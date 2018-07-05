@@ -33,6 +33,7 @@ public class ColumnLocalDictionaryGenerator implements LocalDictionaryGenerator 
    */
   private DictionaryStore dictionaryHolder;
 
+
   public ColumnLocalDictionaryGenerator(int threshold, int lvLength) {
     // adding 1 to threshold for null value
     int newThreshold = threshold + 1;

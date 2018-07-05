@@ -24,6 +24,7 @@ import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkReader;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 
 /**
  * Contains raw dimension data,
@@ -38,6 +39,8 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
   private DimensionColumnChunkReader chunkReader;
 
   private FileReader fileReader;
+
+  private CarbonDictionary localDictionary;
 
   public DimensionRawColumnChunk(int columnIndex, ByteBuffer rawData, long offSet, int length,
       DimensionColumnChunkReader columnChunkReader) {
@@ -125,5 +128,13 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
 
   public FileReader getFileReader() {
     return fileReader;
+  }
+
+  public CarbonDictionary getLocalDictionary() {
+    return localDictionary;
+  }
+
+  public void setLocalDictionary(CarbonDictionary localDictionary) {
+    this.localDictionary = localDictionary;
   }
 }

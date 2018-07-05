@@ -24,8 +24,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
-
-
+import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 
 public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
@@ -59,6 +58,9 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
    */
   protected boolean anyNullsSet;
 
+  private CarbonDictionary carbonDictionary;
+
+  private CarbonColumnVector dictionaryVector;
 
   public CarbonColumnVectorImpl(int batchSize, DataType dataType) {
     nullBytes = new BitSet(batchSize);
@@ -78,6 +80,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     } else if (dataType instanceof DecimalType) {
       decimals = new BigDecimal[batchSize];
     } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
+      dictionaryVector = new CarbonColumnVectorImpl(batchSize, DataTypes.INT);
       bytes = new byte[batchSize][];
     } else {
       data = new Object[batchSize];
@@ -170,6 +173,13 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     anyNullsSet = true;
   }
 
+  @Override public void putNotNull(int rowId) {
+
+  }
+
+  @Override public void putNotNull(int rowId, int count) {
+
+  }
 
   public boolean isNullAt(int rowId) {
     return nullBytes.get(rowId);
@@ -203,7 +213,11 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     } else if (dataType instanceof DecimalType) {
       return decimals[rowId];
     } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
-      return  bytes[rowId];
+      if (null != carbonDictionary) {
+        int dictKey = (Integer) dictionaryVector.getData(rowId);
+        return carbonDictionary.getDictionaryValues()[dictKey];
+      }
+      return bytes[rowId];
     } else {
       return data[rowId];
     }
@@ -227,6 +241,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       Arrays.fill(decimals, null);
     } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
       Arrays.fill(bytes, null);
+      this.dictionaryVector.reset();
     } else {
       Arrays.fill(data, null);
     }
@@ -249,6 +264,18 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   @Override public void setFilteredRowsExist(boolean filteredRowsExist) {
 
+  }
+
+  @Override public void setDictionary(CarbonDictionary dictionary) {
+    this.carbonDictionary = dictionary;
+  }
+
+  @Override public boolean hasDictionary() {
+    return null != this.carbonDictionary;
+  }
+
+  @Override public CarbonColumnVector getDictionaryVector() {
+    return dictionaryVector;
   }
 
   /**

@@ -18,8 +18,10 @@ package org.apache.carbondata.core.datastore.chunk.reader.dimension.v3;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.BitSet;
 import java.util.List;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
@@ -29,16 +31,20 @@ import org.apache.carbondata.core.datastore.chunk.reader.dimension.AbstractChunk
 import org.apache.carbondata.core.datastore.chunk.store.ColumnPageWrapper;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
+import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonDictionaryImpl;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 import org.apache.carbondata.format.Encoding;
+import org.apache.carbondata.format.LocalDictionaryChunk;
 
 import org.apache.commons.lang.ArrayUtils;
 
@@ -234,7 +240,11 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       throws IOException, MemoryException {
     if (isEncodedWithMeta(pageMetadata)) {
       ColumnPage decodedPage = decodeDimensionByMeta(pageMetadata, pageData, offset);
-      return new ColumnPageWrapper(decodedPage);
+      if (null != rawColumnPage.getDataChunkV3().local_dictionary) {
+        rawColumnPage
+            .setLocalDictionary(getDictionary(rawColumnPage.getDataChunkV3().local_dictionary));
+      }
+      return new ColumnPageWrapper(decodedPage, rawColumnPage.getLocalDictionary());
     } else {
       // following code is for backward compatibility
       return decodeDimensionLegacy(rawColumnPage, pageData, pageMetadata, offset);
@@ -250,6 +260,10 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     int[] invertedIndexesReverse = new int[0];
     dataPage = COMPRESSOR.unCompressByte(pageData.array(), offset, pageMetadata.data_page_length);
     offset += pageMetadata.data_page_length;
+    if (null != rawColumnPage.getDataChunkV3().local_dictionary) {
+      rawColumnPage
+          .setLocalDictionary(getDictionary(rawColumnPage.getDataChunkV3().local_dictionary));
+    }
     // if row id block is present then read the row id chunk and uncompress it
     if (hasEncoding(pageMetadata.encoders, Encoding.INVERTED_INDEX)) {
       invertedIndexes = CarbonUtil
@@ -265,21 +279,25 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
           CarbonUtil.getIntArray(pageData, offset, pageMetadata.rle_page_length);
       // uncompress the data with rle indexes
       dataPage = UnBlockIndexer.uncompressData(dataPage, rlePage,
-          eachColumnValueSize[rawColumnPage.getColumnIndex()]);
+          null == rawColumnPage.getLocalDictionary() ?
+              eachColumnValueSize[rawColumnPage.getColumnIndex()] :
+              3);
     }
 
     DimensionColumnPage columnDataChunk = null;
-
     // if no dictionary column then first create a no dictionary column chunk
     // and set to data chunk instance
     if (!hasEncoding(pageMetadata.encoders, Encoding.DICTIONARY)) {
       DimensionChunkStoreFactory.DimensionStoreType dimStoreType =
-          hasEncoding(pageMetadata.encoders, Encoding.DIRECT_COMPRESS_VARCHAR) ?
-              DimensionChunkStoreFactory.DimensionStoreType.VARIABLE_INT_LENGTH :
-              DimensionChunkStoreFactory.DimensionStoreType.VARIABLE_SHORT_LENGTH;
+          null != rawColumnPage.getLocalDictionary() ?
+              DimensionChunkStoreFactory.DimensionStoreType.LOCAL_DICT :
+              (hasEncoding(pageMetadata.encoders, Encoding.DIRECT_COMPRESS_VARCHAR) ?
+                  DimensionChunkStoreFactory.DimensionStoreType.VARIABLE_INT_LENGTH :
+                  DimensionChunkStoreFactory.DimensionStoreType.VARIABLE_SHORT_LENGTH);
       columnDataChunk =
           new VariableLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
-              pageMetadata.getNumberOfRowsInpage(), dimStoreType);
+              pageMetadata.getNumberOfRowsInpage(), dimStoreType,
+              rawColumnPage.getLocalDictionary());
     } else {
       // to store fixed length column chunk values
       columnDataChunk =
@@ -288,5 +306,31 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
               eachColumnValueSize[rawColumnPage.getColumnIndex()]);
     }
     return columnDataChunk;
+  }
+
+  private CarbonDictionary getDictionary(LocalDictionaryChunk localDictionaryChunk)
+      throws IOException, MemoryException {
+    if (null != localDictionaryChunk) {
+      List<Encoding> encodings = localDictionaryChunk.getDictionary_meta().getEncoders();
+      List<ByteBuffer> encoderMetas = localDictionaryChunk.getDictionary_meta().getEncoder_meta();
+      ColumnPageDecoder decoder = encodingFactory.createDecoder(encodings, encoderMetas);
+      ColumnPage decode = decoder.decode(localDictionaryChunk.getDictionary_data(), 0,
+          localDictionaryChunk.getDictionary_data().length);
+      BitSet usedDictionary = BitSet.valueOf(CompressorFactory.getInstance().getCompressor()
+          .unCompressByte(localDictionaryChunk.getDictionary_values()));
+      int length = usedDictionary.length();
+      int index = 0;
+      byte[][] dictionary = new byte[length][];
+      for (int i = 0; i < length; i++) {
+        if (usedDictionary.get(i)) {
+          dictionary[i] = decode.getBytes(index++);
+        } else {
+          dictionary[i] = new byte[0];
+        }
+      }
+      dictionary[1] = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
+      return new CarbonDictionaryImpl(dictionary, usedDictionary.cardinality());
+    }
+    return null;
   }
 }

@@ -21,6 +21,7 @@ import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFacto
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory.DimensionStoreType;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 /**
@@ -32,14 +33,29 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
    * Constructor for this class
    */
   public VariableLengthDimensionColumnPage(byte[] dataChunks, int[] invertedIndex,
-      int[] invertedIndexReverse, int numberOfRows, DimensionStoreType dimStoreType) {
+      int[] invertedIndexReverse, int numberOfRows, DimensionStoreType dimStoreType,
+      CarbonDictionary dictionary) {
     boolean isExplicitSorted = isExplicitSorted(invertedIndex);
-    long totalSize = null != invertedIndex ?
-        (dataChunks.length + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE) + (
-            numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE)) :
-        (dataChunks.length + (numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE));
+    long totalSize = 0;
+    switch (dimStoreType) {
+      case LOCAL_DICT:
+        totalSize = null != invertedIndex ?
+            (dataChunks.length + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE)) :
+            dataChunks.length;
+        break;
+      case VARIABLE_INT_LENGTH:
+      case VARIABLE_SHORT_LENGTH:
+        totalSize = null != invertedIndex ?
+            (dataChunks.length + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE) + (
+                numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE)) :
+            (dataChunks.length + (numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE));
+        break;
+      default:
+        throw new UnsupportedOperationException("Invalidate dimension store type");
+    }
     dataChunkStore = DimensionChunkStoreFactory.INSTANCE
-        .getDimensionChunkStore(0, isExplicitSorted, numberOfRows, totalSize, dimStoreType);
+        .getDimensionChunkStore(0, isExplicitSorted, numberOfRows, totalSize, dimStoreType,
+            dictionary);
     dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunks);
   }
 

@@ -20,14 +20,19 @@ package org.apache.carbondata.core.datastore.chunk.store;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
+import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 public class ColumnPageWrapper implements DimensionColumnPage {
 
   private ColumnPage columnPage;
 
-  public ColumnPageWrapper(ColumnPage columnPage) {
+  private CarbonDictionary localDictionary;
+
+  public ColumnPageWrapper(ColumnPage columnPage, CarbonDictionary localDictionary) {
     this.columnPage = columnPage;
+    this.localDictionary = localDictionary;
   }
 
   @Override
@@ -55,6 +60,10 @@ public class ColumnPageWrapper implements DimensionColumnPage {
 
   @Override
   public byte[] getChunkData(int rowId) {
+    if (null != localDictionary) {
+      return localDictionary.getDictionaryValues()[CarbonUtil
+          .getSurrogateInternal(columnPage.getBytes(rowId), 0, 3)];
+    }
     return columnPage.getBytes(rowId);
   }
 

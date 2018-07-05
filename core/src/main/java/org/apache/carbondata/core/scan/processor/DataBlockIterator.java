@@ -242,10 +242,13 @@ public class DataBlockIterator extends CarbonIterator<List<Object[]>> {
 
   public void processNextBatch(CarbonColumnarBatch columnarBatch) {
     if (updateScanner()) {
+      if (scannedResult.isNewScanResult()) {
+        columnarBatch.resetDictionary();
+        scannedResult.setNewScanResultFalse();
+      }
       this.scannerResultAggregator.collectResultInColumnarBatch(scannedResult, columnarBatch);
     }
   }
-
 
   /**
    * Close the resources
