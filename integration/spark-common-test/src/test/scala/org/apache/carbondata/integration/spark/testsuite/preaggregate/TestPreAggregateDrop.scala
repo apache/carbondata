@@ -91,6 +91,7 @@ class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
     sql(
       "create datamap preagg2 on table maintable using 'preaggregate' as select" +
       " a,sum(c) from maintable group by a")
+    sql("drop table if exists maintable")
     checkExistence(sql("show tables").select("database", "tableName"), false, "defaultmaintable_preagg1", "defaultmaintable", "defaultmaintable_preagg2")
   }
 

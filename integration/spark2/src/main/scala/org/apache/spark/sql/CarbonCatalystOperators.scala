@@ -134,22 +134,21 @@ object CountStarPlan {
      expr: Expression,
      outputColumns: mutable.MutableList[Attribute]) {
    expr match {
-     case par@Alias(child, _) =>
-       if (child.isInstanceOf[AggregateExpression]) {
-         val head = par.children.head.children.head
+     case par@Alias(cast: Cast, _) =>
+       if (cast.child.isInstanceOf[AggregateExpression]) {
+         val head = cast.child.children.head
          head match {
            case count: Count if count.children.head.isInstanceOf[Literal] =>
              outputColumns += par.toAttribute
            case _ =>
          }
        }
-       else if (child.isInstanceOf[Cast]) {
-         val head = par.children.head.children.head
-           .children.head
+     case par@Alias(child, _) =>
+       if (child.isInstanceOf[AggregateExpression]) {
+         val head = child.children.head
          head match {
            case count: Count if count.children.head.isInstanceOf[Literal] =>
-             outputColumns += new Alias(par.child.asInstanceOf[Cast].child,
-               par.name)(par.exprId, par.qualifier, par.explicitMetadata).toAttribute
+             outputColumns += par.toAttribute
            case _ =>
          }
        }
