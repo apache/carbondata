@@ -54,6 +54,8 @@ public class Field {
     this.name = name;
     if (type.equalsIgnoreCase("string")) {
       this.type = DataTypes.STRING;
+    } else if (type.equalsIgnoreCase("varchar")) {
+      this.type = DataTypes.VARCHAR;
     } else if (type.equalsIgnoreCase("date")) {
       this.type = DataTypes.DATE;
     } else if (type.equalsIgnoreCase("timestamp")) {
@@ -87,6 +89,8 @@ public class Field {
     this.children = fields;
     if (type.equalsIgnoreCase("string")) {
       this.type = DataTypes.STRING;
+    } else if (type.equalsIgnoreCase("varchar")) {
+      this.type = DataTypes.VARCHAR;
     } else if (type.equalsIgnoreCase("date")) {
       this.type = DataTypes.DATE;
     } else if (type.equalsIgnoreCase("timestamp")) {
