@@ -495,9 +495,10 @@ public class CarbonWriterBuilder {
         if (isSortColumn > -1) {
           // unsupported types for ("array", "struct", "double", "float", "decimal")
           if (field.getDataType() == DataTypes.DOUBLE || field.getDataType() == DataTypes.FLOAT
-              || DataTypes.isDecimal(field.getDataType()) || field.getDataType().isComplexType()) {
+              || DataTypes.isDecimal(field.getDataType()) || field.getDataType().isComplexType()
+              || field.getDataType() == DataTypes.VARCHAR) {
             throw new RuntimeException(
-                " sort columns not supported for " + "array, struct, double, float, decimal ");
+                " sort columns not supported for array, struct, double, float, decimal, varchar");
           }
         }
         if (field.getChildren() != null && field.getChildren().size() > 0) {
