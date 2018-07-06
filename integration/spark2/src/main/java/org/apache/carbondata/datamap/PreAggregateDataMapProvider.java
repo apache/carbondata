@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapCatalog;
 import org.apache.carbondata.core.datamap.DataMapProvider;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
@@ -63,9 +64,11 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
       properties.remove(DataMapProperty.DEFERRED_REBUILD);
       properties.remove(DataMapProperty.PATH);
       properties.remove(DataMapProperty.PARTITIONING);
+      properties.remove(CarbonCommonConstants.LONG_STRING_COLUMNS);
       if (properties.size() > 0) {
         throw new MalformedDataMapCommandException(
-                "Only 'path' and 'partitioning' dmproperties are allowed for this datamap");
+                "Only 'path', 'partitioning' and 'long_string_columns' dmproperties " +
+                "are allowed for this datamap");
       }
     }
   }
