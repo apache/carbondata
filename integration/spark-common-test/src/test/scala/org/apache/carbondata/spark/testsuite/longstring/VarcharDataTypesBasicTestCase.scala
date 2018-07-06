@@ -287,6 +287,18 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     checkQuery()
   }
 
+  test("desc table shows long_string_columns property") {
+    sql(
+      s"""
+         | CREATE TABLE if not exists $longStringTable(
+         | id INT, name STRING, description STRING, address STRING, note STRING
+         | ) STORED BY 'carbondata'
+         | TBLPROPERTIES('LONG_STRING_COLUMNS'='address, note', 'dictionary_include'='name', 'sort_columns'='id')
+         |""".
+        stripMargin)
+    checkExistence(sql(s"desc formatted $longStringTable"), true, "long_string_columns", "address", "note")
+  }
+
   // will create 2 long string columns
   private def createFile(filePath: String, line: Int = 10000, start: Int = 0,
       varcharLen: Int = Short.MaxValue + 1000): Content = {

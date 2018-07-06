@@ -114,6 +114,13 @@ private[sql] case class CarbonDescribeFormattedCommand(
       CarbonCommonConstants.CACHE_LEVEL_DEFAULT_VALUE), ""))
     val isStreaming = tblProps.asScala.getOrElse("streaming", "false")
     results ++= Seq(("Streaming", isStreaming, ""))
+
+    // longstring related info
+    if (tblProps.containsKey(CarbonCommonConstants.LONG_STRING_COLUMNS)) {
+      results ++= Seq((CarbonCommonConstants.LONG_STRING_COLUMNS,
+        tblProps.get(CarbonCommonConstants.LONG_STRING_COLUMNS), ""))
+    }
+
     var isLocalDictEnabled = tblProps.asScala
       .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
         CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
