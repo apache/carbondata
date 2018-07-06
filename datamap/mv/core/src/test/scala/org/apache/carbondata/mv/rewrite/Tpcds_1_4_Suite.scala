@@ -25,7 +25,7 @@ import org.apache.carbondata.mv.testutil.ModularPlanTest
 //import org.apache.spark.sql.catalyst.SQLBuilder
 import java.io.{File, PrintWriter}
 
-class Tpcds_1_4_Suite extends ModularPlanTest with BeforeAndAfter { 
+class Tpcds_1_4_Suite extends ModularPlanTest with BeforeAndAfter {
   import org.apache.carbondata.mv.rewrite.matching.TestTPCDS_1_4_Batch._
   import org.apache.carbondata.mv.testutil.Tpcds_1_4_Tables._
 
@@ -33,7 +33,7 @@ class Tpcds_1_4_Suite extends ModularPlanTest with BeforeAndAfter {
   val testHive = sqlContext.sparkSession
   val hiveClient = spark.sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog].getClient()
 
-  ignore("test using tpc-ds queries") {
+  test("test using tpc-ds queries") {
 
     tpcds1_4Tables.foreach { create_table =>
       hiveClient.runSqlHive(create_table)
@@ -45,10 +45,10 @@ class Tpcds_1_4_Suite extends ModularPlanTest with BeforeAndAfter {
 //    val dest = "case_33"
 // case_15 and case_16 need revisit
 
-    val dest = "case_29"   /** to run single case, uncomment out this **/
+    val dest = "case_39"   /** to run single case, uncomment out this **/
     
     tpcds_1_4_testCases.foreach { testcase =>
-//      if (testcase._1 == dest) { /** to run single case, uncomment out this **/
+      if (testcase._1 == dest) { /** to run single case, uncomment out this **/
         val mvSession = new SummaryDatasetCatalog(testHive)
         val summaryDF = testHive.sql(testcase._2)
         mvSession.registerSummaryDataset(summaryDF)
@@ -75,7 +75,7 @@ class Tpcds_1_4_Suite extends ModularPlanTest with BeforeAndAfter {
           writer.print(s"\n\n==== rewritten query ====\n\n${rewriteSQL}\n")
         }
 
-//        }  /**to run single case, uncomment out this **/
+        }  /**to run single case, uncomment out this **/
     
     }
 

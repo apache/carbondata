@@ -2836,7 +2836,69 @@ object TestTPCDS_1_4_Batch {
         |    GROUP BY gen_subquery_2.`a3600`, gen_subquery_2.`a12575873557`, gen_subquery_2.`a12575847251`, gen_subquery_2.`a12575903189`, gen_subquery_2.`a204010101`) gen_subquery_3 
         |  GROUP BY gen_subquery_3.`a3600`, gen_subquery_3.`a12575873557`, gen_subquery_3.`a12575847251`, gen_subquery_3.`a12575903189`) gen_subquery_4 
         |ORDER BY gen_subquery_4.`START_TIME` ASC NULLS FIRST
+        """.stripMargin.trim),
+      ("case_38",
+       """
+        |SELECT p.id, SUM(s.ss_sales_price) sum, p.prod_name, s.ss_ext_list_price
+        |FROM store_sales s
+        |LEFT JOIN (
+        |  SELECT 1 id, i_item_id, FIRST(i_product_name) prod_name
+        |  FROM item 
+        |  GROUP BY i_item_id) p
+        |ON s.ss_item_sk = p.i_item_id
+        |GROUP BY p.id, p.prod_name, s.ss_ext_list_price
+        """.stripMargin.trim,
+       """
+        |SELECT SUM(s.ss_sales_price), p.prod_name
+        |FROM store_sales s
+        |LEFT JOIN (
+        |  SELECT i_item_id, FIRST(i_product_name) prod_name
+        |  FROM item 
+        |  GROUP BY i_item_id) p
+        |ON s.ss_item_sk = p.i_item_id
+        |WHERE s.ss_ext_list_price > 20.0
+        |GROUP BY p.prod_name
+        """.stripMargin.trim,
+       """ 
+        |
+        |
+        """.stripMargin.trim),
+      ("case_39",
+       """
+        |SELECT p.gen_tag_id, SUM(s.ss_sales_price) sum, p.prod_name, p.prod_size
+        |FROM store_sales s
+        |LEFT JOIN (
+        |  SELECT 1 gen_tag_id, i_item_id, FIRST(i_product_name) prod_name, FIRST(i_size) prod_size
+        |  FROM item 
+        |  GROUP BY i_item_id) p
+        |ON s.ss_item_sk = p.i_item_id
+        |GROUP BY p.gen_tag_id, p.prod_name, p.prod_size
+        """.stripMargin.trim,
+       """
+        |SELECT SUM(s.ss_sales_price), p.prod_name
+        |FROM store_sales s
+        |INNER JOIN (
+        |  SELECT i_item_id, FIRST(i_product_name) prod_name, FIRST(i_size) prod_size
+        |  FROM item 
+        |  GROUP BY i_item_id) p
+        |ON s.ss_item_sk = p.i_item_id
+        |WHERE p.prod_size = 'small'
+        |GROUP BY p.prod_name
+        """.stripMargin.trim,
+       """ 
+        |SELECT sum(gen_subsumer_0.`sum`) AS `sum(ss_sales_price)`, gen_subsumer_0.`prod_name` 
+        |FROM
+        |  (SELECT p.`gen_tag_id`, sum(s.`ss_sales_price`) AS `sum`, p.`prod_name`, p.`prod_size` 
+        |  FROM
+        |    store_sales s 
+        |    LEFT OUTER JOIN (SELECT 1 AS `gen_tag_id`, item.`i_item_id`, first(item.`i_product_name`, false) AS `prod_name`, first(item.`i_size`, false) AS `prod_size` 
+        |    FROM
+        |      item
+        |    GROUP BY item.`i_item_id`) p  ON (s.`ss_item_sk` = CAST(p.`i_item_id` AS INT))
+        |  GROUP BY p.`gen_tag_id`, p.`prod_name`, p.`prod_size`) gen_subsumer_0 
+        |WHERE
+        |  (gen_subsumer_0.`prod_size` = 'small') AND (gen_subsumer_0.`gen_tag_id` IS NOT NULL)
+        |GROUP BY gen_subsumer_0.`prod_name`
         """.stripMargin.trim)
   )
-  
 }
