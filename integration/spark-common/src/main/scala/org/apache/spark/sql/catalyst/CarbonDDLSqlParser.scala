@@ -457,17 +457,19 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       }
     }
 
-    // check if column is other than string datatype
+    // check if column is other than STRING or VARCHAR datatype
     localDictColumns.foreach { dictColm =>
       if (fields
         .exists(x => x.column.equalsIgnoreCase(dictColm) &&
                      !x.dataType.get.equalsIgnoreCase("STRING") &&
+                     !x.dataType.get.equalsIgnoreCase("VARCHAR") &&
                      !x.dataType.get.equalsIgnoreCase("STRUCT") &&
                      !x.dataType.get.equalsIgnoreCase("ARRAY"))) {
         val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
                        dictColm.trim +
-                       " is not a String/complex datatype column. LOCAL_DICTIONARY_COLUMN should " +
-                       "be no dictionary string/complex datatype column.Please check the DDL."
+                       " is not a string/complex/varchar datatype column. LOCAL_DICTIONARY_COLUMN" +
+                       " should be no dictionary string/complex/varchar datatype column." +
+                       "Please check the DDL."
         throw new MalformedCarbonCommandException(errormsg)
       }
     }
@@ -685,12 +687,12 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       noInvertedIdxColsProps =
         tableProperties.get(CarbonCommonConstants.NO_INVERTED_INDEX).get.split(',').map(_.trim)
       noInvertedIdxColsProps.foreach { noInvertedIdxColProp =>
-          if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
-            val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
-                           " does not exist in table. Please check create table statement."
-            throw new MalformedCarbonCommandException(errormsg)
-          }
+        if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
+          val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
+                         " does not exist in table. Please check create table statement."
+          throw new MalformedCarbonCommandException(errormsg)
         }
+      }
     }
     // check duplicate columns and only 1 col left
     val distinctCols = noInvertedIdxColsProps.toSet
