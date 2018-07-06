@@ -34,8 +34,6 @@ case class CustomDeterministicExpression(nonDt: Expression ) extends Expression 
 
   override def children: Seq[Expression] = Seq()
 
-  override def deterministic: Boolean = true
-
   def childexp : Expression = nonDt
 
   override protected def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = ev.copy("")

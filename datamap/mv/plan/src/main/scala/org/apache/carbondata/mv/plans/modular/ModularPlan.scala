@@ -27,6 +27,7 @@ import org.apache.spark.sql.catalyst.plans.{JoinType, QueryPlan}
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
 import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.mv.plans._
 import org.apache.carbondata.mv.plans.util.{Printers, Signature, SQLBuilder}
@@ -64,7 +65,7 @@ abstract class ModularPlan
     //    spark.conf.set("spark.sql.cbo.enabled", true)
     val sqlStmt = asOneLineSQL
     val plan = spark.sql(sqlStmt).queryExecution.optimizedPlan
-    plan.stats(conf)
+    SparkSQLUtil.invokeStatsMethod(plan, conf)
   }
 
   override def fastEquals(other: TreeNode[_]): Boolean = {

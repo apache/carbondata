@@ -64,7 +64,7 @@ public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
     this.inputMetricsStats = inputMetricsStats;
   }
 
-  public void setVectorReader(boolean vectorReader) {
+  public void setIsVectorReader(boolean vectorReader) {
     isVectorReader = vectorReader;
   }
 

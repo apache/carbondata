@@ -18,9 +18,11 @@ package org.apache.spark.sql;
 
 import java.math.BigInteger;
 
+import org.apache.parquet.column.Dictionary;
 import org.apache.spark.memory.MemoryMode;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.execution.vectorized.ColumnarBatch;
+import org.apache.spark.sql.execution.vectorized.ColumnVector;
 import org.apache.spark.sql.types.CalendarIntervalType;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Decimal;
@@ -58,6 +60,10 @@ public class CarbonVectorProxy {
         columnarBatch = ColumnarBatch.allocate(outputSchema, memMode, rowNum);
     }
 
+    public ColumnVector getColumnVector(int ordinal) {
+        return columnarBatch.column(ordinal);
+    }
+
     /**
      * Sets the number of rows in this batch.
      */
@@ -65,11 +71,31 @@ public class CarbonVectorProxy {
         columnarBatch.setNumRows(numRows);
     }
 
+    public Object reserveDictionaryIds(int capacity , int ordinal) {
+        return columnarBatch.column(ordinal).reserveDictionaryIds(capacity);
+    }
+
     /**
      * Returns the number of rows for read, including filtered rows.
      */
     public int numRows() {
         return columnarBatch.capacity();
+    }
+
+    public void setDictionary(Object dictionary, int ordinal) {
+        if (dictionary instanceof Dictionary) {
+            columnarBatch.column(ordinal).setDictionary((Dictionary) dictionary);
+        } else {
+            columnarBatch.column(ordinal).setDictionary(null);
+        }
+    }
+
+    public void putNull(int rowId, int ordinal) {
+        columnarBatch.column(ordinal).putNull(rowId);
+    }
+
+    public void putNulls(int rowId, int count, int ordinal) {
+        columnarBatch.column(ordinal).putNulls(rowId, count);
     }
 
     /**
@@ -96,6 +122,21 @@ public class CarbonVectorProxy {
 
     public void resetDictionaryIds(int ordinal) {
         columnarBatch.column(ordinal).getDictionaryIds().reset();
+    }
+
+    /**
+     * This API will return a columnvector from a batch of column vector rows
+     * based on the ordinal
+     *
+     * @param ordinal
+     * @return
+     */
+    public ColumnVector column(int ordinal) {
+        return columnarBatch.column(ordinal);
+    }
+
+    public boolean hasDictionary(int ordinal) {
+        return columnarBatch.column(ordinal).hasDictionary();
     }
 
     /**
@@ -208,19 +249,24 @@ public class CarbonVectorProxy {
         columnarBatch.column(ordinal).putByteArray(rowId, (byte[]) value, offset, length);
     }
 
-    public void putNull(int rowId, int ordinal) {
-        columnarBatch.column(ordinal).putNull(rowId);
-    }
-
-    public void putNulls(int rowId, int count, int ordinal) {
-        columnarBatch.column(ordinal).putNulls(rowId, count);
-    }
-
     public boolean isNullAt(int rowId, int ordinal) {
-        return columnarBatch.column(ordinal).isNullAt(rowId);
+        return columnarBatch
+                .column(ordinal).isNullAt(rowId);
     }
 
     public DataType dataType(int ordinal) {
         return columnarBatch.column(ordinal).dataType();
+    }
+
+    public void putNotNull(int rowId, int ordinal) {
+        columnarBatch.column(ordinal).putNotNull(rowId);
+    }
+
+    public void putNotNulls(int rowId, int count, int ordinal) {
+        columnarBatch.column(ordinal).putNotNulls(rowId, count);
+    }
+
+    public void putDictionaryInt(int rowId, int value, int ordinal) {
+        columnarBatch.column(ordinal).getDictionaryIds().putInt(rowId, (int) value);
     }
 }

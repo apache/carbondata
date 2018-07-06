@@ -17,13 +17,11 @@
 
 package org.apache.carbondata.mv.testutil
 
-import java.io.File
-
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.util._
-import org.apache.spark.sql.test.util.{PlanTest, QueryTest}
+import org.apache.spark.sql.test.util.QueryTest
 
 import org.apache.carbondata.mv.plans.modular
 import org.apache.carbondata.mv.plans.modular.{ModularPlan, OneRowTable, Select}
@@ -52,30 +50,6 @@ abstract class ModularPlanTest extends QueryTest with PredicateHelper {
         Alias(a.child, a.name)(exprId = ExprId(0))
       case ae: AggregateExpression =>
         ae.copy(resultId = ExprId(0))
-    }
-  }
-
-  /**
-   * Normalizes plans:
-   * - Filter the filter conditions that appear in a plan. For instance,
-   * ((expr 1 && expr 2) && expr 3), (expr 1 && expr 2 && expr 3), (expr 3 && (expr 1 && expr 2)
-   *   etc., will all now be equivalent.
-   * - Sample the seed will replaced by 0L.
-   * - Join conditions will be resorted by hashCode.
-   */
-  protected def normalizePlan(plan: LogicalPlan): LogicalPlan = {
-    plan transform {
-      case filter@Filter(condition: Expression, child: LogicalPlan) =>
-        Filter(
-          splitConjunctivePredicates(condition).map(rewriteEqual(_)).sortBy(_.hashCode())
-            .reduce(And), child)
-      case sample: Sample =>
-        sample.copy(seed = 0L)(true)
-      case join@Join(left, right, joinType, condition) if condition.isDefined =>
-        val newCondition =
-          splitConjunctivePredicates(condition.get).map(rewriteEqual(_)).sortBy(_.hashCode())
-            .reduce(And)
-        Join(left, right, joinType, Some(newCondition))
     }
   }
 
@@ -177,4 +151,12 @@ abstract class ModularPlanTest extends QueryTest with PredicateHelper {
            """.stripMargin)
     }
   }
+
+  object MatchLocalRelation {
+    def unapply(localRelation: LocalRelation): Option[(Seq[Attribute], Any)] = localRelation match {
+      case l: LocalRelation => Some(l.output, l.data)
+      case _ => None
+    }
+  }
+
 }

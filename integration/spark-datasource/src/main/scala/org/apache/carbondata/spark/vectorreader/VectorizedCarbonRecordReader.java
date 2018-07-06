@@ -51,16 +51,13 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.spark.memory.MemoryMode;
-<<<<<<< 2f537b724f6f03ab40c95f7ecc8ebd38f6500099:integration/spark-datasource/src/main/scala/org/apache/carbondata/spark/vectorreader/VectorizedCarbonRecordReader.java
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.execution.vectorized.ColumnVectorUtils;
-import org.apache.spark.sql.execution.vectorized.ColumnarBatch;
-=======
 import org.apache.spark.sql.CarbonVectorProxy;
->>>>>>> [CARBONDATA-2532][Integration] Carbon to support spark 2.3 version, ColumnVector Interface:integration/spark2/src/main/java/org/apache/carbondata/spark/vectorreader/VectorizedCarbonRecordReader.java
 import org.apache.spark.sql.types.DecimalType;
 import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
 
 /**
  * A specialized RecordReader that reads into InternalRows or ColumnarBatches directly using the
@@ -282,22 +279,23 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
         schema = schema.add(field);
       }
     }
-    columnarBatch = ColumnarBatch.allocate(schema, memMode);
+    vectorProxy = new CarbonVectorProxy(DEFAULT_MEMORY_MODE,schema,DEFAULT_BATCH_SIZE);
     if (partitionColumns != null) {
       int partitionIdx = fields.length;
       for (int i = 0; i < partitionColumns.fields().length; i++) {
-        ColumnVectorUtils.populate(columnarBatch.column(i + partitionIdx), partitionValues, i);
-        columnarBatch.column(i + partitionIdx).setIsConstant();
+        ColumnVectorUtils.populate(vectorProxy.column(i + partitionIdx), partitionValues, i);
+        vectorProxy.column(i + partitionIdx).setIsConstant();
       }
     }
-    vectorProxy = new CarbonVectorProxy(MemoryMode.OFF_HEAP,DEFAULT_BATCH_SIZE,fields);
     CarbonColumnVector[] vectors = new CarbonColumnVector[fields.length];
     boolean[] filteredRows = new boolean[vectorProxy.numRows()];
     for (int i = 0; i < fields.length; i++) {
-    if (isNoDictStringField[i]) {
-      vectorProxy.reserveDictionaryIds(vectorProxy.numRows(), i);
-      }
       vectors[i] = new ColumnarVectorWrapper(vectorProxy, filteredRows, i);
+      if (isNoDictStringField[i]) {
+        if (vectors[i] instanceof ColumnarVectorWrapper) {
+          ((ColumnarVectorWrapper) vectors[i]).reserveDictionaryIds();
+        }
+      }
     }
     carbonColumnarBatch = new CarbonColumnarBatch(vectors, vectorProxy.numRows(), filteredRows);
   }

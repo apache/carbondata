@@ -35,6 +35,7 @@ import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
+import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -48,6 +49,7 @@ import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
+
 /**
  * Carbon specific optimization for late decode (convert dictionary key to value as late as
  * possible), which can improve the aggregation performance and reduce memory usage
@@ -55,17 +57,33 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
 private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   val PUSHED_FILTERS = "PushedFilters"
 
+  /*
+  Spark 2.3.1 plan there can be case of multiple projections like below
+  Project [substring(name, 1, 2)#124, name#123, tupleId#117, cast(rand(-6778822102499951904)#125
+  as string) AS rand(-6778822102499951904)#137]
+   +- Project [substring(name#123, 1, 2) AS substring(name, 1, 2)#124, name#123, UDF:getTupleId()
+    AS tupleId#117,
+       customdeterministicexpression(rand(-6778822102499951904)) AS rand(-6778822102499951904)#125]
+   +- Relation[imei#118,age#119,task#120L,num#121,level#122,name#123]
+   CarbonDatasourceHadoopRelation []
+ */
   def apply(plan: LogicalPlan): Seq[SparkPlan] = {
     plan match {
       case PhysicalOperation(projects, filters, l: LogicalRelation)
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
         val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
-        pruneFilterProject(
-          l,
-          projects,
-          filters,
-          (a, f, needDecoder, p) => toCatalystRDD(l, a, relation.buildScan(
-            a.map(_.name).toArray, filters, projects, f, p), needDecoder)) :: Nil
+        // In Spark 2.3.1 there is case of multiple projections like below
+        // if 1 projection is failed then need to continue to other
+        try {
+          pruneFilterProject(
+            l,
+            projects,
+            filters,
+            (a, f, needDecoder, p) => toCatalystRDD(l, a, relation.buildScan(
+              a.map(_.name).toArray, filters, projects, f, p), needDecoder)) :: Nil
+        } catch {
+          case e: CarbonPhysicalPlanException => Nil
+        }
       case CarbonDictionaryCatalystDecoder(relations, profile, aliasMap, _, child) =>
         if ((profile.isInstanceOf[IncludeProfile] && profile.isEmpty) ||
             !CarbonDictionaryDecoder.
@@ -157,17 +175,20 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     if (names.nonEmpty) {
       val partitionSet = AttributeSet(names
         .map(p => relation.output.find(_.name.equalsIgnoreCase(p)).get))
-      val partitionKeyFilters =
-        ExpressionSet(ExpressionSet(filterPredicates).filter(_.references.subsetOf(partitionSet)))
+      val partitionKeyFilters = CarbonToSparkAdapater
+        .getPartitionKeyFilter(partitionSet, filterPredicates)
       // Update the name with lower case as it is case sensitive while getting partition info.
       val updatedPartitionFilters = partitionKeyFilters.map { exp =>
         exp.transform {
           case attr: AttributeReference =>
-            AttributeReference(
+            CarbonToSparkAdapater.createAttributeReference(
               attr.name.toLowerCase,
               attr.dataType,
               attr.nullable,
-              attr.metadata)(attr.exprId, attr.qualifier, attr.isGenerated)
+              attr.metadata,
+              attr.exprId,
+              attr.qualifier,
+              attr)
         }
       }
       partitions =
@@ -224,7 +245,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       }
     }
 
-    val (unhandledPredicates, pushedFilters) =
+    val (unhandledPredicates, pushedFilters, handledFilters ) =
       selectFilters(relation.relation, candidatePredicates)
 
     // A set of column attributes that are only referenced by pushed down filters.  We can eliminate
@@ -232,10 +253,13 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     val handledSet = {
       val handledPredicates = filterPredicates.filterNot(unhandledPredicates.contains)
       val unhandledSet = AttributeSet(unhandledPredicates.flatMap(_.references))
-      AttributeSet(handledPredicates.flatMap(_.references)) --
-      (projectSet ++ unhandledSet).map(relation.attributeMap)
+      try {
+        AttributeSet(handledPredicates.flatMap(_.references)) --
+        (projectSet ++ unhandledSet).map(relation.attributeMap)
+      } catch {
+        case e => throw new CarbonPhysicalPlanException
+      }
     }
-
     // Combines all Catalyst filter `Expression`s that are either not convertible to data source
     // `Filter`s or cannot be handled by `relation`.
     val filterCondition = unhandledPredicates.reduceLeftOption(expressions.And)
@@ -309,6 +333,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         scanBuilder,
         candidatePredicates,
         pushedFilters,
+        handledFilters,
         metadata,
         needDecoder,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]])
@@ -345,6 +370,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         scanBuilder,
         candidatePredicates,
         pushedFilters,
+        handledFilters,
         metadata,
         needDecoder,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]])
@@ -359,9 +385,10 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       output: Seq[Attribute],
       partitions: Seq[PartitionSpec],
       scanBuilder: (Seq[Attribute], Seq[Expression], Seq[Filter],
-        ArrayBuffer[AttributeReference], Seq[PartitionSpec]) => RDD[InternalRow],
+        ArrayBuffer[AttributeReference], Seq[PartitionSpec])
+        => RDD[InternalRow],
       candidatePredicates: Seq[Expression],
-      pushedFilters: Seq[Filter],
+      pushedFilters: Seq[Filter], handledFilters: Seq[Filter],
       metadata: Map[String, String],
       needDecoder: ArrayBuffer[AttributeReference],
       updateRequestedColumns: Seq[Attribute]): DataSourceScanExec = {
@@ -380,18 +407,15 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         metadata,
         relation.catalogTable.map(_.identifier), relation)
     } else {
-      RowDataSourceScanExec(output,
-        scanBuilder(updateRequestedColumns,
-          candidatePredicates,
-          pushedFilters,
-          needDecoder,
-          partitions),
-        relation.relation,
-        getPartitioning(table.carbonTable, updateRequestedColumns),
-        metadata,
-        relation.catalogTable.map(_.identifier))
+      val partition = getPartitioning(table.carbonTable, updateRequestedColumns)
+      val rdd = scanBuilder(updateRequestedColumns, candidatePredicates,
+        pushedFilters, needDecoder, partitions)
+      CarbonReflectionUtils.getRowDataSourceScanExecObj(relation, output,
+        pushedFilters, handledFilters,
+        rdd, partition, metadata)
     }
   }
+
 
   def updateRequestedColumnsFunc(requestedColumns: Seq[Expression],
       relation: CarbonDatasourceHadoopRelation,
@@ -471,7 +495,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
   protected[sql] def selectFilters(
       relation: BaseRelation,
-      predicates: Seq[Expression]): (Seq[Expression], Seq[Filter]) = {
+      predicates: Seq[Expression]): (Seq[Expression], Seq[Filter], Seq[Filter]) = {
 
     // In case of ComplexType dataTypes no filters should be pushed down. IsNotNull is being
     // explicitly added by spark and pushed. That also has to be handled and pushed back to
@@ -536,7 +560,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     // a filter to every row or not.
     val (_, translatedFilters) = translated.unzip
 
-    (unrecognizedPredicates ++ unhandledPredicates, translatedFilters)
+    (unrecognizedPredicates ++ unhandledPredicates, translatedFilters, handledFilters)
   }
 
   /**
@@ -701,3 +725,5 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     }
   }
 }
+
+class CarbonPhysicalPlanException extends Exception

@@ -60,7 +60,7 @@ object Worker {
         do {
           try {
             LOG.info(s"starting search-service on $hostAddress:$port")
-            val config = RpcEnvConfig(
+            val config = RpcUtil.getRpcEnvConfig(
               conf, s"worker-$hostAddress", hostAddress, "", port,
               new SecurityManager(conf), clientMode = false)
             rpcEnv = new NettyRpcEnvFactory().create(config)
@@ -89,7 +89,7 @@ object Worker {
   private def registerToMaster(masterHostAddress: String, masterPort: Int): String = {
     LOG.info(s"trying to register to master $masterHostAddress:$masterPort")
     val conf = new SparkConf()
-    val config = RpcEnvConfig(conf, "registry-client", masterHostAddress, "", masterPort,
+    val config = RpcUtil.getRpcEnvConfig(conf, "registry-client", masterHostAddress, "", masterPort,
       new SecurityManager(conf), clientMode = true)
     val rpcEnv: RpcEnv = new NettyRpcEnvFactory().create(config)
 

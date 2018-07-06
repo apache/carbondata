@@ -80,7 +80,7 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
     checkAnswer(sql("select count(*) from carbon_table where booleanField = true"),
       Row(4))
 
-    if (!Spark2TestQueryExecutor.spark.version.startsWith("2.2")) {
+    if (Spark2TestQueryExecutor.spark.version.startsWith("2.1")) {
       checkAnswer(sql("select count(*) from carbon_table where booleanField = 'true'"),
         Row(0))
 

@@ -49,13 +49,8 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CompactionResultSortProcessor, CompactionType}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.{HandoffResult, HandoffResultImpl}
-<<<<<<< 2f537b724f6f03ab40c95f7ecc8ebd38f6500099
 import org.apache.carbondata.spark.util.CommonUtil
-import org.apache.carbondata.streaming.{CarbonStreamInputFormat, CarbonStreamRecordReader}
-=======
-import org.apache.carbondata.spark.util.{CommonUtil, SparkDataTypeConverterImpl}
 import org.apache.carbondata.streaming.CarbonStreamInputFormat
->>>>>>> [CARBONDATA-2532][Integration] Carbon to support spark 2.3 version, ColumnVector Interface
 
 
 /**
@@ -167,11 +162,11 @@ class StreamHandoffRDD[K, V](
     val format = new CarbonTableInputFormat[Array[Object]]()
     val model = format.createQueryModel(inputSplit, attemptContext)
     val inputFormat = new CarbonStreamInputFormat
-    val streamReader = inputFormat.createRecordReader(inputSplit, attemptContext)
-      .asInstanceOf[RecordReader[Void, Any]]
-    inputFormat.setVectorReader(false)
+    inputFormat.setIsVectorReader(false)
     inputFormat.setModel(model)
     inputFormat.setUseRawRow(true)
+    val streamReader = inputFormat.createRecordReader(inputSplit, attemptContext)
+      .asInstanceOf[RecordReader[Void, Any]]
     streamReader.initialize(inputSplit, attemptContext)
     val iteratorList = new util.ArrayList[RawResultIterator](1)
     iteratorList.add(new StreamingRawResultIterator(streamReader))

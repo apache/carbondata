@@ -421,7 +421,7 @@ class CarbonScanRDD[T: ClassTag](
           // create record reader for row format
           DataTypeUtil.setDataTypeConverter(dataTypeConverterClz.newInstance())
           val inputFormat = new CarbonStreamInputFormat
-          inputFormat.setVectorReader(vectorReader)
+          inputFormat.setIsVectorReader(vectorReader)
           inputFormat.setInputMetricsStats(inputMetricsStats)
           model.setStatisticsRecorder(
             CarbonTimeStatisticsFactory.createExecutorRecorder(model.getQueryId))
