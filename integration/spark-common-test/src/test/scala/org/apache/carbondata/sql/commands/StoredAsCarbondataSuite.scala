@@ -87,7 +87,8 @@ class StoredAsCarbondataSuite extends QueryTest with BeforeAndAfterEach {
       sql("CREATE TABLE carbon_table(key INT, value STRING) STORED AS  ")
     } catch {
       case e: Exception =>
-        assert(e.getMessage.contains("no viable alternative at input"))
+        assert(e.getMessage.contains("no viable alternative at input") ||
+        e.getMessage.contains("mismatched input '<EOF>' expecting "))
     }
   }
 
