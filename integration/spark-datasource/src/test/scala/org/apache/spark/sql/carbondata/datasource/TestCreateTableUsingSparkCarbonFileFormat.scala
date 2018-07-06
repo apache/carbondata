@@ -22,6 +22,7 @@ import java.io.File
 import org.apache.commons.io.FileUtils
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.apache.spark.sql.carbondata.datasource.TestUtil._
+import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
@@ -110,10 +111,10 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     //data source file format
-    if (spark.sparkContext.version.startsWith("2.1")) {
+    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       //data source file format
       spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$filePath') """)
-    } else if (spark.sparkContext.version.startsWith("2.2")) {
+    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
       //data source file format
       spark.sql(
         s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
@@ -158,10 +159,10 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     //data source file format
-    if (spark.sparkContext.version.startsWith("2.1")) {
+    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       //data source file format
       spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$filePath') """)
-    } else if (spark.sparkContext.version.startsWith("2.2")) {
+    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
       //data source file format
       spark.sql(
         s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
@@ -180,7 +181,6 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     cleanTestData()
   }
 
-
   // TODO: Make the sparkCarbonFileFormat to work without index file
   test("Read sdk writer output file without Carbondata file should fail") {
     buildTestData(false)
@@ -190,10 +190,10 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
 
     val exception = intercept[Exception] {
       //    data source file format
-      if (spark.sparkContext.version.startsWith("2.1")) {
+      if (SparkUtil.isSparkVersionEqualTo("2.1")) {
         //data source file format
         spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$filePath') """)
-      } else if (spark.sparkContext.version.startsWith("2.2")) {
+      } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
         //data source file format
         spark.sql(
           s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
@@ -220,10 +220,10 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
 
     val exception = intercept[Exception] {
       //data source file format
-      if (spark.sparkContext.version.startsWith("2.1")) {
+      if (SparkUtil.isSparkVersionEqualTo("2.1")) {
         //data source file format
         spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$filePath') """)
-      } else if (spark.sparkContext.version.startsWith("2.2")) {
+      } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
         //data source file format
         spark.sql(
           s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
@@ -250,10 +250,10 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     //data source file format
     spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
-    if (spark.sparkContext.version.startsWith("2.1")) {
+    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       //data source file format
       spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$filePath') """)
-    } else if (spark.sparkContext.version.startsWith("2.2")) {
+    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
       //data source file format
       spark.sql(
         s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
@@ -299,10 +299,10 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     assert(new File(filePath).exists())
     spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
-    if (spark.sparkContext.version.startsWith("2.1")) {
+    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       //data source file format
       spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$filePath') """)
-    } else if (spark.sparkContext.version.startsWith("2.2")) {
+    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
       //data source file format
       spark.sql(
         s"""CREATE TABLE sdkOutputTable USING carbon LOCATION

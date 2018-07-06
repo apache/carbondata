@@ -18,17 +18,14 @@
 package org.apache.carbondata.stream;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
@@ -78,12 +75,11 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-
 import org.apache.spark.memory.MemoryMode;
+import org.apache.spark.sql.CarbonVectorProxy;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
+import org.apache.spark.sql.types.*;
 
 /**
  * Stream record reader
@@ -117,7 +113,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
 
   // vectorized reader
   private StructType outputSchema;
-  private Object vectorProxy;
+  private CarbonVectorProxy vectorProxy;
   private boolean isFinished = false;
 
   // filter
@@ -142,9 +138,6 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
 
   // InputMetricsStats
   private InputMetricsStats inputMetricsStats;
-
-  private static final LogService LOGGER =
-          LogServiceFactory.getLogService(CarbonStreamRecordReader.class.getName());
 
   public CarbonStreamRecordReader(boolean isVectorReader, InputMetricsStats inputMetricsStats,
       QueryModel mdl, boolean useRawRow) {
@@ -400,21 +393,15 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
     return null;
   }
 
-  @Override public Object getCurrentValue() throws IOException, InterruptedException {
-    if (isVectorReader) {
-      Method method = null;
-      try {
-        method = vectorProxy.getClass().getMethod("numRows");
-        int value = (int) method.invoke(vectorProxy);
-        if (inputMetricsStats != null) {
-          inputMetricsStats.incrementRecordRead((long) value);
+    @Override public Object getCurrentValue() throws IOException, InterruptedException {
+        if (isVectorReader) {
+            int value = vectorProxy.numRows();
+            if (inputMetricsStats != null) {
+                inputMetricsStats.incrementRecordRead((long) value);
+            }
+
+            return vectorProxy.getColumnarBatch();
         }
-        method = vectorProxy.getClass().getMethod("getColumnarBatch");
-        return method.invoke(vectorProxy);
-      } catch (Exception e) {
-        throw new IOException(e);
-      }
-    }
 
     if (inputMetricsStats != null) {
       inputMetricsStats.incrementRecordRead(1L);
@@ -440,50 +427,39 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
     return true;
   }
 
-  private boolean scanBlockletAndFillVector(BlockletHeader header) throws IOException {
-    Constructor cons = null;
-    // if filter is null and output projection is empty, use the row number of blocklet header
-    int rowNum = 0;
-    String methodName = "setNumRows";
-    try {
-      String vectorReaderClassName = "org.apache.spark.sql.CarbonVectorProxy";
-      cons = CarbonStreamUtils.getConstructorWithReflection(vectorReaderClassName, MemoryMode.class,
-              StructType.class, int.class);
-      if (skipScanData) {
+    private boolean scanBlockletAndFillVector(BlockletHeader header) throws IOException {
+        // if filter is null and output projection is empty, use the row number of blocklet header
+        if (skipScanData) {
+            int rowNums = header.getBlocklet_info().getNum_rows();
+            vectorProxy= new CarbonVectorProxy(MemoryMode.OFF_HEAP,outputSchema,rowNums);
+            vectorProxy.setNumRows(rowNums);
+            input.skipBlockletData(true);
+            return rowNums > 0;
+        }
 
-        int rowNums = header.getBlocklet_info().getNum_rows();
-        vectorProxy = cons.newInstance(MemoryMode.OFF_HEAP, outputSchema, rowNums);
-        Method setNumRowsMethod = vectorProxy.getClass().getMethod(methodName, int.class);
-        setNumRowsMethod.invoke(vectorProxy, rowNums);
-        input.skipBlockletData(true);
-        return rowNums > 0;
-      }
-      input.readBlockletData(header);
-      vectorProxy = cons.newInstance(MemoryMode.OFF_HEAP,outputSchema, input.getRowNums());
-      if (null == filter) {
-        while (input.hasNext()) {
-          readRowFromStream();
-          putRowToColumnBatch(rowNum++);
-        }
-      } else {
-        try {
-          while (input.hasNext()) {
-            readRowFromStream();
-            if (filter.applyFilter(filterRow, carbonTable.getDimensionOrdinalMax())) {
-              putRowToColumnBatch(rowNum++);
+        input.readBlockletData(header);
+        vectorProxy= new CarbonVectorProxy(MemoryMode.OFF_HEAP,outputSchema,input.getRowNums());
+        int rowNum = 0;
+        if (null == filter) {
+            while (input.hasNext()) {
+                readRowFromStream();
+                putRowToColumnBatch(rowNum++);
             }
-          }
-        } catch (FilterUnsupportedException e) {
-          throw new IOException("Failed to filter row in vector reader", e);
+        } else {
+            try {
+                while (input.hasNext()) {
+                    readRowFromStream();
+                    if (filter.applyFilter(filterRow, carbonTable.getDimensionOrdinalMax())) {
+                        putRowToColumnBatch(rowNum++);
+                    }
+                }
+            } catch (FilterUnsupportedException e) {
+                throw new IOException("Failed to filter row in vector reader", e);
+            }
         }
-      }
-      Method setNumRowsMethod = vectorProxy.getClass().getMethod(methodName, int.class);
-      setNumRowsMethod.invoke(vectorProxy, rowNum);
-    } catch (Exception e) {
-      throw new IOException("Failed to fill row in  vector reader", e);
+        vectorProxy.setNumRows(rowNum);
+        return rowNum > 0;
     }
-    return rowNum > 0;
-  }
 
   private void readRowFromStream() {
     input.nextRow();
@@ -719,43 +695,24 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
     }
   }
 
-  private void putRowToColumnBatch(int rowId) {
-    Class<?>[] paramTypes = {int.class, Object.class, int.class};
-    Method putRowToColumnBatch = null;
-    try {
-      putRowToColumnBatch = vectorProxy.getClass().getMethod("putRowToColumnBatch", paramTypes);
+    private void putRowToColumnBatch(int rowId) {
+        for (int i = 0; i < projection.length; i++) {
+            Object value = outputValues[i];
+            vectorProxy.putRowToColumnBatch(rowId,value,i);
 
-    } catch (Exception e) {
-      LOGGER.error(
-              "Unable to put the row in the vector" + "rowid: " + rowId + e);
+        }
     }
-    for (int i = 0; i < projection.length; i++) {
-      Object value = outputValues[i];
-      try {
-        putRowToColumnBatch.invoke(vectorProxy, rowId, value, i);
-      } catch (Exception e) {
-        LOGGER.error(
-                "Unable to put the row in the vector" + "rowid: " + rowId + e);
-      }
-    }
-  }
 
-  @Override public float getProgress() throws IOException, InterruptedException {
-    return 0;
-  }
+    @Override public float getProgress() throws IOException, InterruptedException {
+        return 0;
+    }
 
-  @Override public void close() throws IOException {
-    if (null != input) {
-      input.close();
+    @Override public void close() throws IOException {
+        if (null != input) {
+            input.close();
+        }
+        if (null != vectorProxy) {
+            vectorProxy.close();
+        }
     }
-    if (null != vectorProxy) {
-      try {
-        Method closeMethod = vectorProxy.getClass().getMethod("close");
-        closeMethod.invoke(vectorProxy);
-      } catch (Exception e) {
-        LOGGER.error(
-                "Unable to close the stream vector reader" + e);
-      }
-    }
-  }
 }

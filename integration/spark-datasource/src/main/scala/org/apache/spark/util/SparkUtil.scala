@@ -17,15 +17,7 @@
 
 package org.apache.spark.util
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.io.{LongWritable, Text}
-import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
-import org.apache.spark.{SparkContext, TaskContext}
-import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.rdd.{NewHadoopPartition, NewHadoopRDD}
-
-import org.apache.carbondata.processing.loading.csvinput.BlockDetails
+import org.apache.spark.{SPARK_VERSION, TaskContext}
 
 /*
  * this object use to handle file splits
@@ -37,6 +29,32 @@ object SparkUtil {
     if (localThreadContext == null) {
       TaskContext.setTaskContext(context)
     }
+  }
+
+  /**
+   * Utility method to compare the Spark Versions.
+   * This API ignores the sub-version and compares with only major version
+   * Version passed should be of format x.y  e.g 2.2 ,2.3 , SPARK_VERSION
+   * will be of format x.y.z e.g 2.3.0,2.2.1
+   */
+  def isSparkVersionXandAbove(xVersion: String, isEqualComparision: Boolean = false): Boolean = {
+    val tmpArray = SPARK_VERSION.split("\\.")
+    // convert to float
+    val sparkVersion = if (tmpArray.length >= 2) {
+      (tmpArray(0) + "." + tmpArray(1)).toFloat
+    } else {
+      (tmpArray(0) + ".0").toFloat
+    }
+    // compare the versions
+    if (isEqualComparision) {
+      sparkVersion == xVersion.toFloat
+    } else {
+      sparkVersion >= xVersion.toFloat
+    }
+  }
+
+  def isSparkVersionEqualTo(xVersion: String): Boolean = {
+    isSparkVersionXandAbove(xVersion, true)
   }
 
 }

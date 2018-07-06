@@ -24,6 +24,7 @@ import org.apache.spark.sql.catalyst.plans.JoinType
 import org.apache.spark.sql.catalyst.plans.logical
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
 import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.mv.plans.modular.Flags._
 
@@ -45,7 +46,7 @@ case class ModularRelation(databaseName: String,
     rest: Seq[Seq[Any]]) extends LeafNode {
   override def computeStats(spark: SparkSession, conf: SQLConf): Statistics = {
     val plan = spark.table(s"${ databaseName }.${ tableName }").queryExecution.optimizedPlan
-    val stats = plan.stats(conf)
+    val stats = SparkSQLUtil.invokeStatsMethod(plan, conf)
     val output = outputList.map(_.toAttribute)
     val mapSeq = plan.collect { case n: logical.LeafNode => n }.map {
       table => AttributeMap(table.output.zip(output))
@@ -136,7 +137,7 @@ case class HarmonizedRelation(source: ModularPlan) extends LeafNode {
   // (spark, conf)
   override def computeStats(spark: SparkSession, conf: SQLConf): Statistics = {
     val plan = spark.table(s"${ databaseName }.${ tableName }").queryExecution.optimizedPlan
-    val stats = plan.stats(conf)
+    val stats = SparkSQLUtil.invokeStatsMethod(plan, conf)
     val output = source.asInstanceOf[GroupBy].child.children(0).asInstanceOf[ModularRelation]
       .outputList.map(_.toAttribute)
     val mapSeq = plan.collect { case n: logical.LeafNode => n }.map {
