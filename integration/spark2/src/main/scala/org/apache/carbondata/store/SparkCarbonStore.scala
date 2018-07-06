@@ -115,7 +115,7 @@ class SparkCarbonStore extends MetaCachedCarbonStore {
   def startSearchMode(): Unit = {
     LOG.info("Starting search mode master")
     val conf = new StoreConf()
-    conf.conf(StoreConf.MASTER_HOST, "127.0.0.1")
+    conf.conf(StoreConf.MASTER_HOST, InetAddress.getLocalHost.getHostAddress)
     conf.conf(StoreConf.MASTER_PORT, CarbonProperties.getSearchMasterPort)
     conf.conf(StoreConf.STORE_LOCATION, CarbonProperties.getStorePath)
     master = Master.getInstance(conf)
@@ -163,11 +163,11 @@ class SparkCarbonStore extends MetaCachedCarbonStore {
       .mapPartitions { f =>
         // start worker
         val conf = new StoreConf()
-        conf.conf(StoreConf.WORKER_HOST, "127.0.0.1")
+        conf.conf(StoreConf.WORKER_HOST, InetAddress.getLocalHost.getHostAddress)
         conf.conf(StoreConf.WORKER_PORT, CarbonProperties.getSearchWorkerPort)
         conf.conf(StoreConf.WORKER_CORE_NUM, 2)
         conf.conf(StoreConf.STORE_LOCATION, CarbonProperties.getStorePath)
-        conf.conf(StoreConf.MASTER_HOST, "127.0.0.1")
+        conf.conf(StoreConf.MASTER_HOST, masterIp)
         conf.conf(StoreConf.MASTER_PORT, CarbonProperties.getSearchMasterPort)
 
         var storeLocation: String = null
