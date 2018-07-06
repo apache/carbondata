@@ -65,9 +65,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations for local dict columns _002")
-  {
+  test("test local dictionary custom configurations for local dict columns _002") {
     sql("drop table if exists local1")
 
     intercept[MalformedCarbonCommandException] {
@@ -127,10 +125,10 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
     assert(exception.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a String/complex " +
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a string/complex/varchar " +
         "datatype column. " +
         "LOCAL_DICTIONARY_COLUMN should " +
-        "be no dictionary string/complex datatype column"))
+        "be no dictionary string/complex/varchar datatype column"))
   }
 
   test("test local dictionary custom configurations for local dict columns _006") {
@@ -164,8 +162,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test("test local dictionary custom configurations for local dict threshold _002")
-  {
+  test("test local dictionary custom configurations for local dict threshold _002") {
     sql("drop table if exists local1")
     sql(
       """
@@ -180,8 +177,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test("test local dictionary custom configurations for local dict threshold _003")
-  {
+  test("test local dictionary custom configurations for local dict threshold _003") {
     sql("drop table if exists local1")
     sql(
       """
@@ -196,8 +192,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test("test local dictionary custom configurations for local dict threshold _004")
-  {
+  test("test local dictionary custom configurations for local dict threshold _004") {
     sql("drop table if exists local1")
     sql(
       """
@@ -212,8 +207,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test("test local dictionary custom configurations for local dict threshold _005")
-  {
+  test("test local dictionary custom configurations for local dict threshold _005") {
     sql("drop table if exists local1")
     sql(
       """
@@ -229,8 +223,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
   }
 
   test("test local dictionary custom configurations with both columns and threshold configured " +
-       "_001")
-  {
+       "_001") {
     sql("drop table if exists local1")
     sql(
       """
@@ -252,8 +245,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
   }
 
   test("test local dictionary custom configurations with both columns and threshold configured " +
-       "_002")
-  {
+       "_002") {
     sql("drop table if exists local1")
     sql(
       """
@@ -275,8 +267,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
   }
 
   test("test local dictionary custom configurations with both columns and threshold configured " +
-       "_003")
-  {
+       "_003") {
     sql("drop table if exists local1")
     sql(
       """
@@ -298,8 +289,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
   }
 
   test("test local dictionary custom configurations with both columns and threshold configured " +
-       "_004")
-  {
+       "_004") {
     sql("drop table if exists local1")
     sql(
       """
@@ -335,8 +325,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
   }
 
   test("test local dictionary custom configurations with both columns and threshold configured " +
-       "_006")
-  {
+       "_006") {
     sql("drop table if exists local1")
     intercept[MalformedCarbonCommandException] {
       sql(
@@ -349,8 +338,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
   }
 
   test("test local dictionary custom configurations with both columns and threshold configured " +
-       "_007")
-  {
+       "_007") {
     sql("drop table if exists local1")
     intercept[MalformedCarbonCommandException] {
       sql(
@@ -363,8 +351,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
   }
 
   test("test local dictionary custom configurations with both columns and threshold configured " +
-       "_008")
-  {
+       "_008") {
     sql("drop table if exists local1")
     intercept[MalformedCarbonCommandException] {
       sql(
@@ -378,8 +365,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
   }
 
   test("test local dictionary custom configurations with both columns and threshold configured " +
-       "_009")
-  {
+       "_009") {
     sql("drop table if exists local1")
     intercept[MalformedCarbonCommandException] {
       sql(
@@ -392,8 +378,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
   }
 
   test("test local dictionary custom configurations with both columns and threshold configured " +
-       "_010")
-  {
+       "_010") {
     sql("drop table if exists local1")
     intercept[MalformedCarbonCommandException] {
       sql(
@@ -406,8 +391,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
   }
 
   test("test local dictionary custom configurations with both columns and threshold configured " +
-       "_011")
-  {
+       "_011") {
     sql("drop table if exists local1")
     intercept[MalformedCarbonCommandException] {
       sql(
@@ -457,8 +441,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test("test local dictionary custom configurations when enabled for local dict columns _002")
-  {
+  test("test local dictionary custom configurations when enabled for local dict columns _002") {
     sql("drop table if exists local1")
 
     intercept[MalformedCarbonCommandException] {
@@ -519,10 +502,10 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
     assert(exception.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a String/complex " +
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a string/complex/varchar " +
         "datatype column. " +
         "LOCAL_DICTIONARY_COLUMN should " +
-        "be no dictionary string/complex datatype column"))
+        "be no dictionary string/complex/varchar datatype column"))
   }
 
   test("test local dictionary custom configurations when enabled for local dict columns _006") {
@@ -539,9 +522,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when local_dictionary_exclude is configured _001")
-  {
+  test("test local dictionary custom configurations when local_dictionary_exclude is " +
+       "configured _001") {
     sql("drop table if exists local1")
     sql(
       """
@@ -559,9 +541,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when local_dictionary_exclude is configured _002")
-  {
+  test("test local dictionary custom configurations when local_dictionary_exclude is " +
+       "configured _002") {
     sql("drop table if exists local1")
     val exception = intercept[MalformedCarbonCommandException] {
       sql(
@@ -577,9 +558,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         "Please check the DDL."))
   }
 
-  test(
-    "test local dictionary custom configurations when local_dictionary_exclude is configured _003")
-  {
+  test("test local dictionary custom configurations when local_dictionary_exclude is " +
+       "configured _003") {
     sql("drop table if exists local1")
     val exception = intercept[MalformedCarbonCommandException] {
       sql(
@@ -597,9 +577,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
 
   }
 
-  test(
-    "test local dictionary custom configurations when local_dictionary_exclude is configured _004")
-  {
+  test("test local dictionary custom configurations when local_dictionary_exclude is " +
+       "configured _004") {
     sql("drop table if exists local1")
     val exception1 = intercept[MalformedCarbonCommandException] {
       sql(
@@ -616,9 +595,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         "Please check the DDL."))
   }
 
-  test(
-    "test local dictionary custom configurations when local_dictionary_exclude is configured _005")
-  {
+  test("test local dictionary custom configurations when local_dictionary_exclude is " +
+       "configured _005") {
     sql("drop table if exists local1")
     val exception = intercept[MalformedCarbonCommandException] {
       sql(
@@ -631,15 +609,14 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
     assert(exception.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a String/complex " +
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a string/complex/varchar " +
         "datatype column. " +
         "LOCAL_DICTIONARY_COLUMN should " +
-        "be no dictionary string/complex datatype column"))
+        "be no dictionary string/complex/varchar datatype column"))
   }
 
-  test(
-    "test local dictionary custom configurations when local_dictionary_exclude is configured _006")
-  {
+  test("test local dictionary custom configurations when local_dictionary_exclude is " +
+       "configured _006") {
     sql("drop table if exists local1")
     intercept[MalformedCarbonCommandException] {
       sql(
@@ -653,10 +630,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when local_dictionary_include and " +
-    "local_dictionary_exclude " +
-    "is configured _001") {
+  test("test local dictionary custom configurations when local_dictionary_include and " +
+       "local_dictionary_exclude is configured _001") {
     sql("drop table if exists local1")
     sql(
       """
@@ -680,10 +655,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when local_dictionary_include and " +
-    "local_dictionary_exclude " +
-    "is configured _002") {
+  test("test local dictionary custom configurations when local_dictionary_include and " +
+       "local_dictionary_exclude is configured _002") {
     sql("drop table if exists local1")
     sql(
       """
@@ -708,10 +681,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when local_dictionary_include and " +
-    "local_dictionary_exclude " +
-    "is configured _003") {
+  test("test local dictionary custom configurations when local_dictionary_include and " +
+       "local_dictionary_exclude is configured _003") {
     sql("drop table if exists local1")
     sql(
       """
@@ -730,10 +701,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     checkExistence(sql("describe formatted local1"), false, "Local Dictionary Exclude")
   }
 
-  test(
-    "test local dictionary custom configurations when local_dictionary_include and " +
-    "local_dictionary_exclude " +
-    "is configured _004") {
+  test("test local dictionary custom configurations when local_dictionary_include and " +
+       "local_dictionary_exclude is configured _004") {
     sql("drop table if exists local1")
     intercept[MalformedCarbonCommandException] {
       sql(
@@ -747,10 +716,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when local_dictionary_include and " +
-    "local_dictionary_exclude " +
-    "is configured _005") {
+  test("test local dictionary custom configurations when local_dictionary_include and " +
+       "local_dictionary_exclude is configured _005") {
     sql("drop table if exists local1")
     val exception = intercept[MalformedCarbonCommandException] {
       sql(
@@ -768,10 +735,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         "LOCAL_DICTIONARY_EXCLUDE. Duplicate columns are not allowed."))
   }
 
-  test(
-    "test local dictionary custom configurations when local_dictionary_include and " +
-    "local_dictionary_exclude " +
-    "is configured _006") {
+  test("test local dictionary custom configurations when local_dictionary_include and " +
+       "local_dictionary_exclude is configured _006") {
     sql("drop table if exists local1")
     sql(
       """
@@ -791,10 +756,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when local_dictionary_include and " +
-    "local_dictionary_exclude " +
-    "is configured _007") {
+  test("test local dictionary custom configurations when local_dictionary_include and " +
+       "local_dictionary_exclude is configured _007") {
     sql("drop table if exists local1")
     sql(
       """
@@ -832,8 +795,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test("test local dictionary custom configurations when enabled for local dict threshold _002")
-  {
+  test("test local dictionary custom configurations when enabled for local dict threshold _002") {
     sql("drop table if exists local1")
     sql(
       """
@@ -848,8 +810,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test("test local dictionary custom configurations when enabled for local dict threshold _003")
-  {
+  test("test local dictionary custom configurations when enabled for local dict threshold _003") {
     sql("drop table if exists local1")
     sql(
       """
@@ -864,8 +825,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test("test local dictionary custom configurations when enabled for local dict threshold _004")
-  {
+  test("test local dictionary custom configurations when enabled for local dict threshold _004") {
     sql("drop table if exists local1")
     sql(
       """
@@ -880,8 +840,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test("test local dictionary custom configurations when enabled for local dict threshold _005")
-  {
+  test("test local dictionary custom configurations when enabled for local dict threshold _005") {
     sql("drop table if exists local1")
     sql(
       """
@@ -896,10 +855,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when enabled with both columns and threshold " +
-    "configured _001")
-  {
+  test("test local dictionary custom configurations when enabled with both columns and threshold " +
+       "configured _001") {
     sql("drop table if exists local1")
     sql(
       """
@@ -921,10 +878,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when enabled with both columns and threshold " +
-    "configured _002")
-  {
+  test("test local dictionary custom configurations when enabled with both columns and threshold " +
+       "configured _002") {
     sql("drop table if exists local1")
     sql(
       """
@@ -946,10 +901,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when enabled with both columns and threshold " +
-    "configured _003")
-  {
+  test("test local dictionary custom configurations when enabled with both columns and threshold " +
+       "configured _003") {
     sql("drop table if exists local1")
     sql(
       """
@@ -971,10 +924,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when enabled with both columns and threshold " +
-    "configured _004")
-  {
+  test("test local dictionary custom configurations when enabled with both columns and threshold " +
+       "configured _004") {
     sql("drop table if exists local1")
     sql(
       """
@@ -996,10 +947,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when enabled with both columns and threshold " +
-    "configured _005")
-  {
+  test("test local dictionary custom configurations when enabled with both columns and threshold " +
+       "configured _005") {
     sql("drop table if exists local1")
     intercept[MalformedCarbonCommandException] {
       sql(
@@ -1012,10 +961,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when enabled with both columns and threshold " +
-    "configured _006")
-  {
+  test("test local dictionary custom configurations when enabled with both columns and threshold " +
+       "configured _006") {
     sql("drop table if exists local1")
     intercept[MalformedCarbonCommandException] {
       sql(
@@ -1028,10 +975,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when enabled with both columns and threshold " +
-    "configured _007")
-  {
+  test("test local dictionary custom configurations when enabled with both columns and threshold " +
+       "configured _007") {
     sql("drop table if exists local1")
     intercept[MalformedCarbonCommandException] {
       sql(
@@ -1044,10 +989,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when enabled with both columns and threshold " +
-    "configured _008")
-  {
+  test("test local dictionary custom configurations when enabled with both columns and threshold " +
+       "configured _008") {
     sql("drop table if exists local1")
     intercept[MalformedCarbonCommandException] {
       sql(
@@ -1060,10 +1003,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when enabled with both columns and threshold " +
-    "configured _009")
-  {
+  test("test local dictionary custom configurations when enabled with both columns and threshold " +
+       "configured _009") {
     sql("drop table if exists local1")
     intercept[MalformedCarbonCommandException] {
       sql(
@@ -1076,10 +1017,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when enabled with both columns and threshold " +
-    "configured _010")
-  {
+  test("test local dictionary custom configurations when enabled with both columns and threshold " +
+       "configured _010") {
     sql("drop table if exists local1")
     intercept[MalformedCarbonCommandException] {
       sql(
@@ -1092,10 +1031,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when enabled with both columns and threshold " +
-    "configured _011")
-  {
+  test("test local dictionary custom configurations when enabled with both columns and threshold " +
+       "configured _011") {
     sql("drop table if exists local1")
     intercept[MalformedCarbonCommandException] {
       sql(
@@ -1140,8 +1077,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test("test local dictionary custom configurations when disabled for local dict columns _002")
-  {
+  test("test local dictionary custom configurations when disabled for local dict columns _002") {
     sql("drop table if exists local1")
     sql(
       """
@@ -1231,8 +1167,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test("test local dictionary custom configurations when disabled for local dict threshold _002")
-  {
+  test("test local dictionary custom configurations when disabled for local dict threshold _002") {
     sql("drop table if exists local1")
     sql(
       """
@@ -1263,8 +1198,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test("test local dictionary custom configurations when disabled for local dict threshold _004")
-  {
+  test("test local dictionary custom configurations when disabled for local dict threshold _004") {
     sql("drop table if exists local1")
     sql(
       """
@@ -1279,8 +1213,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test("test local dictionary custom configurations when disabled for local dict threshold _005")
-  {
+  test("test local dictionary custom configurations when disabled for local dict threshold _005") {
     sql("drop table if exists local1")
     sql(
       """
@@ -1297,8 +1230,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
 
   test(
     "test local dictionary custom configurations when disabled with both columns and threshold " +
-    "configured _001")
-  {
+    "configured _001") {
     sql("drop table if exists local1")
     sql(
       """
@@ -1314,10 +1246,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when disabled with both columns and threshold " +
-    "configured _002")
-  {
+  test("test local dictionary custom configurations when disabled with both columns and threshold" +
+       " configured _002") {
     sql("drop table if exists local1")
     sql(
       """
@@ -1333,10 +1263,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when disabled with both columns and threshold " +
-    "configured _003")
-  {
+  test("test local dictionary custom configurations when disabled with both columns and threshold" +
+       " configured _003") {
     sql("drop table if exists local1")
     sql(
       """
@@ -1352,10 +1280,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when disabled with both columns and threshold " +
-    "configured _004")
-  {
+  test("test local dictionary custom configurations when disabled with both columns and threshold" +
+       " configured _004") {
     sql("drop table if exists local1")
     sql(
       """
@@ -1371,10 +1297,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when disabled with both columns and threshold " +
-    "configured _005")
-  {
+  test("test local dictionary custom configurations when disabled with both columns and threshold" +
+       " configured _005") {
     sql("drop table if exists local1")
 
     sql(
@@ -1390,10 +1314,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when disabled with both columns and threshold " +
-    "configured _006")
-  {
+  test("test local dictionary custom configurations when disabled with both columns and threshold" +
+       " configured _006") {
     sql("drop table if exists local1")
     sql(
       """
@@ -1409,10 +1331,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when disabled with both columns and threshold " +
-    "configured _007")
-  {
+  test("test local dictionary custom configurations when disabled with both columns and threshold" +
+       " configured _007") {
     sql("drop table if exists local1")
     sql(
       """
@@ -1428,10 +1348,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when disabled with both columns and threshold " +
-    "configured _008")
-  {
+  test("test local dictionary custom configurations when disabled with both columns and threshold" +
+       " configured _008") {
     sql("drop table if exists local1")
     sql(
       """
@@ -1447,10 +1365,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when disabled with both columns and threshold " +
-    "configured _009")
-  {
+  test("test local dictionary custom configurations when disabled with both columns and threshold" +
+       " configured _009") {
     sql("drop table if exists local1")
     sql(
       """
@@ -1466,10 +1382,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when disabled with both columns and threshold " +
-    "configured _010")
-  {
+  test("test local dictionary custom configurations when disabled with both columns and threshold" +
+       " configured _010") {
     sql("drop table if exists local1")
     sql(
       """
@@ -1485,10 +1399,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when disabled with both columns and threshold " +
-    "configured _011")
-  {
+  test("test local dictionary custom configurations when disabled with both columns and threshold" +
+       " configured _011") {
     sql("drop table if exists local1")
     sql(
       """
@@ -1610,10 +1522,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when enabled for local dict " +
-    "columns _001")
-  {
+  test("test CTAS statements for local dictionary custom configurations when enabled for " +
+       "local dict columns _001") {
     sql("drop table if exists local")
     sql("drop table if exists local1")
     sql(
@@ -1637,10 +1547,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when enabled for local dict " +
-    "columns _002")
-  {
+  test("test CTAS statements for local dictionary custom configurations when enabled for " +
+       "local dict columns _002") {
     sql("drop table if exists local")
     sql("drop table if exists local1")
 
@@ -1659,10 +1567,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when enabled for local dict " +
-    "columns _003")
-  {
+  test("test CTAS statements for local dictionary custom configurations when enabled for " +
+       "local dict columns _003") {
     sql("drop table if exists local")
     sql("drop table if exists local1")
 
@@ -1687,9 +1593,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
 
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when enabled for local dict " +
-    "columns _004")
+  test("test CTAS statements for local dictionary custom configurations when enabled for " +
+       "local dict columns _004")
   {
     sql("drop table if exists local")
     sql("drop table if exists local1")
@@ -1713,10 +1618,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         "Please check the DDL."))
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when enabled for local dict " +
-    "columns _005")
-  {
+  test("test CTAS statements for local dictionary custom configurations when enabled for " +
+       "local dict columns _005") {
     sql("drop table if exists local")
     sql("drop table if exists local1")
     sql(
@@ -1735,16 +1638,14 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
     assert(exception.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a String/complex " +
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a string/complex/varchar " +
         "datatype column. " +
         "LOCAL_DICTIONARY_COLUMN should " +
-        "be no dictionary string/complex datatype column"))
+        "be no dictionary string/complex/varchar datatype column"))
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when enabled for local dict " +
-    "columns _006")
-  {
+  test("test CTAS statements for local dictionary custom configurations when enabled for local dict " +
+       "columns _006") {
     sql("drop table if exists local")
     sql("drop table if exists local1")
     sql(
@@ -1763,10 +1664,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when " +
-    "local_dictionary_exclude is configured _001")
-  {
+  test("test CTAS statements for local dictionary custom configurations when " +
+       "local_dictionary_exclude is configured _001") {
     sql("drop table if exists local")
     sql("drop table if exists local1")
     sql(
@@ -1790,10 +1689,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when " +
-    "local_dictionary_exclude is configured _002")
-  {
+  test("test CTAS statements for local dictionary custom configurations when " +
+       "local_dictionary_exclude is configured _002") {
     sql("drop table if exists local1")
     sql("drop table if exists local")
     sql(
@@ -1811,10 +1708,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when " +
-    "local_dictionary_exclude is configured _003")
-  {
+  test("test CTAS statements for local dictionary custom configurations when " +
+       "local_dictionary_exclude is configured _003") {
     sql("drop table if exists local1")
     sql("drop table if exists local")
     sql(
@@ -1837,10 +1732,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         "Please check the DDL."))
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when " +
-    "local_dictionary_exclude is configured _004")
-  {
+  test("test CTAS statements for local dictionary custom configurations when " +
+       "local_dictionary_exclude is configured _004") {
     sql("drop table if exists local1")
     sql("drop table if exists local")
     sql(
@@ -1863,10 +1756,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         "Please check the DDL."))
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when " +
-    "local_dictionary_exclude is configured _005")
-  {
+  test("test CTAS statements for local dictionary custom configurations when " +
+       "local_dictionary_exclude is configured _005") {
     sql("drop table if exists local1")
     sql("drop table if exists local")
     sql(
@@ -1885,16 +1776,14 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
     assert(exception.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a String/complex " +
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a string/complex/varchar " +
         "datatype column. " +
         "LOCAL_DICTIONARY_COLUMN should " +
-        "be no dictionary string/complex datatype column"))
+        "be no dictionary string/complex/varchar datatype column"))
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when " +
-    "local_dictionary_exclude is configured _006")
-  {
+  test("test CTAS statements for local dictionary custom configurations when " +
+       "local_dictionary_exclude is configured _006") {
     sql("drop table if exists local1")
     sql("drop table if exists local")
     sql(
@@ -1913,10 +1802,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when " +
-    "local_dictionary_include and local_dictionary_exclude " +
-    "is configured _001") {
+  test("test CTAS statements for local dictionary custom configurations when " +
+       "local_dictionary_include and local_dictionary_exclude is configured _001") {
     sql("drop table if exists local1")
     sql("drop table if exists local")
     sql(
@@ -1945,10 +1832,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when " +
-    "local_dictionary_include and local_dictionary_exclude " +
-    "is configured _002") {
+  test("test CTAS statements for local dictionary custom configurations when " +
+       "local_dictionary_include and local_dictionary_exclude is configured _002") {
     sql("drop table if exists local1")
     sql("drop table if exists local")
     sql(
@@ -1972,10 +1857,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     checkExistence(sql("describe formatted local1"), false, "Local Dictionary Exclude")
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when " +
-    "local_dictionary_include and local_dictionary_exclude " +
-    "is configured _003") {
+  test("test CTAS statements for local dictionary custom configurations when " +
+       "local_dictionary_include and local_dictionary_exclude is configured _003") {
     sql("drop table if exists local1")
     sql("drop table if exists local")
     sql(
@@ -1995,10 +1878,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when " +
-    "local_dictionary_include and local_dictionary_exclude " +
-    "is configured _004") {
+  test("test CTAS statements for local dictionary custom configurations when " +
+       "local_dictionary_include and local_dictionary_exclude is configured _004") {
     sql("drop table if exists local1")
     sql("drop table if exists local")
     sql(
@@ -2017,10 +1898,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when " +
-    "local_dictionary_include and local_dictionary_exclude " +
-    "is configured _005") {
+  test("test CTAS statements for local dictionary custom configurations when " +
+       "local_dictionary_include and local_dictionary_exclude is configured _005") {
     sql("drop table if exists local1")
     sql("drop table if exists local")
     sql(
@@ -2042,10 +1921,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when enabled for local dict " +
-    "threshold _001")
-  {
+  test("test CTAS statements for local dictionary custom configurations when enabled for local dict " +
+       "threshold _001") {
     sql("drop table if exists local1")
     sql("drop table if exists local")
     sql(
@@ -2069,10 +1946,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when enabled for local dict " +
-    "threshold _002")
-  {
+  test("test CTAS statements for local dictionary custom configurations when enabled for local dict " +
+       "threshold _002") {
     sql("drop table if exists local1")
     sql("drop table if exists local")
     sql(
@@ -2093,10 +1968,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when enabled for local dict " +
-    "threshold _003")
-  {
+  test("test CTAS statements for local dictionary custom configurations when enabled for local dict " +
+       "threshold _003") {
     sql("drop table if exists local1")
     sql("drop table if exists local")
     sql(
@@ -2118,10 +1991,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test CTAS statements for local dictionary custom configurations when first table is hive " +
-    "table")
-  {
+  test("test CTAS statements for local dictionary custom configurations when first table is hive " +
+       "table") {
     sql("drop table if exists local1")
     sql("drop table if exists local")
     sql(
@@ -2172,9 +2043,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when complex dataType columns are given in " +
-    "local_dictionary_include _001") {
+  test("test local dictionary custom configurations when complex dataType columns are given in " +
+       "local_dictionary_include _001") {
     sql("drop table if exists local1")
     val exception = intercept[MalformedCarbonCommandException] {
       sql(
@@ -2190,9 +2060,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         "local_dictionary_include are not of string dataType."))
   }
 
-  test(
-    "test local dictionary custom configurations when complex dataType columns are given in " +
-    "local_dictionary_include _002") {
+  test("test local dictionary custom configurations when complex dataType columns are given in " +
+       "local_dictionary_include _002") {
     sql("drop table if exists local1")
     val exception = intercept[MalformedCarbonCommandException] {
       sql(
@@ -2209,10 +2078,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         "local_dictionary_include are not of string dataType."))
   }
 
-  test(
-    "test local dictionary custom configurations when complex dataType columns are given in " +
-    "local_dictionary_include _003")
-  {
+  test("test local dictionary custom configurations when complex dataType columns are given in " +
+       "local_dictionary_include _003") {
     sql("drop table if exists local1")
       sql(
         """
@@ -2232,10 +2099,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when complex dataType columns are given in " +
-    "local_dictionary_include _004")
-  {
+  test("test local dictionary custom configurations when complex dataType columns are given in " +
+       "local_dictionary_include _004") {
     sql("drop table if exists local1")
     sql(
       """
@@ -2255,10 +2120,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when complex dataType columns are given in " +
-    "local_dictionary_include _005")
-  {
+  test("test local dictionary custom configurations when complex dataType columns are given in " +
+       "local_dictionary_include _005") {
     sql("drop table if exists local1")
     sql(
       """
@@ -2278,9 +2141,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when complex dataType columns are given in " +
-    "local_dictionary_include _006") {
+  test("test local dictionary custom configurations when complex dataType columns are given in " +
+       "local_dictionary_include _006") {
     sql("drop table if exists local1")
     sql(
       """
@@ -2301,10 +2163,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when complex dataType columns are given in " +
-    "local_dictionary_include _007")
-  {
+  test("test local dictionary custom configurations when complex dataType columns are given in " +
+       "local_dictionary_include _007") {
     sql("drop table if exists local1")
     sql(
       """
@@ -2324,9 +2184,8 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test(
-    "test local dictionary custom configurations when complex dataType columns are given in " +
-    "local_dictionary_include _008") {
+  test("test local dictionary custom configurations when complex dataType columns are given in " +
+       "local_dictionary_include _008") {
     sql("drop table if exists local1")
     val exception = intercept[MalformedCarbonCommandException] {
       sql(
@@ -2341,6 +2200,96 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       .contains(
         "None of the child columns specified in the complex dataType column(s) in " +
         "local_dictionary_include are not of string dataType."))
+  }
+
+  test("test local dictionary custom configurations when varchar columns are specified _001") {
+    sql("drop table if exists local1")
+    sql(
+      """
+        | CREATE TABLE local1(id int, name string,city string, st array<struct<si:string>>)
+        | STORED BY 'org.apache.carbondata.format'
+        | tblproperties('LONG_STRING_COLUMNS'='name','local_dictionary_enable'='true','local_dictionary_include'='name')
+      """.stripMargin)
+    sql("desc formatted local1").show(30,false)
+    val descLoc = sql("describe formatted local1").collect
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
+      case Some(row) => assert(row.get(1).toString.contains("true"))
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
+      case Some(row) => assert(row.get(1).toString.contains("name") && !row.get(1).toString.contains("city"))
+    }
+  }
+
+  test("test local dictionary custom configurations when varchar columns are specified _002") {
+    sql("drop table if exists local1")
+    sql(
+      """
+        | CREATE TABLE local1(id int, name string,city string, st array<struct<si:string,sd:int>>)
+        | STORED BY 'org.apache.carbondata.format'
+        | tblproperties('LONG_STRING_COLUMNS'=' Name','local_dictionary_enable'='true','local_dictionary_include'='name,st')
+      """.stripMargin)
+    val descLoc = sql("describe formatted local1").collect
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
+      case Some(row) => assert(row.get(1).toString.contains("true"))
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
+      case Some(row) => assert(row.get(1).toString.contains("st.val.si,name") && !row.get(1).toString.contains("city"))
+    }
+  }
+
+  test("test local dictionary custom configurations when varchar columns are specified _003") {
+    sql("drop table if exists local1")
+    sql(
+      """
+        | CREATE TABLE local1(id int, name string,city string, st array<struct<si:string,sd:int>>)
+        | STORED BY 'org.apache.carbondata.format'
+        | tblproperties('LONG_STRING_COLUMNS'='name','local_dictionary_enable'='true','local_dictionary_exclude'='name,st')
+      """.stripMargin)
+    val descLoc = sql("describe formatted local1").collect
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
+      case Some(row) => assert(row.get(1).toString.contains("true"))
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
+      case Some(row) => assert(row.get(1).toString.contains("st.val.si,name") &&
+                               !row.get(1).toString.contains("city"))
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
+      case Some(row) => assert(row.get(1).toString.contains("city"))
+    }
+  }
+
+  test("test local dictionary custom configurations when varchar columns are specified _004") {
+    sql("drop table if exists local1")
+    sql(
+      """
+        | CREATE TABLE local1(id int, name string,city string, st array<struct<si:string,sd:int>>)
+        | STORED BY 'org.apache.carbondata.format'
+        | tblproperties('LONG_STRING_COLUMNS'=' Name','local_dictionary_enable'='true',
+        | 'local_dictionary_include'='name,st','local_dictionary_exclude'='city')
+      """.stripMargin)
+    val descLoc = sql("describe formatted local1").collect
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
+      case Some(row) => assert(row.get(1).toString.contains("true"))
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
+      case Some(row) => assert(row.get(1).toString.contains("st.val.si,name") &&
+                               !row.get(1).toString.contains("city"))
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
+      case Some(row) => assert(row.get(1).toString.contains("city"))
+    }
   }
 
   override protected def afterAll(): Unit = {

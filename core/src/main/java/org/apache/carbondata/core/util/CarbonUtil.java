@@ -3141,8 +3141,9 @@ public final class CarbonUtil {
           } else {
             continue;
           }
-          if (column.isDimensionColumn() && (column.getDataType().equals(DataTypes.STRING) || column
-              .getDataType().equals(DataTypes.VARCHAR)) && !column.hasEncoding(Encoding.DICTIONARY)
+          if (column.isDimensionColumn() && (column.getDataType().equals(DataTypes.STRING) ||
+              column.getDataType().equals(DataTypes.VARCHAR)) &&
+              !column.hasEncoding(Encoding.DICTIONARY)
               && localDictIncludeColumns.toLowerCase()
               .contains(column.getColumnName().toLowerCase())) {
             for (String dictColumn : listOfDictionaryIncludeColumns) {
@@ -3172,8 +3173,9 @@ public final class CarbonUtil {
         dimensionOrdinal++;
         setLocalDictForComplexColumns(allColumns, dimensionOrdinal, column.getNumberOfChild());
       } else {
-        if (column.isDimensionColumn() && (column.getDataType().equals(DataTypes.STRING) || column
-            .getDataType().equals(DataTypes.VARCHAR)) && !column.hasEncoding(Encoding.DICTIONARY)) {
+        if (column.isDimensionColumn() && (column.getDataType().equals(DataTypes.STRING) ||
+            column.getDataType().equals(DataTypes.VARCHAR)) &&
+            !column.hasEncoding(Encoding.DICTIONARY)) {
           column.setLocalDictColumn(true);
         }
       }
