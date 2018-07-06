@@ -229,7 +229,7 @@ public class UnsafeDataMapRow extends DataMapRow {
             getUnsafe().copyMemory(
                 block.getBaseObject(),
                 block.getBaseOffset() + pointer + runningLength,
-                    data,
+                data,
                 BYTE_ARRAY_OFFSET,
                 data.length);
             row.setByteArray(data, i);
