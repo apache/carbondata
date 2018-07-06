@@ -38,7 +38,6 @@ abstract class Harmonizer(conf: SQLConf)
       "Data Harmonizations", fixedPoint,
       Seq( HarmonizeDimensionTable) ++
       extendedOperatorHarmonizationRules: _*) :: Nil
-//      HarmonizeFactTable) :: Nil
   }
 
   /**
@@ -58,7 +57,7 @@ class FullHarmonizer extends Harmonizer(new SQLConf()) {
 }
 
 /**
- * A semi Harmonizer - harmonize dimension tables only
+ * A semi Harmonizer - it harmonizes dimension tables only
  */
 object SemiHarmonizer extends SemiHarmonizer
 

@@ -127,22 +127,17 @@ object SelectSelectNoChildDelta extends DefaultMatchPattern with PredicateHelper
   }
 
   private def isLeftJoinView(subsumer: ModularPlan): Boolean = {
-    if (subsumer.isInstanceOf[modular.Select]) {
-      val sel = subsumer.asInstanceOf[modular.Select]
-      if (sel.joinEdges.length == 1 &&
-          sel.joinEdges(0).joinType == LeftOuter &&
-          sel.children(1).isInstanceOf[HarmonizedRelation]) {
+    subsumer match {
+      case sel: Select
+        if sel.joinEdges.length == 1 &&
+           sel.joinEdges.head.joinType == LeftOuter &&
+           sel.children(1).isInstanceOf[HarmonizedRelation] =>
         val hDim = sel.children(1).asInstanceOf[HarmonizedRelation]
         hDim.tag match {
           case Some(tag) => sel.outputList.contains(tag)
           case None => false
         }
-      }
-      else {
-        false
-      }
-    } else {
-      false
+      case _ => false
     }
   }
 
@@ -277,13 +272,13 @@ object SelectSelectNoChildDelta extends DefaultMatchPattern with PredicateHelper
               } else {
                 Seq.empty
               })
-              val wip = sel_1q.copy(
+              val sel_1q_temp = sel_1q.copy(
                 predicateList = tPredicateList,
                 children = tChildren,
                 joinEdges = tJoinEdges.filter(_ != null),
                 aliasMap = tAliasMap.toMap)
 
-              val done = factorOutSubsumer(wip, usel_1a, wip.aliasMap)
+              val done = factorOutSubsumer(sel_1q_temp, usel_1a, sel_1q_temp.aliasMap)
               Seq(done)
             }
           } else Nil

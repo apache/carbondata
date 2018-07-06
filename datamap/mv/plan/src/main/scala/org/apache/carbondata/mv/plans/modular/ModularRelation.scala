@@ -86,29 +86,27 @@ object HarmonizedRelation {
       _,
       Select(_, _, _, _, _, dim :: Nil, NoFlags, Nil, Nil, _),
       NoFlags,
-      Nil, _) if (dim.isInstanceOf[ModularRelation]) =>
-        if (g.outputList.forall(col => {
-          if (col.isInstanceOf[Alias]) {
-            val check = (col.asInstanceOf[Alias].child.isInstanceOf[AttributeReference] ||
-                         col.asInstanceOf[Alias].child.isInstanceOf[Literal] ||
-                         (col.asInstanceOf[Alias].child match {
-                           case AggregateExpression(First(_, _), _, _, _) => true
-                           case AggregateExpression(Last(_, _), _, _, _) => true
-                           case _ => false
-                         }))
-            check
-          }
-          else {
-            val check = (col.isInstanceOf[AttributeReference] ||
-                         col.isInstanceOf[Literal] ||
-                         (col.asInstanceOf[Expression] match {
-                           case AggregateExpression(First(_, _), _, _, _) => true
-                           case AggregateExpression(Last(_, _), _, _, _) => true
-                           case _ => false
-                         }))
-            check
-          }
-        })) {
+      Nil, _) if dim.isInstanceOf[ModularRelation] =>
+        val check =
+          g.outputList.forall {
+            case alias: Alias =>
+              alias.child.isInstanceOf[AttributeReference] ||
+              alias.child.isInstanceOf[Literal] ||
+              (alias.child match {
+                case AggregateExpression(First(_, _), _, _, _) => true
+                case AggregateExpression(Last(_, _), _, _, _) => true
+                case _ => false
+              })
+            case col =>
+              col.isInstanceOf[AttributeReference] ||
+              col.isInstanceOf[Literal] ||
+              (col.asInstanceOf[Expression] match {
+                case AggregateExpression(First(_, _), _, _, _) => true
+                case AggregateExpression(Last(_, _), _, _, _) => true
+                case _ => false
+              })
+        }
+        if (check) {
           true
         } else {
           false
