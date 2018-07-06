@@ -328,6 +328,7 @@ class AlterTableColumnSchemaGenerator(
               includeColumns.append(column)
             } else {
               if (column.getDataType.equals(DataTypes.STRING) ||
+                  column.getDataType.equals(DataTypes.VARCHAR) ||
                   column.getDataType.toString.equals("ARRAY") ||
                   column.getDataType.toString.equals("STRUCT")) {
                 excludeColumns.append(column)
@@ -348,6 +349,7 @@ class AlterTableColumnSchemaGenerator(
         if (null == localDictExcludeColumns) {
           columns.foreach { column =>
             if (column.getDataType.equals(DataTypes.STRING) ||
+                column.getDataType.equals(DataTypes.VARCHAR) ||
                 column.getDataType.toString.equals("ARRAY") ||
                 column.getDataType.toString.equals("STRUCT")) {
               includeColumns.append(column)
@@ -357,6 +359,7 @@ class AlterTableColumnSchemaGenerator(
           columns.foreach { column =>
             if (!localDictExcludeColumns.contains(column.getColumnName) &&
                 (column.getDataType.equals(DataTypes.STRING) ||
+                 column.getDataType.equals(DataTypes.VARCHAR) ||
                  column.getDataType.toString.equals("ARRAY") ||
                  column.getDataType.toString.equals("STRUCT"))) {
               includeColumns.append(column)

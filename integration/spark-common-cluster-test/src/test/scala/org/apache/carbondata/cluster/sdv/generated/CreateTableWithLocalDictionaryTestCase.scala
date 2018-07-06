@@ -93,8 +93,8 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column:  does not exist in table. Please " +
-        "check the DDL."))
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column:  does not exist in table. Please check " +
+        "the DDL."))
   }
 
   test("test local dictionary custom configurations for local dict columns _004") {
@@ -110,8 +110,8 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception1.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. " +
-        "Please check the DDL."))
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. Please check " +
+        "the DDL."))
   }
 
   test("test local dictionary custom configurations for local dict columns _005") {
@@ -127,9 +127,9 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a String/complex datatype column. " +
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a string/complex/varchar datatype column. " +
         "LOCAL_DICTIONARY_COLUMN should " +
-        "be no dictionary string/complex datatype column"))
+        "be no dictionary string/complex/varchar datatype column"))
   }
 
   test("test local dictionary custom configurations for local dict columns _006") {
@@ -483,8 +483,8 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column:  does not exist in table. " +
-        "Please check the DDL."))
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column:  does not exist in table. Please check " +
+        "the DDL."))
 
   }
 
@@ -501,8 +501,8 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception1.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. " +
-        "Please check the DDL."))
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. Please check " +
+        "the DDL."))
   }
 
   test("test local dictionary custom configurations when enabled for local dict columns _005") {
@@ -518,9 +518,9 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a String/complex datatype column. " +
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a string/complex/varchar datatype column. " +
         "LOCAL_DICTIONARY_COLUMN should " +
-        "be no dictionary string/complex datatype column"))
+        "be no dictionary string/complex/varchar datatype column"))
   }
 
   test("test local dictionary custom configurations when enabled for local dict columns _006") {
@@ -600,8 +600,8 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception1.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. " +
-        "Please check the DDL."))
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. Please check " +
+        "the DDL."))
   }
 
   test("test local dictionary custom configurations when local_dictionary_exclude is configured _005") {
@@ -617,9 +617,9 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a String/complex datatype column. " +
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a string/complex/varchar datatype column. " +
         "LOCAL_DICTIONARY_COLUMN should " +
-        "be no dictionary string/complex datatype column"))
+        "be no dictionary string/complex/varchar datatype column"))
   }
 
   test("test local dictionary custom configurations when local_dictionary_exclude is configured _006") {
@@ -1674,8 +1674,8 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception1.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. " +
-        "Please check the DDL."))
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. Please check " +
+        "the DDL."))
   }
 
   test("test CTAS statements for local dictionary custom configurations when enabled for local dict columns _005") {
@@ -1697,9 +1697,9 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a String/complex datatype column. " +
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a string/complex/varchar datatype column. " +
         "LOCAL_DICTIONARY_COLUMN should " +
-        "be no dictionary string/complex datatype column"))
+        "be no dictionary string/complex/varchar datatype column"))
   }
 
   test("test CTAS statements for local dictionary custom configurations when enabled for local dict columns _006") {
@@ -1806,8 +1806,8 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception1.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. " +
-        "Please check the DDL."))
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. Please check " +
+        "the DDL."))
   }
 
   test("test CTAS statements for local dictionary custom configurations when local_dictionary_exclude is configured _005") {
@@ -1829,9 +1829,9 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a String/complex datatype column. " +
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: id is not a string/complex/varchar datatype column. " +
         "LOCAL_DICTIONARY_COLUMN should " +
-        "be no dictionary string/complex datatype column"))
+        "be no dictionary string/complex/varchar datatype column"))
   }
 
   test("test CTAS statements for local dictionary custom configurations when local_dictionary_exclude is configured _006") {

@@ -42,7 +42,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
+import org.apache.carbondata.format.{Encoding, SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
 
 
@@ -691,62 +691,68 @@ object AlterTableUtil {
     }
 
     /**
-     * Verify if specified column is of no-dictionary string dataType
+     * Verify if specified column is of no-dictionary string or varchar dataType
      */
     localDictColumns.foreach { dictCol =>
       if (allColumns.exists(col => col.getColumnName.equalsIgnoreCase(dictCol) &&
                                    !col.getDataType.toString
                                      .equalsIgnoreCase("STRING") &&
                                    !col.getDataType.toString
+                                     .equalsIgnoreCase("VARCHAR") &&
+                                   !col.getDataType.toString
                                      .equalsIgnoreCase("STRUCT") &&
                                    !col.getDataType.toString
                                      .equalsIgnoreCase("ARRAY"))) {
         val errMsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " + dictCol.trim +
-                     " is not a String/complex datatype column. LOCAL_DICTIONARY_INCLUDE" +
+                     " is not a string/complex/varchar datatype column. LOCAL_DICTIONARY_INCLUDE" +
                      "/LOCAL_DICTIONARY_EXCLUDE should be no " +
-                     "dictionary string/complex datatype column."
+                     "dictionary string/complex/varchar datatype column."
         throw new MalformedCarbonCommandException(errMsg)
       }
     }
-
-    // Validate whether any of the child columns of complex dataType column is a string column
-    localDictColumns.foreach { dictColm =>
-      if (allColumns
-        .exists(x => x.getColumnName.equalsIgnoreCase(dictColm) && x.getNumberOfChild > 0 &&
-                     !validateChildColumns(allColumns, dictColm))) {
-        val errMsg = "None of the child columns specified in the complex dataType column(s) in " +
-                     "local_dictionary_include are not of string dataType."
-        throw new MalformedCarbonCommandException(errMsg)
+    var countOfDictCols = 0
+    var trav = 0
+    // Validate whether any of the child columns of complex dataType column is a string or
+    // varchar dataType column
+    if (property._1.equalsIgnoreCase(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE)) {
+      // Validate whether any of the child columns of complex dataType column is a string column
+      localDictColumns.foreach { dictColm =>
+        for (elem <- allColumns.indices) {
+          var column = allColumns(elem)
+          if (column.getColumnName.equalsIgnoreCase(dictColm) && column.getNumberOfChild > 0 &&
+              !validateChildColumns(allColumns, column.getNumberOfChild, elem. +(1))) {
+            val errMsg =
+              "None of the child columns specified in the complex dataType column(s) in " +
+              "local_dictionary_include are not of string dataType."
+            throw new MalformedCarbonCommandException(errMsg)
+          }
+        }
       }
     }
 
     /**
-     * check whether any child column present in complex type column is string type
+     * check whether any child column present in complex type column is string or varchar type
      *
      * @param schemas
      * @return
      */
     def validateChildColumns(schemas: mutable.Buffer[ColumnSchema],
-        complexColumn: String): Boolean = {
-      var childColumnCount = 0
-      var numberOfPrimitiveColumns = 0
-      schemas.foreach { column =>
-        if (childColumnCount > 0) {
-          if (column.getDataType.equals(DataTypes.STRING)) {
-            primitiveComplexChildColumns.add(column.getColumnName)
-            numberOfPrimitiveColumns += 1
-            childColumnCount -= 1
-          } else {
-            childColumnCount -= 1
+        colCount: Int, traverse: Int): Boolean = {
+      trav = traverse
+      var column: ColumnSchema = null
+      for (i <- 0 until colCount) {
+        column = schemas(trav)
+        if (column.getNumberOfChild > 0) {
+          validateChildColumns(schemas, column.getNumberOfChild, trav. +(1))
+        } else {
+          if (column.isDimensionColumn && (column.getDataType.equals(DataTypes.STRING) ||
+                                           column.getDataType.equals(DataTypes.VARCHAR))) {
+            countOfDictCols += 1
           }
-        }
-        if ((localDictColumns.exists(x => x.equalsIgnoreCase(column.getColumnName)) ||
-             primitiveComplexChildColumns.contains(column.getColumnName)) &&
-            column.getNumberOfChild > 0) {
-          childColumnCount = column.getNumberOfChild
+          trav = trav + 1
         }
       }
-      if (numberOfPrimitiveColumns > 0) {
+      if (countOfDictCols > 0) {
         return true
       }
       false
