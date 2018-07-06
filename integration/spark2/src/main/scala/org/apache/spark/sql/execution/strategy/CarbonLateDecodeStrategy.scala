@@ -79,7 +79,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
             projects,
             filters,
             (a, f, needDecoder, p) => toCatalystRDD(l, a, relation.buildScan(
-              a.map(_.name).toArray, filters, projects, f, p), needDecoder)) :: Nil
+              a.map(_.name).toArray, f, p), needDecoder)) :: Nil
         } catch {
           case e: CarbonPhysicalPlanException => Nil
         }
