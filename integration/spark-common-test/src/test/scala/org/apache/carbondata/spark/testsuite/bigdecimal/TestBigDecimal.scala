@@ -70,7 +70,6 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select min(salary) from carbonTable"),
       sql("select min(salary) from hiveTable"))
   }
-  
   test("test min datatype on big decimal column") {
     val output = sql("select min(salary) from carbonTable").collectAsList().get(0).get(0)
     assert(output.isInstanceOf[java.math.BigDecimal])
@@ -80,7 +79,6 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
     val output = sql("select max(salary) from carbonTable").collectAsList().get(0).get(0)
     assert(output.isInstanceOf[java.math.BigDecimal])
   }
-  
   test("test count function on big decimal column") {
     checkAnswer(sql("select count(salary) from carbonTable"),
       sql("select count(salary) from hiveTable"))
@@ -149,8 +147,8 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test sum*10 aggregation on big decimal column with high precision") {
-    checkAnswer(sql("select sum(salary)*10 from carbonBigDecimal_2"),
-      sql("select sum(salary)*10 from hiveBigDecimal"))
+    checkAnswer(sql("select cast(sum(salary)*10 as double) from carbonBigDecimal_2"),
+      sql("select cast(sum(salary)*10 as double) from hiveBigDecimal"))
   }
 
   test("test sum/10 aggregation on big decimal column with high precision") {
@@ -164,8 +162,8 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test sum-distinct*10 aggregation on big decimal column with high precision") {
-    checkAnswer(sql("select sum(distinct(salary))*10 from carbonBigDecimal_2"),
-      sql("select sum(distinct(salary))*10 from hiveBigDecimal"))
+    checkAnswer(sql("select cast(sum(distinct(salary))*10 as decimal)from carbonBigDecimal_2"),
+      sql("select cast(sum(distinct(salary))*10 as decimal) from hiveBigDecimal"))
   }
 
   test("test sum-distinct/10 aggregation on big decimal column with high precision") {

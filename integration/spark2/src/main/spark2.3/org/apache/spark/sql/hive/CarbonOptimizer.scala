@@ -28,7 +28,7 @@ class CarbonOptimizer(
     catalog: SessionCatalog,
     conf: SQLConf,
     experimentalMethods: ExperimentalMethods)
-  extends SparkOptimizer(catalog, conf, experimentalMethods) {
+  extends SparkOptimizer(catalog, experimentalMethods) {
 
   override def execute(plan: LogicalPlan): LogicalPlan = {
     val transFormedPlan: LogicalPlan = CarbonOptimizerUtil.transformForScalarSubQuery(plan)
