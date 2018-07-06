@@ -73,6 +73,6 @@ class TestSegmentReadingForMultiThreading extends QueryTest with BeforeAndAfterA
 
   override def afterAll: Unit = {
     sql("DROP TABLE IF EXISTS carbon_table_MulTI_THread")
-
+    CarbonSession.threadUnset("carbon.input.segments.default.carbon_table_MulTI_THread")
   }
 }
