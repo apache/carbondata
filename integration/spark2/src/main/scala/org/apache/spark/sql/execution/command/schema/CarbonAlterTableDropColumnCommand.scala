@@ -75,6 +75,16 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
                                                   s"$partitionColumns")
         }
       }
+
+      // Check if column to be dropped is of complex dataType
+      alterTableDropColumnModel.columns.foreach { column =>
+        if (carbonTable.getColumnByName(alterTableDropColumnModel.tableName, column).getDataType
+          .isComplexType) {
+          val errMsg = "Complex column cannot be dropped"
+          throw new MalformedCarbonCommandException(errMsg)
+        }
+      }
+
       val tableColumns = carbonTable.getCreateOrderColumn(tableName).asScala
       var dictionaryColumns = Seq[org.apache.carbondata.core.metadata.schema.table.column
       .ColumnSchema]()

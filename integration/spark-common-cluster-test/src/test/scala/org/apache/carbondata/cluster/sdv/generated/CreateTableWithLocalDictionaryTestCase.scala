@@ -1,3 +1,20 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.carbondata.cluster.sdv.generated
 
 import org.apache.spark.sql.test.util.QueryTest
@@ -76,8 +93,8 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column:  does not exist in table. Please check " +
-        "create table statement"))
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column:  does not exist in table. Please " +
+        "check the DDL."))
   }
 
   test("test local dictionary custom configurations for local dict columns _004") {
@@ -93,9 +110,8 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception1.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. Please check " +
-        "create table " +
-        "statement"))
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. " +
+        "Please check the DDL."))
   }
 
   test("test local dictionary custom configurations for local dict columns _005") {
@@ -226,7 +242,6 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
     }
-    sql("desc formatted local1").show(truncate = false)
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("20000"))
     }
@@ -250,7 +265,6 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
     }
-    sql("desc formatted local1").show(truncate = false)
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
@@ -274,7 +288,6 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
     }
-    sql("desc formatted local1").show(truncate = false)
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
@@ -298,7 +311,6 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
     }
-    sql("desc formatted local1").show(truncate = false)
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
@@ -471,8 +483,8 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column:  does not exist in table. Please check " +
-        "create table statement"))
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column:  does not exist in table. " +
+        "Please check the DDL."))
 
   }
 
@@ -489,9 +501,8 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception1.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. Please check " +
-        "create table " +
-        "statement"))
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. " +
+        "Please check the DDL."))
   }
 
   test("test local dictionary custom configurations when enabled for local dict columns _005") {
@@ -572,7 +583,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     assert(exception.getMessage
       .contains(
         "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column:  does not exist in table. Please check " +
-        "create table statement"))
+        "the DDL."))
 
   }
 
@@ -589,9 +600,8 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception1.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. Please check " +
-        "create table " +
-        "statement"))
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. " +
+        "Please check the DDL."))
   }
 
   test("test local dictionary custom configurations when local_dictionary_exclude is configured _005") {
@@ -880,7 +890,6 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
     }
-    sql("desc formatted local1").show(truncate = false)
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("20000"))
     }
@@ -906,7 +915,6 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
     }
-    sql("desc formatted local1").show(truncate = false)
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
@@ -932,7 +940,6 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
     }
-    sql("desc formatted local1").show(truncate = false)
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
@@ -958,7 +965,6 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
     }
-    sql("desc formatted local1").show(truncate = false)
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("10000"))
     }
@@ -1645,7 +1651,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     assert(exception.getMessage
       .contains(
         "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column:  does not exist in table. Please check " +
-        "create table statement"))
+        "the DDL."))
 
   }
 
@@ -1668,9 +1674,8 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception1.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. Please check " +
-        "create table " +
-        "statement"))
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. " +
+        "Please check the DDL."))
   }
 
   test("test CTAS statements for local dictionary custom configurations when enabled for local dict columns _005") {
@@ -1779,7 +1784,7 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     assert(exception.getMessage
       .contains(
         "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column:  does not exist in table. Please check " +
-        "create table statement"))
+        "the DDL."))
   }
 
   test("test CTAS statements for local dictionary custom configurations when local_dictionary_exclude is configured _004") {
@@ -1801,9 +1806,8 @@ class CreateTableWithLocalDictionaryTestCase extends QueryTest with BeforeAndAft
     }
     assert(exception1.getMessage
       .contains(
-        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. Please check " +
-        "create table " +
-        "statement"))
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: abc does not exist in table. " +
+        "Please check the DDL."))
   }
 
   test("test CTAS statements for local dictionary custom configurations when local_dictionary_exclude is configured _005") {

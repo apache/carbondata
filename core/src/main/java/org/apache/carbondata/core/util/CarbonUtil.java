@@ -3022,16 +3022,16 @@ public final class CarbonUtil {
    *    count and then sets the primitive child column as local dictionary column if it is string
    *    datatype column or varchar datatype column
    * Handling for both localDictionary Include and exclude columns:
-   * There will be basically four scenarios which are
+   * There will basically be four scenarios which are
    * -------------------------------------------------------
    * | Local_Dictionary_include | Local_Dictionary_Exclude |
    * -------------------------------------------------------
    * |   Not Defined            |     Not Defined          |
-   * |   Not Defined            |      Defined             |
+   * |   Not Defined            |     Defined             |
    * |   Defined                |     Not Defined          |
-   * |   Defined                |      Defined             |
+   * |   Defined                |     Defined             |
    * -------------------------------------------------------
-   * 1. when the both local dictionary include and exclude is not defined, then set all the no
+   * 1. when both local dictionary include and exclude are not defined, then set all the no
    * dictionary string datatype columns as local dictionary generate columns
    * 2. set all the no dictionary string and varchar datatype columns as local dictionary columns
    * except the columns present in local dictionary exclude
@@ -3058,34 +3058,27 @@ public final class CarbonUtil {
     }
     if (null != isLocalDictEnabledForMainTable && Boolean
         .parseBoolean(isLocalDictEnabledForMainTable)) {
-      int childColumnCount = 0;
-      int excludeChildColumnCount = 0;
-      for (ColumnSchema column : columns) {
-        // for complex type columns, user gives the parent column as local dictionary column and
-        // only the string primitive type child column will be set as local dictionary column in the
-        // schema
-        if (childColumnCount > 0) {
-          if (column.getDataType().equals(DataTypes.STRING) || column.getDataType()
-              .equals(DataTypes.VARCHAR)) {
-            column.setLocalDictColumn(true);
-            childColumnCount -= 1;
-          } else {
-            childColumnCount -= 1;
-          }
-        }
-        // if complex column is defined in local dictionary include column, then get the child
-        // columns and set the string datatype child type as local dictionary column
-        if (column.getNumberOfChild() > 0 && null != localDictIncludeColumns) {
-          for (String dictColumn : listOfDictionaryIncludeColumns) {
-            if (dictColumn.trim().equalsIgnoreCase(column.getColumnName())) {
-              childColumnCount = column.getNumberOfChild();
-            }
-          }
-        }
+      int ordinal = 0;
+      for (int i = 0; i < columns.size(); i++) {
+        ColumnSchema column = columns.get(i);
         if (null == localDictIncludeColumns) {
           // if local dictionary exclude columns is not defined, then set all the no dictionary
-          // string datatype column and varchar datatype column
+          // string datatype column and varchar datatype columns
           if (null == localDictExcludeColumns) {
+            // if column is complex type, call the setLocalDictForComplexColumns to set local
+            // dictionary for all string and varchar child columns
+            if (column.getDataType().isComplexType()) {
+              ordinal = i + 1;
+              ordinal = setLocalDictForComplexColumns(columns, ordinal, column.getNumberOfChild());
+              i = ordinal - 1;
+            } else {
+              ordinal = i;
+            }
+            if (ordinal < columns.size()) {
+              column = columns.get(ordinal);
+            } else {
+              continue;
+            }
             // column should be no dictionary string datatype column or varchar datatype column
             if (column.isDimensionColumn() && (column.getDataType().equals(DataTypes.STRING)
                 || column.getDataType().equals(DataTypes.VARCHAR)) && !column
@@ -3095,16 +3088,32 @@ public final class CarbonUtil {
             // if local dictionary exclude columns is defined, then set for all no dictionary string
             // datatype columns and varchar datatype columns except excluded columns
           } else {
-            // if complex column is present in exclude column, no need to check for child column,
-            // just continue
-            if (excludeChildColumnCount > 0) {
-              excludeChildColumnCount -= 1;
+            if (!Arrays.asList(listOfDictionaryExcludeColumns).contains(column.getColumnName())
+                && column.getDataType().isComplexType()) {
+              ordinal = i + 1;
+              ordinal = setLocalDictForComplexColumns(columns, ordinal, column.getNumberOfChild());
+              i = ordinal - 1;
+            } else if (
+                // if complex column is defined in Local Dictionary Exclude, then
+                // unsetLocalDictForComplexColumns is mainly used to increment the ordinal value
+                // required for traversing
+                Arrays.asList(listOfDictionaryExcludeColumns).contains(column.getColumnName())
+                    && column.getDataType().isComplexType()) {
+              ordinal = i + 1;
+              ordinal =
+                  unsetLocalDictForComplexColumns(columns, ordinal, column.getNumberOfChild());
+              i = ordinal - 1;
+            } else {
+              ordinal = i;
+
+            }
+            if (ordinal < columns.size()) {
+              column = columns.get(ordinal);
+            } else {
               continue;
             }
-            if (Arrays.asList(listOfDictionaryExcludeColumns).contains(column.getColumnName())
-                && column.getNumberOfChild() > 0) {
-              excludeChildColumnCount = column.getNumberOfChild();
-            }
+            //if column is primitive string or varchar and no dictionary column,then set local
+            // dictionary if not specified as local dictionary exclude
             if (column.isDimensionColumn() && (column.getDataType().equals(DataTypes.STRING)
                 || column.getDataType().equals(DataTypes.VARCHAR)) && !column
                 .hasEncoding(Encoding.DICTIONARY)) {
@@ -3114,8 +3123,24 @@ public final class CarbonUtil {
             }
           }
         } else {
+          // if column is complex type, call the setLocalDictForComplexColumns to set local
+          // dictionary for all string and varchar child columns which are defined in
+          // local dictionary include
+          if (localDictIncludeColumns.contains(column.getColumnName()) && column.getDataType()
+              .isComplexType()) {
+            ordinal = i + 1;
+            ordinal = setLocalDictForComplexColumns(columns, ordinal, column.getNumberOfChild());
+            i = ordinal - 1;
+          } else {
+            ordinal = i;
+          }
           // if local dict columns are configured, set for all no dictionary string datatype or
           // varchar type column
+          if (ordinal < columns.size()) {
+            column = columns.get(ordinal);
+          } else {
+            continue;
+          }
           if (column.isDimensionColumn() && (column.getDataType().equals(DataTypes.STRING) || column
               .getDataType().equals(DataTypes.VARCHAR)) && !column.hasEncoding(Encoding.DICTIONARY)
               && localDictIncludeColumns.toLowerCase()
@@ -3129,6 +3154,52 @@ public final class CarbonUtil {
         }
       }
     }
+  }
+
+  /**
+   * traverse through the columns of complex column specified in local dictionary include,
+   * and set local dictionary for all the string and varchar child columns
+   * @param allColumns
+   * @param dimensionOrdinal
+   * @param childColumnCount
+   * @return
+   */
+  private static int setLocalDictForComplexColumns(List<ColumnSchema> allColumns,
+      int dimensionOrdinal, int childColumnCount) {
+    for (int i = 0; i < childColumnCount; i++) {
+      ColumnSchema column = allColumns.get(dimensionOrdinal);
+      if (column.getNumberOfChild() > 0) {
+        dimensionOrdinal++;
+        setLocalDictForComplexColumns(allColumns, dimensionOrdinal, column.getNumberOfChild());
+      } else {
+        if (column.isDimensionColumn() && (column.getDataType().equals(DataTypes.STRING) || column
+            .getDataType().equals(DataTypes.VARCHAR)) && !column.hasEncoding(Encoding.DICTIONARY)) {
+          column.setLocalDictColumn(true);
+        }
+      }
+      dimensionOrdinal++;
+    }
+    return dimensionOrdinal;
+  }
+
+  /**
+   * traverse through the columns of complex column specified in local dictionary exclude
+   * @param allColumns
+   * @param dimensionOrdinal
+   * @param childColumnCount
+   * @return
+   */
+  private static int unsetLocalDictForComplexColumns(List<ColumnSchema> allColumns,
+      int dimensionOrdinal, int childColumnCount) {
+    for (int i = 0; i < childColumnCount; i++) {
+      ColumnSchema column = allColumns.get(dimensionOrdinal);
+      if (column.getNumberOfChild() > 0) {
+        dimensionOrdinal++;
+        unsetLocalDictForComplexColumns(allColumns, dimensionOrdinal, column.getNumberOfChild());
+      }
+      dimensionOrdinal++;
+    }
+    return dimensionOrdinal++;
   }
 
   /**
