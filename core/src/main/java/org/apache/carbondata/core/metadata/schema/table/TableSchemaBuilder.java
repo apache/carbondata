@@ -138,6 +138,7 @@ public class TableSchemaBuilder {
     newColumn.setDataType(field.getDataType());
     if (isSortColumn ||
         field.getDataType() == DataTypes.STRING ||
+        field.getDataType() == DataTypes.VARCHAR ||
         field.getDataType() == DataTypes.DATE ||
         field.getDataType() == DataTypes.TIMESTAMP ||
         field.getDataType().isComplexType() ||
