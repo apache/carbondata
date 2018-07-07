@@ -434,6 +434,26 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
       sql(s"SELECT * FROM $normalTable WHERE isNull(c2)"))
   }
 
+  test("test bloom datamap: querying with longstring index column") {
+    sql(s"CREATE TABLE $normalTable(c1 string, c2 int, c3 string) STORED BY 'carbondata' TBLPROPERTIES('long_string_columns'='c3')")
+    sql(s"CREATE TABLE $bloomDMSampleTable(c1 string, c2 int, c3 string) STORED BY 'carbondata' TBLPROPERTIES('long_string_columns'='c3')")
+    // create datamap on longstring columns
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName on table $bloomDMSampleTable
+         | using 'bloomfilter'
+         | DMPROPERTIES('index_columns'='c3')
+       """.stripMargin)
+
+    sql(s"INSERT INTO $normalTable SELECT 'c1v1', 1, 'xxx'")
+    sql(s"INSERT INTO $bloomDMSampleTable SELECT 'c1v1', 1, 'xxx'")
+    sql(s"INSERT INTO $normalTable SELECT 'c1v1', 1, 'yyy'")
+    sql(s"INSERT INTO $bloomDMSampleTable SELECT 'c1v1', 1, 'yyy'")
+
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE c3 = 'xxx'"),
+      sql(s"SELECT * FROM $normalTable WHERE c3 = 'xxx'"))
+  }
+
   override def afterAll(): Unit = {
     deleteFile(bigFile)
     sql(s"DROP TABLE IF EXISTS $normalTable")
