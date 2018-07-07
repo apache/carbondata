@@ -18,9 +18,10 @@
 package org.apache.carbondata.horizon.rest.model.validate;
 
 import org.apache.carbondata.horizon.rest.model.view.CreateTableRequest;
+import org.apache.carbondata.horizon.rest.model.view.DropTableRequest;
 import org.apache.carbondata.horizon.rest.model.view.LoadRequest;
 import org.apache.carbondata.horizon.rest.model.view.SelectRequest;
-import org.apache.carbondata.store.exception.StoreException;
+import org.apache.carbondata.store.api.exception.StoreException;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -65,6 +66,18 @@ public class RequestValidator {
     }
     if (StringUtils.isEmpty(request.getInputPath())) {
       throw new StoreException("input path is invalid");
+    }
+  }
+
+  public static void validateDrop(DropTableRequest request)  throws StoreException {
+    if (request == null) {
+      throw new StoreException("DropTableRequest should not be null");
+    }
+    if (StringUtils.isEmpty(request.getDatabaseName())) {
+      throw new StoreException("database name is invalid");
+    }
+    if (StringUtils.isEmpty(request.getTableName())) {
+      throw new StoreException("table name is invalid");
     }
   }
 }

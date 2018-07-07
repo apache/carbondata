@@ -196,7 +196,7 @@ struct DataMapSchema  {
     // class name
     2: required string className;
     // to maintain properties which are mentioned in DMPROPERTIES of DDL and also it
-    // stores properties of select query, query type like groupby, join in
+    // stores properties of projection query, query type like groupby, join in
     // case of preaggregate/timeseries
     3: optional map<string, string> properties;
     // relation identifier of a table which stores data of datamaps like preaggregate/timeseries.

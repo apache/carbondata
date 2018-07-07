@@ -124,8 +124,9 @@ public class TableSchemaBuilder {
     return schema;
   }
 
-  public void setSortColumns(List<ColumnSchema> sortColumns) {
+  public TableSchemaBuilder setSortColumns(List<ColumnSchema> sortColumns) {
     this.sortColumns = sortColumns;
+    return this;
   }
 
   public ColumnSchema addColumn(StructField field, AtomicInteger valIndex, boolean isSortColumn) {

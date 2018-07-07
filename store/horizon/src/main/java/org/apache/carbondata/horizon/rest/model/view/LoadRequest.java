@@ -20,9 +20,10 @@ package org.apache.carbondata.horizon.rest.model.view;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.carbondata.horizon.rest.model.descriptor.LoadDescriptor;
+import org.apache.carbondata.store.api.descriptor.LoadDescriptor;
+import org.apache.carbondata.store.api.descriptor.TableIdentifier;
 
-public class LoadRequest {
+public class LoadRequest extends Request {
 
   private String databaseName;
   private String tableName;
@@ -83,7 +84,8 @@ public class LoadRequest {
   }
 
   public LoadDescriptor convertToDto() {
-    return new LoadDescriptor(databaseName, tableName, inputPath, options, isOverwrite);
+    return new LoadDescriptor(new TableIdentifier(tableName, databaseName),
+        inputPath, options, isOverwrite);
   }
 
   public static class Builder {
