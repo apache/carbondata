@@ -57,6 +57,9 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
   }
 
   private def checkQuery(dataMapName: String, shouldHit: Boolean = true) = {
+    /**
+     * queries that use equal operator
+     */
     checkAnswer(
       checkSqlHitDataMap(s"select * from $bloomDMSampleTable where id = 1", dataMapName, shouldHit),
       sql(s"select * from $normalTable where id = 1"))
@@ -85,6 +88,39 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     checkAnswer(
       checkSqlHitDataMap(s"select * from $bloomDMSampleTable where city = 'city_999' and name='n1'", dataMapName, shouldHit),
       sql(s"select * from $normalTable where city = 'city_999' and name='n1'"))
+
+    /**
+     * queries that use in operator
+     */
+    checkAnswer(
+      checkSqlHitDataMap(s"select * from $bloomDMSampleTable where id in (1)", dataMapName, shouldHit),
+      sql(s"select * from $normalTable where id in (1)"))
+    checkAnswer(
+      checkSqlHitDataMap(s"select * from $bloomDMSampleTable where id in (999)", dataMapName, shouldHit),
+      sql(s"select * from $normalTable where id in (999)"))
+    checkAnswer(
+      checkSqlHitDataMap(s"select * from $bloomDMSampleTable where city in( 'city_1')", dataMapName, shouldHit),
+      sql(s"select * from $normalTable where city in( 'city_1')"))
+    checkAnswer(
+      checkSqlHitDataMap(s"select * from $bloomDMSampleTable where city in ('city_999')", dataMapName, shouldHit),
+      sql(s"select * from $normalTable where city in ('city_999')"))
+    // query with two index_columns
+    checkAnswer(
+      checkSqlHitDataMap(s"select * from $bloomDMSampleTable where id in (1) and city in ('city_1')", dataMapName, shouldHit),
+      sql(s"select * from $normalTable where id in (1) and city in ('city_1')"))
+    checkAnswer(
+      checkSqlHitDataMap(s"select * from $bloomDMSampleTable where id in (999) and city in ('city_999')", dataMapName, shouldHit),
+      sql(s"select * from $normalTable where id in (999) and city in ('city_999')"))
+    checkAnswer(
+      checkSqlHitDataMap(s"select * from $bloomDMSampleTable where city in ('city_1') and id in (0)", dataMapName, shouldHit),
+      sql(s"select * from $normalTable where city in ('city_1') and id in (0)"))
+    checkAnswer(
+      checkSqlHitDataMap(s"select * from $bloomDMSampleTable where city in ('city_999') and name in ('n999')", dataMapName, shouldHit),
+      sql(s"select * from $normalTable where city in ('city_999') and name in ('n999')"))
+    checkAnswer(
+      checkSqlHitDataMap(s"select * from $bloomDMSampleTable where city in ('city_999') and name in ('n1')", dataMapName, shouldHit),
+      sql(s"select * from $normalTable where city in ('city_999') and name in ('n1')"))
+
     checkAnswer(
       sql(s"select min(id), max(id), min(name), max(name), min(city), max(city)" +
           s" from $bloomDMSampleTable"),

@@ -111,6 +111,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     List<ExpressionType> optimizedOperations = new ArrayList<ExpressionType>();
     // todo: support more optimize operations
     optimizedOperations.add(ExpressionType.EQUALS);
+    optimizedOperations.add(ExpressionType.IN);
     this.dataMapMeta = new DataMapMeta(this.dataMapName, indexedColumns, optimizedOperations);
     LOGGER.info(String.format("DataMap %s works for %s with bloom size %d",
         this.dataMapName, this.dataMapMeta, this.bloomFilterSize));
