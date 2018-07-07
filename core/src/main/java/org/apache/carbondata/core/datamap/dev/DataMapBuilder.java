@@ -35,4 +35,8 @@ public interface DataMapBuilder {
   void finish() throws IOException;
 
   void close() throws IOException;
+  /**
+   * whether create index on internal carbon bytes (such as dictionary encoded) or original value
+   */
+  boolean isIndexForCarbonRawBytes();
 }

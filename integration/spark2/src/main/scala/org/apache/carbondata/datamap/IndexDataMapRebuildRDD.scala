@@ -33,13 +33,17 @@ import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datamap.{DataMapRegistry, DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datamap.dev.DataMapBuilder
+import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory
+import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher
+import org.apache.carbondata.core.keygenerator.columnar.ColumnarSplitter
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
+import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.TaskMetricsMap
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -78,7 +82,7 @@ object IndexDataMapRebuildRDD {
     validSegments.asScala.foreach { segment =>
       // if lucene datamap folder is exists, not require to build lucene datamap again
       refreshOneSegment(sparkSession, carbonTable, schema.getDataMapName,
-        indexedCarbonColumns, segment.getSegmentNo);
+        indexedCarbonColumns, segment);
     }
     val buildDataMapPostExecutionEvent = new BuildDataMapPostExecutionEvent(sparkSession,
       tableIdentifier)
@@ -90,10 +94,10 @@ object IndexDataMapRebuildRDD {
       carbonTable: CarbonTable,
       dataMapName: String,
       indexColumns: java.util.List[CarbonColumn],
-      segmentId: String): Unit = {
+      segment: Segment): Unit = {
 
-    val dataMapStorePath =
-      CarbonTablePath.getDataMapStorePath(carbonTable.getTablePath, segmentId, dataMapName)
+    val dataMapStorePath = CarbonTablePath.getDataMapStorePath(carbonTable.getTablePath,
+      segment.getSegmentNo, dataMapName)
 
     if (!FileFactory.isFileExist(dataMapStorePath)) {
       if (FileFactory.mkdirs(dataMapStorePath, FileFactory.getFileType(dataMapStorePath))) {
@@ -104,19 +108,19 @@ object IndexDataMapRebuildRDD {
             carbonTable.getTableInfo,
             dataMapName,
             indexColumns.asScala.toArray,
-            segmentId
+            segment
           ).collect()
 
           status.find(_._2 == false).foreach { task =>
             throw new Exception(
-              s"Task Failed to rebuild datamap $dataMapName on segment_$segmentId")
+              s"Task Failed to rebuild datamap $dataMapName on segment_${segment.getSegmentNo}")
           }
         } catch {
           case ex: Throwable =>
             // process failure
             FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(dataMapStorePath))
             throw new Exception(
-              s"Failed to refresh datamap $dataMapName on segment_$segmentId", ex)
+              s"Failed to refresh datamap $dataMapName on segment_${segment.getSegmentNo}", ex)
         }
       } else {
         throw new IOException(s"Failed to create directory $dataMapStorePath")
@@ -144,13 +148,113 @@ class OriginalReadSupport(dataTypes: Array[DataType]) extends CarbonReadSupport[
   }
 }
 
+/**
+ * This class will generate row value which is raw bytes for the dimensions.
+ */
+class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Array[CarbonColumn])
+  extends CarbonReadSupport[Array[Object]] {
+  var columnarSplitter: ColumnarSplitter = _
+  // for the non dictionary dimensions
+  var indexCol2IdxInNoDictArray: Map[String, Int] = Map()
+  // for the measures
+  var indexCol2IdxInMeasureArray: Map[String, Int] = Map()
+  // for the dictionary/date dimensions
+  var dictIndexCol2MdkIndex: Map[String, Int] = Map()
+  var mdkIndex2DictIndexCol: Map[Int, String] = Map()
+  var existDim = false
+
+  override def initialize(carbonColumns: Array[CarbonColumn],
+      carbonTable: CarbonTable): Unit = {
+    this.columnarSplitter = segmentProperties.getFixedLengthKeySplitter
+
+    indexColumns.foreach { col =>
+      if (col.isDimension) {
+        val dim = carbonTable.getDimensionByName(carbonTable.getTableName, col.getColName)
+        if (!dim.isGlobalDictionaryEncoding && !dim.isDirectDictionaryEncoding) {
+          indexCol2IdxInNoDictArray =
+            indexCol2IdxInNoDictArray + (col.getColName -> indexCol2IdxInNoDictArray.size)
+        }
+      } else {
+        indexCol2IdxInMeasureArray =
+          indexCol2IdxInMeasureArray + (col.getColName -> indexCol2IdxInMeasureArray.size)
+      }
+    }
+    dictIndexCol2MdkIndex = segmentProperties.getDimensions.asScala
+      .filter(col => col.isGlobalDictionaryEncoding || col.isDirectDictionaryEncoding)
+      .map(_.getColName)
+      .zipWithIndex
+      .filter(p => indexColumns.exists(c => c.getColName.equalsIgnoreCase(p._1)))
+      .toMap
+    mdkIndex2DictIndexCol = dictIndexCol2MdkIndex.map(p => (p._2, p._1))
+    existDim = indexCol2IdxInNoDictArray.nonEmpty || dictIndexCol2MdkIndex.nonEmpty
+  }
+
+  /**
+   * input: all the dimensions are bundled in one ByteArrayWrapper in position 0,
+   * then comes the measures one by one;
+   * output: all the dimensions and measures comes one after another
+   */
+  override def readRow(data: Array[Object]): Array[Object] = {
+    val dictArray = if (existDim) {
+      val dictKeys = data(0).asInstanceOf[ByteArrayWrapper].getDictionaryKey
+      // note that the index column may only contains a portion of all the dict columns, so we
+      // need to pad fake bytes to dict keys in order to reconstruct value later
+      if (columnarSplitter.getBlockKeySize.length > dictIndexCol2MdkIndex.size) {
+        val res = new Array[Byte](columnarSplitter.getBlockKeySize.sum)
+        var startPos = 0
+        var desPos = 0
+        columnarSplitter.getBlockKeySize.indices.foreach { idx =>
+          if (mdkIndex2DictIndexCol.contains(idx)) {
+            val size = columnarSplitter.getBlockKeySize.apply(idx)
+            System.arraycopy(dictKeys, startPos, res, desPos, size)
+            startPos += size
+          }
+          desPos += columnarSplitter.getBlockKeySize.apply(idx)
+        }
+
+        Option(res)
+      } else {
+        Option(dictKeys)
+      }
+    } else {
+      None
+    }
+
+    val dictKeys = if (existDim) {
+      Option(columnarSplitter.splitKey(dictArray.get))
+    } else {
+      None
+    }
+    val rtn = new Array[Object](indexColumns.length + 3)
+
+    indexColumns.zipWithIndex.foreach { case (col, i) =>
+      rtn(i) = if (dictIndexCol2MdkIndex.contains(col.getColName)) {
+        dictKeys.get(dictIndexCol2MdkIndex.get(col.getColName).get)
+      } else if (indexCol2IdxInNoDictArray.contains(col.getColName)) {
+        data(0).asInstanceOf[ByteArrayWrapper].getNoDictionaryKeyByIndex(
+          indexCol2IdxInNoDictArray.apply(col.getColName))
+      } else {
+        // measures start from 1
+        data(1 + indexCol2IdxInMeasureArray.apply(col.getColName))
+      }
+    }
+    rtn(indexColumns.length) = data(data.length - 3)
+    rtn(indexColumns.length + 1) = data(data.length - 2)
+    rtn(indexColumns.length + 2) = data(data.length - 1)
+    rtn
+  }
+
+  override def close(): Unit = {
+  }
+}
+
 class IndexDataMapRebuildRDD[K, V](
     session: SparkSession,
     result: RefreshResult[K, V],
     @transient tableInfo: TableInfo,
     dataMapName: String,
     indexColumns: Array[CarbonColumn],
-    segmentId: String
+    segment: Segment
 ) extends CarbonRDDWithTableInfo[(K, V)](
   session.sparkContext, Nil, tableInfo.serialize()) {
 
@@ -163,9 +267,9 @@ class IndexDataMapRebuildRDD[K, V](
 
   override def internalCompute(split: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    val dataMapFactory =
-      DataMapManager.get().getDataMapProvider(
-        CarbonTable.buildFromTableInfo(getTableInfo), dataMapSchema, session).getDataMapFactory
+    val carbonTable = CarbonTable.buildFromTableInfo(getTableInfo)
+    val dataMapFactory = DataMapManager.get().getDataMapProvider(
+      carbonTable, dataMapSchema, session).getDataMapFactory
     var status = false
     val inputMetrics = new CarbonInputMetrics
     TaskMetricsMap.getInstance().registerThreadCallback()
@@ -180,20 +284,30 @@ class IndexDataMapRebuildRDD[K, V](
     // one query id per table
     model.setQueryId(queryId)
     model.setVectorReader(false)
-    model.setForcedDetailRawQuery(false)
     model.setRequiredRowId(true)
 
     var reader: CarbonRecordReader[Array[Object]] = null
     var refresher: DataMapBuilder = null
     try {
-      reader = new CarbonRecordReader(
-        model, new OriginalReadSupport(indexColumns.map(_.getDataType)), inputMetrics)
-      reader.initialize(inputSplit, attemptContext)
+      val segmentPropertiesFetcher = DataMapStoreManager.getInstance().getDataMap(carbonTable,
+        BlockletDataMapFactory.DATA_MAP_SCHEMA)
+        .getDataMapFactory
+        .asInstanceOf[SegmentPropertiesFetcher]
+      val segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segment)
 
       // we use task name as shard name to create the folder for this datamap
       val shardName = CarbonTablePath.getShardName(inputSplit.getAllSplits.get(0).getBlockPath)
-      refresher = dataMapFactory.createBuilder(new Segment(segmentId), shardName, null)
+      refresher = dataMapFactory.createBuilder(segment, shardName, segmentProperties)
       refresher.initialize()
+
+      model.setForcedDetailRawQuery(refresher.isIndexForCarbonRawBytes)
+      val readSupport = if (refresher.isIndexForCarbonRawBytes) {
+        new RawBytesReadSupport(segmentProperties, indexColumns)
+      } else {
+        new OriginalReadSupport(indexColumns.map(_.getDataType))
+      }
+      reader = new CarbonRecordReader[Array[Object]](model, readSupport, inputMetrics)
+      reader.initialize(inputSplit, attemptContext)
 
       var blockletId = 0
       var firstRow = true
@@ -269,7 +383,7 @@ class IndexDataMapRebuildRDD[K, V](
 
     CarbonInputFormat.setSegmentsToAccess(
       conf,
-      Segment.toSegmentList(Array(segmentId), null))
+      Segment.toSegmentList(Array(segment.getSegmentNo), null))
 
     CarbonInputFormat.setColumnProjection(
       conf,
@@ -291,7 +405,7 @@ class IndexDataMapRebuildRDD[K, V](
 
     CarbonInputFormat.setSegmentsToAccess(
       job.getConfiguration,
-      Segment.toSegmentList(Array(segmentId), null))
+      Segment.toSegmentList(Array(segment.getSegmentNo), null))
 
     CarbonInputFormat.setTableInfo(
       job.getConfiguration,

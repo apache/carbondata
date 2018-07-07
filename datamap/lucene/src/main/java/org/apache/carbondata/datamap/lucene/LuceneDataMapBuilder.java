@@ -172,4 +172,8 @@ public class LuceneDataMapBuilder implements DataMapBuilder {
     }
   }
 
+  @Override
+  public boolean isIndexForCarbonRawBytes() {
+    return false;
+  }
 }

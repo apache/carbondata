@@ -293,6 +293,14 @@ class TestDataMapFactory(
       override def finish(): Unit = { }
 
       override def close(): Unit = { }
+
+      /**
+       * whether create index on internal carbon bytes (such as dictionary encoded) or original
+       * value
+       */
+      override def isIndexForCarbonRawBytes: Boolean = {
+        false
+      }
     }
   }
 }
