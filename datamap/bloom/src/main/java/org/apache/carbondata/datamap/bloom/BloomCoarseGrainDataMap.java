@@ -55,6 +55,8 @@ import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.core.scan.expression.conditional.InExpression;
+import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -178,6 +180,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
   private List<BloomQueryModel> createQueryModel(Expression expression)
       throws DictionaryGenerationException, UnsupportedEncodingException {
     List<BloomQueryModel> queryModels = new ArrayList<BloomQueryModel>();
+    // bloomdatamap only support equalTo and In operators now
     if (expression instanceof EqualToExpression) {
       Expression left = ((EqualToExpression) expression).getLeft();
       Expression right = ((EqualToExpression) expression).getRight();
@@ -186,7 +189,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         column = ((ColumnExpression) left).getColumnName();
         if (this.name2Col.containsKey(column)) {
           BloomQueryModel bloomQueryModel =
-              buildQueryModelFromExpression((ColumnExpression) left, (LiteralExpression) right);
+              buildQueryModelForEqual((ColumnExpression) left, (LiteralExpression) right);
           queryModels.add(bloomQueryModel);
         }
         return queryModels;
@@ -194,10 +197,35 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         column = ((ColumnExpression) right).getColumnName();
         if (this.name2Col.containsKey(column)) {
           BloomQueryModel bloomQueryModel =
-              buildQueryModelFromExpression((ColumnExpression) right, (LiteralExpression) left);
+              buildQueryModelForEqual((ColumnExpression) right, (LiteralExpression) left);
           queryModels.add(bloomQueryModel);
         }
         return queryModels;
+      } else {
+        LOGGER.warn("BloomFilter can only support the 'equal' filter like 'Col = PlainValue'");
+      }
+    } else if (expression instanceof InExpression) {
+      Expression left = ((InExpression) expression).getLeft();
+      Expression right = ((InExpression) expression).getRight();
+      String column;
+      if (left instanceof ColumnExpression && right instanceof ListExpression) {
+        column = ((ColumnExpression) left).getColumnName();
+        if (this.name2Col.containsKey(column)) {
+          List<BloomQueryModel> models =
+              buildQueryModelForIn((ColumnExpression) left, (ListExpression) right);
+          queryModels.addAll(models);
+        }
+        return queryModels;
+      } else if (left instanceof ListExpression && right instanceof ColumnExpression) {
+        column = ((ColumnExpression) right).getColumnName();
+        if (this.name2Col.containsKey(column)) {
+          List<BloomQueryModel> models =
+              buildQueryModelForIn((ColumnExpression) right, (ListExpression) left);
+          queryModels.addAll(models);
+        }
+        return queryModels;
+      } else {
+        LOGGER.warn("BloomFilter can only support the 'in' filter like 'Col in (PlainValues)'");
       }
     }
 
@@ -207,7 +235,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     return queryModels;
   }
 
-  private BloomQueryModel buildQueryModelFromExpression(ColumnExpression ce,
+  private BloomQueryModel buildQueryModelForEqual(ColumnExpression ce,
       LiteralExpression le) throws DictionaryGenerationException, UnsupportedEncodingException {
     String columnName = ce.getColumnName();
     DataType dataType = ce.getDataType();
@@ -232,6 +260,20 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     }
 
     return buildQueryModelInternal(this.name2Col.get(columnName), literalValue, dataType);
+  }
+
+  /**
+   * for `in` expressions, we use `equal` to handle it.
+   * Note that `in` operator needs at least one match not exactly match. since while doing pruning,
+   * we collect all the blocklets that will match the querymodel, this will not be a problem.
+   */
+  private List<BloomQueryModel> buildQueryModelForIn(ColumnExpression ce, ListExpression le)
+      throws DictionaryGenerationException, UnsupportedEncodingException {
+    List<BloomQueryModel> queryModels = new ArrayList<>();
+    for (Expression child : le.getChildren()) {
+      queryModels.add(buildQueryModelForEqual(ce, (LiteralExpression) child));
+    }
+    return queryModels;
   }
 
   private BloomQueryModel buildQueryModelInternal(CarbonColumn carbonColumn,
