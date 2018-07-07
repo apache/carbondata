@@ -109,7 +109,7 @@ public class HorizonController {
         request.getDatabaseName() + "." + request.getTableName() +
         ", take time: " + (end - start) + " ms");
 
-    return new ResponseEntity<>(new SelectResponse(output), HttpStatus.OK);
+    return new ResponseEntity<>(new SelectResponse(request, output), HttpStatus.OK);
   }
 
 }

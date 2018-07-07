@@ -21,6 +21,9 @@ public class SelectResponse extends Response{
 
   private Object[][] rows;
 
+  public SelectResponse() {
+  }
+
   public SelectResponse(SelectRequest request) {
     super(request);
   }
