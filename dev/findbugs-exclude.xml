@@ -21,7 +21,7 @@
   </Match>
 
   <Match>
-    <Package name="org.apache.carbondata.horizon.antlr.gen"/>
+    <Package name="org.apache.carbondata.horizon.rest.parser.anltr.gen"/>
   </Match>
 
   <Match>

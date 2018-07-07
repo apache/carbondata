@@ -22,7 +22,7 @@ imei,specialchar
 1AA20,LonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmember
 1AA21,char123234Number
 1AA22,\\  esc  !@~##%%&**(*&((*()()*  ""  some thing ""  ' DF
-1AA23,select * from sale_fact
+1AA23,projection * from sale_fact
 1AA24,pipe|hi
 1AA25,Curly{braces}hi
 1AA26,braces[hi]

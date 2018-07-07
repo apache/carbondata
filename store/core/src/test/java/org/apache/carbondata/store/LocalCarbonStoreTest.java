@@ -19,20 +19,49 @@ package org.apache.carbondata.store;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Iterator;
+import java.util.List;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.sdk.file.Field;
-import org.apache.carbondata.sdk.file.Schema;
-import org.apache.carbondata.sdk.file.TestUtil;
+import org.apache.carbondata.core.scan.expression.ColumnExpression;
+import org.apache.carbondata.core.scan.expression.LiteralExpression;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.store.api.conf.StoreConf;
+import org.apache.carbondata.store.api.descriptor.LoadDescriptor;
+import org.apache.carbondata.store.api.descriptor.SelectDescriptor;
+import org.apache.carbondata.store.api.descriptor.TableDescriptor;
+import org.apache.carbondata.store.api.descriptor.TableIdentifier;
+import org.apache.carbondata.store.api.exception.StoreException;
+import org.apache.carbondata.store.impl.LocalCarbonStore;
 
-import org.apache.commons.io.FileUtils;
 import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class LocalCarbonStoreTest {
+
+  private static String projectFolder;
+  private static LocalCarbonStore store;
+
+  @BeforeClass
+  public static void setup() throws IOException {
+    StoreConf conf = new StoreConf("test", "./");
+    conf.conf(StoreConf.STORE_TEMP_LOCATION, "./temp");
+    store = new LocalCarbonStore(conf);
+    projectFolder = new File(LocalCarbonStoreTest.class.getResource("/").getPath() + "../../../../")
+        .getCanonicalPath();
+  }
+
+  @AfterClass
+  public static void afterAll() throws IOException {
+    store.close();
+  }
+
   @Before
   public void cleanFile() {
     assert (TestUtil.cleanMdtFile());
@@ -43,30 +72,64 @@ public class LocalCarbonStoreTest {
     assert (!TestUtil.verifyMdtFile());
   }
 
-  // TODO: complete this testcase
-  // Currently result rows are empty, because SDK is not writing table status file
-  // so that reader does not find any segment.
-  // Complete this testcase after flat folder reader is done.
   @Test
-  public void testWriteAndReadFiles() throws IOException {
-    String path = "./testWriteFiles";
-    FileUtils.deleteDirectory(new File(path));
+  public void testWriteAndReadFiles() throws IOException, StoreException {
+    TableIdentifier tableIdentifier = new TableIdentifier("table_1", "default");
+    store.dropTable(tableIdentifier);
+    TableDescriptor table = TableDescriptor
+        .builder()
+        .ifNotExists()
+        .table(tableIdentifier)
+        .comment("first table")
+        .column("shortField", DataTypes.SHORT, "short field")
+        .column("intField", DataTypes.INT, "int field")
+        .column("bigintField", DataTypes.LONG, "long field")
+        .column("doubleField", DataTypes.DOUBLE, "double field")
+        .column("stringField", DataTypes.STRING, "string field")
+        .column("timestampField", DataTypes.TIMESTAMP, "timestamp field")
+        .column("decimalField", DataTypes.createDecimalType(18, 2), "decimal field")
+        .column("dateField", DataTypes.DATE, "date field")
+        .column("charField", DataTypes.STRING, "char field")
+        .column("floatField", DataTypes.DOUBLE, "float field")
+        .tblProperties(CarbonCommonConstants.SORT_COLUMNS, "intField")
+        .create();
+    store.createTable(table);
 
-    Field[] fields = new Field[2];
-    fields[0] = new Field("name", DataTypes.STRING);
-    fields[1] = new Field("age", DataTypes.INT);
+    // load one segment
+    LoadDescriptor load = LoadDescriptor
+        .builder()
+        .table(tableIdentifier)
+        .overwrite(false)
+        .inputPath(projectFolder + "/store/core/src/test/resources/data1.csv")
+        .options("header", "true")
+        .create();
+    store.loadData(load);
 
-    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
+    // select row
+    SelectDescriptor select = SelectDescriptor
+        .builder()
+        .table(tableIdentifier)
+        .select("intField", "stringField")
+        .limit(5)
+        .create();
+    List<CarbonRow> result = store.select(select);
+    Assert.assertEquals(5, result.size());
 
-    CarbonStore store = new LocalCarbonStore();
-    Iterator<CarbonRow> rows = store.scan(path, new String[]{"name, age"}, null);
+    // select row with filter
+    SelectDescriptor select2 = SelectDescriptor
+        .builder()
+        .table(tableIdentifier)
+        .select("intField", "stringField")
+        .filter(new EqualToExpression(
+            new ColumnExpression("intField", DataTypes.INT),
+            new LiteralExpression(11, DataTypes.INT)))
+        .limit(5)
+        .create();
+    List<CarbonRow> result2 = store.select(select2);
+    Assert.assertEquals(1, result2.size());
 
-    while (rows.hasNext()) {
-      CarbonRow row = rows.next();
-      System.out.println(row.toString());
-    }
-
-    FileUtils.deleteDirectory(new File(path));
+    store.dropTable(tableIdentifier);
+    Assert.assertTrue(!FileFactory.isFileExist(store.getTablePath("table_1", "default")));
   }
 
 }

@@ -22,31 +22,33 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.horizon.rest.model.descriptor.TableDescriptor;
 import org.apache.carbondata.sdk.file.Field;
 import org.apache.carbondata.sdk.file.Schema;
+import org.apache.carbondata.store.api.descriptor.TableDescriptor;
+import org.apache.carbondata.store.api.descriptor.TableIdentifier;
 
-public class CreateTableRequest {
+public class CreateTableRequest extends Request {
 
   private boolean ifNotExists;
   private String databaseName;
   private String tableName;
+  private String tablePath;
   private FieldRequest[] fields;
   private Map<String, String> properties;
   private String comment;
 
   public CreateTableRequest() {
-
   }
 
   public CreateTableRequest(boolean ifNotExists, String databaseName, String tableName,
-      FieldRequest[] fields, Map<String, String> properties, String comment) {
+      FieldRequest[] fields, Map<String, String> properties, String tablePath, String comment) {
     this.databaseName = databaseName;
     this.tableName = tableName;
     this.ifNotExists = ifNotExists;
     this.fields = fields;
     this.properties = properties;
     this.comment = comment;
+    this.tablePath = tablePath;
   }
 
   public boolean isIfNotExists() {
@@ -104,7 +106,8 @@ public class CreateTableRequest {
       schemaFields[i] = fields[i].convertToDto();
       schemaFields[i].setSchemaOrdinal(i);
     }
-    return new TableDescriptor(ifNotExists, databaseName, tableName, schema, properties, comment);
+    return new TableDescriptor(new TableIdentifier(tableName, databaseName),
+        schema, properties, tablePath, comment, ifNotExists);
   }
 
   public static class Builder {
