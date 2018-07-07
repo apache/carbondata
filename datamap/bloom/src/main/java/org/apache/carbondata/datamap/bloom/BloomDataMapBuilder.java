@@ -21,30 +21,22 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
-import org.apache.carbondata.core.util.CarbonUtil;
-
-import org.apache.hadoop.util.bloom.Key;
 
 /**
  * Implementation for BloomFilter DataMap to rebuild the datamap for main table with existing data
  */
 @InterfaceAudience.Internal
-public class BloomDataMapBuilder extends BloomDataMapWriter implements DataMapBuilder {
+public class BloomDataMapBuilder extends AbstractBloomDataMapWriter implements DataMapBuilder {
 
   BloomDataMapBuilder(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
       Segment segment, String shardName, SegmentProperties segmentProperties,
       int bloomFilterSize, double bloomFilterFpp, boolean bloomCompress) throws IOException {
     super(tablePath, dataMapName, indexColumns, segment, shardName, segmentProperties,
         bloomFilterSize, bloomFilterFpp, bloomCompress);
-    throw new RuntimeException(
-        "Deferred rebuild for bloomfilter datamap is currently not supported");
   }
 
   @Override
@@ -63,20 +55,13 @@ public class BloomDataMapBuilder extends BloomDataMapWriter implements DataMapBu
     List<CarbonColumn> indexColumns = getIndexColumns();
     for (int i = 0; i < indexColumns.size(); i++) {
       Object data = values[i];
-      DataType dataType = indexColumns.get(i).getDataType();
-      byte[] indexValue;
-      if (DataTypes.STRING == dataType) {
-        indexValue = getStringData(data);
-      } else if (DataTypes.BYTE_ARRAY == dataType) {
-        byte[] originValue = (byte[]) data;
-        // String and byte array is LV encoded, L is short type
-        indexValue = new byte[originValue.length - 2];
-        System.arraycopy(originValue, 2, indexValue, 0, originValue.length - 2);
-      } else {
-        indexValue = CarbonUtil.getValueAsBytes(dataType, data);
-      }
-      indexBloomFilters.get(i).add(new Key(indexValue));
+      addValue2BloomIndex(i, data);
     }
+  }
+
+  @Override
+  protected byte[] convertNonDictionaryValue(int indexColIdx, byte[] value) {
+    return value;
   }
 
   @Override
@@ -96,7 +81,7 @@ public class BloomDataMapBuilder extends BloomDataMapWriter implements DataMapBu
   }
 
   @Override
-  protected byte[] getStringData(Object data) {
-    return ((String) data).getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+  public boolean isIndexForCarbonRawBytes() {
+    return true;
   }
 }

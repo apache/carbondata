@@ -454,6 +454,311 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
       sql(s"SELECT * FROM $normalTable WHERE c3 = 'xxx'"))
   }
 
+  test("test rebuild bloom datamap: index column is integer, dictionary, sort_column") {
+    sql(
+      s"""
+         | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('table_blocksize'='128')
+         |  """.stripMargin)
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('table_blocksize'='128', 'dictionary_include'='id, name, s1', 'sort_columns'='id')
+         |  """.stripMargin)
+
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$bigFile' INTO TABLE $normalTable
+         | OPTIONS('header'='false')
+         """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$bigFile' INTO TABLE $bloomDMSampleTable
+         | OPTIONS('header'='false')
+         """.stripMargin)
+
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='city,id,age,name', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+
+    sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable").show(false)
+    checkExistence(sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable"), true, dataMapName)
+    checkBasicQuery(dataMapName, bloomDMSampleTable, normalTable)
+    sql(s"DROP TABLE IF EXISTS $normalTable")
+    sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
+  }
+
+  test("test rebuild bloom datamap: index column is integer, dictionary, not sort_column") {
+    sql(
+      s"""
+         | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('table_blocksize'='128')
+         |  """.stripMargin)
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('table_blocksize'='128', 'dictionary_include'='id, name, s1', 'sort_columns'='name')
+         |  """.stripMargin)
+
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$bigFile' INTO TABLE $normalTable
+         | OPTIONS('header'='false')
+         """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$bigFile' INTO TABLE $bloomDMSampleTable
+         | OPTIONS('header'='false')
+         """.stripMargin)
+
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='city,id,age,name', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+
+    sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable").show(false)
+    checkExistence(sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable"), true, dataMapName)
+    checkBasicQuery(dataMapName, bloomDMSampleTable, normalTable)
+    sql(s"DROP TABLE IF EXISTS $normalTable")
+    sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
+  }
+
+  test("test rebuild bloom datamap: index column is integer, sort_column") {
+    sql(
+      s"""
+         | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('table_blocksize'='128')
+         |  """.stripMargin)
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('table_blocksize'='128', 'dictionary_include'='name, s1', 'sort_columns'='id')
+         |  """.stripMargin)
+
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$bigFile' INTO TABLE $normalTable
+         | OPTIONS('header'='false')
+         """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$bigFile' INTO TABLE $bloomDMSampleTable
+         | OPTIONS('header'='false')
+         """.stripMargin)
+
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='city,id,age,name', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+
+    sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable").show(false)
+    checkExistence(sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable"), true, dataMapName)
+    checkBasicQuery(dataMapName, bloomDMSampleTable, normalTable)
+    sql(s"DROP TABLE IF EXISTS $normalTable")
+    sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
+  }
+
+  test("test rebuild bloom datamap: index column is float, not dictionary") {
+    val floatCsvPath = s"$resourcesPath/datasamplefordate.csv"
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+    sql(
+      s"""
+         | CREATE TABLE $normalTable(empno string, doj date, salary float)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('SORT_COLUMNS'='empno')
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable(empno string, doj date, salary float)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('SORT_COLUMNS'='empno')
+       """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA INPATH '$floatCsvPath' INTO TABLE $normalTable OPTIONS(
+         | 'DELIMITER'=',', 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE')
+       """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA INPATH '$floatCsvPath' INTO TABLE $bloomDMSampleTable OPTIONS(
+         | 'DELIMITER'=',', 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE')
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable USING 'bloomfilter' DMPROPERTIES (
+         | 'INDEX_COLUMNS'='salary')
+       """.stripMargin)
+    sql(s"SELECT * FROM $bloomDMSampleTable WHERE salary='1040.56'").show(false)
+    sql(s"SELECT * FROM $bloomDMSampleTable WHERE salary='1040'").show(false)
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE salary='1040.56'"),
+      sql(s"SELECT * FROM $normalTable WHERE salary='1040.56'"))
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE salary='1040'"),
+      sql(s"SELECT * FROM $normalTable WHERE salary='1040'"))
+  }
+
+  test("test rebuild bloom datamap: index column is float, dictionary") {
+    val floatCsvPath = s"$resourcesPath/datasamplefordate.csv"
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+    sql(
+      s"""
+         | CREATE TABLE $normalTable(empno string, doj date, salary float)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('SORT_COLUMNS'='empno')
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable(empno string, doj date, salary float)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('SORT_COLUMNS'='empno', 'DICTIONARY_INCLUDE'='salary')
+       """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA INPATH '$floatCsvPath' INTO TABLE $normalTable OPTIONS(
+         | 'DELIMITER'=',', 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE')
+       """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA INPATH '$floatCsvPath' INTO TABLE $bloomDMSampleTable OPTIONS(
+         | 'DELIMITER'=',', 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE')
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable USING 'bloomfilter' DMPROPERTIES (
+         | 'INDEX_COLUMNS'='salary')
+       """.stripMargin)
+    sql(s"SELECT * FROM $bloomDMSampleTable WHERE salary='1040.56'").show(false)
+    sql(s"SELECT * FROM $bloomDMSampleTable WHERE salary='1040'").show(false)
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE salary='1040.56'"),
+      sql(s"SELECT * FROM $normalTable WHERE salary='1040.56'"))
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE salary='1040'"),
+      sql(s"SELECT * FROM $normalTable WHERE salary='1040'"))
+  }
+
+  test("test rebuild bloom datamap: index column is date") {
+    val dateCsvPath = s"$resourcesPath/datasamplefordate.csv"
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+    sql(
+      s"""
+         | CREATE TABLE $normalTable(empno string, doj date, salary float)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('SORT_COLUMNS'='empno')
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable(empno string, doj date, salary float)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('SORT_COLUMNS'='empno')
+       """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA INPATH '$dateCsvPath' INTO TABLE $normalTable OPTIONS(
+         | 'DELIMITER'=',', 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE')
+       """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA INPATH '$dateCsvPath' INTO TABLE $bloomDMSampleTable OPTIONS(
+         | 'DELIMITER'=',', 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE')
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable USING 'bloomfilter' DMPROPERTIES (
+         | 'INDEX_COLUMNS'='doj')
+       """.stripMargin)
+    sql(s"SELECT * FROM $bloomDMSampleTable WHERE doj='2016-03-14'").show(false)
+    sql(s"SELECT * FROM $bloomDMSampleTable WHERE doj='2016-03-15'").show(false)
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE doj='2016-03-14'"),
+      sql(s"SELECT * FROM $normalTable WHERE doj='2016-03-14'"))
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE doj='2016-03-15'"),
+      sql(s"SELECT * FROM $normalTable WHERE doj='2016-03-15'"))
+  }
+
+  test("test rebuild bloom datamap: index column is date, dictionary, sort_colum") {
+    val dateCsvPath = s"$resourcesPath/datasamplefordate.csv"
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+    sql(
+      s"""
+         | CREATE TABLE $normalTable(empno string, doj date, salary float)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('SORT_COLUMNS'='empno')
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable(empno string, doj date, salary float)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('SORT_COLUMNS'='empno,doj', 'DICTIONARY_INCLUDE'='doj')
+       """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA INPATH '$dateCsvPath' INTO TABLE $normalTable OPTIONS(
+         | 'DELIMITER'=',', 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE')
+       """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA INPATH '$dateCsvPath' INTO TABLE $bloomDMSampleTable OPTIONS(
+         | 'DELIMITER'=',', 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE')
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable USING 'bloomfilter' DMPROPERTIES (
+         | 'INDEX_COLUMNS'='doj')
+       """.stripMargin)
+    sql(s"SELECT * FROM $bloomDMSampleTable WHERE doj='2016-03-14'").show(false)
+    sql(s"SELECT * FROM $bloomDMSampleTable WHERE doj='2016-03-15'").show(false)
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE doj='2016-03-14'"),
+      sql(s"SELECT * FROM $normalTable WHERE doj='2016-03-14'"))
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE doj='2016-03-15'"),
+      sql(s"SELECT * FROM $normalTable WHERE doj='2016-03-15'"))
+  }
+
+  ignore("test rebuild bloom datamap: loading and querying with empty values on index column") {
+    sql(s"CREATE TABLE $normalTable(c1 string, c2 int, c3 string) STORED BY 'carbondata'")
+    sql(s"CREATE TABLE $bloomDMSampleTable(c1 string, c2 int, c3 string) STORED BY 'carbondata'")
+
+    // load data with empty value
+    sql(s"INSERT INTO $normalTable SELECT '', 1, 'xxx'")
+    sql(s"INSERT INTO $bloomDMSampleTable SELECT '', 1, 'xxx'")
+    sql(s"INSERT INTO $normalTable SELECT '', null, 'xxx'")
+    sql(s"INSERT INTO $bloomDMSampleTable SELECT '', null, 'xxx'")
+
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName on table $bloomDMSampleTable
+         | using 'bloomfilter'
+         | DMPROPERTIES('index_columns'='c1, c2')
+       """.stripMargin)
+
+    // query on null fields
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable"),
+      sql(s"SELECT * FROM $normalTable"))
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE c1 = null"),
+      sql(s"SELECT * FROM $normalTable WHERE c1 = null"))
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE c1 = ''"),
+      sql(s"SELECT * FROM $normalTable WHERE c1 = ''"))
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE isNull(c1)"),
+      sql(s"SELECT * FROM $normalTable WHERE isNull(c1)"))
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE isNull(c2)"),
+      sql(s"SELECT * FROM $normalTable WHERE isNull(c2)"))
+  }
+
   override def afterAll(): Unit = {
     deleteFile(bigFile)
     sql(s"DROP TABLE IF EXISTS $normalTable")
