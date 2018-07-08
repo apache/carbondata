@@ -80,7 +80,11 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   int[] dimensionChunkIndex;
 
   /**
-   * it has index at which given measure is stored in file
+   * it has index at which given measure is stored in file.
+   * Note: Its value can be used only for isScanRequired method as the value is incremented by
+   * last dimension ordinal in segmentProperties because of data writing order
+   * (first dimensions are written and then measures). Therefore avoid its usage in in methods other
+   * than isScanRequired
    */
   int[] measureChunkIndex;
 
@@ -164,8 +168,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           .getDimensionFromCurrentBlock(dimColEvaluatorInfoList.get(i).getDimension());
       if (null != dimensionFromCurrentBlock) {
         dimColEvaluatorInfoList.get(i).setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
-        this.dimensionChunkIndex[i] = segmentProperties.getDimensionOrdinalToChunkMapping()
-            .get(dimensionFromCurrentBlock.getOrdinal());
+        this.dimensionChunkIndex[i] =
+            dimColEvaluatorInfoList.get(i).getColumnIndexInMinMaxByteArray();
         isDimensionPresentInCurrentBlock[i] = true;
       }
     }
@@ -182,8 +186,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           msrColEvalutorInfoList.get(i).getCarbonColumn().getColumnId());
       if (null != measureFromCurrentBlock) {
         msrColEvalutorInfoList.get(i).setColumnIndex(measureFromCurrentBlock.getOrdinal());
-        this.measureChunkIndex[i] = segmentProperties.getMeasuresOrdinalToChunkMapping()
-            .get(measureFromCurrentBlock.getOrdinal());
+        this.measureChunkIndex[i] = msrColEvalutorInfoList.get(i).getColumnIndexInMinMaxByteArray();
         isMeasurePresentInCurrentBlock[i] = true;
       }
     }
@@ -224,10 +227,12 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     }
     if (msrColEvalutorInfoList.size() > 0) {
       if (isMeasurePresentInCurrentBlock[0]) {
-        pageNumbers = rawBlockletColumnChunks.getMeasureRawColumnChunks()[measureChunkIndex[0]]
-            .getPagesCount();
-        numberOfRows = rawBlockletColumnChunks.getMeasureRawColumnChunks()[measureChunkIndex[0]]
-            .getRowCount();
+        pageNumbers =
+            rawBlockletColumnChunks.getMeasureRawColumnChunks()[msrColEvalutorInfoList.get(0)
+                .getColumnIndex()].getPagesCount();
+        numberOfRows =
+            rawBlockletColumnChunks.getMeasureRawColumnChunks()[msrColEvalutorInfoList.get(0)
+                .getColumnIndex()].getRowCount();
       } else {
         // specific for restructure case where default values need to be filled
         pageNumbers = rawBlockletColumnChunks.getDataBlock().numberOfPages();
@@ -483,8 +488,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
       Object msrValue;
       ColumnPage columnPage =
-          blockChunkHolder.getMeasureRawColumnChunks()[measureChunkIndex[0]]
-              .decodeColumnPage(pageIndex);
+          blockChunkHolder.getMeasureRawColumnChunks()[msrColEvalutorInfoList.get(0)
+              .getColumnIndex()].decodeColumnPage(pageIndex);
       if (msrType == DataTypes.BOOLEAN) {
         msrValue = columnPage.getBoolean(index);
       } else if (msrType == DataTypes.SHORT) {
@@ -648,10 +653,11 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     }
 
     for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
-      if (null == rawBlockletColumnChunks.getMeasureRawColumnChunks()[measureChunkIndex[0]]) {
-        rawBlockletColumnChunks.getMeasureRawColumnChunks()[measureChunkIndex[0]] =
+      int chunkIndex = msrColEvalutorInfoList.get(0).getColumnIndex();
+      if (null == rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex]) {
+        rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex] =
             rawBlockletColumnChunks.getDataBlock()
-              .readMeasureChunk(rawBlockletColumnChunks.getFileReader(), measureChunkIndex[0]);
+                .readMeasureChunk(rawBlockletColumnChunks.getFileReader(), chunkIndex);
       }
     }
   }

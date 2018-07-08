@@ -50,6 +50,7 @@ import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -366,5 +367,45 @@ public class BlockletDataMapUtil {
       columnSchemas.add(columnSchema);
     }
     return columnSchemas;
+  }
+
+  /**
+   * Method to get the min/max values for columns to be cached
+   *
+   * @param segmentProperties
+   * @param minMaxCacheColumns
+   * @param minMaxValuesForAllColumns
+   * @return
+   */
+  public static byte[][] getMinMaxForColumnsToBeCached(SegmentProperties segmentProperties,
+      List<CarbonColumn> minMaxCacheColumns, byte[][] minMaxValuesForAllColumns) {
+    byte[][] minMaxValuesForColumnsToBeCached = minMaxValuesForAllColumns;
+    if (null != minMaxCacheColumns) {
+      minMaxValuesForColumnsToBeCached = new byte[minMaxCacheColumns.size()][];
+      int counter = 0;
+      for (CarbonColumn column : minMaxCacheColumns) {
+        minMaxValuesForColumnsToBeCached[counter++] =
+            minMaxValuesForAllColumns[getColumnOrdinal(segmentProperties, column)];
+      }
+    }
+    return minMaxValuesForColumnsToBeCached;
+  }
+
+  /**
+   * compute the column ordinal as per data is stored
+   *
+   * @param segmentProperties
+   * @param column
+   * @return
+   */
+  public static int getColumnOrdinal(SegmentProperties segmentProperties, CarbonColumn column) {
+    if (column.isMeasure()) {
+      // as measures are stored at the end after all dimensions and complex dimensions hence add
+      // the last dimension ordinal to measure ordinal. Segment properties will store min max
+      // length in one array on the order normal dimension, complex dimension and then measure
+      return segmentProperties.getLastDimensionColOrdinal() + column.getOrdinal();
+    } else {
+      return column.getOrdinal();
+    }
   }
 }

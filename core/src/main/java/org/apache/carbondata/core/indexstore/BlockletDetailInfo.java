@@ -223,7 +223,7 @@ public class BlockletDetailInfo implements Serializable, Writable {
    * @throws IOException
    */
   public void readColumnSchema(byte[] schemaArray) throws IOException {
-    if (null != columnSchemaBinary) {
+    if (null != schemaArray) {
       columnSchemas = BlockletDataMapUtil.readColumnSchema(schemaArray);
     }
   }

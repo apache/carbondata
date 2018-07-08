@@ -190,16 +190,13 @@ public class BlockletDataMapIndexStore
     if (null != blockletDataMapIndexWrapper) {
       // clear the segmentProperties cache
       List<BlockDataMap> dataMaps = blockletDataMapIndexWrapper.getDataMaps();
-      if (null != dataMaps) {
+      if (null != dataMaps && !dataMaps.isEmpty()) {
         String segmentId =
             tableSegmentUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier().getSegmentId();
-        for (BlockDataMap dataMap : dataMaps) {
-          // as segmentId will be same for all the dataMaps and segmentProperties cache is
-          // maintained at segment level so it need to be called only once for clearing
-          SegmentPropertiesAndSchemaHolder.getInstance()
-              .invalidate(segmentId, dataMap.getSegmentPropertiesIndex());
-          break;
-        }
+        // as segmentId will be same for all the dataMaps and segmentProperties cache is
+        // maintained at segment level so it need to be called only once for clearing
+        SegmentPropertiesAndSchemaHolder.getInstance()
+            .invalidate(segmentId, dataMaps.get(0).getSegmentPropertiesIndex());
       }
     }
     lruCache.remove(tableSegmentUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier()

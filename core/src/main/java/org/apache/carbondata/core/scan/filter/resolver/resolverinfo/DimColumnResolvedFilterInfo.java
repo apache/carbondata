@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
@@ -35,11 +36,6 @@ public class DimColumnResolvedFilterInfo extends ColumnResolvedFilterInfo implem
    *
    */
   private static final long serialVersionUID = 3428115141211084114L;
-
-  /**
-   * column index in file
-   */
-  private int columnIndex = -1;
 
   /**
    * rowIndex
@@ -140,6 +136,11 @@ public class DimColumnResolvedFilterInfo extends ColumnResolvedFilterInfo implem
     dimColumnResolvedFilterInfo.rowIndex = this.rowIndex;
     dimColumnResolvedFilterInfo.dimensionResolvedFilter = this.dimensionResolvedFilter;
     dimColumnResolvedFilterInfo.isDimensionExistsInCurrentSilce = isDimensionExistsInCurrentSilce;
+    dimColumnResolvedFilterInfo.columnIndexInMinMaxByteArray = columnIndexInMinMaxByteArray;
     return dimColumnResolvedFilterInfo;
+  }
+
+  @Override public CarbonMeasure getMeasure() {
+    throw new UnsupportedOperationException("Operation not supported");
   }
 }

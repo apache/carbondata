@@ -30,7 +30,10 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.indexstore.schema.SchemaGenerator;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 /**
@@ -87,20 +90,20 @@ public class SegmentPropertiesAndSchemaHolder {
    * Method to add the segment properties and avoid construction of new segment properties until
    * the schema is not modified
    *
-   * @param tableIdentifier
+   * @param carbonTable
    * @param columnsInTable
    * @param columnCardinality
    * @param segmentId
    */
-  public int addSegmentProperties(AbsoluteTableIdentifier tableIdentifier,
+  public int addSegmentProperties(CarbonTable carbonTable,
       List<ColumnSchema> columnsInTable, int[] columnCardinality, String segmentId) {
     SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper segmentPropertiesWrapper =
-        new SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper(tableIdentifier,
+        new SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper(carbonTable,
             columnsInTable, columnCardinality);
     SegmentIdAndSegmentPropertiesIndexWrapper segmentIdSetAndIndexWrapper =
         this.segmentPropWrapperToSegmentSetMap.get(segmentPropertiesWrapper);
     if (null == segmentIdSetAndIndexWrapper) {
-      synchronized (getOrCreateTableLock(tableIdentifier)) {
+      synchronized (getOrCreateTableLock(carbonTable.getAbsoluteTableIdentifier())) {
         segmentIdSetAndIndexWrapper =
             this.segmentPropWrapperToSegmentSetMap.get(segmentPropertiesWrapper);
         if (null == segmentIdSetAndIndexWrapper) {
@@ -109,7 +112,7 @@ public class SegmentPropertiesAndSchemaHolder {
           int segmentPropertiesIndex = segmentPropertiesIndexCounter.incrementAndGet();
           indexToSegmentPropertiesWrapperMapping
               .put(segmentPropertiesIndex, segmentPropertiesWrapper);
-          LOGGER.info("Constructing new SegmentProperties for table: " + tableIdentifier
+          LOGGER.info("Constructing new SegmentProperties for table: " + carbonTable
               .getCarbonTableIdentifier().getTableUniqueName()
               + ". Current size of segment properties" + " holder list is: "
               + indexToSegmentPropertiesWrapperMapping.size());
@@ -123,7 +126,7 @@ public class SegmentPropertiesAndSchemaHolder {
         }
       }
     } else {
-      synchronized (getOrCreateTableLock(tableIdentifier)) {
+      synchronized (getOrCreateTableLock(carbonTable.getAbsoluteTableIdentifier())) {
         segmentIdSetAndIndexWrapper.addSegmentId(segmentId);
       }
     }
@@ -244,13 +247,14 @@ public class SegmentPropertiesAndSchemaHolder {
     private List<ColumnSchema> columnsInTable;
     private int[] columnCardinality;
     private SegmentProperties segmentProperties;
-    private CarbonRowSchema[] taskSummarySchema;
+    private List<CarbonColumn> minMaxCacheColumns;
 
-    public SegmentPropertiesWrapper(AbsoluteTableIdentifier tableIdentifier,
+    public SegmentPropertiesWrapper(CarbonTable carbonTable,
         List<ColumnSchema> columnsInTable, int[] columnCardinality) {
-      this.tableIdentifier = tableIdentifier;
+      this.tableIdentifier = carbonTable.getAbsoluteTableIdentifier();
       this.columnsInTable = columnsInTable;
       this.columnCardinality = columnCardinality;
+      this.minMaxCacheColumns = carbonTable.getMinMaxCacheColumns();
     }
 
     public void initSegmentProperties() {
@@ -289,20 +293,23 @@ public class SegmentPropertiesAndSchemaHolder {
       return columnCardinality;
     }
 
-    public CarbonRowSchema[] getBlockSchema() {
-      return SchemaGenerator.createBlockSchema(segmentProperties);
+    public CarbonRowSchema[] getTaskSummarySchema(boolean storeBlockletCount,
+        boolean filePathToBeStored) throws MemoryException {
+      return SchemaGenerator
+          .createTaskSummarySchema(segmentProperties, minMaxCacheColumns, storeBlockletCount,
+              filePathToBeStored);
     }
 
-    public CarbonRowSchema[] getBlocketSchema() {
-      return SchemaGenerator.createBlockletSchema(segmentProperties);
+    public CarbonRowSchema[] getBlockFileFooterEntrySchema() {
+      return SchemaGenerator.createBlockSchema(segmentProperties, minMaxCacheColumns);
     }
 
-    public CarbonRowSchema[] getTaskSummarySchema() {
-      return taskSummarySchema;
+    public CarbonRowSchema[] getBlockletFileFooterEntrySchema() {
+      return SchemaGenerator.createBlockletSchema(segmentProperties, minMaxCacheColumns);
     }
 
-    public void setTaskSummarySchema(CarbonRowSchema[] taskSummarySchema) {
-      this.taskSummarySchema = taskSummarySchema;
+    public List<CarbonColumn> getMinMaxCacheColumns() {
+      return minMaxCacheColumns;
     }
   }
 

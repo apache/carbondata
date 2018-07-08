@@ -100,6 +100,8 @@ import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.ConditionalFilterResolverImpl;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.filter.resolver.RowLevelFilterResolverImpl;
+import org.apache.carbondata.core.scan.filter.resolver.RowLevelRangeFilterResolverImpl;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.ColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
@@ -135,7 +137,8 @@ public final class FilterUtil {
    */
   private static FilterExecuter createFilterExecuterTree(
       FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
-      Map<Integer, GenericQueryType> complexDimensionInfoMap) {
+      Map<Integer, GenericQueryType> complexDimensionInfoMap,
+      List<CarbonColumn> minMaxCacheColumns) {
     FilterExecuterType filterExecuterType = filterExpressionResolverTree.getFilterExecuterType();
     if (null != filterExecuterType) {
       switch (filterExecuterType) {
@@ -148,6 +151,11 @@ public final class FilterUtil {
                 filterExpressionResolverTree.getDimColResolvedFilterInfo(),
                 filterExpressionResolverTree.getMsrColResolvedFilterInfo(), segmentProperties);
           }
+          // return true filter expression if filter column min/max is not cached in driver
+          if (checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(filterExpressionResolverTree,
+              segmentProperties, minMaxCacheColumns)) {
+            return new TrueFilterExecutor();
+          }
           return getIncludeFilterExecuter(
               filterExpressionResolverTree.getDimColResolvedFilterInfo(),
               filterExpressionResolverTree.getMsrColResolvedFilterInfo(), segmentProperties);
@@ -158,23 +166,37 @@ public final class FilterUtil {
         case OR:
           return new OrFilterExecuterImpl(
               createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties,
-                  complexDimensionInfoMap),
+                  complexDimensionInfoMap, minMaxCacheColumns),
               createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties,
-                  complexDimensionInfoMap));
+                  complexDimensionInfoMap, minMaxCacheColumns));
         case AND:
           return new AndFilterExecuterImpl(
               createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties,
-                  complexDimensionInfoMap),
+                  complexDimensionInfoMap, minMaxCacheColumns),
               createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties,
-                  complexDimensionInfoMap));
+                  complexDimensionInfoMap, minMaxCacheColumns));
         case ROWLEVEL_LESSTHAN:
         case ROWLEVEL_LESSTHAN_EQUALTO:
         case ROWLEVEL_GREATERTHAN_EQUALTO:
         case ROWLEVEL_GREATERTHAN:
+          // return true filter expression if filter column min/max is not cached in driver
+          RowLevelRangeFilterResolverImpl rowLevelRangeFilterResolver =
+              (RowLevelRangeFilterResolverImpl) filterExpressionResolverTree;
+          if (checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(
+              rowLevelRangeFilterResolver.getDimColEvaluatorInfoList(),
+              rowLevelRangeFilterResolver.getMsrColEvalutorInfoList(), segmentProperties,
+              minMaxCacheColumns)) {
+            return new TrueFilterExecutor();
+          }
           return RowLevelRangeTypeExecuterFactory
               .getRowLevelRangeTypeExecuter(filterExecuterType, filterExpressionResolverTree,
                   segmentProperties);
         case RANGE:
+          // return true filter expression if filter column min/max is not cached in driver
+          if (checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(filterExpressionResolverTree,
+              segmentProperties, minMaxCacheColumns)) {
+            return new TrueFilterExecutor();
+          }
           return new RangeValueFilterExecuterImpl(
               filterExpressionResolverTree.getDimColResolvedFilterInfo(),
               filterExpressionResolverTree.getFilterExpression(),
@@ -253,6 +275,137 @@ public final class FilterUtil {
             msrColResolvedFilterInfo, false);
       }
     }
+  }
+
+  /**
+   * check if current need to be replaced with TrueFilter expression. This will happen in case
+   * filter column min/max is not cached in the driver
+   *
+   * @param dimColEvaluatorInfoList
+   * @param msrColEvaluatorInfoList
+   * @param segmentProperties
+   * @param minMaxCacheColumns
+   * @return
+   */
+  private static boolean checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(
+      List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
+      List<MeasureColumnResolvedFilterInfo> msrColEvaluatorInfoList,
+      SegmentProperties segmentProperties, List<CarbonColumn> minMaxCacheColumns) {
+    boolean replaceCurrentNodeWithTrueFilter = false;
+    ColumnResolvedFilterInfo columnResolvedFilterInfo = null;
+    if (!msrColEvaluatorInfoList.isEmpty()) {
+      columnResolvedFilterInfo = msrColEvaluatorInfoList.get(0);
+      replaceCurrentNodeWithTrueFilter =
+          checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,
+              minMaxCacheColumns, true);
+    } else {
+      columnResolvedFilterInfo = dimColEvaluatorInfoList.get(0);
+      if (!columnResolvedFilterInfo.getDimension().hasEncoding(Encoding.IMPLICIT)) {
+        replaceCurrentNodeWithTrueFilter =
+            checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,
+                minMaxCacheColumns, false);
+      }
+    }
+    return replaceCurrentNodeWithTrueFilter;
+  }
+
+  /**
+   * check if current need to be replaced with TrueFilter expression. This will happen in case
+   * filter column min/max is not cached in the driver
+   *
+   * @param filterExpressionResolverTree
+   * @param segmentProperties
+   * @param minMaxCacheColumns
+   * @return
+   */
+  private static boolean checkIfCurrentNodeToBeReplacedWithTrueFilterExpression(
+      FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
+      List<CarbonColumn> minMaxCacheColumns) {
+    boolean replaceCurrentNodeWithTrueFilter = false;
+    ColumnResolvedFilterInfo columnResolvedFilterInfo = null;
+    if (null != filterExpressionResolverTree.getMsrColResolvedFilterInfo()) {
+      columnResolvedFilterInfo = filterExpressionResolverTree.getMsrColResolvedFilterInfo();
+      replaceCurrentNodeWithTrueFilter =
+          checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,
+              minMaxCacheColumns, true);
+    } else {
+      columnResolvedFilterInfo = filterExpressionResolverTree.getDimColResolvedFilterInfo();
+      if (!columnResolvedFilterInfo.getDimension().hasEncoding(Encoding.IMPLICIT)) {
+        replaceCurrentNodeWithTrueFilter =
+            checkIfFilterColumnIsCachedInDriver(columnResolvedFilterInfo, segmentProperties,
+                minMaxCacheColumns, false);
+      }
+    }
+    return replaceCurrentNodeWithTrueFilter;
+  }
+
+  /**
+   * Method to check whether current node needs to be replaced with true filter to avoid pruning
+   * for case when filter column is not cached in the min/max cached dimension
+   *
+   * @param columnResolvedFilterInfo
+   * @param segmentProperties
+   * @param minMaxCacheColumns
+   * @param isMeasure
+   * @return
+   */
+  private static boolean checkIfFilterColumnIsCachedInDriver(
+      ColumnResolvedFilterInfo columnResolvedFilterInfo, SegmentProperties segmentProperties,
+      List<CarbonColumn> minMaxCacheColumns, boolean isMeasure) {
+    boolean replaceCurrentNodeWithTrueFilter = false;
+    CarbonColumn columnFromCurrentBlock = null;
+    if (isMeasure) {
+      columnFromCurrentBlock = segmentProperties
+          .getMeasureFromCurrentBlock(columnResolvedFilterInfo.getMeasure().getColumnId());
+    } else {
+      columnFromCurrentBlock =
+          segmentProperties.getDimensionFromCurrentBlock(columnResolvedFilterInfo.getDimension());
+    }
+    if (null != columnFromCurrentBlock) {
+      // check for filter dimension in the cached column list
+      if (null != minMaxCacheColumns) {
+        int columnIndexInMinMaxByteArray =
+            getFilterColumnIndexInCachedColumns(minMaxCacheColumns, columnFromCurrentBlock);
+        if (columnIndexInMinMaxByteArray != -1) {
+          columnResolvedFilterInfo.setColumnIndexInMinMaxByteArray(columnIndexInMinMaxByteArray);
+        } else {
+          // will be true only if column caching is enabled and current filter column is not cached
+          replaceCurrentNodeWithTrueFilter = true;
+        }
+      } else {
+        // if columns to be cached are not specified then in that case all columns will be cached
+        // and  then the ordinal of column will be its index in the min/max byte array
+        if (isMeasure) {
+          columnResolvedFilterInfo.setColumnIndexInMinMaxByteArray(
+              segmentProperties.getLastDimensionColOrdinal() + columnFromCurrentBlock.getOrdinal());
+        } else {
+          columnResolvedFilterInfo
+              .setColumnIndexInMinMaxByteArray(columnFromCurrentBlock.getOrdinal());
+        }
+      }
+    }
+    return replaceCurrentNodeWithTrueFilter;
+  }
+
+  /**
+   * Method to check whether the filter dimension exists in the cached dimensions for a table
+   *
+   * @param carbonDimensionsToBeCached
+   * @param filterColumn
+   * @return
+   */
+  private static int getFilterColumnIndexInCachedColumns(
+      List<CarbonColumn> carbonDimensionsToBeCached, CarbonColumn filterColumn) {
+    int columnIndexInMinMaxByteArray = -1;
+    int columnCounter = 0;
+    for (CarbonColumn cachedColumn : carbonDimensionsToBeCached) {
+      if (cachedColumn.getColumnId().equals(filterColumn.getColumnId())) {
+        columnIndexInMinMaxByteArray = columnCounter;
+        break;
+      }
+      columnCounter++;
+    }
+    return columnIndexInMinMaxByteArray;
   }
 
   /**
@@ -1282,8 +1435,23 @@ public final class FilterUtil {
   public static FilterExecuter getFilterExecuterTree(
       FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
       Map<Integer, GenericQueryType> complexDimensionInfoMap) {
+    return getFilterExecuterTree(filterExpressionResolverTree, segmentProperties,
+        complexDimensionInfoMap, null);
+  }
+
+  /**
+   * API will create an filter executer tree based on the filter resolver and minMaxColumns
+   *
+   * @param filterExpressionResolverTree
+   * @param segmentProperties
+   * @return
+   */
+  public static FilterExecuter getFilterExecuterTree(
+      FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
+      Map<Integer, GenericQueryType> complexDimensionInfoMap,
+      List<CarbonColumn> minMaxCacheColumns) {
     return createFilterExecuterTree(filterExpressionResolverTree, segmentProperties,
-        complexDimensionInfoMap);
+        complexDimensionInfoMap, minMaxCacheColumns);
   }
 
   /**
