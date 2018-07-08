@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
@@ -37,8 +38,6 @@ public class MeasureColumnResolvedFilterInfo extends ColumnResolvedFilterInfo
    *
    */
   private static final long serialVersionUID = 4222568289115151561L;
-
-  private int columnIndex = -1;
 
   private int rowIndex = -1;
 
@@ -117,6 +116,10 @@ public class MeasureColumnResolvedFilterInfo extends ColumnResolvedFilterInfo
     return carbonMeasure;
   }
 
+  @Override public CarbonDimension getDimension() {
+    throw new UnsupportedOperationException("Operation not supported");
+  }
+
   public void setMeasureExistsInCurrentSilce(boolean measureExistsInCurrentSilce) {
     isMeasureExistsInCurrentSilce = measureExistsInCurrentSilce;
   }
@@ -148,6 +151,7 @@ public class MeasureColumnResolvedFilterInfo extends ColumnResolvedFilterInfo
     msrColumnResolvedFilterInfo.rowIndex = this.rowIndex;
     msrColumnResolvedFilterInfo.measureResolvedFilter = this.measureResolvedFilter;
     msrColumnResolvedFilterInfo.setMeasureExistsInCurrentSilce(this.isMeasureExistsInCurrentSilce);
+    msrColumnResolvedFilterInfo.columnIndexInMinMaxByteArray = columnIndexInMinMaxByteArray;
     return msrColumnResolvedFilterInfo;
   }
 

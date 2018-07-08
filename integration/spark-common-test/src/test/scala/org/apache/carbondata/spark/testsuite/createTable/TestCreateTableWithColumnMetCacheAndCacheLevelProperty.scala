@@ -17,11 +17,14 @@
 
 package org.apache.carbondata.spark.testsuite.createTable
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 /**
  * test class for validating create table with column_meta_cache and cache_level properties
@@ -33,8 +36,13 @@ class TestCreateTableWithColumnMetCacheAndCacheLevelProperty extends QueryTest w
       key: String,
       expectedValue: String): Boolean = {
     val carbonTable = CarbonEnv.getCarbonTable(Option(dbName), tableName)(sqlContext.sparkSession)
-    val value = carbonTable.getTableInfo.getFactTable.getTableProperties.get(key)
-    expectedValue.equals(value)
+    if (key.equalsIgnoreCase(CarbonCommonConstants.COLUMN_META_CACHE)) {
+      val value = carbonTable.getMinMaxCachedColumnsInCreateOrder.asScala.mkString(",")
+      expectedValue.equals(value)
+    } else {
+      val value = carbonTable.getTableInfo.getFactTable.getTableProperties.get(key)
+      expectedValue.equals(value)
+    }
   }
 
   test("validate column_meta_cache with only empty spaces - COLUMN_META_CACHE_01") {
@@ -109,6 +117,14 @@ class TestCreateTableWithColumnMetCacheAndCacheLevelProperty extends QueryTest w
     sql("create table column_meta_cache(c1 String, c2 String, c3 int, c4 double) stored by 'carbondata'")
     val descResult = sql("describe formatted column_meta_cache")
     checkExistence(descResult, false, "COLUMN_META_CACHE")
+  }
+
+  test("validate column_meta_cache after column drop - COLUMN_META_CACHE_12") {
+    sql("drop table if exists column_meta_cache")
+    sql("create table column_meta_cache(c1 String, c2 String, c3 int, c4 double) stored by 'carbondata' TBLPROPERTIES('column_meta_cache'='c1,c2,c3')")
+    assert(isExpectedValueValid("default", "column_meta_cache", "column_meta_cache", "c1,c2,c3"))
+    sql("alter table column_meta_cache drop columns(c2)")
+    assert(isExpectedValueValid("default", "column_meta_cache", "column_meta_cache", "c1,c3"))
   }
 
   test("validate cache_level with only empty spaces - CACHE_LEVEL_01") {

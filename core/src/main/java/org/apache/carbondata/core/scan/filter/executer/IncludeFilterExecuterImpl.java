@@ -449,20 +449,15 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   public BitSet isScanRequired(byte[][] blkMaxVal, byte[][] blkMinVal) {
     BitSet bitSet = new BitSet(1);
     byte[][] filterValues;
-    int columnIndex = 0;
     int chunkIndex = 0;
     boolean isScanRequired = false;
 
     if (isDimensionPresentInCurrentBlock) {
       filterValues = dimColumnExecuterInfo.getFilterKeys();
-      columnIndex = dimColumnEvaluatorInfo.getColumnIndex();
-      chunkIndex = segmentProperties.getDimensionOrdinalToChunkMapping().get(columnIndex);
+      chunkIndex = dimColumnEvaluatorInfo.getColumnIndexInMinMaxByteArray();
       isScanRequired = isScanRequired(blkMaxVal[chunkIndex], blkMinVal[chunkIndex], filterValues);
     } else if (isMeasurePresentInCurrentBlock) {
-      columnIndex = msrColumnEvaluatorInfo.getColumnIndex();
-      chunkIndex =
-          segmentProperties.getMeasuresOrdinalToChunkMapping().get(columnIndex) +
-              segmentProperties.getLastDimensionColOrdinal();
+      chunkIndex = msrColumnEvaluatorInfo.getColumnIndexInMinMaxByteArray();
       isScanRequired = isScanRequired(blkMaxVal[chunkIndex], blkMinVal[chunkIndex],
           msrColumnExecutorInfo.getFilterKeys(),
           msrColumnEvaluatorInfo.getType());

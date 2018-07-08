@@ -209,7 +209,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
     // add columns configured in column meta cache
     if (null != tblProps.get(CarbonCommonConstants.COLUMN_META_CACHE)) {
       results ++=
-      Seq(("COLUMN_META_CACHE", carbonTable.getCachedColumns(carbonTable.getTableName).asScala
+      Seq(("COLUMN_META_CACHE", carbonTable.getMinMaxCachedColumnsInCreateOrder().asScala
         .map(col => col).mkString(","), ""))
     }
     if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null) {
