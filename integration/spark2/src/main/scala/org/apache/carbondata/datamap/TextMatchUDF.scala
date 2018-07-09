@@ -29,6 +29,18 @@ class TextMatchUDF extends ((String) => Boolean) with Serializable {
 }
 
 @InterfaceAudience.Internal
+class TextMatchMaxDocUDF extends ((String, Int) => Boolean) with Serializable {
+  override def apply(v1: String, v2: Int): Boolean = {
+    v1.length > 0
+  }
+}
+
+@InterfaceAudience.Internal
 case class TextMatch(queryString: String) extends Filter {
+  override def references: Array[String] = null
+}
+
+@InterfaceAudience.Internal
+case class TextMatchLimit(queryString: String, maxDoc: String) extends Filter {
   override def references: Array[String] = null
 }

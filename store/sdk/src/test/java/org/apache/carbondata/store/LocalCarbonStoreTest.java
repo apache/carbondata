@@ -28,9 +28,20 @@ import org.apache.carbondata.sdk.file.Schema;
 import org.apache.carbondata.sdk.file.TestUtil;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 public class LocalCarbonStoreTest {
+  @Before
+  public void cleanFile() {
+    assert (TestUtil.cleanMdtFile());
+  }
+
+  @After
+  public void verifyDMFile() {
+    assert (!TestUtil.verifyMdtFile());
+  }
 
   // TODO: complete this testcase
   // Currently result rows are empty, because SDK is not writing table status file
@@ -45,7 +56,7 @@ public class LocalCarbonStoreTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
 
     CarbonStore store = new LocalCarbonStore();
     Iterator<CarbonRow> rows = store.scan(path, new String[]{"name, age"}, null);

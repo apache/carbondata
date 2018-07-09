@@ -24,7 +24,6 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.expression.BinaryExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
@@ -57,10 +56,8 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
    * node for filter evaluation, so in this instance no implementation is required.
    *
    * @param absoluteTableIdentifier
-   * @param tableProvider
    */
-  @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier,
-      TableProvider tableProvider) {
+  @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
 
   }
 

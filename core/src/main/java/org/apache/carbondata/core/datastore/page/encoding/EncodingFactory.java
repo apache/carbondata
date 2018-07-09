@@ -47,6 +47,7 @@ import static org.apache.carbondata.format.Encoding.ADAPTIVE_FLOATING;
 import static org.apache.carbondata.format.Encoding.ADAPTIVE_INTEGRAL;
 import static org.apache.carbondata.format.Encoding.BOOL_BYTE;
 import static org.apache.carbondata.format.Encoding.DIRECT_COMPRESS;
+import static org.apache.carbondata.format.Encoding.DIRECT_COMPRESS_VARCHAR;
 import static org.apache.carbondata.format.Encoding.RLE_INTEGRAL;
 
 /**
@@ -71,7 +72,7 @@ public abstract class EncodingFactory {
     byte[] encoderMeta = encoderMetas.get(0).array();
     ByteArrayInputStream stream = new ByteArrayInputStream(encoderMeta);
     DataInputStream in = new DataInputStream(stream);
-    if (encoding == DIRECT_COMPRESS) {
+    if (encoding == DIRECT_COMPRESS || encoding == DIRECT_COMPRESS_VARCHAR) {
       ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
       metadata.readFields(in);
       return new DirectCompressCodec(metadata.getStoreDataType()).createDecoder(metadata);
@@ -118,6 +119,9 @@ public abstract class EncodingFactory {
    * Old way of creating decoder, based on algorithm
    */
   public ColumnPageDecoder createDecoderLegacy(ValueEncoderMeta metadata) {
+    if (null == metadata) {
+      throw new RuntimeException("internal error");
+    }
     SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
     TableSpec.ColumnSpec spec =
         TableSpec.ColumnSpec.newInstanceLegacy("legacy", stats.getDataType(), ColumnType.MEASURE);

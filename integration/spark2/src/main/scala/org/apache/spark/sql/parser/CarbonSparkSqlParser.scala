@@ -120,8 +120,8 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
 
 
   def needToConvertToLowerCase(key: String): Boolean = {
-    val noConvertList = Array("LIST_INFO", "RANGE_INFO")
-    !noConvertList.exists(x => x.equalsIgnoreCase(key));
+    val noConvertList = Array("LIST_INFO", "RANGE_INFO", "PATH")
+    !noConvertList.exists(x => x.equalsIgnoreCase(key))
   }
 
   /**
@@ -258,21 +258,22 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
     }
     // validate tblProperties
     val bucketFields = parser.getBucketFields(tableProperties, fields, options)
-    var unManagedTable : Boolean = false
+    var isTransactionalTable : Boolean = true
 
     val tableInfo = if (external) {
       // read table info from schema file in the provided table path
+      // external table also must convert table name to lower case
       val identifier = AbsoluteTableIdentifier.from(
         tablePath.get,
-        CarbonEnv.getDatabaseName(tableIdentifier.database)(sparkSession),
-        tableIdentifier.table)
+        CarbonEnv.getDatabaseName(tableIdentifier.database)(sparkSession).toLowerCase(),
+        tableIdentifier.table.toLowerCase())
       val table = try {
         val schemaPath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath)
         if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath))) {
           if (provider.equalsIgnoreCase("'carbonfile'")) {
             SchemaReader.inferSchema(identifier, true)
           } else {
-            unManagedTable = true
+            isTransactionalTable = false
             SchemaReader.inferSchema(identifier, false)
           }
         }
@@ -304,10 +305,11 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
         tableProperties,
         bucketFields,
         isAlterFlow = false,
+        false,
         tableComment)
       TableNewProcessor(tableModel)
     }
-    tableInfo.setUnManagedTable(unManagedTable)
+    tableInfo.setTransactionalTable(isTransactionalTable)
     selectQuery match {
       case query@Some(q) =>
         CarbonCreateTableAsSelectCommand(

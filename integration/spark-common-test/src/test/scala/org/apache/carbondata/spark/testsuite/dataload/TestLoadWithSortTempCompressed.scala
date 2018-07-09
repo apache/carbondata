@@ -50,9 +50,8 @@ class TestLoadWithSortTempCompressed extends QueryTest
 
 
   override protected def beforeAll(): Unit = {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR,
-      "SNAPPY")
   }
+
   override def afterAll(): Unit = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR,
@@ -84,6 +83,8 @@ class TestLoadWithSortTempCompressed extends QueryTest
 
   test("test data load for simple table with sort temp compressed with snappy" +
        " and off-heap sort enabled") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR,
+      "SNAPPY")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
     testSimpleTable()
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
@@ -92,6 +93,28 @@ class TestLoadWithSortTempCompressed extends QueryTest
 
   test("test data load for simple table with sort temp compressed with snappy" +
        " and off-heap sort disabled") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR,
+      "SNAPPY")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "false")
+    testSimpleTable()
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
+      originOffHeapStatus)
+  }
+
+  test("test data load for simple table with sort temp compressed with zstd" +
+       " and off-heap sort enabled") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR,
+      "ZSTD")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+    testSimpleTable()
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
+      originOffHeapStatus)
+  }
+
+  test("test data load for simple table with sort temp compressed with zstd" +
+       " and off-heap sort disabled") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR,
+      "ZSTD")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "false")
     testSimpleTable()
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
@@ -138,6 +161,8 @@ class TestLoadWithSortTempCompressed extends QueryTest
 
   test("test data load for complex table with sort temp compressed with snappy" +
        " and off-heap sort enabled") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR,
+      "SNAPPY")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
     testComplexTable()
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
@@ -146,6 +171,28 @@ class TestLoadWithSortTempCompressed extends QueryTest
 
   test("test data load for complex table with sort temp compressed with snappy" +
        " and off-heap sort disabled") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR,
+      "SNAPPY")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "false")
+    testComplexTable()
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
+      originOffHeapStatus)
+  }
+
+  test("test data load for complex table with sort temp compressed with zstd" +
+       " and off-heap sort enabled") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR,
+      "ZSTD")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+    testComplexTable()
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
+      originOffHeapStatus)
+  }
+
+  test("test data load for complex table with sort temp compressed with zstd" +
+       " and off-heap sort disabled") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR,
+      "ZSTD")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "false")
     testComplexTable()
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,

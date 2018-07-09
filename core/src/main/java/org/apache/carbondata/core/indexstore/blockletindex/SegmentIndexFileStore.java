@@ -70,9 +70,15 @@ public class SegmentIndexFileStore {
    */
   private Map<String, byte[]> carbonIndexMapWithFullPath;
 
+  /**
+   * Stores the list of index files in a merge file
+   */
+  private Map<String, List<String>> carbonMergeFileToIndexFilesMap;
+
   public SegmentIndexFileStore() {
     carbonIndexMap = new HashMap<>();
     carbonIndexMapWithFullPath = new HashMap<>();
+    carbonMergeFileToIndexFilesMap = new HashMap<>();
   }
 
   /**
@@ -201,6 +207,28 @@ public class SegmentIndexFileStore {
   }
 
   /**
+   * Read all index file names of the segment
+   *
+   * @param segmentPath
+   * @return
+   * @throws IOException
+   */
+  public Map<String, String> getMergeOrIndexFilesFromSegment(String segmentPath)
+      throws IOException {
+    CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(segmentPath);
+    Map<String, String> indexFiles = new HashMap<>();
+    for (int i = 0; i < carbonIndexFiles.length; i++) {
+      if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        indexFiles
+            .put(carbonIndexFiles[i].getAbsolutePath(), carbonIndexFiles[i].getAbsolutePath());
+      } else if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+        indexFiles.put(carbonIndexFiles[i].getAbsolutePath(), null);
+      }
+    }
+    return indexFiles;
+  }
+
+  /**
    * List all the index files inside merge file.
    * @param mergeFile
    * @return
@@ -221,13 +249,14 @@ public class SegmentIndexFileStore {
    * @param mergeFilePath
    * @throws IOException
    */
-  private void readMergeFile(String mergeFilePath) throws IOException {
+  public void readMergeFile(String mergeFilePath) throws IOException {
     ThriftReader thriftReader = new ThriftReader(mergeFilePath);
     try {
       thriftReader.open();
       MergedBlockIndexHeader indexHeader = readMergeBlockIndexHeader(thriftReader);
       MergedBlockIndex mergedBlockIndex = readMergeBlockIndex(thriftReader);
       List<String> file_names = indexHeader.getFile_names();
+      carbonMergeFileToIndexFilesMap.put(mergeFilePath, file_names);
       List<ByteBuffer> fileData = mergedBlockIndex.getFileData();
       CarbonFile mergeFile = FileFactory.getCarbonFile(mergeFilePath);
       assert (file_names.size() == fileData.size());
@@ -253,12 +282,15 @@ public class SegmentIndexFileStore {
     DataInputStream dataInputStream =
         FileFactory.getDataInputStream(indexFilePath, FileFactory.getFileType(indexFilePath));
     byte[] bytes = new byte[(int) indexFile.getSize()];
-    dataInputStream.readFully(bytes);
-    carbonIndexMap.put(indexFile.getName(), bytes);
-    carbonIndexMapWithFullPath.put(
-        indexFile.getParentFile().getAbsolutePath() + CarbonCommonConstants.FILE_SEPARATOR
-            + indexFile.getName(), bytes);
-    dataInputStream.close();
+    try {
+      dataInputStream.readFully(bytes);
+      carbonIndexMap.put(indexFile.getName(), bytes);
+      carbonIndexMapWithFullPath.put(
+          indexFile.getParentFile().getAbsolutePath() + CarbonCommonConstants.FILE_SEPARATOR
+              + indexFile.getName(), bytes);
+    } finally {
+      dataInputStream.close();
+    }
   }
 
   private MergedBlockIndexHeader readMergeBlockIndexHeader(ThriftReader thriftReader)
@@ -291,6 +323,21 @@ public class SegmentIndexFileStore {
   /**
    * List all the index files of the segment.
    *
+   * @param carbonFile directory
+   * @return
+   */
+  public static CarbonFile[] getCarbonIndexFiles(CarbonFile carbonFile) {
+    return carbonFile.listFiles(new CarbonFileFilter() {
+      @Override public boolean accept(CarbonFile file) {
+        return ((file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
+            .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) && file.getSize() > 0);
+      }
+    });
+  }
+
+  /**
+   * List all the index files of the segment.
+   *
    * @param segmentPath
    * @return
    */
@@ -298,8 +345,8 @@ public class SegmentIndexFileStore {
     CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
     return carbonFile.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
-        return file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
-            .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT);
+        return ((file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
+            .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) && file.getSize() > 0);
       }
     });
   }
@@ -427,5 +474,9 @@ public class SegmentIndexFileStore {
         "Time taken to read carbondata file footer to get blocklet info " + blockInfo.getFilePath()
             + " is " + (System.currentTimeMillis() - startTime));
     return carbondataFileFooter.getBlockletList();
+  }
+
+  public Map<String, List<String>> getCarbonMergeFileToIndexFilesMap() {
+    return carbonMergeFileToIndexFilesMap;
   }
 }

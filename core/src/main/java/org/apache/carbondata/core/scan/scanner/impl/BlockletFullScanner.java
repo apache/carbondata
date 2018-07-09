@@ -61,7 +61,8 @@ public class BlockletFullScanner implements BlockletScanner {
       RawBlockletColumnChunks rawBlockletColumnChunks)
       throws IOException, FilterUnsupportedException {
     long startTime = System.currentTimeMillis();
-    BlockletScannedResult scannedResult = new NonFilterQueryScannedResult(blockExecutionInfo);
+    BlockletScannedResult scannedResult =
+        new NonFilterQueryScannedResult(blockExecutionInfo, queryStatisticsModel);
     QueryStatistic totalBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM);
     totalBlockletStatistic.addCountStatistic(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM,
@@ -81,9 +82,9 @@ public class BlockletFullScanner implements BlockletScanner {
         .get(QueryStatisticsConstants.TOTAL_PAGE_SCANNED);
     totalPagesScanned.addCountStatistic(QueryStatisticsConstants.TOTAL_PAGE_SCANNED,
         totalPagesScanned.getCount() + rawBlockletColumnChunks.getDataBlock().numberOfPages());
-    scannedResult.setBlockletId(
-        blockExecutionInfo.getBlockIdString() + CarbonCommonConstants.FILE_SEPARATOR +
-            rawBlockletColumnChunks.getDataBlock().blockletIndex());
+    String blockletId = blockExecutionInfo.getBlockIdString() + CarbonCommonConstants.FILE_SEPARATOR
+        + rawBlockletColumnChunks.getDataBlock().blockletIndex();
+    scannedResult.setBlockletId(blockletId);
     if (!blockExecutionInfo.isPrefetchBlocklet()) {
       readBlocklet(rawBlockletColumnChunks);
     }
@@ -101,18 +102,6 @@ public class BlockletFullScanner implements BlockletScanner {
     scannedResult.setMeasureColumnPages(measureColumnPages);
     scannedResult.setDimRawColumnChunks(dimensionRawColumnChunks);
     scannedResult.setMsrRawColumnChunks(measureRawColumnChunks);
-    if (blockExecutionInfo.isPrefetchBlocklet()) {
-      for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
-        if (dimensionRawColumnChunks[i] != null) {
-          dimensionColumnDataChunks[i] = dimensionRawColumnChunks[i].decodeAllColumnPages();
-        }
-      }
-      for (int i = 0; i < measureRawColumnChunks.length; i++) {
-        if (measureRawColumnChunks[i] != null) {
-          measureColumnPages[i] = measureRawColumnChunks[i].decodeAllColumnPages();
-        }
-      }
-    }
     int[] numberOfRows = null;
     if (blockExecutionInfo.getAllSelectedDimensionColumnIndexRange().length > 0) {
       for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
@@ -145,9 +134,7 @@ public class BlockletFullScanner implements BlockletScanner {
       }
     }
     scannedResult.setPageFilteredRowCount(numberOfRows);
-    if (!blockExecutionInfo.isPrefetchBlocklet()) {
-      scannedResult.fillDataChunks();
-    }
+    scannedResult.fillDataChunks();
     // adding statistics for carbon scan time
     QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);
@@ -177,7 +164,7 @@ public class BlockletFullScanner implements BlockletScanner {
 
   BlockletScannedResult createEmptyResult() {
     if (emptyResult == null) {
-      emptyResult = new NonFilterQueryScannedResult(blockExecutionInfo);
+      emptyResult = new NonFilterQueryScannedResult(blockExecutionInfo, queryStatisticsModel);
       emptyResult.setPageFilteredRowCount(new int[0]);
       emptyResult.setPageFilteredRowId(new int[0][]);
     }

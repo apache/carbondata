@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.metadata.datatype;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class StructField implements Serializable {
 
@@ -27,9 +28,19 @@ public class StructField implements Serializable {
 
   private DataType dataType;
 
+  private List<StructField> children;
+
   public StructField(String fieldName, DataType dataType) {
     this.fieldName = fieldName;
     this.dataType = dataType;
+    this.children = null;
+  }
+
+
+  public StructField(String fieldName, DataType dataType, List<StructField> children) {
+    this.fieldName = fieldName;
+    this.dataType = dataType;
+    this.children = children;
   }
 
   public DataType getDataType() {
@@ -38,5 +49,49 @@ public class StructField implements Serializable {
 
   public String getFieldName() {
     return fieldName;
+  }
+
+  public List<StructField> getChildren() {
+    return children;
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + fieldName.hashCode();
+    result = prime * result + dataType.hashCode();
+    result = prime * result + ((children == null) ? 0 : children.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    StructField other = (StructField) obj;
+    if (!this.fieldName.equalsIgnoreCase(other.fieldName)) {
+      return false;
+    }
+    if (!this.dataType.equals(other.dataType)) {
+      return false;
+    }
+    if (children == null) {
+      if (other.children != null) {
+        return false;
+      }
+    } else if (other.children == null) {
+      return false;
+    } else if (!children.equals(other.children)) {
+      return false;
+    }
+    return true;
   }
 }

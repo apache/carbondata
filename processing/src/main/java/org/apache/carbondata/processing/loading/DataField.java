@@ -69,5 +69,6 @@ public class DataField implements Serializable {
 
   public void setUseActualData(boolean useActualData) {
     this.useActualData = useActualData;
+    this.column.setUseActualData(useActualData);
   }
 }

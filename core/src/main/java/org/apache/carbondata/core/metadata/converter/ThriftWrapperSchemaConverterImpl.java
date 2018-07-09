@@ -37,6 +37,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * Thrift schema to carbon schema converter and vice versa
@@ -111,6 +112,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return org.apache.carbondata.format.Encoding.RLE;
       case INVERTED_INDEX:
         return org.apache.carbondata.format.Encoding.INVERTED_INDEX;
+      case DIRECT_COMPRESS_VARCHAR:
+        return org.apache.carbondata.format.Encoding.DIRECT_COMPRESS_VARCHAR;
       case BIT_PACKED:
         return org.apache.carbondata.format.Encoding.BIT_PACKED;
       case DIRECT_DICTIONARY:
@@ -153,6 +156,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       return org.apache.carbondata.format.DataType.ARRAY;
     } else if (DataTypes.isStructType(dataType)) {
       return org.apache.carbondata.format.DataType.STRUCT;
+    } else if (dataType.getId() == DataTypes.VARCHAR.getId()) {
+      return org.apache.carbondata.format.DataType.VARCHAR;
     } else {
       return org.apache.carbondata.format.DataType.STRING;
     }
@@ -269,7 +274,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       thriftColumnSchema.add(fromWrapperToExternalColumnSchema(wrapperColumnSchema));
     }
     org.apache.carbondata.format.SchemaEvolution schemaEvolution =
-        fromWrapperToExternalSchemaEvolution(wrapperTableSchema.getSchemaEvalution());
+        fromWrapperToExternalSchemaEvolution(wrapperTableSchema.getSchemaEvolution());
     org.apache.carbondata.format.TableSchema externalTableSchema =
         new org.apache.carbondata.format.TableSchema(
             wrapperTableSchema.getTableId(), thriftColumnSchema, schemaEvolution);
@@ -446,6 +451,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return Encoding.RLE;
       case INVERTED_INDEX:
         return Encoding.INVERTED_INDEX;
+      case DIRECT_COMPRESS_VARCHAR:
+        return Encoding.DIRECT_COMPRESS_VARCHAR;
       case BIT_PACKED:
         return Encoding.BIT_PACKED;
       case DIRECT_DICTIONARY:
@@ -489,6 +496,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return DataTypes.createDefaultArrayType();
       case STRUCT:
         return DataTypes.createDefaultStructType();
+      case VARCHAR:
+        return DataTypes.VARCHAR;
       default:
         return DataTypes.STRING;
     }
@@ -535,7 +544,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         externalColumnSchema.getParentColumnTableRelations();
     if (null != parentColumnTableRelation) {
       wrapperColumnSchema.setParentColumnTableRelations(
-          fromExtrenalToWrapperParentTableColumnRelations(parentColumnTableRelation));
+          fromExternalToWrapperParentTableColumnRelations(parentColumnTableRelation));
     }
     return wrapperColumnSchema;
   }
@@ -594,12 +603,18 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         .getTable_columns()) {
       listOfColumns.add(fromExternalToWrapperColumnSchema(externalColumnSchema));
     }
+    if (null != externalTableSchema.tableProperties) {
+      CarbonUtil
+          .setLocalDictColumnsToWrapperSchema(listOfColumns, externalTableSchema.tableProperties,
+              externalTableSchema.tableProperties
+                  .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE));
+    }
     wrapperTableSchema.setListOfColumns(listOfColumns);
-    wrapperTableSchema.setSchemaEvalution(
+    wrapperTableSchema.setSchemaEvolution(
         fromExternalToWrapperSchemaEvolution(externalTableSchema.getSchema_evolution()));
     if (externalTableSchema.isSetBucketingInfo()) {
       wrapperTableSchema.setBucketingInfo(
-          fromExternalToWarpperBucketingInfo(externalTableSchema.bucketingInfo));
+          fromExternalToWrapperBucketingInfo(externalTableSchema.bucketingInfo));
     }
     if (externalTableSchema.getPartitionInfo() != null) {
       wrapperTableSchema.setPartitionInfo(
@@ -608,7 +623,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     return wrapperTableSchema;
   }
 
-  private BucketingInfo fromExternalToWarpperBucketingInfo(
+  private BucketingInfo fromExternalToWrapperBucketingInfo(
       org.apache.carbondata.format.BucketingInfo externalBucketInfo) {
     List<ColumnSchema> listOfColumns = new ArrayList<ColumnSchema>();
     for (org.apache.carbondata.format.ColumnSchema externalColumnSchema :
@@ -661,7 +676,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     return childSchema;
   }
 
-  private List<ParentColumnTableRelation> fromExtrenalToWrapperParentTableColumnRelations(
+  private List<ParentColumnTableRelation> fromExternalToWrapperParentTableColumnRelations(
       List<org.apache.carbondata.format.ParentColumnTableRelation> thirftParentColumnRelation) {
     List<ParentColumnTableRelation> parentColumnTableRelationList = new ArrayList<>();
     for (org.apache.carbondata.format.ParentColumnTableRelation carbonTableRelation :

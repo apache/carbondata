@@ -16,29 +16,34 @@
  */
 package org.apache.carbondata.processing.store.writer.v3;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.ExecutorService;
 
+import org.apache.carbondata.core.datastore.blocklet.EncodedBlocklet;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.processing.store.TablePage;
 
 public class BlockletDataHolder {
-  private List<EncodedTablePage> encodedTablePage;
+
+  /**
+   * current data size
+   */
   private long currentSize;
 
-  public BlockletDataHolder() {
-    this.encodedTablePage = new ArrayList<>();
+  private EncodedBlocklet encodedBlocklet;
+
+  public BlockletDataHolder(ExecutorService fallbackpool) {
+    encodedBlocklet = new EncodedBlocklet(fallbackpool);
   }
 
   public void clear() {
-    encodedTablePage.clear();
     currentSize = 0;
+    encodedBlocklet.clear();
   }
 
   public void addPage(TablePage rawTablePage) {
     EncodedTablePage encodedTablePage = rawTablePage.getEncodedTablePage();
-    this.encodedTablePage.add(encodedTablePage);
     currentSize += encodedTablePage.getEncodedSize();
+    encodedBlocklet.addEncodedTablePage(encodedTablePage);
   }
 
   public long getSize() {
@@ -47,19 +52,14 @@ public class BlockletDataHolder {
   }
 
   public int getNumberOfPagesAdded() {
-    return encodedTablePage.size();
+    return encodedBlocklet.getNumberOfPages();
   }
 
   public int getTotalRows() {
-    int rows = 0;
-    for (EncodedTablePage nh : encodedTablePage) {
-      rows += nh.getPageSize();
-    }
-    return rows;
+    return encodedBlocklet.getBlockletSize();
   }
 
-  public List<EncodedTablePage> getEncodedTablePages() {
-    return encodedTablePage;
+  public EncodedBlocklet getEncodedBlocklet() {
+    return encodedBlocklet;
   }
-
 }

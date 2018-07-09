@@ -17,7 +17,6 @@
 package org.apache.carbondata.processing.loading.steps;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -75,7 +74,8 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   @Override public Iterator<CarbonRowBatch>[] execute() {
     int batchSize = CarbonProperties.getInstance().getBatchSize();
-    List<CarbonIterator<Object[]>>[] readerIterators = partitionInputReaderIterators();
+    List<CarbonIterator<Object[]>>[] readerIterators =
+        CarbonDataProcessorUtil.partitionInputReaderIterators(inputIterators);
     Iterator<CarbonRowBatch>[] outIterators = new Iterator[readerIterators.length];
     for (int i = 0; i < outIterators.length; i++) {
       outIterators[i] =
@@ -83,28 +83,6 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
               configuration.isPreFetch(), executorService, rowCounter, isRawDataRequired);
     }
     return outIterators;
-  }
-
-  /**
-   * Partition input iterators equally as per the number of threads.
-   * @return
-   */
-  private List<CarbonIterator<Object[]>>[] partitionInputReaderIterators() {
-    // Get the number of cores configured in property.
-    int numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
-    // Get the minimum of number of cores and iterators size to get the number of parallel threads
-    // to be launched.
-    int parallelThreadNumber = Math.min(inputIterators.length, numberOfCores);
-
-    List<CarbonIterator<Object[]>>[] iterators = new List[parallelThreadNumber];
-    for (int i = 0; i < parallelThreadNumber; i++) {
-      iterators[i] = new ArrayList<>();
-    }
-    // Equally partition the iterators as per number of threads
-    for (int i = 0; i < inputIterators.length; i++) {
-      iterators[i % parallelThreadNumber].add(inputIterators[i]);
-    }
-    return iterators;
   }
 
   @Override protected CarbonRow processRow(CarbonRow row) {
@@ -129,7 +107,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
    * This iterator wraps the list of iterators and it starts iterating the each
    * iterator of the list one by one. It also parse the data while iterating it.
    */
-  private static class InputProcessorIterator extends CarbonIterator<CarbonRowBatch> {
+  public static class InputProcessorIterator extends CarbonIterator<CarbonRowBatch> {
 
     private List<CarbonIterator<Object[]>> inputIterators;
 

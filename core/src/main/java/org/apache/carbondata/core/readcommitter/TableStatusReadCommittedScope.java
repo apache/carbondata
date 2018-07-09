@@ -25,7 +25,9 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
+import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -35,12 +37,20 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 @InterfaceAudience.Internal
 @InterfaceStability.Stable
 public class TableStatusReadCommittedScope implements ReadCommittedScope {
+
   private LoadMetadataDetails[] loadMetadataDetails;
+
   private AbsoluteTableIdentifier identifier;
 
   public TableStatusReadCommittedScope(AbsoluteTableIdentifier identifier) throws IOException {
     this.identifier = identifier;
     takeCarbonIndexFileSnapShot();
+  }
+
+  public TableStatusReadCommittedScope(AbsoluteTableIdentifier identifier,
+      LoadMetadataDetails[] loadMetadataDetails) throws IOException {
+    this.identifier = identifier;
+    this.loadMetadataDetails = loadMetadataDetails;
   }
 
   @Override public LoadMetadataDetails[] getSegmentList() throws IOException {
@@ -60,13 +70,24 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
     if (segment.getSegmentFileName() == null) {
       String path =
           CarbonTablePath.getSegmentPath(identifier.getTablePath(), segment.getSegmentNo());
-      indexFiles = new SegmentIndexFileStore().getIndexFilesFromSegment(path);
+      indexFiles = new SegmentIndexFileStore().getMergeOrIndexFilesFromSegment(path);
     } else {
       SegmentFileStore fileStore =
           new SegmentFileStore(identifier.getTablePath(), segment.getSegmentFileName());
-      indexFiles = fileStore.getIndexFiles();
+      indexFiles = fileStore.getIndexOrMergeFiles();
     }
     return indexFiles;
+  }
+
+  public SegmentRefreshInfo getCommittedSegmentRefreshInfo(Segment segment, UpdateVO updateVo)
+      throws IOException {
+    SegmentRefreshInfo segmentRefreshInfo;
+    if (updateVo != null) {
+      segmentRefreshInfo = new SegmentRefreshInfo(updateVo.getCreatedOrUpdatedTimeStamp(), 0);
+    } else {
+      segmentRefreshInfo = new SegmentRefreshInfo(0L, 0);
+    }
+    return segmentRefreshInfo;
   }
 
   @Override public void takeCarbonIndexFileSnapShot() throws IOException {

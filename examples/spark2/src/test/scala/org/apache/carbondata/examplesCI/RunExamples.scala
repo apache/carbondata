@@ -105,4 +105,12 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
   test("TimeSeriesPreAggregateTableExample") {
     TimeSeriesPreAggregateTableExample.exampleBody(spark)
   }
+
+  test("LuceneDataMapExample") {
+    LuceneDataMapExample.exampleBody(spark)
+  }
+
+  test("ExternalTableExample") {
+    ExternalTableExample.exampleBody(spark)
+  }
 }

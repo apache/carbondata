@@ -18,23 +18,26 @@
 
 package org.apache.carbondata.cluster.sdv.generated
 
+import java.util.TimeZone
+
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.TIMESERIES
 import org.apache.carbondata.core.util.CarbonProperties
 
-class TimeSeriesPreAggregateTestCase extends QueryTest with BeforeAndAfterEach {
+class TimeSeriesPreAggregateTestCase extends QueryTest with BeforeAndAfterAll {
 
   val timeSeries = TIMESERIES.toString
-
+  val timeZonePre = TimeZone.getDefault
   val csvPath = s"$resourcesPath/Data/timeseriestest.csv"
-  override def beforeEach: Unit = {
+  override def beforeAll: Unit = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    TimeZone.setDefault(TimeZone.getTimeZone(System.getProperty("user.timezone")))
     sql("drop table if exists mainTable")
     sql(
       "CREATE TABLE mainTable(mytime timestamp, name string, age int) STORED BY 'org.apache" +
@@ -152,7 +155,6 @@ class TimeSeriesPreAggregateTestCase extends QueryTest with BeforeAndAfterEach {
 
   //test case for compaction
   test("TimeSeriesPreAggregateTestCase_007") {
-    beforeEach
     sql(s"LOAD DATA LOCAL INPATH '$csvPath' into table mainTable")
     sql(s"LOAD DATA LOCAL INPATH '$csvPath' into table mainTable")
     sql(s"LOAD DATA LOCAL INPATH '$csvPath' into table mainTable")
@@ -182,7 +184,8 @@ class TimeSeriesPreAggregateTestCase extends QueryTest with BeforeAndAfterEach {
     segmentNamesyear should equal(Array("3", "2", "1", "0.1", "0"))
   }
 
-  override def afterEach: Unit = {
+  override def afterAll: Unit = {
+    TimeZone.setDefault(timeZonePre)
     sql("drop table if exists mainTable")
 
   }

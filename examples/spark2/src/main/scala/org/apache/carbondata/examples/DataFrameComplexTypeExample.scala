@@ -22,7 +22,18 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.carbondata.examples.util.ExampleUtils
 
 case class StructElement(school: Array[String], age: Int)
+
+case class StructElement1(school: Array[String], school1: Array[String], age: Int)
+
 case class ComplexTypeData(id: Int, name: String, city: String, salary: Float, file: StructElement)
+
+case class ComplexTypeData1(id: Int,
+    name: String,
+    city: String,
+    salary: Float,
+    file: StructElement1)
+
+case class ComplexTypeData2(id: Int, name: String, city: String, salary: Float, file: Array[String])
 
 // scalastyle:off println
 object DataFrameComplexTypeExample {
@@ -34,16 +45,21 @@ object DataFrameComplexTypeExample {
     spark.close()
   }
 
-  def exampleBody(spark : SparkSession): Unit = {
-    val complexTableName = s"complex_type_table"
+  def exampleBody(spark: SparkSession): Unit = {
+    val complexTypeDictionaryTableName = s"complex_type_dictionary_table"
+    val complexTypeNoDictionaryTableName = s"complex_type_noDictionary_table"
+    val complexTypeNoDictionaryTableNameArray = s"complex_type_noDictionary_array_table"
 
     import spark.implicits._
 
     // drop table if exists previously
-    spark.sql(s"DROP TABLE IF EXISTS ${ complexTableName }")
+    spark.sql(s"DROP TABLE IF EXISTS ${ complexTypeDictionaryTableName }")
+    spark.sql(s"DROP TABLE IF EXISTS ${ complexTypeNoDictionaryTableName }")
+    spark.sql(s"DROP TABLE IF EXISTS ${ complexTypeNoDictionaryTableNameArray }")
+
     spark.sql(
       s"""
-         | CREATE TABLE ${ complexTableName }(
+         | CREATE TABLE ${ complexTypeDictionaryTableName }(
          | id INT,
          | name STRING,
          | city STRING,
@@ -56,6 +72,37 @@ object DataFrameComplexTypeExample {
          | 'dictionary_include'='city')
          | """.stripMargin)
 
+    spark.sql(
+      s"""
+         | CREATE TABLE ${ complexTypeNoDictionaryTableNameArray }(
+         | id INT,
+         | name STRING,
+         | city STRING,
+         | salary FLOAT,
+         | file array<string>
+         | )
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES(
+         | 'sort_columns'='name',
+         | 'dictionary_include'='city')
+         | """.stripMargin)
+
+
+    spark.sql(
+      s"""
+         | CREATE TABLE ${ complexTypeNoDictionaryTableName }(
+         | id INT,
+         | name STRING,
+         | city STRING,
+         | salary FLOAT,
+         | file struct<school:array<string>, school1:array<string>, age:int>
+         | )
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES(
+         | 'sort_columns'='name')
+         | """.stripMargin)
+
+
     val sc = spark.sparkContext
     // generate data
     val df = sc.parallelize(Seq(
@@ -66,30 +113,108 @@ object DataFrameComplexTypeExample {
       ComplexTypeData(3, "index_3", "city_3", 30000.0f,
         StructElement(Array("struct_31", "struct_32"), 30))
     )).toDF
+
+    // generate data
+    val df2 = sc.parallelize(Seq(
+      ComplexTypeData2(1, "index_1", "city_1", 10000.0f, Array("struct_11", "struct_12")),
+      ComplexTypeData2(2, "index_2", "city_2", 20000.0f, Array("struct_21", "struct_22")),
+      ComplexTypeData2(3, "index_3", "city_3", 30000.0f, Array("struct_31", "struct_32"))
+    )).toDF
+
+    // generate data
+    val df1 = sc.parallelize(Seq(
+      ComplexTypeData1(1, "index_1", "city_1", 10000.0f,
+        StructElement1(Array("struct_11", "struct_12"), Array("struct_11", "struct_12"), 10)),
+      ComplexTypeData1(2, "index_2", "city_2", 20000.0f,
+        StructElement1(Array("struct_21", "struct_22"), Array("struct_11", "struct_12"), 20)),
+      ComplexTypeData1(3, "index_3", "city_3", 30000.0f,
+        StructElement1(Array("struct_31", "struct_32"), Array("struct_11", "struct_12"), 30))
+    )).toDF
+
+
     df.printSchema()
     df.write
       .format("carbondata")
-      .option("tableName", complexTableName)
+      .option("tableName", complexTypeDictionaryTableName)
       .mode(SaveMode.Append)
       .save()
 
-    spark.sql(s"select count(*) from ${ complexTableName }").show(100, truncate = false)
+    df1.printSchema()
+    df1.write
+      .format("carbondata")
+      .option("tableName", complexTypeNoDictionaryTableName)
+      .mode(SaveMode.Append)
+      .save()
 
-    spark.sql(s"select * from ${ complexTableName } order by id desc").show(300, truncate = false)
+
+    df2.printSchema()
+    df2.write
+      .format("carbondata")
+      .option("tableName", complexTypeNoDictionaryTableNameArray)
+      .mode(SaveMode.Append)
+      .save()
+
+
+    spark.sql(s"select count(*) from ${ complexTypeDictionaryTableName }")
+      .show(100, truncate = false)
+
+    spark.sql(s"select * from ${ complexTypeDictionaryTableName } order by id desc")
+      .show(300, truncate = false)
 
     spark.sql(s"select * " +
-              s"from ${ complexTableName } " +
+              s"from ${ complexTypeDictionaryTableName } " +
               s"where id = 100000001 or id = 1 limit 100").show(100, truncate = false)
 
     spark.sql(s"select * " +
-              s"from ${ complexTableName } " +
+              s"from ${ complexTypeDictionaryTableName } " +
               s"where id > 10 limit 100").show(100, truncate = false)
 
     // show segments
-    spark.sql(s"SHOW SEGMENTS FOR TABLE ${complexTableName}").show(false)
+    spark.sql(s"SHOW SEGMENTS FOR TABLE ${ complexTypeDictionaryTableName }").show(false)
 
     // drop table
-    spark.sql(s"DROP TABLE IF EXISTS ${ complexTableName }")
+    spark.sql(s"DROP TABLE IF EXISTS ${ complexTypeDictionaryTableName }")
+
+
+    spark.sql(s"select count(*) from ${ complexTypeNoDictionaryTableName }")
+      .show(100, truncate = false)
+
+    spark.sql(s"select * from ${ complexTypeNoDictionaryTableName } order by id desc")
+      .show(300, truncate = false)
+
+    spark.sql(s"select * " +
+              s"from ${ complexTypeNoDictionaryTableName } " +
+              s"where id = 100000001 or id = 1 limit 100").show(100, truncate = false)
+
+    spark.sql(s"select * " +
+              s"from ${ complexTypeNoDictionaryTableName } " +
+              s"where id > 10 limit 100").show(100, truncate = false)
+
+    // show segments
+    spark.sql(s"SHOW SEGMENTS FOR TABLE ${ complexTypeNoDictionaryTableName }").show(false)
+
+    // drop table
+    spark.sql(s"DROP TABLE IF EXISTS ${ complexTypeNoDictionaryTableName }")
+
+    spark.sql(s"select count(*) from ${ complexTypeNoDictionaryTableNameArray }")
+      .show(100, truncate = false)
+
+    spark.sql(s"select * from ${ complexTypeNoDictionaryTableNameArray } order by id desc")
+      .show(300, truncate = false)
+
+    spark.sql(s"select * " +
+              s"from ${ complexTypeNoDictionaryTableNameArray } " +
+              s"where id = 100000001 or id = 1 limit 100").show(100, truncate = false)
+
+    spark.sql(s"select * " +
+              s"from ${ complexTypeNoDictionaryTableNameArray } " +
+              s"where id > 10 limit 100").show(100, truncate = false)
+
+    // show segments
+    spark.sql(s"SHOW SEGMENTS FOR TABLE ${ complexTypeNoDictionaryTableNameArray }").show(false)
+
+    // drop table
+    spark.sql(s"DROP TABLE IF EXISTS ${ complexTypeNoDictionaryTableNameArray }")
   }
 }
 // scalastyle:on println

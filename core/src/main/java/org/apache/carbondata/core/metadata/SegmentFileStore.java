@@ -93,7 +93,7 @@ public class SegmentFileStore {
     String writePath = CarbonTablePath.getSegmentFilesLocation(tablePath) + "/" + tempFolderLoc;
     CarbonFile carbonFile = FileFactory.getCarbonFile(writePath);
     if (!carbonFile.exists()) {
-      carbonFile.mkdirs(writePath, FileFactory.getFileType(writePath));
+      carbonFile.mkdirs(writePath);
     }
     CarbonFile tempFolder =
         FileFactory.getCarbonFile(location + CarbonCommonConstants.FILE_SEPARATOR + tempFolderLoc);
@@ -140,18 +140,22 @@ public class SegmentFileStore {
 
   /**
    * Write segment file to the metadata folder of the table
-   * @param tablePath table path
+   *
+   * @param carbonTable CarbonTable
    * @param segmentId segment id
-   * @param UUID a UUID string used to construct the segment file name
+   * @param UUID      a UUID string used to construct the segment file name
    * @return segment file name
    */
-  public static String writeSegmentFile(String tablePath, String segmentId, String UUID)
+  public static String writeSegmentFile(CarbonTable carbonTable, String segmentId, String UUID)
       throws IOException {
+    String tablePath = carbonTable.getTablePath();
+    boolean supportFlatFolder = carbonTable.isSupportFlatFolder();
     String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
     CarbonFile segmentFolder = FileFactory.getCarbonFile(segmentPath);
     CarbonFile[] indexFiles = segmentFolder.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
-        return file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT);
+        return (file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
+            .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT));
       }
     });
     if (indexFiles != null && indexFiles.length > 0) {
@@ -160,21 +164,47 @@ public class SegmentFileStore {
       folderDetails.setRelative(true);
       folderDetails.setStatus(SegmentStatus.SUCCESS.getMessage());
       for (CarbonFile file : indexFiles) {
-        folderDetails.getFiles().add(file.getName());
+        if (file.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+          folderDetails.setMergeFileName(file.getName());
+        } else {
+          folderDetails.getFiles().add(file.getName());
+        }
       }
-      String segmentRelativePath = segmentPath.substring(tablePath.length(), segmentPath.length());
+      String segmentRelativePath = "/";
+      if (!supportFlatFolder) {
+        segmentRelativePath = segmentPath.substring(tablePath.length(), segmentPath.length());
+      }
       segmentFile.addPath(segmentRelativePath, folderDetails);
-      String segmentFileFolder =  CarbonTablePath.getSegmentFilesLocation(tablePath);
+      String segmentFileFolder = CarbonTablePath.getSegmentFilesLocation(tablePath);
       CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFileFolder);
       if (!carbonFile.exists()) {
-        carbonFile.mkdirs(segmentFileFolder, FileFactory.getFileType(segmentFileFolder));
+        carbonFile.mkdirs(segmentFileFolder);
       }
       String segmentFileName = genSegmentFileName(segmentId, UUID) + CarbonTablePath.SEGMENT_EXT;
       // write segment info to new file.
       writeSegmentFile(segmentFile, segmentFileFolder + File.separator + segmentFileName);
+
+      // Move all files to table path from segment folder.
+      if (supportFlatFolder) {
+        moveFromTempFolder(segmentPath, tablePath);
+      }
+
       return segmentFileName;
     }
     return null;
+  }
+
+  /**
+   * Move the loaded data from source folder to destination folder.
+   */
+  private static void moveFromTempFolder(String source, String dest) {
+
+    CarbonFile oldFolder = FileFactory.getCarbonFile(source);
+    CarbonFile[] oldFiles = oldFolder.listFiles();
+    for (CarbonFile file : oldFiles) {
+      file.renameForce(dest + CarbonCommonConstants.FILE_SEPARATOR + file.getName());
+    }
+    oldFolder.delete();
   }
 
   /**
@@ -213,24 +243,35 @@ public class SegmentFileStore {
       throws IOException {
     CarbonFile[] segmentFiles = getSegmentFiles(readPath);
     if (segmentFiles != null && segmentFiles.length > 0) {
-      SegmentFile segmentFile = null;
-      for (CarbonFile file : segmentFiles) {
-        SegmentFile localSegmentFile = readSegmentFile(file.getAbsolutePath());
-        if (segmentFile == null && localSegmentFile != null) {
-          segmentFile = localSegmentFile;
-        }
-        if (localSegmentFile != null) {
-          segmentFile = segmentFile.merge(localSegmentFile);
-        }
-      }
-      if (segmentFile != null) {
-        String path = writePath + "/" + mergeFileName + CarbonTablePath.SEGMENT_EXT;
-        writeSegmentFile(segmentFile, path);
-        FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(readPath));
-      }
+      SegmentFile segmentFile = mergeSegmentFiles(mergeFileName, writePath, segmentFiles);
+      FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(readPath));
       return segmentFile;
     }
     return null;
+  }
+
+  public static SegmentFile mergeSegmentFiles(String mergeFileName, String writePath,
+      CarbonFile[] segmentFiles) throws IOException {
+    SegmentFile segmentFile = null;
+    for (CarbonFile file : segmentFiles) {
+      SegmentFile localSegmentFile = readSegmentFile(file.getAbsolutePath());
+      if (segmentFile == null && localSegmentFile != null) {
+        segmentFile = localSegmentFile;
+      }
+      if (localSegmentFile != null) {
+        segmentFile = segmentFile.merge(localSegmentFile);
+      }
+    }
+    if (segmentFile != null) {
+      String path = writePath + "/" + mergeFileName + CarbonTablePath.SEGMENT_EXT;
+      writeSegmentFile(segmentFile, path);
+    }
+    return segmentFile;
+  }
+
+  public static String getSegmentFilePath(String tablePath, String segmentFileName) {
+    return CarbonTablePath.getSegmentFilesLocation(tablePath) +
+        CarbonCommonConstants.FILE_SEPARATOR + segmentFileName;
   }
 
   /**
@@ -239,13 +280,16 @@ public class SegmentFileStore {
    * @return boolean which determines whether status update is done or not.
    * @throws IOException
    */
-  public static boolean updateSegmentFile(String tablePath, String segmentId, String segmentFile)
-      throws IOException {
+  public static boolean updateSegmentFile(String tablePath, String segmentId, String segmentFile,
+      String tableId) throws IOException {
     boolean status = false;
     String tableStatusPath = CarbonTablePath.getTableStatusFilePath(tablePath);
+    if (!FileFactory.isFileExist(tableStatusPath)) {
+      return status;
+    }
     String metadataPath = CarbonTablePath.getMetadataPath(tablePath);
     AbsoluteTableIdentifier absoluteTableIdentifier =
-        AbsoluteTableIdentifier.from(tablePath, null, null);
+        AbsoluteTableIdentifier.from(tablePath, null, null, tableId);
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     int retryCount = CarbonLockUtil
@@ -492,6 +536,36 @@ public class SegmentFileStore {
   }
 
   /**
+   * Gets all index files from this segment
+   * @return
+   */
+  public Map<String, String> getIndexOrMergeFiles() {
+    Map<String, String> indexFiles = new HashMap<>();
+    if (segmentFile != null) {
+      for (Map.Entry<String, FolderDetails> entry : getLocationMap().entrySet()) {
+        String location = entry.getKey();
+        if (entry.getValue().isRelative) {
+          location = tablePath + location;
+        }
+        if (entry.getValue().status.equals(SegmentStatus.SUCCESS.getMessage())) {
+          String mergeFileName = entry.getValue().getMergeFileName();
+          if (null != mergeFileName) {
+            indexFiles.put(location + CarbonCommonConstants.FILE_SEPARATOR + mergeFileName,
+                entry.getValue().mergeFileName);
+          }
+          Set<String> files = entry.getValue().getFiles();
+          if (null != files && !files.isEmpty()) {
+            for (String indexFile : files) {
+              indexFiles.put(location + CarbonCommonConstants.FILE_SEPARATOR + indexFile, null);
+            }
+          }
+        }
+      }
+    }
+    return indexFiles;
+  }
+
+  /**
    * Gets all carbon index files from this segment
    * @return
    */
@@ -586,8 +660,8 @@ public class SegmentFileStore {
           new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
               .getValidAndInvalidSegments().getValidSegments());
       CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, uniqueId, true,
-          Segment.toSegmentList(toBeDeleteSegments), Segment.toSegmentList(toBeUpdatedSegments),
-          uuid);
+          Segment.toSegmentList(toBeDeleteSegments, null),
+          Segment.toSegmentList(toBeUpdatedSegments, null), uuid);
     }
   }
 
@@ -619,7 +693,10 @@ public class SegmentFileStore {
             new SegmentFileStore(table.getTablePath(), segment.getSegmentFile());
         fileStore.readIndexFiles(SegmentStatus.MARKED_FOR_DELETE, false);
         if (forceDelete) {
-          deletePhysicalPartition(partitionSpecs, fileStore.getIndexFilesMap());
+          deletePhysicalPartition(
+              partitionSpecs,
+              fileStore.getIndexFilesMap(),
+              table.getTablePath());
         }
         for (Map.Entry<String, List<String>> entry : fileStore.indexFilesMap.entrySet()) {
           String indexFile = entry.getKey();
@@ -663,7 +740,7 @@ public class SegmentFileStore {
         FileFactory.deleteFile(file, FileFactory.getFileType(file));
       }
     }
-    deletePhysicalPartition(partitionSpecs, indexFilesMap);
+    deletePhysicalPartition(partitionSpecs, indexFilesMap, tablePath);
     String segmentFilePath =
         CarbonTablePath.getSegmentFilesLocation(tablePath) + CarbonCommonConstants.FILE_SEPARATOR
             + segmentFile;
@@ -671,20 +748,36 @@ public class SegmentFileStore {
     FileFactory.deleteFile(segmentFilePath, FileFactory.getFileType(segmentFilePath));
   }
 
+  /**
+   * If partition specs are available, then check the location map for any index file path which is
+   * not present in the partitionSpecs. If found then delete that index file.
+   * If the partition directory is empty, then delete the directory also.
+   * If partition specs are null, then directly delete parent directory in locationMap.
+   */
   private static void deletePhysicalPartition(List<PartitionSpec> partitionSpecs,
-      Map<String, List<String>> locationMap) {
+      Map<String, List<String>> locationMap, String tablePath) throws IOException {
     for (Map.Entry<String, List<String>> entry : locationMap.entrySet()) {
-      Path location = new Path(entry.getKey()).getParent();
       if (partitionSpecs != null) {
+        Path location = new Path(entry.getKey());
         boolean exists = pathExistsInPartitionSpec(partitionSpecs, location);
         if (!exists) {
           FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(location.toString()));
+          for (String carbonDataFile : entry.getValue()) {
+            FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(carbonDataFile));
+          }
+        }
+        CarbonFile path = FileFactory.getCarbonFile(location.getParent().toString());
+        if (path.listFiles().length == 0) {
+          FileFactory.deleteAllCarbonFilesOfDir(
+              FileFactory.getCarbonFile(location.getParent().toString()));
         }
       } else {
-        // delete the segment folder if it is empty
-        CarbonFile file = FileFactory.getCarbonFile(location.toString());
-        if (file.listFiles().length == 0) {
-          file.delete();
+        Path location = new Path(entry.getKey()).getParent();
+        // delete the segment folder
+        CarbonFile segmentPath = FileFactory.getCarbonFile(location.toString());
+        if (null != segmentPath && segmentPath.exists() &&
+            !new Path(tablePath).equals(new Path(segmentPath.getAbsolutePath()))) {
+          FileFactory.deleteAllCarbonFilesOfDir(segmentPath);
         }
       }
     }

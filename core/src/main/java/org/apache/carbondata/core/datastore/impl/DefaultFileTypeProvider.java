@@ -22,11 +22,12 @@ import org.apache.carbondata.core.datastore.filesystem.AlluxioCarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.HDFSCarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.S3CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.ViewFSCarbonFile;
 
 import org.apache.hadoop.conf.Configuration;
 
-public class DefaultFileTypeProvider implements FileTypeInerface {
+public class DefaultFileTypeProvider implements FileTypeInterface {
 
   public FileReader getFileHolder(FileFactory.FileType fileType) {
     switch (fileType) {
@@ -47,8 +48,9 @@ public class DefaultFileTypeProvider implements FileTypeInerface {
       case LOCAL:
         return new LocalCarbonFile(FileFactory.getUpdatedFilePath(path, fileType));
       case HDFS:
-      case S3:
         return new HDFSCarbonFile(path);
+      case S3:
+        return new S3CarbonFile(path);
       case ALLUXIO:
         return new AlluxioCarbonFile(path);
       case VIEWFS:
@@ -63,8 +65,9 @@ public class DefaultFileTypeProvider implements FileTypeInerface {
       case LOCAL:
         return new LocalCarbonFile(FileFactory.getUpdatedFilePath(path, fileType));
       case HDFS:
-      case S3:
         return new HDFSCarbonFile(path, conf);
+      case S3:
+        return new S3CarbonFile(path, conf);
       case ALLUXIO:
         return new AlluxioCarbonFile(path);
       case VIEWFS:

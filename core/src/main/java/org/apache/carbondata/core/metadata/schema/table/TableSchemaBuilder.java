@@ -24,13 +24,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
+import org.apache.carbondata.core.metadata.datatype.ArrayType;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.datatype.StructField;
+import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry;
@@ -45,7 +48,11 @@ public class TableSchemaBuilder {
 
   private List<ColumnSchema> sortColumns = new LinkedList<>();
 
-  private List<ColumnSchema> otherColumns = new LinkedList<>();
+  private List<ColumnSchema> dimension = new LinkedList<>();
+
+  private List<ColumnSchema> complex = new LinkedList<>();
+
+  private List<ColumnSchema> measures = new LinkedList<>();
 
   private int blockSize;
 
@@ -83,9 +90,11 @@ public class TableSchemaBuilder {
     schema.setBucketingInfo(null);
     SchemaEvolution schemaEvol = new SchemaEvolution();
     schemaEvol.setSchemaEvolutionEntryList(new ArrayList<SchemaEvolutionEntry>());
-    schema.setSchemaEvalution(schemaEvol);
+    schema.setSchemaEvolution(schemaEvol);
     List<ColumnSchema> allColumns = new LinkedList<>(sortColumns);
-    allColumns.addAll(otherColumns);
+    allColumns.addAll(dimension);
+    allColumns.addAll(complex);
+    allColumns.addAll(measures);
     schema.setListOfColumns(allColumns);
 
     Map<String, String> property = new HashMap<>();
@@ -95,7 +104,6 @@ public class TableSchemaBuilder {
     if (blockletSize > 0) {
       property.put(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB, String.valueOf(blockletSize));
     }
-    // TODO: check other table properties
     if (property.size() != 0) {
       schema.setTableProperties(property);
     }
@@ -103,58 +111,146 @@ public class TableSchemaBuilder {
     return schema;
   }
 
-  public TableSchemaBuilder addColumn(StructField field, boolean isSortColumn) {
+  public void setSortColumns(List<ColumnSchema> sortColumns) {
+    this.sortColumns = sortColumns;
+  }
+
+  public ColumnSchema addColumn(StructField field, AtomicInteger valIndex, boolean isSortColumn) {
+    return addColumn(field, null, valIndex, isSortColumn, false);
+  }
+
+  private ColumnSchema addColumn(StructField field, String parentName, AtomicInteger valIndex,
+      boolean isSortColumn, boolean isComplexChild) {
     Objects.requireNonNull(field);
-    checkRepeatColumnName(field);
+    if (isComplexChild) {
+      // if field is complex then append parent name to the child field to check
+      // if any other field with same name exists
+      checkRepeatColumnName(field, parentName);
+    } else {
+      checkRepeatColumnName(field);
+    }
     ColumnSchema newColumn = new ColumnSchema();
-    newColumn.setColumnName(field.getFieldName());
+    if (parentName != null) {
+      newColumn.setColumnName(parentName + "." + field.getFieldName());
+    } else {
+      newColumn.setColumnName(field.getFieldName());
+    }
     newColumn.setDataType(field.getDataType());
     if (isSortColumn ||
         field.getDataType() == DataTypes.STRING ||
         field.getDataType() == DataTypes.DATE ||
-        field.getDataType() == DataTypes.TIMESTAMP) {
+        field.getDataType() == DataTypes.TIMESTAMP ||
+        field.getDataType().isComplexType() ||
+        (isComplexChild))  {
       newColumn.setDimensionColumn(true);
     } else {
       newColumn.setDimensionColumn(false);
     }
-    newColumn.setSchemaOrdinal(ordinal++);
+    if (!isComplexChild) {
+      newColumn.setSchemaOrdinal(ordinal++);
+    } else {
+      // child column should not be counted for schema ordinal
+      newColumn.setSchemaOrdinal(-1);
+    }
     newColumn.setColumnar(true);
-    newColumn.setColumnUniqueId(UUID.randomUUID().toString());
+
+    // For NonTransactionalTable, multiple sdk writer output with same column name can be placed in
+    // single folder for query.
+    // That time many places in code, columnId check will fail. To avoid that
+    // keep column ID as same as column name.
+    // Anyhow Alter table is not supported for NonTransactionalTable.
+    // SO, this will not have any impact.
+    newColumn.setColumnUniqueId(field.getFieldName());
     newColumn.setColumnReferenceId(newColumn.getColumnUniqueId());
-    newColumn.setEncodingList(createEncoding(field.getDataType(), isSortColumn));
+    newColumn.setEncodingList(createEncoding(field.getDataType(), isSortColumn, isComplexChild));
+    if (field.getDataType().isComplexType()) {
+      if (field.getDataType().getName().equalsIgnoreCase("ARRAY")) {
+        newColumn.setNumberOfChild(1);
+      } else {
+        newColumn.setNumberOfChild(((StructType) field.getDataType()).getFields().size());
+      }
+    }
     if (DataTypes.isDecimal(field.getDataType())) {
       DecimalType decimalType = (DecimalType) field.getDataType();
       newColumn.setPrecision(decimalType.getPrecision());
       newColumn.setScale(decimalType.getScale());
     }
-    if (isSortColumn) {
-      sortColumns.add(newColumn);
-      newColumn.setSortColumn(true);
-    } else {
-      otherColumns.add(newColumn);
+    if (!isSortColumn) {
+      if (!newColumn.isDimensionColumn()) {
+        measures.add(newColumn);
+      } else if (DataTypes.isStructType(field.getDataType()) ||
+          DataTypes.isArrayType(field.getDataType()) || isComplexChild) {
+        complex.add(newColumn);
+      } else {
+        dimension.add(newColumn);
+      }
     }
-    return this;
+    if (newColumn.isDimensionColumn()) {
+      newColumn.setUseInvertedIndex(true);
+    }
+    if (field.getDataType().isComplexType()) {
+      String parentFieldName = newColumn.getColumnName();
+      if (field.getDataType().getName().equalsIgnoreCase("ARRAY")) {
+        String colName = getColNameForArray(valIndex);
+        addColumn(new StructField(colName, ((ArrayType) field.getDataType()).getElementType()),
+            field.getFieldName(), valIndex, false, true);
+      } else if (field.getDataType().getName().equalsIgnoreCase("STRUCT")
+          && ((StructType) field.getDataType()).getFields().size() > 0) {
+        // This field has children.
+        List<StructField> fields = ((StructType) field.getDataType()).getFields();
+        for (int i = 0; i < fields.size(); i++) {
+          addColumn(fields.get(i), parentFieldName, valIndex, false, true);
+        }
+      }
+    }
+    // todo: need more information such as long_string_columns
+    return newColumn;
+  }
+
+  private String getColNameForArray(AtomicInteger valIndex) {
+    String colName = "val" + valIndex.get();
+    valIndex.incrementAndGet();
+    return colName;
   }
 
   /**
    * Throw exception if {@param field} name is repeated
    */
+  private void checkRepeatColumnName(StructField field, String parentName) {
+    checkRepeatColumnName(
+        new StructField(parentName + "." + field.getFieldName(), field.getDataType(),
+            field.getChildren()));
+  }
+
   private void checkRepeatColumnName(StructField field) {
     for (ColumnSchema column : sortColumns) {
       if (column.getColumnName().equalsIgnoreCase(field.getFieldName())) {
         throw new IllegalArgumentException("column name already exists");
       }
     }
-    for (ColumnSchema column : otherColumns) {
+    for (ColumnSchema column : dimension) {
+      if (column.getColumnName().equalsIgnoreCase(field.getFieldName())) {
+        throw new IllegalArgumentException("column name already exists");
+      }
+    }
+
+    for (ColumnSchema column : complex) {
+      if (column.getColumnName().equalsIgnoreCase(field.getFieldName())) {
+        throw new IllegalArgumentException("column name already exists");
+      }
+    }
+
+    for (ColumnSchema column : measures) {
       if (column.getColumnName().equalsIgnoreCase(field.getFieldName())) {
         throw new IllegalArgumentException("column name already exists");
       }
     }
   }
 
-  private List<Encoding> createEncoding(DataType dataType, boolean isSortColumn) {
+  private List<Encoding> createEncoding(DataType dataType, boolean isSortColumn,
+      boolean isComplexChild) {
     List<Encoding> encodings = new LinkedList<>();
-    if (dataType == DataTypes.TIMESTAMP || dataType == DataTypes.DATE) {
+    if (dataType == DataTypes.DATE && !isComplexChild) {
       encodings.add(Encoding.DIRECT_DICTIONARY);
       encodings.add(Encoding.DICTIONARY);
     }

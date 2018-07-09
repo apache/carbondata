@@ -22,19 +22,28 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.util.BlockletDataMapUtil;
 
 import org.apache.hadoop.io.Writable;
-import org.xerial.snappy.Snappy;
 
 /**
  * Blocklet detail information to be sent to each executor
  */
 public class BlockletDetailInfo implements Serializable, Writable {
+
+  /**
+   * LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(BlockletDetailInfo.class.getName());
+
+  private static final long serialVersionUID = 7957493757421513808L;
 
   private int rowCount;
 
@@ -50,6 +59,8 @@ public class BlockletDetailInfo implements Serializable, Writable {
 
   private BlockletInfo blockletInfo;
 
+  private byte[] blockletInfoBinary;
+
   private long blockFooterOffset;
 
   private List<ColumnSchema> columnSchemas;
@@ -57,6 +68,10 @@ public class BlockletDetailInfo implements Serializable, Writable {
   private byte[] columnSchemaBinary;
 
   private long blockSize;
+  /**
+   * flag to check for store from 1.1 or any prior version
+   */
+  private boolean isLegacyStore;
 
   public int getRowCount() {
     return rowCount;
@@ -83,11 +98,38 @@ public class BlockletDetailInfo implements Serializable, Writable {
   }
 
   public BlockletInfo getBlockletInfo() {
+    if (null == blockletInfo) {
+      try {
+        setBlockletInfoFromBinary();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
     return blockletInfo;
   }
 
   public void setBlockletInfo(BlockletInfo blockletInfo) {
     this.blockletInfo = blockletInfo;
+  }
+
+  private void setBlockletInfoFromBinary() throws IOException {
+    if (null == this.blockletInfo && null != blockletInfoBinary && blockletInfoBinary.length > 0) {
+      blockletInfo = new BlockletInfo();
+      ByteArrayInputStream stream = new ByteArrayInputStream(blockletInfoBinary);
+      DataInputStream inputStream = new DataInputStream(stream);
+      try {
+        blockletInfo.readFields(inputStream);
+      } catch (IOException e) {
+        LOGGER.error("Problem in reading blocklet info");
+        throw new IOException("Problem in reading blocklet info." + e.getMessage());
+      } finally {
+        try {
+          inputStream.close();
+        } catch (IOException e) {
+          LOGGER.error(e, "Problem in closing input stream of reading blocklet info.");
+        }
+      }
+    }
   }
 
   public int[] getDimLens() {
@@ -129,9 +171,20 @@ public class BlockletDetailInfo implements Serializable, Writable {
       blockletInfo.write(out);
     }
     out.writeLong(blockFooterOffset);
-    out.writeInt(columnSchemaBinary.length);
-    out.write(columnSchemaBinary);
+    // convert column schema list to binary format for serializing
+    convertColumnSchemaToBinary();
+    if (null != columnSchemaBinary) {
+      out.writeInt(columnSchemaBinary.length);
+      out.write(columnSchemaBinary);
+    } else {
+      // write -1 if columnSchemaBinary is null so that at the time of reading it can distinguish
+      // whether schema is written or not
+      out.writeInt(-1);
+    }
+    out.writeInt(blockletInfoBinary.length);
+    out.write(blockletInfoBinary);
     out.writeLong(blockSize);
+    out.writeBoolean(isLegacyStore);
   }
 
   @Override public void readFields(DataInput in) throws IOException {
@@ -150,10 +203,18 @@ public class BlockletDetailInfo implements Serializable, Writable {
     }
     blockFooterOffset = in.readLong();
     int bytesSize = in.readInt();
-    byte[] schemaArray = new byte[bytesSize];
-    in.readFully(schemaArray);
-    readColumnSchema(schemaArray);
+    // if byteSize is -1 that means schema binary is not written
+    if (bytesSize != -1) {
+      byte[] schemaArray = new byte[bytesSize];
+      in.readFully(schemaArray);
+      readColumnSchema(schemaArray);
+    }
+    int byteSize = in.readInt();
+    blockletInfoBinary = new byte[byteSize];
+    in.readFully(blockletInfoBinary);
+    setBlockletInfoFromBinary();
     blockSize = in.readLong();
+    isLegacyStore = in.readBoolean();
   }
 
   /**
@@ -162,16 +223,14 @@ public class BlockletDetailInfo implements Serializable, Writable {
    * @throws IOException
    */
   public void readColumnSchema(byte[] schemaArray) throws IOException {
-    // uncompress it.
-    schemaArray = Snappy.uncompress(schemaArray);
-    ByteArrayInputStream schemaStream = new ByteArrayInputStream(schemaArray);
-    DataInput schemaInput = new DataInputStream(schemaStream);
-    columnSchemas = new ArrayList<>();
-    int size = schemaInput.readShort();
-    for (int i = 0; i < size; i++) {
-      ColumnSchema columnSchema = new ColumnSchema();
-      columnSchema.readFields(schemaInput);
-      columnSchemas.add(columnSchema);
+    if (null != columnSchemaBinary) {
+      columnSchemas = BlockletDataMapUtil.readColumnSchema(schemaArray);
+    }
+  }
+
+  private void convertColumnSchemaToBinary() throws IOException {
+    if (null != columnSchemas) {
+      columnSchemaBinary = BlockletDataMapUtil.convertSchemaToBinary(columnSchemas);
     }
   }
 
@@ -187,9 +246,12 @@ public class BlockletDetailInfo implements Serializable, Writable {
     detailInfo.dimLens = dimLens;
     detailInfo.schemaUpdatedTimeStamp = schemaUpdatedTimeStamp;
     detailInfo.blockletInfo = blockletInfo;
+    detailInfo.blockletInfoBinary = blockletInfoBinary;
     detailInfo.blockFooterOffset = blockFooterOffset;
     detailInfo.columnSchemas = columnSchemas;
+    detailInfo.columnSchemaBinary = columnSchemaBinary;
     detailInfo.blockSize = blockSize;
+    detailInfo.isLegacyStore = isLegacyStore;
     return detailInfo;
   }
 
@@ -216,11 +278,23 @@ public class BlockletDetailInfo implements Serializable, Writable {
     return columnSchemas;
   }
 
-  public void setColumnSchemaBinary(byte[] columnSchemaBinary) {
-    this.columnSchemaBinary = columnSchemaBinary;
-  }
-
   public byte[] getColumnSchemaBinary() {
     return columnSchemaBinary;
+  }
+
+  public void setBlockletInfoBinary(byte[] blockletInfoBinary) {
+    this.blockletInfoBinary = blockletInfoBinary;
+  }
+
+  public boolean isLegacyStore() {
+    return isLegacyStore;
+  }
+
+  public void setLegacyStore(boolean legacyStore) {
+    isLegacyStore = legacyStore;
+  }
+
+  public void setColumnSchemas(List<ColumnSchema> columnSchemas) {
+    this.columnSchemas = columnSchemas;
   }
 }

@@ -26,10 +26,11 @@ import org.scalatest.BeforeAndAfterEach
 
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 import org.apache.spark.sql.test.util.QueryTest
 
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.util.CarbonProperties
 
 class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
@@ -53,10 +54,8 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     val fileType: FileFactory.FileType = FileFactory.getFileType(partitionPath)
     val carbonFile = FileFactory.getCarbonFile(partitionPath, fileType)
     val segments: ArrayBuffer[String] = ArrayBuffer()
-    carbonFile.listFiles.foreach { file =>
-      segments += CarbonTablePath.DataFileUtil.getSegmentId(file.getAbsolutePath + "/dummy")
-    }
-    segments.contains(segmentId)
+    val segment = Segment.getSegment(segmentId, carbonTable.getAbsoluteTableIdentifier.getTablePath)
+    segment != null
   }
 
   test("test data loading CSV file") {
@@ -260,6 +259,22 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
       CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS,
       originStatus)
   }
+
+  test("test data loading with page size less than 32000") {
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.BLOCKLET_SIZE, "16000")
+
+    val testData = s"$resourcesPath/sample.csv"
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
+    checkAnswer(
+      sql("SELECT COUNT(*) FROM loadtest"),
+      Seq(Row(6))
+    )
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+      CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
+  }
+
   override def afterEach {
     sql("DROP TABLE if exists loadtest")
     sql("drop table if exists invalidMeasures")

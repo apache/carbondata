@@ -41,7 +41,6 @@ import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -57,13 +56,11 @@ import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
-import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -271,14 +268,12 @@ public class QueryUtil {
    *
    * @param queryDimensions         query dimension present in the query this will be used to
    *                                convert the result from surrogate key to actual data
-   * @param absoluteTableIdentifier absolute table identifier
    * @return dimension unique id to its dictionary map
    * @throws IOException
    */
   public static Map<String, Dictionary> getDimensionDictionaryDetail(
       List<ProjectionDimension> queryDimensions, Set<CarbonDimension> filterComplexDimensions,
-      AbsoluteTableIdentifier absoluteTableIdentifier, TableProvider tableProvider)
-      throws IOException {
+      CarbonTable carbonTable) throws IOException {
     // to store complex dimension and its child id unique column id list, this is required as
     // dimension can be present in  projection and filter
     // so we need to get only one instance of dictionary
@@ -309,7 +304,7 @@ public class QueryUtil {
     List<String> dictionaryColumnIdList =
         new ArrayList<String>(dictionaryDimensionFromQuery.size());
     dictionaryColumnIdList.addAll(dictionaryDimensionFromQuery);
-    return getDictionaryMap(dictionaryColumnIdList, absoluteTableIdentifier, tableProvider);
+    return getDictionaryMap(dictionaryColumnIdList, carbonTable);
   }
 
   /**
@@ -336,21 +331,18 @@ public class QueryUtil {
    * Below method will be used to get the column id to its dictionary mapping
    *
    * @param dictionaryColumnIdList  dictionary column list
-   * @param absoluteTableIdentifier absolute table identifier
    * @return dictionary mapping
    * @throws IOException
    */
   private static Map<String, Dictionary> getDictionaryMap(List<String> dictionaryColumnIdList,
-      AbsoluteTableIdentifier absoluteTableIdentifier, TableProvider tableProvider)
-      throws IOException {
+      CarbonTable carbonTable) throws IOException {
     // if any complex dimension not present in query then return the empty map
     if (dictionaryColumnIdList.size() == 0) {
       return new HashMap<>();
     }
     // this for dictionary unique identifier
     List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers =
-        getDictionaryColumnUniqueIdentifierList(dictionaryColumnIdList,
-            absoluteTableIdentifier.getCarbonTableIdentifier(), tableProvider);
+        getDictionaryColumnUniqueIdentifierList(dictionaryColumnIdList, carbonTable);
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache = cacheProvider
         .createCache(CacheType.FORWARD_DICTIONARY);
@@ -371,13 +363,10 @@ public class QueryUtil {
    * Below method will be used to get the dictionary column unique identifier
    *
    * @param dictionaryColumnIdList dictionary
-   * @param carbonTableIdentifier
    * @return
    */
   private static List<DictionaryColumnUniqueIdentifier> getDictionaryColumnUniqueIdentifierList(
-      List<String> dictionaryColumnIdList, CarbonTableIdentifier carbonTableIdentifier,
-      TableProvider tableProvider) throws IOException {
-    CarbonTable carbonTable = tableProvider.getCarbonTable(carbonTableIdentifier);
+      List<String> dictionaryColumnIdList, CarbonTable carbonTable) throws IOException {
     List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers =
         new ArrayList<>(dictionaryColumnIdList.size());
     for (String columnId : dictionaryColumnIdList) {
@@ -388,8 +377,8 @@ public class QueryUtil {
         ColumnIdentifier columnIdentifier;
         if (null != dimension.getColumnSchema().getParentColumnTableRelations() && !dimension
             .getColumnSchema().getParentColumnTableRelations().isEmpty()) {
-          dictionarySourceAbsoluteTableIdentifier = getTableIdentifierForColumn(dimension,
-              carbonTable.getAbsoluteTableIdentifier());
+          dictionarySourceAbsoluteTableIdentifier =
+              getTableIdentifierForColumn(dimension);
           columnIdentifier = new ColumnIdentifier(
               dimension.getColumnSchema().getParentColumnTableRelations().get(0).getColumnId(),
               dimension.getColumnProperties(), dimension.getDataType());
@@ -407,8 +396,14 @@ public class QueryUtil {
     return dictionaryColumnUniqueIdentifiers;
   }
 
-  public static AbsoluteTableIdentifier getTableIdentifierForColumn(CarbonDimension carbonDimension,
-      AbsoluteTableIdentifier identifier) {
+  public static AbsoluteTableIdentifier getTableIdentifierForColumn(
+      CarbonDimension carbonDimension) {
+    RelationIdentifier parentRelationIdentifier =
+        carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0)
+            .getRelationIdentifier();
+    String parentTablePath = CarbonMetadata.getInstance()
+        .getCarbonTable(parentRelationIdentifier.getDatabaseName(),
+            parentRelationIdentifier.getTableName()).getTablePath();
     RelationIdentifier relation = carbonDimension.getColumnSchema()
         .getParentColumnTableRelations()
         .get(0)
@@ -416,9 +411,7 @@ public class QueryUtil {
     String parentTableName = relation.getTableName();
     String parentDatabaseName = relation.getDatabaseName();
     String parentTableId = relation.getTableId();
-    String newTablePath =
-        CarbonTablePath.getNewTablePath(identifier.getTablePath(), parentTableName);
-    return AbsoluteTableIdentifier.from(newTablePath, parentDatabaseName, parentTableName,
+    return AbsoluteTableIdentifier.from(parentTablePath, parentDatabaseName, parentTableName,
         parentTableId);
   }
 
@@ -718,9 +711,23 @@ public class QueryUtil {
       Set<CarbonDimension> filterDimensions) {
     Map<Integer, GenericQueryType> complexTypeMap = new HashMap<Integer, GenericQueryType>();
     for (ProjectionDimension dimension : queryDimensions) {
-      CarbonDimension actualDimension = dimension.getDimension();
+      CarbonDimension actualDimension;
+      CarbonDimension complexDimension = null;
+      if (null != dimension.getDimension().getComplexParentDimension()) {
+        // get the parent dimension column.
+        actualDimension = dimension.getParentDimension();
+        if (dimension.getDimension().isComplex()) {
+          complexDimension = dimension.getDimension();
+        }
+      } else {
+        actualDimension = dimension.getDimension();
+      }
       if (actualDimension.getNumberOfChild() == 0) {
         continue;
+      }
+      if (complexDimension != null) {
+        fillParentDetails(dimensionToBlockIndexMap, complexDimension, complexTypeMap,
+            eachComplexColumnValueSize, columnIdToDictionaryMap);
       }
       fillParentDetails(dimensionToBlockIndexMap, actualDimension, complexTypeMap,
           eachComplexColumnValueSize, columnIdToDictionaryMap);
@@ -777,6 +784,10 @@ public class QueryUtil {
         boolean isDirectDictionary = CarbonUtil
             .hasEncoding(dimension.getListOfChildDimensions().get(i).getEncoder(),
                 Encoding.DIRECT_DICTIONARY);
+        boolean isDictionary = CarbonUtil
+            .hasEncoding(dimension.getListOfChildDimensions().get(i).getEncoder(),
+                Encoding.DICTIONARY);
+
         parentQueryType.addChildren(
             new PrimitiveQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
                 dimension.getColName(), ++parentBlockIndex,

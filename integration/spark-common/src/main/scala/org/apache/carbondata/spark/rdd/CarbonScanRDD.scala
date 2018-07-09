@@ -41,7 +41,6 @@ import org.apache.spark.sql.util.SparkSQLUtil.sessionState
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonCommonConstantsInternal}
-import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -56,6 +55,7 @@ import org.apache.carbondata.hadoop._
 import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonInputFormat}
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.InitInputMetrics
 import org.apache.carbondata.spark.util.{SparkDataTypeConverterImpl, Util}
@@ -451,7 +451,7 @@ class CarbonScanRDD[T: ClassTag](
             reader.close()
           } catch {
             case e: Exception =>
-              LOGGER.error(e)
+              LogServiceFactory.getLogService(this.getClass.getCanonicalName).error(e)
           }
           reader = null
         }
@@ -465,6 +465,9 @@ class CarbonScanRDD[T: ClassTag](
         close()
         logStatistics(executionId, taskId, queryStartTime, model.getStatisticsRecorder, split)
       }
+      // create a statistics recorder
+      val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder(model.getQueryId())
+      model.setStatisticsRecorder(recorder)
       // initialize the reader
       reader.initialize(inputSplit, attemptContext)
 
@@ -520,7 +523,7 @@ class CarbonScanRDD[T: ClassTag](
       CarbonInputFormat.setPartitionsToPrune(conf, partitionNames.asJava)
     }
 
-    CarbonInputFormat.setUnmanagedTable(conf, tableInfo.isUnManagedTable)
+    CarbonInputFormat.setTransactionalTable(conf, tableInfo.isTransactionalTable)
     createInputFormat(conf)
   }
 
@@ -551,12 +554,7 @@ class CarbonScanRDD[T: ClassTag](
     CarbonInputFormat.setQuerySegment(conf, identifier)
     CarbonInputFormat.setFilterPredicates(conf, filterExpression)
     CarbonInputFormat.setColumnProjection(conf, columnProjection)
-    CarbonInputFormat.setDataMapJob(conf, new SparkDataMapJob)
-    if (CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
-      CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT).toBoolean) {
-      CarbonInputFormat.setDataMapJob(conf, new SparkDataMapJob)
-    }
+    CarbonInputFormatUtil.setDataMapJobIfConfigured(conf)
 
     // when validate segments is disabled in thread local update it to CarbonTableInputFormat
     val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
@@ -596,12 +594,7 @@ class CarbonScanRDD[T: ClassTag](
     CarbonInputFormat.setQuerySegment(conf, identifier)
     CarbonInputFormat.setFilterPredicates(conf, filterExpression)
     CarbonInputFormat.setColumnProjection(conf, columnProjection)
-    CarbonInputFormat.setDataMapJob(conf, new SparkDataMapJob)
-    if (CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
-      CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT).toBoolean) {
-      CarbonInputFormat.setDataMapJob(conf, new SparkDataMapJob)
-    }
+    CarbonInputFormatUtil.setDataMapJobIfConfigured(conf)
     // when validate segments is disabled in thread local update it to CarbonTableInputFormat
     val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (carbonSessionInfo != null) {

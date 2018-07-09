@@ -25,6 +25,7 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
 
@@ -149,6 +150,15 @@ public abstract class AbstractDataLoadProcessorStep {
    */
   protected abstract String getStepName();
 
+  /**
+   * This method registers all writer listeners and returns the listener
+   * @param bucketId bucketId
+   * @return
+   */
+  protected DataMapWriterListener getDataMapWriterListener(int bucketId) {
+    // todo: this method is useless, will remove it later
+    return null;
+  }
 
   /**
    * Close all resources.This method is called after execute() is finished.

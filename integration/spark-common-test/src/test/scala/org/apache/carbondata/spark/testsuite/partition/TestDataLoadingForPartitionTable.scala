@@ -16,16 +16,21 @@
  */
 package org.apache.carbondata.spark.testsuite.partition
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.datamap.Segment
 
 class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll {
 
@@ -61,13 +66,21 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
 
   def validateDataFiles(tableUniqueName: String, segmentId: String, partitions: Seq[Int]): Unit = {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
-    val segmentDir = carbonTable.getSemgentPath(segmentId)
-    val carbonFile = FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir))
-    val dataFiles = carbonFile.listFiles(new CarbonFileFilter() {
-      override def accept(file: CarbonFile): Boolean = {
-        return file.getName.endsWith(".carbondata")
-      }
-    })
+    val segmentDir = carbonTable.getSegmentPath(segmentId)
+
+    val dataFiles = if (FileFactory.isFileExist(segmentDir)) {
+      val carbonFile = FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir))
+      carbonFile.listFiles(new CarbonFileFilter() {
+        override def accept(file: CarbonFile): Boolean = {
+          return file.getName.endsWith(".carbondata")
+        }
+      })
+    } else {
+      val segment = Segment.getSegment(segmentId, carbonTable.getTablePath)
+      val store = new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName)
+      store.readIndexFiles()
+      store.getIndexFilesMap.asScala.flatMap(_._2.asScala).map(f => FileFactory.getCarbonFile(f)).toArray
+    }
 
     assert(dataFiles.size == partitions.size)
 

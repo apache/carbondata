@@ -20,11 +20,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
-import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 /**
@@ -46,11 +46,25 @@ public class AndDataMapExprWrapper implements DataMapExprWrapper {
   }
 
   @Override
-  public List<ExtendedBlocklet> prune(List<Segment> segments, List<PartitionSpec> partitionsToPrune,
-      ReadCommittedScope readCommittedScope) throws IOException {
-    List<ExtendedBlocklet> leftPrune = left.prune(segments, partitionsToPrune, readCommittedScope);
-    List<ExtendedBlocklet> rightPrune =
-        right.prune(segments, partitionsToPrune, readCommittedScope);
+  public List<ExtendedBlocklet> prune(List<Segment> segments, List<PartitionSpec> partitionsToPrune)
+      throws IOException {
+    List<ExtendedBlocklet> leftPrune = left.prune(segments, partitionsToPrune);
+    List<ExtendedBlocklet> rightPrune = right.prune(segments, partitionsToPrune);
+    List<ExtendedBlocklet> andBlocklets = new ArrayList<>();
+    for (ExtendedBlocklet blocklet : leftPrune) {
+      if (rightPrune.contains(blocklet)) {
+        andBlocklets.add(blocklet);
+      }
+    }
+    return andBlocklets;
+  }
+
+  @Override
+  public List<ExtendedBlocklet> prune(DataMapDistributable distributable,
+      List<PartitionSpec> partitionsToPrune)
+          throws IOException {
+    List<ExtendedBlocklet> leftPrune = left.prune(distributable, partitionsToPrune);
+    List<ExtendedBlocklet> rightPrune = right.prune(distributable, partitionsToPrune);
     List<ExtendedBlocklet> andBlocklets = new ArrayList<>();
     for (ExtendedBlocklet blocklet : leftPrune) {
       if (rightPrune.contains(blocklet)) {
@@ -88,7 +102,8 @@ public class AndDataMapExprWrapper implements DataMapExprWrapper {
     return null;
   }
 
-  @Override public List<DataMapDistributableWrapper> toDistributable(List<Segment> segments)
+  @Override
+  public List<DataMapDistributableWrapper> toDistributable(List<Segment> segments)
       throws IOException {
     List<DataMapDistributableWrapper> wrappers = new ArrayList<>();
     wrappers.addAll(left.toDistributable(segments));
@@ -96,7 +111,17 @@ public class AndDataMapExprWrapper implements DataMapExprWrapper {
     return wrappers;
   }
 
-  @Override public DataMapLevel getDataMapType() {
-    return left.getDataMapType();
+  @Override public DataMapLevel getDataMapLevel() {
+    return left.getDataMapLevel();
+  }
+
+  @Override
+  public DataMapExprWrapper getLeftDataMapWrapper() {
+    return left;
+  }
+
+  @Override
+  public DataMapExprWrapper getRightDataMapWrapprt() {
+    return right;
   }
 }

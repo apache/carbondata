@@ -84,7 +84,7 @@ public class PrimitiveQueryTypeTest {
     Object expectedValue = 1313043000000L;
 
     Object actualValue =
-        primitiveQueryTypeForTimeStamp.getDataBasedOnDataTypeFromSurrogates(surrogateData);
+        primitiveQueryTypeForTimeStamp.getDataBasedOnDataType(surrogateData);
     assertEquals(expectedValue, actualValue);
   }
 
@@ -97,9 +97,9 @@ public class PrimitiveQueryTypeTest {
       }
     };
     Object expectedValue = primitiveQueryTypeForTimeStampForIsDictionaryFalse
-        .getDataBasedOnDataTypeFromSurrogates(surrogateData);
+        .getDataBasedOnDataType(surrogateData);
     Object actualValue = primitiveQueryTypeForTimeStampForIsDictionaryFalse
-        .getDataBasedOnDataTypeFromSurrogates(surrogateData);
+        .getDataBasedOnDataType(surrogateData);
     assertEquals(expectedValue, actualValue);
   }
 

@@ -27,11 +27,19 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
+import org.apache.carbondata.core.datamap.TableDataMap;
+import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
-import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
@@ -42,25 +50,25 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.reader.CarbonHeaderReader;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
-import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
 import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.core.scan.model.QueryProjection;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeConverter;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.format.FileHeader;
+
+import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
 
 /**
  * Mapping class for Carbon actual table
  */
 public class CarbonTable implements Serializable {
+
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(CarbonTable.class.getName());
 
   /**
    * the cached table info
@@ -144,12 +152,26 @@ public class CarbonTable implements Serializable {
   private boolean hasDataMapSchema;
 
   /**
-   * The boolean field which points if the data written for UnManaged Table
-   * or Managed Table. The difference between managed and unManaged table is
-   * unManaged Table will not contain any Metadata folder and subsequently
+   * is local dictionary generation enabled for the table
+   */
+  private boolean isLocalDictionaryEnabled;
+
+  /**
+   * local dictionary generation threshold
+   */
+  private int localDictionaryThreshold;
+
+  /**
+   * The boolean field which points if the data written for Non Transactional Table
+   * or Transactional Table.
+   * transactional table means carbon will provide transactional support when user doing data
+   * management like data loading, whether it is success or failure, data will be in consistent
+   * state
+   * The difference between Transactional and non Transactional table is
+   * non Transactional Table will not contain any Metadata folder and subsequently
    * no TableStatus or Schema files.
    */
-  private boolean isUnManagedTable;
+  private boolean isTransactionalTable = true;
 
   private CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
@@ -211,32 +233,48 @@ public class CarbonTable implements Serializable {
     }
   }
 
-  public static CarbonTable buildFromDataFile(
-      String tableName, String tablePath, String filePath) throws IOException {
-    CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(filePath);
-    FileHeader fileHeader = carbonHeaderReader.readHeader();
-    TableSchemaBuilder builder = TableSchema.builder();
-    ThriftWrapperSchemaConverterImpl schemaConverter = new ThriftWrapperSchemaConverterImpl();
-    for (org.apache.carbondata.format.ColumnSchema column : fileHeader.getColumn_schema()) {
-      ColumnSchema columnSchema = schemaConverter.fromExternalToWrapperColumnSchema(column);
-      builder.addColumn(
-          new StructField(columnSchema.getColumnName(), columnSchema.getDataType()), false);
+  public static CarbonTable buildTable(
+      String tablePath,
+      String tableName) throws IOException {
+    TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, "null", "null");
+    CarbonFile[] carbonFiles = FileFactory
+        .getCarbonFile(tablePath)
+        .listFiles(new CarbonFileFilter() {
+          @Override
+          public boolean accept(CarbonFile file) {
+            if (file == null) {
+              return false;
+            }
+            return file.getName().endsWith("carbonindex");
+          }
+        });
+    if (carbonFiles == null || carbonFiles.length < 1) {
+      throw new RuntimeException("Carbon index file not exists.");
     }
-
-    TableSchema tableSchema = builder.tableName(tableName).build();
-    TableInfo tableInfo = new TableInfo();
-    tableInfo.setFactTable(tableSchema);
-    tableInfo.setTablePath(tablePath);
-    tableInfo.setDatabaseName("default");
-    tableInfo.setTableUniqueName(
-        CarbonTable.buildUniqueName("default", tableSchema.getTableName()));
-    return buildFromTableInfo(tableInfo);
+    org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil
+        .inferSchemaFromIndexFile(carbonFiles[0].getPath(), tableName);
+    List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
+    for (org.apache.carbondata.format.ColumnSchema thriftColumnSchema : tableInfo
+        .getFact_table().getTable_columns()) {
+      ColumnSchema columnSchema = thriftColumnSchemaToWrapperColumnSchema(thriftColumnSchema);
+      if (columnSchema.getColumnReferenceId() == null) {
+        columnSchema.setColumnReferenceId(columnSchema.getColumnUniqueId());
+      }
+      columnSchemaList.add(columnSchema);
+    }
+    tableInfoInfer.getFactTable().setListOfColumns(columnSchemaList);
+    return CarbonTable.buildFromTableInfo(tableInfoInfer);
   }
 
-  public static CarbonTable buildFromTablePath(
-      String tableName, String tablePath) throws IOException {
+  public static CarbonTable buildDummyTable(String tablePath) throws IOException {
+    TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, "null", "null");
+    return CarbonTable.buildFromTableInfo(tableInfoInfer);
+  }
+
+  public static CarbonTable buildFromTablePath(String tableName, String dbName, String tablePath,
+      String tableId) throws IOException {
     return SchemaReader.readCarbonTableFromStore(
-        AbsoluteTableIdentifier.from(tablePath, tableName, "default"));
+        AbsoluteTableIdentifier.from(tablePath, dbName, tableName, tableId));
   }
 
   /**
@@ -244,24 +282,7 @@ public class CarbonTable implements Serializable {
    */
   public static CarbonTable buildFromTableInfo(TableInfo tableInfo) {
     CarbonTable table = new CarbonTable();
-    updateTableInfo(tableInfo);
-    table.tableInfo = tableInfo;
-    table.blockSize = tableInfo.getTableBlockSizeInMB();
-    table.tableLastUpdatedTime = tableInfo.getLastUpdatedTime();
-    table.tableUniqueName = tableInfo.getTableUniqueName();
-    table.setUnManagedTable(tableInfo.isUnManagedTable());
-    table.fillDimensionsAndMeasuresForTables(tableInfo.getFactTable());
-    table.fillCreateOrderColumn(tableInfo.getFactTable().getTableName());
-    if (tableInfo.getFactTable().getBucketingInfo() != null) {
-      table.tableBucketMap.put(tableInfo.getFactTable().getTableName(),
-          tableInfo.getFactTable().getBucketingInfo());
-    }
-    if (tableInfo.getFactTable().getPartitionInfo() != null) {
-      table.tablePartitionMap.put(tableInfo.getFactTable().getTableName(),
-          tableInfo.getFactTable().getPartitionInfo());
-    }
-    table.hasDataMapSchema =
-        null != tableInfo.getDataMapSchemaList() && tableInfo.getDataMapSchemaList().size() > 0;
+    updateTableByTableInfo(table, tableInfo);
     return table;
   }
 
@@ -461,6 +482,37 @@ public class CarbonTable implements Serializable {
   }
 
   /**
+   * is local dictionary enabled for the table
+   * @return
+   */
+  public boolean isLocalDictionaryEnabled() {
+    return false;
+  }
+
+  /**
+   * set whether local dictionary enabled or not
+   * @param localDictionaryEnabled
+   */
+  public void setLocalDictionaryEnabled(boolean localDictionaryEnabled) {
+    isLocalDictionaryEnabled = localDictionaryEnabled;
+  }
+
+  /**
+   * @return local dictionary generation threshold
+   */
+  public int getLocalDictionaryThreshold() {
+    return localDictionaryThreshold;
+  }
+
+  /**
+   * set the local dictionary generation threshold
+   * @param localDictionaryThreshold
+   */
+  public void setLocalDictionaryThreshold(int localDictionaryThreshold) {
+    this.localDictionaryThreshold = localDictionaryThreshold;
+  }
+
+  /**
    * build table unique name
    * all should call this method to build table unique name
    * @param databaseName
@@ -481,12 +533,12 @@ public class CarbonTable implements Serializable {
   /**
    * Return the segment path of the specified segmentId
    */
-  public String getSemgentPath(String segmentId) {
+  public String getSegmentPath(String segmentId) {
     return CarbonTablePath.getSegmentPath(getTablePath(), segmentId);
   }
 
   /**
-   * @return storepath
+   * @return store path
    */
   public String getTablePath() {
     return tableInfo.getOrCreateAbsoluteTableIdentifier().getTablePath();
@@ -569,15 +621,15 @@ public class CarbonTable implements Serializable {
     List<CarbonDimension> dimensions = tableDimensionsMap.get(tableName);
     List<CarbonMeasure> measures = tableMeasuresMap.get(tableName);
     List<CarbonColumn> columnList = new ArrayList<>(dimensions.size() + measures.size());
-    List<CarbonColumn> complexdimensionList = new ArrayList<>(dimensions.size());
+    List<CarbonColumn> complexDimensionList = new ArrayList<>(dimensions.size());
     for (CarbonColumn column : dimensions) {
       if (column.isComplex()) {
-        complexdimensionList.add(column);
+        complexDimensionList.add(column);
       } else {
         columnList.add(column);
       }
     }
-    columnList.addAll(complexdimensionList);
+    columnList.addAll(complexDimensionList);
     for (CarbonColumn column : measures) {
       if (!(column.getColName().equals("default_dummy_measure"))) {
         columnList.add(column);
@@ -613,20 +665,62 @@ public class CarbonTable implements Serializable {
   public CarbonDimension getDimensionByName(String tableName, String columnName) {
     CarbonDimension carbonDimension = null;
     List<CarbonDimension> dimList = tableDimensionsMap.get(tableName);
-    for (CarbonDimension dim : dimList) {
-      if (dim.getColName().equalsIgnoreCase(columnName)) {
-        carbonDimension = dim;
-        break;
+    String[] colSplits = columnName.split("\\.");
+    StringBuffer tempColName = new StringBuffer(colSplits[0]);
+    for (String colSplit : colSplits) {
+      if (!tempColName.toString().equalsIgnoreCase(colSplit)) {
+        tempColName = tempColName.append(".").append(colSplit);
+      }
+      carbonDimension = getCarbonDimension(tempColName.toString(), dimList);
+      if (carbonDimension != null && carbonDimension.getListOfChildDimensions() != null) {
+        dimList = carbonDimension.getListOfChildDimensions();
       }
     }
     List<CarbonDimension> implicitDimList = tableImplicitDimensionsMap.get(tableName);
-    for (CarbonDimension dim : implicitDimList) {
+    if (carbonDimension == null) {
+      carbonDimension = getCarbonDimension(columnName, implicitDimList);
+    }
+
+    if (colSplits.length > 1) {
+      List<CarbonDimension> dimLists = tableDimensionsMap.get(tableName);
+      for (CarbonDimension dims : dimLists) {
+        if (dims.getColName().equalsIgnoreCase(colSplits[0])) {
+          // Set the parent Dimension
+          carbonDimension
+              .setComplexParentDimension(getDimensionBasedOnOrdinal(dimLists, dims.getOrdinal()));
+          break;
+        }
+      }
+    }
+    return carbonDimension;
+  }
+
+  /**
+   * Get Dimension for columnName from list of dimensions
+   *
+   * @param columnName
+   * @param dimensions
+   * @return
+   */
+  public static CarbonDimension getCarbonDimension(String columnName,
+      List<CarbonDimension> dimensions) {
+    CarbonDimension carbonDimension = null;
+    for (CarbonDimension dim : dimensions) {
       if (dim.getColName().equalsIgnoreCase(columnName)) {
         carbonDimension = dim;
         break;
       }
     }
     return carbonDimension;
+  }
+
+  private CarbonDimension getDimensionBasedOnOrdinal(List<CarbonDimension> dimList, int ordinal) {
+    for (CarbonDimension dimension : dimList) {
+      if (dimension.getOrdinal() == ordinal) {
+        return dimension;
+      }
+    }
+    throw new RuntimeException("No Dimension Matches the ordinal value");
   }
 
   /**
@@ -826,18 +920,27 @@ public class CarbonTable implements Serializable {
   }
 
   /**
-   * Return true if this is a streaming table (table with property "streaming"="true")
+   * Return true if this is a streaming table (table with property "streaming"="true" or "sink")
    */
-  public boolean isStreamingTable() {
+  public boolean isStreamingSink() {
     String streaming = getTableInfo().getFactTable().getTableProperties().get("streaming");
-    return streaming != null && streaming.equalsIgnoreCase("true");
+    return streaming != null &&
+        (streaming.equalsIgnoreCase("true") || streaming.equalsIgnoreCase("sink"));
+  }
+
+  /**
+   * Return true if this is a streaming source (table with property "streaming"="source")
+   */
+  public boolean isStreamingSource() {
+    String streaming = getTableInfo().getFactTable().getTableProperties().get("streaming");
+    return streaming != null && streaming.equalsIgnoreCase("source");
   }
 
   /**
    * Return true if 'autoRefreshDataMap' is enabled, by default it is enabled
    */
   public boolean isAutoRefreshDataMap() {
-    String refresh = getTableInfo().getFactTable().getTableProperties().get("autoRefreshDataMap");
+    String refresh = getTableInfo().getFactTable().getTableProperties().get("autorefreshdatamap");
     return refresh == null || refresh.equalsIgnoreCase("true");
   }
 
@@ -895,7 +998,7 @@ public class CarbonTable implements Serializable {
 
 
   public long size() throws IOException {
-    Map<String, Long> dataIndexSize = CarbonUtil.calculateDataIndexSize(this);
+    Map<String, Long> dataIndexSize = CarbonUtil.calculateDataIndexSize(this, true);
     Long dataSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE);
     if (dataSize == null) {
       dataSize = 0L;
@@ -905,65 +1008,6 @@ public class CarbonTable implements Serializable {
       indexSize = 0L;
     }
     return dataSize + indexSize;
-  }
-
-  /**
-   * Create a new QueryModel with projection all columns in the table.
-   */
-  public QueryModel createQueryModelWithProjectAllColumns(DataTypeConverter converter) {
-    QueryProjection projection = new QueryProjection();
-
-    List<CarbonDimension> dimensions = getDimensionByTableName(getTableName());
-    for (int i = 0; i < dimensions.size(); i++) {
-      projection.addDimension(dimensions.get(i), i);
-    }
-    List<CarbonMeasure> measures = getMeasureByTableName(getTableName());
-    for (int i = 0; i < measures.size(); i++) {
-      projection.addMeasure(measures.get(i), i);
-    }
-    QueryModel model = QueryModel.newInstance(this);
-    model.setProjection(projection);
-    model.setConverter(converter);
-    return model;
-  }
-
-  /**
-   * Create a new QueryModel with specified projection
-   */
-  public QueryModel createQueryWithProjection(String[] projectionColumnNames,
-      DataTypeConverter converter) {
-    QueryProjection projection = createProjection(projectionColumnNames);
-    QueryModel queryModel = QueryModel.newInstance(this);
-    queryModel.setProjection(projection);
-    queryModel.setConverter(converter);
-    return queryModel;
-  }
-
-  public QueryProjection createProjection(String[] projectionColumnNames) {
-    String factTableName = getTableName();
-    QueryProjection projection = new QueryProjection();
-    // fill dimensions
-    // If columns are null, set all dimensions and measures
-    int i = 0;
-    if (projectionColumnNames != null) {
-      for (String projectionColumnName : projectionColumnNames) {
-        CarbonDimension dimension = getDimensionByName(factTableName, projectionColumnName);
-        if (dimension != null) {
-          projection.addDimension(dimension, i);
-          i++;
-        } else {
-          CarbonMeasure measure = getMeasureByName(factTableName, projectionColumnName);
-          if (measure == null) {
-            throw new RuntimeException(projectionColumnName +
-                " column not found in the table " + factTableName);
-          }
-          projection.addMeasure(measure, i);
-          i++;
-        }
-      }
-    }
-
-    return projection;
   }
 
   public void processFilterExpression(Expression filterExpression,
@@ -982,12 +1026,11 @@ public class CarbonTable implements Serializable {
   /**
    * Resolve the filter expression.
    */
-  public FilterResolverIntf resolveFilter(Expression filterExpression,
-      TableProvider tableProvider) {
+  public FilterResolverIntf resolveFilter(Expression filterExpression) {
     try {
       FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
       return filterExpressionProcessor.getFilterResolver(
-          filterExpression, getAbsoluteTableIdentifier(), tableProvider);
+          filterExpression, getAbsoluteTableIdentifier());
     } catch (Exception e) {
       throw new RuntimeException("Error while resolving filter expression", e);
     }
@@ -1000,11 +1043,168 @@ public class CarbonTable implements Serializable {
     return new CarbonTableBuilder();
   }
 
-  public boolean isUnManagedTable() {
-    return isUnManagedTable;
+  public boolean isTransactionalTable() {
+    return isTransactionalTable;
   }
 
-  public void setUnManagedTable(boolean unManagedTable) {
-    isUnManagedTable = unManagedTable;
+  public void setTransactionalTable(boolean transactionalTable) {
+    isTransactionalTable = transactionalTable;
+  }
+
+  /**
+   * methods returns true if operation is allowed for the corresponding datamap or not
+   * if this operation makes datamap stale it is not allowed
+   * @param carbonTable
+   * @param operation
+   * @return
+   */
+  public boolean canAllow(CarbonTable carbonTable, TableOperation operation) {
+    try {
+      List<TableDataMap> datamaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
+      if (!datamaps.isEmpty()) {
+        for (TableDataMap dataMap : datamaps) {
+          DataMapFactory factoryClass =
+              DataMapStoreManager.getInstance().getDataMapFactoryClass(
+                  carbonTable, dataMap.getDataMapSchema());
+          if (factoryClass.willBecomeStale(operation)) {
+            return false;
+          }
+        }
+      }
+    } catch (Exception e) {
+      // since method returns true or false and based on that calling function throws exception, no
+      // need to throw the catched exception
+      LOGGER.error(e.getMessage());
+      return true;
+    }
+    return true;
+  }
+
+  /**
+   * Get all index columns specified by dataMapSchema
+   */
+  public List<CarbonColumn> getIndexedColumns(DataMapSchema dataMapSchema)
+      throws MalformedDataMapCommandException {
+    String[] columns = dataMapSchema.getIndexColumns();
+    List<CarbonColumn> indexColumn = new ArrayList<>(columns.length);
+    for (String column : columns) {
+      CarbonColumn carbonColumn = getColumnByName(getTableName(), column.trim().toLowerCase());
+      if (carbonColumn == null) {
+        throw new MalformedDataMapCommandException(String.format(
+            "column '%s' does not exist in table. Please check create DataMap statement.",
+            column));
+      }
+      if (carbonColumn.getColName().isEmpty()) {
+        throw new MalformedDataMapCommandException(
+            CarbonCommonConstants.INDEX_COLUMNS + " contains invalid column name");
+      }
+      indexColumn.add(carbonColumn);
+    }
+    return indexColumn;
+  }
+
+  /**
+   * Whether this table supports flat folder structure, it means all data files directly written
+   * under table path
+   */
+  public boolean isSupportFlatFolder() {
+    boolean supportFlatFolder = Boolean.parseBoolean(CarbonCommonConstants.DEFAULT_FLAT_FOLDER);
+    Map<String, String> tblProps = getTableInfo().getFactTable().getTableProperties();
+    if (tblProps.containsKey(CarbonCommonConstants.FLAT_FOLDER)) {
+      supportFlatFolder = tblProps.get(CarbonCommonConstants.FLAT_FOLDER).equalsIgnoreCase("true");
+    }
+    return supportFlatFolder;
+  }
+
+  /**
+   * update the carbon table by using the passed tableInfo
+   *
+   * @param table
+   * @param tableInfo
+   */
+  public static void updateTableByTableInfo(CarbonTable table, TableInfo tableInfo) {
+    updateTableInfo(tableInfo);
+    table.tableInfo = tableInfo;
+    table.blockSize = tableInfo.getTableBlockSizeInMB();
+    table.tableLastUpdatedTime = tableInfo.getLastUpdatedTime();
+    table.tableUniqueName = tableInfo.getTableUniqueName();
+    table.setTransactionalTable(tableInfo.isTransactionalTable());
+    table.fillDimensionsAndMeasuresForTables(tableInfo.getFactTable());
+    table.fillCreateOrderColumn(tableInfo.getFactTable().getTableName());
+    if (tableInfo.getFactTable().getBucketingInfo() != null) {
+      table.tableBucketMap.put(tableInfo.getFactTable().getTableName(),
+          tableInfo.getFactTable().getBucketingInfo());
+    }
+    if (tableInfo.getFactTable().getPartitionInfo() != null) {
+      table.tablePartitionMap.put(tableInfo.getFactTable().getTableName(),
+          tableInfo.getFactTable().getPartitionInfo());
+    }
+    table.hasDataMapSchema =
+        null != tableInfo.getDataMapSchemaList() && tableInfo.getDataMapSchemaList().size() > 0;
+    setLocalDictInfo(table, tableInfo);
+  }
+
+  /**
+   * This method sets whether the local dictionary is enabled or not, and the local dictionary
+   * threshold, if not defined default value are considered.
+   * @param table
+   * @param tableInfo
+   */
+  private static void setLocalDictInfo(CarbonTable table, TableInfo tableInfo) {
+    String isLocalDictionaryEnabled = tableInfo.getFactTable().getTableProperties()
+        .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE);
+    String localDictionaryThreshold = tableInfo.getFactTable().getTableProperties()
+        .get(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD);
+    if (null != isLocalDictionaryEnabled) {
+      table.setLocalDictionaryEnabled(Boolean.parseBoolean(isLocalDictionaryEnabled));
+      if (null != localDictionaryThreshold) {
+        table.setLocalDictionaryThreshold(Integer.parseInt(localDictionaryThreshold));
+      } else {
+        table.setLocalDictionaryThreshold(
+            Integer.parseInt(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT));
+      }
+    } else {
+      // in case of old tables, local dictionary enable property will not be present in
+      // tableProperties, so disable the local dictionary generation
+      table.setLocalDictionaryEnabled(Boolean.parseBoolean("false"));
+    }
+  }
+
+  /**
+   * Method to get the list of cached columns of the table
+   *
+   * @param tableName
+   * @return
+   */
+  public List<String> getCachedColumns(String tableName) {
+    List<String> cachedColsList = new ArrayList<>(tableDimensionsMap.size());
+    String cacheColumns =
+        tableInfo.getFactTable().getTableProperties().get(CarbonCommonConstants.COLUMN_META_CACHE);
+    if (null != cacheColumns && !cacheColumns.isEmpty()) {
+      List<CarbonDimension> carbonDimensions = tableDimensionsMap.get(tableName);
+      List<CarbonMeasure> carbonMeasures = tableMeasuresMap.get(tableName);
+      String[] cachedCols = cacheColumns.split(",");
+      for (String column : cachedCols) {
+        boolean found = false;
+        // this will avoid adding the columns which have been dropped from the table
+        for (CarbonDimension dimension : carbonDimensions) {
+          if (dimension.getColName().equals(column)) {
+            cachedColsList.add(column);
+            found = true;
+            break;
+          }
+        }
+        // if column is not a dimension then check in measures
+        if (!found) {
+          for (CarbonMeasure measure : carbonMeasures) {
+            if (measure.getColName().equals(column)) {
+              cachedColsList.add(column);
+              break;
+            }
+          }
+        }
+      }
+    }
+    return cachedColsList;
   }
 }

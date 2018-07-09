@@ -18,13 +18,17 @@ package org.apache.carbondata.processing.loading.steps;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
@@ -46,9 +50,12 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataWriterBatchProcessorStepImpl.class.getName());
 
+  private Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap;
   public DataWriterBatchProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
     super(configuration, child);
+    this.localDictionaryGeneratorMap =
+        CarbonUtil.getLocalDictionaryModel(configuration.getTableSpec().getCarbonTable());
   }
 
   @Override public DataField[] getOutput() {
@@ -85,8 +92,10 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
           CarbonRowBatch next = iterator.next();
           // If no rows from merge sorter, then don't create a file in fact column handler
           if (next.hasNext()) {
+            DataMapWriterListener listener = getDataMapWriterListener(0);
             CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
-                .createCarbonFactDataHandlerModel(configuration, storeLocation, 0, k++);
+                .createCarbonFactDataHandlerModel(configuration, storeLocation, 0, k++, listener);
+            model.setColumnLocalDictGenMap(this.localDictionaryGeneratorMap);
             CarbonFactHandler dataHandler = CarbonFactHandlerFactory
                 .createCarbonFactHandler(model, CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
             dataHandler.initialise();

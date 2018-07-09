@@ -35,7 +35,7 @@
   <inceptionYear>2016</inceptionYear>
   <packaging>pom</packaging>
 
-  <version>1.4.0-SNAPSHOT</version>
+  <version>1.5.0-SNAPSHOT</version>
 
   <licenses>
     <license>
@@ -103,6 +103,7 @@
     <module>integration/spark-common-test</module>
     <module>datamap/examples</module>
     <module>store/sdk</module>
+    <module>store/search</module>
     <module>assembly</module>
   </modules>
 
@@ -463,12 +464,6 @@
       </build>
     </profile>
     <profile>
-      <id>hadoop-2.2.0</id>
-      <properties>
-        <hadoop.version>2.2.0</hadoop.version>
-      </properties>
-    </profile>
-    <profile>
       <id>spark-2.1</id>
       <properties>
         <spark.version>2.1.0</spark.version>
@@ -482,6 +477,7 @@
         <module>streaming</module>
         <module>examples/spark2</module>
         <module>datamap/lucene</module>
+        <module>datamap/bloom</module>
       </modules>
       <build>
         <plugins>
@@ -514,6 +510,11 @@
                 <sourceDirectory>${basedir}/integration/presto/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/store/sdk/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/store/search/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/store/search/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/datamap/bloom/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/datamap/lucene/src/main/java</sourceDirectory>
               </sourceDirectories>
             </configuration>
           </plugin>
@@ -537,6 +538,7 @@
         <module>streaming</module>
         <module>examples/spark2</module>
         <module>datamap/lucene</module>
+        <module>datamap/bloom</module>
       </modules>
       <build>
         <plugins>
@@ -569,6 +571,11 @@
                 <sourceDirectory>${basedir}/integration/presto/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/store/sdk/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/store/search/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/store/search/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/datamap/bloom/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/datamap/lucene/src/main/java</sourceDirectory>
               </sourceDirectories>
             </configuration>
           </plugin>
@@ -622,6 +629,13 @@
       <properties>
         <script.exetension>.bat</script.exetension>
       </properties>
+    </profile>
+    <profile>
+      <id>mv</id>
+      <modules>
+        <module>datamap/mv/plan</module>
+        <module>datamap/mv/core</module>
+      </modules>
     </profile>
   </profiles>
 

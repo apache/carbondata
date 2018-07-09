@@ -16,10 +16,12 @@
  */
 package org.apache.carbondata.core.datamap;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -27,6 +29,8 @@ import org.apache.carbondata.core.datamap.dev.expr.AndDataMapExprWrapper;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapperImpl;
 import org.apache.carbondata.core.datamap.dev.expr.OrDataMapExprWrapper;
+import org.apache.carbondata.core.datamap.status.DataMapStatusDetail;
+import org.apache.carbondata.core.datamap.status.DataMapStatusManager;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -54,32 +58,42 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 @InterfaceAudience.Internal
 public class DataMapChooser {
 
-  private static DataMapChooser INSTANCE;
+  private CarbonTable carbonTable;
+  private List<TableDataMap> cgDataMaps;
+  private List<TableDataMap> fgDataMaps;
 
-  private DataMapChooser() { }
-
-  public static DataMapChooser get() {
-    if (INSTANCE == null) {
-      INSTANCE = new DataMapChooser();
+  public DataMapChooser(CarbonTable carbonTable) throws IOException {
+    this.carbonTable = carbonTable;
+    // read all datamaps for this table and populate CG and FG datamap list
+    List<TableDataMap> visibleDataMaps =
+        DataMapStoreManager.getInstance().getAllVisibleDataMap(carbonTable);
+    Map<String, DataMapStatusDetail> map = DataMapStatusManager.readDataMapStatusMap();
+    cgDataMaps = new ArrayList<>(visibleDataMaps.size());
+    fgDataMaps = new ArrayList<>(visibleDataMaps.size());
+    for (TableDataMap visibleDataMap : visibleDataMaps) {
+      DataMapStatusDetail status = map.get(visibleDataMap.getDataMapSchema().getDataMapName());
+      if (status != null && status.isEnabled()) {
+        DataMapLevel level = visibleDataMap.getDataMapFactory().getDataMapLevel();
+        if (level == DataMapLevel.CG) {
+          cgDataMaps.add(visibleDataMap);
+        } else {
+          fgDataMaps.add(visibleDataMap);
+        }
+      }
     }
-    return INSTANCE;
   }
 
   /**
    * Return a chosen datamap based on input filter. See {@link DataMapChooser}
    */
-  public DataMapExprWrapper choose(CarbonTable carbonTable, FilterResolverIntf resolverIntf) {
-    if (resolverIntf != null) {
-      Expression expression = resolverIntf.getFilterExpression();
+  public DataMapExprWrapper choose(FilterResolverIntf filter) {
+    if (filter != null) {
+      Expression expression = filter.getFilterExpression();
       // First check for FG datamaps if any exist
-      List<TableDataMap> allDataMapFG =
-          DataMapStoreManager.getInstance().getAllDataMap(carbonTable, DataMapLevel.FG);
-      ExpressionTuple tuple = selectDataMap(expression, allDataMapFG, resolverIntf);
+      ExpressionTuple tuple = selectDataMap(expression, fgDataMaps, filter);
       if (tuple.dataMapExprWrapper == null) {
         // Check for CG datamap
-        List<TableDataMap> allDataMapCG =
-            DataMapStoreManager.getInstance().getAllDataMap(carbonTable, DataMapLevel.CG);
-        tuple = selectDataMap(expression, allDataMapCG, resolverIntf);
+        tuple = selectDataMap(expression, cgDataMaps, filter);
       }
       if (tuple.dataMapExprWrapper != null) {
         return tuple.dataMapExprWrapper;
@@ -87,8 +101,65 @@ public class DataMapChooser {
     }
     // Return the default datamap if no other datamap exists.
     return new DataMapExprWrapperImpl(
-        DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable),
-        resolverIntf);
+        DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable), filter);
+  }
+
+  /**
+   * Return a chosen FG datamap based on input filter. See {@link DataMapChooser}
+   */
+  public DataMapExprWrapper chooseFGDataMap(FilterResolverIntf resolverIntf) {
+    return chooseDataMap(DataMapLevel.FG, resolverIntf);
+  }
+
+  /**
+   * Return a chosen CG datamap based on input filter. See {@link DataMapChooser}
+   */
+  public DataMapExprWrapper chooseCGDataMap(FilterResolverIntf resolverIntf) {
+    return chooseDataMap(DataMapLevel.CG, resolverIntf);
+  }
+
+  private DataMapExprWrapper chooseDataMap(DataMapLevel level, FilterResolverIntf resolverIntf) {
+    if (resolverIntf != null) {
+      Expression expression = resolverIntf.getFilterExpression();
+      List<TableDataMap> datamaps = level == DataMapLevel.CG ? cgDataMaps : fgDataMaps;
+      ExpressionTuple tuple = selectDataMap(expression, datamaps, resolverIntf);
+      if (tuple.dataMapExprWrapper != null) {
+        return tuple.dataMapExprWrapper;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Get all datamaps of the table for clearing purpose
+   */
+  public DataMapExprWrapper getAllDataMapsForClear(CarbonTable carbonTable)
+      throws IOException {
+    List<TableDataMap> allDataMapFG =
+        DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
+    DataMapExprWrapper initialExpr = null;
+    if (allDataMapFG.size() > 0) {
+      initialExpr = new DataMapExprWrapperImpl(allDataMapFG.get(0), null);
+
+      for (int i = 1; i < allDataMapFG.size(); i++) {
+        initialExpr = new AndDataMapExprWrapper(initialExpr,
+            new DataMapExprWrapperImpl(allDataMapFG.get(i), null), null);
+      }
+    }
+    return initialExpr;
+  }
+
+  /**
+   * Returns default blocklet datamap
+   * @param carbonTable
+   * @param resolverIntf
+   * @return
+   */
+  public static DataMapExprWrapper getDefaultDataMap(CarbonTable carbonTable,
+      FilterResolverIntf resolverIntf) {
+    // Return the default datamap if no other datamap exists.
+    return new DataMapExprWrapperImpl(
+        DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable), resolverIntf);
   }
 
   private ExpressionTuple selectDataMap(Expression expression, List<TableDataMap> allDataMap,
@@ -212,8 +283,8 @@ public class DataMapChooser {
       List<ColumnExpression> columnExpressions, Set<ExpressionType> expressionTypes) {
     List<DataMapTuple> tuples = new ArrayList<>();
     for (TableDataMap dataMap : allDataMap) {
-      if (contains(dataMap.getDataMapFactory().getMeta(), columnExpressions, expressionTypes))
-      {
+      if (null != dataMap.getDataMapFactory().getMeta() && contains(
+          dataMap.getDataMapFactory().getMeta(), columnExpressions, expressionTypes)) {
         tuples.add(
             new DataMapTuple(dataMap.getDataMapFactory().getMeta().getIndexedColumns().size(),
                 dataMap));
@@ -226,6 +297,10 @@ public class DataMapChooser {
     return null;
   }
 
+  /**
+   * Return true if the input datamap contains the column that needed in
+   * specified expression
+   */
   private boolean contains(DataMapMeta mapMeta, List<ColumnExpression> columnExpressions,
       Set<ExpressionType> expressionTypes) {
     if (mapMeta.getOptimizedOperation().contains(ExpressionType.TEXT_MATCH) &&
@@ -238,8 +313,8 @@ public class DataMapChooser {
     }
     boolean contains = true;
     for (ColumnExpression expression : columnExpressions) {
-      if (!mapMeta.getIndexedColumns().contains(expression.getColumnName()) || !mapMeta
-          .getOptimizedOperation().containsAll(expressionTypes)) {
+      if (!mapMeta.getIndexedColumnNames().contains(expression.getColumnName()) ||
+          !mapMeta.getOptimizedOperation().containsAll(expressionTypes)) {
         contains = false;
         break;
       }

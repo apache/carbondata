@@ -28,6 +28,7 @@ class TestDescribeTable extends QueryTest with BeforeAndAfterAll {
   override def beforeAll: Unit = {
     sql("DROP TABLE IF EXISTS Desc1")
     sql("DROP TABLE IF EXISTS Desc2")
+    sql("drop table if exists a")
     sql("CREATE TABLE Desc1(Dec1Col1 String, Dec1Col2 String, Dec1Col3 int, Dec1Col4 double) stored by 'carbondata'")
     sql("DESC Desc1")
     sql("DROP TABLE Desc1")
@@ -50,15 +51,34 @@ class TestDescribeTable extends QueryTest with BeforeAndAfterAll {
   test("test describe formatted table desc1") {
 
     val resultCol = Seq("", "", "##Detailed Column property", "##Detailed Table Information", "ADAPTIVE", "CARBON Store Path", "Comment", "Database Name", "Last Update Time",
-    "SORT_COLUMNS", "SORT_SCOPE", "Streaming", "Table Block Size", "Table Data Size", "Table Index Size", "Table Name", "dec2col1", "dec2col2", "dec2col3", "dec2col4")
+    "SORT_COLUMNS", "SORT_SCOPE", "CACHE_LEVEL", "Streaming", "Table Block Size", "Local Dictionary Enabled", "Local Dictionary Include", "Local Dictionary Threshold","Table Data Size", "Table Index Size", "Table Name", "dec2col1", "dec2col2", "dec2col3", "dec2col4")
     val resultRow: Seq[Row] = resultCol map(propName => Row(f"$propName%-36s"))
     checkAnswer(sql("desc formatted DESC1").select("col_name"), resultRow)
-    assert(sql("desc formatted desc1").count() == 20)
+    assert(sql("desc formatted desc1").count() == 24)
+  }
+
+  test("test describe formatted for partition table") {
+    sql("create table a(a string) partitioned by (b int) stored by 'carbondata'")
+    sql("insert into a values('a',1)")
+    sql("insert into a values('a',2)")
+    val desc = sql("describe formatted a").collect()
+    assert(desc(desc.indexWhere(_.get(0).toString.contains("#Partition")) + 2).get(0).toString.contains("b"))
+    val descPar = sql("describe formatted a partition(b=1)").collect
+    descPar.find(_.get(0).toString.contains("Partition Value:")) match {
+      case Some(row) => assert(row.get(1).toString.contains("1"))
+      case None => fail("Partition Value not found in describe formatted")
+    }
+    descPar.find(_.get(0).toString.contains("Location:")) match {
+      case Some(row) => assert(row.get(1).toString.contains("target/warehouse/a/b=1"))
+      case None => fail("Partition Location not found in describe formatted")
+    }
+    assert(descPar.exists(_.toString().contains("Partition Parameters:")))
   }
 
   override def afterAll: Unit = {
     sql("DROP TABLE Desc1")
     sql("DROP TABLE Desc2")
+    sql("drop table if exists a")
   }
 
 }

@@ -105,7 +105,10 @@ DataMap can be created using following DDL
   ```
 The string followed by USING is called DataMap Provider, in this version CarbonData supports two 
 kinds of DataMap: 
-1. preaggregate, for pre-aggregate table. No DMPROPERTY is required for this DataMap
+1. preaggregate, for pre-aggregate table. Pre-Aggregate table supports two values for DMPROPERTIES.
+   a. 'path' is used to specify the store location of the datamap.('path'='/location/').
+   b. 'partitioning' when set to false enables user to disable partitioning of the datamap.
+       Default value is true for this property.
 2. timeseries, for timeseries roll-up table. Please refer to [Timeseries DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/timeseries-datamap-guide.md)
 
 DataMap can be dropped using following DDL

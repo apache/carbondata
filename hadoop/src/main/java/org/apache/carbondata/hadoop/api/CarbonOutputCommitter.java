@@ -124,6 +124,9 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
         .mergeSegmentFiles(readPath, segmentFileName,
             CarbonTablePath.getSegmentFilesLocation(loadModel.getTablePath()));
     if (segmentFile != null) {
+      if (null == newMetaEntry) {
+        throw new RuntimeException("Internal Error");
+      }
       // Move all files from temp directory of each segment to partition directory
       SegmentFileStore.moveFromTempFolder(segmentFile,
           loadModel.getSegmentId() + "_" + loadModel.getFactTimeStamp() + ".tmp",
@@ -157,14 +160,18 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       }
       String uniqueId = null;
       if (overwriteSet) {
-        if (segmentSize == 0) {
-          newMetaEntry.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
+        if (!loadModel.isCarbonTransactionalTable()) {
+          CarbonLoaderUtil.deleteNonTransactionalTableForInsertOverwrite(loadModel);
+        } else {
+          if (segmentSize == 0) {
+            newMetaEntry.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
+          }
+          uniqueId = overwritePartitions(loadModel, newMetaEntry, uuid);
         }
-        uniqueId = overwritePartitions(loadModel, newMetaEntry, uuid);
       } else {
         CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false, uuid);
       }
-      DataMapStatusManager.disableDataMapsOfTable(carbonTable);
+      DataMapStatusManager.disableAllLazyDataMaps(carbonTable);
       if (operationContext != null) {
         LoadEvents.LoadTablePostStatusUpdateEvent postStatusUpdateEvent =
             new LoadEvents.LoadTablePostStatusUpdateEvent(loadModel);
@@ -179,7 +186,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
           context.getConfiguration().get(CarbonTableOutputFormat.UPADTE_TIMESTAMP, null);
       String segmentsToBeDeleted =
           context.getConfiguration().get(CarbonTableOutputFormat.SEGMENTS_TO_BE_DELETED, "");
-      List<Segment> segmentDeleteList = Segment.toSegmentList(segmentsToBeDeleted.split(","));
+      List<Segment> segmentDeleteList = Segment.toSegmentList(segmentsToBeDeleted.split(","), null);
       Set<Segment> segmentSet = new HashSet<>(
           new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
               .getValidAndInvalidSegments().getValidSegments());
@@ -230,7 +237,8 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       newMetaEntry.setUpdateStatusFileName(uniqueId);
       // Commit the removed partitions in carbon store.
       CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, false, uuid,
-          Segment.toSegmentList(tobeDeletedSegs), Segment.toSegmentList(tobeUpdatedSegs));
+          Segment.toSegmentList(tobeDeletedSegs, null),
+          Segment.toSegmentList(tobeUpdatedSegs, null));
       return uniqueId;
     }
     return null;

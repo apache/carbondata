@@ -18,9 +18,13 @@
 package org.apache.carbondata.sdk.file;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapter;
@@ -36,8 +40,24 @@ public class Schema {
 
   private Field[] fields;
 
+  /**
+   * construct a schema with fields
+   * @param fields
+   */
   public Schema(Field[] fields) {
     this.fields = fields;
+  }
+
+  /**
+   * construct a schema with List<ColumnSchema>
+   *
+   * @param columnSchemaList column schema list
+   */
+  public Schema(List<ColumnSchema> columnSchemaList) {
+    fields = new Field[columnSchemaList.size()];
+    for (int i = 0; i < columnSchemaList.size(); i++) {
+      fields[i] = new Field(columnSchemaList.get(i));
+    }
   }
 
   /**
@@ -46,6 +66,8 @@ public class Schema {
    *   {"name":"string"},
    *   {"age":"int"}
    * ]
+   * @param json specified as string
+   * @return Schema
    */
   public static Schema parseJson(String json) {
     GsonBuilder gsonBuilder = new GsonBuilder();
@@ -70,5 +92,20 @@ public class Schema {
 
   public Field[] getFields() {
     return fields;
+  }
+
+  /**
+   * Sort the schema order as original order
+   *
+   * @return Schema object
+   */
+  public Schema asOriginOrder() {
+    Arrays.sort(fields, new Comparator<Field>() {
+      @Override
+      public int compare(Field o1, Field o2) {
+        return Integer.compare(o1.getSchemaOrdinal(), o2.getSchemaOrdinal());
+      }
+    });
+    return this;
   }
 }

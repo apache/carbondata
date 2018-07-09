@@ -17,12 +17,20 @@
 
 package org.apache.carbondata.core.datamap;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.common.exceptions.MetadataProcessException;
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.core.datamap.dev.DataMap;
+import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 /**
  * Developer can register a datamap implementation with a short name.
@@ -33,7 +41,7 @@ import org.apache.carbondata.common.annotations.InterfaceStability;
  *  USING 'short-name-of-the-datamap'
  * }
  * otherwise, user should use the class name of the datamap implementation to create the datamap
- * (subclass of {@link org.apache.carbondata.core.datamap.dev.DataMapFactory})
+ * (subclass of {@link DataMapFactory})
  * <p>
  * {@code
  *  CREATE DATAMAP dm ON TABLE table
@@ -45,14 +53,44 @@ import org.apache.carbondata.common.annotations.InterfaceStability;
 public class DataMapRegistry {
   private static Map<String, String> shortNameToClassName = new ConcurrentHashMap<>();
 
-  public static void registerDataMap(String datamapClassName, String shortName) {
+  private static void registerDataMap(String datamapClassName, String shortName) {
     Objects.requireNonNull(datamapClassName);
     Objects.requireNonNull(shortName);
     shortNameToClassName.put(shortName, datamapClassName);
   }
 
-  public static String getDataMapClassName(String shortName) {
+  private static String getDataMapClassName(String shortName) {
     Objects.requireNonNull(shortName);
     return shortNameToClassName.get(shortName);
+  }
+
+  public static DataMapFactory<? extends DataMap> getDataMapFactoryByShortName(
+      CarbonTable table, DataMapSchema dataMapSchema) throws MalformedDataMapCommandException {
+    String providerName = dataMapSchema.getProviderName();
+    try {
+      registerDataMap(
+          DataMapClassProvider.getDataMapProviderOnName(providerName).getClassName(),
+          DataMapClassProvider.getDataMapProviderOnName(providerName).getShortName());
+    } catch (UnsupportedOperationException ex) {
+      throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found", ex);
+    }
+    DataMapFactory<? extends DataMap> dataMapFactory;
+    String className = getDataMapClassName(providerName.toLowerCase());
+    if (className != null) {
+      try {
+        dataMapFactory = (DataMapFactory<? extends DataMap>)
+            Class.forName(className).getConstructors()[0].newInstance(table, dataMapSchema);
+      } catch (ClassNotFoundException ex) {
+        throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found", ex);
+      } catch (InvocationTargetException ex) {
+        throw new MalformedDataMapCommandException(ex.getTargetException().getMessage());
+      } catch (InstantiationException | IllegalAccessException | IllegalArgumentException ex) {
+        throw new MetadataProcessException(
+            "failed to create DataMap '" + providerName + "': " + ex.getMessage(), ex);
+      }
+    } else {
+      throw new MalformedDataMapCommandException("DataMap '" + providerName + "' not found");
+    }
+    return dataMapFactory;
   }
 }

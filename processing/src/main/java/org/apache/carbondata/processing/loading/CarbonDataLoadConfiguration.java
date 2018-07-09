@@ -87,7 +87,9 @@ public class CarbonDataLoadConfiguration {
 
   private int noDictionaryCount;
 
-  private int complexColumnCount;
+  private int complexDictionaryColumnCount;
+
+  private int complexNonDictionaryColumnCount;
 
   /**
    * schema updated time stamp to be used for restructure scenarios
@@ -110,14 +112,24 @@ public class CarbonDataLoadConfiguration {
 
   private SortColumnRangeInfo sortColumnRangeInfo;
 
-  private boolean carbonUnmanagedTable;
+  private boolean carbonTransactionalTable;
 
   /**
    * Flder path to where data should be written for this load.
    */
   private String dataWritePath;
 
+  private String parentTablePath;
+
   public CarbonDataLoadConfiguration() {
+  }
+
+  public String getParentTablePath() {
+    return parentTablePath;
+  }
+
+  public void setParentTablePath(String parentTablePath) {
+    this.parentTablePath = parentTablePath;
   }
 
   public void setDataFields(DataField[] dataFields) {
@@ -128,13 +140,17 @@ public class CarbonDataLoadConfiguration {
       CarbonColumn column = dataField.getColumn();
       if (column.isDimension()) {
         dimensionCount++;
-        if (!dataField.hasDictionaryEncoding()) {
+        if (column.isComplex()) {
+          if (!dataField.hasDictionaryEncoding()) {
+            complexNonDictionaryColumnCount++;
+          } else {
+            complexDictionaryColumnCount++;
+          }
+        } else if (!dataField.hasDictionaryEncoding()) {
           noDictionaryCount++;
         }
       }
-      if (column.isComplex()) {
-        complexColumnCount++;
-      }
+
       if (column.isMeasure()) {
         measureCount++;
       }
@@ -153,8 +169,8 @@ public class CarbonDataLoadConfiguration {
     return noDictionaryCount;
   }
 
-  public int getComplexColumnCount() {
-    return complexColumnCount;
+  public int getComplexDictionaryColumnCount() {
+    return complexDictionaryColumnCount;
   }
 
   public int getMeasureCount() {
@@ -380,11 +396,16 @@ public class CarbonDataLoadConfiguration {
     this.sortColumnRangeInfo = sortColumnRangeInfo;
   }
 
-  public boolean isCarbonUnmanagedTable() {
-    return carbonUnmanagedTable;
+  public boolean isCarbonTransactionalTable() {
+    return carbonTransactionalTable;
   }
 
-  public void setCarbonUnmanagedTable(boolean carbonUnmanagedTable) {
-    this.carbonUnmanagedTable = carbonUnmanagedTable;
+  public void setCarbonTransactionalTable(boolean carbonTransactionalTable) {
+    this.carbonTransactionalTable = carbonTransactionalTable;
   }
+
+  public int getComplexNonDictionaryColumnCount() {
+    return complexNonDictionaryColumnCount;
+  }
+
 }

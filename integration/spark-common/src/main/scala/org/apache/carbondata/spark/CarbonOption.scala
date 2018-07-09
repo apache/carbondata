@@ -48,6 +48,8 @@ class CarbonOption(options: Map[String, String]) {
 
   def dictionaryExclude: Option[String] = options.get("dictionary_exclude")
 
+  def longStringColumns: Option[String] = options.get("long_string_columns")
+
   def tableBlockSize: Option[String] = options.get("table_blocksize")
 
   def bucketNumber: Int = options.getOrElse("bucketnumber", "0").toInt
@@ -57,8 +59,16 @@ class CarbonOption(options: Map[String, String]) {
   def isBucketingEnabled: Boolean = options.contains("bucketcolumns") &&
                                     options.contains("bucketnumber")
 
-  def isStreaming: Boolean =
-    options.getOrElse("streaming", "false").toBoolean
+  def isStreaming: Boolean = {
+    var stream = options.getOrElse("streaming", "false")
+    if (stream.equalsIgnoreCase("sink") || stream.equalsIgnoreCase("source")) {
+      stream = "true"
+    }
+    stream.toBoolean
+  }
+
+  def overwriteEnabled: Boolean =
+    options.getOrElse("overwrite", "false").toBoolean
 
   def toMap: Map[String, String] = options
 }

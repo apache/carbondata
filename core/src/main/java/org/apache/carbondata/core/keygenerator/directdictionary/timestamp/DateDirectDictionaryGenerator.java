@@ -85,7 +85,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
   @Override public int generateDirectSurrogateKey(String memberStr) {
     if (null == memberStr || memberStr.trim().isEmpty() || memberStr
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-      return 1;
+      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     }
     return getDirectSurrogateForMember(memberStr);
   }
@@ -103,7 +103,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
     } else {
       if (null == memberStr || memberStr.trim().isEmpty() || memberStr
           .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-        return 1;
+        return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
       }
       return getDirectSurrogateForMember(memberStr);
     }
@@ -127,7 +127,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
     }
     //adding +2 to reserve the first cuttOffDiff value for null or empty date
     if (null == dateToStr) {
-      return 1;
+      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     } else {
       return generateKey(dateToStr.getTime());
     }
@@ -140,7 +140,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
    * @return member value/actual value Date
    */
   @Override public Object getValueFromSurrogate(int key) {
-    if (key == 1) {
+    if (key == CarbonCommonConstants.DIRECT_DICT_VALUE_NULL) {
       return null;
     }
     return key - cutOffDate;
@@ -157,18 +157,18 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
       }
     }
     if (timeValue == -1) {
-      return 1;
+      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     } else {
       return generateKey(timeValue);
     }
   }
 
-  private int generateKey(long timeValue) {
+  public int generateKey(long timeValue) {
     if (timeValue < MIN_VALUE || timeValue > MAX_VALUE) {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("Value for date type column is not in valid range. Value considered as null.");
       }
-      return 1;
+      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     }
     return (int) Math.floor((double) timeValue / MILLIS_PER_DAY) + cutOffDate;
   }

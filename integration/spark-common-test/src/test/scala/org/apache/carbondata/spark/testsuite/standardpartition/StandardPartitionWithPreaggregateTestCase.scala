@@ -514,6 +514,108 @@ class StandardPartitionWithPreaggregateTestCase extends QueryTest with BeforeAnd
     assert(sql("show datamap on table partitiontable").collect().head.get(0).toString.equalsIgnoreCase("ag1"))
     sql("drop datamap ag1 on table partitiontable")
   }
+  
+  test("test blocking partitioning of Pre-Aggregate table") {
+    sql("drop table if exists updatetime_8")
+    sql("create table updatetime_8" +
+      "(countryid smallint,hs_len smallint,minstartdate string,startdate string,newdate string,minnewdate string) partitioned by (imex smallint) stored by 'carbondata' tblproperties('sort_scope'='global_sort','sort_columns'='countryid,imex,hs_len,minstartdate,startdate,newdate,minnewdate','table_blocksize'='256')")
+    sql("create datamap ag on table updatetime_8 using 'preaggregate' dmproperties('partitioning'='false') as select imex,sum(hs_len) from updatetime_8 group by imex")
+    val carbonTable = CarbonEnv.getCarbonTable(Some("partition_preaggregate"), "updatetime_8_ag")(sqlContext.sparkSession)
+    assert(!carbonTable.isHivePartitionTable)
+    sql("drop table if exists updatetime_8")
+  }
+
+  test("Test data updation after compaction on Partition with Pre-Aggregate tables") {
+    sql("drop table if exists partitionallcompaction")
+    sql(
+      "create table partitionallcompaction(empno int,empname String,designation String," +
+      "workgroupcategory int,workgroupcategoryname String,deptno int,projectjoindate timestamp," +
+      "projectenddate date,attendance int,utilization int,salary int) partitioned by (deptname " +
+      "String,doj timestamp,projectcode int) stored  by 'carbondata' tblproperties" +
+      "('sort_scope'='global_sort')")
+    sql(
+      "create datamap sensor_1 on table partitionallcompaction using 'preaggregate' as select " +
+      "sum(salary),doj, deptname,projectcode from partitionallcompaction group by doj," +
+      "deptname,projectcode")
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE
+         |partitionallcompaction OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE
+         |partitionallcompaction OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE
+         |partitionallcompaction PARTITION(deptname='Learning', doj, projectcode) OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"') """.stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE
+         |partitionallcompaction PARTITION(deptname='configManagement', doj, projectcode) OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE
+         |partitionallcompaction PARTITION(deptname='network', doj, projectcode) OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE
+         |partitionallcompaction PARTITION(deptname='protocol', doj, projectcode) OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE
+         |partitionallcompaction PARTITION(deptname='security', doj, projectcode) OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '"')""".stripMargin)
+    sql("ALTER TABLE partitionallcompaction COMPACT 'MINOR'").collect()
+    checkAnswer(sql("select count(empno) from partitionallcompaction where empno=14"),
+      Seq(Row(5)))
+  }
+
+  test("Test data updation in Aggregate query after compaction on Partitioned table with Pre-Aggregate table") {
+    sql("drop table if exists updatetime_8")
+    sql("create table updatetime_8" +
+      "(countryid smallint,hs_len smallint,minstartdate string,startdate string,newdate string,minnewdate string) partitioned by (imex smallint) stored by 'carbondata' tblproperties('sort_scope'='global_sort','sort_columns'='countryid,imex,hs_len,minstartdate,startdate,newdate,minnewdate','table_blocksize'='256')")
+    sql("create datamap ag on table updatetime_8 using 'preaggregate' as select sum(hs_len) from updatetime_8 group by imex")
+    sql("insert into updatetime_8 select 21,20,'fbv','gbv','wvsw','vwr',23")
+    sql("insert into updatetime_8 select 21,20,'fbv','gbv','wvsw','vwr',24")
+    sql("insert into updatetime_8 select 21,20,'fbv','gbv','wvsw','vwr',23")
+    sql("insert into updatetime_8 select 21,21,'fbv','gbv','wvsw','vwr',24")
+    sql("insert into updatetime_8 select 21,21,'fbv','gbv','wvsw','vwr',24")
+    sql("insert into updatetime_8 select 21,21,'fbv','gbv','wvsw','vwr',24")
+    sql("insert into updatetime_8 select 21,21,'fbv','gbv','wvsw','vwr',25")
+    sql("insert into updatetime_8 select 21,21,'fbv','gbv','wvsw','vwr',25")
+    sql("alter table updatetime_8 compact 'minor'")
+    sql("alter table updatetime_8 compact 'minor'")
+    checkAnswer(sql("select sum(hs_len) from updatetime_8 group by imex"),Seq(Row(40),Row(42),Row(83)))
+  }
+
+  test("check partitioning for child tables with various combinations") {
+    sql("drop table if exists partitionone")
+    sql(
+      """
+        | CREATE TABLE if not exists partitionone (empname String, id int)
+        | PARTITIONED BY (year int, month int,day int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(
+      "create datamap p7 on table partitionone using 'preaggregate' as select empname, sum(year), sum(day) from partitionone group by empname, year, day")
+    sql(
+      "create datamap p1 on table partitionone using 'preaggregate' as select empname, sum(year) from partitionone group by empname")
+    sql(
+      "create datamap p2 on table partitionone using 'preaggregate' as select empname, sum(year) from partitionone group by empname, year")
+    sql(
+      "create datamap p3 on table partitionone using 'preaggregate' as select empname, sum(year), sum(month) from partitionone group by empname, year, month")
+    sql(
+      "create datamap p4 on table partitionone using 'preaggregate' as select empname, sum(year) from partitionone group by empname, year, month, day")
+    sql(
+      "create datamap p5 on table partitionone using 'preaggregate' as select empname, sum(year) from partitionone group by empname, month")
+    sql(
+      "create datamap p6 on table partitionone using 'preaggregate' as select empname, sum(year), sum(month) from partitionone group by empname, month, day")
+    assert(!CarbonEnv.getCarbonTable(Some("partition_preaggregate"),"partitionone_p1")(sqlContext.sparkSession).isHivePartitionTable)
+    assert(CarbonEnv.getCarbonTable(Some("partition_preaggregate"),"partitionone_p2")(sqlContext.sparkSession).getPartitionInfo.getColumnSchemaList.size() == 1)
+    assert(CarbonEnv.getCarbonTable(Some("partition_preaggregate"),"partitionone_p3")(sqlContext.sparkSession).getPartitionInfo.getColumnSchemaList.size == 2)
+    assert(CarbonEnv.getCarbonTable(Some("partition_preaggregate"),"partitionone_p4")(sqlContext.sparkSession).getPartitionInfo.getColumnSchemaList.size == 3)
+    assert(!CarbonEnv.getCarbonTable(Some("partition_preaggregate"),"partitionone_p5")(sqlContext.sparkSession).isHivePartitionTable)
+    assert(!CarbonEnv.getCarbonTable(Some("partition_preaggregate"),"partitionone_p6")(sqlContext.sparkSession).isHivePartitionTable)
+    assert(!CarbonEnv.getCarbonTable(Some("partition_preaggregate"),"partitionone_p7")(sqlContext.sparkSession).isHivePartitionTable)
+  }
 
   def preAggTableValidator(plan: LogicalPlan, actualTableName: String) : Unit = {
     var isValidPlan = false

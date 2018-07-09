@@ -94,7 +94,7 @@ case class RefreshCarbonTableCommand(
           // 2.2.1 Register the aggregate tables to hive
           registerAggregates(databaseName, dataMapSchemaList)(sparkSession)
         }
-        registerTableWithHive(databaseName, tableName, tableInfo)(sparkSession)
+        registerTableWithHive(databaseName, tableName, tableInfo, tablePath)(sparkSession)
         // Register partitions to hive metastore in case of hive partitioning carbon table
         if (tableInfo.getFactTable.getPartitionInfo != null &&
             tableInfo.getFactTable.getPartitionInfo.getPartitionType == PartitionType.NATIVE_HIVE) {
@@ -144,14 +144,16 @@ case class RefreshCarbonTableCommand(
    */
   def registerTableWithHive(dbName: String,
       tableName: String,
-      tableInfo: TableInfo)(sparkSession: SparkSession): Any = {
+      tableInfo: TableInfo,
+      tablePath: String)(sparkSession: SparkSession): Any = {
     val operationContext = new OperationContext
     try {
       val refreshTablePreExecutionEvent: RefreshTablePreExecutionEvent =
         new RefreshTablePreExecutionEvent(sparkSession,
           tableInfo.getOrCreateAbsoluteTableIdentifier())
       OperationListenerBus.getInstance.fireEvent(refreshTablePreExecutionEvent, operationContext)
-      CarbonCreateTableCommand(tableInfo, ifNotExistsSet = false).run(sparkSession)
+      CarbonCreateTableCommand(tableInfo, ifNotExistsSet = false, tableLocation = Some(tablePath))
+        .run(sparkSession)
       LOGGER.audit(s"Table registration with Database name [$dbName] and Table name " +
                    s"[$tableName] is successful.")
     } catch {
@@ -199,7 +201,6 @@ case class RefreshCarbonTableCommand(
    */
   def registerAggregates(dbName: String,
       dataMapSchemaList: util.List[DataMapSchema])(sparkSession: SparkSession): Any = {
-    val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     dataMapSchemaList.asScala.foreach(dataMap => {
       val tableName = dataMap.getChildSchema.getTableName
       if (!sparkSession.sessionState.catalog.listTables(dbName)
@@ -208,7 +209,7 @@ case class RefreshCarbonTableCommand(
         val absoluteTableIdentifier = AbsoluteTableIdentifier
           .from(tablePath, dbName, tableName)
         val tableInfo = SchemaReader.getTableInfo(absoluteTableIdentifier)
-        registerTableWithHive(dbName, tableName, tableInfo)(sparkSession)
+        registerTableWithHive(dbName, tableName, tableInfo, tablePath)(sparkSession)
       }
     })
   }

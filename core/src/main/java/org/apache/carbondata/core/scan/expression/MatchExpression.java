@@ -29,9 +29,20 @@ import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 @InterfaceAudience.Internal
 public class MatchExpression extends Expression {
   private String queryString;
+  private int maxDoc;
 
   public MatchExpression(String queryString) {
     this.queryString = queryString;
+    this.maxDoc = -1;
+  }
+
+  public MatchExpression(String queryString, int maxDoc) {
+    this.queryString = queryString;
+    this.maxDoc = maxDoc;
+  }
+
+  public int getMaxDoc() {
+    return maxDoc;
   }
 
   @Override
@@ -57,6 +68,6 @@ public class MatchExpression extends Expression {
 
   @Override
   public String getStatement() {
-    return queryString;
+    return "TEXT_MATCH('" + queryString + "')";
   }
 }

@@ -94,6 +94,7 @@ object CarbonDataStoreCreator {
       loadModel.setTableName(
         absoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
       loadModel.setFactFilePath(dataFilePath)
+      loadModel.setCarbonTransactionalTable(table.isTransactionalTable)
       loadModel.setLoadMetadataDetails(new ArrayList[LoadMetadataDetails]())
       loadModel.setTablePath(absoluteTableIdentifier.getTablePath)
       CarbonProperties.getInstance
@@ -309,7 +310,7 @@ object CarbonDataStoreCreator {
     val schemaEvol: SchemaEvolution = new SchemaEvolution()
     schemaEvol.setSchemaEvolutionEntryList(
       new util.ArrayList[SchemaEvolutionEntry]())
-    tableSchema.setSchemaEvalution(schemaEvol)
+    tableSchema.setSchemaEvolution(schemaEvol)
     tableSchema.setTableId(UUID.randomUUID().toString)
     tableInfo.setTableUniqueName(
       absoluteTableIdentifier.getCarbonTableIdentifier.getTableUniqueName

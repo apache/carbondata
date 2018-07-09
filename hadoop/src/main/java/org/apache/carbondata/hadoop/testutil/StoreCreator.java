@@ -128,6 +128,7 @@ public class StoreCreator {
     loadModel.setLoadMetadataDetails(new ArrayList<LoadMetadataDetails>());
     loadModel.setTablePath(absoluteTableIdentifier.getTablePath());
     loadModel.setDateFormat(null);
+    loadModel.setCarbonTransactionalTable(table.isTransactionalTable());
     loadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
         CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS));
@@ -166,7 +167,7 @@ public class StoreCreator {
   /**
    * Method to clear the data maps
    */
-  public static void clearDataMaps() {
+  public static void clearDataMaps() throws IOException {
     DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier);
   }
 
@@ -277,7 +278,7 @@ public class StoreCreator {
     tableSchema.setListOfColumns(columnSchemas);
     SchemaEvolution schemaEvol = new SchemaEvolution();
     schemaEvol.setSchemaEvolutionEntryList(new ArrayList<SchemaEvolutionEntry>());
-    tableSchema.setSchemaEvalution(schemaEvol);
+    tableSchema.setSchemaEvolution(schemaEvol);
     tableSchema.setTableId(UUID.randomUUID().toString());
     tableInfo.setTableUniqueName(
         identifier.getCarbonTableIdentifier().getTableUniqueName()

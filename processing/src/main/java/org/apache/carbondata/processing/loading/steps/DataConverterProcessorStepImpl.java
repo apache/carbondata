@@ -192,11 +192,15 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
   protected CarbonRowBatch processRowBatch(CarbonRowBatch rowBatch, RowConverter localConverter) {
     while (rowBatch.hasNext()) {
       CarbonRow convertRow = localConverter.convert(rowBatch.next());
-      if (isSortColumnRangeEnabled || isBucketColumnEnabled) {
-        short rangeNumber = (short) partitioner.getPartition(convertRow);
-        convertRow.setRangeId(rangeNumber);
+      if (convertRow == null) {
+        rowBatch.remove();
+      } else {
+        if (isSortColumnRangeEnabled || isBucketColumnEnabled) {
+          short rangeNumber = (short) partitioner.getPartition(convertRow);
+          convertRow.setRangeId(rangeNumber);
+        }
+        rowBatch.setPreviousRow(convertRow);
       }
-      rowBatch.setPreviousRow(convertRow);
     }
     rowCounter.getAndAdd(rowBatch.getSize());
     // reuse the origin batch

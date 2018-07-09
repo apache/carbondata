@@ -22,30 +22,38 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
+import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainDataMap;
+import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 /**
- * CG level of lucene DataMap
+ * FG level of lucene DataMap
  */
 @InterfaceAudience.Internal
 public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<FineGrainDataMap> {
 
+  public LuceneFineGrainDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema)
+      throws MalformedDataMapCommandException {
+    super(carbonTable, dataMapSchema);
+  }
+
   /**
    * Get the datamap for segmentid
    */
-  @Override public List<FineGrainDataMap> getDataMaps(Segment segment,
-      ReadCommittedScope readCommittedScope) throws IOException {
+  @Override public List<FineGrainDataMap> getDataMaps(Segment segment) throws IOException {
     List<FineGrainDataMap> lstDataMap = new ArrayList<>();
-    FineGrainDataMap dataMap = new LuceneFineGrainDataMap(analyzer);
+    FineGrainDataMap dataMap = new LuceneFineGrainDataMap(analyzer, getDataMapSchema());
     try {
       dataMap.init(new DataMapModel(
-          LuceneDataMapWriter.genDataMapStorePath(
+          DataMapWriter.getDefaultDataMapPath(
               tableIdentifier.getTablePath(), segment.getSegmentNo(), dataMapName)));
     } catch (MemoryException e) {
       LOGGER.error("failed to get lucene datamap , detail is {}" + e.getMessage());
@@ -59,15 +67,46 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
    * Get datamaps for distributable object.
    */
   @Override
-  public List<FineGrainDataMap> getDataMaps(DataMapDistributable distributable,
-      ReadCommittedScope readCommittedScope)
+  public List<FineGrainDataMap> getDataMaps(DataMapDistributable distributable)
       throws IOException {
-    return getDataMaps(distributable.getSegment(), readCommittedScope);
+    List<FineGrainDataMap> lstDataMap = new ArrayList<>();
+    FineGrainDataMap dataMap = new LuceneFineGrainDataMap(analyzer, getDataMapSchema());
+    String indexPath = ((LuceneDataMapDistributable) distributable).getIndexPath();
+    try {
+      dataMap.init(new DataMapModel(indexPath));
+    } catch (MemoryException e) {
+      LOGGER.error(String.format("failed to get lucene datamap , detail is %s", e.getMessage()));
+      return lstDataMap;
+    }
+    lstDataMap.add(dataMap);
+    return lstDataMap;
   }
 
   @Override
-  public DataMapLevel getDataMapType() {
+  public DataMapLevel getDataMapLevel() {
     return DataMapLevel.FG;
   }
 
+  @Override public boolean willBecomeStale(TableOperation operation) {
+    switch (operation) {
+      case ALTER_RENAME:
+        return true;
+      case ALTER_DROP:
+        return true;
+      case ALTER_ADD_COLUMN:
+        return true;
+      case ALTER_CHANGE_DATATYPE:
+        return true;
+      case STREAMING:
+        return true;
+      case DELETE:
+        return true;
+      case UPDATE:
+        return true;
+      case PARTITION:
+        return true;
+      default:
+        return false;
+    }
+  }
 }

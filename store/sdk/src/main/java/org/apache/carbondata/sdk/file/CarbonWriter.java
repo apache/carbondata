@@ -32,7 +32,8 @@ public abstract class CarbonWriter {
 
   /**
    * Write an object to the file, the format of the object depends on the
-   * implementation
+   * implementation.
+   * Note: This API is not thread safe
    */
   public abstract void write(Object object) throws IOException;
 

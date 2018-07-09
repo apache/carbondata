@@ -1,4 +1,4 @@
-/*
+  /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -31,7 +31,7 @@ import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
-import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable}
@@ -40,6 +40,7 @@ import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
+import org.apache.carbondata.processing.merger.CompactionType
 
 object AlterTableDropPartitionPreStatusListener extends OperationEventListener {
   /**
@@ -102,7 +103,11 @@ trait CommitHelper {
         false
       }
     } else {
-      false
+     /**
+      * Tablestatus_uuid will fail when Pre-Aggregate table is not valid for compaction.
+      * Hence this should return true
+      */
+      true
     }
   }
 
@@ -423,6 +428,32 @@ object LoadPostAggregateListener extends OperationEventListener {
       val carbonLoadModel = carbonLoadModelOption.get
       val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
       if (CarbonUtil.hasAggregationDataMap(table)) {
+        val isOverwrite =
+          operationContext.getProperty("isOverwrite").asInstanceOf[Boolean]
+        if (isOverwrite && table.isHivePartitionTable) {
+          val parentPartitionColumns = table.getPartitionInfo.getColumnSchemaList.asScala
+            .map(_.getColumnName)
+          val childTablesWithoutPartitionColumns =
+            table.getTableInfo.getDataMapSchemaList.asScala.filter { dataMapSchema =>
+              val childColumns = dataMapSchema.getChildSchema.getListOfColumns.asScala
+              val partitionColExists = parentPartitionColumns.forall {
+                partition =>
+                  childColumns.exists { childColumn =>
+                    childColumn.getAggFunction.isEmpty &&
+                    childColumn.getParentColumnTableRelations.asScala.head.getColumnName.
+                      equals(partition)
+                  }
+              }
+              !partitionColExists
+            }
+          if (childTablesWithoutPartitionColumns.nonEmpty) {
+            throw new MetadataProcessException(
+              "Cannot execute load overwrite or insert overwrite as the following aggregate tables"
+              + s" ${
+                childTablesWithoutPartitionColumns.toList.map(_.getChildSchema.getTableName)
+              } are not partitioned on all the partition column. Drop these to continue")
+          }
+        }
         // getting all the aggergate datamap schema
         val aggregationDataMapList = table.getTableInfo.getDataMapSchemaList.asScala
           .filter(_.isInstanceOf[AggregationDataMapSchema])
@@ -435,8 +466,6 @@ object LoadPostAggregateListener extends OperationEventListener {
             .asInstanceOf[CarbonLoadDataCommand]
           childLoadCommand.dataFrame = Some(PreAggregateUtil
             .getDataFrame(sparkSession, childLoadCommand.logicalPlan.get))
-          val isOverwrite =
-            operationContext.getProperty("isOverwrite").asInstanceOf[Boolean]
           childLoadCommand.operationContext = operationContext
           val timeseriesParent = childLoadCommand.internalOptions.get("timeseriesParent")
           val (parentTableIdentifier, segmentToLoad) =
@@ -451,7 +480,7 @@ object LoadPostAggregateListener extends OperationEventListener {
               val segment = if (currentSegmentFile != null) {
                 new Segment(carbonLoadModel.getSegmentId, currentSegmentFile.toString)
               } else {
-                Segment.toSegment(carbonLoadModel.getSegmentId)
+                Segment.toSegment(carbonLoadModel.getSegmentId, null)
               }
               (TableIdentifier(table.getTableName, Some(table.getDatabaseName)), segment.toString)
             }
@@ -483,6 +512,14 @@ object CommitPreAggregateListener extends OperationEventListener with CommitHelp
       case loadEvent: LoadTablePostStatusUpdateEvent =>
         loadEvent.getCarbonLoadModel
       case compactionEvent: AlterTableCompactionPostStatusUpdateEvent =>
+        // Once main table compaction is done and 0.1, 4.1, 8.1 is created commit will happen for
+        // all the tables. The commit listener will compact the child tables until no more segments
+        // are left. But 2nd level compaction is yet to happen on the main table therefore again the
+        // compaction flow will try to commit the child tables which is wrong. This check tell the
+        // 2nd level compaction flow that the commit for datamaps is already done.
+        if (null != operationContext.getProperty("commitComplete")) {
+          return
+        }
         compactionEvent.carbonLoadModel
     }
     val isCompactionFlow = Option(
@@ -504,45 +541,53 @@ object CommitPreAggregateListener extends OperationEventListener with CommitHelp
             .asInstanceOf[CarbonLoadDataCommand]
         }
       }
-     if (dataMapSchemas.nonEmpty) {
-       val uuid = operationContext.getProperty("uuid").toString
-      // keep committing until one fails
-      val renamedDataMaps = childLoadCommands.takeWhile { childLoadCommand =>
-        val childCarbonTable = childLoadCommand.table
-        // Generate table status file name with UUID, forExample: tablestatus_1
-        val oldTableSchemaPath = CarbonTablePath.getTableStatusFilePathWithUUID(
-          childCarbonTable.getTablePath, uuid)
-        // Generate table status file name without UUID, forExample: tablestatus
-        val newTableSchemaPath = CarbonTablePath.getTableStatusFilePath(
-          childCarbonTable.getTablePath)
-        renameDataMapTableStatusFiles(oldTableSchemaPath, newTableSchemaPath, uuid)
-      }
-      // if true then the commit for one of the child tables has failed
-      val commitFailed = renamedDataMaps.lengthCompare(dataMapSchemas.length) != 0
-      if (commitFailed) {
-        LOGGER.warn("Reverting table status file to original state")
-        renamedDataMaps.foreach {
-          loadCommand =>
-            val carbonTable = loadCommand.table
-            // rename the backup tablestatus i.e tablestatus_backup_UUID to tablestatus
-            val backupTableSchemaPath =
-              CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath) + "_backup_" + uuid
-            val tableSchemaPath = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath)
-            markInProgressSegmentAsDeleted(backupTableSchemaPath, operationContext, carbonTable)
-            renameDataMapTableStatusFiles(backupTableSchemaPath, tableSchemaPath, "")
+    var commitFailed = false
+    try {
+      if (dataMapSchemas.nonEmpty) {
+        val uuid = operationContext.getProperty("uuid").toString
+        // keep committing until one fails
+        val renamedDataMaps = childLoadCommands.takeWhile { childLoadCommand =>
+          val childCarbonTable = childLoadCommand.table
+          // Generate table status file name with UUID, forExample: tablestatus_1
+          val oldTableSchemaPath = CarbonTablePath.getTableStatusFilePathWithUUID(
+            childCarbonTable.getTablePath, uuid)
+          // Generate table status file name without UUID, forExample: tablestatus
+          val newTableSchemaPath = CarbonTablePath.getTableStatusFilePath(
+            childCarbonTable.getTablePath)
+          renameDataMapTableStatusFiles(oldTableSchemaPath, newTableSchemaPath, uuid)
+        }
+        // if true then the commit for one of the child tables has failed
+        commitFailed = renamedDataMaps.lengthCompare(dataMapSchemas.length) != 0
+        if (commitFailed) {
+          LOGGER.warn("Reverting table status file to original state")
+          renamedDataMaps.foreach {
+            loadCommand =>
+              val carbonTable = loadCommand.table
+              // rename the backup tablestatus i.e tablestatus_backup_UUID to tablestatus
+              val backupTableSchemaPath =
+                CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath) + "_backup_" +
+                uuid
+              val tableSchemaPath = CarbonTablePath
+                .getTableStatusFilePath(carbonTable.getTablePath)
+              markInProgressSegmentAsDeleted(backupTableSchemaPath, operationContext, carbonTable)
+              renameDataMapTableStatusFiles(backupTableSchemaPath, tableSchemaPath, "")
+          }
+        }
+        // after success/failure of commit delete all tablestatus files with UUID in their names.
+        // if commit failed then remove the segment directory
+        cleanUpStaleTableStatusFiles(childLoadCommands.map(_.table),
+          operationContext,
+          uuid)
+        operationContext.setProperty("commitComplete", !commitFailed)
+        if (commitFailed) {
+          sys.error("Failed to update table status for pre-aggregate table")
         }
       }
-      // after success/failure of commit delete all tablestatus files with UUID in their names.
-      // if commit failed then remove the segment directory
-      cleanUpStaleTableStatusFiles(childLoadCommands.map(_.table),
-        operationContext,
-        uuid)
-      if (commitFailed) {
-        sys.error("Failed to update table status for pre-aggregate table")
-      }
+    } catch {
+      case e: Exception =>
+        operationContext.setProperty("commitComplete", false)
+        LOGGER.error(e, "Problem while committing data maps")
     }
-
-
   }
 }
 
@@ -560,6 +605,9 @@ object AlterPreAggregateTableCompactionPostListener extends OperationEventListen
     val compactionEvent = event.asInstanceOf[AlterTableCompactionPreStatusUpdateEvent]
     val carbonTable = compactionEvent.carbonTable
     val compactionType = compactionEvent.carbonMergerMapping.campactionType
+    if (compactionType == CompactionType.CUSTOM) {
+      return
+    }
     val carbonLoadModel = compactionEvent.carbonLoadModel
     val sparkSession = compactionEvent.sparkSession
     if (CarbonUtil.hasAggregationDataMap(carbonTable)) {
@@ -735,7 +783,7 @@ object PreAggregateDropColumnPreListener extends OperationEventListener {
   }
 }
 
-object PreAggregateRenameTablePreListener extends OperationEventListener {
+object RenameTablePreListener extends OperationEventListener {
   /**
    * Called on a specified event occurrence
    *
@@ -748,11 +796,16 @@ object PreAggregateRenameTablePreListener extends OperationEventListener {
     val carbonTable = renameTablePostListener.carbonTable
     if (carbonTable.isChildDataMap) {
       throw new UnsupportedOperationException(
-        "Rename operation for pre-aggregate table is not supported.")
+        "Rename operation for datamaps is not supported.")
     }
-    if (CarbonUtil.hasAggregationDataMap(carbonTable)) {
+    if (carbonTable.hasAggregationDataMap) {
       throw new UnsupportedOperationException(
         "Rename operation is not supported for table with pre-aggregate tables")
+    }
+    val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
+    if (!indexSchemas.isEmpty) {
+      throw new UnsupportedOperationException(
+        "Rename operation is not supported for table with datamaps")
     }
   }
 }

@@ -24,18 +24,20 @@ import java.util.concurrent.{Callable, ExecutorService, Executors, Future}
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.dev.DataMapWriter
+import org.apache.carbondata.core.datamap.dev.{DataMapBuilder, DataMapWriter}
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
-import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager, Segment}
+import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
+import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.exception.ConcurrentOperationException
+import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.schema.table.{DataMapSchema, RelationIdentifier}
-import org.apache.carbondata.core.readcommitter.ReadCommittedScope
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
@@ -43,18 +45,30 @@ import org.apache.carbondata.events.Event
 // This testsuite test insert and insert overwrite with other commands concurrently
 class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
   private val executorService: ExecutorService = Executors.newFixedThreadPool(10)
-  var df: DataFrame = _
+  var testData: DataFrame = _
 
   override def beforeAll {
     dropTable()
     buildTestData()
 
+    createTable("orders", testData.schema)
+    createTable("orders_overwrite", testData.schema)
     sql(
       s"""
          | create datamap test on table orders
-         | using '${classOf[WaitingDataMap].getName}'
-         | as select count(a) from hiveMetaStoreTable_1")
+         | using '${classOf[WaitingDataMapFactory].getName}'
+         | dmproperties('index_columns'='o_name')
        """.stripMargin)
+
+    testData.write
+      .format("carbondata")
+      .option("tableName", "temp_table")
+      .option("tempCSV", "false")
+      .mode(SaveMode.Overwrite)
+      .save()
+
+    sql(s"insert into orders select * from temp_table")
+    sql(s"insert into orders_overwrite select * from temp_table")
   }
 
   private def buildTestData(): Unit = {
@@ -66,23 +80,17 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     import sqlContext.implicits._
 
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
-    df = sqlContext.sparkSession.sparkContext.parallelize(1 to 150000)
+    testData = sqlContext.sparkSession.sparkContext.parallelize(1 to 150000)
       .map(value => (value, new java.sql.Date(sdf.parse("2015-07-" + (value % 10 + 10)).getTime),
         "china", "aaa" + value, "phone" + 555 * value, "ASD" + (60000 + value), 14999 + value,
         "ordersTable" + value))
       .toDF("o_id", "o_date", "o_country", "o_name",
         "o_phonetype", "o_serialname", "o_salary", "o_comment")
-    createTable("orders")
-    createTable("orders_overwrite")
   }
 
-  private def createTable(tableName: String): Unit = {
-    df.write
-      .format("carbondata")
-      .option("tableName", tableName)
-      .option("tempCSV", "false")
-      .mode(SaveMode.Overwrite)
-      .save()
+  private def createTable(tableName: String, schema: StructType): Unit = {
+    val schemaString = schema.fields.map(x => x.name + " " + x.dataType.typeName).mkString(", ")
+    sql(s"CREATE TABLE $tableName ($schemaString) stored as carbondata")
   }
 
   override def afterAll {
@@ -91,7 +99,7 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
   }
 
   override def beforeEach(): Unit = {
-    Global.overwriteRunning = false
+    Global.loading = false
   }
 
   private def dropTable() = {
@@ -101,14 +109,14 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
 
   // run the input SQL and block until it is running
   private def runSqlAsync(sql: String): Future[String] = {
-    assert(!Global.overwriteRunning)
+    assert(!Global.loading)
     var count = 0
     val future = executorService.submit(
       new QueryTask(sql)
     )
-    while (!Global.overwriteRunning && count < 1000) {
+    while (!Global.loading && count < 1000) {
       Thread.sleep(10)
-      // to avoid dead loop in case WaitingDataMap is not invoked
+      // to avoid dead loop in case WaitingDataMapFactory is not invoked
       count += 1
     }
     future
@@ -202,16 +210,20 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
     sql("drop table if exists t1")
 
     // number of segment is 1 after createTable
-    createTable("t1")
-    // number of segment is 2 after insert
-    sql("insert into table t1 select * from orders_overwrite")
+    createTable("t1", testData.schema)
 
     sql(
       s"""
          | create datamap dm_t1 on table t1
-         | using '${classOf[WaitingDataMap].getName}'
-         | as select count(a) from hiveMetaStoreTable_1")
+         | using '${classOf[WaitingDataMapFactory].getName}'
+         | dmproperties('index_columns'='o_name')
        """.stripMargin)
+
+    sql("insert into table t1 select * from orders_overwrite")
+    Thread.sleep(1100)
+    sql("insert into table t1 select * from orders_overwrite")
+    Thread.sleep(1100)
+
     val future = runSqlAsync("insert into table t1 select * from orders_overwrite")
     sql("alter table t1 compact 'MAJOR'")
     assert(future.get.contains("PASS"))
@@ -279,12 +291,12 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
 }
 
 object Global {
-  var overwriteRunning = false
+  var loading = false
 }
 
-class WaitingDataMap() extends CoarseGrainDataMapFactory {
-
-  private var identifier: AbsoluteTableIdentifier = _
+class WaitingDataMapFactory(
+    carbonTable: CarbonTable,
+    dataMapSchema: DataMapSchema) extends CoarseGrainDataMapFactory(carbonTable, dataMapSchema) {
 
   override def fireEvent(event: Event): Unit = ???
 
@@ -292,13 +304,14 @@ class WaitingDataMap() extends CoarseGrainDataMapFactory {
 
   override def clear(): Unit = {}
 
-  override def getDataMaps(distributable: DataMapDistributable, readCommitted: ReadCommittedScope): util.List[CoarseGrainDataMap] = ???
+  override def getDataMaps(distributable: DataMapDistributable): util.List[CoarseGrainDataMap] = ???
 
-  override def getDataMaps(segment: Segment, readCommitted: ReadCommittedScope): util.List[CoarseGrainDataMap] = ???
+  override def getDataMaps(segment: Segment): util.List[CoarseGrainDataMap] = ???
 
-  override def createWriter(segment: Segment, writeDirectoryPath: String): DataMapWriter = {
-    new DataMapWriter(identifier, segment, writeDirectoryPath) {
-      override def onPageAdded(blockletId: Int, pageId: Int, pages: Array[ColumnPage]): Unit = { }
+  override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): DataMapWriter = {
+    new DataMapWriter(carbonTable.getTablePath, dataMapSchema.getDataMapName,
+      carbonTable.getIndexedColumns(dataMapSchema), segment, shardName) {
+      override def onPageAdded(blockletId: Int, pageId: Int, pageSize: Int, pages: Array[ColumnPage]): Unit = { }
 
       override def onBlockletEnd(blockletId: Int): Unit = { }
 
@@ -308,24 +321,40 @@ class WaitingDataMap() extends CoarseGrainDataMapFactory {
 
       override def onBlockStart(blockId: String): Unit = {
         // trigger the second SQL to execute
-        Global.overwriteRunning = true
+        Global.loading = true
 
         // wait for 1 second to let second SQL to finish
         Thread.sleep(1000)
       }
 
       override def finish(): Unit = {
-
+        Global.loading = false
       }
     }
   }
 
-  override def getMeta: DataMapMeta = new DataMapMeta(List("o_country").asJava, Seq(ExpressionType.EQUALS).asJava)
+  override def getMeta: DataMapMeta = new DataMapMeta(carbonTable.getIndexedColumns(dataMapSchema), Seq(ExpressionType.EQUALS).asJava)
 
-  override def toDistributable(segmentId: Segment): util.List[DataMapDistributable] = ???
+  override def toDistributable(segmentId: Segment): util.List[DataMapDistributable] = {
+    util.Collections.emptyList()
+  }
 
-  override def init(identifier: AbsoluteTableIdentifier,
-      dataMapSchema: DataMapSchema): Unit = {
-    this.identifier = identifier
+  /**
+   * delete datamap data if any
+   */
+  override def deleteDatamapData(): Unit = {
+
+  }
+
+  /**
+   * defines the features scopes for the datamap
+   */
+  override def willBecomeStale(operation: TableOperation): Boolean = {
+    false
+  }
+
+  override def createBuilder(segment: Segment,
+      shardName: String, segmentProperties: SegmentProperties): DataMapBuilder = {
+    ???
   }
 }

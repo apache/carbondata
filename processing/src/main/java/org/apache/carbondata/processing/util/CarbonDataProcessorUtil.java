@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.constants.LoggerAction;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -223,6 +224,26 @@ public final class CarbonDataProcessorUtil {
         .toPrimitive(noDictionaryMapping.toArray(new Boolean[noDictionaryMapping.size()]));
   }
 
+  /**
+   * Preparing the boolean [] to map whether the dimension is varchar data type or not.
+   */
+  public static boolean[] getIsVarcharColumnMapping(DataField[] fields) {
+    List<Boolean> isVarcharColumnMapping = new ArrayList<Boolean>();
+    for (DataField field : fields) {
+      // for complex type need to break the loop
+      if (field.getColumn().isComplex()) {
+        break;
+      }
+
+      if (field.getColumn().isDimension()) {
+        isVarcharColumnMapping.add(
+            field.getColumn().getColumnSchema().getDataType() == DataTypes.VARCHAR);
+      }
+    }
+    return ArrayUtils.toPrimitive(
+        isVarcharColumnMapping.toArray(new Boolean[isVarcharColumnMapping.size()]));
+  }
+
   public static boolean[] getNoDictionaryMapping(CarbonColumn[] carbonColumns) {
     List<Boolean> noDictionaryMapping = new ArrayList<Boolean>();
     for (CarbonColumn column : carbonColumns) {
@@ -239,6 +260,35 @@ public final class CarbonDataProcessorUtil {
     return ArrayUtils
         .toPrimitive(noDictionaryMapping.toArray(new Boolean[noDictionaryMapping.size()]));
   }
+
+  public static void getComplexNoDictionaryMapping(DataField[] dataFields,
+      List<Integer> complexNoDictionary) {
+
+    // save the Ordinal Number in the List.
+    for (DataField field : dataFields) {
+      if (field.getColumn().isComplex()) {
+        // get the childs.
+        getComplexNoDictionaryMapping(
+            ((CarbonDimension) field.getColumn()).getListOfChildDimensions(), complexNoDictionary);
+      }
+    }
+  }
+
+  public static void getComplexNoDictionaryMapping(List<CarbonDimension> carbonDimensions,
+      List<Integer> complexNoDictionary) {
+    for (CarbonDimension carbonDimension : carbonDimensions) {
+      if (carbonDimension.isComplex()) {
+        getComplexNoDictionaryMapping(carbonDimension.getListOfChildDimensions(),
+            complexNoDictionary);
+      } else {
+        // This is primitive type. Check the encoding for NoDictionary.
+        if (!carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
+          complexNoDictionary.add(carbonDimension.getOrdinal());
+        }
+      }
+    }
+  }
+
 
   /**
    * Preparing the boolean [] to map whether the dimension use inverted index or not.
@@ -267,14 +317,24 @@ public final class CarbonDataProcessorUtil {
     return dimString.toString();
   }
 
+  private static String isDictionaryType(CarbonDimension dimension) {
+    Boolean isDictionary = true;
+    if (!(dimension.hasEncoding(Encoding.DICTIONARY))) {
+      isDictionary = false;
+    }
+    return isDictionary.toString();
+  }
+
   /**
    * This method will return all the child dimensions under complex dimension
    */
   private static void addAllComplexTypeChildren(CarbonDimension dimension, StringBuilder dimString,
       String parent) {
+
     dimString.append(dimension.getColName()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
         .append(dimension.getDataType()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
         .append(parent).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
+        .append(isDictionaryType(dimension)).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
         .append(dimension.getColumnId()).append(CarbonCommonConstants.HASH_SPC_CHARACTER);
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
       CarbonDimension childDim = dimension.getListOfChildDimensions().get(i);
@@ -284,6 +344,7 @@ public final class CarbonDataProcessorUtil {
         dimString.append(childDim.getColName()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
             .append(childDim.getDataType()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
             .append(dimension.getColName()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
+            .append(isDictionaryType(dimension)).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
             .append(childDim.getColumnId()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
             .append(childDim.getOrdinal()).append(CarbonCommonConstants.HASH_SPC_CHARACTER);
       }
@@ -291,11 +352,21 @@ public final class CarbonDataProcessorUtil {
   }
 
   // TODO: need to simplify it. Not required create string first.
-  public static Map<String, GenericDataType> getComplexTypesMap(DataField[] dataFields) {
+  public static Map<String, GenericDataType> getComplexTypesMap(DataField[] dataFields,
+      CarbonDataLoadConfiguration configuration) {
     String complexTypeString = getComplexTypeString(dataFields);
+
     if (null == complexTypeString || complexTypeString.equals("")) {
       return new LinkedHashMap<>();
     }
+
+    String nullFormat =
+        configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
+            .toString();
+    boolean isEmptyBadRecord = Boolean.parseBoolean(
+        configuration.getDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD)
+            .toString());
+
     Map<String, GenericDataType> complexTypesMap = new LinkedHashMap<String, GenericDataType>();
     String[] hierarchies = complexTypeString.split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
     for (int i = 0; i < hierarchies.length; i++) {
@@ -312,8 +383,9 @@ public final class CarbonDataProcessorUtil {
         } else if (levelInfo[1].toLowerCase().contains(CarbonCommonConstants.STRUCT)) {
           g.addChildren(new StructDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
         } else {
-          g.addChildren(new PrimitiveDataType(levelInfo[0], levelInfo[2], levelInfo[3],
-              Integer.parseInt(levelInfo[4])));
+          g.addChildren(new PrimitiveDataType(levelInfo[0], levelInfo[2], levelInfo[4],
+              Integer.parseInt(levelInfo[5]), levelInfo[3].contains("true"), nullFormat,
+              isEmptyBadRecord));
         }
       }
     }
@@ -570,8 +642,10 @@ public final class CarbonDataProcessorUtil {
   public static String trimErrorMessage(String input) {
     String errorMessage = input;
     if (input != null) {
-      if (input.split("Hint").length > 0) {
+      if (input.split("Hint").length > 1) {
         errorMessage = input.split("Hint")[0];
+      } else if (input.split("Parser Configuration:").length > 1) {
+        errorMessage = input.split("Parser Configuration:")[0];
       }
     }
     return errorMessage;
@@ -600,6 +674,34 @@ public final class CarbonDataProcessorUtil {
       }
     }
     return isRawDataRequired;
+  }
+
+  /**
+   * Partition input iterators equally as per the number of threads.
+   *
+   * @return
+   */
+  public static List<CarbonIterator<Object[]>>[] partitionInputReaderIterators(
+      CarbonIterator<Object[]>[] inputIterators) {
+    // Get the number of cores configured in property.
+    int numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
+    // Get the minimum of number of cores and iterators size to get the number of parallel threads
+    // to be launched.
+    int parallelThreadNumber = Math.min(inputIterators.length, numberOfCores);
+
+    if (parallelThreadNumber <= 0) {
+      parallelThreadNumber = 1;
+    }
+
+    List<CarbonIterator<Object[]>>[] iterators = new List[parallelThreadNumber];
+    for (int i = 0; i < parallelThreadNumber; i++) {
+      iterators[i] = new ArrayList<>();
+    }
+    // Equally partition the iterators as per number of threads
+    for (int i = 0; i < inputIterators.length; i++) {
+      iterators[i % parallelThreadNumber].add(inputIterators[i]);
+    }
+    return iterators;
   }
 
 }

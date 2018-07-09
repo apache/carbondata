@@ -28,10 +28,12 @@ import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_OFFHEAP_SORT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_UNSAFE_SORT;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE;
@@ -144,6 +146,7 @@ public class SessionParams implements Serializable, Cloneable {
     boolean isValid = false;
     switch (key) {
       case ENABLE_UNSAFE_SORT:
+      case ENABLE_OFFHEAP_SORT:
       case CARBON_CUSTOM_BLOCK_DISTRIBUTION:
       case CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE:
       case CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD:
@@ -208,6 +211,21 @@ public class SessionParams implements Serializable, Cloneable {
           isValid = true;
         } else if (key.startsWith(CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING)) {
           isValid = true;
+        } else if (key.startsWith(CarbonCommonConstants.CARBON_DATAMAP_VISIBLE)) {
+          String[] keyArray = key.split("\\.");
+          isValid = DataMapStoreManager.getInstance().isDataMapExist(
+              keyArray[keyArray.length - 3],
+              keyArray[keyArray.length - 2],
+              keyArray[keyArray.length - 1]);
+          if (!isValid) {
+            throw new InvalidConfigurationException(
+                String.format("Invalid configuration of %s, datamap does not exist", key));
+          }
+        } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL)) {
+          isValid = CarbonUtil.validateBoolean(value);
+          if (!isValid) {
+            throw new InvalidConfigurationException("Invalid value " + value + " for key " + key);
+          }
         } else {
           throw new InvalidConfigurationException(
               "The key " + key + " not supported for dynamic configuration.");

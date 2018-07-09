@@ -65,7 +65,7 @@ public class RangeNoDictionaryTypeVisitor extends NoDictionaryTypeVisitor
           }
           evaluateResultListFinal.add(result.getString());
         }
-        // evaluateResultListFinal.add(metadata.getExpression().evaluate().getListAsString());
+        // evaluateResultListFinal.add(metadata.getFilterExpression().evaluate().getListAsString());
         if (!metadata.isIncludeFilter() && !evaluateResultListFinal
             .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
           evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);

@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.hive.execution.command
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, CarbonSession, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 import org.apache.spark.sql.catalyst.expressions.Attribute
@@ -68,10 +68,19 @@ case class CarbonSetCommand(command: SetCommand)
   override val output: Seq[Attribute] = command.output
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
-    val sessionParms = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.getSessionParams
+    val sessionParams = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.getSessionParams
     command.kv match {
       case Some((key, Some(value))) =>
-        CarbonSetCommand.validateAndSetValue(sessionParms, key, value)
+        CarbonSetCommand.validateAndSetValue(sessionParams, key, value)
+
+        // handle search mode start/stop for ThriftServer usage
+        if (key.equalsIgnoreCase(CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE)) {
+          if (value.equalsIgnoreCase("true")) {
+            sparkSession.asInstanceOf[CarbonSession].startSearchMode()
+          } else {
+            sparkSession.asInstanceOf[CarbonSession].stopSearchMode()
+          }
+        }
       case _ =>
 
     }
@@ -98,6 +107,23 @@ object CarbonSetCommand {
       sessionParams.addProperty(key.toLowerCase(), value)
     } else if (key.startsWith(CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING)) {
       sessionParams.addProperty(key.toLowerCase(), value)
+    } else if (key.startsWith(CarbonCommonConstants.CARBON_DATAMAP_VISIBLE)) {
+      if (key.split("\\.").length == 6) {
+        sessionParams.addProperty(key.toLowerCase, value)
+      } else {
+        throw new MalformedCarbonCommandException("property should be in " +
+          "\" carbon.datamap.visible.<database_name>.<table_name>.<database_name>" +
+          " = <true/false> \" format")
+      }
+    } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL)) {
+      if (key.split("\\.").length == 6) {
+        sessionParams.addProperty(key.toLowerCase(), value)
+      }
+      else {
+        throw new MalformedCarbonCommandException(
+          "property should be in \" carbon.load.datamaps.parallel.<database_name>" +
+          ".<table_name>=<true/false> \" format.")
+      }
     }
   }
 

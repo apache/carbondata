@@ -76,6 +76,11 @@ public class StreamBlockletWriter {
     rowIndex++;
   }
 
+  void skipRow() {
+    maxSize -- ;
+    maxRowNum -- ;
+  }
+
   boolean isFull() {
     return rowIndex == maxRowNum || count >= maxSize;
   }

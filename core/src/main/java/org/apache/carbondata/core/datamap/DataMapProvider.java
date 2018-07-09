@@ -21,6 +21,8 @@ import java.io.IOException;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
+import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
@@ -42,67 +44,81 @@ import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
  *
  * <br>Currently CarbonData supports following provider:
  * <ol>
- *   <li> preaggregate: one type of MVDataMap that do pre-aggregate of single table </li>
- *   <li> timeseries: one type of MVDataMap that do pre-aggregate based on time dimension
- *     of the table </li>
- *   <li> class name of {@link org.apache.carbondata.core.datamap.dev.DataMapFactory}
- * implementation: Developer can implement new type of DataMap by extending
- * {@link org.apache.carbondata.core.datamap.dev.DataMapFactory} </li>
+ *   <li> preaggregate: pre-aggregate table of single table </li>
+ *   <li> timeseries: pre-aggregate table based on time dimension of the table </li>
+ *   <li> lucene: index backed by Apache Lucene </li>
+ *   <li> bloomfilter: index backed by Bloom Filter </li>
  * </ol>
  *
  * @since 1.4.0
  */
 @InterfaceAudience.Internal
-public interface DataMapProvider {
+public abstract class DataMapProvider {
+
+  private CarbonTable mainTable;
+  private DataMapSchema dataMapSchema;
+
+  public DataMapProvider(CarbonTable mainTable, DataMapSchema dataMapSchema) {
+    this.mainTable = mainTable;
+    this.dataMapSchema = dataMapSchema;
+  }
+
+  protected final CarbonTable getMainTable() {
+    return mainTable;
+  }
+
+  public final DataMapSchema getDataMapSchema() {
+    return dataMapSchema;
+  }
 
   /**
    * Initialize a datamap's metadata.
    * This is called when user creates datamap, for example "CREATE DATAMAP dm ON TABLE mainTable"
    * Implementation should initialize metadata for datamap, like creating table
    */
-  void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, String ctasSqlStatement)
-      throws MalformedDataMapCommandException, IOException;
+  public abstract void initMeta(String ctasSqlStatement) throws MalformedDataMapCommandException,
+      IOException;
 
   /**
    * Initialize a datamap's data.
    * This is called when user creates datamap, for example "CREATE DATAMAP dm ON TABLE mainTable"
    * Implementation should initialize data for datamap, like creating data folders
    */
-  void initData(CarbonTable mainTable);
+  public abstract void initData();
 
   /**
-   * Opposite operation of {@link #initMeta(CarbonTable, DataMapSchema, String)}.
+   * Opposite operation of {@link #initMeta(String)}.
    * This is called when user drops datamap, for example "DROP DATAMAP dm ON TABLE mainTable"
    * Implementation should clean all meta for the datamap
    */
-  void freeMeta(CarbonTable mainTable, DataMapSchema dataMapSchema) throws IOException;
+  public abstract void cleanMeta() throws IOException;
 
   /**
-   * Opposite operation of {@link #initData(CarbonTable)}.
+   * Opposite operation of {@link #initData()}.
    * This is called when user drops datamap, for example "DROP DATAMAP dm ON TABLE mainTable"
    * Implementation should clean all data for the datamap
    */
-  void freeData(CarbonTable mainTable, DataMapSchema dataMapSchema);
+  public abstract void cleanData();
 
   /**
    * Rebuild the datamap by loading all existing data from mainTable
    * This is called when refreshing the datamap when
    * 1. after datamap creation and if `autoRefreshDataMap` is set to true
-   * 2. user manually trigger refresh datamap command
+   * 2. user manually trigger REBUILD DATAMAP command
    */
-  void rebuild(CarbonTable mainTable, DataMapSchema dataMapSchema) throws IOException;
+  public abstract void rebuild() throws IOException, NoSuchDataMapException;
 
   /**
    * Build the datamap incrementally by loading specified segment data
-   * This is called when user manually trigger refresh datamap
    */
-  void incrementalBuild(CarbonTable mainTable, DataMapSchema dataMapSchema, String[] segmentIds)
-    throws IOException;
+  public abstract void incrementalBuild(String[] segmentIds) throws IOException;
 
   /**
    * Provide the datamap catalog instance or null if this datamap not required to rewrite
    * the query.
    */
-  DataMapCatalog createDataMapCatalog();
+  public abstract DataMapCatalog createDataMapCatalog();
+
+  public abstract DataMapFactory getDataMapFactory();
 
 }

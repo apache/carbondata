@@ -63,5 +63,59 @@ trait CarbonSessionCatalog {
   /**
    * Update the storageformat with new location information
    */
-  def updateStorageLocation(path: Path, storage: CatalogStorageFormat): CatalogStorageFormat
+  def updateStorageLocation(
+      path: Path,
+      storage: CatalogStorageFormat,
+      newTableName: String,
+      dbName: String): CatalogStorageFormat
+
+  /**
+   * Method used to update the table name
+   * @param oldTableIdentifier old table identifier
+   * @param newTableIdentifier new table identifier
+   * @param newTablePath new table path
+   */
+  def alterTableRename(oldTableIdentifier: TableIdentifier,
+      newTableIdentifier: TableIdentifier,
+      newTablePath: String): Unit
+
+  /**
+   * Below method will be used to update serd properties
+   * @param tableIdentifier table identifier
+   * @param schemaParts schema parts
+   * @param cols cols
+   */
+  def alterTable(tableIdentifier: TableIdentifier,
+      schemaParts: String,
+      cols: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]]): Unit
+
+  /**
+   * Below method will be used to add new column
+   * @param tableIdentifier table identifier
+   * @param schemaParts schema parts
+   * @param cols cols
+   */
+  def alterAddColumns(tableIdentifier: TableIdentifier,
+      schemaParts: String,
+      cols: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]]): Unit
+
+  /**
+   * Below method will be used to drop column
+   * @param tableIdentifier table identifier
+   * @param schemaParts schema parts
+   * @param cols cols
+   */
+  def alterDropColumns(tableIdentifier: TableIdentifier,
+      schemaParts: String,
+      cols: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]]): Unit
+
+  /**
+   * Below method will be used to alter data type of column in schema
+   * @param tableIdentifier table identifier
+   * @param schemaParts schema parts
+   * @param cols cols
+   */
+  def alterColumnChangeDataType(tableIdentifier: TableIdentifier,
+      schemaParts: String,
+      cols: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]]): Unit
 }

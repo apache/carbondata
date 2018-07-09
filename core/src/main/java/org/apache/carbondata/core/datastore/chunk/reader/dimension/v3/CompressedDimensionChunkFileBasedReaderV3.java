@@ -27,6 +27,7 @@ import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionColum
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.reader.dimension.AbstractChunkReaderV2V3Format;
 import org.apache.carbondata.core.datastore.chunk.store.ColumnPageWrapper;
+import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
@@ -241,11 +242,12 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
   }
 
   private DimensionColumnPage decodeDimensionLegacy(DimensionRawColumnChunk rawColumnPage,
-      ByteBuffer pageData, DataChunk2 pageMetadata, int offset) {
+      ByteBuffer pageData, DataChunk2 pageMetadata, int offset) throws IOException,
+      MemoryException {
     byte[] dataPage;
     int[] rlePage;
-    int[] invertedIndexes = null;
-    int[] invertedIndexesReverse = null;
+    int[] invertedIndexes = new int[0];
+    int[] invertedIndexesReverse = new int[0];
     dataPage = COMPRESSOR.unCompressByte(pageData.array(), offset, pageMetadata.data_page_length);
     offset += pageMetadata.data_page_length;
     // if row id block is present then read the row id chunk and uncompress it
@@ -271,9 +273,13 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     // if no dictionary column then first create a no dictionary column chunk
     // and set to data chunk instance
     if (!hasEncoding(pageMetadata.encoders, Encoding.DICTIONARY)) {
+      DimensionChunkStoreFactory.DimensionStoreType dimStoreType =
+          hasEncoding(pageMetadata.encoders, Encoding.DIRECT_COMPRESS_VARCHAR) ?
+              DimensionChunkStoreFactory.DimensionStoreType.VARIABLE_INT_LENGTH :
+              DimensionChunkStoreFactory.DimensionStoreType.VARIABLE_SHORT_LENGTH;
       columnDataChunk =
           new VariableLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
-              pageMetadata.getNumberOfRowsInpage());
+              pageMetadata.getNumberOfRowsInpage(), dimStoreType);
     } else {
       // to store fixed length column chunk values
       columnDataChunk =

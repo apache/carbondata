@@ -60,12 +60,10 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil, ObjectSerializationUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMapPreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.events.exception.PreEventException
-import org.apache.carbondata.hadoop.util.ObjectSerializationUtil
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePostExecutionEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
@@ -73,12 +71,12 @@ import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.{CarbonLoadModelBuilder, LoadOption}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions
-import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
+import org.apache.carbondata.processing.util.{CarbonBadRecordUtil, CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.dictionary.provider.SecureDictionaryServiceProvider
 import org.apache.carbondata.spark.dictionary.server.SecureDictionaryServer
 import org.apache.carbondata.spark.load.{CsvRDDHelper, DataLoadProcessorStepOnSpark}
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil, SparkDataTypeConverterImpl}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, GlobalDictionaryUtil, SparkDataTypeConverterImpl}
 
 case class CarbonLoadDataCommand(
     databaseNameOp: Option[String],
@@ -103,6 +101,8 @@ case class CarbonLoadDataCommand(
   var sizeInBytes: Long = _
 
   var currPartitions: util.List[PartitionSpec] = _
+
+  var parentTablePath: String = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -131,6 +131,12 @@ case class CarbonLoadDataCommand(
         }.head
       sizeInBytes = logicalPartitionRelation.relation.sizeInBytes
     }
+    if (table.isChildDataMap) {
+      val parentTableIdentifier = table.getTableInfo.getParentRelationIdentifiers.get(0)
+      parentTablePath = CarbonEnv
+        .getCarbonTable(Some(parentTableIdentifier.getDatabaseName),
+          parentTableIdentifier.getTableName)(sparkSession).getTablePath
+    }
     operationContext.setProperty("isOverwrite", isOverwriteTable)
     if(CarbonUtil.hasAggregationDataMap(table)) {
       val loadMetadataEvent = new LoadMetadataEvent(table, false)
@@ -153,9 +159,7 @@ case class CarbonLoadDataCommand(
     } else {
       null
     }
-    if (table.getTableInfo.isUnManagedTable) {
-      throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
-    }
+
     // get the value of 'spark.executor.cores' from spark conf, default value is 1
     val sparkExecutorCores = sparkSession.sparkContext.conf.get("spark.executor.cores", "1")
     // get the value of 'carbon.number.of.cores.while.loading' from carbon properties,
@@ -186,12 +190,16 @@ case class CarbonLoadDataCommand(
           carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
             CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))
 
+      optionsFinal
+        .put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options.asJava, table))
       val factPath = if (dataFrame.isDefined) {
         ""
       } else {
         FileUtils.getPaths(factPathFromUser, hadoopConf)
       }
+      carbonLoadModel.setParentTablePath(parentTablePath)
       carbonLoadModel.setFactFilePath(factPath)
+      carbonLoadModel.setCarbonTransactionalTable(table.getTableInfo.isTransactionalTable)
       carbonLoadModel.setAggLoadRequest(
         internalOptions.getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL, "false").toBoolean)
       carbonLoadModel.setSegmentId(internalOptions.getOrElse("mergedSegmentName", ""))
@@ -236,6 +244,18 @@ case class CarbonLoadDataCommand(
             isOverwriteTable)
         operationContext.setProperty("isOverwrite", isOverwriteTable)
         OperationListenerBus.getInstance.fireEvent(loadTablePreExecutionEvent, operationContext)
+        // Add pre event listener for index datamap
+        val tableDataMaps = DataMapStoreManager.getInstance().getAllDataMap(table)
+        val dataMapOperationContext = new OperationContext()
+        if (null != tableDataMaps) {
+          val dataMapNames: mutable.Buffer[String] =
+            tableDataMaps.asScala.map(dataMap => dataMap.getDataMapSchema.getDataMapName)
+          val buildDataMapPreExecutionEvent: BuildDataMapPreExecutionEvent =
+            new BuildDataMapPreExecutionEvent(sparkSession,
+              table.getAbsoluteTableIdentifier, dataMapNames)
+          OperationListenerBus.getInstance().fireEvent(buildDataMapPreExecutionEvent,
+            dataMapOperationContext)
+        }
         // First system has to partition the data first and then call the load data
         LOGGER.info(s"Initiating Direct Load for the Table : ($dbName.$tableName)")
         // Clean up the old invalid segment data before creating a new entry for new load.
@@ -267,10 +287,14 @@ case class CarbonLoadDataCommand(
           carbonLoadModel.setUseOnePass(false)
         }
         // Create table and metadata folders if not exist
-        val metadataDirectoryPath = CarbonTablePath.getMetadataPath(table.getTablePath)
-        val fileType = FileFactory.getFileType(metadataDirectoryPath)
-        if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
-          FileFactory.mkdirs(metadataDirectoryPath, fileType)
+        if (carbonLoadModel.isCarbonTransactionalTable) {
+          val metadataDirectoryPath = CarbonTablePath.getMetadataPath(table.getTablePath)
+          val fileType = FileFactory.getFileType(metadataDirectoryPath)
+          if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
+            FileFactory.mkdirs(metadataDirectoryPath, fileType)
+          }
+        } else {
+          carbonLoadModel.setSegmentId(System.currentTimeMillis().toString)
         }
         val partitionStatus = SegmentStatus.SUCCESS
         val columnar = sparkSession.conf.get("carbon.is.columnar.storage", "true").toBoolean
@@ -299,6 +323,13 @@ case class CarbonLoadDataCommand(
             table.getCarbonTableIdentifier,
             carbonLoadModel)
         OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
+        if (null != tableDataMaps) {
+          val buildDataMapPostExecutionEvent: BuildDataMapPostExecutionEvent =
+            BuildDataMapPostExecutionEvent(sparkSession, table.getAbsoluteTableIdentifier)
+          OperationListenerBus.getInstance()
+            .fireEvent(buildDataMapPostExecutionEvent, dataMapOperationContext)
+        }
+
       } catch {
         case CausedBy(ex: NoRetryException) =>
           // update the load entry in table status file for changing the status to marked for delete
@@ -755,13 +786,15 @@ case class CarbonLoadDataCommand(
     }
     try {
       carbonLoadModel.setFactTimeStamp(System.currentTimeMillis())
+      val compactedSegments = new util.ArrayList[String]()
       // Trigger auto compaction
       CarbonDataRDDFactory.handleSegmentMerging(
         sparkSession.sqlContext,
         carbonLoadModel,
         table,
+        compactedSegments,
         operationContext)
-
+      carbonLoadModel.setMergedSegmentIds(compactedSegments)
     } catch {
       case e: Exception =>
         throw new Exception(
@@ -855,7 +888,7 @@ case class CarbonLoadDataCommand(
   }
 
   /**
-   * Convert the rdd as per steps of data loading inputprocessor step and coverter step
+   * Convert the rdd as per steps of data loading inputprocessor step and converter step
    * @param originRDD
    * @param sparkSession
    * @param model

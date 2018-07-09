@@ -123,6 +123,7 @@ case class CarbonAlterTableAddHivePartitionCommand(
             "Schema of index files located in location is not matching with current table schema")
         }
         val loadModel = new CarbonLoadModel
+        loadModel.setCarbonTransactionalTable(true)
         loadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(table))
         // Create new entry in tablestatus file
         CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, false)

@@ -110,7 +110,7 @@ class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
       sql("DROP DATAMAP not_exists_datamap ON TABLE maintable")
     }
     assert(e.getMessage.equals(
-      "Datamap with name not_exists_datamap does not exist under table maintable"))
+      "Datamap with name not_exists_datamap does not exist"))
   }
 
   test("drop datamap without 'if exists' when main table not exists") {

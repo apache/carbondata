@@ -205,11 +205,16 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
     parserSettings.setSkipEmptyLines(
         Boolean.valueOf(job.get(SKIP_EMPTY_LINE,
             CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE_DEFAULT)));
-    parserSettings.setMaxCharsPerColumn(CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT);
+    // todo: will verify whether there is a performance degrade using -1 here
+    // parserSettings.setMaxCharsPerColumn(CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT);
+    parserSettings.setMaxCharsPerColumn(CarbonCommonConstants.MAX_CHARS_PER_COLUMN_INFINITY);
     String maxColumns = job.get(MAX_COLUMNS, "" + DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING);
     parserSettings.setMaxColumns(Integer.parseInt(maxColumns));
     parserSettings.getFormat().setQuote(job.get(QUOTE, QUOTE_DEFAULT).charAt(0));
     parserSettings.getFormat().setQuoteEscape(job.get(ESCAPE, ESCAPE_DEFAULT).charAt(0));
+    // setting the content length to to limit the length of displayed contents being parsed/written
+    // in the exception message when an error occurs.
+    parserSettings.setErrorContentLength(CarbonCommonConstants.CARBON_ERROR_CONTENT_LENGTH);
     return parserSettings;
   }
 

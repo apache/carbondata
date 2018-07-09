@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.{CarbonDDLSqlParser, TableIdentifier}
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.command.datamap.{CarbonCreateDataMapCommand, CarbonDataMapRefreshCommand, CarbonDataMapShowCommand, CarbonDropDataMapCommand}
+import org.apache.spark.sql.execution.command.datamap.{CarbonCreateDataMapCommand, CarbonDataMapRebuildCommand, CarbonDataMapShowCommand, CarbonDropDataMapCommand}
 import org.apache.spark.sql.execution.command.management._
 import org.apache.spark.sql.execution.command.partition.{CarbonAlterTableDropPartitionCommand, CarbonAlterTableSplitPartitionCommand}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
@@ -33,6 +33,7 @@ import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
+import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand, CarbonDropStreamCommand, CarbonShowStreamsCommand}
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
@@ -75,7 +76,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val startCommand: Parser[LogicalPlan] =
     loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
-    alterPartition | datamapManagement | alterTableFinishStreaming
+    alterPartition | datamapManagement | alterTableFinishStreaming | stream
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
@@ -88,6 +89,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val datamapManagement: Parser[LogicalPlan] =
     createDataMap | dropDataMap | showDataMap | refreshDataMap
+
+  protected lazy val stream: Parser[LogicalPlan] =
+    createStream | dropStream | showStreams
 
   protected lazy val alterAddPartition: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (ADD ~> PARTITION ~>
@@ -124,11 +128,13 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
 
   protected lazy val alterTable: Parser[LogicalPlan] =
-    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (COMPACT ~ stringLit) <~ opt(";")  ^^ {
-      case dbName ~ table ~ (compact ~ compactType) =>
+    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (COMPACT ~ stringLit) ~
+      (WHERE ~> (SEGMENT ~ "." ~ ID) ~> IN ~> "(" ~> repsep(segmentId, ",") <~ ")").? <~
+      opt(";") ^^ {
+      case dbName ~ table ~ (compact ~ compactType) ~ segs =>
         val altertablemodel =
           AlterTableModel(convertDbNameToLowerCase(dbName), table, None, compactType,
-          Some(System.currentTimeMillis()), null)
+          Some(System.currentTimeMillis()), null, segs)
         CarbonAlterTableCompactionCommand(altertablemodel)
     }
 
@@ -144,19 +150,60 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   /**
+   * The syntax of CREATE STREAM
+   * CREATE STREAM [IF NOT EXISTS] streamName ON TABLE [dbName.]tableName
+   * [STMPROPERTIES('KEY'='VALUE')]
+   * AS SELECT COUNT(COL1) FROM tableName
+   */
+  protected lazy val createStream: Parser[LogicalPlan] =
+    CREATE ~> STREAM ~>  opt(IF ~> NOT ~> EXISTS) ~ ident ~
+    (ON ~> TABLE ~> (ident <~ ".").?) ~ ident ~
+    (STMPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? ~
+    (AS ~> restInput) <~ opt(";") ^^ {
+      case ifNotExists ~ streamName ~ dbName ~ tableName ~ options ~ query =>
+        val optionMap = options.getOrElse(List[(String, String)]()).toMap[String, String]
+        CarbonCreateStreamCommand(
+          streamName, dbName, tableName, ifNotExists.isDefined, optionMap, query)
+    }
+
+  /**
+   * The syntax of DROP STREAM
+   * DROP STREAM [IF EXISTS] streamName
+   */
+  protected lazy val dropStream: Parser[LogicalPlan] =
+    DROP ~> STREAM ~> opt(IF ~> EXISTS) ~ ident <~ opt(";") ^^ {
+      case ifExists ~ streamName =>
+        CarbonDropStreamCommand(streamName, ifExists.isDefined)
+    }
+
+  /**
+   * The syntax of SHOW STREAMS
+   * SHOW STREAMS [ON TABLE dbName.tableName]
+   */
+  protected lazy val showStreams: Parser[LogicalPlan] =
+    SHOW ~> STREAMS ~> opt(ontable) <~ opt(";") ^^ {
+      case tableIdent =>
+        CarbonShowStreamsCommand(tableIdent)
+    }
+
+  /**
    * The syntax of datamap creation is as follows.
-   * CREATE DATAMAP IF NOT EXISTS datamapName ON TABLE tableName USING 'DataMapClassName'
+   * CREATE DATAMAP IF NOT EXISTS datamapName [ON TABLE tableName]
+   * USING 'DataMapProviderName'
+   * [WITH DEFERRED REBUILD]
    * DMPROPERTIES('KEY'='VALUE') AS SELECT COUNT(COL1) FROM tableName
    */
   protected lazy val createDataMap: Parser[LogicalPlan] =
     CREATE ~> DATAMAP ~> opt(IF ~> NOT ~> EXISTS) ~ ident ~
     opt(ontable) ~
-    (USING ~> stringLit) ~ (DMPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? ~
+    (USING ~> stringLit) ~
+    opt(WITH ~> DEFERRED ~> REBUILD) ~
+    (DMPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? ~
     (AS ~> restInput).? <~ opt(";") ^^ {
-      case ifnotexists ~ dmname ~ tableIdent ~ className ~ dmprops ~ query =>
-
+      case ifnotexists ~ dmname ~ tableIdent ~ dmProviderName ~ deferred ~ dmprops ~ query =>
         val map = dmprops.getOrElse(List[(String, String)]()).toMap[String, String]
-        CarbonCreateDataMapCommand(dmname, tableIdent, className, map, query, ifnotexists.isDefined)
+        CarbonCreateDataMapCommand(dmname, tableIdent, dmProviderName, map, query,
+          ifnotexists.isDefined, deferred.isDefined)
     }
 
   protected lazy val ontable: Parser[TableIdentifier] =
@@ -187,12 +234,12 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   /**
    * The syntax of show datamap is used to show datamaps on the table
-   * REFRESH DATAMAP datamapname [ON TABLE] tableName
+   * REBUILD DATAMAP datamapname [ON TABLE] tableName
    */
   protected lazy val refreshDataMap: Parser[LogicalPlan] =
-    REFRESH ~> DATAMAP ~> ident ~ opt(ontable) <~ opt(";") ^^ {
+    REBUILD ~> DATAMAP ~> ident ~ opt(ontable) <~ opt(";") ^^ {
       case datamap ~ tableIdent =>
-        CarbonDataMapRefreshCommand(datamap, tableIdent)
+        CarbonDataMapRebuildCommand(datamap, tableIdent)
     }
 
   protected lazy val deleteRecords: Parser[LogicalPlan] =
@@ -495,7 +542,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           val tblProps = tblProp.get
             .map(f => if (CarbonCommonConstants.TABLE_BLOCKSIZE.equalsIgnoreCase(f._1) ||
                           CarbonCommonConstants.COLUMN_GROUPS.equalsIgnoreCase(f._1) ||
-            CarbonCommonConstants.SORT_COLUMNS.equalsIgnoreCase(f._1)) {
+                          CarbonCommonConstants.SORT_COLUMNS.equalsIgnoreCase(f._1) ||
+                          CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE.equalsIgnoreCase(f._1) ||
+                          CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD.equalsIgnoreCase(f._1)) {
               throw new MalformedCarbonCommandException(
                 s"Unsupported Table property in add column: ${ f._1 }")
             } else if (f._1.toLowerCase.startsWith("default.value.")) {

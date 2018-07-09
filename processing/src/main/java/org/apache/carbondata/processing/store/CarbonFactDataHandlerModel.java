@@ -22,12 +22,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
@@ -36,6 +38,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datamap.DataMapWriterListener;
@@ -49,6 +52,12 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 // This class contains all the data required for processing and writing the carbon data
 // TODO: we should try to minimize this class as refactorying loading process
 public class CarbonFactDataHandlerModel {
+
+  /**
+   * LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(CarbonFactDataHandlerModel.class.getName());
 
   /**
    * dbName
@@ -164,12 +173,16 @@ public class CarbonFactDataHandlerModel {
 
   private short writingCoresCount;
 
+  private Map<String, LocalDictionaryGenerator> columnLocalDictGenMap;
+
+  private int numberOfCores;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    */
   public static CarbonFactDataHandlerModel createCarbonFactDataHandlerModel(
       CarbonDataLoadConfiguration configuration, String[] storeLocation, int bucketId,
-      int taskExtension) {
+      int taskExtension, DataMapWriterListener listener) {
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
     boolean[] isUseInvertedIndex =
@@ -199,7 +212,8 @@ public class CarbonFactDataHandlerModel {
 
     int dimensionCount = configuration.getDimensionCount();
     int noDictionaryCount = configuration.getNoDictionaryCount();
-    int complexDimensionCount = configuration.getComplexColumnCount();
+    int complexDimensionCount = configuration.getComplexDictionaryColumnCount() + configuration
+        .getComplexNonDictionaryColumnCount();
     int measureCount = configuration.getMeasureCount();
 
     int simpleDimsCount = dimensionCount - noDictionaryCount - complexDimensionCount;
@@ -210,8 +224,8 @@ public class CarbonFactDataHandlerModel {
     //To Set MDKey Index of each primitive type in complex type
     int surrIndex = simpleDimsCount;
     Iterator<Map.Entry<String, GenericDataType>> complexMap =
-        CarbonDataProcessorUtil.getComplexTypesMap(configuration.getDataFields()).entrySet()
-            .iterator();
+        CarbonDataProcessorUtil.getComplexTypesMap(configuration.getDataFields(), configuration)
+            .entrySet().iterator();
     Map<Integer, GenericDataType> complexIndexMap = new HashMap<>(complexDimensionCount);
     while (complexMap.hasNext()) {
       Map.Entry<String, GenericDataType> complexDataType = complexMap.next();
@@ -232,10 +246,8 @@ public class CarbonFactDataHandlerModel {
 
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
     carbonFactDataHandlerModel.setSchemaUpdatedTimeStamp(configuration.getSchemaUpdatedTimeStamp());
-    carbonFactDataHandlerModel.setDatabaseName(
-        identifier.getDatabaseName());
-    carbonFactDataHandlerModel
-        .setTableName(identifier.getTableName());
+    carbonFactDataHandlerModel.setDatabaseName(identifier.getDatabaseName());
+    carbonFactDataHandlerModel.setTableName(identifier.getTableName());
     carbonFactDataHandlerModel.setMeasureCount(measureCount);
     carbonFactDataHandlerModel.setStoreLocation(storeLocation);
     carbonFactDataHandlerModel.setDimLens(dimLens);
@@ -260,12 +272,22 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.tableSpec = configuration.getTableSpec();
     carbonFactDataHandlerModel.sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
 
-    DataMapWriterListener listener = new DataMapWriterListener();
-    listener.registerAllWriter(configuration.getTableSpec().getCarbonTable(),
-        configuration.getSegmentId(), storeLocation[new Random().nextInt(storeLocation.length)]);
+    if (listener == null) {
+      listener = new DataMapWriterListener();
+      listener.registerAllWriter(
+          configuration.getTableSpec().getCarbonTable(),
+          configuration.getSegmentId(),
+          CarbonTablePath.getShardName(
+              carbonDataFileAttributes.getTaskId(),
+              bucketId,
+              0,
+              String.valueOf(carbonDataFileAttributes.getFactTimeStamp()),
+              configuration.getSegmentId()),
+          segmentProperties);
+    }
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
     carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
-
+    setNumberOfCores(carbonFactDataHandlerModel);
     return carbonFactDataHandlerModel;
   }
 
@@ -327,8 +349,17 @@ public class CarbonFactDataHandlerModel {
     listener.registerAllWriter(
         loadModel.getCarbonDataLoadSchema().getCarbonTable(),
         loadModel.getSegmentId(),
-        tempStoreLocation[new Random().nextInt(tempStoreLocation.length)]);
+        CarbonTablePath.getShardName(
+            CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(loadModel.getTaskNo()),
+            carbonFactDataHandlerModel.getBucketId(),
+            carbonFactDataHandlerModel.getTaskExtension(),
+            String.valueOf(loadModel.getFactTimeStamp()),
+            loadModel.getSegmentId()),
+        segmentProperties);
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
+    setNumberOfCores(carbonFactDataHandlerModel);
+    carbonFactDataHandlerModel
+        .setColumnLocalDictGenMap(CarbonUtil.getLocalDictionaryModel(carbonTable));
     return carbonFactDataHandlerModel;
   }
 
@@ -367,7 +398,7 @@ public class CarbonFactDataHandlerModel {
     }
     AbsoluteTableIdentifier absoluteTableIdentifier = configuration.getTableIdentifier();
     String carbonDataDirectoryPath;
-    if (configuration.isCarbonUnmanagedTable()) {
+    if (!configuration.isCarbonTransactionalTable()) {
       carbonDataDirectoryPath = absoluteTableIdentifier.getTablePath();
     } else {
       carbonDataDirectoryPath = CarbonTablePath
@@ -608,6 +639,46 @@ public class CarbonFactDataHandlerModel {
 
   public DataMapWriterListener getDataMapWriterlistener() {
     return dataMapWriterlistener;
+  }
+
+  public Map<String, LocalDictionaryGenerator> getColumnLocalDictGenMap() {
+    return columnLocalDictGenMap;
+  }
+
+  public void setColumnLocalDictGenMap(
+      Map<String, LocalDictionaryGenerator> columnLocalDictGenMap) {
+    this.columnLocalDictGenMap = columnLocalDictGenMap;
+  }
+
+  private static void setNumberOfCores(CarbonFactDataHandlerModel model) {
+    // in compaction flow the measure with decimal type will come as spark decimal.
+    // need to convert it to byte array.
+    if (model.isCompactionFlow()) {
+      try {
+        model.numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.NUM_CORES_COMPACTING,
+                CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
+      } catch (NumberFormatException exc) {
+        LOGGER.error("Configured value for property " + CarbonCommonConstants.NUM_CORES_COMPACTING
+            + "is wrong.Falling back to the default value "
+            + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
+        model.numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
+      }
+    } else {
+      model.numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
+    }
+
+    if (model.sortScope != null && model.sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
+      model.numberOfCores = 1;
+    }
+    // Overriding it to the task specified cores.
+    if (model.getWritingCoresCount() > 0) {
+      model.numberOfCores = model.getWritingCoresCount();
+    }
+  }
+
+  public int getNumberOfCores() {
+    return numberOfCores;
   }
 }
 

@@ -28,11 +28,13 @@ public interface CarbonStreamParser {
 
   String CARBON_STREAM_PARSER = "carbon.stream.parser";
 
-  String CARBON_STREAM_PARSER_DEFAULT =
+  String CARBON_STREAM_PARSER_CSV =
       "org.apache.carbondata.streaming.parser.CSVStreamParserImp";
 
   String CARBON_STREAM_PARSER_ROW_PARSER =
       "org.apache.carbondata.streaming.parser.RowStreamParserImp";
+
+  String CARBON_STREAM_PARSER_DEFAULT = CARBON_STREAM_PARSER_ROW_PARSER;
 
   void initialize(Configuration configuration, StructType structType);
 

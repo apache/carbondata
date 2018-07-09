@@ -21,6 +21,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.CarbonIterator;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,12 +34,12 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<Object[]> {
 
   private static final Log LOG = LogFactory.getLog(CarbonOutputIteratorWrapper.class);
 
-  private boolean close = false;
+  private boolean close;
 
   /**
    * Number of rows kept in memory at most will be batchSize * queue size
    */
-  private int batchSize = 1000;
+  private int batchSize = CarbonProperties.getInstance().getBatchSize();
 
   private RowBatch loadBatch = new RowBatch(batchSize);
 
@@ -47,6 +48,10 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<Object[]> {
   private ArrayBlockingQueue<RowBatch> queue = new ArrayBlockingQueue<>(10);
 
   public void write(Object[] row) throws InterruptedException {
+    if (close) {
+      // already might be closed forcefully
+      return;
+    }
     if (!loadBatch.addRow(row)) {
       loadBatch.readyRead();
       queue.put(loadBatch);
@@ -82,8 +87,19 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<Object[]> {
     return readBatch.next();
   }
 
-  public void closeWriter() {
+  public void closeWriter(boolean isForceClose) {
+    if (close) {
+      // already might be closed forcefully
+      return;
+    }
     try {
+      if (isForceClose) {
+        // unblock the queue.put on the other thread and clear the queue.
+        queue.clear();
+        close = true;
+        return;
+      }
+      // below code will ensure that the last RowBatch is consumed properly
       loadBatch.readyRead();
       if (loadBatch.size > 0) {
         queue.put(loadBatch);

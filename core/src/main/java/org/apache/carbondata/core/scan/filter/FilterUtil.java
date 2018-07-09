@@ -54,6 +54,7 @@ import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -76,12 +77,10 @@ import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.TrueExpression;
 import org.apache.carbondata.core.scan.filter.executer.AndFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.DimColumnExecuterFilterInfo;
-import org.apache.carbondata.core.scan.filter.executer.ExcludeColGroupFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.ExcludeFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.FalseFilterExecutor;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.executer.ImplicitIncludeFilterExecutorImpl;
-import org.apache.carbondata.core.scan.filter.executer.IncludeColGroupFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.IncludeFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.MeasureColumnExecuterFilterInfo;
 import org.apache.carbondata.core.scan.filter.executer.OrFilterExecuterImpl;
@@ -231,30 +230,24 @@ public final class FilterUtil {
             msrColResolvedFilterInfo, true);
       }
     }
-    if (null != dimColResolvedFilterInfo) {
-      CarbonDimension dimension = dimColResolvedFilterInfo.getDimension();
-      if (dimension.hasEncoding(Encoding.IMPLICIT)) {
-        return new ImplicitIncludeFilterExecutorImpl(dimColResolvedFilterInfo);
-      } else if (dimension.isColumnar()) {
-        CarbonDimension dimensionFromCurrentBlock =
-            segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
-        if (null != dimensionFromCurrentBlock) {
-          // update dimension and column index according to the dimension position in current block
-          DimColumnResolvedFilterInfo dimColResolvedFilterInfoCopyObject =
-              dimColResolvedFilterInfo.getCopyObject();
-          dimColResolvedFilterInfoCopyObject.setDimension(dimensionFromCurrentBlock);
-          dimColResolvedFilterInfoCopyObject.setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
-          return new IncludeFilterExecuterImpl(dimColResolvedFilterInfoCopyObject, null,
-              segmentProperties, false);
-        } else {
-          return new RestructureIncludeFilterExecutorImpl(dimColResolvedFilterInfo,
-              msrColResolvedFilterInfo, false);
-        }
-      } else {
-        return new IncludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
-      }
+    CarbonDimension dimension = dimColResolvedFilterInfo.getDimension();
+    if (dimension.hasEncoding(Encoding.IMPLICIT)) {
+      return new ImplicitIncludeFilterExecutorImpl(dimColResolvedFilterInfo);
     } else {
-      return new IncludeColGroupFilterExecuterImpl(null, segmentProperties);
+      CarbonDimension dimensionFromCurrentBlock =
+          segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
+      if (null != dimensionFromCurrentBlock) {
+        // update dimension and column index according to the dimension position in current block
+        DimColumnResolvedFilterInfo dimColResolvedFilterInfoCopyObject =
+            dimColResolvedFilterInfo.getCopyObject();
+        dimColResolvedFilterInfoCopyObject.setDimension(dimensionFromCurrentBlock);
+        dimColResolvedFilterInfoCopyObject.setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
+        return new IncludeFilterExecuterImpl(dimColResolvedFilterInfoCopyObject, null,
+            segmentProperties, false);
+      } else {
+        return new RestructureIncludeFilterExecutorImpl(dimColResolvedFilterInfo,
+            msrColResolvedFilterInfo, false);
+      }
     }
   }
 
@@ -287,24 +280,19 @@ public final class FilterUtil {
             msrColResolvedFilterInfo, true);
       }
     }
-    if ((null != dimColResolvedFilterInfo) && (dimColResolvedFilterInfo.getDimension()
-        .isColumnar())) {
-      CarbonDimension dimensionFromCurrentBlock =
-          segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
-      if (null != dimensionFromCurrentBlock) {
-        // update dimension and column index according to the dimension position in current block
-        DimColumnResolvedFilterInfo dimColResolvedFilterInfoCopyObject =
-            dimColResolvedFilterInfo.getCopyObject();
-        dimColResolvedFilterInfoCopyObject.setDimension(dimensionFromCurrentBlock);
-        dimColResolvedFilterInfoCopyObject.setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
-        return new ExcludeFilterExecuterImpl(dimColResolvedFilterInfoCopyObject, null,
-            segmentProperties, false);
-      } else {
-        return new RestructureExcludeFilterExecutorImpl(dimColResolvedFilterInfo,
-            msrColResolvedFilterInfo, false);
-      }
+    CarbonDimension dimensionFromCurrentBlock =
+        segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
+    if (null != dimensionFromCurrentBlock) {
+      // update dimension and column index according to the dimension position in current block
+      DimColumnResolvedFilterInfo dimColResolvedFilterInfoCopyObject =
+          dimColResolvedFilterInfo.getCopyObject();
+      dimColResolvedFilterInfoCopyObject.setDimension(dimensionFromCurrentBlock);
+      dimColResolvedFilterInfoCopyObject.setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
+      return new ExcludeFilterExecuterImpl(dimColResolvedFilterInfoCopyObject, null,
+          segmentProperties, false);
     } else {
-      return new ExcludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
+      return new RestructureExcludeFilterExecutorImpl(dimColResolvedFilterInfo,
+          msrColResolvedFilterInfo, false);
     }
   }
 
@@ -535,8 +523,7 @@ public final class FilterUtil {
    * @throws QueryExecutionException
    */
   public static ColumnFilterInfo getFilterValues(AbsoluteTableIdentifier tableIdentifier,
-      ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter,
-      TableProvider tableProvider)
+      ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter)
       throws QueryExecutionException, FilterUnsupportedException, IOException {
     Dictionary forwardDictionary = null;
     ColumnFilterInfo filterInfo = null;
@@ -545,8 +532,7 @@ public final class FilterUtil {
     try {
       // Reading the dictionary value from cache.
       forwardDictionary =
-          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension(),
-              tableProvider);
+          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
       sortFilterModelMembers(columnExpression, evaluateResultList);
       getDictionaryValue(evaluateResultList, forwardDictionary, surrogates);
       filterInfo =
@@ -566,7 +552,6 @@ public final class FilterUtil {
    *
    * @param forwardDictionary
    * @param isIncludeFilter
-   * @param filterInfo
    * @param surrogates
    * @return
    */
@@ -583,17 +568,15 @@ public final class FilterUtil {
     }
     Collections.sort(surrogates);
     ColumnFilterInfo columnFilterInfo = null;
-    if (surrogates.size() > 0) {
-      columnFilterInfo = new ColumnFilterInfo();
-      if (isExcludeFilterNeedsToApply) {
-        columnFilterInfo.setOptimized(true);
-      }
-      columnFilterInfo.setIncludeFilter(isIncludeFilter);
-      if (!isIncludeFilter) {
-        columnFilterInfo.setExcludeFilterList(surrogates);
-      } else {
-        columnFilterInfo.setFilterList(surrogates);
-      }
+    columnFilterInfo = new ColumnFilterInfo();
+    if (isExcludeFilterNeedsToApply) {
+      columnFilterInfo.setOptimized(true);
+    }
+    columnFilterInfo.setIncludeFilter(isIncludeFilter);
+    if (!isIncludeFilter) {
+      columnFilterInfo.setExcludeFilterList(surrogates);
+    } else {
+      columnFilterInfo.setFilterList(surrogates);
     }
     return columnFilterInfo;
   }
@@ -704,14 +687,12 @@ public final class FilterUtil {
    */
   public static ColumnFilterInfo getFilterListForAllValues(AbsoluteTableIdentifier tableIdentifier,
       Expression expression, final ColumnExpression columnExpression, boolean isIncludeFilter,
-      TableProvider tableProvider, boolean isExprEvalReqd)
-      throws FilterUnsupportedException, IOException {
+      boolean isExprEvalReqd) throws FilterUnsupportedException, IOException {
     Dictionary forwardDictionary = null;
     List<Integer> surrogates = new ArrayList<Integer>(20);
     try {
       forwardDictionary =
-          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension(),
-              tableProvider);
+          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
       if (isExprEvalReqd && !isIncludeFilter) {
         surrogates.add(CarbonCommonConstants.DICT_VALUE_NULL);
       }
@@ -889,7 +870,7 @@ public final class FilterUtil {
   }
 
   /**
-   * Below method will be used to covert the filter surrogate keys
+   * Below method will be used to convert the filter surrogate keys
    * to mdkey
    *
    * @param columnFilterInfo
@@ -959,7 +940,7 @@ public final class FilterUtil {
   /**
    * Algorithm for getting the start key for a filter
    * step 1: Iterate through each dimension and verify whether its not an exclude filter.
-   * step 2: Intialize start key with the first filter member value present in each filter model
+   * step 2: Initialize start key with the first filter member value present in each filter model
    * for the respective dimensions.
    * step 3: since its a no dictionary start key there will only actual value so compare
    * the first filter model value with respect to the dimension data type.
@@ -1238,35 +1219,25 @@ public final class FilterUtil {
   }
 
   /**
-   * @param tableIdentifier
+   * @param dictionarySourceAbsoluteTableIdentifier
    * @param carbonDimension
-   * @return
-   */
-  public static Dictionary getForwardDictionaryCache(AbsoluteTableIdentifier tableIdentifier,
-      CarbonDimension carbonDimension) throws IOException {
-    return getForwardDictionaryCache(tableIdentifier, carbonDimension, null);
-  }
-
-  /**
-   * @param carbonDimension
-   * @param tableProvider
    * @return
    */
   public static Dictionary getForwardDictionaryCache(
       AbsoluteTableIdentifier dictionarySourceAbsoluteTableIdentifier,
-      CarbonDimension carbonDimension, TableProvider tableProvider) throws IOException {
+      CarbonDimension carbonDimension) throws IOException {
     String dictionaryPath = null;
     ColumnIdentifier columnIdentifier = carbonDimension.getColumnIdentifier();
-    if (null != tableProvider) {
-      CarbonTable carbonTable = tableProvider
-          .getCarbonTable(dictionarySourceAbsoluteTableIdentifier.getCarbonTableIdentifier());
+    CarbonTable carbonTable = CarbonMetadata.getInstance()
+        .getCarbonTable(dictionarySourceAbsoluteTableIdentifier.getDatabaseName(),
+            dictionarySourceAbsoluteTableIdentifier.getTableName());
+    if (null != carbonTable) {
       dictionaryPath = carbonTable.getTableInfo().getFactTable().getTableProperties()
           .get(CarbonCommonConstants.DICTIONARY_PATH);
-      if (null != carbonDimension.getColumnSchema().getParentColumnTableRelations() &&
-          carbonDimension.getColumnSchema().getParentColumnTableRelations().size() == 1) {
-        dictionarySourceAbsoluteTableIdentifier =
-            QueryUtil.getTableIdentifierForColumn(carbonDimension,
-                carbonTable.getAbsoluteTableIdentifier());
+      if (null != carbonDimension.getColumnSchema().getParentColumnTableRelations()
+          && carbonDimension.getColumnSchema().getParentColumnTableRelations().size() == 1) {
+        dictionarySourceAbsoluteTableIdentifier = QueryUtil
+            .getTableIdentifierForColumn(carbonDimension);
         columnIdentifier = new ColumnIdentifier(
             carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0).getColumnId(),
             carbonDimension.getColumnProperties(), carbonDimension.getDataType());

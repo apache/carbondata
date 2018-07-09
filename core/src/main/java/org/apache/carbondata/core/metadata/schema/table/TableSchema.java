@@ -30,6 +30,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonUtil;
 
@@ -61,7 +62,7 @@ public class TableSchema implements Serializable, Writable {
   /**
    * History of schema evolution of this table
    */
-  private SchemaEvolution schemaEvalution;
+  private SchemaEvolution schemaEvolution;
 
   /**
    * contains all key value pairs for table properties set by user in craete DDL
@@ -112,17 +113,17 @@ public class TableSchema implements Serializable, Writable {
   }
 
   /**
-   * @return the schemaEvalution
+   * @return the schemaEvolution
    */
-  public SchemaEvolution getSchemaEvalution() {
-    return schemaEvalution;
+  public SchemaEvolution getSchemaEvolution() {
+    return schemaEvolution;
   }
 
   /**
-   * @param schemaEvalution the schemaEvalution to set
+   * @param schemaEvolution the schemaEvolution to set
    */
-  public void setSchemaEvalution(SchemaEvolution schemaEvalution) {
-    this.schemaEvalution = schemaEvalution;
+  public void setSchemaEvolution(SchemaEvolution schemaEvolution) {
+    this.schemaEvolution = schemaEvolution;
   }
 
   /**
@@ -279,13 +280,12 @@ public class TableSchema implements Serializable, Writable {
         new RelationIdentifier(databaseName, tableName, tableId);
     Map<String, String> properties = new HashMap<>();
     if (queryString != null) {
-      properties.put(
-          "CHILD_SELECT QUERY",
+      properties.put(DataMapProperty.CHILD_SELECT_QUERY,
           CarbonUtil.encodeToString(queryString.trim().getBytes(
               // replace = to with & as hive metastore does not allow = inside. For base 64
               // only = is allowed as special character , so replace with &
               CarbonCommonConstants.DEFAULT_CHARSET)).replace("=", "&"));
-      properties.put("QUERYTYPE", queryType);
+      properties.put(DataMapProperty.QUERY_TYPE, queryType);
     }
     DataMapSchema dataMapSchema = new DataMapSchema(dataMapName, className);
     dataMapSchema.setProperties(properties);

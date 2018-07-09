@@ -20,6 +20,7 @@ package org.apache.spark.sql.optimizer
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.util.Try
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions._
@@ -43,7 +44,7 @@ import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseE
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
-import org.apache.carbondata.datamap.TextMatch
+import org.apache.carbondata.datamap.{TextMatch, TextMatchLimit}
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
@@ -141,6 +142,8 @@ object CarbonFilters {
           Some(new FalseExpression(null))
         case TextMatch(queryString) =>
           Some(new MatchExpression(queryString))
+        case TextMatchLimit(queryString, maxDoc) =>
+          Some(new MatchExpression(queryString, Try(maxDoc.toInt).getOrElse(Integer.MAX_VALUE)))
         case _ => None
       }
     }
@@ -379,6 +382,8 @@ object CarbonFilters {
             CarbonScalaUtil.convertSparkToCarbonDataType(dataType)))
         new AndExpression(l, r)
       case StringTrim(child) => transformExpression(child)
+      case s: ScalaUDF =>
+        new MatchExpression(s.children.head.toString())
       case _ =>
         new SparkUnknownExpression(expr.transform {
           case AttributeReference(name, dataType, _, _) =>
@@ -528,7 +533,7 @@ object CarbonFilters {
         // In case of compaction multiple segments will be passed as CARBON_INPUT_SEGMENTS.
         // Therefore partitionSpec will be extracted from all segments.
         val segments = segmentNumbersFromProperty.split(",").flatMap { a =>
-          val segment = Segment.toSegment(a)
+          val segment = Segment.toSegment(a, null)
           val segmentFile = new SegmentFileStore(table.getTablePath, segment.getSegmentFileName)
           segmentFile.getPartitionSpecs.asScala
         }

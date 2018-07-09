@@ -18,12 +18,13 @@
 package org.apache.carbondata.spark.util
 
 import java.{lang, util}
+import java.io.IOException
 import java.lang.ref.Reference
-import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util.Date
 
 import scala.collection.mutable
+import scala.util.Try
 
 import com.univocity.parsers.common.TextParsingException
 import org.apache.spark.SparkException
@@ -34,16 +35,17 @@ import org.apache.spark.sql.execution.command.{DataTypeInfo, UpdateTableModel}
 import org.apache.spark.sql.types._
 import org.apache.spark.util.CarbonReflectionUtils
 
+import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.common.logging.LogService
+import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory
 import org.apache.carbondata.core.metadata.ColumnIdentifier
-import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, StructField => CarbonStructField}
+import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, DecimalType => CarbonDecimalType, StructField => CarbonStructField}
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchemaStorageProvider}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
 import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.processing.exception.DataLoadingException
@@ -53,6 +55,8 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.streaming.parser.FieldConverter
 
 object CarbonScalaUtil {
+
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   // TODO: move this to spark module
   def convertSparkToCarbonDataType(dataType: DataType): CarbonDataType = {
@@ -103,7 +107,8 @@ object CarbonScalaUtil {
 
   def convertCarbonToSparkDataType(dataType: CarbonDataType): types.DataType = {
     if (CarbonDataTypes.isDecimal(dataType)) {
-      DecimalType.SYSTEM_DEFAULT
+      DecimalType(dataType.asInstanceOf[CarbonDecimalType].getPrecision,
+        dataType.asInstanceOf[CarbonDecimalType].getScale)
     } else {
       dataType match {
         case CarbonDataTypes.STRING => StringType
@@ -114,6 +119,7 @@ object CarbonScalaUtil {
         case CarbonDataTypes.BOOLEAN => BooleanType
         case CarbonDataTypes.TIMESTAMP => TimestampType
         case CarbonDataTypes.DATE => DateType
+        case CarbonDataTypes.VARCHAR => StringType
       }
     }
   }
@@ -124,9 +130,10 @@ object CarbonScalaUtil {
       delimiterLevel2: String,
       timeStampFormat: SimpleDateFormat,
       dateFormat: SimpleDateFormat,
+      isVarcharType: Boolean = false,
       level: Int = 1): String = {
     FieldConverter.objectToString(value, serializationNullFormat, delimiterLevel1,
-      delimiterLevel2, timeStampFormat, dateFormat, level)
+      delimiterLevel2, timeStampFormat, dateFormat, isVarcharType = isVarcharType, level)
   }
 
   /**
@@ -496,8 +503,16 @@ object CarbonScalaUtil {
     if (ex != null) {
       ex match {
         case sparkException: SparkException =>
-          if (sparkException.getCause.isInstanceOf[DataLoadingException] ||
-              sparkException.getCause.isInstanceOf[CarbonDataLoadingException]) {
+          if (sparkException.getCause.isInstanceOf[IOException]) {
+            if (sparkException.getCause.getCause.isInstanceOf[MetadataProcessException]) {
+              executorMessage = sparkException.getCause.getCause.getMessage
+              errorMessage = errorMessage + ": " + executorMessage
+            } else {
+              executorMessage = sparkException.getCause.getMessage
+              errorMessage = errorMessage + ": " + executorMessage
+            }
+          } else if (sparkException.getCause.isInstanceOf[DataLoadingException] ||
+                     sparkException.getCause.isInstanceOf[CarbonDataLoadingException]) {
             executorMessage = sparkException.getCause.getMessage
             errorMessage = errorMessage + ": " + executorMessage
           } else if (sparkException.getCause.isInstanceOf[TextParsingException]) {
@@ -592,11 +607,124 @@ object CarbonScalaUtil {
   /**
    * Create datamap provider using class name
    */
-  def createDataMapProvider(className: String, sparkSession: SparkSession,
-      storageProvider: DataMapSchemaStorageProvider): Object = {
+  def createDataMapProvider(
+      className: String,
+      sparkSession: SparkSession,
+      table: CarbonTable,
+      schema: DataMapSchema): Object = {
     CarbonReflectionUtils.createObject(
       className,
+      table,
       sparkSession,
-      storageProvider)._1.asInstanceOf[Object]
+      schema)._1.asInstanceOf[Object]
+  }
+
+  /**
+   * this method validates the local dictionary columns configurations
+   *
+   * @param tableProperties
+   * @param localDictColumns
+   */
+  def validateLocalDictionaryColumns(tableProperties: mutable.Map[String, String],
+      localDictColumns: Seq[String]): Unit = {
+    var dictIncludeColumns: Seq[String] = Seq[String]()
+
+    // check if the duplicate columns are specified in table schema
+    if (localDictColumns.distinct.lengthCompare(localDictColumns.size) != 0) {
+      val duplicateColumns = localDictColumns
+        .diff(localDictColumns.distinct).distinct
+      val errMsg =
+        "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE contains Duplicate Columns: " +
+        duplicateColumns.mkString(",") +
+        ". Please check the DDL."
+      throw new MalformedCarbonCommandException(errMsg)
+    }
+
+    // check if the same column is present in both dictionary include and local dictionary columns
+    // configuration
+    if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {
+      dictIncludeColumns =
+        tableProperties(CarbonCommonConstants.DICTIONARY_INCLUDE).split(",").map(_.trim)
+      localDictColumns.foreach { distCol =>
+        if (dictIncludeColumns.exists(x => x.equalsIgnoreCase(distCol.trim))) {
+          val commonColumn = (dictIncludeColumns ++ localDictColumns)
+            .diff((dictIncludeColumns ++ localDictColumns).distinct).distinct
+          val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
+                         commonColumn.mkString(",") +
+                         " specified in Dictionary include. Local Dictionary will not be " +
+                         "generated for Dictionary include columns. Please check the DDL."
+          throw new MalformedCarbonCommandException(errormsg)
+        }
+      }
+    }
+  }
+
+  /**
+   * this method validates the local dictionary enable property
+   *
+   * @param localDictionaryEnable
+   * @return
+   */
+  def validateLocalDictionaryEnable(localDictionaryEnable: String): Boolean = {
+    Try(localDictionaryEnable.toBoolean) match {
+      case scala.util.Success(value) =>
+        true
+      case scala.util.Failure(ex) =>
+        false
+    }
+  }
+
+  /**
+   * this method validates the local dictionary threshold property
+   *
+   * @param localDictionaryThreshold
+   * @return
+   */
+  def validateLocalDictionaryThreshold(localDictionaryThreshold: String): Boolean = {
+    // if any invalid value is configured for LOCAL_DICTIONARY_THRESHOLD, then default value
+    // will be
+    // considered which is 1000
+    Try(localDictionaryThreshold.toInt) match {
+      case scala.util.Success(value) =>
+        if (value < 1000 || value > 100000) {
+          false
+        } else {
+          true
+        }
+      case scala.util.Failure(ex) =>
+        false
+    }
+  }
+
+  /**
+   * This method validate if both local dictionary include and exclude contains same column
+   *
+   * @param tableProperties
+   */
+  def validateDuplicateLocalDictIncludeExcludeColmns(tableProperties: mutable.Map[String,
+    String]): Unit = {
+    val isLocalDictIncludeDefined = tableProperties
+      .get(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE)
+      .isDefined
+    val isLocalDictExcludeDefined = tableProperties
+      .get(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE)
+      .isDefined
+    if (isLocalDictIncludeDefined && isLocalDictExcludeDefined) {
+      val localDictIncludeCols = tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE)
+        .split(",").map(_.trim)
+      val localDictExcludeCols = tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE)
+        .split(",").map(_.trim)
+      localDictIncludeCols.foreach { distCol =>
+        if (localDictExcludeCols.exists(x => x.equalsIgnoreCase(distCol.trim))) {
+          val duplicateColumns = (localDictIncludeCols ++ localDictExcludeCols)
+            .diff((localDictIncludeCols ++ localDictExcludeCols).distinct).distinct
+          val errMsg = "Column ambiguity as duplicate column(s):" +
+                       duplicateColumns.mkString(",") +
+                       " is present in LOCAL_DICTIONARY_INCLUDE " +
+                       "and LOCAL_DICTIONARY_EXCLUDE. Duplicate columns are not allowed."
+          throw new MalformedCarbonCommandException(errMsg)
+        }
+      }
+    }
   }
 }

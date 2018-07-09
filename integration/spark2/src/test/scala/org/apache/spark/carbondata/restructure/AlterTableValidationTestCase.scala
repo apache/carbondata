@@ -43,7 +43,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("drop table if exists testalterwithboolean")
     sql("drop table if exists testalterwithbooleanwithoutdefaultvalue")
     sql("drop table if exists test")
-
+    sql("drop table if exists retructure_iud")
 
     // clean data folder
     CarbonProperties.getInstance()
@@ -547,7 +547,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
       " a,sum(b) from PreAggMain group by a")
     assert(intercept[ProcessMetaDataException] {
       sql("alter table preAggmain_preagg1 rename to preagg2")
-    }.getMessage.contains("Rename operation for pre-aggregate table is not supported."))
+    }.getMessage.contains("Rename operation for datamaps is not supported."))
     assert(intercept[ProcessMetaDataException] {
       sql("alter table preaggmain rename to preaggmain_new")
     }.getMessage.contains("Rename operation is not supported for table with pre-aggregate tables"))
@@ -690,7 +690,25 @@ test("test alter command for boolean data type with correct default measure valu
     testFilterWithDefaultValue(true)
     testFilterWithDefaultValue(false)
   }
-
+  test("Filter query on Restructure and updated table") {
+    sql(
+      """
+         CREATE TABLE retructure_iud(id int, name string, city string, age int)
+         STORED BY 'org.apache.carbondata.format'
+      """)
+    val testData = s"$resourcesPath/sample.csv"
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table retructure_iud")
+    sql("ALTER TABLE retructure_iud ADD COLUMNS (newField STRING) " +
+        "TBLPROPERTIES ('DEFAULT.VALUE.newField'='def', 'DICTIONARY_INCLUDE'='newField')").show()
+    sql("ALTER TABLE retructure_iud ADD COLUMNS (newField1 STRING) " +
+        "TBLPROPERTIES ('DEFAULT.VALUE.newField1'='def', 'DICTIONARY_EXCLUDE'='newField1')").show()
+    // update operation
+    sql("""update retructure_iud d  set (d.id) = (d.id + 1) where d.id > 2""").show()
+    checkAnswer(
+      sql("select count(*) from retructure_iud where id = 2 and newfield1='def'"),
+      Seq(Row(1))
+    )
+  }
   override def afterAll {
     sql("DROP TABLE IF EXISTS restructure")
     sql("drop table if exists table1")
@@ -707,5 +725,6 @@ test("test alter command for boolean data type with correct default measure valu
     sql("drop table if exists testalterwithboolean")
     sql("drop table if exists testalterwithbooleanwithoutdefaultvalue")
     sql("drop table if exists test")
+    sql("drop table if exists retructure_iud")
   }
 }

@@ -208,8 +208,8 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
 
     isProjectionRequired = new boolean[storageColumns.length];
     projectionMap = new int[storageColumns.length];
-    for (int i = 0; i < storageColumns.length; i++) {
-      for (int j = 0; j < projection.length; j++) {
+    for (int j = 0; j < projection.length; j++) {
+      for (int i = 0; i < storageColumns.length; i++) {
         if (storageColumns[i].getColName().equals(projection[j].getColName())) {
           isRequired[i] = true;
           isProjectionRequired[i] = true;
@@ -414,9 +414,6 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
 
   private boolean isScanRequired(BlockletHeader header) {
     // TODO require to implement min-max index
-    if (null == filter) {
-      return true;
-    }
     return true;
   }
 
@@ -535,7 +532,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
           }
           if (isProjectionRequired[colCount]) {
             outputValues[projectionMap[colCount]] = queryTypes[colCount]
-                .getDataBasedOnDataTypeFromSurrogates(ByteBuffer.wrap(b));
+                .getDataBasedOnDataType(ByteBuffer.wrap(b));
           }
         } else {
           input.skipBytes(v);

@@ -31,6 +31,7 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.mutate.UpdateVO;
@@ -53,7 +54,7 @@ public class CarbonInputSplit extends FileSplit
   private static final long serialVersionUID = 3520344046772190207L;
   public String taskId;
 
-  private String segmentId;
+  private Segment segment;
 
   private String bucketId;
 
@@ -90,7 +91,7 @@ public class CarbonInputSplit extends FileSplit
   private String dataMapWritePath;
 
   public CarbonInputSplit() {
-    segmentId = null;
+    segment = null;
     taskId = "0";
     bucketId = "0";
     blockletId = "0";
@@ -103,7 +104,7 @@ public class CarbonInputSplit extends FileSplit
       String[] locations, ColumnarFormatVersion version, String[] deleteDeltaFiles,
       String dataMapWritePath) {
     super(path, start, length, locations);
-    this.segmentId = segmentId;
+    this.segment = Segment.toSegment(segmentId);
     String taskNo = CarbonTablePath.DataFileUtil.getTaskNo(path.getName());
     if (taskNo.contains("_")) {
       taskNo = taskNo.split("_")[0];
@@ -127,7 +128,7 @@ public class CarbonInputSplit extends FileSplit
   public CarbonInputSplit(String segmentId, Path path, long start, long length, String[] locations,
       FileFormat fileFormat) {
     super(path, start, length, locations);
-    this.segmentId = segmentId;
+    this.segment = Segment.toSegment(segmentId);
     this.fileFormat = fileFormat;
     taskId = "0";
     bucketId = "0";
@@ -140,7 +141,7 @@ public class CarbonInputSplit extends FileSplit
   public CarbonInputSplit(String segmentId, Path path, long start, long length, String[] locations,
       String[] inMemoryHosts, FileFormat fileFormat) {
     super(path, start, length, locations, inMemoryHosts);
-    this.segmentId = segmentId;
+    this.segment = Segment.toSegment(segmentId);
     this.fileFormat = fileFormat;
     taskId = "0";
     bucketId = "0";
@@ -183,8 +184,8 @@ public class CarbonInputSplit extends FileSplit
       try {
         TableBlockInfo blockInfo =
             new TableBlockInfo(split.getPath().toString(), split.blockletId, split.getStart(),
-                split.getSegmentId(), split.getLocations(), split.getLength(), blockletInfos,
-                split.getVersion(), split.getDeleteDeltaFiles());
+                split.getSegment().toString(), split.getLocations(), split.getLength(),
+                blockletInfos, split.getVersion(), split.getDeleteDeltaFiles());
         blockInfo.setDetailInfo(split.getDetailInfo());
         blockInfo.setDataMapWriterPath(split.dataMapWritePath);
         blockInfo.setBlockOffset(split.getDetailInfo().getBlockFooterOffset());
@@ -202,7 +203,7 @@ public class CarbonInputSplit extends FileSplit
     try {
       TableBlockInfo blockInfo =
           new TableBlockInfo(inputSplit.getPath().toString(), inputSplit.blockletId,
-              inputSplit.getStart(), inputSplit.getSegmentId(), inputSplit.getLocations(),
+              inputSplit.getStart(), inputSplit.getSegment().toString(), inputSplit.getLocations(),
               inputSplit.getLength(), blockletInfos, inputSplit.getVersion(),
               inputSplit.getDeleteDeltaFiles());
       blockInfo.setDetailInfo(inputSplit.getDetailInfo());
@@ -214,12 +215,21 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public String getSegmentId() {
-    return segmentId;
+    if (segment != null) {
+      return segment.getSegmentNo();
+    } else {
+      return null;
+    }
   }
+
+  public Segment getSegment() {
+    return segment;
+  }
+
 
   @Override public void readFields(DataInput in) throws IOException {
     super.readFields(in);
-    this.segmentId = in.readUTF();
+    this.segment = Segment.toSegment(in.readUTF());
     this.version = ColumnarFormatVersion.valueOf(in.readShort());
     this.bucketId = in.readUTF();
     this.blockletId = in.readUTF();
@@ -246,7 +256,7 @@ public class CarbonInputSplit extends FileSplit
 
   @Override public void write(DataOutput out) throws IOException {
     super.write(out);
-    out.writeUTF(segmentId);
+    out.writeUTF(segment.toString());
     out.writeShort(version.number());
     out.writeUTF(bucketId);
     out.writeUTF(blockletId);
@@ -322,7 +332,7 @@ public class CarbonInputSplit extends FileSplit
     // get the segment id
     // converr seg ID to double.
 
-    double seg1 = Double.parseDouble(segmentId);
+    double seg1 = Double.parseDouble(segment.getSegmentNo());
     double seg2 = Double.parseDouble(other.getSegmentId());
     if (seg1 - seg2 < 0) {
       return -1;
@@ -380,7 +390,7 @@ public class CarbonInputSplit extends FileSplit
 
   @Override public int hashCode() {
     int result = taskId.hashCode();
-    result = 31 * result + segmentId.hashCode();
+    result = 31 * result + segment.hashCode();
     result = 31 * result + bucketId.hashCode();
     result = 31 * result + invalidSegments.hashCode();
     result = 31 * result + numberOfBlocklets;
@@ -429,5 +439,9 @@ public class CarbonInputSplit extends FileSplit
 
   public void setFormat(FileFormat fileFormat) {
     this.fileFormat = fileFormat;
+  }
+
+  public Blocklet makeBlocklet() {
+    return new Blocklet(getPath().getName(), blockletId);
   }
 }

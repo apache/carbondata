@@ -28,16 +28,15 @@ import org.apache.spark.sql.execution.command.schema._
 import org.apache.spark.sql.execution.command.table.{CarbonDescribeFormattedCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
 import org.apache.spark.sql.CarbonExpressions.{CarbonDescribeTable => DescribeTableCommand}
-import org.apache.spark.sql.execution.command.datamap.CarbonDataMapRefreshCommand
 import org.apache.spark.sql.execution.datasources.{RefreshResource, RefreshTable}
-import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.hive.{CarbonRelation, CreateCarbonSourceTableAsSelectCommand}
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.processing.merger.CompactionType
 
 /**
  * Carbon strategies for ddl commands
@@ -117,8 +116,9 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           if (carbonTable != null && carbonTable.isFileLevelFormat) {
             throw new MalformedCarbonCommandException(
               "Unsupported alter operation on Carbon external fileformat table")
-          } else if (carbonTable != null && carbonTable.getTableInfo.isUnManagedTable) {
-            throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+          } else if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
+            throw new MalformedCarbonCommandException(
+              "Unsupported operation on non transactional table")
           } else {
             ExecutedCommandExec(dataTypeChange) :: Nil
           }
@@ -135,8 +135,9 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           if (carbonTable != null && carbonTable.isFileLevelFormat) {
             throw new MalformedCarbonCommandException(
               "Unsupported alter operation on Carbon external fileformat table")
-          } else if (carbonTable != null && carbonTable.getTableInfo.isUnManagedTable) {
-            throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+          } else if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
+            throw new MalformedCarbonCommandException(
+              "Unsupported operation on non transactional table")
           } else {
             ExecutedCommandExec(addColumn) :: Nil
           }
@@ -153,8 +154,9 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           if (carbonTable != null && carbonTable.isFileLevelFormat) {
             throw new MalformedCarbonCommandException(
               "Unsupported alter operation on Carbon external fileformat table")
-          } else if (carbonTable != null && carbonTable.getTableInfo.isUnManagedTable) {
-            throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+          } else if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
+            throw new MalformedCarbonCommandException(
+              "Unsupported operation on non transactional table")
           } else {
             ExecutedCommandExec(dropColumn) :: Nil
           }
@@ -177,6 +179,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
             CarbonDescribeFormattedCommand(
               resultPlan,
               plan.output,
+              partitionSpec,
               identifier)) :: Nil
         } else {
           Nil
@@ -187,8 +190,9 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if (isCarbonTable) {
           val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
             .lookupRelation(t)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
-          if (carbonTable != null && carbonTable.getTableInfo.isUnManagedTable) {
-            throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+          if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
+            throw new MalformedCarbonCommandException(
+              "Unsupported operation on non transactional table")
           }
           if (!carbonTable.isHivePartitionTable) {
             ExecutedCommandExec(CarbonShowCarbonPartitionsCommand(t)) :: Nil
@@ -225,11 +229,28 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         val cmd =
           CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists = mode == SaveMode.Ignore)
         ExecutedCommandExec(cmd) :: Nil
+      case cmd@CreateDataSourceTableAsSelectCommand(tableDesc, mode, query)
+        if tableDesc.provider.get != DDLUtils.HIVE_PROVIDER
+           && (tableDesc.provider.get.equals("org.apache.spark.sql.CarbonSource")
+               || tableDesc.provider.get.equalsIgnoreCase("carbondata")) =>
+        val updatedCatalog = CarbonSource
+          .updateCatalogTableWithCarbonSchema(tableDesc, sparkSession, Option(query))
+        val cmd = CreateCarbonSourceTableAsSelectCommand(updatedCatalog, SaveMode.Ignore, query)
+        ExecutedCommandExec(cmd) :: Nil
+      case cmd@org.apache.spark.sql.execution.datasources.CreateTable(tableDesc, mode, query)
+        if tableDesc.provider.get != DDLUtils.HIVE_PROVIDER
+           && (tableDesc.provider.get.equals("org.apache.spark.sql.CarbonSource")
+               || tableDesc.provider.get.equalsIgnoreCase("carbondata")) =>
+        val updatedCatalog = CarbonSource
+          .updateCatalogTableWithCarbonSchema(tableDesc, sparkSession, query)
+        val cmd = CreateCarbonSourceTableAsSelectCommand(updatedCatalog, SaveMode.Ignore, query.get)
+        ExecutedCommandExec(cmd) :: Nil
       case CreateDataSourceTableCommand(table, ignoreIfExists)
         if table.provider.get != DDLUtils.HIVE_PROVIDER
           && (table.provider.get.equals("org.apache.spark.sql.CarbonSource")
           || table.provider.get.equalsIgnoreCase("carbondata")) =>
-        val updatedCatalog = CarbonSource.updateCatalogTableWithCarbonSchema(table, sparkSession)
+        val updatedCatalog = CarbonSource
+          .updateCatalogTableWithCarbonSchema(table, sparkSession)
         val cmd = CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists)
         ExecutedCommandExec(cmd) :: Nil
       case AlterTableSetPropertiesCommand(tableName, properties, isView)
@@ -240,14 +261,23 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         // if the table has 'preaggregate' DataMap, it doesn't support streaming now
         val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .lookupRelation(tableName)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
-        if (carbonTable != null && carbonTable.getTableInfo.isUnManagedTable) {
-          throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+        if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
+          throw new MalformedCarbonCommandException(
+            "Unsupported operation on non transactional table")
+        }
+
+        if (carbonTable != null && !carbonTable.canAllow(carbonTable, TableOperation.STREAMING)) {
+          throw new MalformedCarbonCommandException(
+            "streaming is not supported for index datamap")
         }
 
         // TODO remove this limitation later
         val property = properties.find(_._1.equalsIgnoreCase("streaming"))
         if (property.isDefined) {
-          if (carbonTable.isStreamingTable) {
+          if (carbonTable.getTablePath.startsWith("s3") && property.get._2.equalsIgnoreCase("s3")) {
+            throw new UnsupportedOperationException("streaming is not supported with s3 store")
+          }
+          if (carbonTable.isStreamingSink) {
             throw new MalformedCarbonCommandException(
               "Streaming property can not be changed once it is 'true'")
           } else {

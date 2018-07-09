@@ -191,9 +191,9 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
   private Object[] convertRow(Object[] rawRow) throws KeyGenException {
     byte[] dims = ((ByteArrayWrapper) rawRow[0]).getDictionaryKey();
     long[] keyArray = sourceSegProperties.getDimensionKeyGenerator().getKeyArray(dims);
-    byte[] covertedBytes =
+    byte[] convertedBytes =
         destinationSegProperties.getDimensionKeyGenerator().generateKey(keyArray);
-    ((ByteArrayWrapper) rawRow[0]).setDictionaryKey(covertedBytes);
+    ((ByteArrayWrapper) rawRow[0]).setDictionaryKey(convertedBytes);
     return rawRow;
   }
 

@@ -26,6 +26,9 @@ import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOp
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.path.CarbonTablePath
+
 class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
 
@@ -689,7 +692,12 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
                      CarbonCommonConstants.FILE_SEPARATOR + "t" +
                      CarbonCommonConstants.FILE_SEPARATOR + "Fact" +
                      CarbonCommonConstants.FILE_SEPARATOR + "Part0")
-    assert(f.list().length == 2)
+    if (!FileFactory.isFileExist(
+      CarbonTablePath.getSegmentFilesLocation(
+        dblocation + CarbonCommonConstants.FILE_SEPARATOR +
+        CarbonCommonConstants.FILE_SEPARATOR + "t"))) {
+      assert(f.list().length == 2)
+    }
   }
   test("test sentences func in update statement") {
     sql("drop table if exists senten")

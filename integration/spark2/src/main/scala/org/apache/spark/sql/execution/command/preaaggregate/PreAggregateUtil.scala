@@ -40,6 +40,7 @@ import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty
 import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable, DataMapSchema, TableSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.CarbonUtil
@@ -612,7 +613,8 @@ object PreAggregateUtil {
     val groupingExpressions = scala.collection.mutable.ArrayBuffer.empty[String]
     val columns = tableSchema.getListOfColumns.asScala
       .filter(f => !f.getColumnName.equals(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE))
-    columns.foreach { a =>
+    //  schema ordinal should be considered
+    columns.sortBy(_.getSchemaOrdinal).foreach { a =>
       if (a.getAggFunction.nonEmpty) {
         aggregateColumns += s"${a.getAggFunction match {
           case "count" => "sum"
@@ -745,8 +747,8 @@ object PreAggregateUtil {
    * @param aggExp aggregate expression
    * @return list of fields
    */
-  def validateAggregateFunctionAndGetFields(aggExp: AggregateExpression):
-  Seq[AggregateExpression] = {
+  def validateAggregateFunctionAndGetFields(aggExp: AggregateExpression)
+  : Seq[AggregateExpression] = {
     aggExp.aggregateFunction match {
       case Sum(MatchCastExpression(exp: Expression, changeDataType: DataType)) =>
         Seq(AggregateExpression(Sum(Cast(
@@ -788,9 +790,7 @@ object PreAggregateUtil {
           changeDataType)),
           aggExp.mode,
           aggExp.isDistinct),
-          AggregateExpression(Count(Cast(
-            exp,
-            changeDataType)),
+          AggregateExpression(Count(exp),
             aggExp.mode,
             aggExp.isDistinct))
       // in case of average need to return two columns
@@ -870,7 +870,7 @@ object PreAggregateUtil {
   def getChildQuery(aggDataMapSchema: AggregationDataMapSchema): String = {
     new String(
       CarbonUtil.decodeStringToBytes(
-        aggDataMapSchema.getProperties.get("CHILD_SELECT QUERY").replace("&", "=")),
+        aggDataMapSchema.getProperties.get(DataMapProperty.CHILD_SELECT_QUERY).replace("&", "=")),
       CarbonCommonConstants.DEFAULT_CHARSET)
   }
 

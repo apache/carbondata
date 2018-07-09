@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
@@ -64,7 +65,7 @@ public class TableBlockInfo implements Distributable, Serializable {
   /**
    * id of the segment this will be used to sort the blocks
    */
-  private String segmentId;
+  private Segment segment;
 
   /**
    * id of the Blocklet.
@@ -120,7 +121,7 @@ public class TableBlockInfo implements Distributable, Serializable {
     this.filePath = FileFactory.getUpdatedFilePath(filePath);
     this.blockletId = "0";
     this.blockOffset = blockOffset;
-    this.segmentId = segmentId;
+    this.segment = Segment.toSegment(segmentId);
     this.locations = locations;
     this.blockLength = blockLength;
     this.version = version;
@@ -196,14 +197,16 @@ public class TableBlockInfo implements Distributable, Serializable {
     info.filePath = filePath;
     info.blockOffset = blockOffset;
     info.blockLength = blockLength;
-    info.segmentId = segmentId;
+    info.segment = segment;
     info.blockletId = blockletId;
     info.locations = locations;
     info.version = version;
+    info.isDataBlockFromOldStore = isDataBlockFromOldStore;
     info.blockletInfos = blockletInfos;
     info.blockStorageIdMap = blockStorageIdMap;
     info.deletedDeltaFilePath = deletedDeltaFilePath;
     info.detailInfo = detailInfo.copy();
+    info.dataMapWriterPath = dataMapWriterPath;
     return info;
   }
 
@@ -229,7 +232,15 @@ public class TableBlockInfo implements Distributable, Serializable {
    * @return the segmentId
    */
   public String getSegmentId() {
-    return segmentId;
+    if (segment == null) {
+      return null;
+    } else {
+      return segment.getSegmentNo();
+    }
+  }
+
+  public Segment getSegment() {
+    return segment;
   }
 
   /**
@@ -264,7 +275,7 @@ public class TableBlockInfo implements Distributable, Serializable {
       return false;
     }
     TableBlockInfo other = (TableBlockInfo) obj;
-    if (!segmentId.equals(other.segmentId)) {
+    if (!segment.equals(other.segment)) {
       return false;
     }
     if (blockOffset != other.blockOffset) {
@@ -300,8 +311,8 @@ public class TableBlockInfo implements Distributable, Serializable {
     // get the segment id
     // converr seg ID to double.
 
-    double seg1 = Double.parseDouble(segmentId);
-    double seg2 = Double.parseDouble(((TableBlockInfo) other).segmentId);
+    double seg1 = Double.parseDouble(segment.getSegmentNo());
+    double seg2 = Double.parseDouble(((TableBlockInfo) other).segment.getSegmentNo());
     if (seg1 - seg2 < 0) {
       return -1;
     }
@@ -358,7 +369,7 @@ public class TableBlockInfo implements Distributable, Serializable {
     int result = filePath.hashCode();
     result = 31 * result + (int) (blockOffset ^ (blockOffset >>> 32));
     result = 31 * result + (int) (blockLength ^ (blockLength >>> 32));
-    result = 31 * result + segmentId.hashCode();
+    result = 31 * result + segment.hashCode();
     result = 31 * result + blockletInfos.getStartBlockletNumber();
     return result;
   }
@@ -457,7 +468,7 @@ public class TableBlockInfo implements Distributable, Serializable {
     sb.append("filePath='").append(filePath).append('\'');
     sb.append(", blockOffset=").append(blockOffset);
     sb.append(", blockLength=").append(blockLength);
-    sb.append(", segmentId='").append(segmentId).append('\'');
+    sb.append(", segment='").append(segment.toString()).append('\'');
     sb.append(", blockletId='").append(blockletId).append('\'');
     sb.append(", locations=").append(Arrays.toString(locations));
     sb.append('}');

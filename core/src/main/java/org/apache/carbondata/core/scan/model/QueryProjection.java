@@ -46,7 +46,6 @@ public class QueryProjection {
    */
   private List<ProjectionMeasure> measures =
       new ArrayList<ProjectionMeasure>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-
   /**
    * Constructor created with database name and table name.
    *

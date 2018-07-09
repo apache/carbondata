@@ -22,35 +22,43 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
+import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
+import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 /**
- * FG level of lucene DataMap
+ * CG level of lucene DataMap
  */
 @InterfaceAudience.Internal
 public class LuceneCoarseGrainDataMapFactory extends LuceneDataMapFactoryBase<CoarseGrainDataMap> {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(LuceneCoarseGrainDataMapFactory.class.getName());
 
+  public LuceneCoarseGrainDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema)
+      throws MalformedDataMapCommandException {
+    super(carbonTable, dataMapSchema);
+  }
+
   /**
    * Get the datamap for segmentid
    */
   @Override
-  public List<CoarseGrainDataMap> getDataMaps(Segment segment,
-      ReadCommittedScope readCommittedScope) throws IOException {
+  public List<CoarseGrainDataMap> getDataMaps(Segment segment) throws IOException {
     List<CoarseGrainDataMap> lstDataMap = new ArrayList<>();
     CoarseGrainDataMap dataMap = new LuceneCoarseGrainDataMap(analyzer);
     try {
       dataMap.init(new DataMapModel(
-          LuceneDataMapWriter.genDataMapStorePath(
+          DataMapWriter.getDefaultDataMapPath(
               tableIdentifier.getTablePath(), segment.getSegmentNo(), dataMapName)));
     } catch (MemoryException e) {
       LOGGER.error("failed to get lucene datamap , detail is {}" + e.getMessage());
@@ -64,15 +72,24 @@ public class LuceneCoarseGrainDataMapFactory extends LuceneDataMapFactoryBase<Co
    * Get datamaps for distributable object.
    */
   @Override
-  public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable,
-      ReadCommittedScope readCommittedScope)
+  public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable)
       throws IOException {
-    return getDataMaps(distributable.getSegment(), readCommittedScope);
+    return getDataMaps(distributable.getSegment());
   }
 
   @Override
-  public DataMapLevel getDataMapType() {
+  public DataMapLevel getDataMapLevel() {
     return DataMapLevel.CG;
+  }
+
+  @Override
+  public void deleteDatamapData() {
+
+  }
+
+  @Override
+  public boolean willBecomeStale(TableOperation operation) {
+    return false;
   }
 
 }

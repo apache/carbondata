@@ -17,19 +17,23 @@
 
 package org.apache.spark.sql.execution.command.management
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.execution.command.{Checker, DataCommand}
+import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, Checker, DataCommand}
 import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.indexstore.PartitionSpec
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.events.{CleanFilesPostEvent, CleanFilesPreEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events._
 import org.apache.carbondata.spark.util.CommonUtil
 
 /**
@@ -43,16 +47,38 @@ import org.apache.carbondata.spark.util.CommonUtil
 case class CarbonCleanFilesCommand(
     databaseNameOp: Option[String],
     tableName: Option[String],
-    forceTableClean: Boolean = false)
-  extends DataCommand {
+    forceTableClean: Boolean = false,
+    isInternalCleanCall: Boolean = false)
+  extends AtomicRunnableCommand {
+
+  var carbonTable: CarbonTable = _
+  var cleanFileCommands: List[CarbonCleanFilesCommand] = _
+
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
+    carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName.get)(sparkSession)
+
+    if (carbonTable.hasAggregationDataMap) {
+      cleanFileCommands = carbonTable.getTableInfo.getDataMapSchemaList.asScala.map {
+        dataMapSchema =>
+          val relationIdentifier = dataMapSchema.getRelationIdentifier
+          CarbonCleanFilesCommand(
+            Some(relationIdentifier.getDatabaseName), Some(relationIdentifier.getTableName),
+            isInternalCleanCall = true)
+      }.toList
+      cleanFileCommands.foreach(_.processMetadata(sparkSession))
+    } else if (carbonTable.isChildDataMap && !isInternalCleanCall) {
+      throwMetadataException(
+        carbonTable.getDatabaseName, carbonTable.getTableName,
+        "Cannot clean files directly for aggregate table.")
+    }
+    Seq.empty
+  }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName.get)(sparkSession)
     // if insert overwrite in progress, do not allow delete segment
     if (SegmentStatusManager.isOverwriteInProgressInTable(carbonTable)) {
       throw new ConcurrentOperationException(carbonTable, "insert overwrite", "clean file")
     }
-
     val operationContext = new OperationContext
     val cleanFilesPreEvent: CleanFilesPreEvent =
       CleanFilesPreEvent(carbonTable,
@@ -67,6 +93,9 @@ case class CarbonCleanFilesCommand(
       }
     } else {
       cleanGarbageDataInAllTables(sparkSession)
+    }
+    if (cleanFileCommands != null) {
+      cleanFileCommands.foreach(_.processData(sparkSession))
     }
     val cleanFilesPostEvent: CleanFilesPostEvent =
       CleanFilesPostEvent(carbonTable, sparkSession)
@@ -89,11 +118,13 @@ case class CarbonCleanFilesCommand(
 
   private def cleanGarbageData(sparkSession: SparkSession,
       databaseNameOp: Option[String], tableName: String): Unit = {
-    val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+    if (!carbonTable.getTableInfo.isTransactionalTable) {
+      throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
+    }
     val partitions: Option[Seq[PartitionSpec]] = CarbonFilters.getPartitions(
       Seq.empty[Expression],
       sparkSession,
-      TableIdentifier(tableName, databaseNameOp))
+      carbonTable)
     CarbonStore.cleanFiles(
       dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession),
       tableName = tableName,

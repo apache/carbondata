@@ -28,6 +28,7 @@ import org.apache.spark.{Partition, SparkContext}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.execution.command.CarbonMergerMapping
 
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
@@ -74,7 +75,8 @@ class CarbonIUDMergerRDD[K, V](
     val carbonInputSplits = splits.asScala.map(_.asInstanceOf[CarbonInputSplit])
 
     // group blocks by segment.
-    val splitsGroupedMySegment = carbonInputSplits.groupBy(_.getSegmentId)
+    val splitsGroupedMySegment =
+      carbonInputSplits.groupBy(_.getSegmentId)
 
     var i = -1
 

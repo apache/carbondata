@@ -22,7 +22,8 @@ import java.math.BigDecimal
 
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{AnalysisException, DataFrame, DataFrameWriter, Row, SaveMode}
+import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.scalatest.BeforeAndAfterAll
 
 class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
@@ -83,6 +84,8 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS df_write_sort_column_not_specified")
     sql("DROP TABLE IF EXISTS df_write_specify_sort_column")
     sql("DROP TABLE IF EXISTS df_write_empty_sort_column")
+    sql("DROP TABLE IF EXISTS carbon_table_df")
+    sql("DROP TABLE IF EXISTS carbon_table_df1")
   }
 
 
@@ -117,6 +120,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select count(*) from carbon1 where c3 > 500"), Row(31500)
     )
+    sql(s"describe formatted carbon1").show(true)
   }
 
   test("test load dataframe with saving csv uncompressed files") {
@@ -333,6 +337,58 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
 
     val sortColumnValue = getSortColumnValue("df_write_empty_sort_column")
     assert(sortColumnValue.isEmpty)
+  }
+
+  test("test load dataframe while giving already created table") {
+
+    sql(s"create table carbon_table_df(c1 string, c2 string, c3 int) stored by 'carbondata'")
+    // save dataframe to carbon file
+    df.write
+      .format("carbondata")
+      .option("tableName", "carbon_table_df")
+      .option("tempCSV", "false")
+      .mode(SaveMode.Overwrite)
+      .save()
+
+    df.write
+      .format("carbondata")
+      .option("tableName", "carbon_table_df")
+      .option("tempCSV", "false")
+      .mode(SaveMode.Overwrite)
+      .save()
+    checkAnswer(
+      sql("select count(*) from carbon_table_df where c3 > 500"), Row(31500)
+    )
+  }
+
+  test("test load dataframe while giving already created table with delete segment") {
+
+    sql(s"create table carbon_table_df1(c1 string, c2 string, c3 int) stored by 'carbondata'")
+    val table = CarbonEnv.getCarbonTable(TableIdentifier("carbon_table_df1"))(sqlContext.sparkSession)
+    // save dataframe to carbon file
+    df.write
+      .format("carbondata")
+      .option("tableName", "carbon_table_df1")
+      .option("tempCSV", "false")
+      .mode(SaveMode.Overwrite)
+      .save()
+
+    assert(CarbonEnv.getCarbonTable(TableIdentifier("carbon_table_df1"))(sqlContext.sparkSession)
+      .getTableInfo.getFactTable.equals(table.getTableInfo.getFactTable))
+
+    sql("delete from table carbon_table_df1 where segment.id in (0)")
+    df.write
+      .format("carbondata")
+      .option("tableName", "carbon_table_df1")
+      .option("tempCSV", "false")
+      .mode(SaveMode.Overwrite)
+      .save()
+    assert(CarbonEnv.getCarbonTable(TableIdentifier("carbon_table_df1"))(sqlContext.sparkSession)
+      .getTableInfo.getFactTable.equals(table.getTableInfo.getFactTable))
+    checkAnswer(
+      sql("select count(*) from carbon_table_df1 where c3 > 500"), Row(31500)
+    )
+
   }
 
   override def afterAll {

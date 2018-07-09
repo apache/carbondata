@@ -23,12 +23,15 @@ import scala.collection.mutable
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.execution.command.datamap.CarbonDropDataMapCommand
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
+import org.apache.spark.util.PartitionUtils
 
+import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -64,27 +67,22 @@ case class PreAggregateTableHelper(
     val df = sparkSession.sql(updatedQuery)
     val fieldRelationMap = PreAggregateUtil.validateActualSelectPlanAndGetAttributes(
       df.logicalPlan, queryString)
+
     val partitionInfo = parentTable.getPartitionInfo
     val fields = fieldRelationMap.keySet.toSeq
     val tableProperties = mutable.Map[String, String]()
-    val parentPartitionColumns = if (parentTable.isHivePartitionTable) {
+    val usePartitioning = dataMapProperties.getOrDefault("partitioning", "true").toBoolean
+    val parentPartitionColumns = if (!usePartitioning) {
+      Seq.empty
+    } else if (parentTable.isHivePartitionTable) {
       partitionInfo.getColumnSchemaList.asScala.map(_.getColumnName)
     } else {
       Seq()
     }
     // Generate child table partition columns in the same order as the parent table.
-    val partitionerFields = fieldRelationMap.collect {
-      case (field, dataMapField) if parentPartitionColumns
-        .exists(parentCol =>
-          /* For count(*) while Pre-Aggregate table creation,columnTableRelationList was null */
-          dataMapField.columnTableRelationList.getOrElse(Seq()).nonEmpty &&
-            parentCol.equals(dataMapField.columnTableRelationList.get.head.parentColumnName) &&
-          dataMapField.aggregateFunction.isEmpty) =>
-        (PartitionerField(field.name.get,
-          field.dataType,
-          field.columnComment), parentPartitionColumns
-          .indexOf(dataMapField.columnTableRelationList.get.head.parentColumnName))
-    }.toSeq.sortBy(_._2).map(_._1)
+    val partitionerFields =
+      PartitionUtils.getPartitionerFields(parentPartitionColumns, fieldRelationMap)
+
     dmProperties.foreach(t => tableProperties.put(t._1, t._2))
 
     val selectTable = PreAggregateUtil.getParentCarbonTable(df.logicalPlan)
@@ -105,6 +103,47 @@ case class PreAggregateTableHelper(
       .LOAD_SORT_SCOPE_DEFAULT))
     tableProperties
       .put(CarbonCommonConstants.TABLE_BLOCKSIZE, parentTable.getBlockSizeInMB.toString)
+    tableProperties.put(CarbonCommonConstants.FLAT_FOLDER,
+      parentTable.getTableInfo.getFactTable.getTableProperties.asScala.getOrElse(
+        CarbonCommonConstants.FLAT_FOLDER, CarbonCommonConstants.DEFAULT_FLAT_FOLDER))
+
+    // Datamap table name and columns are automatically added prefix with parent table name
+    // in carbon. For convenient, users can type column names same as the ones in select statement
+    // when config dmproperties, and here we update column names with prefix.
+    val longStringColumn = tableProperties.get(CarbonCommonConstants.LONG_STRING_COLUMNS)
+    if (longStringColumn != None) {
+      val fieldNames = fields.map(_.column)
+      val newLongStringColumn = longStringColumn.get.split(",").map(_.trim).map{ colName =>
+        val newColName = parentTable.getTableName.toLowerCase() + "_" + colName
+        if (!fieldNames.contains(newColName)) {
+          throw new MalformedDataMapCommandException(
+            CarbonCommonConstants.LONG_STRING_COLUMNS.toUpperCase() + ":" + colName
+              + " does not in datamap")
+        }
+        newColName
+      }
+      tableProperties.put(CarbonCommonConstants.LONG_STRING_COLUMNS,
+        newLongStringColumn.mkString(","))
+    }
+
+    // inherit the local dictionary properties of main parent table
+    tableProperties
+      .put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
+        parentTable.getTableInfo.getFactTable.getTableProperties.asScala
+          .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE, "false"))
+    tableProperties
+      .put(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
+        parentTable.getTableInfo.getFactTable.getTableProperties.asScala
+          .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
+            CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT))
+    tableProperties
+      .put(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE,
+        parentTable.getTableInfo.getFactTable.getTableProperties.asScala
+          .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE, ""))
+    tableProperties
+      .put(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE,
+        parentTable.getTableInfo.getFactTable.getTableProperties.asScala
+          .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE, ""))
     val tableIdentifier =
       TableIdentifier(parentTable.getTableName + "_" + dataMapName,
         Some(parentTable.getDatabaseName))
@@ -118,6 +157,7 @@ case class PreAggregateTableHelper(
       tableProperties,
       None,
       isAlterFlow = false,
+      true,
       None)
 
     // updating the relation identifier, this will be stored in child table
@@ -155,9 +195,22 @@ case class PreAggregateTableHelper(
       "AGGREGATION")
     dmProperties.foreach(f => childSchema.getProperties.put(f._1, f._2))
 
-    // updating the parent table about child table
-    PreAggregateUtil.updateMainTable(parentTable, childSchema, sparkSession)
-
+    try {
+      // updating the parent table about child table
+      PreAggregateUtil.updateMainTable(parentTable, childSchema, sparkSession)
+    } catch {
+      case e: MetadataProcessException =>
+        throw e
+      case ex: Exception =>
+        // If updation failed then forcefully remove datamap from metastore.
+        val dropTableCommand = CarbonDropDataMapCommand(childSchema.getDataMapName,
+          ifExistsSet = true,
+          Some(TableIdentifier
+            .apply(parentTable.getTableName, Some(parentTable.getDatabaseName))),
+          forceDrop = true)
+        dropTableCommand.processMetadata(sparkSession)
+        throw ex
+    }
     // After updating the parent carbon table with data map entry extract the latest table object
     // to be used in further create process.
     parentTable = CarbonEnv.getCarbonTable(Some(parentTable.getDatabaseName),

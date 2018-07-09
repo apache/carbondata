@@ -25,6 +25,8 @@ import org.apache.carbondata.core.scan.collector.impl.RawBasedResultCollector;
 import org.apache.carbondata.core.scan.collector.impl.RestructureBasedDictionaryResultCollector;
 import org.apache.carbondata.core.scan.collector.impl.RestructureBasedRawResultCollector;
 import org.apache.carbondata.core.scan.collector.impl.RestructureBasedVectorResultCollector;
+import org.apache.carbondata.core.scan.collector.impl.RowIdBasedResultCollector;
+import org.apache.carbondata.core.scan.collector.impl.RowIdRawBasedResultCollector;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 
 /**
@@ -51,6 +53,9 @@ public class ResultCollectorFactory {
       if (blockExecutionInfo.isRestructuredBlock()) {
         LOGGER.info("Restructure based raw collector is used to scan and collect the data");
         scannerResultAggregator = new RestructureBasedRawResultCollector(blockExecutionInfo);
+      } else if (blockExecutionInfo.isRequiredRowId()) {
+        LOGGER.info("RowId based raw collector is used to scan and collect the data");
+        scannerResultAggregator = new RowIdRawBasedResultCollector(blockExecutionInfo);
       } else {
         LOGGER.info("Row based raw collector is used to scan and collect the data");
         scannerResultAggregator = new RawBasedResultCollector(blockExecutionInfo);
@@ -67,6 +72,9 @@ public class ResultCollectorFactory {
       if (blockExecutionInfo.isRestructuredBlock()) {
         LOGGER.info("Restructure based dictionary collector is used to scan and collect the data");
         scannerResultAggregator = new RestructureBasedDictionaryResultCollector(blockExecutionInfo);
+      } else if (blockExecutionInfo.isRequiredRowId()) {
+        LOGGER.info("RowId based dictionary collector is used to scan and collect the data");
+        scannerResultAggregator = new RowIdBasedResultCollector(blockExecutionInfo);
       } else {
         LOGGER.info("Row based dictionary collector is used to scan and collect the data");
         scannerResultAggregator = new DictionaryBasedResultCollector(blockExecutionInfo);

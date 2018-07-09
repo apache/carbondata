@@ -68,32 +68,36 @@ public class DecimalSliceStreamReader  extends AbstractStreamReader {
    * @return
    * @throws IOException
    */
-  public Block readBlock(Type type)
-      throws IOException
-  {
+  public Block readBlock(Type type) throws IOException {
     int numberOfRows = 0;
     BlockBuilder builder = null;
-    if(isVectorReader) {
+    if (isVectorReader) {
       numberOfRows = batchSize;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (columnVector != null) {
-        if(columnVector.anyNullsSet())
-        {
-          handleNullInVector(type, numberOfRows, builder);
-        } else {
-          if(isShortDecimal(type)) {
-            populateShortDecimalVector(type, numberOfRows, builder);
+        if (isDictionary) {
+          if (isShortDecimal(type)) {
+            populateShortDictionaryVector(type, numberOfRows, builder);
           } else {
-            populateLongDecimalVector(type, numberOfRows, builder);
+            populateLongDictionaryVector(type, numberOfRows, builder);
+          }
+        } else {
+          if (columnVector.anyNullsSet()) {
+            handleNullInVector(type, numberOfRows, builder);
+          } else {
+            if (isShortDecimal(type)) {
+              populateShortDecimalVector(type, numberOfRows, builder);
+            } else {
+              populateLongDecimalVector(type, numberOfRows, builder);
+            }
           }
         }
       }
-
     } else {
       if (streamData != null) {
         numberOfRows = streamData.length;
         builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
-        for(int i = 0; i < numberOfRows ; i++ ){
+        for (int i = 0; i < numberOfRows; i++) {
           Slice slice = getSlice(streamData[i], type);
           if (isShortDecimal(type)) {
             type.writeLong(builder, parseLong((DecimalType) type, slice, 0, slice.length()));
@@ -211,52 +215,55 @@ public class DecimalSliceStreamReader  extends AbstractStreamReader {
 
   private void populateShortDecimalVector(Type type, int numberOfRows, BlockBuilder builder) {
     DecimalType decimalType = (DecimalType) type;
+    for (int i = 0; i < numberOfRows; i++) {
+      BigDecimal decimalValue = (BigDecimal) columnVector.getData(i);
+      long rescaledDecimal = Decimals
+          .rescale(decimalValue.unscaledValue().longValue(), decimalValue.scale(),
+              decimalType.getScale());
+      type.writeLong(builder, rescaledDecimal);
+    }
+  }
 
-    if (isDictionary) {
-      for (int i = 0; i < numberOfRows; i++) {
-        int value = (int)columnVector.getData(i);
-        Object data = DataTypeUtil
-            .getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value), DataTypes.createDecimalType(decimalType.getPrecision(), decimalType.getScale()));
-        if(Objects.isNull(data)) {
-          builder.appendNull();
-        } else {
-          BigDecimal decimalValue = (BigDecimal) data;
-          long rescaledDecimal =
-              Decimals.rescale(decimalValue.unscaledValue().longValue(), decimalValue.scale(),decimalType.getScale());
-          type.writeLong(builder, rescaledDecimal);
-        }
-      }
-    } else {
-      for (int i = 0; i < numberOfRows; i++) {
-        BigDecimal decimalValue = (BigDecimal) columnVector.getData(i);
-        long rescaledDecimal =
-            Decimals.rescale(decimalValue.unscaledValue().longValue(), decimalValue.scale(),decimalType.getScale());
+  private void populateLongDecimalVector(Type type, int numberOfRows, BlockBuilder builder) {
+    for (int i = 0; i < numberOfRows; i++) {
+      Slice slice = getSlice((columnVector.getData(i)), type);
+      type.writeSlice(builder, parseSlice((DecimalType) type, slice, 0, slice.length()));
+    }
+  }
+
+  private void populateShortDictionaryVector(Type type, int numberOfRows, BlockBuilder builder) {
+    DecimalType decimalType = (DecimalType) type;
+    for (int i = 0; i < numberOfRows; i++) {
+      int value = (int) columnVector.getData(i);
+      Object data = DataTypeUtil.getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value),
+          DataTypes.createDecimalType(decimalType.getPrecision(), decimalType.getScale()));
+      if (Objects.isNull(data)) {
+        builder.appendNull();
+      } else {
+        BigDecimal decimalValue = (BigDecimal) data;
+        long rescaledDecimal = Decimals
+            .rescale(decimalValue.unscaledValue().longValue(), decimalValue.scale(),
+                decimalType.getScale());
         type.writeLong(builder, rescaledDecimal);
       }
     }
   }
 
-  private void populateLongDecimalVector(Type type, int numberOfRows, BlockBuilder builder) {
-    if (isDictionary) {
-      for (int i = 0; i < numberOfRows; i++) {
-        int value = (int) columnVector.getData(i);
-        DecimalType decimalType = (DecimalType) type;
-        Object data = DataTypeUtil
-            .getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value), DataTypes.createDecimalType(decimalType.getPrecision(), decimalType.getScale()));
-        if(Objects.isNull(data)) {
-          builder.appendNull();
-        } else {
-          BigDecimal decimalValue = (BigDecimal) data;
-          Slice slice = getSlice(decimalValue, type);
-          type.writeSlice(builder, parseSlice((DecimalType) type, slice, 0, slice.length()));
-        }
-      }
-    } else {
-      for (int i = 0; i < numberOfRows; i++) {
-        Slice slice = getSlice((columnVector.getData(i)), type);
+  private void populateLongDictionaryVector(Type type, int numberOfRows, BlockBuilder builder) {
+    DecimalType decimalType = (DecimalType) type;
+    for (int i = 0; i < numberOfRows; i++) {
+      int value = (int) columnVector.getData(i);
+      Object data = DataTypeUtil.getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value),
+          DataTypes.createDecimalType(decimalType.getPrecision(), decimalType.getScale()));
+      if (Objects.isNull(data)) {
+        builder.appendNull();
+      } else {
+        BigDecimal decimalValue = (BigDecimal) data;
+        Slice slice = getSlice(decimalValue, type);
         type.writeSlice(builder, parseSlice((DecimalType) type, slice, 0, slice.length()));
       }
     }
   }
+
 
 }

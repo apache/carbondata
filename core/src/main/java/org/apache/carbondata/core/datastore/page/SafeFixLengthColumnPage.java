@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.page;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 
 import org.apache.carbondata.core.datastore.TableSpec;
@@ -37,9 +38,17 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   private float[] floatData;
   private double[] doubleData;
   private byte[] shortIntData;
+  private byte[][] fixedLengthdata;
+
 
   SafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize) {
     super(columnSpec, dataType, pageSize);
+  }
+
+  SafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
+      int eachRowSize) {
+    super(columnSpec, dataType, pageSize);
+    this.fixedLengthdata = new byte[pageSize][];
   }
 
   /**
@@ -87,7 +96,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putBytes(int rowId, byte[] bytes) {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    this.fixedLengthdata[rowId] = bytes;
   }
 
   @Override
@@ -173,7 +182,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public byte[] getBytes(int rowId) {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    return this.fixedLengthdata[rowId];
   }
 
   /**
@@ -241,8 +250,18 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override
-  public byte[] getLVFlattenedBytePage() {
+  public byte[] getLVFlattenedBytePage() throws IOException {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override
+  public byte[] getComplexChildrenLVFlattenedBytePage() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public byte[] getComplexParentFlattenedBytePage() throws IOException {
+    throw new UnsupportedOperationException("internal error");
   }
 
   /**

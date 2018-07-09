@@ -92,6 +92,10 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private boolean[] noDictionaryColMapping;
   /**
+   * boolean mapping for long string dimension
+   */
+  private boolean[] isVarcharDimMapping;
+  /**
    * agg type defined for measures
    */
   private DataType[] dataTypes;
@@ -175,7 +179,6 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
                   partitionSpec.getLocation().toString(), carbonLoadModel.getFactTimeStamp() + "",
                   partitionSpec.getPartitions());
         } catch (IOException e) {
-          isCompactionSuccess = false;
           throw e;
         }
       }
@@ -354,13 +357,18 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     measureCount = carbonTable.getMeasureByTableName(tableName).size();
     List<CarbonDimension> dimensions = carbonTable.getDimensionByTableName(tableName);
     noDictionaryColMapping = new boolean[dimensions.size()];
+    isVarcharDimMapping = new boolean[dimensions.size()];
     int i = 0;
     for (CarbonDimension dimension : dimensions) {
       if (CarbonUtil.hasEncoding(dimension.getEncoder(), Encoding.DICTIONARY)) {
         i++;
         continue;
       }
-      noDictionaryColMapping[i++] = true;
+      noDictionaryColMapping[i] = true;
+      if (dimension.getColumnSchema().getDataType() == DataTypes.VARCHAR) {
+        isVarcharDimMapping[i] = true;
+      }
+      i++;
       noDictionaryCount++;
     }
     dimensionColumnCount = dimensions.size();
@@ -388,7 +396,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
         .createSortParameters(carbonTable, carbonLoadModel.getDatabaseName(), tableName,
             dimensionColumnCount, segmentProperties.getComplexDimensions().size(), measureCount,
             noDictionaryCount, segmentId,
-            carbonLoadModel.getTaskNo(), noDictionaryColMapping, true);
+            carbonLoadModel.getTaskNo(), noDictionaryColMapping, isVarcharDimMapping, true);
   }
 
   /**
@@ -428,6 +436,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
         .getCarbonFactDataHandlerModel(carbonLoadModel, carbonTable, segmentProperties, tableName,
             tempStoreLocation, carbonStoreLocation);
+    carbonFactDataHandlerModel.setSegmentId(carbonLoadModel.getSegmentId());
     setDataFileAttributesInModel(carbonLoadModel, compactionType, carbonFactDataHandlerModel);
     dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(carbonFactDataHandlerModel,
         CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);

@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.command.management
 
 import java.io.{File, IOException}
+import java.util
 
 import scala.collection.JavaConverters._
 
@@ -77,8 +78,8 @@ case class CarbonAlterTableCompactionCommand(
       }
       relation.carbonTable
     }
-    if (table.getTableInfo.isUnManagedTable) {
-      throw new MalformedCarbonCommandException("Unsupported operation on unmanaged table")
+    if (!table.getTableInfo.isTransactionalTable) {
+      throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
     if (CarbonUtil.hasAggregationDataMap(table) ||
@@ -120,12 +121,25 @@ case class CarbonAlterTableCompactionCommand(
     } else if (compactionException.equalsIgnoreCase("false")) {
       Seq.empty
     } else {
+
+      if (compactionType != CompactionType.CUSTOM &&
+        alterTableModel.customSegmentIds.isDefined) {
+        throw new MalformedCarbonCommandException(
+          s"Custom segments not supported when doing ${compactionType.toString} compaction")
+      }
+      if (compactionType == CompactionType.CUSTOM &&
+        alterTableModel.customSegmentIds.isEmpty) {
+        throw new MalformedCarbonCommandException(
+          s"Segment ids should not be empty when doing ${compactionType.toString} compaction")
+      }
+
       val carbonLoadModel = new CarbonLoadModel()
       carbonLoadModel.setTableName(table.getTableName)
       val dataLoadSchema = new CarbonDataLoadSchema(table)
       // Need to fill dimension relation
       carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
       carbonLoadModel.setTableName(table.getTableName)
+      carbonLoadModel.setCarbonTransactionalTable(table.isTransactionalTable)
       carbonLoadModel.setDatabaseName(table.getDatabaseName)
       carbonLoadModel.setTablePath(table.getTablePath)
 
@@ -135,12 +149,14 @@ case class CarbonAlterTableCompactionCommand(
       val alterTableCompactionPreEvent: AlterTableCompactionPreEvent =
         AlterTableCompactionPreEvent(sparkSession, table, null, null)
       OperationListenerBus.getInstance.fireEvent(alterTableCompactionPreEvent, operationContext)
+      val compactedSegments: java.util.List[String] = new util.ArrayList[String]()
       try {
         alterTableForCompaction(
           sparkSession.sqlContext,
           alterTableModel,
           carbonLoadModel,
           storeLocation,
+          compactedSegments,
           operationContext)
       } catch {
         case e: Exception =>
@@ -154,7 +170,7 @@ case class CarbonAlterTableCompactionCommand(
       }
       // trigger event for compaction
       val alterTableCompactionPostEvent: AlterTableCompactionPostEvent =
-        AlterTableCompactionPostEvent(sparkSession, table, null, null)
+        AlterTableCompactionPostEvent(sparkSession, table, null, compactedSegments)
       OperationListenerBus.getInstance.fireEvent(alterTableCompactionPostEvent, operationContext)
       Seq.empty
     }
@@ -164,6 +180,7 @@ case class CarbonAlterTableCompactionCommand(
       alterTableModel: AlterTableModel,
       carbonLoadModel: CarbonLoadModel,
       storeLocation: String,
+      compactedSegments: java.util.List[String],
       operationContext: OperationContext): Unit = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
     val compactionType = CompactionType.valueOf(alterTableModel.compactionType.toUpperCase)
@@ -211,13 +228,20 @@ case class CarbonAlterTableCompactionCommand(
     carbonLoadModel.setFactTimeStamp(loadStartTime)
 
     val isCompactionTriggerByDDl = true
+    val segmentIds: Option[List[String]] = if (compactionType == CompactionType.CUSTOM &&
+      alterTableModel.customSegmentIds.isDefined) {
+      alterTableModel.customSegmentIds
+    } else {
+      None
+    }
     val compactionModel = CompactionModel(compactionSize,
       compactionType,
       carbonTable,
       isCompactionTriggerByDDl,
       CarbonFilters.getCurrentPartitions(sqlContext.sparkSession,
-        TableIdentifier(carbonTable.getTableName,
-        Some(carbonTable.getDatabaseName)))
+      TableIdentifier(carbonTable.getTableName,
+      Some(carbonTable.getDatabaseName))),
+      segmentIds
     )
 
     val isConcurrentCompactionAllowed = CarbonProperties.getInstance()
@@ -237,6 +261,7 @@ case class CarbonAlterTableCompactionCommand(
         storeLocation,
         compactionType,
         carbonTable,
+        compactedSegments,
         compactionModel,
         operationContext
       )
@@ -256,6 +281,7 @@ case class CarbonAlterTableCompactionCommand(
             storeLocation,
             compactionModel,
             lock,
+            compactedSegments,
             operationContext
           )
         } catch {

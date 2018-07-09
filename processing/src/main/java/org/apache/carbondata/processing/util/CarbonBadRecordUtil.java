@@ -19,6 +19,7 @@ package org.apache.carbondata.processing.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -27,11 +28,13 @@ import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.loading.BadRecordsLogger;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Common methods used for the bad record handling
@@ -47,11 +50,16 @@ public class CarbonBadRecordUtil {
    */
   public static void renameBadRecord(CarbonDataLoadConfiguration configuration) {
     // rename the bad record in progress to normal
-    CarbonTableIdentifier identifier =
-        configuration.getTableIdentifier().getCarbonTableIdentifier();
-    renameBadRecordsFromInProgressToNormal(configuration,
-        identifier.getDatabaseName() + File.separator + identifier.getTableName() + File.separator
-            + configuration.getSegmentId() + File.separator + configuration.getTaskNo());
+    String storeLocation = "";
+    if (configuration.isCarbonTransactionalTable()) {
+      storeLocation =
+          configuration.getSegmentId() + CarbonCommonConstants.FILE_SEPARATOR + configuration
+              .getTaskNo();
+    } else {
+      storeLocation =
+          "SdkWriterBadRecords" + CarbonCommonConstants.FILE_SEPARATOR + configuration.getTaskNo();
+    }
+    renameBadRecordsFromInProgressToNormal(configuration, storeLocation);
   }
 
   /**
@@ -117,6 +125,33 @@ public class CarbonBadRecordUtil {
     String key = loadModel.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier()
         .getBadRecordLoggerKey();
     return (null != BadRecordsLogger.hasBadRecord(key));
+  }
+
+  public static String getBadRecordsPath(Map<String, String> loadOptions, CarbonTable table) {
+    String badRecordsFromLoad = loadOptions.get("bad_record_path");
+    String badRecordsFromCreate =
+        table.getTableInfo().getFactTable().getTableProperties().get("bad_records_path");
+    String badRecordsPath;
+    if (StringUtils.isNotEmpty(badRecordsFromLoad)) {
+      badRecordsPath =
+          badRecordsFromLoad + CarbonCommonConstants.FILE_SEPARATOR + table.getDatabaseName()
+              + CarbonCommonConstants.FILE_SEPARATOR + table.getTableName();
+    } else if (StringUtils.isNotEmpty(badRecordsFromCreate)) {
+      badRecordsPath = badRecordsFromCreate;
+    } else {
+      String badRecordsFromProp = CarbonProperties.getInstance()
+          .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH,
+              CarbonProperties.getInstance()
+                  .getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
+                      CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL));
+      if (!badRecordsFromProp.isEmpty()) {
+        badRecordsFromProp =
+            badRecordsFromProp + CarbonCommonConstants.FILE_SEPARATOR + table.getDatabaseName()
+                + CarbonCommonConstants.FILE_SEPARATOR + table.getTableName();
+      }
+      badRecordsPath = badRecordsFromProp;
+    }
+    return badRecordsPath;
   }
 
 }

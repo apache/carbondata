@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.spark.testsuite.datamap
 
+import scala.collection.JavaConverters._
+
 import java.io.{File, FilenameFilter}
 
 import org.apache.spark.sql.Row
@@ -26,7 +28,9 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.exceptions.sql.{MalformedDataMapCommandException, NoSuchDataMapException}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
@@ -200,6 +204,69 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("test show datamap: show datamap property related information") {
+    val tableName = "datamapshowtest"
+    val datamapName = "bloomdatamap"
+    val datamapName2 = "bloomdatamap2"
+    val datamapName3 = "bloomdatamap3"
+    sql(s"drop table if exists $tableName")
+    // for index datamap
+    sql(s"create table $tableName (a string, b string, c string) stored by 'carbondata'")
+    sql(
+      s"""
+         | create datamap $datamapName on table $tableName using 'bloomfilter'
+         | DMPROPERTIES ('index_columns'='a', 'bloom_size'='32000', 'bloom_fpp'='0.001')
+       """.stripMargin)
+    sql(
+      s"""
+         | create datamap $datamapName2 on table $tableName using 'bloomfilter'
+         | DMPROPERTIES ('index_columns'='b')
+       """.stripMargin)
+    sql(
+      s"""
+         | create datamap $datamapName3 on table $tableName using 'bloomfilter'
+         | with deferred rebuild
+         | DMPROPERTIES ('index_columns'='c')
+       """.stripMargin)
+    var result = sql(s"show datamap on table $tableName").cache()
+    checkAnswer(sql(s"show datamap on table $tableName"),
+      Seq(Row(datamapName, "bloomfilter", s"default.$tableName", "'bloom_fpp'='0.001', 'bloom_size'='32000', 'index_columns'='a'"),
+        Row(datamapName2, "bloomfilter", s"default.$tableName", "'index_columns'='b'"),
+        Row(datamapName3, "bloomfilter", s"default.$tableName", "'index_columns'='c'")))
+    result.unpersist()
+    sql(s"drop table if exists $tableName")
+
+    // for timeseries datamap
+    sql(s"CREATE TABLE $tableName(mytime timestamp, name string, age int) STORED BY 'org.apache.carbondata.format'")
+    sql(
+      s"""
+         | CREATE DATAMAP agg0_hour ON TABLE $tableName
+         | USING 'timeSeries'
+         | DMPROPERTIES (
+         | 'EVENT_TIME'='mytime',
+         | 'HOUR_GRANULARITY'='1')
+         | AS SELECT mytime, SUM(age) FROM $tableName
+         | GROUP BY mytime
+       """.stripMargin)
+    checkAnswer(sql(s"show datamap on table $tableName"),
+      Seq(Row("agg0_hour", "timeSeries", s"default.${tableName}_agg0_hour", "'event_time'='mytime', 'hour_granularity'='1'")))
+    sql(s"drop table if exists $tableName")
+
+    // for preaggreate datamap, the property is empty
+    sql(s"CREATE TABLE $tableName(id int, name string, city string, age string)" +
+        s" STORED BY 'org.apache.carbondata.format'")
+    sql (
+      s"""
+         | CREATE DATAMAP agg0 ON TABLE $tableName USING 'preaggregate' AS
+         | SELECT name,
+         | count(age)
+         | FROM $tableName GROUP BY name
+         | """.stripMargin)
+    checkAnswer(sql(s"show datamap on table $tableName"),
+      Seq(Row("agg0", "preaggregate", s"default.${tableName}_agg0", "")))
+    sql(s"drop table if exists $tableName")
+  }
+
   test("test if preaggregate load is successfull for hivemetastore") {
     try {
       CarbonProperties.getInstance()
@@ -261,17 +328,77 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
          |    group by name
        """.stripMargin)
     assertResult(true)(new File(path).exists())
-    assertResult(true)(new File(s"${CarbonTablePath.getSegmentPath(path, "0")}")
-      .list(new FilenameFilter {
-        override def accept(dir: File, name: String): Boolean = {
-          name.contains(CarbonCommonConstants.FACT_FILE_EXT)
-        }
-      }).length > 0)
+    if (FileFactory.isFileExist(CarbonTablePath.getSegmentPath(path, "0"))) {
+      assertResult(true)(new File(s"${CarbonTablePath.getSegmentPath(path, "0")}")
+         .list(new FilenameFilter {
+           override def accept(dir: File, name: String): Boolean = {
+             name.contains(CarbonCommonConstants.FACT_FILE_EXT)
+           }
+         }).length > 0)
+    } else {
+      val segment = Segment.getSegment("0", path)
+      val store = new SegmentFileStore(path, segment.getSegmentFileName)
+      store.readIndexFiles()
+      val size = store.getIndexFilesMap.asScala.map(f => f._2.size()).sum
+      assertResult(true)(size > 0)
+    }
+
     checkAnswer(sql("select name,avg(salary) from main group by name"), Row("amy", 13.0))
     checkAnswer(sql("select * from main_preagg"), Row("amy", 26, 2))
     sql("drop datamap preagg on table main")
     assertResult(false)(new File(path).exists())
     sql("drop table main")
+  }
+
+  test("test create datamap: unable to create same index datamap for one column") {
+    sql("DROP TABLE IF EXISTS datamap_test_table")
+    sql(
+      """
+        | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+    val exception_duplicate_column: Exception = intercept[MalformedDataMapCommandException] {
+      sql(
+        s"""
+           | CREATE DATAMAP dm ON TABLE datamap_test_table
+           | USING 'lucene'
+           | DMProperties('INDEX_COLUMNS'='name')
+      """.stripMargin)
+      sql(
+        s"""
+           | CREATE DATAMAP dm1 ON TABLE datamap_test_table
+           | USING 'lucene'
+           | DMProperties('INDEX_COLUMNS'='name')
+      """.stripMargin)
+    }
+    assertResult("column 'name' already has lucene index datamap created")(exception_duplicate_column.getMessage)
+    sql("drop table if exists datamap_test_table")
+  }
+
+  test("test create datamap: able to create different index datamap for one column") {
+    sql("DROP TABLE IF EXISTS datamap_test_table")
+    sql(
+      """
+        | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP dm ON TABLE datamap_test_table
+         | USING 'lucene'
+         | DMProperties('INDEX_COLUMNS'='name')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP dm1 ON TABLE datamap_test_table
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='name')
+      """.stripMargin)
+    sql("show datamap on table datamap_test_table").show(false)
+    checkExistence(sql("show datamap on table datamap_test_table"), true, "dm", "dm1", "lucene", "bloomfilter")
+    sql("drop table if exists datamap_test_table")
   }
 
   override def afterAll {

@@ -45,6 +45,7 @@ public class BlockScan {
   public BlockScan(BlockExecutionInfo blockExecutionInfo, FileReader fileReader,
       QueryStatisticsModel queryStatisticsModel) {
     this.blockExecutionInfo = blockExecutionInfo;
+    this.blockExecutionInfo.setQueryStatisticsModel(queryStatisticsModel);
     this.fileReader = fileReader;
     this.blockletIterator = new BlockletIterator(blockExecutionInfo.getFirstDataBlock(),
         blockExecutionInfo.getNumberOfBlockToScan());
@@ -93,6 +94,10 @@ public class BlockScan {
 
   public void processNextBatch(CarbonColumnarBatch columnarBatch) {
     this.scannerResultAggregator.collectResultInColumnarBatch(curResult, columnarBatch);
+  }
+
+  public List<Object[]> next(int size) {
+    return this.scannerResultAggregator.collectResultInRow(curResult, size);
   }
 
 }

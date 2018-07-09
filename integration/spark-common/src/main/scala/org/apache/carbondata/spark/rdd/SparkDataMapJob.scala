@@ -27,14 +27,14 @@ import org.apache.hadoop.mapreduce.{InputSplit, Job, TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{Partition, SparkContext, TaskContext, TaskKilledException}
 
+import org.apache.carbondata.core.datamap.{AbstractDataMapJob, DistributableDataMapFormat}
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf
-import org.apache.carbondata.hadoop.api.{DataMapJob, DistributableDataMapFormat}
 
 /**
  * Spark job to execute datamap job and prune all the datamaps distributable
  */
-class SparkDataMapJob extends DataMapJob {
+class SparkDataMapJob extends AbstractDataMapJob {
 
   override def execute(dataMapFormat: DistributableDataMapFormat,
       filter: FilterResolverIntf): util.List[ExtendedBlocklet] = {
@@ -71,6 +71,9 @@ class DataMapPruneRDD(sc: SparkContext,
     val inputSplit = split.asInstanceOf[DataMapRDDPartition].inputSplit
     val reader = dataMapFormat.createRecordReader(inputSplit, attemptContext)
     reader.initialize(inputSplit, attemptContext)
+    context.addTaskCompletionListener(_ => {
+      reader.close()
+    })
     val iter = new Iterator[ExtendedBlocklet] {
 
       private var havePair = false

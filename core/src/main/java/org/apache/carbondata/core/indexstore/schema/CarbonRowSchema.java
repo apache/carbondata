@@ -16,16 +16,24 @@
  */
 package org.apache.carbondata.core.indexstore.schema;
 
+import java.io.Serializable;
+
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
  * It just have 2 types right now, either fixed or variable.
  */
-public abstract class CarbonRowSchema {
+public abstract class CarbonRowSchema implements Serializable {
+
+  private static final long serialVersionUID = -8061282029097686495L;
 
   protected DataType dataType;
 
   public CarbonRowSchema(DataType dataType) {
+    this.dataType = dataType;
+  }
+
+  public void setDataType(DataType dataType) {
     this.dataType = dataType;
   }
 
@@ -82,9 +90,15 @@ public abstract class CarbonRowSchema {
   }
 
   public static class VariableCarbonRowSchema extends CarbonRowSchema {
+    private boolean isVarcharType = false;
 
     public VariableCarbonRowSchema(DataType dataType) {
       super(dataType);
+    }
+
+    public VariableCarbonRowSchema(DataType dataType, boolean isVarcharType) {
+      super(dataType);
+      this.isVarcharType = isVarcharType;
     }
 
     @Override public int getLength() {
@@ -92,7 +106,7 @@ public abstract class CarbonRowSchema {
     }
 
     @Override public DataMapSchemaType getSchemaType() {
-      return DataMapSchemaType.VARIABLE;
+      return isVarcharType ? DataMapSchemaType.VARIABLE_INT : DataMapSchemaType.VARIABLE_SHORT;
     }
   }
 
@@ -119,6 +133,6 @@ public abstract class CarbonRowSchema {
   }
 
   public enum DataMapSchemaType {
-    FIXED, VARIABLE, STRUCT
+    FIXED, VARIABLE_INT, VARIABLE_SHORT, STRUCT
   }
 }

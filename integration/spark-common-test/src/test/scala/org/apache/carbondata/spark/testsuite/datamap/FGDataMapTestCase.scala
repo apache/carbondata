@@ -22,25 +22,23 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.datamap.dev.DataMapModel
-import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager, Segment}
+import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
+import org.apache.carbondata.core.datamap.dev.{DataMapModel, DataMapBuilder, DataMapWriter}
 import org.apache.carbondata.core.datamap.dev.fgdatamap.{FineGrainBlocklet, FineGrainDataMap, FineGrainDataMapFactory}
-import org.apache.carbondata.core.datamap.dev.{DataMapModel, DataMapWriter}
-import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.compression.SnappyCompressor
-import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.ColumnPage
-import org.apache.carbondata.core.indexstore.{Blocklet, PartitionSpec}
+import org.apache.carbondata.core.features.TableOperation
+import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
-import org.apache.carbondata.core.readcommitter.ReadCommittedScope
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
@@ -50,35 +48,24 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.Event
 import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlobalSortBigFileTest
 
-class FGDataMapFactory extends FineGrainDataMapFactory {
-  var identifier: AbsoluteTableIdentifier = _
-  var dataMapSchema: DataMapSchema = _
-
-  /**
-   * Initialization of Datamap factory with the identifier and datamap name
-   */
-  override def init(identifier: AbsoluteTableIdentifier, dataMapSchema: DataMapSchema): Unit = {
-    this.identifier = identifier
-    this.dataMapSchema = dataMapSchema
-  }
+class FGDataMapFactory(carbonTable: CarbonTable,
+    dataMapSchema: DataMapSchema) extends FineGrainDataMapFactory(carbonTable, dataMapSchema) {
 
   /**
    * Return a new write for this datamap
    */
-  override def createWriter(segment: Segment, dataWritePath: String): DataMapWriter = {
-    new FGDataMapWriter(identifier, segment, dataWritePath, dataMapSchema)
+  override def createWriter(segment: Segment, dataWritePath: String, segmentProperties: SegmentProperties): DataMapWriter = {
+    new FGDataMapWriter(carbonTable, segment, dataWritePath, dataMapSchema)
   }
 
   /**
    * Get the datamap for segmentid
    */
-  override def getDataMaps(segment: Segment, readCommitted: ReadCommittedScope): java.util.List[FineGrainDataMap] = {
-    val file = FileFactory
-      .getCarbonFile(CarbonTablePath.getSegmentPath(identifier.getTablePath, segment.getSegmentNo))
+  override def getDataMaps(segment: Segment): java.util.List[FineGrainDataMap] = {
+    val path = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segment.getSegmentNo)
+    val file = FileFactory.getCarbonFile(path+ "/" +dataMapSchema.getDataMapName)
 
-    val files = file.listFiles(new CarbonFileFilter {
-      override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".datamap")
-    })
+    val files = file.listFiles()
     files.map { f =>
       val dataMap: FineGrainDataMap = new FGDataMap()
       dataMap.init(new DataMapModel(f.getCanonicalPath))
@@ -89,7 +76,7 @@ class FGDataMapFactory extends FineGrainDataMapFactory {
   /**
    * Get datamap for distributable object.
    */
-  override def getDataMaps(distributable: DataMapDistributable, readCommitted: ReadCommittedScope): java.util.List[FineGrainDataMap]= {
+  override def getDataMaps(distributable: DataMapDistributable): java.util.List[FineGrainDataMap]= {
     val mapDistributable = distributable.asInstanceOf[BlockletDataMapDistributable]
     val dataMap: FineGrainDataMap = new FGDataMap()
     dataMap.init(new DataMapModel(mapDistributable.getFilePath))
@@ -102,12 +89,11 @@ class FGDataMapFactory extends FineGrainDataMapFactory {
    * @return
    */
   override def toDistributable(segment: Segment): java.util.List[DataMapDistributable] = {
+    val path = carbonTable.getTablePath
     val file = FileFactory.getCarbonFile(
-      CarbonTablePath.getSegmentPath(identifier.getTablePath, segment.getSegmentNo))
+      path+ "/" +dataMapSchema.getDataMapName + "/" + segment.getSegmentNo)
 
-    val files = file.listFiles(new CarbonFileFilter {
-      override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".datamap")
-    })
+    val files = file.listFiles()
     files.map { f =>
       val d: DataMapDistributable = new BlockletDataMapDistributable(f.getCanonicalPath)
       d
@@ -138,31 +124,53 @@ class FGDataMapFactory extends FineGrainDataMapFactory {
    * Return metadata of this datamap
    */
   override def getMeta: DataMapMeta = {
-    new DataMapMeta(dataMapSchema.getProperties.get("indexcolumns").split(",").toList.asJava,
+    new DataMapMeta(carbonTable.getIndexedColumns(dataMapSchema),
       List(ExpressionType.EQUALS, ExpressionType.IN).asJava)
+  }
+
+  /**
+   * delete datamap data if any
+   */
+  override def deleteDatamapData(): Unit = {
+    ???
+  }
+
+  /**
+   * defines the features scopes for the datamap
+   */
+  override def willBecomeStale(operation: TableOperation): Boolean = {
+    false
+  }
+
+  override def createBuilder(segment: Segment,
+      shardName: String, segmentProperties: SegmentProperties): DataMapBuilder = {
+    ???
   }
 }
 
 class FGDataMap extends FineGrainDataMap {
 
-  var maxMin: ArrayBuffer[(String, Int, (Array[Byte], Array[Byte]), Long, Int)] = _
+  var maxMin: ArrayBuffer[(Int, (Array[Byte], Array[Byte]), Long, Int)] = _
   var FileReader: FileReader = _
   var filePath: String = _
   val compressor = new SnappyCompressor
+  var taskName:String = _
 
   /**
    * It is called to load the data map to memory or to initialize it.
    */
   override def init(dataMapModel: DataMapModel): Unit = {
     this.filePath = dataMapModel.getFilePath
-    val size = FileFactory.getCarbonFile(filePath).getSize
+    val carbonFile = FileFactory.getCarbonFile(filePath)
+    taskName = carbonFile.getName
+    val size = carbonFile.getSize
     FileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath))
     val footerLen = FileReader.readInt(filePath, size - 4)
     val bytes = FileReader.readByteArray(filePath, size - footerLen - 4, footerLen)
     val in = new ByteArrayInputStream(compressor.unCompressByte(bytes))
     val obj = new ObjectInputStream(in)
     maxMin = obj.readObject()
-      .asInstanceOf[ArrayBuffer[(String, Int, (Array[Byte], Array[Byte]), Long, Int)]]
+      .asInstanceOf[ArrayBuffer[(Int, (Array[Byte], Array[Byte]), Long, Int)]]
   }
 
   /**
@@ -188,9 +196,9 @@ class FGDataMap extends FineGrainDataMap {
     }.filter(_.isDefined).map(_.get).asJava
   }
 
-  private def readAndFindData(meta: (String, Int, (Array[Byte], Array[Byte]), Long, Int),
+  private def readAndFindData(meta: (Int, (Array[Byte], Array[Byte]), Long, Int),
       value: Array[Byte]): Option[FineGrainBlocklet] = {
-    val bytes = FileReader.readByteArray(filePath, meta._4, meta._5)
+    val bytes = FileReader.readByteArray(filePath, meta._3, meta._4)
     val outputStream = new ByteArrayInputStream(compressor.unCompressByte(bytes))
     val obj = new ObjectInputStream(outputStream)
     val blockletsData = obj.readObject()
@@ -213,7 +221,7 @@ class FGDataMap extends FineGrainDataMap {
         pg.setRowId(f._2(p._2).toArray)
         pg
       }
-      Some(new FineGrainBlocklet(meta._1, meta._2.toString, pages.toList.asJava))
+      Some(new FineGrainBlocklet(taskName, meta._1.toString, pages.toList.asJava))
     } else {
       None
     }
@@ -221,8 +229,8 @@ class FGDataMap extends FineGrainDataMap {
 
   private def findMeta(value: Array[Byte]) = {
     val tuples = maxMin.filter { f =>
-      ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._3._1) >= 0 &&
-      ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._3._2) <= 0
+      ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._2._1) >= 0 &&
+      ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._2._2) <= 0
     }
     tuples
   }
@@ -250,19 +258,25 @@ class FGDataMap extends FineGrainDataMap {
   }
 
   override def isScanRequired(filterExp: FilterResolverIntf): Boolean = ???
+
+  /**
+   * clears all the resources for datamaps
+   */
+  override def finish() = {
+
+  }
 }
 
-class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
-    segment: Segment, dataWriterPath: String, dataMapSchema: DataMapSchema)
-  extends DataMapWriter(identifier, segment, dataWriterPath) {
+class FGDataMapWriter(carbonTable: CarbonTable,
+    segment: Segment, shardName: String, dataMapSchema: DataMapSchema)
+  extends DataMapWriter(carbonTable.getTablePath, dataMapSchema.getDataMapName,
+    carbonTable.getIndexedColumns(dataMapSchema), segment, shardName) {
 
-  var currentBlockId: String = null
-  val fgwritepath = dataWriterPath + "/" + dataMapSchema.getDataMapName + System.nanoTime() +
-                    ".datamap"
-  val stream: DataOutputStream = FileFactory
-    .getDataOutputStream(fgwritepath, FileFactory.getFileType(fgwritepath))
+  var taskName: String = _
+  val fgwritepath = dataMapPath
+  var stream: DataOutputStream = _
   val blockletList = new ArrayBuffer[(Array[Byte], Seq[Int], Seq[Int])]()
-  val maxMin = new ArrayBuffer[(String, Int, (Array[Byte], Array[Byte]), Long, Int)]()
+  val maxMin = new ArrayBuffer[(Int, (Array[Byte], Array[Byte]), Long, Int)]()
   var position: Long = 0
   val compressor = new SnappyCompressor
 
@@ -272,7 +286,13 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
    * @param blockId file name of the carbondata file
    */
   override def onBlockStart(blockId: String): Unit = {
-    currentBlockId = blockId
+    this.taskName = shardName
+    if (stream == null) {
+      val path = fgwritepath.substring(0, fgwritepath.lastIndexOf("/"))
+      FileFactory.mkdirs(path, FileFactory.getFileType(path))
+      stream = FileFactory
+        .getDataOutputStream(fgwritepath, FileFactory.getFileType(fgwritepath))
+    }
   }
 
   /**
@@ -329,7 +349,7 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
     val bytes = compressor.compressByte(out.getBytes)
     stream.write(bytes)
     maxMin +=
-    ((currentBlockId + "", blockletId, (blockletListUpdated.head._1, blockletListUpdated.last
+    ((blockletId, (blockletListUpdated.head._1, blockletListUpdated.last
       ._1), position, bytes.length))
     position += bytes.length
     blockletList.clear()
@@ -344,6 +364,7 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
    */
   override def onPageAdded(blockletId: Int,
       pageId: Int,
+      pageSize: Int,
       pages: Array[ColumnPage]): Unit = {
     val size = pages(0).getPageSize
     val list = new ArrayBuffer[(Array[Byte], Int)]()
@@ -387,6 +408,7 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
    * class.
    */
   override def finish(): Unit = {
+    FileFactory.mkdirs(fgwritepath, FileFactory.getFileType(fgwritepath))
     val out = new ByteOutputStream()
     val outStream = new ObjectOutputStream(out)
     outStream.writeObject(maxMin)
@@ -395,7 +417,6 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
     stream.write(bytes)
     stream.writeInt(bytes.length)
     stream.close()
-    commitFile(fgwritepath)
   }
 }
 
@@ -431,7 +452,7 @@ class FGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP ggdatamap ON TABLE datamap_test
          | USING '${classOf[FGDataMapFactory].getName}'
-         | DMPROPERTIES('indexcolumns'='name')
+         | DMPROPERTIES('index_columns'='name')
        """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
     checkAnswer(sql("select * from datamap_test where name='n502670'"),
@@ -452,22 +473,90 @@ class FGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
       s"""
          | CREATE DATAMAP ggdatamap1 ON TABLE datamap_test
          | USING '${classOf[FGDataMapFactory].getName}'
-         | DMPROPERTIES('indexcolumns'='name')
+         | DMPROPERTIES('index_columns'='name')
        """.stripMargin)
     sql(
       s"""
          | CREATE DATAMAP ggdatamap2 ON TABLE datamap_test
          | USING '${classOf[FGDataMapFactory].getName}'
-         | DMPROPERTIES('indexcolumns'='city')
+         | DMPROPERTIES('index_columns'='city')
        """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
     checkAnswer(sql("select * from datamap_test where name='n502670' and city='c2670'"),
       sql("select * from normal_test where name='n502670' and city='c2670'"))
   }
 
+  test("test invisible datamap during query") {
+    val tableName = "datamap_testFG"
+    val dataMapName1 = "datamap1"
+    val dataMapName2 = "datamap2"
+    sql(s"DROP TABLE IF EXISTS $tableName")
+    sql(
+      s"""
+         | CREATE TABLE $tableName(id INT, name STRING, city STRING, age INT)
+         | STORED BY 'org.apache.carbondata.format'
+         | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+      """.stripMargin)
+    // register datamap writer
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName1
+         | ON TABLE $tableName
+         | USING '${classOf[FGDataMapFactory].getName}'
+         | DMPROPERTIES('index_columns'='name')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName2
+         | ON TABLE $tableName
+         | USING '${classOf[FGDataMapFactory].getName}'
+         | DMPROPERTIES('index_columns'='city')
+       """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE $tableName OPTIONS('header'='false')")
+    val df1 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
+    assert(df1(0).getString(0).contains("FG DataMap"))
+    assert(df1(0).getString(0).contains(dataMapName1))
+    assert(df1(0).getString(0).contains(dataMapName2))
+
+    // make datamap1 invisible
+    sql(s"SET ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName1 = false")
+    val df2 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
+    val e = intercept[Exception] {
+      assert(df2(0).getString(0).contains(dataMapName1))
+    }
+    assert(e.getMessage.contains("did not contain \"" + dataMapName1))
+    assert(df2(0).getString(0).contains(dataMapName2))
+    checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
+      sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
+
+    // also make datamap2 invisible
+    sql(s"SET ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName2 = false")
+    checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
+      sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
+    val df3 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
+    val e31 = intercept[Exception] {
+      assert(df3(0).getString(0).contains(dataMapName1))
+    }
+    assert(e31.getMessage.contains("did not contain \"" + dataMapName1))
+    val e32 = intercept[Exception] {
+      assert(df3(0).getString(0).contains(dataMapName2))
+    }
+    assert(e32.getMessage.contains("did not contain \"" + dataMapName2))
+
+    // make datamap1,datamap2 visible
+    sql(s"SET ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName1 = true")
+    sql(s"SET ${CarbonCommonConstants.CARBON_DATAMAP_VISIBLE}default.$tableName.$dataMapName2 = true")
+    checkAnswer(sql(s"SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'"),
+      sql("SELECT * FROM normal_test WHERE name='n502670' AND city='c2670'"))
+    val df4 = sql(s"EXPLAIN EXTENDED SELECT * FROM $tableName WHERE name='n502670' AND city='c2670'").collect()
+    assert(df4(0).getString(0).contains(dataMapName1))
+    assert(df4(0).getString(0).contains(dataMapName2))
+  }
+
   override protected def afterAll(): Unit = {
     CompactionSupportGlobalSortBigFileTest.deleteFile(file2)
     sql("DROP TABLE IF EXISTS normal_test")
     sql("DROP TABLE IF EXISTS datamap_test")
+    sql("DROP TABLE IF EXISTS datamap_testFG")
   }
 }

@@ -18,18 +18,17 @@
 package org.apache.carbondata.sdk.file;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
-import org.apache.carbondata.core.metadata.converter.SchemaConverter;
-import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
-import org.apache.carbondata.core.metadata.schema.table.TableInfo;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.reader.CarbonHeaderReader;
-import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.CarbonTaskInfo;
+import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
 import org.apache.hadoop.mapreduce.RecordReader;
+
 
 /**
  * Reader for carbondata file
@@ -44,6 +43,8 @@ public class CarbonReader<T> {
 
   private int index;
 
+  private boolean initialise;
+
   /**
    * Call {@link #builder(String)} to construct an instance
    */
@@ -51,15 +52,20 @@ public class CarbonReader<T> {
     if (readers.size() == 0) {
       throw new IllegalArgumentException("no reader");
     }
+    this.initialise = true;
     this.readers = readers;
     this.index = 0;
     this.currentReader = readers.get(0);
+    CarbonTaskInfo carbonTaskInfo = new CarbonTaskInfo();
+    carbonTaskInfo.setTaskId(System.nanoTime());
+    ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo);
   }
 
   /**
    * Return true if has next row
    */
   public boolean hasNext() throws IOException, InterruptedException {
+    validateReader();
     if (currentReader.nextKeyValue()) {
       return true;
     } else {
@@ -68,6 +74,8 @@ public class CarbonReader<T> {
         return false;
       } else {
         index++;
+        // current reader is closed
+        currentReader.close();
         currentReader = readers.get(index);
         return currentReader.nextKeyValue();
       }
@@ -78,30 +86,52 @@ public class CarbonReader<T> {
    * Read and return next row object
    */
   public T readNextRow() throws IOException, InterruptedException {
+    validateReader();
     return currentReader.getCurrentValue();
   }
 
   /**
    * Return a new {@link CarbonReaderBuilder} instance
+   *
+   * @param tablePath table store path
+   * @param tableName table name
+   * @return CarbonReaderBuilder object
    */
   public static CarbonReaderBuilder builder(String tablePath, String tableName) {
     return new CarbonReaderBuilder(tablePath, tableName);
   }
 
   /**
-   * Read carbondata file and return the schema
+   * Return a new {@link CarbonReaderBuilder} instance
+   * Default value of table name is table + tablePath + time
+   *
+   * @param tablePath table path
+   * @return CarbonReaderBuilder object
    */
-  public static List<ColumnSchema> readSchemaInDataFile(String dataFilePath) throws IOException {
-    CarbonHeaderReader reader = new CarbonHeaderReader(dataFilePath);
-    return reader.readSchema();
+  public static CarbonReaderBuilder builder(String tablePath) {
+    String time = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date());
+    String tableName = "UnknownTable" + time;
+    return builder(tablePath, tableName);
   }
 
   /**
-   * Read schmea file and return table info object
+   * Close reader
+   *
+   * @throws IOException
    */
-  public static TableInfo readSchemaFile(String schemaFilePath) throws IOException {
-    org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil.readSchemaFile(schemaFilePath);
-    SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
-    return schemaConverter.fromExternalToWrapperTableInfo(tableInfo, "", "", "");
+  public void close() throws IOException {
+    validateReader();
+    this.currentReader.close();
+    this.initialise = false;
+  }
+
+  /**
+   * Validate the reader
+   */
+  private void validateReader() {
+    if (!this.initialise) {
+      throw new RuntimeException(this.getClass().getSimpleName() +
+          " not initialise, please create it first.");
+    }
   }
 }

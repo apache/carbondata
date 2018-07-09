@@ -3301,7 +3301,12 @@ test("IUD-01-01-02_023-67", Include) {
 //Delete the uniqdata table 
 test("IUD-01-01-02_023-68", Include) {
    sql(s"""use default""").collect
- sql(s"""delete from table uniqdata where segment.id IN(0)""").collect
+ try {
+   sql(s"""delete from table uniqdata where segment.id IN(0)""").collect
+ } catch {
+   case e: Exception =>
+     // ignore as data is already deleted in segment 0
+ }
   checkAnswer(s"""select DOJ from uniqdata where CUST_ID=9001""",
     Seq(Row(Timestamp.valueOf("2012-01-12 03:14:05.0"))), "DataLoadingIUDTestCase_IUD-01-01-02_023-68")
   
@@ -3671,6 +3676,23 @@ test("HQ_Defect_TC_2016110901163", Include) {
    sql(s"""drop table default.t_carbn01  """).collect
 }
 
+  test("[CARBONDATA-2604] ", Include){
+    sql("drop table if exists brinjal").collect
+    sql("create table brinjal (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId double,deviceInformationId double,productionDate Timestamp,deliveryDate timestamp,deliverycharge double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('table_blocksize'='2000','sort_columns'='imei')").collect
+    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/vardhandaterestruct.csv' INTO TABLE brinjal OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
+    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/vardhandaterestruct.csv' INTO TABLE brinjal OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
+    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/vardhandaterestruct.csv' INTO TABLE brinjal OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
+    sql("insert into brinjal select * from brinjal").collect
+    sql("update brinjal set (AMSize)= ('8RAM size') where AMSize='4RAM size'").collect
+    sql("delete from brinjal where AMSize='8RAM size'").collect
+    sql("delete from table brinjal where segment.id IN(0)").collect
+    sql("clean files for table brinjal").collect
+    sql("alter table brinjal compact 'minor'").collect
+    sql("alter table brinjal compact 'major'").collect
+    checkAnswer(s"""select count(*) from brinjal""",
+      Seq(Row(335)), "CARBONDATA-2604")
+    sql("drop table if exists brinjal")
+  }
 override def afterAll {
   sql("use default").collect
   sql("drop table if exists t_carbn02").collect
@@ -3701,5 +3723,7 @@ override def afterAll {
   sql("drop table if exists t_carbn01b").collect
   sql("drop table if exists T_Hive1").collect
   sql("drop table if exists T_Hive6").collect
+  sql("drop table if exists brinjal")
+
 }
 }
