@@ -29,6 +29,7 @@ import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -56,6 +57,10 @@ case class CarbonCleanFilesCommand(
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName.get)(sparkSession)
+
+    val dms = carbonTable.getTableInfo.getDataMapSchemaList.asScala.map(_.getDataMapName)
+    val indexDms = DataMapStoreManager.getInstance.getAllDataMap(carbonTable).asScala
+      .filter(_.getDataMapSchema.isIndexDataMap)
 
     if (carbonTable.hasAggregationDataMap) {
       cleanFileCommands = carbonTable.getTableInfo.getDataMapSchemaList.asScala.map {

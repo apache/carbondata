@@ -136,6 +136,13 @@ class CGDataMapFactory(
   }
 
   /**
+   * delete datamap of the segment
+   */
+  override def deleteDatamapData(segment: Segment): Unit = {
+    ???
+  }
+
+  /**
    * delete datamap data if any
    */
   override def deleteDatamapData(): Unit = {
