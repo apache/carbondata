@@ -289,13 +289,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     // column properties
     val colProps = extractColumnProperties(fields, tableProperties)
-    // get column groups configuration from table properties.
-    val groupCols: Seq[String] = updateColumnGroupsInField(tableProperties,
-      noDictionaryDims, msrs, dims)
-    if (groupCols != null) {
-      throw new MalformedCarbonCommandException(
-        s"${CarbonCommonConstants.COLUMN_GROUPS} is deprecated")
-    }
 
     // validate the local dictionary property if defined
     if (tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE).isDefined) {
@@ -409,7 +402,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       Option(varcharColumns),
       Option(noDictionaryDims),
       Option(noInvertedIdxCols),
-      groupCols,
+      Seq.empty,
       Some(colProps),
       bucketFields: Option[BucketFields],
       partitionInfo,
