@@ -181,19 +181,9 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
     try {
       List<Segment> validSegments = ssm.getValidAndInvalidSegments().getValidSegments();
       for (Segment segment : validSegments) {
-        String segmentId = segment.getSegmentNo();
-        String datamapPath = CarbonTablePath
-            .getDataMapStorePath(tableIdentifier.getTablePath(), segmentId, dataMapName);
-        if (FileFactory.isFileExist(datamapPath)) {
-          CarbonFile file =
-              FileFactory.getCarbonFile(datamapPath, FileFactory.getFileType(datamapPath));
-          CarbonUtil.deleteFoldersAndFilesSilent(file);
-        }
+        deleteDatamapData(segment);
       }
-    } catch (IOException ex) {
-      throw new MalformedDataMapCommandException(
-          "drop datamap failed, failed to delete datamap directory");
-    } catch (InterruptedException ex) {
+    } catch (IOException | RuntimeException ex) {
       throw new MalformedDataMapCommandException(
           "drop datamap failed, failed to delete datamap directory");
     }
@@ -268,6 +258,22 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
   @Override
   public void clear() {
 
+  }
+
+  @Override public void deleteDatamapData(Segment segment) {
+    try {
+      String segmentId = segment.getSegmentNo();
+      String datamapPath = CarbonTablePath
+          .getDataMapStorePath(tableIdentifier.getTablePath(), segmentId, dataMapName);
+      if (FileFactory.isFileExist(datamapPath)) {
+        CarbonFile file = FileFactory.getCarbonFile(datamapPath,
+            FileFactory.getFileType(datamapPath));
+        CarbonUtil.deleteFoldersAndFilesSilent(file);
+      }
+    } catch (IOException | InterruptedException ex) {
+      throw new RuntimeException(
+          "drop datamap failed, failed to delete datamap directory");
+    }
   }
 
   @Override public void deleteDatamapData() {
