@@ -415,10 +415,13 @@ public class CarbonWriterBuilder {
     }
     TableSchema schema = tableSchemaBuilder.build();
     schema.setTableName(tableName);
-    CarbonTable table =
-        CarbonTable.builder().tableName(schema.getTableName()).databaseName(dbName).tablePath(path)
-            .tableSchema(schema).isTransactionalTable(isTransactionalTable).build();
-    return table;
+    return CarbonTable.builder()
+        .tableName(schema.getTableName())
+        .databaseName(dbName)
+        .tablePath(path)
+        .tableSchema(schema)
+        .isTransactionalTable(isTransactionalTable)
+        .build();
   }
 
   public static void buildTableSchema(Field[] fields, TableSchemaBuilder tableSchemaBuilder,

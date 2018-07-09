@@ -578,7 +578,7 @@ public final class CarbonLoaderUtil {
    *                       based on block location information
    * @param blockAssignmentStrategy strategy used to assign blocks
    * @param expectedMinSizePerNode expected minimum size per node
-   * @return a map that maps node to blocks
+   * @return a map that maps node (hostname) to blocks
    */
   public static Map<String, List<Distributable>> nodeBlockMapping(
       List<Distributable> blockInfos, int noOfNodesInput, List<String> activeNodes,
