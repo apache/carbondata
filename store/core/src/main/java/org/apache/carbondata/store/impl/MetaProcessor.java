@@ -160,7 +160,7 @@ class MetaProcessor {
           CarbonUtil.readSchemaFile(CarbonTablePath.getSchemaFilePath(tablePath));
       SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
       TableInfo tableInfo = schemaConverter.fromExternalToWrapperTableInfo(
-          formatTableInfo, "", "", "");
+          formatTableInfo, table.getDatabaseName(), table.getTableName(), tablePath);
       tableInfo.setTablePath(tablePath);
       CarbonTable carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
       cache.put(tablePath, carbonTable);
