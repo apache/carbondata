@@ -330,6 +330,11 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     return null;
   }
 
+  @Override
+  public void deleteDatamapData(Segment segment) {
+
+  }
+
   @Override public void deleteDatamapData() {
 
   }

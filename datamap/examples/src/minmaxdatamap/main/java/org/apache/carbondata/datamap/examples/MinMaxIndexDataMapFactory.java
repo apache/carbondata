@@ -156,6 +156,11 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
     return this.dataMapMeta;
   }
 
+  @Override
+  public void deleteDatamapData(Segment segment) {
+
+  }
+
   @Override public void deleteDatamapData() {
 
   }

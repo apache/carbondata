@@ -345,22 +345,31 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   }
 
   @Override
+  public void deleteDatamapData(Segment segment) {
+    try {
+      String segmentId = segment.getSegmentNo();
+      String datamapPath = CarbonTablePath
+          .getDataMapStorePath(getCarbonTable().getTablePath(), segmentId, dataMapName);
+      if (FileFactory.isFileExist(datamapPath)) {
+        CarbonFile file = FileFactory.getCarbonFile(datamapPath,
+            FileFactory.getFileType(datamapPath));
+        CarbonUtil.deleteFoldersAndFilesSilent(file);
+      }
+    } catch (IOException | InterruptedException ex) {
+      LOGGER.error("Failed to delete datamap for segment_" + segment.getSegmentNo());
+    }
+  }
+
+  @Override
   public void deleteDatamapData() {
     SegmentStatusManager ssm =
         new SegmentStatusManager(getCarbonTable().getAbsoluteTableIdentifier());
     try {
       List<Segment> validSegments = ssm.getValidAndInvalidSegments().getValidSegments();
       for (Segment segment : validSegments) {
-        String segmentId = segment.getSegmentNo();
-        String datamapPath = CarbonTablePath
-            .getDataMapStorePath(getCarbonTable().getTablePath(), segmentId, dataMapName);
-        if (FileFactory.isFileExist(datamapPath)) {
-          CarbonFile file = FileFactory.getCarbonFile(datamapPath,
-              FileFactory.getFileType(datamapPath));
-          CarbonUtil.deleteFoldersAndFilesSilent(file);
-        }
+        deleteDatamapData(segment);
       }
-    } catch (IOException | InterruptedException ex) {
+    } catch (IOException e) {
       LOGGER.error("drop datamap failed, failed to delete datamap directory");
     }
   }
