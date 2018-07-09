@@ -686,7 +686,8 @@ object CarbonScalaUtil {
     // considered which is 1000
     Try(localDictionaryThreshold.toInt) match {
       case scala.util.Success(value) =>
-        if (value < 1000 || value > 100000) {
+        if (value < CarbonCommonConstants.LOCAL_DICTIONARY_MIN ||
+            value > CarbonCommonConstants.LOCAL_DICTIONARY_MAX) {
           false
         } else {
           true
@@ -727,4 +728,9 @@ object CarbonScalaUtil {
       }
     }
   }
+
+  def isStringDataType(dataType: DataType): Boolean = {
+    dataType == StringType
+  }
+
 }

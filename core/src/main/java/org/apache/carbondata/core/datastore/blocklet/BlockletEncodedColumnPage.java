@@ -73,8 +73,11 @@ public class BlockletEncodedColumnPage {
    */
   private ArrayDeque<Future<FallbackEncodedColumnPage>> fallbackFutureQueue;
 
+  private String columnName;
+
   BlockletEncodedColumnPage(ExecutorService fallbackExecutorService) {
     this.fallbackExecutorService = fallbackExecutorService;
+    this.fallbackFutureQueue = new ArrayDeque<>();
   }
 
   /**
@@ -92,29 +95,42 @@ public class BlockletEncodedColumnPage {
         // get first page dictionary
         this.pageLevelDictionary = encodedColumnPage.getPageDictionary();
       }
-      encodedColumnPageList.add(encodedColumnPage);
+      this.encodedColumnPageList.add(encodedColumnPage);
+      this.columnName = encodedColumnPage.getActualPage().getColumnSpec().getFieldName();
       return;
+    }
+    // when first page was encoded without dictionary and next page encoded with dictionary
+    // in a blocklet
+    if (!isLocalDictEncoded && encodedColumnPage.isLocalDictGeneratedPage()) {
+      LOGGER.info(
+          "Local dictionary Fallback is initiated for column: " + this.columnName + " for page:"
+              + encodedColumnPageList.size());
+      fallbackFutureQueue.add(fallbackExecutorService
+          .submit(new FallbackColumnPageEncoder(encodedColumnPage, encodedColumnPageList.size())));
+      // fill null so once page is decoded again fill the re-encoded page again
+      this.encodedColumnPageList.add(null);
     }
     // if local dictionary is false or column is encoded with local dictionary then
     // add a page
-    if (!isLocalDictEncoded || encodedColumnPage.isLocalDictGeneratedPage()) {
-      this.encodedColumnPageList.add(encodedColumnPage);
+    else if (!isLocalDictEncoded || encodedColumnPage.isLocalDictGeneratedPage()) {
       // merge page level dictionary values
       if (null != this.pageLevelDictionary) {
         pageLevelDictionary.mergerDictionaryValues(encodedColumnPage.getPageDictionary());
       }
-    } else {
-      // if older pages were encoded with dictionary and new pages are without dictionary
+      this.encodedColumnPageList.add(encodedColumnPage);
+    }
+    // if all the older pages were encoded with dictionary and new pages are without dictionary
+    else {
       isLocalDictEncoded = false;
       pageLevelDictionary = null;
-      this.fallbackFutureQueue = new ArrayDeque<>();
-      LOGGER.info(
-          "Local dictionary Fallback is initiated for column: " + encodedColumnPageList.get(0)
-              .getActualPage().getColumnSpec().getFieldName());
+      LOGGER.warn("Local dictionary Fallback is initiated for column: " + this.columnName
+          + " for pages: 1 to " + encodedColumnPageList.size());
       // submit all the older pages encoded with dictionary for fallback
       for (int pageIndex = 0; pageIndex < encodedColumnPageList.size(); pageIndex++) {
-        fallbackFutureQueue.add(fallbackExecutorService.submit(
-            new FallbackColumnPageEncoder(encodedColumnPageList.get(pageIndex), pageIndex)));
+        if (encodedColumnPageList.get(pageIndex).getActualPage().isLocalDictGeneratedPage()) {
+          fallbackFutureQueue.add(fallbackExecutorService.submit(
+              new FallbackColumnPageEncoder(encodedColumnPageList.get(pageIndex), pageIndex)));
+        }
       }
       //add to page list
       this.encodedColumnPageList.add(encodedColumnPage);

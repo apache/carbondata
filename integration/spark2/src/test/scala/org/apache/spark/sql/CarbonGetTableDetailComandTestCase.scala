@@ -25,11 +25,11 @@ import org.scalatest.BeforeAndAfterAll
 class CarbonGetTableDetailCommandTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     sql("drop table if exists table_info1")
-    sql("create table table_info1 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) stored by 'org.apache.carbondata.format'")
+    sql("create table table_info1 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) stored by 'org.apache.carbondata.format' tblproperties('local_dictionary_enable'='false')")
     sql(s"""load data local inpath '$resourcesPath/data.csv' into table table_info1 options('delimiter'=',', 'quotechar'='\"', 'fileheader'='')""")
 
     sql("drop table if exists table_info2")
-    sql("create table table_info2 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) stored by 'org.apache.carbondata.format'")
+    sql("create table table_info2 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) stored by 'org.apache.carbondata.format' tblproperties('local_dictionary_enable'='false')")
     sql(s"""load data local inpath '$resourcesPath/data.csv' into table table_info2 options('delimiter'=',', 'quotechar'='\"', 'fileheader'='')""")
   }
 
