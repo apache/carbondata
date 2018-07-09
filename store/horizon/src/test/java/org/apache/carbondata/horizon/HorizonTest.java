@@ -21,15 +21,15 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.store.conf.StoreConf;
 import org.apache.carbondata.horizon.rest.controller.Horizon;
-import org.apache.carbondata.store.master.Master;
+import org.apache.carbondata.horizon.rest.model.view.CreateTableRequest;
+import org.apache.carbondata.horizon.rest.model.view.DropTableRequest;
 import org.apache.carbondata.horizon.rest.model.view.LoadRequest;
 import org.apache.carbondata.horizon.rest.model.view.SelectRequest;
 import org.apache.carbondata.horizon.rest.model.view.SelectResponse;
-import org.apache.carbondata.horizon.rest.model.view.CreateTableRequest;
+import org.apache.carbondata.store.api.conf.StoreConf;
+import org.apache.carbondata.store.impl.distributed.Worker;
 import org.apache.carbondata.store.util.StoreUtil;
-import org.apache.carbondata.store.worker.Worker;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -39,7 +39,6 @@ import org.springframework.web.client.RestTemplate;
 
 public class HorizonTest {
 
-  private static Master master;
   private static Worker worker;
   private static String serviceUri = "http://localhost:8080";
   private static String projectFolder;
@@ -54,6 +53,7 @@ public class HorizonTest {
     String confFile = projectFolder + "/store/conf/store.conf";
 
     System.setProperty("log.path", projectFolder + "/store/core/target/master_worker.log");
+    System.setProperty("carbonstore.conf.file", confFile);
     StoreUtil.initLog4j(log4jFile);
 
     StoreConf storeConf = new StoreConf(confFile);
@@ -61,13 +61,9 @@ public class HorizonTest {
         StoreConf.STORE_LOCATION,
         storeConf.storeLocation() + System.currentTimeMillis());
 
-    // start master
-    master = Master.getInstance(storeConf);
-    master.startService();
-
     new Thread() {
       public void run() {
-        Horizon.main(new String[0]);
+        Horizon.start(new String[0]);
       }
     }.start();
     Thread.sleep(10000);
@@ -79,8 +75,19 @@ public class HorizonTest {
     restTemplate = new RestTemplate();
   }
 
+  @AfterClass
+  public static void shutdown() {
+    worker.stop();
+    Horizon.stop();
+  }
+
   @Test
   public void testHorizon() {
+    DropTableRequest request = new DropTableRequest("default", "table_1", false);
+    String response =
+        restTemplate.postForObject(serviceUri + "/table/drop", request, String.class);
+    Assert.assertEquals(true, Boolean.valueOf(response));
+
     // create table if not exists
     CreateTableRequest table = CreateTableRequest
         .builder()
@@ -110,7 +117,7 @@ public class HorizonTest {
         .databaseName("default")
         .tableName("table_1")
         .overwrite(false)
-        .inputPath(projectFolder + "/store/horizon/src/test/resources/data1.csv")
+        .inputPath(projectFolder + "/store/core/src/test/resources/data1.csv")
         .options("header", "true")
         .create();
     String loadData =
@@ -141,13 +148,6 @@ public class HorizonTest {
     SelectResponse fitlerResult =
         restTemplate.postForObject(serviceUri + "/table/select", filter, SelectResponse.class);
     Assert.assertEquals(1, fitlerResult.getRows().length);
-  }
-
-  @AfterClass
-  public static void release() throws InterruptedException {
-    worker.stop();
-    Horizon.close();
-    master.stopService();
   }
 
 }

@@ -16,21 +16,29 @@
  */
 package org.apache.carbondata.horizon.rest.controller;
 
-import java.util.UUID;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.horizon.rest.model.descriptor.LoadDescriptor;
-import org.apache.carbondata.horizon.rest.model.descriptor.SelectDescriptor;
-import org.apache.carbondata.horizon.rest.model.descriptor.TableDescriptor;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.horizon.antlr.Parser;
 import org.apache.carbondata.horizon.rest.model.validate.RequestValidator;
 import org.apache.carbondata.horizon.rest.model.view.CreateTableRequest;
+import org.apache.carbondata.horizon.rest.model.view.DropTableRequest;
 import org.apache.carbondata.horizon.rest.model.view.LoadRequest;
 import org.apache.carbondata.horizon.rest.model.view.SelectRequest;
 import org.apache.carbondata.horizon.rest.model.view.SelectResponse;
-import org.apache.carbondata.horizon.rest.service.HorizonService;
-import org.apache.carbondata.store.exception.StoreException;
+import org.apache.carbondata.store.api.conf.StoreConf;
+import org.apache.carbondata.store.api.descriptor.LoadDescriptor;
+import org.apache.carbondata.store.api.descriptor.SelectDescriptor;
+import org.apache.carbondata.store.api.descriptor.TableDescriptor;
+import org.apache.carbondata.store.api.descriptor.TableIdentifier;
+import org.apache.carbondata.store.api.exception.StoreException;
+import org.apache.carbondata.store.impl.DistributedCarbonStore;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -45,48 +53,63 @@ public class HorizonController {
   private static LogService LOGGER =
       LogServiceFactory.getLogService(HorizonController.class.getName());
 
-  private HorizonService service;
+  private DistributedCarbonStore store;
 
-  public HorizonController() {
-    service = HorizonService.getInstance();
+  public HorizonController() throws IOException {
+    String storeFile = System.getProperty("carbonstore.conf.file");
+    store = new DistributedCarbonStore(new StoreConf(storeFile));
   }
 
   @RequestMapping(value = "/table/create", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<String> createTable(
-      @RequestBody CreateTableRequest request) throws StoreException {
+      @RequestBody CreateTableRequest request) throws StoreException, IOException {
     RequestValidator.validateTable(request);
     TableDescriptor tableDescriptor = request.convertToDto();
-    boolean result = service.createTable(tableDescriptor);
-    return new ResponseEntity<>(String.valueOf(result), HttpStatus.OK);
+    store.createTable(tableDescriptor);
+    return new ResponseEntity<>(String.valueOf(true), HttpStatus.OK);
+  }
+
+  @RequestMapping(value = "/table/drop", produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<String> dropTable(
+      @RequestBody DropTableRequest request) throws StoreException, IOException {
+    RequestValidator.validateDrop(request);
+    store.dropTable(new TableIdentifier(request.getTableName(), request.getDatabaseName()));
+    return new ResponseEntity<>(String.valueOf(true), HttpStatus.OK);
   }
 
   @RequestMapping(value = "/table/load", produces = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity<String> load(@RequestBody LoadRequest request) throws StoreException {
+  public ResponseEntity<String> load(@RequestBody LoadRequest request)
+      throws StoreException, IOException {
     RequestValidator.validateLoad(request);
     LoadDescriptor loadDescriptor = request.convertToDto();
-    boolean result = service.loadData(loadDescriptor);
-    return new ResponseEntity<>(String.valueOf(result), HttpStatus.OK);
+    store.loadData(loadDescriptor);
+    return new ResponseEntity<>(String.valueOf(true), HttpStatus.OK);
   }
-
 
   @RequestMapping(value = "/table/select", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<SelectResponse> select(@RequestBody SelectRequest request)
-      throws StoreException {
+      throws StoreException, IOException {
     long start = System.currentTimeMillis();
     RequestValidator.validateSelect(request);
-    SelectDescriptor selectDescriptor = request.convertToDto();
-    selectDescriptor.setId(UUID.randomUUID().toString());
-    CarbonRow[] result = service.select(selectDescriptor);
-    Object[][] newResult = new Object[result.length][];
-    for (int i = newResult.length - 1; i >= 0; i--) {
-      newResult[i] = result[i].getData();
+    TableIdentifier table = new TableIdentifier(request.getTableName(), request.getDatabaseName());
+    CarbonTable carbonTable = store.getTable(table);
+    Expression expression = Parser.parseFilter(request.getFilter(), carbonTable);
+    SelectDescriptor selectDescriptor = new SelectDescriptor(
+        table, request.getProjection(), expression, request.getLimit());
+    List<CarbonRow> result = store.select(selectDescriptor);
+    Iterator<CarbonRow> iterator = result.iterator();
+    Object[][] output = new Object[result.size()][];
+    int i = 0;
+    while (iterator.hasNext()) {
+      output[i] = (iterator.next().getData());
+      i++;
     }
     long end = System.currentTimeMillis();
-    LOGGER.audit("[" + selectDescriptor.getId() +  "] HorizonController select " +
+    LOGGER.audit("[" + request.getRequestId() +  "] HorizonController select " +
         request.getDatabaseName() + "." + request.getTableName() +
         ", take time: " + (end - start) + " ms");
-    return new ResponseEntity<>(
-        new SelectResponse(selectDescriptor.getId(), newResult), HttpStatus.OK);
+
+    return new ResponseEntity<>(new SelectResponse(request, output), HttpStatus.OK);
   }
 
 }

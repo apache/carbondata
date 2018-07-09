@@ -39,11 +39,11 @@ public class DataLoadExecutor {
 
   private boolean isClosed;
 
-  public void execute(CarbonLoadModel loadModel, String[] storeLocation,
-      CarbonIterator<Object[]>[] inputIterators) throws Exception {
+  public void execute(CarbonLoadModel loadModel, String[] tempLocation,
+      CarbonIterator<Object[]>[] inputIterators) {
     try {
       loadProcessorStep =
-          new DataLoadProcessBuilder().build(loadModel, storeLocation, inputIterators);
+          new DataLoadProcessBuilder().build(loadModel, tempLocation, inputIterators);
       // 1. initialize
       loadProcessorStep.initialize();
       LOGGER.info("Data Loading is started for table " + loadModel.getTableName());
