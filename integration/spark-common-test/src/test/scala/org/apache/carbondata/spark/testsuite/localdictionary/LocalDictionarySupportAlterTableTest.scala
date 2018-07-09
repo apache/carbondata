@@ -40,12 +40,15 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("20000"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("city,alt"))
+      case None => assert(false)
     }
   }
 
@@ -61,12 +64,15 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("20000"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name,city,alt"))
+      case None => assert(false)
     }
   }
 
@@ -214,6 +220,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("false"))
+      case None => assert(false)
     }
 
     checkExistence(sql("DESC FORMATTED local1"), false,
@@ -230,6 +237,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case None => assert(false)
     }
     sql("drop table if exists local1")
     sql(
@@ -240,6 +248,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case None => assert(false)
     }
   }
 
@@ -257,12 +266,15 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("city,abc"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
       case Some(row) => assert(row.get(1).toString.contains("alt"))
+      case None => assert(false)
     }
   }
 
@@ -277,9 +289,11 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("city"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case None => assert(false)
     }
   }
 
@@ -294,12 +308,15 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name,city"))
+      case None => assert(false)
     }
   }
 
@@ -314,6 +331,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case None => assert(false)
     }
   }
 
@@ -328,14 +346,17 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case None => assert(false)
     }
     sql("alter table local1 set tblproperties('local_dictionary_enable'='false')")
     val descLoc2 = sql("describe formatted local1").collect
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("false"))
+      case None => assert(false)
     }
     checkExistence(sql("DESC FORMATTED local1"), false,
       "Local Dictionary Threshold")
@@ -352,14 +373,17 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     sql("alter table local1 set tblproperties('local_dictionary_threshold'='30000')")
     val descLoc2 = sql("describe formatted local1").collect
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("30000"))
+      case None => assert(false)
     }
   }
 
@@ -375,14 +399,17 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     sql("alter table local1 set tblproperties('local_dictionary_include'='name')")
     val descLoc2 = sql("describe formatted local1").collect
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name") && !row.get(1).toString.contains("city"))
+      case None => assert(false)
     }
   }
 
@@ -397,17 +424,21 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     sql("alter table local1 set tblproperties('local_dictionary_exclude'='name')")
     val descLoc2 = sql("describe formatted local1").collect
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("city"))
+      case None => assert(false)
     }
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
       case Some(row) => assert(row.get(1).toString.contains("name"))
+      case None => assert(false)
     }
   }
 
@@ -422,15 +453,18 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     sql("alter table local1 set tblproperties('local_dictionary_include'='city')")
 
     val descLoc2 = sql("describe formatted local1").collect
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("city"))
+      case None => assert(false)
     }
   }
 
@@ -445,15 +479,18 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     sql("alter table local1 set tblproperties('local_dictionary_include'='name,city')")
 
     val descLoc2 = sql("describe formatted local1").collect
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name,city"))
+      case None => assert(false)
     }
   }
 
@@ -468,18 +505,22 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     sql("alter table local1 set tblproperties('local_dictionary_exclude'='city')")
 
     val descLoc2 = sql("describe formatted local1").collect
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name"))
+      case None => assert(false)
     }
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
       case Some(row) => assert(row.get(1).toString.contains("city"))
+      case None => assert(false)
     }
   }
 
@@ -494,6 +535,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     val exception1 = intercept[Exception] {
       sql("alter table local1 set tblproperties('local_dictionary_include'='city, ')")
@@ -515,6 +557,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     val exception1 = intercept[Exception] {
       sql("alter table local1 set tblproperties('local_dictionary_exclude'='name')")
@@ -533,6 +576,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     val exception1 = intercept[Exception] {
       sql("alter table local1 set tblproperties('local_dictionary_exclude'='id')")
@@ -551,6 +595,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     val exception1 = intercept[Exception] {
       sql("alter table local1 set tblproperties('local_dictionary_include'='name')")
@@ -569,17 +614,21 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     sql("alter table local1 set tblproperties('local_dictionary_exclude'='city')")
     val descLoc2 = sql("describe formatted local1").collect
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name"))
+      case None => assert(false)
     }
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
       case Some(row) => assert(row.get(1).toString.contains("city"))
+      case None => assert(false)
     }
   }
 
@@ -594,6 +643,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     val exception1 = intercept[Exception] {
       sql("alter table local1 set tblproperties('local_dictionary_exclude'='city, ')")
@@ -612,6 +662,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     val exception1 = intercept[Exception] {
       sql("alter table local1 set tblproperties('local_dictionary_exclude'='name')")
@@ -630,6 +681,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     val exception1 = intercept[Exception] {
       sql("alter table local1 set tblproperties('local_dictionary_exclude'='name')")
@@ -648,11 +700,13 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     sql("alter table local1 set tblproperties('local_dictionary_enable'='false')")
     val descLoc2 = sql("describe formatted local1").collect
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("false"))
+      case None => assert(false)
     }
   }
 
@@ -668,6 +722,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc2 = sql("describe formatted local1").collect
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("false"))
+      case None => assert(false)
     }
   }
 
@@ -697,6 +752,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc2 = sql("describe formatted local1").collect
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name"))
+      case None => assert(false)
     }
   }
 
@@ -711,6 +767,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("false"))
+      case None => assert(false)
     }
     checkExistence(sql("DESC FORMATTED local1"), false,
       "Local Dictionary Threshold")
@@ -718,9 +775,11 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc2 = sql("describe formatted local1").collect
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("30000"))
+      case None => assert(false)
     }
   }
 
@@ -752,10 +811,12 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descFormatted1 = sql("describe formatted local1").collect
     descFormatted1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descFormatted1.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(
         row.get(1).toString.contains("city,dcity") && !row.get(1).toString.contains("name"))
+      case None => assert(false)
     }
     intercept[Exception] {
       sql("alter table local1 set tblproperties('local_dictionary_exclude'='dcity')")
@@ -764,18 +825,22 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descFormatted2 = sql("describe formatted local1").collect
     descFormatted2.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
       case Some(row) => assert(row.get(1).toString.contains("st"))
+      case None => assert(false)
     }
     descFormatted2.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("city,dcity"))
+      case None => assert(false)
     }
     sql("alter table local1 set tblproperties('local_dictionary_exclude'='st'," +
         "'local_dictionary_include'='dcity')")
     val descFormatted3 = sql("describe formatted local1").collect
     descFormatted3.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
       case Some(row) => assert(row.get(1).toString.contains("st"))
+      case None => assert(false)
     }
     descFormatted3.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("dcity"))
+      case None => assert(false)
     }
   }
 
@@ -808,11 +873,13 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Enable")) match {
       case Some(row) => assert(row.get(1).toString.contains("false"))
+      case None => assert(false)
     }
     sql("alter table local1 unset tblproperties('local_dictionary_enable')")
     val descLoc2 = sql("describe formatted local1").collect
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Enable")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
   }
 
@@ -827,11 +894,13 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("city"))
+      case None => assert(false)
     }
     sql("alter table local1 unset tblproperties('local_dictionary_include')")
     val descLoc2 = sql("describe formatted local1").collect
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name,city,add"))
+      case None => assert(false)
     }
   }
 
@@ -847,11 +916,13 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("city"))
+      case None => assert(false)
     }
     sql("alter table local1 unset tblproperties('local_dictionary_exclude')")
     val descLoc2 = sql("describe formatted local1").collect
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("city"))
+      case None => assert(false)
     }
   }
 
@@ -869,16 +940,19 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc1 = sql("describe formatted local1").collect
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("city"))
+      case None => assert(false)
     }
     descLoc1.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
       case Some(row) => assert(
         row.get(1).toString.contains("st.s_name") && !row.get(1).toString.contains("st.s_id"))
+      case None => assert(false)
     }
     sql("alter table local1 unset tblproperties('local_dictionary_exclude')")
     sql("alter table local1 unset tblproperties('local_dictionary_include')")
     val descLoc2 = sql("describe formatted local1").collect
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name,city,st.s_name,dcity.val"))
+      case None => assert(false)
     }
   }
 
@@ -895,12 +969,15 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("20000"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name") && !row.get(1).toString.contains("city"))
+      case None => assert(false)
     }
   }
 
@@ -917,12 +994,15 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("20000"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
       case Some(row) => assert(row.get(1).toString.contains("city") && !row.get(1).toString.contains("name"))
+      case None => assert(false)
     }
   }
 
@@ -957,12 +1037,15 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("20000"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name,city,add2,add1"))
+      case None => assert(false)
     }
   }
 
@@ -979,12 +1062,15 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("20000"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name") && !row.get(1).toString.contains("city,add2,add1"))
+      case None => assert(false)
     }
   }
 
@@ -1001,6 +1087,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("false"))
+      case None => assert(false)
     }
   }
 
@@ -1014,35 +1101,39 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
         | tblproperties('local_dictionary_enable'='true')
       """.
         stripMargin)
-    sql("alter table local1 unset tblproperties('local_dictionary_exclude')")
     sql("alter table local1 set tblproperties('local_dictionary_include'='st')")
-
     val descFormatted1 = sql("describe formatted local1").collect
     descFormatted1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descFormatted1.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(
         row.get(1).toString.contains("st.s_name,st.s_city.val") &&
         !row.get(1).toString.contains("dcity"))
+      case None => assert(false)
     }
     sql("alter table local1 unset tblproperties('local_dictionary_include')")
     sql("alter table local1 set tblproperties('local_dictionary_exclude'='st')")
     val descFormatted2 = sql("describe formatted local1").collect
     descFormatted2.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
       case Some(row) => assert(row.get(1).toString.contains("st"))
+      case None => assert(false)
     }
     descFormatted2.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("city,dcity"))
+      case None => assert(false)
     }
     sql("alter table local1 set tblproperties('local_dictionary_exclude'='st'," +
         "'local_dictionary_include'='dcity')")
     val descFormatted3 = sql("describe formatted local1").collect
     descFormatted3.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
       case Some(row) => assert(row.get(1).toString.contains("st"))
+      case None => assert(false)
     }
     descFormatted3.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("dcity"))
+      case None => assert(false)
     }
   }
 
@@ -1061,11 +1152,13 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descFormatted1 = sql("describe formatted local1").collect
     descFormatted1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descFormatted1.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(
         row.get(1).toString.contains("dcity.val") &&
         !row.get(1).toString.contains("st"))
+      case None => assert(false)
     }
   }
 
@@ -1084,15 +1177,18 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descFormatted1 = sql("describe formatted local1").collect
     descFormatted1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descFormatted1.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(
         row.get(1).toString.contains("name,city,dcity.val") &&
         !row.get(1).toString.contains("st"))
+      case None => assert(false)
     }
     descFormatted1.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
       case Some(row) => assert(
         row.get(1).toString.contains("st.s_city.val,st.s_name"))
+      case None => assert(false)
     }
   }
 
@@ -1111,10 +1207,12 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descFormatted1 = sql("describe formatted local1").collect
     descFormatted1.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descFormatted1.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(
         row.get(1).toString.contains("dcity.val"))
+      case None => assert(false)
     }
   }
 
@@ -1130,12 +1228,15 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
       case Some(row) => assert(row.get(1).toString.contains("st.val.si,name"))
+      case None => assert(false)
     }
   }
 
@@ -1152,12 +1253,155 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("st.val.si,name"))
+      case None => assert(false)
+    }
+  }
+
+  test("test alter for local dictionary for complex columns when local dictionary exclude is defined _001") {
+    sql("drop table if exists local1")
+    sql(
+      """
+        | CREATE TABLE local1(id int, name string,city string, st array<struct<si:int,sd:string>>)
+        | STORED BY 'org.apache.carbondata.format'
+        | tblproperties('long_string_columns'='name','local_dictionary_enable'='true')
+      """.stripMargin)
+    sql("alter table local1 set tblproperties('local_dictionary_exclude'='st,name')")
+    val descLoc = sql("describe formatted local1").collect
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case None => assert(false)
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
+      case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
+      case Some(row) => assert(row.get(1).toString.contains("st.val.sd,name"))
+      case None => assert(false)
+    }
+  }
+
+  test("test alter for local dictionary for complex columns when local dictionary exclude is defined _002") {
+    sql("drop table if exists local1")
+    sql(
+      """
+        | CREATE TABLE local1(id int, name string,city string, st array<struct<si:int,sd:string>>,f string,g int,h string)
+        | STORED BY 'org.apache.carbondata.format'
+        | tblproperties('long_string_columns'='name','local_dictionary_enable'='true','local_dictionary_include'='st')
+      """.stripMargin)
+    sql("alter table local1 unset tblproperties('local_dictionary_include')")
+    sql("alter table local1 set tblproperties('local_dictionary_exclude'='st,name,h')")
+    val descLoc = sql("describe formatted local1").collect
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case None => assert(false)
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
+      case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
+      case Some(row) => assert(row.get(1).toString.contains("h,st.val.sd,name"))
+      case None => assert(false)
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
+            case Some(row) => assert(row.get(1).toString.contains("city,f"))
+            case None => assert(false)
+    }
+  }
+
+  test("test alter for local dictionary for complex columns when local dictionary exclude is defined _003") {
+    sql("drop table if exists local1")
+    sql(
+      """
+        | CREATE TABLE local1(id int, name string,city string, st struct<si:int,sd:string,sh:array<string>>,f string,g int,h string)
+        | STORED BY 'org.apache.carbondata.format'
+        | tblproperties('long_string_columns'='name','local_dictionary_enable'='true','local_dictionary_include'='st')
+      """.stripMargin)
+    sql("alter table local1 unset tblproperties('local_dictionary_include')")
+    sql("alter table local1 set tblproperties('local_dictionary_exclude'='st,name,h')")
+    val descLoc = sql("describe formatted local1").collect
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case None => assert(false)
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
+      case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
+      case Some(row) => assert(row.get(1).toString.contains("h,st.sd,st.sh.val,name"))
+      case None => assert(false)
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
+      case Some(row) => assert(row.get(1).toString.contains("city,f"))
+      case None => assert(false)
+    }
+  }
+
+  test("test alter for local dictionary for complex columns when local dictionary exclude is defined _004") {
+    sql("drop table if exists local1")
+    sql(
+      """
+        | CREATE TABLE local1(id int, name string,city string, st struct<si:int,sd:string>,f string,g int,h string)
+        | STORED BY 'org.apache.carbondata.format'
+        | tblproperties('long_string_columns'='name','local_dictionary_enable'='true','local_dictionary_include'='st')
+      """.stripMargin)
+    sql("alter table local1 unset tblproperties('local_dictionary_include')")
+    sql("alter table local1 set tblproperties('local_dictionary_exclude'='st,name,h')")
+    val descLoc = sql("describe formatted local1").collect
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case None => assert(false)
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
+      case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
+      case Some(row) => assert(row.get(1).toString.contains("h,st.sd,name"))
+      case None => assert(false)
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
+      case Some(row) => assert(row.get(1).toString.contains("city,f"))
+      case None => assert(false)
+    }
+  }
+
+  test("test alter for local dictionary for complex columns when local dictionary exclude is defined _005") {
+    sql("drop table if exists local1")
+    sql(
+      """
+        | CREATE TABLE local1(id int, name string,city string, st array<string>,g string,f int,h string)
+        | STORED BY 'org.apache.carbondata.format'
+        | tblproperties('long_string_columns'='name','local_dictionary_enable'='true','local_dictionary_include'='st')
+      """.stripMargin)
+    sql("alter table local1 unset tblproperties('local_dictionary_include')")
+    sql("alter table local1 set tblproperties('local_dictionary_exclude'='st,name,h')")
+    val descLoc = sql("describe formatted local1").collect
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
+      case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case None => assert(false)
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
+      case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
+      case Some(row) => assert(row.get(1).toString.contains("h,st.val,name"))
+      case None => assert(false)
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
+      case Some(row) => assert(row.get(1).toString.contains("city,g"))
+      case None => assert(false)
     }
   }
 

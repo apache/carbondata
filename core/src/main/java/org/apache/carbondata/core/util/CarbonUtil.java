@@ -3179,11 +3179,15 @@ public final class CarbonUtil {
       ColumnSchema column = allColumns.get(dimensionOrdinal);
       if (column.getNumberOfChild() > 0) {
         dimensionOrdinal++;
-        unsetLocalDictForComplexColumns(allColumns, dimensionOrdinal, column.getNumberOfChild());
+        // Dimension ordinal will take value from recursive functions so as to skip the
+        // child columns of the complex column.
+        dimensionOrdinal = unsetLocalDictForComplexColumns(allColumns, dimensionOrdinal,
+            column.getNumberOfChild());
+      } else {
+        dimensionOrdinal++;
       }
-      dimensionOrdinal++;
     }
-    return dimensionOrdinal++;
+    return dimensionOrdinal;
   }
 
   /**
