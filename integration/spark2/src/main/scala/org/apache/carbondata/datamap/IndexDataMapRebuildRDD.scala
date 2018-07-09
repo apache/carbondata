@@ -59,6 +59,7 @@ import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
  * Helper object to rebuild the index DataMap
  */
 object IndexDataMapRebuildRDD {
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   /**
    * Rebuild the datamap for all existing data in the table
@@ -78,56 +79,56 @@ object IndexDataMapRebuildRDD {
       tableIdentifier,
       mutable.Seq[String](schema.getDataMapName))
     OperationListenerBus.getInstance().fireEvent(buildDataMapPreExecutionEvent, operationContext)
-    // loop all segments to rebuild DataMap
-    validSegments.asScala.foreach { segment =>
-      // if lucene datamap folder is exists, not require to build lucene datamap again
-      refreshOneSegment(sparkSession, carbonTable, schema.getDataMapName,
-        indexedCarbonColumns, segment);
+
+    val segments2DmStorePath = validSegments.asScala.map { segment =>
+      val dataMapStorePath = CarbonTablePath.getDataMapStorePath(carbonTable.getTablePath,
+        segment.getSegmentNo, schema.getDataMapName)
+      segment -> dataMapStorePath
+    }.filter(p => !FileFactory.isFileExist(p._2)).toMap
+
+    segments2DmStorePath.foreach { case (_, dmPath) =>
+      if (!FileFactory.mkdirs(dmPath, FileFactory.getFileType(dmPath))) {
+        throw new IOException(
+          s"Failed to create directory $dmPath for rebuilding datamap ${ schema.getDataMapName }")
+      }
     }
+
+    val status = new IndexDataMapRebuildRDD[String, (String, Boolean)](
+      sparkSession,
+      new RefreshResultImpl(),
+      carbonTable.getTableInfo,
+      schema.getDataMapName,
+      indexedCarbonColumns.asScala.toArray,
+      segments2DmStorePath.keySet
+    ).collect
+
+    // for failed segments, clean the result
+    val failedSegments = status
+      .find { case (taskId, (segmentId, rebuildStatus)) =>
+        !rebuildStatus
+      }
+      .map { task =>
+        val segmentId = task._2._1
+        val dmPath = segments2DmStorePath.filter(p => p._1.getSegmentNo.equals(segmentId)).values
+        val cleanResult = dmPath.map(p =>
+          FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(p)))
+        if (cleanResult.exists(!_)) {
+          LOGGER.error(s"Failed to clean up datamap store for segment_$segmentId")
+          false
+        } else {
+          true
+        }
+      }
+
+    if (failedSegments.nonEmpty) {
+      throw new Exception(s"Failed to refresh datamap ${ schema.getDataMapName }")
+    }
+    DataMapStoreManager.getInstance().clearDataMaps(tableIdentifier)
+
     val buildDataMapPostExecutionEvent = new BuildDataMapPostExecutionEvent(sparkSession,
       tableIdentifier)
     OperationListenerBus.getInstance().fireEvent(buildDataMapPostExecutionEvent, operationContext)
   }
-
-  private def refreshOneSegment(
-      sparkSession: SparkSession,
-      carbonTable: CarbonTable,
-      dataMapName: String,
-      indexColumns: java.util.List[CarbonColumn],
-      segment: Segment): Unit = {
-
-    val dataMapStorePath = CarbonTablePath.getDataMapStorePath(carbonTable.getTablePath,
-      segment.getSegmentNo, dataMapName)
-
-    if (!FileFactory.isFileExist(dataMapStorePath)) {
-      if (FileFactory.mkdirs(dataMapStorePath, FileFactory.getFileType(dataMapStorePath))) {
-        try {
-          val status = new IndexDataMapRebuildRDD[String, Boolean](
-            sparkSession,
-            new RefreshResultImpl(),
-            carbonTable.getTableInfo,
-            dataMapName,
-            indexColumns.asScala.toArray,
-            segment
-          ).collect()
-
-          status.find(_._2 == false).foreach { task =>
-            throw new Exception(
-              s"Task Failed to rebuild datamap $dataMapName on segment_${segment.getSegmentNo}")
-          }
-        } catch {
-          case ex: Throwable =>
-            // process failure
-            FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(dataMapStorePath))
-            throw new Exception(
-              s"Failed to refresh datamap $dataMapName on segment_${segment.getSegmentNo}", ex)
-        }
-      } else {
-        throw new IOException(s"Failed to create directory $dataMapStorePath")
-      }
-    }
-  }
-
 }
 
 class OriginalReadSupport(dataTypes: Array[DataType]) extends CarbonReadSupport[Array[Object]] {
@@ -254,7 +255,7 @@ class IndexDataMapRebuildRDD[K, V](
     @transient tableInfo: TableInfo,
     dataMapName: String,
     indexColumns: Array[CarbonColumn],
-    segment: Segment
+    segments: Set[Segment]
 ) extends CarbonRDDWithTableInfo[(K, V)](
   session.sparkContext, Nil, tableInfo.serialize()) {
 
@@ -274,11 +275,12 @@ class IndexDataMapRebuildRDD[K, V](
     val inputMetrics = new CarbonInputMetrics
     TaskMetricsMap.getInstance().registerThreadCallback()
     val inputSplit = split.asInstanceOf[CarbonSparkPartition].split.value
+    val segment = inputSplit.getAllSplits.get(0).getSegment
     inputMetrics.initBytesReadCallback(context, inputSplit)
 
     val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
     val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
-    val format = createInputFormat(attemptContext)
+    val format = createInputFormat(segment, attemptContext)
 
     val model = format.createQueryModel(inputSplit, attemptContext)
     // one query id per table
@@ -290,8 +292,7 @@ class IndexDataMapRebuildRDD[K, V](
     var refresher: DataMapBuilder = null
     try {
       val segmentPropertiesFetcher = DataMapStoreManager.getInstance().getDataMap(carbonTable,
-        BlockletDataMapFactory.DATA_MAP_SCHEMA)
-        .getDataMapFactory
+        BlockletDataMapFactory.DATA_MAP_SCHEMA).getDataMapFactory
         .asInstanceOf[SegmentPropertiesFetcher]
       val segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segment)
 
@@ -308,6 +309,8 @@ class IndexDataMapRebuildRDD[K, V](
       }
       reader = new CarbonRecordReader[Array[Object]](model, readSupport, inputMetrics)
       reader.initialize(inputSplit, attemptContext)
+      // skip clear datamap and we will do this adter rebuild
+      reader.setSkipClearDataMapAtClose(true)
 
       var blockletId = 0
       var firstRow = true
@@ -360,13 +363,13 @@ class IndexDataMapRebuildRDD[K, V](
 
       override def next(): (K, V) = {
         finished = true
-        result.getKey(split.index.toString, status)
+        result.getKey(split.index.toString, (segment.getSegmentNo, status))
       }
     }
   }
 
 
-  private def createInputFormat(
+  private def createInputFormat(segment: Segment,
       attemptContext: TaskAttemptContextImpl) = {
     val format = new CarbonTableInputFormat[Object]
     val tableInfo1 = getTableInfo
@@ -405,7 +408,7 @@ class IndexDataMapRebuildRDD[K, V](
 
     CarbonInputFormat.setSegmentsToAccess(
       job.getConfiguration,
-      Segment.toSegmentList(Array(segment.getSegmentNo), null))
+      Segment.toSegmentList(segments.map(_.getSegmentNo).toArray, null))
 
     CarbonInputFormat.setTableInfo(
       job.getConfiguration,
@@ -424,7 +427,7 @@ class IndexDataMapRebuildRDD[K, V](
       .getSplits(job)
       .asScala
       .map(_.asInstanceOf[CarbonInputSplit])
-      .groupBy(_.taskId)
+      .groupBy(p => (p.getSegmentId, p.taskId))
       .map { group =>
         new CarbonMultiBlockSplit(
           group._2.asJava,

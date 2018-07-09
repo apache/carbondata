@@ -74,7 +74,6 @@ class C2DataMapFactory(
    * delete datamap data if any
    */
   override def deleteDatamapData(): Unit = {
-    ???
   }
 
   /**

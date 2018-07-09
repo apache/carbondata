@@ -132,7 +132,7 @@ class FGDataMapFactory(carbonTable: CarbonTable,
    * delete datamap data if any
    */
   override def deleteDatamapData(): Unit = {
-    ???
+
   }
 
   /**
