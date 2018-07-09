@@ -434,7 +434,7 @@ public final class DataMapStoreManager {
   }
 
   /**
-   * Clear the datamap/datamaps of a table from memory
+   * Clear the datamap/datamaps of a table from memory and disk
    *
    * @param identifier Table identifier
    */
