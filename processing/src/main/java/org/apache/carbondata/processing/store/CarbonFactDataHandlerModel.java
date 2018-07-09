@@ -35,8 +35,10 @@ import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -311,6 +313,19 @@ public class CarbonFactDataHandlerModel {
   public static CarbonFactDataHandlerModel getCarbonFactDataHandlerModel(CarbonLoadModel loadModel,
       CarbonTable carbonTable, SegmentProperties segmentProperties, String tableName,
       String[] tempStoreLocation, String carbonDataDirectoryPath) {
+
+    // for dynamic page size in write step if varchar columns exist
+    List<Integer> varcharDimIdxInNoDict = new ArrayList<>();
+    List<CarbonDimension> allDimensions = carbonTable.getDimensions();
+    int dictDimCount = allDimensions.size() - segmentProperties.getNumberOfNoDictionaryDimension();
+    for (CarbonDimension dim : allDimensions) {
+      if (!dim.isComplex() && !dim.hasEncoding(Encoding.DICTIONARY) &&
+          dim.getDataType() == DataTypes.VARCHAR) {
+        // ordinal is set in CarbonTable.fillDimensionsAndMeasuresForTables()
+        varcharDimIdxInNoDict.add(dim.getOrdinal() - dictDimCount);
+      }
+    }
+
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
     carbonFactDataHandlerModel.setSchemaUpdatedTimeStamp(carbonTable.getTableLastUpdatedTime());
     carbonFactDataHandlerModel.setDatabaseName(loadModel.getDatabaseName());
@@ -364,6 +379,7 @@ public class CarbonFactDataHandlerModel {
     setNumberOfCores(carbonFactDataHandlerModel);
     carbonFactDataHandlerModel
         .setColumnLocalDictGenMap(CarbonUtil.getLocalDictionaryModel(carbonTable));
+    carbonFactDataHandlerModel.setVarcharDimIdxInNoDict(varcharDimIdxInNoDict);
     return carbonFactDataHandlerModel;
   }
 
