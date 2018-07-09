@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.file;
+package org.apache.carbondata.store;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -26,103 +26,15 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.sdk.file.CarbonWriter;
+import org.apache.carbondata.sdk.file.CarbonWriterBuilder;
+import org.apache.carbondata.sdk.file.Schema;
+import org.apache.carbondata.store.api.conf.StoreConf;
+import org.apache.carbondata.store.util.StoreUtil;
 
 import org.junit.Assert;
 
 public class TestUtil {
-
-  static void writeFilesAndVerify(Schema schema, String path) {
-    writeFilesAndVerify(schema, path, null);
-  }
-
-  static void writeFilesAndVerify(Schema schema, String path, String[] sortColumns) {
-    writeFilesAndVerify(100, schema, path, sortColumns, false, -1, -1, true);
-  }
-
-  public static void writeFilesAndVerify(int rows, Schema schema, String path, boolean persistSchema) {
-    writeFilesAndVerify(rows, schema, path, null, persistSchema, -1, -1, true);
-  }
-
-  public static void writeFilesAndVerify(Schema schema, String path, boolean persistSchema,
-      boolean isTransactionalTable) {
-    writeFilesAndVerify(100, schema, path, null, persistSchema, -1, -1, isTransactionalTable);
-  }
-
-  /**
-   * write file and verify
-   *
-   * @param rows                 number of rows
-   * @param schema               schema
-   * @param path                 table store path
-   * @param persistSchema        whether persist schema
-   * @param isTransactionalTable whether is transactional table
-   */
-  public static void writeFilesAndVerify(int rows, Schema schema, String path, boolean persistSchema,
-      boolean isTransactionalTable) {
-    writeFilesAndVerify(rows, schema, path, null, persistSchema, -1, -1, isTransactionalTable);
-  }
-
-  /**
-   * Invoke CarbonWriter API to write carbon files and assert the file is rewritten
-   * @param rows number of rows to write
-   * @param schema schema of the file
-   * @param path local write path
-   * @param sortColumns sort columns
-   * @param persistSchema true if want to persist schema file
-   * @param blockletSize blockletSize in the file, -1 for default size
-   * @param blockSize blockSize in the file, -1 for default size
-   * @param isTransactionalTable set to true if this is written for Transactional Table.
-   */
-  static void writeFilesAndVerify(int rows, Schema schema, String path, String[] sortColumns,
-      boolean persistSchema, int blockletSize, int blockSize, boolean isTransactionalTable) {
-    try {
-      CarbonWriterBuilder builder = CarbonWriter.builder()
-          .isTransactionalTable(isTransactionalTable)
-          .outputPath(path);
-      if (sortColumns != null) {
-        builder = builder.sortBy(sortColumns);
-      }
-      if (persistSchema) {
-        builder = builder.persistSchemaFile(true);
-      }
-      if (blockletSize != -1) {
-        builder = builder.withBlockletSize(blockletSize);
-      }
-      if (blockSize != -1) {
-        builder = builder.withBlockSize(blockSize);
-      }
-
-      CarbonWriter writer = builder.buildWriterForCSVInput(schema);
-
-      for (int i = 0; i < rows; i++) {
-        writer.write(new String[]{"robot" + (i % 10), String.valueOf(i), String.valueOf((double) i / 2)});
-      }
-      writer.close();
-    } catch (IOException e) {
-      e.printStackTrace();
-      Assert.fail(e.getMessage());
-    } catch (InvalidLoadOptionException l) {
-      l.printStackTrace();
-      Assert.fail(l.getMessage());
-    }
-
-    File segmentFolder = null;
-    if (isTransactionalTable) {
-      segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-      Assert.assertTrue(segmentFolder.exists());
-    } else {
-      segmentFolder = new File(path);
-      Assert.assertTrue(segmentFolder.exists());
-    }
-
-    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
-      @Override public boolean accept(File pathname) {
-        return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
-      }
-    });
-    Assert.assertNotNull(dataFiles);
-    Assert.assertTrue(dataFiles.length > 0);
-  }
 
   /**
    * verify whether the file exists
@@ -165,4 +77,5 @@ public class TestUtil {
       throw new RuntimeException("IO exception:", e);
     }
   }
+
 }
