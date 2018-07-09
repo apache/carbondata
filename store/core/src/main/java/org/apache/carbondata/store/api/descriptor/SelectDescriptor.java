@@ -26,13 +26,13 @@ public class SelectDescriptor {
   private TableIdentifier table;
   private String[] projection;
   private Expression filter;
-  private int limit;
+  private long limit;
 
   private SelectDescriptor() {
   }
 
   public SelectDescriptor(TableIdentifier table, String[] projection,
-      Expression filter, int limit) {
+      Expression filter, long limit) {
     Objects.requireNonNull(table);
     Objects.requireNonNull(projection);
     this.table = table;
@@ -65,11 +65,11 @@ public class SelectDescriptor {
     this.filter = filter;
   }
 
-  public int getLimit() {
+  public long getLimit() {
     return limit;
   }
 
-  public void setLimit(int limit) {
+  public void setLimit(long limit) {
     this.limit = limit;
   }
 
@@ -95,7 +95,7 @@ public class SelectDescriptor {
       return this;
     }
 
-    public Builder limit(int limit) {
+    public Builder limit(long limit) {
       select.setLimit(limit);
       return this;
     }

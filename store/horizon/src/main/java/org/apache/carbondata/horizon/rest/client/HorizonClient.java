@@ -25,9 +25,9 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.horizon.rest.model.view.CreateTableRequest;
+import org.apache.carbondata.horizon.rest.model.view.DropTableRequest;
 import org.apache.carbondata.horizon.rest.model.view.LoadRequest;
 import org.apache.carbondata.horizon.rest.model.view.SelectRequest;
-import org.apache.carbondata.store.api.descriptor.TableIdentifier;
 import org.apache.carbondata.store.api.exception.StoreException;
 
 /**
@@ -39,17 +39,17 @@ public interface HorizonClient extends Closeable {
 
   /**
    * Create a Table
-   * @param table descriptor for create table operation
+   * @param create descriptor for create table operation
    * @throws IOException if network or disk IO error occurs
    */
-  void createTable(CreateTableRequest table) throws IOException, StoreException;
+  void createTable(CreateTableRequest create) throws IOException, StoreException;
 
   /**
    * Drop a Table, and remove all data in it
    * @param table table identifier
    * @throws IOException if network or disk IO error occurs
    */
-  void dropTable(TableIdentifier table) throws IOException;
+  void dropTable(DropTableRequest drop) throws IOException;
 
   /**
    * Load data into a Table

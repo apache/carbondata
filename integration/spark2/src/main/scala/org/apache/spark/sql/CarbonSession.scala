@@ -33,6 +33,7 @@ import org.apache.spark.sql.execution.QueryExecution
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.execution.command.CarbonSetCommand
 import org.apache.spark.sql.internal.{SessionState, SharedState}
+import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.profiler.{Profiler, SQLStart}
 import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 
@@ -196,6 +197,8 @@ class CarbonSession(@transient val sc: SparkContext,
     }
   }
 
+  // variable that used in search mode
+  @transient private var store: CarbonStore = _
   @transient private var workerManager: WorkerManager = _
 
   def startSearchMode(): Unit = {
@@ -219,6 +222,8 @@ class CarbonSession(@transient val sc: SparkContext,
       try {
         workerManager.stopAllWorker()
         workerManager = null
+        store.close()
+        store = null
       } catch {
         case e: RuntimeException =>
           LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -227,8 +232,6 @@ class CarbonSession(@transient val sc: SparkContext,
       }
     }
   }
-
-  private var store: CarbonStore = _
 
   private def runSearch(
       logicalPlan: LogicalPlan,
@@ -241,14 +244,17 @@ class CarbonSession(@transient val sc: SparkContext,
     val select = new SelectDescriptor(
       new CTableIdentifier(table.getTableName, table.getDatabaseName),
       columns.map(_.name).toArray,
-      null,
-      maxRows.getOrElse(Long.MaxValue).asInstanceOf[Int]
+      if (expr != null) CarbonFilters.transformExpression(expr) else null,
+      localMaxRows.getOrElse(Long.MaxValue)
     )
     val rows = store.select(select).iterator()
     val output = new java.util.ArrayList[Row]()
-    while (rows.hasNext) {
+    val maxRowCount = maxRows.getOrElse(Long.MaxValue)
+    var rowCount = 0
+    while (rows.hasNext && rowCount < maxRowCount) {
       val row = rows.next()
       output.add(Row.fromSeq(row.getData))
+      rowCount = rowCount + 1
     }
     createDataFrame(output, logicalPlan.schema)
   }

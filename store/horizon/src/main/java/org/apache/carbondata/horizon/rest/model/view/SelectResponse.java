@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.horizon.rest.model.view;
 
-public class SelectResponse extends Response{
+public class SelectResponse extends Response {
 
   private Object[][] rows;
 

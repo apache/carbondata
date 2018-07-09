@@ -21,18 +21,18 @@ public class SelectRequest extends Request {
 
   private String databaseName;
   private String tableName;
-  private String[] projection;
+  private String[] selectColumns;
   private String filter;
   private int limit;
 
   public SelectRequest() {
   }
 
-  public SelectRequest(String databaseName, String tableName, String[] projection, String filter,
+  public SelectRequest(String databaseName, String tableName, String[] select, String filter,
       int limit) {
     this.databaseName = databaseName;
     this.tableName = tableName;
-    this.projection = projection;
+    this.selectColumns = select;
     this.filter = filter;
     this.limit = limit;
   }
@@ -53,12 +53,12 @@ public class SelectRequest extends Request {
     this.tableName = tableName;
   }
 
-  public String[] getProjection() {
-    return projection;
+  public String[] getSelect() {
+    return selectColumns;
   }
 
-  public void setProjection(String[] select) {
-    this.projection = select;
+  public void setSelect(String[] selectColumns) {
+    this.selectColumns = selectColumns;
   }
 
   public String getFilter() {
@@ -96,7 +96,7 @@ public class SelectRequest extends Request {
     }
 
     public Builder select(String... columnNames) {
-      select.setProjection(columnNames);
+      select.setSelect(columnNames);
       return this;
     }
 

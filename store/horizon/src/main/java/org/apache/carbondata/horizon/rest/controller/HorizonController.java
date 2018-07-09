@@ -95,7 +95,7 @@ public class HorizonController {
     CarbonTable carbonTable = store.getTable(table);
     Expression expression = Parser.parseFilter(request.getFilter(), carbonTable);
     SelectDescriptor selectDescriptor = new SelectDescriptor(
-        table, request.getProjection(), expression, request.getLimit());
+        table, request.getSelect(), expression, request.getLimit());
     List<CarbonRow> result = store.select(selectDescriptor);
     Iterator<CarbonRow> iterator = result.iterator();
     Object[][] output = new Object[result.size()][];
