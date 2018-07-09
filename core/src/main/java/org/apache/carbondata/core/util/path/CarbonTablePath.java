@@ -25,8 +25,6 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 
-import org.apache.hadoop.fs.Path;
-
 /**
  * Helps to get Table content paths.
  */
@@ -383,21 +381,6 @@ public class CarbonTablePath {
 
   public static String getStreamingCheckpointDir(String tablePath) {
     return tablePath + File.separator + STREAMING_DIR + File.separator + STREAMING_CHECKPOINT_DIR;
-  }
-
-  /**
-   * get the parent folder of old table path and returns the new tablePath by appending new
-   * tableName to the parent
-   *
-   * @param tablePath         Old tablePath
-   * @param newTableName      new table name
-   * @return the new table path
-   */
-  public static String getNewTablePath(
-      String tablePath,
-      String newTableName) {
-    Path parentPath = new Path(tablePath).getParent();
-    return parentPath.toString() + CarbonCommonConstants.FILE_SEPARATOR + newTableName;
   }
 
   /**
@@ -771,5 +754,16 @@ public class CarbonTablePath {
   public static String getTableStatusHistoryFilePath(String tablePath) {
     return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR
         + TABLE_STATUS_HISTORY_FILE;
+  }
+
+  public static String generateBadRecordsPath(String badLogStoreLocation, String segmentId,
+      String taskNo, boolean isTransactionalTable) {
+    if (!isTransactionalTable) {
+      return badLogStoreLocation + File.separator + "SdkWriterBadRecords"
+          + CarbonCommonConstants.FILE_SEPARATOR + taskNo;
+    } else {
+      return badLogStoreLocation + File.separator + segmentId + CarbonCommonConstants.FILE_SEPARATOR
+          + taskNo;
+    }
   }
 }

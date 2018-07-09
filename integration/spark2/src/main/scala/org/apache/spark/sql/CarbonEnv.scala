@@ -166,7 +166,7 @@ object CarbonEnv {
       .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
       .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
       .addListener(classOf[AlterTableDropColumnPreEvent], PreAggregateDropColumnPreListener)
-      .addListener(classOf[AlterTableRenamePreEvent], PreAggregateRenameTablePreListener)
+      .addListener(classOf[AlterTableRenamePreEvent], RenameTablePreListener)
       .addListener(classOf[AlterTableDataTypeChangePreEvent], PreAggregateDataTypeChangePreListener)
       .addListener(classOf[AlterTableAddColumnPreEvent], PreAggregateAddColumnsPreListener)
       .addListener(classOf[LoadTablePreExecutionEvent], LoadPreAggregateTablePreListener)
@@ -220,11 +220,9 @@ object CarbonEnv {
       identifier.database.getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase),
       identifier.table)
     if (carbonEnv.carbonMetastore
-          .checkSchemasModifiedTimeAndReloadTable(identifier)) {
+          .checkSchemasModifiedTimeAndReloadTable(identifier)  && table.isDefined) {
       sparkSession.sessionState.catalog.refreshTable(identifier)
-      val tablePath = CarbonProperties.getStorePath + File.separator + identifier.database
-        .getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase) +
-                      File.separator + identifier.table
+      val tablePath = table.get.getTablePath
       DataMapStoreManager.getInstance().
         clearDataMaps(AbsoluteTableIdentifier.from(tablePath,
           identifier.database.getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase),

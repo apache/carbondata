@@ -547,7 +547,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
       " a,sum(b) from PreAggMain group by a")
     assert(intercept[ProcessMetaDataException] {
       sql("alter table preAggmain_preagg1 rename to preagg2")
-    }.getMessage.contains("Rename operation for pre-aggregate table is not supported."))
+    }.getMessage.contains("Rename operation for datamaps is not supported."))
     assert(intercept[ProcessMetaDataException] {
       sql("alter table preaggmain rename to preaggmain_new")
     }.getMessage.contains("Rename operation is not supported for table with pre-aggregate tables"))

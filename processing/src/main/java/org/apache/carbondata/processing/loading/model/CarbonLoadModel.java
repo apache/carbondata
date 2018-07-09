@@ -50,6 +50,8 @@ public class CarbonLoadModel implements Serializable {
 
   private String tablePath;
 
+  private String parentTablePath;
+
   /*
      This points if the carbonTable is a Non Transactional Table or not.
      The path will be pointed by the tablePath. And there will be
@@ -230,6 +232,14 @@ public class CarbonLoadModel implements Serializable {
 
   public void setAggLoadRequest(boolean aggLoadRequest) {
     isAggLoadRequest = aggLoadRequest;
+  }
+
+  public String getParentTablePath() {
+    return parentTablePath;
+  }
+
+  public void setParentTablePath(String parentTablePath) {
+    this.parentTablePath = parentTablePath;
   }
 
   /**
@@ -459,6 +469,7 @@ public class CarbonLoadModel implements Serializable {
     copy.isLoadWithoutConverterStep = isLoadWithoutConverterStep;
     copy.sortColumnsBoundsStr = sortColumnsBoundsStr;
     copy.loadMinSize = loadMinSize;
+    copy.parentTablePath = parentTablePath;
     return copy;
   }
 
@@ -513,6 +524,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.isAggLoadRequest = isAggLoadRequest;
     copyObj.sortColumnsBoundsStr = sortColumnsBoundsStr;
     copyObj.loadMinSize = loadMinSize;
+    copyObj.parentTablePath = parentTablePath;
     return copyObj;
   }
 
