@@ -281,7 +281,7 @@ public class SegmentFileStore {
    * @throws IOException
    */
   public static boolean updateSegmentFile(String tablePath, String segmentId, String segmentFile,
-      String tableId) throws IOException {
+      String tableId, SegmentFileStore segmentFileStore) throws IOException {
     boolean status = false;
     String tableStatusPath = CarbonTablePath.getTableStatusFilePath(tablePath);
     if (!FileFactory.isFileExist(tableStatusPath)) {
@@ -308,6 +308,8 @@ public class SegmentFileStore {
           // if the segments is in the list of marked for delete then update the status.
           if (segmentId.equals(detail.getLoadName())) {
             detail.setSegmentFile(segmentFile);
+            detail.setIndexSize(String.valueOf(CarbonUtil
+                .getCarbonIndexSize(segmentFileStore, segmentFileStore.getLocationMap())));
             break;
           }
         }

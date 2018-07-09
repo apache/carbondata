@@ -520,7 +520,9 @@ object CarbonDataRDDFactory {
         carbonTable.getTablePath,
         carbonLoadModel.getSegmentId,
         segmentFileName,
-        carbonTable.getCarbonTableIdentifier.getTableId)
+        carbonTable.getCarbonTableIdentifier.getTableId,
+        new SegmentFileStore(carbonTable.getTablePath, segmentFileName))
+
       operationContext.setProperty(carbonTable.getTableUniqueName + "_Segment",
         carbonLoadModel.getSegmentId)
       val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
