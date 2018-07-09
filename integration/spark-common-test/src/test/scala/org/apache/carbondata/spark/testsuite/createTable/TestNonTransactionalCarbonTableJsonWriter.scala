@@ -32,7 +32,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.sdk.file._
-
 import scala.collection.JavaConverters._
 
 class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAndAfterAll {
@@ -94,7 +93,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
   private def writeCarbonFileFromJsonRowInput(jsonRow: String,
       carbonSchema: Schema) = {
     try {
-      var options: util.Map[String, String] = Map("bAd_RECords_action" -> "FAIL").asJava
+      var options: util.Map[String, String] = Map("bAd_RECords_action" -> "FAIL", "quotechar" -> "\"").asJava
       val writer = CarbonWriter.builder
         .outputPath(writerPath).isTransactionalTable(false)
         .uniqueIdentifier(System.currentTimeMillis())
@@ -138,7 +137,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkOutputTable"),
-      Seq(Row("ajantha",
+      Seq(Row("ajantha\"bhat\"",
         26,
         26,
         1234567,
@@ -266,21 +265,86 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
-
-    sql("select * from sdkOutputTable").show(false)
-    /*
-    * +--------------------------------------------------------------------+
-      |StructColumn                                                        |
-      +--------------------------------------------------------------------+
-      |[bob,10,12345678,123400.78,true,WrappedArray(1),WrappedArray(abc),  |
-      | WrappedArray(1234567),WrappedArray(1.0),WrappedArray(true)]        |
-      +--------------------------------------------------------------------+
-    * */
-
+    assert(sql("select * from sdkOutputTable").collectAsList().toString.equals(
+      "[[[bob,10,12345678,123400.78,true,WrappedArray(1, 2, 3, 4, 5, 6),WrappedArray(abc, def)," +
+      "WrappedArray(1234567, 2345678),WrappedArray(1.0, 2.0, 33.33),WrappedArray(true, false, " +
+      "false, true)]]]"))
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
     assert(new File(writerPath).listFiles().length > 0)
     FileUtils.deleteDirectory(new File(writerPath))
   }
 
+  // test : One element as null
+  test("Read sdk writer Json output of primitive type with one element as null") {
+    FileUtils.deleteDirectory(new File(writerPath))
+    var dataPath: String = null
+    dataPath = resourcesPath + "/jsonFiles/data/PrimitiveTypeWithNull.json"
+    val fields = new Array[Field](2)
+    fields(0) = new Field("stringField", DataTypes.STRING)
+    fields(1) = new Field("intField", DataTypes.INT)
+    val jsonRow = readFromFile(dataPath)
+    writeCarbonFileFromJsonRowInput(jsonRow, new Schema(fields))
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+    checkAnswer(sql("select * from sdkOutputTable"),
+      Seq(Row(null,
+        26)))
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).listFiles().length > 0)
+    FileUtils.deleteDirectory(new File(writerPath))
+  }
+
+  // test : Schema length is greater than array length
+  test("Read Json output of primitive type with Schema length is greater than array length") {
+    FileUtils.deleteDirectory(new File(writerPath))
+    var dataPath: String = null
+    dataPath = resourcesPath + "/jsonFiles/data/PrimitiveTypeWithNull.json"
+    val fields = new Array[Field](5)
+    fields(0) = new Field("stringField", DataTypes.STRING)
+    fields(1) = new Field("intField", DataTypes.INT)
+    fields(2) = new Field("shortField", DataTypes.SHORT)
+    fields(3) = new Field("longField", DataTypes.LONG)
+    fields(4) = new Field("doubleField", DataTypes.DOUBLE)
+    val jsonRow = readFromFile(dataPath)
+    writeCarbonFileFromJsonRowInput(jsonRow, new Schema(fields))
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+    checkAnswer(sql("select * from sdkOutputTable"),
+      Seq(Row(null, 26, null, null, null)))
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).listFiles().length > 0)
+    FileUtils.deleteDirectory(new File(writerPath))
+  }
+
+  // test : Schema length is lesser than array length
+  test("Read Json output of primitive type with Schema length is lesser than array length") {
+    FileUtils.deleteDirectory(new File(writerPath))
+    var dataPath: String = null
+    dataPath = resourcesPath + "/jsonFiles/data/allPrimitiveType.json"
+    val fields = new Array[Field](2)
+    fields(0) = new Field("stringField", DataTypes.STRING)
+    fields(1) = new Field("intField", DataTypes.INT)
+    val jsonRow = readFromFile(dataPath)
+    writeCarbonFileFromJsonRowInput(jsonRow, new Schema(fields))
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+    checkAnswer(sql("select * from sdkOutputTable"),
+      Seq(Row("ajantha\"bhat\"", 26)))
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).listFiles().length > 0)
+    FileUtils.deleteDirectory(new File(writerPath))
+  }
 }
