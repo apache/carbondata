@@ -139,7 +139,7 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
   }
 
-  ignore("test create bloom datamap and REBUILD DATAMAP") {
+  test("test create bloom datamap and REBUILD DATAMAP") {
     sql(
       s"""
          | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
@@ -181,7 +181,7 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
   }
 
-  ignore("test create bloom datamap with DEFERRED REBUILD, query hit datamap") {
+  test("test create bloom datamap with DEFERRED REBUILD, query hit datamap") {
     sql(
       s"""
          | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
@@ -259,7 +259,7 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
   }
 
-  ignore("test create bloom datamap with DEFERRED REBUILD, query not hit datamap") {
+  test("test create bloom datamap with DEFERRED REBUILD, query not hit datamap") {
     sql(
       s"""
          | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
