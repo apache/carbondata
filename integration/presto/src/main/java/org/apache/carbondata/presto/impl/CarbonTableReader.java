@@ -246,6 +246,7 @@ public class CarbonTableReader {
    * @return
    */
   private Set<String> updateTableList(String schemaName) {
+    updateCarbonFile();
     List<CarbonFile> schema =
         Stream.of(carbonFileList.listFiles()).filter(a -> schemaName.equals(a.getName()))
             .collect(Collectors.toList());
