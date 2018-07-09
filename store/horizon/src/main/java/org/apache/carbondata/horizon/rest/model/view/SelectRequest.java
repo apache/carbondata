@@ -17,25 +17,22 @@
 
 package org.apache.carbondata.horizon.rest.model.view;
 
-import org.apache.carbondata.horizon.rest.model.descriptor.SelectDescriptor;
-
-public class SelectRequest {
+public class SelectRequest extends Request {
 
   private String databaseName;
   private String tableName;
-  private String[] select;
+  private String[] selectColumns;
   private String filter;
   private int limit;
 
   public SelectRequest() {
-
   }
 
   public SelectRequest(String databaseName, String tableName, String[] select, String filter,
       int limit) {
     this.databaseName = databaseName;
     this.tableName = tableName;
-    this.select = select;
+    this.selectColumns = select;
     this.filter = filter;
     this.limit = limit;
   }
@@ -57,11 +54,11 @@ public class SelectRequest {
   }
 
   public String[] getSelect() {
-    return select;
+    return selectColumns;
   }
 
-  public void setSelect(String[] select) {
-    this.select = select;
+  public void setSelect(String[] selectColumns) {
+    this.selectColumns = selectColumns;
   }
 
   public String getFilter() {
@@ -78,11 +75,6 @@ public class SelectRequest {
 
   public void setLimit(int limit) {
     this.limit = limit;
-  }
-
-  public SelectDescriptor convertToDto() {
-    return new SelectDescriptor(
-        databaseName, tableName, select, filter, limit);
   }
 
   public static class Builder {

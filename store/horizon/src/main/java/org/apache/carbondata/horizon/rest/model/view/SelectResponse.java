@@ -17,26 +17,20 @@
 
 package org.apache.carbondata.horizon.rest.model.view;
 
-public class SelectResponse {
+public class SelectResponse extends Response {
 
-  private String selectId;
   private Object[][] rows;
 
   public SelectResponse() {
-
   }
 
-  public SelectResponse(String selectId, Object[][] rows) {
-    this.selectId = selectId;
+  public SelectResponse(SelectRequest request) {
+    super(request);
+  }
+
+  public SelectResponse(SelectRequest request, Object[][] rows) {
+    super(request);
     this.rows = rows;
-  }
-
-  public String getSelectId() {
-    return selectId;
-  }
-
-  public void setSelectId(String selectId) {
-    this.selectId = selectId;
   }
 
   public Object[][] getRows() {

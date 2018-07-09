@@ -27,10 +27,14 @@ public class Horizon {
   private static ConfigurableApplicationContext context;
 
   public static void main(String[] args) {
+    start(args);
+  }
+
+  public static void start(String[] args) {
     context = SpringApplication.run(Horizon.class, args);
   }
 
-  public static void close() {
+  public static void stop() {
     SpringApplication.exit(context);
   }
 }

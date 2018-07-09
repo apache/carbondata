@@ -28,11 +28,11 @@ import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableSchemaBuilder;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.horizon.rest.model.descriptor.TableDescriptor;
-import org.apache.carbondata.horizon.rest.service.HorizonService;
 import org.apache.carbondata.sdk.file.CarbonWriterBuilder;
 import org.apache.carbondata.sdk.file.Field;
 import org.apache.carbondata.horizon.rest.model.view.CreateTableRequest;
+import org.apache.carbondata.store.api.descriptor.TableDescriptor;
+import org.apache.carbondata.horizon.antlr.Parser;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -66,8 +66,10 @@ public class FilterParseTest {
 
     TableDescriptor tableDescriptor = createTableRequest.convertToDto();
 
-    TableSchemaBuilder builder = TableSchema.builder();
-    builder.tableName(tableDescriptor.getName()).properties(tableDescriptor.getProperties());
+    TableSchemaBuilder builder = TableSchema
+        .builder()
+        .tableName(tableDescriptor.getTable().getTableName())
+        .properties(tableDescriptor.getProperties());
 
     Field[] fields = tableDescriptor.getSchema().getFields();
     // sort_columns
@@ -82,12 +84,12 @@ public class FilterParseTest {
     SchemaEvolutionEntry schemaEvolutionEntry = new SchemaEvolutionEntry();
     schemaEvolutionEntry.setTimeStamp(System.currentTimeMillis());
     schema.getSchemaEvolution().getSchemaEvolutionEntryList().add(schemaEvolutionEntry);
-    schema.setTableName(tableDescriptor.getName());
+    schema.setTableName(tableDescriptor.getTable().getTableName());
 
     carbonTable = CarbonTable
         .builder()
-        .databaseName(tableDescriptor.getDatabase())
-        .tableName(tableDescriptor.getName())
+        .databaseName(tableDescriptor.getTable().getDatabaseName())
+        .tableName(tableDescriptor.getTable().getTableName())
         .tablePath("")
         .tableSchema(schema)
         .isTransactionalTable(true)
@@ -96,7 +98,7 @@ public class FilterParseTest {
 
 
   private void checkExpression(String sql1, String sql2) {
-    Expression expression = HorizonService.parseFilter(sql1, carbonTable);
+    Expression expression = Parser.parseFilter(sql1, carbonTable);
     Assert.assertEquals(sql2, expression.getStatement());
   }
 

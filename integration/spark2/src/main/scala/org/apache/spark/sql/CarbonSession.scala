@@ -17,6 +17,7 @@
 package org.apache.spark.sql
 
 import java.io.File
+import java.net.InetAddress
 import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.JavaConverters._
@@ -41,6 +42,11 @@ import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
 import org.apache.carbondata.store.SparkCarbonStore
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
+import org.apache.carbondata.store.WorkerManager
+import org.apache.carbondata.store.api.{CarbonStore, CarbonStoreFactory}
+import org.apache.carbondata.store.api.conf.StoreConf
+import org.apache.carbondata.store.api.descriptor.{SelectDescriptor, TableIdentifier => CTableIdentifier}
 import org.apache.carbondata.streaming.CarbonStreamingQueryListener
 
 /**
@@ -119,7 +125,7 @@ class CarbonSession(@transient val sc: SparkContext,
     message(0).getString(0).contains(dataMapName)
   }
 
-  def isSearchModeEnabled: Boolean = carbonStore != null
+  def isSearchModeEnabled: Boolean = store != null
 
   /**
    * Run SparkSQL directly
@@ -191,24 +197,34 @@ class CarbonSession(@transient val sc: SparkContext,
     }
   }
 
-  @transient private var carbonStore: SparkCarbonStore = _
+  // variable that used in search mode
+  @transient private var store: CarbonStore = _
 
   def startSearchMode(): Unit = {
-    CarbonProperties.enableSearchMode(true)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
-    if (carbonStore == null) {
-      carbonStore = new SparkCarbonStore(this)
-      carbonStore.startSearchMode()
+    if (store == null) {
+      val storeConf = new StoreConf()
+      storeConf.conf(StoreConf.STORE_LOCATION, CarbonProperties.getStorePath)
+      storeConf.conf(StoreConf.MASTER_HOST, InetAddress.getLocalHost.getHostAddress)
+      storeConf.conf(StoreConf.MASTER_PORT, CarbonProperties.getSearchMasterPort)
+      storeConf.conf(StoreConf.WORKER_HOST, InetAddress.getLocalHost.getHostAddress)
+      storeConf.conf(StoreConf.WORKER_PORT, CarbonProperties.getSearchWorkerPort)
+      storeConf.conf(StoreConf.WORKER_CORE_NUM, 2)
+
+      store = CarbonStoreFactory.getDistributedStore("GlobalStore", storeConf)
+      CarbonProperties.enableSearchMode(true)
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
+      WorkerManager.startAllWorker(this, storeConf)
     }
   }
 
   def stopSearchMode(): Unit = {
-    CarbonProperties.enableSearchMode(false)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "true")
-    if (carbonStore != null) {
+    if (store != null) {
+      CarbonProperties.enableSearchMode(false)
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "true")
       try {
-        carbonStore.stopSearchMode()
-        carbonStore = null
+        CarbonStoreFactory.removeDistributedStore("GlobalStore")
+        store = null
       } catch {
         case e: RuntimeException =>
           LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -225,16 +241,21 @@ class CarbonSession(@transient val sc: SparkContext,
       relation: LogicalRelation,
       maxRows: Option[Long] = None,
       localMaxRows: Option[Long] = None): DataFrame = {
-    val rows = carbonStore.search(
-        relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable,
-        columns.map(_.name).toArray,
-        if (expr != null) CarbonFilters.transformExpression(expr) else null,
-        maxRows.getOrElse(Long.MaxValue),
-        localMaxRows.getOrElse(Long.MaxValue))
+    val table = relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
+    val select = new SelectDescriptor(
+      new CTableIdentifier(table.getTableName, table.getDatabaseName),
+      columns.map(_.name).toArray,
+      if (expr != null) CarbonFilters.transformExpression(expr) else null,
+      localMaxRows.getOrElse(Long.MaxValue)
+    )
+    val rows = store.select(select).iterator()
     val output = new java.util.ArrayList[Row]()
-    while (rows.hasNext) {
+    val maxRowCount = maxRows.getOrElse(Long.MaxValue)
+    var rowCount = 0
+    while (rows.hasNext && rowCount < maxRowCount) {
       val row = rows.next()
       output.add(Row.fromSeq(row.getData))
+      rowCount = rowCount + 1
     }
     createDataFrame(output, logicalPlan.schema)
   }
