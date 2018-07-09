@@ -34,7 +34,9 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -43,6 +45,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
+import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
@@ -172,6 +175,8 @@ public class CarbonFactDataHandlerModel {
 
   private int numberOfCores;
 
+  private List<Integer> varcharDimIdxInNoDict;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    */
@@ -214,6 +219,19 @@ public class CarbonFactDataHandlerModel {
     for (int i = 0; i < simpleDimsCount; i++) {
       simpleDimsLen[i] = dimLens[i];
     }
+
+    // for dynamic page size in write step if varchar columns exist
+    List<Integer> varcharDimIdxInNoDict = new ArrayList<>();
+    int dictDimCount = configuration.getDimensionCount() - configuration.getNoDictionaryCount();
+    for (DataField dataField : configuration.getDataFields()) {
+      CarbonColumn column = dataField.getColumn();
+      if (!column.isComplex() && !dataField.hasDictionaryEncoding() &&
+              column.getDataType() == DataTypes.VARCHAR) {
+        // ordinal is set in CarbonTable.fillDimensionsAndMeasuresForTables()
+        varcharDimIdxInNoDict.add(column.getOrdinal() - dictDimCount);
+      }
+    }
+
     //To Set MDKey Index of each primitive type in complex type
     int surrIndex = simpleDimsCount;
     Iterator<Map.Entry<String, GenericDataType>> complexMap =
@@ -280,6 +298,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
     carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
     setNumberOfCores(carbonFactDataHandlerModel);
+    carbonFactDataHandlerModel.setVarcharDimIdxInNoDict(varcharDimIdxInNoDict);
     return carbonFactDataHandlerModel;
   }
 
@@ -654,5 +673,14 @@ public class CarbonFactDataHandlerModel {
   public int getNumberOfCores() {
     return numberOfCores;
   }
+
+  public void setVarcharDimIdxInNoDict(List<Integer> varcharDimIdxInNoDict) {
+    this.varcharDimIdxInNoDict = varcharDimIdxInNoDict;
+  }
+
+  public List<Integer> getVarcharDimIdxInNoDict() {
+    return varcharDimIdxInNoDict;
+  }
+
 }
 

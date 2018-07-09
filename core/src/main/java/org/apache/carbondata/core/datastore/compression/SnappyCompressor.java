@@ -31,6 +31,9 @@ public class SnappyCompressor implements Compressor {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(SnappyCompressor.class.getName());
 
+  // snappy estimate max compressed length as 32 + source_len + source_len/6
+  public static final int MAX_BYTE_TO_COMPRESS = (int)((Integer.MAX_VALUE - 32) / 7.0 * 6);
+
   private final SnappyNative snappyNative;
 
   public SnappyCompressor() {
