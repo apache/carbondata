@@ -46,6 +46,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -59,6 +60,11 @@ public class HorizonController {
   public HorizonController() throws StoreException {
     String storeFile = System.getProperty("carbonstore.conf.file");
     store = CarbonStoreFactory.getDistributedStore("GlobalStore", new StoreConf(storeFile));
+  }
+
+  @RequestMapping(value = "echo")
+  public ResponseEntity<String> echo(@RequestParam(name = "name") String name) {
+    return new ResponseEntity<>(String.valueOf("Hello " + name), HttpStatus.OK);
   }
 
   @RequestMapping(value = "/table/create", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -110,7 +116,8 @@ public class HorizonController {
         request.getDatabaseName() + "." + request.getTableName() +
         ", take time: " + (end - start) + " ms");
 
-    return new ResponseEntity<>(new SelectResponse(request, output), HttpStatus.OK);
+    return new ResponseEntity<>(
+        new SelectResponse(request, "SUCCESS", output), HttpStatus.OK);
   }
 
 }

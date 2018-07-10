@@ -17,23 +17,17 @@
 
 package org.apache.carbondata.horizon.rest.model.view;
 
-public class Response {
-  private long responseId;
-  private String message;
+public class SqlRequest extends Request {
+  private String sqlStatement;
 
-  public Response() {
+  public SqlRequest() {
   }
 
-  Response(Request request, String message) {
-    this.responseId = request.getRequestId();
-    this.message = message;
+  public SqlRequest(String sqlStatement) {
+    this.sqlStatement = sqlStatement;
   }
 
-  public long getResponseId() {
-    return responseId;
-  }
-
-  public String getMessage() {
-    return message;
+  public String getSqlStatement() {
+    return sqlStatement;
   }
 }

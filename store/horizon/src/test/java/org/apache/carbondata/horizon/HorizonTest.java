@@ -55,7 +55,7 @@ public class HorizonTest {
     projectFolder = new File(HorizonTest.class.getResource("/").getPath() +
         "../../../../").getCanonicalPath();
     String log4jFile = projectFolder + "/store/conf/log4j.properties";
-    String confFile = projectFolder + "/store/conf/store.conf";
+    final String confFile = projectFolder + "/store/conf/store.conf";
 
     System.setProperty("log.path", projectFolder + "/store/core/target/master_worker.log");
     System.setProperty("carbonstore.conf.file", confFile);
@@ -68,7 +68,7 @@ public class HorizonTest {
 
     new Thread() {
       public void run() {
-        Horizon.start(new String[0]);
+        Horizon.start(confFile);
       }
     }.start();
     Thread.sleep(10000);

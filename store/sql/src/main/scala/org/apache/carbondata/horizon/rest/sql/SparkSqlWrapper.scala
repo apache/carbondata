@@ -15,25 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.horizon.rest.model.view;
+package org.apache.carbondata.horizon.rest.sql
 
-public class Response {
-  private long responseId;
-  private String message;
+import org.apache.spark.sql.{AnalysisException, DataFrame, SparkSession}
 
-  public Response() {
+/**
+ * We need to catch the exceptions that spark throws.
+ * But native spark does not annotate the exception explicitly, so we need to add
+ * this class.
+ */
+object SparkSqlWrapper {
+
+  @throws[AnalysisException]
+  def sql(session: SparkSession, sqlStatement: String): DataFrame = {
+    session.sql(sqlStatement)
   }
 
-  Response(Request request, String message) {
-    this.responseId = request.getRequestId();
-    this.message = message;
-  }
-
-  public long getResponseId() {
-    return responseId;
-  }
-
-  public String getMessage() {
-    return message;
-  }
 }
