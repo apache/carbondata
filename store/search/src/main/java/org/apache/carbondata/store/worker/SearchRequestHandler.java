@@ -191,7 +191,7 @@ public class SearchRequestHandler {
 
     HashMap<String, ExtendedBlocklet> pathToRead = new HashMap<>();
     for (ExtendedBlocklet prunedBlocklet : prunnedBlocklets) {
-      pathToRead.put(prunedBlocklet.getFilePath(), prunedBlocklet);
+      pathToRead.put(prunedBlocklet.getFilePath().replace('\\', '/'), prunedBlocklet);
     }
 
     List<TableBlockInfo> blocks = queryModel.getTableBlockInfos();
