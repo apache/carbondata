@@ -34,6 +34,7 @@ import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.processing.store.TablePage;
@@ -48,6 +49,12 @@ public class DataMapWriterListener {
 
   // list indexed column -> list of data map writer
   private Map<List<CarbonColumn>, List<DataMapWriter>> registry = new ConcurrentHashMap<>();
+  // table for this listener
+  private CarbonTableIdentifier tblIdentifier;
+
+  public CarbonTableIdentifier getTblIdentifier() {
+    return tblIdentifier;
+  }
 
   /**
    * register all datamap writer for specified table and segment
@@ -62,6 +69,7 @@ public class DataMapWriterListener {
       throw new RuntimeException(e);
     }
     if (tableIndices != null) {
+      tblIdentifier = carbonTable.getCarbonTableIdentifier();
       for (TableDataMap tableDataMap : tableIndices) {
         // register it only if it is not lazy datamap, for lazy datamap, user
         // will rebuild the datamap manually
