@@ -176,7 +176,8 @@ class CarbonHiveSessionCatalog(
       refreshTable(identifier)
       DataMapStoreManager.getInstance().
         clearDataMaps(AbsoluteTableIdentifier.from(storePath,
-          identifier.database.getOrElse("default"), identifier.table))
+          identifier.database.getOrElse("default"),
+          identifier.table))
       isRefreshed = true
       logInfo(s"Schema changes have been detected for table: $identifier")
     }
