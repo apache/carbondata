@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.horizon.rest.client.HorizonClient;
 import org.apache.carbondata.horizon.rest.model.view.CreateTableRequest;
@@ -34,10 +36,15 @@ import org.apache.carbondata.store.api.exception.StoreException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+/**
+ * REST Client implementation for Horizon service
+ */
+@InterfaceAudience.User
+@InterfaceStability.Unstable
 public class SimpleHorizonClient implements HorizonClient {
 
-  private RestTemplate restTemplate;
-  private String serviceUri;
+  protected RestTemplate restTemplate;
+  protected String serviceUri;
 
   public SimpleHorizonClient(String serviceUri) {
     this.serviceUri = serviceUri;

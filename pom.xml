@@ -587,6 +587,7 @@
       <id>horizon</id>
       <modules>
         <module>store/horizon</module>
+        <module>store/sql</module>
       </modules>
     </profile>
     <profile>

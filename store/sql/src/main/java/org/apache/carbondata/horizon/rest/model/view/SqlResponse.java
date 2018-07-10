@@ -17,23 +17,23 @@
 
 package org.apache.carbondata.horizon.rest.model.view;
 
-public class Response {
-  private long responseId;
-  private String message;
+public class SqlResponse extends Response {
 
-  public Response() {
+  private Object[][] rows;
+
+  public SqlResponse() {
   }
 
-  Response(Request request, String message) {
-    this.responseId = request.getRequestId();
-    this.message = message;
+  public SqlResponse(Request request, String message, Object[][] rows) {
+    super(request, message);
+    this.rows = rows;
   }
 
-  public long getResponseId() {
-    return responseId;
+  public Object[][] getRows() {
+    return rows;
   }
 
-  public String getMessage() {
-    return message;
+  public void setRows(Object[][] rows) {
+    this.rows = rows;
   }
 }
