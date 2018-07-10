@@ -208,6 +208,14 @@ public final class TableDataMap extends OperationEventListener {
   }
 
   /**
+   * delete only the datamaps of the segments
+   */
+  public void deleteDatamapData(List<Segment> segments) {
+    for (Segment segment: segments) {
+      dataMapFactory.deleteDatamapData(segment);
+    }
+  }
+  /**
    * delete datamap data if any
    */
   public void deleteDatamapData() {

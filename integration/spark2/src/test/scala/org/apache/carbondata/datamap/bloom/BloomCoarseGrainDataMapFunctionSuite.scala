@@ -2,12 +2,16 @@ package org.apache.carbondata.datamap.bloom
 
 import java.io.File
 
+import org.apache.commons.io.FileUtils
+import org.apache.spark.sql.CarbonEnv
+import org.apache.spark.sql.test.Spark2TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.datamap.bloom.BloomCoarseGrainDataMapTestUtil.deleteFile
 import org.apache.carbondata.datamap.bloom.BloomCoarseGrainDataMapTestUtil.createFile
 import org.apache.carbondata.datamap.bloom.BloomCoarseGrainDataMapTestUtil.checkBasicQuery
@@ -757,6 +761,33 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
       sql(s"SELECT * FROM $normalTable WHERE isNull(c1)"))
     checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE isNull(c2)"),
       sql(s"SELECT * FROM $normalTable WHERE isNull(c2)"))
+  }
+
+  test("test bloom datamap: deleting & clearning segment will clear datamap files") {
+    sql(s"CREATE TABLE $bloomDMSampleTable(c1 string, c2 int, c3 string) STORED BY 'carbondata'")
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName on table $bloomDMSampleTable
+         | using 'bloomfilter'
+         | DMPROPERTIES('index_columns'='c1, c2')
+       """.stripMargin)
+    sql(s"INSERT INTO $bloomDMSampleTable SELECT 'c1v1', 1, 'c3v1'")
+    sql(s"INSERT INTO $bloomDMSampleTable SELECT 'c1v2', 2, 'c3v2'")
+
+    // two segments both has datamap files
+    val carbonTable = CarbonEnv.getCarbonTable(Option("default"), bloomDMSampleTable)(Spark2TestQueryExecutor.spark)
+    import scala.collection.JavaConverters._
+    (0 to 1).foreach { segId =>
+      val datamapPath = CarbonTablePath.getDataMapStorePath(carbonTable.getTablePath, segId.toString, dataMapName)
+      assert(FileUtils.listFiles(FileUtils.getFile(datamapPath), Array("bloomindex"), true).asScala.nonEmpty)
+    }
+    // delete and clean the first segment, the corresponding datamap files should be cleaned too
+    sql(s"DELETE FROM TABLE $bloomDMSampleTable WHERE SEGMENT.ID IN (0)")
+    sql(s"CLEAN FILES FOR TABLE $bloomDMSampleTable")
+    var datamapPath = CarbonTablePath.getDataMapStorePath(carbonTable.getTablePath, "0", dataMapName)
+    assert(!FileUtils.getFile(datamapPath).exists(), "index file of this segment has been deleted, should not exist")
+    datamapPath = CarbonTablePath.getDataMapStorePath(carbonTable.getTablePath, "1", dataMapName)
+    assert(FileUtils.listFiles(FileUtils.getFile(datamapPath), Array("bloomindex"), true).asScala.nonEmpty)
   }
 
   override def afterAll(): Unit = {

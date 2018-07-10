@@ -111,6 +111,11 @@ public abstract class DataMapFactory<T extends DataMap> {
   public abstract DataMapLevel getDataMapLevel();
 
   /**
+   * delete datamap data in the specified segment
+   */
+  public abstract void deleteDatamapData(Segment segment);
+
+  /**
    * delete datamap data if any
    */
   public abstract void deleteDatamapData();
