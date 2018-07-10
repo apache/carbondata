@@ -50,9 +50,15 @@ public class StoreConf implements Serializable, Writable {
   public static final String STORE_LOCATION = "carbon.store.location";
   public static final String STORE_NAME = "carbon.store.name";
 
+  public static final String STORE_CONF_FILE = "carbon.store.confFile";
+
   private Map<String, String> conf = new HashMap<>();
 
   public StoreConf() {
+    String storeConfFile = System.getProperty(STORE_CONF_FILE);
+    if (storeConfFile != null) {
+      load(storeConfFile);
+    }
   }
 
   public StoreConf(String storeName, String storeLocation) {

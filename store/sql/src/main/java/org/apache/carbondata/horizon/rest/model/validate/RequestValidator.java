@@ -15,25 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.horizon.rest.model.view;
+package org.apache.carbondata.horizon.rest.model.validate;
 
-public class Response {
-  private long responseId;
-  private String message;
+import org.apache.carbondata.horizon.rest.model.view.SqlRequest;
+import org.apache.carbondata.store.api.exception.StoreException;
 
-  public Response() {
-  }
+import org.apache.commons.lang.StringUtils;
 
-  Response(Request request, String message) {
-    this.responseId = request.getRequestId();
-    this.message = message;
-  }
+public class RequestValidator {
 
-  public long getResponseId() {
-    return responseId;
-  }
-
-  public String getMessage() {
-    return message;
+  public static void validateSql(SqlRequest request) throws StoreException {
+    if (request == null) {
+      throw new StoreException("Select should not be null");
+    }
+    if (StringUtils.isEmpty(request.getSqlStatement())) {
+      throw new StoreException("sql statement is invalid");
+    }
   }
 }

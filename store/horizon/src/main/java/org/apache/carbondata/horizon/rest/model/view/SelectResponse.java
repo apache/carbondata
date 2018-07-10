@@ -24,12 +24,8 @@ public class SelectResponse extends Response {
   public SelectResponse() {
   }
 
-  public SelectResponse(SelectRequest request) {
-    super(request);
-  }
-
-  public SelectResponse(SelectRequest request, Object[][] rows) {
-    super(request);
+  public SelectResponse(SelectRequest request, String message, Object[][] rows) {
+    super(request, message);
     this.rows = rows;
   }
 

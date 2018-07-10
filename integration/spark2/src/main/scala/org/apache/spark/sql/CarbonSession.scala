@@ -265,14 +265,14 @@ object CarbonSession {
 
   private val statementId = new AtomicLong(0)
 
-  private var enableInMemCatlog: Boolean = false
+  private var enableInMemCatalog: Boolean = false
 
   private[sql] val threadStatementId = new ThreadLocal[Long]()
 
   implicit class CarbonBuilder(builder: Builder) {
 
     def enableInMemoryCatalog(): Builder = {
-      enableInMemCatlog = true
+      enableInMemCatalog = true
       builder
     }
     def getOrCreateCarbonSession(): SparkSession = {
@@ -287,106 +287,7 @@ object CarbonSession {
 
     def getOrCreateCarbonSession(storePath: String,
         metaStorePath: String): SparkSession = synchronized {
-      if (!enableInMemCatlog) {
-        builder.enableHiveSupport()
-      }
-      val options =
-        getValue("options", builder).asInstanceOf[scala.collection.mutable.HashMap[String, String]]
-      val userSuppliedContext: Option[SparkContext] =
-        getValue("userSuppliedContext", builder).asInstanceOf[Option[SparkContext]]
-
-      if (metaStorePath != null) {
-        val hadoopConf = new Configuration()
-        val configFile = Utils.getContextOrSparkClassLoader.getResource("hive-site.xml")
-        if (configFile != null) {
-          hadoopConf.addResource(configFile)
-        }
-        if (options.get(CarbonCommonConstants.HIVE_CONNECTION_URL).isEmpty &&
-            hadoopConf.get(CarbonCommonConstants.HIVE_CONNECTION_URL) == null) {
-          val metaStorePathAbsolute = new File(metaStorePath).getCanonicalPath
-          val hiveMetaStoreDB = metaStorePathAbsolute + "/metastore_db"
-          options ++= Map[String, String]((CarbonCommonConstants.HIVE_CONNECTION_URL,
-            s"jdbc:derby:;databaseName=$hiveMetaStoreDB;create=true"))
-        }
-      }
-
-      // Get the session from current thread's active session.
-      var session: SparkSession = SparkSession.getActiveSession match {
-        case Some(sparkSession: CarbonSession) =>
-          if ((sparkSession ne null) && !sparkSession.sparkContext.isStopped) {
-            options.foreach { case (k, v) => sparkSession.sessionState.conf.setConfString(k, v) }
-            sparkSession
-          } else {
-            null
-          }
-        case _ => null
-      }
-      if (session ne null) {
-        return session
-      }
-
-      // Global synchronization so we will only set the default session once.
-      SparkSession.synchronized {
-        // If the current thread does not have an active session, get it from the global session.
-        session = SparkSession.getDefaultSession match {
-          case Some(sparkSession: CarbonSession) =>
-            if ((sparkSession ne null) && !sparkSession.sparkContext.isStopped) {
-              options.foreach { case (k, v) => sparkSession.sessionState.conf.setConfString(k, v) }
-              sparkSession
-            } else {
-              null
-            }
-          case _ => null
-        }
-        if (session ne null) {
-          return session
-        }
-
-        // No active nor global default session. Create a new one.
-        val sparkContext = userSuppliedContext.getOrElse {
-          // set app name if not given
-          val randomAppName = java.util.UUID.randomUUID().toString
-          val sparkConf = new SparkConf()
-          options.foreach { case (k, v) => sparkConf.set(k, v) }
-          if (!sparkConf.contains("spark.app.name")) {
-            sparkConf.setAppName(randomAppName)
-          }
-          val sc = SparkContext.getOrCreate(sparkConf)
-          // maybe this is an existing SparkContext, update its SparkConf which maybe used
-          // by SparkSession
-          options.foreach { case (k, v) => sc.conf.set(k, v) }
-          if (!sc.conf.contains("spark.app.name")) {
-            sc.conf.setAppName(randomAppName)
-          }
-          sc
-        }
-
-        session = new CarbonSession(sparkContext, None, !enableInMemCatlog)
-        val carbonProperties = CarbonProperties.getInstance()
-        if (storePath != null) {
-          carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
-          // In case if it is in carbon.properties for backward compatible
-        } else if (carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION) == null) {
-          carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION,
-            session.sessionState.conf.warehousePath)
-        }
-        options.foreach { case (k, v) => session.sessionState.conf.setConfString(k, v) }
-        SparkSession.setDefaultSession(session)
-        // Setup monitor end point and register CarbonMonitorListener
-        Profiler.initialize(sparkContext)
-        // Register a successfully instantiated context to the singleton. This should be at the
-        // end of the class definition so that the singleton is updated only if there is no
-        // exception in the construction of the instance.
-        sparkContext.addSparkListener(new SparkListener {
-          override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
-            SparkSession.setDefaultSession(null)
-            SparkSession.sqlListener.set(null)
-          }
-        })
-        session.streams.addListener(new CarbonStreamingQueryListener(session))
-      }
-
-      session
+      new CarbonSessionBuilder(builder).build(storePath, metaStorePath, enableInMemCatalog)
     }
 
     /**
