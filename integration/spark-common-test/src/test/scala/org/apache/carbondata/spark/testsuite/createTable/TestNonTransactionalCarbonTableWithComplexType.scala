@@ -62,7 +62,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
   private def WriteFilesWithAvroWriter(rows: Int, mySchema: String, json: String, isLocalDictionary: Boolean): Unit = {
     // conversion to GenericData.Record
     val nn = new avro.Schema.Parser().parse(mySchema)
-    val record = avroUtil.jsonToAvro(json, mySchema)
+    val record = testUtil.jsonToAvro(json, mySchema)
     try {
       val writer = if (isLocalDictionary) {
         CarbonWriter.builder
@@ -214,7 +214,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
       s"""CREATE EXTERNAL TABLE localComplex STORED BY 'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
     assert(FileFactory.getCarbonFile(writerPath).exists())
-    assert(avroUtil.checkForLocalDictionary(avroUtil.getDimRawChunk(0,writerPath)))
+    assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
     sql("describe formatted localComplex").show(30, false)
     val descLoc = sql("describe formatted localComplex").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
@@ -272,7 +272,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
         |}
       """.stripMargin
     val pschema= org.apache.avro.Schema.parse(mySchema)
-    val records = avroUtil.jsonToAvro(jsonvalue, mySchema)
+    val records = testUtil.jsonToAvro(jsonvalue, mySchema)
     val writer=CarbonWriter.builder().outputPath(writerPath).buildWriterForAvroInput(pschema)
     writer.write(records)
     writer.close()

@@ -287,7 +287,7 @@ public class CarbonWriterBuilder {
   }
 
   /**
-   * @param localDictionaryThreshold is localDictionaryThreshold,default is 1000
+   * @param localDictionaryThreshold is localDictionaryThreshold,default is 10000
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder localDictionaryThreshold(int localDictionaryThreshold) {

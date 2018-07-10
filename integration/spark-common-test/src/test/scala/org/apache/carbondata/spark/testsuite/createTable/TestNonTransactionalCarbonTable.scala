@@ -1053,7 +1053,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       json: String) = {
     // conversion to GenericData.Record
     val nn = new avro.Schema.Parser().parse(mySchema)
-    val record = avroUtil.jsonToAvro(json, mySchema)
+    val record = testUtil.jsonToAvro(json, mySchema)
     try {
       val writer = CarbonWriter.builder
         .outputPath(writerPath).isTransactionalTable(false)
@@ -2027,7 +2027,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       """{"id": 101,"course_details": { "course_struct_course_time":"2014-01-05"  }}""".stripMargin
 
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
-    val record = avroUtil.jsonToAvro(json1, schema1)
+    val record = testUtil.jsonToAvro(json1, schema1)
 
     assert(intercept[RuntimeException] {
       val writer = CarbonWriter.builder.sortBy(Array("name", "id"))
@@ -2068,7 +2068,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       """{"id": null,"course_details": { "course_struct_course_time":"2014-01-05"  }}""".stripMargin
 
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
-    val record = avroUtil.jsonToAvro(json1, schema1)
+    val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
       .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
@@ -2106,7 +2106,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val json1 =
       """{"id": 101,"course_details": { "course_struct_course_time":"2014-01-05 00:00:00"  }}""".stripMargin
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
-    val record = avroUtil.jsonToAvro(json1, schema1)
+    val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder.sortBy(Array("id"))
       .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
@@ -2150,7 +2150,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       """{"id": 101, "entries": [ {"id":1234}, {"id":3212}  ]}""".stripMargin
 
     val nn = new org.apache.avro.Schema.Parser().parse(schema)
-    val record = avroUtil.jsonToAvro(json1, schema)
+    val record = testUtil.jsonToAvro(json1, schema)
 
     val writer = CarbonWriter.builder
       .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
@@ -2190,7 +2190,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val json1 =
       """{"id": 101, "course_details": { "course_struct_course_time":10}}""".stripMargin
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
-    val record = avroUtil.jsonToAvro(json1, schema1)
+    val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
       .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
@@ -2236,7 +2236,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       """{"id": 172800000,"course_details": { "course_struct_course_time":172800000}}""".stripMargin
 
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
-    val record = avroUtil.jsonToAvro(json1, schema1)
+    val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
       .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
@@ -2282,7 +2282,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       """{"id": 172800000000,"course_details": { "course_struct_course_time":172800000000}}""".stripMargin
 
     val nn = new org.apache.avro.Schema.Parser().parse(schema1)
-    val record = avroUtil.jsonToAvro(json1, schema1)
+    val record = testUtil.jsonToAvro(json1, schema1)
 
 
     val writer = CarbonWriter.builder
@@ -2303,7 +2303,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath)
     generateCarbonData(builder)
     assert(FileFactory.getCarbonFile(writerPath).exists())
-    assert(avroUtil.checkForLocalDictionary(avroUtil.getDimRawChunk(0,writerPath)))
+    assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
     sql("DROP TABLE IF EXISTS sdkTable")
     sql(
       s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION
@@ -2329,7 +2329,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath)
     generateCarbonData(builder)
     assert(FileFactory.getCarbonFile(writerPath).exists())
-    assert(avroUtil.checkForLocalDictionary(avroUtil.getDimRawChunk(0,writerPath)))
+    assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
     sql("DROP TABLE IF EXISTS sdkTable")
     sql(
       s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION
@@ -2355,7 +2355,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath)
     generateCarbonData(builder)
     assert(FileFactory.getCarbonFile(writerPath).exists())
-    assert(!avroUtil.checkForLocalDictionary(avroUtil.getDimRawChunk(0,writerPath)))
+    assert(!testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
     sql("DROP TABLE IF EXISTS sdkTable")
     sql(
       s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION
@@ -2381,7 +2381,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath)
     generateCarbonData(builder)
     assert(FileFactory.getCarbonFile(writerPath).exists())
-    assert(avroUtil.checkForLocalDictionary(avroUtil.getDimRawChunk(0,writerPath)))
+    assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
     sql("DROP TABLE IF EXISTS sdkTable")
     sql(
       s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION
@@ -2389,7 +2389,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     FileUtils.deleteDirectory(new File(writerPath))
     sql("insert into sdkTable select 's1','s2',23 ")
     assert(FileFactory.getCarbonFile(writerPath).exists())
-    assert(avroUtil.checkForLocalDictionary(avroUtil.getDimRawChunk(0,writerPath)))
+    assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
     val descLoc = sql("describe formatted sdkTable").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
@@ -2424,7 +2424,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 }
 
 
-object avroUtil{
+object testUtil{
 
   def jsonToAvro(json: String, avroSchema: String): GenericRecord = {
     var input: InputStream = null
