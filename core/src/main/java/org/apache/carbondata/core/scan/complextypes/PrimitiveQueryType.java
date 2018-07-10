@@ -63,7 +63,7 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     this.name = name;
     this.parentname = parentname;
     this.isDirectDictionary = isDirectDictionary;
-    this.isDictionary = (dictionary != null && isDirectDictionary == false);
+    this.isDictionary = (dictionary != null && !isDirectDictionary);
     this.directDictGenForDate =
         DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.DATE);
   }

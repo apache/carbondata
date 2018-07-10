@@ -29,11 +29,17 @@ import org.apache.carbondata.core.memory.CarbonUnsafe;
  */
 public final class ByteUtil {
 
-  public static final int SIZEOF_LONG = 8;
+  public static final int SIZEOF_BYTE = 1;
+
+  public static final int SIZEOF_SHORT = 2;
+
+  public static final int SIZEOF_SHORT_INT = 3;
 
   public static final int SIZEOF_INT = 4;
 
-  public static final int SIZEOF_SHORT = 2;
+  public static final int SIZEOF_LONG = 8;
+
+  public static final int SIZEOF_DOUBLE = 8;
 
   public static final String UTF8_CSN = StandardCharsets.UTF_8.name();
 
