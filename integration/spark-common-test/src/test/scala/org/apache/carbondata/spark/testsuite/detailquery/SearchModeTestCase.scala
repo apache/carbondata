@@ -148,7 +148,7 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP DATAMAP if exists dm3 ON TABLE main")
   }
 
-  test("start search mode twice") {
+  ignore("start search mode twice") {
     sqlContext.sparkSession.asInstanceOf[CarbonSession].startSearchMode()
     assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
     checkSearchAnswer("select id from main where id = '3' limit 10")
