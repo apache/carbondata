@@ -25,6 +25,7 @@ import scala.util.Try
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
+import org.apache.spark.sql.events.MergeIndexEventListener
 import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
 import org.apache.spark.sql.hive._
@@ -39,7 +40,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util._
 import org.apache.carbondata.datamap.{TextMatchMaxDocUDF, TextMatchUDF}
 import org.apache.carbondata.events._
-import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
@@ -151,7 +152,6 @@ object CarbonEnv {
    */
   def init(sparkSession: SparkSession): Unit = {
     initListeners
-    registerCommonListener(sparkSession)
   }
 
   /**
@@ -181,14 +181,9 @@ object CarbonEnv {
       .addListener(classOf[AlterTableDropPartitionPostStatusEvent],
         AlterTableDropPartitionPostStatusListener)
       .addListener(classOf[AlterTableDropPartitionMetaEvent], AlterTableDropPartitionMetaListener)
-  }
-
-  def registerCommonListener(sparkSession: SparkSession): Unit = {
-    val clsName = Try(sparkSession.sparkContext.conf
-      .get(CarbonCommonConstants.CARBON_COMMON_LISTENER_REGISTER_CLASSNAME)).toOption.getOrElse("")
-    if (null != clsName && !clsName.isEmpty) {
-      CarbonReflectionUtils.createObject(clsName)
-    }
+      .addListener(classOf[LoadTablePostExecutionEvent], new MergeIndexEventListener)
+      .addListener(classOf[AlterTableCompactionPostEvent], new MergeIndexEventListener)
+      .addListener(classOf[AlterTableMergeIndexEvent], new MergeIndexEventListener)
   }
 
   /**

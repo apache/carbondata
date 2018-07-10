@@ -106,11 +106,13 @@ public class BlockletDataMapIndexStore
                 new TableBlockIndexUniqueIdentifierWrapper(blockIndexUniqueIdentifier,
                     identifierWrapper.getCarbonTable()), indexFileStore, filesRead,
                 carbonDataFileBlockMetaInfoMapping);
-            BlockDataMap blockletDataMap =
-                loadAndGetDataMap(blockIndexUniqueIdentifier, indexFileStore, blockMetaInfoMap,
-                    identifierWrapper.getCarbonTable(),
-                    identifierWrapper.isAddTableBlockToUnsafe());
-            dataMaps.add(blockletDataMap);
+            if (!blockMetaInfoMap.isEmpty()) {
+              BlockDataMap blockletDataMap =
+                  loadAndGetDataMap(blockIndexUniqueIdentifier, indexFileStore, blockMetaInfoMap,
+                      identifierWrapper.getCarbonTable(),
+                      identifierWrapper.isAddTableBlockToUnsafe());
+              dataMaps.add(blockletDataMap);
+            }
           }
           blockletDataMapIndexWrapper = new BlockletDataMapIndexWrapper(dataMaps);
         }
