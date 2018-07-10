@@ -1394,9 +1394,6 @@ public final class CarbonCommonConstants {
   public static final String CARBON_SQLASTBUILDER_CLASSNAME =
       "spark.carbon.sqlastbuilder.classname";
 
-  public static final String CARBON_COMMON_LISTENER_REGISTER_CLASSNAME =
-      "spark.carbon.common.listener.register.classname";
-
   @CarbonProperty
   public static final String CARBON_LEASE_RECOVERY_RETRY_COUNT =
       "carbon.lease.recovery.retry.count";
@@ -1870,6 +1867,16 @@ public final class CarbonCommonConstants {
    * default value for cache level
    */
   public static final String CACHE_LEVEL_DEFAULT_VALUE = "BLOCK";
+
+  /**
+   * It is internal configuration and used only for test purpose.
+   * It will merge the carbon index files with in the segment to single segment.
+   */
+  @CarbonProperty
+  public static final String CARBON_MERGE_INDEX_IN_SEGMENT =
+      "carbon.merge.index.in.segment";
+
+  public static final String CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT = "true";
 
   private CarbonCommonConstants() {
   }
