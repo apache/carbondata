@@ -151,7 +151,9 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
 
   private void addPageData(TablePage tablePage) throws IOException {
     blockletDataHolder.addPage(tablePage);
-    if (listener != null) {
+    if (listener != null &&
+        model.getDatabaseName().equalsIgnoreCase(listener.getTblIdentifier().getDatabaseName()) &&
+        model.getTableName().equalsIgnoreCase(listener.getTblIdentifier().getTableName())) {
       if (pageId == 0) {
         listener.onBlockletStart(blockletId);
       }
@@ -185,7 +187,9 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
         writeHeaderToFile();
       }
       writeBlockletToFile(dataChunkBytes);
-      if (listener != null) {
+      if (listener != null &&
+          model.getDatabaseName().equalsIgnoreCase(listener.getTblIdentifier().getDatabaseName()) &&
+          model.getTableName().equalsIgnoreCase(listener.getTblIdentifier().getTableName())) {
         listener.onBlockletEnd(blockletId++);
       }
       pageId = 0;
