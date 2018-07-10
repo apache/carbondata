@@ -24,7 +24,6 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.store.api.conf.StoreConf;
-import org.apache.carbondata.store.impl.StoreServiceImpl;
 import org.apache.carbondata.store.impl.rpc.RegistryService;
 import org.apache.carbondata.store.impl.rpc.ServiceFactory;
 import org.apache.carbondata.store.impl.rpc.StoreService;

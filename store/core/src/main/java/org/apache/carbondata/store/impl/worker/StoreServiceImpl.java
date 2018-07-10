@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl;
+package org.apache.carbondata.store.impl.worker;
 
 import java.io.IOException;
 
@@ -27,7 +27,6 @@ import org.apache.carbondata.store.impl.rpc.model.QueryResponse;
 import org.apache.carbondata.store.impl.rpc.model.Scan;
 import org.apache.carbondata.store.impl.rpc.model.ShutdownRequest;
 import org.apache.carbondata.store.impl.rpc.model.ShutdownResponse;
-import org.apache.carbondata.store.impl.worker.Worker;
 
 import org.apache.hadoop.ipc.ProtocolSignature;
 

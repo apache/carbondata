@@ -57,10 +57,10 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
  * This is a special RecordReader that leverages FGDataMap before reading carbondata file
  * and return CarbonRow object
  */
-public class IndexedRecordReader extends CarbonRecordReader<CarbonRow> {
+class IndexedRecordReader extends CarbonRecordReader<CarbonRow> {
 
   private static final LogService LOG =
-      LogServiceFactory.getLogService(RequestHandler.class.getName());
+      LogServiceFactory.getLogService(IndexedRecordReader.class.getName());
 
   private int queryId;
   private CarbonTable table;

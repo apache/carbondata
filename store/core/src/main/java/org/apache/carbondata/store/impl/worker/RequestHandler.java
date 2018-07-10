@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl;
+package org.apache.carbondata.store.impl.worker;
 
 import java.io.IOException;
 import java.util.Date;
@@ -37,6 +37,8 @@ import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
 import org.apache.carbondata.processing.loading.csvinput.CSVRecordReaderIterator;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.store.api.conf.StoreConf;
+import org.apache.carbondata.store.impl.CarbonStoreBase;
+import org.apache.carbondata.store.impl.Status;
 import org.apache.carbondata.store.impl.rpc.model.BaseResponse;
 import org.apache.carbondata.store.impl.rpc.model.LoadDataRequest;
 import org.apache.carbondata.store.impl.rpc.model.QueryResponse;

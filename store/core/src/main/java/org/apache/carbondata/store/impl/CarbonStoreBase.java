@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.block.Distributable;
@@ -55,7 +56,8 @@ import org.apache.hadoop.mapreduce.Job;
  * Provides base functionality of CarbonStore, it contains basic implementation of metadata
  * management, data pruning and data scan logic.
  */
-abstract class CarbonStoreBase implements CarbonStore {
+@InterfaceAudience.Internal
+public abstract class CarbonStoreBase implements CarbonStore {
 
   private static LogService LOGGER =
       LogServiceFactory.getLogService(CarbonStoreBase.class.getCanonicalName());
