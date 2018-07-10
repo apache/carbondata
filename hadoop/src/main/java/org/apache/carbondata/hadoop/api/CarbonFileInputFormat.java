@@ -100,13 +100,11 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
    */
   @Override
   public List<InputSplit> getSplits(JobContext job) throws IOException {
-
-    AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
     CarbonTable carbonTable = getOrCreateCarbonTable(job.getConfiguration());
-
     if (null == carbonTable) {
       throw new IOException("Missing/Corrupt schema file for table.");
     }
+    AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
 
     if (getValidateSegmentsToAccess(job.getConfiguration())) {
       // get all valid segments and set them into the configuration

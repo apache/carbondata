@@ -226,7 +226,7 @@ object CarbonEnv {
       DataMapStoreManager.getInstance().
         clearDataMaps(AbsoluteTableIdentifier.from(tablePath,
           identifier.database.getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase),
-          identifier.table))
+          identifier.table, table.get.getTableInfo.getFactTable.getTableId))
       isRefreshed = true
     }
     isRefreshed

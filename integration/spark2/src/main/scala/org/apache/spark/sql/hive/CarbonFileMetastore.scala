@@ -354,7 +354,8 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val tableName = tableInfo.getFactTable.getTableName
     val thriftTableInfo = schemaConverter.fromWrapperToExternalTableInfo(
       tableInfo, dbName, tableName)
-    val identifier = AbsoluteTableIdentifier.from(tablePath, dbName, tableName)
+    val identifier = AbsoluteTableIdentifier
+      .from(tablePath, dbName, tableName, thriftTableInfo.getFact_table.getTable_id)
     createSchemaThriftFile(identifier, thriftTableInfo)
     LOGGER.info(s"Table $tableName for Database $dbName created successfully.")
   }

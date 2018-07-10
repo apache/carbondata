@@ -60,10 +60,6 @@ public class CarbonLockFactory {
     if (lockPath.isEmpty()) {
       absoluteLockPath = absoluteTableIdentifier.getTablePath();
     } else {
-      if (absoluteTableIdentifier
-          .getCarbonTableIdentifier().getTableId().isEmpty()) {
-        throw new RuntimeException("Table id is empty");
-      }
       absoluteLockPath =
           getLockpath(absoluteTableIdentifier.getCarbonTableIdentifier().getTableId());
     }
