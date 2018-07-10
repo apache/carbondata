@@ -122,8 +122,8 @@ public class LocalDictColumnPage extends ColumnPage {
         dummyKey[0] = pageLevelDictionary.getDictionaryValue(bytes);
         encodedDataColumnPage.putBytes(rowId, keyGenerator.generateKey(dummyKey));
       } catch (DictionaryThresholdReachedException e) {
-        LOGGER.error(e, "Local Dictionary threshold reached for the column: " + actualDataColumnPage
-            .getColumnSpec().getFieldName());
+        LOGGER.warn("Local Dictionary threshold reached for the column: " + actualDataColumnPage
+            .getColumnSpec().getFieldName() + ", " + e.getMessage());
         pageLevelDictionary = null;
         encodedDataColumnPage.freeMemory();
         encodedDataColumnPage = null;
