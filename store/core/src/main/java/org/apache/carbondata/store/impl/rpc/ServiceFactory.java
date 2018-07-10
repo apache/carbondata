@@ -15,18 +15,29 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.distributed.rpc;
+package org.apache.carbondata.store.impl.rpc;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.store.impl.distributed.rpc.model.RegisterWorkerRequest;
-import org.apache.carbondata.store.impl.distributed.rpc.model.RegisterWorkerResponse;
 
-import org.apache.hadoop.ipc.VersionedProtocol;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.ipc.RPC;
 
 @InterfaceAudience.Internal
-public interface RegistryService extends VersionedProtocol {
-  long versionID = 1L;
-  RegisterWorkerResponse registerWorker(RegisterWorkerRequest request) throws IOException;
+public class ServiceFactory {
+
+  public static StoreService createStoreService(String host, int port) throws IOException {
+    InetSocketAddress address = new InetSocketAddress(InetAddress.getByName(host), port);
+    return RPC.getProxy(
+        StoreService.class, StoreService.versionID, address, new Configuration());
+  }
+
+  public static RegistryService createRegistryService(String host, int port) throws IOException {
+    InetSocketAddress address = new InetSocketAddress(InetAddress.getByName(host), port);
+    return RPC.getProxy(
+        RegistryService.class, RegistryService.versionID, address, new Configuration());
+  }
 }

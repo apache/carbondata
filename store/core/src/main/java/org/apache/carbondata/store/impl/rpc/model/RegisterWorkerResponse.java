@@ -15,14 +15,40 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.distributed.rpc.impl;
+package org.apache.carbondata.store.impl.rpc.model;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.io.Serializable;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 
-/**
- * Status of RPC response
- */
+import org.apache.hadoop.io.Writable;
+
 @InterfaceAudience.Internal
-public enum Status {
-  SUCCESS, FAILURE
+public class RegisterWorkerResponse implements Serializable, Writable {
+
+  private String workerId;
+
+  public RegisterWorkerResponse() {
+  }
+
+  public RegisterWorkerResponse(String workerId) {
+    this.workerId = workerId;
+  }
+
+  public String getWorkerId() {
+    return workerId;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    out.writeUTF(workerId);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    workerId = in.readUTF();
+  }
 }

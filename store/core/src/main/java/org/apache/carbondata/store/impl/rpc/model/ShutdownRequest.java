@@ -15,29 +15,39 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.distributed.rpc;
+package org.apache.carbondata.store.impl.rpc.model;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
+import java.io.Serializable;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.ipc.RPC;
+import org.apache.hadoop.io.Writable;
 
 @InterfaceAudience.Internal
-public class ServiceFactory {
+public class ShutdownRequest implements Serializable, Writable {
+  private String reason;
 
-  public static StoreService createStoreService(String host, int port) throws IOException {
-    InetSocketAddress address = new InetSocketAddress(InetAddress.getByName(host), port);
-    return RPC.getProxy(
-        StoreService.class, StoreService.versionID, address, new Configuration());
+  public ShutdownRequest() {
   }
 
-  public static RegistryService createRegistryService(String host, int port) throws IOException {
-    InetSocketAddress address = new InetSocketAddress(InetAddress.getByName(host), port);
-    return RPC.getProxy(
-        RegistryService.class, RegistryService.versionID, address, new Configuration());
+  public ShutdownRequest(String reason) {
+    this.reason = reason;
+  }
+
+  public String getReason() {
+    return reason;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    out.writeUTF(reason);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    reason = in.readUTF();
   }
 }

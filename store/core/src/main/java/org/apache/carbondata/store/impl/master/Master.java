@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.distributed;
+package org.apache.carbondata.store.impl.master;
 
 import java.io.IOException;
 import java.net.BindException;
@@ -26,12 +26,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.store.api.conf.StoreConf;
-import org.apache.carbondata.store.impl.distributed.rpc.RegistryService;
-import org.apache.carbondata.store.impl.distributed.rpc.ServiceFactory;
-import org.apache.carbondata.store.impl.distributed.rpc.StoreService;
-import org.apache.carbondata.store.impl.distributed.rpc.impl.RegistryServiceImpl;
-import org.apache.carbondata.store.impl.distributed.rpc.model.RegisterWorkerRequest;
-import org.apache.carbondata.store.impl.distributed.rpc.model.RegisterWorkerResponse;
+import org.apache.carbondata.store.impl.rpc.RegistryService;
+import org.apache.carbondata.store.impl.rpc.ServiceFactory;
+import org.apache.carbondata.store.impl.rpc.StoreService;
+import org.apache.carbondata.store.impl.rpc.model.RegisterWorkerRequest;
+import org.apache.carbondata.store.impl.rpc.model.RegisterWorkerResponse;
 import org.apache.carbondata.store.util.StoreUtil;
 
 import org.apache.hadoop.conf.Configuration;
@@ -41,7 +40,7 @@ import org.apache.hadoop.ipc.RPC;
  * Master of CarbonSearch.
  * It provides a Registry service for worker to register.
  */
-public class Master {
+class Master {
 
   private static Master instance = null;
 

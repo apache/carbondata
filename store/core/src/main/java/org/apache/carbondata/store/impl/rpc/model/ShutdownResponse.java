@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.distributed.rpc.model;
+package org.apache.carbondata.store.impl.rpc.model;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -27,14 +27,14 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.hadoop.io.Writable;
 
 @InterfaceAudience.Internal
-public class BaseResponse implements Serializable, Writable {
+public class ShutdownResponse implements Serializable, Writable {
   private int status;
   private String message;
 
-  public BaseResponse() {
+  public ShutdownResponse() {
   }
 
-  public BaseResponse(int status, String message) {
+  public ShutdownResponse(int status, String message) {
     this.status = status;
     this.message = message;
   }
@@ -43,16 +43,8 @@ public class BaseResponse implements Serializable, Writable {
     return status;
   }
 
-  public void setStatus(int status) {
-    this.status = status;
-  }
-
   public String getMessage() {
     return message;
-  }
-
-  public void setMessage(String message) {
-    this.message = message;
   }
 
   @Override

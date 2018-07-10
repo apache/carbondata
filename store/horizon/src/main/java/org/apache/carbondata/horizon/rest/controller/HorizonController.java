@@ -32,13 +32,14 @@ import org.apache.carbondata.horizon.rest.model.view.DropTableRequest;
 import org.apache.carbondata.horizon.rest.model.view.LoadRequest;
 import org.apache.carbondata.horizon.rest.model.view.SelectRequest;
 import org.apache.carbondata.horizon.rest.model.view.SelectResponse;
+import org.apache.carbondata.store.api.CarbonStore;
+import org.apache.carbondata.store.api.CarbonStoreFactory;
 import org.apache.carbondata.store.api.conf.StoreConf;
 import org.apache.carbondata.store.api.descriptor.LoadDescriptor;
 import org.apache.carbondata.store.api.descriptor.SelectDescriptor;
 import org.apache.carbondata.store.api.descriptor.TableDescriptor;
 import org.apache.carbondata.store.api.descriptor.TableIdentifier;
 import org.apache.carbondata.store.api.exception.StoreException;
-import org.apache.carbondata.store.impl.DistributedCarbonStore;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -53,11 +54,11 @@ public class HorizonController {
   private static LogService LOGGER =
       LogServiceFactory.getLogService(HorizonController.class.getName());
 
-  private DistributedCarbonStore store;
+  private CarbonStore store;
 
-  public HorizonController() throws IOException {
+  public HorizonController() throws StoreException {
     String storeFile = System.getProperty("carbonstore.conf.file");
-    store = new DistributedCarbonStore(new StoreConf(storeFile));
+    store = CarbonStoreFactory.getDistributedStore("GlobalStore", new StoreConf(storeFile));
   }
 
   @RequestMapping(value = "/table/create", produces = MediaType.APPLICATION_JSON_VALUE)

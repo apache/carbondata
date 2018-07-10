@@ -15,12 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.distributed;
+package org.apache.carbondata.store.impl.master;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.carbondata.store.impl.distributed.rpc.StoreService;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.store.impl.rpc.StoreService;
 
+@InterfaceAudience.Internal
 public class Schedulable {
 
   private String id;

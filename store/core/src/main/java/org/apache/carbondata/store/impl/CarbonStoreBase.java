@@ -44,8 +44,7 @@ import org.apache.carbondata.store.api.conf.StoreConf;
 import org.apache.carbondata.store.api.descriptor.TableDescriptor;
 import org.apache.carbondata.store.api.descriptor.TableIdentifier;
 import org.apache.carbondata.store.api.exception.StoreException;
-import org.apache.carbondata.store.impl.distributed.rpc.impl.IndexedRecordReader;
-import org.apache.carbondata.store.impl.distributed.rpc.model.Scan;
+import org.apache.carbondata.store.impl.rpc.model.Scan;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
@@ -98,7 +97,7 @@ abstract class CarbonStoreBase implements CarbonStore {
    * Return a mapping of host address to list of block.
    * This should be invoked in driver side.
    */
-  public List<Distributable> pruneBlock(CarbonTable table, String[] columns,
+  public static List<Distributable> pruneBlock(CarbonTable table, String[] columns,
       Expression filter) throws IOException {
     Objects.requireNonNull(table);
     Objects.requireNonNull(columns);
@@ -129,7 +128,7 @@ abstract class CarbonStoreBase implements CarbonStore {
    * @return matched rows
    * @throws IOException if IO error occurs
    */
-  public List<CarbonRow> scan(CarbonTable table, Scan scan) throws IOException {
+  public static List<CarbonRow> scan(CarbonTable table, Scan scan) throws IOException {
     CarbonTaskInfo carbonTaskInfo = new CarbonTaskInfo();
     carbonTaskInfo.setTaskId(System.nanoTime());
     ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo);

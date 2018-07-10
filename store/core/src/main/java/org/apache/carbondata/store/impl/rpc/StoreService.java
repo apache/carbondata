@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.distributed.rpc;
+package org.apache.carbondata.store.impl.rpc;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.store.impl.distributed.rpc.model.BaseResponse;
-import org.apache.carbondata.store.impl.distributed.rpc.model.LoadDataRequest;
-import org.apache.carbondata.store.impl.distributed.rpc.model.QueryResponse;
-import org.apache.carbondata.store.impl.distributed.rpc.model.Scan;
-import org.apache.carbondata.store.impl.distributed.rpc.model.ShutdownRequest;
-import org.apache.carbondata.store.impl.distributed.rpc.model.ShutdownResponse;
+import org.apache.carbondata.store.impl.rpc.model.BaseResponse;
+import org.apache.carbondata.store.impl.rpc.model.LoadDataRequest;
+import org.apache.carbondata.store.impl.rpc.model.QueryResponse;
+import org.apache.carbondata.store.impl.rpc.model.Scan;
+import org.apache.carbondata.store.impl.rpc.model.ShutdownRequest;
+import org.apache.carbondata.store.impl.rpc.model.ShutdownResponse;
 
 import org.apache.hadoop.ipc.VersionedProtocol;
 

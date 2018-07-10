@@ -26,57 +26,29 @@ import org.apache.carbondata.common.annotations.InterfaceAudience
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.util.Util
+import org.apache.carbondata.store.api.CarbonStoreFactory
 import org.apache.carbondata.store.api.conf.StoreConf
-import org.apache.carbondata.store.impl.DistributedCarbonStore
-import org.apache.carbondata.store.impl.distributed.Worker
+import org.apache.carbondata.store.impl.worker.Worker
 
 /**
  * A CarbonStore implementation that uses Spark as underlying compute engine
  * with CarbonData query optimization capability
  */
 @InterfaceAudience.Internal
-class WorkerManager {
-  private var session: SparkSession = _
+object WorkerManager {
   private final val LOG = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  def this(sparkSession: SparkSession) = {
-    this()
-    session = sparkSession
-  }
-
-  def startAllWorker(storeConf: StoreConf): Unit = {
-    LOG.info("Starting search mode master")
-    startAllWorkers()
-  }
-
-  private val store: DistributedCarbonStore = new DistributedCarbonStore(new StoreConf())
-
-  def stopAllWorker(): Unit = {
-    if (store != null) {
-      store.close()
-    }
-  }
-
-  private def startAllWorkers(): Array[Int] = {
-    // TODO: how to ensure task is sent to every executor?
+  // TODO: how to ensure task is sent to every executor?
+  def startAllWorker(session: SparkSession, storeConf: StoreConf): Unit = {
     val numExecutors = session.sparkContext.getExecutorMemoryStatus.keySet.size
-    val masterIp = InetAddress.getLocalHost.getHostAddress
+    LOG.info("Starting search mode master")
     val rows = session.sparkContext.parallelize(1 to numExecutors * 10, numExecutors)
       .mapPartitions { f =>
         // start worker
-        val conf = new StoreConf()
-        conf.conf(StoreConf.WORKER_HOST, InetAddress.getLocalHost.getHostAddress)
-        conf.conf(StoreConf.WORKER_PORT, CarbonProperties.getSearchWorkerPort)
-        conf.conf(StoreConf.WORKER_CORE_NUM, 2)
-        conf.conf(StoreConf.STORE_LOCATION, CarbonProperties.getStorePath)
-        conf.conf(StoreConf.MASTER_HOST, masterIp)
-        conf.conf(StoreConf.MASTER_PORT, CarbonProperties.getSearchMasterPort)
-
         var storeLocation: String = null
         val carbonUseLocalDir = CarbonProperties.getInstance()
           .getProperty("carbon.use.local.dir", "false")
         if (carbonUseLocalDir.equalsIgnoreCase("true")) {
-
           val storeLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
           if (null != storeLocations && storeLocations.nonEmpty) {
             storeLocation = storeLocations.mkString(",")
@@ -87,9 +59,9 @@ class WorkerManager {
         } else {
           storeLocation = System.getProperty("java.io.tmpdir")
         }
-        conf.conf(StoreConf.STORE_TEMP_LOCATION, storeLocation)
+        storeConf.conf(StoreConf.STORE_TEMP_LOCATION, storeLocation)
 
-        val worker = new Worker(conf)
+        val worker = new Worker(storeConf)
         worker.start()
         new Iterator[Int] {
           override def hasNext: Boolean = false
@@ -97,8 +69,7 @@ class WorkerManager {
           override def next(): Int = 1
         }
       }.collect()
-    LOG.info(s"Tried to start $numExecutors workers, started successfully")
-    rows
+    LOG.info(s"Tried to start $numExecutors workers, $rows workers started successfully")
   }
 
 }

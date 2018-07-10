@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.distributed.rpc.impl;
+package org.apache.carbondata.store.impl;
 
 import java.io.IOException;
 import java.util.HashMap;

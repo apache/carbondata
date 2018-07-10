@@ -44,7 +44,7 @@ import org.apache.carbondata.store.api.conf.StoreConf;
 import org.apache.carbondata.store.api.descriptor.LoadDescriptor;
 import org.apache.carbondata.store.api.descriptor.SelectDescriptor;
 import org.apache.carbondata.store.api.exception.StoreException;
-import org.apache.carbondata.store.impl.distributed.rpc.model.Scan;
+import org.apache.carbondata.store.impl.rpc.model.Scan;
 import org.apache.carbondata.store.util.StoreUtil;
 
 import org.apache.hadoop.conf.Configuration;
@@ -63,7 +63,7 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
  */
 @InterfaceAudience.User
 @InterfaceStability.Unstable
-public class LocalCarbonStore extends CarbonStoreBase {
+class LocalCarbonStore extends CarbonStoreBase {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(LocalCarbonStore.class.getName());
@@ -72,11 +72,11 @@ public class LocalCarbonStore extends CarbonStoreBase {
   private Configuration configuration;
   private SegmentTxnManager txnManager;
 
-  public LocalCarbonStore(StoreConf storeConf) {
+  LocalCarbonStore(StoreConf storeConf) {
     this(storeConf, new Configuration());
   }
 
-  public LocalCarbonStore(StoreConf storeConf, Configuration hadoopConf) {
+  LocalCarbonStore(StoreConf storeConf, Configuration hadoopConf) {
     super(storeConf);
     this.storeConf = storeConf;
     this.txnManager = SegmentTxnManager.getInstance();

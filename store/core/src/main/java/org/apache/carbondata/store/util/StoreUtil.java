@@ -27,6 +27,7 @@ import java.io.ObjectOutputStream;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -42,6 +43,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.PropertyConfigurator;
 
+@InterfaceAudience.Internal
 public class StoreUtil {
 
   private static LogService LOGGER = LogServiceFactory.getLogService(StoreUtil.class.getName());

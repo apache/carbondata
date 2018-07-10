@@ -43,10 +43,9 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.store.WorkerManager
-import org.apache.carbondata.store.api.CarbonStore
+import org.apache.carbondata.store.api.{CarbonStore, CarbonStoreFactory}
 import org.apache.carbondata.store.api.conf.StoreConf
 import org.apache.carbondata.store.api.descriptor.{SelectDescriptor, TableIdentifier => CTableIdentifier}
-import org.apache.carbondata.store.impl.DistributedCarbonStore
 import org.apache.carbondata.streaming.CarbonStreamingQueryListener
 
 /**
@@ -125,7 +124,7 @@ class CarbonSession(@transient val sc: SparkContext,
     message(0).getString(0).contains(dataMapName)
   }
 
-  def isSearchModeEnabled: Boolean = workerManager != null
+  def isSearchModeEnabled: Boolean = store != null
 
   /**
    * Run SparkSQL directly
@@ -199,30 +198,31 @@ class CarbonSession(@transient val sc: SparkContext,
 
   // variable that used in search mode
   @transient private var store: CarbonStore = _
-  @transient private var workerManager: WorkerManager = _
 
   def startSearchMode(): Unit = {
-    val storeConf = new StoreConf()
-    storeConf.conf(StoreConf.MASTER_HOST, InetAddress.getLocalHost.getHostAddress)
-    storeConf.conf(StoreConf.MASTER_PORT, CarbonProperties.getSearchMasterPort)
-    storeConf.conf(StoreConf.STORE_LOCATION, CarbonProperties.getStorePath)
-    store = new DistributedCarbonStore(storeConf)
-    CarbonProperties.enableSearchMode(true)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
-    if (workerManager == null) {
-      workerManager = new WorkerManager(this)
-      workerManager.startAllWorker(storeConf)
+    if (store == null) {
+      val storeConf = new StoreConf()
+      storeConf.conf(StoreConf.STORE_LOCATION, CarbonProperties.getStorePath)
+      storeConf.conf(StoreConf.MASTER_HOST, InetAddress.getLocalHost.getHostAddress)
+      storeConf.conf(StoreConf.MASTER_PORT, CarbonProperties.getSearchMasterPort)
+      storeConf.conf(StoreConf.WORKER_HOST, InetAddress.getLocalHost.getHostAddress)
+      storeConf.conf(StoreConf.WORKER_PORT, CarbonProperties.getSearchWorkerPort)
+      storeConf.conf(StoreConf.WORKER_CORE_NUM, 2)
+
+      store = CarbonStoreFactory.getDistributedStore("GlobalStore", storeConf)
+      CarbonProperties.enableSearchMode(true)
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
+      WorkerManager.startAllWorker(this, storeConf)
     }
   }
 
   def stopSearchMode(): Unit = {
-    CarbonProperties.enableSearchMode(false)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "true")
-    if (workerManager != null) {
+    if (store != null) {
+      CarbonProperties.enableSearchMode(false)
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "true")
       try {
-        workerManager.stopAllWorker()
-        workerManager = null
-        store.close()
+        CarbonStoreFactory.removeDistributedStore("GlobalStore")
         store = null
       } catch {
         case e: RuntimeException =>

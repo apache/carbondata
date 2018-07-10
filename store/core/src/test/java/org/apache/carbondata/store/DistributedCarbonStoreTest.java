@@ -22,21 +22,20 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.store.api.CarbonStore;
+import org.apache.carbondata.store.api.CarbonStoreFactory;
 import org.apache.carbondata.store.api.conf.StoreConf;
 import org.apache.carbondata.store.api.descriptor.LoadDescriptor;
 import org.apache.carbondata.store.api.descriptor.SelectDescriptor;
 import org.apache.carbondata.store.api.descriptor.TableDescriptor;
 import org.apache.carbondata.store.api.descriptor.TableIdentifier;
 import org.apache.carbondata.store.api.exception.StoreException;
-import org.apache.carbondata.store.impl.DistributedCarbonStore;
-import org.apache.carbondata.store.impl.distributed.Worker;
-import org.apache.carbondata.store.util.StoreUtil;
+import org.apache.carbondata.store.impl.worker.Worker;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -48,20 +47,16 @@ import org.junit.Test;
 public class DistributedCarbonStoreTest {
 
   private static String projectFolder;
-  private static DistributedCarbonStore store;
+  private static CarbonStore store;
 
   @BeforeClass
-  public static void beforeAll() throws IOException {
+  public static void beforeAll() throws IOException, StoreException {
     projectFolder = new File(DistributedCarbonStoreTest.class.getResource("/").getPath() +
         "../../../../").getCanonicalPath();
     String confFile = projectFolder + "/store/conf/store.conf";
     StoreConf storeConf = new StoreConf(confFile);
 
-    String log4jFile = projectFolder + "/store/conf/log4j.properties";
-    System.setProperty("log.path", projectFolder + "/store/core/target/master_worker.log");
-    StoreUtil.initLog4j(log4jFile);
-
-    store = new DistributedCarbonStore(storeConf);
+    store = CarbonStoreFactory.getDistributedStore("DistributedCarbonStoreTest", storeConf);
     projectFolder = new File(LocalCarbonStoreTest.class.getResource("/").getPath() + "../../../../")
         .getCanonicalPath();
 
@@ -142,8 +137,6 @@ public class DistributedCarbonStoreTest {
     Assert.assertEquals(1, result2.size());
 
     store.dropTable(tableIdentifier);
-    Assert.assertTrue(!FileFactory.isFileExist(store.getTablePath("table_1", "default")));
-
   }
 
 }

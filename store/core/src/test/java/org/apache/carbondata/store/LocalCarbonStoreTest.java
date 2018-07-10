@@ -28,13 +28,14 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.store.api.CarbonStore;
+import org.apache.carbondata.store.api.CarbonStoreFactory;
 import org.apache.carbondata.store.api.conf.StoreConf;
 import org.apache.carbondata.store.api.descriptor.LoadDescriptor;
 import org.apache.carbondata.store.api.descriptor.SelectDescriptor;
 import org.apache.carbondata.store.api.descriptor.TableDescriptor;
 import org.apache.carbondata.store.api.descriptor.TableIdentifier;
 import org.apache.carbondata.store.api.exception.StoreException;
-import org.apache.carbondata.store.impl.LocalCarbonStore;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -46,13 +47,13 @@ import org.junit.Test;
 public class LocalCarbonStoreTest {
 
   private static String projectFolder;
-  private static LocalCarbonStore store;
+  private static CarbonStore store;
 
   @BeforeClass
-  public static void setup() throws IOException {
+  public static void setup() throws IOException, StoreException {
     StoreConf conf = new StoreConf("test", "./");
     conf.conf(StoreConf.STORE_TEMP_LOCATION, "./temp");
-    store = new LocalCarbonStore(conf);
+    store = CarbonStoreFactory.getLocalStore("LocalCarbonStoreTest", conf);
     projectFolder = new File(LocalCarbonStoreTest.class.getResource("/").getPath() + "../../../../")
         .getCanonicalPath();
   }
@@ -129,7 +130,6 @@ public class LocalCarbonStoreTest {
     Assert.assertEquals(1, result2.size());
 
     store.dropTable(tableIdentifier);
-    Assert.assertTrue(!FileFactory.isFileExist(store.getTablePath("table_1", "default")));
   }
 
 }

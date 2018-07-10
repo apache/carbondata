@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.distributed;
+package org.apache.carbondata.store.impl.master;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,20 +27,22 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.store.api.conf.StoreConf;
 import org.apache.carbondata.store.api.exception.SchedulerException;
-import org.apache.carbondata.store.impl.distributed.rpc.model.BaseResponse;
-import org.apache.carbondata.store.impl.distributed.rpc.model.LoadDataRequest;
-import org.apache.carbondata.store.impl.distributed.rpc.model.QueryResponse;
-import org.apache.carbondata.store.impl.distributed.rpc.model.Scan;
-import org.apache.carbondata.store.impl.distributed.rpc.model.ShutdownRequest;
+import org.apache.carbondata.store.impl.rpc.model.BaseResponse;
+import org.apache.carbondata.store.impl.rpc.model.LoadDataRequest;
+import org.apache.carbondata.store.impl.rpc.model.QueryResponse;
+import org.apache.carbondata.store.impl.rpc.model.Scan;
+import org.apache.carbondata.store.impl.rpc.model.ShutdownRequest;
 
 /**
  * [[Master]] uses Scheduler to pick a Worker to send request
  */
+@InterfaceAudience.Internal
 public class Scheduler {
 
   private static LogService LOGGER = LogServiceFactory.getLogService(Scheduler.class.getName());

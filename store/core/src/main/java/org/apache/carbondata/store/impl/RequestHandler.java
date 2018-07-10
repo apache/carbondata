@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.distributed.rpc.impl;
+package org.apache.carbondata.store.impl;
 
 import java.io.IOException;
 import java.util.Date;
@@ -37,13 +37,12 @@ import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
 import org.apache.carbondata.processing.loading.csvinput.CSVRecordReaderIterator;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.store.api.conf.StoreConf;
-import org.apache.carbondata.store.impl.LocalCarbonStore;
-import org.apache.carbondata.store.impl.distributed.rpc.model.BaseResponse;
-import org.apache.carbondata.store.impl.distributed.rpc.model.LoadDataRequest;
-import org.apache.carbondata.store.impl.distributed.rpc.model.QueryResponse;
-import org.apache.carbondata.store.impl.distributed.rpc.model.Scan;
-import org.apache.carbondata.store.impl.distributed.rpc.model.ShutdownRequest;
-import org.apache.carbondata.store.impl.distributed.rpc.model.ShutdownResponse;
+import org.apache.carbondata.store.impl.rpc.model.BaseResponse;
+import org.apache.carbondata.store.impl.rpc.model.LoadDataRequest;
+import org.apache.carbondata.store.impl.rpc.model.QueryResponse;
+import org.apache.carbondata.store.impl.rpc.model.Scan;
+import org.apache.carbondata.store.impl.rpc.model.ShutdownRequest;
+import org.apache.carbondata.store.impl.rpc.model.ShutdownResponse;
 import org.apache.carbondata.store.util.StoreUtil;
 
 import org.apache.hadoop.conf.Configuration;
@@ -76,9 +75,8 @@ class RequestHandler {
   QueryResponse handleScan(Scan scan) {
     try {
       LOGGER.info(String.format("[QueryId:%d] receive search request", scan.getRequestId()));
-      LocalCarbonStore store = new LocalCarbonStore(storeConf);
       CarbonTable table = CarbonTable.buildFromTableInfo(scan.getTableInfo());
-      List<CarbonRow> rows = store.scan(table, scan);
+      List<CarbonRow> rows = CarbonStoreBase.scan(table, scan);
       LOGGER.info(String.format("[QueryId:%d] sending success response", scan.getRequestId()));
       return createSuccessResponse(scan, rows);
     } catch (IOException e) {

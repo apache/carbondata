@@ -15,39 +15,39 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.distributed.rpc.model;
+package org.apache.carbondata.store.impl.master;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
-import java.io.Serializable;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.store.impl.rpc.RegistryService;
+import org.apache.carbondata.store.impl.rpc.model.RegisterWorkerRequest;
+import org.apache.carbondata.store.impl.rpc.model.RegisterWorkerResponse;
 
-import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.ipc.ProtocolSignature;
 
 @InterfaceAudience.Internal
-public class ShutdownRequest implements Serializable, Writable {
-  private String reason;
+class RegistryServiceImpl implements RegistryService {
 
-  public ShutdownRequest() {
-  }
+  private Master master;
 
-  public ShutdownRequest(String reason) {
-    this.reason = reason;
-  }
-
-  public String getReason() {
-    return reason;
+  RegistryServiceImpl(Master master) {
+    this.master = master;
   }
 
   @Override
-  public void write(DataOutput out) throws IOException {
-    out.writeUTF(reason);
+  public RegisterWorkerResponse registerWorker(RegisterWorkerRequest request) throws IOException {
+    return master.addWorker(request);
   }
 
   @Override
-  public void readFields(DataInput in) throws IOException {
-    reason = in.readUTF();
+  public long getProtocolVersion(String protocol, long clientVersion) throws IOException {
+    return versionID;
+  }
+
+  @Override
+  public ProtocolSignature getProtocolSignature(String protocol, long clientVersion,
+      int clientMethodsHash) throws IOException {
+    return null;
   }
 }

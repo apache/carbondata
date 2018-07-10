@@ -15,59 +15,46 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.distributed.rpc.model;
+package org.apache.carbondata.store.impl.rpc.model;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 
-import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
+import org.apache.carbondata.store.util.StoreUtil;
 
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableUtils;
 
-@InterfaceAudience.Internal
-public class RegisterWorkerRequest implements Serializable, Writable {
-  private String hostAddress;
-  private int port;
-  private int cores;
+public class LoadDataRequest implements Serializable, Writable {
 
-  public RegisterWorkerRequest() {
+  private CarbonLoadModel model;
+
+  public LoadDataRequest() {
   }
 
-  public RegisterWorkerRequest(String hostAddress, int port, int cores) {
-    this.hostAddress = hostAddress;
-    this.port = port;
-    this.cores = cores;
+  public LoadDataRequest(CarbonLoadModel model) {
+    this.model = model;
   }
 
-  public String getHostAddress() {
-    return hostAddress;
+  public CarbonLoadModel getModel() {
+    return model;
   }
 
-  public int getPort() {
-    return port;
-  }
-
-  public int getCores() {
-    return cores;
+  public void setModel(CarbonLoadModel model) {
+    this.model = model;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    out.writeUTF(hostAddress);
-    out.writeInt(port);
-    out.writeInt(cores);
+    WritableUtils.writeCompressedByteArray(out, StoreUtil.serialize(model));
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    hostAddress = in.readUTF();
-    port = in.readInt();
-    cores = in.readInt();
-  }
-
-  @Override public String toString() {
-    return "RegisterWorkerRequest{" + "hostAddress='" + hostAddress + '\'' + ", port=" + port + '}';
+    byte[] bytes = WritableUtils.readCompressedByteArray(in);
+    model = (CarbonLoadModel) StoreUtil.deserialize(bytes);
   }
 }

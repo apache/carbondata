@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.distributed.rpc.model;
+package org.apache.carbondata.store.impl.rpc.model;
 
 import java.io.DataInput;
 import java.io.DataOutput;

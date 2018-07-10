@@ -49,27 +49,26 @@ import org.apache.carbondata.store.api.descriptor.LoadDescriptor;
 import org.apache.carbondata.store.api.descriptor.SelectDescriptor;
 import org.apache.carbondata.store.api.exception.ExecutionTimeoutException;
 import org.apache.carbondata.store.api.exception.StoreException;
-import org.apache.carbondata.store.impl.distributed.Schedulable;
-import org.apache.carbondata.store.impl.distributed.Scheduler;
-import org.apache.carbondata.store.impl.distributed.rpc.impl.Status;
-import org.apache.carbondata.store.impl.distributed.rpc.model.BaseResponse;
-import org.apache.carbondata.store.impl.distributed.rpc.model.LoadDataRequest;
-import org.apache.carbondata.store.impl.distributed.rpc.model.QueryResponse;
-import org.apache.carbondata.store.impl.distributed.rpc.model.Scan;
+import org.apache.carbondata.store.impl.master.Schedulable;
+import org.apache.carbondata.store.impl.master.Scheduler;
+import org.apache.carbondata.store.impl.rpc.model.BaseResponse;
+import org.apache.carbondata.store.impl.rpc.model.LoadDataRequest;
+import org.apache.carbondata.store.impl.rpc.model.QueryResponse;
+import org.apache.carbondata.store.impl.rpc.model.Scan;
 
 /**
  * A CarbonStore that leverage multiple servers via RPC calls (Master and Workers)
  */
 @InterfaceAudience.User
 @InterfaceStability.Unstable
-public class DistributedCarbonStore extends CarbonStoreBase {
+class DistributedCarbonStore extends CarbonStoreBase {
   private static LogService LOGGER =
       LogServiceFactory.getLogService(DistributedCarbonStore.class.getCanonicalName());
   private SegmentTxnManager txnManager;
   private Scheduler scheduler;
   private Random random = new Random();
 
-  public DistributedCarbonStore(StoreConf storeConf) throws IOException {
+  DistributedCarbonStore(StoreConf storeConf) throws IOException {
     super(storeConf);
     this.scheduler = new Scheduler(storeConf);
     txnManager = SegmentTxnManager.getInstance();
