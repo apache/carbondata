@@ -859,22 +859,14 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
 
   def getDataFiles(carbonTable: CarbonTable, segmentId: String): Array[String] = {
     val segment = Segment.getSegment(segmentId, carbonTable.getTablePath)
-    if (segment.getSegmentFileName != null) {
-      val sfs = new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName)
-      sfs.readIndexFiles()
-      val indexFilesMap = sfs.getIndexFilesMap
-      val dataFiles = indexFilesMap.asScala.flatMap(_._2.asScala).map(f => new Path(f).getName)
-      dataFiles.toArray
-    } else {
-      val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentId)
-      val carbonFile = FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir))
-      val dataFiles = carbonFile.listFiles(new CarbonFileFilter() {
-        override def accept(file: CarbonFile): Boolean = {
-          return file.getName.endsWith(".carbondata")
-        }
-      })
-      dataFiles.map(_.getName)
-    }
+    val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentId)
+    val carbonFile = FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir))
+    val dataFiles = carbonFile.listFiles(new CarbonFileFilter() {
+      override def accept(file: CarbonFile): Boolean = {
+        return file.getName.endsWith(".carbondata")
+      }
+    })
+    dataFiles.map(_.getName)
   }
 
   /**

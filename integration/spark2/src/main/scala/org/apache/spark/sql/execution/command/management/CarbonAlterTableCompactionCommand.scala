@@ -102,23 +102,24 @@ case class CarbonAlterTableCompactionCommand(
     if (SegmentStatusManager.isOverwriteInProgressInTable(table)) {
       throw new ConcurrentOperationException(table, "insert overwrite", "compaction")
     }
-    operationContext.setProperty("compactionException", "true")
     var compactionType: CompactionType = null
-    var compactionException = "true"
     try {
       compactionType = CompactionType.valueOf(alterTableModel.compactionType.toUpperCase)
     } catch {
       case _: Exception =>
-        val alterTableCompactionExceptionEvent: AlterTableCompactionAbortEvent =
-          AlterTableCompactionAbortEvent(sparkSession, table, alterTableModel)
-        OperationListenerBus.getInstance
-          .fireEvent(alterTableCompactionExceptionEvent, operationContext)
-        compactionException = operationContext.getProperty("compactionException").toString
+        throw new MalformedCarbonCommandException(
+          "Unsupported alter operation on carbon table")
     }
-    if (compactionException.equalsIgnoreCase("true") && null == compactionType) {
-      throw new MalformedCarbonCommandException(
-        "Unsupported alter operation on carbon table")
-    } else if (compactionException.equalsIgnoreCase("false")) {
+    if (compactionType == CompactionType.SEGMENT_INDEX) {
+      if (table.isStreamingSink) {
+        throw new MalformedCarbonCommandException(
+          "Unsupported alter operation on carbon table: Merge index is not supported on streaming" +
+          " table")
+      }
+      val alterTableMergeIndexEvent: AlterTableMergeIndexEvent =
+        AlterTableMergeIndexEvent(sparkSession, table, alterTableModel)
+      OperationListenerBus.getInstance
+        .fireEvent(alterTableMergeIndexEvent, operationContext)
       Seq.empty
     } else {
 
