@@ -40,7 +40,6 @@ import org.apache.carbondata.core.indexstore.UnsafeMemoryDMStore;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.DataMapRowImpl;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
-import org.apache.carbondata.core.indexstore.schema.SchemaGenerator;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
@@ -126,10 +125,12 @@ public class BlockDataMap extends CoarseGrainDataMap
       // init segment properties and create schema
       SegmentProperties segmentProperties = initSegmentProperties(blockletDataMapInfo, fileFooter);
       createMemorySchema(blockletDataMapInfo);
-      createSummarySchema(segmentProperties, blockletDataMapInfo);
+      createSummaryDMStore(blockletDataMapInfo);
+      CarbonRowSchema[] taskSummarySchema = getTaskSummarySchema();
       // check for legacy store and load the metadata
-      DataMapRowImpl summaryRow = loadMetadata(segmentProperties, blockletDataMapInfo, indexInfo);
-      finishWriting(filePath, fileName, segmentId, summaryRow);
+      DataMapRowImpl summaryRow =
+          loadMetadata(taskSummarySchema, segmentProperties, blockletDataMapInfo, indexInfo);
+      finishWriting(taskSummarySchema, filePath, fileName, segmentId, summaryRow);
     }
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug(
@@ -138,13 +139,14 @@ public class BlockDataMap extends CoarseGrainDataMap
     }
   }
 
-  private void finishWriting(byte[] filePath, byte[] fileName, byte[] segmentId,
-      DataMapRowImpl summaryRow) throws MemoryException {
+  private void finishWriting(CarbonRowSchema[] taskSummarySchema, byte[] filePath, byte[] fileName,
+      byte[] segmentId, DataMapRowImpl summaryRow) throws MemoryException {
     if (memoryDMStore != null) {
       memoryDMStore.finishWriting();
     }
     if (null != taskSummaryDMStore) {
-      addTaskSummaryRowToUnsafeMemoryStore(summaryRow, filePath, fileName, segmentId);
+      addTaskSummaryRowToUnsafeMemoryStore(taskSummarySchema, summaryRow, filePath, fileName,
+          segmentId);
       taskSummaryDMStore.finishWriting();
     }
   }
@@ -158,13 +160,15 @@ public class BlockDataMap extends CoarseGrainDataMap
    * @throws IOException
    * @throws MemoryException
    */
-  protected DataMapRowImpl loadMetadata(SegmentProperties segmentProperties,
-      BlockletDataMapModel blockletDataMapInfo, List<DataFileFooter> indexInfo)
-      throws IOException, MemoryException {
+  protected DataMapRowImpl loadMetadata(CarbonRowSchema[] taskSummarySchema,
+      SegmentProperties segmentProperties, BlockletDataMapModel blockletDataMapInfo,
+      List<DataFileFooter> indexInfo) throws IOException, MemoryException {
     if (isLegacyStore) {
-      return loadBlockInfoForOldStore(segmentProperties, blockletDataMapInfo, indexInfo);
+      return loadBlockInfoForOldStore(taskSummarySchema, segmentProperties, blockletDataMapInfo,
+          indexInfo);
     } else {
-      return loadBlockMetaInfo(segmentProperties, blockletDataMapInfo, indexInfo);
+      return loadBlockMetaInfo(taskSummarySchema, segmentProperties, blockletDataMapInfo,
+          indexInfo);
     }
   }
 
@@ -193,9 +197,9 @@ public class BlockDataMap extends CoarseGrainDataMap
    * @throws IOException
    * @throws MemoryException
    */
-  protected DataMapRowImpl loadBlockInfoForOldStore(SegmentProperties segmentProperties,
-      BlockletDataMapModel blockletDataMapInfo, List<DataFileFooter> indexInfo)
-      throws IOException, MemoryException {
+  protected DataMapRowImpl loadBlockInfoForOldStore(CarbonRowSchema[] taskSummarySchema,
+      SegmentProperties segmentProperties, BlockletDataMapModel blockletDataMapInfo,
+      List<DataFileFooter> indexInfo) throws IOException, MemoryException {
     DataMapRowImpl summaryRow = null;
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
     for (DataFileFooter fileFooter : indexInfo) {
@@ -219,7 +223,7 @@ public class BlockDataMap extends CoarseGrainDataMap
             CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, true);
         byte[][] updatedMaxValues =
             CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, false);
-        summaryRow = loadToUnsafeBlock(schema, fileFooter, segmentProperties,
+        summaryRow = loadToUnsafeBlock(schema, taskSummarySchema, fileFooter, segmentProperties,
             blockletDataMapInfo.getMinMaxCacheColumns(), blockInfo.getFilePath(), summaryRow,
             blockMetaInfo, updatedMinValues, updatedMaxValues);
       }
@@ -235,9 +239,9 @@ public class BlockDataMap extends CoarseGrainDataMap
    * @throws IOException
    * @throws MemoryException
    */
-  private DataMapRowImpl loadBlockMetaInfo(SegmentProperties segmentProperties,
-      BlockletDataMapModel blockletDataMapInfo, List<DataFileFooter> indexInfo)
-      throws IOException, MemoryException {
+  private DataMapRowImpl loadBlockMetaInfo(CarbonRowSchema[] taskSummarySchema,
+      SegmentProperties segmentProperties, BlockletDataMapModel blockletDataMapInfo,
+      List<DataFileFooter> indexInfo) throws IOException, MemoryException {
     String tempFilePath = null;
     DataFileFooter previousDataFileFooter = null;
     int footerCounter = 0;
@@ -281,9 +285,9 @@ public class BlockDataMap extends CoarseGrainDataMap
         if (!blockInfo.getFilePath().equals(tempFilePath) || footerCounter == indexInfo.size()) {
           TableBlockInfo previousBlockInfo =
               previousDataFileFooter.getBlockInfo().getTableBlockInfo();
-          summaryRow = loadToUnsafeBlock(schema, previousDataFileFooter, segmentProperties,
-              blockletDataMapInfo.getMinMaxCacheColumns(), previousBlockInfo.getFilePath(),
-              summaryRow,
+          summaryRow = loadToUnsafeBlock(schema, taskSummarySchema, previousDataFileFooter,
+              segmentProperties, blockletDataMapInfo.getMinMaxCacheColumns(),
+              previousBlockInfo.getFilePath(), summaryRow,
               blockletDataMapInfo.getBlockMetaInfoMap().get(previousBlockInfo.getFilePath()),
               blockMinValues, blockMaxValues);
           // flag to check whether last file footer entry is different from previous entry.
@@ -305,18 +309,19 @@ public class BlockDataMap extends CoarseGrainDataMap
     }
     // add the last file footer entry
     if (isLastFileFooterEntryNeedToBeAdded) {
-      summaryRow = loadToUnsafeBlock(schema, previousDataFileFooter, segmentProperties,
-          blockletDataMapInfo.getMinMaxCacheColumns(),
-          previousDataFileFooter.getBlockInfo().getTableBlockInfo().getFilePath(), summaryRow,
-          blockletDataMapInfo.getBlockMetaInfoMap()
-              .get(previousDataFileFooter.getBlockInfo().getTableBlockInfo().getFilePath()),
-          blockMinValues, blockMaxValues);
+      summaryRow =
+          loadToUnsafeBlock(schema, taskSummarySchema, previousDataFileFooter, segmentProperties,
+              blockletDataMapInfo.getMinMaxCacheColumns(),
+              previousDataFileFooter.getBlockInfo().getTableBlockInfo().getFilePath(), summaryRow,
+              blockletDataMapInfo.getBlockMetaInfoMap()
+                  .get(previousDataFileFooter.getBlockInfo().getTableBlockInfo().getFilePath()),
+              blockMinValues, blockMaxValues);
       blockletCountInEachBlock.add(totalBlockletsInOneBlock);
     }
     byte[] blockletCount = ArrayUtils
         .toPrimitive(blockletCountInEachBlock.toArray(new Byte[blockletCountInEachBlock.size()]));
     // blocklet count index is the last index
-    summaryRow.setByteArray(blockletCount, getTaskSummarySchema().length - 1);
+    summaryRow.setByteArray(blockletCount, taskSummarySchema.length - 1);
     return summaryRow;
   }
 
@@ -332,11 +337,11 @@ public class BlockDataMap extends CoarseGrainDataMap
    * where blocklet information is not available in index file. So load only block information
    * and read blocklet information in executor.
    */
-  protected DataMapRowImpl loadToUnsafeBlock(CarbonRowSchema[] schema, DataFileFooter fileFooter,
+  protected DataMapRowImpl loadToUnsafeBlock(CarbonRowSchema[] schema,
+      CarbonRowSchema[] taskSummarySchema, DataFileFooter fileFooter,
       SegmentProperties segmentProperties, List<CarbonColumn> minMaxCacheColumns, String filePath,
       DataMapRowImpl summaryRow, BlockMetaInfo blockMetaInfo, byte[][] minValues,
       byte[][] maxValues) {
-    CarbonRowSchema[] taskSummarySchema = getTaskSummarySchema();
     // Add one row to maintain task level min max for segment pruning
     if (summaryRow == null) {
       summaryRow = new DataMapRowImpl(taskSummarySchema);
@@ -405,8 +410,8 @@ public class BlockDataMap extends CoarseGrainDataMap
     return fileName;
   }
 
-  private void addTaskSummaryRowToUnsafeMemoryStore(DataMapRow summaryRow, byte[] filePath,
-      byte[] fileName, byte[] segmentId) {
+  private void addTaskSummaryRowToUnsafeMemoryStore(CarbonRowSchema[] taskSummarySchema,
+      DataMapRow summaryRow, byte[] filePath, byte[] fileName, byte[] segmentId) {
     // write the task summary info to unsafe memory store
     if (null != summaryRow) {
       summaryRow.setByteArray(fileName, SUMMARY_INDEX_FILE_NAME);
@@ -415,7 +420,7 @@ public class BlockDataMap extends CoarseGrainDataMap
         summaryRow.setByteArray(filePath, SUMMARY_INDEX_PATH);
       }
       try {
-        taskSummaryDMStore.addIndexRow(getTaskSummarySchema(), summaryRow);
+        taskSummaryDMStore.addIndexRow(taskSummarySchema, summaryRow);
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
@@ -504,27 +509,11 @@ public class BlockDataMap extends CoarseGrainDataMap
    * once per datamap. It stores datamap level max/min of each column and partition information of
    * datamap
    *
-   * @param segmentProperties
    * @throws MemoryException
    */
-  protected void createSummarySchema(SegmentProperties segmentProperties,
-      BlockletDataMapModel blockletDataMapModel) throws MemoryException {
-    // flag to check whether it is required to store blocklet count of each carbondata file as
-    // binary in summary schema. This will be true when it is not a legacy store (>1.1 version)
-    // and CACHE_LEVEL=BLOCK
-    lazyCreateSummarySchema(segmentProperties, blockletDataMapModel.getMinMaxCacheColumns(),
-        !isLegacyStore);
+  protected void createSummaryDMStore(BlockletDataMapModel blockletDataMapModel)
+      throws MemoryException {
     taskSummaryDMStore = getMemoryDMStore(blockletDataMapModel.isAddToUnsafe());
-  }
-
-  protected void lazyCreateSummarySchema(SegmentProperties segmentProperties,
-      List<CarbonColumn> minMaxCacheColumns, boolean storeBlockletCount) throws MemoryException {
-    CarbonRowSchema[] taskSummarySchema = SchemaGenerator
-        .createTaskSummarySchema(segmentProperties, minMaxCacheColumns, storeBlockletCount,
-            isFilePathStored);
-    SegmentPropertiesAndSchemaHolder.getInstance()
-        .getSegmentPropertiesWrapper(segmentPropertiesIndex)
-        .setTaskSummarySchema(taskSummarySchema);
   }
 
   @Override public boolean isScanRequired(FilterResolverIntf filterExp) {
@@ -857,17 +846,11 @@ public class BlockDataMap extends CoarseGrainDataMap
     SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper segmentPropertiesWrapper =
         SegmentPropertiesAndSchemaHolder.getInstance()
             .getSegmentPropertiesWrapper(segmentPropertiesIndex);
-    CarbonRowSchema[] taskSummarySchema = segmentPropertiesWrapper.getTaskSummarySchema();
-    if (null == taskSummarySchema) {
-      try {
-        lazyCreateSummarySchema(segmentPropertiesWrapper.getSegmentProperties(),
-            segmentPropertiesWrapper.getMinMaxCacheColumns(), !isLegacyStore);
-      } catch (MemoryException e) {
-        throw new RuntimeException(e);
-      }
-      taskSummarySchema = segmentPropertiesWrapper.getTaskSummarySchema();
+    try {
+      return segmentPropertiesWrapper.getTaskSummarySchema(!isLegacyStore, isFilePathStored);
+    } catch (MemoryException e) {
+      throw new RuntimeException(e);
     }
-    return taskSummarySchema;
   }
 
   /**

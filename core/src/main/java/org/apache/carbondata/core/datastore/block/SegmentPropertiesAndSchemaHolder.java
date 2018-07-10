@@ -30,6 +30,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.indexstore.schema.SchemaGenerator;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -246,7 +247,6 @@ public class SegmentPropertiesAndSchemaHolder {
     private List<ColumnSchema> columnsInTable;
     private int[] columnCardinality;
     private SegmentProperties segmentProperties;
-    private CarbonRowSchema[] taskSummarySchema;
     private List<CarbonColumn> minMaxCacheColumns;
 
     public SegmentPropertiesWrapper(CarbonTable carbonTable,
@@ -293,12 +293,11 @@ public class SegmentPropertiesAndSchemaHolder {
       return columnCardinality;
     }
 
-    public synchronized CarbonRowSchema[] getTaskSummarySchema() {
-      return taskSummarySchema;
-    }
-
-    public synchronized void setTaskSummarySchema(CarbonRowSchema[] taskSummarySchema) {
-      this.taskSummarySchema = taskSummarySchema;
+    public CarbonRowSchema[] getTaskSummarySchema(boolean storeBlockletCount,
+        boolean filePathToBeStored) throws MemoryException {
+      return SchemaGenerator
+          .createTaskSummarySchema(segmentProperties, minMaxCacheColumns, storeBlockletCount,
+              filePathToBeStored);
     }
 
     public CarbonRowSchema[] getBlockFileFooterEntrySchema() {

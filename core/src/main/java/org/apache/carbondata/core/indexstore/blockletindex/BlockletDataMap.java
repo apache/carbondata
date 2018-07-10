@@ -60,55 +60,27 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
    * @throws IOException
    * @throws MemoryException
    */
-  protected DataMapRowImpl loadMetadata(SegmentProperties segmentProperties,
-      BlockletDataMapModel blockletDataMapInfo, List<DataFileFooter> indexInfo)
-      throws IOException, MemoryException {
+  protected DataMapRowImpl loadMetadata(CarbonRowSchema[] taskSummarySchema,
+      SegmentProperties segmentProperties, BlockletDataMapModel blockletDataMapInfo,
+      List<DataFileFooter> indexInfo) throws IOException, MemoryException {
     if (isLegacyStore) {
-      return loadBlockInfoForOldStore(segmentProperties, blockletDataMapInfo, indexInfo);
+      return loadBlockInfoForOldStore(taskSummarySchema, segmentProperties, blockletDataMapInfo,
+          indexInfo);
     } else {
-      return loadBlockletMetaInfo(segmentProperties, blockletDataMapInfo, indexInfo);
+      return loadBlockletMetaInfo(taskSummarySchema, segmentProperties, blockletDataMapInfo,
+          indexInfo);
     }
-  }
-
-  /**
-   * Method to create blocklet schema
-   *
-   * @throws MemoryException
-   */
-  protected void createMemorySchema(BlockletDataMapModel blockletDataMapModel)
-      throws MemoryException {
-    memoryDMStore = getMemoryDMStore(blockletDataMapModel.isAddToUnsafe());
-  }
-
-  /**
-   * Creates the schema to store summary information or the information which can be stored only
-   * once per datamap. It stores datamap level max/min of each column and partition information of
-   * datamap
-   *
-   * @param segmentProperties
-   * @throws MemoryException
-   */
-  protected void createSummarySchema(SegmentProperties segmentProperties,
-      BlockletDataMapModel blockletDataMapModel) throws MemoryException {
-    lazyCreateSummarySchema(segmentProperties, blockletDataMapModel.getMinMaxCacheColumns(), false);
-    taskSummaryDMStore = getMemoryDMStore(blockletDataMapModel.isAddToUnsafe());
   }
 
   protected CarbonRowSchema[] getTaskSummarySchema() {
     SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper segmentPropertiesWrapper =
         SegmentPropertiesAndSchemaHolder.getInstance()
             .getSegmentPropertiesWrapper(segmentPropertiesIndex);
-    CarbonRowSchema[] taskSummarySchema = segmentPropertiesWrapper.getTaskSummarySchema();
-    if (null == taskSummarySchema) {
-      try {
-        lazyCreateSummarySchema(segmentPropertiesWrapper.getSegmentProperties(),
-            segmentPropertiesWrapper.getMinMaxCacheColumns(), false);
-      } catch (MemoryException e) {
-        throw new RuntimeException(e);
-      }
-      taskSummarySchema = segmentPropertiesWrapper.getTaskSummarySchema();
+    try {
+      return segmentPropertiesWrapper.getTaskSummarySchema(false, isFilePathStored);
+    } catch (MemoryException e) {
+      throw new RuntimeException(e);
     }
-    return taskSummarySchema;
   }
 
   protected CarbonRowSchema[] getFileFooterEntrySchema() {
@@ -124,9 +96,9 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
    * @throws IOException
    * @throws MemoryException
    */
-  private DataMapRowImpl loadBlockletMetaInfo(SegmentProperties segmentProperties,
-      BlockletDataMapModel blockletDataMapInfo, List<DataFileFooter> indexInfo)
-      throws IOException, MemoryException {
+  private DataMapRowImpl loadBlockletMetaInfo(CarbonRowSchema[] taskSummarySchema,
+      SegmentProperties segmentProperties, BlockletDataMapModel blockletDataMapInfo,
+      List<DataFileFooter> indexInfo) throws IOException, MemoryException {
     String tempFilePath = null;
     DataMapRowImpl summaryRow = null;
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
@@ -147,7 +119,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
           tempFilePath = blockInfo.getFilePath();
           relativeBlockletId = 0;
         }
-        summaryRow = loadToUnsafe(schema, fileFooter, segmentProperties,
+        summaryRow = loadToUnsafe(schema, taskSummarySchema, fileFooter, segmentProperties,
             blockletDataMapInfo.getMinMaxCacheColumns(), blockInfo.getFilePath(), summaryRow,
             blockMetaInfo, relativeBlockletId);
         // this is done because relative blocklet id need to be incremented based on the
@@ -158,11 +130,11 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
     return summaryRow;
   }
 
-  private DataMapRowImpl loadToUnsafe(CarbonRowSchema[] schema, DataFileFooter fileFooter,
-      SegmentProperties segmentProperties, List<CarbonColumn> minMaxCacheColumns, String filePath,
-      DataMapRowImpl summaryRow, BlockMetaInfo blockMetaInfo, int relativeBlockletId) {
+  private DataMapRowImpl loadToUnsafe(CarbonRowSchema[] schema, CarbonRowSchema[] taskSummarySchema,
+      DataFileFooter fileFooter, SegmentProperties segmentProperties,
+      List<CarbonColumn> minMaxCacheColumns, String filePath, DataMapRowImpl summaryRow,
+      BlockMetaInfo blockMetaInfo, int relativeBlockletId) {
     List<BlockletInfo> blockletList = fileFooter.getBlockletList();
-    CarbonRowSchema[] taskSummarySchema = getTaskSummarySchema();
     // Add one row to maintain task level min max for segment pruning
     if (!blockletList.isEmpty() && summaryRow == null) {
       summaryRow = new DataMapRowImpl(taskSummarySchema);

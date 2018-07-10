@@ -365,7 +365,7 @@ public final class FilterUtil {
       // check for filter dimension in the cached column list
       if (null != minMaxCacheColumns) {
         int columnIndexInMinMaxByteArray =
-            getFilterDimensionIndexInCachedColumns(minMaxCacheColumns, columnFromCurrentBlock);
+            getFilterColumnIndexInCachedColumns(minMaxCacheColumns, columnFromCurrentBlock);
         if (columnIndexInMinMaxByteArray != -1) {
           columnResolvedFilterInfo.setColumnIndexInMinMaxByteArray(columnIndexInMinMaxByteArray);
         } else {
@@ -394,7 +394,7 @@ public final class FilterUtil {
    * @param filterColumn
    * @return
    */
-  private static int getFilterDimensionIndexInCachedColumns(
+  private static int getFilterColumnIndexInCachedColumns(
       List<CarbonColumn> carbonDimensionsToBeCached, CarbonColumn filterColumn) {
     int columnIndexInMinMaxByteArray = -1;
     int columnCounter = 0;

@@ -72,10 +72,10 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
   }
 
   private def validateMinMaxColumnsCacheLength(dataMaps: List[DataMap[_ <: Blocklet]],
-      expectedLength: Int): Boolean = {
+      expectedLength: Int, storeBlockletCount: Boolean = false): Boolean = {
     val index = dataMaps(0).asInstanceOf[BlockDataMap].getSegmentPropertiesIndex
     val summarySchema = SegmentPropertiesAndSchemaHolder.getInstance()
-      .getSegmentPropertiesWrapper(index).getTaskSummarySchema
+      .getSegmentPropertiesWrapper(index).getTaskSummarySchema(storeBlockletCount, false)
     val minSchemas = summarySchema(0).asInstanceOf[CarbonRowSchema.StructCarbonRowSchema]
       .getChildSchemas
     minSchemas.length == expectedLength
@@ -90,7 +90,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     // validate dataMap is non empty, its an instance of BlockDataMap and minMaxSchema length is 3
     assert(dataMaps.nonEmpty)
     assert(dataMaps(0).isInstanceOf[BlockDataMap])
-    assert(validateMinMaxColumnsCacheLength(dataMaps, 3))
+    assert(validateMinMaxColumnsCacheLength(dataMaps, 3, true))
     var segmentPropertyIndex = dataMaps(0).asInstanceOf[BlockDataMap].getSegmentPropertiesIndex
 
     // alter table to add column_meta_cache and cache_level
