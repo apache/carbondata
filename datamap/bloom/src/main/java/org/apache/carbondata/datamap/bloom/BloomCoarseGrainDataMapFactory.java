@@ -18,6 +18,7 @@ package org.apache.carbondata.datamap.bloom;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
@@ -94,7 +95,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   private boolean bloomCompress;
   private Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> cache;
   // segmentId -> list of index file
-  private Map<String, Set<String>> segmentMap = new HashMap<>();
+  private Map<String, Set<String>> segmentMap = new ConcurrentHashMap<>();
 
   public BloomCoarseGrainDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
@@ -336,9 +337,10 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   }
 
   @Override
-  public void clear() {
+  public synchronized void clear() {
     if (segmentMap.size() > 0) {
-      for (String segmentId : segmentMap.keySet().toArray(new String[segmentMap.size()])) {
+      List<String> segments = new ArrayList<>(segmentMap.keySet());
+      for (String segmentId : segments) {
         clear(new Segment(segmentId, null, null));
       }
     }
