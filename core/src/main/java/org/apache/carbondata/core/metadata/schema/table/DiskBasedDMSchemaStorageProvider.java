@@ -27,6 +27,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -84,10 +85,10 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
       if (null != brWriter) {
         brWriter.flush();
       }
-      checkAndReloadDataMapSchemas(true);
       dataMapSchemas.add(dataMapSchema);
-      touchMDTFile();
       CarbonUtil.closeStreams(dataOutputStream, brWriter);
+      checkAndReloadDataMapSchemas(true);
+      touchMDTFile();
     }
   }
 
@@ -159,19 +160,16 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
     if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath))) {
       throw new IOException("DataMap with name " + dataMapName + " does not exists in storage");
     }
-    DataMapSchema dataMapSchemaToRemove = null;
-    for (DataMapSchema dataMapSchema : dataMapSchemas) {
-      if (dataMapSchema.getDataMapName().equalsIgnoreCase(dataMapName)) {
-        dataMapSchemaToRemove =  dataMapSchema;
+    Iterator<DataMapSchema> iterator = dataMapSchemas.iterator();
+    while (iterator.hasNext()) {
+      DataMapSchema schema = iterator.next();
+      if (schema.getDataMapName().equalsIgnoreCase(dataMapName)) {
+        iterator.remove();
       }
     }
-    if (dataMapSchemaToRemove != null) {
-      dataMapSchemas.remove(dataMapSchemaToRemove);
-    }
+    touchMDTFile();
     if (!FileFactory.deleteFile(schemaPath, FileFactory.getFileType(schemaPath))) {
       throw new IOException("DataMap with name " + dataMapName + " cannot be deleted");
-    } else {
-      touchMDTFile();
     }
   }
 
@@ -180,13 +178,13 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
       long lastModifiedTime = FileFactory.getCarbonFile(mdtFilePath).getLastModifiedTime();
       if (this.lastModifiedTime != lastModifiedTime) {
         dataMapSchemas = retrieveAllSchemasInternal();
-        this.lastModifiedTime = lastModifiedTime;
+        touchMDTFile();
       }
     } else {
+      dataMapSchemas = retrieveAllSchemasInternal();
       if (touchFile) {
         touchMDTFile();
       }
-      dataMapSchemas = retrieveAllSchemasInternal();
     }
   }
 
@@ -205,6 +203,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
     }
     long lastModifiedTime = System.currentTimeMillis();
     FileFactory.getCarbonFile(mdtFilePath).setLastModifiedTime(lastModifiedTime);
+    this.lastModifiedTime = lastModifiedTime;
   }
 
   /**

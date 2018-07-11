@@ -26,6 +26,7 @@ import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Transformer;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Metadata of the datamap, set by DataMap developer
@@ -71,9 +72,13 @@ public class DataMapMeta {
     return optimizedOperation;
   }
 
-  @Override
-  public String toString() {
-    return "DataMapMeta{" + "dataMapName='" + dataMapName + '\'' + ", indexedColumns="
-        + indexedColumns + ", optimizedOperation=" + optimizedOperation + '}';
+  @Override public String toString() {
+    return new StringBuilder("DataMapMeta{")
+        .append("dataMapName='").append(dataMapName).append('\'')
+        .append(", indexedColumns=[")
+        .append(StringUtils.join(getIndexedColumnNames(), ", ")).append("]\'")
+        .append(", optimizedOperation=").append(optimizedOperation)
+        .append('}')
+        .toString();
   }
 }
