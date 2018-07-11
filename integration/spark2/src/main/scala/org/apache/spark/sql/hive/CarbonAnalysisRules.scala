@@ -35,6 +35,8 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.util.CarbonUtil
 
 case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
@@ -55,7 +57,23 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
         Seq.empty, isDistinct = false), "tupleId")())
 
       val projList = Seq(UnresolvedAlias(UnresolvedStar(alias.map(Seq(_)))), tupleId)
-
+      val carbonTable = CarbonEnv.getCarbonTable(table.tableIdentifier)(sparkSession)
+      if (carbonTable != null) {
+        if (CarbonUtil.hasAggregationDataMap(carbonTable)) {
+          throw new UnsupportedOperationException(
+            "Update operation is not supported for tables which have a pre-aggregate table. " +
+            "Drop pre-aggregate tables to continue.")
+        }
+        if (carbonTable.isChildDataMap) {
+          throw new UnsupportedOperationException(
+            "Update operation is not supported for pre-aggregate table")
+        }
+        val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
+        if (!indexSchemas.isEmpty) {
+          throw new UnsupportedOperationException(
+            "Update operation is not supported for table which has index datamaps")
+        }
+      }
       val tableRelation = if (SPARK_VERSION.startsWith("2.1")) {
         relation
       } else if (SPARK_VERSION.startsWith("2.2")) {
@@ -170,6 +188,23 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
           Seq.empty, isDistinct = false), "tupleId")())
 
         val projList = Seq(UnresolvedAlias(UnresolvedStar(alias.map(Seq(_)))), tupleId)
+        val carbonTable = CarbonEnv.getCarbonTable(table.tableIdentifier)(sparkSession)
+        if (carbonTable != null) {
+          if (CarbonUtil.hasAggregationDataMap(carbonTable)) {
+            throw new UnsupportedOperationException(
+              "Delete operation is not supported for tables which have a pre-aggregate table. " +
+              "Drop pre-aggregate tables to continue.")
+          }
+          if (carbonTable.isChildDataMap) {
+            throw new UnsupportedOperationException(
+              "Delete operation is not supported for pre-aggregate table")
+          }
+          val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
+          if (!indexSchemas.isEmpty) {
+            throw new UnsupportedOperationException(
+              "Delete operation is not supported for table which has index datamaps")
+          }
+        }
         // include tuple id in subquery
         if (SPARK_VERSION.startsWith("2.1")) {
           Project(projList, relation)
