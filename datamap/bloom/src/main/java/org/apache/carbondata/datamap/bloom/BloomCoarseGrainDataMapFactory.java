@@ -347,7 +347,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   }
 
   @Override
-  public void deleteDatamapData(Segment segment) {
+  public void deleteDatamapData(Segment segment) throws IOException {
     try {
       String segmentId = segment.getSegmentNo();
       String datamapPath = CarbonTablePath
@@ -357,8 +357,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
             FileFactory.getFileType(datamapPath));
         CarbonUtil.deleteFoldersAndFilesSilent(file);
       }
-    } catch (IOException | InterruptedException ex) {
-      LOGGER.error("Failed to delete datamap for segment_" + segment.getSegmentNo());
+    } catch (InterruptedException ex) {
+      throw new IOException("Failed to delete datamap for segment_" + segment.getSegmentNo());
     }
   }
 

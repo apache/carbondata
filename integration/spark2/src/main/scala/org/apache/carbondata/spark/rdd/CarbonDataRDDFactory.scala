@@ -47,7 +47,7 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo}
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
@@ -475,6 +475,7 @@ object CarbonDataRDDFactory {
       if (carbonLoadModel.isCarbonTransactionalTable) {
         // delete segment is applicable for transactional table
         CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
+        clearDataMapFiles(carbonTable, carbonLoadModel.getSegmentId)
       }
       LOGGER.info("********clean up done**********")
       LOGGER.audit(s"Data load is failed for " +
@@ -493,6 +494,7 @@ object CarbonDataRDDFactory {
         if (carbonLoadModel.isCarbonTransactionalTable) {
           // delete segment is applicable for transactional table
           CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
+          clearDataMapFiles(carbonTable, carbonLoadModel.getSegmentId)
         }
         LOGGER.info("********clean up done**********")
         LOGGER.audit(s"Data load is failed for " +
@@ -554,6 +556,7 @@ object CarbonDataRDDFactory {
         if (carbonLoadModel.isCarbonTransactionalTable) {
           // delete segment is applicable for transactional table
           CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
+          clearDataMapFiles(carbonTable, carbonLoadModel.getSegmentId)
         }
         LOGGER.info("********clean up done**********")
         LOGGER.audit("Data load is failed for " +
@@ -588,6 +591,21 @@ object CarbonDataRDDFactory {
     }
   }
 
+  /**
+   * clear datamap files for segment
+   */
+  private def clearDataMapFiles(carbonTable: CarbonTable, segmentId: String): Unit = {
+    try {
+      val segments = List(new Segment(segmentId)).asJava
+      DataMapStoreManager.getInstance().getAllDataMap(carbonTable).asScala
+        .filter(_.getDataMapSchema.isIndexDataMap)
+        .foreach(_.deleteDatamapData(segments))
+    } catch {
+      case ex : Exception =>
+        LOGGER.error(s"Failed to clear datamap files for" +
+                     s" ${carbonTable.getDatabaseName}.${carbonTable.getTableName}")
+    }
+  }
   /**
    * Add and update the segment files. In case of update scenario the carbonindex files are written
    * to the same segment so we need to update old segment file. So this ethod writes the latest data

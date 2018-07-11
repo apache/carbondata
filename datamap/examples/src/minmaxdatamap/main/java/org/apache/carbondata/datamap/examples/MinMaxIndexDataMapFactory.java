@@ -157,7 +157,7 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
   }
 
   @Override
-  public void deleteDatamapData(Segment segment) {
+  public void deleteDatamapData(Segment segment) throws IOException {
 
   }
 
