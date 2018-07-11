@@ -23,7 +23,9 @@ import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
+import org.apache.commons.lang3.ArrayUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.{Job, TaskAttemptID, TaskType}
@@ -33,19 +35,22 @@ import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datamap.{DataMapRegistry, DataMapStoreManager, Segment}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datamap.dev.DataMapBuilder
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher
-import org.apache.carbondata.core.keygenerator.columnar.ColumnarSplitter
+import org.apache.carbondata.core.keygenerator.KeyGenerator
+import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
+import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.TaskMetricsMap
+import org.apache.carbondata.core.util.{CarbonUtil, TaskMetricsMap}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMapPreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection, CarbonRecordReader}
@@ -54,6 +59,7 @@ import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 import org.apache.carbondata.spark.{RefreshResult, RefreshResultImpl}
 import org.apache.carbondata.spark.rdd.{CarbonRDDWithTableInfo, CarbonSparkPartition}
 import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
+
 
 /**
  * Helper object to rebuild the index DataMap
@@ -154,89 +160,114 @@ class OriginalReadSupport(dataTypes: Array[DataType]) extends CarbonReadSupport[
  */
 class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Array[CarbonColumn])
   extends CarbonReadSupport[Array[Object]] {
-  var columnarSplitter: ColumnarSplitter = _
+  var dimensionKeyGenerator: KeyGenerator = _
+  // for the dictionary dimensions
+  var indexCol2IdxInDictArray: Map[String, Int] = Map()
   // for the non dictionary dimensions
   var indexCol2IdxInNoDictArray: Map[String, Int] = Map()
   // for the measures
   var indexCol2IdxInMeasureArray: Map[String, Int] = Map()
-  // for the dictionary/date dimensions
-  var dictIndexCol2MdkIndex: Map[String, Int] = Map()
-  var mdkIndex2DictIndexCol: Map[Int, String] = Map()
-  var existDim = false
+
+  /**
+   * rebuild process get data from query, if some columns added to table but not in this segment
+   * it will be filled with default value and generate new key for dict dimension.
+   * Here we use same way as `RowIdRestructureBasedRawResultCollector` to prepare
+   * key generator to get surrogate value of dict column result.
+   * So we do not need to make a fake mdk to split when adding row to datamap
+   */
+  def prepareKeyGenForDictIndexColumns(carbonTable: CarbonTable,
+                                       dictIndexColumns: ListBuffer[CarbonColumn]): Unit = {
+
+    val columnCardinality = new util.ArrayList[Integer](dictIndexColumns.length)
+    val columnPartitioner = new util.ArrayList[Integer](dictIndexColumns.length)
+
+    dictIndexColumns.foreach { col =>
+      val dim = carbonTable.getDimensionByName(carbonTable.getTableName, col.getColName)
+      val currentBlockDimension = segmentProperties.getDimensionFromCurrentBlock(dim)
+      if (null != currentBlockDimension) {
+        columnCardinality.add(segmentProperties.getDimColumnsCardinality.apply(
+          currentBlockDimension.getKeyOrdinal))
+        columnPartitioner.add(segmentProperties.getDimensionPartitions.apply(
+          currentBlockDimension.getKeyOrdinal
+        ))
+      } else {
+        columnPartitioner.add(1)
+        if (col.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+          columnCardinality.add(Integer.MAX_VALUE)
+        } else {
+          val defaultValue = col.getDefaultValue
+          if (null != col.getDefaultValue) {
+            columnCardinality.add(CarbonCommonConstants.DICTIONARY_DEFAULT_CARDINALITY + 1)
+          } else {
+            columnCardinality.add(CarbonCommonConstants.DICTIONARY_DEFAULT_CARDINALITY)
+          }
+        }
+      }
+    }
+
+    if (!columnCardinality.isEmpty) {
+      val latestColumnCardinality = ArrayUtils.toPrimitive(columnCardinality.toArray(
+        new Array[Integer](columnCardinality.size)))
+      val latestColumnPartitioner = ArrayUtils.toPrimitive(columnPartitioner.toArray(
+        new Array[Integer](columnPartitioner.size)))
+      val dimensionBitLength = CarbonUtil.getDimensionBitLength(
+        latestColumnCardinality, latestColumnPartitioner)
+      this.dimensionKeyGenerator = new MultiDimKeyVarLengthGenerator(dimensionBitLength)
+    }
+  }
 
   override def initialize(carbonColumns: Array[CarbonColumn],
       carbonTable: CarbonTable): Unit = {
-    this.columnarSplitter = segmentProperties.getFixedLengthKeySplitter
 
+    val dictIndexColumns = new ListBuffer[CarbonColumn]()
+
+    // prepare index info to extract data from query result
     indexColumns.foreach { col =>
       if (col.isDimension) {
         val dim = carbonTable.getDimensionByName(carbonTable.getTableName, col.getColName)
         if (!dim.isGlobalDictionaryEncoding && !dim.isDirectDictionaryEncoding) {
           indexCol2IdxInNoDictArray =
             indexCol2IdxInNoDictArray + (col.getColName -> indexCol2IdxInNoDictArray.size)
+        } else {
+          dictIndexColumns.append(col)
+          indexCol2IdxInDictArray =
+            indexCol2IdxInDictArray + (col.getColName -> indexCol2IdxInDictArray.size)
         }
       } else {
         indexCol2IdxInMeasureArray =
           indexCol2IdxInMeasureArray + (col.getColName -> indexCol2IdxInMeasureArray.size)
       }
     }
-    dictIndexCol2MdkIndex = segmentProperties.getDimensions.asScala
-      .filter(col => col.isGlobalDictionaryEncoding || col.isDirectDictionaryEncoding)
-      .map(_.getColName)
-      .zipWithIndex
-      .filter(p => indexColumns.exists(c => c.getColName.equalsIgnoreCase(p._1)))
-      .toMap
-    mdkIndex2DictIndexCol = dictIndexCol2MdkIndex.map(p => (p._2, p._1))
-    existDim = indexCol2IdxInNoDictArray.nonEmpty || dictIndexCol2MdkIndex.nonEmpty
+
+    if (dictIndexColumns.size > 0) {
+      prepareKeyGenForDictIndexColumns(carbonTable, dictIndexColumns)
+    }
   }
 
   /**
    * input: all the dimensions are bundled in one ByteArrayWrapper in position 0,
-   * then comes the measures one by one;
+   * then comes the measures one by one; last 3 elements are block/page/row id
    * output: all the dimensions and measures comes one after another
    */
   override def readRow(data: Array[Object]): Array[Object] = {
-    val dictArray = if (existDim) {
-      val dictKeys = data(0).asInstanceOf[ByteArrayWrapper].getDictionaryKey
-      // note that the index column may only contains a portion of all the dict columns, so we
-      // need to pad fake bytes to dict keys in order to reconstruct value later
-      if (columnarSplitter.getBlockKeySize.length > dictIndexCol2MdkIndex.size) {
-        val res = new Array[Byte](columnarSplitter.getBlockKeySize.sum)
-        var startPos = 0
-        var desPos = 0
-        columnarSplitter.getBlockKeySize.indices.foreach { idx =>
-          if (mdkIndex2DictIndexCol.contains(idx)) {
-            val size = columnarSplitter.getBlockKeySize.apply(idx)
-            System.arraycopy(dictKeys, startPos, res, desPos, size)
-            startPos += size
-          }
-          desPos += columnarSplitter.getBlockKeySize.apply(idx)
-        }
 
-        Option(res)
-      } else {
-        Option(dictKeys)
-      }
-    } else {
-      None
+    var surrogatKeys = new Array[Long](0)
+    if(null != dimensionKeyGenerator) {
+        surrogatKeys = dimensionKeyGenerator.getKeyArray(
+          data(0).asInstanceOf[ByteArrayWrapper].getDictionaryKey)
     }
 
-    val dictKeys = if (existDim) {
-      Option(columnarSplitter.splitKey(dictArray.get))
-    } else {
-      None
-    }
+    // fill return row from data
     val rtn = new Array[Object](indexColumns.length + 3)
-
     indexColumns.zipWithIndex.foreach { case (col, i) =>
-      rtn(i) = if (dictIndexCol2MdkIndex.contains(col.getColName)) {
-        dictKeys.get(dictIndexCol2MdkIndex.get(col.getColName).get)
+      rtn(i) = if (indexCol2IdxInDictArray.contains(col.getColName)) {
+        surrogatKeys(indexCol2IdxInDictArray(col.getColName)).toInt.asInstanceOf[Integer]
       } else if (indexCol2IdxInNoDictArray.contains(col.getColName)) {
         data(0).asInstanceOf[ByteArrayWrapper].getNoDictionaryKeyByIndex(
-          indexCol2IdxInNoDictArray.apply(col.getColName))
+          indexCol2IdxInNoDictArray(col.getColName))
       } else {
         // measures start from 1
-        data(1 + indexCol2IdxInMeasureArray.apply(col.getColName))
+        data(1 + indexCol2IdxInMeasureArray(col.getColName))
       }
     }
     rtn(indexColumns.length) = data(data.length - 3)
