@@ -270,7 +270,7 @@ class TestDataMapFactory(
    * delete datamap of the segment
    */
   override def deleteDatamapData(segment: Segment): Unit = {
-    ???
+
   }
 
   /**

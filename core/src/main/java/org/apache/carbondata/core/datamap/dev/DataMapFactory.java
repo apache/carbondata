@@ -113,7 +113,7 @@ public abstract class DataMapFactory<T extends DataMap> {
   /**
    * delete datamap data in the specified segment
    */
-  public abstract void deleteDatamapData(Segment segment);
+  public abstract void deleteDatamapData(Segment segment) throws IOException;
 
   /**
    * delete datamap data if any
