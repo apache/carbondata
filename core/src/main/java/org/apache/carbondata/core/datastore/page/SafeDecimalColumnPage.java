@@ -218,5 +218,6 @@ public class SafeDecimalColumnPage extends DecimalColumnPage {
   @Override
   public void freeMemory() {
     byteArrayData = null;
+    super.freeMemory();
   }
 }
