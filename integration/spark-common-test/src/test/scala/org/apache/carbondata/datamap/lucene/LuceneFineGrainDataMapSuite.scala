@@ -641,15 +641,15 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     assert(ex4.getMessage.contains("alter table drop column is not supported"))
 
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test7 OPTIONS('header'='false')")
-    val ex5 = intercept[MalformedCarbonCommandException] {
+    val ex5 = intercept[UnsupportedOperationException] {
       sql("UPDATE datamap_test7 d set(d.city)=('luc') where d.name='n10'").show()
     }
-    assert(ex5.getMessage.contains("update operation is not supported"))
+    assert(ex5.getMessage.contains("Update operation is not supported"))
 
-    val ex6 = intercept[MalformedCarbonCommandException] {
+    val ex6 = intercept[UnsupportedOperationException] {
       sql("delete from datamap_test7 where name = 'n10'").show()
     }
-    assert(ex6.getMessage.contains("delete operation is not supported"))
+    assert(ex6.getMessage.contains("Delete operation is not supported"))
   }
 
   test("test lucene fine grain multiple data map on table") {

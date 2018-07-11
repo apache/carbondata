@@ -713,6 +713,52 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists senten")
   }
 
+  test("block updating table which has preaggreate datamap") {
+    sql("use iud")
+    sql("drop table if exists test_dm_main")
+    sql("drop table if exists test_dm_main_preagg1")
+
+    sql("create table test_dm_main (a string, b string, c string) stored by 'carbondata'")
+    sql("insert into test_dm_main select 'aaa','bbb','ccc'")
+    sql("insert into test_dm_main select 'bbb','bbb','ccc'")
+    sql("insert into test_dm_main select 'ccc','bbb','ccc'")
+
+    sql(
+      "create datamap preagg1 on table test_dm_main using 'preaggregate' as select" +
+      " a,sum(b) from test_dm_main group by a")
+
+    assert(intercept[UnsupportedOperationException] {
+      sql("update test_dm_main_preagg1 set(test_dm_main_a) = ('aaa') where test_dm_main_a = 'bbb'")
+    }.getMessage.contains("Update operation is not supported for pre-aggregate table"))
+    assert(intercept[UnsupportedOperationException] {
+      sql("update test_dm_main set(a) = ('aaa') where a = 'ccc'")
+    }.getMessage.contains("Update operation is not supported for tables which have a pre-aggregate table"))
+
+    sql("drop table if exists test_dm_main")
+    sql("drop table if exists test_dm_main_preagg1")
+  }
+
+  test("block updating table which has index datamap") {
+    sql("use iud")
+    sql("drop table if exists test_dm_index")
+
+    sql("create table test_dm_index (a string, b string, c string) stored by 'carbondata'")
+    sql("insert into test_dm_index select 'ccc','bbb','ccc'")
+
+    sql(
+      s"""
+         | CREATE DATAMAP dm_test_dm_index ON TABLE test_dm_index
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='a', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+
+    assert(intercept[UnsupportedOperationException] {
+      sql("update test_dm_index set(a) = ('aaa') where a = 'ccc'")
+    }.getMessage.contains("Update operation is not supported for table which has index datamaps"))
+
+    sql("drop table if exists test_dm_index")
+  }
+
   override def afterAll {
     sql("use default")
     sql("drop database  if exists iud cascade")
