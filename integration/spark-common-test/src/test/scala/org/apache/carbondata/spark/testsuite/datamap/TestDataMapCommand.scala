@@ -350,57 +350,6 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop table main")
   }
 
-  test("test create datamap: unable to create same index datamap for one column") {
-    sql("DROP TABLE IF EXISTS datamap_test_table")
-    sql(
-      """
-        | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'carbondata'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
-      """.stripMargin)
-    val exception_duplicate_column: Exception = intercept[MalformedDataMapCommandException] {
-      sql(
-        s"""
-           | CREATE DATAMAP dm ON TABLE datamap_test_table
-           | USING 'lucene'
-           | DMProperties('INDEX_COLUMNS'='name')
-      """.stripMargin)
-      sql(
-        s"""
-           | CREATE DATAMAP dm1 ON TABLE datamap_test_table
-           | USING 'lucene'
-           | DMProperties('INDEX_COLUMNS'='name')
-      """.stripMargin)
-    }
-    assertResult("column 'name' already has lucene index datamap created")(exception_duplicate_column.getMessage)
-    sql("drop table if exists datamap_test_table")
-  }
-
-  test("test create datamap: able to create different index datamap for one column") {
-    sql("DROP TABLE IF EXISTS datamap_test_table")
-    sql(
-      """
-        | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'carbondata'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
-      """.stripMargin)
-    sql(
-      s"""
-         | CREATE DATAMAP dm ON TABLE datamap_test_table
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name')
-      """.stripMargin)
-    sql(
-      s"""
-         | CREATE DATAMAP dm1 ON TABLE datamap_test_table
-         | USING 'bloomfilter'
-         | DMProperties('INDEX_COLUMNS'='name')
-      """.stripMargin)
-    sql("show datamap on table datamap_test_table").show(false)
-    checkExistence(sql("show datamap on table datamap_test_table"), true, "dm", "dm1", "lucene", "bloomfilter")
-    sql("drop table if exists datamap_test_table")
-  }
-
   override def afterAll {
     sql("DROP TABLE IF EXISTS maintable")
     sql("drop table if exists uniqdata")
