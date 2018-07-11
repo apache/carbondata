@@ -67,7 +67,7 @@ public class ColumnLocalDictionaryGenerator implements LocalDictionaryGenerator 
     currentSize += data.length;
     if (currentSize >= Integer.MAX_VALUE) {
       throw new DictionaryThresholdReachedException(
-          "Unable to generate dictionary as Dictionary Size crossed 2GB limit");
+          "Unable to generate dictionary. Dictionary Size crossed 2GB limit");
     }
     return this.dictionaryHolder.putIfAbsent(data);
   }

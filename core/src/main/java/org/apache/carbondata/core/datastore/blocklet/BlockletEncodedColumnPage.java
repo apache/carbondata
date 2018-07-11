@@ -123,7 +123,7 @@ public class BlockletEncodedColumnPage {
     else {
       isLocalDictEncoded = false;
       pageLevelDictionary = null;
-      LOGGER.warn("Local dictionary Fallback is initiated for column: " + this.columnName
+      LOGGER.info("Local dictionary Fallback is initiated for column: " + this.columnName
           + " for pages: 1 to " + encodedColumnPageList.size());
       // submit all the older pages encoded with dictionary for fallback
       for (int pageIndex = 0; pageIndex < encodedColumnPageList.size(); pageIndex++) {
