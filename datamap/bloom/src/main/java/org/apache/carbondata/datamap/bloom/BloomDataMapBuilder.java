@@ -24,7 +24,9 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * Implementation for BloomFilter DataMap to rebuild the datamap for main table with existing data
@@ -72,6 +74,12 @@ public class BloomDataMapBuilder extends AbstractBloomDataMapWriter implements D
       releaseResouce();
       setWritingFinished(true);
     }
+  }
+
+  @Override
+  protected byte[] convertDictionaryValue(int indexColIdx, Object value) {
+    // input value from IndexDataMapRebuildRDD is already decoded as surrogate key
+    return CarbonUtil.getValueAsBytes(DataTypes.INT, value);
   }
 
   @Override
