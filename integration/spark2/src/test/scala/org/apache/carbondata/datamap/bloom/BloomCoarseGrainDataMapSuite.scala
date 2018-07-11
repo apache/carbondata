@@ -26,6 +26,8 @@ import org.apache.spark.sql.{CarbonSession, DataFrame}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
+import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 
@@ -411,6 +413,103 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
 
     // we do not care about the datamap name here, only to validate the query results are them same
     checkQuery("fakeDm", shouldHit = false)
+  }
+
+  test("test block change datatype for bloomfilter index datamap") {
+    sql(
+      s"""
+         | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128')
+         | """.stripMargin)
+
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $normalTable
+         | USING 'bloomfilter' WITH DEFERRED REBUILD
+         | DMProperties( 'INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+    val exception: MalformedCarbonCommandException = intercept[MalformedCarbonCommandException] {
+      sql(s"ALTER TABLE $normalTable CHANGE id id bigint")
+    }
+    assert(exception.getMessage.contains(
+      "alter table change datatype is not supported for index datamap"))
+  }
+
+  test("test drop index columns for bloomfilter datamap") {
+    sql(
+      s"""
+         | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128')
+         |  """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $normalTable
+         | USING 'bloomfilter'
+         | WITH DEFERRED REBUILD
+         | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+    val exception: MalformedCarbonCommandException = intercept[MalformedCarbonCommandException] {
+      sql(s"alter table $normalTable drop columns(name, id)")
+    }
+    assert(exception.getMessage.contains(
+      "alter table drop column is not supported for index datamap"))
+  }
+
+  test("test bloom datamap: bloom index column is local dictionary") {
+    sql(
+      s"""
+         | CREATE TABLE $normalTable(c1 string, c2 int, c3 string)
+         | STORED BY 'carbondata'
+         | """.stripMargin)
+    // c1 is local dictionary and will create bloom index on it
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable(c1 string, c2 int, c3 string)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('local_dictionary_include'='c1', 'local_dictionary_threshold'='1000')
+         | """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName on table $bloomDMSampleTable
+         | using 'bloomfilter'
+         | DMPROPERTIES('index_columns'='c1, c2')
+         | """.stripMargin)
+    sql(
+      s"""
+         | INSERT INTO $bloomDMSampleTable
+         | values ('c1v11', 11, 'c3v11'), ('c1v12', 12, 'c3v12')
+         | """.stripMargin)
+    sql(
+      s"""
+         | INSERT INTO $normalTable values ('c1v11', 11, 'c3v11'),
+         | ('c1v12', 12, 'c3v12')
+         | """.stripMargin)
+    checkAnswer(sql(s"select * from $bloomDMSampleTable"),
+      sql(s"select * from $normalTable"))
+    checkAnswer(sql(s"select * from $bloomDMSampleTable where c1 = 'c1v12'"),
+      sql(s"select * from $normalTable where c1 = 'c1v12'"))
+  }
+
+  test("test create bloomfilter datamap which index column datatype is complex ") {
+    sql(
+      s"""
+         | CREATE TABLE $normalTable(id INT, name STRING, city Array<INT>, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata'
+         |  """.stripMargin)
+    val exception: MalformedDataMapCommandException = intercept[MalformedDataMapCommandException] {
+      sql(
+        s"""
+           | CREATE DATAMAP $dataMapName ON TABLE $normalTable
+           | USING 'bloomfilter'
+           | WITH DEFERRED REBUILD
+           | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+           | """.stripMargin)
+    }
+    assert(exception.getMessage.contains(
+      "BloomFilter datamap does not support complex datatype column"))
   }
 
   override protected def afterAll(): Unit = {

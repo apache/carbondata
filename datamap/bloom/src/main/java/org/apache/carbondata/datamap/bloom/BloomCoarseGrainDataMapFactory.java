@@ -377,8 +377,43 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     }
   }
 
-  @Override public boolean willBecomeStale(TableOperation operation) {
+  @Override
+  public boolean willBecomeStale(TableOperation operation) {
     return false;
+  }
+
+  @Override
+  public boolean isOperationBlocked(TableOperation operation, Object... targets) {
+    switch (operation) {
+      case ALTER_DROP: {
+        // alter table drop columns
+        // will be blocked if the columns in bloomfilter datamap
+        List<String> columnsToDrop = (List<String>) targets[0];
+        List<String> indexedColumnNames = dataMapMeta.getIndexedColumnNames();
+        for (String indexedcolumn : indexedColumnNames) {
+          for (String column : columnsToDrop) {
+            if (column.equalsIgnoreCase(indexedcolumn)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+      case ALTER_CHANGE_DATATYPE: {
+        // alter table change one column datatype
+        // will be blocked if the column in bloomfilter datamap
+        String columnToChangeDatatype = (String) targets[0];
+        List<String> indexedColumnNames = dataMapMeta.getIndexedColumnNames();
+        for (String indexedcolumn : indexedColumnNames) {
+          if (indexedcolumn.equalsIgnoreCase(columnToChangeDatatype)) {
+            return true;
+          }
+        }
+        return false;
+      }
+      default:
+        return false;
+    }
   }
 
   @Override

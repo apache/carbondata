@@ -55,7 +55,8 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
       val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
       carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
-      if (!carbonTable.canAllow(carbonTable, TableOperation.ALTER_CHANGE_DATATYPE)) {
+      if (!carbonTable.canAllow(carbonTable, TableOperation.ALTER_CHANGE_DATATYPE,
+        alterTableDataTypeChangeModel.columnName)) {
         throw new MalformedCarbonCommandException(
           "alter table change datatype is not supported for index datamap")
       }
