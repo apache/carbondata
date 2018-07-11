@@ -667,4 +667,19 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select a.b from test where id=3 or a.c=3"),Seq(Row(5),Row(2)))
   }
 
+  /* test struct of date*/
+  test("test struct complex type with date") {
+    var backupdateFormat = CarbonProperties.getInstance().getProperty(
+      CarbonCommonConstants.CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+    sql("DROP TABLE IF EXISTS test")
+    sql("create table test(a struct<b:date>) stored by 'carbondata'")
+    sql("insert into test select '1992-02-19' ")
+    checkAnswer(sql("select * from test "), Row(Row(java.sql.Date.valueOf("1992-02-19"))))
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+        backupdateFormat)
+  }
 }
