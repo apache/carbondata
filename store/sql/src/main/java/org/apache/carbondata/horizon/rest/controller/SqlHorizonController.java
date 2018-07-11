@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.carbondata.horizon.rest.model.validate.RequestValidator;
 import org.apache.carbondata.horizon.rest.model.view.SqlRequest;
 import org.apache.carbondata.horizon.rest.model.view.SqlResponse;
+import org.apache.carbondata.horizon.rest.sql.SparkSqlWrapper;
 import org.apache.carbondata.store.api.exception.StoreException;
 
 import org.apache.spark.sql.AnalysisException;
@@ -42,12 +43,12 @@ public class SqlHorizonController {
     RequestValidator.validateSql(request);
     List<Row> rows;
     try {
-      rows = SqlHorizon.getSession().sql(request.getSqlStatement()).collectAsList();
+      rows = SparkSqlWrapper.sql(SqlHorizon.getSession(), request.getSqlStatement())
+          .collectAsList();
+    } catch (AnalysisException e) {
+      throw new StoreException(e.getSimpleMessage());
     } catch (Exception e) {
-      if (e instanceof AnalysisException) {
-        throw new StoreException(((AnalysisException) e).getSimpleMessage());
-      }
-      throw new StoreException(e);
+      throw new StoreException(e.getMessage());
     }
     Object[][] result = new Object[rows.size()][];
     for (int i = 0; i < rows.size(); i++) {
