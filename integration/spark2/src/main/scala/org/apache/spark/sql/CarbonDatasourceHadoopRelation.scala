@@ -148,7 +148,7 @@ case class CarbonDatasourceHadoopRelation(
           } else {
             output += col
           }
-          output = output.distinct
+          output = output.map(_.toLowerCase).distinct
         })
       }
       output.toArray.foreach(projection.addColumn)
