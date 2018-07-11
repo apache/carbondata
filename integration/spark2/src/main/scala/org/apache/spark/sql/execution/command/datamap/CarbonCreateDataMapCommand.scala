@@ -26,9 +26,10 @@ import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandExcept
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion
 import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, DataMapProperty}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.datamap.{DataMapManager, IndexDataMapProvider}
 import org.apache.carbondata.events._
 
@@ -77,6 +78,11 @@ case class CarbonCreateDataMapCommand(
           || dmProviderName.equalsIgnoreCase(DataMapClassProvider.TIMESERIES.toString))) {
       throw new MalformedCarbonCommandException(s"Streaming table does not support creating " +
                                                 s"$dmProviderName datamap")
+    }
+
+    if (mainTable !=null && CarbonUtil.getFormatVersion(mainTable) != ColumnarFormatVersion.V3) {
+      throw new MalformedCarbonCommandException(s"Unsupported operation on table with " +
+                                                s"V1 or V2 format data")
     }
 
     dataMapSchema = new DataMapSchema(dataMapName, dmProviderName)

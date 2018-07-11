@@ -89,6 +89,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockletHeader;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
+import org.apache.carbondata.format.FileHeader;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -3230,5 +3231,55 @@ public final class CarbonUtil {
           + " for table: " + carbonTable.getTableUniqueName());
     }
     return columnLocalDictGenMap;
+  }
+
+  /**
+   * This method get the carbon file format version
+   *
+   * @param carbonTable
+   * carbon Table
+   */
+  public static ColumnarFormatVersion getFormatVersion(CarbonTable carbonTable)
+      throws IOException {
+    String storePath = null;
+    // if the carbontable is support flat folder
+    boolean supportFlatFolder = carbonTable.isSupportFlatFolder();
+    if (supportFlatFolder) {
+      storePath = carbonTable.getTablePath();
+    } else {
+      // get the valid segments
+      SegmentStatusManager segmentStatusManager =
+          new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier());
+      SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegmentsInfo =
+          segmentStatusManager.getValidAndInvalidSegments();
+      List<Segment> validSegments = validAndInvalidSegmentsInfo.getValidSegments();
+      CarbonProperties carbonProperties = CarbonProperties.getInstance();
+      if (validSegments.isEmpty()) {
+        return carbonProperties.getFormatVersion();
+      }
+      storePath = carbonTable.getSegmentPath(validSegments.get(0).getSegmentNo());
+    }
+
+    CarbonFile[] carbonFiles = FileFactory
+        .getCarbonFile(storePath)
+        .listFiles(new CarbonFileFilter() {
+          @Override
+          public boolean accept(CarbonFile file) {
+            if (file == null) {
+              return false;
+            }
+            return file.getName().endsWith("carbondata");
+          }
+        });
+    if (carbonFiles == null || carbonFiles.length < 1) {
+      return CarbonProperties.getInstance().getFormatVersion();
+    }
+
+    CarbonFile carbonFile = carbonFiles[0];
+    // get the carbon file header
+    CarbonHeaderReader headerReader = new CarbonHeaderReader(carbonFile.getCanonicalPath());
+    FileHeader fileHeader = headerReader.readHeader();
+    int version = fileHeader.getVersion();
+    return ColumnarFormatVersion.valueOf((short)version);
   }
 }
