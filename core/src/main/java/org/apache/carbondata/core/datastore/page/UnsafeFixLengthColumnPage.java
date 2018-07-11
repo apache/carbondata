@@ -110,6 +110,12 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     }
   }
 
+  private void updatePageSize(int rowId) {
+    if (pageSize < rowId) {
+      pageSize = rowId;
+    }
+  }
+
   @Override
   public void putByte(int rowId, byte value) {
     try {
@@ -120,6 +126,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     long offset = ((long)rowId) << byteBits;
     CarbonUnsafe.getUnsafe().putByte(baseAddress, baseOffset + offset, value);
     totalLength += ByteUtil.SIZEOF_BYTE;
+    updatePageSize(rowId);
   }
 
 
@@ -134,6 +141,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     long offset = ((long)rowId) << shortBits;
     CarbonUnsafe.getUnsafe().putShort(baseAddress, baseOffset + offset, value);
     totalLength += ByteUtil.SIZEOF_SHORT;
+    updatePageSize(rowId);
   }
 
   @Override
@@ -149,6 +157,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     CarbonUnsafe.getUnsafe().putByte(baseAddress, baseOffset + offset + 1, data[1]);
     CarbonUnsafe.getUnsafe().putByte(baseAddress, baseOffset + offset + 2, data[2]);
     totalLength += ByteUtil.SIZEOF_SHORT_INT;
+    updatePageSize(rowId);
   }
 
   @Override
@@ -161,6 +170,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     long offset = ((long)rowId) << intBits;
     CarbonUnsafe.getUnsafe().putInt(baseAddress, baseOffset + offset, value);
     totalLength += ByteUtil.SIZEOF_INT;
+    updatePageSize(rowId);
   }
 
   @Override
@@ -173,6 +183,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     long offset = ((long)rowId) << longBits;
     CarbonUnsafe.getUnsafe().putLong(baseAddress, baseOffset + offset, value);
     totalLength += ByteUtil.SIZEOF_LONG;
+    updatePageSize(rowId);
   }
 
   @Override
@@ -185,6 +196,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     long offset = ((long)rowId) << doubleBits;
     CarbonUnsafe.getUnsafe().putDouble(baseAddress, baseOffset + offset, value);
     totalLength += ByteUtil.SIZEOF_DOUBLE;
+    updatePageSize(rowId);
   }
 
   @Override
@@ -194,6 +206,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     CarbonUnsafe.getUnsafe()
         .copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
             baseOffset + offset, bytes.length);
+    updatePageSize(rowId);
   }
 
   @Override
@@ -274,7 +287,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public byte[] getBytePage() {
-    byte[] data = new byte[getPageSize()];
+    byte[] data = new byte[getEndLoop()];
     for (long i = 0; i < data.length; i++) {
       long offset = i << byteBits;
       data[(int)i] = CarbonUnsafe.getUnsafe().getByte(baseAddress, baseOffset + offset);
@@ -284,7 +297,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public short[] getShortPage() {
-    short[] data = new short[getPageSize()];
+    short[] data = new short[getEndLoop()];
     for (long i = 0; i < data.length; i++) {
       long offset = i << shortBits;
       data[(int)i] = CarbonUnsafe.getUnsafe().getShort(baseAddress, baseOffset + offset);
@@ -294,7 +307,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public byte[] getShortIntPage() {
-    byte[] data = new byte[pageSize * 3];
+    byte[] data = new byte[getEndLoop() * 3];
     CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset,
         data, CarbonUnsafe.BYTE_ARRAY_OFFSET, data.length);
     return data;
@@ -302,7 +315,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public int[] getIntPage() {
-    int[] data = new int[getPageSize()];
+    int[] data = new int[getEndLoop()];
     for (long i = 0; i < data.length; i++) {
       long offset = i << intBits;
       data[(int)i] = CarbonUnsafe.getUnsafe().getInt(baseAddress, baseOffset + offset);
@@ -312,7 +325,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public long[] getLongPage() {
-    long[] data = new long[getPageSize()];
+    long[] data = new long[getEndLoop()];
     for (long i = 0; i < data.length; i++) {
       long offset = i << longBits;
       data[(int)i] = CarbonUnsafe.getUnsafe().getLong(baseAddress, baseOffset + offset);
@@ -513,5 +526,9 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
       baseOffset = newBlock.getBaseOffset();
       capacity = newSize;
     }
+  }
+
+  public int getActualRowCount() {
+    return getEndLoop();
   }
 }

@@ -388,7 +388,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     }
   }
 
-  protected void ensureArraySize(int requestSize, DataType dataType) {
+  private void ensureArraySize(int requestSize, DataType dataType) {
     if (dataType == DataTypes.BYTE) {
       if (requestSize >= byteData.length) {
         byte[] newArray = new byte[arrayElementCount + 16];
@@ -436,4 +436,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
           "not support value conversion on " + dataType + " page");
     }
   }
+  public int getActualRowCount() {
+    return arrayElementCount;
+  }
+
 }
