@@ -116,7 +116,6 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
 
   protected void resetBloomFilters() {
     indexBloomFilters.clear();
-    List<CarbonColumn> indexColumns = getIndexColumns();
     int[] stats = calculateBloomStats();
     for (int i = 0; i < indexColumns.size(); i++) {
       indexBloomFilters
@@ -225,7 +224,6 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
         throw new IOException("Failed to create directory " + dataMapPath);
       }
     }
-    List<CarbonColumn> indexColumns = getIndexColumns();
     for (int indexColId = 0; indexColId < indexColumns.size(); indexColId++) {
       String dmFile = BloomCoarseGrainDataMap.getBloomIndexFile(dataMapPath,
           indexColumns.get(indexColId).getColName());
@@ -245,7 +243,6 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
   }
 
   protected void writeBloomDataMapFile() {
-    List<CarbonColumn> indexColumns = getIndexColumns();
     try {
       for (int indexColId = 0; indexColId < indexColumns.size(); indexColId++) {
         CarbonBloomFilter bloomFilter = indexBloomFilters.get(indexColId);
@@ -274,7 +271,6 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
   }
 
   protected void releaseResouce() {
-    List<CarbonColumn> indexColumns = getIndexColumns();
     for (int indexColId = 0; indexColId < indexColumns.size(); indexColId++) {
       CarbonUtil.closeStreams(
           currentDataOutStreams.get(indexColId));
