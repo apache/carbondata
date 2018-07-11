@@ -512,6 +512,102 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
       "BloomFilter datamap does not support complex datatype column"))
   }
 
+  test("test create bloom datamap on newly added column") {
+    val datamap1 = "datamap1"
+    val datamap2 = "datamap2"
+    val datamap3 = "datamap3"
+
+    // create a table with dict/noDict/measure column
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128',
+         | 'DICTIONARY_INCLUDE'='s1,s2')
+         |  """.stripMargin)
+
+    // load data into table (segment0)
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$smallFile' INTO TABLE $bloomDMSampleTable
+         | OPTIONS('header'='false')
+         """.stripMargin)
+
+    // create simple datamap on segment0
+    sql(
+      s"""
+         | CREATE DATAMAP $datamap1 ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='id', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+
+    // add some columns including dict/noDict/measure column
+    sql(
+      s"""
+         | ALTER TABLE $bloomDMSampleTable
+         | ADD COLUMNS(num1 INT, dictString STRING, noDictString STRING)
+         | TBLPROPERTIES('DEFAULT.VALUE.num1'='999', 'DEFAULT.VALUE.dictString'='old',
+         | 'DICTIONARY_INCLUDE'='dictString'
+         | )
+         """.stripMargin)
+
+    // load data into table (segment1)
+    sql(
+      s"""
+         | INSERT INTO TABLE $bloomDMSampleTable VALUES
+         | (100,'name0','city0',10,'s10','s20','s30','s40','s50','s60','s70','s80',0,'S01','S02'),
+         | (101,'name1','city1',11,'s11','s21','s31','s41','s51','s61','s71','s81',4,'S11','S12'),
+         | (102,'name2','city2',12,'s12','s22','s32','s42','s52','s62','s72','s82',5,'S21','S22')
+           """.stripMargin)
+
+    // check data after columns added
+    var res = sql(
+      s"""
+         | SELECT name, city, num1, dictString, noDictString
+         | FROM $bloomDMSampleTable
+         | WHERE id = 101
+         | """.stripMargin)
+    checkExistence(res, true, "999", "null")
+
+    // create datamap on newly added column
+    sql(
+      s"""
+         | CREATE DATAMAP $datamap2 ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='s1,dictString,s8,noDictString,age,num1',
+         | 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+
+    // load data into table (segment2)
+    sql(
+      s"""
+         | INSERT INTO TABLE $bloomDMSampleTable VALUES
+         | (100,'name0','city0',10,'s10','s20','s30','s40','s50','s60','s70','s80',1,'S01','S02'),
+         | (101,'name1','city1',11,'s11','s21','s31','s41','s51','s61','s71','s81',2,'S11','S12'),
+         | (102,'name2','city1',12,'s12','s22','s32','s42','s52','s62','s72','s82',3,'S21','S22')
+           """.stripMargin)
+
+    var explainString = sql(
+      s"""
+         | explain SELECT id, name, num1, dictString
+         | FROM $bloomDMSampleTable
+         | WHERE num1 = 1
+           """.stripMargin).collect()
+    assert(explainString(0).getString(0).contains(
+      "- name: datamap2\n    - provider: bloomfilter\n    - skipped blocklets: 1"))
+
+    explainString = sql(
+      s"""
+         | explain SELECT id, name, num1, dictString
+         | FROM $bloomDMSampleTable
+         | WHERE dictString = 'S21'
+           """.stripMargin).collect()
+    assert(explainString(0).getString(0).contains(
+      "- name: datamap2\n    - provider: bloomfilter\n    - skipped blocklets: 0"))
+
+  }
+
+
   override protected def afterAll(): Unit = {
     deleteFile(bigFile)
     deleteFile(smallFile)

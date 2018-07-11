@@ -18,15 +18,7 @@ package org.apache.carbondata.core.scan.collector;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.scan.collector.impl.AbstractScannedResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.DictionaryBasedResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.DictionaryBasedVectorResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.RawBasedResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.RestructureBasedDictionaryResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.RestructureBasedRawResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.RestructureBasedVectorResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.RowIdBasedResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.RowIdRawBasedResultCollector;
+import org.apache.carbondata.core.scan.collector.impl.*;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 
 /**
@@ -51,14 +43,21 @@ public class ResultCollectorFactory {
     AbstractScannedResultCollector scannerResultAggregator = null;
     if (blockExecutionInfo.isRawRecordDetailQuery()) {
       if (blockExecutionInfo.isRestructuredBlock()) {
-        LOGGER.info("Restructure based raw collector is used to scan and collect the data");
-        scannerResultAggregator = new RestructureBasedRawResultCollector(blockExecutionInfo);
-      } else if (blockExecutionInfo.isRequiredRowId()) {
-        LOGGER.info("RowId based raw collector is used to scan and collect the data");
-        scannerResultAggregator = new RowIdRawBasedResultCollector(blockExecutionInfo);
+        if (blockExecutionInfo.isRequiredRowId()) {
+          LOGGER.info("RowId Restructure based raw ollector is used to scan and collect the data");
+          scannerResultAggregator = new RowIdRestructureBasedRawResultCollector(blockExecutionInfo);
+        } else {
+          LOGGER.info("Restructure based raw collector is used to scan and collect the data");
+          scannerResultAggregator = new RestructureBasedRawResultCollector(blockExecutionInfo);
+        }
       } else {
-        LOGGER.info("Row based raw collector is used to scan and collect the data");
-        scannerResultAggregator = new RawBasedResultCollector(blockExecutionInfo);
+        if (blockExecutionInfo.isRequiredRowId()) {
+          LOGGER.info("RowId based raw collector is used to scan and collect the data");
+          scannerResultAggregator = new RowIdRawBasedResultCollector(blockExecutionInfo);
+        } else {
+          LOGGER.info("Row based raw collector is used to scan and collect the data");
+          scannerResultAggregator = new RawBasedResultCollector(blockExecutionInfo);
+        }
       }
     } else if (blockExecutionInfo.isVectorBatchCollector()) {
       if (blockExecutionInfo.isRestructuredBlock()) {
