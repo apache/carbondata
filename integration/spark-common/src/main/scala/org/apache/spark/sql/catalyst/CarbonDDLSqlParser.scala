@@ -1330,6 +1330,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         Field(field.column, Some("Timestamp"), field.name, Some(null),
           field.parent, field.storeType, field.schemaOrdinal,
           field.precision, field.scale, field.rawSchema, field.columnComment)
+      case "date" =>
+        Field(field.column, Some("Date"), field.name, Some(null),
+          field.parent, field.storeType, field.schemaOrdinal,
+          field.precision, field.scale, field.rawSchema, field.columnComment)
       case "numeric" => Field(field.column, Some("Numeric"), field.name, Some(null), field.parent,
         field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
         field.columnComment)
@@ -1401,6 +1405,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       case "Float" => Field(parentName + "." + field.column, Some("Double"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
       case "Timestamp" => Field(parentName + "." + field.column, Some("Timestamp"),
+        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
+      case "Date" => Field(parentName + "." + field.column, Some("Date"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
       case "Numeric" => Field(parentName + "." + field.column, Some("Numeric"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
