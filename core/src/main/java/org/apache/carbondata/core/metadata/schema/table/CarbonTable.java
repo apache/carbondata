@@ -1173,40 +1173,71 @@ public class CarbonTable implements Serializable {
   }
 
   /**
-   * Method to get the list of cached columns of the table
+   * Method to get the list of cached columns of the table.
+   * This method need to be used for Describe formatted like scenario where columns need to be
+   * displayed in the column create order
    *
-   * @param tableName
    * @return
    */
-  public List<String> getCachedColumns(String tableName) {
-    List<String> cachedColsList = new ArrayList<>(tableDimensionsMap.size());
+  public List<String> getMinMaxCachedColumnsInCreateOrder() {
+    List<String> cachedColsList = new ArrayList<>();
+    String tableName = tableInfo.getFactTable().getTableName();
     String cacheColumns =
         tableInfo.getFactTable().getTableProperties().get(CarbonCommonConstants.COLUMN_META_CACHE);
     if (null != cacheColumns && !cacheColumns.isEmpty()) {
-      List<CarbonDimension> carbonDimensions = tableDimensionsMap.get(tableName);
-      List<CarbonMeasure> carbonMeasures = tableMeasuresMap.get(tableName);
       String[] cachedCols = cacheColumns.split(",");
       for (String column : cachedCols) {
-        boolean found = false;
-        // this will avoid adding the columns which have been dropped from the table
-        for (CarbonDimension dimension : carbonDimensions) {
-          if (dimension.getColName().equals(column)) {
-            cachedColsList.add(column);
-            found = true;
-            break;
-          }
-        }
-        // if column is not a dimension then check in measures
-        if (!found) {
-          for (CarbonMeasure measure : carbonMeasures) {
-            if (measure.getColName().equals(column)) {
-              cachedColsList.add(column);
-              break;
-            }
-          }
+        CarbonColumn carbonColumn = getColumnByName(tableName, column);
+        if (null != carbonColumn && !carbonColumn.isInvisible()) {
+          cachedColsList.add(carbonColumn.getColName());
         }
       }
     }
     return cachedColsList;
+  }
+
+  /**
+   * Method to find get carbon columns for columns to be cached. It will fill dimension first and
+   * then measures
+   *
+   * @return
+   */
+  public List<CarbonColumn> getMinMaxCacheColumns() {
+    List<CarbonColumn> minMaxCachedColsList = null;
+    String tableName = tableInfo.getFactTable().getTableName();
+    String cacheColumns =
+        tableInfo.getFactTable().getTableProperties().get(CarbonCommonConstants.COLUMN_META_CACHE);
+    if (null != cacheColumns) {
+      minMaxCachedColsList = new ArrayList<>();
+      String[] cachedCols = cacheColumns.split(",");
+      List<String> measureColumns = new ArrayList<>(cachedCols.length);
+      List<CarbonDimension> complexDimensions = new ArrayList<>(cacheColumns.length());
+      // add the columns in storage order: first normal dimensions, then complex dimensions
+      // and then measures
+      for (String column : cachedCols) {
+        CarbonDimension dimension = getDimensionByName(tableName, column);
+        // if found in dimension then add to dimension else add to measures
+        if (null != dimension) {
+          // first add normal dimensions and then complex dimensions
+          if (dimension.isComplex()) {
+            complexDimensions.add(dimension);
+            continue;
+          }
+          minMaxCachedColsList.add(dimension);
+        } else {
+          measureColumns.add(column);
+        }
+      }
+      // add complex dimensions
+      minMaxCachedColsList.addAll(complexDimensions);
+      // search for measures columns and fill measures
+      for (String measureColumn : measureColumns) {
+        CarbonMeasure measure = getMeasureByName(tableName, measureColumn);
+        if (null != measure) {
+          minMaxCachedColsList.add(measure);
+        }
+      }
+    }
+    return minMaxCachedColsList;
   }
 }

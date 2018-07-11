@@ -31,8 +31,9 @@ import org.apache.spark.sql.hive.HiveExternalCatalog._
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
@@ -519,15 +520,23 @@ object AlterTableUtil {
       // the cache should be loaded again with default value
       if (propertiesToBeRemoved.contains(CarbonCommonConstants.COLUMN_META_CACHE) &&
           existingTableProperties.get(CarbonCommonConstants.COLUMN_META_CACHE).isDefined) {
-        ManageDictionaryAndBTree.invalidateBTreeCache(carbonTable)
+        clearCache(carbonTable)
       } else if (propertiesToBeRemoved.contains(CarbonCommonConstants.CACHE_LEVEL)) {
         val cacheLevel = existingTableProperties.get(CarbonCommonConstants.CACHE_LEVEL)
         if (cacheLevel.isDefined &&
             !cacheLevel.equals(CarbonCommonConstants.CACHE_LEVEL_DEFAULT_VALUE)) {
-          ManageDictionaryAndBTree.invalidateBTreeCache(carbonTable)
+          clearCache(carbonTable)
         }
       }
     }
+  }
+
+  private def clearCache(carbonTable: CarbonTable): Unit = {
+    // clear dataMap cache
+    DataMapStoreManager.getInstance().clearDataMaps(carbonTable.getAbsoluteTableIdentifier)
+    // clear segmentProperties Cache
+    SegmentPropertiesAndSchemaHolder.getInstance()
+      .invalidate(carbonTable.getAbsoluteTableIdentifier)
   }
 
   /**
@@ -549,7 +558,7 @@ object AlterTableUtil {
       case Some(newColumnsToBeCached) =>
         if (!checkIfColumnsAreAlreadyCached(carbonTable, tblPropertiesMap
           .get(CarbonCommonConstants.COLUMN_META_CACHE), newColumnsToBeCached)) {
-          ManageDictionaryAndBTree.invalidateBTreeCache(carbonTable)
+          clearCache(carbonTable)
         }
       case None =>
       // don't do anything
@@ -561,7 +570,7 @@ object AlterTableUtil {
       case Some(newCacheLevelValue) =>
         if (!isCacheLevelValid(tblPropertiesMap.get(CarbonCommonConstants.CACHE_LEVEL),
           newCacheLevelValue)) {
-          ManageDictionaryAndBTree.invalidateBTreeCache(carbonTable)
+          clearCache(carbonTable)
         }
       case None =>
       // don't do anything

@@ -34,11 +34,12 @@ import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.DataMapRowImpl;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
-import org.apache.carbondata.core.indexstore.schema.SchemaGenerator;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.util.BlockletDataMapUtil;
 
 /**
  * Datamap implementation for blocklet.
@@ -59,42 +60,32 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
    * @throws IOException
    * @throws MemoryException
    */
-  protected DataMapRowImpl loadMetadata(SegmentProperties segmentProperties,
-      BlockletDataMapModel blockletDataMapInfo, List<DataFileFooter> indexInfo)
-      throws IOException, MemoryException {
+  protected DataMapRowImpl loadMetadata(CarbonRowSchema[] taskSummarySchema,
+      SegmentProperties segmentProperties, BlockletDataMapModel blockletDataMapInfo,
+      List<DataFileFooter> indexInfo) throws IOException, MemoryException {
     if (isLegacyStore) {
-      return loadBlockInfoForOldStore(segmentProperties, blockletDataMapInfo, indexInfo);
+      return loadBlockInfoForOldStore(taskSummarySchema, segmentProperties, blockletDataMapInfo,
+          indexInfo);
     } else {
-      return loadBlockletMetaInfo(segmentProperties, blockletDataMapInfo, indexInfo);
+      return loadBlockletMetaInfo(taskSummarySchema, segmentProperties, blockletDataMapInfo,
+          indexInfo);
     }
   }
 
-  /**
-   * Method to create blocklet schema
-   *
-   * @param addToUnsafe
-   * @throws MemoryException
-   */
-  protected void createMemoryDMStore(boolean addToUnsafe) throws MemoryException {
-    memoryDMStore = getMemoryDMStore(addToUnsafe);
+  protected CarbonRowSchema[] getTaskSummarySchema() {
+    SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper segmentPropertiesWrapper =
+        SegmentPropertiesAndSchemaHolder.getInstance()
+            .getSegmentPropertiesWrapper(segmentPropertiesIndex);
+    try {
+      return segmentPropertiesWrapper.getTaskSummarySchema(false, isFilePathStored);
+    } catch (MemoryException e) {
+      throw new RuntimeException(e);
+    }
   }
 
-  /**
-   * Creates the schema to store summary information or the information which can be stored only
-   * once per datamap. It stores datamap level max/min of each column and partition information of
-   * datamap
-   *
-   * @param segmentProperties
-   * @throws MemoryException
-   */
-  protected void createSummarySchema(SegmentProperties segmentProperties, boolean addToUnsafe)
-      throws MemoryException {
-    CarbonRowSchema[] taskSummarySchema =
-        SchemaGenerator.createTaskSummarySchema(segmentProperties, false, isFilePathStored);
-    SegmentPropertiesAndSchemaHolder.getInstance()
-        .getSegmentPropertiesWrapper(segmentPropertiesIndex)
-        .setTaskSummarySchema(taskSummarySchema);
-    taskSummaryDMStore = getMemoryDMStore(addToUnsafe);
+  protected CarbonRowSchema[] getFileFooterEntrySchema() {
+    return SegmentPropertiesAndSchemaHolder.getInstance()
+        .getSegmentPropertiesWrapper(segmentPropertiesIndex).getBlockletFileFooterEntrySchema();
   }
 
   /**
@@ -105,11 +96,12 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
    * @throws IOException
    * @throws MemoryException
    */
-  private DataMapRowImpl loadBlockletMetaInfo(SegmentProperties segmentProperties,
-      BlockletDataMapModel blockletDataMapInfo, List<DataFileFooter> indexInfo)
-      throws IOException, MemoryException {
+  private DataMapRowImpl loadBlockletMetaInfo(CarbonRowSchema[] taskSummarySchema,
+      SegmentProperties segmentProperties, BlockletDataMapModel blockletDataMapInfo,
+      List<DataFileFooter> indexInfo) throws IOException, MemoryException {
     String tempFilePath = null;
     DataMapRowImpl summaryRow = null;
+    CarbonRowSchema[] schema = getFileFooterEntrySchema();
     // Relative blocklet ID is the id assigned to a blocklet within a part file
     int relativeBlockletId = 0;
     for (DataFileFooter fileFooter : indexInfo) {
@@ -127,9 +119,9 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
           tempFilePath = blockInfo.getFilePath();
           relativeBlockletId = 0;
         }
-        summaryRow =
-            loadToUnsafe(fileFooter, segmentProperties, blockInfo.getFilePath(), summaryRow,
-                blockMetaInfo, relativeBlockletId);
+        summaryRow = loadToUnsafe(schema, taskSummarySchema, fileFooter, segmentProperties,
+            blockletDataMapInfo.getMinMaxCacheColumns(), blockInfo.getFilePath(), summaryRow,
+            blockMetaInfo, relativeBlockletId);
         // this is done because relative blocklet id need to be incremented based on the
         // total number of blocklets
         relativeBlockletId += fileFooter.getBlockletList().size();
@@ -138,13 +130,11 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
     return summaryRow;
   }
 
-  private DataMapRowImpl loadToUnsafe(DataFileFooter fileFooter,
-      SegmentProperties segmentProperties, String filePath, DataMapRowImpl summaryRow,
+  private DataMapRowImpl loadToUnsafe(CarbonRowSchema[] schema, CarbonRowSchema[] taskSummarySchema,
+      DataFileFooter fileFooter, SegmentProperties segmentProperties,
+      List<CarbonColumn> minMaxCacheColumns, String filePath, DataMapRowImpl summaryRow,
       BlockMetaInfo blockMetaInfo, int relativeBlockletId) {
-    int[] minMaxLen = segmentProperties.getColumnsValueSize();
     List<BlockletInfo> blockletList = fileFooter.getBlockletList();
-    CarbonRowSchema[] schema = getSchema();
-    CarbonRowSchema[] taskSummarySchema = getTaskSummarySchema();
     // Add one row to maintain task level min max for segment pruning
     if (!blockletList.isEmpty() && summaryRow == null) {
       summaryRow = new DataMapRowImpl(taskSummarySchema);
@@ -155,16 +145,23 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
       int taskMinMaxOrdinal = 0;
       BlockletInfo blockletInfo = blockletList.get(index);
       BlockletMinMaxIndex minMaxIndex = blockletInfo.getBlockletIndex().getMinMaxIndex();
-      row.setRow(addMinMax(minMaxLen, schema[ordinal], minMaxIndex.getMinValues()), ordinal);
+      // get min max values for columns to be cached
+      byte[][] minValuesForColumnsToBeCached = BlockletDataMapUtil
+          .getMinMaxForColumnsToBeCached(segmentProperties, minMaxCacheColumns,
+              minMaxIndex.getMinValues());
+      byte[][] maxValuesForColumnsToBeCached = BlockletDataMapUtil
+          .getMinMaxForColumnsToBeCached(segmentProperties, minMaxCacheColumns,
+              minMaxIndex.getMaxValues());
+      row.setRow(addMinMax(schema[ordinal], minValuesForColumnsToBeCached), ordinal);
       // compute and set task level min values
-      addTaskMinMaxValues(summaryRow, minMaxLen, taskSummarySchema, taskMinMaxOrdinal,
-          minMaxIndex.getMinValues(), TASK_MIN_VALUES_INDEX, true);
+      addTaskMinMaxValues(summaryRow, taskSummarySchema, taskMinMaxOrdinal,
+          minValuesForColumnsToBeCached, TASK_MIN_VALUES_INDEX, true);
       ordinal++;
       taskMinMaxOrdinal++;
-      row.setRow(addMinMax(minMaxLen, schema[ordinal], minMaxIndex.getMaxValues()), ordinal);
+      row.setRow(addMinMax(schema[ordinal], maxValuesForColumnsToBeCached), ordinal);
       // compute and set task level max values
-      addTaskMinMaxValues(summaryRow, minMaxLen, taskSummarySchema, taskMinMaxOrdinal,
-          minMaxIndex.getMaxValues(), TASK_MAX_VALUES_INDEX, false);
+      addTaskMinMaxValues(summaryRow, taskSummarySchema, taskMinMaxOrdinal,
+          maxValuesForColumnsToBeCached, TASK_MAX_VALUES_INDEX, false);
       ordinal++;
       row.setInt(blockletInfo.getNumberOfRows(), ordinal++);
       // add file name
@@ -205,8 +202,8 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
       super.getDetailedBlocklet(blockletId);
     }
     int absoluteBlockletId = Integer.parseInt(blockletId);
-    DataMapRow safeRow =
-        memoryDMStore.getDataMapRow(getSchema(), absoluteBlockletId).convertToSafeRow();
+    DataMapRow safeRow = memoryDMStore.getDataMapRow(getFileFooterEntrySchema(), absoluteBlockletId)
+        .convertToSafeRow();
     short relativeBlockletId = safeRow.getShort(BLOCKLET_ID_INDEX);
     String filePath = getFilePath();
     return createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath), relativeBlockletId);
@@ -214,11 +211,6 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
 
   protected short getBlockletId(DataMapRow dataMapRow) {
     return dataMapRow.getShort(BLOCKLET_ID_INDEX);
-  }
-
-  protected CarbonRowSchema[] getSchema() {
-    return SegmentPropertiesAndSchemaHolder.getInstance()
-        .getSegmentPropertiesWrapper(segmentPropertiesIndex).getBlocketSchema();
   }
 
   protected ExtendedBlocklet createBlocklet(DataMapRow row, String fileName, short blockletId) {

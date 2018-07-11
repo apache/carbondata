@@ -23,6 +23,8 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.util.BlockletDataMapUtil;
 
 /**
  * class for creating schema for a given DataMap
@@ -35,10 +37,11 @@ public class SchemaGenerator {
    * @param segmentProperties
    * @return
    */
-  public static CarbonRowSchema[] createBlockSchema(SegmentProperties segmentProperties) {
+  public static CarbonRowSchema[] createBlockSchema(SegmentProperties segmentProperties,
+      List<CarbonColumn> minMaxCacheColumns) {
     List<CarbonRowSchema> indexSchemas = new ArrayList<>();
     // get MinMax Schema
-    getMinMaxSchema(segmentProperties, indexSchemas);
+    getMinMaxSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
     // for number of rows.
     indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.INT));
     // for table block path
@@ -63,10 +66,11 @@ public class SchemaGenerator {
    * @param segmentProperties
    * @return
    */
-  public static CarbonRowSchema[] createBlockletSchema(SegmentProperties segmentProperties) {
+  public static CarbonRowSchema[] createBlockletSchema(SegmentProperties segmentProperties,
+      List<CarbonColumn> minMaxCacheColumns) {
     List<CarbonRowSchema> indexSchemas = new ArrayList<>();
     // get MinMax Schema
-    getMinMaxSchema(segmentProperties, indexSchemas);
+    getMinMaxSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
     // for number of rows.
     indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.INT));
     // for table block path
@@ -100,10 +104,11 @@ public class SchemaGenerator {
    * @throws MemoryException
    */
   public static CarbonRowSchema[] createTaskSummarySchema(SegmentProperties segmentProperties,
+      List<CarbonColumn> minMaxCacheColumns,
       boolean storeBlockletCount, boolean filePathToBeStored) throws MemoryException {
     List<CarbonRowSchema> taskMinMaxSchemas = new ArrayList<>();
     // get MinMax Schema
-    getMinMaxSchema(segmentProperties, taskMinMaxSchemas);
+    getMinMaxSchema(segmentProperties, taskMinMaxSchemas, minMaxCacheColumns);
     // for storing file name
     taskMinMaxSchemas
         .add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
@@ -134,17 +139,19 @@ public class SchemaGenerator {
    * @param minMaxSchemas
    */
   private static void getMinMaxSchema(SegmentProperties segmentProperties,
-      List<CarbonRowSchema> minMaxSchemas) {
+      List<CarbonRowSchema> minMaxSchemas, List<CarbonColumn> minMaxCacheColumns) {
     // Index key
-    int[] minMaxLen = segmentProperties.getColumnsValueSize();
+    int[] minMaxLen = getMinMaxLength(segmentProperties, minMaxCacheColumns);
+    int[] columnOrdinals = getColumnOrdinalsToAccess(segmentProperties, minMaxCacheColumns);
     // do it 2 times, one for min and one for max.
     for (int k = 0; k < 2; k++) {
       CarbonRowSchema[] mapSchemas = new CarbonRowSchema[minMaxLen.length];
       for (int i = 0; i < minMaxLen.length; i++) {
         if (minMaxLen[i] <= 0) {
           boolean isVarchar = false;
-          if (i < segmentProperties.getDimensions().size()
-              && segmentProperties.getDimensions().get(i).getDataType() == DataTypes.VARCHAR) {
+          if (columnOrdinals[i] < segmentProperties.getDimensions().size()
+              && segmentProperties.getDimensions().get(columnOrdinals[i]).getDataType()
+              == DataTypes.VARCHAR) {
             isVarchar = true;
           }
           mapSchemas[i] =
@@ -159,5 +166,57 @@ public class SchemaGenerator {
               mapSchemas);
       minMaxSchemas.add(mapSchema);
     }
+  }
+
+  /**
+   * Method to get the min max length of each column. It will return the length of only column
+   * which will be cached
+   *
+   * @param segmentProperties
+   * @param minMaxCacheColumns
+   * @return
+   */
+  private static int[] getMinMaxLength(SegmentProperties segmentProperties,
+      List<CarbonColumn> minMaxCacheColumns) {
+    int[] minMaxLen = null;
+    if (null != minMaxCacheColumns) {
+      minMaxLen = new int[minMaxCacheColumns.size()];
+      int counter = 0;
+      for (CarbonColumn column : minMaxCacheColumns) {
+        minMaxLen[counter++] = segmentProperties.getColumnsValueSize()[BlockletDataMapUtil
+            .getColumnOrdinal(segmentProperties, column)];
+      }
+    } else {
+      minMaxLen = segmentProperties.getColumnsValueSize();
+    }
+    return minMaxLen;
+  }
+
+  /**
+   * Method to fill the column ordinals to access based on the columns to be cached
+   *
+   * @param segmentProperties
+   * @param minMaxCacheColumns
+   * @return
+   */
+  private static int[] getColumnOrdinalsToAccess(SegmentProperties segmentProperties,
+      List<CarbonColumn> minMaxCacheColumns) {
+    int[] columnOrdinalsTOAccess = null;
+    if (null != minMaxCacheColumns) {
+      columnOrdinalsTOAccess = new int[minMaxCacheColumns.size()];
+      int counter = 0;
+      for (CarbonColumn column : minMaxCacheColumns) {
+        columnOrdinalsTOAccess[counter++] =
+            BlockletDataMapUtil.getColumnOrdinal(segmentProperties, column);
+      }
+    } else {
+      // when columns to cache is not specified then column access order will be same as the array
+      // index of min max length
+      columnOrdinalsTOAccess = new int[segmentProperties.getColumnsValueSize().length];
+      for (int i = 0; i < columnOrdinalsTOAccess.length; i++) {
+        columnOrdinalsTOAccess[i] = i;
+      }
+    }
+    return columnOrdinalsTOAccess;
   }
 }
