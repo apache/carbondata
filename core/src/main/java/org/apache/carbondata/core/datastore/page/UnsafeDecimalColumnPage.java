@@ -266,13 +266,13 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
   private void convertValueForDecimalType(ColumnPageValueConverter codec) {
     switch (decimalConverter.getDecimalConverterType()) {
       case DECIMAL_INT:
-        for (int i = 0; i < rowOffset.getActualRowCount() - 1; i++) {
+        for (int i = 0; i < pageSize; i++) {
           long offset = (long)i << intBits;
           codec.encode(i, CarbonUnsafe.getUnsafe().getInt(baseAddress, baseOffset + offset));
         }
         break;
       case DECIMAL_LONG:
-        for (int i = 0; i < rowOffset.getActualRowCount() - 1; i++) {
+        for (int i = 0; i < pageSize; i++) {
           long offset = (long)i << longBits;
           codec.encode(i, CarbonUnsafe.getUnsafe().getLong(baseAddress, baseOffset + offset));
         }
