@@ -682,4 +682,35 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
         backupdateFormat)
   }
+
+  test("test Projection with two struct") {
+    sql("DROP TABLE IF EXISTS test")
+    sql("create table test(id int,a struct<b:int,c:int>, d struct<e:int,f:int>) stored by 'carbondata'")
+    sql("insert into test values(1,'2$3','3$2')")
+    checkAnswer(sql("select * from test"),Seq(Row(1,Row(2,3),Row(3,2))))
+    checkAnswer(sql("select a.b,id,a.c from test"),Seq(Row(2,1,3)))
+    checkAnswer(sql("select d.e,d.f from test"),Seq(Row(3,2)))
+    checkAnswer(sql("select a.b,d.e,d.f,id,a.c from test"),Seq(Row(2,3,2,1,3)))
+    checkAnswer(sql("select a.b,d.e,id,a.c,d.f,a.c from test"), Seq(Row(2, 3, 1, 3, 2, 3)))
+    checkAnswer(sql("select a.b,d.e,d.f from test"), Seq(Row(2, 3, 2)))
+    checkAnswer(sql("select a.b,a.c,id,d.e,d.f from test"), Seq(Row(2, 3, 1, 3, 2)))
+    checkAnswer(sql("select d.e,d.f,id,a.b,a.c from test"), Seq(Row(3, 2, 1, 2, 3)))
+    checkAnswer(sql("select d.e,1,d.f from test"), Seq(Row(3, 1, 2)))
+    checkAnswer(sql("select d.e,1,d.f,a.b,id,a.c from test"), Seq(Row(3, 1, 2, 2, 1, 3)))
+    checkAnswer(sql("select d.e+1,d.f,a.b,d.e,a.c,id from test"), Seq(Row(4,2,2,3,3,1)))
+    checkAnswer(sql("select d.f,a.c,a.b,id,a.c,a.b from test"), Seq(Row(2,3,2,1,3,2)))
+    checkAnswer(sql("select sum(d.e) from test"), Seq(Row(3)))
+    checkAnswer(sql("select d.f,a.c,a.b,id,a.c,a.b,id,1,id,3,d.f from test"), Seq(Row(2,3,2,1,3,2,1,1,1,3,2)))
+  }
+
+  test("test project with struct and array") {
+    sql("DROP TABLE IF EXISTS test")
+    sql("create table test(id int,a struct<b:int,c:int>, d struct<e:int,f:int>,person Struct<detail:array<int>>) stored by 'carbondata'")
+    sql("insert into test values(1,'2$3','3$2','5:6:7:8')")
+    checkAnswer(sql("select * from test"),Seq(Row(1,Row(2,3),Row(3,2),Row(mutable.WrappedArray.make(Array(5,6,7,8))))))
+    checkAnswer(sql("select a.b,id,a.c,person.detail[0] from test"),Seq(Row(2,1,3,5)))
+    checkAnswer(sql("select a.b,id,a.c,person.detail[0],d.e,d.f,person.detail[1],id from test"),Seq(Row(2,1,3,5,3,2,6,1)))
+    checkAnswer(sql("select a.b,id,a.c,person.detail[0],d.e,d.f,person.detail[1],id,1,a.b from test"),Seq(Row(2,1,3,5,3,2,6,1,1,2)))
+  }
+  
 }

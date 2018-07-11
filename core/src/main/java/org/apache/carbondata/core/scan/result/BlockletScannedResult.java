@@ -106,7 +106,7 @@ public abstract class BlockletScannedResult {
   /**
    *
    */
-  private Map<Integer, GenericQueryType> complexParentIndexToQueryMap;
+  public Map<Integer, GenericQueryType> complexParentIndexToQueryMap;
 
   private int totalDimensionsSize;
 

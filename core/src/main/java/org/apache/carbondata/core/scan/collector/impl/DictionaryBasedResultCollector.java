@@ -140,6 +140,17 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
         continue;
       }
       fillMeasureData(scannedResult, row);
+      if (scannedResult.complexParentIndexToQueryMap.toString().contains("StructQueryType")) {
+        // If a : <b,c> and d : <e,f> are two struct and if a.b,a.c,d.e is given in the
+        // projection list,then object array will contain a,null,d as result, because for a.b,
+        // a will be filled and for a.c null will be placed.
+        // Instead place null in the end of object array and send a,d,null as result.
+        int count = 0;
+        for (int j = 0; j < row.length; j++) {
+          if (row[j] != null) row[count++] = row[j];
+        }
+        while (count < row.length) row[count++] = null;
+      }
       listBasedResult.add(row);
       rowCounter++;
     }
