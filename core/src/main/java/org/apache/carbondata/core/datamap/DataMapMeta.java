@@ -74,6 +74,6 @@ public class DataMapMeta {
   @Override
   public String toString() {
     return "DataMapMeta{" + "dataMapName='" + dataMapName + '\'' + ", indexedColumns="
-        + indexedColumns + ", optimizedOperation=" + optimizedOperation + '}';
+        + getIndexedColumnNames() + ", optimizedOperation=" + optimizedOperation + '}';
   }
 }
