@@ -56,17 +56,33 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
 private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   val PUSHED_FILTERS = "PushedFilters"
 
+  /*
+  Spark 2.3.1 plan there can be case of multiple projections like below
+  Project [substring(name, 1, 2)#124, name#123, tupleId#117, cast(rand(-6778822102499951904)#125
+  as string) AS rand(-6778822102499951904)#137]
+   +- Project [substring(name#123, 1, 2) AS substring(name, 1, 2)#124, name#123, UDF:getTupleId()
+    AS tupleId#117,
+       customdeterministicexpression(rand(-6778822102499951904)) AS rand(-6778822102499951904)#125]
+   +- Relation[imei#118,age#119,task#120L,num#121,level#122,name#123]
+   CarbonDatasourceHadoopRelation []
+ */
   def apply(plan: LogicalPlan): Seq[SparkPlan] = {
     plan match {
       case PhysicalOperation(projects, filters, l: LogicalRelation)
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
         val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
-        pruneFilterProject(
-          l,
-          projects,
-          filters,
-          (a, f, needDecoder, p) => toCatalystRDD(l, a, relation.buildScan(
-            a.map(_.name).toArray, f, p), needDecoder)) :: Nil
+        // In Spark 2.3.1 there is case of multiple projections like below
+        // if 1 projection is failed then need to continue to other
+        try {
+          pruneFilterProject(
+            l,
+            projects,
+            filters,
+            (a, f, needDecoder, p) => toCatalystRDD(l, a, relation.buildScan(
+              a.map(_.name).toArray, f, p), needDecoder)) :: Nil
+        } catch {
+          case e: CarbonPhysicalPlanException => Nil
+        }
       case CarbonDictionaryCatalystDecoder(relations, profile, aliasMap, _, child) =>
         if ((profile.isInstanceOf[IncludeProfile] && profile.isEmpty) ||
             !CarbonDictionaryDecoder.
@@ -158,8 +174,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     if (names.nonEmpty) {
       val partitionSet = AttributeSet(names
         .map(p => relation.output.find(_.name.equalsIgnoreCase(p)).get))
-      val partitionKeyFilters =
-        ExpressionSet(ExpressionSet(filterPredicates).filter(_.references.subsetOf(partitionSet)))
+      val partitionKeyFilters = CarbonToSparkAdapater
+        .getPartitionKeyFilter(partitionSet, filterPredicates)
       // Update the name with lower case as it is case sensitive while getting partition info.
       val updatedPartitionFilters = partitionKeyFilters.map { exp =>
         exp.transform {
@@ -236,10 +252,13 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     val handledSet = {
       val handledPredicates = filterPredicates.filterNot(unhandledPredicates.contains)
       val unhandledSet = AttributeSet(unhandledPredicates.flatMap(_.references))
-      AttributeSet(handledPredicates.flatMap(_.references)) --
-      (projectSet ++ unhandledSet).map(relation.attributeMap)
+      try {
+        AttributeSet(handledPredicates.flatMap(_.references)) --
+        (projectSet ++ unhandledSet).map(relation.attributeMap)
+      } catch {
+        case e => throw new CarbonPhysicalPlanException
+      }
     }
-
     // Combines all Catalyst filter `Expression`s that are either not convertible to data source
     // `Filter`s or cannot be handled by `relation`.
     val filterCondition = unhandledPredicates.reduceLeftOption(expressions.And)
@@ -678,4 +697,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     supportCodegen && vectorizedReader.toBoolean &&
     cols.forall(_.dataType.isInstanceOf[AtomicType])
   }
+}
+
+class CarbonPhysicalPlanException extends Exception {
+
 }
