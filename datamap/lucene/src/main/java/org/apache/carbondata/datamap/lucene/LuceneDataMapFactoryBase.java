@@ -260,7 +260,8 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
 
   }
 
-  @Override public void deleteDatamapData(Segment segment) {
+  @Override
+  public void deleteDatamapData(Segment segment) throws IOException {
     try {
       String segmentId = segment.getSegmentNo();
       String datamapPath = CarbonTablePath
@@ -270,13 +271,13 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
             FileFactory.getFileType(datamapPath));
         CarbonUtil.deleteFoldersAndFilesSilent(file);
       }
-    } catch (IOException | InterruptedException ex) {
-      throw new RuntimeException(
-          "drop datamap failed, failed to delete datamap directory");
+    } catch (InterruptedException ex) {
+      throw new IOException("drop datamap failed, failed to delete datamap directory");
     }
   }
 
-  @Override public void deleteDatamapData() {
+  @Override
+  public void deleteDatamapData() {
     try {
       deleteDatamap();
     } catch (MalformedDataMapCommandException ex) {
