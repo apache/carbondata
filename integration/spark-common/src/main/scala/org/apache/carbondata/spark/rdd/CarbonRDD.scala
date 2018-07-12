@@ -26,19 +26,16 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{Dependency, OneToOneDependency, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.util._
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 
 /**
  * This RDD maintains session level ThreadLocal
  */
 abstract class CarbonRDD[T: ClassTag](@transient sc: SparkContext,
-    @transient private var deps: Seq[Dependency[_]],
-    @transient hadoopConf: Configuration) extends RDD[T](sc, deps) {
+    @transient private var deps: Seq[Dependency[_]]) extends RDD[T](sc, deps) {
 
   val carbonSessionInfo: CarbonSessionInfo = {
     var info = ThreadLocalSessionInfo.getCarbonSessionInfo
@@ -50,24 +47,15 @@ abstract class CarbonRDD[T: ClassTag](@transient sc: SparkContext,
     info
   }
 
-  private val confBytes = {
-    val bao = new ByteArrayOutputStream()
-    val oos = new ObjectOutputStream(bao)
-    hadoopConf.write(oos)
-    oos.close()
-    CompressorFactory.getInstance().getCompressor.compressByte(bao.toByteArray)
-  }
-
   /** Construct an RDD with just a one-to-one dependency on one parent */
   def this(@transient oneParent: RDD[_]) =
-    this (oneParent.context, List(new OneToOneDependency(oneParent)),
-      oneParent.sparkContext.hadoopConfiguration)
+    this (oneParent.context, List(new OneToOneDependency(oneParent)))
 
   // RDD compute logic should be here
   def internalCompute(split: Partition, context: TaskContext): Iterator[T]
 
   final def compute(split: Partition, context: TaskContext): Iterator[T] = {
-    CarbonInputFormatUtil.setS3Configurations(getConf)
+    TaskContext.get().addTaskCompletionListener(_ => ThreadLocalSessionInfo.unsetAll())
     ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
     TaskMetricsMap.threadLocal.set(Thread.currentThread().getId)
     val carbonTaskInfo = new CarbonTaskInfo
@@ -79,14 +67,11 @@ abstract class CarbonRDD[T: ClassTag](@transient sc: SparkContext,
   }
 
   def getConf: Configuration = {
-    val configuration = new Configuration(false)
-    val bai = new ByteArrayInputStream(CompressorFactory.getInstance().getCompressor
-      .unCompressByte(confBytes))
-    val ois = new ObjectInputStream(bai)
-    configuration.readFields(ois)
-    ois.close()
-    configuration
+    val carbonConfiguration = carbonSessionInfo.getThreadParams.getExtraInfo("carbonConf")
+      .asInstanceOf[CarbonConfiguration]
+    carbonConfiguration.getConfiguration
   }
+
 }
 
 /**
@@ -95,7 +80,7 @@ abstract class CarbonRDD[T: ClassTag](@transient sc: SparkContext,
 abstract class CarbonRDDWithTableInfo[T: ClassTag](
     @transient sc: SparkContext,
     @transient private var deps: Seq[Dependency[_]],
-    serializedTableInfo: Array[Byte]) extends CarbonRDD[T](sc, deps, sc.hadoopConfiguration) {
+    serializedTableInfo: Array[Byte]) extends CarbonRDD[T](sc, deps) {
 
   def this(@transient oneParent: RDD[_], serializedTableInfo: Array[Byte]) =
     this (oneParent.context, List(new OneToOneDependency(oneParent)), serializedTableInfo)

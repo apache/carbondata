@@ -103,7 +103,7 @@ class CarbonScanRDD[T: ClassTag](
     var numBlocks = 0
 
     try {
-      val conf = new Configuration()
+      val conf = getConf
       val jobConf = new JobConf(conf)
       SparkHadoopUtil.get.addCredentials(jobConf)
       val job = Job.getInstance(jobConf)

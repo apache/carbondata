@@ -61,7 +61,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.{ByteUtil, CarbonConfiguration, CarbonProperties, CarbonUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.exception.DataLoadingException
@@ -181,7 +181,7 @@ object CarbonDataRDDFactory {
             triggeredCompactionStatus = true
           } catch {
             case e: Exception =>
-              LOGGER.error(s"Exception in compaction thread ${ e.getMessage }")
+              LOGGER.error(e, s"Exception in compaction thread ${ e }")
               exception = e
           }
           // continue in case of exception also, check for all the tables.
@@ -587,8 +587,7 @@ object CarbonDataRDDFactory {
         carbonLoadModel.setMergedSegmentIds(compactedSegments)
       } catch {
         case e: Exception =>
-          throw new Exception(
-            "Dataload is success. Auto-Compaction has failed. Please check logs.")
+          throw new Exception(e)
       }
     }
   }
@@ -707,9 +706,13 @@ object CarbonDataRDDFactory {
       val partitionByRdd = keyRDD.partitionBy(
         new SegmentPartitioner(segmentIdIndex, segmentUpdateParallelism))
 
+      val conf = new CarbonConfiguration(FileFactory.getConfiguration)
       // because partitionId=segmentIdIndex*parallelism+RandomPart and RandomPart<parallelism,
       // so segmentIdIndex=partitionId/parallelism, this has been verified.
       partitionByRdd.map(_._2).mapPartitions { partition =>
+        TaskContext.get().addTaskCompletionListener(_ => ThreadLocalSessionInfo.unsetAll())
+        ThreadLocalSessionInfo.getCarbonSessionInfo.getThreadParams
+          .setExtraInfo("carbonConf", conf)
         val partitionId = TaskContext.getPartitionId()
         val segIdIndex = partitionId / segmentUpdateParallelism
         val randomPart = partitionId - segIdIndex * segmentUpdateParallelism
@@ -1094,8 +1097,7 @@ object CarbonDataRDDFactory {
         sqlContext.sparkContext,
         new DataLoadResultImpl(),
         carbonLoadModel,
-        newRdd,
-        sqlContext.sparkContext.hadoopConfiguration
+        newRdd
       ).collect()
     } catch {
       case ex: Exception =>

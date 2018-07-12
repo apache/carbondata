@@ -38,8 +38,9 @@ import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 
 import org.apache.carbondata.common.annotations.InterfaceAudience
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.{CarbonConfiguration, CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.store.SparkCarbonStore
 import org.apache.carbondata.streaming.CarbonStreamingQueryListener
@@ -384,13 +385,7 @@ object CarbonSession {
   }
 
   def threadSet(key: String, value: String): Unit = {
-    var currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
-    if (currentThreadSessionInfo == null) {
-      currentThreadSessionInfo = new CarbonSessionInfo()
-    }
-    else {
-      currentThreadSessionInfo = currentThreadSessionInfo.clone()
-    }
+    val currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
     val threadParams = currentThreadSessionInfo.getThreadParams
     CarbonSetCommand.validateAndSetValue(threadParams, key, value)
     ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
@@ -398,13 +393,7 @@ object CarbonSession {
 
 
   def threadSet(key: String, value: Object): Unit = {
-    var currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
-    if (currentThreadSessionInfo == null) {
-      currentThreadSessionInfo = new CarbonSessionInfo()
-    }
-    else {
-      currentThreadSessionInfo = currentThreadSessionInfo.clone()
-    }
+    val currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
     currentThreadSessionInfo.getThreadParams.setExtraInfo(key, value)
     ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
   }
@@ -420,7 +409,10 @@ object CarbonSession {
     }
   }
 
-  def updateSessionInfoToCurrentThread(sparkSession: SparkSession): Unit = {
+  private val LOGGER: LogService =
+    LogServiceFactory.getLogService(classOf[CacheProvider].getName)
+
+  def updateSessionInfoToCurrentThread(sparkSession: SparkSession, s: Boolean = true): Unit = {
     val carbonSessionInfo = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.clone()
     val currentThreadSessionInfoOrig = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (currentThreadSessionInfoOrig != null) {
@@ -429,6 +421,12 @@ object CarbonSession {
       currentThreadSessionInfo.getThreadParams.getAll.asScala
         .foreach(entry => carbonSessionInfo.getSessionParams.addProperty(entry._1, entry._2))
       carbonSessionInfo.setThreadParams(currentThreadSessionInfo.getThreadParams)
+    }
+    if (s) {
+      val startTime = System.currentTimeMillis()
+      carbonSessionInfo.getThreadParams.setExtraInfo("carbonConf",
+        new CarbonConfiguration(sparkSession.sessionState.newHadoopConf()))
+      LOGGER.audit(s"-----------> ${ System.currentTimeMillis() - startTime }")
     }
     // preserve thread parameters across call
     ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)

@@ -20,13 +20,12 @@ package org.apache.spark.sql.execution.command.mutation
 import java.util
 
 import scala.collection.JavaConverters._
-import scala.reflect.ClassTag
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
+import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -41,7 +40,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, DeleteDeltaBlockDetails, SegmentUpdateDetails, TupleIdEnum}
 import org.apache.carbondata.core.mutate.data.RowCountDetailsVO
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonConfiguration, CarbonUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
@@ -118,11 +117,15 @@ object DeleteExecution {
         blockMappingVO.getCompleteBlockRowDetailVO.asScala.toSeq,
         keyRdd.partitions.length)
 
+    val conf = new CarbonConfiguration(FileFactory.getConfiguration)
+
     val rdd = rowContRdd.join(keyRdd)
     res = rdd.mapPartitionsWithIndex(
       (index: Int, records: Iterator[((String), (RowCountDetailsVO, Iterable[Row]))]) =>
         Iterator[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))]] {
-
+          TaskContext.get().addTaskCompletionListener(_ => ThreadLocalSessionInfo.unsetAll())
+          ThreadLocalSessionInfo.getCarbonSessionInfo.getThreadParams
+            .setExtraInfo("carbonConf", conf)
           var result = List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))]()
           while (records.hasNext) {
             val ((key), (rowCountDetailsVO, groupedRows)) = records.next
@@ -328,7 +331,7 @@ object DeleteExecution {
   private def createCarbonInputFormat(absoluteTableIdentifier: AbsoluteTableIdentifier) :
   (CarbonTableInputFormat[Array[Object]], Job) = {
     val carbonInputFormat = new CarbonTableInputFormat[Array[Object]]()
-    val jobConf: JobConf = new JobConf(new Configuration)
+    val jobConf: JobConf = new JobConf(FileFactory.getConfiguration)
     val job: Job = new Job(jobConf)
     FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getTablePath))
     (carbonInputFormat, job)

@@ -64,7 +64,7 @@ class CarbonMergerRDD[K, V](
     carbonLoadModel: CarbonLoadModel,
     carbonMergerMapping: CarbonMergerMapping,
     confExecutorsTemp: String)
-  extends CarbonRDD[(K, V)](sc, Nil, sc.hadoopConfiguration) {
+  extends CarbonRDD[(K, V)](sc, Nil) {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
   sc.setLocalProperty("spark.job.interruptOnCancel", "true")

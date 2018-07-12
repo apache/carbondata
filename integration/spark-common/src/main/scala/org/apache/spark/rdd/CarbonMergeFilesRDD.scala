@@ -46,7 +46,7 @@ class CarbonMergeFilesRDD(
   segmentFileNameToSegmentIdMap: java.util.Map[String, String],
   isHivePartitionedTable: Boolean,
   readFileFooterFromCarbonDataFile: Boolean)
-  extends CarbonRDD[String](sc, Nil, sc.hadoopConfiguration) {
+  extends CarbonRDD[String](sc, Nil) {
 
   override def getPartitions: Array[Partition] = {
     segments.zipWithIndex.map {s =>

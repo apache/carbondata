@@ -29,9 +29,9 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapreduce.{Job, TaskAttemptContext}
-import org.apache.spark.SparkEnv
+import org.apache.spark.{SparkEnv, TaskContext}
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, CarbonSession, Row, SparkSession}
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.ExternalCatalogUtils
 import org.apache.spark.sql.internal.SQLConf
@@ -45,7 +45,7 @@ import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
-import org.apache.carbondata.core.util.{CarbonProperties, DataTypeConverterImpl, DataTypeUtil, ObjectSerializationUtil}
+import org.apache.carbondata.core.util._
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.api.{CarbonOutputCommitter, CarbonTableOutputFormat}
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat.CarbonRecordWriter
@@ -361,6 +361,7 @@ private class CarbonOutputWriter(path: String,
     context.getConfiguration.set("carbon.outputformat.taskno", taskNo)
     context.getConfiguration.set("carbon.outputformat.writepath",
       writePath + "/" + model.getSegmentId + "_" + model.getFactTimeStamp + ".tmp")
+
     new CarbonTableOutputFormat() {
       override def getDefaultWorkFile(context: TaskAttemptContext, extension: String): Path = {
         new Path(path)
