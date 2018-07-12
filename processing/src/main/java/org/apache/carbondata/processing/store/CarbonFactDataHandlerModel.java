@@ -332,7 +332,7 @@ public class CarbonFactDataHandlerModel {
         new TableSpec(loadModel.getCarbonDataLoadSchema().getCarbonTable());
     DataMapWriterListener listener = new DataMapWriterListener();
     listener.registerAllWriter(
-        loadModel.getCarbonDataLoadSchema().getCarbonTable(),
+        carbonTable,
         loadModel.getSegmentId(),
         CarbonTablePath.getShardName(
             CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(loadModel.getTaskNo()),
