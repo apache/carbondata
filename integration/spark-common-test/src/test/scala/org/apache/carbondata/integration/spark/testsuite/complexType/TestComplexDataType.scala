@@ -4,10 +4,11 @@ import java.sql.Timestamp
 
 import scala.collection.mutable
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
@@ -17,6 +18,16 @@ import org.apache.carbondata.core.util.CarbonProperties
  */
 
 class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
+
+  override def beforeAll(): Unit = {
+    sql("DROP TABLE IF EXISTS table1")
+    sql("DROP TABLE IF EXISTS test")
+  }
+
+  override def afterAll(): Unit = {
+    sql("DROP TABLE IF EXISTS table1")
+    sql("DROP TABLE IF EXISTS test")
+  }
 
   test("test Projection PushDown for Struct - Integer type") {
     sql("DROP TABLE IF EXISTS table1")
@@ -712,5 +723,166 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select a.b,id,a.c,person.detail[0],d.e,d.f,person.detail[1],id from test"),Seq(Row(2,1,3,5,3,2,6,1)))
     checkAnswer(sql("select a.b,id,a.c,person.detail[0],d.e,d.f,person.detail[1],id,1,a.b from test"),Seq(Row(2,1,3,5,3,2,6,1,1,2)))
   }
-  
+
+  test("test block Update for complex datatype") {
+    sql("DROP TABLE IF EXISTS test")
+    sql("create table test(id int,a struct<b:int,c:int>,d array<int>) stored by 'carbondata'")
+    sql("insert into test values(1,'2$3',4)")
+    val structException = intercept[UnsupportedOperationException](
+    sql("update test set(a.b)=(4) where id=1").show(false))
+    assertResult("Unsupported operation on Complex data type")(structException.getMessage)
+    val arrayException = intercept[UnsupportedOperationException](
+    sql("update test set(a)=(4) where id=1").show(false))
+    assertResult("Unsupported operation on Complex data type")(arrayException.getMessage)
+  }
+
+  test("test block partition column") {
+    sql("DROP TABLE IF EXISTS test")
+    val arrayException = intercept[AnalysisException](
+    sql("""
+          | CREATE TABLE IF NOT EXISTS test
+          | (
+          | id Int,
+          | vin string,
+          | logdate Timestamp,
+          | phonenumber Long,
+          | country array<string>,
+          | salary Int
+          | )
+          | PARTITIONED BY (area array<string>)
+          | STORED BY 'carbondata'
+        """.stripMargin))
+    assertResult("Cannot use array<string> for partition column;")(arrayException.getMessage)
+    sql("DROP TABLE IF EXISTS test")
+    val structException = intercept[AnalysisException](
+      sql("""
+            | CREATE TABLE IF NOT EXISTS test
+            | (
+            | id Int,
+            | vin string,
+            | logdate Timestamp,
+            | phonenumber Long,
+            | country array<string>,
+            | salary Int
+            | )
+            | PARTITIONED BY (area struct<b:int>)
+            | STORED BY 'carbondata'
+          """.stripMargin)
+    )
+    assertResult("Cannot use struct<b:int> for partition column;")(structException.getMessage)
+  }
+
+  test("test block preaggregate") {
+    sql("DROP TABLE IF EXISTS test")
+    sql("create table test(id int,a struct<b:int>) stored by 'carbondata'")
+    sql("insert into test values (1,2)")
+    sql("insert into test values (1,2)")
+    sql("insert into test values (1,2)")
+    val structException = intercept[UnsupportedOperationException](
+      sql("create datamap preagg_sum on table test using 'preaggregate' as select id,sum(a.b) from test group by id"))
+    assertResult("Preaggregate is unsupported for ComplexData type column: a.b")(structException.getMessage)
+    sql("DROP TABLE IF EXISTS test")
+    sql("create table test(id int,a array<int>) stored by 'carbondata'")
+    sql("insert into test values (1,2)")
+    val arrayException = intercept[UnsupportedOperationException](
+      sql("create datamap preagg_sum on table test using 'preaggregate' as select id,sum(a[0]) from test group by id"))
+    assertResult("Preaggregate is unsupported for ComplexData type column: a[0]")(arrayException.getMessage)
+  }
+
+  test("test block dictionary exclude for child column") {
+    sql("DROP TABLE IF EXISTS table1")
+    sql(
+      "create table table1 (roll int,a struct<b:int,c:string,d:int,e:string,f:struct<g:int," +
+      "h:string,i:int>,j:int>) stored " +
+      "by " +
+      "'carbondata' tblproperties('dictionary_exclude'='a')")
+    sql("insert into table1 values(1,'1$abc$2$efg$3:mno:4$5')")
+    checkAnswer(sql("select a.b from table1"), Seq(Row(1)))
+    sql("DROP TABLE IF EXISTS table1")
+    val structException = intercept[MalformedCarbonCommandException](
+    sql(
+      "create table table1 (roll int,a struct<b:int,c:string,d:int,e:string,f:struct<g:int," +
+      "h:string,i:int>,j:int>) stored " +
+      "by " +
+      "'carbondata' tblproperties('dictionary_exclude'='a.b')"))
+    assertResult(
+      "DICTIONARY_EXCLUDE column: a.b does not exist in table or unsupported for complex child " +
+      "column. Please check create table statement.")(
+      structException.getMessage)
+    sql("DROP TABLE IF EXISTS table1")
+    val arrayException = intercept[MalformedCarbonCommandException](
+      sql(
+        "create table table1 (roll int,a array<int>) stored " +
+        "by " +
+        "'carbondata' tblproperties('dictionary_exclude'='a[0]')"))
+    assertResult(
+      "DICTIONARY_EXCLUDE column: a[0] does not exist in table or unsupported for complex child " +
+      "column. Please check create table statement.")(
+      arrayException.getMessage)
+  }
+
+  test("test block dictionary include for child column") {
+    sql("DROP TABLE IF EXISTS table1")
+    val structException = intercept[MalformedCarbonCommandException](
+      sql(
+        "create table table1 (roll int,a struct<b:int,c:string,d:int,e:string,f:struct<g:int," +
+        "h:string,i:int>,j:int>) stored " +
+        "by " +
+        "'carbondata' tblproperties('dictionary_include'='a.b')"))
+    assertResult(
+      "DICTIONARY_INCLUDE column: a.b does not exist in table or unsupported for complex child " +
+      "column. Please check create table statement.")(
+      structException.getMessage)
+    sql("DROP TABLE IF EXISTS table1")
+    val arrayException = intercept[MalformedCarbonCommandException](
+      sql(
+        "create table table1 (roll int,a array<int>) stored " +
+        "by " +
+        "'carbondata' tblproperties('dictionary_include'='a[0]')"))
+    assertResult(
+      "DICTIONARY_INCLUDE column: a[0] does not exist in table or unsupported for complex child " +
+      "column. Please check create table statement.")(
+      arrayException.getMessage)
+  }
+
+  test("test block compaction") {
+    sql("DROP TABLE IF EXISTS table1")
+    sql(
+      "create table table1 (roll int,person Struct<detail:int,age:string,height:double>) stored " +
+      "by 'carbondata'")
+    sql(
+      "load data inpath '" + resourcesPath +
+      "/Struct.csv' into table table1 options('delimiter'=','," +
+      "'quotechar'='\"','fileheader'='roll,person','complex_delimiter_level_1'='$'," +
+      "'complex_delimiter_level_2'='&')")
+    sql(
+      "load data inpath '" + resourcesPath +
+      "/Struct.csv' into table table1 options('delimiter'=','," +
+      "'quotechar'='\"','fileheader'='roll,person','complex_delimiter_level_1'='$'," +
+      "'complex_delimiter_level_2'='&')")
+    val exception = intercept[UnsupportedOperationException](
+      sql("alter table table1 compact 'major'"))
+    assertResult(
+      "Compaction is unsupported for Table containing Complex Columns")(
+      exception.getMessage)
+    val exception1 = intercept[UnsupportedOperationException](
+      sql("alter table table1 compact 'minor'"))
+    assertResult(
+      "Compaction is unsupported for Table containing Complex Columns")(
+      exception1.getMessage)
+    val exception2 = intercept[UnsupportedOperationException](
+      sql("alter table table1 compact 'custom' where segment.id in (0,1)"))
+    assertResult(
+      "Compaction is unsupported for Table containing Complex Columns")(
+      exception2.getMessage)
+  }
+
+  test("test complex datatype double for encoding") {
+    sql("DROP TABLE IF EXISTS table1")
+    sql(
+      "create table table1 (person struct<height:double>) stored by 'carbondata'")
+    sql("insert into table1 values('1000000000')")
+    checkExistence(sql("select * from table1"),true,"1.0E9")
+  }
+
 }

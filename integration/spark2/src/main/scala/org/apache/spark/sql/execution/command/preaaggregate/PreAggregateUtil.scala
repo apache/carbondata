@@ -24,7 +24,7 @@ import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAl
 import org.apache.spark.sql.CarbonExpressions.MatchCastExpression
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedFunction, UnresolvedRelation}
-import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, AttributeSeq, Cast, Expression, ExprId, NamedExpression, ScalaUDF}
+import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate.{Count, _}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command.{ColumnTableRelation, DataMapField, Field}
@@ -354,7 +354,13 @@ object PreAggregateUtil {
         !expression.isInstanceOf[AttributeReference]) {
       newColumnName
     } else {
-      expression.asInstanceOf[AttributeReference].name
+      if (expression.isInstanceOf[GetStructField] || expression.isInstanceOf[GetArrayItem]) {
+        throw new UnsupportedOperationException(
+          "Preaggregate is unsupported for ComplexData type column: " +
+          expression.simpleString.replaceAll("#[0-9]*", ""))
+      } else {
+        expression.asInstanceOf[AttributeReference].name
+      }
     }
     createField(columnName,
       dataType,
