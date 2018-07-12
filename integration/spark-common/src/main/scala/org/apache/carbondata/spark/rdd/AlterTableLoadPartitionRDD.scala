@@ -39,7 +39,7 @@ class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
     partitionIds: Seq[String],
     bucketId: Int,
     identifier: AbsoluteTableIdentifier,
-    prev: RDD[Array[AnyRef]]) extends RDD[(K, V)](prev) {
+    prev: RDD[Array[AnyRef]]) extends CarbonRDD[(K, V)](prev) {
 
   var storeLocation: String = null
   val carbonLoadModel = alterPartitionModel.carbonLoadModel
@@ -57,7 +57,7 @@ class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
     firstParent[Array[AnyRef]].partitions
   }
 
-  override def compute(split: Partition, context: TaskContext): Iterator[(K, V)] = {
+  override def internalCompute(split: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val rows = firstParent[Array[AnyRef]].iterator(split, context).toList.asJava
     val iter = new Iterator[(K, V)] {

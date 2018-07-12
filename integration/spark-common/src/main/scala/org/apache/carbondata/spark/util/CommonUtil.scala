@@ -571,7 +571,7 @@ object CommonUtil {
     } else {
       context.defaultParallelism
     }
-    val spaceConsumed = FileUtils.getSpaceOccupied(filePaths, hadoopConfiguration)
+    val spaceConsumed = FileUtils.getSpaceOccupied(filePaths)
     val blockSize =
       hadoopConfiguration.getLongBytes("dfs.blocksize", CarbonCommonConstants.CARBON_256MB)
     LOGGER.info("[Block Distribution]")

@@ -159,7 +159,7 @@ object PartitionUtils {
       partitionIds: List[String], oldPartitionIdList: List[Int],
       partitionInfo: PartitionInfo,
       carbonTable: CarbonTable): java.util.List[TableBlockInfo] = {
-    val jobConf = new JobConf(new Configuration)
+    val jobConf = new JobConf(FileFactory.getConfiguration)
     val job = new Job(jobConf)
     val format = CarbonInputFormatUtil
       .createCarbonTableInputFormat(identifier, partitionIds.asJava, job)

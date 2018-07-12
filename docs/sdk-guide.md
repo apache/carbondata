@@ -786,3 +786,11 @@ public String getProperty(String key);
 public String getProperty(String key, String defaultValue);
 ```
 Reference : [list of carbon properties](http://carbondata.apache.org/configuration-parameters.html)
+
+# Limitations
+
+SDK reader/writer does not support multiple users having different s3 credentials even with
+ different writer/reader instances.
+If the user wishes to connect to two different s3 accounts, user must create a reader and writer
+ in a separate thread.
+

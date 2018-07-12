@@ -74,8 +74,7 @@ object FileUtils {
       val stringBuild = new StringBuilder()
       val filePaths = inputPath.split(",")
       for (i <- 0 until filePaths.size) {
-        val filePath = CarbonUtil.checkAndAppendHDFSUrl(filePaths(i))
-        val carbonFile = FileFactory.getCarbonFile(filePaths(i), hadoopConf)
+        val carbonFile = FileFactory.getCarbonFile(filePaths(i))
         if (!carbonFile.exists()) {
           throw new DataLoadingException(
             s"The input file does not exist: ${CarbonUtil.removeAKSK(filePaths(i))}" )
@@ -91,14 +90,14 @@ object FileUtils {
     }
   }
 
-  def getSpaceOccupied(inputPath: String, hadoopConfiguration: Configuration): Long = {
+  def getSpaceOccupied(inputPath: String): Long = {
     var size : Long = 0
     if (inputPath == null || inputPath.isEmpty) {
       size
     } else {
       val filePaths = inputPath.split(",")
       for (i <- 0 until filePaths.size) {
-        val carbonFile = FileFactory.getCarbonFile(filePaths(i), hadoopConfiguration)
+        val carbonFile = FileFactory.getCarbonFile(filePaths(i))
         size = size + carbonFile.getSize
       }
       size

@@ -74,6 +74,13 @@ public class SessionParams implements Serializable, Cloneable {
     return this.extraInfo.get(key);
   }
 
+  public Object getExtraInfo(String key, Object defaultValue) {
+    if (!extraInfo.containsKey(key)) {
+      return defaultValue;
+    }
+    return extraInfo.get(key);
+  }
+
   /**
    * This method will be used to get the properties value
    *

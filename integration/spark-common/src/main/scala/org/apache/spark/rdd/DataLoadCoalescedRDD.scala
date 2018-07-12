@@ -29,8 +29,7 @@ case class DataLoadPartitionWrap[T: ClassTag](rdd: RDD[T], partition: Partition)
 class DataLoadCoalescedRDD[T: ClassTag](
     @transient var prev: RDD[T],
     nodeList: Array[String])
-  extends CarbonRDD[DataLoadPartitionWrap[T]](prev.context, Nil,
-    prev.sparkContext.hadoopConfiguration) {
+  extends CarbonRDD[DataLoadPartitionWrap[T]](prev.context, Nil) {
 
   override def getPartitions: Array[Partition] = {
     new DataLoadPartitionCoalescer(prev, nodeList).run

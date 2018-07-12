@@ -28,7 +28,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
 import org.apache.carbondata.core.datamap.DataMapJob;
 import org.apache.carbondata.core.datamap.DataMapUtil;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -177,20 +176,4 @@ public class CarbonInputFormatUtil {
     return new JobID(jobtrackerID, batch);
   }
 
-  public static void setS3Configurations(Configuration hadoopConf) {
-    FileFactory.getConfiguration()
-        .set("fs.s3a.access.key", hadoopConf.get("fs.s3a.access.key", ""));
-    FileFactory.getConfiguration()
-        .set("fs.s3a.secret.key", hadoopConf.get("fs.s3a.secret.key", ""));
-    FileFactory.getConfiguration()
-        .set("fs.s3a.endpoint", hadoopConf.get("fs.s3a.endpoint", ""));
-    FileFactory.getConfiguration().set(CarbonCommonConstants.S3_ACCESS_KEY,
-        hadoopConf.get(CarbonCommonConstants.S3_ACCESS_KEY, ""));
-    FileFactory.getConfiguration().set(CarbonCommonConstants.S3_SECRET_KEY,
-        hadoopConf.get(CarbonCommonConstants.S3_SECRET_KEY, ""));
-    FileFactory.getConfiguration().set(CarbonCommonConstants.S3N_ACCESS_KEY,
-        hadoopConf.get(CarbonCommonConstants.S3N_ACCESS_KEY, ""));
-    FileFactory.getConfiguration().set(CarbonCommonConstants.S3N_SECRET_KEY,
-        hadoopConf.get(CarbonCommonConstants.S3N_SECRET_KEY, ""));
-  }
 }
