@@ -25,6 +25,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.datatype.DataTypes
@@ -79,7 +80,7 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
   }
 
   test("long string columns cannot be dictionary include") {
-    val exceptionCaught = intercept[Exception] {
+    val exceptionCaught = intercept[MalformedCarbonCommandException] {
       sql(
         s"""
            | CREATE TABLE if not exists $longStringTable(
@@ -93,7 +94,7 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
   }
 
   test("long string columns cannot be dictionay exclude") {
-    val exceptionCaught = intercept[Exception] {
+    val exceptionCaught = intercept[MalformedCarbonCommandException] {
       sql(
         s"""
            | CREATE TABLE if not exists $longStringTable(
@@ -107,7 +108,7 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
   }
 
   test("long string columns cannot be sort_columns") {
-    val exceptionCaught = intercept[Exception] {
+    val exceptionCaught = intercept[MalformedCarbonCommandException] {
       sql(
         s"""
            | CREATE TABLE if not exists $longStringTable(
@@ -121,18 +122,71 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
   }
 
   test("long string columns can only be string columns") {
-    val exceptionCaught = intercept[Exception] {
+    val exceptionCaught = intercept[MalformedCarbonCommandException] {
       sql(
         s"""
            | CREATE TABLE if not exists $longStringTable(
            | id INT, name STRING, description STRING, address STRING, note STRING
            | ) STORED BY 'carbondata'
            | TBLPROPERTIES('LONG_STRING_COLUMNS'='id, note')
-           |""".
-          stripMargin)
+           |""".stripMargin)
     }
     assert(exceptionCaught.getMessage.contains("long_string_columns: id"))
     assert(exceptionCaught.getMessage.contains("its data type is not string"))
+  }
+
+  test("long string columns cannot contain duplicate columns") {
+    val exceptionCaught = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
+           | CREATE TABLE if not exists $longStringTable(
+           | id INT, name STRING, description STRING, address STRING, note STRING
+           | ) STORED BY 'carbondata'
+           | TBLPROPERTIES('LONG_STRING_COLUMNS'='address, note, Note')
+           |""".stripMargin)
+    }
+    assert(exceptionCaught.getMessage.contains("long_string_columns"))
+    assert(exceptionCaught.getMessage.contains("Duplicate columns are not allowed"))
+  }
+
+  test("long_string_columns: column does not exist in table ") {
+    val exceptionCaught = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
+           | CREATE TABLE if not exists $longStringTable(
+           | id INT, name STRING, description STRING, address STRING, note STRING
+           | ) STORED BY 'carbondata'
+           | TBLPROPERTIES('LONG_STRING_COLUMNS'='address, note, NoteS')
+           |""".stripMargin)
+    }
+    assert(exceptionCaught.getMessage.contains("long_string_columns"))
+    assert(exceptionCaught.getMessage.contains("does not exist in table"))
+  }
+
+  test("long_string_columns: columns cannot exist in patitions columns") {
+    val exceptionCaught = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
+           | CREATE TABLE if not exists $longStringTable(
+           | id INT, name STRING, description STRING, address STRING
+           | ) partitioned by (note string) STORED BY 'carbondata'
+           | TBLPROPERTIES('LONG_STRING_COLUMNS'='note')
+           |""".stripMargin)
+    }
+    assert(exceptionCaught.getMessage.contains("both in partition and long_string_columns"))
+  }
+
+  test("long_string_columns: columns cannot exist in no_inverted_index columns") {
+    val exceptionCaught = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
+           | CREATE TABLE if not exists $longStringTable(
+           | id INT, name STRING, description STRING, address STRING, note STRING
+           | ) STORED BY 'carbondata'
+           | TBLPROPERTIES('no_inverted_index'='note', 'LONG_STRING_COLUMNS'='address, note')
+           |""".stripMargin)
+    }
+    assert(exceptionCaught.getMessage.contains("both in no_inverted_index and long_string_columns"))
   }
 
   private def prepareTable(): Unit = {
