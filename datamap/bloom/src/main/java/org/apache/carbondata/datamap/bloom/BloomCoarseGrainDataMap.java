@@ -180,6 +180,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
   private List<BloomQueryModel> createQueryModel(Expression expression)
       throws DictionaryGenerationException, UnsupportedEncodingException {
     List<BloomQueryModel> queryModels = new ArrayList<BloomQueryModel>();
+    // bloomdatamap only support equalTo and In operators now
     if (expression instanceof EqualToExpression) {
       Expression left = ((EqualToExpression) expression).getLeft();
       Expression right = ((EqualToExpression) expression).getRight();
@@ -200,6 +201,8 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
           queryModels.add(bloomQueryModel);
         }
         return queryModels;
+      } else {
+        LOGGER.warn("BloomFilter can only support the 'equal' filter like 'Col = PlainValue'");
       }
     } else if (expression instanceof InExpression) {
       Expression left = ((InExpression) expression).getLeft();
@@ -220,6 +223,9 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
               buildQueryModelForIn((ColumnExpression) right, (ListExpression) left);
           queryModels.addAll(models);
         }
+        return queryModels;
+      } else {
+        LOGGER.warn("BloomFilter can only support the 'in' filter like 'Col in (PlainValues)'");
       }
     }
 
