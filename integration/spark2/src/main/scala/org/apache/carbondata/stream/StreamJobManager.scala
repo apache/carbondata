@@ -21,17 +21,17 @@ import java.util.concurrent.{ConcurrentHashMap, CountDownLatch, TimeUnit}
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
-import org.apache.spark.sql.streaming.StreamingQuery
-import org.apache.spark.sql.types.{StructField, StructType}
-
 import org.apache.carbondata.common.exceptions.NoSuchStreamException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.spark.StreamingOption
 import org.apache.carbondata.streaming.CarbonStreamException
+
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
+import org.apache.spark.sql.streaming.StreamingQuery
+import org.apache.spark.sql.types.{StructField, StructType}
 
 /**
  * A manager to start and stop a stream job for StreamSQL.
@@ -52,19 +52,23 @@ object StreamJobManager {
     }
   }
 
-  private def validateSinkTable(querySchema: StructType, sink: CarbonTable): Unit = {
+  private def validateSinkTable(validateQuerySchema: Boolean,
+                                querySchema: StructType, sink: CarbonTable): Unit = {
     if (!sink.isStreamingSink) {
       throw new MalformedCarbonCommandException(s"Table ${sink.getTableName} is not " +
                                                 "streaming sink table " +
                                                 "('streaming' tblproperty is not 'sink' or 'true')")
     }
-    val fields = sink.getCreateOrderColumn(sink.getTableName).asScala.map { column =>
-      StructField(column.getColName,
-        CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(column.getDataType))
-    }
-    if (!querySchema.equals(StructType(fields))) {
-      throw new MalformedCarbonCommandException(s"Schema of table ${sink.getTableName} " +
-                                                s"does not match query output")
+    // TODO: validate query schema against sink in kafka (we cannot get schema directly)
+    if (validateQuerySchema) {
+      val fields = sink.getCreateOrderColumn(sink.getTableName).asScala.map { column =>
+        StructField(column.getColName,
+          CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(column.getDataType))
+      }
+      if (!querySchema.equals(StructType(fields))) {
+        throw new MalformedCarbonCommandException(s"Schema of table ${sink.getTableName} " +
+          s"does not match query output")
+      }
     }
   }
 
@@ -102,14 +106,22 @@ object StreamJobManager {
     }
 
     validateSourceTable(sourceTable)
-    validateSinkTable(streamDf.schema, sinkTable)
+
+    // kafka source always have fixed schema, need to get actual schema
+    val isKafka = Option(sourceTable.getFormat).exists(_ == "kafka")
+    val dataFrame = if (isKafka) {
+      streamDf.selectExpr("CAST(value as STRING)")
+    } else {
+      streamDf
+    }
+    validateSinkTable(!isKafka, dataFrame.schema, sinkTable)
 
     // start a new thread to run the streaming ingest job, the job will be running
     // until user stops it by STOP STREAM JOB
     val thread = new Thread(new Runnable {
       override def run(): Unit = {
         try {
-          job = streamDf.writeStream
+          job = dataFrame.writeStream
             .format("carbondata")
             .trigger(options.trigger)
             .option("checkpointLocation", options.checkpointLocation(sinkTable.getTablePath))
