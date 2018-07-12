@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
+import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -97,6 +98,9 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
           // if job is to clear datamaps just clear datamaps from cache and return
           DataMapStoreManager.getInstance()
               .clearDataMaps(table.getCarbonTableIdentifier().getTableUniqueName());
+          // clear the segment properties cache from executor
+          SegmentPropertiesAndSchemaHolder.getInstance()
+              .invalidate(table.getAbsoluteTableIdentifier());
           blockletIterator = Collections.emptyIterator();
           return;
         }
