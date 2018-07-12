@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class ListExpressionUnitTest {
 
@@ -57,5 +58,26 @@ public class ListExpressionUnitTest {
     String expected_value = "Row is for left";
     ExpressionResult result = listExpression.evaluate(value);
     assertThat(expected_value, is(equalTo(result.getList().get(0).getString())));
+  }
+
+  @Test public void testGetString() throws FilterUnsupportedException, FilterIllegalMemberException  {
+    ColumnExpression left = new ColumnExpression("left_name", DataTypes.STRING);
+    left.setColIndex(0);
+    ColumnExpression right = new ColumnExpression("right_name", DataTypes.STRING);
+    right.setColIndex(1);
+
+    List<Expression> children = new ArrayList<>();
+    children.add(left);
+    children.add(right);
+
+    listExpression = new ListExpression(children);
+    RowImpl value = new RowImpl();
+    String row = "Row is for left";
+    String row1 = "I am row 1";
+    Object objectRow[] = { row, row1 };
+    value.setValues(objectRow);
+    String expected_value = "ListExpression(ColumnExpression(left_name);ColumnExpression(right_name);)";
+    String exresult = listExpression.getString();
+    assertTrue(exresult.equals(expected_value));
   }
 }

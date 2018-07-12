@@ -40,25 +40,6 @@ public class NoRetryException extends RuntimeException {
   }
 
   /**
-   * Constructor
-   *
-   * @param msg The error message for this exception.
-   */
-  public NoRetryException(String msg, Throwable t) {
-    super(msg, t);
-    this.msg = msg;
-  }
-
-  /**
-   * Constructor
-   *
-   * @param t
-   */
-  public NoRetryException(Throwable t) {
-    super(t);
-  }
-
-  /**
    * getMessage
    */
   public String getMessage() {

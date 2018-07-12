@@ -179,10 +179,10 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
                 wrapperColumnSchema.getDataType()),
             wrapperColumnSchema.getColumnName(),
             wrapperColumnSchema.getColumnUniqueId(),
-            wrapperColumnSchema.isColumnar(),
+            true,
             encoders,
             wrapperColumnSchema.isDimensionColumn());
-    thriftColumnSchema.setColumn_group_id(wrapperColumnSchema.getColumnGroupId());
+    thriftColumnSchema.setColumn_group_id(-1);
     if (DataTypes.isDecimal(wrapperColumnSchema.getDataType())) {
       thriftColumnSchema.setScale(wrapperColumnSchema.getScale());
       thriftColumnSchema.setPrecision(wrapperColumnSchema.getPrecision());
@@ -511,7 +511,6 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     ColumnSchema wrapperColumnSchema = new ColumnSchema();
     wrapperColumnSchema.setColumnUniqueId(externalColumnSchema.getColumn_id());
     wrapperColumnSchema.setColumnName(externalColumnSchema.getColumn_name());
-    wrapperColumnSchema.setColumnar(externalColumnSchema.isColumnar());
     wrapperColumnSchema.setDataType(
         fromExternalToWrapperDataType(
             externalColumnSchema.data_type,
@@ -525,7 +524,6 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperColumnSchema.setEncodingList(encoders);
     wrapperColumnSchema.setNumberOfChild(externalColumnSchema.getNum_child());
     wrapperColumnSchema.setPrecision(externalColumnSchema.getPrecision());
-    wrapperColumnSchema.setColumnGroup(externalColumnSchema.getColumn_group_id());
     wrapperColumnSchema.setScale(externalColumnSchema.getScale());
     wrapperColumnSchema.setDefaultValue(externalColumnSchema.getDefault_value());
     wrapperColumnSchema.setInvisible(externalColumnSchema.isInvisible());

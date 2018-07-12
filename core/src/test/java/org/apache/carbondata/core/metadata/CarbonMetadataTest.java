@@ -117,7 +117,6 @@ public class CarbonMetadataTest {
 
   private static ColumnSchema getColumnarDimensionColumn() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataTypes.STRING);
@@ -167,8 +166,8 @@ public class CarbonMetadataTest {
     ColumnSchema colSchema2 = new ColumnSchema();
     colSchema1.setColumnUniqueId("1");
     colSchema2.setColumnUniqueId("2");
-    carbonDimensions.add(new CarbonDimension(colSchema1, 1, 1, 2, 1));
-    carbonDimensions.add(new CarbonDimension(colSchema2, 2, 2, 2, 2));
+    carbonDimensions.add(new CarbonDimension(colSchema1, 1, 1, 1));
+    carbonDimensions.add(new CarbonDimension(colSchema2, 2, 2, 2));
     new MockUp<CarbonTable>() {
       @Mock public String getTableName() {
         return "carbonTestTable";
@@ -192,12 +191,12 @@ public class CarbonMetadataTest {
     ColumnSchema colSchema1 = new ColumnSchema();
     ColumnSchema colSchema2 = new ColumnSchema();
     colSchema1.setColumnUniqueId("1");
-    carbonDimensions.add(new CarbonDimension(colSchema1, 1, 1, 2, 1));
+    carbonDimensions.add(new CarbonDimension(colSchema1, 1, 1, 1));
     final List<CarbonDimension> carbonChildDimensions = new ArrayList();
     ColumnSchema colSchema3 = new ColumnSchema();
     colSchema3.setColumnUniqueId("9");
     colSchema2.setColumnUniqueId("2");
-    carbonChildDimensions.add(new CarbonDimension(colSchema3, 1, 1, 2, 1));
+    carbonChildDimensions.add(new CarbonDimension(colSchema3, 1, 1, 1));
     new MockUp<CarbonTable>() {
       @Mock public String getTableName() {
         return "carbonTestTable";
@@ -232,13 +231,13 @@ public class CarbonMetadataTest {
     ColumnSchema colSchema1 = new ColumnSchema();
     colSchema1.setColumnUniqueId("1");
     colSchema1.setNumberOfChild(1);
-    CarbonDimension carbonDimension = new CarbonDimension(colSchema1, 1, 1, 2, 1);
+    CarbonDimension carbonDimension = new CarbonDimension(colSchema1, 1, 1, 1);
     carbonDimensions.add(carbonDimension);
     final List<CarbonDimension> carbonChildDimensions = new ArrayList();
     ColumnSchema colSchema2 = new ColumnSchema();
     colSchema2.setColumnUniqueId("9");
     colSchema2.setNumberOfChild(0);
-    carbonChildDimensions.add(new CarbonDimension(colSchema2, 1, 1, 2, 1));
+    carbonChildDimensions.add(new CarbonDimension(colSchema2, 1, 1, 1));
 
     new MockUp<CarbonTable>() {
       @Mock public String getTableName() {

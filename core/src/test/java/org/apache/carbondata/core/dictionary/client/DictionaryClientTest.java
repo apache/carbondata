@@ -72,7 +72,7 @@ public class DictionaryClientTest {
     empColumnSchema.setDimensionColumn(true);
     empColumnSchema.setDataType(DataTypes.STRING);
     empColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
-    empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0, 0);
+    empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0);
 
     ageColumnSchema = new ColumnSchema();
     ageColumnSchema.setColumnName("ageNameCol");
@@ -80,7 +80,7 @@ public class DictionaryClientTest {
     ageColumnSchema.setColumnUniqueId("ageNameCol");
     ageColumnSchema.setDimensionColumn(true);
     ageColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
-    ageDimension = new CarbonDimension(ageColumnSchema, 0, 0, 0, 0, 0);
+    ageDimension = new CarbonDimension(ageColumnSchema, 0, 0, 0, 0);
 
     // Create a Table
     tableSchema = new TableSchema();

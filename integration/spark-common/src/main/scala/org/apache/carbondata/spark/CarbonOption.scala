@@ -31,11 +31,6 @@ class CarbonOption(options: Map[String, String]) {
 
   def partitionCount: String = options.getOrElse("partitionCount", "1")
 
-  def partitionClass: String = {
-    options.getOrElse("partitionClass",
-      "org.apache.carbondata.processing.partition.impl.SampleDataPartitionerImpl")
-  }
-
   def tempCSV: Boolean = options.getOrElse("tempCSV", "false").toBoolean
 
   def compress: Boolean = options.getOrElse("compress", "false").toBoolean

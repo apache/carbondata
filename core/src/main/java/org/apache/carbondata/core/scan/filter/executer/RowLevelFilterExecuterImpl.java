@@ -37,7 +37,6 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionColumnPage;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -46,8 +45,6 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
-import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
-import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.MatchExpression;
@@ -427,7 +424,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           }
         } else {
           int dictionaryValue = readSurrogatesFromColumnChunk(blockChunkHolder, index, pageIndex,
-              dimColumnEvaluatorInfo, dimensionChunkIndex[i]);
+              dimensionChunkIndex[i]);
           if (dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)
               && !dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
             memberString =
@@ -588,45 +585,16 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    *
    * @param blockChunkHolder
    * @param index
-   * @param dimColumnEvaluatorInfo
    * @return
    */
   private int readSurrogatesFromColumnChunk(RawBlockletColumnChunks blockChunkHolder, int index,
-      int page, DimColumnResolvedFilterInfo dimColumnEvaluatorInfo, int chunkIndex) {
+      int page, int chunkIndex) {
     DimensionColumnPage dataChunk =
         blockChunkHolder.getDimensionRawColumnChunks()[chunkIndex].decodeColumnPage(page);
-    if (dimColumnEvaluatorInfo.getDimension().isColumnar()) {
-      byte[] rawData = dataChunk.getChunkData(index);
-      ByteBuffer byteBuffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE);
-      return CarbonUtil.getSurrogateKey(rawData, byteBuffer);
-    } else {
-      return readSurrogatesFromColumnGroupBlock(dataChunk, index, dimColumnEvaluatorInfo);
-    }
-
+    byte[] rawData = dataChunk.getChunkData(index);
+    ByteBuffer byteBuffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE);
+    return CarbonUtil.getSurrogateKey(rawData, byteBuffer);
   }
-
-  /**
-   * @param index
-   * @param dimColumnEvaluatorInfo
-   * @return read surrogate of given row of given column group dimension
-   */
-  private int readSurrogatesFromColumnGroupBlock(DimensionColumnPage chunk, int index,
-      DimColumnResolvedFilterInfo dimColumnEvaluatorInfo) {
-    try {
-      KeyStructureInfo keyStructureInfo =
-          QueryUtil.getKeyStructureInfo(segmentProperties, dimColumnEvaluatorInfo);
-      byte[] colData = chunk.getChunkData(index);
-      long[] result = keyStructureInfo.getKeyGenerator().getKeyArray(colData);
-      int colGroupId =
-          QueryUtil.getColumnGroupId(segmentProperties, dimensionChunkIndex[0]);
-      return (int) result[segmentProperties
-          .getColumnGroupMdKeyOrdinal(colGroupId, dimensionChunkIndex[0])];
-    } catch (KeyGenException e) {
-      LOGGER.error(e);
-    }
-    return 0;
-  }
-
 
   @Override
   public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {

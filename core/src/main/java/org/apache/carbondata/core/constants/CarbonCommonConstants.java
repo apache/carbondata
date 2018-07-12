@@ -917,8 +917,6 @@ public final class CarbonCommonConstants {
    */
   public static final String DATABASE_DEFAULT_NAME = "default";
 
-  // tblproperties
-  public static final String COLUMN_GROUPS = "column_groups";
   public static final String DICTIONARY_EXCLUDE = "dictionary_exclude";
   public static final String DICTIONARY_INCLUDE = "dictionary_include";
   public static final String LONG_STRING_COLUMNS = "long_string_columns";

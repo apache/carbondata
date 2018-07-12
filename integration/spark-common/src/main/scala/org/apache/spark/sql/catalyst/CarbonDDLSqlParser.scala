@@ -289,13 +289,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     // column properties
     val colProps = extractColumnProperties(fields, tableProperties)
-    // get column groups configuration from table properties.
-    val groupCols: Seq[String] = updateColumnGroupsInField(tableProperties,
-      noDictionaryDims, msrs, dims)
-    if (groupCols != null) {
-      throw new MalformedCarbonCommandException(
-        s"${CarbonCommonConstants.COLUMN_GROUPS} is deprecated")
-    }
 
     // validate the local dictionary property if defined
     if (tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE).isDefined) {
@@ -409,7 +402,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       Option(varcharColumns),
       Option(noDictionaryDims),
       Option(noInvertedIdxCols),
-      groupCols,
       Some(colProps),
       bucketFields: Option[BucketFields],
       partitionInfo,
@@ -485,74 +477,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         throw new MalformedCarbonCommandException(errMsg)
       }
     }
-  }
-
-  /**
-   * Extract the column groups configuration from table properties.
-   * Based on this Row groups of fields will be determined.
-   *
-   * @param tableProperties
-   * @return
-   */
-  protected def updateColumnGroupsInField(tableProperties: mutable.Map[String, String],
-      noDictionaryDims: Seq[String],
-      msrs: Seq[Field],
-      dims: Seq[Field]): Seq[String] = {
-    if (tableProperties.get(CarbonCommonConstants.COLUMN_GROUPS).isDefined) {
-
-      var splittedColGrps: Seq[String] = Seq[String]()
-      val nonSplitCols: String = tableProperties.get(CarbonCommonConstants.COLUMN_GROUPS).get
-
-      // row groups will be specified in table properties like -> "(col1,col2),(col3,col4)"
-      // here first splitting the value by () . so that the above will be splitted into 2 strings.
-      // [col1,col2] [col3,col4]
-      val m: Matcher = Pattern.compile("\\(([^)]+)\\)").matcher(nonSplitCols)
-      while (m.find()) {
-        val oneGroup: String = m.group(1)
-        CommonUtil.validateColumnGroup(oneGroup, noDictionaryDims, msrs, splittedColGrps, dims)
-        val arrangedColGrp = rearrangedColumnGroup(oneGroup, dims)
-        splittedColGrps :+= arrangedColGrp
-      }
-      // This will  be furthur handled.
-      CommonUtil.arrangeColGrpsInSchemaOrder(splittedColGrps, dims)
-    } else {
-      null
-    }
-  }
-
-  def rearrangedColumnGroup(colGroup: String, dims: Seq[Field]): String = {
-    // if columns in column group is not in schema order than arrange it in schema order
-    var colGrpFieldIndx: Seq[Int] = Seq[Int]()
-    colGroup.split(',').map(_.trim).foreach { x =>
-      dims.zipWithIndex.foreach { dim =>
-        if (dim._1.column.equalsIgnoreCase(x)) {
-          colGrpFieldIndx :+= dim._2
-        }
-      }
-    }
-    // sort it
-    colGrpFieldIndx = colGrpFieldIndx.sorted
-    // check if columns in column group is in schema order
-    if (!checkIfInSequence(colGrpFieldIndx)) {
-      throw new MalformedCarbonCommandException("Invalid column group:" + colGroup)
-    }
-    def checkIfInSequence(colGrpFieldIndx: Seq[Int]): Boolean = {
-      for (i <- 0 until (colGrpFieldIndx.length - 1)) {
-        if ((colGrpFieldIndx(i + 1) - colGrpFieldIndx(i)) != 1) {
-          throw new MalformedCarbonCommandException(
-            "Invalid column group,column in group should be contiguous as per schema.")
-        }
-      }
-      true
-    }
-    val colGrpNames: StringBuilder = StringBuilder.newBuilder
-    for (i <- colGrpFieldIndx.indices) {
-      colGrpNames.append(dims(colGrpFieldIndx(i)).column)
-      if (i < (colGrpFieldIndx.length - 1)) {
-        colGrpNames.append(",")
-      }
-    }
-    colGrpNames.toString()
   }
 
   /**

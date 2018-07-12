@@ -61,14 +61,6 @@ public class CarbonRow implements Serializable {
     return data[ordinal];
   }
 
-  public Object[] getObjectArray(int ordinal) {
-    return (Object[]) data[ordinal];
-  }
-
-  public int[] getIntArray(int ordinal) {
-    return (int[]) data[ordinal];
-  }
-
   public void update(Object value, int ordinal) {
     data[ordinal] = value;
   }

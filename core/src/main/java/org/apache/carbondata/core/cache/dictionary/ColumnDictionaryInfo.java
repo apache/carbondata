@@ -18,9 +18,7 @@
 package org.apache.carbondata.core.cache.dictionary;
 
 import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -301,17 +299,6 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
             (Double.parseDouble(dictionaryVal)), (Double.parseDouble(memberVal)));
       } else if (dataType == DataTypes.LONG) {
         return Long.compare((Long.parseLong(dictionaryVal)), (Long.parseLong(memberVal)));
-      } else if (dataType == DataTypes.BOOLEAN) {
-        return Boolean.compare(
-            (Boolean.parseBoolean(dictionaryVal)), (Boolean.parseBoolean(memberVal)));
-      } else if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
-        String format = CarbonUtil.getFormatFromProperty(dataType);
-        SimpleDateFormat parser = new SimpleDateFormat(format);
-        Date dateToStr;
-        Date dictionaryDate;
-        dateToStr = parser.parse(memberVal);
-        dictionaryDate = parser.parse(dictionaryVal);
-        return dictionaryDate.compareTo(dateToStr);
       } else if (DataTypes.isDecimal(dataType)) {
         java.math.BigDecimal javaDecValForDictVal = new java.math.BigDecimal(dictionaryVal);
         java.math.BigDecimal javaDecValForMemberVal = new java.math.BigDecimal(memberVal);

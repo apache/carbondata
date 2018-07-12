@@ -239,7 +239,7 @@ public final class FilterUtil {
       DimColumnResolvedFilterInfo dimColResolvedFilterInfo,
       MeasureColumnResolvedFilterInfo msrColResolvedFilterInfo,
       SegmentProperties segmentProperties) {
-    if (null != msrColResolvedFilterInfo && msrColResolvedFilterInfo.getMeasure().isColumnar()) {
+    if (null != msrColResolvedFilterInfo && msrColResolvedFilterInfo.getMeasure().isMeasure()) {
       CarbonMeasure measuresFromCurrentBlock = segmentProperties
           .getMeasureFromCurrentBlock(msrColResolvedFilterInfo.getMeasure().getColumnId());
       if (null != measuresFromCurrentBlock) {
@@ -420,7 +420,7 @@ public final class FilterUtil {
       MeasureColumnResolvedFilterInfo msrColResolvedFilterInfo,
       SegmentProperties segmentProperties) {
 
-    if (null != msrColResolvedFilterInfo && msrColResolvedFilterInfo.getMeasure().isColumnar()) {
+    if (null != msrColResolvedFilterInfo && msrColResolvedFilterInfo.getMeasure().isMeasure()) {
       CarbonMeasure measuresFromCurrentBlock = segmentProperties
           .getMeasureFromCurrentBlock(msrColResolvedFilterInfo.getMeasure().getColumnId());
       if (null != measuresFromCurrentBlock) {

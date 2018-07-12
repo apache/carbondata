@@ -157,14 +157,6 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
    */
   private boolean processRowToNextStep(SortDataRows sortDataRows, SortParameters parameters)
       throws CarbonDataLoadingException {
-    if (null == sortDataRows) {
-      LOGGER.info("Record Processed For table: " + parameters.getTableName());
-      LOGGER.info("Number of Records was Zero");
-      String logMessage = "Summary: Carbon Sort Key Step: Read: " + 0 + ": Write: " + 0;
-      LOGGER.info(logMessage);
-      return false;
-    }
-
     try {
       // start sorting
       sortDataRows.startSorting();

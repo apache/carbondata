@@ -20,31 +20,7 @@ package org.apache.carbondata.processing.exception;
 public class MultipleMatchingException extends Exception {
   private static final long serialVersionUID = 1L;
 
-  private long errorCode = -1;
-
-  public MultipleMatchingException() {
-    super();
-  }
-
-  public MultipleMatchingException(long errorCode, String message) {
-    super(message);
-    this.errorCode = errorCode;
-  }
-
   public MultipleMatchingException(String message) {
     super(message);
   }
-
-  public MultipleMatchingException(Throwable cause) {
-    super(cause);
-  }
-
-  public MultipleMatchingException(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  public long getErrorCode() {
-    return errorCode;
-  }
-
 }

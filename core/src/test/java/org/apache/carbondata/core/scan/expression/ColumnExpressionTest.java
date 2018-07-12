@@ -48,6 +48,7 @@ public class ColumnExpressionTest {
     };
     ExpressionResult expectedValue = new ExpressionResult(DataTypes.INT, 1);
     assertEquals(expectedValue, columnExpression.evaluate(rowImpl));
+    assertEquals(1, rowImpl.size());
   }
 
   @Test public void testEvaluateForNullValue() {

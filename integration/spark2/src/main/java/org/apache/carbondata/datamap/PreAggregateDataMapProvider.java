@@ -23,7 +23,6 @@ import java.util.Map;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.DataMapCatalog;
 import org.apache.carbondata.core.datamap.DataMapProvider;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty;
@@ -74,11 +73,6 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
   }
 
   @Override
-  public void initData() {
-    // Nothing is needed to do by default
-  }
-
-  @Override
   public void cleanMeta() {
     DataMapSchema dataMapSchema = getDataMapSchema();
     dropTableCommand = new CarbonDropTableCommand(
@@ -101,15 +95,6 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
     if (helper != null) {
       helper.initData(sparkSession);
     }
-  }
-
-  @Override public void incrementalBuild(String[] segmentIds) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override public DataMapCatalog createDataMapCatalog() {
-    // TODO manage pre-agg also with catalog.
-    return null;
   }
 
   @Override

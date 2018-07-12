@@ -31,6 +31,7 @@
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
+    <jacoco.append>true</jacoco.append>
     <build.directory.projectCommon>../../common/target</build.directory.projectCommon>
     <build.directory.projectCore>../../core/target</build.directory.projectCore>
     <build.directory.projectProcessing>../../processing/target</build.directory.projectProcessing>
@@ -40,8 +41,8 @@
     <build.directory.projectSpark2>../../integration/spark2/target</build.directory.projectSpark2>
     <build.directory.projectSparkCommon>../../integration/spark-common/target</build.directory.projectSparkCommon>
     <build.directory.projectSparkCommonTest>../../integration/spark-common-test/target</build.directory.projectSparkCommonTest>
-    <build.directory.projectHive>../../integration/hive/target</build.directory.projectHive>
-    <build.directory.projectPresto>../../integration/presto/target</build.directory.projectPresto>
+    <!--<build.directory.projectHive>../../integration/hive/target</build.directory.projectHive>-->
+    <!--<build.directory.projectPresto>../../integration/presto/target</build.directory.projectPresto>-->
     <build.directory.projectStoreSdk>../../store/sdk/target</build.directory.projectStoreSdk>
     <build.directory.projectStoreSearch>../../store/search/target</build.directory.projectStoreSearch>
     <build.directory.projectStreaming>../../streaming/target</build.directory.projectStreaming>
@@ -57,8 +58,8 @@
     <classes.directory.projectSpark2>../../integration/spark2/target/classes</classes.directory.projectSpark2>
     <classes.directory.projectSparkCommon>../../integration/spark-common/target/classes</classes.directory.projectSparkCommon>
     <classes.directory.projectSparkCommonTest>../../integration/spark-common-test/target/classes</classes.directory.projectSparkCommonTest>
-    <classes.directory.projectHive>../../integration/hive/target/classes</classes.directory.projectHive>
-    <classes.directory.projectPresto>../../integration/presto/target/classes</classes.directory.projectPresto>
+    <!--<classes.directory.projectHive>../../integration/hive/target/classes</classes.directory.projectHive>-->
+    <!--<classes.directory.projectPresto>../../integration/presto/target/classes</classes.directory.projectPresto>-->
     <classes.directory.projectStoreSdk>../../store/sdk/target/classes</classes.directory.projectStoreSdk>
     <classes.directory.projectStoreSearch>../../store/search/target/classes</classes.directory.projectStoreSearch>
     <classes.directory.projectStreaming>../../streaming/target/classes</classes.directory.projectStreaming>
@@ -76,10 +77,10 @@
     <sources.directory.projectSpark2>../../integration/spark2/src/main/scala</sources.directory.projectSpark2>
     <sources.directory.projectSparkCommon>../../integration/spark-common/src/main/java</sources.directory.projectSparkCommon>
     <sources.directory.projectSparkCommon>../../integration/spark-common/src/main/scala</sources.directory.projectSparkCommon>
-    <sources.directory.projectHive>../../integration/hive/src/main/java</sources.directory.projectHive>
-    <sources.directory.projectHive>../../integration/hive/src/main/scala</sources.directory.projectHive>
-    <sources.directory.projectPresto>../../integration/presto/src/main/java</sources.directory.projectPresto>
-    <sources.directory.projectPresto>../../integration/presto/src/main/scala</sources.directory.projectPresto>
+    <!--<sources.directory.projectHive>../../integration/hive/src/main/java</sources.directory.projectHive>-->
+    <!--<sources.directory.projectHive>../../integration/hive/src/main/scala</sources.directory.projectHive>-->
+    <!--<sources.directory.projectPresto>../../integration/presto/src/main/java</sources.directory.projectPresto>-->
+    <!--<sources.directory.projectPresto>../../integration/presto/src/main/scala</sources.directory.projectPresto>-->
     <sources.directory.projectStoreSdk>../../store/sdk/src/main/java</sources.directory.projectStoreSdk>
     <sources.directory.projectStoreSearch>../../store/search/src/main/java</sources.directory.projectStoreSearch>
     <sources.directory.projectStoreSearch>../../store/search/src/main/scala</sources.directory.projectStoreSearch>
@@ -97,8 +98,8 @@
     <generated-sources.directory.projectSpark2>../../integration/spark2/target/generated-sources/annotations</generated-sources.directory.projectSpark2>
     <generated-sources.directory.projectSparkCommon>../../integration/spark-common/target/generated-sources/annotations</generated-sources.directory.projectSparkCommon>
     <generated-sources.directory.projectSparkCommonTest>../../integration/spark-common-test/target/generated-sources/annotations</generated-sources.directory.projectSparkCommonTest>
-    <generated-sources.directory.projectHive>../../integration/hive/target/generated-sources/annotations</generated-sources.directory.projectHive>
-    <generated-sources.directory.projectPresto>../../integration/presto/target/generated-sources/annotations</generated-sources.directory.projectPresto>
+    <!--<generated-sources.directory.projectHive>../../integration/hive/target/generated-sources/annotations</generated-sources.directory.projectHive>-->
+    <!--<generated-sources.directory.projectPresto>../../integration/presto/target/generated-sources/annotations</generated-sources.directory.projectPresto>-->
     <generated-sources.directory.projectStoreSdk>../../store/sdk/target/generated-sources/annotations</generated-sources.directory.projectStoreSdk>
     <generated-sources.directory.projectStoreSearch>../../store/search/target/generated-sources/annotations</generated-sources.directory.projectStoreSearch>
     <generated-sources.directory.projectStreaming>../../streaming/target/generated-sources/annotations</generated-sources.directory.projectStreaming>
@@ -324,12 +325,12 @@
                     <fileset dir="${build.directory.projectSparkCommonTest}">
                       <include name="jacoco.exec" />
                     </fileset>
-                    <fileset dir="${build.directory.projectHive}" erroronmissingdir="false">
+                    <!--<fileset dir="${build.directory.projectHive}" erroronmissingdir="false">
                       <include name="jacoco.exec" />
-                    </fileset>
-                    <fileset dir="${build.directory.projectPresto}" erroronmissingdir="false">
+                    </fileset>-->
+                    <!--<fileset dir="${build.directory.projectPresto}" erroronmissingdir="false">
                       <include name="jacoco.exec" />
-                    </fileset>
+                    </fileset>-->
                     <fileset dir="${build.directory.projectStoreSdk}" erroronmissingdir="false">
                       <include name="jacoco.exec" />
                     </fileset>
@@ -354,13 +355,13 @@
                         <fileset dir="${classes.directory.projectCore}" />
                         <fileset dir="${classes.directory.projectProcessing}" />
                         <fileset dir="${classes.directory.projectHadoop}" />
-                        <fileset dir="${classes.directory.projectFormat}" erroronmissingdir="false"/>
+                        <!--<fileset dir="${classes.directory.projectFormat}" erroronmissingdir="false"/>-->
                         <fileset dir="${classes.directory.projectSpark}" erroronmissingdir="false"/>
                         <fileset dir="${classes.directory.projectSpark2}" erroronmissingdir="false"/>
                         <fileset dir="${classes.directory.projectSparkCommon}" />
                         <fileset dir="${classes.directory.projectSparkCommonTest}" />
-                        <fileset dir="${classes.directory.projectHive}" erroronmissingdir="false" />
-                        <fileset dir="${classes.directory.projectPresto}" erroronmissingdir="false" />
+                        <!--<fileset dir="${classes.directory.projectHive}" erroronmissingdir="false" />-->
+                        <!--<fileset dir="${classes.directory.projectPresto}" erroronmissingdir="false" />-->
                         <fileset dir="${classes.directory.projectStoreSdk}" erroronmissingdir="false" />
                         <fileset dir="${classes.directory.projectStoreSearch}" erroronmissingdir="false" />
                         <fileset dir="${classes.directory.projectStreaming}" erroronmissingdir="false" />
@@ -372,12 +373,12 @@
                         <fileset dir="${sources.directory.projectCore}" />
                         <fileset dir="${sources.directory.projectProcessing}" />
                         <fileset dir="${sources.directory.projectHadoop}" />
-                        <fileset dir="${sources.directory.projectFormat}" erroronmissingdir="false"/>
+                        <!--<fileset dir="${sources.directory.projectFormat}" erroronmissingdir="false"/>-->
                         <fileset dir="${sources.directory.projectSpark}" erroronmissingdir="false"/>
                         <fileset dir="${sources.directory.projectSpark2}" erroronmissingdir="false"/>
                         <fileset dir="${sources.directory.projectSparkCommon}" />
-                        <fileset dir="${sources.directory.projectHive}" erroronmissingdir="false" />
-                        <fileset dir="${sources.directory.projectPresto}" erroronmissingdir="false" />
+                        <!--<fileset dir="${sources.directory.projectHive}" erroronmissingdir="false" />-->
+                        <!--<fileset dir="${sources.directory.projectPresto}" erroronmissingdir="false" />-->
                         <fileset dir="${sources.directory.projectStoreSdk}" erroronmissingdir="false" />
                         <fileset dir="${sources.directory.projectStoreSearch}" erroronmissingdir="false" />
                         <fileset dir="${sources.directory.projectStreaming}" erroronmissingdir="false" />

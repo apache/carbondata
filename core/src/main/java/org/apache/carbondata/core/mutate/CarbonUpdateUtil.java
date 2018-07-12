@@ -257,7 +257,7 @@ public class CarbonUpdateUtil {
         }
 
         try {
-          segmentStatusManager
+          SegmentStatusManager
                   .writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetailsArray);
         } catch (IOException e) {
           return false;
@@ -469,7 +469,7 @@ public class CarbonUpdateUtil {
         String segmentPath = CarbonTablePath.getSegmentPath(
             table.getAbsoluteTableIdentifier().getTablePath(), segment.getLoadName());
         CarbonFile segDir =
-                FileFactory.getCarbonFile(segmentPath, FileFactory.getFileType(segmentPath));
+            FileFactory.getCarbonFile(segmentPath, FileFactory.getFileType(segmentPath));
         CarbonFile[] allSegmentFiles = segDir.listFiles();
 
         // scan through the segment and find the carbondatafiles and index files.
@@ -557,7 +557,6 @@ public class CarbonUpdateUtil {
               }
             }
 
-
           } else {
             invalidDeleteDeltaFiles = updateStatusManager
                     .getDeleteDeltaInvalidFilesList(block, false,
@@ -594,7 +593,7 @@ public class CarbonUpdateUtil {
     if (null != validUpdateStatusFile && !validUpdateStatusFile.isEmpty()) {
 
       final String updateStatusTimestamp = validUpdateStatusFile
-              .substring(validUpdateStatusFile.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1);
+          .substring(validUpdateStatusFile.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1);
 
       String tablePath = table.getAbsoluteTableIdentifier().getTablePath();
       CarbonFile metaFolder = FileFactory.getCarbonFile(
@@ -607,9 +606,7 @@ public class CarbonUpdateUtil {
 
             // CHECK if this is valid or not.
             // we only send invalid ones to delete.
-            if (!file.getName().endsWith(updateStatusTimestamp)) {
-              return true;
-            }
+            return !file.getName().endsWith(updateStatusTimestamp);
           }
           return false;
         }

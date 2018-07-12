@@ -50,7 +50,6 @@ import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator}
 import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.processing.splits.TableSplit
 import org.apache.carbondata.processing.util.CarbonQueryUtil
 import org.apache.carbondata.spark.DataLoadResult
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
@@ -103,21 +102,6 @@ class CarbonNodePartition(rddId: Int, val idx: Int, host: String,
   override def hashCode(): Int = 41 * (41 + rddId) + idx
 }
 
-/**
- * This partition class use to split by TableSplit
- *
- */
-class CarbonTableSplitPartition(rddId: Int, val idx: Int, @transient val tableSplit: TableSplit,
-    val blocksDetails: Array[BlockDetails])
-  extends Partition {
-
-  override val index: Int = idx
-  val serializableHadoopSplit = new SerializableWritable[TableSplit](tableSplit)
-  val partitionBlocksDetail = blocksDetails
-
-  override def hashCode(): Int = 41 * (41 + rddId) + idx
-}
-
 class SparkPartitionLoader(model: CarbonLoadModel,
     splitIndex: Long,
     storePath: String,
@@ -140,7 +124,6 @@ class SparkPartitionLoader(model: CarbonLoadModel,
     CarbonProperties.getInstance().addProperty("is.int.based.indexer", "true")
     CarbonProperties.getInstance().addProperty("aggregate.columnar.keyblock", "true")
     CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false")
-    CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000")
 
     // this property is used to determine whether temp location for carbon is inside
     // container temp dir or is yarn application directory.

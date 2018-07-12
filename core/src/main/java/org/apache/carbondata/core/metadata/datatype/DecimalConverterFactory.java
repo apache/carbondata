@@ -104,20 +104,6 @@ public final class DecimalConverterFactory {
     }
   }
 
-  private long getUnscaledLong(byte[] bytes) {
-    long unscaled = 0L;
-    int i = 0;
-
-    while (i < bytes.length) {
-      unscaled = (unscaled << 8) | (bytes[i] & 0xff);
-      i += 1;
-    }
-
-    int bits = 8 * bytes.length;
-    unscaled = (unscaled << (64 - bits)) >> (64 - bits);
-    return unscaled;
-  }
-
   public static class DecimalLongConverter implements DecimalConverter {
 
     private int scale;

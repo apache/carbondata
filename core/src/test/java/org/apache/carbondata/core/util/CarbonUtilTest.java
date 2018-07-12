@@ -32,7 +32,6 @@ import java.util.Map;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionColumnPage;
-import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
 import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
@@ -101,16 +100,6 @@ public class CarbonUtilTest {
     int[] expectedResult = { 4, 5, 1, 3 };
     for (int i = 0; i < cardinality.length; i++) {
       assertEquals(actualResult[i], expectedResult[i]);
-    }
-  }
-
-  @Test public void testToGetColGroupModel() {
-    int[][] cardinality = { { 10, 20, 30 }, { 20, 30 }, {} };
-    ColumnGroupModel actualResult = CarbonUtil.getColGroupModel(cardinality);
-    assertEquals(actualResult.getNoOfColumnStore(), 3);
-    int[] expectedResult = { 3, 2, 0 };
-    for (int i = 0; i < actualResult.getColumnSplit().length; i++) {
-      assertEquals(actualResult.getColumnSplit()[i], expectedResult[i]);
     }
   }
 
@@ -296,17 +285,6 @@ public class CarbonUtilTest {
         new FixedLengthDimensionColumnPage(dataChunks, null, null, 5, 1);
     int result = CarbonUtil.nextGreaterValueToTarget(2, fixedLengthDataChunk, compareValues, 5);
     assertEquals(result, 5);
-  }
-
-
-  @Test public void testToGetCardinalityFromLevelMetadataFileForInvalidPath()
-      throws IOException, InterruptedException {
-    try {
-      int[] cardinality = CarbonUtil.getCardinalityFromLevelMetadataFile("");
-      assertTrue(false);
-    } catch (Exception e) {
-      assertTrue(true);
-    }
   }
 
   @Test public void testToUnescapeChar() {
@@ -522,14 +500,14 @@ public class CarbonUtilTest {
     encoding.add(Encoding.DICTIONARY);
     column1Schema.setEncodingList(encoding);
     ProjectionDimension
-        column1 = new ProjectionDimension(new CarbonDimension(column1Schema, 1, 1, 1, 1));
+        column1 = new ProjectionDimension(new CarbonDimension(column1Schema, 1, 1, 1));
 
     column2Schema.setColumnName("Column2");
     List<Encoding> encoding2 = new ArrayList<>();
     encoding2.add(Encoding.DELTA);
     column2Schema.setEncodingList(encoding2);
     ProjectionDimension
-        column2 = new ProjectionDimension(new CarbonDimension(column2Schema, 1, 1, 1, 1));
+        column2 = new ProjectionDimension(new CarbonDimension(column2Schema, 1, 1, 1));
 
     ProjectionDimension[] queryDimensions = { column1, column2 };
 
@@ -548,14 +526,14 @@ public class CarbonUtilTest {
     encoding.add(Encoding.DIRECT_DICTIONARY);
     column1Schema.setEncodingList(encoding);
     ProjectionDimension
-        column1 = new ProjectionDimension(new CarbonDimension(column1Schema, 1, 1, 1, 1));
+        column1 = new ProjectionDimension(new CarbonDimension(column1Schema, 1, 1, 1));
 
     column2Schema.setColumnName("Column2");
     List<Encoding> encoding2 = new ArrayList<>();
     encoding2.add(Encoding.DELTA);
     column2Schema.setEncodingList(encoding2);
     ProjectionDimension
-        column2 = new ProjectionDimension(new CarbonDimension(column2Schema, 1, 1, 1, 1));
+        column2 = new ProjectionDimension(new CarbonDimension(column2Schema, 1, 1, 1));
 
     ProjectionDimension[] queryDimensions = { column1, column2 };
 
@@ -572,12 +550,12 @@ public class CarbonUtilTest {
     column1Schema.setColumnName("Column1");
     column1Schema.setDataType(DataTypes.DATE);
     ProjectionDimension
-        column1 = new ProjectionDimension(new CarbonDimension(column1Schema, 1, 1, 1, 1));
+        column1 = new ProjectionDimension(new CarbonDimension(column1Schema, 1, 1, 1));
 
     column2Schema.setColumnName("Column2");
     column2Schema.setDataType(DataTypes.createDefaultArrayType());
     ProjectionDimension
-        column2 = new ProjectionDimension(new CarbonDimension(column2Schema, 1, 1, 1, 1));
+        column2 = new ProjectionDimension(new CarbonDimension(column2Schema, 1, 1, 1));
 
     ProjectionDimension[] queryDimensions = { column1, column2 };
 
@@ -617,10 +595,10 @@ public class CarbonUtilTest {
     column1Schema.setColumnName("Column1");
     column2Schema.setColumnName("Column2");
     List<CarbonDimension> carbonDimension = new ArrayList<>();
-    carbonDimension.add(new CarbonDimension(column1Schema, 1, 1, 1, 1));
-    carbonDimension.add(new CarbonDimension(column2Schema, 2, 1, 2, 1));
+    carbonDimension.add(new CarbonDimension(column1Schema, 1, 1, 1));
+    carbonDimension.add(new CarbonDimension(column2Schema, 2, 1, 1));
     assertEquals(CarbonUtil.findDimension(carbonDimension, "Column1"),
-        new CarbonDimension(column1Schema, 1, 1, 1, 1));
+        new CarbonDimension(column1Schema, 1, 1, 1));
   }
 
   @Test public void testToGetFormattedCardinality() {
@@ -649,8 +627,8 @@ public class CarbonUtilTest {
     column1Schema.setColumnName("Column1");
     column2Schema.setColumnName("Column2");
     List<CarbonDimension> carbonDimension = new ArrayList<>();
-    carbonDimension.add(new CarbonDimension(column1Schema, 1, 1, 1, 1));
-    carbonDimension.add(new CarbonDimension(column2Schema, 2, 2, 2, 1));
+    carbonDimension.add(new CarbonDimension(column1Schema, 1, 1, 1));
+    carbonDimension.add(new CarbonDimension(column2Schema, 2, 2, 1));
 
     List<CarbonMeasure> carbonMeasure = new ArrayList<>();
     carbonMeasure.add(new CarbonMeasure(column1Schema, 1));
@@ -776,17 +754,14 @@ public class CarbonUtilTest {
     ColumnSchema column2Schema = new ColumnSchema();
     ColumnSchema column3Schema = new ColumnSchema();
     column1Schema.setColumnName("Column1");
-    column1Schema.setColumnar(true);
     column1Schema.setEncodingList(Arrays.asList(Encoding.DELTA, Encoding.DICTIONARY));
     column2Schema.setColumnName("Column2");
-    column2Schema.setColumnar(false);
     column2Schema.setEncodingList(Arrays.asList(Encoding.DELTA, Encoding.DICTIONARY));
     column3Schema.setColumnName("Column3");
-    column3Schema.setColumnar(true);
     column3Schema.setEncodingList(Arrays.asList(Encoding.DELTA, Encoding.INVERTED_INDEX));
-    CarbonDimension carbonDimension = new CarbonDimension(column1Schema, 1, 1, 1, 1);
-    CarbonDimension carbonDimension2 = new CarbonDimension(column2Schema, 2, 2, 2, 2);
-    CarbonDimension carbonDimension3 = new CarbonDimension(column3Schema, 3, 3, 3, 3);
+    CarbonDimension carbonDimension = new CarbonDimension(column1Schema, 1, 1, 1);
+    CarbonDimension carbonDimension2 = new CarbonDimension(column2Schema, 2, 2, 2);
+    CarbonDimension carbonDimension3 = new CarbonDimension(column3Schema, 3, 3, 3);
     List<CarbonDimension> carbonDimensions =
         Arrays.asList(carbonDimension, carbonDimension2, carbonDimension3);
     boolean[] result = CarbonUtil.identifyDimensionType(carbonDimensions);

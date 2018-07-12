@@ -69,19 +69,19 @@ public class RestructureUtilTest {
     columnSchema5.setColumnUniqueId(UUID.randomUUID().toString());
     columnSchema5.setEncodingList(encodingList);
 
-    CarbonDimension tableBlockDimension1 = new CarbonDimension(columnSchema1, 1, 1, 1, 1);
-    CarbonDimension tableBlockDimension2 = new CarbonDimension(columnSchema2, 5, 5, 5, 5);
+    CarbonDimension tableBlockDimension1 = new CarbonDimension(columnSchema1, 1, 1, 1);
+    CarbonDimension tableBlockDimension2 = new CarbonDimension(columnSchema2, 5, 5, 5);
     List<CarbonDimension> tableBlockDimensions =
         Arrays.asList(tableBlockDimension1, tableBlockDimension2);
 
-    CarbonDimension tableComplexDimension1 = new CarbonDimension(columnSchema3, 4, 4, 4, 4);
-    CarbonDimension tableComplexDimension2 = new CarbonDimension(columnSchema4, 2, 2, 2, 2);
+    CarbonDimension tableComplexDimension1 = new CarbonDimension(columnSchema3, 4, 4, 4);
+    CarbonDimension tableComplexDimension2 = new CarbonDimension(columnSchema4, 2, 2, 2);
     List<CarbonDimension> tableComplexDimensions =
         Arrays.asList(tableComplexDimension1, tableComplexDimension2);
 
     ProjectionDimension queryDimension1 = new ProjectionDimension(tableBlockDimension1);
     ProjectionDimension queryDimension2 = new ProjectionDimension(tableComplexDimension2);
-    ProjectionDimension queryDimension3 = new ProjectionDimension(new CarbonDimension(columnSchema5, 3, 3, 3, 3));
+    ProjectionDimension queryDimension3 = new ProjectionDimension(new CarbonDimension(columnSchema5, 3, 3, 3));
     ProjectionMeasure queryMeasure1 = new ProjectionMeasure(new CarbonMeasure(columnSchema3, 2));
     ProjectionMeasure queryMeasure2 = new ProjectionMeasure(new CarbonMeasure(columnSchema4, 4));
     List<ProjectionMeasure> queryMeasures = Arrays.asList(queryMeasure1, queryMeasure2);

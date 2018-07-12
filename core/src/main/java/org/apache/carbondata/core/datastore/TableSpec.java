@@ -50,12 +50,8 @@ public class TableSpec {
     // first calculate total number of columnar field considering column group and complex column
     numSimpleDimensions = 0;
     for (CarbonDimension dimension : dimensions) {
-      if (dimension.isColumnar()) {
-        if (!dimension.isComplex()) {
-          numSimpleDimensions++;
-        }
-      } else {
-        throw new UnsupportedOperationException("column group is not supported");
+      if (!dimension.isComplex()) {
+        numSimpleDimensions++;
       }
     }
     dimensionSpec = new DimensionSpec[dimensions.size()];
@@ -68,24 +64,22 @@ public class TableSpec {
     int dimIndex = 0;
     for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dimension = dimensions.get(i);
-      if (dimension.isColumnar()) {
-        if (dimension.isComplex()) {
-          DimensionSpec spec = new DimensionSpec(ColumnType.COMPLEX, dimension);
-          dimensionSpec[dimIndex++] = spec;
-        } else if (dimension.getDataType() == DataTypes.TIMESTAMP && !dimension
-            .isDirectDictionaryEncoding()) {
-          DimensionSpec spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension);
-          dimensionSpec[dimIndex++] = spec;
-        } else if (dimension.isDirectDictionaryEncoding()) {
-          DimensionSpec spec = new DimensionSpec(ColumnType.DIRECT_DICTIONARY, dimension);
-          dimensionSpec[dimIndex++] = spec;
-        } else if (dimension.isGlobalDictionaryEncoding()) {
-          DimensionSpec spec = new DimensionSpec(ColumnType.GLOBAL_DICTIONARY, dimension);
-          dimensionSpec[dimIndex++] = spec;
-        } else {
-          DimensionSpec spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension);
-          dimensionSpec[dimIndex++] = spec;
-        }
+      if (dimension.isComplex()) {
+        DimensionSpec spec = new DimensionSpec(ColumnType.COMPLEX, dimension);
+        dimensionSpec[dimIndex++] = spec;
+      } else if (dimension.getDataType() == DataTypes.TIMESTAMP && !dimension
+          .isDirectDictionaryEncoding()) {
+        DimensionSpec spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension);
+        dimensionSpec[dimIndex++] = spec;
+      } else if (dimension.isDirectDictionaryEncoding()) {
+        DimensionSpec spec = new DimensionSpec(ColumnType.DIRECT_DICTIONARY, dimension);
+        dimensionSpec[dimIndex++] = spec;
+      } else if (dimension.isGlobalDictionaryEncoding()) {
+        DimensionSpec spec = new DimensionSpec(ColumnType.GLOBAL_DICTIONARY, dimension);
+        dimensionSpec[dimIndex++] = spec;
+      } else {
+        DimensionSpec spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension);
+        dimensionSpec[dimIndex++] = spec;
       }
     }
   }

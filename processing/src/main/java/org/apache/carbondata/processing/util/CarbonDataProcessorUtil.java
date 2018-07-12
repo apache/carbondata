@@ -33,7 +33,6 @@ import org.apache.carbondata.common.constants.LoggerAction;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -397,7 +396,7 @@ public final class CarbonDataProcessorUtil {
   public static boolean isHeaderValid(String tableName, String[] csvHeader,
       CarbonDataLoadSchema schema, List<String> ignoreColumns) {
     Iterator<String> columnIterator =
-        CarbonDataProcessorUtil.getSchemaColumnNames(schema, tableName).iterator();
+        CarbonDataProcessorUtil.getSchemaColumnNames(schema).iterator();
     Set<String> csvColumns = new HashSet<String>(csvHeader.length);
     Collections.addAll(csvColumns, csvHeader);
 
@@ -418,28 +417,17 @@ public final class CarbonDataProcessorUtil {
    * @param schema
    * @param tableName
    */
-  public static Set<String> getSchemaColumnNames(CarbonDataLoadSchema schema, String tableName) {
+  public static Set<String> getSchemaColumnNames(CarbonDataLoadSchema schema) {
     Set<String> columnNames = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     String factTableName = schema.getCarbonTable().getTableName();
-    if (tableName.equals(factTableName)) {
-      List<CarbonDimension> dimensions =
-          schema.getCarbonTable().getDimensionByTableName(factTableName);
-      for (CarbonDimension dimension : dimensions) {
-        columnNames.add(dimension.getColName());
-      }
-      List<CarbonMeasure> measures = schema.getCarbonTable().getMeasureByTableName(factTableName);
-      for (CarbonMeasure msr : measures) {
-        columnNames.add(msr.getColName());
-      }
-    } else {
-      List<CarbonDimension> dimensions = schema.getCarbonTable().getDimensionByTableName(tableName);
-      for (CarbonDimension dimension : dimensions) {
-        columnNames.add(dimension.getColName());
-      }
-      List<CarbonMeasure> measures = schema.getCarbonTable().getMeasureByTableName(tableName);
-      for (CarbonMeasure msr : measures) {
-        columnNames.add(msr.getColName());
-      }
+    List<CarbonDimension> dimensions =
+        schema.getCarbonTable().getDimensionByTableName(factTableName);
+    for (CarbonDimension dimension : dimensions) {
+      columnNames.add(dimension.getColName());
+    }
+    List<CarbonMeasure> measures = schema.getCarbonTable().getMeasureByTableName(factTableName);
+    for (CarbonMeasure msr : measures) {
+      columnNames.add(msr.getColName());
     }
     return columnNames;
   }
@@ -601,19 +589,6 @@ public final class CarbonDataProcessorUtil {
   public static String prepareFailureReason(String columnName, DataType dataType) {
     return "The value with column name " + columnName + " and column data type " + dataType
         .getName() + " is not a valid " + dataType + " type.";
-  }
-
-  /**
-   * This method will return a flag based on whether a column is applicable for RLE encoding
-   *
-   * @param dimensionType
-   * @return
-   */
-  public static boolean isRleApplicableForColumn(ColumnType dimensionType) {
-    if (dimensionType == ColumnType.GLOBAL_DICTIONARY) {
-      return true;
-    }
-    return false;
   }
 
   /**

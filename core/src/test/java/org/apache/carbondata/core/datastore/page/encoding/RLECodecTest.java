@@ -35,7 +35,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class RLECodecSuite {
+public class RLECodecTest {
 
   static class TestData {
     private byte[] inputByteData;

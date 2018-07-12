@@ -128,7 +128,6 @@ public class BlockletFullScanner implements BlockletScanner {
       }
       int lastPageSize = rawBlockletColumnChunks.getDataBlock().numRows()
           % CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
-      ;
       if (lastPageSize > 0) {
         numberOfRows[numberOfRows.length - 1] = lastPageSize;
       }

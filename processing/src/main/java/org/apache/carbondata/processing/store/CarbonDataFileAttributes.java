@@ -48,10 +48,6 @@ public class CarbonDataFileAttributes {
     return taskId;
   }
 
-  public void setFactTimeStamp(long factTimeStamp) {
-    this.factTimeStamp = factTimeStamp;
-  }
-
   /**
    * @return fact time stamp which is load start time
    */

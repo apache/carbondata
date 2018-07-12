@@ -821,10 +821,6 @@ public final class CarbonProperties {
     if (null != sessionPropertyValue) {
       return sessionPropertyValue;
     }
-    //TODO temporary fix
-    if ("carbon.leaf.node.size".equals(key)) {
-      return "120000";
-    }
     return carbonProperties.getProperty(key);
   }
 

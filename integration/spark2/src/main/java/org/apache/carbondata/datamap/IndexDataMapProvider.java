@@ -24,7 +24,6 @@ import java.util.List;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
-import org.apache.carbondata.core.datamap.DataMapCatalog;
 import org.apache.carbondata.core.datamap.DataMapProvider;
 import org.apache.carbondata.core.datamap.DataMapRegistry;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
@@ -81,11 +80,6 @@ public class IndexDataMapProvider extends DataMapProvider {
   }
 
   @Override
-  public void initData() {
-    // Nothing is needed to do by default
-  }
-
-  @Override
   public void cleanMeta() throws IOException {
     if (getMainTable() == null) {
       throw new UnsupportedOperationException("Table need to be specified in index datamaps");
@@ -108,11 +102,6 @@ public class IndexDataMapProvider extends DataMapProvider {
     IndexDataMapRebuildRDD.rebuildDataMap(sparkSession, getMainTable(), getDataMapSchema());
   }
 
-  @Override
-  public void incrementalBuild(String[] segmentIds) {
-    throw new UnsupportedOperationException();
-  }
-
   private DataMapFactory<? extends DataMap> createDataMapFactory()
       throws MalformedDataMapCommandException {
     CarbonTable mainTable = getMainTable();
@@ -132,12 +121,6 @@ public class IndexDataMapProvider extends DataMapProvider {
           "failed to create DataMapClassProvider '" + dataMapSchema.getProviderName() + "'", e);
     }
     return dataMapFactory;
-  }
-
-  @Override
-  public DataMapCatalog createDataMapCatalog() {
-    // TODO create abstract class and move the default implementation there.
-    return null;
   }
 
   @Override

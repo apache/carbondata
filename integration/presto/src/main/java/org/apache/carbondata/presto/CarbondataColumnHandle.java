@@ -39,9 +39,7 @@ public class CarbondataColumnHandle implements ColumnHandle {
   private final Type columnType;
   private final int ordinalPosition;
   private final int keyOrdinal;
-  private final int columnGroupOrdinal;
 
-  private final int columnGroupId;
   private final String columnUniqueId;
   private final boolean isInvertedIndex;
 
@@ -63,27 +61,13 @@ public class CarbondataColumnHandle implements ColumnHandle {
     return keyOrdinal;
   }
 
-  public int getColumnGroupOrdinal() {
-    return columnGroupOrdinal;
-  }
-
-  public int getColumnGroupId() {
-    return columnGroupId;
-  }
-
-  public String getColumnUniqueId() {
-    return columnUniqueId;
-  }
-
   @JsonCreator public CarbondataColumnHandle(
       @JsonProperty("connectorId") String connectorId,
       @JsonProperty("columnName") String columnName,
       @JsonProperty("columnType") Type columnType,
       @JsonProperty("ordinalPosition") int ordinalPosition,
       @JsonProperty("keyOrdinal") int keyOrdinal,
-      @JsonProperty("columnGroupOrdinal") int columnGroupOrdinal,
       @JsonProperty("isMeasure") boolean isMeasure,
-      @JsonProperty("columnGroupId") int columnGroupId,
       @JsonProperty("columnUniqueId") String columnUniqueId,
       @JsonProperty("isInvertedIndex") boolean isInvertedIndex,
       @JsonProperty("precision") int precision,
@@ -94,10 +78,8 @@ public class CarbondataColumnHandle implements ColumnHandle {
 
     this.ordinalPosition = requireNonNull(ordinalPosition, "ordinalPosition is null");
     this.keyOrdinal = requireNonNull(keyOrdinal, "keyOrdinal is null");
-    this.columnGroupOrdinal = requireNonNull(columnGroupOrdinal, "columnGroupOrdinal is null");
 
     this.isMeasure = isMeasure;
-    this.columnGroupId = requireNonNull(columnGroupId, "columnGroupId is null");
     this.columnUniqueId = columnUniqueId;//requireNonNull(columnUniqueId, "columnUniqueId is null");
     this.isInvertedIndex = requireNonNull(isInvertedIndex, "isInvertedIndex is null");
     this.precision = precision;

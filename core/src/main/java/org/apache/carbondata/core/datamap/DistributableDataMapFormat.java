@@ -29,10 +29,7 @@ import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
-import org.apache.carbondata.core.util.ObjectSerializationUtil;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -44,8 +41,6 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
  */
 public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBlocklet> implements
     Serializable {
-
-  private static final String FILTER_EXP = "mapreduce.input.distributed.datamap.filter";
 
   private CarbonTable table;
 
@@ -70,27 +65,6 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
     this.invalidSegments = invalidSegments;
     this.partitions = partitions;
     this.isJobToClearDataMaps = isJobToClearDataMaps;
-  }
-
-  public boolean isJobToClearDataMaps() {
-    return isJobToClearDataMaps;
-  }
-
-  public static void setFilterExp(Configuration configuration, FilterResolverIntf filterExp)
-      throws IOException {
-    if (filterExp != null) {
-      String string = ObjectSerializationUtil.convertObjectToString(filterExp);
-      configuration.set(FILTER_EXP, string);
-    }
-  }
-
-  private static FilterResolverIntf getFilterExp(Configuration configuration) throws IOException {
-    String filterString = configuration.get(FILTER_EXP);
-    if (filterString != null) {
-      Object toObject = ObjectSerializationUtil.convertStringToObject(filterString);
-      return (FilterResolverIntf) toObject;
-    }
-    return null;
   }
 
   @Override

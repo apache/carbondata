@@ -254,8 +254,7 @@ object DataLoadProcessorStepOnSpark {
       while (rows.hasNext) {
         if (rowsNotExist) {
           rowsNotExist = false
-          dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(dataHandlerModel,
-            CarbonFactHandlerFactory.FactHandlerType.COLUMNAR)
+          dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(dataHandlerModel)
           dataHandler.initialise()
         }
         val row = dataWriter.processRow(rows.next(), dataHandler)

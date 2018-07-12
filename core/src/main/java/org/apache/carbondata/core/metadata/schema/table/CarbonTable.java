@@ -322,8 +322,6 @@ public class CarbonTable implements Serializable {
     int dimensionOrdinal = 0;
     int measureOrdinal = 0;
     int keyOrdinal = 0;
-    int columnGroupOrdinal = -1;
-    int previousColumnGroupId = -1;
     List<ColumnSchema> listOfColumns = tableSchema.getListOfColumns();
     int complexTypeOrdinal = -1;
     for (int i = 0; i < listOfColumns.size(); i++) {
@@ -331,8 +329,8 @@ public class CarbonTable implements Serializable {
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
           CarbonDimension complexDimension =
-              new CarbonDimension(columnSchema, dimensionOrdinal++, columnSchema.getSchemaOrdinal(),
-                  -1, -1, ++complexTypeOrdinal);
+              new CarbonDimension(columnSchema, dimensionOrdinal++,
+                    columnSchema.getSchemaOrdinal(), -1, ++complexTypeOrdinal);
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           allDimensions.add(complexDimension);
           dimensionOrdinal =
@@ -345,27 +343,18 @@ public class CarbonTable implements Serializable {
             this.numberOfSortColumns++;
           }
           if (!columnSchema.getEncodingList().contains(Encoding.DICTIONARY)) {
-            CarbonDimension dimension = new CarbonDimension(
-                columnSchema, dimensionOrdinal++, columnSchema.getSchemaOrdinal(), -1, -1, -1);
+            CarbonDimension dimension =
+                    new CarbonDimension(columnSchema, dimensionOrdinal++,
+                            columnSchema.getSchemaOrdinal(), -1, -1);
             if (!columnSchema.isInvisible() && columnSchema.isSortColumn()) {
               this.numberOfNoDictSortColumns++;
             }
             allDimensions.add(dimension);
             primitiveDimensions.add(dimension);
-          } else if (columnSchema.getEncodingList().contains(Encoding.DICTIONARY)
-              && columnSchema.getColumnGroupId() == -1) {
-            CarbonDimension dimension = new CarbonDimension(
-                columnSchema, dimensionOrdinal++, columnSchema.getSchemaOrdinal(), keyOrdinal++,
-                -1, -1);
-            allDimensions.add(dimension);
-            primitiveDimensions.add(dimension);
-          } else {
-            columnGroupOrdinal =
-                previousColumnGroupId == columnSchema.getColumnGroupId() ? ++columnGroupOrdinal : 0;
-            previousColumnGroupId = columnSchema.getColumnGroupId();
-            CarbonDimension dimension = new CarbonDimension(
-                columnSchema, dimensionOrdinal++, columnSchema.getSchemaOrdinal(), keyOrdinal++,
-                columnGroupOrdinal, -1);
+          } else if (columnSchema.getEncodingList().contains(Encoding.DICTIONARY)) {
+            CarbonDimension dimension =
+                    new CarbonDimension(columnSchema, dimensionOrdinal++,
+                            columnSchema.getSchemaOrdinal(), keyOrdinal++, -1);
             allDimensions.add(dimension);
             primitiveDimensions.add(dimension);
           }
@@ -425,8 +414,8 @@ public class CarbonTable implements Serializable {
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
           CarbonDimension complexDimension =
-              new CarbonDimension(columnSchema, dimensionOrdinal++, columnSchema.getSchemaOrdinal(),
-                  -1, -1, -1);
+              new CarbonDimension(columnSchema, dimensionOrdinal++,
+                        columnSchema.getSchemaOrdinal(), -1, -1);
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           parentDimension.getListOfChildDimensions().add(complexDimension);
           dimensionOrdinal =
@@ -434,8 +423,8 @@ public class CarbonTable implements Serializable {
                   listOfColumns, complexDimension, primitiveDimensions);
         } else {
           CarbonDimension carbonDimension =
-              new CarbonDimension(columnSchema, dimensionOrdinal++, columnSchema.getSchemaOrdinal(),
-                  -1, -1, -1);
+                  new CarbonDimension(columnSchema, dimensionOrdinal++,
+                          columnSchema.getSchemaOrdinal(), -1, -1);
           parentDimension.getListOfChildDimensions().add(carbonDimension);
           primitiveDimensions.add(carbonDimension);
         }
