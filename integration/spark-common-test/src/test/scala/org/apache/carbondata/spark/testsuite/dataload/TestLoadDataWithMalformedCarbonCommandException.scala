@@ -83,16 +83,20 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
     val e = intercept[MalformedCarbonCommandException] {
       buildTableWithNoExistDictExclude()
     }
-    assert(e.getMessage.equals("DICTIONARY_EXCLUDE column: ccc does not exist in table. " +
-      "Please check create table statement."))
+    assert(e.getMessage
+      .equals(
+        "DICTIONARY_EXCLUDE column: ccc does not exist in table or unsupported for complex child " +
+        "column. Please check create table statement."))
   }
 
   test("test load data with dictionary include columns which no exist in table.") {
     val e = intercept[MalformedCarbonCommandException] {
       buildTableWithNoExistDictInclude()
     }
-    assert(e.getMessage.equals("DICTIONARY_INCLUDE column: aaa does not exist in table. " +
-      "Please check create table statement."))
+    assert(e.getMessage
+      .equals(
+        "DICTIONARY_INCLUDE column: aaa does not exist in table or unsupported for complex child " +
+        "column. Please check create table statement."))
   }
 
   test("test load data with dictionary include is same with dictionary exclude") {

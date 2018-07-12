@@ -722,16 +722,13 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         .foreach { dictExcludeCol =>
           if (!fields.exists(x => x.column.equalsIgnoreCase(dictExcludeCol))) {
             val errormsg = "DICTIONARY_EXCLUDE column: " + dictExcludeCol +
-                           " does not exist in table. Please check create table statement."
+                           " does not exist in table or unsupported for complex child column. " +
+                           "Please check create table statement."
             throw new MalformedCarbonCommandException(errormsg)
           } else {
             val dataType = fields.find(x =>
               x.column.equalsIgnoreCase(dictExcludeCol)).get.dataType.get
-            if (isComplexDimDictionaryExclude(dataType)) {
-              val errormsg = "DICTIONARY_EXCLUDE is unsupported for complex datatype column: " +
-                             dictExcludeCol
-              throw new MalformedCarbonCommandException(errormsg)
-            } else if (!isDataTypeSupportedForDictionary_Exclude(dataType)) {
+            if (!isDataTypeSupportedForDictionary_Exclude(dataType)) {
               val errorMsg = "DICTIONARY_EXCLUDE is unsupported for " + dataType.toLowerCase() +
                              " data type column: " + dictExcludeCol
               throw new MalformedCarbonCommandException(errorMsg)
@@ -750,7 +747,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       dictIncludeCols.foreach { distIncludeCol =>
         if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol.trim))) {
           val errormsg = "DICTIONARY_INCLUDE column: " + distIncludeCol.trim +
-                         " does not exist in table. Please check create table statement."
+                         " does not exist in table or unsupported for complex child column. " +
+                         "Please check create table statement."
           throw new MalformedCarbonCommandException(errormsg)
         }
         if (varcharCols.exists(x => x.equalsIgnoreCase(distIncludeCol.trim))) {
@@ -874,7 +872,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * detects whether datatype is part of dictionary_exclude
    */
   def isDataTypeSupportedForDictionary_Exclude(columnDataType: String): Boolean = {
-    val dataTypes = Array("string", "timestamp", "int", "long", "bigint")
+    val dataTypes = Array("string", "timestamp", "int", "long", "bigint", "struct", "array")
     dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
   }
 

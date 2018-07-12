@@ -42,7 +42,8 @@ import org.apache.carbondata.processing.loading.FailureCauses
 private[sql] case class CarbonProjectForUpdateCommand(
     plan: LogicalPlan,
     databaseNameOp: Option[String],
-    tableName: String)
+    tableName: String,
+    columns: List[String])
   extends DataCommand {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
@@ -59,6 +60,13 @@ private[sql] case class CarbonProjectForUpdateCommand(
       return Seq.empty
     }
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+    columns.foreach { col =>
+      val dataType = carbonTable.getColumnByName(tableName, col).getColumnSchema.getDataType
+      if (dataType.isComplexType) {
+        throw new UnsupportedOperationException("Unsupported operation on Complex data type")
+      }
+
+    }
     if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }

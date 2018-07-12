@@ -40,6 +40,13 @@ class CarbonIUDRule extends Rule[LogicalPlan] with PredicateHelper {
             val (dest: Seq[NamedExpression], source: Seq[NamedExpression]) = pList
               .splitAt(pList.size - cols.size)
             val diff = cols.diff(dest.map(_.name.toLowerCase))
+            cols.foreach { col =>
+              val complexExists = "\"name\":\"" + col + "\""
+              if (dest.exists(m => m.dataType.json.contains(complexExists))) {
+                throw new UnsupportedOperationException(
+                  "Unsupported operation on Complex data type")
+              }
+            }
             if (diff.nonEmpty) {
               sys.error(s"Unknown column(s) ${ diff.mkString(",") } in table ${ table.tableName }")
             }
@@ -47,7 +54,7 @@ class CarbonIUDRule extends Rule[LogicalPlan] with PredicateHelper {
             Project(dest.filter(a => !cols.contains(a.name.toLowerCase)) ++ source, child)
         }
         CarbonProjectForUpdateCommand(
-          newPlan, table.tableIdentifier.database, table.tableIdentifier.table)
+          newPlan, table.tableIdentifier.database, table.tableIdentifier.table, cols)
     }
   }
 }
