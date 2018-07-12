@@ -115,7 +115,8 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
                 String]()
               loadFolderDetailsArray.foreach(loadMetadataDetails => {
                 segmentFileNameMap
-                  .put(loadMetadataDetails.getLoadName, loadMetadataDetails.getSegmentFile)
+                  .put(loadMetadataDetails.getLoadName,
+                    String.valueOf(loadMetadataDetails.getLoadStartTime))
               })
               CommonUtil.mergeIndexFiles(sparkSession.sparkContext,
                 validSegmentIds,
@@ -165,7 +166,8 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
       .readLoadMetadata(carbonTable.getMetadataPath)
     val segmentFileNameMap: java.util.Map[String, String] = new util.HashMap[String, String]()
     loadFolderDetailsArray.foreach(loadMetadataDetails => {
-      segmentFileNameMap.put(loadMetadataDetails.getLoadName, loadMetadataDetails.getSegmentFile)
+      segmentFileNameMap
+        .put(loadMetadataDetails.getLoadName, String.valueOf(loadMetadataDetails.getLoadStartTime))
     })
     // filter out only the valid segments from the list of compacted segments
     // Example: say compacted segments list contains 0.1, 3.1, 6.1, 0.2.
