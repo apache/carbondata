@@ -86,6 +86,11 @@ public abstract class DataMapRow implements Serializable {
       case VARIABLE_INT:
         return getLengthInBytes(ordinal) + 4;
       case STRUCT:
+        DataMapRow row = getRow(ordinal);
+        CarbonRowSchema[] childSchemas =
+            ((CarbonRowSchema.StructCarbonRowSchema) schemas[ordinal]).getChildSchemas();
+        // set the child schema. Because schema is transient it can be null
+        row.setSchemas(childSchemas);
         return getRow(ordinal).getTotalSizeInBytes();
       default:
         throw new UnsupportedOperationException("wrong type");

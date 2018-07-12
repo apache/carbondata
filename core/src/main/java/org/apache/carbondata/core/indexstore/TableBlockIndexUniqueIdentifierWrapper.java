@@ -35,6 +35,10 @@ public class TableBlockIndexUniqueIdentifierWrapper implements Serializable {
 
   // holds the reference to CarbonTable
   private CarbonTable carbonTable;
+  /**
+   * flag to specify whether to load table block metadata in unsafe or safe. Default value is true
+   */
+  private boolean addTableBlockToUnsafe = true;
 
   public TableBlockIndexUniqueIdentifierWrapper(
       TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier, CarbonTable carbonTable) {
@@ -42,11 +46,25 @@ public class TableBlockIndexUniqueIdentifierWrapper implements Serializable {
     this.carbonTable = carbonTable;
   }
 
+  // Note: The constructor is getting used in extensions with other functionalities.
+  // Kindly do not remove
+  public TableBlockIndexUniqueIdentifierWrapper(
+      TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier, CarbonTable carbonTable,
+      boolean addTableBlockToUnsafe) {
+    this(tableBlockIndexUniqueIdentifier, carbonTable);
+    this.addTableBlockToUnsafe = addTableBlockToUnsafe;
+  }
+
+
   public TableBlockIndexUniqueIdentifier getTableBlockIndexUniqueIdentifier() {
     return tableBlockIndexUniqueIdentifier;
   }
 
   public CarbonTable getCarbonTable() {
     return carbonTable;
+  }
+
+  public boolean isAddTableBlockToUnsafe() {
+    return addTableBlockToUnsafe;
   }
 }

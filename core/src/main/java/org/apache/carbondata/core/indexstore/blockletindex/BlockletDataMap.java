@@ -73,6 +73,9 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
   }
 
   protected CarbonRowSchema[] getTaskSummarySchema() {
+    if (isLegacyStore) {
+      return super.getTaskSummarySchema();
+    }
     SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper segmentPropertiesWrapper =
         SegmentPropertiesAndSchemaHolder.getInstance()
             .getSegmentPropertiesWrapper(segmentPropertiesIndex);
@@ -84,6 +87,9 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
   }
 
   protected CarbonRowSchema[] getFileFooterEntrySchema() {
+    if (isLegacyStore) {
+      return super.getFileFooterEntrySchema();
+    }
     return SegmentPropertiesAndSchemaHolder.getInstance()
         .getSegmentPropertiesWrapper(segmentPropertiesIndex).getBlockletFileFooterEntrySchema();
   }
@@ -199,7 +205,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
 
   public ExtendedBlocklet getDetailedBlocklet(String blockletId) {
     if (isLegacyStore) {
-      super.getDetailedBlocklet(blockletId);
+      return super.getDetailedBlocklet(blockletId);
     }
     int absoluteBlockletId = Integer.parseInt(blockletId);
     DataMapRow safeRow = memoryDMStore.getDataMapRow(getFileFooterEntrySchema(), absoluteBlockletId)
@@ -210,10 +216,16 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
   }
 
   protected short getBlockletId(DataMapRow dataMapRow) {
+    if (isLegacyStore) {
+      return super.getBlockletId(dataMapRow);
+    }
     return dataMapRow.getShort(BLOCKLET_ID_INDEX);
   }
 
   protected ExtendedBlocklet createBlocklet(DataMapRow row, String fileName, short blockletId) {
+    if (isLegacyStore) {
+      return super.createBlocklet(row, fileName, blockletId);
+    }
     ExtendedBlocklet blocklet = new ExtendedBlocklet(fileName, blockletId + "");
     BlockletDetailInfo detailInfo = getBlockletDetailInfo(row, blockletId, blocklet);
     detailInfo.setColumnSchemas(getColumnSchema());

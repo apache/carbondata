@@ -93,7 +93,7 @@ public class BlockletDataMapIndexStore
                   carbonDataFileBlockMetaInfoMapping);
           BlockDataMap blockletDataMap =
               loadAndGetDataMap(identifier, indexFileStore, blockMetaInfoMap,
-                  identifierWrapper.getCarbonTable());
+                  identifierWrapper.getCarbonTable(), identifierWrapper.isAddTableBlockToUnsafe());
           dataMaps.add(blockletDataMap);
           blockletDataMapIndexWrapper = new BlockletDataMapIndexWrapper(dataMaps);
         } else {
@@ -108,7 +108,8 @@ public class BlockletDataMapIndexStore
                 carbonDataFileBlockMetaInfoMapping);
             BlockDataMap blockletDataMap =
                 loadAndGetDataMap(blockIndexUniqueIdentifier, indexFileStore, blockMetaInfoMap,
-                    identifierWrapper.getCarbonTable());
+                    identifierWrapper.getCarbonTable(),
+                    identifierWrapper.isAddTableBlockToUnsafe());
             dataMaps.add(blockletDataMap);
           }
           blockletDataMapIndexWrapper = new BlockletDataMapIndexWrapper(dataMaps);
@@ -251,7 +252,7 @@ public class BlockletDataMapIndexStore
    */
   private BlockDataMap loadAndGetDataMap(TableBlockIndexUniqueIdentifier identifier,
       SegmentIndexFileStore indexFileStore, Map<String, BlockMetaInfo> blockMetaInfoMap,
-      CarbonTable carbonTable)
+      CarbonTable carbonTable, boolean addTableBlockToUnsafe)
       throws IOException, MemoryException {
     String uniqueTableSegmentIdentifier =
         identifier.getUniqueTableSegmentIdentifier();
@@ -265,7 +266,7 @@ public class BlockletDataMapIndexStore
       dataMap.init(new BlockletDataMapModel(carbonTable,
           identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
               .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()),
-          blockMetaInfoMap, identifier.getSegmentId()));
+          blockMetaInfoMap, identifier.getSegmentId(), addTableBlockToUnsafe));
     }
     return dataMap;
   }
