@@ -712,5 +712,16 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select a.b,id,a.c,person.detail[0],d.e,d.f,person.detail[1],id from test"),Seq(Row(2,1,3,5,3,2,6,1)))
     checkAnswer(sql("select a.b,id,a.c,person.detail[0],d.e,d.f,person.detail[1],id,1,a.b from test"),Seq(Row(2,1,3,5,3,2,6,1,1,2)))
   }
-  
+
+  test("test Filter as projection PushDown for more than one Struct column Cases -1") {
+    sql("drop table if exists test")
+    sql("create table test (a struct<b:int, c:struct<d:int,e:int>>) stored by 'carbondata'")
+    sql("insert into test select '1$2:3'")
+    checkAnswer(sql("select a.b, a.c from test"), Seq(Row(1, Row(2, 3))))
+    checkAnswer(sql("select a.b, a.c from test where a.c.e = 3"), Seq(Row(1, Row(2, 3))))
+    checkAnswer(sql("select a.c.e from test where a.c.e = 3"), Seq(Row(3)))
+    checkAnswer(sql("select a.c.d from test where a.c.e = 3"), Seq(Row(2)))
+    checkAnswer(sql("select a from test where a.c.e = 3"), Seq(Row(Row(1, Row(2, 3)))))
+    sql("drop table if exists test")
+  }
 }

@@ -59,12 +59,13 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       case PhysicalOperation(projects, filters, l: LogicalRelation)
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
         val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+        val complexColumnsReferenceList = getComplexColumnsReferenceList(l)
         pruneFilterProject(
           l,
           projects,
           filters,
           (a, f, needDecoder, p) => toCatalystRDD(l, a, relation.buildScan(
-            a.map(_.name).toArray, filters, projects, f, p), needDecoder)) :: Nil
+            a.map(_.name).toArray, f, complexColumnsReferenceList, p), needDecoder)) :: Nil
       case CarbonDictionaryCatalystDecoder(relations, profile, aliasMap, _, child) =>
         if ((profile.isInstanceOf[IncludeProfile] && profile.isEmpty) ||
             !CarbonDictionaryDecoder.
@@ -86,6 +87,18 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       case _ => Nil
     }
   }
+
+  /**
+   * CarbonComplexTypeRule of optimizer stores attribute references of complex types in
+   * attribute meta data. Fetch attribute references
+   * @param l
+   * @return attribute to Attribute references map
+   */
+  private def getComplexColumnsReferenceList(l: LogicalRelation): Map[String, Seq[String]] =
+    l.expectedOutputAttributes.map(
+      _.filter(_.metadata.contains("attribRef"))
+        .map(attrib => (attrib.name, attrib.metadata.getStringArray("attribRef").toSeq)).toMap
+    ).getOrElse(Map())
 
   /**
    * Return true if driver-side count star optimization can be used.
