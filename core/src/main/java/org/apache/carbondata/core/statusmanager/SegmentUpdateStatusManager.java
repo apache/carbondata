@@ -65,7 +65,7 @@ public class SegmentUpdateStatusManager {
   private static final LogService LOG =
       LogServiceFactory.getLogService(SegmentUpdateStatusManager.class.getName());
 
-  private AbsoluteTableIdentifier identifier;
+  private final AbsoluteTableIdentifier identifier;
   private LoadMetadataDetails[] segmentDetails;
   private SegmentUpdateDetails[] updateDetails;
   private Map<String, SegmentUpdateDetails> blockAndDetailsMap;
@@ -124,7 +124,7 @@ public class SegmentUpdateStatusManager {
    * @param actualBlockName
    * @return null if block is not present in segment update status.
    */
-  public SegmentUpdateDetails getDetailsForABlock(String segID, String actualBlockName) {
+  private SegmentUpdateDetails getDetailsForABlock(String segID, String actualBlockName) {
 
     String blockIdentifier = CarbonUpdateUtil
         .getSegmentBlockNameKey(segID, actualBlockName);

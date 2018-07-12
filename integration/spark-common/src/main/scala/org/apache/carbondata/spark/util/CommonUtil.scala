@@ -65,77 +65,6 @@ object CommonUtil {
   val FIXED_DECIMAL = """decimal\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
   val FIXED_DECIMALTYPE = """decimaltype\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
 
-  def validateColumnGroup(colGroup: String, noDictionaryDims: Seq[String],
-      msrs: Seq[Field], retrievedColGrps: Seq[String], dims: Seq[Field]) {
-    val colGrpCols = colGroup.split(',').map(_.trim)
-    colGrpCols.foreach { x =>
-      // if column is no dictionary
-      if (noDictionaryDims.contains(x)) {
-        throw new MalformedCarbonCommandException(
-          "Column group is not supported for no dictionary columns:" + x)
-      } else if (msrs.exists(msr => msr.column.equals(x))) {
-        // if column is measure
-        throw new MalformedCarbonCommandException("Column group is not supported for measures:" + x)
-      } else if (foundIndExistingColGrp(x)) {
-        throw new MalformedCarbonCommandException("Column is available in other column group:" + x)
-      } else if (isComplex(x, dims)) {
-        throw new MalformedCarbonCommandException(
-          "Column group doesn't support Complex column:" + x)
-      } else if (isTimeStampColumn(x, dims)) {
-        throw new MalformedCarbonCommandException(
-          "Column group doesn't support Timestamp datatype:" + x)
-      }// if invalid column is
-      else if (!dims.exists(dim => dim.column.equalsIgnoreCase(x))) {
-        // present
-        throw new MalformedCarbonCommandException(
-          "column in column group is not a valid column: " + x
-        )
-      }
-    }
-    // check if given column is present in other groups
-    def foundIndExistingColGrp(colName: String): Boolean = {
-      retrievedColGrps.foreach { colGrp =>
-        if (colGrp.split(",").contains(colName)) {
-          return true
-        }
-      }
-      false
-    }
-
-  }
-
-
-  def isTimeStampColumn(colName: String, dims: Seq[Field]): Boolean = {
-    dims.foreach { dim =>
-      if (dim.column.equalsIgnoreCase(colName)) {
-        if (dim.dataType.isDefined && null != dim.dataType.get &&
-            "timestamp".equalsIgnoreCase(dim.dataType.get)) {
-          return true
-        }
-      }
-    }
-    false
-  }
-
-  def isComplex(colName: String, dims: Seq[Field]): Boolean = {
-    dims.foreach { x =>
-      if (x.children.isDefined && null != x.children.get && x.children.get.nonEmpty) {
-        val children = x.children.get
-        if (x.column.equals(colName)) {
-          return true
-        } else {
-          children.foreach { child =>
-            val fieldName = x.column + "." + child.column
-            if (fieldName.equalsIgnoreCase(colName)) {
-              return true
-            }
-          }
-        }
-      }
-    }
-    false
-  }
-
   def getColumnProperties(column: String,
       tableProperties: Map[String, String]): Option[util.List[ColumnProperty]] = {
     val fieldProps = new util.ArrayList[ColumnProperty]()
@@ -438,38 +367,6 @@ object CommonUtil {
   }
 
   /**
-   * @param colGrps
-   * @param dims
-   * @return columns of column groups in schema order
-   */
-  def arrangeColGrpsInSchemaOrder(colGrps: Seq[String], dims: Seq[Field]): Seq[String] = {
-    def sortByIndex(colGrp1: String, colGrp2: String) = {
-      val firstCol1 = colGrp1.split(",")(0)
-      val firstCol2 = colGrp2.split(",")(0)
-      val dimIndex1: Int = getDimIndex(firstCol1, dims)
-      val dimIndex2: Int = getDimIndex(firstCol2, dims)
-      dimIndex1 < dimIndex2
-    }
-    val sortedColGroups: Seq[String] = colGrps.sortWith(sortByIndex)
-    sortedColGroups
-  }
-
-  /**
-   * @param colName
-   * @param dims
-   * @return return index for given column in dims
-   */
-  def getDimIndex(colName: String, dims: Seq[Field]): Int = {
-    var index: Int = -1
-    dims.zipWithIndex.foreach { h =>
-      if (h._1.column.equalsIgnoreCase(colName)) {
-        index = h._2.toInt
-      }
-    }
-    index
-  }
-
-  /**
    * validate table level properties for compaction
    *
    * @param tableProperties
@@ -689,58 +586,6 @@ object CommonUtil {
       LOGGER.info(s"totalInputSpaceConsumed: $spaceConsumed , " +
                   s"defaultParallelism: $defaultParallelism")
       LOGGER.info(s"mapreduce.input.fileinputformat.split.maxsize: ${ newSplitSize.toString }")
-    }
-  }
-
-  def validateMaxColumns(csvHeaders: Array[String], maxColumns: String): Int = {
-    /*
-    User configures both csvheadercolumns, maxcolumns,
-      if csvheadercolumns >= maxcolumns, give error
-      if maxcolumns > threashold, give error
-    User configures csvheadercolumns
-      if csvheadercolumns >= maxcolumns(default) then maxcolumns = csvheadercolumns+1
-      if csvheadercolumns >= threashold, give error
-    User configures nothing
-      if csvheadercolumns >= maxcolumns(default) then maxcolumns = csvheadercolumns+1
-      if csvheadercolumns >= threashold, give error
-     */
-    val columnCountInSchema = csvHeaders.length
-    var maxNumberOfColumnsForParsing = 0
-    val maxColumnsInt = getMaxColumnValue(maxColumns)
-    if (maxColumnsInt != null) {
-      if (columnCountInSchema >= maxColumnsInt) {
-        CarbonException.analysisException(
-          s"csv headers should be less than the max columns: $maxColumnsInt")
-      } else if (maxColumnsInt > CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
-        CarbonException.analysisException(
-          s"max columns cannot be greater than the threshold value: " +
-            s"${CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING}")
-      } else {
-        maxNumberOfColumnsForParsing = maxColumnsInt
-      }
-    } else if (columnCountInSchema >= CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
-      CarbonException.analysisException(
-        s"csv header columns should be less than max threashold: " +
-          s"${CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING}")
-    } else if (columnCountInSchema >= CSVInputFormat.DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
-      maxNumberOfColumnsForParsing = columnCountInSchema + 1
-    } else {
-      maxNumberOfColumnsForParsing = CSVInputFormat.DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING
-    }
-    maxNumberOfColumnsForParsing
-  }
-
-  private def getMaxColumnValue(maxColumn: String): Integer = {
-    if (maxColumn != null) {
-      try {
-        maxColumn.toInt
-      } catch {
-        case e: Exception =>
-          LOGGER.error(s"Invalid value for max column in load options ${ e.getMessage }")
-          null
-      }
-    } else {
-      null
     }
   }
 

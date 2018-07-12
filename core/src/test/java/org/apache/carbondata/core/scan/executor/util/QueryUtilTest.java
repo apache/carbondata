@@ -141,42 +141,6 @@ public class QueryUtilTest extends TestCase {
     Assert.assertTrue(result);
   }
 
-  @Test public void testGetColumnGroupIdWhenOrdinalValueNotPresentInArrayIndex() {
-    int ordinal = 0;
-    new MockUp<SegmentProperties>() {
-      @Mock public int[][] getColumnGroups() {
-        return new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 }, { 4, 4 }, { 5, 5 } };
-      }
-    };
-    int actualValue = QueryUtil.getColumnGroupId(segmentProperties, ordinal);
-    int expectedValue = 4; //expectedValue will always be arrayLength - 1
-    assertEquals(expectedValue, actualValue);
-  }
-
-  @Test public void testGetColumnGroupIdWhenOrdinalValuePresentInArrayIndex() {
-    int ordinal = 1;
-    new MockUp<SegmentProperties>() {
-      @Mock public int[][] getColumnGroups() {
-        return new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 }, { 4, 4 }, { 5, 5 } };
-      }
-    };
-    int actualValue = QueryUtil.getColumnGroupId(segmentProperties, ordinal);
-    int expectedValue = 0;
-    assertEquals(expectedValue, actualValue);
-  }
-
-  @Test public void testGetColumnGroupIdWhenColumnGroupsIndexValueLengthLessThanOne() {
-    int ordinal = 1;
-    new MockUp<SegmentProperties>() {
-      @Mock public int[][] getColumnGroups() {
-        return new int[][] { { 1 } };
-      }
-    };
-    int actualValue = QueryUtil.getColumnGroupId(segmentProperties, ordinal);
-    int expectedValue = -1;
-    assertEquals(expectedValue, actualValue);
-  }
-
   @Test public void testGetMaskedKey() {
     byte[] data = { 1, 2, 3, 4, 5, 5 };
     byte[] maxKey = { 15, 20, 25, 30, 35, 35 };

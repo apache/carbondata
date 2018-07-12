@@ -253,13 +253,8 @@ public class DefaultEncodingFactory extends EncodingFactory {
       boolean isComplexPrimitive) {
     DataType srcDataType = stats.getDataType();
     DataType adaptiveDataType = fitMinMax(stats.getDataType(), stats.getMax(), stats.getMin());
-    DataType deltaDataType;
 
-    if (adaptiveDataType == DataTypes.LONG) {
-      deltaDataType = DataTypes.LONG;
-    } else {
-      deltaDataType = fitDelta(stats.getDataType(), stats.getMax(), stats.getMin());
-    }
+    DataType deltaDataType = fitDelta(stats.getDataType(), stats.getMax(), stats.getMin());
     // for complex primitive, if source and destination data type is same, use adaptive encoding.
     if (!isComplexPrimitive) {
       // in case of decimal datatype, check if the decimal converter type is Int or Long and based

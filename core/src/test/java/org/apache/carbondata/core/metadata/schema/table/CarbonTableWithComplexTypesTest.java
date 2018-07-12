@@ -67,7 +67,6 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     List<ColumnSchema> cols = new ArrayList<ColumnSchema>();
 
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataTypes.STRING);
@@ -80,7 +79,6 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     cols.add(dimColumn);
 
     ColumnSchema structColumn = new ColumnSchema();
-    structColumn.setColumnar(true);
     structColumn.setColumnName("mobile");
     structColumn.setColumnUniqueId(UUID.randomUUID().toString());
     structColumn.setDataType(DataTypes.createDefaultStructType());
@@ -90,7 +88,6 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     cols.add(structColumn);
 
     ColumnSchema primitiveColumn = new ColumnSchema();
-    primitiveColumn.setColumnar(true);
     primitiveColumn.setColumnName("mobile.stdcode");
     primitiveColumn.setColumnUniqueId(UUID.randomUUID().toString());
     primitiveColumn.setDataType(DataTypes.STRING);
@@ -100,7 +97,6 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     cols.add(primitiveColumn);
 
     ColumnSchema arrayColumn = new ColumnSchema();
-    arrayColumn.setColumnar(true);
     arrayColumn.setColumnName("mobile.val");
     arrayColumn.setColumnUniqueId(UUID.randomUUID().toString());
     arrayColumn.setDataType(DataTypes.createDefaultArrayType());
@@ -110,7 +106,6 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     cols.add(arrayColumn);
 
     ColumnSchema primitiveColumn1 = new ColumnSchema();
-    primitiveColumn1.setColumnar(true);
     primitiveColumn1.setColumnName("mobile.val.phoneno");
     primitiveColumn1.setColumnUniqueId(UUID.randomUUID().toString());
     primitiveColumn1.setDataType(DataTypes.STRING);

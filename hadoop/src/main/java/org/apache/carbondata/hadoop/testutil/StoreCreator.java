@@ -195,84 +195,70 @@ public class StoreCreator {
     encodings.add(Encoding.DICTIONARY);
     ColumnSchema id = new ColumnSchema();
     id.setColumnName("ID");
-    id.setColumnar(true);
     id.setDataType(DataTypes.INT);
     id.setEncodingList(encodings);
     id.setColumnUniqueId(UUID.randomUUID().toString());
     id.setColumnReferenceId(id.getColumnUniqueId());
     id.setDimensionColumn(true);
-    id.setColumnGroup(1);
     columnSchemas.add(id);
 
     ColumnSchema date = new ColumnSchema();
     date.setColumnName("date");
-    date.setColumnar(true);
     date.setDataType(DataTypes.STRING);
     date.setEncodingList(encodings);
     date.setColumnUniqueId(UUID.randomUUID().toString());
     date.setDimensionColumn(true);
-    date.setColumnGroup(2);
     date.setSortColumn(true);
     date.setColumnReferenceId(id.getColumnUniqueId());
     columnSchemas.add(date);
 
     ColumnSchema country = new ColumnSchema();
     country.setColumnName("country");
-    country.setColumnar(true);
     country.setDataType(DataTypes.STRING);
     country.setEncodingList(encodings);
     country.setColumnUniqueId(UUID.randomUUID().toString());
     country.setDimensionColumn(true);
-    country.setColumnGroup(3);
     country.setSortColumn(true);
     country.setColumnReferenceId(id.getColumnUniqueId());
     columnSchemas.add(country);
 
     ColumnSchema name = new ColumnSchema();
     name.setColumnName("name");
-    name.setColumnar(true);
     name.setDataType(DataTypes.STRING);
     name.setEncodingList(encodings);
     name.setColumnUniqueId(UUID.randomUUID().toString());
     name.setDimensionColumn(true);
-    name.setColumnGroup(4);
     name.setSortColumn(true);
     name.setColumnReferenceId(id.getColumnUniqueId());
     columnSchemas.add(name);
 
     ColumnSchema phonetype = new ColumnSchema();
     phonetype.setColumnName("phonetype");
-    phonetype.setColumnar(true);
     phonetype.setDataType(DataTypes.STRING);
     phonetype.setEncodingList(encodings);
     phonetype.setColumnUniqueId(UUID.randomUUID().toString());
     phonetype.setDimensionColumn(true);
-    phonetype.setColumnGroup(5);
     phonetype.setSortColumn(true);
     phonetype.setColumnReferenceId(id.getColumnUniqueId());
     columnSchemas.add(phonetype);
 
     ColumnSchema serialname = new ColumnSchema();
     serialname.setColumnName("serialname");
-    serialname.setColumnar(true);
     serialname.setDataType(DataTypes.STRING);
     serialname.setEncodingList(encodings);
     serialname.setColumnUniqueId(UUID.randomUUID().toString());
     serialname.setDimensionColumn(true);
-    serialname.setColumnGroup(6);
     serialname.setSortColumn(true);
     serialname.setColumnReferenceId(id.getColumnUniqueId());
     columnSchemas.add(serialname);
 
     ColumnSchema salary = new ColumnSchema();
     salary.setColumnName("salary");
-    salary.setColumnar(true);
     salary.setDataType(DataTypes.INT);
     salary.setEncodingList(new ArrayList<Encoding>());
     salary.setColumnUniqueId(UUID.randomUUID().toString());
     salary.setDimensionColumn(false);
     salary.setColumnReferenceId(id.getColumnUniqueId());
-    salary.setColumnGroup(7);
     columnSchemas.add(salary);
 
     tableSchema.setListOfColumns(columnSchemas);
@@ -391,7 +377,6 @@ public class StoreCreator {
     CarbonProperties.getInstance().addProperty("is.int.based.indexer", "true");
     CarbonProperties.getInstance().addProperty("aggregate.columnar.keyblock", "true");
     CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false");
-    CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000");
 
     String graphPath =
         outPutLoc + File.separator + loadModel.getDatabaseName() + File.separator + tableName

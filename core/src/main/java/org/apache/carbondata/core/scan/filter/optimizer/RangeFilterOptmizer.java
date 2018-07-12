@@ -19,14 +19,13 @@ package org.apache.carbondata.core.scan.filter.optimizer;
 
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.RangeExpressionEvaluator;
-import org.apache.carbondata.core.scan.filter.intf.FilterOptimizerImpl;
+import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
 
-public class RangeFilterOptmizer extends FilterOptimizerImpl {
+public class RangeFilterOptmizer implements FilterOptimizer {
 
   RangeExpressionEvaluator rangeExpEvaluator;
 
   public RangeFilterOptmizer(Expression filterExpression) {
-    super(filterExpression);
     this.rangeExpEvaluator = new RangeExpressionEvaluator(filterExpression);
 
   }

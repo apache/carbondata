@@ -194,7 +194,7 @@ public class IncludeFilterExecuterImplTest extends TestCase {
       oldTime = oldTime + System.currentTimeMillis() - start;
 
       start = System.currentTimeMillis();
-      BitSet bitNew = this.setFilterdIndexToBitSetNew((FixedLengthDimensionColumnPage) dimensionColumnDataChunk, dataChunkSize,
+      BitSet bitNew = this.setFilterdIndexToBitSetNew(dimensionColumnDataChunk, dataChunkSize,
           filterKeys);
       newTime = newTime + System.currentTimeMillis() - start;
 

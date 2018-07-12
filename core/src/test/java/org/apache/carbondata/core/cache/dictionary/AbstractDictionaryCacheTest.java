@@ -87,9 +87,9 @@ public class AbstractDictionaryCacheTest {
    * prepare the dataset required for running test cases
    */
   protected void prepareDataSet() {
-    dataSet1 = Arrays.asList(new String[] { "a", "b", "c" });
-    dataSet2 = Arrays.asList(new String[] { "d", "e", "f" });
-    dataSet3 = Arrays.asList(new String[] { "b", "c", "a", "d" });
+    dataSet1 = Arrays.asList("a", "b", "c");
+    dataSet2 = Arrays.asList("d", "e", "f");
+    dataSet3 = Arrays.asList("b", "c", "a", "d");
   }
 
   /**

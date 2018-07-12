@@ -51,7 +51,9 @@ public abstract class CarbonRowSchema implements Serializable {
    *
    * @return
    */
-  public abstract int getLength();
+  public int getLength() {
+    return dataType.getSizeInBytes();
+  }
 
   /**
    * schema type

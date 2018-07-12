@@ -21,7 +21,6 @@ import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFacto
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory.DimensionStoreType;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
@@ -57,11 +56,9 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
    * @param rowId            row id of the chunk
    * @param offset           offset from which data need to be filed
    * @param data             data to filed
-   * @param keyStructureInfo define the structure of the key
    * @return how many bytes was copied
    */
-  @Override public int fillRawData(int rowId, int offset, byte[] data,
-      KeyStructureInfo keyStructureInfo) {
+  @Override public int fillRawData(int rowId, int offset, byte[] data) {
     dataChunkStore.fillRow(rowId, data, offset);
     return dataChunkStore.getColumnValueSize();
   }
@@ -72,11 +69,9 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
    * @param rowId
    * @param chunkIndex
    * @param outputSurrogateKey
-   * @param restructuringInfo
    * @return
    */
-  @Override public int fillSurrogateKey(int rowId, int chunkIndex, int[] outputSurrogateKey,
-      KeyStructureInfo restructuringInfo) {
+  @Override public int fillSurrogateKey(int rowId, int chunkIndex, int[] outputSurrogateKey) {
     outputSurrogateKey[chunkIndex] = dataChunkStore.getSurrogate(rowId);
     return chunkIndex + 1;
   }
@@ -86,11 +81,9 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
    *
    * @param vectorInfo
    * @param chunkIndex
-   * @param restructuringInfo
    * @return next column index
    */
-  @Override public int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex,
-      KeyStructureInfo restructuringInfo) {
+  @Override public int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex) {
     ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
     int offset = columnVectorInfo.offset;
     int vectorOffset = columnVectorInfo.vectorOffset;
@@ -127,11 +120,10 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
    * @param filteredRowId
    * @param vectorInfo
    * @param chunkIndex
-   * @param restructuringInfo
    * @return next column index
    */
   @Override public int fillVector(int[] filteredRowId, ColumnVectorInfo[] vectorInfo,
-      int chunkIndex, KeyStructureInfo restructuringInfo) {
+      int chunkIndex) {
     ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
     int offset = columnVectorInfo.offset;
     int vectorOffset = columnVectorInfo.vectorOffset;

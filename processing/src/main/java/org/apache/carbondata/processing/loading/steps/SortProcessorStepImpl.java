@@ -19,10 +19,8 @@ package org.apache.carbondata.processing.loading.steps;
 import java.io.IOException;
 import java.util.Iterator;
 
-import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
-import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
 import org.apache.carbondata.processing.loading.sort.Sorter;
@@ -43,11 +41,6 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
   }
 
   @Override
-  public DataField[] getOutput() {
-    return child.getOutput();
-  }
-
-  @Override
   public void initialize() throws IOException {
     super.initialize();
     child.initialize();
@@ -60,11 +53,6 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
   public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
     final Iterator<CarbonRowBatch>[] iterators = child.execute();
     return sorter.sort(iterators);
-  }
-
-  @Override
-  protected CarbonRow processRow(CarbonRow row) {
-    return null;
   }
 
   @Override

@@ -194,14 +194,6 @@ public class UnsafeIntermediateMerger {
     mergerTask.add(executorService.submit(merger));
   }
 
-  private int getTotalNumberOfRows(List<UnsafeCarbonRowPage> unsafeCarbonRowPages) {
-    int totalSize = 0;
-    for (UnsafeCarbonRowPage unsafeCarbonRowPage : unsafeCarbonRowPages) {
-      totalSize += unsafeCarbonRowPage.getBuffer().getActualSize();
-    }
-    return totalSize;
-  }
-
   public void finish() throws CarbonSortKeyAndGroupByException {
     try {
       executorService.shutdown();

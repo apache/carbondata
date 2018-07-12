@@ -36,15 +36,6 @@ public class MemoryLocation {
     this.offset = offset;
   }
 
-  public MemoryLocation() {
-    this(null, 0);
-  }
-
-  public void setObjAndOffset(Object newObj, long newOffset) {
-    this.obj = newObj;
-    this.offset = newOffset;
-  }
-
   public final Object getBaseObject() {
     return obj;
   }

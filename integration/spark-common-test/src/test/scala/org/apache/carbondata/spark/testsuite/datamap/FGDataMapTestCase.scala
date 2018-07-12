@@ -491,6 +491,8 @@ class FGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE datamap_test OPTIONS('header'='false')")
     checkAnswer(sql("select * from datamap_test where name='n502670' and city='c2670'"),
       sql("select * from normal_test where name='n502670' and city='c2670'"))
+    checkAnswer(sql("select * from datamap_test where name='n502670' or city='c2670'"),
+      sql("select * from normal_test where name='n502670' or city='c2670'"))
   }
 
   test("test invisible datamap during query") {

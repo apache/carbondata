@@ -72,8 +72,7 @@ public class NonFilterQueryScannedResult extends BlockletScannedResult {
     for (int i = 0; i < this.dictionaryColumnChunkIndexes.length; i++) {
       for (int j = 0; j < validRowIds.size(); j++) {
         columnDataOffsets[j] += dimensionColumnPages[dictionaryColumnChunkIndexes[i]][pageCounter]
-            .fillRawData(validRowIds.get(j), columnDataOffsets[j], dictionaryKeyArrayList.get(j),
-                columnGroupKeyStructureInfo.get(dictionaryColumnChunkIndexes[i]));
+            .fillRawData(validRowIds.get(j), columnDataOffsets[j], dictionaryKeyArrayList.get(j));
       }
     }
     return dictionaryKeyArrayList;

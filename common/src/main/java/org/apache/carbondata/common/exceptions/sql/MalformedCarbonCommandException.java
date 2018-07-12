@@ -59,14 +59,6 @@ public class MalformedCarbonCommandException extends Exception {
   }
 
   /**
-   * getLocalizedMessage
-   */
-  @Override
-  public String getLocalizedMessage() {
-    return super.getLocalizedMessage();
-  }
-
-  /**
    * getMessage
    */
   public String getMessage() {

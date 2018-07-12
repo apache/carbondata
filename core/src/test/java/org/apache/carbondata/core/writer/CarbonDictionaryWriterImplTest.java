@@ -119,9 +119,9 @@ public class CarbonDictionaryWriterImplTest {
    * prepare the dataset required for running test cases
    */
   private void prepareDataSet() {
-    dataSet1 = Arrays.asList(new String[] { "a", "b" });
-    dataSet2 = Arrays.asList(new String[] { "c", "d" });
-    dataSet3 = Arrays.asList(new String[] { "e", "f" });
+    dataSet1 = Arrays.asList("a", "b");
+    dataSet2 = Arrays.asList("c", "d");
+    dataSet3 = Arrays.asList("e", "f");
   }
 
   /**

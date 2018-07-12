@@ -20,9 +20,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.blocklet.BlockletEncodedColumnPage;
 import org.apache.carbondata.core.datastore.blocklet.EncodedBlocklet;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
@@ -42,7 +40,6 @@ import org.apache.carbondata.format.ColumnSchema;
 import org.apache.carbondata.format.CompressionCodec;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
-import org.apache.carbondata.format.Encoding;
 import org.apache.carbondata.format.FileFooter3;
 import org.apache.carbondata.format.FileHeader;
 import org.apache.carbondata.format.IndexHeader;
@@ -53,6 +50,9 @@ import org.apache.carbondata.format.SegmentInfo;
  * Util class to convert to thrift metdata classes
  */
 public class CarbonMetadataUtil {
+
+  private CarbonMetadataUtil() {
+  }
 
   /**
    * Below method prepares the file footer object for carbon data file version 3
@@ -219,28 +219,6 @@ public class CarbonMetadataUtil {
     blockletIndex.setMin_max_index(blockletMinMaxIndex);
     blockletIndex.setB_tree_index(blockletBTreeIndex);
     return blockletIndex;
-  }
-
-  /**
-   * @param blockIndex
-   * @param encoding
-   * @param columnSchemas
-   * @param segmentProperties
-   * @return return true if given encoding is present in column
-   */
-  private static boolean containsEncoding(int blockIndex, Encoding encoding,
-      List<ColumnSchema> columnSchemas, SegmentProperties segmentProperties) {
-    Set<Integer> dimOrdinals = segmentProperties.getDimensionOrdinalForBlock(blockIndex);
-    // column groups will always have dictionary encoding
-    if (dimOrdinals.size() > 1 && Encoding.DICTIONARY == encoding) {
-      return true;
-    }
-    for (Integer dimOrdinal : dimOrdinals) {
-      if (columnSchemas.get(dimOrdinal).encoders.contains(encoding)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   /**

@@ -87,7 +87,6 @@ public class HeapMemoryAllocator implements MemoryAllocator {
     // As an additional layer of defense against use-after-free bugs, we mutate the
     // MemoryBlock to null out its reference to the long[] array.
     long[] array = (long[]) memory.obj;
-    memory.setObjAndOffset(null, 0);
 
     long alignedSize = ((size + 7) / 8) * 8;
     if (shouldPool(alignedSize)) {

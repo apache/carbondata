@@ -113,12 +113,7 @@ class CarbonAppendableStreamSink(
       // in case of streaming options and optionsFinal can be same
       val loadTablePreExecutionEvent = new LoadTablePreExecutionEvent(
         carbonTable.getCarbonTableIdentifier,
-        carbonLoadModel,
-        carbonLoadModel.getFactFilePath,
-        false,
-        parameters.asJava,
-        parameters.asJava,
-        false)
+        carbonLoadModel)
       OperationListenerBus.getInstance().fireEvent(loadTablePreExecutionEvent, operationContext)
       checkOrHandOffSegment()
 

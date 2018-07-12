@@ -38,11 +38,7 @@ public abstract class IndexStorageEncoder extends ColumnPageEncoder {
 
   @Override
   protected byte[] encodeData(ColumnPage input) throws MemoryException, IOException {
-    assert (indexStorage == null);
-    assert (compressedDataPage == null);
     encodeIndexStorage(input);
-    assert (indexStorage != null);
-    assert (compressedDataPage != null);
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream out = new DataOutputStream(stream);
     out.write(compressedDataPage);
