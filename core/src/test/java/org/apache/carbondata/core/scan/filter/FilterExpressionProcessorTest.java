@@ -36,7 +36,6 @@ public class FilterExpressionProcessorTest extends AbstractDictionaryCacheTest {
         new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString());
     this.carbonStorePath = props.getProperty("storePath", "carbonStore");
     columnSchema = new ColumnSchema();
-    columnSchema.setColumnar(true);
     columnSchema.setColumnName("IMEI");
     columnSchema.setColumnUniqueId(UUID.randomUUID().toString());
     columnSchema.setDataType(DataTypes.STRING);

@@ -82,28 +82,6 @@ object DataTypeConverterUtil {
     }
   }
 
-  def convertToString(dataType: DataType): String = {
-    if (DataTypes.isDecimal(dataType)) {
-      "decimal"
-    } else if (DataTypes.isArrayType(dataType)) {
-      "array"
-    } else if (DataTypes.isStructType(dataType)) {
-      "struct"
-    } else {
-      dataType match {
-        case DataTypes.BOOLEAN => "boolean"
-      case DataTypes.STRING => "string"
-        case DataTypes.SHORT => "smallint"
-        case DataTypes.INT => "int"
-        case DataTypes.LONG => "bigint"
-        case DataTypes.DOUBLE => "double"
-        case DataTypes.FLOAT => "double"
-        case DataTypes.TIMESTAMP => "timestamp"
-        case DataTypes.DATE => "date"
-      }
-    }
-  }
-
   /**
    * convert from wrapper to external data type
    *

@@ -102,8 +102,7 @@ public class FilterQueryScannedResult extends BlockletScannedResult {
       column = dimensionColumnPages[chunkIndex][pageCounter].fillVector(
           pageFilteredRowId[pageCounter],
           vectorInfo,
-          column,
-          columnGroupKeyStructureInfo.get(chunkIndex));
+          column);
     }
   }
 
@@ -116,8 +115,7 @@ public class FilterQueryScannedResult extends BlockletScannedResult {
       column = dimensionColumnPages[chunkIndex][pageCounter].fillVector(
           pageFilteredRowId[pageCounter],
           vectorInfo,
-          column,
-          columnGroupKeyStructureInfo.get(chunkIndex));
+          column);
     }
   }
 

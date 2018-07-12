@@ -100,13 +100,8 @@ object StreamSinkFactory {
     val operationContext = new OperationContext
     val loadTablePreExecutionEvent = new LoadTablePreExecutionEvent(
       carbonTable.getCarbonTableIdentifier,
-      carbonLoadModel,
-      carbonLoadModel.getFactFilePath,
-      false,
-      parameters.asJava,
-      parameters.asJava,
-      false
-    )
+      carbonLoadModel
+      )
     OperationListenerBus.getInstance().fireEvent(loadTablePreExecutionEvent, operationContext)
     // prepare the stream segment
     val segmentId = getStreamSegmentId(carbonTable)

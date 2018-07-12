@@ -84,12 +84,6 @@ public class ColumnSchema implements Serializable, Writable {
   private boolean isDimensionColumn;
 
   /**
-   * The group ID for column used for row format columns,
-   * where in columns in each group are chunked together.
-   */
-  private int columnGroupId = -1;
-
-  /**
    * Used when this column contains decimal data.
    */
   private int scale;
@@ -185,20 +179,6 @@ public class ColumnSchema implements Serializable, Writable {
   }
 
   /**
-   * @return the isColumnar
-   */
-  public boolean isColumnar() {
-    return isColumnar;
-  }
-
-  /**
-   * @param isColumnar the isColumnar to set
-   */
-  public void setColumnar(boolean isColumnar) {
-    this.isColumnar = isColumnar;
-  }
-
-  /**
    * @return the isDimensionColumn
    */
   public boolean isDimensionColumn() {
@@ -232,19 +212,6 @@ public class ColumnSchema implements Serializable, Writable {
         this.getEncodingList().remove(Encoding.INVERTED_INDEX);
       }
     }
-  }
-
-  /**
-   * @return the columnGroup
-   */
-  public int getColumnGroupId() {
-    return columnGroupId;
-  }
-
-  /**
-   */
-  public void setColumnGroup(int columnGroupId) {
-    this.columnGroupId = columnGroupId;
   }
 
   /**

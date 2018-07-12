@@ -24,35 +24,34 @@ import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberE
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.intf.RowImpl;
-
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class FalseExpressionTest {
-  private FalseExpression falseExpression;
+public class TrueExpressionTest {
+  private TrueExpression trueExpression;
 
   @Before public void setUp() {
     ColumnExpression columnExpression = new ColumnExpression("IMEI", DataTypes.BOOLEAN);
-    falseExpression = new FalseExpression(columnExpression);
+    trueExpression = new TrueExpression(columnExpression);
   }
 
   @Test public void testEvaluate() throws FilterUnsupportedException, FilterIllegalMemberException {
     RowImpl rowImpl = new RowImpl();
     rowImpl.setValues(new Boolean[] { true });
-    ExpressionResult actualValue = falseExpression.evaluate(rowImpl);
-    assertEquals(new ExpressionResult(DataTypes.BOOLEAN, false), actualValue);
+    ExpressionResult actualValue = trueExpression.evaluate(rowImpl);
+    assertEquals(new ExpressionResult(DataTypes.BOOLEAN, true), actualValue);
   }
 
   @Test public void testGetString() {
-    String actualValue = falseExpression.getString();
-    String expectedValue = "False(ColumnExpression(IMEI)";
+    String actualValue = trueExpression.getString();
+    String expectedValue = "True(ColumnExpression(IMEI)";
     assertEquals(expectedValue, actualValue);
   }
 
   @Test public void testFilterExpressionType() {
-    ExpressionType actualValue = falseExpression.getFilterExpressionType();
-    assertEquals(ExpressionType.FALSE, actualValue);
+    ExpressionType actualValue = trueExpression.getFilterExpressionType();
+    assertEquals(ExpressionType.TRUE, actualValue);
   }
 }

@@ -23,5 +23,5 @@ import org.apache.carbondata.core.dictionary.client.DictionaryClient;
 
 public interface DictionaryServiceProvider extends Serializable {
 
-  public DictionaryClient getDictionaryClient();
+  DictionaryClient getDictionaryClient();
 }

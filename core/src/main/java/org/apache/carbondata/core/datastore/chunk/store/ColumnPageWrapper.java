@@ -24,7 +24,6 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -48,25 +47,22 @@ public class ColumnPageWrapper implements DimensionColumnPage {
   }
 
   @Override
-  public int fillRawData(int rowId, int offset, byte[] data, KeyStructureInfo restructuringInfo) {
+  public int fillRawData(int rowId, int offset, byte[] data) {
     throw new UnsupportedOperationException("internal error");
   }
 
   @Override
-  public int fillSurrogateKey(int rowId, int chunkIndex, int[] outputSurrogateKey,
-      KeyStructureInfo restructuringInfo) {
+  public int fillSurrogateKey(int rowId, int chunkIndex, int[] outputSurrogateKey) {
     throw new UnsupportedOperationException("internal error");
   }
 
   @Override
-  public int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex,
-      KeyStructureInfo restructuringInfo) {
+  public int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex) {
     throw new UnsupportedOperationException("internal error");
   }
 
   @Override
-  public int fillVector(int[] filteredRowId, ColumnVectorInfo[] vectorInfo, int chunkIndex,
-      KeyStructureInfo restructuringInfo) {
+  public int fillVector(int[] filteredRowId, ColumnVectorInfo[] vectorInfo, int chunkIndex) {
     throw new UnsupportedOperationException("internal error");
   }
 

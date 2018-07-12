@@ -401,6 +401,8 @@
                 <exclude>**/*SparkUnknownExpression*.class</exclude>
                 <exclude>**/org/apache/carbondata/cluster/sdv/generated/*</exclude>
                 <exclude>**/org.apache.carbondata.cluster.sdv.generated.*</exclude>
+                <exclude>**/org.apache.spark.sql.test.*</exclude>
+                <exclude>**/org.apache.carbondata.format.*</exclude>
               </excludes>
               <includes>
                 <include>**/org.apache.*</include>

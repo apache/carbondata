@@ -40,34 +40,4 @@ public abstract class AbstractKeyGenerator implements KeyGenerator {
     }
     return 0;
   }
-
-  public int compare(byte[] buffer1, int offset1, int length1, byte[] buffer2, int offset2,
-      int length2) {
-    length1 += offset1;
-    length2 += offset2;
-    // Bring WritableComparator code local
-    for (; offset1 < length1 && offset2 < length2; offset1++, offset2++) {
-      int a = (buffer1[offset1] & 0xff);
-      int b = (buffer2[offset2] & 0xff);
-      if (a != b) {
-        return a - b;
-      }
-    }
-    return 0;
-  }
-
-  @Override public void setProperty(Object key, Object value) {
-    /*
-     * No implementation required.
-     */
-  }
-
-  @Override public int getKeySizeInBytes() {
-    return 0;
-  }
-
-  @Override public int getDimCount() {
-    return 0;
-  }
-
 }

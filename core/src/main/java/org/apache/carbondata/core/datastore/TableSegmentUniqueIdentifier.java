@@ -17,11 +17,7 @@
 
 package org.apache.carbondata.core.datastore;
 
-import java.util.List;
-import java.util.Map;
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 
@@ -34,13 +30,7 @@ public class TableSegmentUniqueIdentifier {
    */
   private AbsoluteTableIdentifier absoluteTableIdentifier;
 
-  /**
-   * segment to tableBlockInfo map
-   */
-  Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos;
-
   private String segmentId;
-  private  boolean isSegmentUpdated;
 
   /**
    * Constructor to initialize the class instance
@@ -51,42 +41,6 @@ public class TableSegmentUniqueIdentifier {
       String segmentId) {
     this.absoluteTableIdentifier = absoluteTableIdentifier;
     this.segmentId = segmentId;
-  }
-
-  public TableSegmentUniqueIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier,
-      Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos, String segmentId) {
-    this.absoluteTableIdentifier = absoluteTableIdentifier;
-    this.segmentToTableBlocksInfos = segmentToTableBlocksInfos;
-    this.segmentId = segmentId;
-  }
-
-  /**
-   * returns AbsoluteTableIdentifier
-   * @return
-   */
-  public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
-    return absoluteTableIdentifier;
-  }
-
-  public void setAbsoluteTableIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier) {
-    this.absoluteTableIdentifier = absoluteTableIdentifier;
-  }
-
-  /**
-   *  returns the segment to tableBlockInfo map
-   * @return
-   */
-  public Map<String, List<TableBlockInfo>> getSegmentToTableBlocksInfos() {
-    return segmentToTableBlocksInfos;
-  }
-
-  /**
-   * set the segment to tableBlockInfo map
-   * @param segmentToTableBlocksInfos
-   */
-  public void setSegmentToTableBlocksInfos(
-      Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos) {
-    this.segmentToTableBlocksInfos = segmentToTableBlocksInfos;
   }
 
   public String getSegmentId() {
@@ -104,13 +58,6 @@ public class TableSegmentUniqueIdentifier {
     return carbonTableIdentifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR
             + carbonTableIdentifier.getTableName() + CarbonCommonConstants.UNDERSCORE
             + carbonTableIdentifier.getTableId() + CarbonCommonConstants.FILE_SEPARATOR + segmentId;
-  }
-  public void setIsSegmentUpdated(boolean isSegmentUpdated) {
-    this.isSegmentUpdated = isSegmentUpdated;
-  }
-
-  public boolean isSegmentUpdated() {
-    return isSegmentUpdated;
   }
 
   /**

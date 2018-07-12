@@ -35,7 +35,6 @@ import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -88,10 +87,6 @@ public class CarbonFactDataHandlerModel {
    * local store location
    */
   private String[] storeLocation;
-  /**
-   * flag to check whether use inverted index
-   */
-  private boolean[] isUseInvertedIndex;
 
   /**
    * length of each dimension, including dictionary, nodictioncy, complex dimension
@@ -185,8 +180,6 @@ public class CarbonFactDataHandlerModel {
       int taskExtension, DataMapWriterListener listener) {
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
-    boolean[] isUseInvertedIndex =
-        CarbonDataProcessorUtil.getIsUseInvertedIndex(configuration.getDataFields());
 
     int[] dimLensWithComplex = configuration.getCardinalityFinder().getCardinality();
     if (!configuration.isSortTable()) {
@@ -262,7 +255,6 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setPrimitiveDimLens(simpleDimsLen);
     carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
-    carbonFactDataHandlerModel.setIsUseInvertedIndex(isUseInvertedIndex);
     carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
     carbonFactDataHandlerModel.setComplexDimensionKeyGenerator(
         configuration.createKeyGeneratorForComplexDimension());
@@ -333,13 +325,6 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setMeasureDataType(measureDataTypes);
     CarbonUtil.checkAndCreateFolderWithPermission(carbonDataDirectoryPath);
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
-    List<CarbonDimension> dimensionByTableName = carbonTable.getDimensionByTableName(tableName);
-    boolean[] isUseInvertedIndexes = new boolean[dimensionByTableName.size()];
-    int index = 0;
-    for (CarbonDimension dimension : dimensionByTableName) {
-      isUseInvertedIndexes[index++] = dimension.isUseInvertedIndex();
-    }
-    carbonFactDataHandlerModel.setIsUseInvertedIndex(isUseInvertedIndexes);
     carbonFactDataHandlerModel.setPrimitiveDimLens(segmentProperties.getDimColumnsCardinality());
     carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
 
@@ -528,13 +513,6 @@ public class CarbonFactDataHandlerModel {
     isCompactionFlow = compactionFlow;
   }
 
-  public boolean[] getIsUseInvertedIndex() {
-    return isUseInvertedIndex;
-  }
-
-  public void setIsUseInvertedIndex(boolean[] isUseInvertedIndex) {
-    this.isUseInvertedIndex = isUseInvertedIndex;
-  }
   /**
    *
    * @return segmentProperties
@@ -619,10 +597,6 @@ public class CarbonFactDataHandlerModel {
       }
     }
     return count;
-  }
-
-  public boolean isSortColumn(int columnIndex) {
-    return columnIndex < segmentProperties.getNumberOfSortColumns();
   }
 
   public TableSpec getTableSpec() {

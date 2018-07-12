@@ -155,13 +155,6 @@ public class CarbonTablePath {
   }
 
   /**
-   * Return absolute path of sort index file
-   */
-  public static String getSortIndexFilePath(String tablePath, String columnId) {
-    return getMetadataPath(tablePath) + File.separator + columnId + SORT_INDEX_EXT;
-  }
-
-  /**
    * Return sortindex file path based on specified dictionary path
    */
   public static String getExternalSortIndexFilePath(String dictionaryPath, String columnId) {
@@ -213,20 +206,6 @@ public class CarbonTablePath {
     } else {
       return getTableStatusFilePath(tablePath);
     }
-  }
-
-  /**
-   * Gets absolute path of data file
-   *
-   * @param segmentId           unique partition identifier
-   * @param filePartNo          data file part number
-   * @param factUpdateTimeStamp unique identifier to identify an update
-   * @return absolute path of data file stored in carbon data format
-   */
-  public static String getCarbonDataFilePath(String tablePath, String segmentId, Integer filePartNo,
-      Long taskNo, int batchNo, int bucketNumber, String factUpdateTimeStamp) {
-    return getSegmentPath(tablePath, segmentId) + File.separator + getCarbonDataFileName(
-        filePartNo, taskNo, bucketNumber, batchNo, factUpdateTimeStamp, segmentId);
   }
 
   /**
@@ -282,20 +261,6 @@ public class CarbonTablePath {
         String segmentDir = getSegmentPath(tablePath, segmentId);
         return segmentDir + File.separator + getCarbonIndexFileName(taskId,
             Integer.parseInt(bucketNumber), timeStamp, segmentId);
-    }
-  }
-
-  public static String getCarbonIndexFilePath(String tablePath, String taskId, String segmentId,
-      int batchNo, String bucketNumber, String timeStamp,
-      ColumnarFormatVersion columnarFormatVersion) {
-    switch (columnarFormatVersion) {
-      case V1:
-      case V2:
-        return getCarbonIndexFilePath(tablePath, taskId, segmentId, bucketNumber);
-      default:
-        String segmentDir = getSegmentPath(tablePath, segmentId);
-        return segmentDir + File.separator + getCarbonIndexFileName(Long.parseLong(taskId),
-            Integer.parseInt(bucketNumber), batchNo, timeStamp, segmentId);
     }
   }
 
@@ -358,13 +323,6 @@ public class CarbonTablePath {
 
   // This partition is not used in any code logic, just keep backward compatibility
   public static final String DEPRECATED_PATITION_ID = "0";
-
-  /**
-   * Return true if tablePath exists
-   */
-  public static boolean exists(String tablePath) {
-    return FileFactory.getCarbonFile(tablePath, FileFactory.getFileType(tablePath)).exists();
-  }
 
   public static String getPartitionDir(String tablePath) {
     return getFactDir(tablePath) + File.separator + PARTITION_PREFIX +
@@ -731,14 +689,6 @@ public class CarbonTablePath {
    */
   public static String getLockFilePath(String tablePath, String lockType) {
     return getLockFilesDirPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + lockType;
-  }
-
-  /**
-   * Get the segment lock file according to table path and segment load name
-   */
-  public static String getSegmentLockFilePath(String tablePath, String loadName) {
-    return getLockFilesDirPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR +
-        addSegmentPrefix(loadName) + LockUsage.LOCK;
   }
 
   /**

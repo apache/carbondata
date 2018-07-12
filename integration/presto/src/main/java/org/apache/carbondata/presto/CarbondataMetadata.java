@@ -176,20 +176,18 @@ public class CarbondataMetadata implements ConnectorMetadata {
 
       Type spiType = carbonDataType2SpiMapper(cs);
       columnHandles.put(cs.getColumnName(),
-          new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType,
-              column.getSchemaOrdinal(), column.getKeyOrdinal(), column.getColumnGroupOrdinal(),
-              false, cs.getColumnGroupId(), cs.getColumnUniqueId(), cs.isUseInvertedIndex(),
-              cs.getPrecision(), cs.getScale()));
+          new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType, column.getSchemaOrdinal(),
+              column.getKeyOrdinal(), false,
+              cs.getColumnUniqueId(), cs.isUseInvertedIndex(), cs.getPrecision(), cs.getScale()));
     }
 
     for (CarbonMeasure measure : cb.getMeasureByTableName(tableName)) {
       ColumnSchema cs = measure.getColumnSchema();
       Type spiType = carbonDataType2SpiMapper(cs);
       columnHandles.put(cs.getColumnName(),
-          new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType,
-              cs.getSchemaOrdinal(), measure.getOrdinal(), cs.getColumnGroupId(), true,
-              cs.getColumnGroupId(), cs.getColumnUniqueId(), cs.isUseInvertedIndex(),
-              cs.getPrecision(), cs.getScale()));
+          new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType, cs.getSchemaOrdinal(),
+              measure.getOrdinal(), true,
+              cs.getColumnUniqueId(), cs.isUseInvertedIndex(), cs.getPrecision(), cs.getScale()));
     }
 
     columnHandleMap = columnHandles.build();

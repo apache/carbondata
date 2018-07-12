@@ -59,9 +59,8 @@ public class RangeExpression extends BinaryConditionalExpression {
     return ExpressionType.RANGE;
   }
 
-  @Override
-  public String getString() {
-    return null;
+  @Override public String getString() {
+    return "Range(" + left.getString() + ',' + right.getString() + ')';
   }
 
   @Override

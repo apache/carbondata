@@ -74,10 +74,6 @@ public class TablePageKey {
     }
   }
 
-  public Object getKey() {
-    return this;
-  }
-
   /** update all keys if SORT_COLUMNS option is used when creating table */
   private void finalizeKeys() {
     // If SORT_COLUMNS is used, may need to update start/end keys since the they may
@@ -131,24 +127,12 @@ public class TablePageKey {
     }
   }
 
-  public byte[] getStartKey() {
-    return startKey;
-  }
-
-  public byte[] getEndKey() {
-    return endKey;
-  }
-
   public byte[] getNoDictStartKey() {
     return packedNoDictStartKey;
   }
 
   public byte[] getNoDictEndKey() {
     return packedNoDictEndKey;
-  }
-
-  public int getPageSize() {
-    return pageSize;
   }
 
   public byte[] serializeStartKey() {

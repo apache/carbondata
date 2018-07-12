@@ -89,13 +89,13 @@ public class SegmentPropertiesTest extends TestCase {
     dimensionOrdinalToBlockMapping.put(0, 0);
     dimensionOrdinalToBlockMapping.put(1, 1);
     dimensionOrdinalToBlockMapping.put(2, 2);
-    dimensionOrdinalToBlockMapping.put(3, 2);
-    dimensionOrdinalToBlockMapping.put(4, 3);
-    dimensionOrdinalToBlockMapping.put(5, 4);
-    dimensionOrdinalToBlockMapping.put(6, 4);
-    dimensionOrdinalToBlockMapping.put(7, 4);
-    dimensionOrdinalToBlockMapping.put(8, 5);
-    dimensionOrdinalToBlockMapping.put(9, 6);
+    dimensionOrdinalToBlockMapping.put(3, 3);
+    dimensionOrdinalToBlockMapping.put(4, 4);
+    dimensionOrdinalToBlockMapping.put(5, 5);
+    dimensionOrdinalToBlockMapping.put(6, 6);
+    dimensionOrdinalToBlockMapping.put(7, 7);
+    dimensionOrdinalToBlockMapping.put(8, 8);
+    dimensionOrdinalToBlockMapping.put(9, 9);
     Map<Integer, Integer> dimensionOrdinalToBlockMappingActual =
         blockMetadataInfos.getDimensionOrdinalToChunkMapping();
     assertEquals(dimensionOrdinalToBlockMapping.size(),
@@ -143,7 +143,7 @@ public class SegmentPropertiesTest extends TestCase {
   }
 
   @Test public void testEachColumnValueSizeHasProperValue() {
-    int[] size = { 1, -1, 2, -1, 3 };
+    int[] size = { 1, -1, 1, 1, -1, 1, 1, 1 };
     int[] eachDimColumnValueSize = blockMetadataInfos.getEachDimColumnValueSize();
     boolean isEqual = false;
     for (int i = 0; i < size.length; i++) {
@@ -170,7 +170,6 @@ public class SegmentPropertiesTest extends TestCase {
 
   private ColumnSchema getDimensionColumn1() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataTypes.STRING);
@@ -185,7 +184,6 @@ public class SegmentPropertiesTest extends TestCase {
 
   private ColumnSchema getDimensionColumn2() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI1");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataTypes.STRING);
@@ -199,7 +197,6 @@ public class SegmentPropertiesTest extends TestCase {
 
   private ColumnSchema getDimensionColumn3() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(false);
     dimColumn.setColumnName("IMEI2");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataTypes.STRING);
@@ -208,14 +205,12 @@ public class SegmentPropertiesTest extends TestCase {
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     encodeList.add(Encoding.DICTIONARY);
     dimColumn.setEncodingList(encodeList);
-    dimColumn.setColumnGroup(0);
     dimColumn.setNumberOfChild(0);
     return dimColumn;
   }
 
   private ColumnSchema getDimensionColumn4() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(false);
     dimColumn.setColumnName("IMEI3");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataTypes.STRING);
@@ -225,13 +220,11 @@ public class SegmentPropertiesTest extends TestCase {
     encodeList.add(Encoding.DICTIONARY);
     dimColumn.setEncodingList(encodeList);
     dimColumn.setNumberOfChild(0);
-    dimColumn.setColumnGroup(0);
     return dimColumn;
   }
 
   private ColumnSchema getDimensionColumn5() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI4");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataTypes.STRING);
@@ -245,7 +238,6 @@ public class SegmentPropertiesTest extends TestCase {
 
   private ColumnSchema getDimensionColumn9() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(false);
     dimColumn.setColumnName("IMEI9");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataTypes.STRING);
@@ -254,14 +246,12 @@ public class SegmentPropertiesTest extends TestCase {
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     encodeList.add(Encoding.DICTIONARY);
     dimColumn.setEncodingList(encodeList);
-    dimColumn.setColumnGroup(1);
     dimColumn.setNumberOfChild(0);
     return dimColumn;
   }
 
   private ColumnSchema getDimensionColumn10() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(false);
     dimColumn.setColumnName("IMEI10");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataTypes.STRING);
@@ -271,13 +261,11 @@ public class SegmentPropertiesTest extends TestCase {
     encodeList.add(Encoding.DICTIONARY);
     dimColumn.setEncodingList(encodeList);
     dimColumn.setNumberOfChild(0);
-    dimColumn.setColumnGroup(1);
     return dimColumn;
   }
 
   private ColumnSchema getDimensionColumn11() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(false);
     dimColumn.setColumnName("IMEI11");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataTypes.STRING);
@@ -287,13 +275,11 @@ public class SegmentPropertiesTest extends TestCase {
     encodeList.add(Encoding.DICTIONARY);
     dimColumn.setEncodingList(encodeList);
     dimColumn.setNumberOfChild(0);
-    dimColumn.setColumnGroup(1);
     return dimColumn;
   }
 
   private ColumnSchema getDimensionColumn6() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI5");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataTypes.createDefaultArrayType());
@@ -308,7 +294,6 @@ public class SegmentPropertiesTest extends TestCase {
 
   private ColumnSchema getDimensionColumn7() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI6");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataTypes.STRING);

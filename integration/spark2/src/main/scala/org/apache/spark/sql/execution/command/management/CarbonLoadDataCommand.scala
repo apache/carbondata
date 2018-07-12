@@ -236,12 +236,7 @@ case class CarbonLoadDataCommand(
         val loadTablePreExecutionEvent: LoadTablePreExecutionEvent =
           new LoadTablePreExecutionEvent(
             table.getCarbonTableIdentifier,
-            carbonLoadModel,
-            factPath,
-            dataFrame.isDefined,
-            optionsFinal,
-            options.asJava,
-            isOverwriteTable)
+            carbonLoadModel)
         operationContext.setProperty("isOverwrite", isOverwriteTable)
         OperationListenerBus.getInstance.fireEvent(loadTablePreExecutionEvent, operationContext)
         // Add pre event listener for index datamap

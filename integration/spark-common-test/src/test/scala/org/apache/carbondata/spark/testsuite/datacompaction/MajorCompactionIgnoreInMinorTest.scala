@@ -21,13 +21,9 @@ import scala.collection.JavaConverters._
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.block.SegmentTaskIndexWrapper
-import org.apache.carbondata.core.datastore.TableSegmentUniqueIdentifier
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.hadoop.CacheClient
 import org.apache.spark.sql.test.util.QueryTest
 
 /**
@@ -138,11 +134,6 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     assert(segments.contains("2.1"))
     assert(!segments.contains("2"))
     assert(!segments.contains("3"))
-    val cacheClient = new CacheClient()
-    val segmentIdentifier = new TableSegmentUniqueIdentifier(absoluteTableIdentifier, "2")
-    val wrapper: SegmentTaskIndexWrapper = cacheClient.getSegmentAccessClient.
-      getIfPresent(segmentIdentifier)
-    assert(null == wrapper)
   }
 
   /**

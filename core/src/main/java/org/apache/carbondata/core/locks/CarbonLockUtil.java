@@ -128,9 +128,7 @@ public class CarbonLockUtil {
 
             @Override public boolean accept(CarbonFile pathName) {
               if (CarbonTablePath.isSegmentLockFilePath(pathName.getName())) {
-                if ((currTime - pathName.getLastModifiedTime()) > segmentLockFilesPreservTime) {
-                  return true;
-                }
+                return (currTime - pathName.getLastModifiedTime()) > segmentLockFilesPreservTime;
               }
               return false;
             }

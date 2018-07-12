@@ -30,7 +30,6 @@ public final class DirectDictionaryKeyGeneratorFactory {
    * private constructor
    */
   private DirectDictionaryKeyGeneratorFactory() {
-
   }
 
   /**

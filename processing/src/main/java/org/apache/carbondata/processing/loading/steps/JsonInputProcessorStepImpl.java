@@ -21,7 +21,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
@@ -70,10 +69,6 @@ public class JsonInputProcessorStepImpl extends AbstractDataLoadProcessorStep {
               batchSize, false, null, rowCounter, isRawDataRequired);
     }
     return outIterators;
-  }
-
-  @Override protected CarbonRow processRow(CarbonRow row) {
-    return null;
   }
 
   @Override public void close() {

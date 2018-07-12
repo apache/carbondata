@@ -44,5 +44,4 @@ public class TrueConditionalResolverImpl extends ConditionalFilterResolverImpl {
   @Override public FilterExecuterType getFilterExecuterType() {
     return FilterExecuterType.TRUE;
   }
-
 }

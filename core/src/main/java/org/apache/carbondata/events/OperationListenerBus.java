@@ -68,40 +68,6 @@ public class OperationListenerBus {
   }
 
   /**
-   * Removes a given map from the event. This method is thread-safe and can be called
-   * in any thread.
-   *
-   * @param eventType
-   */
-  public void removeEvent(String eventType) {
-    eventMap.remove(eventType);
-  }
-
-  /**
-   * Removes a given listener for an event. This method is thread-safe and can be called
-   * in any thread.
-   *
-   * @param eventType
-   * @param operationEventListener
-   */
-  public void removeListener(String eventType, OperationEventListener operationEventListener) {
-    List<OperationEventListener> operationEventListeners = eventMap.get(eventType);
-    if (null != operationEventListeners) {
-      operationEventListeners.remove(operationEventListener);
-    }
-  }
-
-  /**
-   * Notify all registered listeners on occurrence of an event
-   * Should be used for stateless events which cannot be mapped to a operation
-   *
-   * @param event
-   */
-  public void fireEvent(Event event) throws Exception {
-    fireEvent(event, new OperationContext());
-  }
-
-  /**
    * Notify all registered listeners on occurrence of an event
    *
    * @param event

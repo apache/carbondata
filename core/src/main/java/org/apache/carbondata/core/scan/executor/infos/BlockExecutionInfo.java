@@ -121,11 +121,6 @@ public class BlockExecutionInfo {
   private int[] eachColumnValueSize;
 
   /**
-   * column group block index in file to key structure info mapping
-   */
-  private Map<Integer, KeyStructureInfo> columnGroupToKeyStructureInfo;
-
-  /**
    * filter tree to execute the filter
    */
   private FilterExecuter filterExecuterTree;
@@ -423,21 +418,6 @@ public class BlockExecutionInfo {
    */
   public void setNoDictionaryColumnChunkIndexes(int[] noDictionaryColumnChunkIndexes) {
     this.noDictionaryColumnChunkIndexes = noDictionaryColumnChunkIndexes;
-  }
-
-  /**
-   * @return the columnGroupToKeyStructureInfo
-   */
-  public Map<Integer, KeyStructureInfo> getColumnGroupToKeyStructureInfo() {
-    return columnGroupToKeyStructureInfo;
-  }
-
-  /**
-   * @param columnGroupToKeyStructureInfo the columnGroupToKeyStructureInfo to set
-   */
-  public void setColumnGroupToKeyStructureInfo(
-      Map<Integer, KeyStructureInfo> columnGroupToKeyStructureInfo) {
-    this.columnGroupToKeyStructureInfo = columnGroupToKeyStructureInfo;
   }
 
   public boolean isRawRecordDetailQuery() {

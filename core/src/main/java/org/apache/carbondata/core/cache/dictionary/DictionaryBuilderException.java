@@ -39,23 +39,5 @@ public class DictionaryBuilderException extends IOException {
     super(msg);
     this.msg = msg;
   }
-
-  /**
-   * getLocalizedMessage
-   */
-  @Override public String getLocalizedMessage() {
-    return super.getLocalizedMessage();
-  }
-
-  /**
-   * getMessage
-   */
-  public String getMessage() {
-    return this.msg;
-  }
-
-  @Override public String toString() {
-    return "DictionaryBuilderException: " + msg;
-  }
 }
 

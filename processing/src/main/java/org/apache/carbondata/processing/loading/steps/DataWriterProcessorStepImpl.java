@@ -42,7 +42,6 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
-import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
@@ -76,10 +75,6 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     super(configuration, null);
     this.localDictionaryGeneratorMap =
         CarbonUtil.getLocalDictionaryModel(configuration.getTableSpec().getCarbonTable());
-  }
-
-  @Override public DataField[] getOutput() {
-    return child.getOutput();
   }
 
   @Override public void initialize() throws IOException {
@@ -187,7 +182,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       if (rowsNotExist) {
         rowsNotExist = false;
         dataHandler = CarbonFactHandlerFactory
-            .createCarbonFactHandler(model, CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
+            .createCarbonFactHandler(model);
         dataHandler.initialise();
       }
       processBatch(insideRangeIterator.next(), dataHandler);
@@ -258,10 +253,6 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       throw new CarbonDataLoadingException("unable to generate the mdkey", e);
     }
     rowCounter.getAndAdd(1);
-  }
-
-  @Override protected CarbonRow processRow(CarbonRow row) {
-    return null;
   }
 
   @Override public void close() {

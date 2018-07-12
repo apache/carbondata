@@ -438,8 +438,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
             tempStoreLocation, carbonStoreLocation);
     carbonFactDataHandlerModel.setSegmentId(carbonLoadModel.getSegmentId());
     setDataFileAttributesInModel(carbonLoadModel, compactionType, carbonFactDataHandlerModel);
-    dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(carbonFactDataHandlerModel,
-        CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
+    dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(carbonFactDataHandlerModel);
     try {
       dataHandler.initialise();
     } catch (CarbonDataWriterException e) {

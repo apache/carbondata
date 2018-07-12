@@ -183,7 +183,6 @@ public class TableSchemaBuilder {
       // child column should not be counted for schema ordinal
       newColumn.setSchemaOrdinal(-1);
     }
-    newColumn.setColumnar(true);
 
     // For NonTransactionalTable, multiple sdk writer output with same column name can be placed in
     // single folder for query.
