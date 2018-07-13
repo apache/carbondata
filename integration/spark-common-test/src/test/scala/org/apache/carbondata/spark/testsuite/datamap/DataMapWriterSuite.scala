@@ -74,7 +74,7 @@ class C2DataMapFactory(
    * delete datamap of the segment
    */
   override def deleteDatamapData(segment: Segment): Unit = {
-    ???
+
   }
 
   /**
