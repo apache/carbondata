@@ -20,13 +20,12 @@ package org.apache.spark.sql.hive
 
 import java.net.URI
 
+import org.apache.spark.sql.{AnalysisException, Dataset, Row, SaveMode, SparkSession}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType, CatalogUtils}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{AlterTableRecoverPartitionsCommand, RunnableCommand}
 import org.apache.spark.sql.execution.datasources.{DataSource, HadoopFsRelation}
 import org.apache.spark.sql.sources.BaseRelation
-import org.apache.spark.sql.{AnalysisException, Dataset, Row, SaveMode, SparkSession}
-import org.apache.spark.util.CarbonReflectionUtils
 
 /**
  * Create table 'using carbondata' and insert the query result into it.
@@ -113,14 +112,7 @@ case class CreateCarbonSourceTableAsSelectCommand(
       })
 
     try {
-      val physicalPlan = session.sessionState.executePlan(data).executedPlan
-      CarbonReflectionUtils.invokewriteAndReadMethod(dataSource,
-        Dataset.ofRows(session, query),
-        data,
-        session,
-        mode,
-        query,
-        physicalPlan)
+      dataSource.writeAndRead(mode, Dataset.ofRows(session, query))
     } catch {
       case ex: AnalysisException =>
         logError(s"Failed to write to table ${ table.identifier.unquotedString }", ex)

@@ -32,7 +32,7 @@ import org.apache.spark.sql.execution.command.mutation.CarbonProjectForDeleteCom
 import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, FileFormat, HadoopFsRelation, LogicalRelation, SparkCarbonTableFormat}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CarbonException
-import org.apache.spark.util.{CarbonReflectionUtils, SparkUtil}
+import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
@@ -56,9 +56,9 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
 
       val projList = Seq(UnresolvedAlias(UnresolvedStar(alias.map(Seq(_)))), tupleId)
 
-      val tableRelation = if (SparkUtil.isSparkVersionEqualToX("2.1")) {
+      val tableRelation = if (SPARK_VERSION.startsWith("2.1")) {
         relation
-      } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+      } else if (SPARK_VERSION.startsWith("2.2")) {
         alias match {
           case Some(_) =>
             CarbonReflectionUtils.getSubqueryAlias(
@@ -171,9 +171,9 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
 
         val projList = Seq(UnresolvedAlias(UnresolvedStar(alias.map(Seq(_)))), tupleId)
         // include tuple id in subquery
-        if (SparkUtil.isSparkVersionEqualToX("2.1")) {
+        if (SPARK_VERSION.startsWith("2.1")) {
           Project(projList, relation)
-        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+        } else if (SPARK_VERSION.startsWith("2.2")) {
           alias match {
             case Some(_) =>
               val subqueryAlias = CarbonReflectionUtils.getSubqueryAlias(
@@ -244,13 +244,14 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
           case attr => attr
         }
       }
+      val version = SPARK_VERSION
       val newChild: LogicalPlan = if (newChildOutput == child.output) {
-        if (SparkUtil.isSparkVersionEqualToX("2.1")) {
+        if (version.startsWith("2.1")) {
           CarbonReflectionUtils.getField("child", p).asInstanceOf[LogicalPlan]
-        } else if (SparkUtil.isSparkVersionEqualToX("2.2")) {
+        } else if (version.startsWith("2.2")) {
           CarbonReflectionUtils.getField("query", p).asInstanceOf[LogicalPlan]
         } else {
-          throw new UnsupportedOperationException(s"Spark version $SPARK_VERSION is not supported")
+          throw new UnsupportedOperationException(s"Spark version $version is not supported")
         }
       } else {
         Project(newChildOutput, child)

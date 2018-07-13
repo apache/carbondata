@@ -21,6 +21,7 @@ import java.io.File
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession.Builder
 import org.apache.spark.sql.profiler.Profiler
 import org.apache.spark.util.Utils
@@ -135,7 +136,12 @@ class CarbonSessionBuilder(builder: Builder) {
       // Register a successfully instantiated context to the singleton. This should be at the
       // end of the class definition so that the singleton is updated only if there is no
       // exception in the construction of the instance.
-      CarbonToSparkAdapater.addSparkListener(sparkContext)
+      sparkContext.addSparkListener(new SparkListener {
+        override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
+          SparkSession.setDefaultSession(null)
+          SparkSession.sqlListener.set(null)
+        }
+      })
       session.streams.addListener(new CarbonStreamingQueryListener(session))
     }
     session

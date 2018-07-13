@@ -34,7 +34,6 @@ import org.apache.spark.sql.optimizer.{CarbonDecoderRelation, CarbonFilters}
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
-import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -47,7 +46,6 @@ import org.apache.carbondata.datamap.{TextMatch, TextMatchLimit, TextMatchMaxDoc
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.apache.carbondata.spark.util.CarbonScalaUtil
-
 
 /**
  * Carbon specific optimization for late decode (convert dictionary key to value as late as
@@ -164,14 +162,11 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       val updatedPartitionFilters = partitionKeyFilters.map { exp =>
         exp.transform {
           case attr: AttributeReference =>
-            CarbonToSparkAdapater.createAttributeReference(
+            AttributeReference(
               attr.name.toLowerCase,
               attr.dataType,
               attr.nullable,
-              attr.metadata,
-              attr.exprId,
-              attr.qualifier,
-              attr)
+              attr.metadata)(attr.exprId, attr.qualifier, attr.isGenerated)
         }
       }
       partitions =
@@ -228,7 +223,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       }
     }
 
-    val (unhandledPredicates, pushedFilters, handledFilters ) =
+    val (unhandledPredicates, pushedFilters) =
       selectFilters(relation.relation, candidatePredicates)
 
     // A set of column attributes that are only referenced by pushed down filters.  We can eliminate
@@ -313,7 +308,6 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         scanBuilder,
         candidatePredicates,
         pushedFilters,
-        handledFilters,
         metadata,
         needDecoder,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]])
@@ -350,7 +344,6 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         scanBuilder,
         candidatePredicates,
         pushedFilters,
-        handledFilters,
         metadata,
         needDecoder,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]])
@@ -365,10 +358,9 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       output: Seq[Attribute],
       partitions: Seq[PartitionSpec],
       scanBuilder: (Seq[Attribute], Seq[Expression], Seq[Filter],
-        ArrayBuffer[AttributeReference], Seq[PartitionSpec])
-        => RDD[InternalRow],
+        ArrayBuffer[AttributeReference], Seq[PartitionSpec]) => RDD[InternalRow],
       candidatePredicates: Seq[Expression],
-      pushedFilters: Seq[Filter], handledFilters: Seq[Filter],
+      pushedFilters: Seq[Filter],
       metadata: Map[String, String],
       needDecoder: ArrayBuffer[AttributeReference],
       updateRequestedColumns: Seq[Attribute]): DataSourceScanExec = {
@@ -387,15 +379,18 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         metadata,
         relation.catalogTable.map(_.identifier), relation)
     } else {
-      val partition = getPartitioning(table.carbonTable, updateRequestedColumns)
-      val rdd = scanBuilder(updateRequestedColumns, candidatePredicates,
-        pushedFilters, needDecoder, partitions)
-      CarbonReflectionUtils.getRowDataSourceScanExecObj(relation, output,
-        pushedFilters, handledFilters,
-        rdd, partition, metadata)
+      RowDataSourceScanExec(output,
+        scanBuilder(updateRequestedColumns,
+          candidatePredicates,
+          pushedFilters,
+          needDecoder,
+          partitions),
+        relation.relation,
+        getPartitioning(table.carbonTable, updateRequestedColumns),
+        metadata,
+        relation.catalogTable.map(_.identifier))
     }
   }
-
 
   def updateRequestedColumnsFunc(requestedColumns: Seq[Expression],
       relation: CarbonDatasourceHadoopRelation,
@@ -474,7 +469,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
   protected[sql] def selectFilters(
       relation: BaseRelation,
-      predicates: Seq[Expression]): (Seq[Expression], Seq[Filter], Seq[Filter]) = {
+      predicates: Seq[Expression]): (Seq[Expression], Seq[Filter]) = {
 
     // In case of ComplexType dataTypes no filters should be pushed down. IsNotNull is being
     // explicitly added by spark and pushed. That also has to be handled and pushed back to
@@ -539,7 +534,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     // a filter to every row or not.
     val (_, translatedFilters) = translated.unzip
 
-    (unrecognizedPredicates ++ unhandledPredicates, translatedFilters, handledFilters)
+    (unrecognizedPredicates ++ unhandledPredicates, translatedFilters)
   }
 
   /**

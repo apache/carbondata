@@ -127,7 +127,7 @@ class CarbonAppendableStreamSink(
         className = sparkSession.sessionState.conf.streamingFileCommitProtocolClass,
         jobId = batchId.toString,
         outputPath = fileLogPath,
-        false)
+        isAppend = false)
 
       committer match {
         case manifestCommitter: ManifestFileCommitProtocol =>

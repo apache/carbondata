@@ -19,7 +19,6 @@ package org.apache.spark.sql.execution.strategy
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, UnresolvedRelation}
-import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command._
@@ -39,17 +38,9 @@ import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.util.CarbonProperties
 
-  /**
-   * Carbon strategies for ddl commands
-   * CreateDataSourceTableAsSelectCommand class has extra argument in
-   * 2.3, so need to add wrapper to match the case
-   */
-object MatchCreateDataSourceTable {
-  def unapply(plan: LogicalPlan): Option[(CatalogTable, SaveMode, LogicalPlan)] = plan match {
-    case t: CreateDataSourceTableAsSelectCommand => Some(t.table, t.mode, t.query)
-    case _ => None
-  }
-}
+/**
+ * Carbon strategies for ddl commands
+ */
 
 class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
   val LOGGER: LogService =
@@ -238,7 +229,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         val cmd =
           CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists = mode == SaveMode.Ignore)
         ExecutedCommandExec(cmd) :: Nil
-      case MatchCreateDataSourceTable(tableDesc, mode, query)
+      case cmd@CreateDataSourceTableAsSelectCommand(tableDesc, mode, query)
         if tableDesc.provider.get != DDLUtils.HIVE_PROVIDER
            && (tableDesc.provider.get.equals("org.apache.spark.sql.CarbonSource")
                || tableDesc.provider.get.equalsIgnoreCase("carbondata")) =>
