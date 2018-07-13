@@ -95,6 +95,8 @@ case class CarbonCreateDataMapCommand(
     // If it is index datamap, check whether the column has datamap created already
     dataMapProvider match {
       case provider: IndexDataMapProvider =>
+        val isBloomFilter = DataMapClassProvider.BLOOMFILTER.getShortName
+          .equalsIgnoreCase(dmProviderName)
         val datamaps = DataMapStoreManager.getInstance.getAllDataMap(mainTable).asScala
         val thisDmProviderName =
           dataMapProvider.asInstanceOf[IndexDataMapProvider].getDataMapSchema.getProviderName
@@ -109,6 +111,14 @@ case class CarbonCreateDataMapCommand(
             throw new MalformedDataMapCommandException(String.format(
               "column '%s' already has %s index datamap created",
               column.getColName, thisDmProviderName))
+          } else if (isBloomFilter) {
+            // if datamap provider is bloomfilter,the index column datatype cannot be complex type
+            if (column.isComplex) {
+              throw new MalformedDataMapCommandException(
+                s"BloomFilter datamap does not support complex datatype column: ${
+                  column.getColName
+                }")
+            }
           }
         }
 
