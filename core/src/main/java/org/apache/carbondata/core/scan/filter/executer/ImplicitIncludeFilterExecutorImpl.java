@@ -20,6 +20,7 @@ package org.apache.carbondata.core.scan.filter.executer;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
@@ -72,9 +73,23 @@ public class ImplicitIncludeFilterExecutorImpl
   @Override
   public BitSet isFilterValuesPresentInBlockOrBlocklet(byte[][] maxValue, byte[][] minValue,
       String uniqueBlockPath) {
+    uniqueBlockPath = uniqueBlockPath.replaceAll("\\\\", "/");
     BitSet bitSet = new BitSet(1);
     boolean isScanRequired = false;
-    String shortBlockId = CarbonTablePath.getShortBlockId(uniqueBlockPath);
+    String shortBlockId = "";
+    // in case of non flat folder structure, we need to check whether the path has Part0/Segment_
+    if (uniqueBlockPath.matches("(.*)Part0/Segment_[0-9]*/(.*)")) {
+      shortBlockId = CarbonTablePath.getShortBlockId(uniqueBlockPath);
+    } else {
+      // when parent table has flat folder structure, need to get the segmentId from the carbondata
+      // file name and form the shortBlockId for proper pruning
+      String segmentId = uniqueBlockPath.substring(uniqueBlockPath.lastIndexOf("/part") + 1);
+      segmentId = Character.toString(segmentId.substring(segmentId.lastIndexOf("-") - 1).charAt(0));
+      uniqueBlockPath = "Part0" + CarbonCommonConstants.FILE_SEPARATOR + segmentId
+          + CarbonCommonConstants.FILE_SEPARATOR + uniqueBlockPath
+          .substring(uniqueBlockPath.lastIndexOf("/part") + 1);
+      shortBlockId = CarbonTablePath.getShortBlockId(uniqueBlockPath);
+    }
     if (uniqueBlockPath.endsWith(".carbondata")) {
       if (dimColumnEvaluatorInfo.getFilterValues().getImplicitDriverColumnFilterList()
           .contains(shortBlockId)) {
