@@ -56,6 +56,9 @@ public class JsonRowParser implements RowParser {
       Map<String, Object> jsonNodeMap =
           objectMapper.readValue(jsonString, new TypeReference<Map<String, Object>>() {
           });
+      if (jsonNodeMap == null) {
+        return null;
+      }
       return jsonToCarbonRecord(jsonNodeMap, dataFields);
     } catch (IOException e) {
       throw new IOException("Failed to parse Json String: " + e.getMessage());
@@ -66,9 +69,7 @@ public class JsonRowParser implements RowParser {
     List<Object> fields = new ArrayList<>();
     for (DataField dataField : dataFields) {
       Object field = jsonToCarbonObject(jsonNodeMap, dataField.getColumn());
-      if (field != null) {
-        fields.add(field);
-      }
+      fields.add(field);
     }
     // use this array object to form carbonRow
     return fields.toArray();
@@ -78,12 +79,16 @@ public class JsonRowParser implements RowParser {
     DataType type = column.getDataType();
     if (DataTypes.isArrayType(type)) {
       CarbonDimension carbonDimension = (CarbonDimension) column;
-      int size = carbonDimension.getNumberOfChild();
       ArrayList array = (ArrayList) jsonNodeMap.get(extractChildColumnName(column));
+      if ((array == null) || (array.size() == 0)) {
+        return null;
+      }
       // stored as array in carbonObject
-      Object[] arrayChildObjects = new Object[size];
-      for (int i = 0; i < size; i++) {
-        CarbonDimension childCol = carbonDimension.getListOfChildDimensions().get(i);
+      Object[] arrayChildObjects = new Object[array.size()];
+      for (int i = 0; i < array.size(); i++) {
+        // array column will have only one child, hence get(0).
+        // But data can have n elements, hence the loop.
+        CarbonDimension childCol = carbonDimension.getListOfChildDimensions().get(0);
         arrayChildObjects[i] = jsonChildElementToCarbonChildElement(array.get(i), childCol);
       }
       return new ArrayObject(arrayChildObjects);
@@ -92,33 +97,45 @@ public class JsonRowParser implements RowParser {
       int size = carbonDimension.getNumberOfChild();
       Map<String, Object> jsonMap =
           (Map<String, Object>) jsonNodeMap.get(extractChildColumnName(column));
+      if (jsonMap == null) {
+        return null;
+      }
       Object[] structChildObjects = new Object[size];
       for (int i = 0; i < size; i++) {
         CarbonDimension childCol = carbonDimension.getListOfChildDimensions().get(i);
         Object childObject =
             jsonChildElementToCarbonChildElement(jsonMap.get(extractChildColumnName(childCol)),
                 childCol);
-        if (childObject != null) {
-          structChildObjects[i] = childObject;
-        }
+        structChildObjects[i] = childObject;
       }
       return new StructObject(structChildObjects);
     } else {
       // primitive type
+      if (jsonNodeMap.get(extractChildColumnName(column)) == null) {
+        return null;
+      }
       return jsonNodeMap.get(extractChildColumnName(column)).toString();
     }
   }
 
   private Object jsonChildElementToCarbonChildElement(Object childObject,
       CarbonDimension column) {
+    if (childObject == null) {
+      return null;
+    }
     DataType type = column.getDataType();
     if (DataTypes.isArrayType(type)) {
-      int size = column.getNumberOfChild();
       ArrayList array = (ArrayList) childObject;
+      if (array.size() == 0) {
+        // handling empty array
+        return null;
+      }
       // stored as array in carbonObject
-      Object[] arrayChildObjects = new Object[size];
-      for (int i = 0; i < size; i++) {
-        CarbonDimension childCol = column.getListOfChildDimensions().get(i);
+      Object[] arrayChildObjects = new Object[array.size()];
+      for (int i = 0; i < array.size(); i++) {
+        // array column will have only one child, hence get(0).
+        // But data can have n elements, hence the loop.
+        CarbonDimension childCol = column.getListOfChildDimensions().get(0);
         arrayChildObjects[i] = jsonChildElementToCarbonChildElement(array.get(i), childCol);
       }
       return new ArrayObject(arrayChildObjects);
@@ -130,9 +147,7 @@ public class JsonRowParser implements RowParser {
         CarbonDimension childCol = column.getListOfChildDimensions().get(i);
         Object child = jsonChildElementToCarbonChildElement(
             childFieldsMap.get(extractChildColumnName(childCol)), childCol);
-        if (child != null) {
-          structChildObjects[i] = child;
-        }
+        structChildObjects[i] = child;
       }
       return new StructObject(structChildObjects);
     } else {
@@ -140,6 +155,7 @@ public class JsonRowParser implements RowParser {
       return childObject.toString();
     }
   }
+
   private static String extractChildColumnName(CarbonColumn column) {
     String columnName = column.getColName();
     if (columnName.contains(".")) {
@@ -153,5 +169,4 @@ public class JsonRowParser implements RowParser {
     }
     return columnName;
   }
-
 }
