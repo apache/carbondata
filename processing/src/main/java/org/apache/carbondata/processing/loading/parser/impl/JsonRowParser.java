@@ -97,7 +97,7 @@ public class JsonRowParser implements RowParser {
       int size = carbonDimension.getNumberOfChild();
       Map<String, Object> jsonMap =
           (Map<String, Object>) jsonNodeMap.get(extractChildColumnName(column));
-      if ((jsonMap == null) || (jsonMap.size() == 0)) {
+      if (jsonMap == null) {
         return null;
       }
       Object[] structChildObjects = new Object[size];
@@ -141,10 +141,6 @@ public class JsonRowParser implements RowParser {
       return new ArrayObject(arrayChildObjects);
     } else if (DataTypes.isStructType(type)) {
       Map<String, Object> childFieldsMap = (Map<String, Object>) childObject;
-      if (childFieldsMap.size() == 0) {
-        // handling empty struct
-        return null;
-      }
       int size = column.getNumberOfChild();
       Object[] structChildObjects = new Object[size];
       for (int i = 0; i < size; i++) {
