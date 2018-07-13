@@ -24,6 +24,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
@@ -246,15 +247,15 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     val dataframe = sql("select getTupleId() as tupleId from iud_db.dest_tuple")
     val listOfTupleId = dataframe.collect().map(df => df.get(0).toString).sorted
     assert(
-      listOfTupleId(0).startsWith("0/0/0-0_batchno0-0-0-") && listOfTupleId(0).endsWith("/0/0/0"))
+      listOfTupleId(0).contains("0/0/0-0_batchno0-0-0-") && listOfTupleId(0).endsWith("/0/0/0"))
     assert(
-      listOfTupleId(1).startsWith("0/0/0-0_batchno0-0-0-") && listOfTupleId(1).endsWith("/0/0/1"))
+      listOfTupleId(1).contains("0/0/0-0_batchno0-0-0-") && listOfTupleId(1).endsWith("/0/0/1"))
     assert(
-      listOfTupleId(2).startsWith("0/0/0-0_batchno0-0-0-") && listOfTupleId(2).endsWith("/0/0/2"))
+      listOfTupleId(2).contains("0/0/0-0_batchno0-0-0-") && listOfTupleId(2).endsWith("/0/0/2"))
     assert(
-      listOfTupleId(3).startsWith("0/0/0-0_batchno0-0-0-") && listOfTupleId(3).endsWith("/0/0/3"))
+      listOfTupleId(3).contains("0/0/0-0_batchno0-0-0-") && listOfTupleId(3).endsWith("/0/0/3"))
     assert(
-      listOfTupleId(4).startsWith("0/0/0-0_batchno0-0-0-") && listOfTupleId(4).endsWith("/0/0/4"))
+      listOfTupleId(4).contains("0/0/0-0_batchno0-0-0-") && listOfTupleId(4).endsWith("/0/0/4"))
 
     val carbonTable_part = CarbonEnv.getInstance(Spark2TestQueryExecutor.spark).carbonMetastore
       .lookupRelation(Option("iud_db"), "dest_tuple_part")(Spark2TestQueryExecutor.spark)
@@ -281,15 +282,16 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       carbonTable.isTransactionalTable,
       carbonTable.isHivePartitionTable)
     assert(blockId_part.startsWith("Part0/Segment_0/part-0-100100000100001_batchno0-0-0-"))
-
+    val segment = Segment.getSegment("0", carbonTable.getTablePath)
     val tableBlockPath = CarbonUpdateUtil
       .getTableBlockPath(listOfTupleId(0),
         carbonTable.getTablePath,
-        carbonTable.isHivePartitionTable)
+        segment.getSegmentFileName != null)
+    val segment_part = Segment.getSegment("0", carbonTable_part.getTablePath)
     val tableBl0ckPath_part = CarbonUpdateUtil
       .getTableBlockPath(listOfTupleId_part(0),
         carbonTable_part.getTablePath,
-        carbonTable_part.isHivePartitionTable)
+        segment_part.getSegmentFileName != null)
     assert(tableBl0ckPath_part.endsWith("iud_db.db/dest_tuple_part/c3=aa"))
     assert(tableBlockPath.endsWith("iud_db.db/dest_tuple/Fact/Part0/Segment_0"))
 

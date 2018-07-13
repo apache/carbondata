@@ -759,6 +759,19 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists test_dm_index")
   }
 
+  test("flat folder carbon table without alias in set columns with mulitple loads") {
+    sql("""drop table if exists iud.dest33_flat""")
+    sql("""create table iud.dest33_part (c1 string,c2 int,c5 string, c3 string) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('flat_folder'='true')""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.dest33_part""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.dest33_part""")
+    sql("""update iud.dest33_part d set (c3,c5 ) = (select s.c33 ,s.c55  from iud.source2 s where d.c1 = s.c11) where d.c1 = 'a'""").show()
+    checkAnswer(
+      sql("""select c3,c5 from iud.dest33_part where c1='a'"""),
+      Seq(Row("MGM","Disco"),Row("MGM","Disco"))
+    )
+    sql("""drop table if exists iud.dest33_part""")
+  }
+
   override def afterAll {
     sql("use default")
     sql("drop database  if exists iud cascade")
