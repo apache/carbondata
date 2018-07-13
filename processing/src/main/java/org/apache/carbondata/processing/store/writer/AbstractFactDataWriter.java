@@ -422,6 +422,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
       for (int i = 0; i < executorServiceSubmitList.size(); i++) {
         executorServiceSubmitList.get(i).get();
       }
+      listener = null;
     } catch (InterruptedException | ExecutionException | IOException e) {
       throw new CarbonDataWriterException(e);
     }

@@ -52,7 +52,6 @@ public class BloomDataMapBuilder extends AbstractBloomDataMapWriter implements D
       currentBlockletId = blockletId;
     }
     // for each indexed column, add the data to bloom filter
-    List<CarbonColumn> indexColumns = getIndexColumns();
     for (int i = 0; i < indexColumns.size(); i++) {
       Object data = values[i];
       addValue2BloomIndex(i, data);

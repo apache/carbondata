@@ -431,6 +431,7 @@ public final class DataMapStoreManager {
         }
       }
     }
+    allDataMaps.remove(tableUniqName);
   }
 
   /**
@@ -460,6 +461,7 @@ public final class DataMapStoreManager {
         }
         i++;
       }
+      allDataMaps.put(tableUniqueName, tableIndices);
     }
   }
 
