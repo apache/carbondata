@@ -35,20 +35,16 @@ case class CarbonGetTableDetailCommand(
   extends DataCommand {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    val storePath = CarbonProperties.getStorePath
     if (tableNames.isDefined) {
       tableNames.get.map { tablename =>
-        val absoluteTableIdentifier =
-          AbsoluteTableIdentifier.from(storePath, databaseName.toLowerCase, tablename.toLowerCase)
-        val carbonTableIdentifier = absoluteTableIdentifier.getCarbonTableIdentifier
-        val carbonTable = CarbonEnv.getCarbonTable(Option(carbonTableIdentifier.getDatabaseName),
-          carbonTableIdentifier.getTableName)(sparkSession)
+        val carbonTable = CarbonEnv.getCarbonTable(Option(databaseName),
+          tablename)(sparkSession)
 
         Row(
           tablename,
           carbonTable.size,
-          SegmentStatusManager.getTableStatusLastModifiedTime(absoluteTableIdentifier)
-        )
+          SegmentStatusManager
+            .getTableStatusLastModifiedTime(carbonTable.getAbsoluteTableIdentifier))
       }
     } else {
       Seq.empty[Row]

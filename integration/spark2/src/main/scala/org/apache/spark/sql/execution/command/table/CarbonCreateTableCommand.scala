@@ -81,7 +81,8 @@ case class CarbonCreateTableCommand(
         throw new UnsupportedOperationException("streaming is not supported with s3 store")
       }
       tableInfo.setTablePath(tablePath)
-      val tableIdentifier = AbsoluteTableIdentifier.from(tablePath, dbName, tableName)
+      val tableIdentifier = AbsoluteTableIdentifier
+        .from(tablePath, dbName, tableName, tableInfo.getFactTable.getTableId)
 
       // Add validation for sort scope when create table
       val sortScope = tableInfo.getFactTable.getTableProperties.asScala
