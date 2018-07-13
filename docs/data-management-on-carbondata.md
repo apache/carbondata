@@ -52,6 +52,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      ```
      TBLPROPERTIES ('DICTIONARY_INCLUDE'='column1, column2')
 	 ```
+	 NOTE: Dictionary Include/Exclude for complex child columns is not supported.
 	 
    - **Inverted Index Configuration**
 
@@ -75,6 +76,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      OR
      TBLPROPERTIES ('SORT_COLUMNS'='')
      ```
+     NOTE: Sort_Columns for Complex datatype columns is not supported.
 
    - **Sort Scope Configuration**
    
@@ -290,6 +292,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      ```
      ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING) TBLPROPERTIES('DEFAULT.VALUE.a1'='10')
      ```
+      NOTE: Add Complex datatype columns is not supported.
 
    - **DROP COLUMNS**
    
@@ -306,6 +309,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      
      ALTER TABLE carbon DROP COLUMNS (c1,d1)
      ```
+     NOTE: Drop Complex child column is not supported.
 
    - **CHANGE DATA TYPE**
    
@@ -656,6 +660,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   ```
   UPDATE t3 SET (t3_country, t3_salary) = (SELECT t5_country, t5_salary FROM t5 FULL JOIN t3 u WHERE u.t3_id = t5_id and t5_id=6) WHERE t3_id >6
   ```
+   NOTE: Update Complex datatype columns is not supported.
     
 ### DELETE
 
@@ -725,6 +730,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   ```
   ALTER TABLE table_name COMPACT 'CUSTOM' WHERE SEGMENT.ID IN (2,3,4)
   ```
+  NOTE: Compaction is unsupported for table containing Complex columns.
   
 
   - **CLEAN SEGMENTS AFTER Compaction**
@@ -765,6 +771,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   PARTITIONED BY (productCategory STRING, productBatch STRING)
   STORED BY 'carbondata'
   ```
+   NOTE: Hive partition is not supported on complex datatype columns.
 		
 #### Load Data Using Static Partition 
 
