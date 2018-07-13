@@ -384,6 +384,27 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         tableProperties.get(CarbonCommonConstants.CACHE_LEVEL).get,
         tableProperties)
     }
+    // long_string_columns columns cannot be in no_inverted_index columns
+    var longStringColumns = varcharColumns.map(_.toUpperCase)
+    var noInvColIntersecLongStrCols = longStringColumns
+      .intersect(noInvertedIdxCols.map(_.toUpperCase))
+    if (!noInvColIntersecLongStrCols.isEmpty) {
+      throw new MalformedCarbonCommandException(
+        s"Column(s): ${
+          noInvColIntersecLongStrCols
+            .mkString(",")
+        } both in no_inverted_index and long_string_columns which is not allowed.")
+    }
+    // long_string_columns columns cannot be in partition columns
+    var partitionColIntersecLongStrCols = longStringColumns
+      .intersect(partitionCols.map(col => col.partitionColumn.toUpperCase))
+    if (!partitionColIntersecLongStrCols.isEmpty) {
+      throw new MalformedCarbonCommandException(
+        s"Column(s): ${
+          partitionColIntersecLongStrCols
+            .mkString(",")
+        } both in partition and long_string_columns which is not allowed.")
+    }
     // validate the tableBlockSize from table properties
     CommonUtil.validateTableBlockSize(tableProperties)
     // validate table level properties for compaction
@@ -476,6 +497,66 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
                      "local_dictionary_include are not of string dataType."
         throw new MalformedCarbonCommandException(errMsg)
       }
+    }
+  }
+
+  /**
+   * This method validates the long string columns, will check:
+   * 1.the column in tblproperty long_string_columns must be in table fields.
+   * 2.the column datatype in tblproperty long_string_columns should be string.
+   * 3.the columns in tblproperty long_string_columns cannot be duplicate
+   *
+   * @param fields table fields
+   * @param varcharCols the columns in tblproperty long_string_columns
+   * @return
+   */
+  private def validateLongStringColumns(fields: Seq[Field],
+      varcharCols: Seq[String]): Unit = {
+    var longStringColumnsMap: Map[String, Field] = Map[String, Field]()
+    fields.foreach(field =>
+      longStringColumnsMap.put(field.column.toUpperCase, field)
+    )
+    var dataTypeErr: Set[String] = Set[String]()
+    var duplicateColumnErr: Map[String, Int] = Map[String, Int]()
+    var nullColumnErr: Set[String] = Set[String]()
+    var tmpStr: String = ""
+    varcharCols.foreach {
+      column =>
+        tmpStr = column.toUpperCase
+        duplicateColumnErr.get(tmpStr) match {
+          case None => duplicateColumnErr.put(tmpStr, 1)
+          case Some(count) => duplicateColumnErr.put(tmpStr, count + 1)
+        }
+        longStringColumnsMap.get(tmpStr) match {
+          case None => nullColumnErr += column
+          case Some(field) => if (!DataTypes.STRING.getName.equalsIgnoreCase(field.dataType.get)) {
+            dataTypeErr += column
+          }
+        }
+    }
+    if (!nullColumnErr.isEmpty) {
+      val errMsg = s"long_string_columns: ${
+        nullColumnErr
+          .mkString(",")
+      } does not exist in table. Please check create table statement."
+      throw new MalformedCarbonCommandException(errMsg)
+    }
+
+    var duplicateColumns = duplicateColumnErr.filter(kv => kv._2 != 1).keySet
+    if (!duplicateColumns.isEmpty) {
+      val errMsg = s"Column ambiguity as duplicate column(s):${
+        duplicateColumns
+          .mkString(",")
+      } is present in long_string_columns. Duplicate columns are not allowed."
+      throw new MalformedCarbonCommandException(errMsg)
+    }
+
+    if (!dataTypeErr.isEmpty) {
+      val errMsg = s"long_string_columns: ${
+        dataTypeErr
+          .mkString(",")
+      } ,its data type is not string. Please check create table statement."
+      throw new MalformedCarbonCommandException(errMsg)
     }
   }
 
@@ -652,17 +733,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     if (tableProperties.get(CarbonCommonConstants.LONG_STRING_COLUMNS).isDefined) {
       varcharCols =
         tableProperties(CarbonCommonConstants.LONG_STRING_COLUMNS).split(",").map(_.trim)
-      varcharCols.foreach { varcharCol =>
-        val exists = fields.exists(f => f.column.equalsIgnoreCase(varcharCol) &&
-                                        DataTypes.STRING.getName.equalsIgnoreCase(f.dataType.get))
-        if (!exists) {
-          throw new MalformedCarbonCommandException(
-            s"""
-               |${CarbonCommonConstants.LONG_STRING_COLUMNS}: $varcharCol does not exist in table
-               | or its data type is not string. Please check create table statement.
-             """.stripMargin)
-        }
-      }
+      validateLongStringColumns(fields, varcharCols)
     }
 
     // All columns in sortkey should be there in create table cols
