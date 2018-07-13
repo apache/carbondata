@@ -52,22 +52,24 @@ object StreamJobManager {
     }
   }
 
-  private def validateSinkTable(querySchema: StructType, sink: CarbonTable): Unit = {
+  private def validateSinkTable(validateQuerySchema: Boolean,
+                                querySchema: StructType, sink: CarbonTable): Unit = {
     if (!sink.isStreamingSink) {
       throw new MalformedCarbonCommandException(s"Table ${sink.getTableName} is not " +
                                                 "streaming sink table " +
                                                 "('streaming' tblproperty is not 'sink' or 'true')")
     }
-    // TODO: validate query schema against sink ( as in kafka we cannot get schema directly)
-    /*
-    val fields = sink.getCreateOrderColumn(sink.getTableName).asScala.map { column =>
-      StructField(column.getColName,
-        CarbonScalaUtil.convertCarbonToSparkDataType(column.getDataType))
+    // TODO: validate query schema against sink in kafka (we cannot get schema directly)
+    if (validateQuerySchema) {
+      val fields = sink.getCreateOrderColumn(sink.getTableName).asScala.map { column =>
+        StructField(column.getColName,
+          CarbonScalaUtil.convertCarbonToSparkDataType(column.getDataType))
+      }
+      if (!querySchema.equals(StructType(fields))) {
+        throw new MalformedCarbonCommandException(s"Schema of table ${sink.getTableName} " +
+          s"does not match query output")
+      }
     }
-    if (!querySchema.equals(StructType(fields))) {
-      throw new MalformedCarbonCommandException(s"Schema of table ${sink.getTableName} " +
-                                                s"does not match query output")
-    }*/
   }
 
   /**
@@ -105,15 +107,13 @@ object StreamJobManager {
 
     validateSourceTable(sourceTable)
 
-    // kafka surce always have fixed schema, need to get actual schema
-    val isKafka = Option(sourceTable.getTableInfo.getFactTable.getTableProperties
-      .get("format")).exists(_ == "kafka")
-    val dataFrame = if (isKafka) {
+    // kafka source always have fixed schema, need to get actual schema
+    val dataFrame = if (sourceTable.isKafkaFormat) {
       streamDf.selectExpr("CAST(value as STRING)")
     } else {
       streamDf
     }
-    validateSinkTable(dataFrame.schema, sinkTable)
+    validateSinkTable(!sourceTable.isKafkaFormat, dataFrame.schema, sinkTable)
 
     // start a new thread to run the streaming ingest job, the job will be running
     // until user stops it by STOP STREAM JOB

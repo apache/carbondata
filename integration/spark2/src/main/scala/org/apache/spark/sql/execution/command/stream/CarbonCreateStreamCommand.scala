@@ -54,8 +54,7 @@ case class CarbonCreateStreamCommand(
     var sourceTable: CarbonTable = null
     var dataFrame: Option[DataFrame] = None
 
-    // find the streaming source table in the query
-    // and replace it with StreamingRelation
+    // Prepare the dataframe from the stream source table
     df.logicalPlan transform {
       case r: LogicalRelation
         if r.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
@@ -89,16 +88,23 @@ case class CarbonCreateStreamCommand(
     Seq(Row(streamName, jobId, "RUNNING"))
   }
 
+  /**
+   * Create a dataframe from source table of logicalRelation
+   * @param sparkSession
+   * @param logicalRelation
+   * @return sourceTable and its stream dataFrame
+   */
   private def prepareDataFrame(
       sparkSession: SparkSession,
-      r: LogicalRelation): (CarbonTable, DataFrame) = {
-    val sourceTable = r.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
+      logicalRelation: LogicalRelation): (CarbonTable, DataFrame) = {
+    val sourceTable = logicalRelation.relation
+      .asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
     val tblProperty = sourceTable.getTableInfo.getFactTable.getTableProperties
     val format = tblProperty.get("format")
     if (format == null) {
       throw new MalformedCarbonCommandException("Streaming from carbon file is not supported")
     }
-    val streamReader = if(format != "kafka") {
+    val streamReader = if (format != "kafka") {
       sparkSession.readStream
         .schema(getSparkSchema(sourceTable))
         .format(format)

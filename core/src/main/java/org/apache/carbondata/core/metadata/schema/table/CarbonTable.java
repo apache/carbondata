@@ -1123,4 +1123,13 @@ public class CarbonTable implements Serializable {
       table.setLocalDictionaryEnabled(Boolean.parseBoolean("false"));
     }
   }
+
+  /**
+   * Check if the CarbonTable is from kafka source
+   * @return true if table properties contain format=kafka
+   */
+  public boolean isKafkaFormat() {
+    return "kafka".equals(getTableInfo().getFactTable().getTableProperties()
+            .get("format"));
+  }
 }
