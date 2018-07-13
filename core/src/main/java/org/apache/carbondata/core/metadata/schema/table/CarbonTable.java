@@ -1125,11 +1125,11 @@ public class CarbonTable implements Serializable {
   }
 
   /**
-   * Check if the CarbonTable is from kafka source
-   * @return true if table properties contain format=kafka
+   * Return the format value defined in table properties
+   * @return String as per table properties, null if not defined
    */
-  public boolean isKafkaFormat() {
-    return "kafka".equals(getTableInfo().getFactTable().getTableProperties()
-            .get("format"));
+  public String getFormat() {
+    return getTableInfo().getFactTable().getTableProperties()
+            .get("format");
   }
 }

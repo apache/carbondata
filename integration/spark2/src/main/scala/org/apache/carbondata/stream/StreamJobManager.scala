@@ -108,12 +108,13 @@ object StreamJobManager {
     validateSourceTable(sourceTable)
 
     // kafka source always have fixed schema, need to get actual schema
-    val dataFrame = if (sourceTable.isKafkaFormat) {
+    val isKafka = Option(sourceTable.getFormat).exists(_ == "kafka")
+    val dataFrame = if (isKafka) {
       streamDf.selectExpr("CAST(value as STRING)")
     } else {
       streamDf
     }
-    validateSinkTable(!sourceTable.isKafkaFormat, dataFrame.schema, sinkTable)
+    validateSinkTable(!isKafka, dataFrame.schema, sinkTable)
 
     // start a new thread to run the streaming ingest job, the job will be running
     // until user stops it by STOP STREAM JOB
