@@ -109,13 +109,20 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
         allColumnInfo[queryDimensions[i].getOrdinal()] = columnVectorInfo;
       }
     }
+    //skipping non existing measure columns in measureColumnInfo as here data
+    // filling to be done only on existing columns
+    // for non existing column it is already been filled from restructure based collector
+    int j = 0;
     for (int i = 0; i < queryMeasures.length; i++) {
+      if (!measureInfo.getMeasureExists()[i]) {
+        continue;
+      }
       ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
       columnVectorInfo.measureVectorFiller = MeasureDataVectorProcessor.MeasureVectorFillerFactory
           .getMeasureVectorFiller(queryMeasures[i].getMeasure().getDataType());
       columnVectorInfo.ordinal = queryMeasures[i].getMeasure().getOrdinal();
       columnVectorInfo.measure = queryMeasures[i];
-      this.measureColumnInfo[i] = columnVectorInfo;
+      this.measureColumnInfo[j++] = columnVectorInfo;
       allColumnInfo[queryMeasures[i].getOrdinal()] = columnVectorInfo;
     }
     dictionaryInfo = dictInfoList.toArray(new ColumnVectorInfo[dictInfoList.size()]);

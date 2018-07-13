@@ -44,6 +44,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("drop table if exists testalterwithbooleanwithoutdefaultvalue")
     sql("drop table if exists test")
     sql("drop table if exists retructure_iud")
+    sql("drop table if exists restructure_random_select")
 
     // clean data folder
     CarbonProperties.getInstance()
@@ -709,6 +710,34 @@ test("test alter command for boolean data type with correct default measure valu
       Seq(Row(1))
     )
   }
+
+  test("Alter table selection in random order"){
+    def test(): Unit ={
+      sql("drop table if exists restructure_random_select")
+      sql("create table restructure_random_select (imei string,channelsId string,gamePointId double,deviceInformationId double," +
+          " deliverycharge double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('table_blocksize'='2000','sort_columns'='imei')")
+      sql("insert into restructure_random_select values('abc','def',50.5,30.2,40.6) ")
+      sql("Alter table restructure_random_select add columns (age int,name String)")
+      checkAnswer(
+        sql("select gamePointId,deviceInformationId,age,name from restructure_random_select where name is NULL or channelsId=4"),
+        Seq(Row(50.5,30.2,null,null)))
+      checkAnswer(
+        sql("select age,name,gamePointId,deviceInformationId from restructure_random_select where name is NULL or channelsId=4"),
+        Seq(Row(null,null,50.5,30.2)))
+    }
+    try {
+      test()
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
+      test()
+    }
+    finally {
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
+          CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
+    }
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS restructure")
     sql("drop table if exists table1")
@@ -726,5 +755,6 @@ test("test alter command for boolean data type with correct default measure valu
     sql("drop table if exists testalterwithbooleanwithoutdefaultvalue")
     sql("drop table if exists test")
     sql("drop table if exists retructure_iud")
+    sql("drop table if exists restructure_random_select")
   }
 }
