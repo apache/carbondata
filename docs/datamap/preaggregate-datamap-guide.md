@@ -244,6 +244,7 @@ is not supported:
 change datatype command, CarbonData will check whether it will impact the pre-aggregate table, if 
  not, the operation is allowed, otherwise operation will be rejected by throwing exception.   
 3. Partition management command: `ALTER TABLE ADD/DROP PARTITION`
+4. Complex Datatypes for preaggregate is not supported.
 
 However, there is still way to support these operations on main table, in current CarbonData 
 release, user can do as following:
