@@ -17,6 +17,7 @@
 
 package org.apache.spark.carbondata.bucketing
 
+import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.execution.exchange.ShuffleExchange
 import org.scalatest.BeforeAndAfterAll
@@ -52,7 +53,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
         "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t4")
-    val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "t4")
+    val table = CarbonEnv.getCarbonTable(Option("default"), "t4")(sqlContext.sparkSession)
     if (table != null && table.getBucketingInfo("t4") != null) {
       assert(true)
     } else {
