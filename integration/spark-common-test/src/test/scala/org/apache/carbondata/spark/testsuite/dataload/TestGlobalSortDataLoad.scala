@@ -18,7 +18,6 @@
 package org.apache.carbondata.spark.testsuite.dataload
 
 import scala.collection.JavaConverters._
-
 import java.io.{File, FileWriter}
 
 import org.apache.commons.io.FileUtils
@@ -27,7 +26,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.execution.BatchedDataSourceScanExec
+import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.test.TestQueryExecutor.projectPath
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
@@ -298,7 +297,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
       }
       val df = sql("select * from carbon_globalsort")
       val scanRdd = df.queryExecution.sparkPlan.collect {
-        case b: BatchedDataSourceScanExec if b.rdd.isInstanceOf[CarbonScanRDD[InternalRow]] =>
+        case b: CarbonDataSourceScan if b.rdd.isInstanceOf[CarbonScanRDD[InternalRow]] =>
           b.rdd.asInstanceOf[CarbonScanRDD[InternalRow]]
       }.head
       assertResult(defaultParallelism)(scanRdd.getPartitions.length)
