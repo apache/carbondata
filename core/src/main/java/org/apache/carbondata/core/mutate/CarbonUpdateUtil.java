@@ -81,10 +81,10 @@ public class CarbonUpdateUtil {
   /**
    * Returns block path from tuple id
    */
-  public static String getTableBlockPath(String tid, String tablePath, boolean isPartitionTable) {
+  public static String getTableBlockPath(String tid, String tablePath, boolean isStandardTable) {
     String partField = getRequiredFieldFromTID(tid, TupleIdEnum.PART_ID);
     // If it has segment file then partfield can be appended directly to table path
-    if (isPartitionTable) {
+    if (!isStandardTable) {
       return tablePath + CarbonCommonConstants.FILE_SEPARATOR + partField.replace("#", "/");
     }
     String part = CarbonTablePath.addPartPrefix(partField);

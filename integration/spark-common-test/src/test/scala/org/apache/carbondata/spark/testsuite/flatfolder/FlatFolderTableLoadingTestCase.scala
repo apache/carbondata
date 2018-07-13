@@ -106,6 +106,27 @@ class FlatFolderTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
+  test("merge index flat folder issue") {
+    sql("drop table if exists t1")
+    sql("create table t1(c1 int,c2 string,c3 float,c4 date) stored by 'carbondata' TBLPROPERTIES('flat_folder'='true')")
+    sql("insert into t1 select 1,'a',1001,'1999-01-02'")
+    sql("insert into t1 select 2,'b',20.01,'1998-01-02'")
+    sql("insert into t1 select 3,'c',30.01,'1997-01-02'")
+    sql("insert into t1 select 4,'d',40.01,'1996-01-02'")
+    sql("insert into t1 select 5,'d',40.01,'1996-01-02'")
+    sql("delete from table t1 where segment.id in(1)")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "t1")
+    assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles().filter(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)).length == 5)
+    sql("clean files for table t1")
+    assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles().filter(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)).length == 4)
+    sql("Alter table t1 compact 'minor'")
+    sql("show segments for table t1").show()
+    assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles().filter(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)).length == 5)
+    sql("clean files for table t1")
+    assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles().filter(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)).length == 1)
+    sql("drop table if exists t1")
+  }
+
   override def afterAll = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,

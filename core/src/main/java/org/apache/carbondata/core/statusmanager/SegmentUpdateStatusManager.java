@@ -69,21 +69,22 @@ public class SegmentUpdateStatusManager {
   private LoadMetadataDetails[] segmentDetails;
   private SegmentUpdateDetails[] updateDetails;
   private Map<String, SegmentUpdateDetails> blockAndDetailsMap;
-  private boolean isPartitionTable;
+  private boolean isStandardTable;
 
   public SegmentUpdateStatusManager(CarbonTable table,
       LoadMetadataDetails[] segmentDetails) {
     this.identifier = table.getAbsoluteTableIdentifier();
+    this.isStandardTable = CarbonUtil.isStandardCarbonTable(table);
     // current it is used only for read function scenarios, as file update always requires to work
     // on latest file status.
     this.segmentDetails = segmentDetails;
     updateDetails = readLoadMetadata();
-    isPartitionTable = table.isHivePartitionTable();
     populateMap();
   }
 
   public SegmentUpdateStatusManager(CarbonTable table) {
     this.identifier = table.getAbsoluteTableIdentifier();
+    this.isStandardTable = CarbonUtil.isStandardCarbonTable(table);
     // current it is used only for read function scenarios, as file update always requires to work
     // on latest file status.
     if (!table.getTableInfo().isTransactionalTable()) {
@@ -98,7 +99,6 @@ public class SegmentUpdateStatusManager {
     } else {
       updateDetails = new SegmentUpdateDetails[0];
     }
-    isPartitionTable = table.isHivePartitionTable();
     populateMap();
   }
 
@@ -250,9 +250,9 @@ public class SegmentUpdateStatusManager {
    */
   public String[] getDeleteDeltaFilePath(String blockFilePath, String segmentId) throws Exception {
     String blockId =
-        CarbonUtil.getBlockId(identifier, blockFilePath, segmentId, true, isPartitionTable);
+        CarbonUtil.getBlockId(identifier, blockFilePath, segmentId, true, isStandardTable);
     String tupleId;
-    if (isPartitionTable) {
+    if (!isStandardTable) {
       tupleId = CarbonTablePath.getShortBlockIdForPartitionTable(blockId);
     } else {
       tupleId = CarbonTablePath.getShortBlockId(blockId);
@@ -272,7 +272,7 @@ public class SegmentUpdateStatusManager {
             + CarbonCommonConstants.FACT_FILE_EXT);
 
     String blockPath;
-    if (isPartitionTable) {
+    if (!isStandardTable) {
       blockPath = identifier.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR
           + CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.PART_ID)
           .replace("#", "/") + CarbonCommonConstants.FILE_SEPARATOR + completeBlockName;
