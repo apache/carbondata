@@ -24,7 +24,8 @@ import org.apache.spark.sql.execution.FileSourceScanExec
 import org.apache.spark.sql.execution.datasources.{HadoopFsRelation, LogicalRelation}
 
 /**
- *  Physical plan node for scanning data.
+ *  Physical plan node for scanning data. It is applied for both tables
+ *  USING carbondata and STORED AS CARBONDATA.
  */
 class CarbonDataSourceScan(
     override val output: Seq[Attribute],

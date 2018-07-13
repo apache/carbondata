@@ -674,20 +674,23 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     cols.forall(_.dataType.isInstanceOf[AtomicType])
   }
 
-  private def createHadoopFSRelation(relation: LogicalRelation) = {
+  private def createHadoopFSRelation(relation: LogicalRelation): HadoopFsRelation = {
     val sparkSession = relation.relation.sqlContext.sparkSession
     relation.catalogTable match {
       case Some(catalogTable) =>
-        HadoopFsRelation(new CatalogFileIndex(
-          sparkSession,
-          catalogTable, relation.relation.sizeInBytes),
+        HadoopFsRelation(
+          new CatalogFileIndex(
+            sparkSession,
+            catalogTable,
+            sizeInBytes = relation.relation.sizeInBytes),
           catalogTable.partitionSchema,
           catalogTable.schema,
           catalogTable.bucketSpec,
           new SparkCarbonTableFormat,
           catalogTable.storage.properties)(sparkSession)
       case _ =>
-        HadoopFsRelation(new InMemoryFileIndex(sparkSession, Seq.empty, Map.empty, None),
+        HadoopFsRelation(
+          new InMemoryFileIndex(sparkSession, Seq.empty, Map.empty, None),
           new StructType(),
           relation.relation.schema,
           None,
