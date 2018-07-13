@@ -18,6 +18,8 @@
 package org.apache.spark.rpc
 
 import java.io.IOException
+import java.util
+import java.util.{ArrayList => JArrayList, List => JList}
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.mutable
@@ -25,8 +27,16 @@ import scala.concurrent.Future
 import scala.reflect.ClassTag
 import scala.util.Random
 
+import org.apache.spark.SerializableWritable
+import org.apache.spark.search.SearchRequest
+
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
+
 
 /**
  * [[org.apache.spark.rpc.Master]] uses Scheduler to pick a Worker to send request
@@ -44,7 +54,7 @@ private[rpc] class Scheduler {
    */
   def sendRequestAsync[T: ClassTag](
       splitAddress: String,
-      request: Any): (Schedulable, Future[T]) = {
+      request: Any): (Schedulable, JList[Future[T]]) = {
     require(splitAddress != null)
     if (workers.isEmpty) {
       throw new IOException("No worker is available")
@@ -69,9 +79,45 @@ private[rpc] class Scheduler {
         s"All workers are busy, number of workers: ${workers.size}, workload limit: $maxWorkload")
     }
     LOG.info(s"sending search request to worker ${worker.address}:${worker.port}")
-    val future = worker.ref.ask(request)
-    worker.workload.incrementAndGet()
-    (worker, future)
+
+    val list = new util.LinkedList[Future[T]]()
+    val mode = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_SEARCH_PRUNE_MODE,
+      CarbonCommonConstants.CARBON_SEARCH_PRUNE_MODET_DEFAULT)
+    if (mode.equalsIgnoreCase("block")) {
+      val future = worker.ref.ask(request)
+      worker.workload.incrementAndGet()
+      list.add(future)
+    } else if (mode.equalsIgnoreCase("shard")) {
+      val hashMap = new mutable.HashMap[String, JList[Distributable]]()
+      val blocks = request.asInstanceOf[SearchRequest].split.value.getAllSplits
+      for (i <- 0 until (blocks.size())) {
+        val shardName = CarbonTablePath
+          .getShardName(((blocks.get(i)).asInstanceOf[CarbonInputSplit].getBlockPath));
+        if (null == hashMap.get(shardName) || hashMap.get(shardName).isEmpty) {
+
+          val list = new JArrayList[Distributable]()
+          list.add(blocks.get(i))
+          hashMap.put(shardName, list)
+        } else {
+          hashMap.get(shardName).get.add(blocks.get(i))
+        }
+      }
+
+      hashMap.toArray.foreach { each =>
+        val splitByShard = new SerializableWritable[CarbonMultiBlockSplit](
+          new CarbonMultiBlockSplit(each._2, splitAddress))
+        val newRequest = request.asInstanceOf[SearchRequest].copy(split = splitByShard)
+        val future = worker.ref.ask(newRequest)
+        worker.workload.incrementAndGet()
+        list.add(future)
+      }
+
+    } else {
+      throw new RuntimeException("Prune mode of carbon search query doesn't support "
+        + mode + ", please choose block or shard")
+    }
+    (worker, list)
   }
 
   private def pickWorker[T: ClassTag](splitAddress: String) = {

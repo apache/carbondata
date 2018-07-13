@@ -1756,6 +1756,19 @@ public final class CarbonCommonConstants {
   public static final String CARBON_SEARCH_QUERY_TIMEOUT_DEFAULT = "10s";
 
   /**
+   * It's prune mode of carbon search query
+   */
+  @CarbonProperty
+  @InterfaceStability.Unstable
+  public static final String CARBON_SEARCH_PRUNE_MODE = "carbon.search.prune.mode";
+
+  /**
+   * Default value is block mode
+   * Support prune by shard
+   */
+  public static final String CARBON_SEARCH_PRUNE_MODET_DEFAULT = "block";
+
+  /**
    * The size of thread pool used for reading files in Work for search mode. By default,
    * it is number of cores in Worker
    */

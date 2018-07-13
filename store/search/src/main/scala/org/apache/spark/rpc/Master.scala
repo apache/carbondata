@@ -44,8 +44,8 @@ import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.hadoop.CarbonMultiBlockSplit
 import org.apache.carbondata.hadoop.api.CarbonInputFormat
+import org.apache.carbondata.hadoop.CarbonMultiBlockSplit
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.store.worker.Status
@@ -208,45 +208,51 @@ class Master(sparkConf: SparkConf) {
       }
       LOG.info(s"[SearchId:$queryId] accumulated result size $rowCount")
     }
-    def onFaiure(e: Throwable) = throw new IOException(s"exception in worker: ${ e.getMessage }")
-    def onTimedout() = throw new ExecutionTimeoutException()
+
+    def onFailure(e: Throwable) = throw new IOException(s"exception in worker: ${e.getMessage}")
+
+    def onTimeout() = throw new ExecutionTimeoutException()
 
     // prune data and get a mapping of worker hostname to list of blocks,
     // then add these blocks to the SearchRequest and fire the RPC call
-    val nodeBlockMapping: JMap[String, JList[Distributable]] = pruneBlock(table, columns, filter)
-    val tuple = nodeBlockMapping.asScala.map { case (splitAddress, blocks) =>
-      // Build a SearchRequest
+    val nodeShardMapping: JMap[String, JList[Distributable]] = prune(table, columns, filter)
+    val tuple = nodeShardMapping.asScala.map { case (splitAddress, blocks) =>
       val split = new SerializableWritable[CarbonMultiBlockSplit](
         new CarbonMultiBlockSplit(blocks, splitAddress))
       val request =
         SearchRequest(queryId, split, table.getTableInfo, columns, filter, localLimit)
-
       // Find an Endpoind and send the request to it
       // This RPC is non-blocking so that we do not need to wait before send to next worker
-      scheduler.sendRequestAsync[SearchResult](splitAddress, request)
-    }
-
-    // loop to get the result of each Worker
-    tuple.foreach { case (worker: Schedulable, future: Future[SearchResult]) =>
-
-      // if we have enough data already, we do not need to collect more result
-      if (rowCount < globalLimit) {
-        // wait for worker
-        val timeout = CarbonProperties
+      val result = scheduler.sendRequestAsync[SearchResult](splitAddress, request)
+      val timeout = CarbonProperties
           .getInstance()
           .getProperty(CarbonCommonConstants.CARBON_SEARCH_QUERY_TIMEOUT,
             CarbonCommonConstants.CARBON_SEARCH_QUERY_TIMEOUT_DEFAULT)
-        ThreadUtils.awaitResult(future, Duration.apply(timeout))
+      for (i <- 0 until result._2.size()) {
+        ThreadUtils.awaitResult(result._2.get(i), Duration.apply(timeout))
+      }
+      result
+    }
+
+    // loop to get the result of each Worker
+    tuple.foreach { case (worker: Schedulable, futures: JList[Future[SearchResult]]) =>
+
+      // if we have enough data already, we do not need to collect more result
+      if (rowCount < globalLimit) {
         LOG.info(s"[SearchId:$queryId] receive search response from worker " +
           s"${worker.address}:${worker.port}")
         try {
-          future.value match {
-            case Some(response: Try[SearchResult]) =>
-              response match {
-                case Success(result) => onSuccess(result)
-                case Failure(e) => onFaiure(e)
-              }
-            case None => onTimedout()
+          val itor = futures.iterator
+          while (itor.hasNext) {
+            val future = itor.next()
+            future.value match {
+              case Some(response: Try[SearchResult]) =>
+                response match {
+                  case Success(result) => onSuccess(result)
+                  case Failure(e) => onFailure(e)
+                }
+              case None => onTimeout()
+            }
           }
         } finally {
           worker.workload.decrementAndGet()
@@ -260,7 +266,7 @@ class Master(sparkConf: SparkConf) {
    * Prune data by using CarbonInputFormat.getSplit
    * Return a mapping of host address to list of block
    */
-  private def pruneBlock(
+  private def prune(
       table: CarbonTable,
       columns: Array[String],
       filter: Expression): JMap[String, JList[Distributable]] = {

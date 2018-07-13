@@ -23,6 +23,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.datamap.lucene.LuceneFineGrainDataMapSuite
 import org.apache.carbondata.spark.util.DataGenerator
 
 /**
@@ -30,12 +31,14 @@ import org.apache.carbondata.spark.util.DataGenerator
  */
 
 class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
-
+  val file = resourcesPath + "/datamap_input.csv"
   val numRows = 500 * 1000
   override def beforeAll = {
     sqlContext.sparkContext.setLogLevel("INFO")
     sqlContext.sparkSession.asInstanceOf[CarbonSession].startSearchMode()
+    LuceneFineGrainDataMapSuite.createFile(file, 1000000)
     sql("DROP TABLE IF EXISTS main")
+    sql("DROP TABLE IF EXISTS shard_table")
 
     val df = DataGenerator.generateDataFrame(sqlContext.sparkSession, numRows)
     df.write
@@ -48,6 +51,8 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll = {
     sql("DROP TABLE IF EXISTS main")
+    sql("DROP TABLE IF EXISTS shard_table")
+    LuceneFineGrainDataMapSuite.deleteFile(file)
     sqlContext.sparkSession.asInstanceOf[CarbonSession].stopSearchMode()
   }
 
@@ -150,4 +155,50 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
     checkSearchAnswer("select id from main where id = '3' limit 10")
     sqlContext.sparkSession.asInstanceOf[CarbonSession].stopSearchMode()
   }
+
+  test("test search mode with shard to search") {
+    sqlContext.sparkSession.asInstanceOf[CarbonSession].startSearchMode()
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SEARCH_PRUNE_MODE, "shard")
+    sql("DROP TABLE IF EXISTS shard_table")
+    sql(
+      """
+        | CREATE TABLE shard_table(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT','TABLE_BLOCKSIZE'='1')
+      """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$file'
+         | INTO TABLE shard_table
+         | OPTIONS('header'='false','GLOBAL_SORT_PARTITIONS'='2')
+       """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$file'
+         | INTO TABLE shard_table
+         | OPTIONS('header'='false','GLOBAL_SORT_PARTITIONS'='2')
+       """.stripMargin)
+
+    val df1 = sql("SELECT * FROM shard_table WHERE name='n10'")
+    val df2 = sql("SELECT * FROM shard_table WHERE city='c0620666'")
+    val df3 = sql("SELECT COUNT(id) FROM shard_table WHERE age='62'")
+    val df4 = sql("SELECT COUNT(*) FROM shard_table WHERE age='62'")
+    val df5 = sql("SELECT * FROM shard_table WHERE id=620666")
+    val df6 = sql("SELECT * FROM shard_table WHERE id=825162")
+
+    sqlContext.sparkSession.asInstanceOf[CarbonSession].stopSearchMode()
+
+    checkAnswer(sql("SELECT * FROM shard_table WHERE name='n10'"), df1)
+    checkAnswer(sql("SELECT * FROM shard_table WHERE city='c0620666'"), df2)
+    checkAnswer(sql("SELECT COUNT(id) FROM shard_table WHERE age='62'"), df3)
+    checkAnswer(sql("SELECT COUNT(*) FROM shard_table WHERE age='62'"), df4)
+    checkAnswer(sql("SELECT * FROM shard_table WHERE id=620666"), df5)
+    checkAnswer(sql("SELECT * FROM shard_table WHERE id=825162"), df6)
+
+    sqlContext.sparkSession.asInstanceOf[CarbonSession].startSearchMode()
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SEARCH_PRUNE_MODE,
+      CarbonCommonConstants.CARBON_SEARCH_PRUNE_MODET_DEFAULT)
+  }
+
 }
