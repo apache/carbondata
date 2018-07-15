@@ -22,6 +22,7 @@ import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeMap
 import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
 import org.apache.spark.sql.catalyst.plans.{FullOuter, Inner, LeftOuter}
 
+import org.apache.carbondata.mv.datamap.MVHelper
 import org.apache.carbondata.mv.plans.modular.{JoinEdge, Matchable, ModularPlan, _}
 import org.apache.carbondata.mv.plans.modular
 import org.apache.carbondata.mv.plans.modular.Flags._
@@ -689,9 +690,7 @@ object SelectSelectGroupbyChildDelta extends DefaultMatchPattern with PredicateH
                 }.getOrElse(gb_2c.outputList(index)))
               }
 
-              val oList = for ((o1, o2) <- mappings) yield {
-                if (o1.name != o2.name) Alias(o2, o1.name)(exprId = o1.exprId) else o2
-              }
+              val oList = MVHelper.createAliases(mappings)
 
               val wip = sel_3q_exp.copy(outputList = oList, children = Seq(gb_3c2))
               val sel_3c3 = Some(factorOutSubsumer(wip, sel_3a, s.aliasMap))
