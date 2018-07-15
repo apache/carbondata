@@ -34,9 +34,11 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.{DataMapSchema, RelationIdentifier}
+import org.apache.carbondata.datamap.DataMapManager
 import org.apache.carbondata.mv.plans.modular.{GroupBy, Matchable, ModularPlan, Select}
-import org.apache.carbondata.mv.rewrite.{MVPlanWrapper, QueryRewrite}
+import org.apache.carbondata.mv.rewrite.{MVPlanWrapper, QueryRewrite, SummaryDatasetCatalog}
 import org.apache.carbondata.spark.util.CommonUtil
 
 /**
@@ -50,7 +52,9 @@ object MVHelper {
       ifNotExistsSet: Boolean = false): Unit = {
     val dmProperties = dataMapSchema.getProperties.asScala
     val updatedQuery = new CarbonSpark2SqlParser().addPreAggFunction(queryString)
-    val logicalPlan = sparkSession.sql(updatedQuery).drop("preAgg").queryExecution.analyzed
+    val query = sparkSession.sql(updatedQuery)
+    val logicalPlan = MVHelper.dropDummFuc(query.queryExecution.analyzed)
+    validateMVQuery(sparkSession, logicalPlan)
     val fullRebuild = isFullReload(logicalPlan)
     val fields = logicalPlan.output.map { attr =>
       val name = updateColumnName(attr)
@@ -116,6 +120,43 @@ object MVHelper {
     dataMapSchema.setParentTables(new util.ArrayList[RelationIdentifier](parentIdents.asJava))
     dataMapSchema.getProperties.put("full_refresh", fullRebuild.toString)
     DataMapStoreManager.getInstance().saveDataMapSchema(dataMapSchema)
+  }
+
+  private def validateMVQuery(sparkSession: SparkSession,
+      logicalPlan: LogicalPlan): Unit = {
+    val dataMapProvider = DataMapManager.get().getDataMapProvider(null,
+      new DataMapSchema("", DataMapClassProvider.MV.getShortName), sparkSession)
+    var catalog = DataMapStoreManager.getInstance().getDataMapCatalog(dataMapProvider,
+      DataMapClassProvider.MV.getShortName).asInstanceOf[SummaryDatasetCatalog]
+    if (catalog == null) {
+      catalog = new SummaryDatasetCatalog(sparkSession)
+    }
+    val modularPlan =
+      catalog.mvSession.sessionState.modularizer.modularize(
+        catalog.mvSession.sessionState.optimizer.execute(logicalPlan)).next().semiHarmonized
+
+    // Only queries which can be select , predicate , join, group by and having queries.
+    if (!modularPlan.isSPJGH)  {
+      throw new UnsupportedOperationException("MV is not supported for this query")
+    }
+    val isValid = modularPlan match {
+      case g: GroupBy =>
+        // Make sure all predicates are present in projections.
+        g.predicateList.forall{p =>
+          g.outputList.exists{
+            case a: Alias =>
+              a.semanticEquals(p) || a.child.semanticEquals(p)
+            case other => other.semanticEquals(p)
+          }
+        }
+      case _ => true
+    }
+    if (!isValid) {
+      throw new UnsupportedOperationException("Group by columns must be present in project columns")
+    }
+    if (catalog.isMVWithSameQueryPresent(logicalPlan)) {
+      throw new UnsupportedOperationException("MV with same query present")
+    }
   }
 
   def updateColumnName(attr: Attribute): String = {
