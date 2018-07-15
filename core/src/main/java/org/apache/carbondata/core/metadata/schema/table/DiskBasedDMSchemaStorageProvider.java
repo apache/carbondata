@@ -39,6 +39,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import com.google.gson.Gson;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
 
@@ -109,7 +110,13 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
     for (DataMapSchema dataMapSchema : this.dataMapSchemas) {
       List<RelationIdentifier> parentTables = dataMapSchema.getParentTables();
       for (RelationIdentifier identifier : parentTables) {
-        if (identifier.getTableId().equalsIgnoreCase(carbonTable.getTableId())) {
+        if (StringUtils.isNotEmpty(identifier.getTableId())) {
+          if (identifier.getTableId().equalsIgnoreCase(carbonTable.getTableId())) {
+            dataMapSchemas.add(dataMapSchema);
+            break;
+          }
+        } else if (identifier.getTableName().equalsIgnoreCase(carbonTable.getTableName()) &&
+            identifier.getDatabaseName().equalsIgnoreCase(carbonTable.getDatabaseName())) {
           dataMapSchemas.add(dataMapSchema);
           break;
         }
