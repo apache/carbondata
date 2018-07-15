@@ -95,7 +95,9 @@ public class DataMapStatusManager {
         DataMapStoreManager.getInstance().getDataMapSchemasOfTable(table);
     List<DataMapSchema> dataMapToBeDisabled = new ArrayList<>(allDataMapSchemas.size());
     for (DataMapSchema dataMap : allDataMapSchemas) {
-      if (dataMap.isLazy()) {
+      // TODO all non datamaps like MV is now supports only lazy. Once the support is made the
+      // following check can be removed.
+      if (dataMap.isLazy() || !dataMap.isIndexDataMap()) {
         dataMapToBeDisabled.add(dataMap);
       }
     }
