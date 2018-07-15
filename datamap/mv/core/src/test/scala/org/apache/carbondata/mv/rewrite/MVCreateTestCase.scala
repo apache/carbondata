@@ -750,6 +750,36 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists test1")
   }
 
+  test("jira carbondata-2550") {
+
+    sql("drop table if exists mvtable1")
+    sql("drop datamap if exists map1")
+    sql("create table mvtable1(name string,age int,salary int) stored by 'carbondata'")
+    sql(" insert into mvtable1 select 'n1',12,12")
+    sql("  insert into mvtable1 select 'n1',12,12")
+    sql(" insert into mvtable1 select 'n3',12,12")
+    sql(" insert into mvtable1 select 'n4',12,12")
+    sql("create datamap map1 using 'mv' as select name,sum(salary) from mvtable1 group by name")
+    sql("rebuild datamap map1")
+    val frame = sql("select name,sum(salary) from mvtable1 group by name limit 1")
+    val analyzed = frame.queryExecution.analyzed
+    assert(verifyMVDataMap(analyzed, "map1"))
+    sql("drop datamap if exists map1")
+    sql("drop table if exists mvtable1")
+  }
+
+  test("jira carbondata-2576") {
+
+    sql("drop datamap if exists datamap_comp_maxsumminavg")
+    sql("create datamap datamap_comp_maxsumminavg using 'mv' as select empname,max(projectenddate),sum(salary),min(projectjoindate),avg(attendance) from fact_table1 group by empname")
+    sql("rebuild datamap datamap_comp_maxsumminavg")
+    val frame = sql(
+      "select empname,max(projectenddate),sum(salary),min(projectjoindate),avg(attendance) from fact_table1 group by empname")
+    val analyzed = frame.queryExecution.analyzed
+    assert(verifyMVDataMap(analyzed, "datamap_comp_maxsumminavg"))
+    sql("drop datamap if exists datamap_comp_maxsumminavg")
+  }
+
   def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
     val tables = logicalPlan collect {
       case l: LogicalRelation => l.catalogTable.get

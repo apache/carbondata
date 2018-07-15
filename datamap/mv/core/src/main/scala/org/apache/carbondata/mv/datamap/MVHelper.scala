@@ -157,9 +157,15 @@ object MVHelper {
   private def isFullReload(logicalPlan: LogicalPlan): Boolean = {
     var isFullReload = false
     logicalPlan.transformAllExpressions {
-      case a: Alias =>
-        a
-      case agg: AggregateExpression => agg
+      case a: Alias => a
+      case agg: AggregateExpression =>
+        // If average function present then go for full refresh
+        var reload = agg.aggregateFunction match {
+          case avg: Average => true
+          case _ => false
+        }
+        isFullReload = reload || isFullReload
+        agg
       case c: Cast =>
         isFullReload = c.child.find {
           case agg: AggregateExpression => false
@@ -385,7 +391,8 @@ object MVHelper {
             val relation =
               g.dataMapTableRelation.get.asInstanceOf[MVPlanWrapper].plan.asInstanceOf[Select]
             val aliasMap = getAttributeMap(relation.outputList, g.outputList)
-            val updatedFlagSpec: Seq[Seq[ArrayBuffer[SortOrder]]] = updateSortOrder(
+            // Update the flagspec as per the mv table attributes.
+            val updatedFlagSpec: Seq[Seq[Any]] = updateFlagSpec(
               keepAlias = false,
               select,
               relation,
@@ -429,7 +436,7 @@ object MVHelper {
   /**
    * Updates the flagspec of given select plan with attributes of relation select plan
    */
-  private def updateSortOrder(keepAlias: Boolean,
+  private def updateFlagSpec(keepAlias: Boolean,
       select: Select,
       relation: Select,
       aliasMap: Map[AttributeKey, NamedExpression]) = {
@@ -445,6 +452,8 @@ object MVHelper {
                 keepAlias = false)
             SortOrder(expressions.head, s.direction, s.sameOrderExpressions)
           }
+        // In case of limit it goes to other.
+        case other => other
       }
     }
     updatedFlagSpec
