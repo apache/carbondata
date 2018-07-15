@@ -367,8 +367,9 @@ object GroupbyGroupbyNoChildDelta extends DefaultMatchPattern {
         if (isGroupingEmR && isGroupingRmE) {
           val isOutputEmR = gb_2q.outputList.forall {
             case a @ Alias(_, _) =>
-              gb_2a.outputList.exists{a1 =>
-                a1.isInstanceOf[Alias] && a1.asInstanceOf[Alias].child.semanticEquals(a.child)
+              gb_2a.outputList.exists{
+                case a1: Alias => a1.child.semanticEquals(a.child)
+                case exp => exp.semanticEquals(a.child)
               }
             case exp => gb_2a.outputList.exists(_.semanticEquals(exp))
           }
