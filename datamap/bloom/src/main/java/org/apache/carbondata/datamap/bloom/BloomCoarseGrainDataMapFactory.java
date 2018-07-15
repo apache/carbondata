@@ -47,6 +47,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
+import org.apache.carbondata.core.statusmanager.SegmentManager;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -365,14 +366,14 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
 
   @Override
   public void deleteDatamapData() {
-    SegmentStatusManager ssm =
-        new SegmentStatusManager(getCarbonTable().getAbsoluteTableIdentifier());
+    SegmentManager ssm = new SegmentManager();
     try {
-      List<Segment> validSegments = ssm.getValidAndInvalidSegments().getValidSegments();
+      List<Segment> validSegments =
+          ssm.getValidSegments(getCarbonTable().getAbsoluteTableIdentifier()).getValidSegments();
       for (Segment segment : validSegments) {
         deleteDatamapData(segment);
       }
-    } catch (IOException e) {
+    } catch (Exception e) {
       LOGGER.error("drop datamap failed, failed to delete datamap directory");
     }
   }

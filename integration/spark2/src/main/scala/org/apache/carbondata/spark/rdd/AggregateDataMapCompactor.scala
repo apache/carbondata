@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.spark.rdd
 
+import java.util
 import java.util.concurrent.ExecutorService
 
 import scala.collection.JavaConverters._
@@ -28,7 +29,7 @@ import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{SegmentDetailVO, SegmentManager, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.OperationContext
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -52,7 +53,7 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
     // therefore the segment file name should be loadName#segmentFileName.segment
     val segments = loadMetaDataDetails.asScala.map {
       loadDetail =>
-        new Segment(loadDetail.getLoadName, loadDetail.getSegmentFile, null).toString
+        new Segment(loadDetail.getSegmentId, loadDetail.getSegmentFileName, null).toString
     }
 
     if (segments.nonEmpty) {
@@ -79,20 +80,14 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
         CarbonSession.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
           "true")
         loadCommand.processData(sqlContext.sparkSession)
-        val newLoadMetaDataDetails = SegmentStatusManager.readLoadMetadata(
-          carbonTable.getMetadataPath, uuid)
-        val updatedLoadMetaDataDetails = newLoadMetaDataDetails collect {
-          case load if loadMetaDataDetails.contains(load) =>
-            load.setMergedLoadName(mergedLoadName)
-            load.setSegmentStatus(SegmentStatus.COMPACTED)
-            load.setModificationOrdeletionTimesStamp(System.currentTimeMillis())
-            load
-          case other => other
-        }
-        SegmentStatusManager.writeLoadDetailsIntoFile(
-          CarbonTablePath.getTableStatusFilePathWithUUID(carbonTable.getTablePath, uuid),
-            updatedLoadMetaDataDetails)
-        carbonLoadModel.setLoadMetadataDetails(updatedLoadMetaDataDetails.toList.asJava)
+        val updatedSegs = loadMetaDataDetails.asScala.map{seg =>
+          new SegmentDetailVO().
+            setSegmentId(seg.getSegmentId).
+            setStatus(SegmentStatus.COMPACTED.toString).
+            setModificationOrDeletionTimestamp(System.currentTimeMillis())
+        }.toList.asJava
+        new SegmentManager().updateSegments(carbonTable.getAbsoluteTableIdentifier,
+          new util.ArrayList[SegmentDetailVO](updatedSegs))
       } finally {
         // check if any other segments needs compaction on in case of MINOR_COMPACTION.
         // For example: after 8.1 creation 0.1, 4.1, 8.1 have to be merged to 0.2 if threshhold

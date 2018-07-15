@@ -52,6 +52,8 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentDetailVO;
+import org.apache.carbondata.core.statusmanager.SegmentManager;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -280,54 +282,10 @@ public class SegmentFileStore {
    * @return boolean which determines whether status update is done or not.
    * @throws IOException
    */
-  public static boolean updateSegmentFile(String tablePath, String segmentId, String segmentFile,
-      String tableId) throws IOException {
-    boolean status = false;
-    String tableStatusPath = CarbonTablePath.getTableStatusFilePath(tablePath);
-    if (!FileFactory.isFileExist(tableStatusPath)) {
-      return status;
-    }
-    String metadataPath = CarbonTablePath.getMetadataPath(tablePath);
-    AbsoluteTableIdentifier absoluteTableIdentifier =
-        AbsoluteTableIdentifier.from(tablePath, null, null, tableId);
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
-    ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
-    int retryCount = CarbonLockUtil
-        .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
-            CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT);
-    int maxTimeout = CarbonLockUtil
-        .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
-            CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT);
-    try {
-      if (carbonLock.lockWithRetries(retryCount, maxTimeout)) {
-        LOGGER.info("Acquired lock for tablepath" + tablePath + " for table status updation");
-        LoadMetadataDetails[] listOfLoadFolderDetailsArray =
-            SegmentStatusManager.readLoadMetadata(metadataPath);
-
-        for (LoadMetadataDetails detail : listOfLoadFolderDetailsArray) {
-          // if the segments is in the list of marked for delete then update the status.
-          if (segmentId.equals(detail.getLoadName())) {
-            detail.setSegmentFile(segmentFile);
-            break;
-          }
-        }
-
-        SegmentStatusManager
-            .writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetailsArray);
-        status = true;
-      } else {
-        LOGGER.error(
-            "Not able to acquire the lock for Table status updation for table path " + tablePath);
-      }
-      ;
-    } finally {
-      if (carbonLock.unlock()) {
-        LOGGER.info("Table unlocked successfully after table status updation" + tablePath);
-      } else {
-        LOGGER.error(
-            "Unable to unlock Table lock for table" + tablePath + " during table status updation");
-      }
-    }
+  public static boolean updateSegmentFile(AbsoluteTableIdentifier identifier, String segmentId, String segmentFile)
+      throws IOException {
+    boolean status = new SegmentManager().commitLoadSegment(identifier,
+        new SegmentDetailVO().setSegmentId(segmentId).setSegmentFileName(segmentFile));
     return status;
   }
 
@@ -598,7 +556,7 @@ public class SegmentFileStore {
    * @throws IOException
    */
   public void dropPartitions(Segment segment, List<PartitionSpec> partitionSpecs,
-      String uniqueId, List<String> toBeDeletedSegments, List<String> toBeUpdatedSegments)
+      String uniqueId, List<SegmentDetailVO> toBeUpdatedSegments)
       throws IOException {
     readSegment(tablePath, segment.getSegmentFileName());
     boolean updateSegment = false;
@@ -636,10 +594,15 @@ public class SegmentFileStore {
       }
     }
     if (deleteSegment) {
-      toBeDeletedSegments.add(segment.getSegmentNo());
+      SegmentDetailVO deleteSeg = new SegmentDetailVO().setSegmentId(segment.getSegmentNo())
+          .setStatus(SegmentStatus.MARKED_FOR_DELETE.toString());
+      toBeUpdatedSegments.add(deleteSeg);
     }
     if (updateSegment) {
-      toBeUpdatedSegments.add(segment.getSegmentNo());
+      SegmentDetailVO updateSeg = new SegmentDetailVO().setSegmentId(segment.getSegmentNo())
+          .setSegmentFileName(
+              segment.getSegmentNo() + "_" + uniqueId + CarbonTablePath.SEGMENT_EXT);
+      toBeUpdatedSegments.add(updateSeg);
     }
   }
 
@@ -653,12 +616,12 @@ public class SegmentFileStore {
    * @throws IOException
    */
   public static void commitDropPartitions(CarbonTable carbonTable, String uniqueId,
-      List<String> toBeUpdatedSegments, List<String> toBeDeleteSegments,
-      String uuid) throws IOException {
+      List<String> toBeUpdatedSegments, List<String> toBeDeleteSegments, String uuid)
+      throws IOException {
     if (toBeDeleteSegments.size() > 0 || toBeUpdatedSegments.size() > 0) {
       Set<Segment> segmentSet = new HashSet<>(
-          new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
-              .getValidAndInvalidSegments().getValidSegments());
+          new SegmentManager().getValidSegments(carbonTable.getAbsoluteTableIdentifier())
+              .getValidSegments());
       CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, uniqueId, true,
           Segment.toSegmentList(toBeDeleteSegments, null),
           Segment.toSegmentList(toBeUpdatedSegments, null), uuid);
@@ -676,21 +639,23 @@ public class SegmentFileStore {
   public static void cleanSegments(CarbonTable table, List<PartitionSpec> partitionSpecs,
       boolean forceDelete) throws IOException {
 
-    LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(table.getMetadataPath());
+    List<SegmentDetailVO> details =
+        new SegmentManager().getValidSegments(table.getAbsoluteTableIdentifier())
+            .getValidSegmentDetailVOs();
     // scan through each segment.
-    for (LoadMetadataDetails segment : details) {
+    for (SegmentDetailVO segment : details) {
       // if this segment is valid then only we will go for deletion of related
       // dropped partition files. if the segment is mark for delete or compacted then any way
       // it will get deleted.
 
-      if ((segment.getSegmentStatus() == SegmentStatus.SUCCESS
-          || segment.getSegmentStatus() == SegmentStatus.LOAD_PARTIAL_SUCCESS)
-          && segment.getSegmentFile() != null) {
+      if ((segment.getStatus().equals(SegmentStatus.SUCCESS.toString())
+          || segment.getStatus().equals(SegmentStatus.LOAD_PARTIAL_SUCCESS.toString()))
+          && segment.getSegmentFileName() != null) {
         List<String> toBeDeletedIndexFiles = new ArrayList<>();
         List<String> toBeDeletedDataFiles = new ArrayList<>();
         // take the list of files from this segment.
         SegmentFileStore fileStore =
-            new SegmentFileStore(table.getTablePath(), segment.getSegmentFile());
+            new SegmentFileStore(table.getTablePath(), segment.getSegmentFileName());
         fileStore.readIndexFiles(SegmentStatus.MARKED_FOR_DELETE, false);
         if (forceDelete) {
           deletePhysicalPartition(
@@ -796,23 +761,24 @@ public class SegmentFileStore {
   /**
    * Get the partition specs of the segment
    * @param segmentId
-   * @param tablePath
+   * @param identifier
    * @return
    * @throws IOException
    */
-  public static List<PartitionSpec> getPartitionSpecs(String segmentId, String tablePath)
-      throws IOException {
-    LoadMetadataDetails segEntry = null;
-    LoadMetadataDetails[] details =
-        SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(tablePath));
-    for (LoadMetadataDetails entry : details) {
-      if (entry.getLoadName().equals(segmentId)) {
+  public static List<PartitionSpec> getPartitionSpecs(String segmentId,
+      AbsoluteTableIdentifier identifier) throws IOException {
+    SegmentDetailVO segEntry = null;
+    List<SegmentDetailVO> details =
+        new SegmentManager().getAllSegments(identifier).getAllSegments();
+    for (SegmentDetailVO entry : details) {
+      if (entry.getSegmentId().equals(segmentId)) {
         segEntry = entry;
         break;
       }
     }
-    if (segEntry != null && segEntry.getSegmentFile() != null) {
-      SegmentFileStore fileStore = new SegmentFileStore(tablePath, segEntry.getSegmentFile());
+    if (segEntry != null && segEntry.getSegmentFileName() != null) {
+      SegmentFileStore fileStore =
+          new SegmentFileStore(identifier.getTablePath(), segEntry.getSegmentFileName());
       List<PartitionSpec> partitionSpecs = fileStore.getPartitionSpecs();
       for (PartitionSpec spec : partitionSpecs) {
         spec.setUuid(segmentId + "_" + segEntry.getLoadStartTime());

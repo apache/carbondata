@@ -21,13 +21,12 @@ package org.apache.carbondata.spark.testsuite.datacompaction
 import scala.collection.JavaConverters._
 
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.spark.sql.test.util.QueryTest
 
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.statusmanager.{SegmentManager, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 
@@ -98,10 +97,8 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
     */
   test("check if compaction is failed or not.") {
 
-    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
-      absoluteTableIdentifier
-    )
-    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
+    val segmentStatusManager = new SegmentManager()
+    val segments = segmentStatusManager.getValidSegments(absoluteTableIdentifier).getValidSegments.asScala.toList
 
     if (!segments.contains("0.1")) {
       assert(true)

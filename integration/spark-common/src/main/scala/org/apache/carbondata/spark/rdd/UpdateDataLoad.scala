@@ -48,8 +48,7 @@ object UpdateDataLoad {
 
       val loader = new SparkPartitionLoader(carbonLoadModel,
         index,
-        null,
-        loadMetadataDetails)
+        null)
       // Initialize to set carbon properties
       loader.initialize()
 

@@ -44,8 +44,8 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationId
 import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema,
   ParentColumnTableRelation}
 import org.apache.carbondata.core.service.impl.ColumnUniqueIdGenerator
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentDetailVO, SegmentUpdateStatusManager}
+import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.CompactionType
@@ -147,7 +147,7 @@ case class CompactionModel(compactionSize: Long,
 
 case class CompactionCallableModel(carbonLoadModel: CarbonLoadModel,
     carbonTable: CarbonTable,
-    loadsToMerge: util.List[LoadMetadataDetails],
+    loadsToMerge: util.List[SegmentDetailVO],
     sqlContext: SQLContext,
     compactionType: CompactionType,
     currentPartitions: Option[Seq[PartitionSpec]],

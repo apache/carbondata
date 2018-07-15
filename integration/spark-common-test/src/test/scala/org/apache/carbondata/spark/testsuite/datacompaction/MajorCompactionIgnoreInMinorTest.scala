@@ -22,7 +22,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
-import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{SegmentManager, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
@@ -125,11 +125,10 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     )
     val absoluteTableIdentifier = carbonTable
       .getAbsoluteTableIdentifier
-    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
-      absoluteTableIdentifier)
+    val segmentStatusManager = new SegmentManager()
 
     // merged segment should not be there
-    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.map(_.getSegmentNo).toList
+    val segments = segmentStatusManager.getValidSegments(absoluteTableIdentifier).getValidSegments.asScala.map(_.getSegmentNo).toList
     assert(segments.contains("0.1"))
     assert(segments.contains("2.1"))
     assert(!segments.contains("2"))
@@ -168,11 +167,10 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
       "testmajor"
     )
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
-    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
-      absoluteTableIdentifier)
+    val segmentStatusManager = new SegmentManager()
 
     // merged segment should not be there
-    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.map(_.getSegmentNo).toList
+    val segments = segmentStatusManager.getValidSegments(absoluteTableIdentifier).getValidSegments.asScala.map(_.getSegmentNo).toList
     assert(!segments.contains("0.1"))
     assert(segments.contains("0.2"))
     assert(!segments.contains("2"))

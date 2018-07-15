@@ -48,6 +48,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
+import org.apache.carbondata.core.statusmanager.SegmentManager;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -177,13 +178,14 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
    * @throws MalformedDataMapCommandException
    */
   private void deleteDatamap() throws MalformedDataMapCommandException {
-    SegmentStatusManager ssm = new SegmentStatusManager(tableIdentifier);
     try {
-      List<Segment> validSegments = ssm.getValidAndInvalidSegments().getValidSegments();
+      List<Segment> validSegments =
+          new SegmentManager().getValidSegments(getCarbonTable().getAbsoluteTableIdentifier())
+              .getValidSegments();
       for (Segment segment : validSegments) {
         deleteDatamapData(segment);
       }
-    } catch (IOException | RuntimeException ex) {
+    } catch (RuntimeException ex) {
       throw new MalformedDataMapCommandException(
           "drop datamap failed, failed to delete datamap directory");
     }

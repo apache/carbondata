@@ -28,6 +28,7 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.dictionary.service.DictionaryServiceProvider;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentDetailVO;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -65,7 +66,7 @@ public class CarbonLoadModel implements Serializable {
   private String complexDelimiterLevel1;
   private String complexDelimiterLevel2;
 
-  private List<LoadMetadataDetails> loadMetadataDetails;
+  private SegmentDetailVO currentDetailVO;
   private transient SegmentUpdateStatusManager segmentUpdateStatusManager;
 
   private String blocksID;
@@ -430,7 +431,7 @@ public class CarbonLoadModel implements Serializable {
     copy.factFilePath = factFilePath;
     copy.databaseName = databaseName;
     copy.aggLoadRequest = aggLoadRequest;
-    copy.loadMetadataDetails = loadMetadataDetails;
+    copy.currentDetailVO = currentDetailVO;
     copy.csvHeader = csvHeader;
     copy.csvHeaderColumns = csvHeaderColumns;
     copy.csvDelimiter = csvDelimiter;
@@ -486,7 +487,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.factFilePath = null;
     copyObj.databaseName = databaseName;
     copyObj.aggLoadRequest = aggLoadRequest;
-    copyObj.loadMetadataDetails = loadMetadataDetails;
+    copyObj.currentDetailVO = currentDetailVO;
     copyObj.carbonDataLoadSchema = carbonDataLoadSchema;
     copyObj.csvHeader = header;
     copyObj.csvHeaderColumns = csvHeaderColumns;
@@ -542,35 +543,22 @@ public class CarbonLoadModel implements Serializable {
     return tablePath;
   }
 
-  /**
-   * getLoadMetadataDetails.
-   *
-   * @return
-   */
-  public List<LoadMetadataDetails> getLoadMetadataDetails() {
-    return loadMetadataDetails;
-  }
 
   /**
    * Get the current load metadata.
    *
    * @return
    */
-  public LoadMetadataDetails getCurrentLoadMetadataDetail() {
-    if (loadMetadataDetails != null && loadMetadataDetails.size() > 0) {
-      return loadMetadataDetails.get(loadMetadataDetails.size() - 1);
-    } else {
-      return null;
-    }
+  public SegmentDetailVO getCurrentDetailVO() {
+    return currentDetailVO;
   }
 
-  /**
-   * setLoadMetadataDetails.
-   *
-   * @param loadMetadataDetails
-   */
-  public void setLoadMetadataDetails(List<LoadMetadataDetails> loadMetadataDetails) {
-    this.loadMetadataDetails = loadMetadataDetails;
+  public void setCurrentDetailVO(SegmentDetailVO currentLoadMeta) {
+    this.currentDetailVO = currentLoadMeta;
+    this.factTimeStamp = currentDetailVO.getLoadStartTime();
+    if (getSegmentId() == null) {
+      setSegmentId(currentLoadMeta.getSegmentId());
+    }
   }
 
   /**
@@ -881,15 +869,6 @@ public class CarbonLoadModel implements Serializable {
 
   public void setDataWritePath(String dataWritePath) {
     this.dataWritePath = dataWritePath;
-  }
-
-  /**
-   * Read segments metadata from table status file and set it to this load model object
-   */
-  public void readAndSetLoadMetadataDetails() {
-    String metadataPath = CarbonTablePath.getMetadataPath(tablePath);
-    LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metadataPath);
-    setLoadMetadataDetails(Arrays.asList(details));
   }
 
   public boolean isCarbonTransactionalTable() {

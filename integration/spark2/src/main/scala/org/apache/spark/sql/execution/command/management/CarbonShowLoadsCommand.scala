@@ -60,7 +60,7 @@ case class CarbonShowLoadsCommand(
     }
     CarbonStore.showSegments(
       limit,
-      carbonTable.getMetadataPath,
+      carbonTable.getAbsoluteTableIdentifier,
       showHistory
     )
   }

@@ -79,6 +79,8 @@ import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.core.reader.ThriftReader.TBaseCreator;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentDetailVO;
+import org.apache.carbondata.core.statusmanager.SegmentManager;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
@@ -2511,74 +2513,51 @@ public final class CarbonUtil {
     long indexSize = 0L;
     long lastUpdateTime = 0L;
     boolean needUpdate = false;
+    SegmentManager segmentManager = new SegmentManager();
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
     String isCalculated = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_CALCULATE_SIZE,
             CarbonCommonConstants.DEFAULT_ENABLE_CALCULATE_SIZE);
     if (isCalculated.equalsIgnoreCase("true")) {
-      SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
-      ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
-      try {
-        boolean lockAcquired = true;
-        if (updateSize) {
-          lockAcquired = carbonLock.lockWithRetries();
+      LOGGER.info("Acquired lock for table for table status updation");
+      List<SegmentDetailVO> detailVOs =
+          segmentManager.getValidSegments(carbonTable.getAbsoluteTableIdentifier())
+              .getValidSegmentDetailVOs();
+      List<SegmentDetailVO> updateSizeVOs = new ArrayList<>();
+      for (SegmentDetailVO detailVO : detailVOs) {
+        Long dsize = detailVO.getDataSize();
+        Long isize = detailVO.getIndexSize();
+        // If it is old segment, need to calculate data size and index size again
+        if (null == dsize || null == isize) {
+          needUpdate = true;
+          LOGGER.info("It is an old segment, need calculate data size and index size again");
+          HashMap<String, Long> map = CarbonUtil.getDataSizeAndIndexSize(
+              identifier.getTablePath(), detailVO.getSegmentId());
+          dsize = map.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE);
+          isize = map.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE);
+          updateSizeVOs.add(new SegmentDetailVO().setDataSize(dsize).setIndexSize(isize)
+              .setSegmentId(detailVO.getSegmentId()));
         }
-        if (lockAcquired) {
-          LOGGER.info("Acquired lock for table for table status updation");
-          String metadataPath = carbonTable.getMetadataPath();
-          LoadMetadataDetails[] loadMetadataDetails =
-              SegmentStatusManager.readLoadMetadata(metadataPath);
-
-          for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
-            SegmentStatus loadStatus = loadMetadataDetail.getSegmentStatus();
-            if (loadStatus == SegmentStatus.SUCCESS || loadStatus ==
-                      SegmentStatus.LOAD_PARTIAL_SUCCESS) {
-              String dsize = loadMetadataDetail.getDataSize();
-              String isize = loadMetadataDetail.getIndexSize();
-              // If it is old segment, need to calculate data size and index size again
-              if (null == dsize || null == isize) {
-                needUpdate = true;
-                LOGGER.info("It is an old segment, need calculate data size and index size again");
-                HashMap<String, Long> map = CarbonUtil.getDataSizeAndIndexSize(
-                    identifier.getTablePath(), loadMetadataDetail.getLoadName());
-                dsize = String.valueOf(map.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE));
-                isize = String.valueOf(map.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE));
-                loadMetadataDetail.setDataSize(dsize);
-                loadMetadataDetail.setIndexSize(isize);
-              }
-              dataSize += Long.parseLong(dsize);
-              indexSize += Long.parseLong(isize);
-            }
-          }
-          // If it contains old segment, write new load details
-          if (needUpdate && updateSize) {
-            SegmentStatusManager.writeLoadDetailsIntoFile(
-                CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()),
-                loadMetadataDetails);
-          }
-          String tableStatusPath =
-              CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
-          if (FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
-            lastUpdateTime =
-                FileFactory.getCarbonFile(tableStatusPath, FileFactory.getFileType(tableStatusPath))
-                    .getLastModifiedTime();
-          }
-          dataIndexSizeMap
-              .put(String.valueOf(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE), dataSize);
-          dataIndexSizeMap
-              .put(String.valueOf(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE), indexSize);
-          dataIndexSizeMap
-              .put(String.valueOf(CarbonCommonConstants.LAST_UPDATE_TIME), lastUpdateTime);
-        } else {
-          LOGGER.error("Not able to acquire the lock for Table status updation for table");
-        }
-      } finally {
-        if (carbonLock.unlock()) {
-          LOGGER.info("Table unlocked successfully after table status updation");
-        } else {
-          LOGGER.error("Unable to unlock Table lock for table during table status updation");
-        }
+        dataSize += dsize;
+        indexSize += isize;
       }
+      // If it contains old segment, write new load details
+      if (needUpdate && updateSize && updateSizeVOs.size() > 0) {
+        segmentManager.updateSegments(identifier, updateSizeVOs);
+      }
+      String tableStatusPath =
+          CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
+      if (FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
+        lastUpdateTime =
+            FileFactory.getCarbonFile(tableStatusPath, FileFactory.getFileType(tableStatusPath))
+                .getLastModifiedTime();
+      }
+      dataIndexSizeMap
+          .put(String.valueOf(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE), dataSize);
+      dataIndexSizeMap
+          .put(String.valueOf(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE), indexSize);
+      dataIndexSizeMap
+          .put(String.valueOf(CarbonCommonConstants.LAST_UPDATE_TIME), lastUpdateTime);
     }
     return dataIndexSizeMap;
   }

@@ -38,6 +38,7 @@ import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentDetailVO;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
@@ -136,9 +137,9 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
         seg = new Segment("null", null, readCommittedScope);
         externalTableSegments.add(seg);
       } else {
-        LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
-        for (LoadMetadataDetails load : loadMetadataDetails) {
-          seg = new Segment(load.getLoadName(), null, readCommittedScope);
+        List<SegmentDetailVO> allSegments = readCommittedScope.getSegments().getAllSegments();
+        for (SegmentDetailVO load : allSegments) {
+          seg = new Segment(load.getSegmentId(), null, readCommittedScope);
           externalTableSegments.add(seg);
         }
       }

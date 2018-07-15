@@ -189,18 +189,12 @@ case class CarbonAlterTableCompactionCommand(
       if (alterTableModel.segmentUpdateStatusManager.isDefined) {
         carbonLoadModel.setSegmentUpdateStatusManager(
           alterTableModel.segmentUpdateStatusManager.get)
-        carbonLoadModel.setLoadMetadataDetails(
-          alterTableModel.segmentUpdateStatusManager.get.getLoadMetadataDetails.toList.asJava)
       }
     }
 
     LOGGER.audit(s"Compaction request received for table " +
                  s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-
-    if (null == carbonLoadModel.getLoadMetadataDetails) {
-      carbonLoadModel.readAndSetLoadMetadataDetails()
-    }
 
     if (compactionType == CompactionType.STREAMING) {
       StreamHandoffRDD.startStreamingHandoffThread(

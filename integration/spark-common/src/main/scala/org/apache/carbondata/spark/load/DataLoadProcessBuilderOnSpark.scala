@@ -45,7 +45,7 @@ object DataLoadProcessBuilderOnSpark {
       sparkSession: SparkSession,
       dataFrame: Option[DataFrame],
       model: CarbonLoadModel,
-      hadoopConf: Configuration): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+      hadoopConf: Configuration): Array[(String, (SegmentStatus, ExecutionErrors))] = {
     val originRDD = if (dataFrame.isDefined) {
       dataFrame.get.rdd
     } else {
@@ -135,17 +135,15 @@ object DataLoadProcessBuilderOnSpark {
     if (partialSuccessAccum.value != 0) {
       val uniqueLoadStatusId = model.getTableName + CarbonCommonConstants.UNDERSCORE +
         "Partial_Success"
-      val loadMetadataDetails = new LoadMetadataDetails()
-      loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
+      val status = SegmentStatus.LOAD_PARTIAL_SUCCESS
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
       executionErrors.failureCauses = FailureCauses.BAD_RECORDS
-      Array((uniqueLoadStatusId, (loadMetadataDetails, executionErrors)))
+      Array((uniqueLoadStatusId, (status, executionErrors)))
     } else {
       val uniqueLoadStatusId = model.getTableName + CarbonCommonConstants.UNDERSCORE + "Success"
-      val loadMetadataDetails = new LoadMetadataDetails()
-      loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
+      val status = SegmentStatus.SUCCESS
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
-      Array((uniqueLoadStatusId, (loadMetadataDetails, executionErrors)))
+      Array((uniqueLoadStatusId, (status, executionErrors)))
     }
   }
 }
