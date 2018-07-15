@@ -459,9 +459,31 @@ object MVHelper {
                 aliasMap = relation.aliasMap,
                 flagSpec = updatedFlagSpec).setRewritten()
             } else {
-              val outputSel =
-                updateOutPutList(select.outputList, relation, aliasMap, keepAlias = false)
+              // First find the indices from the child outlist.
+              val indices = select.outputList.map{c =>
+                g.outputList.indexWhere{
+                  case al : Alias if c.isInstanceOf[Alias] =>
+                    al.child.semanticEquals(c.asInstanceOf[Alias].child)
+                  case al: Alias if al.child.semanticEquals(c) => true
+                  case other if c.isInstanceOf[Alias] =>
+                    other.semanticEquals(c.asInstanceOf[Alias].child)
+                  case other =>
+                    other.semanticEquals(c) || other.toAttribute.semanticEquals(c)
+                }
+              }
               val child = updateDataMap(g, rewrite).asInstanceOf[Matchable]
+              // Get the outList from converted child outList using already selected indices
+              val outputSel =
+                indices.map(child.outputList(_)).zip(select.outputList).map { case (l, r) =>
+                  l match {
+                    case a: Alias if r.isInstanceOf[Alias] =>
+                      Alias(a.child, r.name)(exprId = r.exprId)
+                    case a: Alias => a
+                    case other if r.isInstanceOf[Alias] =>
+                      Alias(other, r.name)(exprId = r.exprId)
+                    case other => other
+                  }
+              }
               // TODO Remove the unnecessary columns from selection.
               // Only keep columns which are required by parent.
               val inputSel = child.outputList
@@ -516,6 +538,23 @@ object MVHelper {
     } else {
       false
     }
+  }
+
+  // Create the aliases using two plan outputs mappings.
+  def createAliases(mappings: Seq[(NamedExpression, NamedExpression)]): Seq[NamedExpression] = {
+    val oList = for ((o1, o2) <- mappings) yield {
+      o2 match {
+        case al: Alias if o1.name == o2.name && o1.exprId != o2.exprId =>
+          Alias(al.child, o1.name)(exprId = o1.exprId)
+        case other =>
+          if (o1.name != o2.name || o1.exprId != o2.exprId) {
+            Alias(o2, o1.name)(exprId = o1.exprId)
+          } else {
+            o2
+          }
+      }
+    }
+    oList
   }
 
   /**
