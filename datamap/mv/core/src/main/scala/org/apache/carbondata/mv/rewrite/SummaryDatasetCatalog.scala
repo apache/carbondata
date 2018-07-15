@@ -190,6 +190,13 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
   }
 
   /**
+   * Check already with same query present in mv
+   */
+  private[mv] def isMVWithSameQueryPresent(query: LogicalPlan) : Boolean = {
+    lookupSummaryDataset(query).nonEmpty
+  }
+
+  /**
    * API for test only
    * Tries to remove the data set for the given [[DataFrame]] from the catalog if it's registered
    */
