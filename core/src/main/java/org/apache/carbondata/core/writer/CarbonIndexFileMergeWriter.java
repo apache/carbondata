@@ -114,11 +114,11 @@ public class CarbonIndexFileMergeWriter {
   private String writeMergeIndexFileBasedOnSegmentFile(
       String segmentId,
       List<String> indexFileNamesTobeAdded,
-      SegmentFileStore sfs, CarbonFile[] indexFiles) throws IOException {
+      SegmentFileStore segmentFileStore, CarbonFile[] indexFiles) throws IOException {
     SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
     fileStore
-        .readAllIIndexOfSegment(sfs.getSegmentFile(), sfs.getTablePath(), SegmentStatus.SUCCESS,
-            true);
+        .readAllIIndexOfSegment(segmentFileStore.getSegmentFile(), segmentFileStore.getTablePath(),
+            SegmentStatus.SUCCESS, true);
     Map<String, byte[]> indexMap = fileStore.getCarbonIndexMapWithFullPath();
     Map<String, Map<String, byte[]>> indexLocationMap = new HashMap<>();
     for (Map.Entry<String, byte[]> entry: indexMap.entrySet()) {
@@ -133,11 +133,12 @@ public class CarbonIndexFileMergeWriter {
     for (Map.Entry<String, Map<String, byte[]>> entry : indexLocationMap.entrySet()) {
       String mergeIndexFile =
           writeMergeIndexFile(indexFileNamesTobeAdded, entry.getKey(), entry.getValue(), segmentId);
-      for (Map.Entry<String, SegmentFileStore.FolderDetails> segentry : sfs.getLocationMap()
-          .entrySet()) {
+      for (Map.Entry<String, SegmentFileStore.FolderDetails> segentry : segmentFileStore
+          .getLocationMap().entrySet()) {
         String location = segentry.getKey();
         if (segentry.getValue().isRelative()) {
-          location = sfs.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR + location;
+          location =
+              segmentFileStore.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR + location;
         }
         if (new Path(entry.getKey()).equals(new Path(location))) {
           segentry.getValue().setMergeFileName(mergeIndexFile);
@@ -153,9 +154,9 @@ public class CarbonIndexFileMergeWriter {
             + CarbonTablePath.SEGMENT_EXT;
     String path = CarbonTablePath.getSegmentFilesLocation(table.getTablePath())
         + CarbonCommonConstants.FILE_SEPARATOR + newSegmentFileName;
-    SegmentFileStore.writeSegmentFile(sfs.getSegmentFile(), path);
+    SegmentFileStore.writeSegmentFile(segmentFileStore.getSegmentFile(), path);
     SegmentFileStore.updateSegmentFile(table.getTablePath(), segmentId, newSegmentFileName,
-        table.getCarbonTableIdentifier().getTableId());
+        table.getCarbonTableIdentifier().getTableId(), segmentFileStore);
 
     for (CarbonFile file : indexFiles) {
       file.delete();
