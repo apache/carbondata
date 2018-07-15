@@ -119,7 +119,12 @@ object MVHelper {
   }
 
   def updateColumnName(attr: Attribute): String = {
-    val name = attr.name.replace("(", "_").replace(")", "").replace(" ", "_").replace("=", "")
+    val name =
+      attr.name.replace("(", "_")
+        .replace(")", "")
+        .replace(" ", "_")
+        .replace("=", "")
+        .replace(",", "")
     attr.qualifier.map(qualifier => qualifier + "_" + name).getOrElse(name)
   }
 
