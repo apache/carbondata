@@ -750,6 +750,18 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists test1")
   }
 
+  test("jira carbondata-2534") {
+
+    sql("drop datamap if exists MV_exp")
+    sql("create datamap MV_exp using 'mv' as select sum(salary),substring(empname,2,5),designation from fact_table1 group by substring(empname,2,5),designation")
+    sql("rebuild datamap MV_exp")
+    val frame = sql(
+      "select sum(salary),substring(empname,2,5),designation from fact_table1 group by substring(empname,2,5),designation")
+    val analyzed = frame.queryExecution.analyzed
+    assert(verifyMVDataMap(analyzed, "MV_exp"))
+    sql("drop datamap if exists MV_exp")
+  }
+
   def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
     val tables = logicalPlan collect {
       case l: LogicalRelation => l.catalogTable.get
