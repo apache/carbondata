@@ -78,13 +78,13 @@ object StreamSinkFactory {
     }
   }
 
+
   def createStreamTableSink(
       sparkSession: SparkSession,
       hadoopConf: Configuration,
       carbonTable: CarbonTable,
       parameters: Map[String, String]): Sink = {
 
-    lock(carbonTable)
 
     validateParameters(parameters)
 
