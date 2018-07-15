@@ -235,7 +235,7 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
       //  ****not sure what enabledDataSets is used for ****
       //  can enable/disable datamap move to other place ?
       //    val feasible = enabledDataSets.filter { x =>
-      val feasible = summaryDatasets.filter { x =>
+      val feasible = enabledDataSets.filter { x =>
         (x.signature, sig) match {
           case (Some(sig1), Some(sig2)) =>
             if (sig1.groupby && sig2.groupby && sig1.datasets.subsetOf(sig2.datasets)) {
