@@ -584,7 +584,8 @@ public final class DataMapStoreManager {
       SegmentRefreshInfo segmentRefreshInfo =
           seg.getSegmentRefreshInfo(updateVo);
       String segmentId = seg.getSegmentNo();
-      if (segmentRefreshTime.get(segmentId) == null) {
+      if (segmentRefreshTime.get(segmentId) == null
+          && segmentRefreshInfo.getSegmentUpdatedTimestamp() != null) {
         segmentRefreshTime.put(segmentId, segmentRefreshInfo);
         return true;
       }
