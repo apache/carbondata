@@ -762,13 +762,34 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists MV_exp")
   }
 
+  test("jira carbondata-2542") {
+    sql("""drop database if exists xy cascade""")
+    sql("""create database if not exists xy""")
+    sql(
+      """
+        | CREATE TABLE xy.fact_tablexy (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql("drop datamap if exists MV_exp")
+    sql("create datamap MV_exp using 'mv' as select doj,sum(salary) from xy.fact_tablexy group by doj")
+    sql("rebuild datamap MV_exp")
+    val frame = sql(
+      "select doj,sum(salary) from xy.fact_tablexy group by doj")
+    val analyzed = frame.queryExecution.analyzed
+    assert(verifyMVDataMap(analyzed, "MV_exp"))
+    sql("drop datamap if exists MV_exp")
+    sql("""drop database if exists xy cascade""")
+  }
+
   def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
     val tables = logicalPlan collect {
       case l: LogicalRelation => l.catalogTable.get
     }
     tables.exists(_.identifier.table.equalsIgnoreCase(dataMapName+"_table"))
   }
-
 
   def drop(): Unit = {
     sql("drop table IF EXISTS fact_table1")
