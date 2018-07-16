@@ -126,7 +126,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
           relativeBlockletId = 0;
         }
         summaryRow = loadToUnsafe(schema, taskSummarySchema, fileFooter, segmentProperties,
-            blockletDataMapInfo.getMinMaxCacheColumns(), blockInfo.getFilePath(), summaryRow,
+            getMinMaxCacheColumns(), blockInfo.getFilePath(), summaryRow,
             blockMetaInfo, relativeBlockletId);
         // this is done because relative blocklet id need to be incremented based on the
         // total number of blocklets
