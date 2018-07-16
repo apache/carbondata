@@ -333,6 +333,19 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      ```
      ALTER TABLE test_db.carbon CHANGE a1 a1 DECIMAL(18,2)
      ```
+- **MERGE INDEX**
+   
+     This command is used to merge all the CarbonData index files (.carbonindex) inside a segment to a single CarbonData index merge file (.carbonindexmerge). This enhances the first query performance.
+     ```
+      ALTER TABLE [db_name.]table_name COMPACT 'SEGMENT_INDEX'
+      ```
+      
+      Examples:
+      ```
+      ALTER TABLE test_db.carbon COMPACT 'SEGMENT_INDEX'
+      ```
+      **NOTE:**
+      * Merge index is not supported on streaming table.
 
 ### DROP TABLE
   
