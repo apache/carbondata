@@ -34,6 +34,10 @@ import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 
 class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
 
+  val originDistributedDatamapStatus = CarbonProperties.getInstance().getProperty(
+    CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
+    CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT
+  )
   val file2 = resourcesPath + "/datamap_input.csv"
 
   override protected def beforeAll(): Unit = {
@@ -908,6 +912,9 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS,
         CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS_DEFAULT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
+        originDistributedDatamapStatus)
   }
 }
 
