@@ -415,6 +415,46 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     checkQuery("fakeDm", shouldHit = false)
   }
 
+  test("test create datamaps on different column but hit only one") {
+    val originDistributedDatamapStatus = CarbonProperties.getInstance().getProperty(
+      CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
+      CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT
+    )
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP, "true")
+    val datamap1 = "datamap1"
+    val datamap2 = "datamap2"
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT)
+         | STORED BY 'carbondata'
+         |  """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP $datamap1 ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='name', 'BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP $datamap2 ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='city', 'BLOOM_SIZE'='64000', 'BLOOM_FPP'='0.00001')
+      """.stripMargin)
+
+    sql(
+      s"""
+         | INSERT INTO $bloomDMSampleTable
+         | VALUES(5,'a','beijing',21),(6,'b','shanghai',25),(7,'b','guangzhou',28)
+      """.stripMargin)
+    assert(sql(s"SELECT * FROM $bloomDMSampleTable WHERE city='shanghai'").count() == 1)
+
+    // recover original setting
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
+        originDistributedDatamapStatus)
+  }
+
   test("test block change datatype for bloomfilter index datamap") {
     sql(
       s"""

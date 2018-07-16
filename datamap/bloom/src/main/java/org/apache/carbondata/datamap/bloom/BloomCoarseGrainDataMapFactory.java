@@ -278,18 +278,21 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     }
     if (dataMaps.size() > 0) {
       for (TableDataMap dataMap : dataMaps) {
-        List<CarbonFile> indexFiles;
-        String dmPath = CarbonTablePath
-            .getDataMapStorePath(tablePath, segmentId, dataMap.getDataMapSchema().getDataMapName());
-        FileFactory.FileType fileType = FileFactory.getFileType(dmPath);
-        final CarbonFile dirPath = FileFactory.getCarbonFile(dmPath, fileType);
-        indexFiles = Arrays.asList(dirPath.listFiles(new CarbonFileFilter() {
-          @Override
-          public boolean accept(CarbonFile file) {
-            return file.isDirectory();
-          }
-        }));
-        indexDirs.addAll(indexFiles);
+        // different from lucene, bloom only get corresponding directory of current datamap
+        if (dataMap.getDataMapSchema().getDataMapName().equals(this.dataMapName)) {
+          List<CarbonFile> indexFiles;
+          String dmPath = CarbonTablePath.getDataMapStorePath(tablePath, segmentId,
+              dataMap.getDataMapSchema().getDataMapName());
+          FileFactory.FileType fileType = FileFactory.getFileType(dmPath);
+          final CarbonFile dirPath = FileFactory.getCarbonFile(dmPath, fileType);
+          indexFiles = Arrays.asList(dirPath.listFiles(new CarbonFileFilter() {
+            @Override
+            public boolean accept(CarbonFile file) {
+              return file.isDirectory();
+            }
+          }));
+          indexDirs.addAll(indexFiles);
+        }
       }
     }
     return indexDirs.toArray(new CarbonFile[0]);
