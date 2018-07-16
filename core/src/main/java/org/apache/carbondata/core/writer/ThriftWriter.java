@@ -21,8 +21,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.util.CarbonUtil;
 
@@ -91,8 +91,7 @@ public class ThriftWriter {
    * @throws IOException
    */
   public void open(FileWriteOperation fileWriteOperation) throws IOException {
-    FileFactory.FileType fileType = FileFactory.getFileType(fileName);
-    atomicFileOperationsWriter = new AtomicFileOperationsImpl(fileName, fileType);
+    atomicFileOperationsWriter = AtomicFileOperationFactory.getAtomicFileOperations(fileName);
     dataOutputStream = atomicFileOperationsWriter.openForWrite(fileWriteOperation);
     binaryOut = new TCompactProtocol(new TIOStreamTransport(dataOutputStream));
   }

@@ -21,61 +21,44 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
 import org.apache.carbondata.core.util.CarbonUtil;
 
-class AtomicFileOperationsImpl implements AtomicFileOperations {
+/**
+ * This Implementation for AtomicFileOperation is specific to S3 store.
+ * In this temporary files would not be written instead directly overwrite call
+ * would be fired on the desired file.
+ *
+ * This is required because deletion and recreation on tablestatus has a very small window where the
+ * file would not exist in the Metadata directory. Any query which tries to access tablestatus
+ * during this time will fail. By this fix the complete object will be overwritten to the bucket and
+ * S3 will ensure that either the old or the new file content is always available for read.
+ *
+ */
+class AtomicFileOperationS3Impl implements AtomicFileOperations {
 
   private String filePath;
 
-  private FileType fileType;
-
-  private String tempWriteFilePath;
-
   private DataOutputStream dataOutStream;
 
-  AtomicFileOperationsImpl(String filePath, FileType fileType) {
+  AtomicFileOperationS3Impl(String filePath) {
     this.filePath = filePath;
-
-    this.fileType = fileType;
   }
 
   @Override public DataInputStream openForRead() throws IOException {
-    return FileFactory.getDataInputStream(filePath, fileType);
-  }
-
-  @Override public DataOutputStream openForWrite(FileWriteOperation operation) throws IOException {
-
-    filePath = filePath.replace("\\", "/");
-
-    tempWriteFilePath = filePath + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
-
-    if (FileFactory.isFileExist(tempWriteFilePath, fileType)) {
-      FileFactory.getCarbonFile(tempWriteFilePath, fileType).delete();
-    }
-
-    FileFactory.createNewFile(tempWriteFilePath, fileType);
-
-    dataOutStream = FileFactory.getDataOutputStream(tempWriteFilePath, fileType);
-
-    return dataOutStream;
-
+    return FileFactory.getDataInputStream(filePath, FileFactory.getFileType(filePath));
   }
 
   @Override public void close() throws IOException {
-
     if (null != dataOutStream) {
       CarbonUtil.closeStream(dataOutStream);
-      CarbonFile tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
-      if (!tempFile.renameForce(filePath)) {
-        throw new IOException("temporary file renaming failed, src="
-            + tempFile.getPath() + ", dest=" + filePath);
-      }
     }
-
   }
 
+  @Override public DataOutputStream openForWrite(FileWriteOperation operation) throws IOException {
+    filePath = filePath.replace("\\", "/");
+    FileFactory.FileType fileType = FileFactory.getFileType(filePath);
+    dataOutStream = FileFactory.getDataOutputStream(filePath, fileType);
+    return dataOutStream;
+  }
 }
