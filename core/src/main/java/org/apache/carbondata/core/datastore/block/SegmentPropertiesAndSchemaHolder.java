@@ -108,7 +108,7 @@ public class SegmentPropertiesAndSchemaHolder {
             this.segmentPropWrapperToSegmentSetMap.get(segmentPropertiesWrapper);
         if (null == segmentIdSetAndIndexWrapper) {
           // create new segmentProperties
-          segmentPropertiesWrapper.initSegmentProperties();
+          segmentPropertiesWrapper.initSegmentProperties(carbonTable);
           int segmentPropertiesIndex = segmentPropertiesIndexCounter.incrementAndGet();
           indexToSegmentPropertiesWrapperMapping
               .put(segmentPropertiesIndex, segmentPropertiesWrapper);
@@ -216,8 +216,11 @@ public class SegmentPropertiesAndSchemaHolder {
    *
    * @param segmentId
    * @param segmentPropertiesIndex
+   * @param clearSegmentWrapperFromMap flag to specify whether to clear segmentPropertiesWrapper
+   *                                   from Map if all the segment's using it have become stale
    */
-  public void invalidate(String segmentId, int segmentPropertiesIndex) {
+  public void invalidate(String segmentId, int segmentPropertiesIndex,
+      boolean clearSegmentWrapperFromMap) {
     SegmentPropertiesWrapper segmentPropertiesWrapper =
         indexToSegmentPropertiesWrapperMapping.get(segmentPropertiesIndex);
     if (null != segmentPropertiesWrapper) {
@@ -230,7 +233,8 @@ public class SegmentPropertiesAndSchemaHolder {
       // if after removal of given SegmentId, the segmentIdSet becomes empty that means this
       // segmentPropertiesWrapper is not getting used at all. In that case this object can be
       // removed from all the holders
-      if (segmentIdAndSegmentPropertiesIndexWrapper.segmentIdSet.isEmpty()) {
+      if (clearSegmentWrapperFromMap && segmentIdAndSegmentPropertiesIndexWrapper.segmentIdSet
+          .isEmpty()) {
         indexToSegmentPropertiesWrapperMapping.remove(segmentPropertiesIndex);
         segmentPropWrapperToSegmentSetMap.remove(segmentPropertiesWrapper);
       }
@@ -254,11 +258,11 @@ public class SegmentPropertiesAndSchemaHolder {
       this.tableIdentifier = carbonTable.getAbsoluteTableIdentifier();
       this.columnsInTable = columnsInTable;
       this.columnCardinality = columnCardinality;
-      this.minMaxCacheColumns = carbonTable.getMinMaxCacheColumns();
     }
 
-    public void initSegmentProperties() {
+    public void initSegmentProperties(CarbonTable carbonTable) {
       segmentProperties = new SegmentProperties(columnsInTable, columnCardinality);
+      this.minMaxCacheColumns = carbonTable.getMinMaxCacheColumns(segmentProperties);
     }
 
     @Override public boolean equals(Object obj) {
