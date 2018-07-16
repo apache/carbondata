@@ -144,4 +144,17 @@ public abstract class DataMapFactory<T extends DataMap> {
     }
   }
 
+  /**
+   * whether to block operation on corresponding table or column.
+   * For example, bloomfilter datamap will block changing datatype for bloomindex column.
+   * By default it will not block any operation.
+   *
+   * @param operation table operation
+   * @param targets objects which the operation impact on
+   * @return true the operation will be blocked;false the operation will not be blocked
+   */
+  public boolean isOperationBlocked(TableOperation operation, Object... targets) {
+    return false;
+  }
+
 }

@@ -1054,11 +1054,12 @@ public class CarbonTable implements Serializable {
   /**
    * methods returns true if operation is allowed for the corresponding datamap or not
    * if this operation makes datamap stale it is not allowed
-   * @param carbonTable
-   * @param operation
-   * @return
+   * @param carbonTable carbontable to be operated
+   * @param operation which operation on the table,such as drop column,change datatype.
+   * @param targets objects which the operation impact on,such as column
+   * @return true allow;false not allow
    */
-  public boolean canAllow(CarbonTable carbonTable, TableOperation operation) {
+  public boolean canAllow(CarbonTable carbonTable, TableOperation operation, Object... targets) {
     try {
       List<TableDataMap> datamaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
       if (!datamaps.isEmpty()) {
@@ -1067,6 +1068,10 @@ public class CarbonTable implements Serializable {
               DataMapStoreManager.getInstance().getDataMapFactoryClass(
                   carbonTable, dataMap.getDataMapSchema());
           if (factoryClass.willBecomeStale(operation)) {
+            return false;
+          }
+          // check whether the operation is blocked for datamap
+          if (factoryClass.isOperationBlocked(operation, targets)) {
             return false;
           }
         }
