@@ -37,8 +37,8 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.locks.CarbonLockFactory;
 import org.apache.carbondata.core.locks.ICarbonLock;
@@ -662,8 +662,8 @@ public class SegmentUpdateStatusManager {
     String tableUpdateStatusPath =
         CarbonTablePath.getMetadataPath(identifier.getTablePath()) +
             CarbonCommonConstants.FILE_SEPARATOR + tableUpdateStatusIdentifier;
-    AtomicFileOperations fileOperation = new AtomicFileOperationsImpl(tableUpdateStatusPath,
-        FileFactory.getFileType(tableUpdateStatusPath));
+    AtomicFileOperations fileOperation =
+        AtomicFileOperationFactory.getAtomicFileOperations(tableUpdateStatusPath);
 
     try {
       if (!FileFactory
@@ -709,7 +709,7 @@ public class SegmentUpdateStatusManager {
             + CarbonUpdateUtil.getUpdateStatusFileName(updateStatusFileIdentifier);
 
     AtomicFileOperations fileWrite =
-        new AtomicFileOperationsImpl(fileLocation, FileFactory.getFileType(fileLocation));
+        AtomicFileOperationFactory.getAtomicFileOperations(fileLocation);
     BufferedWriter brWriter = null;
     DataOutputStream dataOutputStream = null;
     Gson gsonObjectToWrite = new Gson();

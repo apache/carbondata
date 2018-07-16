@@ -40,8 +40,8 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
@@ -215,7 +215,7 @@ public class SegmentFileStore {
    */
   public static void writeSegmentFile(SegmentFile segmentFile, String path) throws IOException {
     AtomicFileOperations fileWrite =
-        new AtomicFileOperationsImpl(path, FileFactory.getFileType(path));
+        AtomicFileOperationFactory.getAtomicFileOperations(path);
     BufferedWriter brWriter = null;
     DataOutputStream dataOutputStream = null;
     Gson gsonObjectToWrite = new Gson();
@@ -407,7 +407,7 @@ public class SegmentFileStore {
     InputStreamReader inStream = null;
     SegmentFile segmentFile;
     AtomicFileOperations fileOperation =
-        new AtomicFileOperationsImpl(segmentFilePath, FileFactory.getFileType(segmentFilePath));
+        AtomicFileOperationFactory.getAtomicFileOperations(segmentFilePath);
 
     try {
       if (!FileFactory.isFileExist(segmentFilePath, FileFactory.getFileType(segmentFilePath))) {
