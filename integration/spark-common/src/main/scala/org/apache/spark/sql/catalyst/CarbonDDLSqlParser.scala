@@ -472,8 +472,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         .exists(x => x.column.equalsIgnoreCase(dictColm) && x.children.isDefined &&
                      null != x.children.get &&
                      !validateChildColumnsRecursively(x))) {
-        val errMsg = "None of the child columns specified in the complex dataType column(s) in " +
-                     "local_dictionary_include are not of string dataType."
+        val errMsg =
+          s"None of the child columns of complex datatype column $dictColm specified in " +
+          "local_dictionary_include are not of string dataType."
         throw new MalformedCarbonCommandException(errMsg)
       }
     }

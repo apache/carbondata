@@ -18,17 +18,16 @@ package org.apache.spark.sql.hive
 
 import java.util.LinkedHashSet
 
-import scala.Array.canBuildFrom
 import scala.collection.JavaConverters._
-import scala.util.parsing.combinator.RegexParsers
 
 import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan}
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.{CarbonMetastoreTypes, SparkTypeConverter}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -173,15 +172,38 @@ case class CarbonRelation(
             .getValidAndInvalidSegments.getValidSegments.asScala
           var size = 0L
           // for each segment calculate the size
-          segments.foreach {validSeg =>
-            // for older store
-            if (null != validSeg.getLoadMetadataDetails.getDataSize &&
-                null != validSeg.getLoadMetadataDetails.getIndexSize) {
-              size = size + validSeg.getLoadMetadataDetails.getDataSize.toLong +
-                     validSeg.getLoadMetadataDetails.getIndexSize.toLong
-            } else {
-              size = size + FileFactory.getDirectorySize(
-                CarbonTablePath.getSegmentPath(tablePath, validSeg.getSegmentNo))
+          if (carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
+                .get(CarbonCommonConstants.FLAT_FOLDER).isDefined &&
+              carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
+              (CarbonCommonConstants.FLAT_FOLDER).toBoolean) {
+            val tableDirectorySize = FileFactory.getDirectorySize(carbonTable.getTablePath)
+            val metaDirectorySize = FileFactory.getDirectorySize(carbonTable.getMetadataPath)
+            val factDirectorySize = FileFactory
+              .getDirectorySize(CarbonTablePath.getFactDir(carbonTable.getTablePath))
+            val lockDirSize = FileFactory
+              .getDirectorySize(CarbonTablePath.getLockFilesDirPath(carbonTable.getTablePath))
+            val datamaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable)
+            var datamapsDirectorySize = 0L
+            if (datamaps.size() > 0) {
+              datamaps.asScala.foreach { datamap =>
+                datamapsDirectorySize = datamapsDirectorySize + FileFactory
+                  .getDirectorySize(CarbonTablePath.getDataMapStorePath(
+                    carbonTable.getTablePath, datamap.getDataMapSchema.getDataMapName))
+              }
+            }
+            size = tableDirectorySize - (factDirectorySize + metaDirectorySize + lockDirSize +
+                                         datamapsDirectorySize)
+          } else {
+            segments.foreach { validSeg =>
+              // for older store
+              if (null != validSeg.getLoadMetadataDetails.getDataSize &&
+                  null != validSeg.getLoadMetadataDetails.getIndexSize) {
+                size = size + validSeg.getLoadMetadataDetails.getDataSize.toLong +
+                       validSeg.getLoadMetadataDetails.getIndexSize.toLong
+              } else {
+                size = size + FileFactory.getDirectorySize(
+                  CarbonTablePath.getSegmentPath(tablePath, validSeg.getSegmentNo))
+              }
             }
           }
           // update the new table status time

@@ -374,6 +374,20 @@ public class CarbonTablePath {
   }
 
   /**
+   * Return store path for datamap based on the dataMapName,
+   *
+   * @return store path based on datamapname
+   */
+  public static String getDataMapStorePath(String tablePath, String dataMapName) {
+    return new StringBuilder()
+        .append(tablePath)
+        .append(File.separator)
+        .append(dataMapName)
+        .toString();
+  }
+
+
+  /**
    * To manage data file name and composition
    */
   public static class DataFileUtil {
