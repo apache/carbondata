@@ -34,6 +34,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -1195,11 +1196,14 @@ public class CarbonTable implements Serializable {
 
   /**
    * Method to find get carbon columns for columns to be cached. It will fill dimension first and
-   * then measures
+   * then measures based on the block segmentProperties.
+   * In alter add column scenarios it can happen that the newly added columns are being cached
+   * which do not exist in already loaded data. In those cases newly added columns should not be
+   * cached for the already loaded data
    *
    * @return
    */
-  public List<CarbonColumn> getMinMaxCacheColumns() {
+  public List<CarbonColumn> getMinMaxCacheColumns(SegmentProperties segmentProperties) {
     List<CarbonColumn> minMaxCachedColsList = null;
     String tableName = tableInfo.getFactTable().getTableName();
     String cacheColumns =
@@ -1215,12 +1219,16 @@ public class CarbonTable implements Serializable {
         CarbonDimension dimension = getDimensionByName(tableName, column);
         // if found in dimension then add to dimension else add to measures
         if (null != dimension) {
-          // first add normal dimensions and then complex dimensions
-          if (dimension.isComplex()) {
-            complexDimensions.add(dimension);
-            continue;
+          CarbonDimension dimensionFromCurrentBlock =
+              segmentProperties.getDimensionFromCurrentBlock(dimension);
+          if (null != dimensionFromCurrentBlock) {
+            // first add normal dimensions and then complex dimensions
+            if (dimensionFromCurrentBlock.isComplex()) {
+              complexDimensions.add(dimensionFromCurrentBlock);
+              continue;
+            }
+            minMaxCachedColsList.add(dimensionFromCurrentBlock);
           }
-          minMaxCachedColsList.add(dimension);
         } else {
           measureColumns.add(column);
         }
@@ -1231,7 +1239,11 @@ public class CarbonTable implements Serializable {
       for (String measureColumn : measureColumns) {
         CarbonMeasure measure = getMeasureByName(tableName, measureColumn);
         if (null != measure) {
-          minMaxCachedColsList.add(measure);
+          CarbonMeasure measureFromCurrentBlock =
+              segmentProperties.getMeasureFromCurrentBlock(measure.getColumnId());
+          if (null != measureFromCurrentBlock) {
+            minMaxCachedColsList.add(measureFromCurrentBlock);
+          }
         }
       }
     }

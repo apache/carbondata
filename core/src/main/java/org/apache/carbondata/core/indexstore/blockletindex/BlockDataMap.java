@@ -224,7 +224,7 @@ public class BlockDataMap extends CoarseGrainDataMap
         byte[][] updatedMaxValues =
             CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, false);
         summaryRow = loadToUnsafeBlock(schema, taskSummarySchema, fileFooter, segmentProperties,
-            blockletDataMapInfo.getMinMaxCacheColumns(), blockInfo.getFilePath(), summaryRow,
+            getMinMaxCacheColumns(), blockInfo.getFilePath(), summaryRow,
             blockMetaInfo, updatedMinValues, updatedMaxValues);
       }
     }
@@ -286,8 +286,8 @@ public class BlockDataMap extends CoarseGrainDataMap
           TableBlockInfo previousBlockInfo =
               previousDataFileFooter.getBlockInfo().getTableBlockInfo();
           summaryRow = loadToUnsafeBlock(schema, taskSummarySchema, previousDataFileFooter,
-              segmentProperties, blockletDataMapInfo.getMinMaxCacheColumns(),
-              previousBlockInfo.getFilePath(), summaryRow,
+              segmentProperties, getMinMaxCacheColumns(), previousBlockInfo.getFilePath(),
+              summaryRow,
               blockletDataMapInfo.getBlockMetaInfoMap().get(previousBlockInfo.getFilePath()),
               blockMinValues, blockMaxValues);
           // flag to check whether last file footer entry is different from previous entry.
@@ -311,7 +311,7 @@ public class BlockDataMap extends CoarseGrainDataMap
     if (isLastFileFooterEntryNeedToBeAdded) {
       summaryRow =
           loadToUnsafeBlock(schema, taskSummarySchema, previousDataFileFooter, segmentProperties,
-              blockletDataMapInfo.getMinMaxCacheColumns(),
+              getMinMaxCacheColumns(),
               previousDataFileFooter.getBlockInfo().getTableBlockInfo().getFilePath(), summaryRow,
               blockletDataMapInfo.getBlockMetaInfoMap()
                   .get(previousDataFileFooter.getBlockInfo().getTableBlockInfo().getFilePath()),
@@ -530,7 +530,7 @@ public class BlockDataMap extends CoarseGrainDataMap
     return false;
   }
 
-  private List<CarbonColumn> getMinMaxCacheColumns() {
+  protected List<CarbonColumn> getMinMaxCacheColumns() {
     return SegmentPropertiesAndSchemaHolder.getInstance()
         .getSegmentPropertiesWrapper(segmentPropertiesIndex).getMinMaxCacheColumns();
   }

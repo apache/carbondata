@@ -257,4 +257,15 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
       Row(5))
   }
 
+  test("verify column caching with alter add column") {
+    sql("drop table if exists alter_add_column_min_max")
+    sql("create table alter_add_column_min_max (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId double,deviceInformationId double,productionDate Timestamp,deliveryDate timestamp,deliverycharge double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('table_blocksize'='1','COLUMN_META_CACHE'='AMSize','CACHE_LEVEL'='BLOCKLET')")
+    sql("insert into alter_add_column_min_max select '1AA1','8RAM size','4','Chinese','guangzhou',2738,1,'2014-07-01 12:07:28','2014-07-01 12:07:28',25")
+    sql("alter table alter_add_column_min_max add columns(age int, name string)")
+    sql("ALTER TABLE alter_add_column_min_max SET TBLPROPERTIES('COLUMN_META_CACHE'='age,name')")
+    sql("insert into alter_add_column_min_max select '1AA1','8RAM size','4','Chinese','guangzhou',2738,1,'2014-07-01 12:07:28','2014-07-01 12:07:28',25,29,'Rahul'")
+    checkAnswer(sql("select count(*) from alter_add_column_min_max where AMSize='8RAM size'"), Row(2))
+    sql("drop table if exists alter_add_column_min_max")
+  }
+
 }

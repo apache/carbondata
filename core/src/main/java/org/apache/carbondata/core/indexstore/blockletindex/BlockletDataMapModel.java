@@ -16,13 +16,11 @@
  */
 package org.apache.carbondata.core.indexstore.blockletindex;
 
-import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.indexstore.BlockMetaInfo;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 
 /**
  * It is the model object to keep the information to build or initialize BlockletDataMap.
@@ -35,8 +33,6 @@ public class BlockletDataMapModel extends DataMapModel {
 
   private CarbonTable carbonTable;
 
-  private List<CarbonColumn> minMaxCacheColumns;
-
   private String segmentId;
 
   private boolean addToUnsafe = true;
@@ -48,7 +44,6 @@ public class BlockletDataMapModel extends DataMapModel {
     this.blockMetaInfoMap = blockMetaInfoMap;
     this.segmentId = segmentId;
     this.carbonTable = carbonTable;
-    this.minMaxCacheColumns = carbonTable.getMinMaxCacheColumns();
   }
 
   public BlockletDataMapModel(CarbonTable carbonTable, String filePath,
@@ -76,9 +71,5 @@ public class BlockletDataMapModel extends DataMapModel {
 
   public CarbonTable getCarbonTable() {
     return carbonTable;
-  }
-
-  public List<CarbonColumn> getMinMaxCacheColumns() {
-    return minMaxCacheColumns;
   }
 }
