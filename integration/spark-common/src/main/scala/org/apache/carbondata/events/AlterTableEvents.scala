@@ -204,6 +204,17 @@ case class AlterTableCompactionAbortEvent(sparkSession: SparkSession,
     alterTableModel: AlterTableModel) extends Event with AlterTableCompactionEventInfo
 
 /**
+ * Compaction Event for handling merge index in alter DDL
+ *
+ * @param sparkSession
+ * @param carbonTable
+ * @param alterTableModel
+ */
+case class AlterTableMergeIndexEvent(sparkSession: SparkSession,
+    carbonTable: CarbonTable,
+    alterTableModel: AlterTableModel) extends Event with AlterTableCompactionEventInfo
+
+/**
  * pre event for standard hive partition
  * @param sparkSession
  * @param carbonTable

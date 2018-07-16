@@ -112,7 +112,7 @@ public class BlockletDataMapUtil {
         CarbonTable.updateTableByTableInfo(carbonTable, carbonTable.getTableInfo());
       }
       String blockPath = footer.getBlockInfo().getTableBlockInfo().getFilePath();
-      if (null == blockMetaInfoMap.get(blockPath)) {
+      if (null == blockMetaInfoMap.get(blockPath) && FileFactory.isFileExist(blockPath)) {
         blockMetaInfoMap.put(blockPath, createBlockMetaInfo(fileNameToMetaInfoMapping, blockPath));
       }
     }
