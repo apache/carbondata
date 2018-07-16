@@ -58,7 +58,8 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
       val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
       carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
-      if (!carbonTable.canAllow(carbonTable, TableOperation.ALTER_DROP)) {
+      if (!carbonTable.canAllow(carbonTable, TableOperation.ALTER_DROP,
+          alterTableDropColumnModel.columns.asJava)) {
         throw new MalformedCarbonCommandException(
           "alter table drop column is not supported for index datamap")
       }
