@@ -334,6 +334,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setStoreLocation(tempStoreLocation);
     carbonFactDataHandlerModel.setDimLens(segmentProperties.getDimColumnsCardinality());
     carbonFactDataHandlerModel.setSegmentProperties(segmentProperties);
+    carbonFactDataHandlerModel.setSegmentId(loadModel.getSegmentId());
     carbonFactDataHandlerModel
         .setNoDictionaryCount(segmentProperties.getNumberOfNoDictionaryDimension());
     carbonFactDataHandlerModel.setDimensionCount(
