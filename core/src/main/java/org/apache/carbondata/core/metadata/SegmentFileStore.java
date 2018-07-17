@@ -229,6 +229,10 @@ public class SegmentFileStore {
       String metadataInstance = gsonObjectToWrite.toJson(segmentFile);
       brWriter.write(metadataInstance);
       brWriter.flush();
+    } catch (IOException ie) {
+      LOGGER.error("Error message: " + ie.getLocalizedMessage());
+      fileWrite.setFailed();
+      throw ie;
     } finally {
       CarbonUtil.closeStreams(brWriter);
       fileWrite.close();

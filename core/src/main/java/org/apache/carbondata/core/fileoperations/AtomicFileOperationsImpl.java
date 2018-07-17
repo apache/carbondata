@@ -21,6 +21,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -29,6 +31,11 @@ import org.apache.carbondata.core.util.CarbonUtil;
 
 class AtomicFileOperationsImpl implements AtomicFileOperations {
 
+  /**
+   * Logger instance
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(AtomicFileOperationsImpl.class.getName());
   private String filePath;
 
   private FileType fileType;
@@ -36,6 +43,7 @@ class AtomicFileOperationsImpl implements AtomicFileOperations {
   private String tempWriteFilePath;
 
   private DataOutputStream dataOutStream;
+  private boolean setFailed;
 
   AtomicFileOperationsImpl(String filePath, FileType fileType) {
     this.filePath = filePath;
@@ -70,12 +78,20 @@ class AtomicFileOperationsImpl implements AtomicFileOperations {
     if (null != dataOutStream) {
       CarbonUtil.closeStream(dataOutStream);
       CarbonFile tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
-      if (!tempFile.renameForce(filePath)) {
-        throw new IOException("temporary file renaming failed, src="
-            + tempFile.getPath() + ", dest=" + filePath);
+      if (!this.setFailed) {
+        if (!tempFile.renameForce(filePath)) {
+          throw new IOException(
+              "temporary file renaming failed, src=" + tempFile.getPath() + ", dest=" + filePath);
+        }
+      } else {
+        LOGGER.warn("The temporary file renaming skipped due to I/O error, deleting file "
+            + tempWriteFilePath);
+        tempFile.delete();
       }
     }
-
   }
 
+  @Override public void setFailed() {
+    this.setFailed = true;
+  }
 }
