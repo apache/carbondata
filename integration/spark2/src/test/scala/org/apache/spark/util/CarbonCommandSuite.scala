@@ -21,6 +21,7 @@ import java.io.File
 import java.sql.Timestamp
 import java.util.Date
 
+import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -172,7 +173,7 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
     sql(s"drop table if exists ${tableName}")
     sql(s"create table ${tableName} (name String, age int) stored by 'carbondata' "
       + "TBLPROPERTIES('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='2,2')")
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", tableName)
+    val carbonTable = CarbonEnv.getCarbonTable(Some("default"), tableName)(sqlContext.sparkSession)
     sql(s"insert into ${tableName} select 'abc1',1")
     sql(s"insert into ${tableName} select 'abc2',2")
     sql(s"insert into ${tableName} select 'abc3',3")

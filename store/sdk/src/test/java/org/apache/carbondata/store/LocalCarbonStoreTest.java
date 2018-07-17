@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.sdk.file.Field;
 import org.apache.carbondata.sdk.file.Schema;
@@ -59,7 +60,8 @@ public class LocalCarbonStoreTest {
     TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
 
     CarbonStore store = new LocalCarbonStore();
-    Iterator<CarbonRow> rows = store.scan(path, new String[]{"name, age"}, null);
+    Iterator<CarbonRow> rows =
+        store.scan(AbsoluteTableIdentifier.from(path, "", ""), new String[] { "name, age" }, null);
 
     while (rows.hasNext()) {
       CarbonRow row = rows.next();

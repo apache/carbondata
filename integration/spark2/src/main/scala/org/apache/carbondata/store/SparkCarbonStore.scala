@@ -24,12 +24,13 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.{CarbonInputMetrics, SparkConf}
 import org.apache.spark.rpc.{Master, Worker}
+import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.CarbonSession._
-import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.annotations.InterfaceAudience
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.row.CarbonRow
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.util.CarbonProperties
@@ -68,21 +69,22 @@ class SparkCarbonStore extends MetaCachedCarbonStore {
 
   @throws[IOException]
   override def scan(
-      path: String,
+      tableIdentifier: AbsoluteTableIdentifier,
       projectColumns: Array[String]): java.util.Iterator[CarbonRow] = {
-    require(path != null)
+    require(tableIdentifier != null)
     require(projectColumns != null)
-    scan(path, projectColumns, null)
+    scan(tableIdentifier, projectColumns, null)
   }
 
   @throws[IOException]
   override def scan(
-      path: String,
+      tableIdentifier: AbsoluteTableIdentifier,
       projectColumns: Array[String],
       filter: Expression): java.util.Iterator[CarbonRow] = {
-    require(path != null)
+    require(tableIdentifier != null)
     require(projectColumns != null)
-    val table = getTable(path)
+    val table = CarbonEnv
+      .getCarbonTable(Some(tableIdentifier.getDatabaseName), tableIdentifier.getTableName)(session)
     val rdd = new CarbonScanRDD[CarbonRow](
       spark = session,
       columnProjection = new CarbonProjection(projectColumns),
