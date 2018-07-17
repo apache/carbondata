@@ -90,6 +90,16 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
     return this.noDictionaryKeys;
   }
 
+
+  /**
+   * to get the complex column data
+   *
+   * @return no complex values
+   */
+  public byte[][] getComplexTypesKeys() {
+    return this.complexTypesKeys;
+  }
+
   /**
    * to generate the hash code
    */

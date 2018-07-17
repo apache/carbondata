@@ -34,14 +34,19 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datamap.DataMapWriterListener;
+import org.apache.carbondata.processing.datatypes.ArrayDataType;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
+import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
+import org.apache.carbondata.processing.datatypes.StructDataType;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
@@ -314,9 +319,25 @@ public class CarbonFactDataHandlerModel {
         .getFormattedCardinality(segmentProperties.getDimColumnsCardinality(), wrapperColumnSchema);
     carbonFactDataHandlerModel.setColCardinality(formattedCardinality);
     //TO-DO Need to handle complex types here .
-    Map<Integer, GenericDataType> complexIndexMap =
-        new HashMap<Integer, GenericDataType>(segmentProperties.getComplexDimensions().size());
-    carbonFactDataHandlerModel.setComplexIndexMap(complexIndexMap);
+
+    int simpleDimensionCount = -1;
+    if (segmentProperties.getDimensions().size() == 0) {
+      simpleDimensionCount = 0;
+    } else {
+      simpleDimensionCount = segmentProperties.getDimensions().size() - segmentProperties
+          .getNumberOfNoDictionaryDimension() - segmentProperties.getComplexDimensions().size();
+    }
+    boolean isEmptyBadRecords;
+    if (loadModel.getIsEmptyDataBadRecord() == null) {
+      isEmptyBadRecords = false;
+    } else if (loadModel.getIsEmptyDataBadRecord().equalsIgnoreCase("true")) {
+      isEmptyBadRecords = true;
+    } else {
+      isEmptyBadRecords = false;
+    }
+    carbonFactDataHandlerModel.setComplexIndexMap(
+        convertComplexDimensionToGenericDataType(segmentProperties.getComplexDimensions(),
+            simpleDimensionCount, loadModel.getSerializationNullFormat(), isEmptyBadRecords));
     DataType[] measureDataTypes = new DataType[segmentProperties.getMeasures().size()];
     int i = 0;
     for (CarbonMeasure msr : segmentProperties.getMeasures()) {
@@ -345,6 +366,81 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel
         .setColumnLocalDictGenMap(CarbonUtil.getLocalDictionaryModel(carbonTable));
     return carbonFactDataHandlerModel;
+  }
+
+  /**
+   * This routine takes the Complex Dimension and convert into generic DataType.
+   * @param complexDimensions
+   * @param dimensionCount
+   * @param isNullFormat
+   *@param isEmptyBadRecords @return
+   */
+  private static Map<Integer, GenericDataType> convertComplexDimensionToGenericDataType(
+      List<CarbonDimension> complexDimensions, int dimensionCount, String isNullFormat,
+      boolean isEmptyBadRecords) {
+    Map<Integer, GenericDataType> complexIndexMap =
+        new HashMap<Integer, GenericDataType>(complexDimensions.size());
+
+    for (CarbonDimension carbonDimension : complexDimensions) {
+
+      if (carbonDimension.isComplex()) {
+        GenericDataType g;
+        if (carbonDimension.getColumnSchema().getDataType().getName().equalsIgnoreCase("ARRAY")) {
+          g = new ArrayDataType(carbonDimension.getColName(), "", carbonDimension.getColumnId());
+        } else if (carbonDimension.getColumnSchema().getDataType().getName()
+            .equalsIgnoreCase("STRUCT")) {
+          g = new StructDataType(carbonDimension.getColName(), "", carbonDimension.getColumnId());
+        } else {
+          // Add Primitive type.
+          throw new RuntimeException("Primitive Type should not be coming in first loop");
+        }
+        if (carbonDimension.getNumberOfChild() > 0) {
+          addChildrenForComplex(carbonDimension.getListOfChildDimensions(), g, isNullFormat,
+              isEmptyBadRecords);
+        }
+        g.setOutputArrayIndex(0);
+        complexIndexMap.put(dimensionCount++, g);
+      }
+
+    }
+    return complexIndexMap;
+  }
+
+  private static void addChildrenForComplex(List<CarbonDimension> listOfChildDimensions,
+      GenericDataType genericDataType, String isNullFormat, boolean isEmptyBadRecord) {
+    for (CarbonDimension carbonDimension : listOfChildDimensions) {
+      if (carbonDimension.getColumnSchema().getDataType().getName().equalsIgnoreCase("ARRAY")) {
+        GenericDataType arrayGeneric = new ArrayDataType(carbonDimension.getColName(),
+            carbonDimension.getColName()
+                .substring(0, carbonDimension.getColName().lastIndexOf(".")),
+            carbonDimension.getColumnId());
+        if (carbonDimension.getNumberOfChild() > 0) {
+          addChildrenForComplex(carbonDimension.getListOfChildDimensions(), arrayGeneric,
+              isNullFormat, isEmptyBadRecord);
+        }
+        genericDataType.addChildren(arrayGeneric);
+      } else if (carbonDimension.getColumnSchema().getDataType().getName()
+          .equalsIgnoreCase("STRUCT")) {
+        GenericDataType structGeneric = new StructDataType(carbonDimension.getColName(),
+            carbonDimension.getColName()
+                .substring(0, carbonDimension.getColName().lastIndexOf(".")),
+            carbonDimension.getColumnId());
+        if (carbonDimension.getNumberOfChild() > 0) {
+          addChildrenForComplex(carbonDimension.getListOfChildDimensions(), structGeneric,
+              isNullFormat, isEmptyBadRecord);
+        }
+        genericDataType.addChildren(structGeneric);
+      } else {
+        // Primitive Data Type
+        genericDataType.addChildren(
+            new PrimitiveDataType(carbonDimension.getColumnSchema().getColumnName(),
+                carbonDimension.getDataType(), carbonDimension.getColName()
+                .substring(0, carbonDimension.getColName().lastIndexOf(".")),
+                carbonDimension.getColumnId(),
+                carbonDimension.getColumnSchema().hasEncoding(Encoding.DICTIONARY), isNullFormat,
+                isEmptyBadRecord));
+      }
+    }
   }
 
   /**
