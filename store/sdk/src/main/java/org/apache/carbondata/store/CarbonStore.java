@@ -24,6 +24,7 @@ import java.util.Iterator;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.expression.Expression;
 
 /**
@@ -41,7 +42,7 @@ public interface CarbonStore extends Closeable {
    * @throws IOException if unable to read files in table path
    */
   Iterator<CarbonRow> scan(
-      String path,
+      AbsoluteTableIdentifier tableIdentifier,
       String[] projectColumns) throws IOException;
 
   /**
@@ -53,7 +54,7 @@ public interface CarbonStore extends Closeable {
    * @throws IOException if unable to read files in table path
    */
   Iterator<CarbonRow> scan(
-      String path,
+      AbsoluteTableIdentifier tableIdentifier,
       String[] projectColumns,
       Expression filter) throws IOException;
 
