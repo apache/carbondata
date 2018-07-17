@@ -2165,7 +2165,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
     assert(exception.getMessage
       .contains(
-        "None of the child columns specified in the complex dataType column(s) in " +
+        "None of the child columns of complex dataType column st specified in " +
         "local_dictionary_include are not of string dataType."))
   }
 
@@ -2183,7 +2183,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
     assert(exception.getMessage
       .contains(
-        "None of the child columns specified in the complex dataType column(s) in " +
+        "None of the child columns of complex dataType column city specified in " +
         "local_dictionary_include are not of string dataType."))
   }
 
@@ -2322,7 +2322,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
     assert(exception.getMessage
       .contains(
-        "None of the child columns specified in the complex dataType column(s) in " +
+        "None of the child columns of complex dataType column city specified in " +
         "local_dictionary_include are not of string dataType."))
   }
 

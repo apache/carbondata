@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.rdd
 
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util
 import java.util.TimeZone
@@ -558,6 +559,10 @@ object CarbonDataRDDFactory {
         if (carbonLoadModel.isCarbonTransactionalTable) {
           // delete segment is applicable for transactional table
           CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
+          // delete corresponding segment file from metadata
+          val segmentFile = CarbonTablePath.getSegmentFilesLocation(carbonLoadModel.getTablePath) +
+                            File.separator + segmentFileName
+          FileFactory.deleteFile(segmentFile, FileFactory.getFileType(segmentFile))
           clearDataMapFiles(carbonTable, carbonLoadModel.getSegmentId)
         }
         LOGGER.info("********clean up done**********")
