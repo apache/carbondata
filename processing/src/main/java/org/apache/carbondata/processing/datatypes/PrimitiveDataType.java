@@ -111,8 +111,6 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   private boolean isDictionary;
 
-  private boolean isEmptyBadRecord;
-
   private String nullformat;
 
   private boolean isDirectDictionary;
@@ -133,13 +131,12 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    * @param isDictionary
    */
   public PrimitiveDataType(String name, DataType dataType, String parentName, String columnId,
-      boolean isDictionary, String nullFormat, boolean isEmptyBadRecord) {
+      boolean isDictionary, String nullFormat) {
     this.name = name;
     this.parentname = parentName;
     this.columnId = columnId;
     this.isDictionary = isDictionary;
     this.nullformat = nullFormat;
-    this.isEmptyBadRecord = isEmptyBadRecord;
     this.dataType = dataType;
   }
 
@@ -154,19 +151,17 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    * @param useOnePass
    * @param localCache
    * @param nullFormat
-   * @param isEmptyBadRecords
    */
   public PrimitiveDataType(CarbonColumn carbonColumn, String parentName, String columnId,
       CarbonDimension carbonDimension, AbsoluteTableIdentifier absoluteTableIdentifier,
       DictionaryClient client, Boolean useOnePass, Map<Object, Integer> localCache,
-      String nullFormat, Boolean isEmptyBadRecords) {
+      String nullFormat) {
     this.name = carbonColumn.getColName();
     this.parentname = parentName;
     this.columnId = columnId;
     this.carbonDimension = carbonDimension;
     this.isDictionary = isDictionaryDimension(carbonDimension);
     this.nullformat = nullFormat;
-    this.isEmptyBadRecord = isEmptyBadRecords;
     this.dataType = carbonColumn.getDataType();
 
     DictionaryColumnUniqueIdentifier identifier =
@@ -566,7 +561,6 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     dataType.parentname = this.parentname;
     dataType.columnId = this.columnId;
     dataType.dictionaryGenerator = this.dictionaryGenerator;
-    dataType.isEmptyBadRecord = this.isEmptyBadRecord;
     dataType.nullformat = this.nullformat;
     dataType.setKeySize(this.keySize);
     dataType.setSurrogateIndex(this.index);
