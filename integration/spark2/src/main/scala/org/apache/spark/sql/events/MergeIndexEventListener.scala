@@ -31,6 +31,7 @@ import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.events.{AlterTableCompactionPostEvent, AlterTableMergeIndexEvent, Event, OperationContext, OperationEventListener}
@@ -67,6 +68,8 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
               segmentFileNameMap,
               carbonTable.getTablePath,
               carbonTable, false)
+            // clear Block dataMap Cache
+            clearBlockDataMapCache(carbonTable, Seq(loadModel.getSegmentId))
           }
         }
       case alterTableCompactionPostEvent: AlterTableCompactionPostEvent =>
@@ -120,6 +123,8 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
                 carbonMainTable.getTablePath,
                 carbonMainTable,
                 true)
+              // clear Block dataMap Cache
+              clearBlockDataMapCache(carbonMainTable, validSegmentIds)
               val requestMessage = "Compaction request completed for table "
               s"${ carbonMainTable.getDatabaseName }.${ carbonMainTable.getTableName }"
               LOGGER.audit(requestMessage)
@@ -168,13 +173,23 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
     // So, it is enough to do merge index only for 0.2 as it is the only valid segment in this list
     val validMergedSegIds = validSegments
       .filter { seg => mergedSegmentIds.contains(seg.getSegmentNo) }.map(_.getSegmentNo)
-    if (null != validMergedSegIds && !mergedSegmentIds.isEmpty) {
+    if (null != validMergedSegIds && !validMergedSegIds.isEmpty) {
       CommonUtil.mergeIndexFiles(sparkContext,
           validMergedSegIds,
           segmentFileNameMap,
           carbonTable.getTablePath,
           carbonTable,
           false)
+      // clear Block dataMap Cache
+      clearBlockDataMapCache(carbonTable, validMergedSegIds)
     }
   }
+
+  private def clearBlockDataMapCache(carbonTable: CarbonTable, segmentIds: Seq[String]): Unit = {
+    // clear driver Block dataMap cache for each segment
+    segmentIds.foreach { segmentId =>
+      SegmentFileStore.clearBlockDataMapCache(carbonTable, segmentId)
+    }
+  }
+
 }
