@@ -23,6 +23,9 @@ import org.apache.spark.sql.{AnalysisException, CarbonEnv}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
 class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
 
   var originDataPath: String = _
@@ -43,25 +46,40 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
   test("create external table with existing files") {
     assert(new File(originDataPath).exists())
     sql("DROP TABLE IF EXISTS source")
+    if (CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE,
+        CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT).equalsIgnoreCase("false")) {
 
-    // create external table with existing files
-    sql(
-      s"""
-         |CREATE EXTERNAL TABLE source
-         |STORED BY 'carbondata'
-         |LOCATION '$storeLocation/origin'
+      // create external table with existing files
+      sql(
+        s"""
+           |CREATE EXTERNAL TABLE source
+           |STORED BY 'carbondata'
+           |LOCATION '$storeLocation/origin'
        """.stripMargin)
-    checkAnswer(sql("SELECT count(*) from source"), sql("SELECT count(*) from origin"))
+      checkAnswer(sql("SELECT count(*) from source"), sql("SELECT count(*) from origin"))
 
-    checkExistence(sql("describe formatted source"), true, storeLocation+"/origin")
+      checkExistence(sql("describe formatted source"), true, storeLocation + "/origin")
 
-    val carbonTable = CarbonEnv.getCarbonTable(None, "source")(sqlContext.sparkSession)
-    assert(carbonTable.isExternalTable)
-    
-    sql("DROP TABLE IF EXISTS source")
+      val carbonTable = CarbonEnv.getCarbonTable(None, "source")(sqlContext.sparkSession)
+      assert(carbonTable.isExternalTable)
 
-    // DROP TABLE should not delete data
-    assert(new File(originDataPath).exists())
+      sql("DROP TABLE IF EXISTS source")
+
+      // DROP TABLE should not delete data
+      assert(new File(originDataPath).exists())
+    }
+    else {
+      intercept[Exception] {
+        // create external table with existing files
+        sql(
+          s"""
+             |CREATE EXTERNAL TABLE source
+             |STORED BY 'carbondata'
+             |LOCATION '$storeLocation/origin'
+       """.stripMargin)
+      }
+    }
   }
 
   test("create external table with empty folder") {

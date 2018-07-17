@@ -43,8 +43,8 @@ class SparkCarbonStoreTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test CarbonStore.get, compare projection result") {
-    val tablePath = CarbonEnv.getCarbonTable(None, "t1")(sqlContext.sparkSession).getTablePath
-    val rows = store.scan(s"$tablePath", Seq("empno", "empname").toArray)
+    val table = CarbonEnv.getCarbonTable(None, "t1")(sqlContext.sparkSession)
+    val rows = store.scan(table.getAbsoluteTableIdentifier, Seq("empno", "empname").toArray)
     val sparkResult: Array[Row] = sql("select empno, empname from t1").collect()
     sparkResult.zipWithIndex.foreach { case (r: Row, i: Int) =>
       val carbonRow = rows.next()
@@ -55,11 +55,11 @@ class SparkCarbonStoreTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test CarbonStore.get, compare projection and filter result") {
-    val tablePath = CarbonEnv.getCarbonTable(None, "t1")(sqlContext.sparkSession).getTablePath
+    val table = CarbonEnv.getCarbonTable(None, "t1")(sqlContext.sparkSession)
     val filter = new EqualToExpression(
       new ColumnExpression("empno", DataTypes.INT),
       new LiteralExpression(10, DataTypes.INT))
-    val rows = store.scan(s"$tablePath", Seq("empno", "empname").toArray, filter)
+    val rows = store.scan(table.getAbsoluteTableIdentifier, Seq("empno", "empname").toArray, filter)
     val sparkResult: Array[Row] = sql("select empno, empname from t1 where empno = 10").collect()
     sparkResult.zipWithIndex.foreach { case (r: Row, i: Int) =>
       val carbonRow = rows.next()
