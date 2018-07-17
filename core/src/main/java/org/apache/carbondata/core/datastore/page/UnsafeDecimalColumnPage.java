@@ -119,7 +119,7 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
       memoryBlock = null;
       baseAddress = null;
       baseOffset = 0;
-      rowOffset.freeMemory();
+      super.freeMemory();
     }
   }
 

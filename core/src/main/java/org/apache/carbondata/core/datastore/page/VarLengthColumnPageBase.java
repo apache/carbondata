@@ -20,6 +20,7 @@ package org.apache.carbondata.core.datastore.page;
 import java.io.IOException;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
@@ -150,7 +151,8 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
       byte[] lvEncodedBytes, int size) throws MemoryException {
     TableSpec.ColumnSpec spec = TableSpec.ColumnSpec
         .newInstance(columnSpec.getFieldName(), DataTypes.INT, ColumnType.MEASURE);
-    ColumnPage rowOffset = ColumnPage.newPage(spec, DataTypes.INT, size);
+    ColumnPage rowOffset = ColumnPage.newPage(spec, DataTypes.INT,
+        CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
     int offset;
     int rowId = 0;
     int counter = 0;
@@ -184,7 +186,8 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     int rowId = 0;
     TableSpec.ColumnSpec spec = TableSpec.ColumnSpec
         .newInstance(columnSpec.getFieldName(), DataTypes.INT, ColumnType.MEASURE);
-    ColumnPage rowOffset = ColumnPage.newPage(spec, DataTypes.INT, 1024);
+    ColumnPage rowOffset = ColumnPage.newPage(spec, DataTypes.INT,
+        CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
     int length;
     int offset;
     int lvEncodedOffset = 0;
@@ -211,7 +214,8 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     int rowId = 0;
     TableSpec.ColumnSpec spec = TableSpec.ColumnSpec
         .newInstance(columnSpec.getFieldName(), DataTypes.INT, ColumnType.MEASURE);
-    ColumnPage rowOffset = ColumnPage.newPage(spec, DataTypes.INT, 1024);
+    ColumnPage rowOffset = ColumnPage.newPage(spec, DataTypes.INT,
+        CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
     int length;
     int offset;
     int lvEncodedOffset = 0;
@@ -456,6 +460,16 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
       baseAddress = newBlock.getBaseObject();
       baseOffset = newBlock.getBaseOffset();
       capacity = newSize;
+    }
+  }
+
+  /**
+   * free memory as needed
+   */
+  public void freeMemory() {
+    if (null != rowOffset) {
+      rowOffset.freeMemory();
+      rowOffset = null;
     }
   }
 }

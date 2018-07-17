@@ -49,7 +49,7 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
       memoryBlock = null;
       baseAddress = null;
       baseOffset = 0;
-      rowOffset.freeMemory();
+      super.freeMemory();
     }
   }
 

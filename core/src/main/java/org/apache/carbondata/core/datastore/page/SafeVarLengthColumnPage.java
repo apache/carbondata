@@ -40,7 +40,7 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
   @Override
   public void freeMemory() {
     byteArrayData = null;
-    rowOffset.freeMemory();
+    super.freeMemory();
   }
 
   @Override
