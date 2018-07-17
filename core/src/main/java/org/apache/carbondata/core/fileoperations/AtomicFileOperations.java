@@ -28,4 +28,6 @@ public interface AtomicFileOperations {
   void close() throws IOException;
 
   DataOutputStream openForWrite(FileWriteOperation operation) throws IOException;
+
+  void setFailed();
 }
