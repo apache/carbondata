@@ -34,6 +34,7 @@ import org.apache.carbondata.core.datamap.status.DataMapStatusManager;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.MatchExpression;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
@@ -269,6 +270,14 @@ public class DataMapChooser {
       List<ColumnExpression> columnExpressions) {
     if (expression instanceof ColumnExpression) {
       columnExpressions.add((ColumnExpression) expression);
+    } else if (expression instanceof MatchExpression) {
+      // this is a special case for lucene
+      // build a fake ColumnExpression to filter datamaps which contain target column
+      // a Lucene query string is alike "column:query term"
+      String[] queryItems = expression.getString().split(":", 2);
+      if (queryItems.length == 2) {
+        columnExpressions.add(new ColumnExpression(queryItems[0], null));
+      }
     } else if (expression != null) {
       List<Expression> children = expression.getChildren();
       if (children != null && children.size() > 0) {
@@ -303,11 +312,6 @@ public class DataMapChooser {
    */
   private boolean contains(DataMapMeta mapMeta, List<ColumnExpression> columnExpressions,
       Set<ExpressionType> expressionTypes) {
-    if (mapMeta.getOptimizedOperation().contains(ExpressionType.TEXT_MATCH) &&
-        expressionTypes.contains(ExpressionType.TEXT_MATCH)) {
-      // TODO: fix it with right logic
-      return true;
-    }
     if (mapMeta.getIndexedColumns().size() == 0 || columnExpressions.size() == 0) {
       return false;
     }
