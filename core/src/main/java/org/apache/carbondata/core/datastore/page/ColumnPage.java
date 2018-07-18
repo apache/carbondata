@@ -49,7 +49,7 @@ import static org.apache.carbondata.core.metadata.datatype.DataTypes.SHORT_INT;
 public abstract class ColumnPage {
 
   // number of row in this page
-  protected final int pageSize;
+  protected int pageSize;
 
   // data type of the page storage
   protected final DataType dataType;
@@ -830,6 +830,10 @@ public abstract class ColumnPage {
   }
 
   public PageLevelDictionary getColumnPageDictionary() {
+    throw new UnsupportedOperationException("Operation not supported");
+  }
+
+  public int getActualRowCount() {
     throw new UnsupportedOperationException("Operation not supported");
   }
 }
