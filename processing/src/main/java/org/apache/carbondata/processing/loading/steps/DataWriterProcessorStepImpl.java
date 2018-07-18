@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -62,7 +63,11 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   private DataMapWriterListener listener;
 
-  private Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap;
+  private final Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap;
+
+  private ExecutorService rangeExecutorService;
+
+  private List<CarbonFactHandler> carbonFactHandlers;
 
   public DataWriterProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
@@ -80,6 +85,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
   @Override public void initialize() throws IOException {
     super.initialize();
     child.initialize();
+    this.carbonFactHandlers = new CopyOnWriteArrayList<>();
   }
 
   private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier) {
@@ -111,7 +117,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
           .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PATITION_ID,
               System.currentTimeMillis());
-      ExecutorService rangeExecutorService = Executors.newFixedThreadPool(iterators.length,
+      rangeExecutorService = Executors.newFixedThreadPool(iterators.length,
           new CarbonThreadFactory("WriterForwardPool: " + tableName));
       List<Future<Void>> rangeExecutorServiceSubmitList = new ArrayList<>(iterators.length);
       int i = 0;
@@ -183,6 +189,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
         rowsNotExist = false;
         dataHandler = CarbonFactHandlerFactory
             .createCarbonFactHandler(model);
+        carbonFactHandlers.add(dataHandler);
         dataHandler.initialise();
       }
       processBatch(insideRangeIterator.next(), dataHandler);
@@ -190,6 +197,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     if (!rowsNotExist) {
       finish(dataHandler);
     }
+    carbonFactHandlers.remove(dataHandler);
   }
 
   public void finish(CarbonFactHandler dataHandler) {
@@ -265,6 +273,15 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
         } catch (IOException e) {
           LOGGER.error(e, "error while closing the datamap writers");
           // ignoring the exception
+        }
+      }
+      if (null != rangeExecutorService) {
+        rangeExecutorService.shutdownNow();
+      }
+      if (null != this.carbonFactHandlers && !this.carbonFactHandlers.isEmpty()) {
+        for (CarbonFactHandler carbonFactHandler : this.carbonFactHandlers) {
+          carbonFactHandler.finish();
+          carbonFactHandler.closeHandler();
         }
       }
     }

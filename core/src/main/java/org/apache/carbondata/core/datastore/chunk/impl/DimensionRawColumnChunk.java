@@ -141,7 +141,8 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
   }
 
   public CarbonDictionary getLocalDictionary() {
-    if (null != getDataChunkV3().local_dictionary && null == localDictionary) {
+    if (null != getDataChunkV3() && null != getDataChunkV3().local_dictionary
+        && null == localDictionary) {
       try {
         localDictionary = getDictionary(getDataChunkV3().local_dictionary);
       } catch (IOException | MemoryException e) {
