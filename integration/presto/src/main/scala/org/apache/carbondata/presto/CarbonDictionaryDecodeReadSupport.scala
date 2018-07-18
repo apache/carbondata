@@ -93,7 +93,7 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
     while (chunks.hasNext) {
       {
         val value: Array[Byte] = chunks.next
-        if(count ==1) {
+        if (count == 1) {
           sliceArray(count) = null
         }
         else {
@@ -121,6 +121,10 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
 
   def getDictionaries: Array[Dictionary] = {
     dictionaries
+  }
+
+  def getDataTypes: Array[DataType] = {
+    dataTypes
   }
 
   /**

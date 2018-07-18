@@ -17,10 +17,8 @@
 
 package org.apache.carbondata.presto.readers;
 
-import java.io.IOException;
-
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
@@ -28,85 +26,68 @@ import com.facebook.presto.spi.block.BlockBuilderStatus;
 import com.facebook.presto.spi.block.DictionaryBlock;
 import com.facebook.presto.spi.block.SliceArrayBlock;
 import com.facebook.presto.spi.type.Type;
+import com.facebook.presto.spi.type.VarcharType;
 
-import static io.airlift.slice.Slices.utf8Slice;
 import static io.airlift.slice.Slices.wrappedBuffer;
 
 /**
  * This class reads the String data and convert it into Slice Block
  */
-public class SliceStreamReader extends AbstractStreamReader {
+public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoVectorBlockBuilder {
 
-  private boolean isDictionary;
+  protected int batchSize;
 
+  protected Type type = VarcharType.VARCHAR;
+
+  protected BlockBuilder builder;
+  int[] values;
   private SliceArrayBlock dictionarySliceArrayBlock;
 
-  public SliceStreamReader() {
-  }
-
-  public SliceStreamReader(boolean isDictionary, SliceArrayBlock dictionarySliceArrayBlock) {
-    this.isDictionary = isDictionary;
-    this.dictionarySliceArrayBlock = dictionarySliceArrayBlock;
-  }
-
-  /**
-   * Function to create the Slice Block
-   *
-   * @param type
-   * @return
-   * @throws IOException
-   */
-  public Block readBlock(Type type) throws IOException {
-    int numberOfRows;
-    BlockBuilder builder;
-    if (isVectorReader) {
-      numberOfRows = batchSize;
-      builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
-      if (columnVector != null) {
-        if (isDictionary) {
-          int[] values = new int[numberOfRows];
-          for (int i = 0; i < numberOfRows; i++) {
-            if (!columnVector.isNullAt(i)) {
-              values[i] = (Integer) columnVector.getData(i);
-            }
-          }
-          return new DictionaryBlock(batchSize, dictionarySliceArrayBlock, values);
-        } else {
-          if (columnVector.anyNullsSet()) {
-            handleNullInVector(type, numberOfRows, builder);
-          } else {
-            populateVector(type, numberOfRows, builder);
-          }
-        }
-      }
+  public SliceStreamReader(int batchSize, DataType dataType,
+      SliceArrayBlock dictionarySliceArrayBlock) {
+    super(batchSize, dataType);
+    this.batchSize = batchSize;
+    if (dictionarySliceArrayBlock == null) {
+      this.builder = type.createBlockBuilder(new BlockBuilderStatus(), batchSize);
     } else {
-      numberOfRows = streamData.length;
-      builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
-      for (int i = 0; i < numberOfRows; i++) {
-        type.writeSlice(builder, utf8Slice(streamData[i].toString()));
-      }
-    }
-
-    return builder.build();
-  }
-
-  private void handleNullInVector(Type type, int numberOfRows, BlockBuilder builder) {
-    for (int i = 0; i < numberOfRows; i++) {
-      if (columnVector.isNullAt(i)) {
-        builder.appendNull();
-      } else {
-        type.writeSlice(builder, wrappedBuffer((byte[]) columnVector.getData(i)));
-      }
+      this.dictionarySliceArrayBlock = dictionarySliceArrayBlock;
+      this.values = new int[batchSize];
     }
   }
 
-  private void populateVector(Type type, int numberOfRows, BlockBuilder builder) {
-    for (int i = 0; i < numberOfRows; i++) {
-      type.writeSlice(builder, wrappedBuffer((byte[]) columnVector.getData(i)));
+  @Override public Block buildBlock() {
+    if (dictionarySliceArrayBlock == null) {
+      return builder.build();
+    } else {
+      return new DictionaryBlock(batchSize, dictionarySliceArrayBlock, values);
     }
   }
 
+  @Override public void setBatchSize(int batchSize) {
+    this.batchSize = batchSize;
+  }
 
+  @Override public void putInt(int rowId, int value) {
+    values[rowId] = value;
+  }
 
+  @Override public void putBytes(int rowId, byte[] value) {
+    type.writeSlice(builder, wrappedBuffer(value));
+  }
 
+  @Override public void putBytes(int rowId, int offset, int length, byte[] value) {
+    byte[] byteArr = new byte[length];
+    System.arraycopy(value, offset, byteArr, 0, length);
+    type.writeSlice(builder, wrappedBuffer(byteArr));
+  }
+
+  @Override public void putNull(int rowId) {
+    if (dictionarySliceArrayBlock == null) {
+      builder.appendNull();
+    }
+  }
+
+  @Override public void reset() {
+    builder = type.createBlockBuilder(new BlockBuilderStatus(), batchSize);
+  }
 }

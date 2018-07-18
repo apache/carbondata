@@ -19,12 +19,10 @@ package org.apache.carbondata.presto;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.presto.readers.StreamReader;
-import org.apache.carbondata.presto.readers.StreamReaders;
+import org.apache.carbondata.presto.readers.PrestoVectorBlockBuilder;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 
 import com.facebook.presto.hadoop.$internal.com.google.common.base.Throwables;
@@ -35,7 +33,6 @@ import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.LazyBlock;
 import com.facebook.presto.spi.block.LazyBlockLoader;
-import com.facebook.presto.spi.type.Type;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
@@ -47,25 +44,18 @@ class CarbondataPageSource implements ConnectorPageSource {
 
   private static final LogService logger =
       LogServiceFactory.getLogService(CarbondataPageSource.class.getName());
-  private final List<Type> types;
+  private List<ColumnHandle> columnHandles;
   private boolean closed;
   private PrestoCarbonVectorizedRecordReader vectorReader;
-  private CarbonDictionaryDecodeReadSupport<Object[]> readSupport;
-  List<ColumnHandle> columnHandles;
   private long sizeOfData = 0;
-  private final StreamReader[] readers ;
   private int batchId;
   private long nanoStart;
   private long nanoEnd;
 
-  public CarbondataPageSource(CarbonDictionaryDecodeReadSupport readSupport,
-      PrestoCarbonVectorizedRecordReader vectorizedRecordReader,
-      List<ColumnHandle> columnHandles ) {
+  CarbondataPageSource(PrestoCarbonVectorizedRecordReader vectorizedRecordReader,
+      List<ColumnHandle> columnHandles) {
     this.columnHandles = columnHandles;
-    this.types = getColumnTypes();
-    this.readSupport = readSupport;
     vectorReader = vectorizedRecordReader;
-    this.readers = createStreamReaders();
   }
 
   @Override public long getCompletedBytes() {
@@ -77,9 +67,8 @@ class CarbondataPageSource implements ConnectorPageSource {
   }
 
   @Override public boolean isFinished() {
-    return closed ;
+    return closed;
   }
-
 
   @Override public Page getNextPage() {
     if (nanoStart == 0) {
@@ -89,13 +78,12 @@ class CarbondataPageSource implements ConnectorPageSource {
     int batchSize = 0;
     try {
       batchId++;
-      if(vectorReader.nextKeyValue()) {
+      if (vectorReader.nextKeyValue()) {
         Object vectorBatch = vectorReader.getCurrentValue();
-        if(vectorBatch != null && vectorBatch instanceof CarbonVectorBatch)
-        {
+        if (vectorBatch instanceof CarbonVectorBatch) {
           columnarBatch = (CarbonVectorBatch) vectorBatch;
           batchSize = columnarBatch.numRows();
-          if(batchSize == 0){
+          if (batchSize == 0) {
             close();
             return null;
           }
@@ -108,22 +96,16 @@ class CarbondataPageSource implements ConnectorPageSource {
         return null;
       }
 
-      Block[] blocks = new Block[types.size()];
+      Block[] blocks = new Block[columnHandles.size()];
       for (int column = 0; column < blocks.length; column++) {
-        Type type = types.get(column);
-        readers[column].setBatchSize(columnarBatch.numRows());
-        readers[column].setVectorReader(true);
-        readers[column].setVector(columnarBatch.column(column));
-        blocks[column] = new LazyBlock(batchSize, new CarbondataBlockLoader(column, type));
+        blocks[column] = new LazyBlock(batchSize, new CarbondataBlockLoader(column));
       }
       Page page = new Page(batchSize, blocks);
       return page;
-    }
-    catch (PrestoException e) {
+    } catch (PrestoException e) {
       closeWithSuppression(e);
       throw e;
-    }
-    catch ( RuntimeException | InterruptedException | IOException e) {
+    } catch (RuntimeException | InterruptedException | IOException e) {
       closeWithSuppression(e);
       throw new CarbonDataLoadingException("Exception when creating the Carbon data Block", e);
     }
@@ -133,7 +115,7 @@ class CarbondataPageSource implements ConnectorPageSource {
     return sizeOfData;
   }
 
-  @Override public void close()  {
+  @Override public void close() {
     // some hive input formats are broken and bad things can happen if you close them multiple times
     if (closed) {
       return;
@@ -148,13 +130,11 @@ class CarbondataPageSource implements ConnectorPageSource {
 
   }
 
-  protected void closeWithSuppression(Throwable throwable)
-  {
+  private void closeWithSuppression(Throwable throwable) {
     requireNonNull(throwable, "throwable is null");
     try {
       close();
-    }
-    catch (RuntimeException e) {
+    } catch (RuntimeException e) {
       // Self-suppression not permitted
       logger.error(e, e.getMessage());
       if (throwable != e) {
@@ -166,61 +146,32 @@ class CarbondataPageSource implements ConnectorPageSource {
   /**
    * Lazy Block Implementation for the Carbondata
    */
-  private final class CarbondataBlockLoader
-      implements LazyBlockLoader<LazyBlock>
-  {
+  private final class CarbondataBlockLoader implements LazyBlockLoader<LazyBlock> {
     private final int expectedBatchId = batchId;
     private final int columnIndex;
-    private final Type type;
     private boolean loaded;
 
-    public CarbondataBlockLoader(int columnIndex, Type type)
-    {
+    CarbondataBlockLoader(int columnIndex) {
       this.columnIndex = columnIndex;
-      this.type = requireNonNull(type, "type is null");
     }
 
-    @Override
-    public final void load(LazyBlock lazyBlock)
-    {
+    @Override public final void load(LazyBlock lazyBlock) {
       if (loaded) {
         return;
       }
       checkState(batchId == expectedBatchId);
       try {
-        Block block = readers[columnIndex].readBlock(type);
+        PrestoVectorBlockBuilder blockBuilder =
+            (PrestoVectorBlockBuilder) vectorReader.getColumnarBatch().column(columnIndex);
+        blockBuilder.setBatchSize(lazyBlock.getPositionCount());
+        Block block = blockBuilder.buildBlock();
         sizeOfData += block.getSizeInBytes();
         lazyBlock.setBlock(block);
-      }
-      catch (IOException e) {
+      } catch (Exception e) {
         throw new CarbonDataLoadingException("Error in Reading Data from Carbondata ", e);
       }
       loaded = true;
     }
-
   }
-
-
-  /**
-   * Create the Stream Reader for every column based on their type
-   * This method will be initialized only once based on the types.
-   *
-   * @return
-   */
-  private StreamReader[] createStreamReaders( ) {
-    requireNonNull(types);
-    StreamReader[] readers = new StreamReader[types.size()];
-    for (int i = 0; i < types.size(); i++) {
-      readers[i] = StreamReaders.createStreamReader(types.get(i), readSupport
-          .getSliceArrayBlock(i),readSupport.getDictionaries()[i]);
-    }
-    return readers;
-  }
-
-   private List<Type> getColumnTypes() {
-    return columnHandles.stream().map(a -> ((CarbondataColumnHandle)a).getColumnType())
-        .collect(Collectors.toList());
-  }
-
 
 }

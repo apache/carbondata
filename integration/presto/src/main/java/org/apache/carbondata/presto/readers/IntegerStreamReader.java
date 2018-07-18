@@ -17,86 +17,64 @@
 
 package org.apache.carbondata.presto.readers;
 
-import java.io.IOException;
-
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
 import com.facebook.presto.spi.block.BlockBuilderStatus;
+import com.facebook.presto.spi.type.IntegerType;
 import com.facebook.presto.spi.type.Type;
 
-public class IntegerStreamReader extends AbstractStreamReader {
+public class IntegerStreamReader extends CarbonColumnVectorImpl
+    implements PrestoVectorBlockBuilder {
 
-  private Dictionary dictionaryValues;
-  private boolean isDictionary;
+  protected int batchSize;
 
-  public IntegerStreamReader() {
+  protected Type type = IntegerType.INTEGER;
 
+  protected BlockBuilder builder;
+
+  private Dictionary dictionary;
+
+  public IntegerStreamReader(int batchSize, DataType dataType, Dictionary dictionary) {
+    super(batchSize, dataType);
+    this.batchSize = batchSize;
+    this.builder = type.createBlockBuilder(new BlockBuilderStatus(), batchSize);
+    this.dictionary = dictionary;
   }
 
-  public IntegerStreamReader(boolean isDictionary, Dictionary dictionary) {
-    this.dictionaryValues = dictionary;
-    this.isDictionary = isDictionary;
-  }
-
-  public Block readBlock(Type type) throws IOException {
-    int numberOfRows;
-    BlockBuilder builder;
-    if (isVectorReader) {
-      numberOfRows = batchSize;
-      builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
-      if (columnVector != null) {
-        if (isDictionary) {
-          populateDictionaryVector(type, numberOfRows, builder);
-        } else {
-          if (columnVector.anyNullsSet()) {
-            handleNullInVector(type, numberOfRows, builder);
-          } else {
-            populateVector(type, numberOfRows, builder);
-          }
-        }
-      }
-    } else {
-      numberOfRows = streamData.length;
-      builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
-      for (int i = 0; i < numberOfRows; i++) {
-        type.writeLong(builder, ((Integer) streamData[i]).longValue());
-      }
-    }
+  @Override public Block buildBlock() {
     return builder.build();
   }
 
-  private void handleNullInVector(Type type, int numberOfRows, BlockBuilder builder) {
-    for (int i = 0; i < numberOfRows; i++) {
-      if (columnVector.isNullAt(i)) {
-        builder.appendNull();
+  @Override public void setBatchSize(int batchSize) {
+    this.batchSize = batchSize;
+  }
+
+  @Override public void putInt(int rowId, int value) {
+    if (dictionary == null) {
+      type.writeLong(builder, value);
+    } else {
+      Object data = DataTypeUtil
+          .getDataBasedOnDataType(dictionary.getDictionaryValueForKey(value), DataTypes.INT);
+      if (data != null) {
+        type.writeLong(builder, ((Integer) data).longValue());
       } else {
-        type.writeLong(builder, ((Integer) columnVector.getData(i)).longValue());
+        builder.appendNull();
       }
     }
   }
 
-  private void populateVector(Type type, int numberOfRows, BlockBuilder builder) {
-      for (int i = 0; i < numberOfRows; i++) {
-        Integer value = (Integer) columnVector.getData(i);
-        type.writeLong(builder, value.longValue());
-      }
+  @Override public void putNull(int rowId) {
+    builder.appendNull();
   }
 
-  private void populateDictionaryVector(Type type, int numberOfRows, BlockBuilder builder) {
-      for (int i = 0; i < numberOfRows; i++) {
-        int value = (int) columnVector.getData(i);
-        Object data = DataTypeUtil
-            .getDataBasedOnDataType(dictionaryValues.getDictionaryValueForKey(value),
-                DataTypes.INT);
-        if (data != null) {
-          type.writeLong(builder, ((Integer) data).longValue());
-        } else {
-          builder.appendNull();
-        }
-      }
+  @Override public void reset() {
+    builder = type.createBlockBuilder(new BlockBuilderStatus(), batchSize);
   }
+
 }
