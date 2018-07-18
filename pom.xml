@@ -653,6 +653,12 @@
         <module>datamap/mv/core</module>
       </modules>
     </profile>
+    <profile>
+      <id>zeppelin</id>
+      <modules>
+        <module>integration/zeppelin</module>
+      </modules>
+    </profile>
   </profiles>
 
 </project>

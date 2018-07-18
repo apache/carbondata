@@ -18,6 +18,7 @@
 package org.apache.carbondata.horizon.rest.controller;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
 import org.apache.carbondata.horizon.rest.model.validate.RequestValidator;
 import org.apache.carbondata.horizon.rest.model.view.SqlRequest;
@@ -26,6 +27,7 @@ import org.apache.carbondata.horizon.rest.sql.SparkSqlWrapper;
 import org.apache.carbondata.store.api.exception.StoreException;
 
 import org.apache.spark.sql.AnalysisException;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -42,25 +44,29 @@ public class SqlHorizonController {
   public ResponseEntity<SqlResponse> sql(@RequestBody SqlRequest request) throws StoreException {
     RequestValidator.validateSql(request);
     List<Row> rows;
+    Dataset<Row> sqlDataFrame = null;
     try {
-      rows = SparkSqlWrapper.sql(SqlHorizon.getSession(), request.getSqlStatement())
-          .collectAsList();
+      sqlDataFrame = SparkSqlWrapper.sql(SqlHorizon.getSession(),
+              request.getSqlStatement());
+      rows = sqlDataFrame.collectAsList();
     } catch (AnalysisException e) {
       throw new StoreException(e.getSimpleMessage());
     } catch (Exception e) {
       throw new StoreException(e.getMessage());
     }
-    Object[][] result = new Object[rows.size()][];
-    for (int i = 0; i < rows.size(); i++) {
-      Row row = rows.get(i);
-      result[i] = new Object[row.size()];
-      for (int j = 0; j < row.size(); j++) {
-        result[i][j] = row.get(j);
-      }
+    final String[] fieldNames = sqlDataFrame.schema().fieldNames();
+    Object[][] responseData = new Object[0][];
+    if (rows.size() > 0) {
+      final Object[][] result = new Object[rows.size() + 1][fieldNames.length];
+      System.arraycopy(fieldNames, 0, result[0], 0, fieldNames.length);
+      IntStream.range(0, rows.size()).forEach(index ->
+          IntStream.range(0, fieldNames.length).forEach(col ->
+                result[index + 1][col] = rows.get(index).get(col)));
+      responseData = result;
     }
 
     return new ResponseEntity<>(
-        new SqlResponse(request, "SUCCESS", result), HttpStatus.OK);
+        new SqlResponse(request, "SUCCESS", responseData), HttpStatus.OK);
   }
 
   @RequestMapping(value = "echosql")
