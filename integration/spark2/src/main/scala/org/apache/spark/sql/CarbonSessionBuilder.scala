@@ -20,8 +20,8 @@ package org.apache.spark.sql
 import java.io.File
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession.Builder
 import org.apache.spark.sql.profiler.Profiler
 import org.apache.spark.util.Utils

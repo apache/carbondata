@@ -140,7 +140,8 @@ public class TableSchemaBuilder {
       String localdictionaryThreshold = localDictionaryThreshold.equalsIgnoreCase("0") ?
           CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT :
           localDictionaryThreshold;
-      tableProperties.put(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD, localdictionaryThreshold);
+      tableProperties.put(
+          CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD, localdictionaryThreshold);
       for (int index = 0; index < allColumns.size(); index++) {
         ColumnSchema colSchema = allColumns.get(index);
         if (colSchema.getDataType() == DataTypes.STRING
