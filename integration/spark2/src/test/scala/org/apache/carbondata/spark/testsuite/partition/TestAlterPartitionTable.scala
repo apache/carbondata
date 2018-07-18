@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import org.apache.hadoop.fs.Path
+import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -246,7 +247,8 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
 
   test("Alter table add partition: List Partition") {
     sql("""ALTER TABLE list_table_area ADD PARTITION ('OutSpace', 'Hi')""".stripMargin)
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "list_table_area")
+    val carbonTable = CarbonEnv
+      .getCarbonTable(Option("default"), "list_table_area")(sqlContext.sparkSession)
     val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     val partitionIds = partitionInfo.getPartitionIds
     val list_info = partitionInfo.getListInfo
@@ -305,7 +307,8 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
 
   test("Alter table add partition: Range Partition") {
     sql("""ALTER TABLE range_table_logdate ADD PARTITION ('2017/01/01', '2018/01/01')""")
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "range_table_logdate")
+    val carbonTable = CarbonEnv
+      .getCarbonTable(Option("default"), "range_table_logdate")(sqlContext.sparkSession)
     val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     val partitionIds = partitionInfo.getPartitionIds
     val range_info = partitionInfo.getRangeInfo
@@ -442,7 +445,8 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
   test("Alter table split partition with different List Sequence: List Partition") {
     sql("""ALTER TABLE list_table_country ADD PARTITION ('(Part1, Part2, Part3, Part4)')""".stripMargin)
     sql("""ALTER TABLE list_table_country SPLIT PARTITION(9) INTO ('Part4', 'Part2', '(Part1, Part3)')""".stripMargin)
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "list_table_country")
+    val carbonTable = CarbonEnv
+      .getCarbonTable(Option("default"), "list_table_country")(sqlContext.sparkSession)
     val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     val partitionIds = partitionInfo.getPartitionIds
     val list_info = partitionInfo.getListInfo
@@ -489,7 +493,8 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
   test("Alter table split partition with extra space in New SubList: List Partition") {
     sql("""ALTER TABLE list_table_area ADD PARTITION ('(One,Two, Three, Four)')""".stripMargin)
     sql("""ALTER TABLE list_table_area SPLIT PARTITION(6) INTO ('One', '(Two, Three )', 'Four')""".stripMargin)
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "list_table_area")
+    val carbonTable = CarbonEnv
+      .getCarbonTable(Option("default"), "list_table_area")(sqlContext.sparkSession)
     val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     val partitionIds = partitionInfo.getPartitionIds
     val list_info = partitionInfo.getListInfo
@@ -532,10 +537,8 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
 
   test("Alter table split partition: Range Partition") {
     sql("""ALTER TABLE range_table_logdate_split SPLIT PARTITION(4) INTO ('2017/01/01', '2018/01/01')""")
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-      "default",
-      "range_table_logdate_split"
-    )
+    val carbonTable = CarbonEnv
+      .getCarbonTable(Option("default"), "range_table_logdate_split")(sqlContext.sparkSession)
     val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     val partitionIds = partitionInfo.getPartitionIds
     val rangeInfo = partitionInfo.getRangeInfo
@@ -596,7 +599,8 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
 
   test("Alter table split partition: Range Partition + Bucket") {
     sql("""ALTER TABLE range_table_bucket SPLIT PARTITION(4) INTO ('2017/01/01', '2018/01/01')""")
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "range_table_bucket")
+    val carbonTable = CarbonEnv
+      .getCarbonTable(Option("default"), "range_table_bucket")(sqlContext.sparkSession)
     val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     val partitionIds = partitionInfo.getPartitionIds
     val rangeInfo = partitionInfo.getRangeInfo
@@ -798,11 +802,8 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
         | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='2015,2016')
       """.stripMargin)
     sql("ALTER TABLE carbon_table_default_db ADD PARTITION ('2017')")
-
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-      "default",
-      "carbon_table_default_db"
-    )
+    val carbonTable = CarbonEnv
+      .getCarbonTable(Option("default"), "carbon_table_default_db")(sqlContext.sparkSession)
     val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     val partitionIds = partitionInfo.getPartitionIds
     val range_info = partitionInfo.getRangeInfo
