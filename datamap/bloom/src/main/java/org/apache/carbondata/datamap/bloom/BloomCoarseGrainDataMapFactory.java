@@ -278,7 +278,6 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     }
     if (dataMaps.size() > 0) {
       for (TableDataMap dataMap : dataMaps) {
-        // different from lucene, bloom only get corresponding directory of current datamap
         if (dataMap.getDataMapSchema().getDataMapName().equals(this.dataMapName)) {
           List<CarbonFile> indexFiles;
           String dmPath = CarbonTablePath.getDataMapStorePath(tablePath, segmentId,
