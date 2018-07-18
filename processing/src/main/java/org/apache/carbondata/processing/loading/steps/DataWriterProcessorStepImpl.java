@@ -18,13 +18,11 @@ package org.apache.carbondata.processing.loading.steps;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -69,7 +67,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   private ExecutorService rangeExecutorService;
 
-  private Set<CarbonFactHandler> carbonFactHandlers;
+  private List<CarbonFactHandler> carbonFactHandlers;
 
   public DataWriterProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
@@ -87,8 +85,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
   @Override public void initialize() throws IOException {
     super.initialize();
     child.initialize();
-    this.carbonFactHandlers =
-        Collections.newSetFromMap(new IdentityHashMap<CarbonFactHandler, Boolean>());
+    this.carbonFactHandlers = new CopyOnWriteArrayList<>();
   }
 
   private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier) {
@@ -193,18 +190,14 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
         dataHandler = CarbonFactHandlerFactory
             .createCarbonFactHandler(model);
         dataHandler.initialise();
-        synchronized (localDictionaryGeneratorMap) {
-          carbonFactHandlers.add(dataHandler);
-        }
+        carbonFactHandlers.add(dataHandler);
       }
       processBatch(insideRangeIterator.next(), dataHandler);
     }
     if (!rowsNotExist) {
       finish(dataHandler);
     }
-    synchronized (localDictionaryGeneratorMap) {
-      carbonFactHandlers.remove(dataHandler);
-    }
+    carbonFactHandlers.remove(dataHandler);
   }
 
   public void finish(CarbonFactHandler dataHandler) {
