@@ -1,5 +1,5 @@
 Please follow below steps to integrate with zeppelin
-1. mvn package
+1. mvn package -Pzeppelin
 	This will generate carbondata-zeppelin-*.tar.gz under target folder
 2. Extract the tar content to ZEPPELIN_INSTALL_HOME/interpreter
 3. Add org.apache.carbonndata.zeppelin.CarbonInterpreter to list of interpreters mentioned by zeppelin.interpreters @ ZEPPELIN_INSTALL_HOME/conf/zeppelin-site.xml (create if not exists)
