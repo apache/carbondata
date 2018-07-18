@@ -1,0 +1,37 @@
+<assembly>
+<id>compress</id>
+  <formats>
+    <format>tar.gz</format>
+  </formats>
+  
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <dependencySets>
+    <dependencySet>
+      <outputDirectory>/carbon</outputDirectory>
+	  <useTransitiveDependencies>false</useTransitiveDependencies>
+      <includes>
+          <include>com.fasterxml.jackson.core:*:jar</include>
+      </includes>
+    </dependencySet>
+  </dependencySets>
+
+  <fileSets>
+  
+    <fileSet>
+      <directory>misc/</directory>
+	  <outputDirectory>carbon</outputDirectory>
+      <includes>
+        <include>*.json</include>
+      </includes>
+    </fileSet>
+
+    <fileSet>
+      <directory>target</directory>
+      <outputDirectory>carbon</outputDirectory>
+	  <includes>
+        <include>carbondata-zeppelin-*.jar</include>
+      </includes>
+    </fileSet>
+    
+  </fileSets>
+</assembly>
