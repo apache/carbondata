@@ -28,9 +28,11 @@ public class DataMapSchemaFactory {
    * @return data map schema
    */
   public DataMapSchema getDataMapSchema(String dataMapName, String providerName) {
-    if (providerName.equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.toString())) {
+    if (providerName.equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.toString()) || providerName
+        .equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.getClassName())) {
       return new AggregationDataMapSchema(dataMapName, providerName);
-    } else if (providerName.equalsIgnoreCase(DataMapClassProvider.TIMESERIES.toString())) {
+    } else if (providerName.equalsIgnoreCase(DataMapClassProvider.TIMESERIES.toString())
+        || providerName.equalsIgnoreCase(DataMapClassProvider.TIMESERIES.getClassName())) {
       return new AggregationDataMapSchema(dataMapName, providerName);
     } else {
       return new DataMapSchema(dataMapName, providerName);
