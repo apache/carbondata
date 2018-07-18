@@ -666,13 +666,13 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm2 ON TABLE datamap_test5
+         | CREATE DATAMAP dm_city ON TABLE datamap_test5
          | USING 'lucene'
          | DMProperties('INDEX_COLUMNS'='city')
       """.stripMargin)
     sql(
       s"""
-         | CREATE DATAMAP dm1 ON TABLE datamap_test5
+         | CREATE DATAMAP dm_name ON TABLE datamap_test5
          | USING 'lucene'
          | DMProperties('INDEX_COLUMNS'='Name')
       """.stripMargin)
@@ -681,6 +681,11 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       sql(s"select * from datamap_test5 where name='n10'"))
     checkAnswer(sql("SELECT * FROM datamap_test5 WHERE TEXT_MATCH('city:c020')"),
       sql(s"SELECT * FROM datamap_test5 WHERE city='c020'"))
+
+    var explainString = sql("explain select * from datamap_test5 where TEXT_MATCH('name:n10')").collect()
+    assert(explainString(0).getString(0).contains(
+      "pruned by FG DataMap\n    - name: dm_name\n    - provider: lucene"))
+
     sql("DROP TABLE IF EXISTS datamap_test5")
   }
 
