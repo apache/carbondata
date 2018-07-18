@@ -75,7 +75,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
   }
 
   def checkIfRuleNeedToBeApplied(plan: LogicalPlan, removeSubQuery: Boolean = false): Boolean = {
-    relations = collectCarbonRelation(plan)
+    relations = CarbonOptimizerUtil.collectCarbonRelation(plan)
     validateQueryDirectlyOnDataMap(relations)
     if (relations.nonEmpty && !isOptimized(plan)) {
       // In case scalar subquery skip the transformation and update the flag.
@@ -129,14 +129,6 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     }
     if(isThrowException) {
       throw new AnalysisException("Query On DataMap not supported")
-    }
-  }
-
-  private def collectCarbonRelation(plan: LogicalPlan): Seq[CarbonDecoderRelation] = {
-    plan collect {
-      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
-        CarbonDecoderRelation(l.attributeMap,
-          l.relation.asInstanceOf[CarbonDatasourceHadoopRelation])
     }
   }
 
