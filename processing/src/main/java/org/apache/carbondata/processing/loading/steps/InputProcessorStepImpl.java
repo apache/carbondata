@@ -88,7 +88,9 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
   @Override public void close() {
     if (!closed) {
       super.close();
-      executorService.shutdown();
+      if (null != executorService) {
+        executorService.shutdownNow();
+      }
       for (CarbonIterator inputIterator : inputIterators) {
         inputIterator.close();
       }
