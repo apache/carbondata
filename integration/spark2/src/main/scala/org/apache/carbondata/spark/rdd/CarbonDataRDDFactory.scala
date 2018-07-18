@@ -519,7 +519,7 @@ object CarbonDataRDDFactory {
           String.valueOf(carbonLoadModel.getFactTimeStamp))
 
       SegmentFileStore.updateSegmentFile(
-        carbonTable.getTablePath,
+        carbonTable,
         carbonLoadModel.getSegmentId,
         segmentFileName,
         carbonTable.getCarbonTableIdentifier.getTableId,

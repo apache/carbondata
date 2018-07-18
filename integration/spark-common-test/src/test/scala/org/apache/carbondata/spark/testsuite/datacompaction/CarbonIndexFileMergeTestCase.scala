@@ -17,17 +17,24 @@
 
 package org.apache.carbondata.spark.testsuite.datacompaction
 
+import java.util
+
+import scala.collection.JavaConverters._
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.junit.Assert
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
+import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 
@@ -44,6 +51,7 @@ class CarbonIndexFileMergeTestCase
     CompactionSupportGlobalSortBigFileTest.deleteFile(file2)
     sql("DROP TABLE IF EXISTS nonindexmerge")
     sql("DROP TABLE IF EXISTS indexmerge")
+    sql("DROP TABLE IF EXISTS merge_index_cache")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
         CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT)
@@ -442,6 +450,43 @@ class CarbonIndexFileMergeTestCase
     }.getMessage
     assert(exceptionMessage.contains("Unsupported alter operation on carbon table: Merge index is not supported on streaming table"))
     sql("DROP TABLE IF EXISTS streamingTable")
+  }
+
+  test("verify driver cache gets updated after creating merge Index file") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "false")
+    sql("DROP TABLE IF EXISTS merge_index_cache")
+    sql(
+      """
+        | CREATE TABLE merge_index_cache(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name')
+      """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE merge_index_cache OPTIONS('header'='false')")
+    sql("""Select count(*) from merge_index_cache""").collect()
+    // merge Index fileName should be null as merge Index file is not created
+    assert(mergeFileNameIsNull("0", "default", "merge_index_cache"))
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
+    sql("ALTER TABLE merge_index_cache COMPACT 'SEGMENT_INDEX'")
+    sql("""Select count(*) from merge_index_cache""").collect()
+    // once merge file is created cache should be refreshed in the same session and identifiers
+    // should contain mergeIndex file name
+    assert(!mergeFileNameIsNull("0", "default", "merge_index_cache"))
+  }
+
+  private def mergeFileNameIsNull(segmentId: String, dbName: String, tableName: String): Boolean = {
+    val carbonTable = CarbonEnv.getCarbonTable(Option(dbName), tableName)(sqlContext.sparkSession)
+    val dataMapFactory = DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable)
+      .getDataMapFactory
+    val method = classOf[BlockletDataMapFactory]
+      .getDeclaredMethod("getTableBlockIndexUniqueIdentifiers", classOf[Segment])
+    method.setAccessible(true)
+    val segment = new Segment(segmentId)
+    val identifiers = method.invoke(dataMapFactory, segment)
+      .asInstanceOf[util.Set[TableBlockIndexUniqueIdentifier]].asScala
+    assert(identifiers.size == 1)
+    identifiers.forall(identifier => identifier.getMergeIndexFileName == null)
   }
 
   private def getIndexFileCount(tableName: String, segment: String): Int = {
