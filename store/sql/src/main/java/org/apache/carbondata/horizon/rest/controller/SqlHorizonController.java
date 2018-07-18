@@ -26,6 +26,7 @@ import org.apache.carbondata.horizon.rest.sql.SparkSqlWrapper;
 import org.apache.carbondata.store.api.exception.StoreException;
 
 import org.apache.spark.sql.AnalysisException;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -42,20 +43,24 @@ public class SqlHorizonController {
   public ResponseEntity<SqlResponse> sql(@RequestBody SqlRequest request) throws StoreException {
     RequestValidator.validateSql(request);
     List<Row> rows;
+    Dataset<Row> sqlDataFrame = null;
     try {
-      rows = SparkSqlWrapper.sql(SqlHorizon.getSession(), request.getSqlStatement())
+      sqlDataFrame = SparkSqlWrapper.sql(SqlHorizon.getSession(),
+              request.getSqlStatement());
+      rows = sqlDataFrame
           .collectAsList();
     } catch (AnalysisException e) {
       throw new StoreException(e.getSimpleMessage());
     } catch (Exception e) {
       throw new StoreException(e.getMessage());
     }
-    Object[][] result = new Object[rows.size()][];
+    Object[][] result = new Object[rows.size()+1][];
+    result[0] = sqlDataFrame.schema().fieldNames();
     for (int i = 0; i < rows.size(); i++) {
       Row row = rows.get(i);
-      result[i] = new Object[row.size()];
+      result[i+1] = new Object[row.size()];
       for (int j = 0; j < row.size(); j++) {
-        result[i][j] = row.get(j);
+        result[i+1][j] = row.get(j);
       }
     }
 
