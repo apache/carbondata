@@ -46,8 +46,7 @@ public class StreamBlockletReader {
   private int rowIndex = 0;
   private boolean isHeaderPresent;
 
-  public StreamBlockletReader(byte[] syncMarker, InputStream in, long limit,
-      boolean isHeaderPresent) {
+  StreamBlockletReader(byte[] syncMarker, InputStream in, long limit, boolean isHeaderPresent) {
     this.syncMarker = syncMarker;
     syncLen = syncMarker.length;
     syncBuffer = new byte[syncLen];
@@ -97,7 +96,7 @@ public class StreamBlockletReader {
     return false;
   }
 
-  public BlockletHeader readBlockletHeader() throws IOException {
+  BlockletHeader readBlockletHeader() throws IOException {
     int len = readIntFromStream();
     byte[] b = new byte[len];
     if (!readBytesFromStream(b, 0, len)) {
@@ -109,7 +108,7 @@ public class StreamBlockletReader {
     return header;
   }
 
-  public void readBlockletData(BlockletHeader header) throws IOException {
+  void readBlockletData(BlockletHeader header) throws IOException {
     ensureCapacity(header.getBlocklet_length());
     offset = 0;
     int len = readIntFromStream();
@@ -120,7 +119,7 @@ public class StreamBlockletReader {
     compressor.rawUncompress(b, buffer);
   }
 
-  public void skipBlockletData(boolean reset) throws IOException {
+  void skipBlockletData(boolean reset) throws IOException {
     int len = readIntFromStream();
     skip(len);
     pos += len;
@@ -141,7 +140,7 @@ public class StreamBlockletReader {
   /**
    * find the next blocklet
    */
-  public boolean nextBlocklet() throws IOException {
+  boolean nextBlocklet() throws IOException {
     if (pos >= limitStart) {
       return false;
     }
@@ -159,15 +158,15 @@ public class StreamBlockletReader {
     return pos < limitEnd;
   }
 
-  public boolean hasNext() throws IOException {
+  boolean hasNext() throws IOException {
     return rowIndex < rowNums;
   }
 
-  public void nextRow() {
+  void nextRow() {
     rowIndex++;
   }
 
-  public int readIntFromStream() throws IOException {
+  int readIntFromStream() throws IOException {
     int ch1 = in.read();
     int ch2 = in.read();
     int ch3 = in.read();
@@ -183,7 +182,7 @@ public class StreamBlockletReader {
    * @return <code>true</code> if reading data successfully, or
    * <code>false</code> if there is no more data because the end of the stream has been reached.
    */
-  public boolean readBytesFromStream(byte[] b, int offset, int len) throws IOException {
+  boolean readBytesFromStream(byte[] b, int offset, int len) throws IOException {
     int readLen = in.read(b, offset, len);
     if (readLen < 0) {
       return false;
@@ -196,24 +195,24 @@ public class StreamBlockletReader {
     }
   }
 
-  public boolean readBoolean() {
+  boolean readBoolean() {
     return (buffer[offset++]) != 0;
   }
 
-  public short readShort() {
+  short readShort() {
     short v =  (short) ((buffer[offset + 1] & 255) +
         ((buffer[offset]) << 8));
     offset += 2;
     return v;
   }
 
-  public byte[] copy(int len) {
+  byte[] copy(int len) {
     byte[] b = new byte[len];
     System.arraycopy(buffer, offset, b, 0, len);
     return b;
   }
 
-  public int readInt() {
+  int readInt() {
     int v = ((buffer[offset + 3] & 255) +
         ((buffer[offset + 2] & 255) << 8) +
         ((buffer[offset + 1] & 255) << 16) +
@@ -222,7 +221,7 @@ public class StreamBlockletReader {
     return v;
   }
 
-  public long readLong() {
+  long readLong() {
     long v = ((long)(buffer[offset + 7] & 255)) +
         ((long) (buffer[offset + 6] & 255) << 8) +
         ((long) (buffer[offset + 5] & 255) << 16) +
@@ -235,26 +234,26 @@ public class StreamBlockletReader {
     return v;
   }
 
-  public double readDouble() {
+  double readDouble() {
     return Double.longBitsToDouble(readLong());
   }
 
-  public byte[] readBytes(int len) {
+  byte[] readBytes(int len) {
     byte[] b = new byte[len];
     System.arraycopy(buffer, offset, b, 0, len);
     offset += len;
     return b;
   }
 
-  public void skipBytes(int len) {
+  void skipBytes(int len) {
     offset += len;
   }
 
-  public int getRowNums() {
+  int getRowNums() {
     return rowNums;
   }
 
-  public void close() {
+  void close() {
     CarbonUtil.closeStreams(in);
   }
 }
