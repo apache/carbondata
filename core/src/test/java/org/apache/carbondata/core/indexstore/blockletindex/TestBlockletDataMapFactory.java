@@ -77,6 +77,12 @@ public class TestBlockletDataMapFactory {
             UUID.randomUUID().toString());
     Deencapsulation.setField(tableInfo, "identifier", absoluteTableIdentifier);
     Deencapsulation.setField(carbonTable, "tableInfo", tableInfo);
+    new MockUp<CarbonTable>() {
+      @Mock
+      public AbsoluteTableIdentifier getAbsoluteTableIdentifier(){
+        return absoluteTableIdentifier;
+      }
+    };
     blockletDataMapFactory = new BlockletDataMapFactory(carbonTable, new DataMapSchema());
     Deencapsulation.setField(blockletDataMapFactory, "cache",
         CacheProvider.getInstance().createCache(CacheType.DRIVER_BLOCKLET_DATAMAP));

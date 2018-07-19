@@ -805,7 +805,11 @@ public class CarbonTable implements Serializable {
    * @return absolute table identifier
    */
   public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
-    return tableInfo.getOrCreateAbsoluteTableIdentifier();
+    AbsoluteTableIdentifier absoluteTableIdentifier =
+        tableInfo.getOrCreateAbsoluteTableIdentifier();
+    absoluteTableIdentifier.setDictionaryPath(
+        tableInfo.getFactTable().getTableProperties().get(CarbonCommonConstants.DICTIONARY_PATH));
+    return absoluteTableIdentifier;
   }
 
   /**
