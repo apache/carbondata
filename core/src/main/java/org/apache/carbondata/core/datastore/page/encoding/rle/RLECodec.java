@@ -308,6 +308,11 @@ public class RLECodec implements ColumnPageCodec {
       return resultPage;
     }
 
+    @Override public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
+        throws MemoryException, IOException {
+      return decode(input, offset, length);
+    }
+
     private void decodeBytePage(DataInputStream in, ColumnPage decodedPage)
         throws IOException {
       int rowId = 0;

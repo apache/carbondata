@@ -56,7 +56,7 @@ public class PageLevelDictionary {
 
   private DataType dataType;
 
-  private  boolean isComplexTypePrimitive;
+  private boolean isComplexTypePrimitive;
 
   public PageLevelDictionary(LocalDictionaryGenerator localDictionaryGenerator, String columnName,
       DataType dataType, boolean isComplexTypePrimitive) {

@@ -201,12 +201,18 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putBytes(int rowId, byte[] bytes) {
+    try {
+      ensureMemory(eachRowSize);
+    } catch (MemoryException e) {
+      throw new RuntimeException(e);
+    }
     // copy the data to memory
     long offset = (long)rowId * eachRowSize;
     CarbonUnsafe.getUnsafe()
         .copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
             baseOffset + offset, bytes.length);
     updatePageSize(rowId);
+    totalLength += eachRowSize;
   }
 
   @Override
@@ -355,16 +361,33 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public byte[][] getByteArrayPage() {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    byte[][] data = new byte[getEndLoop()][eachRowSize];
+    long offset = baseOffset;
+    for (int i = 0; i < data.length; i++) {
+      //copy the row from memory block based on offset
+      // offset position will be index * each column value length
+      CarbonUnsafe.getUnsafe().copyMemory(memoryBlock.getBaseObject(), offset, data[i],
+          CarbonUnsafe.BYTE_ARRAY_OFFSET, eachRowSize);
+      offset += eachRowSize;
+    }
+    return data;
   }
 
   @Override
   public byte[] getLVFlattenedBytePage() {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
-  @Override
-  public byte[] getComplexChildrenLVFlattenedBytePage() throws IOException {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+
+  @Override public byte[] getComplexChildrenLVFlattenedBytePage() {
+    byte[] data = new byte[totalLength];
+    int numberOfRows = getEndLoop();
+    int destOffset = 0;
+    for (int i = 0; i < numberOfRows; i++) {
+      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + destOffset, data,
+          CarbonUnsafe.BYTE_ARRAY_OFFSET + destOffset, eachRowSize);
+      destOffset += eachRowSize;
+    }
+    return data;
   }
 
   @Override
@@ -485,6 +508,8 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
       return totalLength / DataTypes.FLOAT.getSizeInBytes();
     } else if (dataType == DataTypes.DOUBLE) {
       return totalLength / DataTypes.DOUBLE.getSizeInBytes();
+    } else if (dataType == DataTypes.BYTE_ARRAY) {
+      return totalLength / eachRowSize;
     } else {
       throw new UnsupportedOperationException("invalid data type: " + dataType);
     }

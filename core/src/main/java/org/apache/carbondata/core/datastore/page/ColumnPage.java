@@ -141,7 +141,7 @@ public abstract class ColumnPage {
         throw new RuntimeException(e);
       }
     } else {
-      return new SafeFixLengthColumnPage(columnSpec, dataType, pageSize, eachValueSize);
+      return new SafeFixLengthColumnPage(columnSpec, dataType, pageSize);
     }
   }
 
@@ -167,11 +167,12 @@ public abstract class ColumnPage {
       boolean isComplexTypePrimitive) throws MemoryException {
     if (unsafe) {
       return new LocalDictColumnPage(new UnsafeVarLengthColumnPage(columnSpec, dataType, pageSize),
-          new UnsafeVarLengthColumnPage(columnSpec, DataTypes.BYTE_ARRAY, pageSize),
+          new UnsafeFixLengthColumnPage(columnSpec, DataTypes.BYTE_ARRAY, pageSize,
+              CarbonCommonConstants.LOCAL_DICT_ENCODED_BYTEARRAY_SIZE),
           localDictionaryGenerator, isComplexTypePrimitive);
     } else {
       return new LocalDictColumnPage(new SafeVarLengthColumnPage(columnSpec, dataType, pageSize),
-          new SafeVarLengthColumnPage(columnSpec, DataTypes.BYTE_ARRAY, pageSize),
+          new SafeFixLengthColumnPage(columnSpec, DataTypes.BYTE_ARRAY, pageSize),
           localDictionaryGenerator, isComplexTypePrimitive);
     }
   }
@@ -715,7 +716,7 @@ public abstract class ColumnPage {
    * except for decimal page
    */
   public static ColumnPage decompress(ColumnPageEncoderMeta meta, byte[] compressedData,
-      int offset, int length)
+      int offset, int length, boolean isLVEncoded)
       throws MemoryException {
     Compressor compressor = CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
     TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
@@ -741,12 +742,16 @@ public abstract class ColumnPage {
     } else if (storeDataType == DataTypes.DOUBLE) {
       double[] doubleData = compressor.unCompressDouble(compressedData, offset, length);
       return newDoublePage(columnSpec, doubleData);
-    } else if (storeDataType == DataTypes.BYTE_ARRAY && (
+    } else if (!isLVEncoded && storeDataType == DataTypes.BYTE_ARRAY && (
         columnSpec.getColumnType() == ColumnType.COMPLEX_PRIMITIVE
             || columnSpec.getColumnType() == ColumnType.PLAIN_VALUE)) {
       byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);
       return newComplexLVBytesPage(columnSpec, lvVarBytes,
           CarbonCommonConstants.SHORT_SIZE_IN_BYTE);
+    } else if (isLVEncoded && storeDataType == DataTypes.BYTE_ARRAY &&
+        columnSpec.getColumnType() == ColumnType.COMPLEX_PRIMITIVE) {
+      byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);
+      return newFixedByteArrayPage(columnSpec, lvVarBytes, 3);
     } else if (storeDataType == DataTypes.BYTE_ARRAY
         && columnSpec.getColumnType() == ColumnType.COMPLEX_STRUCT) {
       byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);
