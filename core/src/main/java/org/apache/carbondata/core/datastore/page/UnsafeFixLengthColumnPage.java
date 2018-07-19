@@ -380,13 +380,8 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override public byte[] getComplexChildrenLVFlattenedBytePage() {
     byte[] data = new byte[totalLength];
-    int numberOfRows = getEndLoop();
-    int destOffset = 0;
-    for (int i = 0; i < numberOfRows; i++) {
-      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + destOffset, data,
-          CarbonUnsafe.BYTE_ARRAY_OFFSET + destOffset, eachRowSize);
-      destOffset += eachRowSize;
-    }
+    CarbonUnsafe.getUnsafe()
+        .copyMemory(baseAddress, baseOffset, data, CarbonUnsafe.BYTE_ARRAY_OFFSET, totalLength);
     return data;
   }
 
