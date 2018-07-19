@@ -18,6 +18,7 @@
 package org.apache.carbondata.horizon.rest.controller;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
 import org.apache.carbondata.horizon.rest.model.validate.RequestValidator;
 import org.apache.carbondata.horizon.rest.model.view.SqlRequest;
@@ -47,21 +48,19 @@ public class SqlHorizonController {
     try {
       sqlDataFrame = SparkSqlWrapper.sql(SqlHorizon.getSession(),
               request.getSqlStatement());
-      rows = sqlDataFrame
-          .collectAsList();
+      rows = sqlDataFrame.collectAsList();
     } catch (AnalysisException e) {
       throw new StoreException(e.getSimpleMessage());
     } catch (Exception e) {
       throw new StoreException(e.getMessage());
     }
-    Object[][] result = new Object[rows.size()+1][];
-    result[0] = sqlDataFrame.schema().fieldNames();
-    for (int i = 0; i < rows.size(); i++) {
-      Row row = rows.get(i);
-      result[i+1] = new Object[row.size()];
-      for (int j = 0; j < row.size(); j++) {
-        result[i+1][j] = row.get(j);
-      }
+    final String[] fieldNames = sqlDataFrame.schema().fieldNames();
+    final Object[][] result = new Object[rows.size() + 1][fieldNames.length];
+    if (rows.size() > 0) {
+      System.arraycopy(fieldNames, 0, result[0], 0, fieldNames.length);
+      IntStream.range(0, rows.size()).forEach(index ->
+              System.arraycopy(rows.get(index), 0,
+                      result[index + 1], 0, fieldNames.length));
     }
 
     return new ResponseEntity<>(

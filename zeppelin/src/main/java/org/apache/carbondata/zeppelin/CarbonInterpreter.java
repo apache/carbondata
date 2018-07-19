@@ -39,7 +39,6 @@ import org.apache.zeppelin.interpreter.Interpreter;
 import org.apache.zeppelin.interpreter.InterpreterContext;
 import org.apache.zeppelin.interpreter.InterpreterException;
 import org.apache.zeppelin.interpreter.InterpreterResult;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +57,11 @@ public class CarbonInterpreter extends Interpreter {
    * Property which can be set in zeppelin to carbon REST API server
    */
   public static final String CARBON_QUERY_API_URL = "carbon.query.api.url";
+
+  /**
+   * These are the queries which need Table like output format
+   */
+  private static final String[] SEARCH_QUERIES = {"select", "list", "show", "desc"};
 
   public CarbonInterpreter(Properties properties) {
     super(properties);
@@ -127,10 +131,8 @@ public class CarbonInterpreter extends Interpreter {
   /**
    * Check if output has to be sent as a able to zeppelin
    */
-  private Function<String, Boolean> isTableFormatOutput = sql -> (sql.startsWith("select") ||
-          sql.trim().toLowerCase().startsWith("show") ||
-          sql.trim().toLowerCase().startsWith("list") ||
-          sql.trim().toLowerCase().startsWith("desc"));
+  private Function<String, Boolean> isTableFormatOutput = sql ->
+          (StringUtils.startsWithAny(sql, SEARCH_QUERIES));
 
   /**
    * returns InterpreterResult from CarbonResponse
