@@ -189,8 +189,8 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
         rowsNotExist = false;
         dataHandler = CarbonFactHandlerFactory
             .createCarbonFactHandler(model);
-        dataHandler.initialise();
         carbonFactHandlers.add(dataHandler);
+        dataHandler.initialise();
       }
       processBatch(insideRangeIterator.next(), dataHandler);
     }
