@@ -46,14 +46,30 @@ public class DataConvertUtil {
 
   /**
    * return default null value based on datatype. This method refers to ColumnPage.putNull
+   *
+   * Note: since we can not mark NULL with corresponding data type in bloom datamap
+   * we set/get a `NullValue` for NULL, such that pruning using bloom filter
+   * will have false positive case if filter value is the `NullValue`.
+   * This should not affect the correctness of result
    */
-  public static Object getNullValueForMeasure(DataType dataType) {
+  public static Object getNullValueForMeasure(DataType dataType, int scale) {
     if (dataType == DataTypes.BOOLEAN) {
       return false;
-    } else if (DataTypes.isDecimal(dataType)) {
-      return BigDecimal.ZERO;
-    } else {
+    } else if (dataType == DataTypes.BYTE) {
+      return (byte) 0;
+    } else if (dataType == DataTypes.SHORT) {
+      return (short) 0;
+    } else if (dataType == DataTypes.INT) {
       return 0;
+    } else if (dataType == DataTypes.LONG) {
+      return 0L;
+    } else if (dataType == DataTypes.DOUBLE) {
+      return 0.0;
+    } else if (DataTypes.isDecimal(dataType)) {
+      // keep consistence with `DecimalConverter.getDecimal` in loading process
+      return BigDecimal.valueOf(0, scale);
+    } else {
+      throw new IllegalArgumentException("unsupported data type: " + dataType);
     }
   }
 }

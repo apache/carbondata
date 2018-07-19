@@ -33,6 +33,7 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{CarbonInputMetrics, Partition, TaskContext}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.types.Decimal
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -52,6 +53,7 @@ import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonUtil, TaskMetricsMap}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.datamap.bloom.DataConvertUtil
 import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMapPreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection, CarbonRecordReader}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
@@ -267,7 +269,17 @@ class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Ar
           indexCol2IdxInNoDictArray(col.getColName))
       } else {
         // measures start from 1
-        data(1 + indexCol2IdxInMeasureArray(col.getColName))
+        val value = data(1 + indexCol2IdxInMeasureArray(col.getColName))
+        if (null == value) {
+          DataConvertUtil.getNullValueForMeasure(col.getDataType,
+            col.getColumnSchema.getScale)
+        } else if (DataTypes.isDecimal(col.getDataType)) {
+          // In rebuild process, value is built for spark
+          // here we need to convert it to java BigDecimal for carbon
+          value.asInstanceOf[Decimal].toBigDecimal.bigDecimal
+        } else {
+          value
+        }
       }
     }
     rtn(indexColumns.length) = data(data.length - 3)

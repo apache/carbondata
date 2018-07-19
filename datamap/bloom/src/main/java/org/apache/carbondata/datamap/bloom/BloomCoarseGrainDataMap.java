@@ -42,6 +42,7 @@ import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
@@ -242,7 +243,9 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     Object expressionValue = le.getLiteralExpValue();
     Object literalValue;
     // note that if the datatype is date/timestamp, the expressionValue is long type.
-    if (le.getLiteralExpDataType() == DataTypes.DATE) {
+    if (null == expressionValue) {
+      literalValue = null;
+    } else if (le.getLiteralExpDataType() == DataTypes.DATE) {
       DateFormat format = new SimpleDateFormat(CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
       // the below settings are set statically according to DateDirectDirectionaryGenerator
       format.setLenient(false);
@@ -292,7 +295,12 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     if (carbonColumn.isMeasure()) {
       // for measures, the value is already the type, just convert it to bytes.
       if (convertedValue == null) {
-        convertedValue = DataConvertUtil.getNullValueForMeasure(carbonColumn.getDataType());
+        convertedValue = DataConvertUtil.getNullValueForMeasure(carbonColumn.getDataType(),
+            carbonColumn.getColumnSchema().getScale());
+      }
+      // Carbon stores boolean as byte. Here we convert it for `getValueAsBytes`
+      if (carbonColumn.getDataType().equals(DataTypes.BOOLEAN)) {
+        convertedValue = BooleanConvert.boolean2Byte((Boolean)convertedValue);
       }
       internalFilterValue = CarbonUtil.getValueAsBytes(carbonColumn.getDataType(), convertedValue);
     } else if (carbonColumn.hasEncoding(Encoding.DIRECT_DICTIONARY) ||

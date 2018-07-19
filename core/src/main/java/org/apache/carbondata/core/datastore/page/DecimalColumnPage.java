@@ -17,8 +17,11 @@
 
 package org.apache.carbondata.core.datastore.page;
 
+import java.math.BigDecimal;
+
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 
 /**
@@ -104,6 +107,51 @@ public abstract class DecimalColumnPage extends VarLengthColumnPageBase {
   @Override
   public void setDoublePage(double[] doubleData) {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  // used for building datamap in loading process
+  private BigDecimal getDecimalFromRawData(int rowId) {
+    long value;
+    switch (decimalConverter.getDecimalConverterType()) {
+      case DECIMAL_INT:
+        value = getInt(rowId);
+        break;
+      case DECIMAL_LONG:
+        value = getLong(rowId);
+        break;
+      default:
+        value = getByte(rowId);
+    }
+    return decimalConverter.getDecimal(value);
+  }
+
+  private BigDecimal getDecimalFromDecompressData(int rowId) {
+    long value;
+    if (dataType == DataTypes.BYTE) {
+      value = getByte(rowId);
+    } else if (dataType == DataTypes.SHORT) {
+      value = getShort(rowId);
+    } else if (dataType == DataTypes.SHORT_INT) {
+      value = getShortInt(rowId);
+    } else if (dataType == DataTypes.INT) {
+      value = getInt(rowId);
+    } else if (dataType == DataTypes.LONG) {
+      value = getLong(rowId);
+    } else {
+      return decimalConverter.getDecimal(getBytes(rowId));
+    }
+    return decimalConverter.getDecimal(value);
+  }
+
+  @Override
+  public BigDecimal getDecimal(int rowId) {
+    // rowOffset is initialed for query in `VarLengthColumnPageBase.getDecimalColumnPage`
+    // if its size is 0, we are in loading process and the data in column page is raw
+    if (rowOffset.getActualRowCount() == 0) {
+      return getDecimalFromRawData(rowId);
+    } else {
+      return getDecimalFromDecompressData(rowId);
+    }
   }
 
 }
