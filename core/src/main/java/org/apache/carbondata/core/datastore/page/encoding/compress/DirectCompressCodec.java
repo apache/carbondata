@@ -108,9 +108,15 @@ public class DirectCompressCodec implements ColumnPageCodec {
       if (DataTypes.isDecimal(dataType)) {
         decodedPage = ColumnPage.decompressDecimalPage(meta, input, offset, length);
       } else {
-        decodedPage = ColumnPage.decompress(meta, input, offset, length);
+        decodedPage = ColumnPage.decompress(meta, input, offset, length, false);
       }
       return LazyColumnPage.newPage(decodedPage, converter);
+    }
+
+    @Override public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
+        throws MemoryException, IOException {
+      return LazyColumnPage
+          .newPage(ColumnPage.decompress(meta, input, offset, length, isLVEncoded), converter);
     }
   }
 
