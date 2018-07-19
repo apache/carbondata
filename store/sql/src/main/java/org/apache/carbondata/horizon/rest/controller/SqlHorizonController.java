@@ -59,8 +59,8 @@ public class SqlHorizonController {
     if (rows.size() > 0) {
       System.arraycopy(fieldNames, 0, result[0], 0, fieldNames.length);
       IntStream.range(0, rows.size()).forEach(index ->
-              System.arraycopy(rows.get(index), 0,
-                      result[index + 1], 0, fieldNames.length));
+          IntStream.range(0, fieldNames.length).forEach(col ->
+                result[index + 1][col] = rows.get(index).get(col)));
     }
 
     return new ResponseEntity<>(
