@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.datastore.page;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 
@@ -48,11 +50,6 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     this.fixedLengthdata = new byte[pageSize][];
   }
 
-  SafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
-      int eachRowSize) {
-    super(columnSpec, dataType, pageSize);
-    this.fixedLengthdata = new byte[pageSize][];
-  }
   /**
    * Set byte value at rowId
    */
@@ -108,7 +105,9 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putBytes(int rowId, byte[] bytes) {
+    ensureArraySize(rowId, DataTypes.BYTE_ARRAY);
     this.fixedLengthdata[rowId] = bytes;
+    arrayElementCount++;
   }
 
   @Override
@@ -258,9 +257,12 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   /**
    * Get string page
    */
-  @Override
-  public byte[][] getByteArrayPage() {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  @Override public byte[][] getByteArrayPage() {
+    byte[][] data = new byte[arrayElementCount][];
+    for (int i = 0; i < arrayElementCount; i++) {
+      data[i] = fixedLengthdata[i];
+    }
+    return data;
   }
 
   @Override
@@ -269,8 +271,13 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override
-  public byte[] getComplexChildrenLVFlattenedBytePage() {
-    throw new UnsupportedOperationException("internal error");
+  public byte[] getComplexChildrenLVFlattenedBytePage() throws IOException {
+    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    DataOutputStream out = new DataOutputStream(stream);
+    for (int i = 0; i < arrayElementCount; i++) {
+      out.write(fixedLengthdata[i]);
+    }
+    return stream.toByteArray();
   }
 
   @Override
@@ -350,6 +357,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     floatData = null;
     doubleData = null;
     shortIntData = null;
+    fixedLengthdata = null;
   }
 
   /**
@@ -391,45 +399,54 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   private void ensureArraySize(int requestSize, DataType dataType) {
     if (dataType == DataTypes.BYTE) {
       if (requestSize >= byteData.length) {
-        byte[] newArray = new byte[arrayElementCount + 16];
+        byte[] newArray = new byte[arrayElementCount * 2];
         System.arraycopy(byteData, 0, newArray, 0, arrayElementCount);
         byteData = newArray;
       }
     } else if (dataType == DataTypes.SHORT) {
       if (requestSize >= shortData.length) {
-        short[] newArray = new short[arrayElementCount + 16];
+        short[] newArray = new short[arrayElementCount * 2];
         System.arraycopy(shortData, 0, newArray, 0, arrayElementCount);
         shortData = newArray;
       }
     } else if (dataType == DataTypes.SHORT_INT) {
       if (requestSize >= shortIntData.length / 3) {
-        byte[] newArray = new byte[(arrayElementCount * 3) + (16 * 3)];
+        byte[] newArray = new byte[arrayElementCount * 6];
         System.arraycopy(shortIntData, 0, newArray, 0, arrayElementCount * 3);
         shortIntData = newArray;
       }
     } else if (dataType == DataTypes.INT) {
       if (requestSize >= intData.length) {
-        int[] newArray = new int[arrayElementCount + 16];
+        int[] newArray = new int[arrayElementCount * 2];
         System.arraycopy(intData, 0, newArray, 0, arrayElementCount);
         intData = newArray;
       }
     } else if (dataType == DataTypes.LONG) {
       if (requestSize >= longData.length) {
-        long[] newArray = new long[arrayElementCount + 16];
+        long[] newArray = new long[arrayElementCount * 2];
         System.arraycopy(longData, 0, newArray, 0, arrayElementCount);
         longData = newArray;
       }
     } else if (dataType == DataTypes.FLOAT) {
       if (requestSize >= floatData.length) {
-        float[] newArray = new float[arrayElementCount + 16];
+        float[] newArray = new float[arrayElementCount * 2];
         System.arraycopy(floatData, 0, newArray, 0, arrayElementCount);
         floatData = newArray;
       }
     } else if (dataType == DataTypes.DOUBLE) {
       if (requestSize >= doubleData.length) {
-        double[] newArray = new double[arrayElementCount + 16];
+        double[] newArray = new double[arrayElementCount * 2];
         System.arraycopy(doubleData, 0, newArray, 0, arrayElementCount);
         doubleData = newArray;
+      }
+    } else if (dataType == DataTypes.BYTE_ARRAY) {
+      if (requestSize >= fixedLengthdata.length) {
+        byte[][] newArray = new byte[arrayElementCount * 2][];
+        int index = 0;
+        for (byte[] data : fixedLengthdata) {
+          newArray[index++] = data;
+        }
+        fixedLengthdata = newArray;
       }
     } else {
       throw new UnsupportedOperationException(

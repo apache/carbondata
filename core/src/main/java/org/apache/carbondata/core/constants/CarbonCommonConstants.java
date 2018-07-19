@@ -1878,6 +1878,8 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT = "true";
 
+  public static final short LOCAL_DICT_ENCODED_BYTEARRAY_SIZE = 3;
+
   private CarbonCommonConstants() {
   }
 }

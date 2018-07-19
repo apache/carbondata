@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
@@ -209,12 +210,13 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
   }
 
   private ColumnPage decodeDimensionByMeta(DataChunk2 pageMetadata,
-      ByteBuffer pageData, int offset)
+      ByteBuffer pageData, int offset, boolean isLocalDictEncodedPage)
       throws IOException, MemoryException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
     ColumnPageDecoder decoder = encodingFactory.createDecoder(encodings, encoderMetas);
-    return decoder.decode(pageData.array(), offset, pageMetadata.data_page_length);
+    return decoder
+        .decode(pageData.array(), offset, pageMetadata.data_page_length, isLocalDictEncodedPage);
   }
 
   private boolean isEncodedWithMeta(DataChunk2 pageMetadata) {
@@ -238,7 +240,8 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       ByteBuffer pageData, DataChunk2 pageMetadata, int offset)
       throws IOException, MemoryException {
     if (isEncodedWithMeta(pageMetadata)) {
-      ColumnPage decodedPage = decodeDimensionByMeta(pageMetadata, pageData, offset);
+      ColumnPage decodedPage = decodeDimensionByMeta(pageMetadata, pageData, offset,
+          null != rawColumnPage.getLocalDictionary());
       decodedPage.setNullBits(QueryUtil.getNullBitSet(pageMetadata.presence));
       return new ColumnPageWrapper(decodedPage, rawColumnPage.getLocalDictionary(),
           isEncodedWithAdaptiveMeta(pageMetadata));
@@ -289,7 +292,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       dataPage = UnBlockIndexer.uncompressData(dataPage, rlePage,
           null == rawColumnPage.getLocalDictionary() ?
               eachColumnValueSize[rawColumnPage.getColumnIndex()] :
-              3);
+              CarbonCommonConstants.LOCAL_DICT_ENCODED_BYTEARRAY_SIZE);
     }
 
     DimensionColumnPage columnDataChunk = null;
