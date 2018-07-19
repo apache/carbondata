@@ -19,7 +19,7 @@ package org.apache.spark.sql.execution.command.management
 
 import java.text.SimpleDateFormat
 import java.util
-import java.util.UUID
+import java.util.{List, UUID}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -54,10 +54,11 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.{DictionaryServer, NonSecureDictionaryServer}
 import org.apache.carbondata.core.dictionary.service.NonSecureDictionaryServiceProvider
 import org.apache.carbondata.core.indexstore.PartitionSpec
+import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil, ObjectSerializationUtil}
@@ -148,6 +149,7 @@ case class CarbonLoadDataCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val carbonProperty: CarbonProperties = CarbonProperties.getInstance()
+    var concurrentLoadLock: Option[ICarbonLock] = None
     carbonProperty.addProperty("zookeeper.enable.lock", "false")
     currPartitions = if (table.isHivePartitionTable) {
       CarbonFilters.getCurrentPartitions(
@@ -253,6 +255,7 @@ case class CarbonLoadDataCommand(
         }
         // First system has to partition the data first and then call the load data
         LOGGER.info(s"Initiating Direct Load for the Table : ($dbName.$tableName)")
+        concurrentLoadLock = acquireConcurrentLoadLock()
         // Clean up the old invalid segment data before creating a new entry for new load.
         SegmentStatusManager.deleteLoadsAndUpdateMetadata(table, false, currPartitions)
         // add the start entry for the new load in the table status file
@@ -345,6 +348,7 @@ case class CarbonLoadDataCommand(
           LOGGER.audit(s"Dataload failure for $dbName.$tableName. Please check the logs")
           throw ex
       } finally {
+        releaseConcurrentLoadLock(concurrentLoadLock, LOGGER)
         // Once the data load is successful delete the unwanted partition files
         try {
           val partitionLocation = CarbonProperties.getStorePath + "/partition/" +
@@ -373,6 +377,44 @@ case class CarbonLoadDataCommand(
         throw mce
     }
     Seq.empty
+  }
+
+  private def acquireConcurrentLoadLock(): Option[ICarbonLock] = {
+    val isConcurrentLockRequired = table.getAllDimensions.asScala
+      .exists(cd => cd.hasEncoding(Encoding.DICTIONARY) &&
+                    !cd.hasEncoding(Encoding.DIRECT_DICTIONARY))
+
+    if (isConcurrentLockRequired) {
+      var concurrentLoadLock: ICarbonLock = CarbonLockFactory.getCarbonLockObj(
+        table.getTableInfo().getOrCreateAbsoluteTableIdentifier(),
+        LockUsage.CONCURRENT_LOAD_LOCK)
+      val retryCount = CarbonLockUtil
+        .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
+          CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT)
+      val maxTimeout = CarbonLockUtil
+        .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
+          CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT)
+      if (!(isConcurrentLockRequired &&
+            concurrentLoadLock.lockWithRetries(retryCount, maxTimeout))) {
+        throw new RuntimeException(table.getDatabaseName + "." + table.getTableName +
+                                   " having dictionary column. so concurrent load is not supported")
+      }
+      return Some(concurrentLoadLock)
+    }
+    return None
+  }
+
+  private def releaseConcurrentLoadLock(concurrentLoadLock: Option[ICarbonLock],
+      LOGGER: LogService): Unit = {
+    if (concurrentLoadLock.isDefined) {
+      if (concurrentLoadLock.get.unlock()) {
+        LOGGER.info("concurrent_load lock for table" + table.getTablePath +
+                    "has been released successfully")
+      } else {
+        LOGGER.error(
+          "Unable to unlock concurrent_load lock for table" + table.getTablePath);
+      }
+    }
   }
 
   private def loadDataUsingOnePass(

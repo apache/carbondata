@@ -305,7 +305,6 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  utilization int,salary int)
         | PARTITIONED BY (workgroupcategory int, empname String, designation String)
         | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('DICTIONARY_INCLUDE'='deptname')
       """.stripMargin)
 
     val tasks = new util.ArrayList[Callable[String]]()
