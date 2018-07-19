@@ -1655,4 +1655,11 @@ public final class CarbonProperties {
       return CarbonCommonConstants.CARBON_SEARCH_QUERY_TIMEOUT_DEFAULT;
     }
   }
+
+  public static boolean isTaskLocality() {
+    String taskLocality = getInstance().getProperty(
+        CarbonCommonConstants.CARBON_TASK_LOCALITY,
+        CarbonCommonConstants.CARBON_TASK_LOCALITY_DEFAULT);
+    return taskLocality.equalsIgnoreCase("true");
+  }
 }
