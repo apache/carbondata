@@ -649,7 +649,7 @@
     <profile>
       <id>zeppelin</id>
       <modules>
-        <module>zeppelin</module>
+        <module>integration/zeppelin</module>
       </modules>
     </profile>
   </profiles>
