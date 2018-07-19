@@ -17,9 +17,6 @@
 
 package org.apache.carbondata.horizon.rest.controller;
 
-import java.io.File;
-import java.io.IOException;
-
 import org.apache.carbondata.store.api.conf.StoreConf;
 
 import org.springframework.boot.SpringApplication;
@@ -33,18 +30,7 @@ public class Horizon {
 
   public static void main(String[] args) {
     String storeConfFile = System.getProperty(StoreConf.STORE_CONF_FILE);
-    if (storeConfFile == null) {
-      storeConfFile = getStoreConfFile();
-    }
     start(storeConfFile);
-  }
-
-  static String getStoreConfFile() {
-    try {
-      return new File(".").getCanonicalPath() + "/store/conf/store.conf";
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
   }
 
   public static void start(String storeConfFile) {
@@ -52,12 +38,16 @@ public class Horizon {
   }
 
   static <T> void start(final Class<T> classTag, String storeConfFile) {
-    System.setProperty("carbonstore.conf.file", storeConfFile);
-    new Thread() {
+    if (storeConfFile != null) {
+      System.setProperty("carbonstore.conf.file", storeConfFile);
+    }
+    Thread thread = new Thread() {
       public void run() {
         context = SpringApplication.run(classTag);
       }
-    }.start();
+    };
+    thread.setDaemon(true);
+    thread.start();
   }
 
   public static void stop() {

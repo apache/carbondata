@@ -90,6 +90,8 @@ class CarbonScanRDD[T: ClassTag](
   }
   private var vectorReader = false
 
+  @transient private val isTaskLocality = CarbonProperties.isTaskLocality
+
   private val bucketedTable = tableInfo.getFactTable.getBucketingInfo
   private val storageFormat = tableInfo.getFormat
 
@@ -722,9 +724,16 @@ class CarbonScanRDD[T: ClassTag](
    * Get the preferred locations where to launch this task.
    */
   override def getPreferredLocations(split: Partition): Seq[String] = {
-    val theSplit = split.asInstanceOf[CarbonSparkPartition]
-    val firstOptionLocation = theSplit.split.value.getLocations.filter(_ != "localhost")
-    firstOptionLocation
+    if (isTaskLocality) {
+      split.asInstanceOf[CarbonSparkPartition]
+        .split
+        .value
+        .getLocations
+        .filter(_ != "localhost")
+    } else {
+      // when the computation and the storage are separated, not require the preferred locations
+      Seq.empty[String]
+    }
   }
 
   def createVectorizedCarbonRecordReader(queryModel: QueryModel,
