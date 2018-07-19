@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -77,7 +78,7 @@ public class SegmentIndexFileStore {
 
   public SegmentIndexFileStore() {
     carbonIndexMap = new HashMap<>();
-    carbonIndexMapWithFullPath = new HashMap<>();
+    carbonIndexMapWithFullPath = new TreeMap<>();
     carbonMergeFileToIndexFilesMap = new HashMap<>();
   }
 
@@ -259,12 +260,14 @@ public class SegmentIndexFileStore {
       carbonMergeFileToIndexFilesMap.put(mergeFilePath, file_names);
       List<ByteBuffer> fileData = mergedBlockIndex.getFileData();
       CarbonFile mergeFile = FileFactory.getCarbonFile(mergeFilePath);
+      String mergeFileAbsolutePath = mergeFile.getParentFile().getAbsolutePath();
       assert (file_names.size() == fileData.size());
       for (int i = 0; i < file_names.size(); i++) {
-        carbonIndexMap.put(file_names.get(i), fileData.get(i).array());
-        carbonIndexMapWithFullPath.put(
-            mergeFile.getParentFile().getAbsolutePath() + CarbonCommonConstants.FILE_SEPARATOR
-                + file_names.get(i), fileData.get(i).array());
+        byte[] data = fileData.get(i).array();
+        carbonIndexMap.put(file_names.get(i), data);
+        carbonIndexMapWithFullPath
+            .put(mergeFileAbsolutePath + CarbonCommonConstants.FILE_SEPARATOR + file_names.get(i),
+                data);
       }
     } finally {
       thriftReader.close();

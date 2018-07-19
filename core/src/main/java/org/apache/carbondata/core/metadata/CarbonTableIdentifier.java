@@ -28,6 +28,10 @@ public class CarbonTableIdentifier implements Serializable {
   private static final long serialVersionUID = -0L;
 
   /**
+   * variable for storing tableUnique name. As it is constant it should be constructed only once
+   */
+  private String tableUniqueName;
+  /**
    * database name
    */
   private String databaseName;
@@ -49,6 +53,7 @@ public class CarbonTableIdentifier implements Serializable {
     this.databaseName = databaseName;
     this.tableName = tableName;
     this.tableId = tableId;
+    tableUniqueName = databaseName + '_' + tableName;
   }
 
   /**
@@ -76,7 +81,7 @@ public class CarbonTableIdentifier implements Serializable {
    * @return table unique name
    */
   public String getTableUniqueName() {
-    return databaseName + '_' + tableName;
+    return tableUniqueName;
   }
 
   /**
@@ -134,6 +139,6 @@ public class CarbonTableIdentifier implements Serializable {
    * return unique table name
    */
   @Override public String toString() {
-    return databaseName + '_' + tableName;
+    return tableUniqueName;
   }
 }

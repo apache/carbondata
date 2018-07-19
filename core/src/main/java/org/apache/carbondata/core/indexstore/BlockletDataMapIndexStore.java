@@ -210,35 +210,26 @@ public class BlockletDataMapIndexStore
   @Override
   public void put(TableBlockIndexUniqueIdentifierWrapper tableBlockIndexUniqueIdentifierWrapper,
       BlockletDataMapIndexWrapper wrapper) throws IOException, MemoryException {
-    String uniqueTableSegmentIdentifier =
-        tableBlockIndexUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier()
-            .getUniqueTableSegmentIdentifier();
-    Object lock = segmentLockMap.get(uniqueTableSegmentIdentifier);
-    if (lock == null) {
-      lock = addAndGetSegmentLock(uniqueTableSegmentIdentifier);
-    }
     // As dataMap will use unsafe memory, it is not recommended to overwrite an existing entry
     // as in that case clearing unsafe memory need to be taken card. If at all datamap entry
     // in the cache need to be overwritten then use the invalidate interface
     // and then use the put interface
     if (null == getIfPresent(tableBlockIndexUniqueIdentifierWrapper)) {
-      synchronized (lock) {
-        if (null == getIfPresent(tableBlockIndexUniqueIdentifierWrapper)) {
-          List<BlockDataMap> dataMaps = wrapper.getDataMaps();
-          try {
-            for (BlockDataMap blockletDataMap: dataMaps) {
-              blockletDataMap.convertToUnsafeDMStore();
-            }
-            lruCache.put(tableBlockIndexUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier()
-                .getUniqueTableSegmentIdentifier(), wrapper, wrapper.getMemorySize());
-          } catch (Throwable e) {
-            // clear all the memory acquired by data map in case of any failure
-            for (DataMap blockletDataMap : dataMaps) {
-              blockletDataMap.clear();
-            }
-            throw new IOException("Problem in adding datamap to cache.", e);
-          }
+      List<BlockDataMap> dataMaps = wrapper.getDataMaps();
+      try {
+        for (BlockDataMap blockletDataMap : dataMaps) {
+          blockletDataMap.convertToUnsafeDMStore();
         }
+        // Locking is not required here because in LRU cache map add method is synchronized to add
+        // only one entry at a time and if a key already exists it will not overwrite the entry
+        lruCache.put(tableBlockIndexUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier()
+            .getUniqueTableSegmentIdentifier(), wrapper, wrapper.getMemorySize());
+      } catch (Throwable e) {
+        // clear all the memory acquired by data map in case of any failure
+        for (DataMap blockletDataMap : dataMaps) {
+          blockletDataMap.clear();
+        }
+        throw new IOException("Problem in adding datamap to cache.", e);
       }
     }
   }
