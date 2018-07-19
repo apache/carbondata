@@ -56,12 +56,10 @@ import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -1386,22 +1384,17 @@ public final class FilterUtil {
       CarbonDimension carbonDimension) throws IOException {
     String dictionaryPath = null;
     ColumnIdentifier columnIdentifier = carbonDimension.getColumnIdentifier();
-    CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(dictionarySourceAbsoluteTableIdentifier.getDatabaseName(),
-            dictionarySourceAbsoluteTableIdentifier.getTableName());
-    if (null != carbonTable) {
-      dictionaryPath = carbonTable.getTableInfo().getFactTable().getTableProperties()
-          .get(CarbonCommonConstants.DICTIONARY_PATH);
-      if (null != carbonDimension.getColumnSchema().getParentColumnTableRelations()
-          && carbonDimension.getColumnSchema().getParentColumnTableRelations().size() == 1) {
-        dictionarySourceAbsoluteTableIdentifier = QueryUtil
-            .getTableIdentifierForColumn(carbonDimension);
-        columnIdentifier = new ColumnIdentifier(
-            carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0).getColumnId(),
-            carbonDimension.getColumnProperties(), carbonDimension.getDataType());
-      } else {
-        dictionarySourceAbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
-      }
+    String dicPath = dictionarySourceAbsoluteTableIdentifier.getDictionaryPath();
+    if (null != dicPath && !dicPath.trim().isEmpty()) {
+      dictionaryPath = dicPath;
+    }
+    if (null != carbonDimension.getColumnSchema().getParentColumnTableRelations()
+        && carbonDimension.getColumnSchema().getParentColumnTableRelations().size() == 1) {
+      dictionarySourceAbsoluteTableIdentifier =
+          QueryUtil.getTableIdentifierForColumn(carbonDimension);
+      columnIdentifier = new ColumnIdentifier(
+          carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0).getColumnId(),
+          carbonDimension.getColumnProperties(), carbonDimension.getDataType());
     }
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(dictionarySourceAbsoluteTableIdentifier,
