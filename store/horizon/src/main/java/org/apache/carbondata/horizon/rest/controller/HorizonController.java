@@ -17,14 +17,18 @@
 package org.apache.carbondata.horizon.rest.controller;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.horizon.antlr.Parser;
 import org.apache.carbondata.horizon.rest.model.validate.RequestValidator;
 import org.apache.carbondata.horizon.rest.model.view.CreateTableRequest;
@@ -59,7 +63,26 @@ public class HorizonController {
 
   public HorizonController() throws StoreException {
     String storeFile = System.getProperty("carbonstore.conf.file");
-    store = CarbonStoreFactory.getDistributedStore("GlobalStore", new StoreConf(storeFile));
+    StoreConf storeConf = new StoreConf();
+    try {
+      storeConf.conf(StoreConf.STORE_LOCATION, CarbonProperties.getStorePath())
+          .conf(StoreConf.MASTER_HOST, InetAddress.getLocalHost().getHostAddress())
+          .conf(StoreConf.MASTER_PORT, CarbonProperties.getSearchMasterPort())
+          .conf(StoreConf.WORKER_HOST, InetAddress.getLocalHost().getHostAddress())
+          .conf(StoreConf.WORKER_PORT, CarbonProperties.getSearchWorkerPort())
+          .conf(StoreConf.WORKER_CORE_NUM, 2);
+
+      if (storeFile != null && FileFactory.isFileExist(storeFile)) {
+        storeConf.load(storeFile);
+      }
+
+    } catch (UnknownHostException e) {
+      throw new StoreException(e);
+    } catch (IOException e) {
+      throw new StoreException(e);
+    }
+
+    store = CarbonStoreFactory.getDistributedStore("GlobalStore", storeConf);
   }
 
   @RequestMapping(value = "echo")
@@ -112,7 +135,7 @@ public class HorizonController {
       i++;
     }
     long end = System.currentTimeMillis();
-    LOGGER.audit("[" + request.getRequestId() +  "] HorizonController select " +
+    LOGGER.audit("[" + request.getRequestId() + "] HorizonController select " +
         request.getDatabaseName() + "." + request.getTableName() +
         ", take time: " + (end - start) + " ms");
 

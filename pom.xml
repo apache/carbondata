@@ -586,6 +586,9 @@
     </profile>
     <profile>
       <id>horizon</id>
+      <properties>
+        <hadoop.version>2.8.3</hadoop.version>
+      </properties>
       <modules>
         <module>store/horizon</module>
         <module>store/sql</module>

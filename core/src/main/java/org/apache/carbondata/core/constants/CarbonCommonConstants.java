@@ -1882,6 +1882,15 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT = "true";
 
+  /**
+   * config carbon scan task locality
+   * true: it will execute tasks as close to the data, the locality is important,
+   * false: it will execute tasks immediately, not paying attention to the locality
+   */
+  public static final String CARBON_TASK_LOCALITY = "carbon.task.locality";
+
+  public static final String CARBON_TASK_LOCALITY_DEFAULT = "true";
+
   private CarbonCommonConstants() {
   }
 }
