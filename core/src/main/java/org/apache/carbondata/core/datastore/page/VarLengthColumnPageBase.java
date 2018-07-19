@@ -172,6 +172,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
     // set total length and rowOffset in page
     page.totalLength = offset;
+    page.rowOffset.freeMemory();
     page.rowOffset = rowOffset;
     for (int i = 0; i < rowId; i++) {
       page.putBytes(i, lvEncodedBytes, i * size, size);
@@ -253,6 +254,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
     // set total length and rowOffset in page
     page.totalLength = offset;
+    page.rowOffset.freeMemory();
     page.rowOffset = rowOffset;
 
     // set data in page

@@ -50,6 +50,9 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
       LogServiceFactory.getLogService(DataWriterBatchProcessorStepImpl.class.getName());
 
   private Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap;
+
+  private CarbonFactHandler carbonFactHandler;
+
   public DataWriterBatchProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
     super(configuration, child);
@@ -91,11 +94,12 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
             CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
                 .createCarbonFactDataHandlerModel(configuration, storeLocation, i, k++, listener);
             model.setColumnLocalDictGenMap(this.localDictionaryGeneratorMap);
-            CarbonFactHandler dataHandler = CarbonFactHandlerFactory
+            this.carbonFactHandler = CarbonFactHandlerFactory
                 .createCarbonFactHandler(model);
-            dataHandler.initialise();
-            processBatch(next, dataHandler);
-            finish(tableName, dataHandler);
+            carbonFactHandler.initialise();
+            processBatch(next, carbonFactHandler);
+            finish(tableName, carbonFactHandler);
+            this.carbonFactHandler = null;
           }
         }
         i++;
@@ -151,5 +155,15 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
     }
     batch.close();
     rowCounter.getAndAdd(batchSize);
+  }
+
+  @Override public void close() {
+    if (!closed) {
+      super.close();
+      if (null != this.carbonFactHandler) {
+        carbonFactHandler.finish();
+        carbonFactHandler.closeHandler();
+      }
+    }
   }
 }
