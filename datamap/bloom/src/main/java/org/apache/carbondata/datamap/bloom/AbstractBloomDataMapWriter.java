@@ -31,6 +31,8 @@ import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -129,8 +131,12 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
     // convert non-dict dimensions to simple bytes without length
     // convert internal-dict dimensions to simple bytes without any encode
     if (indexColumns.get(indexColIdx).isMeasure()) {
-      if (value == null) {
-        value = DataConvertUtil.getNullValueForMeasure(indexColumns.get(indexColIdx).getDataType());
+      // NULL value of all measures are already processed in `ColumnPage.getData`
+      // or `RawBytesReadSupport.readRow` with actual data type
+
+      // Carbon stores boolean as byte. Here we convert it for `getValueAsBytes`
+      if (indexColumns.get(indexColIdx).getDataType().equals(DataTypes.BOOLEAN)) {
+        value = BooleanConvert.boolean2Byte((Boolean)value);
       }
       indexValue = CarbonUtil.getValueAsBytes(indexColumns.get(indexColIdx).getDataType(), value);
     } else {

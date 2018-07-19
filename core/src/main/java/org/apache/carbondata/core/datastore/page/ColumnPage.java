@@ -525,6 +525,9 @@ public abstract class ColumnPage {
       result = getBoolean(rowId);
     } else if (dataType == DataTypes.BYTE) {
       result = getByte(rowId);
+      if (columnSpec.getSchemaDataType() == DataTypes.BOOLEAN) {
+        result = BooleanConvert.byte2Boolean((byte)result);
+      }
     } else if (dataType == DataTypes.SHORT) {
       result = getShort(rowId);
     } else if (dataType == DataTypes.INT) {

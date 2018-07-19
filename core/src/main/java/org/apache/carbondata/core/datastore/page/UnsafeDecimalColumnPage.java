@@ -230,29 +230,6 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
   }
 
   @Override
-  public BigDecimal getDecimal(int rowId) {
-    long value;
-    if (dataType == DataTypes.BYTE) {
-      value = getByte(rowId);
-    } else if (dataType == DataTypes.SHORT) {
-      value = getShort(rowId);
-    } else if (dataType == DataTypes.SHORT_INT) {
-      value = getShortInt(rowId);
-    } else if (dataType == DataTypes.INT) {
-      value = getInt(rowId);
-    } else if (dataType == DataTypes.LONG) {
-      value = getLong(rowId);
-    } else {
-      int length = rowOffset.getInt(rowId + 1) - rowOffset.getInt(rowId);
-      byte[] bytes = new byte[length];
-      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset.getInt(rowId), bytes,
-          CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
-      return decimalConverter.getDecimal(bytes);
-    }
-    return decimalConverter.getDecimal(value);
-  }
-
-  @Override
   void copyBytes(int rowId, byte[] dest, int destOffset, int length) {
     CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset.getInt(rowId), dest,
         CarbonUnsafe.BYTE_ARRAY_OFFSET + destOffset, length);
