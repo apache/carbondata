@@ -16,15 +16,17 @@
  */
 package org.apache.carbondata.mv.datamap
 
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{InsertIntoCarbonTable, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute}
 import org.apache.spark.sql.catalyst.expressions.{Alias, ScalaUDF}
 import org.apache.spark.sql.catalyst.plans.logical.{Command, DeserializeToObject, LogicalPlan}
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.datamap.DataMapManager
@@ -75,6 +77,13 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
         plan
       }
     } else {
+      if (catalog != null && (plan.isInstanceOf[InsertIntoCarbonTable]
+        || plan.isInstanceOf[CarbonLoadDataCommand])) {
+        val allSchema = catalog.asInstanceOf[SummaryDatasetCatalog].listAllSchema()
+        for (schema <- allSchema) {
+          DataMapStatusManager.disableDataMap(schema.dataMapSchema.getDataMapName)
+        }
+      }
       plan
     }
   }
