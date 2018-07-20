@@ -214,7 +214,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       }).length == 2)
     }
     else
-      assert(files.listFiles().length == 1)
+      assert(files.listFiles().length == 2)
 
     sql("drop table update_status_files")
   }

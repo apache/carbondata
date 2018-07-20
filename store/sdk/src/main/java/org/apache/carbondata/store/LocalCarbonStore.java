@@ -27,6 +27,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.hadoop.CarbonProjection;
@@ -55,16 +56,18 @@ class LocalCarbonStore extends MetaCachedCarbonStore {
       LogServiceFactory.getLogService(LocalCarbonStore.class.getName());
 
   @Override
-  public Iterator<CarbonRow> scan(String path, String[] projectColumns) throws IOException {
-    return scan(path, projectColumns, null);
+  public Iterator<CarbonRow> scan(AbsoluteTableIdentifier tableIdentifier, String[] projectColumns)
+      throws IOException {
+    return scan(tableIdentifier, projectColumns, null);
   }
 
-  @Override public Iterator<CarbonRow> scan(String path, String[] projectColumns, Expression filter)
-      throws IOException {
-    Objects.requireNonNull(path);
+  @Override
+  public Iterator<CarbonRow> scan(AbsoluteTableIdentifier tableIdentifier, String[] projectColumns,
+      Expression filter) throws IOException {
+    Objects.requireNonNull(tableIdentifier);
     Objects.requireNonNull(projectColumns);
 
-    CarbonTable table = getTable(path);
+    CarbonTable table = getTable(tableIdentifier.getTablePath());
     if (table.isStreamingSink() || table.isHivePartitionTable()) {
       throw new UnsupportedOperationException("streaming and partition table is not supported");
     }
