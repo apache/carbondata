@@ -55,16 +55,18 @@ public class SqlHorizonController {
       throw new StoreException(e.getMessage());
     }
     final String[] fieldNames = sqlDataFrame.schema().fieldNames();
-    final Object[][] result = new Object[rows.size() + 1][fieldNames.length];
+    Object[][] responseData = new Object[0][];
     if (rows.size() > 0) {
+      final Object[][] result = new Object[rows.size() + 1][fieldNames.length];
       System.arraycopy(fieldNames, 0, result[0], 0, fieldNames.length);
       IntStream.range(0, rows.size()).forEach(index ->
           IntStream.range(0, fieldNames.length).forEach(col ->
                 result[index + 1][col] = rows.get(index).get(col)));
+      responseData = result;
     }
 
     return new ResponseEntity<>(
-        new SqlResponse(request, "SUCCESS", result), HttpStatus.OK);
+        new SqlResponse(request, "SUCCESS", responseData), HttpStatus.OK);
   }
 
   @RequestMapping(value = "echosql")
