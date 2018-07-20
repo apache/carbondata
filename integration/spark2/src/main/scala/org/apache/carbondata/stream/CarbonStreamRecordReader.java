@@ -78,9 +78,6 @@ import org.apache.spark.sql.CarbonVectorProxy;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.types.*;
-import org.apache.spark.unsafe.types.CalendarInterval;
-import org.apache.spark.unsafe.types.UTF8String;
-import org.apache.zookeeper.server.persistence.FileHeader;
 
 /**
  * Stream record reader
@@ -89,7 +86,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
     // vector reader
     private boolean isVectorReader;
 
-    // metadata
+    // metadataar
     private CarbonTable carbonTable;
     private CarbonColumn[] storageColumns;
     private boolean[] isRequired;
