@@ -29,6 +29,7 @@ import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.AbstractMemoryDMStore;
 import org.apache.carbondata.core.indexstore.BlockMetaInfo;
 import org.apache.carbondata.core.indexstore.Blocklet;
@@ -97,10 +98,16 @@ public class BlockDataMap extends CoarseGrainDataMap
    * partition table and non transactional table
    */
   protected boolean isFilePathStored;
+  /**
+   * standard table means tablepath has Fact/Part0/Segment_ tail present with all carbon files
+   */
+  protected boolean isStandardCarbonTable;
 
   @Override public void init(DataMapModel dataMapModel) throws IOException, MemoryException {
     long startTime = System.currentTimeMillis();
     assert (dataMapModel instanceof BlockletDataMapModel);
+    this.isStandardCarbonTable =
+        CarbonUtil.isStandardCarbonTable(((BlockletDataMapModel) dataMapModel).getCarbonTable());
     BlockletDataMapModel blockletDataMapInfo = (BlockletDataMapModel) dataMapModel;
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
     List<DataFileFooter> indexInfo = fileFooterConverter
@@ -407,7 +414,7 @@ public class BlockDataMap extends CoarseGrainDataMap
     String fileName = filePath + CarbonCommonConstants.FILE_SEPARATOR + new String(
         dataMapRow.getByteArray(FILE_PATH_INDEX), CarbonCommonConstants.DEFAULT_CHARSET_CLASS)
         + CarbonTablePath.getCarbonDataExtension();
-    return fileName;
+    return FileFactory.getUpdatedFilePath(fileName);
   }
 
   private void addTaskSummaryRowToUnsafeMemoryStore(CarbonRowSchema[] taskSummarySchema,
@@ -654,7 +661,25 @@ public class BlockDataMap extends CoarseGrainDataMap
       byte[][] minValue, String filePath, int blockletId) {
     BitSet bitSet = null;
     if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
-      String uniqueBlockPath = filePath.substring(filePath.lastIndexOf("/Part") + 1);
+      String uniqueBlockPath;
+      String blockName = filePath.substring(filePath.lastIndexOf("/") + 1);
+      if (isStandardCarbonTable) {
+        uniqueBlockPath = filePath.substring(filePath.lastIndexOf("/Part") + 1);
+      } else {
+        if (!filePath.substring(0, filePath.lastIndexOf("/part") + 1)
+            .substring(filePath.lastIndexOf("/" + 1)).contains("=")) {
+          // in flat folder structure, form the unique block path
+          uniqueBlockPath = CarbonCommonConstants.FILE_SEPARATOR + "Segment_" + CarbonTablePath
+              .getSegmentIdFromBlockName(blockName) + CarbonCommonConstants.FILE_SEPARATOR
+              + blockName;
+        } else {
+          // Hive partition table
+          uniqueBlockPath =
+              "Part0" + CarbonCommonConstants.FILE_SEPARATOR + "Segment_" + CarbonTablePath
+                  .getSegmentIdFromBlockName(blockName) + CarbonCommonConstants.FILE_SEPARATOR
+                  + blockName;
+        }
+      }
       // this case will come in case of old store where index file does not contain the
       // blocklet information
       if (blockletId != -1) {

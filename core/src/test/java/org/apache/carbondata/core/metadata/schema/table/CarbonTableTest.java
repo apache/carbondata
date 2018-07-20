@@ -25,6 +25,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import junit.framework.TestCase;
 import org.junit.AfterClass;
@@ -66,6 +67,13 @@ public class CarbonTableTest extends TestCase {
   @Test public void testDimensionPresentInTableIsProper() {
     CarbonDimension dimension = new CarbonDimension(getColumnarDimensionColumn(), 0, -1, -1);
     assertTrue(carbonTable.getDimensionByName("carbonTestTable", "IMEI").equals(dimension));
+  }
+
+  @Test public void testSegmentIdFromBlockName(){
+    String blockName1 = "part-0-0_batchno0-0-0-1531995644238.carbondata";
+    String blockName2 = "part-0-0_batchno0-0-9-1531995644238.carbondata";
+    assertEquals(0, Integer.parseInt(CarbonTablePath.getSegmentIdFromBlockName(blockName1)));
+    assertEquals(9, Integer.parseInt(CarbonTablePath.getSegmentIdFromBlockName(blockName2)));
   }
 
   static ColumnSchema getColumnarDimensionColumn() {
