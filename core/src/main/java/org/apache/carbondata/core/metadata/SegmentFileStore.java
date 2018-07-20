@@ -580,7 +580,7 @@ public class SegmentFileStore {
    * Gets all index files from this segment
    * @return
    */
-  public Map<String, String> getIndexOrMergeFiles() {
+  public Map<String, String> getIndexOrMergeFiles() throws IOException {
     Map<String, String> indexFiles = new HashMap<>();
     if (segmentFile != null) {
       for (Map.Entry<String, FolderDetails> entry : getLocationMap().entrySet()) {
@@ -597,7 +597,14 @@ public class SegmentFileStore {
           Set<String> files = entry.getValue().getFiles();
           if (null != files && !files.isEmpty()) {
             for (String indexFile : files) {
-              indexFiles.put(location + CarbonCommonConstants.FILE_SEPARATOR + indexFile, null);
+              String indexFilePath = location + CarbonCommonConstants.FILE_SEPARATOR + indexFile;
+              // In the 1.3 store, files field contain the carbonindex files names
+              // even if they are merged to a carbonindexmerge file. In that case we have to check
+              // for the physical existence of the file to decide
+              // on whether it is already merged or not.
+              if (FileFactory.isFileExist(indexFilePath)) {
+                indexFiles.put(indexFilePath, null);
+              }
             }
           }
         }
