@@ -271,7 +271,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       carbonDataFilename(0).getAbsolutePath,
       "0",
       carbonTable.isTransactionalTable,
-      carbonTable.isHivePartitionTable)
+      CarbonUtil.isStandardCarbonTable(carbonTable))
 
     assert(blockId.startsWith("Part0/Segment_0/part-0-0_batchno0-0-0-"))
     val carbonDataFilename_part = new File(carbonTable_part.getTablePath + "/c3=aa").listFiles()
@@ -280,18 +280,18 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       carbonDataFilename_part(0).getAbsolutePath,
       "0",
       carbonTable.isTransactionalTable,
-      carbonTable.isHivePartitionTable)
+      CarbonUtil.isStandardCarbonTable(carbonTable))
     assert(blockId_part.startsWith("Part0/Segment_0/part-0-100100000100001_batchno0-0-0-"))
     val segment = Segment.getSegment("0", carbonTable.getTablePath)
     val tableBlockPath = CarbonUpdateUtil
       .getTableBlockPath(listOfTupleId(0),
         carbonTable.getTablePath,
-        segment.getSegmentFileName != null)
+        CarbonUtil.isStandardCarbonTable(carbonTable))
     val segment_part = Segment.getSegment("0", carbonTable_part.getTablePath)
     val tableBl0ckPath_part = CarbonUpdateUtil
       .getTableBlockPath(listOfTupleId_part(0),
         carbonTable_part.getTablePath,
-        segment_part.getSegmentFileName != null)
+        CarbonUtil.isStandardCarbonTable(carbonTable_part))
     assert(tableBl0ckPath_part.endsWith("iud_db.db/dest_tuple_part/c3=aa"))
     assert(tableBlockPath.endsWith("iud_db.db/dest_tuple/Fact/Part0/Segment_0"))
 

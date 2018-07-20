@@ -344,11 +344,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             queryModel.getProjectionDimensions(), tableBlockDimensions,
             segmentProperties.getComplexDimensions(), queryModel.getProjectionMeasures().size(),
             queryModel.getTable().getTableInfo().isTransactionalTable());
+    boolean isStandardTable = CarbonUtil.isStandardCarbonTable(queryModel.getTable());
     String blockId = CarbonUtil
         .getBlockId(queryModel.getAbsoluteTableIdentifier(), filePath, segment.getSegmentNo(),
             queryModel.getTable().getTableInfo().isTransactionalTable(),
-            segment.getSegmentFileName() != null);
-    if (segment.getSegmentFileName() != null) {
+            isStandardTable);
+    if (!isStandardTable) {
       blockExecutionInfo.setBlockId(CarbonTablePath.getShortBlockIdForPartitionTable(blockId));
     } else {
       blockExecutionInfo.setBlockId(CarbonTablePath.getShortBlockId(blockId));

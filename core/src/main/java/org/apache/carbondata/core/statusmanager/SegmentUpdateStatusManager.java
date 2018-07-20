@@ -69,10 +69,12 @@ public class SegmentUpdateStatusManager {
   private LoadMetadataDetails[] segmentDetails;
   private SegmentUpdateDetails[] updateDetails;
   private Map<String, SegmentUpdateDetails> blockAndDetailsMap;
+  private boolean isStandardTable;
 
   public SegmentUpdateStatusManager(CarbonTable table,
       LoadMetadataDetails[] segmentDetails) {
     this.identifier = table.getAbsoluteTableIdentifier();
+    this.isStandardTable = CarbonUtil.isStandardCarbonTable(table);
     // current it is used only for read function scenarios, as file update always requires to work
     // on latest file status.
     this.segmentDetails = segmentDetails;
@@ -82,6 +84,7 @@ public class SegmentUpdateStatusManager {
 
   public SegmentUpdateStatusManager(CarbonTable table) {
     this.identifier = table.getAbsoluteTableIdentifier();
+    this.isStandardTable = CarbonUtil.isStandardCarbonTable(table);
     // current it is used only for read function scenarios, as file update always requires to work
     // on latest file status.
     if (!table.getTableInfo().isTransactionalTable()) {
@@ -246,29 +249,22 @@ public class SegmentUpdateStatusManager {
    * @throws Exception
    */
   public String[] getDeleteDeltaFilePath(String blockFilePath, String segmentId) throws Exception {
-    String segmentFile = null;
-    for (LoadMetadataDetails segmentDetail : segmentDetails) {
-      if (segmentDetail.getLoadName().equals(segmentId)) {
-        segmentFile = segmentDetail.getSegmentFile();
-        break;
-      }
-    }
     String blockId =
-        CarbonUtil.getBlockId(identifier, blockFilePath, segmentId, true, segmentFile != null);
+        CarbonUtil.getBlockId(identifier, blockFilePath, segmentId, true, isStandardTable);
     String tupleId;
-    if (segmentFile != null) {
+    if (!isStandardTable) {
       tupleId = CarbonTablePath.getShortBlockIdForPartitionTable(blockId);
     } else {
       tupleId = CarbonTablePath.getShortBlockId(blockId);
     }
-    return getDeltaFiles(tupleId, CarbonCommonConstants.DELETE_DELTA_FILE_EXT, segmentFile)
+    return getDeltaFiles(tupleId, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
         .toArray(new String[0]);
   }
 
   /**
    * Returns all delta file paths of specified block
    */
-  private List<String> getDeltaFiles(String tupleId, String extension, String segmentFile)
+  private List<String> getDeltaFiles(String tupleId, String extension)
       throws Exception {
     String segment = CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID);
     String completeBlockName = CarbonTablePath.addDataPartPrefix(
@@ -276,7 +272,7 @@ public class SegmentUpdateStatusManager {
             + CarbonCommonConstants.FACT_FILE_EXT);
 
     String blockPath;
-    if (segmentFile != null) {
+    if (!isStandardTable) {
       blockPath = identifier.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR
           + CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.PART_ID)
           .replace("#", "/") + CarbonCommonConstants.FILE_SEPARATOR + completeBlockName;
