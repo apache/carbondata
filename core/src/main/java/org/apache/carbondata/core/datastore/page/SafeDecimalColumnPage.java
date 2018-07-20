@@ -21,7 +21,6 @@ import java.math.BigDecimal;
 
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
 
 /**
@@ -169,26 +168,6 @@ public class SafeDecimalColumnPage extends DecimalColumnPage {
   @Override
   public long getLong(int rowId) {
     return longData[rowId];
-  }
-
-  @Override
-  public BigDecimal getDecimal(int rowId) {
-    long value;
-    if (dataType == DataTypes.BYTE) {
-      value = getByte(rowId);
-    } else if (dataType == DataTypes.SHORT) {
-      value = getShort(rowId);
-    } else if (dataType == DataTypes.SHORT_INT) {
-      value = getShortInt(rowId);
-    } else if (dataType == DataTypes.INT) {
-      value = getInt(rowId);
-    } else if (dataType == DataTypes.LONG) {
-      value = getLong(rowId);
-    } else {
-      byte[] bytes = byteArrayData[rowId];
-      return decimalConverter.getDecimal(bytes);
-    }
-    return decimalConverter.getDecimal(value);
   }
 
   @Override
