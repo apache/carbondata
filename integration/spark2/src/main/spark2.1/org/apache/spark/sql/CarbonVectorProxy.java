@@ -18,6 +18,7 @@ package org.apache.spark.sql;
 
 import java.math.BigInteger;
 
+import org.apache.parquet.column.Dictionary;
 import org.apache.spark.memory.MemoryMode;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.execution.vectorized.ColumnarBatch;
@@ -39,6 +40,7 @@ import org.apache.spark.unsafe.types.UTF8String;
 public class CarbonVectorProxy {
 
     private ColumnarBatch columnarBatch;
+    private Dictionary dictionary;
 
     /**
      * Adapter class which handles the columnar vector reading of the carbondata
@@ -65,11 +67,31 @@ public class CarbonVectorProxy {
         columnarBatch.setNumRows(numRows);
     }
 
+    public Object reserveDictionaryIds(int capacity , int ordinal) {
+        return columnarBatch.column(ordinal).reserveDictionaryIds(capacity);
+    }
+
     /**
      * Returns the number of rows for read, including filtered rows.
      */
     public int numRows() {
         return columnarBatch.capacity();
+    }
+
+    public void setDictionary(Object dictionary, int ordinal) {
+        if (dictionary instanceof Dictionary) {
+            columnarBatch.column(ordinal).setDictionary((Dictionary) dictionary);
+        } else {
+            columnarBatch.column(ordinal).setDictionary(null);
+        }
+    }
+
+    public void putNotNull(int rowId, int ordinal) {
+        columnarBatch.column(ordinal).putNotNull(rowId);
+    }
+
+    public void putNotNulls(int rowId, int count, int ordinal) {
+        columnarBatch.column(ordinal).putNotNulls(rowId, count);
     }
 
     /**
@@ -96,6 +118,10 @@ public class CarbonVectorProxy {
 
     public void resetDictionaryIds(int ordinal) {
         columnarBatch.column(ordinal).getDictionaryIds().reset();
+    }
+
+    public boolean hasDictionary(int ordinal) {
+        return columnarBatch.column(ordinal).hasDictionary();
     }
 
     /**
