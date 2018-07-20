@@ -24,6 +24,7 @@ import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.spark.util.CarbonScalaUtil;
 
+import org.apache.parquet.column.Encoding;
 import org.apache.spark.sql.CarbonVectorProxy;
 import org.apache.spark.sql.types.Decimal;
 
@@ -40,6 +41,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   private boolean filteredRowsExist;
 
   private DataType blockDataType;
+
+  private CarbonColumnVector dictionaryVector;
 
   ColumnarVectorWrapper(CarbonVectorProxy writableColumnVector,
                         boolean[] filteredRows, int ordinal) {
@@ -195,7 +198,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public void putNotNull(int rowId) {
     if (!filteredRows[rowId]) {
-      columnVector.putNotNull(counter++);
+      writableColumnVector.putNotNull(counter++,ordinal);
     }
   }
 
@@ -203,12 +206,12 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
-          columnVector.putNotNull(counter++);
+          writableColumnVector.putNotNull(counter++, ordinal);
         }
         rowId++;
       }
     } else {
-      columnVector.putNotNulls(rowId, count);
+      writableColumnVector.putNotNulls(rowId, count, ordinal);
     }
   }
 
@@ -253,14 +256,14 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public void setDictionary(CarbonDictionary dictionary) {
     if (dictionary == null) {
-      columnVector.setDictionary(null);
+      writableColumnVector.setDictionary(null, ordinal);
     } else {
-      columnVector.setDictionary(new CarbonDictionaryWrapper(Encoding.PLAIN, dictionary));
+      writableColumnVector.setDictionary(new CarbonDictionaryWrapper(Encoding.PLAIN, dictionary),ordinal);
     }
   }
 
   @Override public boolean hasDictionary() {
-    return columnVector.hasDictionary();
+    return writableColumnVector.hasDictionary(ordinal);
   }
 
   @Override public CarbonColumnVector getDictionaryVector() {

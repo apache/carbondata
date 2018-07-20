@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import org.apache.spark.memory.MemoryMode;
 import org.apache.spark.sql.ColumnVectorFactory;
 import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.execution.vectorized.Dictionary;
 import org.apache.spark.sql.execution.vectorized.WritableColumnVector;
 import org.apache.spark.sql.types.*;
 import org.apache.spark.sql.vectorized.ColumnVector;
@@ -38,6 +39,7 @@ public class CarbonVectorProxy {
 
     private ColumnarBatch columnarBatch;
     private WritableColumnVector[] writableColumnVectors;
+    private Dictionary dictionary;
 
     /**
      * Adapter class which handles the columnar vector reading of the carbondata
@@ -245,8 +247,28 @@ public class CarbonVectorProxy {
         writableColumnVectors[ordinal].putNulls(rowId, count);
     }
 
+    public void putNotNull(int rowId, int ordinal) {
+        writableColumnVectors[ordinal].putNotNull(rowId);
+    }
+
+    public void putNotNulls(int rowId, int count, int ordinal) {
+        writableColumnVectors[ordinal].putNotNulls(rowId, count);
+    }
+
     public boolean isNullAt(int rowId, int ordinal) {
         return writableColumnVectors[ordinal].isNullAt(rowId);
+    }
+
+    public boolean hasDictionary(int ordinal) {
+        return writableColumnVectors[ordinal].hasDictionary();
+    }
+
+    public void setDictionary(Object dictionary, int ordinal) {
+        if (dictionary instanceof Dictionary) {
+            writableColumnVectors[ordinal].setDictionary((Dictionary) dictionary);
+        } else {
+            writableColumnVectors[ordinal].setDictionary(null);
+        }
     }
 
     public DataType dataType(int ordinal) {
