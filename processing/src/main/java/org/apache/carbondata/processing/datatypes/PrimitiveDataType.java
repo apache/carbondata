@@ -21,6 +21,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -173,7 +175,8 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       if (carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)
           || carbonColumn.getDataType() == DataTypes.DATE) {
         dictionaryGenerator = new DirectDictionary(DirectDictionaryKeyGeneratorFactory
-            .getDirectDictionaryGenerator(carbonDimension.getDataType()));
+            .getDirectDictionaryGenerator(carbonDimension.getDataType(),
+                getDateFormat(carbonDimension)));
         isDirectDictionary = true;
       } else if (carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
         CacheProvider cacheProvider = CacheProvider.getInstance();
@@ -202,6 +205,25 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  /**
+   * get dateformat
+   * @param carbonDimension
+   * @return
+   */
+  private String getDateFormat(CarbonDimension carbonDimension) {
+    String format;
+    String dateFormat = null;
+    if (this.carbonDimension.getDataType() == DataTypes.DATE) {
+      dateFormat = carbonDimension.getDateFormat();
+    }
+    if (dateFormat != null && !dateFormat.trim().isEmpty()) {
+      format = dateFormat;
+    } else {
+      format = CarbonUtil.getFormatFromProperty(dataType);
+    }
+    return format;
   }
 
   private boolean isDictionaryDimension(CarbonDimension carbonDimension) {
@@ -326,6 +348,10 @@ public class PrimitiveDataType implements GenericDataType<Object> {
             byte[] value = null;
             if (isDirectDictionary) {
               int surrogateKey;
+              if (!(input instanceof Long)) {
+                SimpleDateFormat parser = new SimpleDateFormat(getDateFormat(carbonDimension));
+                parser.parse(parsedValue);
+              }
               // If the input is a long value then this means that logical type was provided by
               // the user using AvroCarbonWriter. In this case directly generate surrogate key
               // using dictionaryGenerator.
@@ -389,6 +415,8 @@ public class PrimitiveDataType implements GenericDataType<Object> {
           updateNullValue(dataOutputStream, logHolder);
         } catch (CarbonDataLoadingException e) {
           throw e;
+        } catch (ParseException ex) {
+          updateNullValue(dataOutputStream, logHolder);
         } catch (Throwable ex) {
           // TODO have to implemented the Bad Records LogHolder.
           // Same like NonDictionaryFieldConverterImpl.

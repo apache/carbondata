@@ -128,7 +128,10 @@ private[spark] object SparkTypeConverter {
       case "struct" => s"${
         childDim.getColName.substring(dimName.length + 1)
       }:struct<${ getStructChildren(table, childDim.getColName) }>"
-      case dType => s"${ childDim.getColName.substring(dimName.length + 1) }:${ dType }"
+      case dType => s"${
+        childDim.getColName
+          .substring(dimName.length + 1)
+      }:${ addDecimalScaleAndPrecision(childDim, dType) }"
     }
   }
 }

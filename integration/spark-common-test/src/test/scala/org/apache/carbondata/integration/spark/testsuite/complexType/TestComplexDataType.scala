@@ -19,6 +19,9 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
 
+  val badRecordAction = CarbonProperties.getInstance()
+    .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
+
   override def beforeAll(): Unit = {
     sql("DROP TABLE IF EXISTS table1")
     sql("DROP TABLE IF EXISTS test")
@@ -27,6 +30,13 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
   override def afterAll(): Unit = {
     sql("DROP TABLE IF EXISTS table1")
     sql("DROP TABLE IF EXISTS test")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, badRecordAction)
   }
 
   test("test Projection PushDown for Struct - Integer type") {
@@ -883,6 +893,110 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "create table table1 (person struct<height:double>) stored by 'carbondata'")
     sql("insert into table1 values('1000000000')")
     checkExistence(sql("select * from table1"),true,"1.0E9")
+    sql("DROP TABLE IF EXISTS table1")
+    sql(
+      "create table table1 (person struct<height:double>) stored by 'carbondata'")
+    sql("insert into table1 values('12345678912')")
+    checkExistence(sql("select * from table1"),true,"1.2345678912E10")
+    sql("DROP TABLE IF EXISTS table1")
+    sql(
+      "create table table1 (person struct<b:array<double>>) stored by 'carbondata'")
+    sql("insert into table1 values('10000000:2000000000:2900000000')")
+    checkExistence(sql("select * from table1"),true,"2.9E9")
   }
 
+  test("test block compaction - auto merge") {
+    sql("DROP TABLE IF EXISTS table1")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    sql(
+      "create table table1 (roll int,person Struct<detail:int,age:string,height:double>) stored " +
+      "by 'carbondata'")
+    sql(
+      "load data inpath '" + resourcesPath +
+      "/Struct.csv' into table table1 options('delimiter'=','," +
+      "'quotechar'='\"','fileheader'='roll,person','complex_delimiter_level_1'='$'," +
+      "'complex_delimiter_level_2'='&')")
+    sql(
+      "load data inpath '" + resourcesPath +
+      "/Struct.csv' into table table1 options('delimiter'=','," +
+      "'quotechar'='\"','fileheader'='roll,person','complex_delimiter_level_1'='$'," +
+      "'complex_delimiter_level_2'='&')")
+    sql(
+      "load data inpath '" + resourcesPath +
+      "/Struct.csv' into table table1 options('delimiter'=','," +
+      "'quotechar'='\"','fileheader'='roll,person','complex_delimiter_level_1'='$'," +
+      "'complex_delimiter_level_2'='&')")
+    sql(
+      "load data inpath '" + resourcesPath +
+      "/Struct.csv' into table table1 options('delimiter'=','," +
+      "'quotechar'='\"','fileheader'='roll,person','complex_delimiter_level_1'='$'," +
+      "'complex_delimiter_level_2'='&')")
+    checkExistence(sql("show segments for table table1"),false, "Compacted")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+  }
+
+  test("decimal with two level struct type") {
+    sql("DROP TABLE IF EXISTS test")
+    sql(
+      "create table test(id int,a struct<c:struct<d:decimal(20,10)>>) stored by 'carbondata' " +
+      "tblproperties('dictionary_include'='a')")
+    checkExistence(sql("desc test"),true,"struct<c:struct<d:decimal(20,10)>>")
+    checkExistence(sql("describe formatted test"),true,"struct<c:struct<d:decimal(20,10)>>")
+    sql("insert into test values(1,'3999.999')")
+    checkExistence(sql("select * from test"),true,"3999.9990000000")
+  }
+
+  test("test dictionary include for second struct and array column") {
+    sql("DROP TABLE IF EXISTS test")
+    sql(
+      "create table test(id int,a struct<b:int,c:int>, d struct<e:int,f:int>, d1 struct<e1:int," +
+      "f1:int>) stored by 'carbondata' tblproperties('dictionary_include'='d1')")
+    sql("insert into test values(1,'2$3','4$5','6$7')")
+    checkAnswer(sql("select * from test"),Seq(Row(1,Row(2,3),Row(4,5),Row(6,7))))
+    sql("DROP TABLE IF EXISTS test")
+    sql(
+      "create table test(a array<int>, b array<int>) stored by 'carbondata' tblproperties" +
+      "('dictionary_include'='b')")
+    sql("insert into test values(1,2) ")
+    checkAnswer(sql("select b[0] from test"),Seq(Row(2)))
+  }
+
+  test("date with struct and array") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
+        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
+    sql("DROP TABLE IF EXISTS test")
+    sql("create table test(a struct<b:date>) stored by 'carbondata'")
+    val exception1 = intercept[Exception] {
+      sql("insert into test select 'a' ")
+    }
+    assert(exception1.getMessage
+      .contains(
+        "Data load failed due to bad record: The value with column name a.b and column data type " +
+        "DATE is not a valid DATE type.Please enable bad record logger to know the detail reason."))
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
+        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
+    sql("DROP TABLE IF EXISTS test")
+    sql("create table test(a array<date>) stored by 'carbondata'")
+    val exception2 = intercept[Exception] {
+      sql("insert into test select 'a' ")
+    }
+    assert(exception2.getMessage
+      .contains(
+        "Data load failed due to bad record: The value with column name a.val and column data type " +
+        "DATE is not a valid DATE type.Please enable bad record logger to know the detail reason."))
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+        "MM-dd-yyyy")
+    sql("DROP TABLE IF EXISTS test")
+    sql("create table test(a struct<d1:date,d2:date>) stored by 'carbondata'")
+    sql("insert into test values ('02-18-2012$12-9-2016')")
+    checkAnswer(sql("select * from test "), Row(Row(java.sql.Date.valueOf("2012-02-18"),java.sql.Date.valueOf("2016-12-09"))))
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+  }
 }
