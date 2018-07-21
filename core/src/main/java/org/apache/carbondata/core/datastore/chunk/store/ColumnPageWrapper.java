@@ -125,6 +125,8 @@ public class ColumnPageWrapper implements DimensionColumnPage {
         return out;
       } else if (srcDataType == DataTypes.BYTE_ARRAY) {
         return columnPage.getBytes(rowId);
+      }  else if (srcDataType == DataTypes.DOUBLE) {
+        return ByteUtil.toBytes(columnPage.getDouble(rowId));
       } else {
         throw new RuntimeException("unsupported type: " + targetDataType);
       }

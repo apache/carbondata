@@ -178,9 +178,17 @@ public class StructDataType implements GenericDataType<StructObject> {
 
   @Override
   public void fillCardinality(List<Integer> dimCardWithComplex) {
-    dimCardWithComplex.add(0);
-    for (int i = 0; i < children.size(); i++) {
-      children.get(i).fillCardinality(dimCardWithComplex);
+    boolean isDictionaryColumn = false;
+    for (GenericDataType child : children) {
+      if (child.getIsColumnDictionary()) {
+        isDictionaryColumn = true;
+      }
+    }
+    if (isDictionaryColumn) {
+      dimCardWithComplex.add(0);
+      for (int i = 0; i < children.size(); i++) {
+        children.get(i).fillCardinality(dimCardWithComplex);
+      }
     }
   }
 
