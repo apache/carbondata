@@ -165,7 +165,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         List<GenericDataType> primitiveTypes = new ArrayList<GenericDataType>();
         complexDataType.getAllPrimitiveChildren(primitiveTypes);
         for (GenericDataType eachPrimitive : primitiveTypes) {
-          eachPrimitive.setSurrogateIndex(surrIndex++);
+          if (eachPrimitive.getIsColumnDictionary()) {
+            eachPrimitive.setSurrogateIndex(surrIndex++);
+          }
         }
       } else {
         surrIndex++;

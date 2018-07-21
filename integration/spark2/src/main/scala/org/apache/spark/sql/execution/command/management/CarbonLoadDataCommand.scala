@@ -823,15 +823,21 @@ case class CarbonLoadDataCommand(
     }
     try {
       carbonLoadModel.setFactTimeStamp(System.currentTimeMillis())
-      val compactedSegments = new util.ArrayList[String]()
-      // Trigger auto compaction
-      CarbonDataRDDFactory.handleSegmentMerging(
-        sparkSession.sqlContext,
-        carbonLoadModel,
-        table,
-        compactedSegments,
-        operationContext)
-      carbonLoadModel.setMergedSegmentIds(compactedSegments)
+      // Block compaction for table containing complex datatype
+      if (table.getTableInfo.getFactTable.getListOfColumns.asScala
+        .exists(m => m.getDataType.isComplexType)) {
+        LOGGER.warn("Compaction is skipped as table contains complex columns")
+      } else {
+        val compactedSegments = new util.ArrayList[String]()
+        // Trigger auto compaction
+        CarbonDataRDDFactory.handleSegmentMerging(
+          sparkSession.sqlContext,
+          carbonLoadModel,
+          table,
+          compactedSegments,
+          operationContext)
+        carbonLoadModel.setMergedSegmentIds(compactedSegments)
+      }
     } catch {
       case e: Exception =>
         throw new Exception(

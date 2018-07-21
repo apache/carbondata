@@ -583,13 +583,19 @@ object CarbonDataRDDFactory {
         if (carbonTable.isHivePartitionTable) {
           carbonLoadModel.setFactTimeStamp(System.currentTimeMillis())
         }
-        val compactedSegments = new util.ArrayList[String]()
-        handleSegmentMerging(sqlContext,
-          carbonLoadModel,
-          carbonTable,
-          compactedSegments,
-          operationContext)
-        carbonLoadModel.setMergedSegmentIds(compactedSegments)
+        // Block compaction for table containing complex datatype
+        if (carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
+          .exists(m => m.getDataType.isComplexType)) {
+          LOGGER.warn("Compaction is skipped as table contains complex columns")
+        } else {
+          val compactedSegments = new util.ArrayList[String]()
+          handleSegmentMerging(sqlContext,
+            carbonLoadModel,
+            carbonTable,
+            compactedSegments,
+            operationContext)
+          carbonLoadModel.setMergedSegmentIds(compactedSegments)
+        }
       } catch {
         case e: Exception =>
           throw new Exception(

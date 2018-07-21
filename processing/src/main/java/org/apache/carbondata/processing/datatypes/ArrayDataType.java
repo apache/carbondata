@@ -172,8 +172,10 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
 
   @Override
   public void fillCardinality(List<Integer> dimCardWithComplex) {
-    dimCardWithComplex.add(0);
-    children.fillCardinality(dimCardWithComplex);
+    if (children.getIsColumnDictionary()) {
+      dimCardWithComplex.add(0);
+      children.fillCardinality(dimCardWithComplex);
+    }
   }
 
   @Override

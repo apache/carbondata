@@ -97,7 +97,7 @@ case class CarbonDatasourceHadoopRelation(
           breakable({
             while (ifGetArrayItemExists.containsChild != null) {
               if (ifGetArrayItemExists.childSchema.toString().contains("ArrayType")) {
-                arrayTypeExists = s.childSchema.toString().contains("ArrayType")
+                arrayTypeExists = ifGetArrayItemExists.childSchema.toString().contains("ArrayType")
                 break
               }
               if (ifGetArrayItemExists.child.isInstanceOf[AttributeReference]) {
