@@ -61,6 +61,9 @@ public class S3CarbonFile extends HDFSCarbonFile {
   @Override
   public boolean renameForce(String changetoName) {
     FileSystem fs;
+    if (fileStatus == null) {
+      throw new RuntimeException("Unable to get file status, Please check logs for details.");
+    }
     try {
       deleteFile(changetoName, FileFactory.getFileType(changetoName));
       fs = fileStatus.getPath().getFileSystem(hadoopConf);
@@ -120,6 +123,9 @@ public class S3CarbonFile extends HDFSCarbonFile {
 
   @Override
   public CarbonFile getParentFile() {
+    if (fileStatus == null) {
+      throw new RuntimeException("Unable to get file status, Please check logs for details.");
+    }
     Path parent = fileStatus.getPath().getParent();
     return null == parent ? null : new S3CarbonFile(parent, hadoopConf);
   }
