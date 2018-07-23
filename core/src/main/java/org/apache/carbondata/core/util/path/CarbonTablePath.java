@@ -661,13 +661,29 @@ public class CarbonTablePath {
 
   /**
    * Unique task name
+   *
+   * A shard name is composed by `TaskNo-BucketNo-SegmentNo-Timestamp`
+   * As for data before version 1.4, shard name was `TaskNo-BucketNo-Timestamp`
+   *
    * @param actualBlockName
    * @return
    */
   public static String getShardName(String actualBlockName) {
-    return DataFileUtil.getTaskNo(actualBlockName) + "-" + DataFileUtil.getBucketNo(actualBlockName)
-        + "-" + DataFileUtil.getSegmentNo(actualBlockName) + "-" + DataFileUtil
-        .getTimeStampFromFileName(actualBlockName);
+    String segmentNoStr = DataFileUtil.getSegmentNo(actualBlockName);
+    StringBuilder shardName = new StringBuilder();
+    if (null != segmentNoStr) {
+      shardName.append(DataFileUtil.getTaskNo(actualBlockName)).append("-");
+      shardName.append(DataFileUtil.getBucketNo(actualBlockName)).append("-");
+      shardName.append(segmentNoStr).append("-");
+      shardName.append(DataFileUtil.getTimeStampFromFileName(actualBlockName));
+      return shardName.toString();
+    } else {
+      // data before version 1.4 does not have SegmentNo in carbondata filename
+      shardName.append(DataFileUtil.getTaskNo(actualBlockName)).append("-");
+      shardName.append(DataFileUtil.getBucketNo(actualBlockName)).append("-");
+      shardName.append(DataFileUtil.getTimeStampFromFileName(actualBlockName));
+      return shardName.toString();
+    }
   }
 
   /**
