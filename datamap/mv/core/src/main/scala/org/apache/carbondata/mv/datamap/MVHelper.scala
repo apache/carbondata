@@ -542,7 +542,7 @@ object MVHelper {
 
   // Create the aliases using two plan outputs mappings.
   def createAliases(mappings: Seq[(NamedExpression, NamedExpression)]): Seq[NamedExpression] = {
-    val oList = for ((o1, o2) <- mappings) yield {
+    mappings.map{ case (o1, o2) =>
       o2 match {
         case al: Alias if o1.name == o2.name && o1.exprId != o2.exprId =>
           Alias(al.child, o1.name)(exprId = o1.exprId)
@@ -554,7 +554,6 @@ object MVHelper {
           }
       }
     }
-    oList
   }
 
   /**
