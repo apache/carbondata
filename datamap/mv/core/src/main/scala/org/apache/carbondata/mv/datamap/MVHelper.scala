@@ -123,10 +123,9 @@ object MVHelper {
   }
 
   private def validateMVQuery(sparkSession: SparkSession,
-      logicalPlan: LogicalPlan) {
+      logicalPlan: LogicalPlan): Unit = {
     val dataMapProvider = DataMapManager.get().getDataMapProvider(null,
       new DataMapSchema("", DataMapClassProvider.MV.getShortName), sparkSession)
-    dataMapProvider
     var catalog = DataMapStoreManager.getInstance().getDataMapCatalog(dataMapProvider,
       DataMapClassProvider.MV.getShortName).asInstanceOf[SummaryDatasetCatalog]
     if (catalog == null) {
@@ -136,6 +135,10 @@ object MVHelper {
       catalog.mvSession.sessionState.modularizer.modularize(
         catalog.mvSession.sessionState.optimizer.execute(logicalPlan)).next().semiHarmonized
 
+    // Only queries which can be select , predicate , join, group by and having queries.
+    if (!modularPlan.isSPJGH)  {
+      throw new UnsupportedOperationException("MV is not supported for this query")
+    }
     val isValid = modularPlan match {
       case g: GroupBy =>
         // Make sure all predicates are present in projections.
@@ -151,11 +154,8 @@ object MVHelper {
     if (!isValid) {
       throw new UnsupportedOperationException("Group by columns must be present in project columns")
     }
-    if(catalog.isMVWithSameQueryPresent(logicalPlan)) {
+    if (catalog.isMVWithSameQueryPresent(logicalPlan)) {
       throw new UnsupportedOperationException("MV with same query present")
-    }
-    if (!modularPlan.isSPJGH)  {
-      throw new UnsupportedOperationException("MV is not supported for this query")
     }
   }
 
