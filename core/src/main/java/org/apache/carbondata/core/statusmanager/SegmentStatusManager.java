@@ -770,6 +770,26 @@ public class SegmentStatusManager {
   }
 
   /**
+   * Return true if the compaction is in progress for the table
+   * @param carbonTable
+   * @return
+   */
+  public static Boolean isCompactionInProgress(CarbonTable carbonTable) {
+    if (carbonTable == null) {
+      return false;
+    }
+    boolean compactionInProgress;
+    ICarbonLock lock = CarbonLockFactory
+        .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier(), LockUsage.COMPACTION_LOCK);
+    try {
+      compactionInProgress = !lock.lockWithRetries(1, 0);
+    } finally {
+      lock.unlock();
+    }
+    return compactionInProgress;
+  }
+
+  /**
    * Return true if insert overwrite is in progress for specified table
    */
   public static Boolean isOverwriteInProgressInTable(CarbonTable carbonTable) {

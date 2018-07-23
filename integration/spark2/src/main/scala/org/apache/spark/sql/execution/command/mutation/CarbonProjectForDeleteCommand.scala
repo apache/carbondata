@@ -50,6 +50,10 @@ private[sql] case class CarbonProjectForDeleteCommand(
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
 
+    if (SegmentStatusManager.isCompactionInProgress(carbonTable)) {
+      throw new ConcurrentOperationException(carbonTable, "compaction", "data delete")
+    }
+
     if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
       throw new ConcurrentOperationException(carbonTable, "loading", "data delete")
     }

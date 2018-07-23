@@ -349,7 +349,17 @@ object AlterTableUtil {
         // since thriftTable also holds comment as its property.
         propKeys.foreach { propKey =>
           if (validateTableProperties(propKey)) {
-            tblPropertiesMap.remove(propKey.toLowerCase)
+            // This check is required because for old tables we need to keep same behavior for it,
+            // meaning, local dictionary should be disabled. To enable we can use set command for
+            // older tables. So no need to remove from table properties map for unset just to ensure
+            // for older table behavior. So in case of unset, if enable property is already present
+            // in map, then just set it to default value of local dictionary which is true.
+            if (!propKey.equalsIgnoreCase(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)) {
+              tblPropertiesMap.remove(propKey.toLowerCase)
+            } else {
+              tblPropertiesMap
+                .put(propKey.toLowerCase, CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
+            }
           } else {
             val errorMessage = "Error: Invalid option(s): " + propKey
             throw new MalformedCarbonCommandException(errorMessage)
