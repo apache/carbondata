@@ -845,38 +845,6 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       arrayException.getMessage)
   }
 
-  test("test block compaction") {
-    sql("DROP TABLE IF EXISTS table1")
-    sql(
-      "create table table1 (roll int,person Struct<detail:int,age:string,height:double>) stored " +
-      "by 'carbondata'")
-    sql(
-      "load data inpath '" + resourcesPath +
-      "/Struct.csv' into table table1 options('delimiter'=','," +
-      "'quotechar'='\"','fileheader'='roll,person','complex_delimiter_level_1'='$'," +
-      "'complex_delimiter_level_2'='&')")
-    sql(
-      "load data inpath '" + resourcesPath +
-      "/Struct.csv' into table table1 options('delimiter'=','," +
-      "'quotechar'='\"','fileheader'='roll,person','complex_delimiter_level_1'='$'," +
-      "'complex_delimiter_level_2'='&')")
-    val exception = intercept[UnsupportedOperationException](
-      sql("alter table table1 compact 'major'"))
-    assertResult(
-      "Compaction is unsupported for Table containing Complex Columns")(
-      exception.getMessage)
-    val exception1 = intercept[UnsupportedOperationException](
-      sql("alter table table1 compact 'minor'"))
-    assertResult(
-      "Compaction is unsupported for Table containing Complex Columns")(
-      exception1.getMessage)
-    val exception2 = intercept[UnsupportedOperationException](
-      sql("alter table table1 compact 'custom' where segment.id in (0,1)"))
-    assertResult(
-      "Compaction is unsupported for Table containing Complex Columns")(
-      exception2.getMessage)
-  }
-
   test("test complex datatype double for encoding") {
     sql("DROP TABLE IF EXISTS table1")
     sql(

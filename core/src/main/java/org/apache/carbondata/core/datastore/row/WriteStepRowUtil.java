@@ -55,8 +55,28 @@ public class WriteStepRowUtil {
     }
     converted[DICTIONARY_DIMENSION] = dictDimensions;
 
+    byte[][] noDictAndComplexColumns =
+        new byte[segmentProperties.getNumberOfNoDictionaryDimension() + segmentProperties
+            .getComplexDimensions().size()][];
+
+    // For No Dictionary Columns.
+    byte[][] noDictColumns = ((ByteArrayWrapper) row[0]).getNoDictionaryKeys();
+
+    for (int i = 0; i < segmentProperties.getNumberOfNoDictionaryDimension(); i++) {
+      noDictAndComplexColumns[i] = noDictColumns[i];
+    }
+
+    // For Complex Type Columns
+    byte[][] complexColumns = ((ByteArrayWrapper) row[0]).getComplexTypesKeys();
+
+    for (int i = segmentProperties.getNumberOfNoDictionaryDimension();
+         i < segmentProperties.getNumberOfNoDictionaryDimension() + segmentProperties
+             .getComplexDimensions().size(); i++) {
+      noDictAndComplexColumns[i] = complexColumns[i];
+    }
+
     // no dictionary and complex dimension
-    converted[NO_DICTIONARY_AND_COMPLEX] = ((ByteArrayWrapper) row[0]).getNoDictionaryKeys();
+    converted[NO_DICTIONARY_AND_COMPLEX] = noDictAndComplexColumns;
 
     // measure
     int measureCount = row.length - 1;
