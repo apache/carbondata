@@ -180,7 +180,7 @@ trait Printers {
     }
 
     def printTable(name: Seq[String]): Unit = {
-      print("%s".format(name.last))
+      print("%s".format(name.mkString(".")))
     }
 
     trait ExprSeq extends Seq[SortOrder]
