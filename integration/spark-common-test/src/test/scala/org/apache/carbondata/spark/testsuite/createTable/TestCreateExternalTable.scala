@@ -46,9 +46,23 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
   test("create external table with existing files") {
     assert(new File(originDataPath).exists())
     sql("DROP TABLE IF EXISTS source")
-    if (CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE,
-        CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT).equalsIgnoreCase("false")) {
+    if (System
+          .getProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE,
+            CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT).equalsIgnoreCase("true") ||
+        CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE,
+            CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT).equalsIgnoreCase("true")) {
+
+      intercept[Exception] {
+        // create external table with existing files
+        sql(
+          s"""
+             |CREATE EXTERNAL TABLE source
+             |STORED BY 'carbondata'
+             |LOCATION '$storeLocation/origin'
+       """.stripMargin)
+      }
+    } else {
 
       // create external table with existing files
       sql(
@@ -68,17 +82,7 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
 
       // DROP TABLE should not delete data
       assert(new File(originDataPath).exists())
-    }
-    else {
-      intercept[Exception] {
-        // create external table with existing files
-        sql(
-          s"""
-             |CREATE EXTERNAL TABLE source
-             |STORED BY 'carbondata'
-             |LOCATION '$storeLocation/origin'
-       """.stripMargin)
-      }
+
     }
   }
 

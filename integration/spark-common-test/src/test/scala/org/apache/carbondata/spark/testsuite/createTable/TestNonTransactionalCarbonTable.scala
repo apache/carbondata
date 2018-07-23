@@ -2329,12 +2329,15 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val descLoc = sql("describe formatted sdkTable").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name,surname"))
+      case None => assert(false)
     }
     FileUtils.deleteDirectory(new File(writerPath))
   }
@@ -2355,12 +2358,15 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val descLoc = sql("describe formatted sdkTable").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name,surname"))
+      case None => assert(false)
     }
     FileUtils.deleteDirectory(new File(writerPath))
   }
@@ -2381,12 +2387,15 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val descLoc = sql("describe formatted sdkTable").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name,surname"))
+      case None => assert(false)
     }
     FileUtils.deleteDirectory(new File(writerPath))
   }
@@ -2411,12 +2420,15 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val descLoc = sql("describe formatted sdkTable").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
       case Some(row) => assert(row.get(1).toString.contains("10000"))
+      case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
       case Some(row) => assert(row.get(1).toString.contains("name,surname"))
+      case None => assert(false)
     }
 
     checkAnswer(sql("select count(*) from sdkTable"), Seq(Row(1)))

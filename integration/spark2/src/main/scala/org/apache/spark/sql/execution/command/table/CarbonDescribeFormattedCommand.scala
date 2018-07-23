@@ -123,41 +123,44 @@ private[sql] case class CarbonDescribeFormattedCommand(
     }
 
     var isLocalDictEnabled = tblProps.asScala
-      .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
-        CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
-    val localDictEnabled = isLocalDictEnabled.split(",") { 0 }
-    results ++= Seq(("Local Dictionary Enabled", localDictEnabled, ""))
-    // if local dictionary is enabled, then only show other properties of local dictionary
-    if (localDictEnabled.toBoolean) {
-      var localDictThreshold = tblProps.asScala
-        .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
-          CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT)
-      val localDictionaryThreshold = localDictThreshold.split(",")
-      localDictThreshold = localDictionaryThreshold { 0 }
-      results ++= Seq(("Local Dictionary Threshold", localDictThreshold, ""))
-      val columns = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
-      val builder = new StringBuilder
-      columns.foreach { column =>
-        if (column.isLocalDictColumn && !column.isInvisible) {
-          builder.append(column.getColumnName).append(",")
-        }
-      }
-      results ++=
-      Seq(("Local Dictionary Include", getDictColumnString(builder.toString().split(",")), ""))
-      if (tblProps.asScala
-        .get(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE).isDefined) {
+      .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)
+    if (isLocalDictEnabled.isDefined) {
+      val localDictEnabled = isLocalDictEnabled.get.split(",") { 0 }
+      results ++= Seq(("Local Dictionary Enabled", localDictEnabled, ""))
+      // if local dictionary is enabled, then only show other properties of local dictionary
+      if (localDictEnabled.toBoolean) {
+        var localDictThreshold = tblProps.asScala
+          .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
+            CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT)
+        val localDictionaryThreshold = localDictThreshold.split(",")
+        localDictThreshold = localDictionaryThreshold { 0 }
+        results ++= Seq(("Local Dictionary Threshold", localDictThreshold, ""))
         val columns = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
         val builder = new StringBuilder
         columns.foreach { column =>
-          if (!column.isLocalDictColumn && !column.isInvisible &&
-              (column.getDataType.equals(DataTypes.STRING) ||
-               column.getDataType.equals(DataTypes.VARCHAR))) {
+          if (column.isLocalDictColumn && !column.isInvisible) {
             builder.append(column.getColumnName).append(",")
           }
         }
         results ++=
-        Seq(("Local Dictionary Exclude", getDictColumnString(builder.toString().split(",")), ""))
+        Seq(("Local Dictionary Include", getDictColumnString(builder.toString().split(",")), ""))
+        if (tblProps.asScala
+          .get(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE).isDefined) {
+          val columns = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
+          val builder = new StringBuilder
+          columns.foreach { column =>
+            if (!column.isLocalDictColumn && !column.isInvisible &&
+                (column.getDataType.equals(DataTypes.STRING) ||
+                 column.getDataType.equals(DataTypes.VARCHAR))) {
+              builder.append(column.getColumnName).append(",")
+            }
+          }
+          results ++=
+          Seq(("Local Dictionary Exclude", getDictColumnString(builder.toString().split(",")), ""))
+        }
       }
+    } else {
+      results ++= Seq(("Local Dictionary Enabled", "false", ""))
     }
 
     /**
