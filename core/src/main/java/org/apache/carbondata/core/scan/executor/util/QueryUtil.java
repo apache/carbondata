@@ -634,7 +634,7 @@ public class QueryUtil {
     return parentBlockIndex;
   }
 
-  public static void getAllFilterDimensions(FilterResolverIntf filterResolverTree,
+  public static void getAllFilterDimensionsAndMeasures(FilterResolverIntf filterResolverTree,
       Set<CarbonDimension> filterDimensions, Set<CarbonMeasure> filterMeasure) {
     if (null == filterResolverTree) {
       return;

@@ -109,7 +109,7 @@ object AlterTableUtil {
    * @param sparkSession
    */
   def updateSchemaInfo(carbonTable: CarbonTable,
-      schemaEvolutionEntry: SchemaEvolutionEntry,
+      schemaEvolutionEntry: SchemaEvolutionEntry = null,
       thriftTable: TableInfo,
       cols: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]] =
       None)
@@ -295,7 +295,6 @@ object AlterTableUtil {
     LOGGER.audit(s"Alter table newProperties request has been received for $dbName.$tableName")
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
     var locks = List.empty[ICarbonLock]
-    val timeStamp = 0L
     try {
       locks = AlterTableUtil
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
@@ -317,8 +316,6 @@ object AlterTableUtil {
         dbName,
         tableName,
         carbonTable.getTablePath)
-      val schemaEvolutionEntry = new org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
-      schemaEvolutionEntry.setTimeStamp(timeStamp)
       val thriftTable = schemaConverter.fromWrapperToExternalTableInfo(
         wrapperTableInfo, dbName, tableName)
       val tblPropertiesMap: mutable.Map[String, String] =
@@ -358,9 +355,10 @@ object AlterTableUtil {
         // check if duplicate columns are present in both local dictionary include and exclude
         CarbonScalaUtil.validateDuplicateLocalDictIncludeExcludeColmns(tblPropertiesMap)
       }
-      val (tableIdentifier, schemParts, cols) = updateSchemaInfo(carbonTable,
-        schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
-        thriftTable)(sparkSession)
+      val (tableIdentifier, schemParts, cols: Option[Seq[org.apache.carbondata.core.metadata
+      .schema.table.column.ColumnSchema]]) = updateSchemaInfo(
+        carbonTable = carbonTable,
+        thriftTable = thriftTable)(sparkSession)
       catalog.alterTable(tableIdentifier, schemParts, cols)
       sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
       // check and clear the block/blocklet cache
