@@ -439,7 +439,7 @@ object MVHelper {
   private def updateFlagSpec(keepAlias: Boolean,
       select: Select,
       relation: Select,
-      aliasMap: Map[AttributeKey, NamedExpression]) = {
+      aliasMap: Map[AttributeKey, NamedExpression]): Seq[Seq[Any]] = {
     val updatedFlagSpec = select.flagSpec.map { f =>
       f.map {
         case list: ArrayBuffer[SortOrder] =>
