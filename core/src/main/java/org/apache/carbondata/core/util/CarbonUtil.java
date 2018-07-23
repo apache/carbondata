@@ -2906,17 +2906,17 @@ public final class CarbonUtil {
    * @param identifier
    * @param filePath
    * @param segmentId
-   * @param isTransactionalTable
+   * @param isStandardTable
    * @return
    */
   public static String getBlockId(AbsoluteTableIdentifier identifier, String filePath,
-      String segmentId, boolean isTransactionalTable, boolean isPartitionTable) {
+      String segmentId, boolean isTransactionalTable, boolean isStandardTable) {
     String blockId;
     String blockName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.length());
     String tablePath = identifier.getTablePath();
 
     if (filePath.startsWith(tablePath)) {
-      if (!isTransactionalTable || !isPartitionTable) {
+      if (!isTransactionalTable || isStandardTable) {
         blockId = "Part0" + CarbonCommonConstants.FILE_SEPARATOR + "Segment_" + segmentId
             + CarbonCommonConstants.FILE_SEPARATOR + blockName;
       } else {
@@ -3234,5 +3234,18 @@ public final class CarbonUtil {
     FileHeader fileHeader = headerReader.readHeader();
     int version = fileHeader.getVersion();
     return ColumnarFormatVersion.valueOf((short)version);
+  }
+
+  /**
+   * Check whether it is standard table means tablepath has Fact/Part0/Segment_ tail present with
+   * all carbon files. In other cases carbon files present directly under tablepath or
+   * tablepath/partition folder
+   * TODO Read segment file and corresponding index file to get the correct carbondata file instead
+   * of using this way.
+   * @param table
+   * @return
+   */
+  public static boolean isStandardCarbonTable(CarbonTable table) {
+    return !(table.isSupportFlatFolder() || table.isHivePartitionTable());
   }
 }
