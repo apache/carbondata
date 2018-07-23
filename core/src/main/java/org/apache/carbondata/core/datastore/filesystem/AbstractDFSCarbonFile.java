@@ -99,6 +99,9 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   }
 
   @Override public boolean createNewFile() {
+    if (fileStatus == null) {
+      throw new RuntimeException("Unable to get file status, Please check logs for details.");
+    }
     Path path = fileStatus.getPath();
     FileSystem fs;
     try {
@@ -110,14 +113,23 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   }
 
   @Override public String getAbsolutePath() {
+    if (fileStatus == null) {
+      throw new RuntimeException("Unable to get file status, Please check logs for details.");
+    }
     return fileStatus.getPath().toString();
   }
 
   @Override public String getName() {
+    if (fileStatus == null) {
+      throw new RuntimeException("Unable to get file status, Please check logs for details.");
+    }
     return fileStatus.getPath().getName();
   }
 
   @Override public boolean isDirectory() {
+    if (fileStatus == null) {
+      throw new RuntimeException("Unable to get file status, Please check logs for details.");
+    }
     return fileStatus.isDirectory();
   }
 
@@ -143,6 +155,9 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   }
 
   @Override public long getSize() {
+    if (fileStatus == null) {
+      throw new RuntimeException("Unable to get file status, Please check logs for details.");
+    }
     return fileStatus.getLen();
   }
 
@@ -175,6 +190,9 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   }
 
   @Override public long getLastModifiedTime() {
+    if (fileStatus == null) {
+      throw new RuntimeException("Unable to get file status, Please check logs for details.");
+    }
     return fileStatus.getModificationTime();
   }
 
@@ -552,6 +570,9 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   @Override
   public String[] getLocations() throws IOException {
     BlockLocation[] blkLocations;
+    if (fileStatus == null) {
+      throw new RuntimeException("Unable to get file status, Please check logs for details.");
+    }
     if (fileStatus instanceof LocatedFileStatus) {
       blkLocations = ((LocatedFileStatus)fileStatus).getBlockLocations();
     } else {

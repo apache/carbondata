@@ -84,6 +84,9 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
   }
 
   @Override public CarbonFile getParentFile() {
+    if (fileStatus == null) {
+      throw new RuntimeException("Unable to get file status, Please check logs for details.");
+    }
     Path parent = fileStatus.getPath().getParent();
     return null == parent ? null : new ViewFSCarbonFile(parent);
   }
@@ -91,6 +94,9 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
   @Override
   public boolean renameForce(String changetoName) {
     FileSystem fs;
+    if (fileStatus == null) {
+      throw new RuntimeException("Unable to get file status, Please check logs for details.");
+    }
     try {
       fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
       if (fs instanceof ViewFileSystem) {
