@@ -72,6 +72,13 @@ public class BlockletDetailInfo implements Serializable, Writable {
    * flag to check for store from 1.1 or any prior version
    */
   private boolean isLegacyStore;
+  /**
+   * flag to check whether to serialize min max values. The flag will be set to true in case
+   * 1. When CACHE_LEVEL = BLOCKLET and filter column min/max in not cached in the driver using the
+   * property COLUMN_META_CACHE
+   * 2. for CACHE_LEVEL = BLOCK, it will always be true which is also the default value
+   */
+  private boolean useMinMaxForPruning = true;
 
   public int getRowCount() {
     return rowCount;
@@ -185,6 +192,7 @@ public class BlockletDetailInfo implements Serializable, Writable {
     out.write(blockletInfoBinary);
     out.writeLong(blockSize);
     out.writeBoolean(isLegacyStore);
+    out.writeBoolean(useMinMaxForPruning);
   }
 
   @Override public void readFields(DataInput in) throws IOException {
@@ -215,6 +223,7 @@ public class BlockletDetailInfo implements Serializable, Writable {
     setBlockletInfoFromBinary();
     blockSize = in.readLong();
     isLegacyStore = in.readBoolean();
+    useMinMaxForPruning = in.readBoolean();
   }
 
   /**
@@ -252,6 +261,7 @@ public class BlockletDetailInfo implements Serializable, Writable {
     detailInfo.columnSchemaBinary = columnSchemaBinary;
     detailInfo.blockSize = blockSize;
     detailInfo.isLegacyStore = isLegacyStore;
+    detailInfo.useMinMaxForPruning = useMinMaxForPruning;
     return detailInfo;
   }
 
@@ -296,5 +306,13 @@ public class BlockletDetailInfo implements Serializable, Writable {
 
   public void setColumnSchemas(List<ColumnSchema> columnSchemas) {
     this.columnSchemas = columnSchemas;
+  }
+
+  public boolean isUseMinMaxForPruning() {
+    return useMinMaxForPruning;
+  }
+
+  public void setUseMinMaxForPruning(boolean useMinMaxForPruning) {
+    this.useMinMaxForPruning = useMinMaxForPruning;
   }
 }

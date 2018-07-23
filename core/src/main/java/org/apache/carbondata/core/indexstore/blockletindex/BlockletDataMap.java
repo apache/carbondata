@@ -212,7 +212,8 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
         .convertToSafeRow();
     short relativeBlockletId = safeRow.getShort(BLOCKLET_ID_INDEX);
     String filePath = getFilePath();
-    return createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath), relativeBlockletId);
+    return createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath), relativeBlockletId,
+        false);
   }
 
   protected short getBlockletId(DataMapRow dataMapRow) {
@@ -222,15 +223,17 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
     return dataMapRow.getShort(BLOCKLET_ID_INDEX);
   }
 
-  protected ExtendedBlocklet createBlocklet(DataMapRow row, String fileName, short blockletId) {
+  protected ExtendedBlocklet createBlocklet(DataMapRow row, String fileName, short blockletId,
+      boolean useMinMaxForPruning) {
     if (isLegacyStore) {
-      return super.createBlocklet(row, fileName, blockletId);
+      return super.createBlocklet(row, fileName, blockletId, useMinMaxForPruning);
     }
     ExtendedBlocklet blocklet = new ExtendedBlocklet(fileName, blockletId + "");
     BlockletDetailInfo detailInfo = getBlockletDetailInfo(row, blockletId, blocklet);
     detailInfo.setColumnSchemas(getColumnSchema());
     detailInfo.setBlockletInfoBinary(row.getByteArray(BLOCKLET_INFO_INDEX));
     detailInfo.setPagesCount(row.getShort(BLOCKLET_PAGE_COUNT_INDEX));
+    detailInfo.setUseMinMaxForPruning(useMinMaxForPruning);
     blocklet.setDetailInfo(detailInfo);
     return blocklet;
   }
