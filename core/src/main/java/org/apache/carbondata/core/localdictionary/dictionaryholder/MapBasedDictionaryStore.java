@@ -55,6 +55,11 @@ public class MapBasedDictionaryStore implements DictionaryStore {
    */
   private boolean isThresholdReached;
 
+  /**
+   * current datasize
+   */
+  private long currentSize;
+
   public MapBasedDictionaryStore(int dictionaryThreshold) {
     this.dictionaryThreshold = dictionaryThreshold;
     this.dictionary = new ConcurrentHashMap<>();
@@ -86,11 +91,9 @@ public class MapBasedDictionaryStore implements DictionaryStore {
         if (null == value) {
           // increment the value
           value = ++lastAssignValue;
+          currentSize += data.length;
           // if new value is greater than threshold
-          if (value > dictionaryThreshold) {
-            // clear the dictionary
-            dictionary.clear();
-            referenceDictionaryArray = null;
+          if (value > dictionaryThreshold || currentSize >= Integer.MAX_VALUE) {
             // set the threshold boolean to true
             isThresholdReached = true;
             // throw exception
@@ -108,8 +111,13 @@ public class MapBasedDictionaryStore implements DictionaryStore {
 
   private void checkIfThresholdReached() throws DictionaryThresholdReachedException {
     if (isThresholdReached) {
-      throw new DictionaryThresholdReachedException(
-          "Unable to generate dictionary value. Dictionary threshold reached");
+      if (currentSize >= Integer.MAX_VALUE) {
+        throw new DictionaryThresholdReachedException(
+            "Unable to generate dictionary. Dictionary Size crossed 2GB limit");
+      } else {
+        throw new DictionaryThresholdReachedException(
+            "Unable to generate dictionary value. Dictionary threshold reached");
+      }
     }
   }
 
