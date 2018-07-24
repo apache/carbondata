@@ -203,7 +203,9 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         }
         return queryModels;
       } else {
-        LOGGER.warn("BloomFilter can only support the 'equal' filter like 'Col = PlainValue'");
+        String errorMsg = "BloomFilter can only support the 'equal' filter like 'Col = PlainValue'";
+        LOGGER.warn(errorMsg);
+        throw new RuntimeException(errorMsg);
       }
     } else if (expression instanceof InExpression) {
       Expression left = ((InExpression) expression).getLeft();
@@ -226,7 +228,9 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         }
         return queryModels;
       } else {
-        LOGGER.warn("BloomFilter can only support the 'in' filter like 'Col in (PlainValues)'");
+        String errorMsg = "BloomFilter can only support the 'in' filter like 'Col in PlainValue'";
+        LOGGER.warn(errorMsg);
+        throw new RuntimeException(errorMsg);
       }
     }
 
