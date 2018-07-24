@@ -87,7 +87,7 @@ class CarbonScanRDD[T: ClassTag](
   }
   private var vectorReader = false
 
-  private val isTaskLocality = CarbonProperties.isTaskLocality
+  @transient private val isTaskLocality = CarbonProperties.isTaskLocality
 
   private val bucketedTable = tableInfo.getFactTable.getBucketingInfo
   private val storageFormat = tableInfo.getFormat
@@ -748,8 +748,7 @@ class CarbonScanRDD[T: ClassTag](
         .getLocations
         .filter(_ != "localhost")
     } else {
-      // in cloud scenario, computation and storage are separated.
-      // not require preferred locations
+      // when the computation and the storage are separated, not require the preferred locations
       Seq.empty[String]
     }
   }

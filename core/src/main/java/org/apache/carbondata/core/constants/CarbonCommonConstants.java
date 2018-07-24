@@ -1884,6 +1884,8 @@ public final class CarbonCommonConstants {
 
   /**
    * config carbon scan task locality
+   * true: it will execute tasks as close to the data, the locality is important,
+   * false: it will execute tasks immediately, not paying attention to the locality
    */
   public static final String CARBON_TASK_LOCALITY = "carbon.task.locality";
 
