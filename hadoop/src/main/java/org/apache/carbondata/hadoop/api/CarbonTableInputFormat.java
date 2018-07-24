@@ -590,7 +590,26 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     // TODO: currently only batch segment is supported, add support for streaming table
     List<Segment> filteredSegment =
         getFilteredSegment(job, allSegments.getValidSegments(), false, readCommittedScope);
-
+    /* In the select * flow, getSplits() method was clearing the segmentMap if,
+    segment needs refreshing. same thing need for select count(*) flow also.
+    For NonTransactional table, one of the reason for a segment refresh is below scenario.
+    SDK is written one set of files with UUID, with same UUID it can write again.
+    So, latest files content should reflect the new count by refreshing the segment */
+    List<Segment> toBeCleanedSegments = new ArrayList<>();
+    for (Segment eachSegment : filteredSegment) {
+      boolean refreshNeeded = DataMapStoreManager.getInstance()
+          .getTableSegmentRefresher(getOrCreateCarbonTable(job.getConfiguration()))
+          .isRefreshNeeded(eachSegment,
+              updateStatusManager.getInvalidTimestampRange(eachSegment.getSegmentNo()));
+      if (refreshNeeded) {
+        toBeCleanedSegments.add(eachSegment);
+      }
+    }
+    if (toBeCleanedSegments.size() > 0) {
+      DataMapStoreManager.getInstance()
+          .clearInvalidSegments(getOrCreateCarbonTable(job.getConfiguration()),
+              toBeCleanedSegments);
+    }
     List<ExtendedBlocklet> blocklets =
         blockletMap.prune(filteredSegment, null, partitions);
     for (ExtendedBlocklet blocklet : blocklets) {

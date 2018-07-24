@@ -350,6 +350,24 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     cleanTestData()
   }
 
+  test("test count star with multiple loads files with same schema and UUID") {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildTestDataWithSameUUID(3, false, null, List("name"))
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+    checkAnswer(sql(s"""select count(*) from sdkOutputTable """), Seq(Row(3)))
+    buildTestDataWithSameUUID(3, false, null, List("name"))
+    // should reflect new count
+    checkAnswer(sql(s"""select count(*) from sdkOutputTable """), Seq(Row(6)))
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
+  }
+
   test("test create external table with sort columns") {
     buildTestDataWithSortColumns(List("age","name"))
     assert(new File(writerPath).exists())
