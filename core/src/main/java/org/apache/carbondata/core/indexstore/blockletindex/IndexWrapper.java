@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.core.indexstore.blockletindex;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
@@ -34,12 +33,11 @@ public class IndexWrapper extends AbstractIndex {
 
   private List<TableBlockInfo> blockInfos;
 
-  public IndexWrapper(List<TableBlockInfo> blockInfos) throws IOException {
+  public IndexWrapper(List<TableBlockInfo> blockInfos, SegmentProperties segmentProperties) {
     this.blockInfos = blockInfos;
-    segmentProperties = new SegmentProperties(blockInfos.get(0).getDetailInfo().getColumnSchemas(),
-        blockInfos.get(0).getDetailInfo().getDimLens());
+    this.segmentProperties = segmentProperties;
     dataRefNode = new BlockletDataRefNode(blockInfos, 0,
-        segmentProperties.getDimensionColumnsValueSize());
+        this.segmentProperties.getDimensionColumnsValueSize());
   }
 
   @Override public void buildIndex(List<DataFileFooter> footerList) {
