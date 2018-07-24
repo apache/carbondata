@@ -51,6 +51,8 @@ public class CarbonTableOutputFormatTest {
   static {
     CarbonProperties.getInstance().
         addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords");
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, "/tmp/carbon/");
     try {
       carbonLoadModel = StoreCreator.createTableAndLoadModel();
     } catch (Exception e) {

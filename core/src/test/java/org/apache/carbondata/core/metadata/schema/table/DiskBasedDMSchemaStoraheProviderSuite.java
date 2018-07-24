@@ -37,7 +37,7 @@ public class DiskBasedDMSchemaStoraheProviderSuite {
 
   @BeforeClass public static void setUp() throws IOException {
     String path =
-        new File(DiskBasedDMSchemaStorageProvider.class.getResource("/").getPath() + "../")
+        new File(DiskBasedDMSchemaStoraheProviderSuite.class.getResource("/").getPath() + "../")
             .getCanonicalPath().replaceAll("\\\\", "/");
 
     CarbonProperties.getInstance()

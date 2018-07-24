@@ -28,6 +28,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.schema.table.DiskBasedDMSchemaStorageProvider;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.*;
@@ -937,6 +938,15 @@ public class CarbonReaderTest extends TestCase {
   @Override
   public void setUp() {
     carbonProperties = CarbonProperties.getInstance();
+    String path = null;
+    try {
+      path = new File(CarbonReaderTest.class.getResource("/").getPath() + "../")
+          .getCanonicalPath().replaceAll("\\\\", "/");
+    } catch (IOException e) {
+      assert (false);
+    }
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, path);
   }
 
   private static final LogService LOGGER =

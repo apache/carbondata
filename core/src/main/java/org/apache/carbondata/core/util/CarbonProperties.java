@@ -34,6 +34,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.BLOCKLET_SIZE;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
@@ -1531,6 +1532,8 @@ public final class CarbonProperties {
     if (systemLocation == null) {
       systemLocation = getStorePath();
     }
+    systemLocation = CarbonUtil.checkAndAppendFileSystemURIScheme(systemLocation);
+    systemLocation = FileFactory.getUpdatedFilePath(systemLocation);
     return systemLocation + CarbonCommonConstants.FILE_SEPARATOR + "_system";
   }
 

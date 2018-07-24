@@ -45,9 +45,6 @@ class LuceneFineGrainDataMapWithSearchModeSuite extends QueryTest with BeforeAnd
       .addProperty(CarbonCommonConstants.CARBON_SEARCH_QUERY_TIMEOUT, "100s")
     LuceneFineGrainDataMapSuite.createFile(file2, n)
     sql("create database if not exists lucene")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION,
-        CarbonEnv.getDatabaseLocation("lucene", sqlContext.sparkSession))
     sql("use lucene")
     sql("DROP TABLE IF EXISTS datamap_test")
     sql(
@@ -305,9 +302,6 @@ class LuceneFineGrainDataMapWithSearchModeSuite extends QueryTest with BeforeAnd
     sql("DROP TABLE IF EXISTS datamap_test")
     sql("DROP TABLE IF EXISTS datamap_test5")
     sql("use default")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION,
-        CarbonProperties.getStorePath)
     sqlContext.sparkSession.asInstanceOf[CarbonSession].stopSearchMode()
   }
 
