@@ -495,6 +495,8 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
       return totalLength / ByteUtil.SIZEOF_BYTE;
     } else if (dataType == DataTypes.SHORT) {
       return totalLength / ByteUtil.SIZEOF_SHORT;
+    } else if (dataType == DataTypes.SHORT_INT) {
+      return totalLength / ByteUtil.SIZEOF_SHORT_INT;
     } else if (dataType == DataTypes.INT) {
       return totalLength / ByteUtil.SIZEOF_INT;
     } else if (dataType == DataTypes.LONG) {
