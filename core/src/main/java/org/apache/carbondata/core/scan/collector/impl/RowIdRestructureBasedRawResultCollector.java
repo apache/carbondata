@@ -106,7 +106,7 @@ public class RowIdRestructureBasedRawResultCollector extends RestructureBasedRaw
       // 3 for blockletId, pageId, rowId
       Object[] row = new Object[1 + queryMeasures.length + 3];
       scannedResult.incrementCounter();
-      row[1 + queryMeasures.length] = Integer.parseInt(scannedResult.getBlockletNumber());
+      row[1 + queryMeasures.length] = scannedResult.getBlockletNumber();
       row[1 + queryMeasures.length + 1] = scannedResult.getCurrentPageCounter();
       ByteArrayWrapper wrapper = new ByteArrayWrapper();
       wrapper.setDictionaryKey(dictionaryKeyArrayBatch.get(i));
