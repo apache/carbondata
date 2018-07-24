@@ -727,7 +727,7 @@ public abstract class BlockletScannedResult {
     return false;
   }
 
-  public String getBlockletNumber() {
-    return blockletNumber;
+  public int getBlockletNumber() {
+    return Integer.parseInt(blockletNumber);
   }
 }
