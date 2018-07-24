@@ -133,7 +133,7 @@
             <configuration>
               <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
               <createDependencyReducedPom>true</createDependencyReducedPom>
-              <outputFile>${project.build.directory}/horizon-sql-shade.jar</outputFile>
+              <outputFile>${project.build.directory}/carbondata-streamsql.jar</outputFile>
               <artifactSet>
                 <includes>
                   <include>*:*</include>
@@ -156,7 +156,24 @@
                   <exclude>org.apache.hadoop:hadoop-yarn-client</exclude>
                   <exclude>org.apache.hadoop:hadoop-yarn-common</exclude>
                   <exclude>org.apache.hadoop:hadoop-yarn-server-common</exclude>
-                  <exclude>org.apache.spark:*</exclude>
+
+                  <exclude>org.apache.spark:spark-catalyst_2.11</exclude>
+                  <exclude>org.apache.spark:spark-core_2.11</exclude>
+                  <exclude>org.apache.spark:spark-graphx_2.11</exclude>
+                  <exclude>org.apache.spark:spark-hive_2.11</exclude>
+                  <exclude>org.apache.spark:spark-hive-thriftserver_2.11</exclude>
+                  <exclude>org.apache.spark:spark-launcher_2.11</exclude>
+                  <exclude>org.apache.spark:spark-network-common_2.11</exclude>
+                  <exclude>org.apache.spark:spark-network-shuffle_2.11</exclude>
+                  <exclude>org.apache.spark:spark-mllib_2.11</exclude>
+                  <exclude>org.apache.spark:spark-mllib-local_2.11</exclude>
+                  <exclude>org.apache.spark:spark-repl_2.11</exclude>
+                  <exclude>org.apache.spark:spark-sketch_2.11</exclude>
+                  <exclude>org.apache.spark:spark-sql_2.11</exclude>
+                  <exclude>org.apache.spark:spark-streaming_2.11</exclude>
+                  <exclude>org.apache.spark:spark-unsafe_2.11</exclude>
+
+                  <exclude>org.spark-project.hive:*</exclude>
                   <exclude>org.apache.zookeeper:*</exclude>
                   <exclude>org.apache.avro:*</exclude>
                   <exclude>com.google.guava:guava</exclude>

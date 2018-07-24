@@ -28,6 +28,17 @@ import org.apache.hadoop.io.IOUtils;
 
 /**
  * a util to upload a local file to s3
+ * How to run it?
+ * VM Options:
+ * -Dhadoop.fs.s3a.endpoint=obs.cn-north-1.myhwclouds.com
+ * -Dhadoop.fs.s3a.access.key=XXXX
+ * -Dhadoop.fs.s3a.secret.key=XXXX
+ * -Dhadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem
+ *
+ * Program arguments:
+ * local file : xxxx/store/sql/target/carbondata-streamsql.jar
+ * s3 path : s3a://xxxx/carbondata-streamsql.jar
+ * overwrite : true
  */
 
 public class Upload {
