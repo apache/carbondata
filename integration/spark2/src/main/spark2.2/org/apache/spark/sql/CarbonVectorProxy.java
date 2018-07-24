@@ -22,6 +22,7 @@ import org.apache.parquet.column.Dictionary;
 import org.apache.spark.memory.MemoryMode;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.execution.vectorized.ColumnarBatch;
+import org.apache.spark.sql.execution.vectorized.ColumnVector;
 import org.apache.spark.sql.types.CalendarIntervalType;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Decimal;
@@ -93,6 +94,10 @@ public class CarbonVectorProxy {
      */
     public Object getColumnarBatch() {
         return columnarBatch;
+    }
+
+    public ColumnVector getColumnVector(int ordinal) {
+        return columnarBatch.column(ordinal);
     }
 
     public Object reserveDictionaryIds(int capacity , int ordinal) {
