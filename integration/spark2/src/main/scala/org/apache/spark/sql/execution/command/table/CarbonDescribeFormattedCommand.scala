@@ -117,7 +117,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
 
     // longstring related info
     if (tblProps.containsKey(CarbonCommonConstants.LONG_STRING_COLUMNS)) {
-      results ++= Seq((CarbonCommonConstants.LONG_STRING_COLUMNS,
+      results ++= Seq((CarbonCommonConstants.LONG_STRING_COLUMNS.toUpperCase,
         tblProps.get(CarbonCommonConstants.LONG_STRING_COLUMNS), ""))
     }
 

@@ -296,7 +296,7 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
          | TBLPROPERTIES('LONG_STRING_COLUMNS'='address, note', 'dictionary_include'='name', 'sort_columns'='id')
          |""".
         stripMargin)
-    checkExistence(sql(s"desc formatted $longStringTable"), true, "long_string_columns", "address", "note")
+    checkExistence(sql(s"desc formatted $longStringTable"), true, "long_string_columns".toUpperCase, "address", "note")
   }
 
   // will create 2 long string columns
