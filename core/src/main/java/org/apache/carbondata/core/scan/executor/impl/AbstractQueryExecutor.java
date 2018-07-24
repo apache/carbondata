@@ -40,13 +40,11 @@ import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataRefNode;
 import org.apache.carbondata.core.indexstore.blockletindex.IndexWrapper;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -279,12 +277,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     if (blockletDetailInfo.isLegacyStore()) {
       // update min and max values in case of old store for measures as min and max is written
       // opposite for measures in old store ( store <= 1.1 version)
-      maxValues = CarbonUtil.updateMinMaxValues(fileFooter,
-          blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues(),
-          blockletInfo.getBlockletIndex().getMinMaxIndex().getMinValues(), false);
-      minValues = CarbonUtil.updateMinMaxValues(fileFooter,
-          blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues(),
-          blockletInfo.getBlockletIndex().getMinMaxIndex().getMinValues(), true);
+      maxValues = CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, false);
+      minValues = CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, true);
       info.setDataBlockFromOldStore(true);
     }
     blockletInfo.getBlockletIndex().getMinMaxIndex().setMaxValues(maxValues);
