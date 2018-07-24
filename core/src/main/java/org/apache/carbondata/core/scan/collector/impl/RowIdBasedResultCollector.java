@@ -46,7 +46,7 @@ public class RowIdBasedResultCollector extends DictionaryBasedResultCollector {
     int columnCount = queryDimensions.length + queryMeasures.length;
     while (scannedResult.hasNext() && rowCounter < batchSize) {
       Object[] row = new Object[columnCount + 3];
-      row[columnCount] = Integer.parseInt(scannedResult.getBlockletNumber());
+      row[columnCount] = scannedResult.getBlockletNumber();
       row[columnCount + 1] = scannedResult.getCurrentPageCounter();
       if (isDimensionExists) {
         surrogateResult = scannedResult.getDictionaryKeyIntegerArray();
