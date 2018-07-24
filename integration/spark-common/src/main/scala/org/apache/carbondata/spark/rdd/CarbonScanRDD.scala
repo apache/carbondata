@@ -38,6 +38,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.SQLExecution
 import org.apache.spark.sql.profiler.{GetPartition, Profiler, QueryTaskEnd}
 import org.apache.spark.sql.util.SparkSQLUtil.sessionState
+import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonCommonConstantsInternal}
@@ -58,7 +59,6 @@ import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.InitInputMetrics
-import org.apache.carbondata.spark.format.{CsvReadSupport, VectorCsvReadSupport}
 import org.apache.carbondata.spark.util.{SparkDataTypeConverterImpl, Util}
 import org.apache.carbondata.streaming.CarbonStreamInputFormat
 
@@ -452,9 +452,11 @@ class CarbonScanRDD[T: ClassTag](
           externalRecordReader.setInputMetricsStats(inputMetricsStats)
           externalRecordReader.setQueryModel(model)
           if (vectorReader) {
-            externalRecordReader.setReadSupport(new VectorCsvReadSupport[Object]())
+            externalRecordReader.setReadSupport(CarbonReflectionUtils
+              .getInstance("VectorCsvReadSupport").asInstanceOf[CarbonReadSupport[Object]])
           } else {
-            externalRecordReader.setReadSupport(new CsvReadSupport[Object]())
+            externalRecordReader.setReadSupport(CarbonReflectionUtils
+              .getInstance("CsvReadSupport").asInstanceOf[CarbonReadSupport[Object]])
           }
           externalRecordReader
         case _ =>

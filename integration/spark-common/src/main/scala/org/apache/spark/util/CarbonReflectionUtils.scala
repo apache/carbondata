@@ -309,4 +309,10 @@ object CarbonReflectionUtils {
     (ctor.newInstance(conArgs: _*), clazz)
   }
 
+  def getInstance(className: String, conArgs: Object*): (Any) = {
+    val clazz = Utils.classForName(className)
+    val ctor = clazz.getConstructors.head
+    ctor.setAccessible(true)
+    (ctor.newInstance(conArgs: _*))
+  }
 }

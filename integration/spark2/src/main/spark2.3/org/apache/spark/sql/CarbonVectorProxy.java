@@ -39,7 +39,6 @@ public class CarbonVectorProxy {
 
     private ColumnarBatch columnarBatch;
     private WritableColumnVector[] writableColumnVectors;
-    private Dictionary dictionary;
 
     /**
      * Adapter class which handles the columnar vector reading of the carbondata
@@ -85,6 +84,10 @@ public class CarbonVectorProxy {
      */
     public ColumnVector column(int ordinal) {
         return columnarBatch.column(ordinal);
+    }
+
+    public WritableColumnVector getColumnVector(int ordinal) {
+        return writableColumnVectors[ordinal];
     }
 
     /**
