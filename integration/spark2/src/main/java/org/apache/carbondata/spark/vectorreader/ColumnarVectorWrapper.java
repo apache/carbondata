@@ -228,7 +228,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     return null;
   }
 
-  @Override public void reset() {
+  @Override
+  public void reset() {
     counter = 0;
     filteredRowsExist = false;
     if (null != dictionaryVector) {
@@ -250,7 +251,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     this.blockDataType = blockDataType;
   }
 
-  @Override public void setFilteredRowsExist(boolean filteredRowsExist) {
+  @Override
+  public void setFilteredRowsExist(boolean filteredRowsExist) {
     this.filteredRowsExist = filteredRowsExist;
   }
 
@@ -258,12 +260,21 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (dictionary == null) {
       writableColumnVector.setDictionary(null, ordinal);
     } else {
-      writableColumnVector.setDictionary(new CarbonDictionaryWrapper(Encoding.PLAIN, dictionary),ordinal);
+      writableColumnVector
+              .setDictionary(new CarbonDictionaryWrapper(Encoding.PLAIN, dictionary),ordinal);
     }
   }
 
   @Override public boolean hasDictionary() {
     return writableColumnVector.hasDictionary(ordinal);
+  }
+
+  public void reserveDictionaryIds() {
+    if (writableColumnVector.getColumnVector(ordinal).getDictionaryIds() != null) {
+      this.dictionaryVector =
+              new ColumnarVectorWrapper(writableColumnVector, filteredRows, ordinal);
+    }
+    writableColumnVector.reserveDictionaryIds(writableColumnVector.numRows(), ordinal);
   }
 
   @Override public CarbonColumnVector getDictionaryVector() {

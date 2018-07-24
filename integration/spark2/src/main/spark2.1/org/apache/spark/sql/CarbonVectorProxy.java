@@ -22,6 +22,7 @@ import org.apache.parquet.column.Dictionary;
 import org.apache.spark.memory.MemoryMode;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.execution.vectorized.ColumnarBatch;
+import org.apache.spark.sql.execution.vectorized.ColumnVector;
 import org.apache.spark.sql.types.CalendarIntervalType;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Decimal;
@@ -40,7 +41,6 @@ import org.apache.spark.unsafe.types.UTF8String;
 public class CarbonVectorProxy {
 
     private ColumnarBatch columnarBatch;
-    private Dictionary dictionary;
 
     /**
      * Adapter class which handles the columnar vector reading of the carbondata
@@ -58,6 +58,10 @@ public class CarbonVectorProxy {
 
     public CarbonVectorProxy(MemoryMode memMode, StructType outputSchema, int rowNum) {
         columnarBatch = ColumnarBatch.allocate(outputSchema, memMode, rowNum);
+    }
+
+    public ColumnVector getColumnVector(int ordinal) {
+        return columnarBatch.column(ordinal);
     }
 
     /**
