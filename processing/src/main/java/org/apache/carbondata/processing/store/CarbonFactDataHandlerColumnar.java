@@ -34,8 +34,10 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
+import org.apache.carbondata.core.datastore.compression.SnappyCompressor;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
 import org.apache.carbondata.core.memory.MemoryException;
@@ -84,6 +86,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private ExecutorService consumerExecutorService;
   private List<Future<Void>> consumerExecutorServiceTaskList;
   private List<CarbonRow> dataRows;
+  private int[] varcharColumnSizeInByte;
   /**
    * semaphore which will used for managing node holder objects
    */
@@ -191,7 +194,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.entryCount++;
     // if entry count reaches to leaf node size then we are ready to write
     // this to leaf node file and update the intermediate files
-    if (this.entryCount == this.pageSize) {
+    if (this.entryCount == this.pageSize || isVarcharColumnFull(row)) {
       try {
         semaphore.acquire();
 
@@ -211,6 +214,43 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         throw new CarbonDataWriterException(e.getMessage(), e);
       }
     }
+  }
+
+  /**
+   * Check if column page can be added more rows after adding this row to page.
+   *
+   * A varchar column page uses SafeVarLengthColumnPage/UnsafeVarLengthColumnPage to store data
+   * and encoded using HighCardDictDimensionIndexCodec which will call getByteArrayPage() from
+   * column page and flatten into byte[] for compression.
+   * Limited by the index of array, we can only put number of Integer.MAX_VALUE bytes in a page.
+   *
+   * Another limitation is from Compressor. Currently we use snappy as default compressor,
+   * and it will call MaxCompressedLength method to estimate the result size for preparing output.
+   * For safety, the estimate result is oversize: `32 + source_len + source_len/6`.
+   * So the maximum bytes to compress by snappy is (2GB-32)*6/7≈1.71GB.
+   *
+   * Size of a row does not exceed 2MB since UnsafeSortDataRows uses 2MB byte[] as rowBuffer.
+   * Such that we can stop adding more row here if any long string column reach this limit.
+   *
+   * If use unsafe column page, please ensure the memory configured is enough.
+   * @param row
+   * @return false if any varchar column page cannot add one more value(2MB)
+   */
+  private boolean isVarcharColumnFull(CarbonRow row) {
+    if (model.getVarcharDimIdxInNoDict().size() > 0) {
+      byte[][] nonDictArray = WriteStepRowUtil.getNoDictAndComplexDimension(row);
+      for (int i = 0; i < model.getVarcharDimIdxInNoDict().size(); i++) {
+        varcharColumnSizeInByte[i] += nonDictArray[model.getVarcharDimIdxInNoDict().get(i)].length;
+        if (SnappyCompressor.MAX_BYTE_TO_COMPRESS -
+                (varcharColumnSizeInByte[i] + dataRows.size() * 4) < (2 << 20)) {
+          LOGGER.info("Limited by varchar column, page size is " + dataRows.size());
+          // re-init for next page
+          varcharColumnSizeInByte = new int[model.getVarcharDimIdxInNoDict().size()];
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   /**
@@ -342,15 +382,22 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
             CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
     // support less than 32000 rows in one page, because we support super long string,
-    // if it is long enough, a clomun page with 32000 rows will exceed 2GB
+    // if it is long enough, a column page with 32000 rows will exceed 2GB
     if (version == ColumnarFormatVersion.V3) {
       this.pageSize =
           pageSize < CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT ?
               pageSize :
               CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
     }
-    LOGGER.info("Number of rows per column blocklet " + pageSize);
+    LOGGER.info("Number of rows per column page is configured as pageSize = " + pageSize);
     dataRows = new ArrayList<>(this.pageSize);
+
+    if (model.getVarcharDimIdxInNoDict().size() > 0) {
+      LOGGER.info("Number of rows per column blocklet is constrained by pageSize and actual size " +
+              "of long string column(s)");
+      varcharColumnSizeInByte = new int[model.getVarcharDimIdxInNoDict().size()];
+    }
+
     int dimSet =
         Integer.parseInt(CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
     // if at least one dimension is present then initialize column splitter otherwise null
