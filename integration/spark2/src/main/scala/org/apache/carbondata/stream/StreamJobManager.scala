@@ -108,7 +108,9 @@ object StreamJobManager {
     validateSourceTable(sourceTable)
 
     // kafka source always have fixed schema, need to get actual schema
-    val isKafka = Option(sourceTable.getFormat).exists(_ == "kafka")
+    val isKafka = Option(sourceTable.getFormat).exists { x =>
+      x.equalsIgnoreCase("kafka") || x.equalsIgnoreCase("dis")
+    }
     val dataFrame = if (isKafka) {
       streamDf.selectExpr("CAST(value as STRING)")
     } else {

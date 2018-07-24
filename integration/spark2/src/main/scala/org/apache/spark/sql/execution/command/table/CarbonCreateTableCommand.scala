@@ -145,7 +145,6 @@ case class CarbonCreateTableCommand(
                  |  tableName "$tableName",
                  |  dbName "$dbName",
                  |  tablePath "$tablePath",
-                 |  path "$tablePath",
                  |  isExternal "$isExternal",
                  |  isTransactional "$isTransactionalTable",
                  |  isVisible "$isVisible"

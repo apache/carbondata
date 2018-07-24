@@ -104,13 +104,15 @@ case class CarbonCreateStreamCommand(
     if (format == null) {
       throw new MalformedCarbonCommandException("Streaming from carbon file is not supported")
     }
-    val streamReader = if (format != "kafka") {
-      sparkSession.readStream
-        .schema(getSparkSchema(sourceTable))
-        .format(format)
-    } else {
+    val streamReader = if (format.equalsIgnoreCase("kafka") ||
+                           format.equalsIgnoreCase("dis")) {
       // kafka source fixed schema, it cannot be set to a custom schema
       sparkSession.readStream
+        .format(format)
+
+    } else {
+      sparkSession.readStream
+        .schema(getSparkSchema(sourceTable))
         .format(format)
     }
     val dataFrame = format match {
@@ -120,7 +122,13 @@ case class CarbonCreateStreamCommand(
             s"'path' tblproperty should be provided for '$format' format")
         }
         streamReader.load(tblProperty.get("path"))
-      case "kafka" | "socket" =>
+      case "kafka" | "socket" | "dis" =>
+        // get source information from SparkSession
+        sparkSession.conf.getAll.foreach { entry =>
+          if (entry._1.toLowerCase.startsWith("carbon.source.")) {
+            streamReader.option(entry._1.substring("carbon.source.".length), entry._2)
+          }
+        }
         streamReader.options(tblProperty).load()
       case other =>
         throw new MalformedCarbonCommandException(s"Streaming from $format is not supported")
