@@ -814,6 +814,53 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists datamap_comp_maxsumminavg")
   }
 
+  test("jira carbondata-2540") {
+
+    sql("drop datamap if exists mv_unional")
+    intercept[UnsupportedOperationException] {
+      sql(
+        "create datamap mv_unional using 'mv' as Select Z.deptname From (Select deptname,empname From fact_table1 Union All Select deptname,empname from fact_table2) Z")
+      sql("rebuild datamap mv_unional")
+    }
+    sql("drop datamap if exists mv_unional")
+  }
+
+  test("jira carbondata-2533") {
+
+    sql("drop datamap if exists MV_exp")
+    intercept[UnsupportedOperationException] {
+      sql(
+        "create datamap MV_exp using 'mv' as select sum(case when deptno=11 and (utilization=92) then salary else 0 end) as t from fact_table1 group by empname")
+
+      sql("rebuild datamap MV_exp")
+      val frame = sql(
+        "select sum(case when deptno=11 and (utilization=92) then salary else 0 end) as t from fact_table1 group by empname")
+      val analyzed = frame.queryExecution.analyzed
+      assert(verifyMVDataMap(analyzed, "MV_exp"))
+    }
+    sql("drop datamap if exists MV_exp")
+  }
+
+  test("jira carbondata-2560") {
+
+    sql("drop datamap if exists MV_exp1")
+    sql("drop datamap if exists MV_exp2")
+    sql("create datamap MV_exp1 using 'mv' as select empname, sum(utilization) from fact_table1 group by empname")
+    intercept[UnsupportedOperationException] {
+      sql(
+        "create datamap MV_exp2 using 'mv' as select empname, sum(utilization) from fact_table1 group by empname")
+
+    }
+    sql("show datamap").show()
+    sql("rebuild datamap MV_exp1")
+    val frame = sql(
+      "select empname, sum(utilization) from fact_table1 group by empname")
+    val analyzed = frame.queryExecution.analyzed
+    assert(verifyMVDataMap(analyzed, "MV_exp1"))
+    sql("drop datamap if exists MV_exp1")
+    sql("drop datamap if exists MV_exp2")
+  }
+
   def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
     val tables = logicalPlan collect {
       case l: LogicalRelation => l.catalogTable.get
