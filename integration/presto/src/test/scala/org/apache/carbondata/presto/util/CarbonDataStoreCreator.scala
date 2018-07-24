@@ -39,7 +39,7 @@ import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumn
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.fileoperations.{AtomicFileOperations, AtomicFileOperationsImpl, FileWriteOperation}
+import org.apache.carbondata.core.fileoperations.{AtomicFileOperationFactory, AtomicFileOperations, FileWriteOperation}
 import org.apache.carbondata.core.metadata.converter.{SchemaConverter, ThriftWrapperSchemaConverterImpl}
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.encoder.Encoding
@@ -525,9 +525,8 @@ object CarbonDataStoreCreator {
       val dataLoadLocation: String = schema.getCarbonTable.getMetadataPath + File.separator +
                                      CarbonTablePath.TABLE_STATUS_FILE
       val gsonObjectToWrite: Gson = new Gson()
-      val writeOperation: AtomicFileOperations = new AtomicFileOperationsImpl(
-        dataLoadLocation,
-        FileFactory.getFileType(dataLoadLocation))
+      val writeOperation: AtomicFileOperations = AtomicFileOperationFactory
+        .getAtomicFileOperations(dataLoadLocation)
       val dataOutputStream =
         writeOperation.openForWrite(FileWriteOperation.OVERWRITE)
       val brWriter = new BufferedWriter(
