@@ -20,6 +20,8 @@ package org.apache.carbondata.horizon.rest.controller;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.horizon.rest.model.validate.RequestValidator;
 import org.apache.carbondata.horizon.rest.model.view.SqlRequest;
 import org.apache.carbondata.horizon.rest.model.view.SqlResponse;
@@ -40,6 +42,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class SqlHorizonController {
 
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(SqlHorizonController.class.getName());
+
   @RequestMapping(value = "/table/sql", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<SqlResponse> sql(@RequestBody SqlRequest request) throws StoreException {
     RequestValidator.validateSql(request);
@@ -50,8 +55,10 @@ public class SqlHorizonController {
               request.getSqlStatement());
       rows = sqlDataFrame.collectAsList();
     } catch (AnalysisException e) {
+      LOGGER.error(e);
       throw new StoreException(e.getSimpleMessage());
     } catch (Exception e) {
+      LOGGER.error(e);
       throw new StoreException(e.getMessage());
     }
     final String[] fieldNames = sqlDataFrame.schema().fieldNames();

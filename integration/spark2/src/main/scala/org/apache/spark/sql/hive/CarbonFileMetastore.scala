@@ -252,6 +252,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
       wrapperTableInfo.setTransactionalTable(false)
       Some(wrapperTableInfo)
     } else {
+      LOGGER.error(s"tablePath: $tablePath")
       val tableMetadataFile = CarbonTablePath.getSchemaFilePath(tablePath)
       val fileType = FileFactory.getFileType(tableMetadataFile)
       if (FileFactory.isFileExist(tableMetadataFile, fileType)) {

@@ -19,16 +19,14 @@ package org.apache.carbondata.horizon.rest.controller;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.Iterator;
-import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.store.api.conf.StoreConf;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.sql.CarbonSessionBuilder;
 import org.apache.spark.sql.SparkSession;
 
@@ -38,50 +36,19 @@ public class SqlHorizon extends Horizon {
       LogServiceFactory.getLogService(SqlHorizon.class.getCanonicalName());
 
   private static SparkSession session;
-  private static Configuration configuration;
   private static String storeLocation;
 
-  private static void createSession(String[] args) throws IOException {
-    CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.STORE_LOCATION, storeLocation)
-        .addProperty(CarbonCommonConstants.CARBON_TASK_LOCALITY, "false")
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
-        .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
-        .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
-        .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "");
-
-    SparkSession.Builder baseBuilder = SparkSession.builder()
-        .appName("Horizon-SQL")
-        .config("spark.ui.port", 9876)
-        .config("spark.sql.crossJoin.enabled", "true");
-
-    Iterator<Map.Entry<String, String>> iterator = configuration.iterator();
-    while (iterator.hasNext()) {
-      Map.Entry<String, String> entry = iterator.next();
-      baseBuilder.config(entry.getKey(), entry.getValue());
-    }
-
-    session = new CarbonSessionBuilder(baseBuilder).build(storeLocation, null, true);
-  }
-
-  static SparkSession getSession() {
-    return session;
-  }
-
   public static void main(String[] args) {
-    if (args.length < 5) {
+    if (args.length < 11) {
       LOGGER.error("Usage: SqlHorizon <store location> <fs.s3a.endpoint> <fs.s3a.access.key>"
-          + " <fs.s3a.secret.key> <fs.s3a.impl>");
+          + " <fs.s3a.secret.key> <fs.s3a.impl> <dis.endpoint> <dis.region> <dis.projectid>"
+          + " <hive metastore> <mrs hdfs url> <hive warehouse>");
       return;
     }
 
     try {
       storeLocation = args[0];
-      configuration = new Configuration();
-      configuration.set("fs.s3a.endpoint", args[1]);
-      configuration.set("fs.s3a.access.key", args[2]);
-      configuration.set("fs.s3a.secret.key", args[3]);
-      configuration.set("fs.s3a.impl", args[4]);
+      FileFactory.getConfiguration().set("fs.defaultFS", args[9]);
 
       String ip = InetAddress.getLocalHost().getHostAddress();
       LOGGER.audit("Driver IP: " + ip);
@@ -97,10 +64,43 @@ public class SqlHorizon extends Horizon {
     try {
       createSession(args);
       Thread.sleep(Long.MAX_VALUE);
-    } catch (IOException | InterruptedException e) {
+    } catch (InterruptedException e) {
       LOGGER.error(e);
       throw new RuntimeException(e);
     }
+  }
+
+  private static void createSession(String[] args) {
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.STORE_LOCATION, storeLocation)
+        .addProperty(CarbonCommonConstants.CARBON_TASK_LOCALITY, "false")
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
+        .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+        .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
+        .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "");
+
+    SparkSession.Builder baseBuilder = SparkSession.builder()
+        .appName("Horizon-SQL")
+        .config("spark.ui.port", 9876)
+        .config("spark.sql.crossJoin.enabled", "true")
+        .config("carbon.source.endpoint", args[5])
+        .config("carbon.source.region", args[6])
+        .config("carbon.source.ak", args[2])
+        .config("carbon.source.sk", args[3])
+        .config("carbon.source.projectid", args[7])
+        .config("spark.sql.warehouse.dir", args[10])
+        .config("hive.metastore.uris", args[8])
+        .config("spark.hadoop.fs.s3a.endpoint", args[1])
+        .config("spark.hadoop.fs.s3a.access.key", args[2])
+        .config("spark.hadoop.fs.s3a.secret.key", args[3])
+        .config("spark.hadoop.fs.s3a.impl", args[4])
+        .config("spark.hadoop.fs.defaultFS", args[9]);
+
+    session = new CarbonSessionBuilder(baseBuilder).build(storeLocation, null, false);
+  }
+
+  static SparkSession getSession() {
+    return session;
   }
 
 }
