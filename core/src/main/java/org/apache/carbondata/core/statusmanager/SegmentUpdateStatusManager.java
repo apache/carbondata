@@ -826,31 +826,4 @@ public class SegmentUpdateStatusManager {
 
     return files.toArray(new CarbonFile[files.size()]);
   }
-
-  /**
-   *
-   * @param allSegmentFiles
-   * @return
-   */
-  public CarbonFile[] getAllBlockRelatedFiles(CarbonFile[] allSegmentFiles,
-      String actualBlockName) {
-    List<CarbonFile> files = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-
-    for (CarbonFile eachFile : allSegmentFiles) {
-
-      // for carbon data.
-      if (eachFile.getName().equalsIgnoreCase(actualBlockName)) {
-        files.add(eachFile);
-      }
-
-      // get carbon index files of the block.
-      String indexFileName = CarbonTablePath.getCarbonIndexFileName(actualBlockName);
-      if (eachFile.getName().equalsIgnoreCase(indexFileName)) {
-        files.add(eachFile);
-      }
-
-    }
-
-    return files.toArray(new CarbonFile[files.size()]);
-  }
 }
