@@ -32,6 +32,7 @@ import org.apache.avro.file.DataFileWriter
 import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DecoderFactory, Encoder}
 import org.apache.commons.lang.CharEncoding
+import org.apache.commons.lang3.RandomStringUtils
 import org.junit.Assert
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -729,6 +730,30 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
 
     checkAnswer(sql(s"""select count(*) from sdkTable"""),
       Seq(Row(3)))
+  }
+
+  test("Test sdk with longstring") {
+    // here we specify the longstring column as varchar
+    val schema = new StringBuilder()
+      .append("[ \n")
+      .append("   {\"name\":\"string\"},\n")
+      .append("   {\"address\":\"varchar\"},\n")
+      .append("   {\"age\":\"int\"}\n")
+      .append("]")
+      .toString()
+    val builder = CarbonWriter.builder()
+    val writer = builder.outputPath(writerPath)
+      .buildWriterForCSVInput(Schema.parseJson(schema))
+
+    for (i <- 0 until 5) {
+      writer.write(Array[String](s"name_$i", RandomStringUtils.randomAlphabetic(33000), i.toString))
+    }
+    writer.close()
+
+    assert(FileFactory.getCarbonFile(writerPath).exists)
+    sql("DROP TABLE IF EXISTS sdkTable")
+    sql(s"CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION '$writerPath'")
+    checkAnswer(sql("select count(*) from sdkTable"), Seq(Row(5)))
   }
 }
 
