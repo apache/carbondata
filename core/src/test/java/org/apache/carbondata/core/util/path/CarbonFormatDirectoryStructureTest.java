@@ -50,4 +50,12 @@ public class CarbonFormatDirectoryStructureTest {
     assertTrue(CarbonTablePath.DataFileUtil.getSegmentNo("part-3-4-0-999.carbondata") == null);
     assertTrue(CarbonTablePath.DataFileUtil.getSegmentNo("part-3-4-0-0-999.carbondata").equals("0"));
   }
+
+  @Test public void testGetShardName() throws IOException {
+    assertTrue(CarbonTablePath.getShardName("part-1-2_batchno3-4-5-999.carbondata").equals("2_batchno3-4-5-999"));
+
+    // check compatible for data generated before carbon version 1.4 which does not have segment id in filename
+    assertTrue(CarbonTablePath.getShardName("part-1-2_batchno3-4-999.carbondata").equals("2_batchno3-4-999"));
+
+  }
 }
