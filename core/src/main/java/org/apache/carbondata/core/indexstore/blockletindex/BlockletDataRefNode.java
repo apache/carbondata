@@ -61,18 +61,26 @@ public class BlockletDataRefNode implements DataRefNode {
       int numberOfPagesCompletelyFilled = detailInfo.getRowCount();
       // no. of rows to a page is 120000 in V2 and 32000 in V3, same is handled to get the number
       // of pages filled
-      if (blockInfo.getVersion() == ColumnarFormatVersion.V2) {
+      int lastPageRowCount;
+      int fullyFilledRowsCount;
+      if (blockInfo.getVersion() == ColumnarFormatVersion.V2
+          || blockInfo.getVersion() == ColumnarFormatVersion.V1) {
         numberOfPagesCompletelyFilled /=
+            CarbonVersionConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT_V2;
+        lastPageRowCount = detailInfo.getRowCount()
+            % CarbonVersionConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT_V2;
+        fullyFilledRowsCount =
             CarbonVersionConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT_V2;
       } else {
         numberOfPagesCompletelyFilled /=
             CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
-      }
-      int lastPageRowCount = detailInfo.getRowCount()
-          % CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
-      for (int i = 0; i < numberOfPagesCompletelyFilled; i++) {
-        pageRowCount[i] =
+        lastPageRowCount = detailInfo.getRowCount()
+            % CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+        fullyFilledRowsCount =
             CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+      }
+      for (int i = 0; i < numberOfPagesCompletelyFilled; i++) {
+        pageRowCount[i] = fullyFilledRowsCount;
       }
       if (lastPageRowCount > 0) {
         pageRowCount[pageRowCount.length - 1] = lastPageRowCount;
