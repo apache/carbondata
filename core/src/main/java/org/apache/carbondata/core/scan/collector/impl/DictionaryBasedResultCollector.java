@@ -141,20 +141,48 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
       }
       fillMeasureData(scannedResult, row);
       if (scannedResult.complexParentIndexToQueryMap.toString().contains("StructQueryType")) {
-        // If a : <b,c> and d : <e,f> are two struct and if a.b,a.c,d.e is given in the
-        // projection list,then object array will contain a,null,d as result, because for a.b,
-        // a will be filled and for a.c null will be placed.
-        // Instead place null in the end of object array and send a,d,null as result.
-        int count = 0;
-        for (int j = 0; j < row.length; j++) {
-          if (row[j] != null) row[count++] = row[j];
+        boolean[] isComplexChildColumn = new boolean[queryDimensions.length + queryMeasures.length];
+        for (ProjectionDimension dimension : queryDimensions) {
+          if (null != dimension.getDimension().getComplexParentDimension()) {
+            isComplexChildColumn[dimension.getOrdinal()] = true;
+          }
         }
-        while (count < row.length) row[count++] = null;
+        shiftNullForStruct(row, isComplexChildColumn);
       }
       listBasedResult.add(row);
       rowCounter++;
     }
     return listBasedResult;
+  }
+
+  /**
+   * shift the complex column null to the end
+   *
+   * @param row
+   * @param isComplexChildColumn
+   */
+  private void shiftNullForStruct(Object[] row, boolean[] isComplexChildColumn) {
+    int count = 0;
+    int dataTypeCount = 0;
+    // If a : <b,c> and d : <e,f> are two struct and if a.b,a.c,d.e is given in the
+    // projection list,then object array will contain a,null,d as result, because for a.b,
+    // a will be filled and for a.c null will be placed.
+    // Instead place null in the end of object array and send a,d,null as result.
+    for (int j = 0; j < row.length; j++) {
+      if (null == row[j] && !isComplexChildColumn[j]) {
+        // if it is a primitive column, don't shift the null to the end.
+        row[count++] = null;
+        isComplexChildColumn[dataTypeCount++] = false;
+      } else if (null != row[j]) {
+        row[count++] = row[j];
+        isComplexChildColumn[dataTypeCount++] = isComplexChildColumn[j];
+      }
+    }
+    // fill the skipped content
+    while (count < row.length) row[count++] = null;
+    while (dataTypeCount < isComplexChildColumn.length) {
+      isComplexChildColumn[dataTypeCount++] = true;
+    }
   }
 
   private void fillComplexColumnDataBufferForThisRow() {
