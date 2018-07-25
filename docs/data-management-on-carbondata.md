@@ -143,7 +143,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   **NOTE:** CarbonData also supports "using carbondata". Find example code at [SparkSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/SparkSessionExample.scala) in the CarbonData repo.
    
    - **Caching Min/Max Value for Required Columns**
-     By default, CarbonData cached min and max values of all the columns in schema.  As the load increases, the memory required to hold the min and max values increases considerably. This feature enables you to configure min and max values only for the required columns, resulting in optimized memory usage. 
+     By default, CarbonData caches min and max values of all the columns in schema.  As the load increases, the memory required to hold the min and max values increases considerably. This feature enables you to configure min and max values only for the required columns, resulting in optimized memory usage. 
 	 
 	 Following are the valid values for COLUMN_META_CACHE:
 	 * If you want no column min/max values to be cached in the driver.
