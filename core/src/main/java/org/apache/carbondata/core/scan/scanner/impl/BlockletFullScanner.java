@@ -19,7 +19,6 @@ package org.apache.carbondata.core.scan.scanner.impl;
 import java.io.IOException;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
@@ -123,13 +122,7 @@ public class BlockletFullScanner implements BlockletScanner {
     if (numberOfRows == null) {
       numberOfRows = new int[rawBlockletColumnChunks.getDataBlock().numberOfPages()];
       for (int i = 0; i < numberOfRows.length; i++) {
-        numberOfRows[i] =
-            CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
-      }
-      int lastPageSize = rawBlockletColumnChunks.getDataBlock().numRows()
-          % CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
-      if (lastPageSize > 0) {
-        numberOfRows[numberOfRows.length - 1] = lastPageSize;
+        numberOfRows[i] = rawBlockletColumnChunks.getDataBlock().getPageRowCount(i);
       }
     }
     scannedResult.setPageFilteredRowCount(numberOfRows);
