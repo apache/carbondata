@@ -26,7 +26,16 @@ Showing all DataMaps on this table
   SHOW DATAMAP
   ON TABLE main_table
   ```
-It will show all DataMaps created on main table.
+
+Disable Datamap
+> The datamap by default is enabled. To support tuning on query, we can disable a specific datamap during query to observe whether we can gain performance enhancement from it. This will only take effect current session.
+
+  ```
+  // disable the datamap
+  SET carbon.datamap.visible.dbName.tableName.dataMapName = false
+  // enable the datamap
+  SET carbon.datamap.visible.dbName.tableName.dataMapName = true
+  ```
 
 
 ## BloomFilter DataMap Introduction
