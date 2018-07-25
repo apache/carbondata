@@ -141,20 +141,52 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
       }
       fillMeasureData(scannedResult, row);
       if (scannedResult.complexParentIndexToQueryMap.toString().contains("StructQueryType")) {
+        boolean[] isComplexColumn = new boolean[queryDimensions.length + queryMeasures.length];
+        for (ProjectionDimension dimension : queryDimensions) {
+          if (null != dimension.getDimension().getComplexParentDimension()) {
+            isComplexColumn[dimension.getOrdinal()] = true;
+          }
+        }
+
         // If a : <b,c> and d : <e,f> are two struct and if a.b,a.c,d.e is given in the
         // projection list,then object array will contain a,null,d as result, because for a.b,
         // a will be filled and for a.c null will be placed.
         // Instead place null in the end of object array and send a,d,null as result.
-        int count = 0;
         for (int j = 0; j < row.length; j++) {
-          if (row[j] != null) row[count++] = row[j];
+          if (row[j] == null && isComplexColumn[j] == true) {
+            shiftNullForStruct(row, isComplexColumn, j);
+            break;
+          }
         }
-        while (count < row.length) row[count++] = null;
       }
       listBasedResult.add(row);
       rowCounter++;
     }
     return listBasedResult;
+  }
+
+  /**
+   * shift the complex column null to the end
+   *
+   * @param row
+   * @param isComplexColumn
+   * @param start
+   */
+  private void shiftNullForStruct(Object[] row, boolean[] isComplexColumn, int start) {
+    int count = start;
+    int dataTypeCount = start;
+    for (int j = start + 1; j < row.length; j++) {
+      // if it is a primitive column, dont shift the null to the end.
+      if (null == row[j] && false == isComplexColumn[j]) {
+        row[count++] = null;
+        isComplexColumn[dataTypeCount++] = false;
+      } else if (null != row[j]) {
+        row[count++] = row[j];
+        isComplexColumn[dataTypeCount++] = isComplexColumn[j];
+      }
+    }
+    while (count < row.length) row[count++] = null;
+    while (dataTypeCount < isComplexColumn.length) isComplexColumn[dataTypeCount++] = true;
   }
 
   private void fillComplexColumnDataBufferForThisRow() {
