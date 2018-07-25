@@ -160,7 +160,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // and measure column start index
     queryProperties.filterMeasures = new HashSet<>();
     queryProperties.complexFilterDimension = new HashSet<>();
-    QueryUtil.getAllFilterDimensions(queryModel.getFilterExpressionResolverTree(),
+    QueryUtil.getAllFilterDimensionsAndMeasures(queryModel.getFilterExpressionResolverTree(),
         queryProperties.complexFilterDimension, queryProperties.filterMeasures);
 
     CarbonTable carbonTable = queryModel.getTable();
@@ -204,7 +204,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       // 1. old stores (1.1 or any prior version to 1.1) where blocklet information is not
       // available so read the blocklet information from block file
       // 2. CACHE_LEVEL is set to block
-      if (blockletDetailInfo.getBlockletInfo() == null) {
+      // 3. CACHE_LEVEL is BLOCKLET but filter column min/max is not cached in driver
+      if (blockletDetailInfo.getBlockletInfo() == null || blockletDetailInfo
+          .isUseMinMaxForPruning()) {
         readAndFillBlockletInfo(filePathToFileFooterMapping, tableBlockInfos, blockInfo,
             blockletDetailInfo);
       } else {

@@ -17,6 +17,8 @@
 package org.apache.carbondata.spark.testsuite.allqueries
 
 
+import java.util
+
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row}
@@ -25,11 +27,17 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.datamap.dev.DataMap
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment, TableDataMap}
+import org.apache.carbondata.core.datamap.{DataMapChooser, DataMapStoreManager, Segment, TableDataMap}
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
 import org.apache.carbondata.core.indexstore.blockletindex.{BlockDataMap, BlockletDataMap}
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema
 import org.apache.carbondata.core.indexstore.Blocklet
+import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.scan.expression.conditional.NotEqualsExpression
+import org.apache.carbondata.core.scan.expression.logical.AndExpression
+import org.apache.carbondata.core.scan.expression.{ColumnExpression, LiteralExpression}
+import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf
 
 /**
  * test class for validating COLUMN_META_CACHE and CACHE_LEVEL
@@ -47,6 +55,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
   private def dropSchema: Unit = {
     sql("drop table if exists metaCache")
     sql("drop table if exists column_min_max_cache_test")
+    sql("drop table if exists minMaxSerialize")
   }
 
   private def createAndLoadTable(cacheLevel: String): Unit = {
@@ -58,11 +67,13 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
 
   private def getDataMaps(dbName: String,
       tableName: String,
-      segmentId: String): List[DataMap[_ <: Blocklet]] = {
+      segmentId: String,
+      isSchemaModified: Boolean = false): List[DataMap[_ <: Blocklet]] = {
     val relation: CarbonRelation = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
       .lookupRelation(Some(dbName), tableName)(sqlContext.sparkSession)
       .asInstanceOf[CarbonRelation]
     val carbonTable = relation.carbonTable
+    assert(carbonTable.getTableInfo.isSchemaModified == isSchemaModified)
     val segment: Segment = Segment.getSegment(segmentId, carbonTable.getTablePath)
     val defaultDataMap: TableDataMap = DataMapStoreManager.getInstance()
       .getDefaultDataMap(carbonTable)
@@ -266,6 +277,38 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     sql("insert into alter_add_column_min_max select '1AA1','8RAM size','4','Chinese','guangzhou',2738,1,'2014-07-01 12:07:28','2014-07-01 12:07:28',25,29,'Rahul'")
     checkAnswer(sql("select count(*) from alter_add_column_min_max where AMSize='8RAM size'"), Row(2))
     sql("drop table if exists alter_add_column_min_max")
+  }
+
+  test("verify min/max getting serialized to executor when cache_level = blocklet") {
+    sql("drop table if exists minMaxSerialize")
+    sql("create table minMaxSerialize(name string, c1 string, c2 string) stored by 'carbondata' TBLPROPERTIES('CACHE_LEVEL'='BLOCKLET', 'COLUMN_META_CACHE'='c1,c2')")
+    sql("insert into minMaxSerialize select 'a','aa','aaa'")
+    checkAnswer(sql("select * from minMaxSerialize where name='a'"), Row("a", "aa", "aaa"))
+    checkAnswer(sql("select * from minMaxSerialize where name='b'"), Seq.empty)
+    val relation: CarbonRelation = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
+      .lookupRelation(Some("default"), "minMaxSerialize")(sqlContext.sparkSession)
+      .asInstanceOf[CarbonRelation]
+    val carbonTable = relation.carbonTable
+    // form a filter expression and generate filter resolver tree
+    val columnExpression = new ColumnExpression("name", DataTypes.STRING)
+    columnExpression.setDimension(true)
+    val dimension: CarbonDimension = carbonTable.getDimensionByName(carbonTable.getTableName, "name")
+    columnExpression.setDimension(dimension)
+    columnExpression.setCarbonColumn(dimension)
+    val literalValueExpression = new LiteralExpression("a", DataTypes.STRING)
+    val literalNullExpression = new LiteralExpression(null, DataTypes.STRING)
+    val notEqualsExpression = new NotEqualsExpression(columnExpression, literalNullExpression)
+    val equalsExpression = new NotEqualsExpression(columnExpression, literalValueExpression)
+    val andExpression = new AndExpression(notEqualsExpression, equalsExpression)
+    val resolveFilter: FilterResolverIntf = carbonTable.resolveFilter(andExpression)
+    val exprWrapper = DataMapChooser.getDefaultDataMap(carbonTable, resolveFilter)
+    val segment = new Segment("0")
+    // get the pruned blocklets
+    val prunedBlocklets = exprWrapper.prune(List(segment).asJava, null)
+    prunedBlocklets.asScala.foreach { blocklet =>
+      // all the blocklets should have useMinMaxForPrune flag set to true
+      assert(blocklet.getDetailInfo.isUseMinMaxForPruning)
+    }
   }
 
 }

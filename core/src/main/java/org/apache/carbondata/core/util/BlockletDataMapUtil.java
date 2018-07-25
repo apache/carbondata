@@ -51,8 +51,11 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.scan.executor.util.QueryUtil;
+import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.logging.Log;
@@ -407,5 +410,68 @@ public class BlockletDataMapUtil {
     } else {
       return column.getOrdinal();
     }
+  }
+
+  /**
+   * Method to check whether to serialize min/max values to executor. Returns true if
+   * filter column min/max is not cached in driver
+   *
+   * @param filterResolverTree
+   * @param minMaxCacheColumns
+   * @return
+   */
+  public static boolean useMinMaxForBlockletPruning(FilterResolverIntf filterResolverTree,
+      List<CarbonColumn> minMaxCacheColumns) {
+    boolean serializeMinMax = false;
+    if (null != minMaxCacheColumns) {
+      Set<CarbonDimension> filterDimensions = new HashSet<>();
+      Set<CarbonMeasure> filterMeasures = new HashSet<>();
+      QueryUtil
+          .getAllFilterDimensionsAndMeasures(filterResolverTree, filterDimensions, filterMeasures);
+      // set flag to true if columns cached size is lesser than filter columns
+      if (minMaxCacheColumns.size() < (filterDimensions.size() + filterMeasures.size())) {
+        serializeMinMax = true;
+      } else {
+        // check if all the filter dimensions are cached
+        for (CarbonDimension filterDimension : filterDimensions) {
+          // complex dimensions are not allwed to be specified in COLUMN_META_CACHE property, so
+          // cannot validate for complex columns
+          if (filterDimension.isComplex()) {
+            continue;
+          }
+          if (!filterColumnExistsInMinMaxColumnList(minMaxCacheColumns, filterDimension)) {
+            serializeMinMax = true;
+            break;
+          }
+        }
+        // check if all the filter measures are cached only if all filter dimensions are cached
+        if (!serializeMinMax) {
+          for (CarbonMeasure filterMeasure : filterMeasures) {
+            if (!filterColumnExistsInMinMaxColumnList(minMaxCacheColumns, filterMeasure)) {
+              serializeMinMax = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+    return serializeMinMax;
+  }
+
+  /**
+   * Method to check for filter column in min/max cache columns list
+   *
+   * @param minMaxCacheColumns
+   * @param filterColumn
+   * @return
+   */
+  private static boolean filterColumnExistsInMinMaxColumnList(List<CarbonColumn> minMaxCacheColumns,
+      CarbonColumn filterColumn) {
+    for (CarbonColumn column : minMaxCacheColumns) {
+      if (filterColumn.getColumnId().equals(column.getColumnId())) {
+        return true;
+      }
+    }
+    return false;
   }
 }
