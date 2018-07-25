@@ -39,11 +39,15 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
   protected PreAggregateTableHelper helper;
   protected CarbonDropTableCommand dropTableCommand;
   protected SparkSession sparkSession;
+  private String dbName;
+  private String tableName;
 
   PreAggregateDataMapProvider(CarbonTable table, DataMapSchema schema,
       SparkSession sparkSession) {
     super(table, schema);
     this.sparkSession = sparkSession;
+    this.dbName = table.getDatabaseName();
+    this.tableName = table.getTableName() + '_' + schema.getDataMapName();
   }
 
   @Override
@@ -74,11 +78,10 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
 
   @Override
   public void cleanMeta() {
-    DataMapSchema dataMapSchema = getDataMapSchema();
     dropTableCommand = new CarbonDropTableCommand(
         true,
-        new Some<>(dataMapSchema.getRelationIdentifier().getDatabaseName()),
-        dataMapSchema.getRelationIdentifier().getTableName(),
+        new Some<>(dbName),
+        tableName,
         true);
     dropTableCommand.processMetadata(sparkSession);
   }
