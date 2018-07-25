@@ -32,4 +32,38 @@ public class MapType extends DataType {
   public boolean isComplexType() {
     return true;
   }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    MapType other = (MapType) obj;
+    if (!this.getName().equalsIgnoreCase(other.getName())) {
+      return false;
+    }
+    if (!this.keyType.equals(other.keyType)) {
+      return false;
+    }
+    if (!this.valueType.equals(other.valueType)) {
+      return false;
+    }
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + getName().hashCode();
+    result = prime * result + keyType.hashCode();
+    result = prime * result + valueType.hashCode();
+    return result;
+  }
 }

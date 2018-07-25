@@ -54,20 +54,14 @@ public class ZookeeperInit {
 
   public static ZookeeperInit getInstance(String zooKeeperUrl) {
 
-    if (null == zooKeeperInit) {
-      synchronized (ZookeeperInit.class) {
-        if (null == zooKeeperInit) {
-          LOGGER.info("Initiating Zookeeper client.");
-          zooKeeperInit = new ZookeeperInit(zooKeeperUrl);
-        }
+    synchronized (ZookeeperInit.class) {
+      if (null == zooKeeperInit) {
+        LOGGER.info("Initiating Zookeeper client.");
+        zooKeeperInit = new ZookeeperInit(zooKeeperUrl);
       }
     }
     return zooKeeperInit;
 
-  }
-
-  public static ZookeeperInit getInstance() {
-    return zooKeeperInit;
   }
 
   public ZooKeeper getZookeeper() {

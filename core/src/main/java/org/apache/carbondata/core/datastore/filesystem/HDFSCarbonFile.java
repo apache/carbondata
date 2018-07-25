@@ -27,9 +27,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 
 public class HDFSCarbonFile extends AbstractDFSCarbonFile {
@@ -76,17 +74,6 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
   }
 
   @Override
-  protected List<CarbonFile> getFiles(RemoteIterator<LocatedFileStatus> listStatus)
-      throws IOException {
-    List<CarbonFile> carbonFiles = new ArrayList<>();
-    while (listStatus.hasNext()) {
-      Path filePath = listStatus.next().getPath();
-      carbonFiles.add(new HDFSCarbonFile(filePath));
-    }
-    return carbonFiles;
-  }
-
-  @Override
   public CarbonFile[] listFiles(final CarbonFileFilter fileFilter) {
     CarbonFile[] files = listFiles();
     if (files != null && files.length >= 1) {
@@ -120,9 +107,6 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
         ((DistributedFileSystem) fs).rename(fileStatus.getPath(), new Path(changetoName),
             org.apache.hadoop.fs.Options.Rename.OVERWRITE);
         return true;
-      } else if (fileStatus.getPath().toString().startsWith("s3n")) {
-        fs.delete(new Path(changetoName), true);
-        return fs.rename(fileStatus.getPath(), new Path(changetoName));
       } else {
         return fs.rename(fileStatus.getPath(), new Path(changetoName));
       }

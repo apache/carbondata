@@ -52,18 +52,27 @@ public class CarbonColumn implements Serializable {
    */
   protected ColumnIdentifier columnIdentifier;
 
+  /**
+   * Date Format
+   */
+  private String dateFormat;
+
+  /**
+   * TimeStamp Format.
+   */
+  private String timestampFormat;
+
+  /**
+   * useActualData
+   */
+  private boolean useActualData;
+
   public CarbonColumn(ColumnSchema columnSchema, int ordinal, int schemaOrdinal) {
     this.columnSchema = columnSchema;
     this.ordinal = ordinal;
     this.schemaOrdinal = schemaOrdinal;
     this.columnIdentifier =
      new ColumnIdentifier(getColumnId(), getColumnProperties(), getDataType());
-  }
-  /**
-   * @return columnar or row based
-   */
-  public boolean isColumnar() {
-    return columnSchema.isColumnar();
   }
 
   /**
@@ -99,13 +108,6 @@ public class CarbonColumn implements Serializable {
    */
   public List<Encoding> getEncoder() {
     return columnSchema.getEncodingList();
-  }
-
-  /**
-   * @return row group id if it is row based
-   */
-  public int columnGroupId() {
-    return columnSchema.getColumnGroupId();
   }
 
   /**
@@ -179,5 +181,29 @@ public class CarbonColumn implements Serializable {
 
   public int getSchemaOrdinal() {
     return this.schemaOrdinal;
+  }
+
+  public String getDateFormat() {
+    return dateFormat;
+  }
+
+  public void setDateFormat(String dateFormat) {
+    this.dateFormat = dateFormat;
+  }
+
+  public String getTimestampFormat() {
+    return timestampFormat;
+  }
+
+  public void setTimestampFormat(String timestampFormat) {
+    this.timestampFormat = timestampFormat;
+  }
+
+  public boolean getUseActualData() {
+    return useActualData;
+  }
+
+  public void setUseActualData(boolean useActualData) {
+    this.useActualData = useActualData;
   }
 }

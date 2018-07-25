@@ -84,12 +84,6 @@ public class ColumnSchema implements Serializable, Writable {
   private boolean isDimensionColumn;
 
   /**
-   * The group ID for column used for row format columns,
-   * where in columns in each group are chunked together.
-   */
-  private int columnGroupId = -1;
-
-  /**
    * Used when this column contains decimal data.
    */
   private int scale;
@@ -138,6 +132,25 @@ public class ColumnSchema implements Serializable, Writable {
   private String timeSeriesFunction = "";
 
   /**
+   * set whether the column is local dictionary column or not.
+   */
+  private boolean isLocalDictColumn = false;
+
+  /**
+   * @return isLocalDictColumn
+   */
+  public boolean isLocalDictColumn() {
+    return isLocalDictColumn;
+  }
+
+  /**
+   * @param localDictColumn whether column is local dictionary column
+   */
+  public void setLocalDictColumn(boolean localDictColumn) {
+    isLocalDictColumn = localDictColumn;
+  }
+
+  /**
    * @return the columnName
    */
   public String getColumnName() {
@@ -163,20 +176,6 @@ public class ColumnSchema implements Serializable, Writable {
    */
   public void setColumnUniqueId(String columnUniqueId) {
     this.columnUniqueId = columnUniqueId;
-  }
-
-  /**
-   * @return the isColumnar
-   */
-  public boolean isColumnar() {
-    return isColumnar;
-  }
-
-  /**
-   * @param isColumnar the isColumnar to set
-   */
-  public void setColumnar(boolean isColumnar) {
-    this.isColumnar = isColumnar;
   }
 
   /**
@@ -213,19 +212,6 @@ public class ColumnSchema implements Serializable, Writable {
         this.getEncodingList().remove(Encoding.INVERTED_INDEX);
       }
     }
-  }
-
-  /**
-   * @return the columnGroup
-   */
-  public int getColumnGroupId() {
-    return columnGroupId;
-  }
-
-  /**
-   */
-  public void setColumnGroup(int columnGroupId) {
-    this.columnGroupId = columnGroupId;
   }
 
   /**
@@ -339,6 +325,34 @@ public class ColumnSchema implements Serializable, Writable {
     } else if (!dataType.equals(other.dataType)) {
       return false;
     }
+    return true;
+  }
+
+  /**
+   * method to compare columnSchema,
+   * other parameters along with just column name and column data type
+   * @param obj
+   * @return
+   */
+  public boolean equalsWithStrictCheck(Object obj) {
+    if (!this.equals(obj)) {
+      return false;
+    }
+    ColumnSchema other = (ColumnSchema) obj;
+    if (!columnUniqueId.equals(other.columnUniqueId) ||
+        (isDimensionColumn != other.isDimensionColumn) ||
+        (isSortColumn != other.isSortColumn)) {
+      return false;
+    }
+    if (encodingList.size() != other.encodingList.size()) {
+      return false;
+    }
+    for (int i = 0; i < encodingList.size(); i++) {
+      if (encodingList.get(i).compareTo(other.encodingList.get(i)) != 0) {
+        return false;
+      }
+    }
+
     return true;
   }
 
@@ -506,6 +520,7 @@ public class ColumnSchema implements Serializable, Writable {
         parentColumnTableRelations.get(i).write(out);
       }
     }
+    out.writeBoolean(isLocalDictColumn);
   }
 
   @Override
@@ -554,5 +569,6 @@ public class ColumnSchema implements Serializable, Writable {
         parentColumnTableRelations.add(parentColumnTableRelation);
       }
     }
+    this.isLocalDictColumn = in.readBoolean();
   }
 }

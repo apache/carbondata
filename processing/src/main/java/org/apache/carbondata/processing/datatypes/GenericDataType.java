@@ -23,9 +23,11 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 
 /**
  * Generic DataType interface which will be used while data loading for complex types like Array &
@@ -58,7 +60,7 @@ public interface GenericDataType<T> {
    * @param dataOutputStream
    * @throws IOException
    */
-  void writeByteArray(T input, DataOutputStream dataOutputStream)
+  void writeByteArray(T input, DataOutputStream dataOutputStream, BadRecordLogHolder logHolder)
       throws IOException, DictionaryGenerationException;
 
   /**
@@ -72,15 +74,23 @@ public interface GenericDataType<T> {
   void setSurrogateIndex(int surrIndex);
 
   /**
-   * converts integer surrogate to bit packed surrogate value
+   * Returns true in case the column has Dictionary Encoding.
+   * @return
+   */
+  boolean getIsColumnDictionary();
+
+  /**
+   * Parse the Complex Datatype from the ByteBuffer.
    * @param byteArrayInput
    * @param dataOutputStream
    * @param generator
+   * @return
    * @throws IOException
    * @throws KeyGenException
    */
-  void parseAndBitPack(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
-      KeyGenerator[] generator) throws IOException, KeyGenException;
+  void parseComplexValue(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
+      KeyGenerator[] generator)
+      throws IOException, KeyGenException;
 
   /**
    * @return columns count of each complex type
@@ -90,7 +100,7 @@ public interface GenericDataType<T> {
   /**
    * @return column uuid string
    */
-  String getColumnId();
+  String getColumnNames();
 
   /**
    * set array index to be referred while creating metadata column
@@ -146,4 +156,6 @@ public interface GenericDataType<T> {
    * clone self for multithread access (for complex type processing in table page)
    */
   GenericDataType<T> deepCopy();
+
+  void getComplexColumnInfo(List<ComplexColumnInfo> columnInfoList);
 }

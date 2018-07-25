@@ -17,13 +17,14 @@
 
 package org.apache.spark.util
 
+import java.util
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.{CarbonEnv, CarbonSession, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog}
 import org.apache.spark.sql.hive.HiveExternalCatalog._
@@ -31,15 +32,20 @@ import org.apache.spark.sql.hive.HiveExternalCatalog._
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.core.util.path.CarbonTablePath.getNewTablePath
-import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
+import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.format.{Encoding, SchemaEvolutionEntry, TableInfo}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
+
 
 object AlterTableUtil {
 
@@ -97,41 +103,20 @@ object AlterTableUtil {
   }
 
   /**
-   * This method will release the locks by manually forming a lock path. Specific usage for
-   * rename table
-   *
-   * @param locks
-   * @param locksAcquired
-   * @param dbName
-   * @param tableName
-   * @param tablePath
-   */
-  def releaseLocksManually(locks: List[ICarbonLock],
-      locksAcquired: List[String],
-      dbName: String,
-      tableName: String,
-      tablePath: String): Unit = {
-    val lockLocation = tablePath
-    locks.zip(locksAcquired).foreach { case (carbonLock, lockType) =>
-      val lockFilePath = CarbonTablePath.getLockFilePath(lockLocation, lockType)
-      if (carbonLock.releaseLockManually(lockFilePath)) {
-        LOGGER.info(s"Alter table lock released successfully: ${ lockType }")
-      } else {
-        LOGGER.error("Unable to release lock during alter table operation")
-      }
-    }
-  }
-
-  /**
    * @param carbonTable
    * @param schemaEvolutionEntry
    * @param thriftTable
    * @param sparkSession
-   * @param catalog
    */
   def updateSchemaInfo(carbonTable: CarbonTable,
-      schemaEvolutionEntry: SchemaEvolutionEntry,
-      thriftTable: TableInfo)(sparkSession: SparkSession, catalog: CarbonSessionCatalog): Unit = {
+      schemaEvolutionEntry: SchemaEvolutionEntry = null,
+      thriftTable: TableInfo,
+      cols: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]] =
+      None)
+    (sparkSession: SparkSession):
+    (TableIdentifier,
+      String,
+      Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]]) = {
     val dbName = carbonTable.getDatabaseName
     val tableName = carbonTable.getTableName
     CarbonEnv.getInstance(sparkSession).carbonMetastore
@@ -145,9 +130,7 @@ object AlterTableUtil {
     val schema = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(tableIdentifier)(sparkSession).schema.json
     val schemaParts = prepareSchemaJsonForAlterTable(sparkSession.sparkContext.getConf, schema)
-    val hiveClient = catalog.getClient();
-    hiveClient.runSqlHive(s"ALTER TABLE $dbName.$tableName SET TBLPROPERTIES($schemaParts)")
-    sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
+    (tableIdentifier, schemaParts, cols)
   }
 
   /**
@@ -187,7 +170,6 @@ object AlterTableUtil {
     val oldCarbonTableIdentifier = oldCarbonTable.getCarbonTableIdentifier
     val database = oldCarbonTable.getDatabaseName
     val newCarbonTableIdentifier = new CarbonTableIdentifier(database, newTableName, tableId)
-    val newTablePath = CarbonTablePath.getNewTablePath(tablePath, newTableName)
     val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val fileType = FileFactory.getFileType(tablePath)
     if (FileFactory.isFileExist(tablePath, fileType)) {
@@ -196,10 +178,8 @@ object AlterTableUtil {
       val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp
       if (updatedTime == timeStamp) {
         LOGGER.error(s"Reverting changes for $database.${oldCarbonTable.getTableName}")
-        FileFactory.getCarbonFile(tablePath, fileType)
-          .renameForce(CarbonTablePath.getNewTablePath(tablePath, oldCarbonTable.getTableName))
         val absoluteTableIdentifier = AbsoluteTableIdentifier.from(
-          newTablePath,
+          tablePath,
           newCarbonTableIdentifier)
         metastore.revertTableSchemaInAlterFailure(oldCarbonTableIdentifier,
           tableInfo, absoluteTableIdentifier)(sparkSession)
@@ -306,23 +286,27 @@ object AlterTableUtil {
    * @param propKeys
    * @param set
    * @param sparkSession
-   * @param catalog
    */
   def modifyTableProperties(tableIdentifier: TableIdentifier, properties: Map[String, String],
       propKeys: Seq[String], set: Boolean)
     (sparkSession: SparkSession, catalog: CarbonSessionCatalog): Unit = {
     val tableName = tableIdentifier.table
     val dbName = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
-    LOGGER.audit(s"Alter table properties request has been received for $dbName.$tableName")
+    LOGGER.audit(s"Alter table newProperties request has been received for $dbName.$tableName")
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
     var locks = List.empty[ICarbonLock]
-    val timeStamp = 0L
-    var carbonTable: CarbonTable = null
     try {
       locks = AlterTableUtil
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
       val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
+      val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
+      val lowerCasePropertiesMap: mutable.Map[String, String] = mutable.Map.empty
+      // convert all the keys to lower case
+      properties.foreach { entry =>
+        lowerCasePropertiesMap.put(entry._1.toLowerCase, entry._2)
+      }
+      // validate the required cache level properties
+      validateColumnMetaCacheAndCacheLevel(carbonTable, lowerCasePropertiesMap)
       // get the latest carbon table
       // read the latest schema file
       val thriftTableInfo: TableInfo = metastore.getThriftTableInfo(carbonTable)
@@ -332,52 +316,434 @@ object AlterTableUtil {
         dbName,
         tableName,
         carbonTable.getTablePath)
-      val schemaEvolutionEntry = new org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
-      schemaEvolutionEntry.setTimeStamp(timeStamp)
       val thriftTable = schemaConverter.fromWrapperToExternalTableInfo(
         wrapperTableInfo, dbName, tableName)
       val tblPropertiesMap: mutable.Map[String, String] =
         thriftTable.fact_table.getTableProperties.asScala
+
+      // validate the local dictionary properties
+      validateLocalDictionaryProperties(lowerCasePropertiesMap, tblPropertiesMap, carbonTable)
+
+      // below map will be used for cache invalidation. As tblProperties map is getting modified
+      // in the next few steps the original map need to be retained for any decision making
+      val existingTablePropertiesMap = mutable.Map(tblPropertiesMap.toSeq: _*)
       if (set) {
-        //       This overrides old properties and update the comment parameter of thriftTable
-        //       with the newly added/modified comment since thriftTable also holds comment as its
-        //       direct property.
-        properties.foreach { property => if (validateTableProperties(property._1)) {
-          tblPropertiesMap.put(property._1.toLowerCase, property._2)
-        } else { val errorMessage = "Error: Invalid option(s): " + property._1.toString()
-          throw new MalformedCarbonCommandException(errorMessage)
+        // This overrides old newProperties and update the comment parameter of thriftTable
+        // with the newly added/modified comment since thriftTable also holds comment as its
+        // direct property.
+        lowerCasePropertiesMap.foreach { property =>
+          if (validateTableProperties(property._1)) {
+            tblPropertiesMap.put(property._1, property._2)
+          } else {
+            val errorMessage = "Error: Invalid option(s): " + property._1.toString()
+            throw new MalformedCarbonCommandException(errorMessage)
+          }
         }
-        }
+        // check if duplicate columns are present in both local dictionary include and exclude
+        CarbonScalaUtil.validateDuplicateLocalDictIncludeExcludeColmns(tblPropertiesMap)
       } else {
         // This removes the comment parameter from thriftTable
         // since thriftTable also holds comment as its property.
         propKeys.foreach { propKey =>
           if (validateTableProperties(propKey)) {
-            tblPropertiesMap.remove(propKey.toLowerCase)
+            // This check is required because for old tables we need to keep same behavior for it,
+            // meaning, local dictionary should be disabled. To enable we can use set command for
+            // older tables. So no need to remove from table properties map for unset just to ensure
+            // for older table behavior. So in case of unset, if enable property is already present
+            // in map, then just set it to default value of local dictionary which is true.
+            if (!propKey.equalsIgnoreCase(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)) {
+              tblPropertiesMap.remove(propKey.toLowerCase)
+            } else {
+              tblPropertiesMap
+                .put(propKey.toLowerCase, CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
+            }
           } else {
             val errorMessage = "Error: Invalid option(s): " + propKey
             throw new MalformedCarbonCommandException(errorMessage)
           }
         }
+        // check if duplicate columns are present in both local dictionary include and exclude
+        CarbonScalaUtil.validateDuplicateLocalDictIncludeExcludeColmns(tblPropertiesMap)
       }
-
-      updateSchemaInfo(carbonTable,
-        schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
-        thriftTable)(sparkSession, catalog)
-      LOGGER.info(s"Alter table properties is successful for table $dbName.$tableName")
-      LOGGER.audit(s"Alter table properties is successful for table $dbName.$tableName")
+      val (tableIdentifier, schemParts, cols: Option[Seq[org.apache.carbondata.core.metadata
+      .schema.table.column.ColumnSchema]]) = updateSchemaInfo(
+        carbonTable = carbonTable,
+        thriftTable = thriftTable)(sparkSession)
+      catalog.alterTable(tableIdentifier, schemParts, cols)
+      sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
+      // check and clear the block/blocklet cache
+      checkAndClearBlockletCache(carbonTable,
+        existingTablePropertiesMap,
+        lowerCasePropertiesMap,
+        propKeys,
+        set)
+      LOGGER.info(s"Alter table newProperties is successful for table $dbName.$tableName")
+      LOGGER.audit(s"Alter table newProperties is successful for table $dbName.$tableName")
     } catch {
       case e: Exception =>
-        LOGGER.error(e, "Alter table properties failed")
-        sys.error(s"Alter table properties operation failed: ${e.getMessage}")
+        LOGGER.error(e, "Alter table newProperties failed")
+        sys.error(s"Alter table newProperties operation failed: ${e.getMessage}")
     } finally {
       // release lock after command execution completion
       AlterTableUtil.releaseLocks(locks)
     }
   }
 
-  def validateTableProperties(propKey: String): Boolean = {
-    val supportedOptions = Seq("STREAMING", "COMMENT")
-   supportedOptions.contains(propKey.toUpperCase)
+  private def validateTableProperties(propKey: String): Boolean = {
+    val supportedOptions = Seq("STREAMING",
+      "COMMENT",
+      "COLUMN_META_CACHE",
+      "CACHE_LEVEL",
+      "LOCAL_DICTIONARY_ENABLE",
+      "LOCAL_DICTIONARY_THRESHOLD",
+      "LOCAL_DICTIONARY_INCLUDE",
+      "LOCAL_DICTIONARY_EXCLUDE")
+    supportedOptions.contains(propKey.toUpperCase)
+  }
+
+  /**
+   * this method validates the local dictioanry properties for alter set
+   *
+   * @param lowerCasePropertiesMap
+   * @param tblPropertiesMap
+   * @param carbonTable
+   */
+  private def validateLocalDictionaryProperties(lowerCasePropertiesMap: mutable.Map[String, String],
+      tblPropertiesMap: mutable.Map[String, String],
+      carbonTable: CarbonTable): Unit = {
+    lowerCasePropertiesMap.foreach { property =>
+      if (property._1.equalsIgnoreCase(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)) {
+        if (!CarbonScalaUtil.validateLocalDictionaryEnable(property._2)) {
+          lowerCasePropertiesMap
+            .put(property._1.toLowerCase, CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
+        } else {
+          lowerCasePropertiesMap.put(property._1, property._2)
+        }
+      }
+      if (property._1.equalsIgnoreCase(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE) ||
+          property._1.equalsIgnoreCase(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE)) {
+        ValidateSetTablePropertiesForLocalDict(tblPropertiesMap, carbonTable, property)
+      }
+
+      if (property._1
+        .equalsIgnoreCase(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD)) {
+        if (!CarbonScalaUtil.validateLocalDictionaryThreshold(property._2)) {
+          lowerCasePropertiesMap
+            .put(property._1,
+              CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT)
+        } else {
+          lowerCasePropertiesMap.put(property._1, property._2)
+        }
+      }
+    }
+  }
+
+  /**
+   * validate column meta cache and cache level properties if configured by the user
+   *
+   * @param carbonTable
+   * @param propertiesMap
+   */
+  private def validateColumnMetaCacheAndCacheLevel(carbonTable: CarbonTable,
+      propertiesMap: mutable.Map[String, String]): Unit = {
+    // validate column meta cache property
+    if (propertiesMap.get(CarbonCommonConstants.COLUMN_META_CACHE).isDefined) {
+      // Column meta cache is not allowed for child tables and dataMaps
+      if (carbonTable.isChildDataMap) {
+        throw new MalformedCarbonCommandException(s"Table property ${
+          CarbonCommonConstants.COLUMN_META_CACHE} is not allowed for child datamaps")
+      }
+      val schemaList: util.List[ColumnSchema] = CarbonUtil
+        .getColumnSchemaList(carbonTable.getDimensionByTableName(carbonTable.getTableName),
+          carbonTable.getMeasureByTableName(carbonTable.getTableName))
+      val tableColumns: Seq[String] = schemaList.asScala
+        .map(columnSchema => columnSchema.getColumnName)
+      CommonUtil
+        .validateColumnMetaCacheFields(carbonTable.getDatabaseName,
+          carbonTable.getTableName,
+          tableColumns,
+          propertiesMap.get(CarbonCommonConstants.COLUMN_META_CACHE).get,
+          propertiesMap)
+      val columnsToBeCached = propertiesMap.get(CarbonCommonConstants.COLUMN_META_CACHE).get
+      validateForComplexTypeColumn(carbonTable, columnsToBeCached)
+    }
+    // validate cache level property
+    if (propertiesMap.get(CarbonCommonConstants.CACHE_LEVEL).isDefined) {
+      // Cache level is not allowed for child tables and dataMaps
+      if (carbonTable.isChildDataMap) {
+        throw new MalformedCarbonCommandException(s"Table property ${
+          CarbonCommonConstants.CACHE_LEVEL} is not allowed for child datamaps")
+      }
+      CommonUtil.validateCacheLevel(
+        propertiesMap.get(CarbonCommonConstants.CACHE_LEVEL).get,
+        propertiesMap)
+    }
+  }
+
+  /**
+   * This method will validate if there is any complex type column in the columns to be cached
+   *
+   * @param carbonTable
+   * @param cachedColumns
+   */
+  private def validateForComplexTypeColumn(carbonTable: CarbonTable,
+      cachedColumns: String): Unit = {
+    if (cachedColumns.nonEmpty) {
+      cachedColumns.split(",").foreach { column =>
+        val dimension = carbonTable.getDimensionByName(carbonTable.getTableName, column)
+        if (null != dimension && dimension.isComplex) {
+          val errorMessage =
+            s"$column is a complex type column and complex type is not allowed for " +
+            s"the option(s): ${ CarbonCommonConstants.COLUMN_META_CACHE }"
+          throw new MalformedCarbonCommandException(errorMessage)
+        }
+      }
+    }
+  }
+
+  /**
+   * This method will check and clear the driver block/blocklet cache
+   *
+   * @param carbonTable
+   * @param existingTableProperties
+   * @param newProperties
+   * @param propKeys
+   * @param set
+   */
+  private def checkAndClearBlockletCache(carbonTable: CarbonTable,
+      existingTableProperties: scala.collection.mutable.Map[String, String],
+      newProperties: mutable.Map[String, String],
+      propKeys: Seq[String],
+      set: Boolean): Unit = {
+    if (set) {
+      clearBlockletCacheForCachingProperties(carbonTable, existingTableProperties, newProperties)
+    } else {
+      // convert all the unset keys to lower case
+      val propertiesToBeRemoved = propKeys.map(key => key.toLowerCase)
+      // This is unset scenario and the cache needs to be cleaned only when
+      // 1. column_meta_cache property is getting unset and existing table properties contains
+      // this property
+      // 2. cache_level property is being unset and existing table properties contains this property
+      // and the existing value is not equal to default value because after un-setting the property
+      // the cache should be loaded again with default value
+      if (propertiesToBeRemoved.contains(CarbonCommonConstants.COLUMN_META_CACHE) &&
+          existingTableProperties.get(CarbonCommonConstants.COLUMN_META_CACHE).isDefined) {
+        clearCache(carbonTable)
+      } else if (propertiesToBeRemoved.contains(CarbonCommonConstants.CACHE_LEVEL)) {
+        val cacheLevel = existingTableProperties.get(CarbonCommonConstants.CACHE_LEVEL)
+        if (cacheLevel.isDefined &&
+            !cacheLevel.equals(CarbonCommonConstants.CACHE_LEVEL_DEFAULT_VALUE)) {
+          clearCache(carbonTable)
+        }
+      }
+    }
+  }
+
+  private def clearCache(carbonTable: CarbonTable): Unit = {
+    // clear dataMap cache
+    DataMapStoreManager.getInstance().clearDataMaps(carbonTable.getAbsoluteTableIdentifier)
+    // clear segmentProperties Cache
+    SegmentPropertiesAndSchemaHolder.getInstance()
+      .invalidate(carbonTable.getAbsoluteTableIdentifier)
+  }
+
+  /**
+   * This method will validate the column_meta_cache and cache_level properties and clear the
+   * driver block/blocklet cache
+   *
+   * @param carbonTable
+   * @param tblPropertiesMap
+   * @param newProperties
+   */
+  private def clearBlockletCacheForCachingProperties(
+      carbonTable: CarbonTable,
+      tblPropertiesMap: scala.collection.mutable.Map[String, String],
+      newProperties: mutable.Map[String, String]): Unit = {
+    // check if column meta cache is defined. if defined then validate and clear the BTree cache
+    // if required
+    val columnMetaCacheProperty = newProperties.get(CarbonCommonConstants.COLUMN_META_CACHE)
+    columnMetaCacheProperty match {
+      case Some(newColumnsToBeCached) =>
+        if (!checkIfColumnsAreAlreadyCached(carbonTable, tblPropertiesMap
+          .get(CarbonCommonConstants.COLUMN_META_CACHE), newColumnsToBeCached)) {
+          clearCache(carbonTable)
+        }
+      case None =>
+      // don't do anything
+    }
+    // check if column meta cache is defined. if defined then validate and clear the BTree cache
+    // if required
+    val cacheLevelProperty = newProperties.get(CarbonCommonConstants.CACHE_LEVEL)
+    cacheLevelProperty match {
+      case Some(newCacheLevelValue) =>
+        if (!isCacheLevelValid(tblPropertiesMap.get(CarbonCommonConstants.CACHE_LEVEL),
+          newCacheLevelValue)) {
+          clearCache(carbonTable)
+        }
+      case None =>
+      // don't do anything
+    }
+  }
+
+  /**
+   * Method to verify if the existing cache level is same as the new cache level
+   *
+   * @param existingCacheLevelValue
+   * @param newCacheLevelValue
+   * @return
+   */
+  private def isCacheLevelValid(existingCacheLevelValue: Option[String],
+      newCacheLevelValue: String): Boolean = {
+    existingCacheLevelValue match {
+      case Some(existingValue) =>
+        existingValue.equals(newCacheLevelValue)
+      case None =>
+        false
+    }
+  }
+
+  /**
+   * Check the new columns to be cached with the already cached columns. If count of new columns
+   * and already cached columns is same and all the new columns are already cached then
+   * false will be returned else true
+   *
+   * @param carbonTable
+   * @param existingCacheColumns
+   * @param newColumnsToBeCached
+   * @return
+   */
+  private def checkIfColumnsAreAlreadyCached(
+      carbonTable: CarbonTable,
+      existingCacheColumns: Option[String],
+      newColumnsToBeCached: String): Boolean = {
+    val newColumns = newColumnsToBeCached.split(",").map(x => x.trim.toLowerCase)
+    val isCached = existingCacheColumns match {
+      case Some(value) =>
+        val existingProperty = value.split(",").map(x => x.trim.toLowerCase)
+        compareColumns(existingProperty, newColumns)
+      case None =>
+        // By default all the columns in the table will be cached. This case is to compare all the
+        // table columns already cached to the newly specified cached columns
+        val schemaList: util.List[ColumnSchema] = CarbonUtil
+          .getColumnSchemaList(carbonTable.getDimensionByTableName(carbonTable.getTableName),
+            carbonTable.getMeasureByTableName(carbonTable.getTableName))
+        val tableColumns: Array[String] = schemaList.asScala
+          .map(columnSchema => columnSchema.getColumnName).toArray
+        compareColumns(tableColumns, newColumns)
+    }
+    isCached
+  }
+
+  /**
+   * compare the existing cache columns and the new columns to be cached
+   *
+   * @param existingCachedColumns
+   * @param newColumnsToBeCached
+   * @return
+   */
+  private def compareColumns(existingCachedColumns: Array[String],
+      newColumnsToBeCached: Array[String]): Boolean = {
+    val allColumnsMatch = if (existingCachedColumns.length == newColumnsToBeCached.length) {
+      existingCachedColumns.filter(col => !newColumnsToBeCached.contains(col)).length == 0
+    } else {
+      false
+    }
+    allColumnsMatch
+  }
+
+  /**
+   * Validate LOCAL_DICT_COLUMNS property specified in Alter command
+   * @param tblPropertiesMap
+   * @param carbonTable
+   * @param property
+   */
+  def ValidateSetTablePropertiesForLocalDict(tblPropertiesMap: mutable.Map[String, String],
+      carbonTable: CarbonTable,
+      property: (String, String)): Unit = {
+    var primitiveComplexChildColumns = new mutable.HashSet[String]
+    var localDictColumns: Seq[String] = Seq[String]()
+    var dictIncludeColumns: Seq[String] = Seq[String]()
+
+    val allColumns = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
+    localDictColumns = property._2.toString.toLowerCase.split(",").map(_.trim)
+
+    CarbonScalaUtil.validateLocalDictionaryColumns(tblPropertiesMap, localDictColumns)
+
+    // check if the column specified exists in table schema
+    localDictColumns.foreach { distCol =>
+      if (!allColumns.exists(x => x.getColumnName.equalsIgnoreCase(distCol.trim))) {
+        val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " + distCol.trim +
+                       " does not exist in table. Please check the DDL."
+        throw new MalformedCarbonCommandException(errormsg)
+      }
+    }
+
+    /**
+     * Verify if specified column is of no-dictionary string or varchar dataType
+     */
+    localDictColumns.foreach { dictCol =>
+      if (allColumns.exists(col => col.getColumnName.equalsIgnoreCase(dictCol) &&
+                                   !col.getDataType.toString
+                                     .equalsIgnoreCase("STRING") &&
+                                   !col.getDataType.toString
+                                     .equalsIgnoreCase("VARCHAR") &&
+                                   !col.getDataType.toString
+                                     .equalsIgnoreCase("STRUCT") &&
+                                   !col.getDataType.toString
+                                     .equalsIgnoreCase("ARRAY"))) {
+        val errMsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " + dictCol.trim +
+                     " is not a string/complex/varchar datatype column. LOCAL_DICTIONARY_INCLUDE" +
+                     "/LOCAL_DICTIONARY_EXCLUDE should be no " +
+                     "dictionary string/complex/varchar datatype column."
+        throw new MalformedCarbonCommandException(errMsg)
+      }
+    }
+    var countOfDictCols = 0
+    var trav = 0
+    // Validate whether any of the child columns of complex dataType column is a string or
+    // varchar dataType column
+    if (property._1.equalsIgnoreCase(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE)) {
+      // Validate whether any of the child columns of complex dataType column is a string column
+      localDictColumns.foreach { dictColm =>
+        for (elem <- allColumns.indices) {
+          var column = allColumns(elem)
+          if (column.getColumnName.equalsIgnoreCase(dictColm) && column.getNumberOfChild > 0 &&
+              !validateChildColumns(allColumns, column.getNumberOfChild, elem. +(1))) {
+            val errMsg =
+              "None of the child columns specified in the complex dataType column(s) in " +
+              "local_dictionary_include are not of string dataType."
+            throw new MalformedCarbonCommandException(errMsg)
+          }
+        }
+      }
+    }
+
+    /**
+     * check whether any child column present in complex type column is string or varchar type
+     *
+     * @param schemas
+     * @return
+     */
+    def validateChildColumns(schemas: mutable.Buffer[ColumnSchema],
+        colCount: Int, traverse: Int): Boolean = {
+      trav = traverse
+      var column: ColumnSchema = null
+      for (i <- 0 until colCount) {
+        column = schemas(trav)
+        if (column.getNumberOfChild > 0) {
+          validateChildColumns(schemas, column.getNumberOfChild, trav. +(1))
+        } else {
+          if (column.isDimensionColumn && (column.getDataType.equals(DataTypes.STRING) ||
+                                           column.getDataType.equals(DataTypes.VARCHAR))) {
+            countOfDictCols += 1
+          }
+          trav = trav + 1
+        }
+      }
+      if (countOfDictCols > 0) {
+        return true
+      }
+      false
+    }
   }
 }

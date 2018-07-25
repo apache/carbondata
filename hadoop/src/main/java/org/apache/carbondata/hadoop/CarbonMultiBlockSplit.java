@@ -20,11 +20,13 @@ package org.apache.carbondata.hadoop;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.statusmanager.FileFormat;
 
 import org.apache.hadoop.io.Writable;
@@ -34,7 +36,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
  * This class wraps multiple blocks belong to a same node to one split.
  * So the scanning task will scan multiple blocks. This is an optimization for concurrent query.
  */
-public class CarbonMultiBlockSplit extends InputSplit implements Writable {
+public class CarbonMultiBlockSplit extends InputSplit implements Serializable, Writable {
 
   /*
    * Splits (HDFS Blocks) for task to scan.
@@ -54,6 +56,14 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
     splitList = null;
     locations = null;
     length = 0;
+  }
+
+  public CarbonMultiBlockSplit(List<Distributable> blocks, String hostname) {
+    this.splitList = new ArrayList<>(blocks.size());
+    for (Distributable block : blocks) {
+      this.splitList.add((CarbonInputSplit)block);
+    }
+    this.locations = new String[]{hostname};
   }
 
   public CarbonMultiBlockSplit(List<CarbonInputSplit> splitList,

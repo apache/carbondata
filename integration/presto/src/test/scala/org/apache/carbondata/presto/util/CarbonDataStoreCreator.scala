@@ -39,7 +39,7 @@ import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumn
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.fileoperations.{AtomicFileOperations, AtomicFileOperationsImpl, FileWriteOperation}
+import org.apache.carbondata.core.fileoperations.{AtomicFileOperationFactory, AtomicFileOperations, FileWriteOperation}
 import org.apache.carbondata.core.metadata.converter.{SchemaConverter, ThriftWrapperSchemaConverterImpl}
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.encoder.Encoding
@@ -94,6 +94,7 @@ object CarbonDataStoreCreator {
       loadModel.setTableName(
         absoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
       loadModel.setFactFilePath(dataFilePath)
+      loadModel.setCarbonTransactionalTable(table.isTransactionalTable)
       loadModel.setLoadMetadataDetails(new ArrayList[LoadMetadataDetails]())
       loadModel.setTablePath(absoluteTableIdentifier.getTablePath)
       CarbonProperties.getInstance
@@ -154,13 +155,11 @@ object CarbonDataStoreCreator {
 
     val id: ColumnSchema = new ColumnSchema()
     id.setColumnName("ID")
-    id.setColumnar(true)
     id.setDataType(DataTypes.INT)
     id.setEncodingList(dictionaryEncoding)
     id.setColumnUniqueId(UUID.randomUUID().toString)
     id.setColumnReferenceId(id.getColumnUniqueId)
     id.setDimensionColumn(true)
-    id.setColumnGroup(1)
     id.setSchemaOrdinal(0)
     columnSchemas.add(id)
 
@@ -171,94 +170,79 @@ object CarbonDataStoreCreator {
 
     val date: ColumnSchema = new ColumnSchema()
     date.setColumnName("date")
-    date.setColumnar(true)
     date.setDataType(DataTypes.DATE)
     date.setEncodingList(directDictionaryEncoding)
     date.setColumnUniqueId(UUID.randomUUID().toString)
     date.setDimensionColumn(true)
-    date.setColumnGroup(2)
     date.setColumnReferenceId(date.getColumnUniqueId)
     date.setSchemaOrdinal(1)
     columnSchemas.add(date)
 
     val country: ColumnSchema = new ColumnSchema()
     country.setColumnName("country")
-    country.setColumnar(true)
     country.setDataType(DataTypes.STRING)
     country.setEncodingList(dictionaryEncoding)
     country.setColumnUniqueId(UUID.randomUUID().toString)
     country.setColumnReferenceId(country.getColumnUniqueId)
     country.setDimensionColumn(true)
-    country.setColumnGroup(3)
     country.setSchemaOrdinal(2)
     country.setColumnReferenceId(country.getColumnUniqueId)
     columnSchemas.add(country)
 
     val name: ColumnSchema = new ColumnSchema()
     name.setColumnName("name")
-    name.setColumnar(true)
     name.setDataType(DataTypes.STRING)
     name.setEncodingList(dictionaryEncoding)
     name.setColumnUniqueId(UUID.randomUUID().toString)
     name.setDimensionColumn(true)
-    name.setColumnGroup(4)
     name.setSchemaOrdinal(3)
     name.setColumnReferenceId(name.getColumnUniqueId)
     columnSchemas.add(name)
 
     val phonetype: ColumnSchema = new ColumnSchema()
     phonetype.setColumnName("phonetype")
-    phonetype.setColumnar(true)
     phonetype.setDataType(DataTypes.STRING)
     phonetype.setEncodingList(dictionaryEncoding)
     phonetype.setColumnUniqueId(UUID.randomUUID().toString)
     phonetype.setDimensionColumn(true)
-    phonetype.setColumnGroup(5)
     phonetype.setSchemaOrdinal(4)
     phonetype.setColumnReferenceId(phonetype.getColumnUniqueId)
     columnSchemas.add(phonetype)
 
     val serialname: ColumnSchema = new ColumnSchema()
     serialname.setColumnName("serialname")
-    serialname.setColumnar(true)
     serialname.setDataType(DataTypes.STRING)
     serialname.setEncodingList(dictionaryEncoding)
     serialname.setColumnUniqueId(UUID.randomUUID().toString)
     serialname.setDimensionColumn(true)
-    serialname.setColumnGroup(6)
     serialname.setSchemaOrdinal(5)
     serialname.setColumnReferenceId(serialname.getColumnUniqueId)
     columnSchemas.add(serialname)
 
     val salary: ColumnSchema = new ColumnSchema()
     salary.setColumnName("salary")
-    salary.setColumnar(true)
     salary.setDataType(DataTypes.DOUBLE)
     salary.setEncodingList(dictionaryEncoding)
     salary.setColumnUniqueId(UUID.randomUUID().toString)
     salary.setDimensionColumn(true)
-    salary.setColumnGroup(7)
     salary.setSchemaOrdinal(6)
     salary.setColumnReferenceId(salary.getColumnUniqueId)
     columnSchemas.add(salary)
 
     val bonus: ColumnSchema = new ColumnSchema()
     bonus.setColumnName("bonus")
-    bonus.setColumnar(true)
     bonus.setDataType(DataTypes.createDecimalType(10, 4))
     bonus.setPrecision(10)
     bonus.setScale(4)
     bonus.setEncodingList(invertedIndexEncoding)
     bonus.setColumnUniqueId(UUID.randomUUID().toString)
     bonus.setDimensionColumn(false)
-    bonus.setColumnGroup(8)
     bonus.setSchemaOrdinal(7)
     bonus.setColumnReferenceId(bonus.getColumnUniqueId)
     columnSchemas.add(bonus)
 
     val monthlyBonus: ColumnSchema = new ColumnSchema()
     monthlyBonus.setColumnName("monthlyBonus")
-    monthlyBonus.setColumnar(true)
     monthlyBonus.setDataType(DataTypes.createDecimalType(18, 4))
     monthlyBonus.setPrecision(18)
     monthlyBonus.setScale(4)
@@ -266,42 +250,35 @@ object CarbonDataStoreCreator {
     monthlyBonus.setEncodingList(invertedIndexEncoding)
     monthlyBonus.setColumnUniqueId(UUID.randomUUID().toString)
     monthlyBonus.setDimensionColumn(false)
-    monthlyBonus.setColumnGroup(9)
     monthlyBonus.setColumnReferenceId(monthlyBonus.getColumnUniqueId)
     columnSchemas.add(monthlyBonus)
 
     val dob: ColumnSchema = new ColumnSchema()
     dob.setColumnName("dob")
-    dob.setColumnar(true)
     dob.setDataType(DataTypes.TIMESTAMP)
     dob.setEncodingList(directDictionaryEncoding)
     dob.setColumnUniqueId(UUID.randomUUID().toString)
     dob.setDimensionColumn(true)
-    dob.setColumnGroup(9)
     dob.setSchemaOrdinal(9)
     dob.setColumnReferenceId(dob.getColumnUniqueId)
     columnSchemas.add(dob)
 
     val shortField: ColumnSchema = new ColumnSchema()
     shortField.setColumnName("shortField")
-    shortField.setColumnar(true)
     shortField.setDataType(DataTypes.SHORT)
     shortField.setEncodingList(dictionaryEncoding)
     shortField.setColumnUniqueId(UUID.randomUUID().toString)
     shortField.setDimensionColumn(true)
-    shortField.setColumnGroup(10)
     shortField.setSchemaOrdinal(10)
     shortField.setColumnReferenceId(shortField.getColumnUniqueId)
     columnSchemas.add(shortField)
 
     val isCurrentEmployee: ColumnSchema = new ColumnSchema()
     isCurrentEmployee.setColumnName("isCurrentEmployee")
-    isCurrentEmployee.setColumnar(true)
     isCurrentEmployee.setDataType(DataTypes.BOOLEAN)
     isCurrentEmployee.setEncodingList(invertedIndexEncoding)
     isCurrentEmployee.setColumnUniqueId(UUID.randomUUID().toString)
     isCurrentEmployee.setDimensionColumn(false)
-    isCurrentEmployee.setColumnGroup(11)
     isCurrentEmployee.setColumnReferenceId(isCurrentEmployee.getColumnUniqueId)
     columnSchemas.add(isCurrentEmployee)
 
@@ -309,7 +286,7 @@ object CarbonDataStoreCreator {
     val schemaEvol: SchemaEvolution = new SchemaEvolution()
     schemaEvol.setSchemaEvolutionEntryList(
       new util.ArrayList[SchemaEvolutionEntry]())
-    tableSchema.setSchemaEvalution(schemaEvol)
+    tableSchema.setSchemaEvolution(schemaEvol)
     tableSchema.setTableId(UUID.randomUUID().toString)
     tableInfo.setTableUniqueName(
       absoluteTableIdentifier.getCarbonTableIdentifier.getTableUniqueName
@@ -478,7 +455,6 @@ object CarbonDataStoreCreator {
     CarbonProperties.getInstance
       .addProperty("aggregate.columnar.keyblock", "true")
     CarbonProperties.getInstance.addProperty("is.compressed.keyblock", "false")
-    CarbonProperties.getInstance.addProperty("carbon.leaf.node.size", "120000")
     CarbonProperties.getInstance
       .addProperty("carbon.direct.dictionary", "true")
     val graphPath: String = outPutLoc + File.separator + loadModel.getDatabaseName +
@@ -549,9 +525,8 @@ object CarbonDataStoreCreator {
       val dataLoadLocation: String = schema.getCarbonTable.getMetadataPath + File.separator +
                                      CarbonTablePath.TABLE_STATUS_FILE
       val gsonObjectToWrite: Gson = new Gson()
-      val writeOperation: AtomicFileOperations = new AtomicFileOperationsImpl(
-        dataLoadLocation,
-        FileFactory.getFileType(dataLoadLocation))
+      val writeOperation: AtomicFileOperations = AtomicFileOperationFactory
+        .getAtomicFileOperations(dataLoadLocation)
       val dataOutputStream =
         writeOperation.openForWrite(FileWriteOperation.OVERWRITE)
       val brWriter = new BufferedWriter(

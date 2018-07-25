@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 
 /**
  * Fetches the detailed blocklet which has more information to execute the query
@@ -32,12 +31,10 @@ public interface BlockletDetailsFetcher {
    *
    * @param blocklets
    * @param segment
-   * @param readCommittedScope
    * @return
    * @throws IOException
    */
-  List<ExtendedBlocklet> getExtendedBlocklets(List<Blocklet> blocklets, Segment segment,
-      ReadCommittedScope readCommittedScope)
+  List<ExtendedBlocklet> getExtendedBlocklets(List<Blocklet> blocklets, Segment segment)
       throws IOException;
 
   /**
@@ -45,21 +42,22 @@ public interface BlockletDetailsFetcher {
    *
    * @param blocklet
    * @param segment
-   * @param readCommittedScope
    * @return
    * @throws IOException
    */
-  ExtendedBlocklet getExtendedBlocklet(Blocklet blocklet, Segment segment,
-      ReadCommittedScope readCommittedScope) throws IOException;
+  ExtendedBlocklet getExtendedBlocklet(Blocklet blocklet, Segment segment) throws IOException;
 
   /**
    * Get all the blocklets in a segment
    *
    * @param segment
-   * @param readCommittedScope
    * @return
    */
-  List<Blocklet> getAllBlocklets(Segment segment, List<PartitionSpec> partitions,
-      ReadCommittedScope readCommittedScope)
+  List<Blocklet> getAllBlocklets(Segment segment, List<PartitionSpec> partitions)
       throws IOException;
+
+  /**
+   * clears the datamap from cache and segmentMap from executor
+   */
+  void clear();
 }

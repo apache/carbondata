@@ -17,10 +17,15 @@
 
 package org.apache.carbondata.datamap;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
-import org.apache.carbondata.core.datamap.DataMapCatalog;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapProvider;
+import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
@@ -30,21 +35,23 @@ import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand;
 import scala.Some;
 
 @InterfaceAudience.Internal
-public class PreAggregateDataMapProvider implements DataMapProvider {
+public class PreAggregateDataMapProvider extends DataMapProvider {
   protected PreAggregateTableHelper helper;
   protected CarbonDropTableCommand dropTableCommand;
   protected SparkSession sparkSession;
 
-  public PreAggregateDataMapProvider(SparkSession sparkSession) {
+  PreAggregateDataMapProvider(CarbonTable table, DataMapSchema schema,
+      SparkSession sparkSession) {
+    super(table, schema);
     this.sparkSession = sparkSession;
   }
 
   @Override
-  public void initMeta(CarbonTable mainTable, DataMapSchema dataMapSchema, String ctasSqlStatement)
-      throws MalformedDataMapCommandException {
+  public void initMeta(String ctasSqlStatement) throws MalformedDataMapCommandException {
+    DataMapSchema dataMapSchema = getDataMapSchema();
     validateDmProperty(dataMapSchema);
     helper = new PreAggregateTableHelper(
-        mainTable, dataMapSchema.getDataMapName(), dataMapSchema.getProviderName(),
+        getMainTable(), dataMapSchema.getDataMapName(), dataMapSchema.getProviderName(),
         dataMapSchema.getProperties(), ctasSqlStatement, null, false);
     helper.initMeta(sparkSession);
   }
@@ -52,21 +59,22 @@ public class PreAggregateDataMapProvider implements DataMapProvider {
   private void validateDmProperty(DataMapSchema dataMapSchema)
       throws MalformedDataMapCommandException {
     if (!dataMapSchema.getProperties().isEmpty()) {
-      if (dataMapSchema.getProperties().size() > 1 ||
-          !dataMapSchema.getProperties().containsKey(DataMapProperty.PATH)) {
+      Map<String, String> properties = new HashMap<>(dataMapSchema.getProperties());
+      properties.remove(DataMapProperty.DEFERRED_REBUILD);
+      properties.remove(DataMapProperty.PATH);
+      properties.remove(DataMapProperty.PARTITIONING);
+      properties.remove(CarbonCommonConstants.LONG_STRING_COLUMNS);
+      if (properties.size() > 0) {
         throw new MalformedDataMapCommandException(
-            "Only 'path' dmproperty is allowed for this datamap");
+                "Only 'path', 'partitioning' and 'long_string_columns' dmproperties " +
+                "are allowed for this datamap");
       }
     }
   }
 
   @Override
-  public void initData(CarbonTable mainTable) {
-    // Nothing is needed to do by default
-  }
-
-  @Override
-  public void freeMeta(CarbonTable mainTable, DataMapSchema dataMapSchema) {
+  public void cleanMeta() {
+    DataMapSchema dataMapSchema = getDataMapSchema();
     dropTableCommand = new CarbonDropTableCommand(
         true,
         new Some<>(dataMapSchema.getRelationIdentifier().getDatabaseName()),
@@ -76,26 +84,21 @@ public class PreAggregateDataMapProvider implements DataMapProvider {
   }
 
   @Override
-  public void freeData(CarbonTable mainTable, DataMapSchema dataMapSchema) {
+  public void cleanData() {
     if (dropTableCommand != null) {
       dropTableCommand.processData(sparkSession);
     }
   }
 
   @Override
-  public void rebuild(CarbonTable mainTable, DataMapSchema dataMapSchema) {
+  public void rebuild() {
     if (helper != null) {
       helper.initData(sparkSession);
     }
   }
 
-  @Override public void incrementalBuild(CarbonTable mainTable, DataMapSchema dataMapSchema,
-      String[] segmentIds) {
+  @Override
+  public DataMapFactory getDataMapFactory() {
     throw new UnsupportedOperationException();
-  }
-
-  @Override public DataMapCatalog createDataMapCatalog() {
-    // TODO manage pre-agg also with catalog.
-    return null;
   }
 }

@@ -63,7 +63,8 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
 
   public RowResultMergerProcessor(String databaseName,
       String tableName, SegmentProperties segProp, String[] tempStoreLocation,
-      CarbonLoadModel loadModel, CompactionType compactionType, PartitionSpec partitionSpec) {
+      CarbonLoadModel loadModel, CompactionType compactionType, PartitionSpec partitionSpec)
+      throws IOException {
     this.segprop = segProp;
     this.partitionSpec = partitionSpec;
     this.loadModel = loadModel;
@@ -84,6 +85,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
             tempStoreLocation, carbonStoreLocation);
     setDataFileAttributesInModel(loadModel, compactionType, carbonFactDataHandlerModel);
     carbonFactDataHandlerModel.setCompactionFlow(true);
+    carbonFactDataHandlerModel.setSegmentId(loadModel.getSegmentId());
     dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
   }
 
@@ -116,6 +118,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
         Object[] convertedRow = iterator.next();
         if (null == convertedRow) {
           index--;
+          iterator.close();
           continue;
         }
         if (!isDataPresent) {
@@ -128,6 +131,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
         // index
         if (!iterator.hasNext()) {
           index--;
+          iterator.close();
           continue;
         }
         // add record to heap
@@ -136,20 +140,23 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
       // if record holder is not empty then iterator the slice holder from
       // heap
       iterator = this.recordHolderHeap.poll();
-      while (true) {
-        Object[] convertedRow = iterator.next();
-        if (null == convertedRow) {
-          break;
-        }
-        // do it only once
-        if (!isDataPresent) {
-          dataHandler.initialise();
-          isDataPresent = true;
-        }
-        addRow(convertedRow);
-        // check if leaf contains no record
-        if (!iterator.hasNext()) {
-          break;
+      if (null != iterator) {
+        while (true) {
+          Object[] convertedRow = iterator.next();
+          if (null == convertedRow) {
+            iterator.close();
+            break;
+          }
+          // do it only once
+          if (!isDataPresent) {
+            dataHandler.initialise();
+            isDataPresent = true;
+          }
+          addRow(convertedRow);
+          // check if leaf contains no record
+          if (!iterator.hasNext()) {
+            break;
+          }
         }
       }
       if (isDataPresent)

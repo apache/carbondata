@@ -58,6 +58,28 @@ public interface QueryStatisticsConstants {
 
   String PAGE_SCANNED = "The number of page scanned";
 
+  /**
+   * measure filling time includes time taken for reading all measures data from a given offset
+   * and adding each column data to an array. Includes total time for 1 query result iterator.
+   */
+  String MEASURE_FILLING_TIME = "measure filling time";
+
+  /**
+   * key column filling time includes time taken for reading all dimensions data from a given offset
+   * and filling each column data to byte array. Includes total time for 1 query result iterator.
+   */
+  String KEY_COLUMN_FILLING_TIME = "key column filling time";
+
+  /**
+   * Time taken to uncompress a page data and decode dimensions and measures data in that page
+   */
+  String PAGE_UNCOMPRESS_TIME = "page uncompress time";
+
+  /**
+   * total of measure filling time, dimension filling time and page uncompressing time
+   */
+  String RESULT_PREP_TIME = "result preparation time";
+
   // clear no-use statistics timeout
   long CLEAR_STATISTICS_TIMEOUT = 60 * 1000 * 1000000L;
 

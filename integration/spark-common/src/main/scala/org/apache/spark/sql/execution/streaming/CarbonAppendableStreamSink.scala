@@ -62,7 +62,8 @@ class CarbonAppendableStreamSink(
     var currentSegmentId: String,
     parameters: Map[String, String],
     carbonLoadModel: CarbonLoadModel,
-    server: Option[DictionaryServer]) extends Sink {
+    server: Option[DictionaryServer],
+    operationContext: OperationContext) extends Sink {
 
   private val fileLogPath = CarbonTablePath.getStreamingLogDir(carbonTable.getTablePath)
   private val fileLog = new FileStreamSinkLog(FileStreamSinkLog.VERSION, sparkSession, fileLogPath)
@@ -110,16 +111,9 @@ class CarbonAppendableStreamSink(
 
       // fire pre event on every batch add
       // in case of streaming options and optionsFinal can be same
-      val operationContext = new OperationContext
       val loadTablePreExecutionEvent = new LoadTablePreExecutionEvent(
         carbonTable.getCarbonTableIdentifier,
-        carbonLoadModel,
-        carbonLoadModel.getFactFilePath,
-        false,
-        parameters.asJava,
-        parameters.asJava,
-        false
-      )
+        carbonLoadModel)
       OperationListenerBus.getInstance().fireEvent(loadTablePreExecutionEvent, operationContext)
       checkOrHandOffSegment()
 
@@ -180,7 +174,7 @@ class CarbonAppendableStreamSink(
         if (enableAutoHandoff) {
           StreamHandoffRDD.startStreamingHandoffThread(
             carbonLoadModel,
-            new OperationContext,
+            operationContext,
             sparkSession,
             false)
         }

@@ -27,7 +27,6 @@ import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ColumnPageValueConverter;
 import org.apache.carbondata.core.datastore.page.LazyColumnPage;
-import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
@@ -46,11 +45,6 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
 
   private ColumnPage encodedPage;
   private Double factor;
-
-  public static ColumnPageCodec newInstance(DataType srcDataType, DataType targetDataType,
-      SimpleStatsResult stats) {
-    return new AdaptiveFloatingCodec(srcDataType, targetDataType, stats);
-  }
 
   public AdaptiveFloatingCodec(DataType srcDataType, DataType targetDataType,
       SimpleStatsResult stats) {
@@ -102,8 +96,13 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
       @Override
       public ColumnPage decode(byte[] input, int offset, int length)
           throws MemoryException, IOException {
-        ColumnPage page = ColumnPage.decompress(meta, input, offset, length);
+        ColumnPage page = ColumnPage.decompress(meta, input, offset, length, false);
         return LazyColumnPage.newPage(page, converter);
+      }
+
+      @Override public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
+          throws MemoryException, IOException {
+        return decode(input, offset, length);
       }
     };
   }

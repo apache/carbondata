@@ -47,7 +47,7 @@ public class CarbonImplicitDimension extends CarbonDimension {
   private String implicitDimensionName;
 
   public CarbonImplicitDimension(int ordinal, String implicitDimensionName) {
-    super(null, ordinal, -1, -1, -1);
+    super(null, ordinal, -1, -1);
     encodingList = new ArrayList<Encoding>();
     encodingList.add(Encoding.IMPLICIT);
     this.implicitDimensionName = implicitDimensionName;
@@ -74,13 +74,6 @@ public class CarbonImplicitDimension extends CarbonDimension {
    */
   public Boolean isComplex() {
     return false;
-  }
-
-  /**
-   * @return row group id if it is row based
-   */
-  @Override public int columnGroupId() {
-    return -1;
   }
 
   /**

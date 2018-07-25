@@ -159,78 +159,6 @@ object GlobalDictionaryUtil {
     dimensionsWithDict.toArray
   }
 
-  /**
-   * invoke CarbonDictionaryWriter to write dictionary to file.
-   *
-   * @param model       instance of DictionaryLoadModel
-   * @param columnIndex the index of current column in column list
-   * @param iter        distinct value list of dictionary
-   */
-  def writeGlobalDictionaryToFile(model: DictionaryLoadModel,
-      columnIndex: Int,
-      iter: Iterator[String]): Unit = {
-    val dictService = CarbonCommonFactory.getDictionaryService
-    val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier = new
-        DictionaryColumnUniqueIdentifier(
-      model.table,
-      model.columnIdentifier(columnIndex),
-      model.columnIdentifier(columnIndex).getDataType)
-    val writer: CarbonDictionaryWriter = dictService
-      .getDictionaryWriter(dictionaryColumnUniqueIdentifier)
-    try {
-      while (iter.hasNext) {
-        writer.write(iter.next)
-      }
-    } finally {
-      writer.close()
-    }
-  }
-
-  /**
-   * read global dictionary from cache
-   */
-  def readGlobalDictionaryFromCache(model: DictionaryLoadModel): HashMap[String, Dictionary] = {
-    val dictMap = new HashMap[String, Dictionary]
-    model.primDimensions.zipWithIndex.filter(f => model.dictFileExists(f._2)).foreach { m =>
-      val dict = CarbonLoaderUtil.getDictionary(model.table,
-        m._1.getColumnIdentifier, m._1.getDataType
-      )
-      dictMap.put(m._1.getColumnId, dict)
-    }
-    dictMap
-  }
-
-  /**
-   * invoke CarbonDictionaryReader to read dictionary from files.
-   *
-   * @param model carbon dictionary load model
-   */
-  def readGlobalDictionaryFromFile(model: DictionaryLoadModel): HashMap[String, HashSet[String]] = {
-    val dictMap = new HashMap[String, HashSet[String]]
-    val dictService = CarbonCommonFactory.getDictionaryService
-    for (i <- model.primDimensions.indices) {
-      val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier = new
-          DictionaryColumnUniqueIdentifier(
-            model.table,
-            model.columnIdentifier(i),
-            model.columnIdentifier(i).getDataType)
-      val set = new HashSet[String]
-      if (model.dictFileExists(i)) {
-        val reader: CarbonDictionaryReader = dictService.getDictionaryReader(
-          dictionaryColumnUniqueIdentifier)
-        val values = reader.read
-        if (values != null) {
-          for (j <- 0 until values.size) {
-            set.add(new String(values.get(j),
-              Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)))
-          }
-        }
-      }
-      dictMap.put(model.primDimensions(i).getColumnId, set)
-    }
-    dictMap
-  }
-
   def generateParserForChildrenDimension(dim: CarbonDimension,
       format: DataFormat,
       mapColumnValuesWithId:
@@ -824,9 +752,11 @@ object GlobalDictionaryUtil {
   def trimErrorMessage(input: String): String = {
     var errorMessage: String = null
     if (input != null && input.contains("TextParsingException:")) {
-      if (input.split("Hint").length > 0 &&
+      if (input.split("Hint").length > 1 &&
           input.split("Hint")(0).split("TextParsingException: ").length > 1) {
         errorMessage = input.split("Hint")(0).split("TextParsingException: ")(1)
+      } else if (input.split("Parser Configuration:").length > 1) {
+        errorMessage = input.split("Parser Configuration:")(0)
       }
     } else if (input != null && input.contains("Exception:")) {
       errorMessage = input.split("Exception: ")(1).split("\n")(0)

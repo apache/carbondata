@@ -40,15 +40,20 @@ public class ComplexFieldConverterImpl extends AbstractDictionaryFieldConverterI
   @Override
   public void convert(CarbonRow row, BadRecordLogHolder logHolder) {
     Object object = row.getObject(index);
+    row.update(convert(object, logHolder), index);
+  }
+
+  @Override
+  public Object convert(Object value, BadRecordLogHolder logHolder) throws RuntimeException {
     // TODO Its temporary, needs refactor here.
     ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
     DataOutputStream dataOutputStream = new DataOutputStream(byteArray);
     try {
-      genericDataType.writeByteArray(object, dataOutputStream);
+      genericDataType.writeByteArray(value, dataOutputStream, logHolder);
       dataOutputStream.close();
-      row.update(byteArray.toByteArray(), index);
+      return byteArray.toByteArray();
     } catch (Exception e) {
-      throw new CarbonDataLoadingException(object + "", e);
+      throw new CarbonDataLoadingException(value + "", e);
     }
   }
 

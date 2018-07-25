@@ -37,6 +37,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
+import org.apache.carbondata.processing.util.CarbonBadRecordUtil;
 import org.apache.carbondata.processing.util.TableOptionConstant;
 
 import org.apache.commons.lang.StringUtils;
@@ -57,10 +58,11 @@ public class CarbonLoadModelBuilder {
   /**
    * build CarbonLoadModel for data loading
    * @param options Load options from user input
+   * @param taskNo
    * @return a new CarbonLoadModel instance
    */
-  public CarbonLoadModel build(
-      Map<String, String> options, long UUID) throws InvalidLoadOptionException, IOException {
+  public CarbonLoadModel build(Map<String, String>  options, long UUID, String taskNo)
+      throws InvalidLoadOptionException, IOException {
     Map<String, String> optionsFinal = LoadOption.fillOptionWithDefaultValue(options);
 
     if (!options.containsKey("fileheader")) {
@@ -71,17 +73,28 @@ public class CarbonLoadModelBuilder {
       }
       optionsFinal.put("fileheader", Strings.mkString(columns, ","));
     }
+    optionsFinal.put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options, table));
     CarbonLoadModel model = new CarbonLoadModel();
-    model.setCarbonUnmanagedTable(table.isUnManagedTable());
+    model.setCarbonTransactionalTable(table.isTransactionalTable());
     model.setFactTimeStamp(UUID);
+    model.setTaskNo(taskNo);
 
     // we have provided 'fileheader', so it hadoopConf can be null
     build(options, optionsFinal, model, null);
-
-
-    // set default values
-    model.setTimestampformat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-    model.setDateFormat(CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+    String timestampFormat = options.get("timestampformat");
+    if (timestampFormat == null) {
+      timestampFormat = CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+    }
+    String dateFormat = options.get("dateFormat");
+    if (dateFormat == null) {
+      dateFormat = CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+              CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+    }
+    model.setDateFormat(dateFormat);
+    model.setTimestampformat(timestampFormat);
     model.setUseOnePass(Boolean.parseBoolean(Maps.getOrDefault(options, "onepass", "false")));
     model.setDictionaryServerHost(Maps.getOrDefault(options, "dicthost", null));
     try {
@@ -129,6 +142,7 @@ public class CarbonLoadModelBuilder {
     carbonLoadModel.setDatabaseName(table.getDatabaseName());
     carbonLoadModel.setTablePath(table.getTablePath());
     carbonLoadModel.setTableName(table.getTableName());
+    carbonLoadModel.setCarbonTransactionalTable(table.isTransactionalTable());
     CarbonDataLoadSchema dataLoadSchema = new CarbonDataLoadSchema(table);
     // Need to fill dimension relation
     carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema);
@@ -151,10 +165,12 @@ public class CarbonLoadModelBuilder {
 
     if (Boolean.parseBoolean(bad_records_logger_enable) ||
         LoggerAction.REDIRECT.name().equalsIgnoreCase(bad_records_action)) {
-      if (!CarbonUtil.isValidBadStorePath(bad_record_path)) {
-        throw new InvalidLoadOptionException("Invalid bad records location.");
+      if (!StringUtils.isEmpty(bad_record_path)) {
+        bad_record_path = CarbonUtil.checkAndAppendHDFSUrl(bad_record_path);
+      } else {
+        throw new InvalidLoadOptionException(
+            "Cannot redirect bad records as bad record location is not provided.");
       }
-      bad_record_path = CarbonUtil.checkAndAppendHDFSUrl(bad_record_path);
     }
 
     carbonLoadModel.setBadRecordsLocation(bad_record_path);
@@ -258,6 +274,8 @@ public class CarbonLoadModelBuilder {
     carbonLoadModel.setMaxColumns(String.valueOf(validatedMaxColumns));
     carbonLoadModel.readAndSetLoadMetadataDetails();
     carbonLoadModel.setSortColumnsBoundsStr(optionsFinal.get("sort_column_bounds"));
+    carbonLoadModel.setLoadMinSize(
+        optionsFinal.get(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB));
   }
 
   private int validateMaxColumns(String[] csvHeaders, String maxColumns)

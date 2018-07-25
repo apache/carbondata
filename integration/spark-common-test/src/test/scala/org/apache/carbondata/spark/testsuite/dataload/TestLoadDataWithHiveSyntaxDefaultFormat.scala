@@ -365,6 +365,22 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     sql("drop table if exists complexcarbontable")
   }
 
+  test("test Complex Data type - Array and Struct of timestamp with dictionary include") {
+    sql("DROP TABLE IF EXISTS array_timestamp")
+    sql(
+      "create table array_timestamp (date1 array<timestamp>,date2 struct<date:timestamp> ) stored" +
+      " by 'carbondata' tblproperties" +
+      "('dictionary_include'='date1,date2')")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    sql("insert into array_timestamp values('2015/01/01$2016/01/01','2017/01/01')")
+    checkExistence(sql("select * from array_timestamp "),
+      true, "2015-01-01 00:00:00.0, 2016-01-01 00:00:00.0")
+    checkExistence(sql("select * from array_timestamp "),
+      true, "2017-01-01 00:00:00.0")
+    sql("DROP TABLE IF EXISTS array_timestamp")
+  }
+
   test("array<string> and string datatype for same column is not working properly") {
     sql("drop table if exists complexcarbontable")
     sql("create table complexcarbontable(deviceInformationId int, MAC array<string>, channelsId string, "+
@@ -566,7 +582,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
            (ID decimal(5,5), date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int, complex
            array<decimal(4,2)>)
-           STORED BY 'org.apache.carbondata.format'
+           STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include'='complex')
       """
     )
 
@@ -588,7 +604,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
            (ID decimal(5,5), date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int, complex
            struct<a:decimal(4,2)>)
-           STORED BY 'org.apache.carbondata.format'
+           STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include'='complex')
       """
     )
 
@@ -611,7 +627,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
            (ID decimal, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int, complex
            array<struct<a:decimal(4,2),str:string>>)
-           STORED BY 'org.apache.carbondata.format'
+           STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include'='complex')
       """
     )
     sql(

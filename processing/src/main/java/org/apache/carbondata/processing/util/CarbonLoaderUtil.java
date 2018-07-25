@@ -40,8 +40,8 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
+import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.locks.CarbonLockUtil;
 import org.apache.carbondata.core.locks.ICarbonLock;
@@ -53,6 +53,7 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter;
@@ -77,7 +78,8 @@ public final class CarbonLoaderUtil {
    */
   public enum BlockAssignmentStrategy {
     BLOCK_NUM_FIRST("Assign blocks to node base on number of blocks"),
-    BLOCK_SIZE_FIRST("Assign blocks to node base on data size of blocks");
+    BLOCK_SIZE_FIRST("Assign blocks to node base on data size of blocks"),
+    NODE_MIN_SIZE_FIRST("Assign blocks to node base on minumun size of inputs");
     private String name;
     BlockAssignmentStrategy(String name) {
       this.name = name;
@@ -159,6 +161,30 @@ public final class CarbonLoaderUtil {
   }
 
   /**
+   * This API deletes the content of the non Transactional Tables when insert overwrite is set true.
+   *
+   * @param loadModel
+   * @throws IOException
+   */
+  public static void deleteNonTransactionalTableForInsertOverwrite(final CarbonLoadModel loadModel)
+      throws IOException {
+    // We need to delete the content of the Table Path Folder except the
+    // Newly added file.
+    List<String> filesToBeDeleted = new ArrayList<>();
+    CarbonFile carbonFile = FileFactory.getCarbonFile(loadModel.getTablePath());
+    CarbonFile[] filteredList = carbonFile.listFiles(new CarbonFileFilter() {
+      @Override public boolean accept(CarbonFile file) {
+        return !file.getName().contains(loadModel.getFactTimeStamp() + "");
+      }
+    });
+    for (CarbonFile file : filteredList) {
+      filesToBeDeleted.add(file.getAbsolutePath());
+    }
+
+    deleteFiles(filesToBeDeleted);
+  }
+
+  /**
    * This API will write the load level metadata for the loadmanagement module inorder to
    * manage the load and query execution management smoothly.
    *
@@ -169,8 +195,13 @@ public final class CarbonLoaderUtil {
    * @throws IOException
    */
   public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
-      CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid)
+      final CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid)
       throws IOException {
+    // For Non Transactional tables no need to update the the Table Status file.
+    if (!loadModel.isCarbonTransactionalTable()) {
+      return true;
+    }
+
     return recordNewLoadMetadata(newMetaEntry, loadModel, loadStartEntry, insertOverwrite, uuid,
         new ArrayList<Segment>(), new ArrayList<Segment>());
   }
@@ -191,10 +222,12 @@ public final class CarbonLoaderUtil {
     boolean status = false;
     AbsoluteTableIdentifier identifier =
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
-    String metadataPath = CarbonTablePath.getMetadataPath(identifier.getTablePath());
-    FileType fileType = FileFactory.getFileType(metadataPath);
-    if (!FileFactory.isFileExist(metadataPath, fileType)) {
-      FileFactory.mkdirs(metadataPath, fileType);
+    if (loadModel.isCarbonTransactionalTable()) {
+      String metadataPath = CarbonTablePath.getMetadataPath(identifier.getTablePath());
+      FileType fileType = FileFactory.getFileType(metadataPath);
+      if (!FileFactory.isFileExist(metadataPath, fileType)) {
+        FileFactory.mkdirs(metadataPath, fileType);
+      }
     }
     String tableStatusPath;
     if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() && !uuid.isEmpty()) {
@@ -282,6 +315,7 @@ public final class CarbonLoaderUtil {
           if (!found) {
             LOGGER.error("Entry not found to update " + newMetaEntry + " From list :: "
                 + listOfLoadFolderDetails);
+            throw new IOException("Entry not found to update in the table status file");
           }
           listOfLoadFolderDetails.set(indexToOverwriteNewMetaEntry, newMetaEntry);
         }
@@ -295,7 +329,8 @@ public final class CarbonLoaderUtil {
           // if the segments is in the list of marked for delete then update the status.
           if (segmentsToBeDeleted.contains(new Segment(detail.getLoadName(), null))) {
             detail.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
-          } else if (segmentFilesTobeUpdated.contains(Segment.toSegment(detail.getLoadName()))) {
+          } else if (segmentFilesTobeUpdated
+              .contains(Segment.toSegment(detail.getLoadName(), null))) {
             detail.setSegmentFile(
                 detail.getLoadName() + "_" + newMetaEntry.getUpdateStatusFileName()
                     + CarbonTablePath.SEGMENT_EXT);
@@ -371,7 +406,7 @@ public final class CarbonLoaderUtil {
     BufferedWriter brWriter = null;
 
     AtomicFileOperations writeOperation =
-        new AtomicFileOperationsImpl(dataLoadLocation, FileFactory.getFileType(dataLoadLocation));
+        AtomicFileOperationFactory.getAtomicFileOperations(dataLoadLocation);
 
     try {
       dataOutputStream = writeOperation.openForWrite(FileWriteOperation.OVERWRITE);
@@ -431,6 +466,7 @@ public final class CarbonLoaderUtil {
     }
     CarbonLoaderUtil
         .populateNewLoadMetaEntry(newLoadMetaEntry, status, model.getFactTimeStamp(), false);
+
     boolean entryAdded = CarbonLoaderUtil
         .recordNewLoadMetadata(newLoadMetaEntry, model, true, insertOverwrite, uuid);
     if (!entryAdded) {
@@ -503,7 +539,7 @@ public final class CarbonLoaderUtil {
       List<String> activeNode) {
     Map<String, List<Distributable>> mapOfNodes =
         CarbonLoaderUtil.nodeBlockMapping(blockInfos, noOfNodesInput, activeNode,
-            BlockAssignmentStrategy.BLOCK_NUM_FIRST);
+            BlockAssignmentStrategy.BLOCK_NUM_FIRST, null);
     int taskPerNode = parallelism / mapOfNodes.size();
     //assigning non zero value to noOfTasksPerNode
     int noOfTasksPerNode = taskPerNode == 0 ? 1 : taskPerNode;
@@ -520,7 +556,7 @@ public final class CarbonLoaderUtil {
   public static Map<String, List<Distributable>> nodeBlockMapping(List<Distributable> blockInfos,
       int noOfNodesInput) {
     return nodeBlockMapping(blockInfos, noOfNodesInput, null,
-        BlockAssignmentStrategy.BLOCK_NUM_FIRST);
+        BlockAssignmentStrategy.BLOCK_NUM_FIRST,null);
   }
 
   /**
@@ -541,11 +577,12 @@ public final class CarbonLoaderUtil {
    * @param noOfNodesInput -1 if number of nodes has to be decided
    *                       based on block location information
    * @param blockAssignmentStrategy strategy used to assign blocks
+   * @param loadMinSize the property load_min_size_inmb specified by the user
    * @return a map that maps node to blocks
    */
   public static Map<String, List<Distributable>> nodeBlockMapping(
       List<Distributable> blockInfos, int noOfNodesInput, List<String> activeNodes,
-      BlockAssignmentStrategy blockAssignmentStrategy) {
+      BlockAssignmentStrategy blockAssignmentStrategy, String expectedMinSizePerNode) {
     ArrayList<NodeMultiBlockRelation> rtnNode2Blocks = new ArrayList<>();
 
     Set<Distributable> uniqueBlocks = new HashSet<>(blockInfos);
@@ -562,20 +599,54 @@ public final class CarbonLoaderUtil {
 
     // calculate the average expected size for each node
     long sizePerNode = 0;
+    long totalFileSize = 0;
     if (BlockAssignmentStrategy.BLOCK_NUM_FIRST == blockAssignmentStrategy) {
-      sizePerNode = blockInfos.size() / noofNodes;
+      if (blockInfos.size() > 0) {
+        sizePerNode = blockInfos.size() / noofNodes;
+      }
       sizePerNode = sizePerNode <= 0 ? 1 : sizePerNode;
-    } else if (BlockAssignmentStrategy.BLOCK_SIZE_FIRST == blockAssignmentStrategy) {
-      long totalFileSize = 0;
+    } else if (BlockAssignmentStrategy.BLOCK_SIZE_FIRST == blockAssignmentStrategy
+        || BlockAssignmentStrategy.NODE_MIN_SIZE_FIRST == blockAssignmentStrategy) {
       for (Distributable blockInfo : uniqueBlocks) {
         totalFileSize += ((TableBlockInfo) blockInfo).getBlockLength();
       }
       sizePerNode = totalFileSize / noofNodes;
     }
 
-    // assign blocks to each node
-    assignBlocksByDataLocality(rtnNode2Blocks, sizePerNode, uniqueBlocks, originNode2Blocks,
-        activeNodes, blockAssignmentStrategy);
+    // if enable to control the minimum amount of input data for each node
+    if (BlockAssignmentStrategy.NODE_MIN_SIZE_FIRST == blockAssignmentStrategy) {
+      long iexpectedMinSizePerNode = 0;
+      // validate the property load_min_size_inmb specified by the user
+      if (CarbonUtil.validateValidIntType(expectedMinSizePerNode)) {
+        iexpectedMinSizePerNode = Integer.parseInt(expectedMinSizePerNode);
+      } else {
+        LOGGER.warn("Invalid load_min_size_inmb value found: " + expectedMinSizePerNode
+            + ", only int value greater than 0 is supported.");
+        iexpectedMinSizePerNode = CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_DEFAULT;
+      }
+      // If the average expected size for each node greater than load min size,
+      // then fall back to default strategy
+      if (iexpectedMinSizePerNode * 1024 * 1024 < sizePerNode) {
+        if (CarbonProperties.getInstance().isLoadSkewedDataOptimizationEnabled()) {
+          blockAssignmentStrategy = BlockAssignmentStrategy.BLOCK_SIZE_FIRST;
+        } else {
+          blockAssignmentStrategy = BlockAssignmentStrategy.BLOCK_NUM_FIRST;
+        }
+        LOGGER.info("Specified minimum data size to load is less than the average size "
+            + "for each node, fallback to default strategy" + blockAssignmentStrategy);
+      } else {
+        sizePerNode = iexpectedMinSizePerNode;
+      }
+    }
+
+    if (BlockAssignmentStrategy.NODE_MIN_SIZE_FIRST == blockAssignmentStrategy) {
+      // assign blocks to each node ignore data locality
+      assignBlocksIgnoreDataLocality(rtnNode2Blocks, sizePerNode, uniqueBlocks, activeNodes);
+    } else {
+      // assign blocks to each node
+      assignBlocksByDataLocality(rtnNode2Blocks, sizePerNode, uniqueBlocks, originNode2Blocks,
+          activeNodes, blockAssignmentStrategy);
+    }
 
     // if any blocks remain then assign them to nodes in round robin.
     assignLeftOverBlocks(rtnNode2Blocks, uniqueBlocks, sizePerNode, activeNodes,
@@ -723,6 +794,7 @@ public final class CarbonLoaderUtil {
         populateBlocksByNum(remainingBlocks, expectedSizePerNode, blockLst);
         break;
       case BLOCK_SIZE_FIRST:
+      case NODE_MIN_SIZE_FIRST:
         populateBlocksBySize(remainingBlocks, expectedSizePerNode, blockLst);
         break;
       default:
@@ -802,6 +874,7 @@ public final class CarbonLoaderUtil {
         roundRobinAssignBlocksByNum(node2Blocks, remainingBlocks);
         break;
       case BLOCK_SIZE_FIRST:
+      case NODE_MIN_SIZE_FIRST:
         roundRobinAssignBlocksBySize(node2Blocks, remainingBlocks);
         break;
       default:
@@ -949,6 +1022,54 @@ public final class CarbonLoaderUtil {
   }
 
   /**
+   * allocate distributable blocks to nodes based on ignore data locality
+   */
+  private static void assignBlocksIgnoreDataLocality(
+          ArrayList<NodeMultiBlockRelation> outputNode2Blocks,
+          long expectedSizePerNode, Set<Distributable> remainingBlocks,
+          List<String> activeNodes) {
+    // get all blocks
+    Set<Distributable> uniqueBlocks = new HashSet<>(remainingBlocks);
+    // shuffle activeNodes ignore data locality
+    List<String> shuffleNodes  = new ArrayList<>(activeNodes);
+    Collections.shuffle(shuffleNodes);
+
+    for (String activeNode : shuffleNodes) {
+      long nodeCapacity = 0;
+      NodeMultiBlockRelation nodeBlock = new NodeMultiBlockRelation(activeNode,
+          new ArrayList<Distributable>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE));
+      // loop thru blocks of each Node
+      for (Distributable block : uniqueBlocks) {
+        if (!remainingBlocks.contains(block)) {
+          // this block has been added before
+          continue;
+        }
+
+        long thisBlockSize = ((TableBlockInfo) block).getBlockLength();
+        if (nodeCapacity == 0
+            || nodeCapacity + thisBlockSize <= expectedSizePerNode * 1024 * 1024) {
+          nodeBlock.getBlocks().add(block);
+          nodeCapacity += thisBlockSize;
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(
+                "First Assignment iteration: " + ((TableBlockInfo) block).getFilePath() + '-'
+                    + ((TableBlockInfo) block).getBlockLength() + "-->" + activeNode);
+          }
+          remainingBlocks.remove(block);
+          // this block is too big for current node and there are still capacity left
+          // for small files, so continue to allocate block on this node in next iteration.
+        } else {
+          // No need to continue loop as node is full
+          break;
+        }
+      }
+      if (nodeBlock.getBlocks().size() != 0) {
+        outputNode2Blocks.add(nodeBlock);
+      }
+    }
+  }
+
+  /**
    * method validates whether the node is active or not.
    *
    * @param activeNode
@@ -1046,16 +1167,18 @@ public final class CarbonLoaderUtil {
 
   /**
    * Merge index files with in the segment of partitioned table
-   * @param segmentId
+   *
    * @param table
+   * @param segmentId
+   * @param uuid
    * @return
    * @throws IOException
    */
-  public static String mergeIndexFilesinPartitionedSegment(String segmentId, CarbonTable table)
-      throws IOException {
+  public static String mergeIndexFilesinPartitionedSegment(CarbonTable table, String segmentId,
+      String uuid) throws IOException {
     String tablePath = table.getTablePath();
     return new CarbonIndexFileMergeWriter(table)
-        .mergeCarbonIndexFilesOfSegment(segmentId, tablePath);
+        .mergeCarbonIndexFilesOfSegment(segmentId, uuid, tablePath);
   }
 
   private static void deleteFiles(List<String> filesToBeDeleted) throws IOException {

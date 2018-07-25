@@ -19,8 +19,8 @@ package org.apache.carbondata.core.datastore.chunk.impl;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory.DimensionStoreType;
-import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 /**
@@ -30,20 +30,31 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
 
   /**
    * Constructor for this class
-   * @param dataChunks
-   * @param invertedIndex
-   * @param invertedIndexReverse
-   * @param numberOfRows
    */
   public VariableLengthDimensionColumnPage(byte[] dataChunks, int[] invertedIndex,
-      int[] invertedIndexReverse, int numberOfRows) {
-    long totalSize = null != invertedIndex ?
-        (dataChunks.length + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE) + (
-            numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE)) :
-        (dataChunks.length + (numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE));
+      int[] invertedIndexReverse, int numberOfRows, DimensionStoreType dimStoreType,
+      CarbonDictionary dictionary) {
+    boolean isExplicitSorted = isExplicitSorted(invertedIndex);
+    long totalSize = 0;
+    switch (dimStoreType) {
+      case LOCAL_DICT:
+        totalSize = null != invertedIndex ?
+            (dataChunks.length + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE)) :
+            dataChunks.length;
+        break;
+      case VARIABLE_INT_LENGTH:
+      case VARIABLE_SHORT_LENGTH:
+        totalSize = null != invertedIndex ?
+            (dataChunks.length + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE) + (
+                numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE)) :
+            (dataChunks.length + (numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE));
+        break;
+      default:
+        throw new UnsupportedOperationException("Invalidate dimension store type");
+    }
     dataChunkStore = DimensionChunkStoreFactory.INSTANCE
-        .getDimensionChunkStore(0, null != invertedIndex, numberOfRows, totalSize,
-            DimensionStoreType.VARIABLELENGTH);
+        .getDimensionChunkStore(0, isExplicitSorted, numberOfRows, totalSize, dimStoreType,
+            dictionary);
     dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunks);
   }
 
@@ -53,11 +64,9 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
    * @param rowId             row id of the chunk
    * @param offset            offset from which data need to be filed
    * @param data              data to filed
-   * @param restructuringInfo define the structure of the key
    * @return how many bytes was copied
    */
-  @Override public int fillRawData(int rowId, int offset, byte[] data,
-      KeyStructureInfo restructuringInfo) {
+  @Override public int fillRawData(int rowId, int offset, byte[] data) {
     // no required in this case because this column chunk is not the part if
     // mdkey
     return 0;
@@ -69,11 +78,9 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
    * @param rowId
    * @param chunkIndex
    * @param outputSurrogateKey
-   * @param restructuringInfo
    * @return
    */
-  @Override public int fillSurrogateKey(int rowId, int chunkIndex, int[] outputSurrogateKey,
-      KeyStructureInfo restructuringInfo) {
+  @Override public int fillSurrogateKey(int rowId, int chunkIndex, int[] outputSurrogateKey) {
     return chunkIndex + 1;
   }
 
@@ -89,11 +96,9 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
    *
    * @param vectorInfo
    * @param chunkIndex
-   * @param restructuringInfo
    * @return next column index
    */
-  @Override public int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex,
-      KeyStructureInfo restructuringInfo) {
+  @Override public int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex) {
     ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
     CarbonColumnVector vector = columnVectorInfo.vector;
     int offset = columnVectorInfo.offset;
@@ -113,11 +118,10 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
    * @param filteredRowId
    * @param vectorInfo
    * @param chunkIndex
-   * @param restructuringInfo
    * @return next column index
    */
   @Override public int fillVector(int[] filteredRowId, ColumnVectorInfo[] vectorInfo,
-      int chunkIndex, KeyStructureInfo restructuringInfo) {
+      int chunkIndex) {
     ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
     CarbonColumnVector vector = columnVectorInfo.vector;
     int offset = columnVectorInfo.offset;

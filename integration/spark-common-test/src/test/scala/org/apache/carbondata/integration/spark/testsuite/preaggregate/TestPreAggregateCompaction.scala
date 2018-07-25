@@ -190,6 +190,19 @@ class TestPreAggregateCompaction extends QueryTest with BeforeAndAfterEach with 
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
   }
 
+  test("test minor compaction on Pre-agg tables after multiple loads") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    sql("alter table maintable compact 'minor'")
+    assert(sql("show segments for table maintable").collect().map(_.get(1).toString.toLowerCase).contains("compacted"))
+  }
+
   override def afterAll(): Unit = {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
     sql("drop database if exists compaction cascade")

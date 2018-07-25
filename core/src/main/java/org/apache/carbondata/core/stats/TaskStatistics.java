@@ -45,7 +45,11 @@ public class TaskStatistics implements Serializable {
       new Column("total_pages", QueryStatisticsConstants.TOTAL_PAGE_SCANNED),
       new Column("scanned_pages", QueryStatisticsConstants.PAGE_SCANNED),
       new Column("valid_pages", QueryStatisticsConstants.VALID_PAGE_SCANNED),
-      new Column("result_size", QueryStatisticsConstants.RESULT_SIZE)
+      new Column("result_size", QueryStatisticsConstants.RESULT_SIZE),
+      new Column("key_column_filling_time", QueryStatisticsConstants.KEY_COLUMN_FILLING_TIME),
+      new Column("measure_filling_time", QueryStatisticsConstants.MEASURE_FILLING_TIME),
+      new Column("page_uncompress_time", QueryStatisticsConstants.PAGE_UNCOMPRESS_TIME),
+      new Column("result_preparation_time", QueryStatisticsConstants.RESULT_PREP_TIME)
   };
 
   private static final int numOfColumns = columns.length;

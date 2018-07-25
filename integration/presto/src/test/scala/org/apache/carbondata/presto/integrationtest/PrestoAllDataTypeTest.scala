@@ -18,10 +18,16 @@
 package org.apache.carbondata.presto.integrationtest
 
 import java.io.File
+import java.sql.Timestamp
 
+import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.scalatest.{BeforeAndAfterAll, FunSuiteLike}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.datastore.impl.FileFactory.FileType
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.presto.server.PrestoServer
 
 
@@ -33,6 +39,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
   private val rootPath = new File(this.getClass.getResource("/").getPath
                                   + "../../../..").getCanonicalPath
   private val storePath = s"$rootPath/integration/presto/target/store"
+  private val systemPath = s"$rootPath/integration/presto/target/system"
 
 
   // Table schema:
@@ -64,10 +71,13 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
     import org.apache.carbondata.presto.util.CarbonDataStoreCreator
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION,
+      systemPath)
     CarbonDataStoreCreator
       .createCarbonStore(storePath,
         s"$rootPath/integration/presto/src/test/resources/alldatatype.csv")
     logger.info(s"\nCarbon store is created at location: $storePath")
+    cleanUp
     PrestoServer.startServer(storePath)
   }
 
@@ -496,5 +506,77 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
 
     assert(actualResult.equals(expectedResult))
   }
+
+
+  test("test the show schemas result"){
+   val actualResult = PrestoServer.executeQuery("SHOW SCHEMAS")
+    assert(actualResult.equals(List(Map("Schema" -> "information_schema"), Map("Schema" -> "testdb"))))
+  }
+  test("test the show tables"){
+  val actualResult = PrestoServer.executeQuery("SHOW TABLES")
+  assert(actualResult.equals(List(Map("Table" -> "testtable"))))
+ }
+
+  private def cleanUp(): Unit = {
+    FileFactory.deleteFile(s"$storePath/Fact", FileType.LOCAL)
+    FileFactory
+      .createDirectoryAndSetPermission(s"$storePath/_system",
+        new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    FileFactory
+      .createDirectoryAndSetPermission(s"$storePath/.DS_Store",
+        new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
+    FileFactory.createNewFile(s"$storePath/testdb/.DS_STORE",FileType.LOCAL)
+  }
+
+  test("test the OR operator on same column"){
+    val actualResult: List[Map[String, Any]] = PrestoServer.executeQuery("SELECT BONUS FROM TESTDB.TESTTABLE WHERE" +
+      " BONUS < 600 OR BONUS > 5000 ORDER BY BONUS")
+    val expectedResult: List[Map[String, Any]] = List(
+      Map("BONUS" -> java.math.BigDecimal.valueOf(500.4140).setScale(4)),
+      Map("BONUS" -> java.math.BigDecimal.valueOf(500.5900).setScale(4)),
+      Map("BONUS" -> java.math.BigDecimal.valueOf(500.8800).setScale(4)),
+      Map("BONUS" -> java.math.BigDecimal.valueOf(500.9900).setScale(4)),
+      Map("BONUS" -> java.math.BigDecimal.valueOf(5000.9990).setScale(4)),
+      Map("BONUS" -> java.math.BigDecimal.valueOf(9999.9990).setScale(4)))
+    assert(actualResult.equals(expectedResult))
+  }
+
+  test("test the AND, OR operator on same column"){
+    val actualResult: List[Map[String, Any]] = PrestoServer.executeQuery("SELECT SHORTFIELD FROM TESTDB.TESTTABLE WHERE" +
+      " SHORTFIELD > 4 AND (SHORTFIELD < 10 or SHORTFIELD > 15) ORDER BY SHORTFIELD")
+    val expectedResult: List[Map[String, Any]] = List(
+      Map("SHORTFIELD" -> 8),
+      Map("SHORTFIELD" -> 18))
+    assert(actualResult.equals(expectedResult))
+  }
+
+  test("test the OR operator with multiple AND on same column"){
+    val actualResult: List[Map[String, Any]] = PrestoServer.executeQuery("SELECT SHORTFIELD FROM TESTDB.TESTTABLE WHERE" +
+      " (SHORTFIELD > 1 AND SHORTFIELD < 5) OR (SHORTFIELD > 10 AND SHORTFIELD < 15) ORDER BY SHORTFIELD")
+    val expectedResult: List[Map[String, Any]] = List(
+      Map("SHORTFIELD" -> 4),
+      Map("SHORTFIELD" -> 11),
+      Map("SHORTFIELD" -> 12))
+    assert(actualResult.equals(expectedResult))
+  }
+
+  test("test the OR, AND operator with on Different column"){
+    val actualResult: List[Map[String, Any]] = PrestoServer.executeQuery("SELECT SHORTFIELD FROM TESTDB.TESTTABLE WHERE" +
+      " ID < 7 AND (SHORTFIELD < 5 OR SHORTFIELD > 15) ORDER BY SHORTFIELD")
+    val expectedResult: List[Map[String, Any]] = List(
+      Map("SHORTFIELD" -> 4),
+      Map("SHORTFIELD" -> 18))
+    assert(actualResult.equals(expectedResult))
+  }
+
+  test("test the Timestamp greaterthan expression"){
+    val actualResult: List[Map[String, Any]] = PrestoServer.executeQuery("SELECT DOB FROM TESTDB.TESTTABLE" +
+                                                                         " WHERE DOB > timestamp '2016-01-01 00:00:00.0' order by DOB")
+    val expectedResult: List[Map[String, Any]] = List(
+      Map("DOB" -> new Timestamp(new java.util.Date(2016-1900,1-1,14,15,7,9).getTime)),
+      Map("DOB" -> new Timestamp(new java.util.Date(2016-1900,4-1,14,15,0,9).getTime)))
+    assert(actualResult.equals(expectedResult))
+  }
+
 
 }

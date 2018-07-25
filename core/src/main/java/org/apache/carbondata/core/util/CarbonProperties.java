@@ -34,6 +34,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.BLOCKLET_SIZE;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
@@ -45,6 +46,8 @@ import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_MAX;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_MIN;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SEARCH_MODE_WORKER_WORKLOAD_LIMIT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_BLOCK;
@@ -54,6 +57,7 @@ import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CSV_READ_BUFFER_SIZE;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_AUTO_HANDOFF;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_OFFHEAP_SORT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_UNSAFE_SORT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_VECTOR_READER;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.HANDOFF_SIZE;
@@ -62,6 +66,7 @@ import static org.apache.carbondata.core.constants.CarbonCommonConstants.NUM_COR
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.NUM_CORES_BLOCK_SORT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.SORT_SIZE;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE;
 import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB;
 import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO;
 
@@ -147,6 +152,9 @@ public final class CarbonProperties {
       case ENABLE_UNSAFE_SORT:
         validateEnableUnsafeSort();
         break;
+      case ENABLE_OFFHEAP_SORT:
+        validateEnableOffHeapSort();
+        break;
       case CARBON_CUSTOM_BLOCK_DISTRIBUTION:
         validateCustomBlockDistribution();
         break;
@@ -185,11 +193,42 @@ public final class CarbonProperties {
       case CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO:
         validateSchedulerMinRegisteredRatio();
         break;
+      case CARBON_SEARCH_MODE_SCAN_THREAD:
+        validatePositiveInteger(CARBON_SEARCH_MODE_SCAN_THREAD);
+        break;
+      case CARBON_SEARCH_MODE_WORKER_WORKLOAD_LIMIT:
+        validatePositiveInteger(CARBON_SEARCH_MODE_WORKER_WORKLOAD_LIMIT);
+        break;
+      case CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE:
+        validateSortMemorySpillPercentage();
+        break;
       // TODO : Validation for carbon.lock.type should be handled for addProperty flow
       default:
         // none
     }
   }
+
+  /**
+   * Validate the specified property is positive integer value
+   */
+  private void validatePositiveInteger(String propertyName) {
+    String value = getInstance().getProperty(propertyName);
+    try {
+      int intValue = Integer.parseInt(value);
+      if (intValue <= 0) {
+        getInstance().removeProperty(propertyName);
+        LOGGER.warn(String.format("The value \"%s\" configured for key \"%s\" " +
+            "is invalid. Ignoring it", value, propertyName));
+        throw new IllegalArgumentException();
+      }
+    } catch (NumberFormatException e) {
+      getInstance().removeProperty(propertyName);
+      LOGGER.warn(String.format("The value \"%s\" configured for key \"%s\" " +
+          "is invalid. Ignoring it", value, propertyName));
+      throw e;
+    }
+  }
+
   /**
    * This method validates the loaded properties and loads default
    * values in case of wrong values.
@@ -205,6 +244,7 @@ public final class CarbonProperties {
     validateBlockletGroupSizeInMB();
     validateNumberOfColumnPerIORead();
     validateEnableUnsafeSort();
+    validateEnableOffHeapSort();
     validateCustomBlockDistribution();
     validateEnableVectorReader();
     validateLockType();
@@ -227,6 +267,7 @@ public final class CarbonProperties {
     validateWorkingMemory();
     validateSortStorageMemory();
     validateEnableQueryStatistics();
+    validateSortMemorySpillPercentage();
   }
 
   /**
@@ -438,6 +479,18 @@ public final class CarbonProperties {
           + CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT);
       carbonProperties.setProperty(ENABLE_UNSAFE_SORT,
           CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT);
+    }
+  }
+
+  private void validateEnableOffHeapSort() {
+    String value = carbonProperties.getProperty(ENABLE_OFFHEAP_SORT);
+    boolean isValidBooleanValue = CarbonUtil.validateBoolean(value);
+    if (!isValidBooleanValue) {
+      LOGGER.warn("The enable off heap sort value \"" + value
+          + "\" is invalid. Using the default value \""
+          + CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT);
+      carbonProperties.setProperty(ENABLE_OFFHEAP_SORT,
+          CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT);
     }
   }
 
@@ -769,10 +822,6 @@ public final class CarbonProperties {
     if (null != sessionPropertyValue) {
       return sessionPropertyValue;
     }
-    //TODO temporary fix
-    if ("carbon.leaf.node.size".equals(key)) {
-      return "120000";
-    }
     return carbonProperties.getProperty(key);
   }
 
@@ -822,6 +871,15 @@ public final class CarbonProperties {
     // the method will validate the added property
     // if the added property is not valid then will reset to default value.
     validateAndLoadDefaultProperties(key.toLowerCase());
+    return this;
+  }
+
+  /**
+   * Remove the specified key in property
+   */
+  public CarbonProperties removeProperty(String key) {
+    carbonProperties.remove(key);
+    addedProperty.remove(key);
     return this;
   }
 
@@ -1032,6 +1090,11 @@ public final class CarbonProperties {
     return enableAutoHandoffStr.equalsIgnoreCase("true");
   }
 
+  public boolean isEnableVectorReader() {
+    return getInstance().getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
+        CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT).equalsIgnoreCase("true");
+  }
+
   /**
    * Validate the restrictions
    *
@@ -1229,11 +1292,11 @@ public final class CarbonProperties {
     String compressor = getProperty(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR,
         CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR_DEFAULT).toUpperCase();
     if (compressor.isEmpty() || "SNAPPY".equals(compressor) || "GZIP".equals(compressor)
-        || "BZIP2".equals(compressor) || "LZ4".equals(compressor)) {
+        || "BZIP2".equals(compressor) || "LZ4".equals(compressor) || "ZSTD".equals(compressor)) {
       return compressor;
     } else {
       LOGGER.warn("The ".concat(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR)
-          .concat(" configuration value is invalid. Only snappy,gzip,bip2,lz4 and")
+          .concat(" configuration value is invalid. Only snappy, gzip, bip2, lz4, zstd and")
           .concat(" empty are allowed. It will not compress the sort temp files by default"));
       return CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR_DEFAULT;
     }
@@ -1249,6 +1312,18 @@ public final class CarbonProperties {
         CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_SKEWED_DATA_OPTIMIZATION_DEFAULT);
     return skewedEnabled.equalsIgnoreCase("true");
   }
+
+  /**
+   * whether optimization for the node loads the minimum amount of data is enabled
+   * @return true, if enabled; false for not enabled.
+   */
+  public boolean isLoadMinSizeOptimizationEnabled() {
+    String loadMinSize = getProperty(
+            CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_NODE_DATA_MIN_SIZE,
+            CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_NODE_DATA_MIN_SIZE_DEFAULT);
+    return loadMinSize.equalsIgnoreCase("true");
+  }
+
   /**
    * returns true if carbon property
    * @param key
@@ -1457,7 +1532,120 @@ public final class CarbonProperties {
     if (systemLocation == null) {
       systemLocation = getStorePath();
     }
+    systemLocation = CarbonUtil.checkAndAppendFileSystemURIScheme(systemLocation);
+    systemLocation = FileFactory.getUpdatedFilePath(systemLocation);
     return systemLocation + CarbonCommonConstants.FILE_SEPARATOR + "_system";
   }
 
+  /**
+   * Return true if search mode is enabled
+   */
+  public static boolean isSearchModeEnabled() {
+    String value = getInstance().getProperty(
+        CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE,
+        CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE_DEFAULT);
+    return Boolean.valueOf(value);
+  }
+
+  public static void enableSearchMode(boolean enable) {
+    getInstance().addProperty(
+        CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE, String.valueOf(enable));
+  }
+
+  public static int getSearchMasterPort() {
+    try {
+      return Integer.parseInt(
+          getInstance().getProperty(
+              CarbonCommonConstants.CARBON_SEARCH_MODE_MASTER_PORT,
+              CarbonCommonConstants.CARBON_SEARCH_MODE_MASTER_PORT_DEFAULT));
+    } catch (NumberFormatException e) {
+      return Integer.parseInt(CarbonCommonConstants.CARBON_SEARCH_MODE_MASTER_PORT_DEFAULT);
+    }
+  }
+
+  public static int getSearchWorkerPort() {
+    try {
+      return Integer.parseInt(
+          getInstance().getProperty(
+              CarbonCommonConstants.CARBON_SEARCH_MODE_WORKER_PORT,
+              CarbonCommonConstants.CARBON_SEARCH_MODE_WORKER_PORT_DEFAULT));
+    } catch (NumberFormatException e) {
+      return Integer.parseInt(CarbonCommonConstants.CARBON_SEARCH_MODE_WORKER_PORT_DEFAULT);
+    }
+  }
+
+  public static int getMaxWorkloadForWorker(int workerCores) {
+    int defaultValue = workerCores * 10;
+    try {
+      return Integer.parseInt(
+          getInstance().getProperty(
+              CarbonCommonConstants.CARBON_SEARCH_MODE_WORKER_WORKLOAD_LIMIT,
+              String.valueOf(defaultValue)));
+    } catch (NumberFormatException e) {
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Return valid storage level for CARBON_INSERT_STORAGE_LEVEL
+   * @return String
+   */
+  public String getInsertIntoDatasetStorageLevel() {
+    String storageLevel = getProperty(CarbonCommonConstants.CARBON_INSERT_STORAGE_LEVEL,
+        CarbonCommonConstants.CARBON_INSERT_STORAGE_LEVEL_DEFAULT);
+    boolean validateStorageLevel = CarbonUtil.isValidStorageLevel(storageLevel);
+    if (!validateStorageLevel) {
+      LOGGER.warn("The " + CarbonCommonConstants.CARBON_INSERT_STORAGE_LEVEL
+          + " configuration value is invalid. It will use default storage level("
+          + CarbonCommonConstants.CARBON_INSERT_STORAGE_LEVEL_DEFAULT
+          + ") to persist dataset.");
+      storageLevel = CarbonCommonConstants.CARBON_INSERT_STORAGE_LEVEL_DEFAULT;
+    }
+    return storageLevel.toUpperCase();
+  }
+
+  /**
+   * Return valid storage level for CARBON_INSERT_STORAGE_LEVEL
+   * @return String
+   */
+  public int getSortMemorySpillPercentage() {
+    int spillPercentage = 0;
+    try {
+      String spillPercentageStr = getProperty(
+          CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
+          CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+      spillPercentage = Integer.parseInt(spillPercentageStr);
+    } catch (NumberFormatException e) {
+      spillPercentage = Integer.parseInt(
+          CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+    }
+    return spillPercentage;
+  }
+
+  private void validateSortMemorySpillPercentage() {
+    String spillPercentageStr = carbonProperties.getProperty(
+        CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
+        CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+
+    try {
+      int spillPercentage = Integer.parseInt(spillPercentageStr);
+      if (spillPercentage > 100 || spillPercentage < 0) {
+        LOGGER.info(
+            "The sort memory spill percentage value \"" + spillPercentageStr +
+                "\" is invalid. Using the default value \""
+                + CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+        carbonProperties.setProperty(
+            CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
+            CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.info(
+          "The sort memory spill percentage value \"" + spillPercentageStr +
+              "\" is invalid. Using the default value \""
+              + CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+      carbonProperties.setProperty(
+          CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
+          CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+    }
+  }
 }

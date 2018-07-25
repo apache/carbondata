@@ -28,13 +28,29 @@ import org.apache.carbondata.core.metadata.schema.table.Writable;
  */
 public class Blocklet implements Writable,Serializable {
 
-  private String blockId;
+  /** file path of this blocklet */
+  private String filePath;
 
+  /** id to identify the blocklet inside the block (it is a sequential number) */
   private String blockletId;
 
-  public Blocklet(String blockId, String blockletId) {
-    this.blockId = blockId;
+  /**
+   * flag to specify whether to consider blocklet Id in equals and hashcode comparison. This is
+   * because when CACHE_LEVEL='BLOCK' which is default value, the blocklet ID returned by
+   * BlockDataMap pruning will always be -1 and other datamaps will give the the correct blocklet
+   * ID. Therefore if we compare -1 with correct blocklet ID the comparison will become wrong and
+   * always false will be returned resulting in incorrect result. Default value for flag is true.
+   */
+  private boolean compareBlockletIdForObjectMatching = true;
+
+  public Blocklet(String filePath, String blockletId) {
+    this.filePath = filePath;
     this.blockletId = blockletId;
+  }
+
+  public Blocklet(String filePath, String blockletId, boolean compareBlockletIdForObjectMatching) {
+    this(filePath, blockletId);
+    this.compareBlockletIdForObjectMatching = compareBlockletIdForObjectMatching;
   }
 
   // For serialization purpose
@@ -45,17 +61,17 @@ public class Blocklet implements Writable,Serializable {
     return blockletId;
   }
 
-  public String getBlockId() {
-    return blockId;
+  public String getFilePath() {
+    return filePath;
   }
 
   @Override public void write(DataOutput out) throws IOException {
-    out.writeUTF(blockId);
+    out.writeUTF(filePath);
     out.writeUTF(blockletId);
   }
 
   @Override public void readFields(DataInput in) throws IOException {
-    blockId = in.readUTF();
+    filePath = in.readUTF();
     blockletId = in.readUTF();
   }
 
@@ -65,8 +81,11 @@ public class Blocklet implements Writable,Serializable {
 
     Blocklet blocklet = (Blocklet) o;
 
-    if (blockId != null ? !blockId.equals(blocklet.blockId) : blocklet.blockId != null) {
+    if (filePath != null ? !filePath.equals(blocklet.filePath) : blocklet.filePath != null) {
       return false;
+    }
+    if (!compareBlockletIdForObjectMatching) {
+      return true;
     }
     return blockletId != null ?
         blockletId.equals(blocklet.blockletId) :
@@ -74,8 +93,11 @@ public class Blocklet implements Writable,Serializable {
   }
 
   @Override public int hashCode() {
-    int result = blockId != null ? blockId.hashCode() : 0;
-    result = 31 * result + (blockletId != null ? blockletId.hashCode() : 0);
+    int result = filePath != null ? filePath.hashCode() : 0;
+    result = 31 * result;
+    if (compareBlockletIdForObjectMatching) {
+      result += blockletId != null ? blockletId.hashCode() : 0;
+    }
     return result;
   }
 }

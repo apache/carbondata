@@ -26,6 +26,7 @@ import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.spark.util.DataGenerator
 
 
 
@@ -313,9 +314,13 @@ object SimpleQueryBenchmark {
     val rootPath = new File(this.getClass.getResource("/").getPath
         + "../../../..").getCanonicalPath
     val storeLocation = s"$rootPath/examples/spark2/target/store"
+    val master = Option(System.getProperty("spark.master"))
+      .orElse(sys.env.get("MASTER"))
+      .orElse(Option("local[8]"))
+
     val spark = SparkSession
         .builder()
-        .master("local")
+        .master(master.get)
         .enableHiveSupport()
         .config("spark.driver.host", "127.0.0.1")
         .getOrCreateCarbonSession(storeLocation)

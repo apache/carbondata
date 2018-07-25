@@ -41,8 +41,11 @@ public class BlockletSerializer {
       throws IOException {
     DataOutputStream dataOutputStream =
         FileFactory.getDataOutputStream(writePath, FileFactory.getFileType(writePath));
-    grainBlocklet.write(dataOutputStream);
-    dataOutputStream.close();
+    try {
+      grainBlocklet.write(dataOutputStream);
+    } finally {
+      dataOutputStream.close();
+    }
   }
 
   /**
@@ -55,8 +58,11 @@ public class BlockletSerializer {
     DataInputStream inputStream =
         FileFactory.getDataInputStream(writePath, FileFactory.getFileType(writePath));
     FineGrainBlocklet blocklet = new FineGrainBlocklet();
-    blocklet.readFields(inputStream);
-    inputStream.close();
+    try {
+      blocklet.readFields(inputStream);
+    } finally {
+      inputStream.close();
+    }
     return blocklet;
   }
 

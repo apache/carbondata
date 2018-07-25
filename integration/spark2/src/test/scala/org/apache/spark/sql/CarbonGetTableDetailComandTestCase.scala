@@ -25,11 +25,11 @@ import org.scalatest.BeforeAndAfterAll
 class CarbonGetTableDetailCommandTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     sql("drop table if exists table_info1")
-    sql("create table table_info1 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) stored by 'org.apache.carbondata.format'")
+    sql("create table table_info1 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) stored by 'org.apache.carbondata.format' tblproperties('local_dictionary_enable'='false')")
     sql(s"""load data local inpath '$resourcesPath/data.csv' into table table_info1 options('delimiter'=',', 'quotechar'='\"', 'fileheader'='')""")
 
     sql("drop table if exists table_info2")
-    sql("create table table_info2 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) stored by 'org.apache.carbondata.format'")
+    sql("create table table_info2 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) stored by 'org.apache.carbondata.format' tblproperties('local_dictionary_enable'='false')")
     sql(s"""load data local inpath '$resourcesPath/data.csv' into table table_info2 options('delimiter'=',', 'quotechar'='\"', 'fileheader'='')""")
   }
 
@@ -43,9 +43,9 @@ class CarbonGetTableDetailCommandTestCase extends QueryTest with BeforeAndAfterA
     assertResult(2)(result.length)
     assertResult("table_info1")(result(0).getString(0))
     // 2096 is the size of carbon table
-    assertResult(2096)(result(0).getLong(1))
+    assertResult(2147)(result(0).getLong(1))
     assertResult("table_info2")(result(1).getString(0))
-    assertResult(2096)(result(1).getLong(1))
+    assertResult(2147)(result(1).getLong(1))
   }
 
   override def afterAll: Unit = {

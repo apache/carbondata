@@ -96,7 +96,9 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
       }
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.DAYS);
-      processRowToNextStep(sortDataRow, sortParameters);
+      if (!sortParameters.getObserver().isFailed()) {
+        processRowToNextStep(sortDataRow, sortParameters);
+      }
     } catch (Exception e) {
       checkError();
       throw new CarbonDataLoadingException("Problem while shutdown the server ", e);
@@ -146,14 +148,6 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
    */
   private boolean processRowToNextStep(UnsafeSortDataRows sortDataRows, SortParameters parameters)
       throws CarbonDataLoadingException {
-    if (null == sortDataRows) {
-      LOGGER.info("Record Processed For table: " + parameters.getTableName());
-      LOGGER.info("Number of Records was Zero");
-      String logMessage = "Summary: Carbon Sort Key Step: Read: " + 0 + ": Write: " + 0;
-      LOGGER.info(logMessage);
-      return false;
-    }
-
     try {
       // start sorting
       sortDataRows.startSorting();

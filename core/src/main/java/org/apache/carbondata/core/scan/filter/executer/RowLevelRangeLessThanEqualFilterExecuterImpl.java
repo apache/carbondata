@@ -58,7 +58,6 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
    * flag to check whether default values is present in the filter value list
    */
   private boolean isDefaultValuePresentInFilter;
-  private int lastDimensionColOrdinal = 0;
   public RowLevelRangeLessThanEqualFilterExecuterImpl(
       List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
@@ -66,7 +65,6 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       Object[] msrFilterRangeValues, SegmentProperties segmentProperties) {
     super(dimColEvaluatorInfoList, msrColEvalutorInfoList, exp, tableIdentifier, segmentProperties,
         null);
-    lastDimensionColOrdinal = segmentProperties.getLastDimensionColOrdinal();
     this.filterRangeValues = filterRangeValues;
     this.msrFilterRangeValues = msrFilterRangeValues;
     if (!msrColEvalutorInfoList.isEmpty()) {
@@ -100,9 +98,11 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     } else if (!msrColEvalutorInfoList.isEmpty() && !isMeasurePresentInCurrentBlock[0]) {
       CarbonMeasure measure = this.msrColEvalutorInfoList.get(0).getMeasure();
       byte[] defaultValue = measure.getDefaultValue();
+      SerializableComparator comparatorTmp =
+          Comparator.getComparatorByDataTypeForMeasure(measure.getDataType());
       if (null != defaultValue) {
         for (int k = 0; k < msrFilterRangeValues.length; k++) {
-          int maxCompare = comparator.compare(msrFilterRangeValues[k],
+          int maxCompare = comparatorTmp.compare(msrFilterRangeValues[k],
               RestructureUtil.getMeasureDefaultValue(measure.getColumnSchema(),
                   measure.getDefaultValue()));
 
@@ -121,7 +121,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     boolean isScanRequired = false;
     if (isMeasurePresentInCurrentBlock[0] || isDimensionPresentInCurrentBlock[0]) {
       if (isMeasurePresentInCurrentBlock[0]) {
-        minValue = blockMinValue[measureChunkIndex[0] + lastDimensionColOrdinal];
+        minValue = blockMinValue[measureChunkIndex[0]];
         isScanRequired =
             isScanRequired(minValue, msrFilterRangeValues, msrColEvalutorInfoList.get(0).getType());
       } else {
@@ -191,11 +191,36 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       DimensionRawColumnChunk rawColumnChunk =
           rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex];
       BitSetGroup bitSetGroup = new BitSetGroup(rawColumnChunk.getPagesCount());
+      FilterExecuter filterExecuter = null;
+      boolean isExclude = false;
       for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
         if (rawColumnChunk.getMinValues() != null) {
           if (isScanRequired(rawColumnChunk.getMinValues()[i], this.filterRangeValues)) {
-            BitSet bitSet = getFilteredIndexes(rawColumnChunk.decodeColumnPage(i),
-                rawColumnChunk.getRowCount()[i]);
+            BitSet bitSet;
+            DimensionColumnPage dimensionColumnPage = rawColumnChunk.decodeColumnPage(i);
+            if (null != rawColumnChunk.getLocalDictionary()) {
+              if (null == filterExecuter) {
+                filterExecuter = FilterUtil
+                    .getFilterExecutorForRangeFilters(rawColumnChunk, exp, isNaturalSorted);
+                if (filterExecuter instanceof ExcludeFilterExecuterImpl) {
+                  isExclude = true;
+                }
+              }
+              if (!isExclude) {
+                bitSet = ((IncludeFilterExecuterImpl) filterExecuter)
+                    .getFilteredIndexes(dimensionColumnPage,
+                        rawColumnChunk.getRowCount()[i], useBitsetPipeLine,
+                        rawBlockletColumnChunks.getBitSetGroup(), i);
+              } else {
+                bitSet = ((ExcludeFilterExecuterImpl) filterExecuter)
+                    .getFilteredIndexes(dimensionColumnPage,
+                        rawColumnChunk.getRowCount()[i], useBitsetPipeLine,
+                        rawBlockletColumnChunks.getBitSetGroup(), i);
+              }
+            } else {
+              bitSet = getFilteredIndexes(dimensionColumnPage,
+                  rawColumnChunk.getRowCount()[i]);
+            }
             bitSetGroup.setBitSet(bitSet, i);
           }
         } else {
@@ -206,8 +231,8 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       }
       return bitSetGroup;
     } else if (isMeasurePresentInCurrentBlock[0]) {
-      int chunkIndex =
-          segmentProperties.getMeasuresOrdinalToChunkMapping().get(measureChunkIndex[0]);
+      int chunkIndex = segmentProperties.getMeasuresOrdinalToChunkMapping()
+          .get(msrColEvalutorInfoList.get(0).getColumnIndex());
       if (null == rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex]) {
         rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex] =
             rawBlockletColumnChunks.getDataBlock().readMeasureChunk(
@@ -475,7 +500,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
                 rawBlockletColumnChunks.getFileReader(), chunkIndex);
       }
     } else if (isMeasurePresentInCurrentBlock[0]) {
-      int chunkIndex = measureChunkIndex[0];
+      int chunkIndex = msrColEvalutorInfoList.get(0).getColumnIndex();
       if (null == rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex]) {
         rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex] =
             rawBlockletColumnChunks.getDataBlock().readMeasureChunk(

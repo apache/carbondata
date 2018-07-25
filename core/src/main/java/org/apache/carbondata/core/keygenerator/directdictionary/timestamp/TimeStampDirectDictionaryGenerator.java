@@ -126,7 +126,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
   @Override public int generateDirectSurrogateKey(String memberStr) {
     if (null == memberStr || memberStr.trim().isEmpty() || memberStr
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-      return 1;
+      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     }
     return getDirectSurrogateForMember(memberStr);
   }
@@ -144,7 +144,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     } else {
       if (null == memberStr || memberStr.trim().isEmpty() || memberStr
           .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-        return 1;
+        return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
       }
       return getDirectSurrogateForMember(memberStr);
     }
@@ -168,7 +168,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     }
     //adding +2 to reserve the first cuttOffDiff value for null or empty date
     if (null == dateToStr) {
-      return 1;
+      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     } else {
       return generateKey(dateToStr.getTime());
     }
@@ -181,7 +181,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
    * @return member value/actual value Date
    */
   @Override public Object getValueFromSurrogate(int key) {
-    if (key == 1) {
+    if (key == CarbonCommonConstants.DIRECT_DICT_VALUE_NULL) {
       return null;
     }
     long timeStamp = ((key - 2) * granularityFactor + cutOffTimeStamp);
@@ -200,19 +200,19 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
       }
     }
     if (timeValue == -1) {
-      return 1;
+      return CarbonCommonConstants.DIRECT_DICT_VALUE_NULL;
     } else {
       return generateKey(timeValue);
     }
   }
 
-  private int generateKey(long timeValue) {
+  public int generateKey(long timeValue) {
     long time = (timeValue - cutOffTimeStamp) / granularityFactor;
     int keyValue = -1;
     if (time >= (long) Integer.MIN_VALUE && time <= (long) Integer.MAX_VALUE) {
       keyValue = (int) time;
     }
-    return keyValue < 0 ? 1 : keyValue + 2;
+    return keyValue < 0 ? CarbonCommonConstants.DIRECT_DICT_VALUE_NULL : keyValue + 2;
   }
 
   public void initialize() {

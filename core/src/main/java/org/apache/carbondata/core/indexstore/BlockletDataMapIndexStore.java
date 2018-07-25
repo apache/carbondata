@@ -18,7 +18,6 @@ package org.apache.carbondata.core.indexstore;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -30,26 +29,22 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CarbonLRUCache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.filesystem.AbstractDFSCarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMap;
+import org.apache.carbondata.core.datamap.dev.DataMap;
+import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockDataMap;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapModel;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
-import org.apache.carbondata.core.util.DataFileFooterConverter;
-
-import org.apache.hadoop.fs.LocatedFileStatus;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.RemoteIterator;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.util.BlockletDataMapUtil;
 
 /**
  * Class to handle loading, unloading,clearing,storing of the table
  * blocks
  */
 public class BlockletDataMapIndexStore
-    implements Cache<TableBlockIndexUniqueIdentifier, BlockletDataMap> {
+    implements Cache<TableBlockIndexUniqueIdentifierWrapper, BlockletDataMapIndexWrapper> {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(BlockletDataMapIndexStore.class.getName());
   /**
@@ -76,130 +71,169 @@ public class BlockletDataMapIndexStore
   }
 
   @Override
-  public BlockletDataMap get(TableBlockIndexUniqueIdentifier identifier)
+  public BlockletDataMapIndexWrapper get(TableBlockIndexUniqueIdentifierWrapper identifierWrapper)
       throws IOException {
+    TableBlockIndexUniqueIdentifier identifier =
+        identifierWrapper.getTableBlockIndexUniqueIdentifier();
     String lruCacheKey = identifier.getUniqueTableSegmentIdentifier();
-    BlockletDataMap dataMap = (BlockletDataMap) lruCache.get(lruCacheKey);
-    if (dataMap == null) {
+    BlockletDataMapIndexWrapper blockletDataMapIndexWrapper =
+        (BlockletDataMapIndexWrapper) lruCache.get(lruCacheKey);
+    List<BlockDataMap> dataMaps = new ArrayList<>();
+    if (blockletDataMapIndexWrapper == null) {
       try {
         SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore();
         Set<String> filesRead = new HashSet<>();
-        Map<String, BlockMetaInfo> blockMetaInfoMap =
-            getBlockMetaInfoMap(identifier, indexFileStore, filesRead);
-        dataMap = loadAndGetDataMap(identifier, indexFileStore, blockMetaInfoMap);
-      } catch (MemoryException e) {
+        String segmentFilePath = identifier.getIndexFilePath();
+        Map<String, BlockMetaInfo> carbonDataFileBlockMetaInfoMapping = BlockletDataMapUtil
+            .createCarbonDataFileBlockMetaInfoMapping(segmentFilePath);
+        // if the identifier is not a merge file we can directly load the datamaps
+        if (identifier.getMergeIndexFileName() == null) {
+          Map<String, BlockMetaInfo> blockMetaInfoMap = BlockletDataMapUtil
+              .getBlockMetaInfoMap(identifierWrapper, indexFileStore, filesRead,
+                  carbonDataFileBlockMetaInfoMapping);
+          BlockDataMap blockletDataMap =
+              loadAndGetDataMap(identifier, indexFileStore, blockMetaInfoMap,
+                  identifierWrapper.getCarbonTable(), identifierWrapper.isAddTableBlockToUnsafe());
+          dataMaps.add(blockletDataMap);
+          blockletDataMapIndexWrapper = new BlockletDataMapIndexWrapper(dataMaps);
+        } else {
+          // if the identifier is a merge file then collect the index files and load the datamaps
+          List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
+              BlockletDataMapUtil.getIndexFileIdentifiersFromMergeFile(identifier, indexFileStore);
+          for (TableBlockIndexUniqueIdentifier blockIndexUniqueIdentifier :
+              tableBlockIndexUniqueIdentifiers) {
+            Map<String, BlockMetaInfo> blockMetaInfoMap = BlockletDataMapUtil.getBlockMetaInfoMap(
+                new TableBlockIndexUniqueIdentifierWrapper(blockIndexUniqueIdentifier,
+                    identifierWrapper.getCarbonTable()), indexFileStore, filesRead,
+                carbonDataFileBlockMetaInfoMapping);
+            if (!blockMetaInfoMap.isEmpty()) {
+              BlockDataMap blockletDataMap =
+                  loadAndGetDataMap(blockIndexUniqueIdentifier, indexFileStore, blockMetaInfoMap,
+                      identifierWrapper.getCarbonTable(),
+                      identifierWrapper.isAddTableBlockToUnsafe());
+              dataMaps.add(blockletDataMap);
+            }
+          }
+          blockletDataMapIndexWrapper = new BlockletDataMapIndexWrapper(dataMaps);
+        }
+        lruCache.put(identifier.getUniqueTableSegmentIdentifier(), blockletDataMapIndexWrapper,
+            blockletDataMapIndexWrapper.getMemorySize());
+      } catch (Throwable e) {
+        // clear all the memory used by datamaps loaded
+        for (DataMap dataMap : dataMaps) {
+          dataMap.clear();
+        }
         LOGGER.error("memory exception when loading datamap: " + e.getMessage());
         throw new RuntimeException(e.getMessage(), e);
       }
     }
-    return dataMap;
+    return blockletDataMapIndexWrapper;
   }
 
-  private Map<String, BlockMetaInfo> getBlockMetaInfoMap(TableBlockIndexUniqueIdentifier identifier,
-      SegmentIndexFileStore indexFileStore, Set<String> filesRead) throws IOException {
-    if (identifier.getMergeIndexFileName() != null) {
-      CarbonFile indexMergeFile = FileFactory.getCarbonFile(
-          identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
-              .getMergeIndexFileName());
-      if (indexMergeFile.exists() && !filesRead.contains(indexMergeFile.getPath())) {
-        indexFileStore.readAllIIndexOfSegment(new CarbonFile[] { indexMergeFile });
-        filesRead.add(indexMergeFile.getPath());
-      }
-    }
-    if (indexFileStore.getFileData(identifier.getIndexFileName()) == null) {
-      indexFileStore.readAllIIndexOfSegment(new CarbonFile[] { FileFactory.getCarbonFile(
-          identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
-              .getIndexFileName()) });
-    }
-    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
-    Map<String, BlockMetaInfo> blockMetaInfoMap = new HashMap<>();
-    List<DataFileFooter> indexInfo = fileFooterConverter.getIndexInfo(
-        identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
-            .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()));
-    for (DataFileFooter footer : indexInfo) {
-      String blockPath = footer.getBlockInfo().getTableBlockInfo().getFilePath();
-      if (FileFactory.isFileExist(blockPath)) {
-        blockMetaInfoMap.put(blockPath, createBlockMetaInfo(blockPath));
-      } else {
-        LOGGER.warn("Skipping invalid block " + footer.getBlockInfo().getBlockUniqueName()
-            + " The block does not exist. The block might be got deleted due to clean up post"
-            + " update/delete operation over table.");
-      }
-    }
-    return blockMetaInfoMap;
-  }
-
-  private BlockMetaInfo createBlockMetaInfo(String carbonDataFile) throws IOException {
-    CarbonFile carbonFile = FileFactory.getCarbonFile(carbonDataFile);
-    if (carbonFile instanceof AbstractDFSCarbonFile) {
-      RemoteIterator<LocatedFileStatus> iter =
-          ((AbstractDFSCarbonFile)carbonFile).fs.listLocatedStatus(new Path(carbonDataFile));
-      LocatedFileStatus fileStatus = iter.next();
-      String[] location = fileStatus.getBlockLocations()[0].getHosts();
-      long len = fileStatus.getLen();
-      return new BlockMetaInfo(location, len);
-    } else {
-      return new BlockMetaInfo(new String[]{"localhost"}, carbonFile.getSize());
-    }
-  }
-
-  @Override
-  public List<BlockletDataMap> getAll(
-      List<TableBlockIndexUniqueIdentifier> tableSegmentUniqueIdentifiers) throws IOException {
-    List<BlockletDataMap> blockletDataMaps =
+  @Override public List<BlockletDataMapIndexWrapper> getAll(
+      List<TableBlockIndexUniqueIdentifierWrapper> tableSegmentUniqueIdentifiers)
+      throws IOException {
+    List<BlockletDataMapIndexWrapper> blockletDataMapIndexWrappers =
         new ArrayList<>(tableSegmentUniqueIdentifiers.size());
-    List<TableBlockIndexUniqueIdentifier> missedIdentifiers = new ArrayList<>();
+    List<TableBlockIndexUniqueIdentifierWrapper> missedIdentifiersWrapper = new ArrayList<>();
+    BlockletDataMapIndexWrapper blockletDataMapIndexWrapper = null;
     // Get the datamaps for each indexfile from cache.
     try {
-      for (TableBlockIndexUniqueIdentifier identifier : tableSegmentUniqueIdentifiers) {
-        BlockletDataMap ifPresent = getIfPresent(identifier);
-        if (ifPresent != null) {
-          blockletDataMaps.add(ifPresent);
+      for (TableBlockIndexUniqueIdentifierWrapper
+               identifierWrapper : tableSegmentUniqueIdentifiers) {
+        BlockletDataMapIndexWrapper dataMapIndexWrapper =
+            getIfPresent(identifierWrapper);
+        if (dataMapIndexWrapper != null) {
+          blockletDataMapIndexWrappers.add(dataMapIndexWrapper);
         } else {
-          missedIdentifiers.add(identifier);
+          missedIdentifiersWrapper.add(identifierWrapper);
         }
       }
-      if (missedIdentifiers.size() > 0) {
-        SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore();
-        Set<String> filesRead = new HashSet<>();
-        for (TableBlockIndexUniqueIdentifier identifier: missedIdentifiers) {
-          Map<String, BlockMetaInfo> blockMetaInfoMap =
-              getBlockMetaInfoMap(identifier, indexFileStore, filesRead);
-          blockletDataMaps.add(
-              loadAndGetDataMap(identifier, indexFileStore, blockMetaInfoMap));
+      if (missedIdentifiersWrapper.size() > 0) {
+        for (TableBlockIndexUniqueIdentifierWrapper identifierWrapper : missedIdentifiersWrapper) {
+          blockletDataMapIndexWrapper = get(identifierWrapper);
+          blockletDataMapIndexWrappers.add(blockletDataMapIndexWrapper);
         }
       }
     } catch (Throwable e) {
-      for (BlockletDataMap dataMap : blockletDataMaps) {
-        dataMap.clear();
+      if (null != blockletDataMapIndexWrapper) {
+        List<BlockDataMap> dataMaps = blockletDataMapIndexWrapper.getDataMaps();
+        for (DataMap dataMap : dataMaps) {
+          dataMap.clear();
+        }
       }
       throw new IOException("Problem in loading segment blocks.", e);
     }
-    return blockletDataMaps;
+
+    return blockletDataMapIndexWrappers;
   }
 
   /**
    * returns the SegmentTaskIndexWrapper
    *
-   * @param tableSegmentUniqueIdentifier
+   * @param tableSegmentUniqueIdentifierWrapper
    * @return
    */
-  @Override
-  public BlockletDataMap getIfPresent(
-      TableBlockIndexUniqueIdentifier tableSegmentUniqueIdentifier) {
-    return (BlockletDataMap) lruCache.get(
-        tableSegmentUniqueIdentifier.getUniqueTableSegmentIdentifier());
+  @Override public BlockletDataMapIndexWrapper getIfPresent(
+      TableBlockIndexUniqueIdentifierWrapper tableSegmentUniqueIdentifierWrapper) {
+    return (BlockletDataMapIndexWrapper) lruCache.get(
+        tableSegmentUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier()
+            .getUniqueTableSegmentIdentifier());
   }
 
   /**
    * method invalidate the segment cache for segment
    *
-   * @param tableSegmentUniqueIdentifier
+   * @param tableSegmentUniqueIdentifierWrapper
    */
-  @Override
-  public void invalidate(TableBlockIndexUniqueIdentifier tableSegmentUniqueIdentifier) {
-    lruCache.remove(tableSegmentUniqueIdentifier.getUniqueTableSegmentIdentifier());
+  @Override public void invalidate(
+      TableBlockIndexUniqueIdentifierWrapper tableSegmentUniqueIdentifierWrapper) {
+    BlockletDataMapIndexWrapper blockletDataMapIndexWrapper =
+        getIfPresent(tableSegmentUniqueIdentifierWrapper);
+    if (null != blockletDataMapIndexWrapper) {
+      // clear the segmentProperties cache
+      List<BlockDataMap> dataMaps = blockletDataMapIndexWrapper.getDataMaps();
+      if (null != dataMaps && !dataMaps.isEmpty()) {
+        String segmentId =
+            tableSegmentUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier().getSegmentId();
+        // as segmentId will be same for all the dataMaps and segmentProperties cache is
+        // maintained at segment level so it need to be called only once for clearing
+        SegmentPropertiesAndSchemaHolder.getInstance()
+            .invalidate(segmentId, dataMaps.get(0).getSegmentPropertiesIndex(),
+                tableSegmentUniqueIdentifierWrapper.isAddTableBlockToUnsafe());
+      }
+    }
+    lruCache.remove(tableSegmentUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier()
+        .getUniqueTableSegmentIdentifier());
   }
+
+  @Override
+  public void put(TableBlockIndexUniqueIdentifierWrapper tableBlockIndexUniqueIdentifierWrapper,
+      BlockletDataMapIndexWrapper wrapper) throws IOException, MemoryException {
+    // As dataMap will use unsafe memory, it is not recommended to overwrite an existing entry
+    // as in that case clearing unsafe memory need to be taken card. If at all datamap entry
+    // in the cache need to be overwritten then use the invalidate interface
+    // and then use the put interface
+    if (null == getIfPresent(tableBlockIndexUniqueIdentifierWrapper)) {
+      List<BlockDataMap> dataMaps = wrapper.getDataMaps();
+      try {
+        for (BlockDataMap blockletDataMap : dataMaps) {
+          blockletDataMap.convertToUnsafeDMStore();
+        }
+        // Locking is not required here because in LRU cache map add method is synchronized to add
+        // only one entry at a time and if a key already exists it will not overwrite the entry
+        lruCache.put(tableBlockIndexUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier()
+            .getUniqueTableSegmentIdentifier(), wrapper, wrapper.getMemorySize());
+      } catch (Throwable e) {
+        // clear all the memory acquired by data map in case of any failure
+        for (DataMap blockletDataMap : dataMaps) {
+          blockletDataMap.clear();
+        }
+        throw new IOException("Problem in adding datamap to cache.", e);
+      }
+    }
+  }
+
 
   /**
    * Below method will be used to load the segment of segments
@@ -210,10 +244,9 @@ public class BlockletDataMapIndexStore
    * @return map of taks id to segment mapping
    * @throws IOException
    */
-  private BlockletDataMap loadAndGetDataMap(
-      TableBlockIndexUniqueIdentifier identifier,
-      SegmentIndexFileStore indexFileStore,
-      Map<String, BlockMetaInfo> blockMetaInfoMap)
+  private BlockDataMap loadAndGetDataMap(TableBlockIndexUniqueIdentifier identifier,
+      SegmentIndexFileStore indexFileStore, Map<String, BlockMetaInfo> blockMetaInfoMap,
+      CarbonTable carbonTable, boolean addTableBlockToUnsafe)
       throws IOException, MemoryException {
     String uniqueTableSegmentIdentifier =
         identifier.getUniqueTableSegmentIdentifier();
@@ -221,15 +254,13 @@ public class BlockletDataMapIndexStore
     if (lock == null) {
       lock = addAndGetSegmentLock(uniqueTableSegmentIdentifier);
     }
-    BlockletDataMap dataMap;
+    BlockDataMap dataMap;
     synchronized (lock) {
-      dataMap = new BlockletDataMap();
-      dataMap.init(new BlockletDataMapModel(
+      dataMap = (BlockDataMap) BlockletDataMapFactory.createDataMap(carbonTable);
+      dataMap.init(new BlockletDataMapModel(carbonTable,
           identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
               .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()),
-          blockMetaInfoMap, identifier.getSegmentId()));
-      lruCache.put(identifier.getUniqueTableSegmentIdentifier(), dataMap,
-          dataMap.getMemorySize());
+          blockMetaInfoMap, identifier.getSegmentId(), addTableBlockToUnsafe));
     }
     return dataMap;
   }
@@ -254,14 +285,14 @@ public class BlockletDataMapIndexStore
   /**
    * The method clears the access count of table segments
    *
-   * @param tableSegmentUniqueIdentifiers
+   * @param tableSegmentUniqueIdentifiersWrapper
    */
-  @Override
-  public void clearAccessCount(
-      List<TableBlockIndexUniqueIdentifier> tableSegmentUniqueIdentifiers) {
-    for (TableBlockIndexUniqueIdentifier identifier : tableSegmentUniqueIdentifiers) {
-      BlockletDataMap cacheable =
-          (BlockletDataMap) lruCache.get(identifier.getUniqueTableSegmentIdentifier());
+  @Override public void clearAccessCount(
+      List<TableBlockIndexUniqueIdentifierWrapper> tableSegmentUniqueIdentifiersWrapper) {
+    for (TableBlockIndexUniqueIdentifierWrapper
+             identifierWrapper : tableSegmentUniqueIdentifiersWrapper) {
+      BlockDataMap cacheable = (BlockDataMap) lruCache.get(
+          identifierWrapper.getTableBlockIndexUniqueIdentifier().getUniqueTableSegmentIdentifier());
       cacheable.clear();
     }
   }

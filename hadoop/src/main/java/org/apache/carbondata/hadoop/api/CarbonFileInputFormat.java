@@ -23,27 +23,21 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
-import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.filter.SingleTableProvider;
-import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
-import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
-import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
@@ -66,7 +60,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
   // a cache for carbon table, it will be used in task side
   private CarbonTable carbonTable;
 
-  protected CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
+  public CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
     CarbonTable carbonTableTemp;
     if (carbonTable == null) {
       // carbon table should be created either from deserialized table info (schema saved in
@@ -106,47 +100,58 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
    */
   @Override
   public List<InputSplit> getSplits(JobContext job) throws IOException {
-    AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
     CarbonTable carbonTable = getOrCreateCarbonTable(job.getConfiguration());
     if (null == carbonTable) {
       throw new IOException("Missing/Corrupt schema file for table.");
     }
+    AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
 
     if (getValidateSegmentsToAccess(job.getConfiguration())) {
       // get all valid segments and set them into the configuration
       // check for externalTable segment (Segment_null)
       // process and resolve the expression
-      ReadCommittedScope readCommittedScope = new LatestFilesReadCommittedScope(
-          identifier.getTablePath() + "/Fact/Part0/Segment_null/");
+
+      ReadCommittedScope readCommittedScope = null;
+      if (carbonTable.isTransactionalTable()) {
+        readCommittedScope = new LatestFilesReadCommittedScope(
+            identifier.getTablePath() + "/Fact/Part0/Segment_null/");
+      } else {
+        readCommittedScope = new LatestFilesReadCommittedScope(identifier.getTablePath());
+      }
       Expression filter = getFilterPredicates(job.getConfiguration());
-      TableProvider tableProvider = new SingleTableProvider(carbonTable);
       // this will be null in case of corrupt schema file.
       PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName());
       carbonTable.processFilterExpression(filter, null, null);
 
-      FilterResolverIntf filterInterface = carbonTable.resolveFilter(filter, tableProvider);
+      FilterResolverIntf filterInterface = carbonTable.resolveFilter(filter);
 
-      String segmentDir = CarbonTablePath.getSegmentPath(identifier.getTablePath(), "null");
-      FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);
-      if (FileFactory.isFileExist(segmentDir, fileType)) {
-        // if external table Segments are found, add it to the List
-        List<Segment> externalTableSegments = new ArrayList<Segment>();
-        Segment seg = new Segment("null", null);
+      // if external table Segments are found, add it to the List
+      List<Segment> externalTableSegments = new ArrayList<Segment>();
+      Segment seg;
+      if (carbonTable.isTransactionalTable()) {
+        // SDK some cases write into the Segment Path instead of Table Path i.e. inside
+        // the "Fact/Part0/Segment_null". The segment in this case is named as "null".
+        // The table is denoted by default as a transactional table and goes through
+        // the path of CarbonFileInputFormat. The above scenario is handled in the below code.
+        seg = new Segment("null", null, readCommittedScope);
         externalTableSegments.add(seg);
-
-        Map<String, String> indexFiles =
-            new SegmentIndexFileStore().getIndexFilesFromSegment(segmentDir);
-
-        if (indexFiles.size() == 0) {
-          throw new RuntimeException("Index file not present to read the carbondata file");
+      } else {
+        LoadMetadataDetails[] loadMetadataDetails = readCommittedScope.getSegmentList();
+        for (LoadMetadataDetails load : loadMetadataDetails) {
+          seg = new Segment(load.getLoadName(), null, readCommittedScope);
+          externalTableSegments.add(seg);
         }
-        // do block filtering and get split
-        List<InputSplit> splits =
-            getSplits(job, filterInterface, externalTableSegments, null, partitionInfo, null,
-                readCommittedScope);
-
-        return splits;
       }
+      // do block filtering and get split
+      List<InputSplit> splits =
+          getSplits(job, filterInterface, externalTableSegments, null, partitionInfo, null);
+      if (getColumnProjection(job.getConfiguration()) == null) {
+        // If the user projection is empty, use default all columns as projections.
+        // All column name will be filled inside getSplits, so can update only here.
+        String[]  projectionColumns = projectAllColumns(carbonTable);
+        setColumnProjection(job.getConfiguration(), projectionColumns);
+      }
+      return splits;
     }
     return null;
   }
@@ -161,49 +166,17 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
    */
   private List<InputSplit> getSplits(JobContext job, FilterResolverIntf filterResolver,
       List<Segment> validSegments, BitSet matchedPartitions, PartitionInfo partitionInfo,
-      List<Integer> oldPartitionIdList, ReadCommittedScope readCommittedScope) throws IOException {
+      List<Integer> oldPartitionIdList) throws IOException {
 
     numSegments = validSegments.size();
     List<InputSplit> result = new LinkedList<InputSplit>();
-    UpdateVO invalidBlockVOForSegmentId = null;
-    Boolean isIUDTable = false;
-
-    SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(carbonTable);
-
-    isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
 
     // for each segment fetch blocks matching filter in Driver BTree
     List<CarbonInputSplit> dataBlocksOfSegment =
         getDataBlocksOfSegment(job, carbonTable, filterResolver, matchedPartitions,
-            validSegments, partitionInfo, oldPartitionIdList, readCommittedScope);
+            validSegments, partitionInfo, oldPartitionIdList);
     numBlocks = dataBlocksOfSegment.size();
-    for (CarbonInputSplit inputSplit : dataBlocksOfSegment) {
-
-      // Get the UpdateVO for those tables on which IUD operations being performed.
-      if (isIUDTable) {
-        invalidBlockVOForSegmentId =
-            updateStatusManager.getInvalidTimestampRange(inputSplit.getSegmentId());
-      }
-      String[] deleteDeltaFilePath = null;
-      if (isIUDTable) {
-        // In case IUD is not performed in this table avoid searching for
-        // invalidated blocks.
-        if (CarbonUtil
-            .isInvalidTableBlock(inputSplit.getSegmentId(), inputSplit.getPath().toString(),
-                invalidBlockVOForSegmentId, updateStatusManager)) {
-          continue;
-        }
-        // When iud is done then only get delete delta files for a block
-        try {
-          deleteDeltaFilePath = updateStatusManager
-              .getDeleteDeltaFilePath(inputSplit.getPath().toString(), inputSplit.getSegmentId());
-        } catch (Exception e) {
-          throw new IOException(e);
-        }
-      }
-      inputSplit.setDeleteDeltaFiles(deleteDeltaFilePath);
-      result.add(inputSplit);
-    }
+    result.addAll(dataBlocksOfSegment);
     return result;
   }
 }

@@ -19,6 +19,7 @@ package org.apache.carbondata.datamap.examples;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -30,14 +31,11 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
+import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
-import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
@@ -45,6 +43,10 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import com.google.gson.Gson;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 
 /**
  * Datamap implementation for min max blocklet.
@@ -54,29 +56,36 @@ public class MinMaxIndexDataMap extends CoarseGrainDataMap {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(MinMaxIndexDataMap.class.getName());
 
-  public static final String NAME = "clustered.minmax.btree.blocklet";
+  private String[] indexFilePath;
 
-  private String filePath;
-
-  private MinMaxIndexBlockDetails[] readMinMaxDataMap;
+  private MinMaxIndexBlockDetails[][] readMinMaxDataMap;
 
   @Override
   public void init(DataMapModel model) throws MemoryException, IOException {
-    this.filePath = model.getFilePath();
-    CarbonFile[] listFiles = getCarbonMinMaxIndexFiles(filePath, "0");
-    for (int i = 0; i < listFiles.length; i++) {
-      readMinMaxDataMap = readJson(listFiles[i].getPath());
-    }
-  }
+    Path indexPath = FileFactory.getPath(model.getFilePath());
 
-  private CarbonFile[] getCarbonMinMaxIndexFiles(String filePath, String segmentId) {
-    String path = filePath.substring(0, filePath.lastIndexOf("/") + 1);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(path);
-    return carbonFile.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile file) {
-        return file.getName().endsWith(".minmaxindex");
+    FileSystem fs = FileFactory.getFileSystem(indexPath);
+    if (!fs.exists(indexPath)) {
+      throw new IOException(
+          String.format("Path %s for MinMax index dataMap does not exist", indexPath));
+    }
+    if (!fs.isDirectory(indexPath)) {
+      throw new IOException(
+          String.format("Path %s for MinMax index dataMap must be a directory", indexPath));
+    }
+
+    FileStatus[] indexFileStatus = fs.listStatus(indexPath, new PathFilter() {
+      @Override public boolean accept(Path path) {
+        return path.getName().endsWith(".minmaxindex");
       }
     });
+
+    this.indexFilePath = new String[indexFileStatus.length];
+    this.readMinMaxDataMap = new MinMaxIndexBlockDetails[indexFileStatus.length][];
+    for (int i = 0; i < indexFileStatus.length; i++) {
+      this.indexFilePath[i] = indexFileStatus[i].getPath().toString();
+      this.readMinMaxDataMap[i] = readJson(this.indexFilePath[i]);
+    }
   }
 
   private MinMaxIndexBlockDetails[] readJson(String filePath) {
@@ -86,7 +95,7 @@ public class MinMaxIndexDataMap extends CoarseGrainDataMap {
     InputStreamReader inStream = null;
     MinMaxIndexBlockDetails[] readMinMax = null;
     AtomicFileOperations fileOperation =
-        new AtomicFileOperationsImpl(filePath, FileFactory.getFileType(filePath));
+        AtomicFileOperationFactory.getAtomicFileOperations(filePath);
 
     try {
       if (!FileFactory.isFileExist(filePath, FileFactory.getFileType(filePath))) {
@@ -118,20 +127,34 @@ public class MinMaxIndexDataMap extends CoarseGrainDataMap {
 
     if (filterExp == null) {
       for (int i = 0; i < readMinMaxDataMap.length; i++) {
-        blocklets.add(new Blocklet(filePath, String.valueOf(readMinMaxDataMap[i].getBlockletId())));
+        for (int j = 0; j < readMinMaxDataMap[i].length; j++) {
+          blocklets.add(new Blocklet(indexFilePath[i],
+              String.valueOf(readMinMaxDataMap[i][j].getBlockletId())));
+        }
       }
     } else {
       FilterExecuter filterExecuter =
           FilterUtil.getFilterExecuterTree(filterExp, segmentProperties, null);
-      int startIndex = 0;
-      while (startIndex < readMinMaxDataMap.length) {
-        BitSet bitSet = filterExecuter.isScanRequired(readMinMaxDataMap[startIndex].getMaxValues(),
-            readMinMaxDataMap[startIndex].getMinValues());
-        if (!bitSet.isEmpty()) {
-          blocklets.add(new Blocklet(filePath,
-              String.valueOf(readMinMaxDataMap[startIndex].getBlockletId())));
+      for (int blkIdx = 0; blkIdx < readMinMaxDataMap.length; blkIdx++) {
+        for (int blkltIdx = 0; blkltIdx < readMinMaxDataMap[blkIdx].length; blkltIdx++) {
+
+          BitSet bitSet = filterExecuter.isScanRequired(
+              readMinMaxDataMap[blkIdx][blkltIdx].getMaxValues(),
+              readMinMaxDataMap[blkIdx][blkltIdx].getMinValues());
+          if (!bitSet.isEmpty()) {
+            String blockFileName = indexFilePath[blkIdx].substring(
+                indexFilePath[blkIdx].lastIndexOf(File.separatorChar) + 1,
+                indexFilePath[blkIdx].indexOf(".minmaxindex"));
+            Blocklet blocklet = new Blocklet(blockFileName,
+                String.valueOf(readMinMaxDataMap[blkIdx][blkltIdx].getBlockletId()));
+            LOGGER.info(String.format("MinMaxDataMap: Need to scan block#%s -> blocklet#%s, %s",
+                blkIdx, blkltIdx, blocklet));
+            blocklets.add(blocklet);
+          } else {
+            LOGGER.info(String.format("MinMaxDataMap: Skip scan block#%s -> blocklet#%s",
+                blkIdx, blkltIdx));
+          }
         }
-        startIndex++;
       }
     }
     return blocklets;
@@ -145,6 +168,11 @@ public class MinMaxIndexDataMap extends CoarseGrainDataMap {
   @Override
   public void clear() {
     readMinMaxDataMap = null;
+  }
+
+  @Override
+  public void finish() {
+
   }
 
 }

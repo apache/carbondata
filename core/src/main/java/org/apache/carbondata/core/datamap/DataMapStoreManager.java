@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datamap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,11 +30,13 @@ import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandExcept
 import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchemaStorageProvider;
@@ -41,8 +44,14 @@ import org.apache.carbondata.core.metadata.schema.table.DiskBasedDMSchemaStorage
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.mutate.UpdateVO;
+import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonSessionInfo;
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
+
+import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV;
+import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.PREAGGREGATE;
 
 /**
  * It maintains all the DataMaps in it.
@@ -52,6 +61,10 @@ public final class DataMapStoreManager {
 
   private static DataMapStoreManager instance = new DataMapStoreManager();
 
+  public Map<String, List<TableDataMap>> getAllDataMaps() {
+    return allDataMaps;
+  }
+
   /**
    * Contains the list of datamaps for each table.
    */
@@ -60,9 +73,12 @@ public final class DataMapStoreManager {
   /**
    * Contains the datamap catalog for each datamap provider.
    */
-  private Map<String, DataMapCatalog> dataMapCatalogs = new ConcurrentHashMap<>();
+  private Map<String, DataMapCatalog> dataMapCatalogs = null;
 
   private Map<String, TableSegmentRefresher> segmentRefreshMap = new ConcurrentHashMap<>();
+
+  private DataMapSchemaStorageProvider provider = new DiskBasedDMSchemaStorageProvider(
+      CarbonProperties.getInstance().getSystemFolderLocation());
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataMapStoreManager.class.getName());
@@ -72,20 +88,33 @@ public final class DataMapStoreManager {
   }
 
   /**
-   * It gives all datamaps of type @mapType except the default datamap.
-   *
+   * It only gives the visible datamaps
    */
-  public List<TableDataMap> getAllDataMap(CarbonTable carbonTable, DataMapLevel mapType) {
-    List<TableDataMap> dataMaps = new ArrayList<>();
-    List<TableDataMap> tableIndices = getAllDataMap(carbonTable);
-    if (tableIndices != null) {
-      for (TableDataMap dataMap : tableIndices) {
-        if (mapType == dataMap.getDataMapFactory().getDataMapType()) {
-          dataMaps.add(dataMap);
+  List<TableDataMap> getAllVisibleDataMap(CarbonTable carbonTable) throws IOException {
+    CarbonSessionInfo sessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo();
+    List<TableDataMap> allDataMaps = getAllDataMap(carbonTable);
+    Iterator<TableDataMap> dataMapIterator = allDataMaps.iterator();
+    while (dataMapIterator.hasNext()) {
+      TableDataMap dataMap = dataMapIterator.next();
+      String dbName = carbonTable.getDatabaseName();
+      String tableName = carbonTable.getTableName();
+      String dmName = dataMap.getDataMapSchema().getDataMapName();
+      // TODO: need support get the visible status of datamap without sessionInfo in the future
+      if (sessionInfo != null) {
+        boolean isDmVisible = sessionInfo.getSessionParams().getProperty(
+            String.format("%s%s.%s.%s", CarbonCommonConstants.CARBON_DATAMAP_VISIBLE,
+                dbName, tableName, dmName), "true").trim().equalsIgnoreCase("true");
+        if (!isDmVisible) {
+          LOGGER.warn(String.format("Ignore invisible datamap %s on table %s.%s",
+              dmName, dbName, tableName));
+          dataMapIterator.remove();
         }
+      } else {
+        String message = "Carbon session info is null";
+        LOGGER.info(message);
       }
     }
-    return dataMaps;
+    return allDataMaps;
   }
 
   /**
@@ -93,16 +122,14 @@ public final class DataMapStoreManager {
    *
    * @return
    */
-  public List<TableDataMap> getAllDataMap(CarbonTable carbonTable) {
-    // TODO cache all schemas and update only when datamap status file updates
-    List<DataMapSchema> dataMapSchemas = getAllDataMapSchemas();
+  public List<TableDataMap> getAllDataMap(CarbonTable carbonTable) throws IOException {
+    List<DataMapSchema> dataMapSchemas = getDataMapSchemasOfTable(carbonTable);
     List<TableDataMap> dataMaps = new ArrayList<>();
     if (dataMapSchemas != null) {
       for (DataMapSchema dataMapSchema : dataMapSchemas) {
         RelationIdentifier identifier = dataMapSchema.getParentTables().get(0);
-        if (dataMapSchema.isIndexDataMap() && identifier.getTableName()
-            .equals(carbonTable.getTableName()) && identifier.getDatabaseName()
-            .equals(carbonTable.getDatabaseName())) {
+        if (dataMapSchema.isIndexDataMap() && identifier.getTableId()
+            .equals(carbonTable.getTableId())) {
           dataMaps.add(getDataMap(carbonTable, dataMapSchema));
         }
       }
@@ -111,47 +138,83 @@ public final class DataMapStoreManager {
   }
 
   /**
-   * It gives all datamap schemas.
+   * It gives all datamap schemas of a given table.
    *
-   * @return
    */
-  public List<DataMapSchema> getAllDataMapSchemas(CarbonTable carbonTable) {
-    // TODO cache all schemas and update only when datamap status file updates
-    List<DataMapSchema> dataMapSchemas = getAllDataMapSchemas();
-    List<DataMapSchema> dataMaps = new ArrayList<>();
-    if (dataMapSchemas != null) {
-      for (DataMapSchema dataMapSchema : dataMapSchemas) {
-        RelationIdentifier identifier = dataMapSchema.getParentTables().get(0);
-        if (dataMapSchema.isIndexDataMap() && identifier.getTableName()
-            .equals(carbonTable.getTableName()) && identifier.getDatabaseName()
-            .equals(carbonTable.getDatabaseName())) {
-          dataMaps.add(dataMapSchema);
-        }
-      }
-    }
-    return dataMaps;
+  public List<DataMapSchema> getDataMapSchemasOfTable(CarbonTable carbonTable) throws IOException {
+    return provider.retrieveSchemas(carbonTable);
   }
 
-  public List<DataMapSchema> getAllDataMapSchemas() {
-    DataMapSchemaStorageProvider provider = new DiskBasedDMSchemaStorageProvider(
-        CarbonProperties.getInstance().getSystemFolderLocation());
-    List<DataMapSchema> dataMapSchemas;
-    try {
-      dataMapSchemas = provider.retrieveAllSchemas();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    return dataMapSchemas;
+  /**
+   * It gives all datamap schemas from store.
+   */
+  public List<DataMapSchema> getAllDataMapSchemas() throws IOException {
+    return provider.retrieveAllSchemas();
   }
 
-  public DataMapSchema getDataMapSchema(String dataMapName) throws NoSuchDataMapException {
-    List<DataMapSchema> allDataMapSchemas = getAllDataMapSchemas();
-    for (DataMapSchema dataMapSchema : allDataMapSchemas) {
-      if (dataMapSchema.getDataMapName().equalsIgnoreCase(dataMapName)) {
-        return dataMapSchema;
+
+  public DataMapSchema getDataMapSchema(String dataMapName)
+      throws NoSuchDataMapException, IOException {
+    return provider.retrieveSchema(dataMapName);
+  }
+
+  /**
+   * Saves the datamap schema to storage
+   * @param dataMapSchema
+   */
+  public void saveDataMapSchema(DataMapSchema dataMapSchema) throws IOException {
+    provider.saveSchema(dataMapSchema);
+  }
+
+  /**
+   * Drops the datamap schema from storage
+   * @param dataMapName
+   */
+  public void dropDataMapSchema(String dataMapName) throws IOException {
+    provider.dropSchema(dataMapName);
+  }
+
+  /**
+   * Update the datamap schema after table rename
+   * This should be invoked after changing table name
+   * @param dataMapSchemaList
+   * @param newTableName
+   */
+  public void updateDataMapSchema(List<DataMapSchema> dataMapSchemaList,
+      String newTableName) throws IOException {
+    List<DataMapSchema> newDataMapSchemas = new ArrayList<>();
+    for (DataMapSchema dataMapSchema : dataMapSchemaList) {
+      RelationIdentifier relationIdentifier = dataMapSchema.getRelationIdentifier();
+      String dataBaseName =  relationIdentifier.getDatabaseName();
+      String tableId = relationIdentifier.getTableId();
+      String providerName = dataMapSchema.getProviderName();
+      // if the preaggregate datamap,not be modified the schema
+      if (providerName.equalsIgnoreCase(PREAGGREGATE.toString())) {
+        continue;
       }
+      // if the mv datamap,not be modified the relationIdentifier
+      if (!providerName.equalsIgnoreCase(MV.toString())) {
+        RelationIdentifier newRelationIdentifier = new RelationIdentifier(dataBaseName,
+            newTableName, tableId);
+        dataMapSchema.setRelationIdentifier(newRelationIdentifier);
+      }
+      List<RelationIdentifier> newParentTables = new ArrayList<>();
+      List<RelationIdentifier> parentTables = dataMapSchema.getParentTables();
+      for (RelationIdentifier identifier : parentTables) {
+        RelationIdentifier newParentTableIdentifier = new RelationIdentifier(
+            identifier.getDatabaseName(), newTableName, identifier.getTableId());
+        newParentTables.add(newParentTableIdentifier);
+      }
+      dataMapSchema.setParentTables(newParentTables);
+      newDataMapSchemas.add(dataMapSchema);
+      // frist drop old schema
+      String dataMapName = dataMapSchema.getDataMapName();
+      dropDataMapSchema(dataMapName);
     }
-    throw new NoSuchDataMapException(dataMapName);
+    // save new datamap schema to storage
+    for (DataMapSchema newDataMapSchema : newDataMapSchemas) {
+      saveDataMapSchema(newDataMapSchema);
+    }
   }
 
   /**
@@ -160,7 +223,8 @@ public final class DataMapStoreManager {
    * @param dataMapSchema
    */
   public synchronized void registerDataMapCatalog(DataMapProvider dataMapProvider,
-      DataMapSchema dataMapSchema) {
+      DataMapSchema dataMapSchema) throws IOException {
+    initializeDataMapCatalogs(dataMapProvider);
     String name = dataMapSchema.getProviderName();
     DataMapCatalog dataMapCatalog = dataMapCatalogs.get(name);
     if (dataMapCatalog == null) {
@@ -179,6 +243,9 @@ public final class DataMapStoreManager {
    * @param dataMapSchema
    */
   public synchronized void unRegisterDataMapCatalog(DataMapSchema dataMapSchema) {
+    if (dataMapCatalogs == null) {
+      return;
+    }
     String name = dataMapSchema.getProviderName();
     DataMapCatalog dataMapCatalog = dataMapCatalogs.get(name);
     if (dataMapCatalog != null) {
@@ -191,8 +258,37 @@ public final class DataMapStoreManager {
    * @param providerName
    * @return
    */
-  public DataMapCatalog getDataMapCatalog(String providerName) {
+  public synchronized DataMapCatalog getDataMapCatalog(DataMapProvider dataMapProvider,
+      String providerName) throws IOException {
+    initializeDataMapCatalogs(dataMapProvider);
     return dataMapCatalogs.get(providerName);
+  }
+
+  /**
+   * Initialize by reading all datamaps from store and re register it
+   * @param dataMapProvider
+   */
+  private void initializeDataMapCatalogs(DataMapProvider dataMapProvider) throws IOException {
+    if (dataMapCatalogs == null) {
+      dataMapCatalogs = new ConcurrentHashMap<>();
+      List<DataMapSchema> dataMapSchemas = getAllDataMapSchemas();
+      for (DataMapSchema schema : dataMapSchemas) {
+        DataMapCatalog dataMapCatalog = dataMapCatalogs.get(schema.getProviderName());
+        if (dataMapCatalog == null) {
+          dataMapCatalog = dataMapProvider.createDataMapCatalog();
+          if (null == dataMapCatalog) {
+            throw new RuntimeException("Internal Error.");
+          }
+          dataMapCatalogs.put(schema.getProviderName(), dataMapCatalog);
+        }
+        try {
+          dataMapCatalog.registerSchema(schema);
+        } catch (Exception e) {
+          // Ignore the schema
+          LOGGER.error(e, "Error while registering schema");
+        }
+      }
+    }
   }
 
   /**
@@ -242,28 +338,35 @@ public final class DataMapStoreManager {
    * Return a new datamap instance and registered in the store manager.
    * The datamap is created using datamap name, datamap factory class and table identifier.
    */
-  // TODO: make it private
-  public TableDataMap createAndRegisterDataMap(CarbonTable table,
-      DataMapSchema dataMapSchema) throws MalformedDataMapCommandException, IOException {
-    DataMapFactory dataMapFactory;
+  public DataMapFactory getDataMapFactoryClass(CarbonTable table, DataMapSchema dataMapSchema)
+      throws MalformedDataMapCommandException {
     try {
       // try to create datamap by reflection to test whether it is a valid DataMapFactory class
-      Class<? extends DataMapFactory> factoryClass =
-          (Class<? extends DataMapFactory>) Class.forName(dataMapSchema.getProviderName());
-      dataMapFactory = factoryClass.newInstance();
+      return (DataMapFactory)
+          Class.forName(dataMapSchema.getProviderName()).getConstructors()[0]
+              .newInstance(table, dataMapSchema);
     } catch (ClassNotFoundException e) {
-      throw new MalformedDataMapCommandException(
-          "DataMap '" + dataMapSchema.getProviderName() + "' not found");
+      // try to create DataMapClassProvider instance by taking providerName as short name
+      return DataMapRegistry.getDataMapFactoryByShortName(table, dataMapSchema);
     } catch (Throwable e) {
       throw new MetadataProcessException(
-          "failed to create DataMap '" + dataMapSchema.getProviderName() + "'", e);
+          "failed to get DataMap factory for'" + dataMapSchema.getProviderName() + "'", e);
     }
+  }
+
+  /**
+   * registered in the store manager.
+   * The datamap is created using datamap name, datamap factory class and table identifier.
+   */
+  // TODO: make it private
+  public TableDataMap createAndRegisterDataMap(CarbonTable table,
+      DataMapSchema dataMapSchema) throws MalformedDataMapCommandException {
+    DataMapFactory dataMapFactory  = getDataMapFactoryClass(table, dataMapSchema);
     return registerDataMap(table, dataMapSchema, dataMapFactory);
   }
 
   public TableDataMap registerDataMap(CarbonTable table,
-      DataMapSchema dataMapSchema,  DataMapFactory dataMapFactory)
-      throws IOException, MalformedDataMapCommandException {
+      DataMapSchema dataMapSchema,  DataMapFactory dataMapFactory) {
     String tableUniqueName = table.getCarbonTableIdentifier().getTableUniqueName();
     // Just update the segmentRefreshMap with the table if not added.
     getTableSegmentRefresher(table);
@@ -272,7 +375,6 @@ public final class DataMapStoreManager {
       tableIndices = new ArrayList<>();
     }
 
-    dataMapFactory.init(table.getAbsoluteTableIdentifier(), dataMapSchema);
     BlockletDetailsFetcher blockletDetailsFetcher;
     SegmentPropertiesFetcher segmentPropertiesFetcher = null;
     if (dataMapFactory instanceof BlockletDetailsFetcher) {
@@ -305,7 +407,8 @@ public final class DataMapStoreManager {
    * @param carbonTable
    * @param segments
    */
-  public void clearInvalidSegments(CarbonTable carbonTable, List<Segment> segments) {
+  public void clearInvalidSegments(CarbonTable carbonTable, List<Segment> segments)
+      throws IOException {
     getDefaultDataMap(carbonTable).clear(segments);
     List<TableDataMap> allDataMap = getAllDataMap(carbonTable);
     for (TableDataMap dataMap: allDataMap) {
@@ -320,40 +423,107 @@ public final class DataMapStoreManager {
    * @param identifier Table identifier
    */
   public void clearDataMaps(AbsoluteTableIdentifier identifier) {
+    CarbonTable carbonTable = getCarbonTable(identifier);
     String tableUniqueName = identifier.getCarbonTableIdentifier().getTableUniqueName();
     List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
-    segmentRefreshMap.remove(identifier.uniqueName());
-    if (tableIndices != null) {
-      for (TableDataMap tableDataMap : tableIndices) {
-        if (tableDataMap != null) {
-          tableDataMap.clear();
-          break;
-        }
+    if (null != carbonTable && tableIndices != null) {
+      try {
+        DataMapUtil.executeDataMapJobForClearingDataMaps(carbonTable);
+      } catch (IOException e) {
+        LOGGER.error(e, "clear dataMap job failed");
+        // ignoring the exception
       }
-      allDataMaps.remove(tableUniqueName);
     }
+    segmentRefreshMap.remove(identifier.uniqueName());
+    clearDataMaps(tableUniqueName);
+    allDataMaps.remove(tableUniqueName);
   }
 
   /**
-   * Clear the datamap/datamaps of a table from memory
+   * This method returns the carbonTable from identifier
+   * @param identifier
+   * @return
+   */
+  public CarbonTable getCarbonTable(AbsoluteTableIdentifier identifier) {
+    CarbonTable carbonTable = null;
+    carbonTable = CarbonMetadata.getInstance()
+        .getCarbonTable(identifier.getDatabaseName(), identifier.getTableName());
+    if (carbonTable == null) {
+      try {
+        carbonTable = CarbonTable
+            .buildFromTablePath(identifier.getTableName(), identifier.getDatabaseName(),
+                identifier.getTablePath(), identifier.getCarbonTableIdentifier().getTableId());
+      } catch (IOException e) {
+        LOGGER.error("failed to get carbon table from table Path");
+        // ignoring exception
+      }
+    }
+    return carbonTable;
+  }
+
+  /**
+   * this methods clears the datamap of table from memory
+   */
+  public void clearDataMaps(String tableUniqName) {
+    List<TableDataMap> tableIndices = allDataMaps.get(tableUniqName);
+    if (tableIndices != null) {
+      for (TableDataMap tableDataMap : tableIndices) {
+        if (tableDataMap != null) {
+          // clear the segmentMap in BlockletDetailsFetcher,else the Segment will remain in executor
+          // and the query fails as we will check whether the blocklet contains in the index or not
+          tableDataMap.getBlockletDetailsFetcher().clear();
+          tableDataMap.clear();
+        }
+      }
+    }
+    allDataMaps.remove(tableUniqName);
+  }
+
+  /**
+   * Clear the datamap/datamaps of a table from memory and disk
    *
    * @param identifier Table identifier
    */
   public void clearDataMap(AbsoluteTableIdentifier identifier, String dataMapName) {
-    List<TableDataMap> tableIndices =
-        allDataMaps.get(identifier.getCarbonTableIdentifier().getTableUniqueName());
+    CarbonTable carbonTable = getCarbonTable(identifier);
+    String tableUniqueName = identifier.getCarbonTableIdentifier().getTableUniqueName();
+    List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
     if (tableIndices != null) {
       int i = 0;
       for (TableDataMap tableDataMap : tableIndices) {
-        if (tableDataMap != null && dataMapName
+        if (carbonTable != null && tableDataMap != null && dataMapName
             .equalsIgnoreCase(tableDataMap.getDataMapSchema().getDataMapName())) {
-          tableDataMap.clear();
+          try {
+            DataMapUtil.executeDataMapJobForClearingDataMaps(carbonTable);
+            tableDataMap.clear();
+          } catch (IOException e) {
+            LOGGER.error(e, "clear dataMap job failed");
+            // ignoring the exception
+          }
+          tableDataMap.deleteDatamapData();
           tableIndices.remove(i);
           break;
         }
         i++;
       }
+      allDataMaps.put(tableUniqueName, tableIndices);
     }
+  }
+
+  /**
+   * is datamap exist
+   * @return true if exist, else return false
+   */
+  public boolean isDataMapExist(String dbName, String tableName, String dmName) {
+    List<TableDataMap> tableDataMaps = allDataMaps.get(dbName + '_' + tableName);
+    if (tableDataMaps != null) {
+      for (TableDataMap dm : tableDataMaps) {
+        if (dm != null && dmName.equalsIgnoreCase(dm.getDataMapSchema().getDataMapName())) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   /**
@@ -394,7 +564,7 @@ public final class DataMapStoreManager {
 
     // This map stores the latest segment refresh time.So in case of update/delete we check the
     // time against this map.
-    private Map<String, Long> segmentRefreshTime = new HashMap<>();
+    private Map<String, SegmentRefreshInfo> segmentRefreshTime = new HashMap<>();
 
     // This map keeps the manual refresh entries from users. It is mainly used for partition
     // altering.
@@ -405,23 +575,26 @@ public final class DataMapStoreManager {
       SegmentUpdateDetails[] updateStatusDetails = statusManager.getUpdateStatusDetails();
       for (SegmentUpdateDetails updateDetails : updateStatusDetails) {
         UpdateVO updateVO = statusManager.getInvalidTimestampRange(updateDetails.getSegmentName());
-        segmentRefreshTime.put(updateVO.getSegmentId(), updateVO.getCreatedOrUpdatedTimeStamp());
+        segmentRefreshTime.put(updateVO.getSegmentId(),
+            new SegmentRefreshInfo(updateVO.getCreatedOrUpdatedTimeStamp(), 0));
       }
     }
 
-    public boolean isRefreshNeeded(String segmentId, SegmentUpdateStatusManager statusManager) {
-      UpdateVO updateVO = statusManager.getInvalidTimestampRange(segmentId);
-      if (segmentRefreshTime.get(segmentId) == null) {
-        segmentRefreshTime.put(segmentId, updateVO.getCreatedOrUpdatedTimeStamp());
+    public boolean isRefreshNeeded(Segment seg, UpdateVO updateVo) throws IOException {
+      SegmentRefreshInfo segmentRefreshInfo =
+          seg.getSegmentRefreshInfo(updateVo);
+      String segmentId = seg.getSegmentNo();
+      if (segmentRefreshTime.get(segmentId) == null
+          && segmentRefreshInfo.getSegmentUpdatedTimestamp() != null) {
+        segmentRefreshTime.put(segmentId, segmentRefreshInfo);
         return true;
       }
       if (manualSegmentRefresh.get(segmentId) != null && manualSegmentRefresh.get(segmentId)) {
         manualSegmentRefresh.put(segmentId, false);
         return true;
       }
-      Long updateTimestamp = updateVO.getLatestUpdateTimestamp();
-      boolean isRefresh =
-          updateTimestamp != null && (updateTimestamp > segmentRefreshTime.get(segmentId));
+
+      boolean isRefresh = segmentRefreshInfo.compare(segmentRefreshTime.get(segmentId));
       if (isRefresh) {
         segmentRefreshTime.remove(segmentId);
       }

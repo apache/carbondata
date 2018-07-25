@@ -26,11 +26,12 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
 import scala.util.Random
 
-import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.{SparkContext, SparkEnv}
+import org.apache.spark.rdd.CarbonMergeFilesRDD
 import org.apache.spark.sql.{Row, RowFactory}
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
 import org.apache.spark.sql.types.{MetadataBuilder, StringType}
@@ -53,9 +54,7 @@ import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.comparator.Comparator
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
-import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 
 
@@ -64,77 +63,6 @@ object CommonUtil {
 
   val FIXED_DECIMAL = """decimal\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
   val FIXED_DECIMALTYPE = """decimaltype\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
-
-  def validateColumnGroup(colGroup: String, noDictionaryDims: Seq[String],
-      msrs: Seq[Field], retrievedColGrps: Seq[String], dims: Seq[Field]) {
-    val colGrpCols = colGroup.split(',').map(_.trim)
-    colGrpCols.foreach { x =>
-      // if column is no dictionary
-      if (noDictionaryDims.contains(x)) {
-        throw new MalformedCarbonCommandException(
-          "Column group is not supported for no dictionary columns:" + x)
-      } else if (msrs.exists(msr => msr.column.equals(x))) {
-        // if column is measure
-        throw new MalformedCarbonCommandException("Column group is not supported for measures:" + x)
-      } else if (foundIndExistingColGrp(x)) {
-        throw new MalformedCarbonCommandException("Column is available in other column group:" + x)
-      } else if (isComplex(x, dims)) {
-        throw new MalformedCarbonCommandException(
-          "Column group doesn't support Complex column:" + x)
-      } else if (isTimeStampColumn(x, dims)) {
-        throw new MalformedCarbonCommandException(
-          "Column group doesn't support Timestamp datatype:" + x)
-      }// if invalid column is
-      else if (!dims.exists(dim => dim.column.equalsIgnoreCase(x))) {
-        // present
-        throw new MalformedCarbonCommandException(
-          "column in column group is not a valid column: " + x
-        )
-      }
-    }
-    // check if given column is present in other groups
-    def foundIndExistingColGrp(colName: String): Boolean = {
-      retrievedColGrps.foreach { colGrp =>
-        if (colGrp.split(",").contains(colName)) {
-          return true
-        }
-      }
-      false
-    }
-
-  }
-
-
-  def isTimeStampColumn(colName: String, dims: Seq[Field]): Boolean = {
-    dims.foreach { dim =>
-      if (dim.column.equalsIgnoreCase(colName)) {
-        if (dim.dataType.isDefined && null != dim.dataType.get &&
-            "timestamp".equalsIgnoreCase(dim.dataType.get)) {
-          return true
-        }
-      }
-    }
-    false
-  }
-
-  def isComplex(colName: String, dims: Seq[Field]): Boolean = {
-    dims.foreach { x =>
-      if (x.children.isDefined && null != x.children.get && x.children.get.nonEmpty) {
-        val children = x.children.get
-        if (x.column.equals(colName)) {
-          return true
-        } else {
-          children.foreach { child =>
-            val fieldName = x.column + "." + child.column
-            if (fieldName.equalsIgnoreCase(colName)) {
-              return true
-            }
-          }
-        }
-      }
-    }
-    false
-  }
 
   def getColumnProperties(column: String,
       tableProperties: Map[String, String]): Option[util.List[ColumnProperty]] = {
@@ -438,38 +366,6 @@ object CommonUtil {
   }
 
   /**
-   * @param colGrps
-   * @param dims
-   * @return columns of column groups in schema order
-   */
-  def arrangeColGrpsInSchemaOrder(colGrps: Seq[String], dims: Seq[Field]): Seq[String] = {
-    def sortByIndex(colGrp1: String, colGrp2: String) = {
-      val firstCol1 = colGrp1.split(",")(0)
-      val firstCol2 = colGrp2.split(",")(0)
-      val dimIndex1: Int = getDimIndex(firstCol1, dims)
-      val dimIndex2: Int = getDimIndex(firstCol2, dims)
-      dimIndex1 < dimIndex2
-    }
-    val sortedColGroups: Seq[String] = colGrps.sortWith(sortByIndex)
-    sortedColGroups
-  }
-
-  /**
-   * @param colName
-   * @param dims
-   * @return return index for given column in dims
-   */
-  def getDimIndex(colName: String, dims: Seq[Field]): Int = {
-    var index: Int = -1
-    dims.zipWithIndex.foreach { h =>
-      if (h._1.column.equalsIgnoreCase(colName)) {
-        index = h._2.toInt
-      }
-    }
-    index
-  }
-
-  /**
    * validate table level properties for compaction
    *
    * @param tableProperties
@@ -524,6 +420,23 @@ object CommonUtil {
       if (!trimStr.equalsIgnoreCase("true") && !trimStr.equalsIgnoreCase("false")) {
         throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
           s"$trimStr, only true|false is supported.")
+      }
+      tableProperties.put(tblPropName, trimStr)
+    }
+  }
+
+  /**
+   * This method will validate the flat folder property specified by the user
+   *
+   * @param tableProperties
+   */
+  def validateFlatFolder(tableProperties: Map[String, String]): Unit = {
+    val tblPropName = CarbonCommonConstants.FLAT_FOLDER
+    if (tableProperties.get(tblPropName).isDefined) {
+      val trimStr = tableProperties(tblPropName).trim
+      if (!trimStr.equalsIgnoreCase("true") && !trimStr.equalsIgnoreCase("false")) {
+        throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
+                                                  s"$trimStr, only true|false is supported.")
       }
       tableProperties.put(tblPropName, trimStr)
     }
@@ -675,58 +588,6 @@ object CommonUtil {
     }
   }
 
-  def validateMaxColumns(csvHeaders: Array[String], maxColumns: String): Int = {
-    /*
-    User configures both csvheadercolumns, maxcolumns,
-      if csvheadercolumns >= maxcolumns, give error
-      if maxcolumns > threashold, give error
-    User configures csvheadercolumns
-      if csvheadercolumns >= maxcolumns(default) then maxcolumns = csvheadercolumns+1
-      if csvheadercolumns >= threashold, give error
-    User configures nothing
-      if csvheadercolumns >= maxcolumns(default) then maxcolumns = csvheadercolumns+1
-      if csvheadercolumns >= threashold, give error
-     */
-    val columnCountInSchema = csvHeaders.length
-    var maxNumberOfColumnsForParsing = 0
-    val maxColumnsInt = getMaxColumnValue(maxColumns)
-    if (maxColumnsInt != null) {
-      if (columnCountInSchema >= maxColumnsInt) {
-        CarbonException.analysisException(
-          s"csv headers should be less than the max columns: $maxColumnsInt")
-      } else if (maxColumnsInt > CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
-        CarbonException.analysisException(
-          s"max columns cannot be greater than the threshold value: " +
-            s"${CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING}")
-      } else {
-        maxNumberOfColumnsForParsing = maxColumnsInt
-      }
-    } else if (columnCountInSchema >= CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
-      CarbonException.analysisException(
-        s"csv header columns should be less than max threashold: " +
-          s"${CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING}")
-    } else if (columnCountInSchema >= CSVInputFormat.DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
-      maxNumberOfColumnsForParsing = columnCountInSchema + 1
-    } else {
-      maxNumberOfColumnsForParsing = CSVInputFormat.DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING
-    }
-    maxNumberOfColumnsForParsing
-  }
-
-  private def getMaxColumnValue(maxColumn: String): Integer = {
-    if (maxColumn != null) {
-      try {
-        maxColumn.toInt
-      } catch {
-        case e: Exception =>
-          LOGGER.error(s"Invalid value for max column in load options ${ e.getMessage }")
-          null
-      }
-    } else {
-      null
-    }
-  }
-
   def getPartitionInfo(columnName: String, partitionType: PartitionType,
       partitionInfo: PartitionInfo): Seq[Row] = {
     var result = Seq.newBuilder[Row]
@@ -807,19 +668,18 @@ object CommonUtil {
             if (tableFolder.isDirectory) {
               val tablePath = databaseLocation +
                               CarbonCommonConstants.FILE_SEPARATOR + tableFolder.getName
-              val identifier =
-                AbsoluteTableIdentifier.from(tablePath, dbName, tableFolder.getName)
+              val tableUniqueName = dbName + "_" + tableFolder.getName
               val tableStatusFile =
                 CarbonTablePath.getTableStatusFilePath(tablePath)
               if (FileFactory.isFileExist(tableStatusFile, fileType)) {
                 try {
                   val carbonTable = CarbonMetadata.getInstance
-                    .getCarbonTable(identifier.getCarbonTableIdentifier.getTableUniqueName)
+                    .getCarbonTable(tableUniqueName)
                   SegmentStatusManager.deleteLoadsAndUpdateMetadata(carbonTable, true, null)
                 } catch {
                   case _: Exception =>
                     LOGGER.warn(s"Error while cleaning table " +
-                                s"${ identifier.getCarbonTableIdentifier.getTableUniqueName }")
+                                s"${ tableUniqueName }")
                 }
               }
             }
@@ -877,6 +737,149 @@ object CommonUtil {
         isCompactionFlow,
         isAltPartitionFlow)
     CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation)
+  }
+
+  /**
+   * This method will validate the cache level
+   *
+   * @param cacheLevel
+   * @param tableProperties
+   */
+  def validateCacheLevel(cacheLevel: String, tableProperties: Map[String, String]): Unit = {
+    val supportedCacheLevel = Seq("BLOCK", "BLOCKLET")
+    if (cacheLevel.trim.isEmpty) {
+      val errorMessage = "Invalid value: Empty column names for the option(s): " +
+                         CarbonCommonConstants.CACHE_LEVEL
+      throw new MalformedCarbonCommandException(errorMessage)
+    } else {
+      val trimmedCacheLevel = cacheLevel.trim.toUpperCase
+      if (!supportedCacheLevel.contains(trimmedCacheLevel)) {
+        val errorMessage = s"Invalid value: Allowed vaLues for ${
+          CarbonCommonConstants.CACHE_LEVEL} are BLOCK AND BLOCKLET"
+        throw new MalformedCarbonCommandException(errorMessage)
+      }
+      tableProperties.put(CarbonCommonConstants.CACHE_LEVEL, trimmedCacheLevel)
+    }
+  }
+
+  /**
+   * This will validate the column meta cache i.e the columns to be cached.
+   * By default all dimensions will be cached.
+   * If the property is already defined in create table DDL then validate it,
+   * else add all the dimension columns as columns to be cached to table properties.
+   * valid values for COLUMN_META_CACHE can either be empty or can have one or more comma
+   * separated values
+   */
+  def validateColumnMetaCacheFields(dbName: String,
+      tableName: String,
+      tableColumns: Seq[String],
+      cachedColumns: String,
+      tableProperties: Map[String, String]): Unit = {
+    val tableIdentifier = TableIdentifier(tableName, Some(dbName))
+    // below check is added because empty value for column_meta_cache is allowed and in that
+    // case there should not be any validation
+    if (!cachedColumns.equals("")) {
+      validateColumnMetaCacheOption(tableIdentifier, dbName, cachedColumns, tableColumns)
+      val columnsToBeCached = cachedColumns.split(",").map(x => x.trim.toLowerCase).toSeq
+      // make the columns in create table order and then add it to table properties
+      val createOrder = tableColumns.filter(col => columnsToBeCached.contains(col))
+      tableProperties.put(CarbonCommonConstants.COLUMN_META_CACHE, createOrder.mkString(","))
+    }
+  }
+
+  /**
+   * Validate the column_meta_cache option in tableproperties
+   *
+   * @param tableIdentifier
+   * @param databaseName
+   * @param columnsToBeCached
+   * @param tableColumns
+   */
+  private def validateColumnMetaCacheOption(tableIdentifier: TableIdentifier,
+      databaseName: String,
+      columnsToBeCached: String,
+      tableColumns: Seq[String]): Unit = {
+    // check if only empty spaces are given in the property value
+    if (columnsToBeCached.trim.isEmpty) {
+      val errorMessage = "Invalid value: Empty column names for the option(s): " +
+                         CarbonCommonConstants.COLUMN_META_CACHE
+      throw new MalformedCarbonCommandException(errorMessage)
+    } else {
+      val columns: Array[String] = columnsToBeCached.split(',').map(x => x.toLowerCase.trim)
+      // Check for duplicate column names
+      columns.groupBy(col => col.toLowerCase).foreach(f => if (f._2.size > 1) {
+        throw new MalformedCarbonCommandException(s"Duplicate column name found : ${ f._1 }")
+      })
+      columns.foreach(col => {
+        // check if any intermediate column is empty
+        if (null == col || col.trim.isEmpty) {
+          val errorMessage = "Invalid value: Empty column names for the option(s): " +
+                             CarbonCommonConstants.COLUMN_META_CACHE
+          throw new MalformedCarbonCommandException(errorMessage)
+        }
+        // check if the column exists in the table
+        if (!tableColumns.contains(col.toLowerCase)) {
+          val errorMessage = s"Column $col does not exists in the table ${ tableIdentifier.table }"
+          throw new MalformedCarbonCommandException(errorMessage)
+        }
+      })
+    }
+  }
+
+  /**
+   * Merge the carbonindex files with in the segment to carbonindexmerge file inside same segment
+   *
+   * @param sparkContext
+   * @param segmentIds
+   * @param tablePath
+   * @param carbonTable
+   * @param mergeIndexProperty
+   * @param readFileFooterFromCarbonDataFile flag to read file footer information from carbondata
+   *                                         file. This will used in case of upgrade from version
+   *                                         which do not store the blocklet info to current
+   *                                         version
+   */
+  def mergeIndexFiles(sparkContext: SparkContext,
+    segmentIds: Seq[String],
+    segmentFileNameToSegmentIdMap: java.util.Map[String, String],
+    tablePath: String,
+    carbonTable: CarbonTable,
+    mergeIndexProperty: Boolean,
+    readFileFooterFromCarbonDataFile: Boolean = false): Unit = {
+    if (mergeIndexProperty) {
+      new CarbonMergeFilesRDD(
+        sparkContext,
+        carbonTable,
+        segmentIds,
+        segmentFileNameToSegmentIdMap,
+        carbonTable.isHivePartitionTable,
+        readFileFooterFromCarbonDataFile).collect()
+    } else {
+      try {
+        if (CarbonProperties.getInstance().getProperty(
+          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT).toBoolean) {
+          new CarbonMergeFilesRDD(
+            sparkContext,
+            carbonTable,
+            segmentIds,
+            segmentFileNameToSegmentIdMap,
+            carbonTable.isHivePartitionTable,
+            readFileFooterFromCarbonDataFile).collect()
+        }
+      } catch {
+        case _: Exception =>
+          if (CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT.toBoolean) {
+            new CarbonMergeFilesRDD(
+              sparkContext,
+              carbonTable,
+              segmentIds,
+              segmentFileNameToSegmentIdMap,
+              carbonTable.isHivePartitionTable,
+              readFileFooterFromCarbonDataFile).collect()
+          }
+      }
+    }
   }
 
 }

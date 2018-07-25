@@ -26,7 +26,6 @@ import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
-import org.apache.carbondata.processing.partition.spliter.exception.AlterPartitionSliceException;
 import org.apache.carbondata.processing.store.CarbonDataFileAttributes;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
@@ -59,6 +58,7 @@ public class RowResultProcessor {
     carbonFactDataHandlerModel.setBucketId(bucketId);
     //Note: set compaction flow just to convert decimal type
     carbonFactDataHandlerModel.setCompactionFlow(true);
+    carbonFactDataHandlerModel.setSegmentId(loadModel.getSegmentId());
     dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
   }
 
@@ -79,7 +79,7 @@ public class RowResultProcessor {
         this.dataHandler.finish();
       }
       processStatus = true;
-    } catch (AlterPartitionSliceException e) {
+    } catch (CarbonDataWriterException e) {
       LOGGER.error(e, e.getMessage());
       LOGGER.error("Exception in executing RowResultProcessor" + e.getMessage());
       processStatus = false;
@@ -96,12 +96,12 @@ public class RowResultProcessor {
     return processStatus;
   }
 
-  private void addRow(Object[] carbonTuple) throws AlterPartitionSliceException {
+  private void addRow(Object[] carbonTuple) throws CarbonDataWriterException {
     CarbonRow row = WriteStepRowUtil.fromMergerRow(carbonTuple, segmentProperties);
     try {
       this.dataHandler.addDataToStore(row);
     } catch (CarbonDataWriterException e) {
-      throw new AlterPartitionSliceException("Exception in adding rows in RowResultProcessor", e);
+      throw new CarbonDataWriterException("Exception in adding rows in RowResultProcessor", e);
     }
   }
 }

@@ -24,7 +24,7 @@
   <parent>
     <groupId>org.apache.carbondata</groupId>
     <artifactId>carbondata-parent</artifactId>
-    <version>1.4.0-SNAPSHOT</version>
+    <version>1.5.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -41,15 +41,14 @@
       <artifactId>carbondata-spark2</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.scalatest</groupId>
+      <artifactId>scalatest_${scala.binary.version}</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
-    <sourceDirectory>src/minmaxdatamap/main/java</sourceDirectory>
-    <resources>
-      <resource>
-        <directory>.</directory>
-      </resource>
-    </resources>
     <plugins>
       <plugin>
         <groupId>org.scala-tools</groupId>

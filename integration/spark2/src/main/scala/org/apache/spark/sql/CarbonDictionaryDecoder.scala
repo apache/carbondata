@@ -35,7 +35,7 @@ import org.apache.spark.util.SparkTypeConverter
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.ColumnIdentifier
+import org.apache.carbondata.core.metadata.{CarbonMetadata, ColumnIdentifier}
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -275,9 +275,13 @@ case class CarbonDictionaryDecoder(
               if (null != carbonDimension.getColumnSchema.getParentColumnTableRelations &&
                   !carbonDimension
                     .getColumnSchema.getParentColumnTableRelations.isEmpty) {
+                val parentRelationIdentifier = carbonDimension.getColumnSchema
+                  .getParentColumnTableRelations.get(0).getRelationIdentifier
+                val parentTablePath = CarbonMetadata.getInstance()
+                  .getCarbonTable(parentRelationIdentifier.getDatabaseName,
+                    parentRelationIdentifier.getTableName).getTablePath
                 (QueryUtil
-                  .getTableIdentifierForColumn(carbonDimension,
-                    atiMap(tableName).getAbsoluteTableIdentifier),
+                  .getTableIdentifierForColumn(carbonDimension),
                   new ColumnIdentifier(carbonDimension.getColumnSchema
                     .getParentColumnTableRelations.get(0).getColumnId,
                     carbonDimension.getColumnProperties,

@@ -105,7 +105,10 @@ DataMap can be created using following DDL
   ```
 The string followed by USING is called DataMap Provider, in this version CarbonData supports two 
 kinds of DataMap: 
-1. preaggregate, for pre-aggregate table. No DMPROPERTY is required for this DataMap
+1. preaggregate, for pre-aggregate table. Pre-Aggregate table supports two values for DMPROPERTIES.
+   a. 'path' is used to specify the store location of the datamap.('path'='/location/').
+   b. 'partitioning' when set to false enables user to disable partitioning of the datamap.
+       Default value is true for this property.
 2. timeseries, for timeseries roll-up table. Please refer to [Timeseries DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/timeseries-datamap-guide.md)
 
 DataMap can be dropped using following DDL
@@ -241,6 +244,7 @@ is not supported:
 change datatype command, CarbonData will check whether it will impact the pre-aggregate table, if 
  not, the operation is allowed, otherwise operation will be rejected by throwing exception.   
 3. Partition management command: `ALTER TABLE ADD/DROP PARTITION`
+4. Complex Datatypes for preaggregate is not supported.
 
 However, there is still way to support these operations on main table, in current CarbonData 
 release, user can do as following:

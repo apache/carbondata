@@ -161,12 +161,11 @@ case class AlterTableCompactionPreEvent(sparkSession: SparkSession,
  * @param sparkSession
  * @param carbonTable
  * @param carbonMergerMapping
- * @param mergedLoadName
  */
 case class AlterTableCompactionPostEvent(sparkSession: SparkSession,
     carbonTable: CarbonTable,
     carbonMergerMapping: CarbonMergerMapping,
-    mergedLoadName: String) extends Event with AlterTableCompactionEventInfo
+    compactedLoads: java.util.List[String]) extends Event with AlterTableCompactionEventInfo
 /**
  * Compaction Event for handling pre update status file opeartions, lister has to implement this
  * event before updating the table status file
@@ -194,26 +193,24 @@ case class AlterTableCompactionPostStatusUpdateEvent(sparkSession: SparkSession,
 
 /**
  * Compaction Event for handling clean up in case of any compaction failure and abort the
- * operation, lister has to implement this event to handle failure scenarios
- *
- * @param carbonTable
- * @param carbonMergerMapping
- * @param mergedLoadName
- */
-case class AlterTableCompactionAbortEvent(sparkSession: SparkSession,
-    carbonTable: CarbonTable,
-    carbonMergerMapping: CarbonMergerMapping,
-    mergedLoadName: String) extends Event with AlterTableCompactionEventInfo
-
-
-/**
- * Compaction Event for handling exception in compaction
+ * * operation, lister has to implement this event to handle failure scenarios
  *
  * @param sparkSession
  * @param carbonTable
  * @param alterTableModel
  */
-case class AlterTableCompactionExceptionEvent(sparkSession: SparkSession,
+case class AlterTableCompactionAbortEvent(sparkSession: SparkSession,
+    carbonTable: CarbonTable,
+    alterTableModel: AlterTableModel) extends Event with AlterTableCompactionEventInfo
+
+/**
+ * Compaction Event for handling merge index in alter DDL
+ *
+ * @param sparkSession
+ * @param carbonTable
+ * @param alterTableModel
+ */
+case class AlterTableMergeIndexEvent(sparkSession: SparkSession,
     carbonTable: CarbonTable,
     alterTableModel: AlterTableModel) extends Event with AlterTableCompactionEventInfo
 

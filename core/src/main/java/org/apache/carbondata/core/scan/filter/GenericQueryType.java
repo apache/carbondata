@@ -20,8 +20,10 @@ package org.apache.carbondata.core.scan.filter;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Map;
 
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 
 public interface GenericQueryType {
@@ -43,5 +45,11 @@ public interface GenericQueryType {
 
   void fillRequiredBlockData(RawBlockletColumnChunks blockChunkHolder) throws IOException;
 
-  Object getDataBasedOnDataTypeFromSurrogates(ByteBuffer surrogateData);
+  Object getDataBasedOnDataType(ByteBuffer dataBuffer);
+
+  Object getDataBasedOnColumn(ByteBuffer dataBuffer, CarbonDimension parent, CarbonDimension child);
+
+  Object getDataBasedOnColumnList(Map<CarbonDimension, ByteBuffer> childBuffer,
+      CarbonDimension presentColumn);
+
 }

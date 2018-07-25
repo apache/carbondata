@@ -26,6 +26,9 @@ import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOp
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.path.CarbonTablePath
+
 class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
 
@@ -689,7 +692,12 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
                      CarbonCommonConstants.FILE_SEPARATOR + "t" +
                      CarbonCommonConstants.FILE_SEPARATOR + "Fact" +
                      CarbonCommonConstants.FILE_SEPARATOR + "Part0")
-    assert(f.list().length == 2)
+    if (!FileFactory.isFileExist(
+      CarbonTablePath.getSegmentFilesLocation(
+        dblocation + CarbonCommonConstants.FILE_SEPARATOR +
+        CarbonCommonConstants.FILE_SEPARATOR + "t"))) {
+      assert(f.list().length == 2)
+    }
   }
   test("test sentences func in update statement") {
     sql("drop table if exists senten")
@@ -703,6 +711,65 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     errorMessage
       .contains("Unsupported data type: Array")
     sql("drop table if exists senten")
+  }
+
+  test("block updating table which has preaggreate datamap") {
+    sql("use iud")
+    sql("drop table if exists test_dm_main")
+    sql("drop table if exists test_dm_main_preagg1")
+
+    sql("create table test_dm_main (a string, b string, c string) stored by 'carbondata'")
+    sql("insert into test_dm_main select 'aaa','bbb','ccc'")
+    sql("insert into test_dm_main select 'bbb','bbb','ccc'")
+    sql("insert into test_dm_main select 'ccc','bbb','ccc'")
+
+    sql(
+      "create datamap preagg1 on table test_dm_main using 'preaggregate' as select" +
+      " a,sum(b) from test_dm_main group by a")
+
+    assert(intercept[UnsupportedOperationException] {
+      sql("update test_dm_main_preagg1 set(test_dm_main_a) = ('aaa') where test_dm_main_a = 'bbb'")
+    }.getMessage.contains("Update operation is not supported for pre-aggregate table"))
+    assert(intercept[UnsupportedOperationException] {
+      sql("update test_dm_main set(a) = ('aaa') where a = 'ccc'")
+    }.getMessage.contains("Update operation is not supported for tables which have a pre-aggregate table"))
+
+    sql("drop table if exists test_dm_main")
+    sql("drop table if exists test_dm_main_preagg1")
+  }
+
+  test("block updating table which has index datamap") {
+    sql("use iud")
+    sql("drop table if exists test_dm_index")
+
+    sql("create table test_dm_index (a string, b string, c string) stored by 'carbondata'")
+    sql("insert into test_dm_index select 'ccc','bbb','ccc'")
+
+    sql(
+      s"""
+         | CREATE DATAMAP dm_test_dm_index ON TABLE test_dm_index
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='a', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+
+    assert(intercept[UnsupportedOperationException] {
+      sql("update test_dm_index set(a) = ('aaa') where a = 'ccc'")
+    }.getMessage.contains("Update operation is not supported for table which has index datamaps"))
+
+    sql("drop table if exists test_dm_index")
+  }
+
+  test("flat folder carbon table without alias in set columns with mulitple loads") {
+    sql("""drop table if exists iud.dest33_flat""")
+    sql("""create table iud.dest33_part (c1 string,c2 int,c5 string, c3 string) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('flat_folder'='true')""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.dest33_part""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.dest33_part""")
+    sql("""update iud.dest33_part d set (c3,c5 ) = (select s.c33 ,s.c55  from iud.source2 s where d.c1 = s.c11) where d.c1 = 'a'""").show()
+    checkAnswer(
+      sql("""select c3,c5 from iud.dest33_part where c1='a'"""),
+      Seq(Row("MGM","Disco"),Row("MGM","Disco"))
+    )
+    sql("""drop table if exists iud.dest33_part""")
   }
 
   override def afterAll {

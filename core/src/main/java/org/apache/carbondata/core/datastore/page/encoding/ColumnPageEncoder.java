@@ -22,9 +22,10 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.Compressor;
@@ -39,9 +40,20 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.BlockletMinMaxIndex;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.Encoding;
+import org.apache.carbondata.format.LocalDictionaryChunk;
+import org.apache.carbondata.format.LocalDictionaryChunkMeta;
 import org.apache.carbondata.format.PresenceMeta;
 
+import static org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory.selectCodecByAlgorithmForFloating;
+import static org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory.selectCodecByAlgorithmForIntegral;
+
 public abstract class ColumnPageEncoder {
+
+  /**
+   * logger
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(ColumnPageEncoder.class.getName());
 
   protected abstract byte[] encodeData(ColumnPage input) throws MemoryException, IOException;
 
@@ -56,7 +68,7 @@ public abstract class ColumnPageEncoder {
   public EncodedColumnPage encode(ColumnPage inputPage) throws IOException, MemoryException {
     byte[] encodedBytes = encodeData(inputPage);
     DataChunk2 pageMetadata = buildPageMetadata(inputPage, encodedBytes);
-    return new EncodedColumnPage(pageMetadata, encodedBytes, inputPage.getStatistics());
+    return new EncodedColumnPage(pageMetadata, encodedBytes, inputPage);
   }
 
   private DataChunk2 buildPageMetadata(ColumnPage inputPage, byte[] encodedBytes)
@@ -136,23 +148,74 @@ public abstract class ColumnPageEncoder {
    */
   public static EncodedColumnPage[] encodeComplexColumn(ComplexColumnPage input)
       throws IOException, MemoryException {
-    EncodedColumnPage[] encodedPages = new EncodedColumnPage[input.getDepth()];
+    EncodedColumnPage[] encodedPages = new EncodedColumnPage[input.getComplexColumnIndex()];
     int index = 0;
-    Iterator<byte[][]> iterator = input.iterator();
-    while (iterator.hasNext()) {
-      byte[][] subColumnPage = iterator.next();
-      encodedPages[index++] = encodeChildColumn(subColumnPage);
+    while (index < input.getComplexColumnIndex()) {
+      ColumnPage subColumnPage = input.getColumnPage(index);
+      encodedPages[index] = encodedColumn(subColumnPage);
+      index++;
     }
     return encodedPages;
   }
 
-  private static EncodedColumnPage encodeChildColumn(byte[][] data)
+  public static EncodedColumnPage encodedColumn(ColumnPage page)
       throws IOException, MemoryException {
-    TableSpec.ColumnSpec spec = TableSpec.ColumnSpec.newInstance("complex_inner_column",
-        DataTypes.BYTE_ARRAY, ColumnType.COMPLEX);
-    ColumnPage page = ColumnPage.wrapByteArrayPage(spec, data);
-    ColumnPageEncoder encoder = new DirectCompressCodec(DataTypes.BYTE_ARRAY).createEncoder(null);
-    return encoder.encode(page);
+    ColumnPageEncoder pageEncoder = createCodecForDimension(page);
+    if (pageEncoder == null) {
+      ColumnPageEncoder encoder = new DirectCompressCodec(DataTypes.BYTE_ARRAY).createEncoder(null);
+      return encoder.encode(page);
+    } else {
+      LOGGER.debug("Encoder result ---> Source data type: " + pageEncoder.getEncoderMeta(page)
+          .getColumnSpec().getSchemaDataType() + " Destination data type: " + pageEncoder
+          .getEncoderMeta(page).getStoreDataType() + " for the column: " + pageEncoder
+          .getEncoderMeta(page).getColumnSpec().getFieldName());
+
+      return pageEncoder.encode(page);
+    }
+  }
+
+  private static ColumnPageEncoder createCodecForDimension(ColumnPage inputPage) {
+    TableSpec.ColumnSpec columnSpec = inputPage.getColumnSpec();
+    if (columnSpec.getColumnType() == ColumnType.COMPLEX_PRIMITIVE) {
+      if (inputPage.getDataType() == DataTypes.BYTE_ARRAY
+          || inputPage.getDataType() == DataTypes.STRING) {
+        // use legacy encoder
+        return null;
+      } else if ((inputPage.getDataType() == DataTypes.BYTE) || (inputPage.getDataType()
+          == DataTypes.SHORT) || (inputPage.getDataType() == DataTypes.INT) || (
+          inputPage.getDataType() == DataTypes.LONG)) {
+        return selectCodecByAlgorithmForIntegral(inputPage.getStatistics(), true)
+            .createEncoder(null);
+      } else if ((inputPage.getDataType() == DataTypes.FLOAT) || (inputPage.getDataType()
+          == DataTypes.DOUBLE)) {
+        return selectCodecByAlgorithmForFloating(inputPage.getStatistics(), true)
+            .createEncoder(null);
+      }
+    }
+    // use legacy encoder
+    return null;
+  }
+
+
+  /**
+   * Below method to encode the dictionary page
+   * @param dictionaryPage
+   * dictionary column page
+   * @return local dictionary chunk
+   * @throws IOException
+   * Problem in encoding
+   * @throws MemoryException
+   * problem in encoding
+   */
+  public LocalDictionaryChunk encodeDictionary(ColumnPage dictionaryPage)
+      throws IOException, MemoryException {
+    LocalDictionaryChunk localDictionaryChunk = new LocalDictionaryChunk();
+    localDictionaryChunk.setDictionary_data(encodeData(dictionaryPage));
+    LocalDictionaryChunkMeta localDictionaryChunkMeta = new LocalDictionaryChunkMeta();
+    localDictionaryChunkMeta.setEncoders(getEncodingList());
+    localDictionaryChunkMeta.setEncoder_meta(buildEncoderMeta(dictionaryPage));
+    localDictionaryChunk.setDictionary_meta(localDictionaryChunkMeta);
+    return localDictionaryChunk;
   }
 
 }

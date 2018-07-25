@@ -28,13 +28,15 @@ import org.apache.spark.sql.execution.command.datamap.CarbonDropDataMapCommand
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
-import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
+import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.events._
 
 case class CarbonDropTableCommand(
@@ -50,20 +52,27 @@ case class CarbonDropTableCommand(
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.DROP_TABLE_LOCK)
-    val identifier = CarbonEnv.getIdentifier(databaseNameOp, tableName)(sparkSession)
-    val dbName = identifier.getCarbonTableIdentifier.getDatabaseName
+
+    val dbName = databaseNameOp.getOrElse(sparkSession.catalog.currentDatabase)
     val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
     try {
-      locksToBeAcquired foreach {
-        lock => carbonLocks += CarbonLockUtil.getLockObject(identifier, lock)
-      }
       carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+      val locksToBeAcquired: List[String] = if (carbonTable.isTransactionalTable) {
+        List(LockUsage.METADATA_LOCK, LockUsage.DROP_TABLE_LOCK)
+      } else {
+        List.empty
+      }
+      val identifier = carbonTable.getAbsoluteTableIdentifier
+      locksToBeAcquired foreach {
+        lock => carbonLocks +=
+                CarbonLockUtil.getLockObject(identifier, lock)
+      }
+
       if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
         throw new ConcurrentOperationException(carbonTable, "loading", "drop table")
       }
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
-      if (carbonTable.isStreamingTable) {
+      if (carbonTable.isStreamingSink) {
         // streaming table should acquire streaming.lock
         carbonLocks += CarbonLockUtil.getLockObject(identifier, LockUsage.STREAMING_LOCK)
       }
@@ -110,9 +119,11 @@ case class CarbonDropTableCommand(
             dropCommand
           }
         childDropCommands.foreach(_.processMetadata(sparkSession))
-      } else {
-        val schemas = DataMapStoreManager.getInstance().getAllDataMapSchemas(carbonTable)
-        childDropDataMapCommands = schemas.asScala.map{ schema =>
+      }
+      val indexDatamapSchemas =
+        DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
+      if (!indexDatamapSchemas.isEmpty) {
+        childDropDataMapCommands = indexDatamapSchemas.asScala.map { schema =>
           val command = CarbonDropDataMapCommand(schema.getDataMapName,
             ifExistsSet,
             Some(TableIdentifier(tableName, Some(dbName))),
@@ -167,6 +178,14 @@ case class CarbonDropTableCommand(
       if (FileFactory.isFileExist(tablePath, fileType) &&
           !(carbonTable.isExternalTable || carbonTable.isFileLevelFormat)) {
         val file = FileFactory.getCarbonFile(tablePath, fileType)
+        CarbonUtil.deleteFoldersAndFilesSilent(file)
+      }
+      // Delete lock directory if external lock path is specified.
+      if (CarbonProperties.getInstance.getProperty(CarbonCommonConstants.LOCK_PATH, "").toLowerCase
+        .nonEmpty) {
+        val tableLockPath = CarbonLockFactory
+          .getLockpath(carbonTable.getCarbonTableIdentifier.getTableId)
+        val file = FileFactory.getCarbonFile(tableLockPath)
         CarbonUtil.deleteFoldersAndFilesSilent(file)
       }
       if (carbonTable.hasDataMapSchema && childDropCommands.nonEmpty) {

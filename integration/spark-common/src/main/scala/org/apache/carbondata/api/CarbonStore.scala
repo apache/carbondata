@@ -142,7 +142,7 @@ object CarbonStore {
     LOGGER.audit(s"The clean files request has been received for $dbName.$tableName")
     var carbonCleanFilesLock: ICarbonLock = null
     val absoluteTableIdentifier = if (forceTableClean) {
-      AbsoluteTableIdentifier.from(tablePath, dbName, tableName)
+      AbsoluteTableIdentifier.from(tablePath, dbName, tableName, tableName)
     } else {
       carbonTable.getAbsoluteTableIdentifier
     }
@@ -317,7 +317,7 @@ object CarbonStore {
       tableName: String,
       storePath: String,
       segmentId: String): Boolean = {
-    val identifier = AbsoluteTableIdentifier.from(storePath, dbName, tableName)
+    val identifier = AbsoluteTableIdentifier.from(storePath, dbName, tableName, tableName)
     val validAndInvalidSegments: SegmentStatusManager.ValidAndInvalidSegmentsInfo = new
         SegmentStatusManager(
           identifier).getValidAndInvalidSegments

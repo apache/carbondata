@@ -26,6 +26,8 @@
 * [How to resolve Abstract Method Error?](#how-to-resolve-abstract-method-error)
 * [How Carbon will behave when execute insert operation in abnormal scenarios?](#how-carbon-will-behave-when-execute-insert-operation-in-abnormal-scenarios)
 * [Why aggregate query is not fetching data from aggregate table?](#why-aggregate-query-is-not-fetching-data-from-aggregate-table)
+* [Why all executors are showing success in Spark UI even after Dataload command failed at Driver side?](#Why-all-executors-are-showing-success-in-Spark-UI-even-after-Dataload-command-failed-at-driver-side)
+* [Why different time zone result for select query output when query SDK writer output?](#Why-different-time-zone-result-for-select-query-output-when-query-SDK-writer-output)
 
 ## What are Bad Records?
 Records that fail to get loaded into the CarbonData due to data type incompatibility or are empty or have incompatible format are classified as Bad Records.
@@ -178,4 +180,18 @@ create datamap ag1 on table gdp21 using 'preaggregate' as select cntry, sum(gdp)
 select cntry,sum(gdp) from gdp21,pop1 where cntry=ctry group by cntry;
 ```
 
+## Why all executors are showing success in Spark UI even after Dataload command failed at Driver side?
+Spark executor shows task as failed after the maximum number of retry attempts, but loading the data having bad records and BAD_RECORDS_ACTION (carbon.bad.records.action) is set as “FAIL” will attempt only once but will send the signal to driver as failed instead of throwing the exception to retry, as there is no point to retry if bad record found and BAD_RECORDS_ACTION is set to fail. Hence the Spark executor displays this one attempt as successful but the command has actually failed to execute. Task attempts or executor logs can be checked to observe the failure reason.
+
+## Why different time zone result for select query output when query SDK writer output? 
+SDK writer is an independent entity, hence SDK writer can generate carbondata files from a non-cluster machine that has different time zones. But at cluster when those files are read, it always takes cluster time-zone. Hence, the value of timestamp and date datatype fields are not original value.
+If wanted to control timezone of data while writing, then set cluster's time-zone in SDK writer by calling below API.
+```
+TimeZone.setDefault(timezoneValue)
+```
+**Example:**
+``` 
+cluster timezone is Asia/Shanghai
+TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"))
+```
 

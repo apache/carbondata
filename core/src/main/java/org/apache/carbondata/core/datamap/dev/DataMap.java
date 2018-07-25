@@ -55,4 +55,9 @@ public interface DataMap<T extends Blocklet> {
    */
   void clear();
 
+  /**
+   * clears all the resources for datamaps
+   */
+  void finish();
+
 }

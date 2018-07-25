@@ -279,16 +279,8 @@ public class ThriftWrapperSchemaConverterImplTest {
         return "1";
       }
 
-      @Mock public boolean isColumnar() {
-        return true;
-      }
-
       @Mock public boolean isDimensionColumn() {
         return true;
-      }
-
-      @Mock public int getColumnGroupId() {
-        return 1;
       }
 
       @Mock public int getScale() {
@@ -363,16 +355,8 @@ public class ThriftWrapperSchemaConverterImplTest {
         return "1";
       }
 
-      @Mock public boolean isColumnar() {
-        return true;
-      }
-
       @Mock public boolean isDimensionColumn() {
         return true;
-      }
-
-      @Mock public int getColumnGroupId() {
-        return 1;
       }
 
       @Mock public int getScale() {
@@ -445,16 +429,8 @@ public class ThriftWrapperSchemaConverterImplTest {
         return "1";
       }
 
-      @Mock public boolean isColumnar() {
-        return true;
-      }
-
       @Mock public boolean isDimensionColumn() {
         return true;
-      }
-
-      @Mock public int getColumnGroupId() {
-        return 1;
       }
 
       @Mock public int getScale() {
@@ -521,16 +497,8 @@ public class ThriftWrapperSchemaConverterImplTest {
         return "1";
       }
 
-      @Mock public boolean isColumnar() {
-        return true;
-      }
-
       @Mock public boolean isDimensionColumn() {
         return true;
-      }
-
-      @Mock public int getColumnGroupId() {
-        return 1;
       }
 
       @Mock public int getScale() {
@@ -596,16 +564,8 @@ public class ThriftWrapperSchemaConverterImplTest {
         return "1";
       }
 
-      @Mock public boolean isColumnar() {
-        return true;
-      }
-
       @Mock public boolean isDimensionColumn() {
         return true;
-      }
-
-      @Mock public int getColumnGroupId() {
-        return 1;
       }
 
       @Mock public int getScale() {
@@ -670,16 +630,8 @@ public class ThriftWrapperSchemaConverterImplTest {
         return "1";
       }
 
-      @Mock public boolean isColumnar() {
-        return true;
-      }
-
       @Mock public boolean isDimensionColumn() {
         return true;
-      }
-
-      @Mock public int getColumnGroupId() {
-        return 1;
       }
 
       @Mock public int getScale() {
@@ -744,16 +696,8 @@ public class ThriftWrapperSchemaConverterImplTest {
         return "1";
       }
 
-      @Mock public boolean isColumnar() {
-        return true;
-      }
-
       @Mock public boolean isDimensionColumn() {
         return true;
-      }
-
-      @Mock public int getColumnGroupId() {
-        return 1;
       }
 
       @Mock public int getScale() {
@@ -819,16 +763,8 @@ public class ThriftWrapperSchemaConverterImplTest {
         return "1";
       }
 
-      @Mock public boolean isColumnar() {
-        return true;
-      }
-
       @Mock public boolean isDimensionColumn() {
         return true;
-      }
-
-      @Mock public int getColumnGroupId() {
-        return 1;
       }
 
       @Mock public int getScale() {
@@ -893,16 +829,8 @@ public class ThriftWrapperSchemaConverterImplTest {
         return "1";
       }
 
-      @Mock public boolean isColumnar() {
-        return true;
-      }
-
       @Mock public boolean isDimensionColumn() {
         return true;
-      }
-
-      @Mock public int getColumnGroupId() {
-        return 1;
       }
 
       @Mock public int getScale() {
@@ -973,16 +901,8 @@ public class ThriftWrapperSchemaConverterImplTest {
         return "1";
       }
 
-      @Mock public boolean isColumnar() {
-        return true;
-      }
-
       @Mock public boolean isDimensionColumn() {
         return true;
-      }
-
-      @Mock public int getColumnGroupId() {
-        return 1;
       }
 
       @Mock public int getScale() {
@@ -1047,16 +967,8 @@ public class ThriftWrapperSchemaConverterImplTest {
         return "1";
       }
 
-      @Mock public boolean isColumnar() {
-        return true;
-      }
-
       @Mock public boolean isDimensionColumn() {
         return true;
-      }
-
-      @Mock public int getColumnGroupId() {
-        return 1;
       }
 
       @Mock public int getScale() {
@@ -1122,16 +1034,8 @@ public class ThriftWrapperSchemaConverterImplTest {
         return "1";
       }
 
-      @Mock public boolean isColumnar() {
-        return true;
-      }
-
       @Mock public boolean isDimensionColumn() {
         return true;
-      }
-
-      @Mock public int getColumnGroupId() {
-        return 1;
       }
 
       @Mock public int getScale() {
@@ -1203,16 +1107,8 @@ public class ThriftWrapperSchemaConverterImplTest {
         return "1";
       }
 
-      @Mock public boolean isColumnar() {
-        return true;
-      }
-
       @Mock public boolean isDimensionColumn() {
         return true;
-      }
-
-      @Mock public int getColumnGroupId() {
-        return 1;
       }
 
       @Mock public int getScale() {
@@ -1277,16 +1173,8 @@ public class ThriftWrapperSchemaConverterImplTest {
         return "1";
       }
 
-      @Mock public boolean isColumnar() {
-        return true;
-      }
-
       @Mock public boolean isDimensionColumn() {
         return true;
-      }
-
-      @Mock public int getColumnGroupId() {
-        return 1;
       }
 
       @Mock public int getScale() {
@@ -1362,16 +1250,8 @@ public class ThriftWrapperSchemaConverterImplTest {
         return "1";
       }
 
-      @Mock public boolean isColumnar() {
-        return true;
-      }
-
       @Mock public boolean isDimensionColumn() {
         return true;
-      }
-
-      @Mock public int getColumnGroupId() {
-        return 1;
       }
 
       @Mock public int getScale() {
@@ -1421,7 +1301,7 @@ public class ThriftWrapperSchemaConverterImplTest {
         return columnSchemas;
       }
 
-      @Mock public SchemaEvolution getSchemaEvalution() {
+      @Mock public SchemaEvolution getSchemaEvolution() {
         return schemaEvolution;
       }
 
@@ -1480,16 +1360,8 @@ public class ThriftWrapperSchemaConverterImplTest {
         return "1";
       }
 
-      @Mock public boolean isColumnar() {
-        return true;
-      }
-
       @Mock public boolean isDimensionColumn() {
         return true;
-      }
-
-      @Mock public int getColumnGroupId() {
-        return 1;
       }
 
       @Mock public int getScale() {
@@ -1537,7 +1409,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       final SchemaEvolution schemaEvolution = new SchemaEvolution();
       final Map mapTableProperties = new HashMap<String, String>();
 
-      @Mock public SchemaEvolution getSchemaEvalution() {
+      @Mock public SchemaEvolution getSchemaEvolution() {
         return schemaEvolution;
       }
 
@@ -1562,16 +1434,14 @@ public class ThriftWrapperSchemaConverterImplTest {
   }
 
   @Test public void testFromExternalToWrapperSchemaEvolutionEntry() {
-long time =1112745600000L;
+    long time =1112745600000L;
     ColumnSchema wrapperColumnSchema = new ColumnSchema();
     wrapperColumnSchema.setColumnUniqueId("1");
     wrapperColumnSchema.setColumnName("columnName");
-    wrapperColumnSchema.setColumnar(true);
     wrapperColumnSchema.setDataType(DataTypes.STRING);
     wrapperColumnSchema.setDimensionColumn(true);
     wrapperColumnSchema.setEncodingList(encodings);
     wrapperColumnSchema.setNumberOfChild(1);
-    wrapperColumnSchema.setColumnGroup(1);
     wrapperColumnSchema.setDefaultValue(new byte[] { 1, 2 });
     wrapperColumnSchema.setColumnProperties(columnPropertyMap);
     wrapperColumnSchema.setInvisible(true);

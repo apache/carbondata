@@ -42,22 +42,10 @@ public class EncodedTablePage {
   // size in bytes of all encoded columns (including data and metadate)
   private int encodedSize;
 
-  public static EncodedTablePage newEmptyInstance() {
-    EncodedTablePage page = new EncodedTablePage();
-    page.pageSize = 0;
-    page.encodedSize = 0;
-    page.dimensionPages = new EncodedColumnPage[0];
-    page.measurePages = new EncodedColumnPage[0];
-    return page;
-  }
-
   public static EncodedTablePage newInstance(int pageSize,
       EncodedColumnPage[] dimensionPages, EncodedColumnPage[] measurePages,
       TablePageKey tablePageKey) throws IOException {
     return new EncodedTablePage(pageSize, dimensionPages, measurePages, tablePageKey);
-  }
-
-  private EncodedTablePage() {
   }
 
   private EncodedTablePage(int pageSize,

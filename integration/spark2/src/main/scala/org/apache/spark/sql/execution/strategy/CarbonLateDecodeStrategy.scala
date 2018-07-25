@@ -29,7 +29,7 @@ import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, Partitioning, UnknownPartitioning}
 import org.apache.spark.sql.execution._
-import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, HadoopFsRelation, InMemoryFileIndex, LogicalRelation, SparkCarbonTableFormat}
 import org.apache.spark.sql.optimizer.{CarbonDecoderRelation, CarbonFilters}
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types._
@@ -42,7 +42,7 @@ import org.apache.carbondata.core.metadata.schema.BucketingInfo
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.datamap.{TextMatch, TextMatchUDF}
+import org.apache.carbondata.datamap.{TextMatch, TextMatchLimit, TextMatchMaxDocUDF, TextMatchUDF}
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.apache.carbondata.spark.util.CarbonScalaUtil
@@ -64,7 +64,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           projects,
           filters,
           (a, f, needDecoder, p) => toCatalystRDD(l, a, relation.buildScan(
-            a.map(_.name).toArray, f, p), needDecoder)) :: Nil
+            a.map(_.name).toArray, filters, projects, f, p), needDecoder)) :: Nil
       case CarbonDictionaryCatalystDecoder(relations, profile, aliasMap, _, child) =>
         if ((profile.isInstanceOf[IncludeProfile] && profile.isEmpty) ||
             !CarbonDictionaryDecoder.
@@ -100,7 +100,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     val updateDeltaMetadata = segmentUpdateStatusManager.readLoadMetadata()
     if (updateDeltaMetadata != null && updateDeltaMetadata.nonEmpty) {
       false
-    } else if (relation.carbonTable.isStreamingTable) {
+    } else if (relation.carbonTable.isStreamingSink) {
       false
     } else {
       true
@@ -367,14 +367,14 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     val table = relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
     if (supportBatchedDataSource(relation.relation.sqlContext, updateRequestedColumns) &&
         needDecoder.isEmpty) {
-      BatchedDataSourceScanExec(
+      new CarbonDataSourceScan(
         output,
         scanBuilder(updateRequestedColumns,
           candidatePredicates,
           pushedFilters,
           needDecoder,
           partitions),
-        relation.relation,
+        createHadoopFSRelation(relation),
         getPartitioning(table.carbonTable, updateRequestedColumns),
         metadata,
         relation.catalogTable.map(_.identifier), relation)
@@ -481,14 +481,29 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
     // For conciseness, all Catalyst filter expressions of type `expressions.Expression` below are
     // called `predicate`s, while all data source filters of type `sources.Filter` are simply called
-    // `filter`s.
+    // `filter`s. And block filters for lucene with more than one text_match udf
+    // Todo: handle when lucene and normal query filter is supported
 
-    val translated: Seq[(Expression, Filter)] =
-      for {
-        predicate <- predicatesWithoutComplex
-        filter <- translateFilter(predicate)
-      } yield predicate -> filter
-
+    var count = 0
+    val translated: Seq[(Expression, Filter)] = predicatesWithoutComplex.flatMap {
+      predicate =>
+        if (predicate.isInstanceOf[ScalaUDF]) {
+          predicate match {
+            case u: ScalaUDF if u.function.isInstanceOf[TextMatchUDF] ||
+                                u.function.isInstanceOf[TextMatchMaxDocUDF] => count = count + 1
+          }
+        }
+        if (count > 1) {
+          throw new MalformedCarbonCommandException(
+            "Specify all search filters for Lucene within a single text_match UDF")
+        }
+        val filter = translateFilter(predicate)
+        if (filter.isDefined) {
+          Some(predicate, filter.get)
+        } else {
+          None
+        }
+    }
 
     // A map from original Catalyst expressions to corresponding translated data source filters.
     val translatedMap: Map[Expression, Filter] = translated.toMap
@@ -535,6 +550,13 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
             "TEXT_MATCH UDF syntax: TEXT_MATCH('luceneQuerySyntax')")
         }
         Some(TextMatch(u.children.head.toString()))
+
+      case u: ScalaUDF if u.function.isInstanceOf[TextMatchMaxDocUDF] =>
+        if (u.children.size > 2) {
+          throw new MalformedCarbonCommandException(
+            "TEXT_MATCH UDF syntax: TEXT_MATCH_LIMIT('luceneQuerySyntax')")
+        }
+        Some(TextMatchLimit(u.children.head.toString(), u.children.last.toString()))
 
       case or@Or(left, right) =>
 
@@ -650,5 +672,30 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       sqlContext.conf.wholeStageEnabled && sqlContext.conf.wholeStageMaxNumFields >= cols.size
     supportCodegen && vectorizedReader.toBoolean &&
     cols.forall(_.dataType.isInstanceOf[AtomicType])
+  }
+
+  private def createHadoopFSRelation(relation: LogicalRelation): HadoopFsRelation = {
+    val sparkSession = relation.relation.sqlContext.sparkSession
+    relation.catalogTable match {
+      case Some(catalogTable) =>
+        HadoopFsRelation(
+          new CatalogFileIndex(
+            sparkSession,
+            catalogTable,
+            sizeInBytes = relation.relation.sizeInBytes),
+          catalogTable.partitionSchema,
+          catalogTable.schema,
+          catalogTable.bucketSpec,
+          new SparkCarbonTableFormat,
+          catalogTable.storage.properties)(sparkSession)
+      case _ =>
+        HadoopFsRelation(
+          new InMemoryFileIndex(sparkSession, Seq.empty, Map.empty, None),
+          new StructType(),
+          relation.relation.schema,
+          None,
+          new SparkCarbonTableFormat,
+          null)(sparkSession)
+    }
   }
 }

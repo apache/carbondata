@@ -61,7 +61,7 @@ class TestTimeSeriesDropSuite extends QueryTest with BeforeAndAfterAll with Befo
       sql(s"DROP DATAMAP agg1_month ON TABLE mainTable")
     }
     assert(e.getMessage.equals(
-      "Datamap with name agg1_month does not exist under table mainTable"))
+      "Datamap with name agg1_month does not exist"))
   }
 
   test("test timeseries drop datamap 2: should support drop datamap IF EXISTS, maintable hasn't datamap") {
@@ -93,7 +93,7 @@ class TestTimeSeriesDropSuite extends QueryTest with BeforeAndAfterAll with Befo
       sql(s"DROP DATAMAP agg1_month ON TABLE mainTable")
     }
     assert(e.getMessage.equals(
-      "Datamap with name agg1_month does not exist under table mainTable"))
+      "Datamap with name agg1_month does not exist"))
   }
 
   test("test timeseries drop datamap 4: should support drop datamap with IF EXISTS, maintable has datamap") {
@@ -117,7 +117,7 @@ class TestTimeSeriesDropSuite extends QueryTest with BeforeAndAfterAll with Befo
       sql(s"DROP DATAMAP agg1_month ON TABLE mainTable")
     }
     assert(e.getMessage.equals(
-      "Datamap with name agg1_month does not exist under table mainTable"))
+      "Datamap with name agg1_month does not exist"))
   }
 
   test("test timeseries drop datamap 5: drop datamap without IF EXISTS when table not exists, catch MalformedCarbonCommandException") {

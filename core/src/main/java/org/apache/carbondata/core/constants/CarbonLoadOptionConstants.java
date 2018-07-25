@@ -144,11 +144,21 @@ public final class CarbonLoadOptionConstants {
    * If the sort memory is insufficient, spill inmemory pages to disk.
    * The total amount of pages is at most the specified percentage of total sort memory. Default
    * value 0 means that no pages will be spilled and the newly incoming pages will be spilled,
-   * whereas value 1 means that all pages will be spilled and newly incoming pages will be loaded
-   * into sort memory.
+   * whereas value 100 means that all pages will be spilled and newly incoming pages will be loaded
+   * into sort memory, valid value is from 0 to 100.
    */
   @CarbonProperty
   public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE
-      = "carbon.load.sortMemory.spill.percentage";
+      = "carbon.load.sortmemory.spill.percentage";
   public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT = "0";
+
+  /**
+   *  if loading data is too small, the original loading method will produce many small files.
+   *  enable set the node load minimum amount of data,avoid producing many small files.
+   *  This option is especially useful when you encounter a lot of small amounts of data.
+   */
+  @CarbonProperty
+  public static final String ENABLE_CARBON_LOAD_NODE_DATA_MIN_SIZE
+      = "carbon.load.min.size.enabled";
+  public static final String ENABLE_CARBON_LOAD_NODE_DATA_MIN_SIZE_DEFAULT = "false";
 }

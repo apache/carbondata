@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.fs.permission.FsPermission;
 
 public interface CarbonFile {
@@ -41,7 +42,7 @@ public interface CarbonFile {
    * It returns list of files with location details.
    * @return
    */
-  CarbonFile[] locationAwareListFiles() throws IOException;
+  CarbonFile[] locationAwareListFiles(PathFilter pathFilter) throws IOException;
 
   String getName();
 
@@ -143,7 +144,7 @@ public interface CarbonFile {
 
   boolean deleteFile(String filePath, FileFactory.FileType fileType) throws IOException;
 
-  boolean mkdirs(String filePath, FileFactory.FileType fileType) throws IOException;
+  boolean mkdirs(String filePath) throws IOException;
 
   DataOutputStream getDataOutputStreamUsingAppend(String path, FileFactory.FileType fileType)
       throws IOException;

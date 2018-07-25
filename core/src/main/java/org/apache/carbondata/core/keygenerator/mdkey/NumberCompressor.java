@@ -103,40 +103,6 @@ public class NumberCompressor {
     return words;
   }
 
-  protected long[] get(byte[] keys, int wsize) {
-    long[] words = new long[wsize];
-    int ll = 0;
-    long val = 0L;
-    for (int i = keys.length - 1; i >= 0; ) {
-
-      int size = i;
-      val = 0L;
-      for (int j = i + 1; j <= size; ) {
-        val <<= BYTE_LENGTH;
-        val ^= keys[j++] & 0xFF;
-        i--;
-      }
-      int index = ll >> 6;// divide by 64 to get the new word index
-      words[index] |= (val << (ll & 0x3f));
-      ll += bitsLength;
-
-      int nextIndex = ll >> 6;// This is divide by 64
-
-      if (nextIndex != index) {
-        int consideredBits = bitsLength - ll & 0x3f;
-        if (consideredBits < bitsLength) // Check for spill over only if
-        // all the bits are not
-        // considered
-        {
-          // Check for spill over
-          words[nextIndex] |= (val >> (bitsLength - ll & 0x3f));
-        }
-      }
-
-    }
-    return words;
-  }
-
   public int[] unCompress(byte[] key, int offset, int length) {
     int arrayLength = (length * BYTE_LENGTH) / bitsLength;
     long[] words = new long[getWordsSizeFromBytesSize(length)];

@@ -22,6 +22,7 @@ import java.util
 
 import scala.collection.JavaConverters._
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession
@@ -38,8 +39,9 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
-import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent}
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePostExecutionEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.processing.loading.model.{CarbonLoadModel, CarbonLoadModelBuilder, LoadOption}
+import org.apache.carbondata.processing.util.CarbonBadRecordUtil
 import org.apache.carbondata.spark.dictionary.provider.SecureDictionaryServiceProvider
 import org.apache.carbondata.spark.dictionary.server.SecureDictionaryServer
 import org.apache.carbondata.streaming.segment.StreamSegment
@@ -98,18 +100,16 @@ object StreamSinkFactory {
     val operationContext = new OperationContext
     val loadTablePreExecutionEvent = new LoadTablePreExecutionEvent(
       carbonTable.getCarbonTableIdentifier,
-      carbonLoadModel,
-      carbonLoadModel.getFactFilePath,
-      false,
-      parameters.asJava,
-      parameters.asJava,
-      false
-    )
+      carbonLoadModel
+      )
     OperationListenerBus.getInstance().fireEvent(loadTablePreExecutionEvent, operationContext)
     // prepare the stream segment
     val segmentId = getStreamSegmentId(carbonTable)
     carbonLoadModel.setSegmentId(segmentId)
 
+    // Used to generate load commands for child tables in case auto-handoff is fired.
+    val loadMetaEvent = new LoadMetadataEvent(carbonTable, false)
+    OperationListenerBus.getInstance().fireEvent(loadMetaEvent, operationContext)
     // start server if necessary
     val server = startDictionaryServer(
       sparkSession,
@@ -120,6 +120,7 @@ object StreamSinkFactory {
     } else {
       carbonLoadModel.setUseOnePass(false)
     }
+
     // default is carbon appended stream sink
     val carbonAppendableStreamSink = new CarbonAppendableStreamSink(
       sparkSession,
@@ -127,7 +128,8 @@ object StreamSinkFactory {
       segmentId,
       parameters,
       carbonLoadModel,
-      server)
+      server,
+      operationContext)
 
     // fire post event before streamin is started
     val loadTablePostExecutionEvent = new LoadTablePostExecutionEvent(
@@ -250,6 +252,8 @@ object StreamSinkFactory {
       optionsFinal.put("fileheader", carbonTable.getCreateOrderColumn(carbonTable.getTableName)
         .asScala.map(_.getColName).mkString(","))
     }
+    optionsFinal
+      .put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(parameters.asJava, carbonTable))
     val carbonLoadModel = new CarbonLoadModel()
     new CarbonLoadModelBuilder(carbonTable).build(
       parameters.asJava,

@@ -21,8 +21,6 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.datastore.TableSegmentUniqueIdentifier;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
-import org.apache.carbondata.core.datastore.block.SegmentTaskIndexWrapper;
-import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
 
 /**
  * class which defines different cache types. cache type can be dictionary cache for
@@ -46,19 +44,7 @@ public class CacheType<K, V> {
   /**
    * Executor BTree cache which maintains size of BTree metadata
    */
-  public static final CacheType<TableBlockUniqueIdentifier, AbstractIndex> EXECUTOR_BTREE =
-      new CacheType("executor_btree");
-
-  /**
-   * Executor BTree cache which maintains size of BTree metadata
-   */
-  public static final CacheType<TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper>
-      DRIVER_BTREE = new CacheType("driver_btree");
-
-  /**
-   * Executor BTree cache which maintains size of BTree metadata
-   */
-  public static final CacheType<TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper>
+  public static final CacheType<TableSegmentUniqueIdentifier, AbstractIndex>
       DRIVER_BLOCKLET_DATAMAP = new CacheType("driver_blocklet_datamap");
 
   /**
@@ -69,7 +55,7 @@ public class CacheType<K, V> {
   /**
    * @param cacheName
    */
-  private CacheType(String cacheName) {
+  public CacheType(String cacheName) {
     this.cacheName = cacheName;
   }
 

@@ -163,14 +163,6 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
    */
   private boolean processRowToNextStep(UnsafeSortDataRows[] sortDataRows, SortParameters parameters)
       throws CarbonDataLoadingException {
-    if (null == sortDataRows || sortDataRows.length == 0) {
-      LOGGER.info("Record Processed For table: " + parameters.getTableName());
-      LOGGER.info("Number of Records was Zero");
-      String logMessage = "Summary: Carbon Sort Key Step: Read: " + 0 + ": Write: " + 0;
-      LOGGER.info(logMessage);
-      return false;
-    }
-
     try {
       for (int i = 0; i < sortDataRows.length; i++) {
         // start sorting
@@ -195,7 +187,7 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
             false, false);
     String[] tmpLoc = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath, File.separator,
         CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
-    LOGGER.error("set temp location: " + StringUtils.join(tmpLoc, ", "));
+    LOGGER.warn("set temp location: " + StringUtils.join(tmpLoc, ", "));
     parameters.setTempFileLocation(tmpLoc);
   }
 
@@ -227,7 +219,6 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
       try {
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();
-          int i = 0;
           while (batch.hasNext()) {
             CarbonRow row = batch.next();
             if (row != null) {

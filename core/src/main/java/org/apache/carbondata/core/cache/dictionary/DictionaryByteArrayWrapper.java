@@ -89,4 +89,8 @@ public class DictionaryByteArrayWrapper {
     result = 31 * result;
     return result;
   }
+
+  public byte[] getData() {
+    return data;
+  }
 }

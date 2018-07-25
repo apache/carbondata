@@ -23,17 +23,9 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
 
-public class LVStringStatsCollector implements ColumnPageStatsCollector {
+public abstract class LVStringStatsCollector implements ColumnPageStatsCollector {
 
   private byte[] min, max;
-
-  public static LVStringStatsCollector newInstance() {
-    return new LVStringStatsCollector();
-  }
-
-  private LVStringStatsCollector() {
-
-  }
 
   @Override
   public void updateNull(int rowId) {
@@ -70,30 +62,26 @@ public class LVStringStatsCollector implements ColumnPageStatsCollector {
 
   }
 
+  protected abstract byte[] getActualValue(byte[] value);
+
   @Override
   public void update(byte[] value) {
     // input value is LV encoded
-    byte[] newValue = null;
-    assert (value.length >= 2);
-    if (value.length == 2) {
-      assert (value[0] == 0 && value[1] == 0);
-      newValue = new byte[0];
-    } else {
-      int length = (value[0] << 8) + (value[1] & 0xff);
-      assert (length > 0);
-      newValue = new byte[value.length - 2];
-      System.arraycopy(value, 2, newValue, 0, newValue.length);
-    }
-    if (min == null && max == null) {
+    byte[] newValue = getActualValue(value);
+    if (min == null) {
       min = newValue;
+    }
+
+    if (null == max) {
       max = newValue;
-    } else {
-      if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(min, newValue) > 0) {
-        min = newValue;
-      }
-      if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(max, newValue) < 0) {
-        max = newValue;
-      }
+    }
+
+    if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(min, newValue) > 0) {
+      min = newValue;
+    }
+
+    if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(max, newValue) < 0) {
+      max = newValue;
     }
   }
 

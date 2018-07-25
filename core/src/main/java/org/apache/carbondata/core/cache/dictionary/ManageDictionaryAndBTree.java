@@ -25,7 +25,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
-import org.apache.carbondata.core.datastore.TableSegmentUniqueIdentifier;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -34,8 +33,6 @@ import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
@@ -96,15 +93,6 @@ public class ManageDictionaryAndBTree {
    * @param carbonTable
    */
   public static void clearBTreeAndDictionaryLRUCache(CarbonTable carbonTable) {
-    // clear Btree cache from LRU cache
-    LoadMetadataDetails[] loadMetadataDetails =
-        SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
-    String[] segments = new String[loadMetadataDetails.length];
-    int i = 0;
-    for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
-      segments[i++] = loadMetadataDetail.getLoadName();
-    }
-    invalidateBTreeCache(carbonTable.getAbsoluteTableIdentifier(), segments);
     // clear dictionary cache from LRU cache
     List<CarbonDimension> dimensions =
         carbonTable.getDimensionByTableName(carbonTable.getTableName());
@@ -131,22 +119,4 @@ public class ManageDictionaryAndBTree {
     dictCache = CacheProvider.getInstance().createCache(CacheType.FORWARD_DICTIONARY);
     dictCache.invalidate(dictionaryColumnUniqueIdentifier);
   }
-
-  /**
-   * This method will remove the BTree instances from LRU cache
-   *
-   * @param absoluteTableIdentifier
-   * @param segments
-   */
-  public static void invalidateBTreeCache(AbsoluteTableIdentifier absoluteTableIdentifier,
-      String[] segments) {
-    Cache<Object, Object> driverBTreeCache =
-        CacheProvider.getInstance().createCache(CacheType.DRIVER_BTREE);
-    for (String segmentNo : segments) {
-      TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier =
-          new TableSegmentUniqueIdentifier(absoluteTableIdentifier, segmentNo);
-      driverBTreeCache.invalidate(tableSegmentUniqueIdentifier);
-    }
-  }
-
 }

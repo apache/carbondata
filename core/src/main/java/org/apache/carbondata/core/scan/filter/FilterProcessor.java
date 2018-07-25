@@ -19,10 +19,7 @@ package org.apache.carbondata.core.scan.filter;
 
 import java.io.IOException;
 import java.util.BitSet;
-import java.util.List;
 
-import org.apache.carbondata.core.datastore.DataRefNode;
-import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -41,19 +38,8 @@ public interface FilterProcessor {
    * @throws FilterUnsupportedException
    */
   FilterResolverIntf getFilterResolver(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier, TableProvider tableProvider)
+      AbsoluteTableIdentifier tableIdentifier)
       throws FilterUnsupportedException, IOException;
-
-  /**
-   * This API is exposed inorder to get the required block reference node
-   * based on the filter.The block list will be send to the executer tasks inorder
-   * to apply filters.
-   *
-   * @param filterResolver DataBlock list with resolved filters
-   * @return list of DataRefNode.
-   */
-  List<DataRefNode> getFilterredBlocks(DataRefNode dataRefNode, FilterResolverIntf filterResolver,
-      AbstractIndex segmentIndexBuilder);
 
   /**
    * This API will get the map of required partitions.

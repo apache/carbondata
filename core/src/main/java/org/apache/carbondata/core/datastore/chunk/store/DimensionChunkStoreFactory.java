@@ -18,10 +18,14 @@
 package org.apache.carbondata.core.datastore.chunk.store;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.chunk.store.impl.LocalDictDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeFixedLengthDimensionDataChunkStore;
-import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeVariableLengthDimensionDataChunkStore;
+import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeVariableIntLengthDimensionDataChunkStore;
+import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeVariableShortLengthDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeFixedLengthDimensionDataChunkStore;
-import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeVariableLengthDimensionDataChunkStore;
+import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeVariableIntLengthDimensionDataChunkStore;
+import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeVariableShortLengthDimensionDataChunkStore;
+import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
@@ -60,22 +64,41 @@ public class DimensionChunkStoreFactory {
    * @return dimension store type
    */
   public DimensionDataChunkStore getDimensionChunkStore(int columnValueSize,
-      boolean isInvertedIndex, int numberOfRows, long totalSize, DimensionStoreType storeType) {
-
+      boolean isInvertedIndex, int numberOfRows, long totalSize, DimensionStoreType storeType,
+      CarbonDictionary dictionary) {
     if (isUnsafe) {
-      if (storeType == DimensionStoreType.FIXEDLENGTH) {
-        return new UnsafeFixedLengthDimensionDataChunkStore(totalSize, columnValueSize,
-            isInvertedIndex, numberOfRows);
-      } else {
-        return new UnsafeVariableLengthDimensionDataChunkStore(totalSize, isInvertedIndex,
-            numberOfRows);
+      switch (storeType) {
+        case FIXED_LENGTH:
+          return new UnsafeFixedLengthDimensionDataChunkStore(totalSize, columnValueSize,
+              isInvertedIndex, numberOfRows);
+        case VARIABLE_SHORT_LENGTH:
+          return new UnsafeVariableShortLengthDimensionDataChunkStore(totalSize, isInvertedIndex,
+              numberOfRows);
+        case VARIABLE_INT_LENGTH:
+          return new UnsafeVariableIntLengthDimensionDataChunkStore(totalSize, isInvertedIndex,
+              numberOfRows);
+        case LOCAL_DICT:
+          return new LocalDictDimensionDataChunkStore(
+              new UnsafeFixedLengthDimensionDataChunkStore(totalSize,
+                  3, isInvertedIndex, numberOfRows),
+              dictionary);
+        default:
+          throw new UnsupportedOperationException("Invalid dimension store type");
       }
-
     } else {
-      if (storeType == DimensionStoreType.FIXEDLENGTH) {
-        return new SafeFixedLengthDimensionDataChunkStore(isInvertedIndex, columnValueSize);
-      } else {
-        return new SafeVariableLengthDimensionDataChunkStore(isInvertedIndex, numberOfRows);
+      switch (storeType) {
+        case FIXED_LENGTH:
+          return new SafeFixedLengthDimensionDataChunkStore(isInvertedIndex, columnValueSize);
+        case VARIABLE_SHORT_LENGTH:
+          return new SafeVariableShortLengthDimensionDataChunkStore(isInvertedIndex, numberOfRows);
+        case VARIABLE_INT_LENGTH:
+          return new SafeVariableIntLengthDimensionDataChunkStore(isInvertedIndex, numberOfRows);
+        case LOCAL_DICT:
+          return new LocalDictDimensionDataChunkStore(
+              new SafeFixedLengthDimensionDataChunkStore(isInvertedIndex,
+                  3), dictionary);
+        default:
+          throw new UnsupportedOperationException("Invalid dimension store type");
       }
     }
   }
@@ -84,6 +107,6 @@ public class DimensionChunkStoreFactory {
    * dimension store type enum
    */
   public enum DimensionStoreType {
-    FIXEDLENGTH, VARIABLELENGTH;
+    FIXED_LENGTH, VARIABLE_SHORT_LENGTH, VARIABLE_INT_LENGTH, LOCAL_DICT;
   }
 }

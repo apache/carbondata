@@ -49,7 +49,7 @@ public interface MeasureColumnChunkReader {
       throws IOException;
 
   /**
-   * Covert raw data to measure chunk
+   * Convert raw data to measure chunk
    * @param measureRawColumnChunk
    * @param pageNumber
    * @return

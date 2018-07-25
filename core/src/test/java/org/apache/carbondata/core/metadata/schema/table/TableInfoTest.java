@@ -16,6 +16,13 @@
  */
 package org.apache.carbondata.core.metadata.schema.table;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
+import org.apache.carbondata.core.util.CarbonUtil;
+
 import junit.framework.TestCase;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -23,30 +30,184 @@ import org.junit.Test;
 
 public class TableInfoTest extends TestCase {
 
-    private TableInfo tableInfo;
+  private TableInfo tableInfo;
 
-    @BeforeClass public void setUp() {
-        tableInfo = getTableInfo("tableInfoTestDatabase", "equalsTableInfoTestTable");
-    }
+  @BeforeClass public void setUp() {
+    tableInfo = getTableInfo("tableInfoTestDatabase", "equalsTableInfoTestTable");
+  }
 
-    @AfterClass public void tearDown() {
-        tableInfo = null;
-    }
+  @AfterClass public void tearDown() {
+    tableInfo = null;
+  }
 
-    @Test public void testTableInfoEquals() {
-        TableInfo cmpEqualsTableInfo =
-            getTableInfo("tableInfoTestDatabase", "equalsTableInfoTestTable");
-        TableInfo cmpNotEqualsTableInfo =
-            getTableInfo("tableInfoTestDatabase", "notEqualsTableInfoTestTable");
-        assertTrue(tableInfo.equals(cmpEqualsTableInfo));
-        assertTrue(!(tableInfo.equals(cmpNotEqualsTableInfo)));
-    }
+  @Test public void testTableInfoEquals() {
+    TableInfo cmpEqualsTableInfo =
+        getTableInfo("tableInfoTestDatabase", "equalsTableInfoTestTable");
+    TableInfo cmpNotEqualsTableInfo =
+        getTableInfo("tableInfoTestDatabase", "notEqualsTableInfoTestTable");
+    assertTrue(tableInfo.equals(cmpEqualsTableInfo));
+    assertTrue(!(tableInfo.equals(cmpNotEqualsTableInfo)));
+  }
 
-    private TableInfo getTableInfo(String databaseName, String tableName) {
-        TableInfo info = new TableInfo();
-        info.setDatabaseName("tableInfoTestDatabase");
-        info.setLastUpdatedTime(1000L);
-        info.setTableUniqueName(CarbonTable.buildUniqueName(databaseName, tableName));
-        return info;
+  private TableInfo getTableInfo(String databaseName, String tableName) {
+    TableInfo info = new TableInfo();
+    info.setDatabaseName("tableInfoTestDatabase");
+    info.setLastUpdatedTime(1000L);
+    info.setTableUniqueName(CarbonTable.buildUniqueName(databaseName, tableName));
+    return info;
+  }
+
+  /**
+   * test with field name schemaEvalution
+   */
+  @Test public void testTableInfoDeserializationWithSchemaEvalution() {
+    Map<String, String> properties = new HashMap<>();
+    properties.put("carbonSchemaPartsNo", "1");
+    properties.put("carbonSchema0", "{\"databaseName\":\"carbonversion_1_1\",\"tableUniqueName\":"
+        + "\"carbonversion_1_1_testinttype1\",\"factTable\":{\"tableId\":"
+        + "\"8ef75d32-b5b7-4c6b-9b1c-16059b4f5f26\",\"tableName\":\"testinttype1\","
+        + "\"listOfColumns\":[{\"dataType\":{\"id\":0,\"precedenceOrder\":0,\"name\":"
+        + "\"STRING\",\"sizeInBytes\":-1},\"columnName\":\"c1\",\"columnUniqueId\":"
+        + "\"5347ee48-d3ca-43a4-bd88-a818fa42a2a3\",\"columnReferenceId\":"
+        + "\"5347ee48-d3ca-43a4-bd88-a818fa42a2a3\",\"isColumnar\":true,"
+        + "\"encodingList\":[\"INVERTED_INDEX\"],\"isDimensionColumn\":true,"
+        + "\"columnGroupId\":-1,\"scale\":0,\"precision\":0,\"schemaOrdinal\":0,"
+        + "\"numberOfChild\":0,\"invisible\":false,\"isSortColumn\":true,"
+        + "\"aggFunction\":\"\",\"timeSeriesFunction\":\"\",\"isLocalDictColumn\":true},"
+        + "{\"dataType\":{\"id\":5,\"precedenceOrder\":3,\"name\":\"INT\","
+        + "\"sizeInBytes\":4},\"columnName\":\"c2\",\"columnUniqueId\":"
+        + "\"9c38b74d-5b56-4554-adbf-b6c7ead63ee2\",\"columnReferenceId\":"
+        + "\"9c38b74d-5b56-4554-adbf-b6c7ead63ee2\",\"isColumnar\":true,"
+        + "\"encodingList\":[],\"isDimensionColumn\":false,\"columnGroupId\":-1,"
+        + "\"scale\":0,\"precision\":0,\"schemaOrdinal\":1,\"numberOfChild\":0,"
+        + "\"invisible\":false,\"isSortColumn\":false,\"aggFunction\":\"\","
+        + "\"timeSeriesFunction\":\"\",\"isLocalDictColumn\":false}],\"schemaEvalution\":"
+        + "{\"schemaEvolutionEntryList\":[{\"timeStamp\":1530534235537}]},"
+        + "\"tableProperties\":{\"sort_columns\":\"c1\",\"comment\":\"\","
+        + "\"local_dictionary_enable\":\"true\"}},\"lastUpdatedTime\":1530534235537,"
+        + "\"tablePath\":\"/store/carbonversion_1_1/testinttype1\","
+        + "\"isTransactionalTable\":true,\"dataMapSchemaList\":[],"
+        + "\"parentRelationIdentifiers\":[],\"isSchemaModified\":false}");
+    TableInfo tableInfo = CarbonUtil.convertGsonToTableInfo(properties);
+    // the schema evolution should not be null
+    assertTrue(null != tableInfo.getFactTable().getSchemaEvolution());
+    CarbonTable carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
+    ThriftWrapperSchemaConverterImpl schemaConverter = new ThriftWrapperSchemaConverterImpl();
+    org.apache.carbondata.format.TableInfo thriftTable = schemaConverter
+        .fromWrapperToExternalTableInfo(carbonTable.getTableInfo(), carbonTable.getDatabaseName(),
+            carbonTable.getTableName());
+    assertTrue(null != thriftTable);
+  }
+
+  /**
+   * test with field name schemaEvolution
+   */
+  @Test public void testTableInfoDeserializationWithSchemaEvolution() {
+    Map<String, String> properties = new HashMap<>();
+    properties.put("carbonSchemaPartsNo", "1");
+    properties.put("carbonSchema0", "{\"databaseName\":\"carbonversion_1_1\",\"tableUniqueName\":"
+        + "\"carbonversion_1_1_testinttype1\",\"factTable\":{\"tableId\":"
+        + "\"8ef75d32-b5b7-4c6b-9b1c-16059b4f5f26\",\"tableName\":\"testinttype1\","
+        + "\"listOfColumns\":[{\"dataType\":{\"id\":0,\"precedenceOrder\":0,\"name\":"
+        + "\"STRING\",\"sizeInBytes\":-1},\"columnName\":\"c1\",\"columnUniqueId\":"
+        + "\"5347ee48-d3ca-43a4-bd88-a818fa42a2a3\",\"columnReferenceId\":"
+        + "\"5347ee48-d3ca-43a4-bd88-a818fa42a2a3\",\"isColumnar\":true,"
+        + "\"encodingList\":[\"INVERTED_INDEX\"],\"isDimensionColumn\":true,"
+        + "\"columnGroupId\":-1,\"scale\":0,\"precision\":0,\"schemaOrdinal\":0,"
+        + "\"numberOfChild\":0,\"invisible\":false,\"isSortColumn\":true,"
+        + "\"aggFunction\":\"\",\"timeSeriesFunction\":\"\",\"isLocalDictColumn\":true},"
+        + "{\"dataType\":{\"id\":5,\"precedenceOrder\":3,\"name\":\"INT\","
+        + "\"sizeInBytes\":4},\"columnName\":\"c2\",\"columnUniqueId\":"
+        + "\"9c38b74d-5b56-4554-adbf-b6c7ead63ee2\",\"columnReferenceId\":"
+        + "\"9c38b74d-5b56-4554-adbf-b6c7ead63ee2\",\"isColumnar\":true,"
+        + "\"encodingList\":[],\"isDimensionColumn\":false,\"columnGroupId\":-1,"
+        + "\"scale\":0,\"precision\":0,\"schemaOrdinal\":1,\"numberOfChild\":0,"
+        + "\"invisible\":false,\"isSortColumn\":false,\"aggFunction\":\"\","
+        + "\"timeSeriesFunction\":\"\",\"isLocalDictColumn\":false}],\"schemaEvolution\":"
+        + "{\"schemaEvolutionEntryList\":[{\"timeStamp\":1530534235537}]},"
+        + "\"tableProperties\":{\"sort_columns\":\"c1\",\"comment\":\"\","
+        + "\"local_dictionary_enable\":\"true\"}},\"lastUpdatedTime\":1530534235537,"
+        + "\"tablePath\":\"/store/carbonversion_1_1/testinttype1\","
+        + "\"isTransactionalTable\":true,\"dataMapSchemaList\":[],"
+        + "\"parentRelationIdentifiers\":[],\"isSchemaModified\":false}");
+    TableInfo tableInfo = CarbonUtil.convertGsonToTableInfo(properties);
+    // the schema evolution should not be null
+    assertTrue(null != tableInfo.getFactTable().getSchemaEvolution());
+    CarbonTable carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
+    ThriftWrapperSchemaConverterImpl schemaConverter = new ThriftWrapperSchemaConverterImpl();
+    org.apache.carbondata.format.TableInfo thriftTable = schemaConverter
+        .fromWrapperToExternalTableInfo(carbonTable.getTableInfo(), carbonTable.getDatabaseName(),
+            carbonTable.getTableName());
+    assertTrue(null != thriftTable);
+  }
+
+  @Test public void testDataMapSchemaDesrializationWithClassName() {
+    Map<String, String> properties = new HashMap<>();
+    properties.put("carbonSchemaPartsNo", "1");
+    properties.put("carbonSchema0", "{\"databaseName\":\"carbonversion_1_3\",\"tableUniqueName\":"
+        + "\"carbonversion_1_3_testinttype3\",\"factTable\":{\"tableId\":"
+        + "\"453fa0dd-721d-41b7-9378-f6d6122daf36\",\"tableName\":\"testinttype3\","
+        + "\"listOfColumns\":[{\"dataType\":{\"id\":0,\"precedenceOrder\":0,\"name\":"
+        + "\"STRING\",\"sizeInBytes\":-1},\"columnName\":\"c1\",\"columnUniqueId\":"
+        + "\"c84e7e3b-5682-4b46-8c72-0f2f341a0a49\",\"columnReferenceId\":"
+        + "\"c84e7e3b-5682-4b46-8c72-0f2f341a0a49\",\"isColumnar\":true,\"encodingList"
+        + "\":[\"INVERTED_INDEX\"],\"isDimensionColumn\":true,\"columnGroupId\":-1,"
+        + "\"scale\":-1,\"precision\":-1,\"schemaOrdinal\":0,\"numberOfChild\":0,"
+        + "\"invisible\":false,\"isSortColumn\":true,\"aggFunction\":\"\","
+        + "\"timeSeriesFunction\":\"\"},{\"dataType\":{\"id\":5,\"precedenceOrder\":3,"
+        + "\"name\":\"INT\",\"sizeInBytes\":4},\"columnName\":\"c2\",\"columnUniqueId\":"
+        + "\"008dc283-beca-4a3e-ad40-b7916aa67795\",\"columnReferenceId\":"
+        + "\"008dc283-beca-4a3e-ad40-b7916aa67795\",\"isColumnar\":true,"
+        + "\"encodingList\":[],\"isDimensionColumn\":false,\"columnGroupId\":-1,"
+        + "\"scale\":-1,\"precision\":-1,\"schemaOrdinal\":1,\"numberOfChild\":0,"
+        + "\"invisible\":false,\"isSortColumn\":false,\"aggFunction\":\"\","
+        + "\"timeSeriesFunction\":\"\"}],\"schemaEvalution\":{\"schemaEvolutionEntryList"
+        + "\":[{\"timeStamp\":1531389794988,\"added\":[],\"removed\":[]}]},"
+        + "\"tableProperties\":{\"sort_columns\":\"c1\",\"comment\":\"\"}},"
+        + "\"lastUpdatedTime\":1531389794988,\"tablePath\":"
+        + "\"/opt/store/carbonversion_1_3/testinttype3\",\"dataMapSchemaList\":"
+        + "[{\"dataMapName\":\"dm1\",\"className\":"
+        + "\"org.apache.carbondata.core.datamap.AggregateDataMap\","
+        + "\"relationIdentifier\":{\"databaseName\":\"carbonversion_1_3\","
+        + "\"tableName\":\"testinttype3_dm1\",\"tableId\":"
+        + "\"97ccae02-c821-4601-a782-69e715671419\"},\"childSchema\":"
+        + "{\"tableId\":\"97ccae02-c821-4601-a782-69e715671419\",\"tableName\":"
+        + "\"testinttype3_dm1\",\"listOfColumns\":[{\"dataType\":{\"id\":0,"
+        + "\"precedenceOrder\":0,\"name\":\"STRING\",\"sizeInBytes\":-1},"
+        + "\"columnName\":\"testinttype3_c1\",\"columnUniqueId\":"
+        + "\"e72ec46b-f41d-43e8-82d9-9b44714a3f36\",\"columnReferenceId\":"
+        + "\"e72ec46b-f41d-43e8-82d9-9b44714a3f36\",\"isColumnar\":true,\"encodingList"
+        + "\":[\"INVERTED_INDEX\"],\"isDimensionColumn\":true,\"columnGroupId\":-1,"
+        + "\"scale\":-1,\"precision\":-1,\"schemaOrdinal\":0,\"numberOfChild\":0,"
+        + "\"invisible\":false,\"isSortColumn\":true,\"aggFunction\":\"\","
+        + "\"parentColumnTableRelations\":[{\"relationIdentifier\":{\"databaseName\":"
+        + "\"carbonversion_1_3\",\"tableName\":\"testinttype3\",\"tableId\":"
+        + "\"453fa0dd-721d-41b7-9378-f6d6122daf36\"},\"columnId\":"
+        + "\"c84e7e3b-5682-4b46-8c72-0f2f341a0a49\",\"columnName\":\"c1\"}],"
+        + "\"timeSeriesFunction\":\"\"},{\"dataType\":{\"id\":7,\"precedenceOrder\":5,"
+        + "\"name\":\"LONG\",\"sizeInBytes\":8},\"columnName\":\"testinttype3_c2_sum\","
+        + "\"columnUniqueId\":\"4d77c528-c830-4f8b-943b-bac9ee9f9af7\",\"columnReferenceId"
+        + "\":\"4d77c528-c830-4f8b-943b-bac9ee9f9af7\",\"isColumnar\":true,\"encodingList"
+        + "\":[],\"isDimensionColumn\":false,\"columnGroupId\":-1,\"scale\":-1,\"precision"
+        + "\":-1,\"schemaOrdinal\":1,\"numberOfChild\":0,\"invisible\":false,\"isSortColumn"
+        + "\":false,\"aggFunction\":\"sum\",\"parentColumnTableRelations\":"
+        + "[{\"relationIdentifier\":{\"databaseName\":\"carbonversion_1_3\",\"tableName"
+        + "\":\"testinttype3\",\"tableId\":\"453fa0dd-721d-41b7-9378-f6d6122daf36\"},"
+        + "\"columnId\":\"008dc283-beca-4a3e-ad40-b7916aa67795\",\"columnName\":\"c2\"}],"
+        + "\"timeSeriesFunction\":\"\"}],\"schemaEvalution\":{\"schemaEvolutionEntryList\":"
+        + "[{\"timeStamp\":1531389797829,\"added\":[],\"removed\":[]}]},\"tableProperties\""
+        + ":{\"sort_scope\":\"LOCAL_SORT\",\"sort_columns\":\"testinttype3_c1\","
+        + "\"table_blocksize\":\"1024\",\"comment\":\"\"}},\"properties\":"
+        + "{\"QUERYTYPE\":\"AGGREGATION\",\"CHILD_SELECT QUERY\":"
+        + "\"c2VsZWN0IGMxLCBzdW0oYzIpIGZyb20gdGVzdGludHR5cGUzIGdyb3VwIGJ5IGMx\"}}],"
+        + "\"parentRelationIdentifiers\":[],\"isSchemaModified\":false}");
+    TableInfo tableInfo = CarbonUtil.convertGsonToTableInfo(properties);
+    // the schema evolution should not be null
+    assertTrue(null != tableInfo.getDataMapSchemaList());
+    List<DataMapSchema> dataMapSchemaList = tableInfo.getDataMapSchemaList();
+    for (DataMapSchema dataMapSchema : dataMapSchemaList) {
+      String providerName = dataMapSchema.getProviderName();
+      assertTrue("org.apache.carbondata.core.datamap.AggregateDataMap".equals(providerName));
     }
+  }
 }

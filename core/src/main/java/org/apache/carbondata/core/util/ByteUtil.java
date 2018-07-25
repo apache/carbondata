@@ -29,11 +29,17 @@ import org.apache.carbondata.core.memory.CarbonUnsafe;
  */
 public final class ByteUtil {
 
-  public static final int SIZEOF_LONG = 8;
+  public static final int SIZEOF_BYTE = 1;
+
+  public static final int SIZEOF_SHORT = 2;
+
+  public static final int SIZEOF_SHORT_INT = 3;
 
   public static final int SIZEOF_INT = 4;
 
-  public static final int SIZEOF_SHORT = 2;
+  public static final int SIZEOF_LONG = 8;
+
+  public static final int SIZEOF_DOUBLE = 8;
 
   public static final String UTF8_CSN = StandardCharsets.UTF_8.name();
 
@@ -517,8 +523,12 @@ public final class ByteUtil {
   }
 
   public static int toInt(byte[] bytes, int offset) {
-    return (((int)bytes[offset]) << 24) + (((int)bytes[offset + 1]) << 16) +
-        (((int)bytes[offset + 2]) << 8) + bytes[offset + 3];
+    return (((int)bytes[offset] & 0xff) << 24) + (((int)bytes[offset + 1] & 0xff) << 16) +
+        (((int)bytes[offset + 2] & 0xff) << 8) + ((int)bytes[offset + 3] & 0xff);
+  }
+
+  public static int toShort(byte[] bytes, int offset) {
+    return (((int)bytes[offset] & 0xff) << 8) + ((int)bytes[offset + 1] & 0xff);
   }
 
   public static void setInt(byte[] data, int offset, int value) {
@@ -526,6 +536,11 @@ public final class ByteUtil {
     data[offset + 1] = (byte) (value >> 16);
     data[offset + 2] = (byte) (value >> 8);
     data[offset + 3] = (byte) value;
+  }
+
+  public static void setShort(byte[] data, int offset, int value) {
+    data[offset] = (byte) (value >> 8);
+    data[offset + 1] = (byte) value;
   }
 
   /**
@@ -543,6 +558,14 @@ public final class ByteUtil {
     }
     b[0] = (byte) val;
     return b;
+  }
+
+  public static byte[] toBytes(double val) {
+    return toBytes(Double.doubleToLongBits(val));
+  }
+
+  public static double toDouble(byte[] value, int offset, int length) {
+    return Double.longBitsToDouble(toLong(value, offset, length));
   }
 
   /**

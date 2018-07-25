@@ -41,6 +41,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalTaskInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -49,7 +50,6 @@ import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator}
 import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.processing.splits.TableSplit
 import org.apache.carbondata.processing.util.CarbonQueryUtil
 import org.apache.carbondata.spark.DataLoadResult
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
@@ -102,21 +102,6 @@ class CarbonNodePartition(rddId: Int, val idx: Int, host: String,
   override def hashCode(): Int = 41 * (41 + rddId) + idx
 }
 
-/**
- * This partition class use to split by TableSplit
- *
- */
-class CarbonTableSplitPartition(rddId: Int, val idx: Int, @transient val tableSplit: TableSplit,
-    val blocksDetails: Array[BlockDetails])
-  extends Partition {
-
-  override val index: Int = idx
-  val serializableHadoopSplit = new SerializableWritable[TableSplit](tableSplit)
-  val partitionBlocksDetail = blocksDetails
-
-  override def hashCode(): Int = 41 * (41 + rddId) + idx
-}
-
 class SparkPartitionLoader(model: CarbonLoadModel,
     splitIndex: Long,
     storePath: String,
@@ -139,7 +124,6 @@ class SparkPartitionLoader(model: CarbonLoadModel,
     CarbonProperties.getInstance().addProperty("is.int.based.indexer", "true")
     CarbonProperties.getInstance().addProperty("aggregate.columnar.keyblock", "true")
     CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false")
-    CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000")
 
     // this property is used to determine whether temp location for carbon is inside
     // container temp dir or is yarn application directory.
@@ -198,16 +182,6 @@ class NewCarbonDataLoadRDD[K, V](
     CompressorFactory.getInstance().getCompressor.compressByte(bao.toByteArray)
   }
 
-  private def getConf = {
-    val configuration = new Configuration(false)
-    val bai = new ByteArrayInputStream(CompressorFactory.getInstance().getCompressor
-      .unCompressByte(confBytes))
-    val ois = new ObjectInputStream(bai)
-    configuration.readFields(ois)
-    ois.close()
-    configuration
-  }
-
   override def getPartitions: Array[Partition] = {
     blocksGroupBy.zipWithIndex.map { b =>
       new CarbonNodePartition(id, b._2, b._1._1, b._1._2)
@@ -238,7 +212,7 @@ class NewCarbonDataLoadRDD[K, V](
           theSplit.index,
           null,
           loadMetadataDetails)
-        // Intialize to set carbon properties
+        // Initialize to set carbon properties
         loader.initialize()
         val executor = new DataLoadExecutor()
         // in case of success, failure or cancelation clear memory and stop execution
@@ -359,16 +333,6 @@ class NewDataFrameLoaderRDD[K, V](
     CompressorFactory.getInstance().getCompressor.compressByte(bao.toByteArray)
   }
 
-  private def getConf = {
-    val configuration = new Configuration(false)
-    val bai = new ByteArrayInputStream(CompressorFactory.getInstance().getCompressor
-      .unCompressByte(confBytes))
-    val ois = new ObjectInputStream(bai)
-    configuration.readFields(ois)
-    ois.close()
-    configuration
-  }
-
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val hadoopConf = getConf
@@ -402,7 +366,7 @@ class NewDataFrameLoaderRDD[K, V](
           theSplit.index,
           null,
           loadMetadataDetails)
-        // Intialize to set carbon properties
+        // Initialize to set carbon properties
         loader.initialize()
         val executor = new DataLoadExecutor
         // in case of success, failure or cancelation clear memory and stop execution
@@ -467,6 +431,10 @@ class NewRddIterator(rddIter: Iterator[Row],
   private val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
   private val serializationNullFormat =
     carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
+  import scala.collection.JavaConverters._
+  private val isVarcharTypeMapping =
+    carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getCreateOrderColumn(
+      carbonLoadModel.getTableName).asScala.map(_.getDataType == DataTypes.VARCHAR)
   def hasNext: Boolean = rddIter.hasNext
 
   def next: Array[AnyRef] = {
@@ -474,7 +442,8 @@ class NewRddIterator(rddIter: Iterator[Row],
     val columns = new Array[AnyRef](row.length)
     for (i <- 0 until columns.length) {
       columns(i) = CarbonScalaUtil.getString(row.get(i), serializationNullFormat,
-        delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat)
+        delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat,
+        isVarcharType = i < isVarcharTypeMapping.size && isVarcharTypeMapping(i))
     }
     columns
   }
@@ -511,6 +480,10 @@ class LazyRddIterator(serializer: SerializerInstance,
   private val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
   private val serializationNullFormat =
     carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
+  import scala.collection.JavaConverters._
+  private val isVarcharTypeMapping =
+    carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getCreateOrderColumn(
+      carbonLoadModel.getTableName).asScala.map(_.getDataType == DataTypes.VARCHAR)
 
   private var rddIter: Iterator[Row] = null
   private var uninitialized = true
@@ -534,7 +507,8 @@ class LazyRddIterator(serializer: SerializerInstance,
     val columns = new Array[AnyRef](row.length)
     for (i <- 0 until columns.length) {
       columns(i) = CarbonScalaUtil.getString(row.get(i), serializationNullFormat,
-        delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat)
+        delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat,
+        isVarcharType = i < isVarcharTypeMapping.size && isVarcharTypeMapping(i))
     }
     columns
   }
@@ -584,7 +558,7 @@ class PartitionTableDataLoaderRDD[K, V](
           theSplit.index,
           null,
           loadMetadataDetails)
-        // Intialize to set carbon properties
+        // Initialize to set carbon properties
         loader.initialize()
         val executor = new DataLoadExecutor
         // in case of success, failure or cancelation clear memory and stop execution

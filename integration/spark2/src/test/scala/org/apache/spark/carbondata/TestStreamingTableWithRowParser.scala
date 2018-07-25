@@ -35,7 +35,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
 case class FileElement(school: Array[String], age: Integer)
 case class StreamData(id: Integer, name: String, city: String, salary: java.lang.Float,
@@ -62,6 +61,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
     dropTable()
 
     createTable(tableName = "stream_table_filter", streaming = true, withBatchLoad = true)
+    createTable(tableName = "stream_table_with_mi", streaming = true, withBatchLoad = true)
 
     createTableWithComplexType(
       tableName = "stream_table_filter_complex", streaming = true, withBatchLoad = true)
@@ -75,6 +75,8 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
 
   def dropTable(): Unit = {
     sql("drop table if exists streaming1.stream_table_filter")
+    sql("drop table if exists streaming1.stream_table_with_mi")
+
     sql("drop table if exists streaming1.stream_table_filter_complex")
   }
 
@@ -590,12 +592,12 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null order by name"),
-      Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null, null)), null)),
+      Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null)), null)),
         Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where name = ''"),
-      Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null, null)), null))))
+      Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null)), null))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and name <> ''"),
@@ -603,7 +605,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where city = ''"),
-      Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null, null)), null))))
+      Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null)), null))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and city <> ''"),
@@ -611,7 +613,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where salary is null"),
-      Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null, null)), null))))
+      Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null)), null))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and salary is not null"),
@@ -619,7 +621,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where tax is null"),
-      Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null, null)), null))))
+      Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null)), null))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and tax is not null"),
@@ -627,7 +629,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where percent is null"),
-      Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null, null)), null))))
+      Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null)), null))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and salary is not null"),
@@ -635,7 +637,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where birthday is null"),
-      Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null, null)), null))))
+      Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null)), null))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and birthday is not null"),
@@ -643,7 +645,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where register is null"),
-      Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null, null)), null)),
+      Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null)), null)),
         Row(null, "name_6", "city_6", 60000.0, BigDecimal.valueOf(0.01), 80.01, Date.valueOf("1990-01-01"), null, Timestamp.valueOf("2010-01-01 10:01:01.0"), Row(wrap(Array("school_6", "school_66")), 6))))
 
     checkAnswer(
@@ -652,7 +654,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where updated is null"),
-      Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null, null)), null))))
+      Seq(Row(null, "", "", null, null, null, null, null, null, Row(wrap(Array(null)), null))))
 
     checkAnswer(
       sql("select * from stream_table_filter_complex where id is null and updated is not null"),
@@ -783,8 +785,6 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
             .option(CarbonCommonConstants.HANDOFF_SIZE, handoffSize)
             .option("timestampformat", CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
             .option(CarbonCommonConstants.ENABLE_AUTO_HANDOFF, autoHandoff)
-            .option(CarbonStreamParser.CARBON_STREAM_PARSER,
-              CarbonStreamParser.CARBON_STREAM_PARSER_ROW_PARSER)
             .start()
           qry.awaitTermination()
         } catch {

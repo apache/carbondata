@@ -17,9 +17,7 @@
 
 package org.apache.spark.sql.common.util
 
-import java.io.{FileInputStream, ObjectInputStream, ObjectOutputStream}
-import java.math
-import java.math.RoundingMode
+import java.io.{ObjectInputStream, ObjectOutputStream}
 import java.util.{Locale, TimeZone}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -28,7 +26,7 @@ import scala.collection.JavaConversions._
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.execution.command.LoadDataCommand
-import org.apache.spark.sql.hive.{CarbonSessionCatalog, HiveExternalCatalog}
+import org.apache.spark.sql.hive.{CarbonSessionCatalog}
 import org.apache.spark.sql.test.{ResourceRegisterAndCopier, TestQueryExecutor}
 import org.apache.spark.sql.{CarbonSession, DataFrame, Row, SQLContext}
 import org.scalatest.Suite

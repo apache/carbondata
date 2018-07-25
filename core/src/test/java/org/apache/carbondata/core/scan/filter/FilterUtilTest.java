@@ -66,7 +66,6 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
         new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString());
     this.carbonStorePath = props.getProperty("storePath", "carbonStore");
     columnSchema = new ColumnSchema();
-    columnSchema.setColumnar(true);
     columnSchema.setColumnName("IMEI");
     columnSchema.setColumnUniqueId(UUID.randomUUID().toString());
     columnSchema.setDataType(DataTypes.STRING);
@@ -232,17 +231,14 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
         new MultiDimKeyVarLengthGenerator(keys);
     int ordinal = 1;
     int keyOrdinal = 1;
-    int columnGroupOrdinal = 1;
     int complexTypeOrdinal = 1;
     ColumnSchema columnSchema = new ColumnSchema();
-    columnSchema.setColumnar(true);
     columnSchema.setColumnName("IMEI");
     columnSchema.setColumnUniqueId(UUID.randomUUID().toString());
     columnSchema.setDataType(DataTypes.STRING);
     columnSchema.setDimensionColumn(true);
     CarbonDimension carbonDimension =
-        new CarbonDimension(columnSchema, ordinal, keyOrdinal, columnGroupOrdinal,
-            complexTypeOrdinal);
+        new CarbonDimension(columnSchema, ordinal, keyOrdinal, complexTypeOrdinal);
     byte[] expectedResult = new byte[] { 1 };
     byte[] actualResult =
         FilterUtil.getMaskKey(surrogate, carbonDimension, multiDimKeyVarLengthGenerator);
@@ -257,7 +253,6 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     boolean isIncludeFilter = true;
     int ordinal = 1;
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataTypes.STRING);
@@ -288,7 +283,6 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     boolean isIncludeFilter = true;
     int ordinal = 1;
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataTypes.STRING);

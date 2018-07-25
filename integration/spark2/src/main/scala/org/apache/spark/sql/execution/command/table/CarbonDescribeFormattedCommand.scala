@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.command.MetadataCommand
@@ -28,13 +29,15 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.codehaus.jackson.map.ObjectMapper
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
+import org.apache.carbondata.core.util.CarbonUtil
 
 private[sql] case class CarbonDescribeFormattedCommand(
     child: SparkPlan,
     override val output: Seq[Attribute],
+    partitionSpec: TablePartitionSpec,
     tblIdentifier: TableIdentifier)
   extends MetadataCommand {
 
@@ -81,12 +84,12 @@ private[sql] case class CarbonDescribeFormattedCommand(
     } else {
       colProps.toString()
     }
+    val carbonTable = relation.carbonTable
     results ++= Seq(("", "", ""), ("##Detailed Table Information", "", ""))
     results ++= Seq(("Database Name", relation.carbonTable.getDatabaseName, "")
     )
     results ++= Seq(("Table Name", relation.carbonTable.getTableName, ""))
-    results ++= Seq(("CARBON Store Path ", CarbonProperties.getStorePath, ""))
-    val carbonTable = relation.carbonTable
+    results ++= Seq(("CARBON Store Path ", carbonTable.getTablePath, ""))
 
     val tblProps = carbonTable.getTableInfo.getFactTable.getTableProperties
 
@@ -94,7 +97,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
     val tableComment = tblProps.asScala.getOrElse(CarbonCommonConstants.TABLE_COMMENT, "")
     results ++= Seq(("Comment", tableComment, ""))
     results ++= Seq(("Table Block Size ", carbonTable.getBlockSizeInMB + " MB", ""))
-    val dataIndexSize = CarbonUtil.calculateDataIndexSize(carbonTable)
+    val dataIndexSize = CarbonUtil.calculateDataIndexSize(carbonTable, false)
     if (!dataIndexSize.isEmpty) {
       results ++= Seq((CarbonCommonConstants.TABLE_DATA_SIZE,
         dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE).toString, ""))
@@ -107,8 +110,70 @@ private[sql] case class CarbonDescribeFormattedCommand(
     results ++= Seq(("SORT_SCOPE", tblProps.asScala.getOrElse("sort_scope", CarbonCommonConstants
       .LOAD_SORT_SCOPE_DEFAULT), tblProps.asScala.getOrElse("sort_scope", CarbonCommonConstants
       .LOAD_SORT_SCOPE_DEFAULT)))
+    // add Cache Level property
+    results ++= Seq(("CACHE_LEVEL", tblProps.asScala.getOrElse(CarbonCommonConstants.CACHE_LEVEL,
+      CarbonCommonConstants.CACHE_LEVEL_DEFAULT_VALUE), ""))
     val isStreaming = tblProps.asScala.getOrElse("streaming", "false")
     results ++= Seq(("Streaming", isStreaming, ""))
+
+    // longstring related info
+    if (tblProps.containsKey(CarbonCommonConstants.LONG_STRING_COLUMNS)) {
+      results ++= Seq((CarbonCommonConstants.LONG_STRING_COLUMNS.toUpperCase,
+        tblProps.get(CarbonCommonConstants.LONG_STRING_COLUMNS), ""))
+    }
+
+    var isLocalDictEnabled = tblProps.asScala
+      .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)
+    if (isLocalDictEnabled.isDefined) {
+      val localDictEnabled = isLocalDictEnabled.get.split(",") { 0 }
+      results ++= Seq(("Local Dictionary Enabled", localDictEnabled, ""))
+      // if local dictionary is enabled, then only show other properties of local dictionary
+      if (localDictEnabled.toBoolean) {
+        var localDictThreshold = tblProps.asScala
+          .getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
+            CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT)
+        val localDictionaryThreshold = localDictThreshold.split(",")
+        localDictThreshold = localDictionaryThreshold { 0 }
+        results ++= Seq(("Local Dictionary Threshold", localDictThreshold, ""))
+        val columns = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
+        val builder = new StringBuilder
+        columns.foreach { column =>
+          if (column.isLocalDictColumn && !column.isInvisible) {
+            builder.append(column.getColumnName).append(",")
+          }
+        }
+        results ++=
+        Seq(("Local Dictionary Include", getDictColumnString(builder.toString().split(",")), ""))
+        if (tblProps.asScala
+          .get(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE).isDefined) {
+          val columns = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
+          val builder = new StringBuilder
+          columns.foreach { column =>
+            if (!column.isLocalDictColumn && !column.isInvisible &&
+                (column.getDataType.equals(DataTypes.STRING) ||
+                 column.getDataType.equals(DataTypes.VARCHAR))) {
+              builder.append(column.getColumnName).append(",")
+            }
+          }
+          results ++=
+          Seq(("Local Dictionary Exclude", getDictColumnString(builder.toString().split(",")), ""))
+        }
+      }
+    } else {
+      results ++= Seq(("Local Dictionary Enabled", "false", ""))
+    }
+
+    /**
+     * return the string which has all comma separated columns
+     * @param localDictColumns
+     * @return
+     */
+    def getDictColumnString(localDictColumns: Array[String]): String = {
+      val dictColumns: StringBuilder = new StringBuilder
+      localDictColumns.foreach(column => dictColumns.append(column.trim).append(","))
+      dictColumns.toString().patch(dictColumns.toString().lastIndexOf(","), "", 1)
+    }
+
 
     // show table level compaction options
     if (tblProps.containsKey(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE)) {
@@ -136,6 +201,11 @@ private[sql] case class CarbonDescribeFormattedCommand(
         tblProps.get(CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS),
         CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT))
     }
+    if (tblProps.containsKey(CarbonCommonConstants.FLAT_FOLDER)) {
+      results ++= Seq((CarbonCommonConstants.FLAT_FOLDER.toUpperCase,
+        tblProps.get(CarbonCommonConstants.FLAT_FOLDER),
+        CarbonCommonConstants.DEFAULT_FLAT_FOLDER))
+    }
 
     results ++= Seq(("", "", ""), ("##Detailed Column property", "", ""))
     if (colPropStr.length() > 0) {
@@ -146,13 +216,35 @@ private[sql] case class CarbonDescribeFormattedCommand(
     results ++= Seq(("SORT_COLUMNS", relation.metaData.carbonTable.getSortColumns(
       relation.carbonTable.getTableName).asScala
       .map(column => column).mkString(","), ""))
+    // add columns configured in column meta cache
+    if (null != tblProps.get(CarbonCommonConstants.COLUMN_META_CACHE)) {
+      results ++=
+      Seq(("COLUMN_META_CACHE", carbonTable.getMinMaxCachedColumnsInCreateOrder().asScala
+        .map(col => col).mkString(","), ""))
+    }
     if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null) {
       results ++=
-      Seq(("Partition Columns", carbonTable.getPartitionInfo(carbonTable.getTableName)
-        .getColumnSchemaList.asScala.map(_.getColumnName).mkString(","), ""))
-      results ++=
-      Seq(("Partition Type", carbonTable.getPartitionInfo(carbonTable.getTableName)
+      Seq(("#Partition Information", "", ""),
+        ("#col_name", "data_type", "comment"))
+      results ++= carbonTable.getPartitionInfo(carbonTable.getTableName)
+        .getColumnSchemaList.asScala.map {
+        col => (col.getColumnName, col.getDataType.getName, "NULL")
+      }
+      results ++= Seq(("Partition Type", carbonTable.getPartitionInfo(carbonTable.getTableName)
         .getPartitionType.toString, ""))
+    }
+    if (partitionSpec.nonEmpty) {
+      val partitions = sparkSession.sessionState.catalog.getPartition(tblIdentifier, partitionSpec)
+      results ++=
+      Seq(("", "", ""),
+        ("##Detailed Partition Information", "", ""),
+        ("Partition Value:", partitions.spec.values.mkString("[", ",", "]"), ""),
+        ("Database:", tblIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase), ""),
+        ("Table:", tblIdentifier.table, ""))
+      if (partitions.storage.locationUri.isDefined) {
+        results ++= Seq(("Location:", partitions.storage.locationUri.get.toString, ""))
+      }
+      results ++= Seq(("Partition Parameters:", partitions.parameters.mkString(", "), ""))
     }
     results.map {
       case (name, dataType, null) =>

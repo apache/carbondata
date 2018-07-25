@@ -17,13 +17,10 @@
 
 package org.apache.carbondata.processing.loading;
 
-import java.io.File;
-
 import org.apache.carbondata.common.constants.LoggerAction;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 
 /**
@@ -71,26 +68,18 @@ public class BadRecordsLoggerProvider {
     }
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
+
     return new BadRecordsLogger(identifier.getBadRecordLoggerKey(),
         identifier.getTableName() + '_' + System.currentTimeMillis(),
-        getBadLogStoreLocation(configuration,
-            identifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + identifier
-                .getTableName() + CarbonCommonConstants.FILE_SEPARATOR + configuration
-                .getSegmentId() + CarbonCommonConstants.FILE_SEPARATOR + configuration.getTaskNo()),
-        badRecordsLogRedirect, badRecordsLoggerEnable, badRecordConvertNullDisable, isDataLoadFail);
+        getBadLogStoreLocation(configuration), badRecordsLogRedirect,
+        badRecordsLoggerEnable, badRecordConvertNullDisable, isDataLoadFail);
   }
 
-  public static String getBadLogStoreLocation(CarbonDataLoadConfiguration configuration,
-      String storeLocation) {
+  public static String getBadLogStoreLocation(CarbonDataLoadConfiguration configuration) {
     String badLogStoreLocation = (String) configuration
         .getDataLoadProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH);
-    if (null == badLogStoreLocation) {
-      badLogStoreLocation =
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
-    }
-    badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
-
-    return badLogStoreLocation;
+    return CarbonTablePath.generateBadRecordsPath(badLogStoreLocation, configuration.getSegmentId(),
+        configuration.getTaskNo(), configuration.isCarbonTransactionalTable());
   }
 }
 

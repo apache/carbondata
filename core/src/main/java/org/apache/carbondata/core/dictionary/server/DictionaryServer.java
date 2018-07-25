@@ -21,21 +21,21 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 
 public interface DictionaryServer {
 
-  public void startServer();
+  void startServer();
 
-  public void bindToPort();
+  void bindToPort();
 
-  public void shutdown()throws Exception;
+  void shutdown()throws Exception;
 
-  public String getHost();
+  String getHost();
 
-  public int getPort();
+  int getPort();
 
-  public String getSecretKey();
+  String getSecretKey();
 
-  public boolean isEncryptSecureServer();
+  boolean isEncryptSecureServer();
 
-  public void writeTableDictionary(String uniqueTableName) throws Exception;
+  void writeTableDictionary(String uniqueTableName) throws Exception;
 
-  public void initializeDictionaryGenerator(CarbonTable carbonTable) throws Exception;
+  void initializeDictionaryGenerator(CarbonTable carbonTable) throws Exception;
 }

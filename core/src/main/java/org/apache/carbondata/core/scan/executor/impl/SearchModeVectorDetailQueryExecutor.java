@@ -24,12 +24,13 @@ import java.util.concurrent.Executors;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.core.scan.result.iterator.SearchModeResultIterator;
+import org.apache.carbondata.core.scan.result.iterator.SearchModeVectorResultIterator;
 import org.apache.carbondata.core.util.CarbonProperties;
+
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD;
 
 /**
  * Below class will be used to execute the detail query and returns columnar vectors.
@@ -37,22 +38,37 @@ import org.apache.carbondata.core.util.CarbonProperties;
 public class SearchModeVectorDetailQueryExecutor extends AbstractQueryExecutor<Object> {
   private static final LogService LOGGER =
           LogServiceFactory.getLogService(SearchModeVectorDetailQueryExecutor.class.getName());
-  private static ExecutorService executorService;
+  private static ExecutorService executorService = null;
 
-  static {
+  public SearchModeVectorDetailQueryExecutor() {
+    if (executorService == null) {
+      initThreadPool();
+    }
+  }
+
+  private static synchronized void initThreadPool() {
+    int defaultValue = Runtime.getRuntime().availableProcessors();
     int nThread;
     try {
       nThread = Integer.parseInt(CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD,
-                      CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD_DEFAULT));
+              .getProperty(CARBON_SEARCH_MODE_SCAN_THREAD, String.valueOf(defaultValue)));
     } catch (NumberFormatException e) {
-      nThread = Integer.parseInt(CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD_DEFAULT);
-      LOGGER.warn("The carbon.search.mode.thread is invalid. Using the default value " + nThread);
+      nThread = defaultValue;
+      LOGGER.warn("The " + CARBON_SEARCH_MODE_SCAN_THREAD + " is invalid. "
+          + "Using the default value " + nThread);
     }
     if (nThread > 0) {
-      executorService =  Executors.newFixedThreadPool(nThread);
+      executorService = Executors.newFixedThreadPool(nThread);
     } else {
       executorService = Executors.newCachedThreadPool();
+    }
+  }
+
+  public static synchronized void shutdownThreadPool() {
+    // shutdown all threads immediately
+    if (executorService != null) {
+      executorService.shutdownNow();
+      executorService = null;
     }
   }
 
@@ -60,7 +76,8 @@ public class SearchModeVectorDetailQueryExecutor extends AbstractQueryExecutor<O
   public CarbonIterator<Object> execute(QueryModel queryModel)
       throws QueryExecutionException, IOException {
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
-    this.queryIterator = new SearchModeResultIterator(
+
+    this.queryIterator = new SearchModeVectorResultIterator(
         blockExecutionInfoList,
         queryModel,
         executorService

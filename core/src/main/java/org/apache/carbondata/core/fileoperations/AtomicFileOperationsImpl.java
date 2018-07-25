@@ -27,7 +27,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
 import org.apache.carbondata.core.util.CarbonUtil;
 
-public class AtomicFileOperationsImpl implements AtomicFileOperations {
+class AtomicFileOperationsImpl implements AtomicFileOperations {
 
   private String filePath;
 
@@ -37,7 +37,7 @@ public class AtomicFileOperationsImpl implements AtomicFileOperations {
 
   private DataOutputStream dataOutStream;
 
-  public AtomicFileOperationsImpl(String filePath, FileType fileType) {
+  AtomicFileOperationsImpl(String filePath, FileType fileType) {
     this.filePath = filePath;
 
     this.fileType = fileType;

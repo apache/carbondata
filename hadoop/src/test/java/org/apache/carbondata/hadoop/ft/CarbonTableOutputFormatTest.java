@@ -51,6 +51,8 @@ public class CarbonTableOutputFormatTest {
   static {
     CarbonProperties.getInstance().
         addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords");
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, "/tmp/carbon/");
     try {
       carbonLoadModel = StoreCreator.createTableAndLoadModel();
     } catch (Exception e) {
@@ -99,7 +101,8 @@ public class CarbonTableOutputFormatTest {
 
   private void runJob(String outPath) throws Exception {
     Configuration configuration = new Configuration();
-    configuration.set("mapreduce.cluster.local.dir", new File(outPath + "1").getCanonicalPath());
+    String mrLocalDir = new File(outPath + "1").getCanonicalPath();
+    configuration.set("mapreduce.cluster.local.dir", mrLocalDir);
     Job job = Job.getInstance(configuration);
     job.setJarByClass(CarbonTableOutputFormatTest.class);
     job.setOutputKeyClass(NullWritable.class);
@@ -118,6 +121,8 @@ public class CarbonTableOutputFormatTest {
     job.getConfiguration().set("outpath", outPath);
     job.getConfiguration().set("query.id", String.valueOf(System.nanoTime()));
     job.waitForCompletion(true);
+
+    CarbonUtil.deleteFoldersAndFiles(new File(mrLocalDir));
   }
 
 }

@@ -80,11 +80,6 @@ public interface KeyGenerator extends Serializable, Comparator<byte[]> {
   long getKey(byte[] key, int index);
 
   /**
-   * Set any extra properties if required.
-   */
-  void setProperty(Object key, Object value);
-
-  /**
    * Gives the key size in number of bytes.
    */
   int getKeySizeInBytes();
@@ -97,8 +92,6 @@ public interface KeyGenerator extends Serializable, Comparator<byte[]> {
    * @return
    */
   int[] getKeyByteOffsets(int index);
-
-  int compare(byte[] key1, int offset1, int length1, byte[] key2, int offset2, int length2);
 
   /**
    * returns the dimension count

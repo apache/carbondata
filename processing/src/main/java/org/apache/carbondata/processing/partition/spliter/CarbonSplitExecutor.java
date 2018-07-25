@@ -30,6 +30,7 @@ import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.block.TaskBlockInfo;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
+import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.scan.result.iterator.PartitionSpliterRawResultIterator;
 import org.apache.carbondata.core.util.DataTypeConverter;
 
@@ -50,8 +51,11 @@ public class CarbonSplitExecutor extends AbstractCarbonQueryExecutor {
       String segmentId, DataTypeConverter converter)
       throws QueryExecutionException, IOException {
     List<TableBlockInfo> list = null;
-    queryModel = carbonTable.createQueryModelWithProjectAllColumns(converter);
-    queryModel.setForcedDetailRawQuery(true);
+    queryModel = new QueryModelBuilder(carbonTable)
+        .projectAllColumns()
+        .dataConverter(converter)
+        .enableForcedDetailRawQuery()
+        .build();
     List<PartitionSpliterRawResultIterator> resultList
         = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     TaskBlockInfo taskBlockInfo = segmentMapping.get(segmentId);

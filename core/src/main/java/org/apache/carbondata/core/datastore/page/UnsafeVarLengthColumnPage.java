@@ -49,6 +49,7 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
       memoryBlock = null;
       baseAddress = null;
       baseOffset = 0;
+      super.freeMemory();
     }
   }
 
@@ -65,7 +66,7 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
       throw new RuntimeException(e);
     }
     CarbonUnsafe.getUnsafe().copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET + offset,
-        baseAddress, baseOffset + rowOffset[rowId], length);
+        baseAddress, baseOffset + rowOffset.getInt(rowId), length);
   }
 
   @Override
@@ -89,20 +90,20 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
   @Override
   public byte[] getBytes(int rowId) {
-    int length = rowOffset[rowId + 1] - rowOffset[rowId];
+    int length = rowOffset.getInt(rowId + 1) - rowOffset.getInt(rowId);
     byte[] bytes = new byte[length];
-    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId],
+    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset.getInt(rowId),
         bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
     return bytes;
   }
 
   @Override
   public byte[][] getByteArrayPage() {
-    byte[][] bytes = new byte[pageSize][];
-    for (int rowId = 0; rowId < pageSize; rowId++) {
-      int length = rowOffset[rowId + 1] - rowOffset[rowId];
+    byte[][] bytes = new byte[rowOffset.getActualRowCount() - 1][];
+    for (int rowId = 0; rowId < rowOffset.getActualRowCount() - 1; rowId++) {
+      int length = rowOffset.getInt(rowId + 1) - rowOffset.getInt(rowId);
       byte[] rowData = new byte[length];
-      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId],
+      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset.getInt(rowId),
           rowData, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
       bytes[rowId] = rowData;
     }
@@ -111,7 +112,7 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
   @Override
   void copyBytes(int rowId, byte[] dest, int destOffset, int length) {
-    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId],
+    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset.getInt(rowId),
         dest, CarbonUnsafe.BYTE_ARRAY_OFFSET + destOffset, length);
   }
 

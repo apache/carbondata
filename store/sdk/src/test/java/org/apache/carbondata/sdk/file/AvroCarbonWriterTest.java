@@ -20,22 +20,48 @@ package org.apache.carbondata.sdk.file;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.schema.table.DiskBasedDMSchemaStorageProvider;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.CharEncoding;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
-import tech.allegro.schema.json2avro.converter.JsonAvroConverter;
 import org.apache.avro.Schema;
 
 public class AvroCarbonWriterTest {
   private String path = "./AvroCarbonWriterSuiteWriteFiles";
+
+  @Before
+  public void cleanFile() {
+    String path = null;
+    try {
+      path = new File(AvroCarbonWriterTest.class.getResource("/").getPath() + "../")
+          .getCanonicalPath().replaceAll("\\\\", "/");
+    } catch (IOException e) {
+      assert (false);
+    }
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, path);
+    assert (TestUtil.cleanMdtFile());
+  }
+
+  @After
+  public void verifyDMFile() {
+    assert (!TestUtil.verifyMdtFile());
+  }
 
   @Test
   public void testWriteBasic() throws IOException {
@@ -54,19 +80,10 @@ public class AvroCarbonWriterTest {
     String json = "{\"name\":\"bob\", \"age\":10}";
 
     // conversion to GenericData.Record
-    JsonAvroConverter converter = new JsonAvroConverter();
-    GenericData.Record record = converter.convertToGenericDataRecord(
-        json.getBytes(CharEncoding.UTF_8), new Schema.Parser().parse(avroSchema));
-
-    Field[] fields = new Field[2];
-    fields[0] = new Field("name", DataTypes.STRING);
-    fields[1] = new Field("age", DataTypes.STRING);
-
+    GenericData.Record record = TestUtil.jsonToAvro(json, avroSchema);
     try {
-      CarbonWriter writer = CarbonWriter.builder()
-          .withSchema(new org.apache.carbondata.sdk.file.Schema(fields))
-          .outputPath(path)
-          .buildWriterForAvroInput();
+      CarbonWriter writer = CarbonWriter.builder().outputPath(path).isTransactionalTable(true)
+          .buildWriterForAvroInput(new Schema.Parser().parse(avroSchema));
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -93,12 +110,382 @@ public class AvroCarbonWriterTest {
 
   @Test
   public void testWriteAllPrimitive() throws IOException {
-    // TODO
+    FileUtils.deleteDirectory(new File(path));
+
+    // Avro schema
+    // Supported Primitive Datatype.
+    // 1. Boolean
+    // 2. Int
+    // 3. long
+    // 4. float -> To carbon Internally it is double.
+    // 5. double
+    // 6. String
+
+    // Not Supported
+    // 1.NULL Datatype
+    // 2.Bytes
+
+    String avroSchema = "{\n" + "  \"name\" : \"myrecord\",\n"
+        + "  \"namespace\": \"org.apache.parquet.avro\",\n" + "  \"type\" : \"record\",\n"
+        + "  \"fields\" : [ "
+        + " {\n" + "    \"name\" : \"myboolean\",\n" + "    \"type\" : \"boolean\"\n  },"
+        + " {\n" + "    \"name\" : \"myint\",\n" + "    \"type\" : \"int\"\n" + "  }, "
+        + " {\n    \"name\" : \"mylong\",\n" + "    \"type\" : \"long\"\n" + "  },"
+        + " {\n   \"name\" : \"myfloat\",\n" + "    \"type\" : \"float\"\n" + "  }, "
+        + " {\n \"name\" : \"mydouble\",\n" + "    \"type\" : \"double\"\n" + "  },"
+        + " {\n \"name\" : \"mystring\",\n" + "    \"type\" : \"string\"\n" + "  }\n" + "] }";
+
+    String json = "{"
+        + "\"myboolean\":true, "
+        + "\"myint\": 10, "
+        + "\"mylong\": 7775656565,"
+        + " \"myfloat\": 0.2, "
+        + "\"mydouble\": 44.56, "
+        + "\"mystring\":\"Ajantha\"}";
+
+
+    // conversion to GenericData.Record
+    GenericData.Record record = TestUtil.jsonToAvro(json, avroSchema);
+
+    try {
+      CarbonWriter writer = CarbonWriter.builder()
+          .outputPath(path)
+          .isTransactionalTable(true)
+          .buildWriterForAvroInput(new Schema.Parser().parse(avroSchema));
+
+      for (int i = 0; i < 100; i++) {
+        writer.write(record);
+      }
+      writer.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+
+    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
+    Assert.assertTrue(segmentFolder.exists());
+
+    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+      @Override public boolean accept(File pathname) {
+        return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
+      }
+    });
+
+    Assert.assertNotNull(dataFiles);
+    Assert.assertEquals(1, dataFiles.length);
+
+    FileUtils.deleteDirectory(new File(path));
   }
+
 
   @Test
   public void testWriteNestedRecord() throws IOException {
-    // TODO
+    FileUtils.deleteDirectory(new File(path));
+
+    String newAvroSchema =
+        "{" +
+          " \"type\" : \"record\", " +
+          "  \"name\" : \"userInfo\", "  +
+          "  \"namespace\" : \"my.example\", " +
+          "  \"fields\" : [{\"name\" : \"username\", " +
+          "  \"type\" : \"string\", " +
+          "  \"default\" : \"NONE\"}, " +
+
+       " {\"name\" : \"age\", " +
+       " \"type\" : \"int\", " +
+       " \"default\" : -1}, " +
+
+    "{\"name\" : \"address\", " +
+     "   \"type\" : { " +
+      "  \"type\" : \"record\", " +
+       "   \"name\" : \"mailing_address\", " +
+        "  \"fields\" : [ {" +
+      "        \"name\" : \"street\", " +
+       "       \"type\" : \"string\", " +
+       "       \"default\" : \"NONE\"}, { " +
+
+      " \"name\" : \"city\", " +
+        "  \"type\" : \"string\", " +
+        "  \"default\" : \"NONE\"}, " +
+         "                 ]}, " +
+     " \"default\" : {} " +
+   " } " +
+"}";
+
+    String mySchema =
+    "{" +
+    "  \"name\": \"address\", " +
+    "   \"type\": \"record\", " +
+    "    \"fields\": [  " +
+    "  { \"name\": \"name\", \"type\": \"string\"}, " +
+    "  { \"name\": \"age\", \"type\": \"int\"}, " +
+    "  { " +
+    "    \"name\": \"address\", " +
+    "      \"type\": { " +
+    "    \"type\" : \"record\", " +
+    "        \"name\" : \"my_address\", " +
+    "        \"fields\" : [ " +
+    "    {\"name\": \"street\", \"type\": \"string\"}, " +
+    "    {\"name\": \"city\", \"type\": \"string\"} " +
+    "  ]} " +
+    "  } " +
+    "] " +
+    "}";
+
+   String json = "{\"name\":\"bob\", \"age\":10, \"address\" : {\"street\":\"abc\", \"city\":\"bang\"}}";
+
+
+    // conversion to GenericData.Record
+    Schema nn = new Schema.Parser().parse(mySchema);
+    GenericData.Record record = TestUtil.jsonToAvro(json, mySchema);
+
+    try {
+      CarbonWriter writer = CarbonWriter.builder()
+          .outputPath(path)
+          .isTransactionalTable(true)
+          .buildWriterForAvroInput(nn);
+
+      for (int i = 0; i < 100; i++) {
+        writer.write(record);
+      }
+      writer.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+
+    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
+    Assert.assertTrue(segmentFolder.exists());
+
+    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+      @Override public boolean accept(File pathname) {
+        return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
+      }
+    });
+    Assert.assertNotNull(dataFiles);
+    Assert.assertEquals(1, dataFiles.length);
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+
+  @Test
+  public void testWriteNestedRecordWithMeasure() throws IOException {
+    FileUtils.deleteDirectory(new File(path));
+
+    String mySchema =
+        "{" +
+            "  \"name\": \"address\", " +
+            "   \"type\": \"record\", " +
+            "    \"fields\": [  " +
+            "  { \"name\": \"name\", \"type\": \"string\"}, " +
+            "  { \"name\": \"age\", \"type\": \"int\"}, " +
+            "  { " +
+            "    \"name\": \"address\", " +
+            "      \"type\": { " +
+            "    \"type\" : \"record\", " +
+            "        \"name\" : \"my_address\", " +
+            "        \"fields\" : [ " +
+            "    {\"name\": \"street\", \"type\": \"string\"}, " +
+            "    {\"name\": \"city\", \"type\": \"string\"} " +
+            "  ]} " +
+            "  } " +
+            "] " +
+            "}";
+
+    String json = "{\"name\":\"bob\", \"age\":10, \"address\" : {\"street\":\"abc\", \"city\":\"bang\"}}";
+
+
+    // conversion to GenericData.Record
+    Schema nn = new Schema.Parser().parse(mySchema);
+    GenericData.Record record = TestUtil.jsonToAvro(json, mySchema);
+
+    try {
+      CarbonWriter writer = CarbonWriter.builder()
+          .outputPath(path)
+          .isTransactionalTable(true)
+          .buildWriterForAvroInput(nn);
+
+      for (int i = 0; i < 100; i++) {
+        writer.write(record);
+      }
+      writer.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+
+    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
+    Assert.assertTrue(segmentFolder.exists());
+
+    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+      @Override public boolean accept(File pathname) {
+        return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
+      }
+    });
+    Assert.assertNotNull(dataFiles);
+    Assert.assertEquals(1, dataFiles.length);
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+
+  private void WriteAvroComplexData(String mySchema, String json, String[] sortColumns)
+      throws UnsupportedEncodingException, IOException, InvalidLoadOptionException {
+
+    // conversion to GenericData.Record
+    Schema nn = new Schema.Parser().parse(mySchema);
+    GenericData.Record record = TestUtil.jsonToAvro(json, mySchema);
+    try {
+      CarbonWriter writer = CarbonWriter.builder()
+          .outputPath(path)
+          .isTransactionalTable(true).sortBy(sortColumns)
+          .buildWriterForAvroInput(nn);
+
+      for (int i = 0; i < 100; i++) {
+        writer.write(record);
+      }
+      writer.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw e;
+    }
+  }
+
+
+  @Test
+  public void testWriteComplexRecord() throws IOException, InvalidLoadOptionException {
+    FileUtils.deleteDirectory(new File(path));
+
+    String mySchema =
+        "{" +
+            "  \"name\": \"address\", " +
+            "   \"type\": \"record\", " +
+            "    \"fields\": [  " +
+            "  { \"name\": \"name\", \"type\": \"string\"}, " +
+            "  { \"name\": \"age\", \"type\": \"int\"}, " +
+            "  { " +
+            "    \"name\": \"address\", " +
+            "      \"type\": { " +
+            "    \"type\" : \"record\", " +
+            "        \"name\" : \"my_address\", " +
+            "        \"fields\" : [ " +
+            "    {\"name\": \"street\", \"type\": \"string\"}, " +
+            "    {\"name\": \"city\", \"type\": \"string\"} " +
+            "  ]} " +
+            "  }, " +
+            "  {\"name\" :\"doorNum\", " +
+            "   \"type\" : { " +
+            "   \"type\" :\"array\", " +
+            "   \"items\":{ " +
+            "   \"name\" :\"EachdoorNums\", " +
+            "   \"type\" : \"int\", " +
+            "   \"default\":-1} " +
+            "              } " +
+            "  }] " +
+            "}";
+
+    String json = "{\"name\":\"bob\", \"age\":10, \"address\" : {\"street\":\"abc\", \"city\":\"bang\"}, "
+        + "   \"doorNum\" : [1,2,3,4]}";
+
+    WriteAvroComplexData(mySchema, json, null);
+
+    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
+    Assert.assertTrue(segmentFolder.exists());
+
+    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+      @Override public boolean accept(File pathname) {
+        return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
+      }
+    });
+    Assert.assertNotNull(dataFiles);
+    Assert.assertEquals(1, dataFiles.length);
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+
+  @Test
+  public void testWriteComplexRecordWithSortColumns() throws IOException {
+    FileUtils.deleteDirectory(new File(path));
+
+    String mySchema =
+        "{" +
+            "  \"name\": \"address\", " +
+            "   \"type\": \"record\", " +
+            "    \"fields\": [  " +
+            "  { \"name\": \"name\", \"type\": \"string\"}, " +
+            "  { \"name\": \"age\", \"type\": \"int\"}, " +
+            "  { " +
+            "    \"name\": \"address\", " +
+            "      \"type\": { " +
+            "    \"type\" : \"record\", " +
+            "        \"name\" : \"my_address\", " +
+            "        \"fields\" : [ " +
+            "    {\"name\": \"street\", \"type\": \"string\"}, " +
+            "    {\"name\": \"city\", \"type\": \"string\"} " +
+            "  ]} " +
+            "  }, " +
+            "  {\"name\" :\"doorNum\", " +
+            "   \"type\" : { " +
+            "   \"type\" :\"array\", " +
+            "   \"items\":{ " +
+            "   \"name\" :\"EachdoorNums\", " +
+            "   \"type\" : \"int\", " +
+            "   \"default\":-1} " +
+            "              } " +
+            "  }] " +
+            "}";
+
+    String json = "{\"name\":\"bob\", \"age\":10, \"address\" : {\"street\":\"abc\", \"city\":\"bang\"}, "
+        + "   \"doorNum\" : [1,2,3,4]}";
+
+    try {
+      WriteAvroComplexData(mySchema, json, new String[] { "doorNum" });
+      Assert.fail();
+    } catch (Exception e) {
+      Assert.assertTrue(true);
+    }
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testExceptionForDuplicateColumns() throws IOException, InvalidLoadOptionException {
+    Field[] field = new Field[2];
+    field[0] = new Field("name", DataTypes.STRING);
+    field[1] = new Field("name", DataTypes.STRING);
+    CarbonWriterBuilder writer = CarbonWriter.builder().isTransactionalTable(false)
+        .uniqueIdentifier(System.currentTimeMillis()).outputPath(path);
+
+    try {
+      writer.buildWriterForCSVInput(new org.apache.carbondata.sdk.file.Schema(field));
+      Assert.fail();
+    } catch (Exception e) {
+      assert(e.getMessage().contains("Duplicate column name found in table schema"));
+    }
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testExceptionForInvalidDate() throws IOException, InvalidLoadOptionException {
+    Field[] field = new Field[2];
+    field[0] = new Field("name", DataTypes.STRING);
+    field[1] = new Field("date", DataTypes.DATE);
+    CarbonWriterBuilder writer = CarbonWriter.builder().isTransactionalTable(false)
+        .uniqueIdentifier(System.currentTimeMillis()).outputPath(path);
+
+    try {
+      Map<String, String> loadOptions = new HashMap<String, String>();
+      loadOptions.put("bad_records_action", "fail");
+      CarbonWriter carbonWriter =
+          writer.isTransactionalTable(false).withLoadOptions(loadOptions).buildWriterForCSVInput(new org.apache.carbondata.sdk.file.Schema(field));
+      carbonWriter.write(new String[] { "k", "20-02-2233" });
+      carbonWriter.close();
+      Assert.fail();
+    } catch (Exception e) {
+      assert(e.getMessage().contains("Data load failed due to bad record"));
+    }
+    FileUtils.deleteDirectory(new File(path));
   }
 
 }

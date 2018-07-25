@@ -1,0 +1,15 @@
+{
+	"StructColumn":{
+		"stringField": "bob",
+		"intField": 10,
+		"longField": 12345678,
+		"doubleField": 123400.78,
+		"boolField": true,
+		"FloorNum": [1,2,3,4,5,6],
+		"FloorString": [ "abc", "def"],
+		"FloorLong": [ 1234567, 2345678],
+		"FloorDouble": [ 1.0, 2.0, 33.33],
+		"FloorBool": [ true, false, false, true]
+	}
+}
+

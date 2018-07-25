@@ -19,24 +19,44 @@ package org.apache.carbondata.sdk.file;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 
-import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.scan.expression.logical.TrueExpression;
+import org.apache.carbondata.core.metadata.schema.table.DiskBasedDMSchemaStorageProvider;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
  * Test suite for {@link CSVCarbonWriter}
  */
 public class CSVCarbonWriterTest {
+
+  @Before
+  public void cleanFile() {
+    String path = null;
+    try {
+      path = new File(CSVCarbonWriterTest.class.getResource("/").getPath() + "../")
+          .getCanonicalPath().replaceAll("\\\\", "/");
+    } catch (IOException e) {
+      assert (false);
+    }
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, path);
+    assert (TestUtil.cleanMdtFile());
+  }
+
+  @After
+  public void verifyDMFile() {
+    assert (!TestUtil.verifyMdtFile());
+  }
 
   @Test
   public void testWriteFiles() throws IOException {
@@ -89,10 +109,10 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder()
-          .withSchema(new Schema(fields))
+          .isTransactionalTable(true)
           .outputPath(path);
 
-      CarbonWriter writer = builder.buildWriterForCSVInput();
+      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields));
 
       for (int i = 0; i < 100; i++) {
         String[] row = new String[]{
@@ -136,7 +156,7 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, false, 1, 100);
+    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, false, 1, 100, false);
 
     // TODO: implement reader to verify the number of blocklet in the file
 
@@ -152,7 +172,7 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, false, 2, 2);
+    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, false, 2, 2, true);
 
     File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
     File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
@@ -196,12 +216,102 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
 
     String schemaFile = CarbonTablePath.getSchemaFilePath(path);
     Assert.assertTrue(new File(schemaFile).exists());
 
     FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test(expected = IOException.class)
+  public void testWhenWriterthrowsError() throws IOException{
+    CarbonWriter carbonWriter = null;
+    String path = "./testWriteFiles";
+
+    FileUtils.deleteDirectory(new File(path));
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    try {
+      carbonWriter = CarbonWriter.builder().isTransactionalTable(false).
+          outputPath(path).buildWriterForCSVInput(new Schema(fields));
+    } catch (InvalidLoadOptionException e) {
+      e.printStackTrace();
+      Assert.assertTrue(false);
+    }
+    carbonWriter.write("babu,1");
+    carbonWriter.close();
+
+  }
+  @Test
+  public void testWrongSchemaFieldsValidation() throws IOException{
+    CarbonWriter carbonWriter = null;
+    String path = "./testWriteFiles";
+
+    FileUtils.deleteDirectory(new File(path));
+    Field[] fields = new Field[3]; // supply 3 size fields but actual Field array value given is 2
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    try {
+      carbonWriter = CarbonWriter.builder().isTransactionalTable(false).
+          outputPath(path).buildWriterForCSVInput(new Schema(fields));
+    } catch (InvalidLoadOptionException e) {
+      e.printStackTrace();
+      Assert.assertTrue(false);
+    }
+    carbonWriter.write(new String[]{"babu","1"});
+    carbonWriter.close();
+
+  }
+
+  @Test
+  public void testTaskNo() throws IOException {
+    // TODO: write all data type and read by CarbonRecordReader to verify the content
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("stringField", DataTypes.STRING);
+    fields[1] = new Field("intField", DataTypes.INT);
+
+
+    try {
+      CarbonWriterBuilder builder = CarbonWriter.builder()
+          .isTransactionalTable(true).taskNo(5)
+          .outputPath(path);
+
+      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields));
+
+      for (int i = 0; i < 2; i++) {
+        String[] row = new String[]{
+            "robot" + (i % 10),
+            String.valueOf(i)
+        };
+        writer.write(row);
+      }
+      writer.close();
+
+      File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
+      Assert.assertTrue(segmentFolder.exists());
+
+      File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+        @Override public boolean accept(File pathname) {
+          return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
+        }
+      });
+      Assert.assertNotNull(dataFiles);
+      Assert.assertTrue(dataFiles.length > 0);
+      String taskNo = CarbonTablePath.DataFileUtil.getTaskNo(dataFiles[0].getName());
+      long taskID = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(taskNo);
+      Assert.assertEquals("Task Id is not matched", taskID, 5);
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+  finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
   }
 
 }

@@ -35,8 +35,8 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.locks.CarbonLockFactory;
@@ -47,6 +47,8 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
+import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
+import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DeleteLoadFolders;
@@ -98,15 +100,20 @@ public class SegmentStatusManager {
    * @throws IOException
    */
   public ValidAndInvalidSegmentsInfo getValidAndInvalidSegments() throws IOException {
-    return getValidAndInvalidSegments(null);
+    return getValidAndInvalidSegments(null, null);
+  }
+
+  public ValidAndInvalidSegmentsInfo getValidAndInvalidSegments(
+      LoadMetadataDetails[] loadMetadataDetails) throws IOException {
+    return getValidAndInvalidSegments(loadMetadataDetails, null);
   }
 
   /**
    * get valid segment for given load status details.
-   *
    */
   public ValidAndInvalidSegmentsInfo getValidAndInvalidSegments(
-      LoadMetadataDetails[] loadMetadataDetails) throws IOException {
+      LoadMetadataDetails[] loadMetadataDetails, ReadCommittedScope readCommittedScope)
+      throws IOException {
 
     // @TODO: move reading LoadStatus file to separate class
     List<Segment> listOfValidSegments = new ArrayList<>(10);
@@ -120,6 +127,10 @@ public class SegmentStatusManager {
         loadMetadataDetails = readTableStatusFile(
             CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()));
       }
+
+      if (readCommittedScope == null) {
+        readCommittedScope = new TableStatusReadCommittedScope(identifier, loadMetadataDetails);
+      }
       //just directly iterate Array
       for (LoadMetadataDetails segment : loadMetadataDetails) {
         if (SegmentStatus.SUCCESS == segment.getSegmentStatus()
@@ -129,7 +140,8 @@ public class SegmentStatusManager {
             || SegmentStatus.STREAMING_FINISH == segment.getSegmentStatus()) {
           // check for merged loads.
           if (null != segment.getMergedLoadName()) {
-            Segment seg = new Segment(segment.getMergedLoadName(), segment.getSegmentFile());
+            Segment seg = new Segment(segment.getMergedLoadName(), segment.getSegmentFile(),
+                readCommittedScope, segment);
             if (!listOfValidSegments.contains(seg)) {
               listOfValidSegments.add(seg);
             }
@@ -142,24 +154,26 @@ public class SegmentStatusManager {
 
           if (SegmentStatus.MARKED_FOR_UPDATE == segment.getSegmentStatus()) {
 
-            listOfValidUpdatedSegments
-                .add(new Segment(segment.getLoadName(), segment.getSegmentFile()));
+            listOfValidUpdatedSegments.add(
+                new Segment(segment.getLoadName(), segment.getSegmentFile(), readCommittedScope));
           }
           if (SegmentStatus.STREAMING == segment.getSegmentStatus()
               || SegmentStatus.STREAMING_FINISH == segment.getSegmentStatus()) {
-            listOfStreamSegments
-                .add(new Segment(segment.getLoadName(), segment.getSegmentFile()));
+            listOfStreamSegments.add(
+                new Segment(segment.getLoadName(), segment.getSegmentFile(), readCommittedScope));
             continue;
           }
-          listOfValidSegments.add(new Segment(segment.getLoadName(), segment.getSegmentFile()));
+          listOfValidSegments.add(
+              new Segment(segment.getLoadName(), segment.getSegmentFile(), readCommittedScope,
+                  segment));
         } else if ((SegmentStatus.LOAD_FAILURE == segment.getSegmentStatus()
             || SegmentStatus.COMPACTED == segment.getSegmentStatus()
             || SegmentStatus.MARKED_FOR_DELETE == segment.getSegmentStatus())) {
           listOfInvalidSegments.add(new Segment(segment.getLoadName(), segment.getSegmentFile()));
         } else if (SegmentStatus.INSERT_IN_PROGRESS == segment.getSegmentStatus() ||
             SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == segment.getSegmentStatus()) {
-          listOfInProgressSegments
-              .add(new Segment(segment.getLoadName(), segment.getSegmentFile()));
+          listOfInProgressSegments.add(
+              new Segment(segment.getLoadName(), segment.getSegmentFile(), readCommittedScope));
         }
       }
     } catch (IOException e) {
@@ -226,7 +240,7 @@ public class SegmentStatusManager {
     InputStreamReader inStream = null;
     LoadMetadataDetails[] listOfLoadFolderDetailsArray;
     AtomicFileOperations fileOperation =
-        new AtomicFileOperationsImpl(tableStatusPath, FileFactory.getFileType(tableStatusPath));
+        AtomicFileOperationFactory.getAtomicFileOperations(tableStatusPath);
 
     try {
       if (!FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
@@ -483,7 +497,7 @@ public class SegmentStatusManager {
   public static void writeLoadDetailsIntoFile(String dataLoadLocation,
       LoadMetadataDetails[] listOfLoadFolderDetailsArray) throws IOException {
     AtomicFileOperations fileWrite =
-        new AtomicFileOperationsImpl(dataLoadLocation, FileFactory.getFileType(dataLoadLocation));
+        AtomicFileOperationFactory.getAtomicFileOperations(dataLoadLocation);
     BufferedWriter brWriter = null;
     DataOutputStream dataOutputStream = null;
     Gson gsonObjectToWrite = new Gson();
@@ -756,6 +770,26 @@ public class SegmentStatusManager {
   }
 
   /**
+   * Return true if the compaction is in progress for the table
+   * @param carbonTable
+   * @return
+   */
+  public static Boolean isCompactionInProgress(CarbonTable carbonTable) {
+    if (carbonTable == null) {
+      return false;
+    }
+    boolean compactionInProgress;
+    ICarbonLock lock = CarbonLockFactory
+        .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier(), LockUsage.COMPACTION_LOCK);
+    try {
+      compactionInProgress = !lock.lockWithRetries(1, 0);
+    } finally {
+      lock.unlock();
+    }
+    return compactionInProgress;
+  }
+
+  /**
    * Return true if insert overwrite is in progress for specified table
    */
   public static Boolean isOverwriteInProgressInTable(CarbonTable carbonTable) {
@@ -837,7 +871,7 @@ public class SegmentStatusManager {
     BufferedWriter brWriter = null;
 
     AtomicFileOperations writeOperation =
-        new AtomicFileOperationsImpl(dataLoadLocation, FileFactory.getFileType(dataLoadLocation));
+        AtomicFileOperationFactory.getAtomicFileOperations(dataLoadLocation);
 
     try {
 

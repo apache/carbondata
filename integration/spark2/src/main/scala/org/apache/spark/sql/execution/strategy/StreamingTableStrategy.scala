@@ -34,7 +34,7 @@ private[sql] class StreamingTableStrategy(sparkSession: SparkSession) extends Sp
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = {
     plan match {
-      case CarbonProjectForUpdateCommand(_, databaseNameOp, tableName) =>
+      case CarbonProjectForUpdateCommand(_, databaseNameOp, tableName, columns) =>
         rejectIfStreamingTable(
           TableIdentifier(tableName, databaseNameOp),
           "Data update")
@@ -75,7 +75,7 @@ private[sql] class StreamingTableStrategy(sparkSession: SparkSession) extends Sp
     try {
       streaming = CarbonEnv.getCarbonTable(
         tableIdentifier.database, tableIdentifier.table)(sparkSession)
-        .isStreamingTable
+        .isStreamingSink
     } catch {
       case e: Exception =>
         streaming = false

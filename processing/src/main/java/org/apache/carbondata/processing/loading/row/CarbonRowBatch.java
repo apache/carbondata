@@ -22,6 +22,7 @@ import java.util.NoSuchElementException;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 
+import org.apache.commons.lang.ArrayUtils;
 
 /**
  * Batch of rows.
@@ -59,7 +60,9 @@ public class CarbonRowBatch extends CarbonIterator<CarbonRow> {
   }
 
   @Override public void remove() {
-
+    rowBatch = (CarbonRow[]) ArrayUtils.remove(rowBatch, index - 1);
+    --size;
+    --index;
   }
 
   /**

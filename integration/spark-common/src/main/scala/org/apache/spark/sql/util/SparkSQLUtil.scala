@@ -17,9 +17,14 @@
 
 package org.apache.spark.sql.util
 
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.internal.SessionState
 
 object SparkSQLUtil {
   def sessionState(sparkSession: SparkSession): SessionState = sparkSession.sessionState
+
+  def execute(logicalPlan: LogicalPlan, sparkSession: SparkSession): DataFrame = {
+    Dataset.ofRows(sparkSession, logicalPlan)
+  }
 }

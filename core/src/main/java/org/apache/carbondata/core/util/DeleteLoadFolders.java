@@ -18,10 +18,14 @@
 package org.apache.carbondata.core.util;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
+import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -31,6 +35,7 @@ import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
@@ -85,7 +90,22 @@ public final class DeleteLoadFolders {
       LoadMetadataDetails[] loadDetails,
       boolean isForceDelete,
       List<PartitionSpec> specs) {
-    for (LoadMetadataDetails oneLoad : loadDetails) {
+    CarbonTable carbonTable = DataMapStoreManager.getInstance().getCarbonTable(
+        absoluteTableIdentifier);
+    List<TableDataMap> indexDataMaps = new ArrayList<>();
+    try {
+      for (TableDataMap dataMap : DataMapStoreManager.getInstance().getAllDataMap(carbonTable)) {
+        if (dataMap.getDataMapSchema().isIndexDataMap()) {
+          indexDataMaps.add(dataMap);
+        }
+      }
+    } catch (IOException e) {
+      LOGGER.warn(String.format(
+          "Failed to get datamaps for %s.%s, therefore the datamap files could not be cleaned.",
+          absoluteTableIdentifier.getDatabaseName(), absoluteTableIdentifier.getTableName()));
+    }
+
+    for (final LoadMetadataDetails oneLoad : loadDetails) {
       if (checkIfLoadCanBeDeletedPhysically(oneLoad, isForceDelete)) {
         try {
           if (oneLoad.getSegmentFile() != null) {
@@ -134,6 +154,12 @@ public final class DeleteLoadFolders {
                   + " it seems, files are already being deleted");
             }
 
+          }
+          List<Segment> segments = new ArrayList<>(1);
+          for (TableDataMap dataMap : indexDataMaps) {
+            segments.clear();
+            segments.add(new Segment(oneLoad.getLoadName()));
+            dataMap.deleteDatamapData(segments);
           }
         } catch (IOException e) {
           LOGGER.warn("Unable to delete the file as per delete command " + oneLoad.getLoadName());

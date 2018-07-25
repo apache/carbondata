@@ -17,13 +17,10 @@
 package org.apache.carbondata.core.datastore.chunk.reader.measure;
 
 import java.io.IOException;
-import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
-import org.apache.carbondata.core.datastore.compression.Compressor;
-import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 
 /**
@@ -94,20 +91,6 @@ public abstract class AbstractMeasureChunkReaderV2V3Format extends AbstractMeasu
       }
     }
     return dataChunks;
-  }
-
-  /**
-   * Below method will be used to convert the thrift presence meta to wrapper
-   * presence meta
-   *
-   * @param presentMetadataThrift
-   * @return wrapper presence meta
-   */
-  protected BitSet getNullBitSet(
-      org.apache.carbondata.format.PresenceMeta presentMetadataThrift) {
-    Compressor compressor = CompressorFactory.getInstance().getCompressor();
-    return BitSet.valueOf(
-        compressor.unCompressByte(presentMetadataThrift.getPresent_bit_stream()));
   }
 
   /**

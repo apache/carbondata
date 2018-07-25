@@ -22,8 +22,10 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -81,8 +83,8 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
       int pageNumber, DataOutputStream dataOutputStream) throws IOException {
     byte[] input = copyBlockDataChunk(dimensionColumnDataChunks, rowNumber, pageNumber);
     ByteBuffer byteArray = ByteBuffer.wrap(input);
-    int childElement = byteArray.getInt();
-    dataOutputStream.writeInt(childElement);
+    int childElement = byteArray.getShort();
+    dataOutputStream.writeShort(childElement);
     if (childElement > 0) {
       for (int i = 0; i < childElement; i++) {
         children.get(i)
@@ -101,13 +103,60 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     }
   }
 
-  @Override public Object getDataBasedOnDataTypeFromSurrogates(ByteBuffer surrogateData) {
-    int childLength = surrogateData.getInt();
+  @Override public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
+    int childLength = dataBuffer.getShort();
     Object[] fields = new Object[childLength];
     for (int i = 0; i < childLength; i++) {
-      fields[i] =  children.get(i).getDataBasedOnDataTypeFromSurrogates(surrogateData);
+      fields[i] =  children.get(i).getDataBasedOnDataType(dataBuffer);
     }
-
     return DataTypeUtil.getDataTypeConverter().wrapWithGenericRow(fields);
+  }
+
+  @Override public Object getDataBasedOnColumn(ByteBuffer dataBuffer, CarbonDimension parent,
+      CarbonDimension child) {
+    int childLength;
+    if (parent.getOrdinal() < child.getOrdinal()) {
+      childLength = parent.getNumberOfChild();
+      Object[] fields = new Object[childLength];
+      for (int i = 0; i < childLength; i++) {
+        fields[i] = children.get(i)
+            .getDataBasedOnColumn(dataBuffer, parent.getListOfChildDimensions().get(i), child);
+      }
+      return DataTypeUtil.getDataTypeConverter().wrapWithGenericRow(fields);
+    } else if (parent.getOrdinal() > child.getOrdinal()) {
+      return null;
+    } else {
+      //      childLength = dataBuffer.getShort();
+      Object field = getDataBasedOnDataType(dataBuffer);
+      return field;
+    }
+  }
+
+  @Override public Object getDataBasedOnColumnList(Map<CarbonDimension, ByteBuffer> childBuffer,
+      CarbonDimension presentColumn) {
+    // Traverse through the Complex Tree and check if the at present column is same as the
+    // column present in the child column then fill it up else add null to the column.
+    if (childBuffer.get(presentColumn) != null) {
+      if (presentColumn.getNumberOfChild() > 0) {
+        // This is complex Column. And all its child will be present in the corresponding data
+        // buffer.
+        Object field = getDataBasedOnDataType(childBuffer.get(presentColumn));
+        return field;
+      } else {
+        // This is a child column with with primitive data type.
+        Object field = children.get(0)
+            .getDataBasedOnColumn(childBuffer.get(presentColumn), presentColumn, presentColumn);
+        return field;
+      }
+    } else {
+      int childLength;
+      childLength = presentColumn.getNumberOfChild();
+      Object[] fields = new Object[childLength];
+      for (int i = 0; i < childLength; i++) {
+        fields[i] = children.get(i)
+            .getDataBasedOnColumnList(childBuffer, presentColumn.getListOfChildDimensions().get(i));
+      }
+      return DataTypeUtil.getDataTypeConverter().wrapWithGenericRow(fields);
+    }
   }
 }

@@ -27,7 +27,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.mutate.DeleteDeltaBlockDetails;
-import org.apache.carbondata.core.util.CarbonUtil;
 
 import com.google.gson.Gson;
 
@@ -59,34 +58,6 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
   }
 
   /**
-   * This method will write the deleted records data in to disk.
-   *
-   * @param value deleted records
-   * @throws IOException if an I/O error occurs
-   */
-  @Override public void write(String value) throws IOException {
-    BufferedWriter brWriter = null;
-    try {
-      FileFactory.createNewFile(filePath, fileType);
-      dataOutStream = FileFactory.getDataOutputStream(filePath, fileType);
-      brWriter = new BufferedWriter(new OutputStreamWriter(dataOutStream,
-          CarbonCommonConstants.DEFAULT_CHARSET));
-      brWriter.write(value);
-    } catch (IOException ioe) {
-      LOGGER.error("Error message: " + ioe.getLocalizedMessage());
-    } finally {
-      if (null != brWriter) {
-        brWriter.flush();
-      }
-      if (null != dataOutStream) {
-        dataOutStream.flush();
-      }
-      CarbonUtil.closeStreams(brWriter, dataOutStream);
-    }
-
-  }
-
-  /**
    * This method will write the deleted records data in the json format.
    * @param deleteDeltaBlockDetails
    * @throws IOException
@@ -103,6 +74,7 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
       brWriter.write(deletedData);
     } catch (IOException ioe) {
       LOGGER.error("Error message: " + ioe.getLocalizedMessage());
+      throw ioe;
     } finally {
       if (null != brWriter) {
         brWriter.flush();
@@ -110,7 +82,9 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
       if (null != dataOutStream) {
         dataOutStream.flush();
       }
-      CarbonUtil.closeStreams(brWriter, dataOutStream);
+      if (null != brWriter) {
+        brWriter.close();
+      }
     }
 
   }

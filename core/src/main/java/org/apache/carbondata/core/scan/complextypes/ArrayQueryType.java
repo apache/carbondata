@@ -20,8 +20,10 @@ package org.apache.carbondata.core.scan.complextypes;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Map;
 
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -85,16 +87,26 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     children.fillRequiredBlockData(blockChunkHolder);
   }
 
-  @Override public Object getDataBasedOnDataTypeFromSurrogates(ByteBuffer surrogateData) {
-    int dataLength = surrogateData.getInt();
+  @Override public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
+    int dataLength = dataBuffer.getInt();
     if (dataLength == -1) {
       return null;
     }
     Object[] data = new Object[dataLength];
     for (int i = 0; i < dataLength; i++) {
-      data[i] = children.getDataBasedOnDataTypeFromSurrogates(surrogateData);
+      data[i] = children.getDataBasedOnDataType(dataBuffer);
     }
     return DataTypeUtil.getDataTypeConverter().wrapWithGenericArrayData(data);
+  }
+
+  @Override public Object getDataBasedOnColumn(ByteBuffer dataBuffer, CarbonDimension parent,
+      CarbonDimension child) {
+    throw new UnsupportedOperationException("Operation Unsupported for ArrayType");
+  }
+
+  @Override public Object getDataBasedOnColumnList(Map<CarbonDimension, ByteBuffer> childBuffer,
+      CarbonDimension presentColumn) {
+    throw new UnsupportedOperationException("Operation Unsupported for ArrayType");
   }
 
 }

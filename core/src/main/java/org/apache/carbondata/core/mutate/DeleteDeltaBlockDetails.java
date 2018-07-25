@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -63,12 +64,15 @@ public class DeleteDeltaBlockDetails implements Serializable {
   }
 
   public List<DeleteDeltaBlockletDetails> getBlockletDetails() {
-
     List<DeleteDeltaBlockletDetails> deleteDeltaBlockletDetailsList = new ArrayList<>();
-    Iterator<Map.Entry<String, DeleteDeltaBlockletDetails>> iterator =
-        blockletDetailsMap.entrySet().iterator();
-    while (iterator.hasNext()) {
-      deleteDeltaBlockletDetailsList.add(iterator.next().getValue());
+    if (null != blockletDetailsMap) {
+      Set<Map.Entry<String, DeleteDeltaBlockletDetails>> entries = blockletDetailsMap.entrySet();
+      if (null != entries && !entries.isEmpty()) {
+        Iterator<Map.Entry<String, DeleteDeltaBlockletDetails>> iterator = entries.iterator();
+        while (iterator.hasNext()) {
+          deleteDeltaBlockletDetailsList.add(iterator.next().getValue());
+        }
+      }
     }
     return deleteDeltaBlockletDetailsList;
   }

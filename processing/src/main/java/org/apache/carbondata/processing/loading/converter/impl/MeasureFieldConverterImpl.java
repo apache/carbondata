@@ -63,17 +63,24 @@ public class MeasureFieldConverterImpl implements FieldConverter {
   public void convert(CarbonRow row, BadRecordLogHolder logHolder)
       throws CarbonDataLoadingException {
     String value = row.getString(index);
+    row.update(convert(value, logHolder), index);
+  }
+
+  @Override
+  public Object convert(Object value, BadRecordLogHolder logHolder)
+      throws RuntimeException {
+    String literalValue = (String) (value);
     Object output;
-    boolean isNull = CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(value);
-    if (value == null || isNull) {
+    boolean isNull = CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(literalValue);
+    if (literalValue == null || isNull) {
       String message = logHolder.getColumnMessageMap().get(measure.getColName());
       if (null == message) {
         message = CarbonDataProcessorUtil
             .prepareFailureReason(measure.getColName(), measure.getDataType());
         logHolder.getColumnMessageMap().put(measure.getColName(), message);
       }
-      row.update(null, index);
-    } else if (value.length() == 0) {
+      return null;
+    } else if (literalValue.length() == 0) {
       if (isEmptyBadRecord) {
         String message = logHolder.getColumnMessageMap().get(measure.getColName());
         if (null == message) {
@@ -83,29 +90,29 @@ public class MeasureFieldConverterImpl implements FieldConverter {
         }
         logHolder.setReason(message);
       }
-      row.update(null, index);
-    } else if (value.equals(nullformat)) {
-      row.update(null, index);
+      return null;
+    } else if (literalValue.equals(nullformat)) {
+      return null;
     } else {
       try {
         if (dataField.isUseActualData()) {
-          output = DataTypeUtil.getMeasureValueBasedOnDataType(value, dataType, measure, true);
+          output =
+              DataTypeUtil.getMeasureValueBasedOnDataType(literalValue, dataType, measure, true);
         } else {
-          output = DataTypeUtil.getMeasureValueBasedOnDataType(value, dataType, measure);
+          output = DataTypeUtil.getMeasureValueBasedOnDataType(literalValue, dataType, measure);
         }
-        row.update(output, index);
+        return output;
       } catch (NumberFormatException e) {
         if (LOGGER.isDebugEnabled()) {
           LOGGER.debug("Can not convert value to Numeric type value. Value considered as null.");
         }
         logHolder.setReason(
             CarbonDataProcessorUtil.prepareFailureReason(measure.getColName(), dataType));
-        output = null;
-        row.update(output, index);
+        return null;
       }
     }
-
   }
+
 
   /**
    * Method to clean the dictionary cache. As in this MeasureFieldConverterImpl convert no

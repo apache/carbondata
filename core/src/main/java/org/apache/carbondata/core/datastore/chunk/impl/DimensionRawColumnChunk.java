@@ -18,12 +18,23 @@ package org.apache.carbondata.core.datastore.chunk.impl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.BitSet;
+import java.util.List;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkReader;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
+import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonDictionaryImpl;
+import org.apache.carbondata.format.Encoding;
+import org.apache.carbondata.format.LocalDictionaryChunk;
 
 /**
  * Contains raw dimension data,
@@ -38,6 +49,8 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
   private DimensionColumnChunkReader chunkReader;
 
   private FileReader fileReader;
+
+  private CarbonDictionary localDictionary;
 
   public DimensionRawColumnChunk(int columnIndex, ByteBuffer rawData, long offSet, int length,
       DimensionColumnChunkReader columnChunkReader) {
@@ -94,6 +107,11 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
    */
   public DimensionColumnPage convertToDimColDataChunkWithOutCache(int index) {
     assert index < pagesCount;
+    // in case of filter query filter column if filter column is decoded and stored.
+    // then return the same
+    if (dataChunks != null && null != dataChunks[index]) {
+      return dataChunks[index];
+    }
     try {
       return chunkReader.decodeColumnPage(this, index);
     } catch (Exception e) {
@@ -111,6 +129,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
         }
       }
     }
+    rawData = null;
   }
 
   public void setFileReader(FileReader fileReader) {
@@ -120,4 +139,54 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
   public FileReader getFileReader() {
     return fileReader;
   }
+
+  public CarbonDictionary getLocalDictionary() {
+    if (null != getDataChunkV3() && null != getDataChunkV3().local_dictionary
+        && null == localDictionary) {
+      try {
+        localDictionary = getDictionary(getDataChunkV3().local_dictionary);
+      } catch (IOException | MemoryException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return localDictionary;
+  }
+
+  /**
+   * Below method will be used to get the local dictionary for a blocklet
+   * @param localDictionaryChunk
+   * local dictionary chunk thrift object
+   * @return local dictionary
+   * @throws IOException
+   * @throws MemoryException
+   */
+  private CarbonDictionary getDictionary(LocalDictionaryChunk localDictionaryChunk)
+      throws IOException, MemoryException {
+    if (null != localDictionaryChunk) {
+      List<Encoding> encodings = localDictionaryChunk.getDictionary_meta().getEncoders();
+      List<ByteBuffer> encoderMetas = localDictionaryChunk.getDictionary_meta().getEncoder_meta();
+      ColumnPageDecoder decoder =
+          DefaultEncodingFactory.getInstance().createDecoder(encodings, encoderMetas);
+      ColumnPage decode = decoder.decode(localDictionaryChunk.getDictionary_data(), 0,
+          localDictionaryChunk.getDictionary_data().length);
+      BitSet usedDictionary = BitSet.valueOf(CompressorFactory.getInstance().getCompressor()
+          .unCompressByte(localDictionaryChunk.getDictionary_values()));
+      int length = usedDictionary.length();
+      int index = 0;
+      byte[][] dictionary = new byte[length][];
+      for (int i = 0; i < length; i++) {
+        if (usedDictionary.get(i)) {
+          dictionary[i] = decode.getBytes(index++);
+        } else {
+          dictionary[i] = null;
+        }
+      }
+      decode.freeMemory();
+      // as dictionary values starts from 1 setting null default value
+      dictionary[1] = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
+      return new CarbonDictionaryImpl(dictionary, usedDictionary.cardinality());
+    }
+    return null;
+  }
+
 }

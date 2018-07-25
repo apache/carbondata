@@ -33,6 +33,9 @@ import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.scan.result.BlockletScannedResult;
+import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
+import org.apache.carbondata.core.stats.QueryStatistic;
+import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -151,106 +154,112 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
    */
   @Override
   public List<Object[]> collectResultInRow(BlockletScannedResult scannedResult, int batchSize) {
+    long startTime = System.currentTimeMillis();
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
     ProjectionMeasure[] queryMeasures = executionInfo.getActualQueryMeasures();
     // scan the record and add to list
-    int rowCounter = 0;
-    while (scannedResult.hasNext() && rowCounter < batchSize) {
-      scanResultAndGetData(scannedResult);
-      if (scannedResult.containsDeletedRow(scannedResult.getCurrentRowId())) {
-        continue;
-      }
-      // re-fill dictionary and no dictionary key arrays for the newly added columns
-      if (dimensionInfo.isDictionaryColumnAdded()) {
-        dictionaryKeyArray = fillDictionaryKeyArrayWithLatestSchema(dictionaryKeyArray);
-      }
-      if (dimensionInfo.isNoDictionaryColumnAdded()) {
-        noDictionaryKeyArray = fillNoDictionaryKeyArrayWithLatestSchema(noDictionaryKeyArray);
-      }
-      prepareRow(scannedResult, listBasedResult, queryMeasures);
-      rowCounter++;
+    scanAndFillData(scannedResult, batchSize, listBasedResult, queryMeasures);
+    // re-fill dictionary and no dictionary key arrays for the newly added columns
+    if (dimensionInfo.isDictionaryColumnAdded()) {
+      fillDictionaryKeyArrayBatchWithLatestSchema(listBasedResult);
     }
+    if (dimensionInfo.isNoDictionaryColumnAdded()) {
+      fillNoDictionaryKeyArrayBatchWithLatestSchema(listBasedResult);
+    }
+    QueryStatistic resultPrepTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.RESULT_PREP_TIME);
+    resultPrepTime.addCountStatistic(QueryStatisticsConstants.RESULT_PREP_TIME,
+        resultPrepTime.getCount() + (System.currentTimeMillis() - startTime));
     return listBasedResult;
   }
 
   /**
    * This method will fill the dictionary key array with newly added dictionary columns if any
    *
-   * @param dictionaryKeyArray
+   * @param rows
    * @return
    */
-  private byte[] fillDictionaryKeyArrayWithLatestSchema(byte[] dictionaryKeyArray) {
-    ProjectionDimension[] actualQueryDimensions = executionInfo.getActualQueryDimensions();
-    int newKeyArrayLength = dimensionInfo.getNewDictionaryColumnCount();
-    long[] keyArray = null;
-    if (null != updatedCurrentBlockKeyGenerator) {
-      keyArray = updatedCurrentBlockKeyGenerator.getKeyArray(dictionaryKeyArray);
-      newKeyArrayLength += keyArray.length;
-    }
-    long[] keyArrayWithNewAddedColumns = new long[newKeyArrayLength];
-    int existingColumnKeyArrayIndex = 0;
-    int newKeyArrayIndex = 0;
-    for (int i = 0; i < dimensionInfo.getDimensionExists().length; i++) {
-      if (CarbonUtil
-          .hasEncoding(actualQueryDimensions[i].getDimension().getEncoder(), Encoding.DICTIONARY)) {
-        // if dimension exists then add the key array value else add the default value
-        if (dimensionInfo.getDimensionExists()[i]) {
-          keyArrayWithNewAddedColumns[newKeyArrayIndex++] = keyArray[existingColumnKeyArrayIndex++];
-        } else {
-          long defaultValueAsLong;
-          Object defaultValue = dimensionInfo.getDefaultValues()[i];
-          if (null != defaultValue) {
-            defaultValueAsLong = ((Integer) defaultValue).longValue();
+  private void fillDictionaryKeyArrayBatchWithLatestSchema(List<Object[]> rows) {
+    for (Object[] row : rows) {
+      ByteArrayWrapper byteArrayWrapper = (ByteArrayWrapper) row[0];
+      byte[] dictKeyArray = byteArrayWrapper.getDictionaryKey();
+      ProjectionDimension[] actualQueryDimensions = executionInfo.getActualQueryDimensions();
+      int newKeyArrayLength = dimensionInfo.getNewDictionaryColumnCount();
+      long[] keyArray = null;
+      if (null != updatedCurrentBlockKeyGenerator) {
+        keyArray = updatedCurrentBlockKeyGenerator.getKeyArray(dictKeyArray);
+        newKeyArrayLength += keyArray.length;
+      }
+      long[] keyArrayWithNewAddedColumns = new long[newKeyArrayLength];
+      int existingColumnKeyArrayIndex = 0;
+      int newKeyArrayIndex = 0;
+      for (int i = 0; i < dimensionInfo.getDimensionExists().length; i++) {
+        if (CarbonUtil.hasEncoding(actualQueryDimensions[i].getDimension().getEncoder(),
+            Encoding.DICTIONARY)) {
+          // if dimension exists then add the key array value else add the default value
+          if (dimensionInfo.getDimensionExists()[i] && null != keyArray && 0 != keyArray.length) {
+            keyArrayWithNewAddedColumns[newKeyArrayIndex++] =
+                keyArray[existingColumnKeyArrayIndex++];
           } else {
-            defaultValueAsLong = (long)CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
+            long defaultValueAsLong;
+            Object defaultValue = dimensionInfo.getDefaultValues()[i];
+            if (null != defaultValue) {
+              defaultValueAsLong = ((Integer) defaultValue).longValue();
+            } else {
+              defaultValueAsLong = (long) CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
+            }
+            keyArrayWithNewAddedColumns[newKeyArrayIndex++] = defaultValueAsLong;
           }
-          keyArrayWithNewAddedColumns[newKeyArrayIndex++] = defaultValueAsLong;
         }
       }
+      try {
+        dictKeyArray = restructuredKeyGenerator.generateKey(keyArrayWithNewAddedColumns);
+        byteArrayWrapper.setDictionaryKey(dictKeyArray);
+      } catch (KeyGenException e) {
+        throw new RuntimeException(e);
+      }
     }
-    try {
-      dictionaryKeyArray = restructuredKeyGenerator.generateKey(keyArrayWithNewAddedColumns);
-    } catch (KeyGenException e) {
-      LOGGER.error(e, e.getMessage());
-    }
-    return dictionaryKeyArray;
   }
 
   /**
    * This method will fill the no dictionary byte array with newly added no dictionary columns
    *
-   * @param noDictionaryKeyArray
+   * @param rows
    * @return
    */
-  private byte[][] fillNoDictionaryKeyArrayWithLatestSchema(byte[][] noDictionaryKeyArray) {
-    ProjectionDimension[] actualQueryDimensions = executionInfo.getActualQueryDimensions();
-    byte[][] noDictionaryKeyArrayWithNewlyAddedColumns =
-        new byte[noDictionaryKeyArray.length + dimensionInfo.getNewNoDictionaryColumnCount()][];
-    int existingColumnValueIndex = 0;
-    int newKeyArrayIndex = 0;
-    for (int i = 0; i < dimensionInfo.getDimensionExists().length; i++) {
-      if (!actualQueryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY)
-          && !actualQueryDimensions[i].getDimension().hasEncoding(Encoding.IMPLICIT)) {
-        // if dimension exists then add the byte array value else add the default value
-        if (dimensionInfo.getDimensionExists()[i]) {
-          noDictionaryKeyArrayWithNewlyAddedColumns[newKeyArrayIndex++] =
-              noDictionaryKeyArray[existingColumnValueIndex++];
-        } else {
-          byte[] newColumnDefaultValue = null;
-          Object defaultValue = dimensionInfo.getDefaultValues()[i];
-          if (null != defaultValue) {
-            newColumnDefaultValue = (byte[]) defaultValue;
-          } else if (actualQueryDimensions[i].getDimension().getDataType() == DataTypes.STRING) {
-            newColumnDefaultValue =
-                DataTypeUtil.getDataTypeConverter().convertFromByteToUTF8Bytes(
-                    CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
+  private void fillNoDictionaryKeyArrayBatchWithLatestSchema(List<Object[]> rows) {
+    for (Object[] row : rows) {
+      ByteArrayWrapper byteArrayWrapper = (ByteArrayWrapper) row[0];
+      byte[][] noDictKeyArray = byteArrayWrapper.getNoDictionaryKeys();
+      ProjectionDimension[] actualQueryDimensions = executionInfo.getActualQueryDimensions();
+      byte[][] noDictionaryKeyArrayWithNewlyAddedColumns =
+          new byte[noDictKeyArray.length + dimensionInfo.getNewNoDictionaryColumnCount()][];
+      int existingColumnValueIndex = 0;
+      int newKeyArrayIndex = 0;
+      for (int i = 0; i < dimensionInfo.getDimensionExists().length; i++) {
+        if (!actualQueryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY)
+            && !actualQueryDimensions[i].getDimension().hasEncoding(Encoding.IMPLICIT)) {
+          // if dimension exists then add the byte array value else add the default value
+          if (dimensionInfo.getDimensionExists()[i]) {
+            noDictionaryKeyArrayWithNewlyAddedColumns[newKeyArrayIndex++] =
+                noDictKeyArray[existingColumnValueIndex++];
           } else {
-            newColumnDefaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
+            byte[] newColumnDefaultValue = null;
+            Object defaultValue = dimensionInfo.getDefaultValues()[i];
+            if (null != defaultValue) {
+              newColumnDefaultValue = (byte[]) defaultValue;
+            } else if (actualQueryDimensions[i].getDimension().getDataType() == DataTypes.STRING) {
+              newColumnDefaultValue =
+                  DataTypeUtil.getDataTypeConverter().convertFromByteToUTF8Bytes(
+                      CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
+            } else {
+              newColumnDefaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
+            }
+            noDictionaryKeyArrayWithNewlyAddedColumns[newKeyArrayIndex++] = newColumnDefaultValue;
           }
-          noDictionaryKeyArrayWithNewlyAddedColumns[newKeyArrayIndex++] = newColumnDefaultValue;
         }
       }
+      byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeyArrayWithNewlyAddedColumns);
     }
-    return noDictionaryKeyArrayWithNewlyAddedColumns;
   }
 }

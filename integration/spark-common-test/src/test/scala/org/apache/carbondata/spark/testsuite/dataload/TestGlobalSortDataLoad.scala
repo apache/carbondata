@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
+import scala.collection.JavaConverters._
 import java.io.{File, FileWriter}
 
 import org.apache.commons.io.FileUtils
@@ -25,14 +26,16 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.execution.BatchedDataSourceScanExec
+import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.test.TestQueryExecutor.projectPath
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
-import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
@@ -273,7 +276,15 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(s"LOAD DATA LOCAL INPATH '$inputPath' INTO TABLE carbon_globalsort")
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "carbon_globalsort")
     val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, "0")
-    assertResult(Math.max(7, defaultParallelism) + 1)(new File(segmentDir).listFiles().length)
+    if (FileFactory.isFileExist(segmentDir)) {
+      assertResult(Math.max(4, defaultParallelism) + 1)(new File(segmentDir).listFiles().length)
+    } else {
+      val segment = Segment.getSegment("0", carbonTable.getTablePath)
+      val store = new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName)
+      store.readIndexFiles()
+      val size = store.getIndexFilesMap.asScala.map(f => f._2.size()).sum
+      assertResult(Math.max(4, defaultParallelism) + 1)(size + store.getIndexFilesMap.size())
+    }
   }
 
   test("Query with small files") {
@@ -286,7 +297,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
       }
       val df = sql("select * from carbon_globalsort")
       val scanRdd = df.queryExecution.sparkPlan.collect {
-        case b: BatchedDataSourceScanExec if b.rdd.isInstanceOf[CarbonScanRDD[InternalRow]] =>
+        case b: CarbonDataSourceScan if b.rdd.isInstanceOf[CarbonScanRDD[InternalRow]] =>
           b.rdd.asInstanceOf[CarbonScanRDD[InternalRow]]
       }.head
       assertResult(defaultParallelism)(scanRdd.getPartitions.length)
@@ -379,6 +390,11 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
   private def getIndexFileCount(tableName: String, segmentNo: String = "0"): Int = {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", tableName)
     val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentNo)
-    new SegmentIndexFileStore().getIndexFilesFromSegment(segmentDir).size()
+    if (FileFactory.isFileExist(segmentDir)) {
+      new SegmentIndexFileStore().getIndexFilesFromSegment(segmentDir).size()
+    } else {
+      val segment = Segment.getSegment(segmentNo, carbonTable.getTablePath)
+      new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName).getIndexCarbonFiles.size()
+    }
   }
 }

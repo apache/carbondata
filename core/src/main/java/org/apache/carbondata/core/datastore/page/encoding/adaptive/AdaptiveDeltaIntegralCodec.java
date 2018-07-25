@@ -57,7 +57,7 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
       this.max = (short) stats.getMax();
     } else if (srcDataType == DataTypes.INT) {
       this.max = (int) stats.getMax();
-    } else if (srcDataType == DataTypes.LONG) {
+    } else if (srcDataType == DataTypes.LONG || srcDataType == DataTypes.TIMESTAMP) {
       this.max = (long) stats.getMax();
     } else if (srcDataType == DataTypes.DOUBLE) {
       this.max = (long) (double) stats.getMax();
@@ -117,9 +117,14 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
         if (DataTypes.isDecimal(meta.getSchemaDataType())) {
           page = ColumnPage.decompressDecimalPage(meta, input, offset, length);
         } else {
-          page = ColumnPage.decompress(meta, input, offset, length);
+          page = ColumnPage.decompress(meta, input, offset, length, false);
         }
         return LazyColumnPage.newPage(page, converter);
+      }
+
+      @Override public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
+          throws MemoryException, IOException {
+        return decode(input, offset, length);
       }
     };
   }

@@ -159,17 +159,6 @@ public class LoadOption {
                     CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
                     CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT))));
 
-    optionsFinal.put(
-        "bad_record_path",
-        Maps.getOrDefault(
-            options,
-            "bad_record_path",
-            CarbonProperties.getInstance().getProperty(
-                CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH,
-                CarbonProperties.getInstance().getProperty(
-                    CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-                    CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL))));
-
     String useOnePass = Maps.getOrDefault(
         options,
         "single_pass",
@@ -196,6 +185,9 @@ public class LoadOption {
     optionsFinal.put("single_pass", String.valueOf(singlePass));
     optionsFinal.put("sort_scope", "local_sort");
     optionsFinal.put("sort_column_bounds", Maps.getOrDefault(options, "sort_column_bounds", ""));
+    optionsFinal.put(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
+        Maps.getOrDefault(options,CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
+            CarbonCommonConstants.CARBON_LOAD_MIN_NODE_SIZE_INMB_DEFAULT));
     return optionsFinal;
   }
 
@@ -244,7 +236,7 @@ public class LoadOption {
       }
     }
 
-    if (!carbonLoadModel.isCarbonUnmanagedTable() && !CarbonDataProcessorUtil
+    if (carbonLoadModel.isCarbonTransactionalTable() && !CarbonDataProcessorUtil
         .isHeaderValid(carbonLoadModel.getTableName(), csvColumns,
             carbonLoadModel.getCarbonDataLoadSchema(), staticPartitionCols)) {
       if (csvFile == null) {

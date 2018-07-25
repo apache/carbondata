@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.processing.exception;
 
-import java.util.Locale;
-
 public class SliceMergerException extends Exception {
 
   /**
@@ -36,30 +34,9 @@ public class SliceMergerException extends Exception {
    *
    * @param msg The error message for this exception.
    */
-  public SliceMergerException(String msg) {
-    super(msg);
-    this.msg = msg;
-  }
-
-  /**
-   * Constructor
-   *
-   * @param msg The error message for this exception.
-   */
   public SliceMergerException(String msg, Throwable t) {
     super(msg, t);
     this.msg = msg;
-  }
-
-  /**
-   * This method is used to get the localized message.
-   *
-   * @param locale - A Locale object represents a specific geographical,
-   *               political, or cultural region.
-   * @return - Localized error message.
-   */
-  public String getLocalizedMessage(Locale locale) {
-    return "";
   }
 
   /**

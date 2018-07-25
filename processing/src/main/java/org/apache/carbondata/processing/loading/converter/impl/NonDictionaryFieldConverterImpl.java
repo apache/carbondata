@@ -54,12 +54,19 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
 
   @Override public void convert(CarbonRow row, BadRecordLogHolder logHolder) {
     String dimensionValue = row.getString(index);
+    row.update(convert(dimensionValue, logHolder), index);
+  }
+
+  @Override
+  public Object convert(Object value, BadRecordLogHolder logHolder)
+      throws RuntimeException {
+    String dimensionValue = (String) value;
     if (null == dimensionValue && column.getDataType() != DataTypes.STRING) {
       logHolder.setReason(
           CarbonDataProcessorUtil.prepareFailureReason(column.getColName(), column.getDataType()));
-      updateWithNullValue(row);
+      return getNullValue();
     } else if (dimensionValue == null || dimensionValue.equals(nullformat)) {
-      updateWithNullValue(row);
+      return getNullValue();
     } else {
       String dateFormat = null;
       if (dataType == DataTypes.DATE) {
@@ -69,23 +76,27 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
       }
       try {
         if (!dataField.isUseActualData()) {
-          byte[] value = DataTypeUtil
+          byte[] parsedValue = DataTypeUtil
               .getBytesBasedOnDataTypeForNoDictionaryColumn(dimensionValue, dataType, dateFormat);
           if (dataType == DataTypes.STRING
-              && value.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
-            throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
-                + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
+              && parsedValue.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
+            throw new CarbonDataLoadingException(String.format(
+                "Dataload failed, String size cannot exceed %d bytes,"
+                    + " please consider long string data type",
+                CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT));
           }
-          row.update(value, index);
+          return parsedValue;
         } else {
-          Object value = DataTypeUtil
+          Object parsedValue = DataTypeUtil
               .getDataDataTypeForNoDictionaryColumn(dimensionValue, dataType, dateFormat);
-          if (dataType == DataTypes.STRING
-              && value.toString().length() > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
-            throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
-                + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
+          if (dataType == DataTypes.STRING && parsedValue.toString().length()
+              > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
+            throw new CarbonDataLoadingException(String.format(
+                "Dataload failed, String size cannot exceed %d bytes,"
+                    + " please consider long string data type",
+                CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT));
           }
-          row.update(value, index);
+          return parsedValue;
         }
       } catch (CarbonDataLoadingException e) {
         throw e;
@@ -98,24 +109,22 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
             logHolder.getColumnMessageMap().put(column.getColName(), message);
           }
           logHolder.setReason(message);
-          updateWithNullValue(row);
-        } else {
-          updateWithNullValue(row);
         }
       }
     }
+    return getNullValue();
   }
 
   @Override public void clear() {
   }
 
-  private void updateWithNullValue(CarbonRow row) {
+  private byte[] getNullValue() {
     if (dataField.isUseActualData()) {
-      row.update(null, index);
+      return null;
     } else if (dataType == DataTypes.STRING) {
-      row.update(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, index);
+      return CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
     } else {
-      row.update(CarbonCommonConstants.EMPTY_BYTE_ARRAY, index);
+      return CarbonCommonConstants.EMPTY_BYTE_ARRAY;
     }
   }
 }

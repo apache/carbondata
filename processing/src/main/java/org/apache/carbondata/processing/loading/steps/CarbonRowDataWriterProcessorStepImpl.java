@@ -18,6 +18,7 @@ package org.apache.carbondata.processing.loading.steps;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -28,14 +29,16 @@ import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
+import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
-import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.exception.BadRecordFoundException;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
@@ -75,13 +78,13 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
 
   private String tableName;
 
+  private Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap;
+
   public CarbonRowDataWriterProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
     super(configuration, child);
-  }
-
-  @Override public DataField[] getOutput() {
-    return child.getOutput();
+    this.localDictionaryGeneratorMap =
+        CarbonUtil.getLocalDictionaryModel(configuration.getTableSpec().getCarbonTable());
   }
 
   @Override public void initialize() throws IOException {
@@ -110,7 +113,8 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       writeCounter = new long[iterators.length];
       dimensionWithComplexCount = configuration.getDimensionCount();
       noDictWithComplextCount =
-          configuration.getNoDictionaryCount() + configuration.getComplexColumnCount();
+          configuration.getNoDictionaryCount() + configuration.getComplexDictionaryColumnCount()
+              + configuration.getComplexNonDictionaryColumnCount();
       dimensionCount = configuration.getDimensionCount() - noDictWithComplextCount;
       isNoDictionaryDimensionColumn =
           CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields());
@@ -153,17 +157,18 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     return null;
   }
 
-  private void doExecute(Iterator<CarbonRowBatch> iterator, int iteratorIndex) {
+  private void doExecute(Iterator<CarbonRowBatch> iterator, int iteratorIndex) throws IOException {
     String[] storeLocation = getStoreLocation(tableIdentifier);
+    DataMapWriterListener listener = getDataMapWriterListener(0);
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(
-        configuration, storeLocation, 0, iteratorIndex);
+        configuration, storeLocation, 0, iteratorIndex, listener);
+    model.setColumnLocalDictGenMap(localDictionaryGeneratorMap);
     CarbonFactHandler dataHandler = null;
     boolean rowsNotExist = true;
     while (iterator.hasNext()) {
       if (rowsNotExist) {
         rowsNotExist = false;
-        dataHandler = CarbonFactHandlerFactory
-            .createCarbonFactHandler(model, CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
+        dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(model);
         dataHandler.initialise();
       }
       processBatch(iterator.next(), dataHandler, iteratorIndex);
@@ -286,10 +291,6 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     rowCounter.getAndAdd(batch.getSize());
   }
 
-  @Override protected CarbonRow processRow(CarbonRow row) {
-    return null;
-  }
-
   class DataWriterRunnable implements Runnable {
 
     private Iterator<CarbonRowBatch> iterator;
@@ -301,7 +302,12 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     }
 
     @Override public void run() {
-      doExecute(this.iterator, iteratorIndex);
+      try {
+        doExecute(this.iterator, iteratorIndex);
+      } catch (IOException e) {
+        LOGGER.error(e);
+        throw new RuntimeException(e);
+      }
     }
   }
 }

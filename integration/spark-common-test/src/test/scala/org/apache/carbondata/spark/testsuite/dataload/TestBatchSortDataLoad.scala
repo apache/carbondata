@@ -26,8 +26,10 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
+import org.apache.carbondata.core.datamap.Segment
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
-import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
@@ -189,12 +191,14 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
   }
 
   def getIndexfileCount(tableName: String, segmentNo: String = "0"): Int = {
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      tableName
-    )
-    val segmentDir = carbonTable.getSemgentPath(segmentNo)
-    new SegmentIndexFileStore().getIndexFilesFromSegment(segmentDir).size()
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", tableName)
+    val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentNo)
+    if (FileFactory.isFileExist(segmentDir)) {
+      new SegmentIndexFileStore().getIndexFilesFromSegment(segmentDir).size()
+    } else {
+      val segment = Segment.getSegment(segmentNo, carbonTable.getTablePath)
+      new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName).getIndexCarbonFiles.size()
+    }
   }
 
   override def afterAll {

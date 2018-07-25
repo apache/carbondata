@@ -25,12 +25,12 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 
 import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.BooleanType;
 import org.apache.spark.sql.types.DateType;
-import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.sql.types.DecimalType;
 import org.apache.spark.sql.types.DoubleType;
 import org.apache.spark.sql.types.FloatType;
@@ -202,6 +202,14 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
     }
   }
 
+  @Override public void putNotNull(int rowId) {
+
+  }
+
+  @Override public void putNotNull(int rowId, int count) {
+
+  }
+
   @Override public boolean isNull(int rowId) {
     return columnVector.isNullAt(rowId);
   }
@@ -236,6 +244,18 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
 
   @Override public void setFilteredRowsExist(boolean filteredRowsExist) {
     this.filteredRowsExist = filteredRowsExist;
+  }
+
+  @Override public void setDictionary(CarbonDictionary dictionary) {
+      this.columnVector.setDictionary(dictionary);
+  }
+
+  @Override public boolean hasDictionary() {
+    return this.columnVector.hasDictionary();
+  }
+
+  @Override public CarbonColumnVector getDictionaryVector() {
+    return this.columnVector;
   }
 
   // TODO: this is copied from carbondata-spark-common module, use presto type instead of this

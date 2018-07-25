@@ -20,50 +20,81 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
+import org.apache.carbondata.presto.readers.BooleanStreamReader;
+import org.apache.carbondata.presto.readers.DecimalSliceStreamReader;
+import org.apache.carbondata.presto.readers.DoubleStreamReader;
+import org.apache.carbondata.presto.readers.IntegerStreamReader;
+import org.apache.carbondata.presto.readers.LongStreamReader;
+import org.apache.carbondata.presto.readers.ObjectStreamReader;
+import org.apache.carbondata.presto.readers.ShortStreamReader;
+import org.apache.carbondata.presto.readers.SliceStreamReader;
+import org.apache.carbondata.presto.readers.TimestampStreamReader;
+
+import com.facebook.presto.spi.block.SliceArrayBlock;
 
 public class CarbonVectorBatch {
 
-  private static final int DEFAULT_BATCH_SIZE = 1024;
+  private static final int DEFAULT_BATCH_SIZE = 4 * 1024;
 
-  private final StructField[] schema;
   private final int capacity;
-  private int numRows;
   private final CarbonColumnVectorImpl[] columns;
-
   // True if the row is filtered.
   private final boolean[] filteredRows;
-
   // Column indices that cannot have null values.
   private final Set<Integer> nullFilteredColumns;
-
+  private int numRows;
   // Total number of rows that have been filtered.
   private int numRowsFiltered = 0;
 
-
-  private CarbonVectorBatch(StructField[] schema, int maxRows) {
-    this.schema = schema;
+  private CarbonVectorBatch(StructField[] schema, CarbonDictionaryDecodeReadSupport readSupport,
+      int maxRows) {
     this.capacity = maxRows;
     this.columns = new CarbonColumnVectorImpl[schema.length];
     this.nullFilteredColumns = new HashSet<>();
     this.filteredRows = new boolean[maxRows];
+    Dictionary[] dictionaries = readSupport.getDictionaries();
+    DataType[] dataTypes = readSupport.getDataTypes();
 
     for (int i = 0; i < schema.length; ++i) {
-      StructField field = schema[i];
-      columns[i] = new CarbonColumnVectorImpl(maxRows, field.getDataType());
+      columns[i] = createDirectStreamReader(maxRows, dataTypes[i], schema[i], dictionaries[i],
+          readSupport.getSliceArrayBlock(i));
     }
-
   }
 
-
-  public static CarbonVectorBatch allocate(StructField[] schema) {
-    return new CarbonVectorBatch(schema, DEFAULT_BATCH_SIZE);
+  public static CarbonVectorBatch allocate(StructField[] schema,
+      CarbonDictionaryDecodeReadSupport readSupport) {
+    return new CarbonVectorBatch(schema, readSupport, DEFAULT_BATCH_SIZE);
   }
 
-  public static CarbonVectorBatch allocate(StructField[] schema,  int maxRows) {
-    return new CarbonVectorBatch(schema, maxRows);
+  private CarbonColumnVectorImpl createDirectStreamReader(int batchSize, DataType dataType,
+      StructField field, Dictionary dictionary, SliceArrayBlock dictionarySliceArrayBlock) {
+    if (dataType == DataTypes.BOOLEAN) {
+      return new BooleanStreamReader(batchSize, field.getDataType(), dictionary);
+    } else if (dataType == DataTypes.SHORT) {
+      return new ShortStreamReader(batchSize, field.getDataType(), dictionary);
+    } else if (dataType == DataTypes.INT || dataType == DataTypes.DATE) {
+      return new IntegerStreamReader(batchSize, field.getDataType(), dictionary);
+    } else if (dataType == DataTypes.TIMESTAMP) {
+      return new TimestampStreamReader(batchSize, field.getDataType(), dictionary);
+    } else if (dataType == DataTypes.LONG) {
+      return new LongStreamReader(batchSize, field.getDataType(), dictionary);
+    } else if (dataType == DataTypes.DOUBLE) {
+      return new DoubleStreamReader(batchSize, field.getDataType(), dictionary);
+    } else if (dataType == DataTypes.STRING) {
+      return new SliceStreamReader(batchSize, field.getDataType(), dictionarySliceArrayBlock);
+    } else if (DataTypes.isDecimal(dataType)) {
+      return new DecimalSliceStreamReader(batchSize, (DecimalType) field.getDataType(), dictionary);
+    } else {
+      return new ObjectStreamReader(batchSize, field.getDataType());
+    }
   }
+
   /**
    * Resets the batch for writing.
    */
@@ -78,18 +109,19 @@ public class CarbonVectorBatch {
     this.numRowsFiltered = 0;
   }
 
-
   /**
    * Returns the number of columns that make up this batch.
    */
-  public int numCols() { return columns.length; }
+  public int numCols() {
+    return columns.length;
+  }
 
   /**
    * Sets the number of rows that are valid. Additionally, marks all rows as "filtered" if one or
    * more of their attributes are part of a non-nullable column.
    */
   public void setNumRows(int numRows) {
-    assert(numRows <= this.capacity);
+    assert (numRows <= this.capacity);
     this.numRows = numRows;
 
     for (int ordinal : nullFilteredColumns) {
@@ -102,30 +134,33 @@ public class CarbonVectorBatch {
     }
   }
 
-
   /**
    * Returns the number of rows for read, including filtered rows.
    */
-  public int numRows() { return numRows; }
+  public int numRows() {
+    return numRows;
+  }
 
   /**
    * Returns the number of valid rows.
    */
   public int numValidRows() {
-    assert(numRowsFiltered <= numRows);
+    assert (numRowsFiltered <= numRows);
     return numRows - numRowsFiltered;
   }
 
   /**
    * Returns the column at `ordinal`.
    */
-  public CarbonColumnVectorImpl column(int ordinal) { return columns[ordinal]; }
+  public CarbonColumnVectorImpl column(int ordinal) {
+    return columns[ordinal];
+  }
 
   /**
    * Returns the max capacity (in number of rows) for this batch.
    */
-  public int capacity() { return capacity; }
-
-
+  public int capacity() {
+    return capacity;
+  }
 
 }

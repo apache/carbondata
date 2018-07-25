@@ -50,7 +50,7 @@ public class ExtendedRollingFileAppender extends RollingFileAppender {
    */
 
   private long nextRollover = 0;
-  private boolean cleanupInProgress = false;
+  private volatile boolean cleanupInProgress = false;
 
   /**
    * Total number of files at any point of time should be Backup number of
@@ -195,7 +195,9 @@ public class ExtendedRollingFileAppender extends RollingFileAppender {
     }
 
     // Do clean up finally
-    cleanUpLogs(startName, folderPath);
+    if (!cleanupInProgress) {
+      cleanUpLogs(startName, folderPath);
+    }
   }
 
   private void cleanUpLogs(final String startName, final String folderPath) {
@@ -204,9 +206,6 @@ public class ExtendedRollingFileAppender extends RollingFileAppender {
       Runnable r = new Runnable() {
 
         public void run() {
-          if (cleanupInProgress) {
-            return;
-          }
           synchronized (ExtendedRollingFileAppender.class) {
             cleanupInProgress = true;
             try {

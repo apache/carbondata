@@ -41,7 +41,7 @@ import org.apache.carbondata.processing.sort.sortdata.SortParameters
 import org.apache.carbondata.processing.store.{CarbonFactHandler, CarbonFactHandlerFactory}
 import org.apache.carbondata.processing.util.{CarbonBadRecordUtil, CarbonDataProcessorUtil}
 import org.apache.carbondata.spark.rdd.{NewRddIterator, StringArrayRow}
-import org.apache.carbondata.spark.util.Util
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, Util}
 
 object DataLoadProcessorStepOnSpark {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -254,8 +254,7 @@ object DataLoadProcessorStepOnSpark {
       while (rows.hasNext) {
         if (rowsNotExist) {
           rowsNotExist = false
-          dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(dataHandlerModel,
-            CarbonFactHandlerFactory.FactHandlerType.COLUMNAR)
+          dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(dataHandlerModel)
           dataHandler.initialise()
         }
         val row = dataWriter.processRow(rows.next(), dataHandler)

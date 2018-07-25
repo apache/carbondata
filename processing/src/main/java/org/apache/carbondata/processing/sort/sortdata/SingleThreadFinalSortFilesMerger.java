@@ -23,6 +23,7 @@ import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -233,8 +234,12 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    * @throws CarbonSortKeyAndGroupByException
    */
   public Object[] next() {
-    IntermediateSortTempRow sortTempRow = getSortedRecordFromFile();
-    return sortStepRowHandler.convertIntermediateSortTempRowTo3Parted(sortTempRow);
+    if (hasNext()) {
+      IntermediateSortTempRow sortTempRow = getSortedRecordFromFile();
+      return sortStepRowHandler.convertIntermediateSortTempRowTo3Parted(sortTempRow);
+    } else {
+      throw new NoSuchElementException("No more elements to return");
+    }
   }
 
   /**

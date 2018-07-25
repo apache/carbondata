@@ -24,8 +24,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -47,7 +47,7 @@ public class BadRecordsLogger {
    * the status
    */
   private static Map<String, String> badRecordEntry =
-      new HashMap<String, String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+      new ConcurrentHashMap<String, String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   /**
    * File Name
    */
@@ -121,6 +121,9 @@ public class BadRecordsLogger {
 
   public void addBadRecordsToBuilder(Object[] row, String reason)
       throws CarbonDataLoadingException {
+    // setting partial success entry since even if bad records are there then load
+    // status should be partial success regardless of bad record logged
+    badRecordEntry.put(taskKey, "Partially");
     if (badRecordsLogRedirect || badRecordLoggerEnable) {
       StringBuilder logStrings = new StringBuilder();
       int size = row.length;
@@ -158,10 +161,6 @@ public class BadRecordsLogger {
         }
         writeBadRecordsToFile(logStrings);
       }
-    } else {
-      // setting partial success entry since even if bad records are there then load
-      // status should be partial success regardless of bad record logged
-      badRecordEntry.put(taskKey, "Partially");
     }
   }
 
@@ -200,11 +199,6 @@ public class BadRecordsLogger {
     } catch (IOException e) {
       LOGGER.error("Error While writing bad record log File");
       throw new CarbonDataLoadingException("Error While writing bad record log File", e);
-    } finally {
-      // if the Bad record file is created means it partially success
-      // if any entry present with key that means its have bad record for
-      // that key
-      badRecordEntry.put(taskKey, "Partially");
     }
   }
 
@@ -245,9 +239,6 @@ public class BadRecordsLogger {
     } catch (IOException e) {
       LOGGER.error("Error While writing bad record csv File");
       throw new CarbonDataLoadingException("Error While writing bad record csv File", e);
-    }
-    finally {
-      badRecordEntry.put(taskKey, "Partially");
     }
   }
 

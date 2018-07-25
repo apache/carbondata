@@ -145,7 +145,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     sql(
       """create table des(a int, b string) partitioned by (c string) stored by 'carbondata'
         |tblproperties ('partition_type'='list','list_info'='1,2')""".stripMargin)
-    checkExistence(sql("describe formatted des"), true, "Partition Columns")
+    checkExistence(sql("describe formatted des"), true, "Partition Type")
     sql("drop table if exists des")
   }
 

@@ -24,10 +24,17 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty;
+
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.INDEX_COLUMNS;
 
 import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * It is the new schama of datamap and it has less fields compare to {{@link DataMapSchema}}
@@ -43,6 +50,9 @@ public class DataMapSchema implements Serializable, Writable {
    * 1. Index DataMap: provider name is class name of implementation class of DataMapFactory
    * 2. OLAP DataMap: provider name is one of the {@link DataMapClassProvider#shortName}
    */
+  // the old version the field name for providerName was className, so to de-serialization
+  // old schema provided the old field name in the alternate filed using annotation
+  @SerializedName(value = "providerName", alternate = "className")
   protected String providerName;
 
   /**
@@ -69,7 +79,6 @@ public class DataMapSchema implements Serializable, Writable {
    * child table schema
    */
   protected TableSchema childSchema;
-
 
   public DataMapSchema(String dataMapName, String providerName) {
     this.dataMapName = dataMapName;
@@ -147,14 +156,25 @@ public class DataMapSchema implements Serializable, Writable {
    */
   public boolean isIndexDataMap() {
     if (providerName.equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.getShortName()) ||
-        providerName.equalsIgnoreCase(DataMapClassProvider.TIMESERIES.getShortName())) {
+        providerName.equalsIgnoreCase(DataMapClassProvider.TIMESERIES.getShortName()) ||
+        providerName.equalsIgnoreCase(DataMapClassProvider.MV.getShortName()) ||
+        ctasQuery != null) {
       return false;
     } else {
       return true;
     }
   }
 
-  @Override public void write(DataOutput out) throws IOException {
+  /**
+   * Return true if this datamap is lazy (created with DEFERRED REBUILD syntax)
+   */
+  public boolean isLazy() {
+    String deferredRebuild = getProperties().get(DataMapProperty.DEFERRED_REBUILD);
+    return deferredRebuild != null && deferredRebuild.equalsIgnoreCase("true");
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
     out.writeUTF(dataMapName);
     out.writeUTF(providerName);
     boolean isRelationIdentifierExists = null != relationIdentifier;
@@ -178,11 +198,12 @@ public class DataMapSchema implements Serializable, Writable {
     }
   }
 
-  @Override public void readFields(DataInput in) throws IOException {
+  @Override
+  public void readFields(DataInput in) throws IOException {
     this.dataMapName = in.readUTF();
     this.providerName = in.readUTF();
-    boolean isRelationIdnentifierExists = in.readBoolean();
-    if (isRelationIdnentifierExists) {
+    boolean isRelationIdentifierExists = in.readBoolean();
+    if (isRelationIdentifierExists) {
       this.relationIdentifier = new RelationIdentifier(null, null, null);
       this.relationIdentifier.readFields(in);
     }
@@ -201,4 +222,32 @@ public class DataMapSchema implements Serializable, Writable {
     }
   }
 
+  /**
+   * Return the list of column name
+   */
+  public String[] getIndexColumns()
+      throws MalformedDataMapCommandException {
+    String columns = getProperties().get(INDEX_COLUMNS);
+    if (columns == null) {
+      columns = getProperties().get(INDEX_COLUMNS.toLowerCase());
+    }
+    if (columns == null) {
+      throw new MalformedDataMapCommandException(INDEX_COLUMNS + " DMPROPERTY is required");
+    } else if (StringUtils.isBlank(columns)) {
+      throw new MalformedDataMapCommandException(INDEX_COLUMNS + " DMPROPERTY is blank");
+    } else {
+      return columns.split(",", -1);
+    }
+  }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    DataMapSchema that = (DataMapSchema) o;
+    return Objects.equals(dataMapName, that.dataMapName);
+  }
+
+  @Override public int hashCode() {
+    return Objects.hash(dataMapName);
+  }
 }

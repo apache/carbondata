@@ -28,10 +28,12 @@ import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.types.StringType
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.metadata.schema.datamap.{DataMapClassProvider, DataMapProperty}
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 
 /**
  * Show the datamaps on the table
+ *
  * @param tableIdentifier
  */
 case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
@@ -40,35 +42,49 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
   override def output: Seq[Attribute] = {
     Seq(AttributeReference("DataMapName", StringType, nullable = false)(),
       AttributeReference("ClassName", StringType, nullable = false)(),
-      AttributeReference("Associated Table", StringType, nullable = false)())
+      AttributeReference("Associated Table", StringType, nullable = false)(),
+      AttributeReference("DataMap Properties", StringType, nullable = false)())
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
+    val dataMapSchemaList: util.List[DataMapSchema] = new util.ArrayList[DataMapSchema]()
     tableIdentifier match {
       case Some(table) =>
         Checker.validateTableExists(table.database, table.table, sparkSession)
         val carbonTable = CarbonEnv.getCarbonTable(table)(sparkSession)
         if (carbonTable.hasDataMapSchema) {
-          val schemaList = carbonTable.getTableInfo.getDataMapSchemaList
-          convertToRow(schemaList)
-        } else {
-          convertToRow(DataMapStoreManager.getInstance().getAllDataMapSchemas(carbonTable))
+          dataMapSchemaList.addAll(carbonTable.getTableInfo.getDataMapSchemaList)
         }
+        val indexSchemas = DataMapStoreManager.getInstance().getDataMapSchemasOfTable(carbonTable)
+        if (!indexSchemas.isEmpty) {
+          dataMapSchemaList.addAll(indexSchemas)
+        }
+        convertToRow(dataMapSchemaList)
       case _ =>
         convertToRow(DataMapStoreManager.getInstance().getAllDataMapSchemas)
     }
-
   }
 
   private def convertToRow(schemaList: util.List[DataMapSchema]) = {
     if (schemaList != null && schemaList.size() > 0) {
-      schemaList.asScala.map { s =>
-        var table = "(NA)"
-        val relationIdentifier = s.getRelationIdentifier
-        if (relationIdentifier != null) {
-          table = relationIdentifier.getDatabaseName + "." + relationIdentifier.getTableName
-        }
-        Row(s.getDataMapName, s.getProviderName, table)
+      schemaList.asScala
+        .map { s =>
+          val relationIdentifier = s.getRelationIdentifier
+          val table = relationIdentifier.getDatabaseName + "." + relationIdentifier.getTableName
+          // preaggregate datamap does not support user specified property, therefor we return empty
+          val dmPropertieStr = if (s.getProviderName.equalsIgnoreCase(
+              DataMapClassProvider.PREAGGREGATE.getShortName)) {
+            ""
+          } else {
+            s.getProperties.asScala
+              // ignore internal used property
+              .filter(p => !p._1.equalsIgnoreCase(DataMapProperty.DEFERRED_REBUILD) &&
+                           !p._1.equalsIgnoreCase(DataMapProperty.CHILD_SELECT_QUERY) &&
+                           !p._1.equalsIgnoreCase(DataMapProperty.QUERY_TYPE))
+              .map(p => s"'${ p._1 }'='${ p._2 }'").toSeq
+              .sorted.mkString(", ")
+          }
+        Row(s.getDataMapName, s.getProviderName, table, dmPropertieStr)
       }
     } else {
       Seq.empty

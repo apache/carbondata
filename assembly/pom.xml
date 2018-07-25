@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.apache.carbondata</groupId>
     <artifactId>carbondata-parent</artifactId>
-    <version>1.4.0-SNAPSHOT</version>
+    <version>1.5.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -89,7 +89,18 @@
           <artifactSet>
             <includes>
               <include>*:*</include>
+              <!--use the following line if we only want carbondata related classes-->
+              <!--<include>org.apache.carbondata:*</include>-->
             </includes>
+            <excludes>
+              <exclude>org.apache.hadoop:*</exclude>
+              <exclude>org.apache.spark:*</exclude>
+              <exclude>org.apache.zookeeper:*</exclude>
+              <exclude>org.apache.avro:*</exclude>
+              <exclude>com.google.guava:guava</exclude>
+              <exclude>org.xerial.snappy:snappy-java</exclude>
+              <!--add more items to be excluded from the assembly-->
+            </excludes>
           </artifactSet>
           <filters>
             <filter>

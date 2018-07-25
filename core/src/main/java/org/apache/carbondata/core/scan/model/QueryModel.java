@@ -104,6 +104,16 @@ public class QueryModel {
    */
   private boolean readPageByPage;
 
+  /**
+   * whether it require to output the row id
+   */
+  private boolean requiredRowId;
+
+  /**
+   * whether it is FG with search mode
+   */
+  private boolean isFG;
+
   private QueryModel(CarbonTable carbonTable) {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
     invalidSegmentIds = new ArrayList<>();
@@ -355,5 +365,29 @@ public class QueryModel {
 
   public void setReadPageByPage(boolean readPageByPage) {
     this.readPageByPage = readPageByPage;
+  }
+
+  public boolean isRequiredRowId() {
+    return requiredRowId;
+  }
+
+  public void setRequiredRowId(boolean requiredRowId) {
+    this.requiredRowId = requiredRowId;
+  }
+
+  public boolean isFG() {
+    return isFG;
+  }
+
+  public void setFG(boolean FG) {
+    isFG = FG;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("scan on table %s.%s, %d projection columns with filter (%s)",
+        table.getDatabaseName(), table.getTableName(),
+        projection.getDimensions().size() + projection.getMeasures().size(),
+        filterExpressionResolverTree.getFilterExpression().toString());
   }
 }

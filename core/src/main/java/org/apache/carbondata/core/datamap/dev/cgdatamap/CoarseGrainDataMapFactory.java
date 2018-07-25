@@ -21,6 +21,8 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 /**
  *  Factory for {@link CoarseGrainDataMap}
@@ -31,9 +33,14 @@ import org.apache.carbondata.core.datamap.dev.DataMapFactory;
  */
 @InterfaceAudience.Developer("DataMap")
 @InterfaceStability.Evolving
-public abstract class CoarseGrainDataMapFactory implements DataMapFactory<CoarseGrainDataMap> {
+public abstract class CoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDataMap> {
 
-  @Override public DataMapLevel getDataMapType() {
+  public CoarseGrainDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
+    super(carbonTable, dataMapSchema);
+  }
+
+  @Override
+  public DataMapLevel getDataMapLevel() {
     return DataMapLevel.CG;
   }
 }

@@ -50,7 +50,7 @@ object UpdateDataLoad {
         index,
         null,
         loadMetadataDetails)
-      // Intialize to set carbon properties
+      // Initialize to set carbon properties
       loader.initialize()
 
       loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)

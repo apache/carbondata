@@ -19,6 +19,7 @@ package org.apache.carbondata.core.locks;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -26,6 +27,8 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
  * This class contains all carbon lock utilities
@@ -121,16 +124,20 @@ public class CarbonLockUtil {
     final long segmentLockFilesPreservTime =
         CarbonProperties.getInstance().getSegmentLockFilesPreserveHours();
     AbsoluteTableIdentifier absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
-    String lockFilesDir = CarbonTablePath
-        .getLockFilesDirPath(absoluteTableIdentifier.getTablePath());
+    String lockFilesDir = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.LOCK_PATH, "");
+    if (StringUtils.isEmpty(lockFilesDir)) {
+      lockFilesDir = CarbonTablePath.getLockFilesDirPath(absoluteTableIdentifier.getTablePath());
+    } else {
+      lockFilesDir = CarbonTablePath.getLockFilesDirPath(
+          CarbonLockFactory.getLockpath(carbonTable.getTableInfo().getFactTable().getTableId()));
+    }
     CarbonFile[] files = FileFactory.getCarbonFile(lockFilesDir)
         .listFiles(new CarbonFileFilter() {
 
             @Override public boolean accept(CarbonFile pathName) {
               if (CarbonTablePath.isSegmentLockFilePath(pathName.getName())) {
-                if ((currTime - pathName.getLastModifiedTime()) > segmentLockFilesPreservTime) {
-                  return true;
-                }
+                return (currTime - pathName.getLastModifiedTime()) > segmentLockFilesPreservTime;
               }
               return false;
             }

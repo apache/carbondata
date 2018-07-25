@@ -16,22 +16,19 @@
  */
 package org.apache.carbondata.spark.testsuite.standardpartition
 
-import scala.collection.JavaConverters._
 import java.io.{File, FileWriter, IOException}
 import java.util
 import java.util.concurrent.{Callable, ExecutorService, Executors}
 
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
-import org.apache.spark.sql.execution.BatchedDataSourceScanExec
+import org.apache.spark.sql.execution.strategy.CarbonDataSourceScan
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, CarbonSession, Row}
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
-import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{CarbonMetadata, SegmentFileStore}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
@@ -308,7 +305,6 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
         |  utilization int,salary int)
         | PARTITIONED BY (workgroupcategory int, empname String, designation String)
         | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('DICTIONARY_INCLUDE'='deptname')
       """.stripMargin)
 
     val tasks = new util.ArrayList[Callable[String]]()
@@ -340,6 +336,8 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
   }
 
   test("merge carbon index disable data loading for partition table for three partition column") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "false")
     sql(
       """
         | CREATE TABLE mergeindexpartitionthree (empno int, doj Timestamp,
@@ -357,6 +355,9 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     store.readIndexFiles()
     store.getIndexFiles
     assert(store.getIndexFiles.size() == 10)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+        CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT)
   }
 
   test("load static partition table for one static partition column with load syntax issue") {
@@ -483,7 +484,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
       FileUtils.deleteDirectory(folder)
       val dataFrame = sql("select * from smallpartitionfilesread")
       val scanRdd = dataFrame.queryExecution.sparkPlan.collect {
-        case b: BatchedDataSourceScanExec if b.rdd.isInstanceOf[CarbonScanRDD[InternalRow]] => b.rdd
+        case b: CarbonDataSourceScan if b.rdd.isInstanceOf[CarbonScanRDD[InternalRow]] => b.rdd
           .asInstanceOf[CarbonScanRDD[InternalRow]]
       }.head
       assert(scanRdd.getPartitions.length < 10)

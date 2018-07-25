@@ -50,9 +50,9 @@ public final class FileFactory {
     configuration.addResource(new Path("../core-default.xml"));
   }
 
-  private static FileTypeInerface fileFileTypeInerface = new DefaultFileTypeProvider();
-  public static void setFileTypeInerface(FileTypeInerface fileTypeInerface) {
-    fileFileTypeInerface = fileTypeInerface;
+  private static FileTypeInterface fileFileTypeInterface = new DefaultFileTypeProvider();
+  public static void setFileTypeInterface(FileTypeInterface fileTypeInterface) {
+    fileFileTypeInterface = fileTypeInterface;
   }
   private FileFactory() {
 
@@ -63,7 +63,7 @@ public final class FileFactory {
   }
 
   public static FileReader getFileHolder(FileType fileType) {
-    return fileFileTypeInerface.getFileHolder(fileType);
+    return fileFileTypeInterface.getFileHolder(fileType);
   }
 
   public static FileType getFileType(String path) {
@@ -83,14 +83,14 @@ public final class FileFactory {
   }
 
   public static CarbonFile getCarbonFile(String path) {
-    return fileFileTypeInerface.getCarbonFile(path, getFileType(path));
+    return fileFileTypeInterface.getCarbonFile(path, getFileType(path));
   }
   public static CarbonFile getCarbonFile(String path, FileType fileType) {
-    return fileFileTypeInerface.getCarbonFile(path, fileType);
+    return fileFileTypeInterface.getCarbonFile(path, fileType);
   }
-  public static CarbonFile getCarbonFile(String path, FileType fileType,
+  public static CarbonFile getCarbonFile(String path,
       Configuration hadoopConf) {
-    return fileFileTypeInerface.getCarbonFile(path, fileType, hadoopConf);
+    return fileFileTypeInterface.getCarbonFile(path, getFileType(path), hadoopConf);
   }
 
   public static DataInputStream getDataInputStream(String path, FileType fileType)
@@ -256,7 +256,11 @@ public final class FileFactory {
   }
 
   public static boolean mkdirs(String filePath, FileType fileType) throws IOException {
-    return getCarbonFile(filePath).mkdirs(filePath, fileType);
+    return getCarbonFile(filePath).mkdirs(filePath);
+  }
+
+  public static boolean mkdirs(String filePath, Configuration configuration) throws IOException {
+    return getCarbonFile(filePath, configuration).mkdirs(filePath);
   }
 
   /**
@@ -269,15 +273,7 @@ public final class FileFactory {
    */
   public static DataOutputStream getDataOutputStreamUsingAppend(String path, FileType fileType)
       throws IOException {
-    if (FileType.S3 == fileType) {
-      CarbonFile carbonFile = getCarbonFile(path);
-      if (carbonFile.exists()) {
-        carbonFile.delete();
-      }
-      return carbonFile.getDataOutputStream(path,fileType);
-    } else {
-      return getCarbonFile(path).getDataOutputStreamUsingAppend(path, fileType);
-    }
+    return getCarbonFile(path).getDataOutputStreamUsingAppend(path, fileType);
   }
 
   /**

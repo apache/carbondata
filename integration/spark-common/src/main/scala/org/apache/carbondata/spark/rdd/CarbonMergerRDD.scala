@@ -31,12 +31,14 @@ import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark._
 import org.apache.spark.deploy.SparkHadoopUtil
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, NodeInfo}
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.block._
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
@@ -45,15 +47,13 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.mutate.UpdateVO
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
-import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.hadoop.util.{CarbonInputFormatUtil, CarbonInputSplitTaskInfo}
 import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger._
-import org.apache.carbondata.processing.splits.TableSplit
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.MergeResult
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, SparkDataTypeConverterImpl, Util}
@@ -80,6 +80,7 @@ class CarbonMergerRDD[K, V](
   val tableId = carbonMergerMapping.tableId
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
+    val queryStartTime = System.currentTimeMillis()
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
@@ -100,9 +101,8 @@ class CarbonMergerRDD[K, V](
       var mergeNumber = ""
       var exec: CarbonCompactionExecutor = null
       var processor: AbstractResultProcessor = null
+      var rawResultIteratorList: java.util.List[RawResultIterator] = null
       try {
-
-
         // sorting the table block info List.
         val splitList = carbonSparkPartition.split.value.getAllSplits
         val tableBlockInfoList = CarbonInputSplit.createBlocks(splitList)
@@ -133,7 +133,7 @@ class CarbonMergerRDD[K, V](
             .toList
         }
         mergeNumber = if (CompactionType.IUD_UPDDEL_DELTA == carbonMergerMapping.campactionType) {
-          tableBlockInfoList.get(0).getSegmentId
+          tableBlockInfoList.get(0).getSegment.toString
         } else {
           mergedLoadName.substring(
             mergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER) +
@@ -180,10 +180,9 @@ class CarbonMergerRDD[K, V](
         context.addTaskCompletionListener { _ =>
           close()
         }
-        // fire a query and get the results.
-        var result2: java.util.List[RawResultIterator] = null
         try {
-          result2 = exec.processTableBlocks()
+          // fire a query and get the results.
+          rawResultIteratorList = exec.processTableBlocks()
         } catch {
           case e: Throwable =>
             LOGGER.error(e)
@@ -220,7 +219,7 @@ class CarbonMergerRDD[K, V](
               carbonMergerMapping.campactionType,
               partitionSpec)
         }
-        mergeStatus = processor.execute(result2)
+        mergeStatus = processor.execute(rawResultIteratorList)
         mergeResult = tableBlockInfoList.get(0).getSegmentId + ',' + mergeNumber
 
       } catch {
@@ -234,7 +233,7 @@ class CarbonMergerRDD[K, V](
         // close all the query executor service and clean up memory acquired during query processing
         if (null != exec) {
           LOGGER.info("Cleaning up query resources acquired during compaction")
-          exec.finish()
+          exec.close(rawResultIteratorList, queryStartTime)
         }
         // clean up the resources for processor
         if (null != processor) {
@@ -327,7 +326,9 @@ class CarbonMergerRDD[K, V](
         val blockInfo = new TableBlockInfo(entry.getPath.toString,
           entry.getStart, entry.getSegmentId,
           entry.getLocations, entry.getLength, entry.getVersion,
-          updateStatusManager.getDeleteDeltaFilePath(entry.getPath.toString, entry.getSegmentId)
+          updateStatusManager.getDeleteDeltaFilePath(
+            entry.getPath.toString,
+            Segment.toSegment(entry.getSegmentId).getSegmentNo)
         )
         (!updated || (updated && (!CarbonUtil
           .isInvalidTableBlock(blockInfo.getSegmentId, blockInfo.getFilePath,
@@ -513,17 +514,4 @@ class CarbonMergerRDD[K, V](
     val theSplit = split.asInstanceOf[CarbonSparkPartition]
     theSplit.split.value.getLocations.filter(_ != "localhost")
   }
-}
-
-
-class CarbonLoadPartition(rddId: Int, val idx: Int, @transient val tableSplit: TableSplit)
-  extends Partition {
-
-  override val index: Int = idx
-  val serializableHadoopSplit = new SerializableWritable[TableSplit](tableSplit)
-
-  override def hashCode(): Int = 41 * (41 + rddId) + idx
-}
-
-case class SplitTaskInfo (splits: List[CarbonInputSplit]) extends CarbonInputSplit{
 }

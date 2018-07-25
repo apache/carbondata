@@ -19,6 +19,7 @@ package org.apache.carbondata.datamap.lucene;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -27,22 +28,31 @@ import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandExcept
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
+import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapMeta;
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMap;
+import org.apache.carbondata.core.datamap.dev.DataMapBuilder;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 
@@ -50,10 +60,31 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
  * Base implementation for CG and FG lucene DataMapFactory.
  */
 @InterfaceAudience.Internal
-abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFactory<T> {
+abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactory<T> {
 
-  static final String TEXT_COLUMNS = "text_columns";
+  /**
+   * Size of the cache to maintain in Lucene writer, if specified then it tries to aggregate the
+   * unique data till the cache limit and flush to Lucene.
+   * It is best suitable for low cardinality dimensions.
+   */
+  static final String FLUSH_CACHE = "flush_cache";
 
+  /**
+   * By default it does not use any cache.
+   */
+  static final String FLUSH_CACHE_DEFAULT_SIZE = "-1";
+
+  /**
+   * when made as true then store the data in blocklet wise in lucene , it means new folder will be
+   * created for each blocklet thus it eliminates storing on blockletid in lucene.
+   * And also it makes lucene small chuns of data
+   */
+  static final String SPLIT_BLOCKLET = "split_blocklet";
+
+  /**
+   * By default it is false
+   */
+  static final String SPLIT_BLOCKLET_DEFAULT = "true";
   /**
    * Logger
    */
@@ -79,31 +110,25 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
    */
   AbsoluteTableIdentifier tableIdentifier = null;
 
-  @Override
-  public void init(AbsoluteTableIdentifier identifier, DataMapSchema dataMapSchema)
-      throws IOException, MalformedDataMapCommandException {
-    Objects.requireNonNull(identifier);
+  List<CarbonColumn> indexedCarbonColumns = null;
+
+  int flushCacheSize;
+
+  boolean storeBlockletWise;
+
+  public LuceneDataMapFactoryBase(CarbonTable carbonTable, DataMapSchema dataMapSchema)
+      throws MalformedDataMapCommandException {
+    super(carbonTable, dataMapSchema);
+    Objects.requireNonNull(carbonTable.getAbsoluteTableIdentifier());
     Objects.requireNonNull(dataMapSchema);
 
-    this.tableIdentifier = identifier;
+    this.tableIdentifier = carbonTable.getAbsoluteTableIdentifier();
     this.dataMapName = dataMapSchema.getDataMapName();
 
-    // get carbonmetadata from carbonmetadata instance
-    CarbonMetadata carbonMetadata = CarbonMetadata.getInstance();
-
-    String tableUniqueName = identifier.getCarbonTableIdentifier().getTableUniqueName();
-
-    // get carbon table
-    CarbonTable carbonTable = carbonMetadata.getCarbonTable(tableUniqueName);
-    if (carbonTable == null) {
-      String errorMessage =
-          String.format("failed to get carbon table with name %s", tableUniqueName);
-      LOGGER.error(errorMessage);
-      throw new IOException(errorMessage);
-    }
-
     // validate DataMapSchema and get index columns
-    List<String> indexedColumns =  validateAndGetIndexedColumns(dataMapSchema, carbonTable);
+    indexedCarbonColumns =  carbonTable.getIndexedColumns(dataMapSchema);;
+    flushCacheSize = validateAndGetWriteCacheSize(dataMapSchema);
+    storeBlockletWise = validateAndGetStoreBlockletWise(dataMapSchema);
 
     // add optimizedOperations
     List<ExpressionType> optimizedOperations = new ArrayList<ExpressionType>();
@@ -114,67 +139,73 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
     // optimizedOperations.add(ExpressionType.LESSTHAN_EQUALTO);
     // optimizedOperations.add(ExpressionType.NOT);
     optimizedOperations.add(ExpressionType.TEXT_MATCH);
-    this.dataMapMeta = new DataMapMeta(indexedColumns, optimizedOperations);
-
+    this.dataMapMeta = new DataMapMeta(indexedCarbonColumns, optimizedOperations);
     // get analyzer
     // TODO: how to get analyzer ?
     analyzer = new StandardAnalyzer();
   }
 
+  public static int validateAndGetWriteCacheSize(DataMapSchema schema) {
+    String cacheStr = schema.getProperties().get(FLUSH_CACHE);
+    if (cacheStr == null) {
+      cacheStr = FLUSH_CACHE_DEFAULT_SIZE;
+    }
+    int cacheSize;
+    try {
+      cacheSize = Integer.parseInt(cacheStr);
+    } catch (NumberFormatException e) {
+      cacheSize = -1;
+    }
+    return cacheSize;
+  }
+
+  public static boolean validateAndGetStoreBlockletWise(DataMapSchema schema) {
+    String splitBlockletStr = schema.getProperties().get(SPLIT_BLOCKLET);
+    if (splitBlockletStr == null) {
+      splitBlockletStr = SPLIT_BLOCKLET_DEFAULT;
+    }
+    boolean splitBlockletWise;
+    try {
+      splitBlockletWise = Boolean.parseBoolean(splitBlockletStr);
+    } catch (NumberFormatException e) {
+      splitBlockletWise = true;
+    }
+    return splitBlockletWise;
+  }
   /**
-   * validate Lucene DataMap
-   * 1. require TEXT_COLUMNS property
-   * 2. TEXT_COLUMNS can't contains illegal argument(empty, blank)
-   * 3. TEXT_COLUMNS can't contains duplicate same columns
-   * 4. TEXT_COLUMNS should be exists in table columns
-   * 5. TEXT_COLUMNS support only String DataType columns
+   * this method will delete the datamap folders during drop datamap
+   * @throws MalformedDataMapCommandException
    */
-  private List<String> validateAndGetIndexedColumns(DataMapSchema dataMapSchema,
-      CarbonTable carbonTable) throws MalformedDataMapCommandException {
-    String textColumnsStr = dataMapSchema.getProperties().get(TEXT_COLUMNS);
-    if (textColumnsStr == null || StringUtils.isBlank(textColumnsStr)) {
+  private void deleteDatamap() throws MalformedDataMapCommandException {
+    SegmentStatusManager ssm = new SegmentStatusManager(tableIdentifier);
+    try {
+      List<Segment> validSegments = ssm.getValidAndInvalidSegments().getValidSegments();
+      for (Segment segment : validSegments) {
+        deleteDatamapData(segment);
+      }
+    } catch (IOException | RuntimeException ex) {
       throw new MalformedDataMapCommandException(
-          "Lucene DataMap require proper TEXT_COLUMNS property.");
+          "drop datamap failed, failed to delete datamap directory");
     }
-    String[] textColumns = textColumnsStr.split(",", -1);
-    for (int i = 0; i < textColumns.length; i++) {
-      textColumns[i] = textColumns[i].trim().toLowerCase();
-    }
-    for (int i = 0; i < textColumns.length; i++) {
-      if (textColumns[i].isEmpty()) {
-        throw new MalformedDataMapCommandException("TEXT_COLUMNS contains illegal argument.");
-      }
-      for (int j = i + 1; j < textColumns.length; j++) {
-        if (textColumns[i].equals(textColumns[j])) {
-          throw new MalformedDataMapCommandException(
-              "TEXT_COLUMNS has duplicate columns :" + textColumns[i]);
-        }
-      }
-    }
-    List<String> textColumnList = new ArrayList<String>(textColumns.length);
-    for (int i = 0; i < textColumns.length; i++) {
-      CarbonColumn column = carbonTable.getColumnByName(carbonTable.getTableName(), textColumns[i]);
-      if (null == column) {
-        throw new MalformedDataMapCommandException("TEXT_COLUMNS: " + textColumns[i]
-            + " does not exist in table. Please check create DataMap statement.");
-      } else if (column.getDataType() != DataTypes.STRING) {
-        throw new MalformedDataMapCommandException(
-            "TEXT_COLUMNS only supports String column. " + "Unsupported column: " + textColumns[i]
-                + ", DataType: " + column.getDataType());
-      }
-      textColumnList.add(column.getColName());
-    }
-    return textColumnList;
   }
 
   /**
    * Return a new write for this datamap
    */
   @Override
-  public DataMapWriter createWriter(Segment segment, String writeDirectoryPath) {
-    LOGGER.info("lucene data write to " + writeDirectoryPath);
-    return new LuceneDataMapWriter(
-        tableIdentifier, dataMapName, segment, writeDirectoryPath, true);
+  public DataMapWriter createWriter(Segment segment, String shardName,
+      SegmentProperties segmentProperties) {
+    LOGGER.info("lucene data write to " + shardName);
+    return new LuceneDataMapWriter(getCarbonTable().getTablePath(), dataMapName,
+        dataMapMeta.getIndexedColumns(), segment, shardName, flushCacheSize,
+        storeBlockletWise);
+  }
+
+  @Override
+  public DataMapBuilder createBuilder(Segment segment, String shardName,
+      SegmentProperties segmentProperties) {
+    return new LuceneDataMapBuilder(getCarbonTable().getTablePath(), dataMapName,
+        segment, shardName, dataMapMeta.getIndexedColumns(), flushCacheSize, storeBlockletWise);
   }
 
   /**
@@ -182,10 +213,29 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
    */
   @Override
   public List<DataMapDistributable> toDistributable(Segment segment) {
-    List<DataMapDistributable> lstDataMapDistribute = new ArrayList<DataMapDistributable>();
-    DataMapDistributable luceneDataMapDistributable = new LuceneDataMapDistributable(
-        CarbonTablePath.getSegmentPath(tableIdentifier.getTablePath(), segment.getSegmentNo()));
-    lstDataMapDistribute.add(luceneDataMapDistributable);
+    List<DataMapDistributable> lstDataMapDistribute = new ArrayList<>();
+    CarbonFile[] indexDirs =
+        getAllIndexDirs(tableIdentifier.getTablePath(), segment.getSegmentNo());
+    if (segment.getFilteredIndexShardNames().size() == 0) {
+      for (CarbonFile indexDir : indexDirs) {
+        DataMapDistributable luceneDataMapDistributable =
+            new LuceneDataMapDistributable(tableIdentifier.getTablePath(),
+                indexDir.getAbsolutePath());
+        lstDataMapDistribute.add(luceneDataMapDistributable);
+      }
+      return lstDataMapDistribute;
+    }
+    for (CarbonFile indexDir : indexDirs) {
+      // Filter out the tasks which are filtered through CG datamap.
+      if (getDataMapLevel() != DataMapLevel.FG &&
+          !segment.getFilteredIndexShardNames().contains(indexDir.getName())) {
+        continue;
+      }
+      DataMapDistributable luceneDataMapDistributable = new LuceneDataMapDistributable(
+          CarbonTablePath.getSegmentPath(tableIdentifier.getTablePath(), segment.getSegmentNo()),
+          indexDir.getAbsolutePath());
+      lstDataMapDistribute.add(luceneDataMapDistributable);
+    }
     return lstDataMapDistribute;
   }
 
@@ -210,10 +260,94 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> implements DataMapFac
 
   }
 
+  @Override
+  public void deleteDatamapData(Segment segment) throws IOException {
+    try {
+      String segmentId = segment.getSegmentNo();
+      String datamapPath = CarbonTablePath
+          .getDataMapStorePath(tableIdentifier.getTablePath(), segmentId, dataMapName);
+      if (FileFactory.isFileExist(datamapPath)) {
+        CarbonFile file = FileFactory.getCarbonFile(datamapPath,
+            FileFactory.getFileType(datamapPath));
+        CarbonUtil.deleteFoldersAndFilesSilent(file);
+      }
+    } catch (InterruptedException ex) {
+      throw new IOException("drop datamap failed, failed to delete datamap directory");
+    }
+  }
+
+  @Override
+  public void deleteDatamapData() {
+    try {
+      deleteDatamap();
+    } catch (MalformedDataMapCommandException ex) {
+      LOGGER.error(ex, "failed to delete datamap directory ");
+    }
+  }
+
   /**
    * Return metadata of this datamap
    */
   public DataMapMeta getMeta() {
     return dataMapMeta;
+  }
+
+  /**
+   * returns all the directories of lucene index files for query
+   * @param tablePath
+   * @param segmentId
+   * @return
+   */
+  private CarbonFile[] getAllIndexDirs(String tablePath, String segmentId) {
+    List<CarbonFile> indexDirs = new ArrayList<>();
+    List<TableDataMap> dataMaps = new ArrayList<>();
+    try {
+      // there can be multiple lucene datamaps present on a table, so get all datamaps and form
+      // the path till the index file directories in all datamaps folders present in each segment
+      dataMaps = DataMapStoreManager.getInstance().getAllDataMap(getCarbonTable());
+    } catch (IOException ex) {
+      LOGGER.error("failed to get datamaps");
+    }
+    if (dataMaps.size() > 0) {
+      for (TableDataMap dataMap : dataMaps) {
+        if (dataMap.getDataMapSchema().getDataMapName().equals(this.dataMapName)) {
+          List<CarbonFile> indexFiles;
+          String dmPath = CarbonTablePath.getDataMapStorePath(tablePath, segmentId,
+              dataMap.getDataMapSchema().getDataMapName());
+          FileFactory.FileType fileType = FileFactory.getFileType(dmPath);
+          final CarbonFile dirPath = FileFactory.getCarbonFile(dmPath, fileType);
+          indexFiles = Arrays.asList(dirPath.listFiles(new CarbonFileFilter() {
+            @Override
+            public boolean accept(CarbonFile file) {
+              return file.isDirectory();
+            }
+          }));
+          indexDirs.addAll(indexFiles);
+        }
+      }
+    }
+    return indexDirs.toArray(new CarbonFile[0]);
+  }
+
+  /**
+   * Further validate whether it is string column and dictionary column.
+   * Currently only string and non-dictionary column is supported for Lucene DataMap
+   */
+  @Override
+  public void validate() throws MalformedDataMapCommandException {
+    super.validate();
+    List<CarbonColumn> indexColumns = getCarbonTable().getIndexedColumns(getDataMapSchema());
+
+    for (CarbonColumn column : indexColumns) {
+      if (column.getDataType() != DataTypes.STRING) {
+        throw new MalformedDataMapCommandException(String.format(
+            "Only String column is supported, column '%s' is %s type. ",
+            column.getColName(), column.getDataType()));
+      } else if (column.getEncoder().contains(Encoding.DICTIONARY)) {
+        throw new MalformedDataMapCommandException(String.format(
+            "Dictionary column is not supported, column '%s' is dictionary column",
+            column.getColName()));
+      }
+    }
   }
 }

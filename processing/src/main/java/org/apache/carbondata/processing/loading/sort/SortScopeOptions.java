@@ -18,7 +18,6 @@
 package org.apache.carbondata.processing.loading.sort;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * Sort scope options
@@ -43,12 +42,8 @@ public class SortScopeOptions {
     }
   }
 
-  public static boolean isValidSortOption(String sortScope) {
-    return CarbonUtil.isValidSortOption(sortScope);
-  }
-
   public enum SortScope {
-    NO_SORT, BATCH_SORT, LOCAL_SORT, GLOBAL_SORT;
+    NO_SORT, BATCH_SORT, LOCAL_SORT, GLOBAL_SORT
   }
 }
 

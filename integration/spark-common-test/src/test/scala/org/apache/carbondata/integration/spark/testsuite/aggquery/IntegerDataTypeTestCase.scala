@@ -112,36 +112,48 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
   }
 
-  test("short int as target type in deltaIntegerCodec") {
+  test("test all codecs") {
     sql(
       """
-        | DROP TABLE IF EXISTS short_int_target_table
+        | DROP TABLE IF EXISTS all_encoding_table
       """.stripMargin)
 
     //begin_time column will be encoded by deltaIntegerCodec
     sql(
       """
-        | CREATE TABLE short_int_target_table
-        | (begin_time bigint, name string)
+        | CREATE TABLE all_encoding_table
+        | (begin_time bigint, name string,begin_time1 long,begin_time2 long,begin_time3 long,
+        | begin_time4 long,begin_time5 int,begin_time6 int,begin_time7 int,begin_time8 short,
+        | begin_time9 bigint,begin_time10 bigint,begin_time11 bigint,begin_time12 int,
+        | begin_time13 int,begin_time14 short,begin_time15 double,begin_time16 double,
+        | begin_time17 double,begin_time18 double,begin_time19 int,begin_time20 double)
         | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
+      """.stripMargin.replaceAll(System.lineSeparator, ""))
 
     sql(
       s"""
-         | LOAD DATA LOCAL INPATH '$resourcesPath/short_int_as_target_type.csv'
-         | INTO TABLE short_int_target_table
+         | LOAD DATA LOCAL INPATH '$resourcesPath/encoding_types.csv'
+         | INTO TABLE all_encoding_table
       """.stripMargin)
 
     checkAnswer(
-      sql("select begin_time from short_int_target_table"),
-      Seq(Row(1497376581), Row(1497423838))
+      sql("select begin_time from all_encoding_table"),
+      sql("select begin_time from all_encoding_table")
+    )
+
+    val ff = BigInt(2147484000L)
+    checkAnswer(
+      sql("select begin_time,begin_time1,begin_time2,begin_time3,begin_time4,begin_time5,begin_time6,begin_time7,begin_time8,begin_time9,begin_time10,begin_time11,begin_time12,begin_time13,begin_time14,begin_time15,begin_time16,begin_time17,begin_time18,begin_time19,begin_time20 from all_encoding_table"),
+      Seq(Row(1497376581,10000,8388600,125,1497376581,8386600,10000,100,125,1497376581,1497423738,2139095000,1497376581,1497423738,32000,123.4,11.1,3200.1,214744460.2,1497376581,1497376581),
+        Row(1497408581,32000,45000,25,10000,55000,32000,75,35,1497423838,1497423838,ff,1497423838,1497423838,31900,838860.7,12.3,127.1,214748360.2,1497408581,1497408581))
     )
 
     sql(
       """
-        | DROP TABLE short_int_target_table
+        | DROP TABLE all_encoding_table
       """.stripMargin)
   }
+
 
   test("Create a table that contains short data type") {
     sql("CREATE TABLE if not exists short_table(col1 short, col2 BOOLEAN) STORED BY 'carbondata'")

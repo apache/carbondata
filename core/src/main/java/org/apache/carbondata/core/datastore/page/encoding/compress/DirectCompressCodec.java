@@ -64,7 +64,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
     return new DirectDecompressor(meta);
   }
 
-  private static class DirectCompressor extends ColumnPageEncoder {
+  private class DirectCompressor extends ColumnPageEncoder {
 
     private Compressor compressor;
 
@@ -80,7 +80,9 @@ public class DirectCompressCodec implements ColumnPageCodec {
     @Override
     protected List<Encoding> getEncodingList() {
       List<Encoding> encodings = new ArrayList<>();
-      encodings.add(Encoding.DIRECT_COMPRESS);
+      encodings.add(dataType == DataTypes.VARCHAR ?
+          Encoding.DIRECT_COMPRESS_VARCHAR :
+          Encoding.DIRECT_COMPRESS);
       return encodings;
     }
 
@@ -106,9 +108,15 @@ public class DirectCompressCodec implements ColumnPageCodec {
       if (DataTypes.isDecimal(dataType)) {
         decodedPage = ColumnPage.decompressDecimalPage(meta, input, offset, length);
       } else {
-        decodedPage = ColumnPage.decompress(meta, input, offset, length);
+        decodedPage = ColumnPage.decompress(meta, input, offset, length, false);
       }
       return LazyColumnPage.newPage(decodedPage, converter);
+    }
+
+    @Override public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
+        throws MemoryException, IOException {
+      return LazyColumnPage
+          .newPage(ColumnPage.decompress(meta, input, offset, length, isLVEncoded), converter);
     }
   }
 

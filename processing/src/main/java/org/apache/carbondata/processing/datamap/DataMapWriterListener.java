@@ -32,8 +32,11 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.processing.store.TablePage;
 
 /**
@@ -44,19 +47,39 @@ public class DataMapWriterListener {
   private static final LogService LOG = LogServiceFactory.getLogService(
       DataMapWriterListener.class.getCanonicalName());
 
-  // list indexed column name -> list of data map writer
-  private Map<List<String>, List<DataMapWriter>> registry = new ConcurrentHashMap<>();
+  // list indexed column -> list of data map writer
+  private Map<List<CarbonColumn>, List<DataMapWriter>> registry = new ConcurrentHashMap<>();
+  // table for this listener
+  private CarbonTableIdentifier tblIdentifier;
+
+  public CarbonTableIdentifier getTblIdentifier() {
+    return tblIdentifier;
+  }
 
   /**
    * register all datamap writer for specified table and segment
    */
   public void registerAllWriter(CarbonTable carbonTable, String segmentId,
-      String dataWritePath) {
-    List<TableDataMap> tableIndices = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
+      String taskNo, SegmentProperties segmentProperties) {
+    // clear cache in executor side
+    DataMapStoreManager.getInstance()
+        .clearDataMaps(carbonTable.getCarbonTableIdentifier().getTableUniqueName());
+    List<TableDataMap> tableIndices;
+    try {
+      tableIndices = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
+    } catch (IOException e) {
+      LOG.error(e, "Error while retrieving datamaps");
+      throw new RuntimeException(e);
+    }
     if (tableIndices != null) {
+      tblIdentifier = carbonTable.getCarbonTableIdentifier();
       for (TableDataMap tableDataMap : tableIndices) {
-        DataMapFactory factory = tableDataMap.getDataMapFactory();
-        register(factory, segmentId, dataWritePath);
+        // register it only if it is not lazy datamap, for lazy datamap, user
+        // will rebuild the datamap manually
+        if (!tableDataMap.getDataMapSchema().isLazy()) {
+          DataMapFactory factory = tableDataMap.getDataMapFactory();
+          register(factory, segmentId, taskNo, segmentProperties);
+        }
       }
     }
   }
@@ -64,7 +87,8 @@ public class DataMapWriterListener {
   /**
    * Register a DataMapWriter
    */
-  private void register(DataMapFactory factory, String segmentId, String dataWritePath) {
+  private void register(DataMapFactory factory, String segmentId,
+      String taskNo, SegmentProperties segmentProperties) {
     assert (factory != null);
     assert (segmentId != null);
     DataMapMeta meta = factory.getMeta();
@@ -72,9 +96,15 @@ public class DataMapWriterListener {
       // if data map does not have meta, no need to register
       return;
     }
-    List<String> columns = factory.getMeta().getIndexedColumns();
+    List<CarbonColumn> columns = factory.getMeta().getIndexedColumns();
     List<DataMapWriter> writers = registry.get(columns);
-    DataMapWriter writer = factory.createWriter(new Segment(segmentId, null), dataWritePath);
+    DataMapWriter writer = null;
+    try {
+      writer = factory.createWriter(new Segment(segmentId), taskNo, segmentProperties);
+    } catch (IOException e) {
+      LOG.error("Failed to create DataMapWriter: " + e.getMessage());
+      throw new DataMapWriterException(e);
+    }
     if (writers != null) {
       writers.add(writer);
     } else {
@@ -85,7 +115,7 @@ public class DataMapWriterListener {
     LOG.info("DataMapWriter " + writer + " added");
   }
 
-  public void onBlockStart(String blockId, String blockPath) throws IOException {
+  public void onBlockStart(String blockId) throws IOException {
     for (List<DataMapWriter> writers : registry.values()) {
       for (DataMapWriter writer : writers) {
         writer.onBlockStart(blockId);
@@ -101,7 +131,7 @@ public class DataMapWriterListener {
     }
   }
 
-  public void onBlockletStart(int blockletId) {
+  public void onBlockletStart(int blockletId) throws IOException {
     for (List<DataMapWriter> writers : registry.values()) {
       for (DataMapWriter writer : writers) {
         writer.onBlockletStart(blockletId);
@@ -109,7 +139,7 @@ public class DataMapWriterListener {
     }
   }
 
-  public void onBlockletEnd(int blockletId) {
+  public void onBlockletEnd(int blockletId) throws IOException {
     for (List<DataMapWriter> writers : registry.values()) {
       for (DataMapWriter writer : writers) {
         writer.onBlockletEnd(blockletId);
@@ -124,16 +154,18 @@ public class DataMapWriterListener {
    * @param tablePage  page data
    */
   public void onPageAdded(int blockletId, int pageId, TablePage tablePage) throws IOException {
-    Set<Map.Entry<List<String>, List<DataMapWriter>>> entries = registry.entrySet();
-    for (Map.Entry<List<String>, List<DataMapWriter>> entry : entries) {
-      List<String> indexedColumns = entry.getKey();
+    Set<Map.Entry<List<CarbonColumn>, List<DataMapWriter>>> entries = registry.entrySet();
+    for (Map.Entry<List<CarbonColumn>, List<DataMapWriter>> entry : entries) {
+      List<CarbonColumn> indexedColumns = entry.getKey();
       ColumnPage[] pages = new ColumnPage[indexedColumns.size()];
       for (int i = 0; i < indexedColumns.size(); i++) {
-        pages[i] = tablePage.getColumnPage(indexedColumns.get(i));
+        pages[i] = tablePage.getColumnPage(indexedColumns.get(i).getColName());
       }
       List<DataMapWriter> writers = entry.getValue();
+      int pageSize = pages[0].getPageSize();
+
       for (DataMapWriter writer : writers) {
-        writer.onPageAdded(blockletId, pageId, pages);
+        writer.onPageAdded(blockletId, pageId, pageSize, pages);
       }
     }
   }
@@ -147,6 +179,7 @@ public class DataMapWriterListener {
         writer.finish();
       }
     }
+    registry.clear();
   }
 
 }

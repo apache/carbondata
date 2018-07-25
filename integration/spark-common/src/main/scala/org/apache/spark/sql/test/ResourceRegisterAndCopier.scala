@@ -49,7 +49,7 @@ object ResourceRegisterAndCopier {
       sys.error(s"""Provided path $hdfsPath does not exist""")
     }
     LOGGER.audit("Try downloading resource data")
-    val lock = new HdfsFileLock(hdfsPath + "/resource.lock")
+    val lock = new HdfsFileLock(hdfsPath, "/resource.lock")
     var bool = false
     try {
       bool = lockWithRetries(lock)

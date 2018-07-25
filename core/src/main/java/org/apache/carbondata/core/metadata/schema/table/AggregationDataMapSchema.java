@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
 import org.apache.carbondata.core.preagg.TimeSeriesFunctionEnum;
@@ -358,5 +359,22 @@ public class AggregationDataMapSchema extends DataMapSchema {
     if (null == this.aggExpToColumnMapping) {
       this.aggExpToColumnMapping = aggExpToColumnMapping;
     }
+  }
+
+  public DataMapClassProvider getProvider() {
+    return isTimeseriesDataMap ?
+        DataMapClassProvider.TIMESERIES : DataMapClassProvider.PREAGGREGATE;
+  }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    if (!super.equals(o)) return false;
+    AggregationDataMapSchema that = (AggregationDataMapSchema) o;
+    return that == this;
+  }
+
+  @Override public int hashCode() {
+    return super.hashCode();
   }
 }

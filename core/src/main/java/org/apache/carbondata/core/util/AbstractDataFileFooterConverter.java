@@ -60,7 +60,12 @@ public abstract class AbstractDataFileFooterConverter {
    */
   private static BitSet getPresenceMeta(
       org.apache.carbondata.format.PresenceMeta presentMetadataThrift) {
-    return BitSet.valueOf(presentMetadataThrift.getPresent_bit_stream());
+    final byte[] present_bit_stream = presentMetadataThrift.getPresent_bit_stream();
+    if (null != present_bit_stream) {
+      return BitSet.valueOf(present_bit_stream);
+    } else {
+      return new BitSet(1);
+    }
   }
 
   /**
@@ -84,7 +89,7 @@ public abstract class AbstractDataFileFooterConverter {
       List<org.apache.carbondata.format.ColumnSchema> table_columns =
           readIndexHeader.getTable_columns();
       for (int i = 0; i < table_columns.size(); i++) {
-        columnSchemaList.add(thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i)));
+        columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
       }
       // get the segment info
       SegmentInfo segmentInfo = getSegmentInfo(readIndexHeader.getSegment_info());
@@ -146,7 +151,7 @@ public abstract class AbstractDataFileFooterConverter {
       List<org.apache.carbondata.format.ColumnSchema> table_columns =
           readIndexHeader.getTable_columns();
       for (int i = 0; i < table_columns.size(); i++) {
-        columnSchemaList.add(thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i)));
+        columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
       }
       // get the segment info
       SegmentInfo segmentInfo = getSegmentInfo(readIndexHeader.getSegment_info());
@@ -279,12 +284,11 @@ public abstract class AbstractDataFileFooterConverter {
     return blockletIndex;
   }
 
-  protected ColumnSchema thriftColumnSchmeaToWrapperColumnSchema(
+  protected ColumnSchema thriftColumnSchemaToWrapperColumnSchema(
       org.apache.carbondata.format.ColumnSchema externalColumnSchema) {
     ColumnSchema wrapperColumnSchema = new ColumnSchema();
     wrapperColumnSchema.setColumnUniqueId(externalColumnSchema.getColumn_id());
     wrapperColumnSchema.setColumnName(externalColumnSchema.getColumn_name());
-    wrapperColumnSchema.setColumnar(externalColumnSchema.isColumnar());
     DataType dataType = thriftDataTyopeToWrapperDataType(externalColumnSchema.data_type);
     if (DataTypes.isDecimal(dataType)) {
       DecimalType decimalType = (DecimalType) dataType;
@@ -300,7 +304,6 @@ public abstract class AbstractDataFileFooterConverter {
     wrapperColumnSchema.setEncodingList(encoders);
     wrapperColumnSchema.setNumberOfChild(externalColumnSchema.getNum_child());
     wrapperColumnSchema.setPrecision(externalColumnSchema.getPrecision());
-    wrapperColumnSchema.setColumnGroup(externalColumnSchema.getColumn_group_id());
     wrapperColumnSchema.setScale(externalColumnSchema.getScale());
     wrapperColumnSchema.setDefaultValue(externalColumnSchema.getDefault_value());
     Map<String, String> properties = externalColumnSchema.getColumnProperties();
@@ -431,6 +434,8 @@ public abstract class AbstractDataFileFooterConverter {
         return DataTypes.createDefaultArrayType();
       case STRUCT:
         return DataTypes.createDefaultStructType();
+      case VARCHAR:
+        return DataTypes.VARCHAR;
       default:
         return DataTypes.STRING;
     }

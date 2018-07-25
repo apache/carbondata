@@ -46,7 +46,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
                             "../." +
                             "./src/test/resources/SparkCarbonFileFormat/WriterOutput/")
     .getCanonicalPath
-  //getCanonicalPath gives path with \, so code expects /. Need to handle in code ?
+  //getCanonicalPath gives path with \, but the code expects /.
   writerPath = writerPath.replace("\\", "/");
 
   val filePath = writerPath + "/Fact/Part0/Segment_null/"
@@ -64,13 +64,13 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
       .toString()
 
     try {
-      val builder = CarbonWriter.builder()
+      val builder = CarbonWriter.builder().isTransactionalTable(true)
       val writer =
         if (persistSchema) {
           builder.persistSchemaFile(true)
-          builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath).buildWriterForCSVInput()
+          builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema))
         } else {
-          builder.withSchema(Schema.parseJson(schema)).outputPath(writerPath).buildWriterForCSVInput()
+          builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema))
         }
 
       var i = 0
@@ -146,6 +146,34 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     sql("select count(*) from sdkOutputTable where name like 'robot%' ").show(200,false)
 
     sql("select count(*) from sdkOutputTable").show(200,false)
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(filePath).exists())
+    cleanTestData()
+  }
+
+  test("Running SQL directly and read carbondata files (sdk Writer Output) using the SparkCarbonFileFormat ") {
+    buildTestData(false)
+    assert(new File(filePath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    //data source file format
+    if (sqlContext.sparkContext.version.startsWith("2.1")) {
+      //data source file format
+      sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
+    } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+      //data source file format
+      sql(
+        s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
+           |'$filePath' """.stripMargin)
+    } else {
+      // TO DO
+    }
+
+    val directSQL = sql(s"""select * FROM  carbonfile.`$filePath`""".stripMargin)
+    directSQL.show(false)
+    checkAnswer(sql("select * from sdkOutputTable"), directSQL)
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
@@ -318,7 +346,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
       {
         sql("select * from sdkOutputTable").show(false)
       }
-    assert(exception.getMessage().contains("Index file not present to read the carbondata file"))
+    assert(exception.getMessage().contains("Error while taking index snapshot"))
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files

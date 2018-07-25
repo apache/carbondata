@@ -25,7 +25,6 @@ import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
 
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.examples.util.ExampleUtils
-import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
 case class FileElement(school: Array[String], age: Int)
 case class StreamData(id: Int, name: String, city: String, salary: Float, file: FileElement)
@@ -170,8 +169,6 @@ object StreamingWithRowParserExample {
             .option("checkpointLocation", CarbonTablePath.getStreamingCheckpointDir(tablePath))
             .option("dbName", "default")
             .option("tableName", "stream_table_with_row_parser")
-            .option(CarbonStreamParser.CARBON_STREAM_PARSER,
-              CarbonStreamParser.CARBON_STREAM_PARSER_ROW_PARSER)
             .start()
 
           qry.awaitTermination()

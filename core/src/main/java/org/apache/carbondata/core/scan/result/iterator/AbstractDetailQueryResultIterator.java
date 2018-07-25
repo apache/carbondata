@@ -82,7 +82,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
   /**
    * number of cores which can be used
    */
-  private int batchSize;
+  protected int batchSize;
   /**
    * queryStatisticsModel to store query statistics object
    */
@@ -135,14 +135,19 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
       } else {
         DataRefNode startDataBlock =
             finder.findFirstDataBlock(dataRefNode, blockInfo.getStartKey());
-        while (startDataBlock.nodeIndex() < blockInfo.getStartBlockletIndex()) {
+        while ((null != startDataBlock) && (startDataBlock.nodeIndex() < blockInfo
+            .getStartBlockletIndex())) {
           startDataBlock = startDataBlock.getNextDataRefNode();
         }
         long numberOfBlockToScan = blockInfo.getNumberOfBlockletToScan();
         //if number of block is less than 0 then take end block.
         if (numberOfBlockToScan <= 0) {
           DataRefNode endDataBlock = finder.findLastDataBlock(dataRefNode, blockInfo.getEndKey());
-          numberOfBlockToScan = endDataBlock.nodeIndex() - startDataBlock.nodeIndex() + 1;
+          if (null != startDataBlock) {
+            numberOfBlockToScan = endDataBlock.nodeIndex() - startDataBlock.nodeIndex() + 1;
+          } else {
+            numberOfBlockToScan = endDataBlock.nodeIndex() + 1;
+          }
         }
         blockInfo.setFirstDataBlock(startDataBlock);
         blockInfo.setNumberOfBlockToScan(numberOfBlockToScan);
@@ -294,6 +299,27 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
     queryStatisticsModel.getStatisticsTypeAndObjMap()
         .put(QueryStatisticsConstants.READ_BLOCKlET_TIME, readTime);
     queryStatisticsModel.getRecorder().recordStatistics(readTime);
+
+    // dimension filling time
+    QueryStatistic keyColumnFilingTime = new QueryStatistic();
+    queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .put(QueryStatisticsConstants.KEY_COLUMN_FILLING_TIME, keyColumnFilingTime);
+    queryStatisticsModel.getRecorder().recordStatistics(keyColumnFilingTime);
+    // measure filling time
+    QueryStatistic measureFilingTime = new QueryStatistic();
+    queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .put(QueryStatisticsConstants.MEASURE_FILLING_TIME, measureFilingTime);
+    queryStatisticsModel.getRecorder().recordStatistics(measureFilingTime);
+    // page Io Time
+    QueryStatistic pageUncompressTime = new QueryStatistic();
+    queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .put(QueryStatisticsConstants.PAGE_UNCOMPRESS_TIME, pageUncompressTime);
+    queryStatisticsModel.getRecorder().recordStatistics(pageUncompressTime);
+    // result preparation time
+    QueryStatistic resultPreparationTime = new QueryStatistic();
+    queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .put(QueryStatisticsConstants.RESULT_PREP_TIME, resultPreparationTime);
+    queryStatisticsModel.getRecorder().recordStatistics(resultPreparationTime);
   }
 
   public void processNextBatch(CarbonColumnarBatch columnarBatch) {

@@ -71,6 +71,74 @@ public class AndExpressionTest {
     assertTrue(actualValue instanceof ExpressionResult);
   }
 
+  @Test public void testEvaluate1() throws FilterIllegalMemberException,
+      FilterUnsupportedException {
+    RowImpl rowImpl = new RowImpl();
+    rowImpl.setValues(new Boolean[] { false });
+    final ExpressionResult expressionResult = new ExpressionResult(DataTypes.BOOLEAN, "true");
+    new MockUp<ColumnExpression>() {
+      @Mock public ExpressionResult evaluate(RowIntf value) {
+        return expressionResult;
+      }
+    };
+
+    assertTrue(andExpression.evaluate(rowImpl) instanceof ExpressionResult);
+  }
+
+  @Test public void testEvaluate2() throws FilterIllegalMemberException,
+      FilterUnsupportedException {
+    RowImpl rowImpl = new RowImpl();
+    rowImpl.setValues(new Boolean[] { false });
+    final ExpressionResult expressionResultRight = new ExpressionResult(DataTypes.BOOLEAN, "false");
+    final ExpressionResult expressionResultLeft = new ExpressionResult(DataTypes.BOOLEAN, "true");
+    new MockUp<ColumnExpression>() {
+      boolean isLeft = true;
+      @Mock public ExpressionResult evaluate(RowIntf value) {
+        if (isLeft) {
+          isLeft = false;
+          return expressionResultLeft;
+        }
+        return expressionResultRight;
+      }
+    };
+
+    assertTrue(andExpression.evaluate(rowImpl) instanceof ExpressionResult);
+  }
+
+  @Test public void testEvaluate3() throws FilterIllegalMemberException,
+      FilterUnsupportedException {
+    RowImpl rowImpl = new RowImpl();
+    rowImpl.setValues(new Boolean[] { false });
+    final ExpressionResult expressionResultRight = new ExpressionResult(DataTypes.BOOLEAN, "false");
+    final ExpressionResult expressionResultLeft = new ExpressionResult(DataTypes.BOOLEAN, "false");
+    new MockUp<ColumnExpression>() {
+      boolean isLeft = true;
+      @Mock public ExpressionResult evaluate(RowIntf value) {
+        if (isLeft) {
+          isLeft = false;
+          return expressionResultLeft;
+        }
+        return expressionResultRight;
+      }
+    };
+
+    assertTrue(andExpression.evaluate(rowImpl) instanceof ExpressionResult);
+  }
+
+  @Test public void testEvaluate4()
+      throws FilterIllegalMemberException, FilterUnsupportedException {
+    RowImpl rowImpl = new RowImpl();
+    rowImpl.setValues(new Boolean[] { false });
+    final ExpressionResult expressionResult = new ExpressionResult(DataTypes.BOOLEAN, "false");
+    new MockUp<ColumnExpression>() {
+      @Mock public ExpressionResult evaluate(RowIntf value) {
+        return expressionResult;
+      }
+    };
+
+    assertTrue(andExpression.evaluate(rowImpl) instanceof ExpressionResult);
+  }
+
   @Test public void testGetString() {
     String actualValue = andExpression.getString();
     String expectedValue = "And(ColumnExpression(IMEI),ColumnExpression(IMEI))";

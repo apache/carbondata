@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertNotSame;
 import static junit.framework.TestCase.assertTrue;
 
 public class ByteArrayWrapperTest {
@@ -30,6 +31,9 @@ public class ByteArrayWrapperTest {
   byte[] dictionaryKey = new byte[] { 1 };
   byte[][] complexTypesKeys = { { 1 }, { 1 } };
   byte[][] noDictionaryKeys = new byte[][] { { 1 }, { 1 } };
+  byte[] dictionaryKey1 = new byte[] { 2 };
+  byte[][] complexTypesKeys1 = { { 2 }, { 1 } };
+  byte[][] noDictionaryKeys1 = new byte[][] { { 2 }, { 1 } };
 
   @BeforeClass
 
@@ -91,6 +95,33 @@ public class ByteArrayWrapperTest {
     assertTrue(result);
   }
 
+  @Test
+
+  public void testEqualsForFirstElementComplexTypesKeysAndOther1() {
+    ByteArrayWrapper other = new ByteArrayWrapper();
+    other.setComplexTypesKeys(complexTypesKeys);
+    other.setDictionaryKey(dictionaryKey);
+    other.setNoDictionaryKeys(noDictionaryKeys);
+    byteArrayWrapper.setComplexTypesKeys(complexTypesKeys);
+    byteArrayWrapper.setDictionaryKey(dictionaryKey);
+    byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys1);
+    boolean result = byteArrayWrapper.equals(other);
+    assertFalse(result);
+  }
+
+  @Test
+  public void testEqualsForFirstElementComplexTypesKeysAndOther2() {
+    ByteArrayWrapper other = new ByteArrayWrapper();
+    other.setComplexTypesKeys(complexTypesKeys);
+    other.setDictionaryKey(dictionaryKey);
+    other.setNoDictionaryKeys(noDictionaryKeys);
+    byteArrayWrapper.setComplexTypesKeys(complexTypesKeys1);
+    byteArrayWrapper.setDictionaryKey(dictionaryKey);
+    byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
+    boolean result = byteArrayWrapper.equals(other);
+    assertFalse(result);
+  }
+
   @Test public void testCompareTo() {
     byteArrayWrapper.setDictionaryKey(dictionaryKey);
     ByteArrayWrapper other = new ByteArrayWrapper();
@@ -102,5 +133,31 @@ public class ByteArrayWrapperTest {
     int actualResult = byteArrayWrapper.compareTo(other);
     int expectedResult = 0;
     assertEquals(expectedResult, actualResult);
+  }
+
+  @Test public void testCompareTo1() {
+    byteArrayWrapper.setDictionaryKey(dictionaryKey1);
+    ByteArrayWrapper other = new ByteArrayWrapper();
+    other.setDictionaryKey(dictionaryKey1);
+    other.setNoDictionaryKeys(noDictionaryKeys);
+    other.setComplexTypesKeys(complexTypesKeys);
+    byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
+    byteArrayWrapper.setComplexTypesKeys(complexTypesKeys1);
+    int actualResult = byteArrayWrapper.compareTo(other);
+    int expectedResult = 0;
+    assertNotSame(expectedResult, actualResult);
+  }
+
+  @Test public void testCompareTo2() {
+    byteArrayWrapper.setDictionaryKey(dictionaryKey);
+    ByteArrayWrapper other = new ByteArrayWrapper();
+    other.setDictionaryKey(dictionaryKey);
+    other.setNoDictionaryKeys(noDictionaryKeys);
+    other.setComplexTypesKeys(complexTypesKeys);
+    byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys1);
+    byteArrayWrapper.setComplexTypesKeys(complexTypesKeys1);
+    int actualResult = byteArrayWrapper.compareTo(other);
+    int expectedResult = 0;
+    assertNotSame(expectedResult, actualResult);
   }
 }
