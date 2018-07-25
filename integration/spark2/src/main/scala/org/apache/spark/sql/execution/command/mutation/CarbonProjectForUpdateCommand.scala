@@ -70,6 +70,9 @@ private[sql] case class CarbonProjectForUpdateCommand(
     if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
+    if (SegmentStatusManager.isCompactionInProgress(carbonTable)) {
+      throw new ConcurrentOperationException(carbonTable, "compaction", "data update")
+    }
     if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
       throw new ConcurrentOperationException(carbonTable, "loading", "data update")
     }
