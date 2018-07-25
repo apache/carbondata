@@ -33,6 +33,7 @@ import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
+import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.memory.MemoryException;
@@ -93,7 +94,8 @@ public class MinMaxIndexDataMap extends CoarseGrainDataMap {
     BufferedReader buffReader = null;
     InputStreamReader inStream = null;
     MinMaxIndexBlockDetails[] readMinMax = null;
-    AtomicFileOperations fileOperation = AtomicFileOperationsF(filePath, FileFactory.getFileType(filePath));
+    AtomicFileOperations fileOperation =
+        AtomicFileOperationFactory.getAtomicFileOperations(filePath);
 
     try {
       if (!FileFactory.isFileExist(filePath, FileFactory.getFileType(filePath))) {
