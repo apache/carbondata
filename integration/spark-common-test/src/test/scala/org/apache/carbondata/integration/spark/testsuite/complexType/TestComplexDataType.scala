@@ -1009,4 +1009,12 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
         CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
   }
+  test("test null values in primitive data type and select all data types including complex data type") {
+    sql("DROP TABLE IF EXISTS table1")
+    sql(
+      "create table table1 (id int, name string, structField struct<intval:int, stringval:string>) stored by 'carbondata'")
+    sql("insert into table1 values(null,'aaa','23$bb')")
+    checkAnswer(sql("select * from table1"),Seq(Row(null,"aaa", Row(23,"bb"))))
+  }
+
 }
