@@ -141,7 +141,103 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
                    'SORT_SCOPE'='NO_SORT')
    ```
   **NOTE:** CarbonData also supports "using carbondata". Find example code at [SparkSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/SparkSessionExample.scala) in the CarbonData repo.
-
+   
+   - **Caching Min/Max Value for Required Columns**
+     By default, CarbonData caches min and max values of all the columns in schema.  As the load increases, the memory required to hold the min and max values increases considerably. This feature enables you to configure min and max values only for the required columns, resulting in optimized memory usage. 
+	 
+	 Following are the valid values for COLUMN_META_CACHE:
+	 * If you want no column min/max values to be cached in the driver.
+	 
+	 ```
+	 COLUMN_META_CACHE=’’
+	 ```
+	 
+	 * If you want only col1 min/max values to be cached in the driver.
+	 
+	 ```
+	 COLUMN_META_CACHE=’col1’
+	 ```
+	 
+	 * If you want min/max values to be cached in driver for all the specified columns.
+	 
+	 ```
+	 COLUMN_META_CACHE=’col1,col2,col3,…’
+	 ```
+	 
+	 Columns to be cached can be specifies either while creating tale or after creation of the table.
+	 During create table operation; specify the columns to be cached in table properties.
+	 
+	 Syntax:
+	 
+	 ```
+	 CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED BY ‘carbondata’ TBLPROPERTIES (‘COLUMN_META_CACHE’=’col1,col2,…’)
+	 ```
+	 
+	 Example:
+	 
+	 ```
+	 CREATE TABLE employee (name String, city String, id int) STORED BY ‘carbondata’ TBLPROPERTIES (‘COLUMN_META_CACHE’=’name’)
+	 ```
+	 
+	 After creation of table or on already created tables use the alter table command to configure the columns to be cached.
+	 
+	 Syntax:
+	 
+	 ```
+	 ALTER TABLE [dbName].tableName SET TBLPROPERTIES (‘COLUMN_META_CACHE’=’col1,col2,…’)
+	 ```
+	 
+	 Example:
+	 
+	 ```
+	 ALTER TABLE employee SET TBLPROPERTIES (‘COLUMN_META_CACHE’=’city’)
+	 ```
+	 
+   - **Caching at Block or Blocklet Level**
+     This feature allows you to maintain the cache at Block level, resulting in optimized usage of the memory. The memory consumption is high if the Blocklet level caching is maintained as a Block can have multiple Blocklet.
+	 
+	 Following are the valid values for CACHE_LEVEL:
+	 * Configuration for caching in driver at Block level (default value).
+	 
+	 ```
+	 CACHE_LEVEL= ‘BLOCK’
+	 ```
+	 
+	 * Configuration for caching in driver at Blocklet level.
+	 
+	 ```
+	 CACHE_LEVEL= ‘BLOCKLET’
+	 ```
+	 
+	 Cache level can be specified either while creating table or after creation of the table.
+	 During create table operation specify the cache level in table properties.
+	 
+	 Syntax:
+	 
+	 ```
+	 CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED BY ‘carbondata’ TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+	 ```
+	 
+	 Example:
+	 
+	 ```
+	 CREATE TABLE employee (name String, city String, id int) STORED BY ‘carbondata’ TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+	 ```
+	 
+	 After creation of table or on already created tables use the alter table command to configure the cache level.
+	 
+	 Syntax:
+	 
+	 ```
+	 ALTER TABLE [dbName].tableName SET TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+	 ```
+	 
+	 Example:
+	 
+	 ```
+	 ALTER TABLE employee SET TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+	 ```
+	 
 ## CREATE TABLE AS SELECT
   This function allows user to create a Carbon table from any of the Parquet/Hive/Carbon table. This is beneficial when the user wants to create Carbon table from any other Parquet/Hive table and use the Carbon query engine to query and achieve better query results for cases where Carbon is faster than other file formats. Also this feature can be used for backing up the data.
 
