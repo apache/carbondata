@@ -1532,8 +1532,10 @@ public final class CarbonProperties {
     if (systemLocation == null) {
       systemLocation = getStorePath();
     }
-    systemLocation = CarbonUtil.checkAndAppendFileSystemURIScheme(systemLocation);
-    systemLocation = FileFactory.getUpdatedFilePath(systemLocation);
+    if (systemLocation != null) {
+      systemLocation = CarbonUtil.checkAndAppendFileSystemURIScheme(systemLocation);
+      systemLocation = FileFactory.getUpdatedFilePath(systemLocation);
+    }
     return systemLocation + CarbonCommonConstants.FILE_SEPARATOR + "_system";
   }
 
