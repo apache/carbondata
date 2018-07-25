@@ -873,6 +873,18 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists datamap46")
   }
 
+  test("jira carbondata-2539") {
+
+    sql("drop datamap if exists datamap_subqry")
+    sql("create datamap datamap_subqry using 'mv' as select empname, min(salary) from fact_table1 group by empname")
+    sql("rebuild datamap datamap_subqry")
+    val frame = sql(
+      "SELECT max(utilization) FROM fact_table1 WHERE salary IN (select min(salary) from fact_table1 group by empname ) group by empname")
+    val analyzed = frame.queryExecution.analyzed
+    assert(verifyMVDataMap(analyzed, "datamap_subqry"))
+    sql("drop datamap if exists datamap_subqry")
+  }
+
   def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
     val tables = logicalPlan collect {
       case l: LogicalRelation => l.catalogTable.get
