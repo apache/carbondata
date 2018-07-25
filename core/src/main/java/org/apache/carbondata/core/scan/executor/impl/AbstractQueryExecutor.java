@@ -270,11 +270,13 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // set column schema details
     detailInfo.setColumnSchemas(fileFooter.getColumnInTable());
     detailInfo.setRowCount(blockletInfo.getNumberOfRows());
-    byte[][] minValues = BlockletDataMapUtil.updateMinValues(segmentProperties,
-        blockletInfo.getBlockletIndex().getMinMaxIndex().getMinValues());
-    byte[][] maxValues = BlockletDataMapUtil.updateMaxValues(segmentProperties,
-        blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues());
+    byte[][] maxValues = blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues();
+    byte[][] minValues = blockletInfo.getBlockletIndex().getMinMaxIndex().getMinValues();
     if (blockletDetailInfo.isLegacyStore()) {
+      minValues = BlockletDataMapUtil.updateMinValues(segmentProperties,
+          blockletInfo.getBlockletIndex().getMinMaxIndex().getMinValues());
+      maxValues = BlockletDataMapUtil.updateMaxValues(segmentProperties,
+          blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues());
       // update min and max values in case of old store for measures as min and max is written
       // opposite for measures in old store ( store <= 1.1 version)
       maxValues = CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, false);
