@@ -587,24 +587,28 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
 
     sql("EXPLAIN SELECT * FROM main WHERE TEXT_MATCH('name:bob')").show(false)
     val rows = sql("EXPLAIN SELECT * FROM main WHERE TEXT_MATCH('name:bob')").collect()
-
-    assertResult(
-      """== CarbonData Profiler ==
-        |Table Scan on main
-        | - total blocklets: 1
-        | - filter: TEXT_MATCH('name:bob')
-        | - pruned by Main DataMap
-        |    - skipped blocklets: 0
-        | - pruned by FG DataMap
-        |    - name: dm
-        |    - provider: lucene
-        |    - skipped blocklets: 1
-        |""".stripMargin)(rows(0).getString(0))
-
-    LuceneFineGrainDataMapSuite.deleteFile(file1)
-    sql("drop datamap dm on table main")
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.BLOCKLET_SIZE, CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
+    // sometimes the plan comparison is failing even in case of both the plan being same.
+    // once the failure happens the dropped datamap is not getting executed
+    // and due to this other test cases also failing.
+    try {
+      assertResult(
+        """== CarbonData Profiler ==
+          |Table Scan on main
+          | - total blocklets: 1
+          | - filter: TEXT_MATCH('name:bob')
+          | - pruned by Main DataMap
+          |    - skipped blocklets: 0
+          | - pruned by FG DataMap
+          |    - name: dm
+          |    - provider: lucene
+          |    - skipped blocklets: 1
+          |""".stripMargin)(rows(0).getString(0))
+    } finally {
+      LuceneFineGrainDataMapSuite.deleteFile(file1)
+      sql("drop datamap dm on table main")
+      CarbonProperties.getInstance().addProperty(
+        CarbonCommonConstants.BLOCKLET_SIZE, CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
+    }
   }
 
   test("test lucene datamap creation for blocked features") {
@@ -909,9 +913,6 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS table_stop")
     sql("use default")
     sql("drop database if exists lucene cascade")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION,
-        CarbonProperties.getStorePath)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS,
         CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS_DEFAULT)
