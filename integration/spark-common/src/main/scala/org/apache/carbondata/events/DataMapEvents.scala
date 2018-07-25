@@ -27,7 +27,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
  * example: bloom datamap, Lucene datamap
  */
 case class CreateDataMapPostExecutionEvent(sparkSession: SparkSession,
-    storePath: String, tableIdentifier: TableIdentifier)
+    storePath: String, tableIdentifier: Option[TableIdentifier], dmProviderName: String)
   extends Event with CreateDataMapEventsInfo
 
 /**

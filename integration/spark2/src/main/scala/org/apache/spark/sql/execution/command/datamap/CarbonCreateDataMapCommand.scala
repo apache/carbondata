@@ -97,6 +97,8 @@ case class CarbonCreateDataMapCommand(
         "For this datamap, main table is required. Use `CREATE DATAMAP ... ON TABLE ...` ")
     }
     dataMapProvider = DataMapManager.get.getDataMapProvider(mainTable, dataMapSchema, sparkSession)
+    val systemFolderLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
+    val operationContext: OperationContext = new OperationContext()
 
     // If it is index datamap, check whether the column has datamap created already
     dataMapProvider match {
@@ -128,8 +130,6 @@ case class CarbonCreateDataMapCommand(
           }
         }
 
-        val operationContext: OperationContext = new OperationContext()
-        val systemFolderLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
         val createDataMapPreExecutionEvent: CreateDataMapPreExecutionEvent =
           new CreateDataMapPreExecutionEvent(sparkSession,
             systemFolderLocation, tableIdentifier.get)
@@ -137,11 +137,6 @@ case class CarbonCreateDataMapCommand(
           operationContext)
         dataMapProvider.initMeta(queryString.orNull)
         DataMapStatusManager.disableDataMap(dataMapName)
-        val createDataMapPostExecutionEvent: CreateDataMapPostExecutionEvent =
-          new CreateDataMapPostExecutionEvent(sparkSession,
-            systemFolderLocation, tableIdentifier.get)
-        OperationListenerBus.getInstance().fireEvent(createDataMapPostExecutionEvent,
-          operationContext)
       case _ =>
         if (deferredRebuild) {
           throw new MalformedDataMapCommandException(
@@ -149,6 +144,11 @@ case class CarbonCreateDataMapCommand(
         }
         dataMapProvider.initMeta(queryString.orNull)
     }
+    val createDataMapPostExecutionEvent: CreateDataMapPostExecutionEvent =
+      new CreateDataMapPostExecutionEvent(sparkSession,
+        systemFolderLocation, tableIdentifier, dmProviderName)
+    OperationListenerBus.getInstance().fireEvent(createDataMapPostExecutionEvent,
+      operationContext)
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     LOGGER.audit(s"DataMap $dataMapName successfully added")
     Seq.empty
