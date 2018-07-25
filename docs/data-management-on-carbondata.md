@@ -193,6 +193,51 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 	 ALTER TABLE employee SET TBLPROPERTIES (‘COLUMN_META_CACHE’=’city’)
 	 ```
 	 
+   - **Caching at Block or Blocklet Level**
+     This feature allows you to maintain the cache at Block level, resulting in optimized usage of the memory. The memory consumption is high if the Blocklet level caching is maintained as a Block can have multiple Blocklet.
+	 
+	 Following are the valid values for CACHE_LEVEL:
+	 * Configuration for caching in driver at Block level (default value).
+	 
+	 ```
+	 CACHE_LEVEL= ‘BLOCK’
+	 ```
+	 
+	 * Configuration for caching in driver at Blocklet level.
+	 
+	 ```
+	 CACHE_LEVEL= ‘BLOCKLET’
+	 ```
+	 
+	 Cache level can be specified either while creating table or after creation of the table.
+	 During create table operation specify the cache level in table properties.
+	 
+	 Syntax:
+	 
+	 ```
+	 CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED BY ‘carbondata’ TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+	 ```
+	 
+	 Example:
+	 
+	 ```
+	 CREATE TABLE employee (name String, city String, id int) STORED BY ‘carbondata’ TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+	 ```
+	 
+	 After creation of table or on already created tables use the alter table command to configure the cache level.
+	 
+	 Syntax:
+	 
+	 ```
+	 ALTER TABLE [dbName].tableName SET TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+	 ```
+	 
+	 Example:
+	 
+	 ```
+	 ALTER TABLE employee SET TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+	 ```
+	 
 ## CREATE TABLE AS SELECT
   This function allows user to create a Carbon table from any of the Parquet/Hive/Carbon table. This is beneficial when the user wants to create Carbon table from any other Parquet/Hive table and use the Carbon query engine to query and achieve better query results for cases where Carbon is faster than other file formats. Also this feature can be used for backing up the data.
 
