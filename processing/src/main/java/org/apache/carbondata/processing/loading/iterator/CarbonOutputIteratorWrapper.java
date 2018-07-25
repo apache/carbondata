@@ -94,9 +94,13 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<Object[]> {
     }
     try {
       if (isForceClose) {
-        // unblock the queue.put on the other thread and clear the queue.
-        queue.clear();
+        // first make close is set to true, when force close happens because of dead consumer.
+        // so that, write() method will stop taking input rows.
         close = true;
+        // once write() method stops taking input rows, clear the queue.
+        // If queue is cleared before close is set to true, then queue will be again filled
+        // by .write() and it can go to blocking put() forever as consumer is dead.
+        queue.clear();
         return;
       }
       // below code will ensure that the last RowBatch is consumed properly
