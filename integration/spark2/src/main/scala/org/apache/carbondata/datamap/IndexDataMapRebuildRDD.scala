@@ -357,13 +357,21 @@ class IndexDataMapRebuildRDD[K, V](
         // skip clear datamap and we will do this adter rebuild
         reader.setSkipClearDataMapAtClose(true)
 
+        // Note that blockletId in rowWithPosition does not work properly,
+        // here we use another way to generate it.
+        var blockletId = 0
+        var firstRow = true
         while (reader.nextKeyValue()) {
           val rowWithPosition = reader.getCurrentValue
           val size = rowWithPosition.length
-          val blockletId = rowWithPosition(size - 3).asInstanceOf[Int]
           val pageId = rowWithPosition(size - 2).asInstanceOf[Int]
           val rowId = rowWithPosition(size - 1).asInstanceOf[Int]
 
+          if (!firstRow && pageId == 0 && rowId == 0) {
+            blockletId = blockletId + 1
+          } else {
+            firstRow = false
+          }
           refresher.addRow(blockletId, pageId, rowId, rowWithPosition)
         }
 

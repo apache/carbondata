@@ -37,6 +37,7 @@ import org.apache.carbondata.core.datamap.dev.expr.DataMapWrapperSimpleInfo;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
@@ -53,6 +54,7 @@ import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
+import org.apache.carbondata.core.util.BlockletDataMapUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -462,8 +464,7 @@ m filterExpression
       }
       // since index datamap prune in segment scope,
       // the result need to intersect with previous pruned result
-      prunedBlocklets = (List) CollectionUtils.intersection(
-          cgPrunedBlocklets, prunedBlocklets);
+      prunedBlocklets = intersectFilteredBlocklets(carbonTable, prunedBlocklets, cgPrunedBlocklets);
       ExplainCollector.recordCGDataMapPruning(
           DataMapWrapperSimpleInfo.fromDataMapWrapper(cgDataMapExprWrapper),
           prunedBlocklets.size());
@@ -482,12 +483,31 @@ m filterExpression
             resolver, segmentIds, fgDataMapExprWrapper, dataMapJob, partitionsToPrune);
         // note that the 'fgPrunedBlocklets' has extra datamap related info compared with
         // 'prunedBlocklets', so the intersection should keep the elements in 'fgPrunedBlocklets'
-        prunedBlocklets = (List) CollectionUtils.intersection(fgPrunedBlocklets,
-            prunedBlocklets);
+        prunedBlocklets = intersectFilteredBlocklets(carbonTable, prunedBlocklets,
+            fgPrunedBlocklets);
         ExplainCollector.recordFGDataMapPruning(
             DataMapWrapperSimpleInfo.fromDataMapWrapper(fgDataMapExprWrapper),
             prunedBlocklets.size());
       }
+    }
+    return prunedBlocklets;
+  }
+
+  private List<ExtendedBlocklet> intersectFilteredBlocklets(CarbonTable carbonTable,
+      List<ExtendedBlocklet> previousDataMapPrunedBlocklets,
+      List<ExtendedBlocklet> otherDataMapPrunedBlocklets) {
+    List<ExtendedBlocklet> prunedBlocklets = null;
+    if (BlockletDataMapUtil.isCacheLevelBlock(
+        carbonTable, BlockletDataMapFactory.CACHE_LEVEL_BLOCKLET)) {
+      prunedBlocklets = new ArrayList<>();
+      for (ExtendedBlocklet otherBlocklet : otherDataMapPrunedBlocklets) {
+        if (previousDataMapPrunedBlocklets.contains(otherBlocklet)) {
+          prunedBlocklets.add(otherBlocklet);
+        }
+      }
+    } else {
+      prunedBlocklets = (List) CollectionUtils
+          .intersection(otherDataMapPrunedBlocklets, previousDataMapPrunedBlocklets);
     }
     return prunedBlocklets;
   }
