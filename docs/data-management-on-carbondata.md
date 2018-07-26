@@ -124,6 +124,52 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      TBLPROPERTIES ('streaming'='true')
      ```
 
+   - **Local Dictionary Configuration**
+     
+     Local Dictionary is generated only for no-dictionary string/varchar datatype columns. It helps in:
+     1. Getting more compression on dimension columns with less cardinality.
+     2. Filter queries and full scan queries on No-dictionary columns with local dictionary will be faster as filter will be done on encoded data.
+     3. Reducing the store size and memory footprint as only unique values will be stored as part of local dictionary and corresponding data will be stored as encoded data.
+   
+     By default, Local Dictionary will be enabled and generated for all no-dictionary string/varchar datatype columns.
+          
+     Users will be able to pass following properties in create table command: 
+          
+     | Properties | Default value | Description |
+     | ---------- | ------------- | ----------- |
+     | LOCAL_DICTIONARY_ENABLE | true | By default, local dictionary will be enabled for the table | 
+     | LOCAL_DICTIONARY_THRESHOLD | 10000 | The maximum cardinality for local dictionary generation (range- 1000 to 100000) |
+     | LOCAL_DICTIONARY_INCLUDE | all no-dictionary string/varchar columns | Columns for which Local Dictionary is generated. |
+     | LOCAL_DICTIONARY_EXCLUDE | none | Columns for which Local Dictionary is not generated |
+        
+      **NOTE:**  If the cardinality exceeds the threshold, this column will not use local dictionary encoding. And in this case, the data loading performance will decrease since there is a rollback procedure for local dictionary encoding.
+      
+      **Calculating Memory Usage for Local Dictionary:**
+      
+      Encoded data and Actual data are both stored when Local Dictionary is enabled.
+      Suppose 'x' columns are configured for Local Dictionary generation out of a total of 'y' string/varchar columns. 
+      
+      Total size will be 
+      
+      Memory size(y-x) + ((4 bytes * number of rows) * x) + (Local Dictionary size of x columns)
+      
+      Local Dictionary size = ((memory occupied by each unique value * cardinality of the column) * number of columns)
+      
+### Example:
+ 
+   ```
+   CREATE TABLE carbontable(
+             
+               column1 string,
+             
+               column2 string,
+             
+               column3 LONG )
+             
+     STORED BY 'carbondata'
+     TBLPROPERTIES('LOCAL_DICTIONARY_ENABLE'='true','LOCAL_DICTIONARY_THRESHOLD'='1000',
+     'LOCAL_DICTIONARY_INCLUDE'='column1','LOCAL_DICTIONARY_EXCLUDE'='column2')
+   ```
 ### Example:
 
    ```
@@ -390,6 +436,11 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      ```
       NOTE: Add Complex datatype columns is not supported.
 
+Users can specify which columns to include and exclude for local dictionary generation after adding new columns. These will be appended with the already existing local dictionary include and exclude columns of main table respectively.
+  ```
+     ALTER TABLE carbon ADD COLUMNS (a1 STRING, b1 STRING) TBLPROPERTIES('LOCAL_DICTIONARY_INCLUDE'='a1','LOCAL_DICTIONARY_EXCLUDE'='b1')
+  ```
+
    - **DROP COLUMNS**
    
      This command is used to delete the existing column(s) in a table.
@@ -442,6 +493,21 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
       ```
       **NOTE:**
       * Merge index is not supported on streaming table.
+      
+- **SET and UNSET for Local Dictionary Properties**
+
+   When set command is used, all the newly set properties will override the corresponding old properties if exists.
+  
+   Example to SET Local Dictionary Properties:
+    ```
+   ALTER TABLE tablename SET TBLPROPERTIES('LOCAL_DICTIONARY_ENABLE'='false','LOCAL_DICTIONARY_THRESHOLD'='1000','LOCAL_DICTIONARY_INCLUDE'='column1','LOCAL_DICTIONARY_EXCLUDE'='column2')
+    ```
+   When Local Dictionary properties are unset, corresponding default values will be used for these properties.
+      
+   Example to UNSET Local Dictionary Properties:
+    ```
+   ALTER TABLE tablename UNSET TBLPROPERTIES('LOCAL_DICTIONARY_ENABLE','LOCAL_DICTIONARY_THRESHOLD','LOCAL_DICTIONARY_INCLUDE','LOCAL_DICTIONARY_EXCLUDE')
+    ```
 
 ### DROP TABLE
   
