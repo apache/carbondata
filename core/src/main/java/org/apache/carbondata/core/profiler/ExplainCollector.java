@@ -98,7 +98,8 @@ public class ExplainCollector {
       int numBlocklets) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
-      scan.setNumBlockletsAfterDefaultPruning(dataMapWrapperSimpleInfo, numBlocklets);
+      scan.setDefaultDataMap(dataMapWrapperSimpleInfo);
+      scan.addNumBlockletsAfterDefaultPruning(numBlocklets);
     }
   }
 
@@ -106,7 +107,8 @@ public class ExplainCollector {
       int numBlocklets) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
-      scan.setNumBlockletsAfterCGPruning(dataMapWrapperSimpleInfo, numBlocklets);
+      scan.setCgDataMap(dataMapWrapperSimpleInfo);
+      scan.addNumBlockletsAfterCGPruning(numBlocklets);
     }
   }
 
@@ -114,7 +116,8 @@ public class ExplainCollector {
       int numBlocklets) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
-      scan.setNumBlockletsAfterFGPruning(dataMapWrapperSimpleInfo, numBlocklets);
+      scan.setFgDataMap(dataMapWrapperSimpleInfo);
+      scan.addNumBlockletsAfterFGPruning(numBlocklets);
     }
   }
 

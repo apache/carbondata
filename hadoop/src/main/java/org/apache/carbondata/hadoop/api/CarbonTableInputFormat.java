@@ -245,9 +245,17 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     FilterResolverIntf filterInterface = carbonTable.resolveFilter(filter);
 
     // do block filtering and get split
-    List<InputSplit> splits =
-        getSplits(job, filterInterface, filteredSegmentToAccess, matchedPartitions, partitionInfo,
-            null, updateStatusManager);
+    List<InputSplit> splits = new ArrayList<>();
+    for (Segment segment : filteredSegmentToAccess) {
+      List<InputSplit> splitsPerSegment = getSplitsForSegment(job, filterInterface, segment,
+          matchedPartitions, partitionInfo, null, updateStatusManager);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug(String.format("Get %d splits for segment %s in table %s",
+            splitsPerSegment.size(), segment.getSegmentNo(), carbonTable.getTableName()));
+      }
+      splits.addAll(splitsPerSegment);
+    }
+
     // pass the invalid segment to task side in order to remove index entry in task side
     if (invalidSegments.size() > 0) {
       for (InputSplit split : splits) {
@@ -427,8 +435,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
       List<Segment> segmentList = new ArrayList<>();
       Segment segment = Segment.getSegment(targetSegment, carbonTable.getTablePath());
-      segmentList.add(
-          new Segment(segment.getSegmentNo(), segment.getSegmentFileName(), readCommittedScope));
+      segment.setReadCommittedScope(readCommittedScope);
+      segmentList.add(segment);
       setSegmentsToAccess(job.getConfiguration(), segmentList);
 
       // process and resolve the expression
@@ -459,7 +467,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
       FilterResolverIntf filterInterface = carbonTable.resolveFilter(filter);
       // do block filtering and get split
-      List<InputSplit> splits = getSplits(job, filterInterface, segmentList, matchedPartitions,
+      List<InputSplit> splits = getSplitsForSegment(job, filterInterface, segment,
+          matchedPartitions,
           partitionInfo, oldPartitionIdList, new SegmentUpdateStatusManager(carbonTable));
       // pass the invalid segment to task side in order to remove index entry in task side
       if (invalidSegments.size() > 0) {
@@ -502,19 +511,17 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     return matchedPartitions;
   }
   /**
-   * {@inheritDoc}
+   * Get splits for one specific segment.
+   *
    * Configurations FileInputFormat.INPUT_DIR, CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS
    * are used to get table path to read.
-   *
-   * @return
-   * @throws IOException
    */
-  private List<InputSplit> getSplits(JobContext job, FilterResolverIntf filterResolver,
-      List<Segment> validSegments, BitSet matchedPartitions, PartitionInfo partitionInfo,
+  private List<InputSplit> getSplitsForSegment(JobContext job, FilterResolverIntf filterResolver,
+      Segment segment, BitSet matchedPartitions, PartitionInfo partitionInfo,
       List<Integer> oldPartitionIdList, SegmentUpdateStatusManager updateStatusManager)
       throws IOException {
 
-    numSegments = validSegments.size();
+    numSegments += 1;
     List<InputSplit> result = new LinkedList<InputSplit>();
     UpdateVO invalidBlockVOForSegmentId = null;
     Boolean isIUDTable = false;
@@ -526,12 +533,12 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     if (carbonTable.getTableInfo().getFormat().equals("")
         || carbonTable.getTableInfo().getFormat().equals("carbondata")) {
       dataBlocksOfSegment = getDataBlocksOfSegment(job, carbonTable, filterResolver,
-          matchedPartitions, validSegments, partitionInfo, oldPartitionIdList);
+          matchedPartitions, Arrays.asList(segment), partitionInfo, oldPartitionIdList);
     } else {
       dataBlocksOfSegment = getDataBlocksOfSegment4ExternalFormat(job, carbonTable, filterResolver,
-          validSegments);
+          Arrays.asList(segment));
     }
-    numBlocks = dataBlocksOfSegment.size();
+    numBlocks += dataBlocksOfSegment.size();
     for (org.apache.carbondata.hadoop.CarbonInputSplit inputSplit : dataBlocksOfSegment) {
 
       // Get the UpdateVO for those tables on which IUD operations being performed.
