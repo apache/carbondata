@@ -58,10 +58,6 @@ case class CarbonCleanFilesCommand(
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName.get)(sparkSession)
 
-    val dms = carbonTable.getTableInfo.getDataMapSchemaList.asScala.map(_.getDataMapName)
-    val indexDms = DataMapStoreManager.getInstance.getAllDataMap(carbonTable).asScala
-      .filter(_.getDataMapSchema.isIndexDataMap)
-
     if (carbonTable.hasAggregationDataMap) {
       cleanFileCommands = carbonTable.getTableInfo.getDataMapSchemaList.asScala.map {
         dataMapSchema =>
