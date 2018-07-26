@@ -371,7 +371,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       """
         | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)
         | STORED BY 'carbondata'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT', 'CACHE_LEVEL'='BLOCKLET')
       """.stripMargin)
     sql(
       s"""
@@ -571,7 +571,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       """
         | CREATE TABLE main(id INT, name STRING, city STRING, age INT)
         | STORED BY 'carbondata'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name')
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'CACHE_LEVEL'='BLOCKLET')
       """.stripMargin)
     sql(
       s"""
@@ -664,7 +664,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       """
         | CREATE TABLE datamap_test5(id INT, name STRING, city STRING, age INT)
         | STORED BY 'carbondata'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT', 'CACHE_LEVEL'='BLOCKLET')
       """.stripMargin)
     sql(
       s"""
@@ -803,7 +803,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists table_stop")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS, "false")
-    sql("create table table_stop(suggestion string,goal string) stored by 'carbondata'")
+    sql("create table table_stop(suggestion string,goal string) stored by 'carbondata' TBLPROPERTIES('CACHE_LEVEL'='BLOCKLET')")
     sql(
       "create datamap stop_dm on table table_stop using 'lucene' DMPROPERTIES('index_columns'='suggestion')")
     sql("insert into table_stop select 'The is the stop word','abcde'")
@@ -821,13 +821,15 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       """
         | CREATE TABLE datamap_test4(id INT, name STRING, city STRING, age INT)
         | STORED BY 'carbondata'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT', 'autorefreshdatamap' = 'false')
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT',
+        | 'autorefreshdatamap' = 'false', 'CACHE_LEVEL'='BLOCKLET')
       """.stripMargin)
     sql(
       """
         | CREATE TABLE datamap_copy(id INT, name STRING, city STRING, age INT)
         | STORED BY 'carbondata'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT', 'autorefreshdatamap' = 'false')
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT',
+        | 'autorefreshdatamap' = 'false', 'CACHE_LEVEL'='BLOCKLET')
       """.stripMargin)
     sql("insert into datamap_test4 select 1,'name','city',20")
     sql("insert into datamap_test4 select 2,'name1','city1',20")

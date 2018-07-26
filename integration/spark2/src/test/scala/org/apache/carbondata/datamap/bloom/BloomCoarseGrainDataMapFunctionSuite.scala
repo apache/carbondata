@@ -1,14 +1,15 @@
 package org.apache.carbondata.datamap.bloom
 
 import java.io.File
+import java.util.{Random, UUID}
 
 import org.apache.commons.io.FileUtils
-import org.apache.spark.sql.CarbonEnv
+import org.apache.spark.sql.{CarbonEnv, SaveMode}
 import org.apache.spark.sql.test.Spark2TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonV3DataFormatConstants}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -788,6 +789,47 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
     assert(!FileUtils.getFile(datamapPath).exists(), "index file of this segment has been deleted, should not exist")
     datamapPath = CarbonTablePath.getDataMapStorePath(carbonTable.getTablePath, "1", dataMapName)
     assert(FileUtils.listFiles(FileUtils.getFile(datamapPath), Array("bloomindex"), true).asScala.nonEmpty)
+  }
+
+  // two blocklets in one block are hit by bloom datamap while block cache level hit this block
+  test("CARBONDATA-2788: enable block cache level and bloom datamap") {
+    // minimum per page is 2000 rows
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.BLOCKLET_SIZE, "2000")
+    // minimum per blocklet is 16MB
+    CarbonProperties.getInstance().addProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB, "16")
+    // these lines will result in 3 blocklets in one block and bloom will hit at least 2 of them
+    val lines = 100000
+    sql("drop table if exists test_rcd").collect()
+    val r = new Random()
+    import sqlContext.implicits._
+    val df = sqlContext.sparkContext.parallelize(1 to lines)
+      .map(x => ("No." + r.nextInt(10000), "country" + x % 10000, "city" + x % 10000, x % 10000,
+        UUID.randomUUID().toString, UUID.randomUUID().toString, UUID.randomUUID().toString,
+        UUID.randomUUID().toString, UUID.randomUUID().toString, UUID.randomUUID().toString,
+        UUID.randomUUID().toString, UUID.randomUUID().toString, UUID.randomUUID().toString,
+        UUID.randomUUID().toString, UUID.randomUUID().toString, UUID.randomUUID().toString))
+      .toDF("ID", "country", "city", "population",
+        "random1", "random2", "random3",
+        "random4", "random5", "random6",
+        "random7", "random8", "random9",
+        "random10", "random11", "random12")
+    df.write
+      .format("carbondata")
+      .option("tableName", "test_rcd")
+      .option("SORT_COLUMNS", "id")
+      .option("SORT_SCOPE", "LOCAL_SORT")
+      .mode(SaveMode.Overwrite)
+      .save()
+
+    val withoutBloom = sql("select count(*) from test_rcd where city = 'city40'").collect().toSeq
+    sql("CREATE DATAMAP dm_rcd ON TABLE test_rcd " +
+        "USING 'bloomfilter' DMPROPERTIES " +
+        "('INDEX_COLUMNS' = 'city', 'BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001')")
+    checkAnswer(sql("select count(*) from test_rcd where city = 'city40'"), withoutBloom)
+
+    sql("drop table if exists test_rcd").collect()
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+      CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
   }
 
   override def afterAll(): Unit = {
