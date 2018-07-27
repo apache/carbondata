@@ -632,6 +632,18 @@ public class CarbonTablePath {
   }
 
   /**
+   * This method will get the segmentId from the block name
+   * if blockname is part-0-0_batchno0-0-0-1531995644238.carbondata - segmentid is 0
+   * if blockname is part-0-0_batchno0-0-9-1531995644238.carbondata - segmentid is 9
+   * @param blockName
+   * @return
+   */
+  public static String getSegmentIdFromBlockName(String blockName) {
+    String[] splitFile = blockName.substring(blockName.lastIndexOf("part") + 1).split("-");
+    return splitFile[splitFile.length - 2];
+  }
+
+  /**
    * adds data part prefix to given value
    * @return partition prefix
    */
