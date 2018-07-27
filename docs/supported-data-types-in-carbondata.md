@@ -35,6 +35,9 @@
     * CHAR
     * VARCHAR
 
+    **NOTE**: For string longer than 32000 characters, use `LONG_STRING_COLUMNS` in table property.
+    Please refer to TBLProperties in [CreateTable](https://github.com/apache/carbondata/blob/master/docs/data-management-on-carbondata.md#create-table) for more information.
+
   * Complex Types
     * arrays: ARRAY``<data_type>``
     * structs: STRUCT``<col_name : data_type COMMENT col_comment, ...>``

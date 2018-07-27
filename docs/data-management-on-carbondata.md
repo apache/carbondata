@@ -283,7 +283,29 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 	 ```
 	 ALTER TABLE employee SET TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
 	 ```
-	 
+
+   - **String longer than 32000 characters**
+     In common scenarios, the length of string is less than 32000, so carbondata store the length of content using Short to reduce memory and space consumption.
+     If your string content exceeds the 32000 characters limitation, you can specify the columns as 'long string column' using below tblProperties:
+
+     ```
+     // specify col1, col2 as long string columns
+     TBLPROPERTIES ('LONG_STRING_COLUMNS'='col1,col2')
+     ```
+
+     Besides, you can also use this property through DataFrame by
+     ```
+     df.format("carbondata")
+       .option("tableName", "carbonTable")
+       .option("long_string_columns", "col1, col2")
+       .save()
+     ```
+
+     If you are using Carbon-SDK, you can specify the datatype of long string column as `varchar`.
+     You can refer to SDKwriterTestCase for example.
+
+     **NOTE:** The LONG_STRING_COLUMNS can only be string/char/varchar columns and cannot be dictionary_include/sort_columns/complex columns.
+
 ## CREATE TABLE AS SELECT
   This function allows user to create a Carbon table from any of the Parquet/Hive/Carbon table. This is beneficial when the user wants to create Carbon table from any other Parquet/Hive table and use the Carbon query engine to query and achieve better query results for cases where Carbon is faster than other file formats. Also this feature can be used for backing up the data.
 
