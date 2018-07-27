@@ -929,7 +929,7 @@ public final class CarbonCommonConstants {
   /**
    * default value for local dictionary generation
    */
-  public static final String LOCAL_DICTIONARY_ENABLE_DEFAULT = "true";
+  public static final String LOCAL_DICTIONARY_ENABLE_DEFAULT = "false";
 
   /**
    * Threshold value for local dictionary
