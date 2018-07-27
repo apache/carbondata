@@ -563,7 +563,7 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
          | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
          | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
          | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128',
-         | 'DICTIONARY_INCLUDE'='s1,s2')
+         | 'DICTIONARY_INCLUDE'='s1,s2', 'CACHE_LEVEL'='BLOCKLET')
          |  """.stripMargin)
 
     // load data into table (segment0)
