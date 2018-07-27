@@ -32,6 +32,8 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
     sql("DROP TABLE IF EXISTS origin")
+    sql("drop table IF EXISTS rsext")
+    sql("drop table IF EXISTS rstest1")
     // create carbon table and insert data
     sql("CREATE TABLE origin(key INT, value STRING) STORED BY 'carbondata'")
     sql("INSERT INTO origin select 100,'spark'")
@@ -41,6 +43,8 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll(): Unit = {
     sql("DROP TABLE IF EXISTS origin")
+    sql("drop table IF EXISTS rsext")
+    sql("drop table IF EXISTS rstest1")
   }
 
   test("create external table with existing files") {
@@ -110,6 +114,16 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
         """.stripMargin)
     }
     assert(exception.getMessage().contains("Create external table as select"))
+  }
+  test("create external table with post schema resturcture") {
+    sql("create table rstest1 (c1 string,c2 int) STORED BY 'org.apache.carbondata.format'")
+    sql("Alter table rstest1 drop columns(c2)")
+    sql(
+      "Alter table rstest1 add columns(c4 string) TBLPROPERTIES('DICTIONARY_EXCLUDE'='c4', " +
+      "'DEFAULT.VALUE.c4'='def')")
+    sql(s"""CREATE EXTERNAL TABLE rsext STORED BY 'carbondata' LOCATION '$storeLocation/rstest1'""")
+    sql("insert into rsext select 'shahid', 1")
+    checkAnswer(sql("select * from rstest1"),  sql("select * from rsext"))
   }
 
 }
