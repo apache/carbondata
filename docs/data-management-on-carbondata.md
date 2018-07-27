@@ -137,7 +137,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
           
      | Properties | Default value | Description |
      | ---------- | ------------- | ----------- |
-     | LOCAL_DICTIONARY_ENABLE | false | By default, local dictionary will not be enabled for the table | 
+     | LOCAL_DICTIONARY_ENABLE | false | By default, local dictionary will not be enabled for the table |
      | LOCAL_DICTIONARY_THRESHOLD | 10000 | The maximum cardinality for local dictionary generation (range- 1000 to 100000) |
      | LOCAL_DICTIONARY_INCLUDE | all no-dictionary string/varchar columns | Columns for which Local Dictionary is generated. |
      | LOCAL_DICTIONARY_EXCLUDE | none | Columns for which Local Dictionary is not generated |
@@ -240,11 +240,11 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 	 ```
 	 
    - **Caching at Block or Blocklet Level**
-   
+
      This feature allows you to maintain the cache at Block level, resulting in optimized usage of the memory. The memory consumption is high if the Blocklet level caching is maintained as a Block can have multiple Blocklet.
 	 
 	 Following are the valid values for CACHE_LEVEL:
-	 
+
 	 *Configuration for caching in driver at Block level (default value).*
 	 
 	 ```
@@ -285,21 +285,47 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 	 ```
 	 ALTER TABLE employee SET TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
 	 ```
-	 
-	 - **Support Flat folder same as Hive/Parquet**
-	 
+
+    - **Support Flat folder same as Hive/Parquet**
+
 	  This feature allows all carbondata and index files to keep directy under tablepath. Currently all carbondata/carbonindex files written under tablepath/Fact/Part0/Segment_NUM folder and it is not same as hive/parquet folder structure. This feature makes all files written will be directly under tablepath, it does not maintain any segment folder structure.This is useful for interoperability between the execution engines and plugin with other execution engines like hive or presto becomes easier.
-	  
+
 	  Following table property enables this feature and default value is false.
 	  ```
 	   'flat_folder'='true'
-	  ``` 
+	  ```
 	  Example:
 	  ```
 	  CREATE TABLE employee (name String, city String, id int) STORED BY ‘carbondata’ TBLPROPERTIES ('flat_folder'='true')
 	  ```
-	  
-	 
+
+    - **String longer than 32000 characters**
+
+     In common scenarios, the length of string is less than 32000,
+     so carbondata stores the length of content using Short to reduce memory and space consumption.
+     To support string longer than 32000 characters, carbondata introduces a table property called `LONG_STRING_COLUMNS`.
+     For these columns, carbondata internally stores the length of content using Integer.
+
+     You can specify the columns as 'long string column' using below tblProperties:
+
+     ```
+     // specify col1, col2 as long string columns
+     TBLPROPERTIES ('LONG_STRING_COLUMNS'='col1,col2')
+     ```
+
+     Besides, you can also use this property through DataFrame by
+     ```
+     df.format("carbondata")
+       .option("tableName", "carbonTable")
+       .option("long_string_columns", "col1, col2")
+       .save()
+     ```
+
+     If you are using Carbon-SDK, you can specify the datatype of long string column as `varchar`.
+     You can refer to SDKwriterTestCase for example.
+
+     **NOTE:** The LONG_STRING_COLUMNS can only be string/char/varchar columns and cannot be dictionary_include/sort_columns/complex columns.
+
 ## CREATE TABLE AS SELECT
   This function allows user to create a Carbon table from any of the Parquet/Hive/Carbon table. This is beneficial when the user wants to create Carbon table from any other Parquet/Hive table and use the Carbon query engine to query and achieve better query results for cases where Carbon is faster than other file formats. Also this feature can be used for backing up the data.
 
@@ -745,7 +771,7 @@ Users can specify which columns to include and exclude for local dictionary gene
   * If the FORCE option is used, then it auto-converts the data by storing the bad records as NULL before Loading data.
   * If the IGNORE option is used, then bad records are neither loaded nor written to the separate CSV file.
   * In loaded data, if all records are bad records, the BAD_RECORDS_ACTION is invalid and the load operation fails.
-  * The maximum number of characters per column is 32000. If there are more than 32000 characters in a column, data loading will fail.
+  * The default maximum number of characters per column is 32000. If there are more than 32000 characters in a column, please refer to *String longer than 32000 characters* section.
 
   Example:
 
