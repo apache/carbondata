@@ -18,13 +18,14 @@
 package org.apache.carbondata.spark.util
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.spark.sql.hive.{CarbonMetaData, CarbonRelation, DictionaryMap}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
 import org.apache.carbondata.core.util.CarbonUtil
 
 case class TransformHolder(rdd: Any, mataData: CarbonMetaData)
@@ -87,18 +88,21 @@ object CarbonSparkUtil {
     val fields = new Array[String](
       carbonRelation.dimensionsAttr.size + carbonRelation.measureAttr.size)
     val carbonTable = carbonRelation.carbonTable
+    val columnSchemas: mutable.Buffer[ColumnSchema] = carbonTable.getTableInfo.getFactTable.
+      getListOfColumns.asScala
+      .filter(cSchema => !cSchema.isInvisible && cSchema.getSchemaOrdinal != -1).
+      sortWith(_.getSchemaOrdinal < _.getSchemaOrdinal)
+    val columnList = columnSchemas.toList.asJava
     carbonRelation.dimensionsAttr.foreach(attr => {
-      val carbonDimension = carbonTable.getDimensionByName(carbonRelation.tableName, attr.name)
       val carbonColumn = carbonTable.getColumnByName(carbonRelation.tableName, attr.name)
       val columnComment = getColumnComment(carbonColumn)
-      fields(carbonDimension.getSchemaOrdinal) =
+      fields(columnList.indexOf(carbonColumn.getColumnSchema)) =
         '`' + attr.name + '`' + ' ' + attr.dataType.catalogString + columnComment
     })
     carbonRelation.measureAttr.foreach(msrAtrr => {
-      val carbonMeasure = carbonTable.getMeasureByName(carbonRelation.tableName, msrAtrr.name)
       val carbonColumn = carbonTable.getColumnByName(carbonRelation.tableName, msrAtrr.name)
       val columnComment = getColumnComment(carbonColumn)
-      fields(carbonMeasure.getSchemaOrdinal) =
+      fields(columnList.indexOf(carbonColumn.getColumnSchema)) =
         '`' + msrAtrr.name + '`' + ' ' + msrAtrr.dataType.catalogString + columnComment
     })
     fields.mkString(",")
