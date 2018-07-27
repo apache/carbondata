@@ -71,7 +71,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   /**
    * variable for cache level BLOCKLET
    */
-  private static final String CACHE_LEVEL_BLOCKLET = "BLOCKLET";
+  public static final String CACHE_LEVEL_BLOCKLET = "BLOCKLET";
 
   public static final DataMapSchema DATA_MAP_SCHEMA =
       new DataMapSchema(NAME, BlockletDataMapFactory.class.getName());
