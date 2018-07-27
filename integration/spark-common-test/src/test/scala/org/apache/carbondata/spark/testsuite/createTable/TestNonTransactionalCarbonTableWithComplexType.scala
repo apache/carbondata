@@ -218,15 +218,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
     sql("describe formatted localComplex").show(30, false)
     val descLoc = sql("describe formatted localComplex").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("true"))
-      case None => assert(false)
-    }
-    descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("10000"))
-      case None => assert(false)
-    }
-    descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
-      case Some(row) => assert(row.get(1).toString.contains("name,val1.val2.street,val1.val2.city,val1.val2.WindSpeed,val1.val2.year"))
+      case Some(row) => assert(row.get(1).toString.contains("false"))
       case None => assert(false)
     }
 
