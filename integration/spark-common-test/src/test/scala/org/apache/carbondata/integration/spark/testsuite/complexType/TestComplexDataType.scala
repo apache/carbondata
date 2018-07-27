@@ -675,6 +675,16 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 
+  test("test arrayofstruct with count(distinct)") {
+    sql("DROP TABLE IF EXISTS test")
+    sql("create table test(cus_id string,array_of_struct array<struct<id:int,country:string," +
+        "state:string,city:string>>) stored by 'carbondata'")
+    sql("insert into test values('cus_01','123:abc:mno:xyz$1234:abc1:mno1:xyz1')")
+    checkAnswer(sql("select array_of_struct.state[0],count(distinct array_of_struct.id[0]) as count_country," +
+      "count(distinct array_of_struct.state[0]) as count_city from test group by array_of_struct" +
+      ".state[0]"), Seq(Row("mno", 1, 1)))
+  }
+
   test("test struct complex type with filter") {
     sql("DROP TABLE IF EXISTS test")
     sql("create table test(id int,a struct<b:int,c:int>) stored by 'carbondata'")
