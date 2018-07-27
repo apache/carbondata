@@ -17,6 +17,7 @@
 package org.apache.carbondata.core.indexstore.blockletindex;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
@@ -58,7 +59,6 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 
@@ -248,8 +248,8 @@ public class BlockDataMap extends CoarseGrainDataMap
     byte[][] blockMinValues = null;
     byte[][] blockMaxValues = null;
     DataMapRowImpl summaryRow = null;
-    List<Byte> blockletCountInEachBlock = new ArrayList<>(indexInfo.size());
-    byte totalBlockletsInOneBlock = 0;
+    List<Short> blockletCountInEachBlock = new ArrayList<>(indexInfo.size());
+    short totalBlockletsInOneBlock = 0;
     boolean isLastFileFooterEntryNeedToBeAdded = false;
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
     for (DataFileFooter fileFooter : indexInfo) {
@@ -318,11 +318,20 @@ public class BlockDataMap extends CoarseGrainDataMap
               blockMinValues, blockMaxValues);
       blockletCountInEachBlock.add(totalBlockletsInOneBlock);
     }
-    byte[] blockletCount = ArrayUtils
-        .toPrimitive(blockletCountInEachBlock.toArray(new Byte[blockletCountInEachBlock.size()]));
+    byte[] blockletCount = convertRowCountFromShortToByteArray(blockletCountInEachBlock);
     // blocklet count index is the last index
     summaryRow.setByteArray(blockletCount, taskSummarySchema.length - 1);
     return summaryRow;
+  }
+
+  private byte[] convertRowCountFromShortToByteArray(List<Short> blockletCountInEachBlock) {
+    int bufferSize = blockletCountInEachBlock.size() * 2;
+    ByteBuffer byteBuffer = ByteBuffer.allocate(bufferSize);
+    for (Short blockletCount : blockletCountInEachBlock) {
+      byteBuffer.putShort(blockletCount);
+    }
+    byteBuffer.rewind();
+    return byteBuffer.array();
   }
 
   protected void setLocations(String[] locations, DataMapRow row, int ordinal)
@@ -696,7 +705,7 @@ public class BlockDataMap extends CoarseGrainDataMap
       relativeBlockletId = (short) absoluteBlockletId;
     } else {
       int diff = absoluteBlockletId;
-      byte[] blockletRowCountForEachBlock = getBlockletRowCountForEachBlock();
+      ByteBuffer byteBuffer = ByteBuffer.wrap(getBlockletRowCountForEachBlock());
       // Example: absoluteBlockletID = 17, blockletRowCountForEachBlock = {4,3,2,5,7}
       // step1: diff = 17-4, diff = 13
       // step2: diff = 13-3, diff = 10
@@ -704,7 +713,8 @@ public class BlockDataMap extends CoarseGrainDataMap
       // step4: diff = 8-5, diff = 3
       // step5: diff = 3-7, diff = -4 (satisfies <= 0)
       // step6: relativeBlockletId = -4+7, relativeBlockletId = 3 (4th index starting from 0)
-      for (byte blockletCount : blockletRowCountForEachBlock) {
+      while (byteBuffer.hasRemaining()) {
+        short blockletCount = byteBuffer.getShort();
         diff = diff - blockletCount;
         if (diff < 0) {
           relativeBlockletId = (short) (diff + blockletCount);
