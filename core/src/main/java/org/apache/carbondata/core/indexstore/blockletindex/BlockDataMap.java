@@ -557,7 +557,7 @@ public class BlockDataMap extends CoarseGrainDataMap
       for (int i = 0; i < numBlocklets; i++) {
         DataMapRow safeRow = memoryDMStore.getDataMapRow(schema, i).convertToSafeRow();
         blocklets.add(createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath),
-            getBlockletId(safeRow), false));
+            getBlockletId(safeRow)));
       }
     } else {
       // Remove B-tree jump logic as start and end key prepared is not
@@ -566,8 +566,7 @@ public class BlockDataMap extends CoarseGrainDataMap
       numBlocklets = memoryDMStore.getRowCount();
       FilterExecuter filterExecuter = FilterUtil
           .getFilterExecuterTree(filterExp, getSegmentProperties(), null, getMinMaxCacheColumns());
-      // flag to be used for deciding whether use min/max in executor pruning for BlockletDataMap
-      boolean useMinMaxForPruning = useMinMaxForExecutorPruning(filterExp);
+      ByteBuffer byteBuffer = ByteBuffer.wrap(getBlockletRowCountForEachBlock());
       // min and max for executor pruning
       while (startIndex < numBlocklets) {
         DataMapRow safeRow = memoryDMStore.getDataMapRow(schema, startIndex).convertToSafeRow();
@@ -577,22 +576,21 @@ public class BlockDataMap extends CoarseGrainDataMap
             addBlockBasedOnMinMaxValue(filterExecuter, getMinMaxValue(safeRow, MAX_VALUES_INDEX),
                 getMinMaxValue(safeRow, MIN_VALUES_INDEX), fileName, blockletId);
         if (isValid) {
-          blocklets.add(createBlocklet(safeRow, fileName, blockletId, useMinMaxForPruning));
+          if (blockletId == -1) {
+            // add all the blocklets in this block with actual relative blockletId
+            short blockletNum = byteBuffer.getShort(startIndex * 2);
+            for (short i = 0; i < blockletNum; i++) {
+              blocklets.add(createBlocklet(safeRow, fileName, i));
+            }
+          } else {
+            blocklets.add(createBlocklet(safeRow, fileName, blockletId));
+          }
         }
         startIndex++;
       }
     }
     ExplainCollector.addTotalBlocklets(numBlocklets);
     return blocklets;
-  }
-
-  private boolean useMinMaxForExecutorPruning(FilterResolverIntf filterResolverIntf) {
-    boolean useMinMaxForPruning = false;
-    if (this instanceof BlockletDataMap) {
-      useMinMaxForPruning = BlockletDataMapUtil
-          .useMinMaxForBlockletPruning(filterResolverIntf, getMinMaxCacheColumns());
-    }
-    return useMinMaxForPruning;
   }
 
   @Override
@@ -726,8 +724,7 @@ public class BlockDataMap extends CoarseGrainDataMap
     DataMapRow safeRow =
         memoryDMStore.getDataMapRow(getFileFooterEntrySchema(), rowIndex).convertToSafeRow();
     String filePath = getFilePath();
-    return createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath), relativeBlockletId,
-        false);
+    return createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath), relativeBlockletId);
   }
 
   private byte[] getBlockletRowCountForEachBlock() {
@@ -766,9 +763,8 @@ public class BlockDataMap extends CoarseGrainDataMap
     return BLOCK_DEFAULT_BLOCKLET_ID;
   }
 
-  protected ExtendedBlocklet createBlocklet(DataMapRow row, String fileName, short blockletId,
-      boolean useMinMaxForPruning) {
-    ExtendedBlocklet blocklet = new ExtendedBlocklet(fileName, blockletId + "", false);
+  protected ExtendedBlocklet createBlocklet(DataMapRow row, String fileName, short blockletId) {
+    ExtendedBlocklet blocklet = new ExtendedBlocklet(fileName, blockletId + "");
     BlockletDetailInfo detailInfo = getBlockletDetailInfo(row, blockletId, blocklet);
     detailInfo.setBlockletInfoBinary(new byte[0]);
     blocklet.setDetailInfo(detailInfo);

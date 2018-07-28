@@ -37,11 +37,6 @@ public class ExtendedBlocklet extends Blocklet {
     super(filePath, blockletId);
   }
 
-  public ExtendedBlocklet(String filePath, String blockletId,
-      boolean compareBlockletIdForObjectMatching) {
-    super(filePath, blockletId, compareBlockletIdForObjectMatching);
-  }
-
   public BlockletDetailInfo getDetailInfo() {
     return detailInfo;
   }
