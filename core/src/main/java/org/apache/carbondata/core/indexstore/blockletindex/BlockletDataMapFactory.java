@@ -348,13 +348,27 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     return dataMap.getSegmentProperties();
   }
 
+  @Override
+  public SegmentProperties getSegmentProperties(Segment segment,
+      List<CoarseGrainDataMap> dataMaps) throws IOException {
+    assert (dataMaps.size() > 0);
+    CoarseGrainDataMap coarseGrainDataMap = dataMaps.get(0);
+    assert (coarseGrainDataMap instanceof BlockletDataMap);
+    BlockletDataMap dataMap = (BlockletDataMap) coarseGrainDataMap;
+    return dataMap.getSegmentProperties();
+  }
+
   @Override public List<Blocklet> getAllBlocklets(Segment segment, List<PartitionSpec> partitions)
       throws IOException {
     List<Blocklet> blocklets = new ArrayList<>();
     List<CoarseGrainDataMap> dataMaps = getDataMaps(segment);
+    SegmentProperties segmentProperties = null;
+    if (dataMaps.size() > 0) {
+      getSegmentProperties(segment, dataMaps);
+    }
     for (CoarseGrainDataMap dataMap : dataMaps) {
       blocklets.addAll(
-          dataMap.prune(null, getSegmentProperties(segment), partitions));
+          dataMap.prune(null, segmentProperties, partitions));
     }
     return blocklets;
   }

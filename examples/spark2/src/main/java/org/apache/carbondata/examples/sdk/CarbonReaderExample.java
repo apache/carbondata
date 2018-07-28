@@ -24,7 +24,9 @@ import java.sql.Timestamp;
 
 import org.apache.commons.io.FileUtils;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.sdk.file.CarbonReader;
 import org.apache.carbondata.sdk.file.CarbonSchemaReader;
 import org.apache.carbondata.sdk.file.CarbonWriter;
@@ -134,6 +136,9 @@ public class CarbonReaderExample {
         } catch (Throwable e) {
             e.printStackTrace();
             System.out.println(e.getMessage());
+        } finally {
+            CarbonProperties.getInstance()
+                .addProperty(CarbonCommonConstants.ENABLE_SDK_QUERY_EXECUTOR, "false");
         }
     }
 }

@@ -325,6 +325,7 @@ public class QueryModel {
   public void setVectorReader(boolean vectorReader) {
     this.vectorReader = vectorReader;
   }
+
   public void setInvalidBlockForSegmentId(List<UpdateVO> invalidSegmentTimestampList) {
     for (UpdateVO anUpdateVO : invalidSegmentTimestampList) {
       this.invalidSegmentBlockIdMap.put(anUpdateVO.getSegmentId(), anUpdateVO);

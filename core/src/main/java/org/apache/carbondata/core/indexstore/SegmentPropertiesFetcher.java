@@ -18,8 +18,10 @@
 package org.apache.carbondata.core.indexstore;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 
 /**
@@ -29,10 +31,14 @@ public interface SegmentPropertiesFetcher {
 
   /**
    * get the Segment properties based on the SegmentID.
-   * @param segmentId
+   * @param segment
    * @return
    * @throws IOException
    */
   SegmentProperties getSegmentProperties(Segment segment)
+      throws IOException;
+
+  SegmentProperties getSegmentProperties(Segment segment,
+       List<CoarseGrainDataMap> dataMaps)
       throws IOException;
 }
