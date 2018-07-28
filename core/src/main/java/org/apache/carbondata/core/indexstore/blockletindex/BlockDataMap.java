@@ -551,45 +551,47 @@ public class BlockDataMap extends CoarseGrainDataMap
     List<Blocklet> blocklets = new ArrayList<>();
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
     String filePath = getFilePath();
-    int numBlocklets = 0;
-    if (filterExp == null) {
-      numBlocklets = memoryDMStore.getRowCount();
-      for (int i = 0; i < numBlocklets; i++) {
-        DataMapRow safeRow = memoryDMStore.getDataMapRow(schema, i).convertToSafeRow();
-        blocklets.add(createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath),
-            getBlockletId(safeRow)));
-      }
-    } else {
-      // Remove B-tree jump logic as start and end key prepared is not
-      // correct for old store scenarios
-      int startIndex = 0;
-      numBlocklets = memoryDMStore.getRowCount();
-      FilterExecuter filterExecuter = FilterUtil
-          .getFilterExecuterTree(filterExp, getSegmentProperties(), null, getMinMaxCacheColumns());
-      ByteBuffer byteBuffer = ByteBuffer.wrap(getBlockletRowCountForEachBlock());
-      // min and max for executor pruning
-      while (startIndex < numBlocklets) {
-        DataMapRow safeRow = memoryDMStore.getDataMapRow(schema, startIndex).convertToSafeRow();
-        String fileName = getFileNameWithFilePath(safeRow, filePath);
-        short blockletId = getBlockletId(safeRow);
-        boolean isValid =
-            addBlockBasedOnMinMaxValue(filterExecuter, getMinMaxValue(safeRow, MAX_VALUES_INDEX),
-                getMinMaxValue(safeRow, MIN_VALUES_INDEX), fileName, blockletId);
-        if (isValid) {
-          if (blockletId == -1) {
-            // add all the blocklets in this block with actual relative blockletId
-            short blockletNum = byteBuffer.getShort(startIndex * 2);
-            for (short i = 0; i < blockletNum; i++) {
-              blocklets.add(createBlocklet(safeRow, fileName, i));
-            }
-          } else {
-            blocklets.add(createBlocklet(safeRow, fileName, blockletId));
+    ByteBuffer byteBuffer = ByteBuffer.wrap(getBlockletRowCountForEachBlock());
+    // for blocklet cache level, it is the number of blocklets;
+    // for block cache level, it is the number of blocks
+    int numIndexCnt = memoryDMStore.getRowCount();
+
+    // Remove B-tree jump logic as start and end key prepared is not
+    // correct for old store scenarios
+    FilterExecuter filterExecuter = null;
+    if (filterExp != null) {
+      filterExecuter = FilterUtil.getFilterExecuterTree(
+          filterExp, getSegmentProperties(), null, getMinMaxCacheColumns());
+    }
+
+    for (int startIndex = 0; startIndex < numIndexCnt; startIndex++) {
+      DataMapRow safeRow = memoryDMStore.getDataMapRow(schema, startIndex).convertToSafeRow();
+      String fileName = getFileNameWithFilePath(safeRow, filePath);
+      short blockletId = getBlockletId(safeRow);
+      boolean isValid = (filterExecuter == null) ||
+          addBlockBasedOnMinMaxValue(filterExecuter,
+              getMinMaxValue(safeRow, MAX_VALUES_INDEX),
+              getMinMaxValue(safeRow, MIN_VALUES_INDEX), fileName, blockletId);
+      if (isValid) {
+        if (blockletId == BLOCK_DEFAULT_BLOCKLET_ID) {
+          // this means it is actually a block,
+          // we will add all the blocklets in this block with actual relative blockletId
+          short blockletNum = byteBuffer.getShort(startIndex * 2);
+          for (short i = 0; i < blockletNum; i++) {
+            blocklets.add(createBlocklet(safeRow, fileName, i));
           }
+        } else {
+          blocklets.add(createBlocklet(safeRow, fileName, blockletId));
         }
-        startIndex++;
       }
     }
-    ExplainCollector.addTotalBlocklets(numBlocklets);
+
+    int totalBlocklets = 0;
+    byteBuffer.rewind();
+    while (byteBuffer.hasRemaining()) {
+      totalBlocklets += byteBuffer.getShort();
+    }
+    ExplainCollector.addTotalBlocklets(totalBlocklets);
     return blocklets;
   }
 
