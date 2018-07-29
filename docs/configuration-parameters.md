@@ -108,7 +108,12 @@ This section provides the details of all the configurations required for CarbonD
 |---------------------------------------------|--------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | carbon.sort.file.write.buffer.size | 16384 | File write buffer size used during sorting. Minimum allowed buffer size is 10240 byte and Maximum allowed buffer size is 10485760 byte. |
 | carbon.lock.type | LOCALLOCK | This configuration specifies the type of lock to be acquired during concurrent operations on table. There are following types of lock implementation: - LOCALLOCK: Lock is created on local file system as file. This lock is useful when only one spark driver (thrift server) runs on a machine and no other CarbonData spark application is launched concurrently. - HDFSLOCK: Lock is created on HDFS file system as file. This lock is useful when multiple CarbonData spark applications are launched and no ZooKeeper is running on cluster and HDFS supports file based locking. |
-| carbon.lock.path | TABLEPATH | This configuration specifies the path where lock files have to be created. Recommended to configure zookeeper lock type or configure HDFS lock path(to this property) in case of S3 file system as locking is not feasible on S3.
+| carbon.lock.path | TABLEPATH | Locks on the files are used to prevent concurrent operation from modifying the same files. This 
+configuration specifies the path where lock files have to be created. Recommended to configure 
+HDFS lock path(to this property) in case of S3 file system as locking is not feasible on S3. 
+**Note:** If this property is not set to HDFS location for S3 store, then there is a possibility 
+of data corruption because multiple data manipulation calls might try to update the status file 
+and as lock is not acquired before updation data might get overwritten. |
 | carbon.sort.intermediate.files.limit | 20 | Minimum number of intermediate files after which merged sort can be started (minValue = 2, maxValue=50). |
 | carbon.block.meta.size.reserved.percentage | 10 | Space reserved in percentage for writing block meta data in CarbonData file. |
 | carbon.csv.read.buffersize.byte | 1048576 | csv reading buffer size. |
