@@ -1350,7 +1350,7 @@ public final class CarbonUtil {
 
     try {
       fileReader = FileFactory.getDataInputStream(
-          csvFilePath, FileFactory.getFileType(csvFilePath), -1, hadoopConf);
+          csvFilePath, FileFactory.getFileType(csvFilePath), -1);
       bufferedReader = new BufferedReader(new InputStreamReader(fileReader,
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       readLine = bufferedReader.readLine();

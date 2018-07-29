@@ -182,7 +182,7 @@ case class CarbonLoadDataCommand(
     carbonProperty.addProperty(CarbonCommonConstants.NUM_CORES_LOADING, numCoresLoading)
 
     val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
-    val hadoopConf = sparkSession.sessionState.newHadoopConf()
+    val hadoopConf = FileFactory.getConfiguration
     val carbonLoadModel = new CarbonLoadModel()
     try {
       val tableProperties = table.getTableInfo.getFactTable.getTableProperties

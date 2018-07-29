@@ -30,6 +30,8 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.util.CarbonConfiguration;
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -43,11 +45,19 @@ public final class FileFactory {
    */
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(FileFactory.class.getName());
-  private static Configuration configuration = null;
 
-  static {
-    configuration = new Configuration();
-    configuration.addResource(new Path("../core-default.xml"));
+  public static Configuration getConfiguration() {
+    Configuration configuration;
+    if (ThreadLocalSessionInfo.getCarbonSessionInfo() == null) {
+      configuration = new Configuration();
+      configuration.addResource(new Path("../core-default.xml"));
+    } else {
+      CarbonConfiguration carbonConfiguration =
+          (CarbonConfiguration) ThreadLocalSessionInfo.getCarbonSessionInfo().getThreadParams()
+              .getExtraInfo("carbonConf", new CarbonConfiguration());
+      configuration = carbonConfiguration.getConfiguration();
+    }
+    return configuration;
   }
 
   private static FileTypeInterface fileFileTypeInterface = new DefaultFileTypeProvider();
@@ -56,10 +66,6 @@ public final class FileFactory {
   }
   private FileFactory() {
 
-  }
-
-  public static Configuration getConfiguration() {
-    return configuration;
   }
 
   public static FileReader getFileHolder(FileType fileType) {
@@ -83,14 +89,10 @@ public final class FileFactory {
   }
 
   public static CarbonFile getCarbonFile(String path) {
-    return fileFileTypeInterface.getCarbonFile(path, getFileType(path));
+    return fileFileTypeInterface.getCarbonFile(path, getFileType(path), getConfiguration());
   }
   public static CarbonFile getCarbonFile(String path, FileType fileType) {
     return fileFileTypeInterface.getCarbonFile(path, fileType);
-  }
-  public static CarbonFile getCarbonFile(String path,
-      Configuration hadoopConf) {
-    return fileFileTypeInterface.getCarbonFile(path, getFileType(path), hadoopConf);
   }
 
   public static DataInputStream getDataInputStream(String path, FileType fileType)
@@ -100,11 +102,7 @@ public final class FileFactory {
 
   public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize)
       throws IOException {
-    return getDataInputStream(path, fileType, bufferSize, configuration);
-  }
-  public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize,
-      Configuration configuration) throws IOException {
-    return getCarbonFile(path).getDataInputStream(path, fileType, bufferSize, configuration);
+    return getCarbonFile(path).getDataInputStream(path, fileType, bufferSize, getConfiguration());
   }
 
   /**
@@ -259,8 +257,8 @@ public final class FileFactory {
     return getCarbonFile(filePath).mkdirs(filePath);
   }
 
-  public static boolean mkdirs(String filePath, Configuration configuration) throws IOException {
-    return getCarbonFile(filePath, configuration).mkdirs(filePath);
+  public static boolean mkdirs(String filePath) throws IOException {
+    return getCarbonFile(filePath).mkdirs(filePath);
   }
 
   /**
@@ -306,7 +304,7 @@ public final class FileFactory {
         // this method was new in hadoop 2.7, otherwise use CarbonFile.truncate to do this.
         try {
           Path pt = new Path(path);
-          FileSystem fs = pt.getFileSystem(configuration);
+          FileSystem fs = pt.getFileSystem(getConfiguration());
           Method truncateMethod = fs.getClass().getDeclaredMethod("truncate",
               new Class[]{Path.class, long.class});
           truncateMethod.invoke(fs, new Object[]{pt, newSize});
@@ -414,7 +412,7 @@ public final class FileFactory {
       case VIEWFS:
       case S3:
         Path path = new Path(filePath);
-        FileSystem fs = path.getFileSystem(configuration);
+        FileSystem fs = path.getFileSystem(getConfiguration());
         return fs.getContentSummary(path).getLength();
       case LOCAL:
       default:
@@ -442,7 +440,7 @@ public final class FileFactory {
    * @throws IOException
    */
   public static FileSystem getFileSystem(Path path) throws IOException {
-    return path.getFileSystem(configuration);
+    return path.getFileSystem(getConfiguration());
   }
 
 
@@ -455,7 +453,7 @@ public final class FileFactory {
       case VIEWFS:
         try {
           Path path = new Path(directoryPath);
-          FileSystem fs = path.getFileSystem(FileFactory.configuration);
+          FileSystem fs = path.getFileSystem(getConfiguration());
           if (!fs.exists(path)) {
             fs.mkdirs(path);
             fs.setPermission(path, permission);

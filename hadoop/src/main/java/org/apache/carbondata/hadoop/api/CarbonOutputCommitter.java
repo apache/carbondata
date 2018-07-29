@@ -40,6 +40,7 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.util.CarbonConfiguration;
 import org.apache.carbondata.core.util.CarbonSessionInfo;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -94,7 +95,14 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
   }
 
   @Override public void setupTask(TaskAttemptContext context) throws IOException {
+    ThreadLocalSessionInfo.getCarbonSessionInfo().getThreadParams()
+        .setExtraInfo("carbonConf", new CarbonConfiguration(context.getConfiguration()));
     super.setupTask(context);
+  }
+
+  @Override public void abortTask(TaskAttemptContext context) throws IOException {
+    ThreadLocalSessionInfo.unsetAll();
+    super.abortTask(context);
   }
 
   /**

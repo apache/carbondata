@@ -37,7 +37,9 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.util.CarbonConfiguration;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -165,7 +167,10 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
     // the indexWriter closes the FileSystem on closing the writer, so for a new configuration
     // and disable the cache for the index writer, it will be closed on closing the writer
-    Configuration conf = new Configuration();
+    CarbonConfiguration carbonConf =
+        (CarbonConfiguration) ThreadLocalSessionInfo.getCarbonSessionInfo().getThreadParams()
+            .getExtraInfo("carbonConf", new CarbonConfiguration());
+    Configuration conf = carbonConf.getConfiguration();
     conf.set("fs.hdfs.impl.disable.cache", "true");
 
     // create a index writer
