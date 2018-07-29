@@ -22,7 +22,7 @@ import java.io.InputStream;
 
 /**
  * Customarized reader class to read data from file
- * untill the upper threshold reached.
+ * until the upper threshold reached.
  */
 public class BoundedInputStream extends InputStream {
 
