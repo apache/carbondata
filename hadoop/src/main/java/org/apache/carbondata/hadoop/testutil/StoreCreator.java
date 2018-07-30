@@ -449,6 +449,10 @@ public class StoreCreator {
 
       String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetails.toArray());
       brWriter.write(metadataInstance);
+    } catch (IOException ioe) {
+      LOG.error("Error message: " + ioe.getLocalizedMessage());
+      writeOperation.setFailed();
+      throw ioe;
     } finally {
       try {
         if (null != brWriter) {

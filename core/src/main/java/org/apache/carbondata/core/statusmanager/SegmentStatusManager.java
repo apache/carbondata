@@ -512,6 +512,7 @@ public class SegmentStatusManager {
       brWriter.write(metadataInstance);
     } catch (IOException ioe) {
       LOG.error("Error message: " + ioe.getLocalizedMessage());
+      fileWrite.setFailed();
       throw ioe;
     } finally {
       if (null != brWriter) {
@@ -881,6 +882,10 @@ public class SegmentStatusManager {
 
       String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetails.toArray());
       brWriter.write(metadataInstance);
+    } catch (IOException ie) {
+      LOG.error("Error message: " + ie.getLocalizedMessage());
+      writeOperation.setFailed();
+      throw ie;
     } finally {
       try {
         if (null != brWriter) {
