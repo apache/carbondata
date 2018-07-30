@@ -5,6 +5,7 @@
 * [Loading Data](#loading-data)
 * [Querying Data](#querying-data)
 * [Data Management](#data-management-with-bloomfilter-datamap)
+* [Useful Tips](#useful-tips)
 
 #### DataMap Management
 Creating BloomFilter DataMap
@@ -103,3 +104,24 @@ If the datamap does not prune blocklets well, you can try to increase the value 
 
 ## Data Management With BloomFilter DataMap
 Data management with BloomFilter datamap has no difference with that on Lucene datamap. You can refer to the corresponding section in `CarbonData BloomFilter DataMap`.
+
+## Useful Tips
++ BloomFilter DataMap is suggested to create on the high cardinality columns.
++ BloomFilter datamap requires that the query conditions on index columns are always simple `equal` or `in`,
+ such as 'col1=XX', 'col1 in (XX, YY)'. Otherwise the queries cannot benefit from BloomFilter datamap.
++ We can create multiple BloomFilter datamaps on one table,
+ also we can create one BloomFilter datamap that contains multiple index columns.
+ We do recommend the later behavior since the data loading and query performance will be better.
++ `BLOOM_FPP` is only the expected number from user, the actually FPP may be worse.
+ If the BloomFilter datamap does not work well,
+ you can try to increase `BLOOM_SIZE` and decrease `BLOOM_FPP` at the same time.
+ Notice that bigger `BLOOM_SIZE` will increase the size of index file
+ and smaller `BLOOM_FPP` will increase runtime calculation while performing query.
++ '0' skipped blocklets of BloomFilter datamap in explain output indicates that
+ BloomFilter datamap does not prune better than Main datamap.
+ If this occurs very often, it means that current BloomFilter is useless. You can disable or drop it.
+ Sometimes we cannot see any pruning result about BloomFilter datamap in the explain output,
+ this indicates that the previous datamap has pruned all the blocklets and there is no need to continue pruning.
++ In some scenario, the BloomFilter datamap may not enhance the query performance significantly
+ but if it can reduce the number of spark task,
+ there is still chance that BloomFilter datamap can enhance the performance of concurrent query.

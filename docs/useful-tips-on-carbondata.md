@@ -125,6 +125,10 @@
     TBLPROPERTIES ('SORT_COLUMNS'='Dime_1, HOST, MSISDN')
   ```
 
+  **NOTE:**
+  + BloomFilter can be created to enhance performance for queries with precise equal/in conditions. You can find more information about it in BloomFilter dataMap document.
+
+
 ## Configuration for Optimizing Data Loading performance for Massive Data
 
 
