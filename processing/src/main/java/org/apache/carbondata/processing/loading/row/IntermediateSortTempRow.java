@@ -54,13 +54,15 @@ public class IntermediateSortTempRow {
   /**
    * deserialize from bytes array to get the no sort fields
    * @param outDictNoSort stores the dict & no-sort fields
-   * @param outNoDictNoSortAndVarcharDims stores the no-dict & no-sort fields,
- *                                    including complex and varchar fields
+   * @param outNoDictNoSort stores all no-dict & no-sort fields,
+   *                        including complex and varchar fields
    * @param outMeasures stores the measure fields
    * @param dataTypes data type for the measure
+   * @param varcharDimCnt number of varchar column
+   * @param complexDimCnt number of complex column
    */
-  public void unpackNoSortFromBytes(int[] outDictNoSort, byte[][] outNoDictNoSortAndVarcharDims,
-      Object[] outMeasures, DataType[] dataTypes, int varcharDimCnt) {
+  public void unpackNoSortFromBytes(int[] outDictNoSort, byte[][] outNoDictNoSort,
+      Object[] outMeasures, DataType[] dataTypes, int varcharDimCnt, int complexDimCnt) {
     ByteBuffer rowBuffer = ByteBuffer.wrap(noSortDimsAndMeasures);
     // read dict_no_sort
     int dictNoSortCnt = outDictNoSort.length;
@@ -68,13 +70,13 @@ public class IntermediateSortTempRow {
       outDictNoSort[i] = rowBuffer.getInt();
     }
 
-    // read no_dict_no_sort (including complex)
-    int noDictNoSortCnt = outNoDictNoSortAndVarcharDims.length - varcharDimCnt;
+    // read no_dict_no_sort
+    int noDictNoSortCnt = outNoDictNoSort.length - varcharDimCnt - complexDimCnt;
     for (int i = 0; i < noDictNoSortCnt; i++) {
       short len = rowBuffer.getShort();
       byte[] bytes = new byte[len];
       rowBuffer.get(bytes);
-      outNoDictNoSortAndVarcharDims[i] = bytes;
+      outNoDictNoSort[i] = bytes;
     }
 
     // read varchar dims
@@ -82,7 +84,15 @@ public class IntermediateSortTempRow {
       int len = rowBuffer.getInt();
       byte[] bytes = new byte[len];
       rowBuffer.get(bytes);
-      outNoDictNoSortAndVarcharDims[i + noDictNoSortCnt] = bytes;
+      outNoDictNoSort[i + noDictNoSortCnt] = bytes;
+    }
+
+    // read complex dims
+    for (int i = 0; i < complexDimCnt; i++) {
+      short len = rowBuffer.getShort();
+      byte[] bytes = new byte[len];
+      rowBuffer.get(bytes);
+      outNoDictNoSort[i + noDictNoSortCnt + varcharDimCnt] = bytes;
     }
 
     // read measure

@@ -224,13 +224,12 @@ public class CarbonFactDataHandlerModel {
 
     // for dynamic page size in write step if varchar columns exist
     List<Integer> varcharDimIdxInNoDict = new ArrayList<>();
-    int dictDimCount = configuration.getDimensionCount() - configuration.getNoDictionaryCount();
     for (DataField dataField : configuration.getDataFields()) {
       CarbonColumn column = dataField.getColumn();
       if (!column.isComplex() && !dataField.hasDictionaryEncoding() &&
               column.getDataType() == DataTypes.VARCHAR) {
         // ordinal is set in CarbonTable.fillDimensionsAndMeasuresForTables()
-        varcharDimIdxInNoDict.add(column.getOrdinal() - dictDimCount);
+        varcharDimIdxInNoDict.add(column.getOrdinal() - simpleDimsCount);
       }
     }
 
@@ -319,7 +318,8 @@ public class CarbonFactDataHandlerModel {
     // for dynamic page size in write step if varchar columns exist
     List<Integer> varcharDimIdxInNoDict = new ArrayList<>();
     List<CarbonDimension> allDimensions = carbonTable.getDimensions();
-    int dictDimCount = allDimensions.size() - segmentProperties.getNumberOfNoDictionaryDimension();
+    int dictDimCount = allDimensions.size() - segmentProperties.getNumberOfNoDictionaryDimension()
+            - segmentProperties.getComplexDimensions().size();
     for (CarbonDimension dim : allDimensions) {
       if (!dim.isComplex() && !dim.hasEncoding(Encoding.DICTIONARY) &&
           dim.getDataType() == DataTypes.VARCHAR) {
