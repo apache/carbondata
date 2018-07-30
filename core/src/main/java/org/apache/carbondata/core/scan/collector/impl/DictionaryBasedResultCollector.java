@@ -29,6 +29,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.scan.complextypes.StructQueryType;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
@@ -112,11 +113,27 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
    */
   @Override
   public List<Object[]> collectResultInRow(BlockletScannedResult scannedResult, int batchSize) {
-
     // scan the record and add to list
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
     int rowCounter = 0;
-
+    boolean isStructQueryType = false;
+    for (Object obj : scannedResult.complexParentIndexToQueryMap.values()) {
+      if (obj instanceof StructQueryType) {
+        //if any one of the map elements contains struct,need to shift rows if contains null.
+        isStructQueryType = true;
+        break;
+      }
+    }
+    boolean[] isComplexChildColumn = null;
+    if (isStructQueryType) {
+      // need to identify complex child columns for shifting rows if contains null
+      isComplexChildColumn = new boolean[queryDimensions.length + queryMeasures.length];
+      for (ProjectionDimension dimension : queryDimensions) {
+        if (null != dimension.getDimension().getComplexParentDimension()) {
+          isComplexChildColumn[dimension.getOrdinal()] = true;
+        }
+      }
+    }
     while (scannedResult.hasNext() && rowCounter < batchSize) {
       Object[] row = new Object[queryDimensions.length + queryMeasures.length];
       if (isDimensionExists) {
@@ -140,13 +157,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
         continue;
       }
       fillMeasureData(scannedResult, row);
-      if (scannedResult.complexParentIndexToQueryMap.toString().contains("StructQueryType")) {
-        boolean[] isComplexChildColumn = new boolean[queryDimensions.length + queryMeasures.length];
-        for (ProjectionDimension dimension : queryDimensions) {
-          if (null != dimension.getDimension().getComplexParentDimension()) {
-            isComplexChildColumn[dimension.getOrdinal()] = true;
-          }
-        }
+      if (isStructQueryType) {
         shiftNullForStruct(row, isComplexChildColumn);
       }
       listBasedResult.add(row);
@@ -163,7 +174,6 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
    */
   private void shiftNullForStruct(Object[] row, boolean[] isComplexChildColumn) {
     int count = 0;
-    int dataTypeCount = 0;
     // If a : <b,c> and d : <e,f> are two struct and if a.b,a.c,d.e is given in the
     // projection list,then object array will contain a,null,d as result, because for a.b,
     // a will be filled and for a.c null will be placed.
@@ -172,17 +182,12 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
       if (null == row[j] && !isComplexChildColumn[j]) {
         // if it is a primitive column, don't shift the null to the end.
         row[count++] = null;
-        isComplexChildColumn[dataTypeCount++] = false;
       } else if (null != row[j]) {
         row[count++] = row[j];
-        isComplexChildColumn[dataTypeCount++] = isComplexChildColumn[j];
       }
     }
     // fill the skipped content
     while (count < row.length) row[count++] = null;
-    while (dataTypeCount < isComplexChildColumn.length) {
-      isComplexChildColumn[dataTypeCount++] = true;
-    }
   }
 
   private void fillComplexColumnDataBufferForThisRow() {
