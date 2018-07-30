@@ -38,10 +38,10 @@ public interface DataMapCatalog<T> {
   void unregisterSchema(String dataMapName);
 
   /**
-   * List all registered schema catalogs
+   * List all registered valid schema catalogs
    * @return
    */
-  T[] listAllSchema();
+  T[] listAllValidSchema();
 
   /**
    * It reloads/removes all registered schema catalogs
