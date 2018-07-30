@@ -18,6 +18,7 @@ package org.apache.carbondata.mv.rewrite
 
 import java.io.File
 
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.test.util.QueryTest
@@ -883,6 +884,19 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     val analyzed = frame.queryExecution.analyzed
     assert(verifyMVDataMap(analyzed, "datamap_subqry"))
     sql("drop datamap if exists datamap_subqry")
+  }
+
+  test("basic scenario") {
+
+    sql("drop table if exists mvtable1")
+    sql("create table mvtable1(name string,age int,salary int) stored by 'carbondata'")
+    sql(" insert into mvtable1 select 'n1',12,12")
+    sql("  insert into mvtable1 select 'n1',12,12")
+    sql(" insert into mvtable1 select 'n3',12,12")
+    sql(" insert into mvtable1 select 'n4',12,12")
+    sql("update mvtable1 set(name) = ('updatedName')").show()
+    checkAnswer(sql("select count(*) from mvtable1 where name = 'updatedName'"),Seq(Row(4)))
+    sql("drop table if exists mvtable1")
   }
 
   def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
