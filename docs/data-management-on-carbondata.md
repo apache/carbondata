@@ -240,16 +240,18 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 	 ```
 	 
    - **Caching at Block or Blocklet Level**
+   
      This feature allows you to maintain the cache at Block level, resulting in optimized usage of the memory. The memory consumption is high if the Blocklet level caching is maintained as a Block can have multiple Blocklet.
 	 
 	 Following are the valid values for CACHE_LEVEL:
-	 * Configuration for caching in driver at Block level (default value).
+	 
+	 *Configuration for caching in driver at Block level (default value).*
 	 
 	 ```
 	 CACHE_LEVEL= ‘BLOCK’
 	 ```
 	 
-	 * Configuration for caching in driver at Blocklet level.
+	 *Configuration for caching in driver at Blocklet level.*
 	 
 	 ```
 	 CACHE_LEVEL= ‘BLOCKLET’
@@ -283,6 +285,20 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 	 ```
 	 ALTER TABLE employee SET TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
 	 ```
+	 
+	 - **Support Flat folder same as Hive/Parquet**
+	 
+	  This feature allows all carbondata and index files to keep directy under tablepath. Currently all carbondata/carbonindex files written under tablepath/Fact/Part0/Segment_NUM folder and it is not same as hive/parquet folder structure. This feature makes all files written will be directly under tablepath, it does not maintain any segment folder structure.This is useful for interoperability between the execution engines and plugin with other execution engines like hive or presto becomes easier.
+	  
+	  Following table property enables this feature and default value is false.
+	  ```
+	   'flat_folder'='true'
+	  ``` 
+	  Example:
+	  ```
+	  CREATE TABLE employee (name String, city String, id int) STORED BY ‘carbondata’ TBLPROPERTIES ('flat_folder'='true')
+	  ```
+	  
 	 
 ## CREATE TABLE AS SELECT
   This function allows user to create a Carbon table from any of the Parquet/Hive/Carbon table. This is beneficial when the user wants to create Carbon table from any other Parquet/Hive table and use the Carbon query engine to query and achieve better query results for cases where Carbon is faster than other file formats. Also this feature can be used for backing up the data.
