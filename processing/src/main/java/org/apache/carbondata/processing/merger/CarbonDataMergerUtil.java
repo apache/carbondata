@@ -391,7 +391,6 @@ public final class CarbonDataMergerUtil {
           CarbonLoadModel carbonLoadModel, long compactionSize,
           List<LoadMetadataDetails> segments, CompactionType compactionType,
           List<String> customSegmentIds) throws IOException, MalformedCarbonCommandException {
-    String tablePath = carbonLoadModel.getTablePath();
     Map<String, String> tableLevelProperties = carbonLoadModel.getCarbonDataLoadSchema()
             .getCarbonTable().getTableInfo().getFactTable().getTableProperties();
     List<LoadMetadataDetails> sortedSegments = new ArrayList<LoadMetadataDetails>(segments);
@@ -400,7 +399,7 @@ public final class CarbonDataMergerUtil {
 
     if (CompactionType.CUSTOM == compactionType) {
       return identitySegmentsToBeMergedBasedOnSpecifiedSegments(sortedSegments,
-              new HashSet<>(customSegmentIds));
+              new LinkedHashSet<>(customSegmentIds));
     }
 
     // Check for segments which are qualified for IUD compaction.
@@ -424,7 +423,7 @@ public final class CarbonDataMergerUtil {
     if (CompactionType.MAJOR == compactionType) {
 
       listOfSegmentsToBeMerged = identifySegmentsToBeMergedBasedOnSize(compactionSize,
-              listOfSegmentsLoadedInSameDateInterval, carbonLoadModel, tablePath);
+              listOfSegmentsLoadedInSameDateInterval, carbonLoadModel);
     } else {
 
       listOfSegmentsToBeMerged =
@@ -462,7 +461,7 @@ public final class CarbonDataMergerUtil {
           List<LoadMetadataDetails> listOfSegments,
           Set<String> segmentIds) throws MalformedCarbonCommandException {
     Map<String, LoadMetadataDetails> specifiedSegments =
-            new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new LinkedHashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (LoadMetadataDetails detail : listOfSegments) {
       if (segmentIds.contains(detail.getLoadName())) {
         specifiedSegments.put(detail.getLoadName(), detail);
@@ -623,13 +622,12 @@ public final class CarbonDataMergerUtil {
    * @param listOfSegmentsAfterPreserve  the segments list after
    *        preserving the configured number of latest loads
    * @param carbonLoadModel carbon load model
-   * @param tablePath the store location of the segment
    * @return the list of segments that need to be merged
    *         based on the Size in case of Major compaction
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnSize(
       long compactionSize, List<LoadMetadataDetails> listOfSegmentsAfterPreserve,
-      CarbonLoadModel carbonLoadModel, String tablePath) throws IOException {
+      CarbonLoadModel carbonLoadModel) throws IOException {
 
     List<LoadMetadataDetails> segmentsToBeMerged =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
