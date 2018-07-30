@@ -268,7 +268,7 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
             CarbonScalaUtil.convertCarbonToSparkDataType(DataTypes.DOUBLE), true, null);
       }
     }
-    vectorProxy = new CarbonVectorProxy(MemoryMode.OFF_HEAP,DEFAULT_BATCH_SIZE,fields);
+    vectorProxy = new CarbonVectorProxy(DEFAULT_MEMORY_MODE,DEFAULT_BATCH_SIZE,fields);
     CarbonColumnVector[] vectors = new CarbonColumnVector[fields.length];
     boolean[] filteredRows = new boolean[vectorProxy.numRows()];
     for (int i = 0; i < fields.length; i++) {
@@ -278,7 +278,6 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
           ((ColumnarVectorWrapper) vectors[i]).reserveDictionaryIds();
         }
       }
-      vectors[i] = new ColumnarVectorWrapper(vectorProxy, filteredRows, i);
     }
     carbonColumnarBatch = new CarbonColumnarBatch(vectors, vectorProxy.numRows(), filteredRows);
   }

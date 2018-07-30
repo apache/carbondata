@@ -38,6 +38,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   private int ordinal;
 
+  private boolean isDictionary;
+
   private boolean filteredRowsExist;
 
   private DataType blockDataType;
@@ -45,7 +47,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   private CarbonColumnVector dictionaryVector;
 
   ColumnarVectorWrapper(CarbonVectorProxy writableColumnVector,
-                        boolean[] filteredRows, int ordinal) {
+      boolean[] filteredRows, int ordinal) {
     this.writableColumnVector = writableColumnVector;
     this.filteredRows = filteredRows;
     this.ordinal = ordinal;
@@ -84,7 +86,11 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public void putInt(int rowId, int value) {
     if (!filteredRows[rowId]) {
-      writableColumnVector.putInt(counter++, value, ordinal);
+      if (isDictionary) {
+        writableColumnVector.putDictionaryInt(counter++, value, ordinal);
+      } else {
+        writableColumnVector.putInt(counter++, value, ordinal);
+      }
     }
   }
 
@@ -228,8 +234,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     return null;
   }
 
-  @Override
-  public void reset() {
+  @Override public void reset() {
     counter = 0;
     filteredRowsExist = false;
     if (null != dictionaryVector) {
@@ -261,8 +266,12 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
       writableColumnVector.setDictionary(null, ordinal);
     } else {
       writableColumnVector
-              .setDictionary(new CarbonDictionaryWrapper(Encoding.PLAIN, dictionary),ordinal);
+          .setDictionary(new CarbonDictionaryWrapper(Encoding.PLAIN, dictionary),ordinal);
     }
+  }
+
+  private void  setDictionaryType(boolean type) {
+    this.isDictionary = type;
   }
 
   @Override public boolean hasDictionary() {
@@ -270,11 +279,9 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   }
 
   public void reserveDictionaryIds() {
-    if (writableColumnVector.getColumnVector(ordinal).getDictionaryIds() != null) {
-      this.dictionaryVector =
-              new ColumnarVectorWrapper(writableColumnVector, filteredRows, ordinal);
-    }
     writableColumnVector.reserveDictionaryIds(writableColumnVector.numRows(), ordinal);
+    dictionaryVector = new ColumnarVectorWrapper(writableColumnVector, filteredRows, ordinal);
+    ((ColumnarVectorWrapper) dictionaryVector).isDictionary = true;
   }
 
   @Override public CarbonColumnVector getDictionaryVector() {

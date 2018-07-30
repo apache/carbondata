@@ -174,7 +174,13 @@ public class CarbonVectorProxy {
     }
 
     public void putInt(int rowId, int value, int ordinal) {
-        columnarBatch.column(ordinal).putInt(rowId, (int) value);
+
+            columnarBatch.column(ordinal).putInt(rowId, (int) value);
+
+    }
+
+    public void putDictionaryInt(int rowId, int value, int ordinal) {
+        columnarBatch.column(ordinal).getDictionaryIds().putInt(rowId, (int) value);
     }
 
     public void putFloat(int rowId, float value, int ordinal) {

@@ -253,4 +253,36 @@ public class CarbonVectorProxy {
     public DataType dataType(int ordinal) {
         return columnarBatch.column(ordinal).dataType();
     }
+
+    public void setDictionary(Object dictionary, int ordinal) {
+        if (dictionary instanceof Dictionary) {
+            columnarBatch.column(ordinal).setDictionary((Dictionary) dictionary);
+        } else {
+            columnarBatch.column(ordinal).setDictionary(null);
+        }
+    }
+
+    public boolean hasDictionary(int ordinal) {
+        return columnarBatch.column(ordinal).hasDictionary();
+    }
+
+    public void putNotNull(int rowId, int ordinal) {
+        columnarBatch.column(ordinal).putNotNull(rowId);
+    }
+
+    public void putNotNulls(int rowId, int count, int ordinal) {
+        columnarBatch.column(ordinal).putNotNulls(rowId, count);
+    }
+
+    public DataType dataType(int ordinal) {
+        return columnarBatch.column(ordinal).dataType();
+    }
+
+    public ColumnVector getColumnVector(int ordinal) {
+        return columnarBatch.column(ordinal);
+    }
+
+    public Object reserveDictionaryIds(int capacity , int ordinal) {
+        return columnarBatch.column(ordinal).reserveDictionaryIds(capacity);
+    }
 }

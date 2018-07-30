@@ -137,6 +137,14 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
     // InputMetricsStats
     private InputMetricsStats inputMetricsStats;
 
+    public CarbonStreamRecordReader(boolean isVectorReader, InputMetricsStats inputMetricsStats,
+        QueryModel mdl, boolean useRawRow) {
+        this.isVectorReader = isVectorReader;
+        this.inputMetricsStats = inputMetricsStats;
+        this.model = mdl;
+        this.useRawRow = useRawRow;
+    }
+
     @Override public void initialize(InputSplit split, TaskAttemptContext context)
             throws IOException, InterruptedException {
         // input
@@ -249,18 +257,10 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
 
     }
 
-    public void setQueryModel(QueryModel model) {
-        this.model = model;
-    }
-
     private byte[] getSyncMarker(String filePath) throws IOException {
         CarbonHeaderReader headerReader = new CarbonHeaderReader(filePath);
         FileHeader header = headerReader.readHeader();
         return header.getSync_marker();
-    }
-
-    public void setUseRawRow(boolean useRawRow) {
-        this.useRawRow = useRawRow;
     }
 
     private void initializeAtFirstRow() throws IOException {
@@ -691,14 +691,6 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
 
     @Override public float getProgress() throws IOException, InterruptedException {
         return 0;
-    }
-
-    public void setVectorReader(boolean isVectorReader) {
-        this.isVectorReader = isVectorReader;
-    }
-
-    public void setInputMetricsStats(InputMetricsStats inputMetricsStats) {
-        this.inputMetricsStats = inputMetricsStats;
     }
 
     @Override public void close() throws IOException {
