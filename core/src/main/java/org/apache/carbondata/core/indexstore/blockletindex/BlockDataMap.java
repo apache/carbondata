@@ -17,6 +17,7 @@
 package org.apache.carbondata.core.indexstore.blockletindex;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
@@ -58,7 +59,6 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 
@@ -248,8 +248,8 @@ public class BlockDataMap extends CoarseGrainDataMap
     byte[][] blockMinValues = null;
     byte[][] blockMaxValues = null;
     DataMapRowImpl summaryRow = null;
-    List<Byte> blockletCountInEachBlock = new ArrayList<>(indexInfo.size());
-    byte totalBlockletsInOneBlock = 0;
+    List<Short> blockletCountInEachBlock = new ArrayList<>(indexInfo.size());
+    short totalBlockletsInOneBlock = 0;
     boolean isLastFileFooterEntryNeedToBeAdded = false;
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
     for (DataFileFooter fileFooter : indexInfo) {
@@ -318,11 +318,20 @@ public class BlockDataMap extends CoarseGrainDataMap
               blockMinValues, blockMaxValues);
       blockletCountInEachBlock.add(totalBlockletsInOneBlock);
     }
-    byte[] blockletCount = ArrayUtils
-        .toPrimitive(blockletCountInEachBlock.toArray(new Byte[blockletCountInEachBlock.size()]));
+    byte[] blockletCount = convertRowCountFromShortToByteArray(blockletCountInEachBlock);
     // blocklet count index is the last index
     summaryRow.setByteArray(blockletCount, taskSummarySchema.length - 1);
     return summaryRow;
+  }
+
+  private byte[] convertRowCountFromShortToByteArray(List<Short> blockletCountInEachBlock) {
+    int bufferSize = blockletCountInEachBlock.size() * 2;
+    ByteBuffer byteBuffer = ByteBuffer.allocate(bufferSize);
+    for (Short blockletCount : blockletCountInEachBlock) {
+      byteBuffer.putShort(blockletCount);
+    }
+    byteBuffer.rewind();
+    return byteBuffer.array();
   }
 
   protected void setLocations(String[] locations, DataMapRow row, int ordinal)
@@ -542,48 +551,48 @@ public class BlockDataMap extends CoarseGrainDataMap
     List<Blocklet> blocklets = new ArrayList<>();
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
     String filePath = getFilePath();
-    int numBlocklets = 0;
-    if (filterExp == null) {
-      numBlocklets = memoryDMStore.getRowCount();
-      for (int i = 0; i < numBlocklets; i++) {
-        DataMapRow safeRow = memoryDMStore.getDataMapRow(schema, i).convertToSafeRow();
-        blocklets.add(createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath),
-            getBlockletId(safeRow), false));
-      }
-    } else {
-      // Remove B-tree jump logic as start and end key prepared is not
-      // correct for old store scenarios
-      int startIndex = 0;
-      numBlocklets = memoryDMStore.getRowCount();
-      FilterExecuter filterExecuter = FilterUtil
-          .getFilterExecuterTree(filterExp, getSegmentProperties(), null, getMinMaxCacheColumns());
-      // flag to be used for deciding whether use min/max in executor pruning for BlockletDataMap
-      boolean useMinMaxForPruning = useMinMaxForExecutorPruning(filterExp);
-      // min and max for executor pruning
-      while (startIndex < numBlocklets) {
-        DataMapRow safeRow = memoryDMStore.getDataMapRow(schema, startIndex).convertToSafeRow();
-        String fileName = getFileNameWithFilePath(safeRow, filePath);
-        short blockletId = getBlockletId(safeRow);
-        boolean isValid =
-            addBlockBasedOnMinMaxValue(filterExecuter, getMinMaxValue(safeRow, MAX_VALUES_INDEX),
-                getMinMaxValue(safeRow, MIN_VALUES_INDEX), fileName, blockletId);
-        if (isValid) {
-          blocklets.add(createBlocklet(safeRow, fileName, blockletId, useMinMaxForPruning));
-        }
-        startIndex++;
-      }
-    }
-    ExplainCollector.addTotalBlocklets(numBlocklets);
-    return blocklets;
-  }
+    ByteBuffer byteBuffer = ByteBuffer.wrap(getBlockletRowCountForEachBlock());
+    // for blocklet cache level, it is the number of blocklets;
+    // for block cache level, it is the number of blocks
+    int numIndexCnt = memoryDMStore.getRowCount();
 
-  private boolean useMinMaxForExecutorPruning(FilterResolverIntf filterResolverIntf) {
-    boolean useMinMaxForPruning = false;
-    if (this instanceof BlockletDataMap) {
-      useMinMaxForPruning = BlockletDataMapUtil
-          .useMinMaxForBlockletPruning(filterResolverIntf, getMinMaxCacheColumns());
+    // Remove B-tree jump logic as start and end key prepared is not
+    // correct for old store scenarios
+    FilterExecuter filterExecuter = null;
+    if (filterExp != null) {
+      filterExecuter = FilterUtil.getFilterExecuterTree(
+          filterExp, getSegmentProperties(), null, getMinMaxCacheColumns());
     }
-    return useMinMaxForPruning;
+
+    for (int startIndex = 0; startIndex < numIndexCnt; startIndex++) {
+      DataMapRow safeRow = memoryDMStore.getDataMapRow(schema, startIndex).convertToSafeRow();
+      String fileName = getFileNameWithFilePath(safeRow, filePath);
+      short blockletId = getBlockletId(safeRow);
+      boolean isValid = (filterExecuter == null) ||
+          addBlockBasedOnMinMaxValue(filterExecuter,
+              getMinMaxValue(safeRow, MAX_VALUES_INDEX),
+              getMinMaxValue(safeRow, MIN_VALUES_INDEX), fileName, blockletId);
+      if (isValid) {
+        if (blockletId == BLOCK_DEFAULT_BLOCKLET_ID) {
+          // this means it is actually a block,
+          // we will add all the blocklets in this block with actual relative blockletId
+          short blockletNum = byteBuffer.getShort(startIndex * 2);
+          for (short i = 0; i < blockletNum; i++) {
+            blocklets.add(createBlocklet(safeRow, fileName, i));
+          }
+        } else {
+          blocklets.add(createBlocklet(safeRow, fileName, blockletId));
+        }
+      }
+    }
+
+    int totalBlocklets = 0;
+    byteBuffer.rewind();
+    while (byteBuffer.hasRemaining()) {
+      totalBlocklets += byteBuffer.getShort();
+    }
+    ExplainCollector.addTotalBlocklets(totalBlocklets);
+    return blocklets;
   }
 
   @Override
@@ -696,7 +705,7 @@ public class BlockDataMap extends CoarseGrainDataMap
       relativeBlockletId = (short) absoluteBlockletId;
     } else {
       int diff = absoluteBlockletId;
-      byte[] blockletRowCountForEachBlock = getBlockletRowCountForEachBlock();
+      ByteBuffer byteBuffer = ByteBuffer.wrap(getBlockletRowCountForEachBlock());
       // Example: absoluteBlockletID = 17, blockletRowCountForEachBlock = {4,3,2,5,7}
       // step1: diff = 17-4, diff = 13
       // step2: diff = 13-3, diff = 10
@@ -704,7 +713,8 @@ public class BlockDataMap extends CoarseGrainDataMap
       // step4: diff = 8-5, diff = 3
       // step5: diff = 3-7, diff = -4 (satisfies <= 0)
       // step6: relativeBlockletId = -4+7, relativeBlockletId = 3 (4th index starting from 0)
-      for (byte blockletCount : blockletRowCountForEachBlock) {
+      while (byteBuffer.hasRemaining()) {
+        short blockletCount = byteBuffer.getShort();
         diff = diff - blockletCount;
         if (diff < 0) {
           relativeBlockletId = (short) (diff + blockletCount);
@@ -716,8 +726,7 @@ public class BlockDataMap extends CoarseGrainDataMap
     DataMapRow safeRow =
         memoryDMStore.getDataMapRow(getFileFooterEntrySchema(), rowIndex).convertToSafeRow();
     String filePath = getFilePath();
-    return createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath), relativeBlockletId,
-        false);
+    return createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath), relativeBlockletId);
   }
 
   private byte[] getBlockletRowCountForEachBlock() {
@@ -756,9 +765,8 @@ public class BlockDataMap extends CoarseGrainDataMap
     return BLOCK_DEFAULT_BLOCKLET_ID;
   }
 
-  protected ExtendedBlocklet createBlocklet(DataMapRow row, String fileName, short blockletId,
-      boolean useMinMaxForPruning) {
-    ExtendedBlocklet blocklet = new ExtendedBlocklet(fileName, blockletId + "", false);
+  protected ExtendedBlocklet createBlocklet(DataMapRow row, String fileName, short blockletId) {
+    ExtendedBlocklet blocklet = new ExtendedBlocklet(fileName, blockletId + "");
     BlockletDetailInfo detailInfo = getBlockletDetailInfo(row, blockletId, blocklet);
     detailInfo.setBlockletInfoBinary(new byte[0]);
     blocklet.setDetailInfo(detailInfo);
