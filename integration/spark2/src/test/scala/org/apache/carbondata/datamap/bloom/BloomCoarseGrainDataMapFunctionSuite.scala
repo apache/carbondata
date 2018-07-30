@@ -832,6 +832,103 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
       CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
   }
 
+  /**
+   * create bloom and preagg on base table, then create bloom on preagg table,
+   * index column and group by column is dictionary column.
+   * note that the test steps are copied from issue.
+   * In the CI env, sometime it will become timeout, so we ignore the newly added tests
+   */
+  ignore("test bloom datamap: CARBONDATA-2799 bloom datamap on preaggregate") {
+    sql(
+      s"""
+         | CREATE TABLE $normalTable (id int, name string, salary float,dob date)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('dictionary_include'='id')
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable (id int, name string, salary float,dob date)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('dictionary_include'='id')
+       """.stripMargin)
+    (1 to 2).foreach { _ =>
+      sql(
+        s"""
+           | INSERT INTO $bloomDMSampleTable VALUES
+           | ('1', 'name1', '11.1', '2018-07-01'),
+           | ('2', 'name2', '21.1', '2018-07-02'),
+           | ('3', 'name3', '31.1', '2018-07-03'),
+           | ('4', 'name4', '41.1', '2018-07-04')
+       """.stripMargin)
+      sql(
+        s"""
+           | INSERT INTO $normalTable VALUES
+           | ('1', 'name1', '11.1', '2018-07-01'),
+           | ('2', 'name2', '21.1', '2018-07-02'),
+           | ('3', 'name3', '31.1', '2018-07-03'),
+           | ('4', 'name4', '41.1', '2018-07-04')
+       """.stripMargin)
+    }
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | DMPROPERTIES('INDEX_COLUMNS'='id', 'BLOOM_SIZE'='320000', 'BLOOM_FPP'='0.01', 'BLOOM_COMPRESS'='TRUE')
+       """.stripMargin)
+    sql(
+      s"""
+         | INSERT INTO $bloomDMSampleTable VALUES
+         | ('1', 'name1', '11.1', '2018-07-01'),
+         | ('2', 'name2', '21.1', '2018-07-02'),
+         | ('3', 'name3', '31.1', '2018-07-03'),
+         | ('4', 'name4', '41.1', '2018-07-04')
+       """.stripMargin)
+    sql(
+      s"""
+         | INSERT INTO $normalTable VALUES
+         | ('1', 'name1', '11.1', '2018-07-01'),
+         | ('2', 'name2', '21.1', '2018-07-02'),
+         | ('3', 'name3', '31.1', '2018-07-03'),
+         | ('4', 'name4', '41.1', '2018-07-04')
+       """.stripMargin)
+    val preAggOnBase = "preagg_on_base"
+    sql(
+      s"""
+         | CREATE DATAMAP $preAggOnBase ON TABLE $bloomDMSampleTable
+         | USING 'preaggregate' AS
+         | select id, count(id) from $bloomDMSampleTable group by id
+       """.stripMargin)
+    checkAnswer(sql(s"SELECT id, count(id) from $bloomDMSampleTable where id = 3 group by id"),
+      sql(s"SELECT id, count(id) from $normalTable where id = 3 group by id"))
+
+    val bloomOnPreAgg = "bloom_on_pre_agg"
+    sql(
+      s"""
+         | CREATE DATAMAP $bloomOnPreAgg ON TABLE ${bloomDMSampleTable}_${preAggOnBase}
+         | USING 'bloomfilter'
+         | DMPROPERTIES('INDEX_COLUMNS'='${bloomDMSampleTable}_id')
+       """.stripMargin)
+    checkAnswer(sql(s"SELECT id, count(id) from $bloomDMSampleTable where id = 3 group by id"),
+      sql(s"SELECT id, count(id) from $normalTable where id = 3 group by id"))
+
+    sql(s"DROP DATAMAP $bloomOnPreAgg on table ${bloomDMSampleTable}_${preAggOnBase}")
+    checkAnswer(sql(s"SELECT id, count(id) from $bloomDMSampleTable where id = 3 group by id"),
+      sql(s"SELECT id, count(id) from $normalTable where id = 3 group by id"))
+
+    sql(
+      s"""
+         | CREATE DATAMAP $bloomOnPreAgg ON TABLE ${bloomDMSampleTable}_${preAggOnBase}
+         | USING 'bloomfilter'
+         | DMPROPERTIES('INDEX_COLUMNS'='${bloomDMSampleTable}_id')
+       """.stripMargin)
+    checkAnswer(sql(s"SELECT id, count(id) from $bloomDMSampleTable where id = 3 group by id"),
+      sql(s"SELECT id, count(id) from $normalTable where id = 3 group by id"))
+
+    sql(s"DROP DATAMAP $bloomOnPreAgg on table ${bloomDMSampleTable}_${preAggOnBase}")
+    checkAnswer(sql(s"SELECT id, count(id) from $bloomDMSampleTable where id = 3 group by id"),
+      sql(s"SELECT id, count(id) from $normalTable where id = 3 group by id"))
+  }
+
   override def afterAll(): Unit = {
     deleteFile(bigFile)
     sql(s"DROP TABLE IF EXISTS $normalTable")
