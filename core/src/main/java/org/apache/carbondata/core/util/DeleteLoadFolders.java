@@ -40,6 +40,7 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 public final class DeleteLoadFolders {
@@ -75,21 +76,21 @@ public final class DeleteLoadFolders {
         absoluteTableIdentifier,
         currentDetails,
         isForceDelete,
-        specs);
+        specs,
+        currentDetails);
     if (newAddedLoadHistoryList != null && newAddedLoadHistoryList.length > 0) {
       physicalFactAndMeasureMetadataDeletion(
           absoluteTableIdentifier,
           newAddedLoadHistoryList,
           isForceDelete,
-          specs);
+          specs,
+          currentDetails);
     }
   }
 
-  public static void physicalFactAndMeasureMetadataDeletion(
-      AbsoluteTableIdentifier absoluteTableIdentifier,
-      LoadMetadataDetails[] loadDetails,
-      boolean isForceDelete,
-      List<PartitionSpec> specs) {
+  private static void physicalFactAndMeasureMetadataDeletion(
+      AbsoluteTableIdentifier absoluteTableIdentifier, LoadMetadataDetails[] loadDetails,
+      boolean isForceDelete, List<PartitionSpec> specs, LoadMetadataDetails[] currLoadDetails) {
     CarbonTable carbonTable = DataMapStoreManager.getInstance().getCarbonTable(
         absoluteTableIdentifier);
     List<TableDataMap> indexDataMaps = new ArrayList<>();
@@ -104,14 +105,16 @@ public final class DeleteLoadFolders {
           "Failed to get datamaps for %s.%s, therefore the datamap files could not be cleaned.",
           absoluteTableIdentifier.getDatabaseName(), absoluteTableIdentifier.getTableName()));
     }
-
+    SegmentUpdateStatusManager updateStatusManager =
+        new SegmentUpdateStatusManager(carbonTable, currLoadDetails);
     for (final LoadMetadataDetails oneLoad : loadDetails) {
       if (checkIfLoadCanBeDeletedPhysically(oneLoad, isForceDelete)) {
         try {
           if (oneLoad.getSegmentFile() != null) {
-            SegmentFileStore
-                .deleteSegment(absoluteTableIdentifier.getTablePath(), oneLoad.getSegmentFile(),
-                    specs);
+            SegmentFileStore.deleteSegment(
+                absoluteTableIdentifier.getTablePath(),
+                new Segment(oneLoad.getLoadName(), oneLoad.getSegmentFile()),
+                specs, updateStatusManager);
           } else {
             String path = getSegmentPath(absoluteTableIdentifier, oneLoad);
             boolean status = false;
@@ -161,7 +164,7 @@ public final class DeleteLoadFolders {
             segments.add(new Segment(oneLoad.getLoadName()));
             dataMap.deleteDatamapData(segments);
           }
-        } catch (IOException e) {
+        } catch (Exception e) {
           LOGGER.warn("Unable to delete the file as per delete command " + oneLoad.getLoadName());
         }
       }
