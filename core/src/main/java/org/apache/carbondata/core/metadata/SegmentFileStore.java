@@ -56,6 +56,7 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -793,25 +794,30 @@ public class SegmentFileStore {
   /**
    * Deletes the segment file and its physical files like partition folders from disk
    * @param tablePath
-   * @param segmentFile
+   * @param segment
    * @param partitionSpecs
    * @throws IOException
    */
-  public static void deleteSegment(String tablePath, String segmentFile,
-      List<PartitionSpec> partitionSpecs) throws IOException {
-    SegmentFileStore fileStore = new SegmentFileStore(tablePath, segmentFile);
+  public static void deleteSegment(String tablePath, Segment segment,
+      List<PartitionSpec> partitionSpecs,
+      SegmentUpdateStatusManager updateStatusManager) throws Exception {
+    SegmentFileStore fileStore = new SegmentFileStore(tablePath, segment.getSegmentFileName());
     List<String> indexOrMergeFiles = fileStore.readIndexFiles(SegmentStatus.SUCCESS, true);
     Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
     for (Map.Entry<String, List<String>> entry : indexFilesMap.entrySet()) {
       FileFactory.deleteFile(entry.getKey(), FileFactory.getFileType(entry.getKey()));
       for (String file : entry.getValue()) {
+        String[] deltaFilePaths =
+            updateStatusManager.getDeleteDeltaFilePath(file, segment.getSegmentNo());
+        for (String deltaFilePath : deltaFilePaths) {
+          FileFactory.deleteFile(deltaFilePath, FileFactory.getFileType(deltaFilePath));
+        }
         FileFactory.deleteFile(file, FileFactory.getFileType(file));
       }
     }
     deletePhysicalPartition(partitionSpecs, indexFilesMap, indexOrMergeFiles, tablePath);
     String segmentFilePath =
-        CarbonTablePath.getSegmentFilesLocation(tablePath) + CarbonCommonConstants.FILE_SEPARATOR
-            + segmentFile;
+        CarbonTablePath.getSegmentFilePath(tablePath, segment.getSegmentFileName());
     // Deletes the physical segment file
     FileFactory.deleteFile(segmentFilePath, FileFactory.getFileType(segmentFilePath));
   }
