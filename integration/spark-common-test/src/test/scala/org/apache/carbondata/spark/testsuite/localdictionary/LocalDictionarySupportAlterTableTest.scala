@@ -1235,7 +1235,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
       case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
-      case Some(row) => assert(row.get(1).toString.contains("st.val.si,name"))
+      case Some(row) => assert(row.get(1).toString.contains("name,st.val.si"))
       case None => assert(false)
     }
   }
@@ -1260,7 +1260,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
       case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
-      case Some(row) => assert(row.get(1).toString.contains("st.val.si,name"))
+      case Some(row) => assert(row.get(1).toString.contains("name,st.val.si"))
       case None => assert(false)
     }
   }
@@ -1284,7 +1284,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
       case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
-      case Some(row) => assert(row.get(1).toString.contains("st.val.sd,name"))
+      case Some(row) => assert(row.get(1).toString.contains("name,st.val.sd"))
       case None => assert(false)
     }
   }
@@ -1309,7 +1309,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
       case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
-      case Some(row) => assert(row.get(1).toString.contains("h,st.val.sd,name"))
+      case Some(row) => assert(row.get(1).toString.contains("h,name,st.val.sd"))
       case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
@@ -1338,7 +1338,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
       case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
-      case Some(row) => assert(row.get(1).toString.contains("h,st.sd,st.sh.val,name"))
+      case Some(row) => assert(row.get(1).toString.contains("h,name,st.sd,st.sh.val"))
       case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
@@ -1367,7 +1367,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
       case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
-      case Some(row) => assert(row.get(1).toString.contains("h,st.sd,name"))
+      case Some(row) => assert(row.get(1).toString.contains("h,name,st.sd"))
       case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
@@ -1396,7 +1396,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
       case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
-      case Some(row) => assert(row.get(1).toString.contains("h,st.val,name"))
+      case Some(row) => assert(row.get(1).toString.contains("h,name,st.val"))
       case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {

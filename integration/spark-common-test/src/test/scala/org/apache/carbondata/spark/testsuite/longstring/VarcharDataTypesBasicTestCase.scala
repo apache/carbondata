@@ -31,6 +31,8 @@ import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.util.CarbonProperties
 
+import scala.collection.mutable
+
 class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   private val longStringTable = "long_string_table"
   private val inputDir = s"$resourcesPath${File.separator}varchartype${File.separator}"
@@ -316,6 +318,37 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     assert(dmTable.getColumnByName(dmTableName.toLowerCase(), longStringTable + "_note").getDataType
       == DataTypes.VARCHAR)
     sql(s"DROP DATAMAP IF EXISTS $datamapName ON TABLE $longStringTable")
+  }
+
+  test("create table with varchar column and complex column") {
+    sql("DROP TABLE IF EXISTS varchar_complex_table")
+    sql("""
+        | CREATE TABLE varchar_complex_table
+        | (m1 int,arr1 array<string>,varchar1 string,s1 string,varchar2 string,arr2 array<string>)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('long_string_columns'='varchar1,varchar2')
+        | """.stripMargin)
+    sql(
+      """
+        | INSERT INTO TABLE varchar_complex_table
+        | VALUES(1,'ar1.0$ar1.1','longstr10','normal string1','longstr11','ar2.0$ar2.1'),
+        | (2,'ar1.2$ar1.3','longstr20','normal string2','longstr21','ar2.2$ar2.3')
+        | """.stripMargin)
+    checkAnswer(
+      sql("SELECT * FROM varchar_complex_table where varchar1='longstr10'"),
+      Seq(Row(1,mutable.WrappedArray.make(Array("ar1.0","ar1.1")),"longstr10","normal string1",
+        "longstr11",mutable.WrappedArray.make(Array("ar2.0","ar2.1")))))
+    checkAnswer(
+      sql(
+        """
+          |SELECT varchar1,arr2,s1,m1,varchar2,arr1
+          |FROM varchar_complex_table
+          |WHERE arr1[1]='ar1.3'
+          |""".stripMargin),
+      Seq(Row("longstr20",mutable.WrappedArray.make(Array("ar2.2","ar2.3")),"normal string2",2,
+        "longstr21",mutable.WrappedArray.make(Array("ar1.2","ar1.3")))))
+
+    sql("DROP TABLE IF EXISTS varchar_complex_table")
   }
 
     // ignore this test in CI, because it will need at least 4GB memory to run successfully
