@@ -52,6 +52,7 @@ import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataFileFooterConverterV3}
+import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
 import org.apache.carbondata.sdk.file._
 
 
@@ -349,6 +350,35 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     assert(new File(writerPath).exists())
     cleanTestData()
   }
+
+  test(" test csv fileheader for transactional table") {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildTestDataWithSameUUID(3, false, null, List("name"))
+    assert(new File(writerPath).exists())
+
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    checkAnswer(sql("SELECT name,name FROM sdkOutputTable"), Seq(
+      Row("robot0", "robot0"),
+      Row("robot1", "robot1"),
+      Row("robot2", "robot2")))
+    //load csvfile without fileheader
+    var exception = intercept[CarbonDataLoadingException] {
+      sql(s"""load data inpath '$resourcesPath/nontransactional1.csv' into table sdkOutputTable""").show(200,false)
+    }
+    assert(exception.getMessage()
+      .contains("CSV header in input file is not proper. Column names in schema and csv header are not the same."))
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
+  }
+
 
   test("test count star with multiple loads files with same schema and UUID") {
     FileUtils.deleteDirectory(new File(writerPath))

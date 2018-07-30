@@ -63,6 +63,11 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   private int outputArrayIndex;
 
   /**
+   * Dictionary column
+   */
+  private boolean isDictionaryColumn;
+
+  /**
    * current data counter
    */
   private int dataCounter;
@@ -86,6 +91,21 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
     this.name = name;
     this.parentname = parentname;
     this.columnId = columnId;
+  }
+
+  /**
+   * constructor
+   * @param name
+   * @param parentname
+   * @param columnId
+   * @param isDictionaryColumn
+   */
+  public ArrayDataType(String name, String parentname, String columnId,
+      Boolean isDictionaryColumn) {
+    this.name = name;
+    this.parentname = parentname;
+    this.columnId = columnId;
+    this.isDictionaryColumn = isDictionaryColumn;
   }
 
   /*
@@ -153,7 +173,7 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   }
 
   @Override public boolean getIsColumnDictionary() {
-    return true;
+    return isDictionaryColumn;
   }
 
   @Override public void writeByteArray(ArrayObject input, DataOutputStream dataOutputStream,
@@ -172,7 +192,7 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
 
   @Override
   public void fillCardinality(List<Integer> dimCardWithComplex) {
-    if (children.getIsColumnDictionary()) {
+    if (this.getIsColumnDictionary()) {
       dimCardWithComplex.add(0);
       children.fillCardinality(dimCardWithComplex);
     }

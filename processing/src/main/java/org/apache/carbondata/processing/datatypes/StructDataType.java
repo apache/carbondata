@@ -57,6 +57,12 @@ public class StructDataType implements GenericDataType<StructObject> {
    * output array index
    */
   private int outputArrayIndex;
+
+  /**
+   * Dictionary column
+   */
+  private boolean isDictionaryColumn;
+
   /**
    * data counter
    */
@@ -80,6 +86,21 @@ public class StructDataType implements GenericDataType<StructObject> {
     this.name = name;
     this.parentname = parentname;
     this.columnId = columnId;
+  }
+
+  /**
+   * constructor
+   * @param name
+   * @param parentname
+   * @param columnId
+   * @param isDictionaryColumn
+   */
+  public StructDataType(String name, String parentname, String columnId,
+      Boolean isDictionaryColumn) {
+    this.name = name;
+    this.parentname = parentname;
+    this.columnId = columnId;
+    this.isDictionaryColumn = isDictionaryColumn;
   }
 
   /*
@@ -153,7 +174,7 @@ public class StructDataType implements GenericDataType<StructObject> {
   }
 
   @Override public boolean getIsColumnDictionary() {
-    return true;
+    return isDictionaryColumn;
   }
 
   @Override public void writeByteArray(StructObject input, DataOutputStream dataOutputStream,
@@ -178,13 +199,7 @@ public class StructDataType implements GenericDataType<StructObject> {
 
   @Override
   public void fillCardinality(List<Integer> dimCardWithComplex) {
-    boolean isDictionaryColumn = false;
-    for (GenericDataType child : children) {
-      if (child.getIsColumnDictionary()) {
-        isDictionaryColumn = true;
-      }
-    }
-    if (isDictionaryColumn) {
+    if (this.getIsColumnDictionary()) {
       dimCardWithComplex.add(0);
       for (int i = 0; i < children.size(); i++) {
         children.get(i).fillCardinality(dimCardWithComplex);
