@@ -889,7 +889,10 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
   test("basic scenario") {
 
     sql("drop table if exists mvtable1")
+    sql("drop table if exists mvtable2")
     sql("create table mvtable1(name string,age int,salary int) stored by 'carbondata'")
+    sql("create table mvtable2(name string,age int,salary int) stored by 'carbondata'")
+    sql("create datamap MV11 using 'mv' as select name from mvtable2")
     sql(" insert into mvtable1 select 'n1',12,12")
     sql("  insert into mvtable1 select 'n1',12,12")
     sql(" insert into mvtable1 select 'n3',12,12")
@@ -897,6 +900,7 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("update mvtable1 set(name) = ('updatedName')").show()
     checkAnswer(sql("select count(*) from mvtable1 where name = 'updatedName'"),Seq(Row(4)))
     sql("drop table if exists mvtable1")
+    sql("drop table if exists mvtable2")
   }
 
   def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {

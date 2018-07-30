@@ -16,8 +16,11 @@
  */
 package org.apache.carbondata.mv.datamap
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute}
+import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Alias, ScalaUDF}
 import org.apache.spark.sql.catalyst.plans.logical.{Command, DeserializeToObject, LogicalPlan}
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -80,26 +83,54 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
   }
 
   def isValidPlan(plan: LogicalPlan, catalog: SummaryDatasetCatalog): Boolean = {
-    !plan.isInstanceOf[Command] && !isDataMapExists(plan, catalog.listAllSchema()) &&
-    !plan.isInstanceOf[DeserializeToObject]
+    if (!plan.isInstanceOf[Command]  && !plan.isInstanceOf[DeserializeToObject]) {
+      val catalogs = extractCatalogs(plan)
+      !isDataMapReplaced(catalog.listAllValidSchema(), catalogs) &&
+      isDataMapExists(catalog.listAllValidSchema(), catalogs)
+    } else {
+      false
+    }
+
   }
   /**
    * Check whether datamap table already updated in the query.
    *
-   * @param plan
    * @param mvs
    * @return
    */
-  def isDataMapExists(plan: LogicalPlan, mvs: Array[SummaryDataset]): Boolean = {
-    val catalogs = plan collect {
-      case l: LogicalRelation => l.catalogTable
-    }
-    catalogs.isEmpty || catalogs.exists { c =>
+  def isDataMapReplaced(
+      mvs: Array[SummaryDataset],
+      catalogs: Seq[Option[CatalogTable]]): Boolean = {
+    catalogs.exists { c =>
       mvs.exists { mv =>
         val identifier = mv.dataMapSchema.getRelationIdentifier
         identifier.getTableName.equals(c.get.identifier.table) &&
         identifier.getDatabaseName.equals(c.get.database)
       }
     }
+  }
+
+  /**
+   * Check whether any suitable datamaps exists for this plan.
+   *
+   * @param mvs
+   * @return
+   */
+  def isDataMapExists(mvs: Array[SummaryDataset], catalogs: Seq[Option[CatalogTable]]): Boolean = {
+    catalogs.exists { c =>
+      mvs.exists { mv =>
+        mv.dataMapSchema.getParentTables.asScala.exists { identifier =>
+          identifier.getTableName.equals(c.get.identifier.table) &&
+          identifier.getDatabaseName.equals(c.get.database)
+        }
+      }
+    }
+  }
+
+  private def extractCatalogs(plan: LogicalPlan) = {
+    val catalogs = plan collect {
+      case l: LogicalRelation => l.catalogTable
+    }
+    catalogs
   }
 }
