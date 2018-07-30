@@ -45,7 +45,6 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "create table table1 (roll string,person Struct<detail:int>) stored by " +
       "'carbondata'")
     sql("insert into table1 values('abc',1)")
-    sql("select roll,person,roll,person.detail from table1").show(false)
     checkAnswer(sql("select roll,person,person.detail from table1"),
       Seq(Row("abc", Row(1), 1)))
     checkAnswer(sql("select person,person.detail from table1"),
@@ -60,7 +59,6 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "create table table1 (roll string,person array<int>) stored by " +
       "'carbondata'")
     sql("insert into table1 values('abc','1$2$3')")
-    sql("select roll,person,roll,person from table1").show(false)
     checkAnswer(sql("select roll,person from table1"),
       Seq(Row("abc", mutable.WrappedArray.make(Array(1, 2, 3)))))
   }
@@ -99,8 +97,6 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "create table table1 (roll int,person Struct<detail:array<string>>) stored by " +
       "'carbondata'")
     sql("insert into table1 values(1,'abc:bcd')")
-    //    sql("select person from table1").show(false)
-    sql("select person.detail[0] from table1").show(false)
     checkAnswer(sql("select person.detail[0] from table1"), Seq(Row("abc")))
     checkAnswer(sql("select person.detail[1] from table1"), Seq(Row("bcd")))
     checkAnswer(sql("select roll,person from table1"),
@@ -164,7 +160,6 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "'carbondata'")
     sql("insert into table1 values(1,'2018/01/01')")
     checkExistence(sql("select person from table1"), true, "2018-01-01 00:00:00.0")
-    sql("select person,roll,person.detail from table1").show(false)
     checkAnswer(sql("select person,roll,person.detail from table1"),
       Seq(Row(Row(Timestamp.valueOf("2018-01-01 00:00:00.0")), 1,
         Timestamp.valueOf("2018-01-01 00:00:00.0"))))
@@ -227,7 +222,6 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "'carbondata'")
     sql("insert into table1 values(1,20)")
     checkExistence(sql("select person from table1"), true, "20")
-    sql("select person,person.detail from table1").show(false)
     checkAnswer(sql("select person,roll,person.detail from table1"), Seq(Row(Row(20), 1, 20)))
     checkExistence(sql("select person.detail from table1"), true, "20")
     checkAnswer(sql("select roll,person from table1"), Seq(Row(1, Row(20))))
@@ -252,7 +246,6 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "'carbondata'")
     sql("insert into table1 values(1,true)")
     checkExistence(sql("select person from table1"), true, "true")
-    sql("select person,person.detail from table1").show(false)
     checkAnswer(sql("select person,roll,person.detail from table1"), Seq(Row(Row(true), 1, true)))
     checkExistence(sql("select person.detail from table1"), true, "true")
     checkAnswer(sql("select roll,person from table1"), Seq(Row(1, Row(true))))
