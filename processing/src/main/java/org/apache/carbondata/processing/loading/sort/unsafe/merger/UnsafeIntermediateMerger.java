@@ -37,8 +37,6 @@ import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
 
-import org.apache.commons.collections.list.SynchronizedList;
-
 /**
  * It does mergesort intermediate files to big file.
  */
