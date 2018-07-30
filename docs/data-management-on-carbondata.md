@@ -284,7 +284,8 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 	 ALTER TABLE employee SET TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
 	 ```
 
-   - **String longer than 32000 characters**
+   - **String longer than 32000 characters** (Alpha Feature 1.4.1)
+
      In common scenarios, the length of string is less than 32000, so carbondata store the length of content using Short to reduce memory and space consumption.
      If your string content exceeds the 32000 characters limitation, you can specify the columns as 'long string column' using below tblProperties:
 
@@ -751,7 +752,7 @@ Users can specify which columns to include and exclude for local dictionary gene
   * If the FORCE option is used, then it auto-converts the data by storing the bad records as NULL before Loading data.
   * If the IGNORE option is used, then bad records are neither loaded nor written to the separate CSV file.
   * In loaded data, if all records are bad records, the BAD_RECORDS_ACTION is invalid and the load operation fails.
-  * The maximum number of characters per column is 32000. If there are more than 32000 characters in a column, data loading will fail.
+  * The default maximum number of characters per column is 32000. If there are more than 32000 characters in a column, please refer to *String longer than 32000 characters* section.
 
   Example:
 
