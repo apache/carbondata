@@ -280,6 +280,10 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     }
   }
 
+  protected void closeStreamsOnForceClose() {
+    CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
+  }
+
   /**
    * This method will be used to initialize the channel
    *
@@ -428,6 +432,24 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     }
     if (null != fallbackExecutorService) {
       fallbackExecutorService.shutdownNow();
+    }
+  }
+
+  protected void closeExecutorServiceOnForceClose() throws CarbonDataWriterException {
+    Throwable t = null;
+    try {
+      listener.finish();
+    } catch (IOException e) {
+      t = e;
+    }
+    if (null != executorService && !executorService.isShutdown()) {
+      executorService.shutdownNow();
+    }
+    if (null != fallbackExecutorService && !fallbackExecutorService.isShutdown()) {
+      fallbackExecutorService.shutdownNow();
+    }
+    if (null != t) {
+      throw new CarbonDataWriterException(t);
     }
   }
 

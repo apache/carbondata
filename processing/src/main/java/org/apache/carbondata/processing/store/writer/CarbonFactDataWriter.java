@@ -47,4 +47,6 @@ public interface CarbonFactDataWriter {
    */
   void closeWriter() throws CarbonDataWriterException;
 
+  void forceClose();
+
 }

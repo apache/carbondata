@@ -280,8 +280,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       }
       if (null != this.carbonFactHandlers && !this.carbonFactHandlers.isEmpty()) {
         for (CarbonFactHandler carbonFactHandler : this.carbonFactHandlers) {
-          carbonFactHandler.finish();
-          carbonFactHandler.closeHandler();
+          carbonFactHandler.forceClose();
         }
       }
     }
