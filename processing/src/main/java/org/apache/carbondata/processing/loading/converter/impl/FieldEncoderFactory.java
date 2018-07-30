@@ -144,7 +144,8 @@ public class FieldEncoderFactory {
           ((CarbonDimension) carbonColumn).getListOfChildDimensions();
       // Create array parser with complex delimiter
       ArrayDataType arrayDataType =
-          new ArrayDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId());
+          new ArrayDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId(),
+              carbonColumn.hasEncoding(Encoding.DICTIONARY));
       for (CarbonDimension dimension : listOfChildDimensions) {
         arrayDataType.addChildren(
             createComplexType(dimension, carbonColumn.getColName(), absoluteTableIdentifier,
@@ -156,7 +157,8 @@ public class FieldEncoderFactory {
           ((CarbonDimension) carbonColumn).getListOfChildDimensions();
       // Create struct parser with complex delimiter
       StructDataType structDataType =
-          new StructDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId());
+          new StructDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId(),
+              carbonColumn.hasEncoding(Encoding.DICTIONARY));
       for (CarbonDimension dimension : dimensions) {
         structDataType.addChildren(
             createComplexType(dimension, carbonColumn.getColName(), absoluteTableIdentifier,

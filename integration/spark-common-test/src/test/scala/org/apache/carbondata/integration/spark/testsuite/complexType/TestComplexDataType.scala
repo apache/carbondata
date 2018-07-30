@@ -971,6 +971,13 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "('dictionary_include'='b')")
     sql("insert into test values(1,2) ")
     checkAnswer(sql("select b[0] from test"),Seq(Row(2)))
+    sql("DROP TABLE IF EXISTS test")
+    sql(
+      "create table test(intval array<array<int>>,str array<array<string>>, bool " +
+      "array<array<boolean>>, sint array<array<short>>, big array<array<bigint>>)  stored by " +
+      "'carbondata' tblproperties('dictionary_include'='bool,sint,big')")
+    sql("insert into test values(1,'ab',true,22,33)")
+    checkExistence(sql("select * from test"), true, "33")
   }
 
   test("date with struct and array") {
