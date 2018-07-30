@@ -47,10 +47,12 @@ import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -108,6 +110,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     for (CarbonColumn col : indexedColumn) {
       this.name2Col.put(col.getColName(), col);
     }
+    String parentTablePath = getAncestorTablePath(carbonTable);
 
     try {
       this.name2Converters = new HashMap<>(indexedColumn.size());
@@ -129,7 +132,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         dataField.setTimestampFormat(tsFormat);
         FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
             .createFieldEncoder(dataField, absoluteTableIdentifier, i, nullFormat, null, false,
-                localCaches[i], false, carbonTable.getTablePath());
+                localCaches[i], false, parentTablePath);
         this.name2Converters.put(indexedColumn.get(i).getColName(), fieldConverter);
       }
     } catch (IOException e) {
@@ -138,6 +141,22 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     }
     this.badRecordLogHolder = new BadRecordLogHolder();
     this.badRecordLogHolder.setLogged(false);
+  }
+
+  /**
+   * recursively find the ancestor's table path. This is used for dictionary scenario
+   * where preagg will use the dictionary of the parent table.
+   */
+  private String getAncestorTablePath(CarbonTable currentTable) {
+    if (!currentTable.isChildDataMap()) {
+      return currentTable.getTablePath();
+    }
+
+    RelationIdentifier parentIdentifier =
+        currentTable.getTableInfo().getParentRelationIdentifiers().get(0);
+    CarbonTable parentTable = CarbonMetadata.getInstance().getCarbonTable(
+        parentIdentifier.getDatabaseName(), parentIdentifier.getTableName());
+    return getAncestorTablePath(parentTable);
   }
 
   @Override
