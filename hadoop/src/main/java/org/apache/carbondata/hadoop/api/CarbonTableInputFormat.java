@@ -198,30 +198,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         getFilteredSegment(job, new ArrayList<>(validAndInProgressSegments), false,
             readCommittedScope);
     // Clean the updated segments from memory if the update happens on segments
-    List<Segment> toBeCleanedSegments = new ArrayList<>();
-    for (Segment filteredSegment : filteredSegmentToAccess) {
-      boolean refreshNeeded =
-          DataMapStoreManager.getInstance().getTableSegmentRefresher(carbonTable)
-              .isRefreshNeeded(filteredSegment,
-                  updateStatusManager.getInvalidTimestampRange(filteredSegment.getSegmentNo()));
-      if (refreshNeeded) {
-        toBeCleanedSegments.add(filteredSegment);
-      }
-    }
-    // Clean segments if refresh is needed
-    for (Segment segment : filteredSegmentToAccess) {
-      if (DataMapStoreManager.getInstance().getTableSegmentRefresher(carbonTable)
-          .isRefreshNeeded(segment.getSegmentNo())) {
-        toBeCleanedSegments.add(segment);
-      }
-    }
-
-
-    if (toBeCleanedSegments.size() > 0) {
-      DataMapStoreManager.getInstance()
-          .clearInvalidSegments(getOrCreateCarbonTable(job.getConfiguration()),
-              toBeCleanedSegments);
-    }
+    refreshSegmentCacheIfRequired(job, carbonTable, updateStatusManager, filteredSegmentToAccess);
 
     // process and resolve the expression
     Expression filter = getFilterPredicates(job.getConfiguration());
@@ -263,6 +240,42 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       splits.addAll(splitsOfStreaming);
     }
     return splits;
+  }
+
+  /**
+   * Method to check and refresh segment cache
+   *
+   * @param job
+   * @param carbonTable
+   * @param updateStatusManager
+   * @param filteredSegmentToAccess
+   * @throws IOException
+   */
+  public void refreshSegmentCacheIfRequired(JobContext job, CarbonTable carbonTable,
+      SegmentUpdateStatusManager updateStatusManager, List<Segment> filteredSegmentToAccess)
+      throws IOException {
+    List<Segment> toBeCleanedSegments = new ArrayList<>();
+    for (Segment filteredSegment : filteredSegmentToAccess) {
+      boolean refreshNeeded =
+          DataMapStoreManager.getInstance().getTableSegmentRefresher(carbonTable)
+              .isRefreshNeeded(filteredSegment,
+                  updateStatusManager.getInvalidTimestampRange(filteredSegment.getSegmentNo()));
+      if (refreshNeeded) {
+        toBeCleanedSegments.add(filteredSegment);
+      }
+    }
+    // Clean segments if refresh is needed
+    for (Segment segment : filteredSegmentToAccess) {
+      if (DataMapStoreManager.getInstance().getTableSegmentRefresher(carbonTable)
+          .isRefreshNeeded(segment.getSegmentNo())) {
+        toBeCleanedSegments.add(segment);
+      }
+    }
+    if (toBeCleanedSegments.size() > 0) {
+      DataMapStoreManager.getInstance()
+          .clearInvalidSegments(getOrCreateCarbonTable(job.getConfiguration()),
+              toBeCleanedSegments);
+    }
   }
 
   /**
