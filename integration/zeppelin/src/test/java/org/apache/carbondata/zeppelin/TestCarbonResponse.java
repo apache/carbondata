@@ -76,7 +76,7 @@ public class TestCarbonResponse {
             "    \"timestamp\": 1531884083849,\n" +
             "    \"status\": 500,\n" +
             "    \"error\": \"Internal Server Error\",\n" +
-            "    \"exception\": \"org.apache.carbondata.store.api.exception.StoreException\",\n" +
+            "    \"exception\": \"org.apache.carbondata.store.api.exception.CarbonException\",\n" +
             "    \"message\": \"org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException: " +
             "Table or view 'sinka6' already exists in database 'default';\",\n" +
             "    \"path\": \"/table/sql\"\n" +
@@ -84,7 +84,7 @@ public class TestCarbonResponse {
     CarbonResponse errorResponse = CarbonResponse.parse(new ByteArrayInputStream(input.getBytes())).get();
     assertEquals("org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException: " +
             "Table or view 'sinka6' already exists in database 'default';", errorResponse.getMessage());
-    assertEquals("org.apache.carbondata.store.api.exception.StoreException", errorResponse.getException());
+    assertEquals("org.apache.carbondata.store.api.exception.CarbonException", errorResponse.getException());
     assertEquals(1531884083849L, errorResponse.getTimestamp());
     assertEquals("Internal Server Error", errorResponse.getError());
     assertEquals(500, errorResponse.getStatus());

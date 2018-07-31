@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -32,14 +31,14 @@ import org.apache.carbondata.sdk.file.Schema;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
-import org.apache.carbondata.store.api.CarbonStore;
-import org.apache.carbondata.store.api.CarbonStoreFactory;
-import org.apache.carbondata.store.api.conf.StoreConf;
-import org.apache.carbondata.store.api.descriptor.LoadDescriptor;
-import org.apache.carbondata.store.api.descriptor.SelectDescriptor;
-import org.apache.carbondata.store.api.descriptor.TableDescriptor;
-import org.apache.carbondata.store.api.descriptor.TableIdentifier;
-import org.apache.carbondata.store.api.exception.StoreException;
+import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.TableDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
+import org.apache.carbondata.sdk.store.exception.CarbonException;
+import org.apache.carbondata.sdk.store.CarbonStore;
+import org.apache.carbondata.sdk.store.CarbonStoreFactory;
+import org.apache.carbondata.sdk.store.conf.StoreConf;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -54,7 +53,7 @@ public class LocalCarbonStoreTest {
   private static CarbonStore store;
 
   @BeforeClass
-  public static void setup() throws IOException, StoreException {
+  public static void setup() throws IOException, CarbonException {
     StoreConf conf = new StoreConf("test", "./");
     conf.conf(StoreConf.STORE_TEMP_LOCATION, "./temp");
     store = CarbonStoreFactory.getLocalStore("LocalCarbonStoreTest", conf);
@@ -87,13 +86,13 @@ public class LocalCarbonStoreTest {
   }
 
   @Test
-  public void testWriteAndReadFiles() throws IOException, StoreException {
+  public void testWriteAndReadFiles() throws IOException, CarbonException {
     TableIdentifier tableIdentifier = new TableIdentifier("table_1", "default");
     store.dropTable(tableIdentifier);
-    TableDescriptor table = TableDescriptor
+    TableDescriptor descriptor = TableDescriptor
         .builder()
-        .ifNotExists()
         .table(tableIdentifier)
+        .ifNotExists()
         .comment("first table")
         .column("shortField", DataTypes.SHORT, "short field")
         .column("intField", DataTypes.INT, "int field")
@@ -107,7 +106,7 @@ public class LocalCarbonStoreTest {
         .column("floatField", DataTypes.DOUBLE, "float field")
         .tblProperties(CarbonCommonConstants.SORT_COLUMNS, "intField")
         .create();
-    store.createTable(table);
+    store.createTable(descriptor);
 
     // load one segment
     LoadDescriptor load = LoadDescriptor
@@ -120,26 +119,26 @@ public class LocalCarbonStoreTest {
     store.loadData(load);
 
     // select row
-    SelectDescriptor select = SelectDescriptor
+    ScanDescriptor select = ScanDescriptor
         .builder()
         .table(tableIdentifier)
-        .select("intField", "stringField")
+        .select(new String[]{"intField", "stringField"})
         .limit(5)
         .create();
-    List<CarbonRow> result = store.select(select);
+    List<CarbonRow> result = store.scan(select);
     Assert.assertEquals(5, result.size());
 
     // select row with filter
-    SelectDescriptor select2 = SelectDescriptor
+    ScanDescriptor select2 = ScanDescriptor
         .builder()
         .table(tableIdentifier)
-        .select("intField", "stringField")
+        .select(new String[]{"intField", "stringField"})
         .filter(new EqualToExpression(
             new ColumnExpression("intField", DataTypes.INT),
             new LiteralExpression(11, DataTypes.INT)))
         .limit(5)
         .create();
-    List<CarbonRow> result2 = store.select(select2);
+    List<CarbonRow> result2 = store.scan(select2);
     Assert.assertEquals(1, result2.size());
 
     store.dropTable(tableIdentifier);

@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
@@ -467,11 +468,11 @@ public class AvroCarbonWriter extends CarbonWriter {
         return new Field(fieldName, DataTypes.DOUBLE);
       case MAP:
         // recursively get the sub fields
-        ArrayList<StructField> mapSubFields = new ArrayList<>();
-        StructField mapField = prepareSubFields("val", childSchema);
+        ArrayList<Field> mapSubFields = new ArrayList<>();
+        Field mapField = prepareSubFields("val", childSchema);
         if (null != mapField) {
           // key value field will be wrapped inside a map struct field
-          StructField keyValueField = mapField.getChildren().get(0);
+          Field keyValueField = mapField.getChildren().get(0);
           // value dataType will be at position 1 in the fields
           DataType valueType =
               ((StructType) keyValueField.getDataType()).getFields().get(1).getDataType();
@@ -482,9 +483,9 @@ public class AvroCarbonWriter extends CarbonWriter {
         return null;
       case RECORD:
         // recursively get the sub fields
-        ArrayList<StructField> structSubFields = new ArrayList<>();
+        ArrayList<Field> structSubFields = new ArrayList<>();
         for (Schema.Field avroSubField : childSchema.getFields()) {
-          StructField structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
+          Field structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
           if (structField != null) {
             structSubFields.add(structField);
           }
@@ -492,9 +493,9 @@ public class AvroCarbonWriter extends CarbonWriter {
         return new Field(fieldName, "struct", structSubFields);
       case ARRAY:
         // recursively get the sub fields
-        ArrayList<StructField> arraySubField = new ArrayList<>();
+        ArrayList<Field> arraySubField = new ArrayList<>();
         // array will have only one sub field.
-        StructField structField = prepareSubFields("val", childSchema.getElementType());
+        Field structField = prepareSubFields("val", childSchema.getElementType());
         if (structField != null) {
           arraySubField.add(structField);
           return new Field(fieldName, "array", arraySubField);
@@ -504,10 +505,10 @@ public class AvroCarbonWriter extends CarbonWriter {
       case UNION:
         int i = 0;
         // Get union types and store as Struct<type>
-        ArrayList<StructField> unionFields = new ArrayList<>();
+        ArrayList<Field> unionFields = new ArrayList<>();
         for (Schema avroSubField : avroField.schema().getTypes()) {
           if (!avroSubField.getType().equals(Schema.Type.NULL)) {
-            StructField unionField = prepareSubFields(avroField.name() + i++, avroSubField);
+            Field unionField = prepareSubFields(avroField.name() + i++, avroSubField);
             if (unionField != null) {
               unionFields.add(unionField);
             }
@@ -535,92 +536,92 @@ public class AvroCarbonWriter extends CarbonWriter {
     }
   }
 
-  private static StructField prepareSubFields(String fieldName, Schema childSchema) {
+  private static Field prepareSubFields(String fieldName, Schema childSchema) {
     Schema.Type type = childSchema.getType();
     LogicalType logicalType = childSchema.getLogicalType();
     switch (type) {
       case BOOLEAN:
-        return new StructField(fieldName, DataTypes.BOOLEAN);
+        return new Field(fieldName, DataTypes.BOOLEAN);
       case INT:
         if (logicalType instanceof LogicalTypes.Date) {
-          return new StructField(fieldName, DataTypes.DATE);
+          return new Field(fieldName, DataTypes.DATE);
         } else {
           LOGGER.warn("Unsupported logical type. Considering Data Type as INT for " + childSchema
               .getName());
-          return new StructField(fieldName, DataTypes.INT);
+          return new Field(fieldName, DataTypes.INT);
         }
       case LONG:
         if (logicalType instanceof LogicalTypes.TimestampMillis
             || logicalType instanceof LogicalTypes.TimestampMicros) {
-          return new StructField(fieldName, DataTypes.TIMESTAMP);
+          return new Field(fieldName, DataTypes.TIMESTAMP);
         } else {
           LOGGER.warn("Unsupported logical type. Considering Data Type as LONG for " + childSchema
               .getName());
-          return new StructField(fieldName, DataTypes.LONG);
+          return new Field(fieldName, DataTypes.LONG);
         }
       case DOUBLE:
-        return new StructField(fieldName, DataTypes.DOUBLE);
+        return new Field(fieldName, DataTypes.DOUBLE);
       case ENUM:
       case STRING:
-        return new StructField(fieldName, DataTypes.STRING);
+        return new Field(fieldName, DataTypes.STRING);
       case FLOAT:
-        return new StructField(fieldName, DataTypes.DOUBLE);
+        return new Field(fieldName, DataTypes.DOUBLE);
       case MAP:
         // recursively get the sub fields
-        ArrayList<StructField> keyValueFields = new ArrayList<>();
+        ArrayList<Field> keyValueFields = new ArrayList<>();
         // for Avro key dataType is always fixed as String
-        StructField keyField = new StructField(fieldName + ".key", DataTypes.STRING);
-        StructField valueField = prepareSubFields(fieldName + ".value", childSchema.getValueType());
+        Field keyField = new Field(fieldName + ".key", DataTypes.STRING);
+        Field valueField = prepareSubFields(fieldName + ".value", childSchema.getValueType());
         if (null != valueField) {
           keyValueFields.add(keyField);
           keyValueFields.add(valueField);
-          StructField mapKeyValueField =
-              new StructField(fieldName, DataTypes.createStructType(keyValueFields));
+          Field mapKeyValueField =
+              new Field(fieldName, createStructType(keyValueFields));
           // value dataType will be at position 1 in the fields
           MapType mapType =
               DataTypes.createMapType(DataTypes.STRING, mapKeyValueField.getDataType());
-          List<StructField> mapStructFields = new ArrayList<>();
+          List<Field> mapStructFields = new ArrayList<>();
           mapStructFields.add(mapKeyValueField);
-          return new StructField(fieldName, mapType, mapStructFields);
+          return new Field(fieldName, mapType, mapStructFields);
         }
         return null;
       case RECORD:
         // recursively get the sub fields
-        ArrayList<StructField> structSubFields = new ArrayList<>();
+        ArrayList<Field> structSubFields = new ArrayList<>();
         for (Schema.Field avroSubField : childSchema.getFields()) {
-          StructField structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
+          Field structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
           if (structField != null) {
             structSubFields.add(structField);
           }
         }
-        return (new StructField(fieldName, DataTypes.createStructType(structSubFields)));
+        return (new Field(fieldName, createStructType(structSubFields)));
       case ARRAY:
         // recursively get the sub fields
         // array will have only one sub field.
         DataType subType = getMappingDataTypeForCollectionRecord(childSchema.getElementType());
         if (subType != null) {
-          return (new StructField(fieldName, DataTypes.createArrayType(subType)));
+          return (new Field(fieldName, DataTypes.createArrayType(subType)));
         } else {
           return null;
         }
       case UNION:
         // recursively get the union types
         int i = 0;
-        ArrayList<StructField> structSubTypes = new ArrayList<>();
+        ArrayList<Field> structSubTypes = new ArrayList<>();
         for (Schema avroSubField : childSchema.getTypes()) {
-          StructField structField = prepareSubFields(fieldName + i++, avroSubField);
+          Field structField = prepareSubFields(fieldName + i++, avroSubField);
           if (structField != null) {
             structSubTypes.add(structField);
           }
         }
-        return (new StructField(fieldName, DataTypes.createStructType(structSubTypes)));
+        return (new Field(fieldName, createStructType(structSubTypes)));
       case BYTES:
         // DECIMAL type is defined in Avro as a BYTE type with the logicalType property
         // set to "decimal" and a specified precision and scale
         if (logicalType instanceof LogicalTypes.Decimal) {
           int precision = ((LogicalTypes.Decimal) childSchema.getLogicalType()).getPrecision();
           int scale = ((LogicalTypes.Decimal) childSchema.getLogicalType()).getScale();
-          return new StructField(fieldName, DataTypes.createDecimalType(precision, scale));
+          return new Field(fieldName, DataTypes.createDecimalType(precision, scale));
         }
         return null;
       case NULL:
@@ -629,6 +630,14 @@ public class AvroCarbonWriter extends CarbonWriter {
         throw new UnsupportedOperationException(
             "carbon not support " + type.toString() + " avro type yet");
     }
+  }
+
+  private static StructType createStructType(List<Field> fields) {
+    List<StructField> f = fields.stream().map(field ->
+        new StructField(field.getFieldName(), field.getDataType(),
+            createStructType(field.getChildren()).getFields())
+    ).collect(Collectors.toList());
+    return DataTypes.createStructType(f);
   }
 
   private static DataType getMappingDataTypeForCollectionRecord(Schema childSchema) {
@@ -670,7 +679,7 @@ public class AvroCarbonWriter extends CarbonWriter {
         return DataTypes.DOUBLE;
       case MAP:
         // recursively get the sub fields
-        StructField mapField = prepareSubFields("val", childSchema);
+        Field mapField = prepareSubFields("val", childSchema);
         if (mapField != null) {
           DataType ketType = ((StructType) mapField.getDataType()).getFields().get(0).getDataType();
           DataType valueType =
@@ -680,14 +689,14 @@ public class AvroCarbonWriter extends CarbonWriter {
         return null;
       case RECORD:
         // recursively get the sub fields
-        ArrayList<StructField> structSubFields = new ArrayList<>();
+        ArrayList<Field> structSubFields = new ArrayList<>();
         for (Schema.Field avroSubField : childSchema.getFields()) {
-          StructField structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
+          Field structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
           if (structField != null) {
             structSubFields.add(structField);
           }
         }
-        return DataTypes.createStructType(structSubFields);
+        return createStructType(structSubFields);
       case ARRAY:
         // array will have only one sub field.
         DataType subType = getMappingDataTypeForCollectionRecord(childSchema.getElementType());
@@ -699,14 +708,14 @@ public class AvroCarbonWriter extends CarbonWriter {
       case UNION:
         int i = 0;
         // recursively get the union types and create struct type
-        ArrayList<StructField> unionFields = new ArrayList<>();
+        ArrayList<Field> unionFields = new ArrayList<>();
         for (Schema avroSubField : childSchema.getTypes()) {
-          StructField unionField = prepareSubFields(avroSubField.getName() + i++, avroSubField);
+          Field unionField = prepareSubFields(avroSubField.getName() + i++, avroSubField);
           if (unionField != null) {
             unionFields.add(unionField);
           }
         }
-        return DataTypes.createStructType(unionFields);
+        return createStructType(unionFields);
       case BYTES:
         // DECIMAL type is defined in Avro as a BYTE type with the logicalType property
         // set to "decimal" and a specified precision and scale

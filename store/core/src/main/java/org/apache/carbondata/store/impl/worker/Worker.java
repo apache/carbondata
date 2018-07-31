@@ -23,13 +23,13 @@ import java.net.BindException;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.store.api.conf.StoreConf;
-import org.apache.carbondata.store.impl.rpc.RegistryService;
-import org.apache.carbondata.store.impl.rpc.ServiceFactory;
-import org.apache.carbondata.store.impl.rpc.StoreService;
-import org.apache.carbondata.store.impl.rpc.model.RegisterWorkerRequest;
-import org.apache.carbondata.store.impl.rpc.model.RegisterWorkerResponse;
-import org.apache.carbondata.store.util.StoreUtil;
+import org.apache.carbondata.sdk.store.conf.StoreConf;
+import org.apache.carbondata.sdk.store.util.StoreUtil;
+import org.apache.carbondata.store.impl.service.DataService;
+import org.apache.carbondata.store.impl.service.RegistryService;
+import org.apache.carbondata.store.impl.service.ServiceFactory;
+import org.apache.carbondata.store.impl.service.model.RegisterWorkerRequest;
+import org.apache.carbondata.store.impl.service.model.RegisterWorkerResponse;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.ipc.RPC;
@@ -66,15 +66,15 @@ public class Worker {
     int coreNum = conf.workerCoreNum();
     String host = conf.workerHost();
     int port = conf.workerPort();
-    StoreService queryService = new StoreServiceImpl(this);
+    DataService dataService = new DataServiceImpl(this);
     do {
       try {
         server = new RPC.Builder(hadoopConf)
             .setNumHandlers(coreNum)
             .setBindAddress(host)
             .setPort(port)
-            .setProtocol(StoreService.class)
-            .setInstance(queryService)
+            .setProtocol(DataService.class)
+            .setInstance(dataService)
             .build();
         server.start();
 
@@ -116,9 +116,11 @@ public class Worker {
   }
 
   private void registerToMaster() throws IOException {
-    LOGGER.info("trying to register to master " + conf.masterHost() + ":" + conf.masterPort());
+    LOGGER.info("trying to register to master " +
+        conf.masterHost() + ":" + conf.registryServicePort());
     if (registry == null) {
-      registry = ServiceFactory.createRegistryService(conf.masterHost(), conf.masterPort());
+      registry = ServiceFactory.createRegistryService(
+          conf.masterHost(), conf.registryServicePort());
     }
     RegisterWorkerRequest request =
         new RegisterWorkerRequest(conf.workerHost(), conf.workerPort(), conf.workerCoreNum());

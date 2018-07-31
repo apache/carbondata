@@ -20,14 +20,14 @@ package org.apache.carbondata.store.impl.master;
 import java.io.IOException;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.store.impl.rpc.RegistryService;
-import org.apache.carbondata.store.impl.rpc.model.RegisterWorkerRequest;
-import org.apache.carbondata.store.impl.rpc.model.RegisterWorkerResponse;
+import org.apache.carbondata.store.impl.service.RegistryService;
+import org.apache.carbondata.store.impl.service.model.RegisterWorkerRequest;
+import org.apache.carbondata.store.impl.service.model.RegisterWorkerResponse;
 
 import org.apache.hadoop.ipc.ProtocolSignature;
 
 @InterfaceAudience.Internal
-class RegistryServiceImpl implements RegistryService {
+class egistryServiceImpl implements RegistryService {
 
   private Master master;
 

@@ -71,7 +71,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobContext;
+import org.apache.hadoop.mapreduce.JobID;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+import org.apache.hadoop.mapreduce.task.JobContextImpl;
 
 /**
  * InputFormat for reading carbondata files with table level metadata support,
@@ -97,6 +99,15 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
   // a cache for carbon table, it will be used in task side
   private CarbonTable carbonTable;
   private ReadCommittedScope readCommittedScope;
+
+  public CarbonTableInputFormat() {
+  }
+
+  public CarbonTableInputFormat(Configuration conf) throws IOException {
+    this.carbonTable = getOrCreateCarbonTable(conf);
+    this.readCommittedScope = getReadCommitted(
+        new JobContextImpl(conf, new JobID()), carbonTable.getAbsoluteTableIdentifier());
+  }
 
   /**
    * Get the cached CarbonTable or create it by TableInfo in `configuration`

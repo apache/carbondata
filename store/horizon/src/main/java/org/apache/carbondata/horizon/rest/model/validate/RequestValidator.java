@@ -21,63 +21,63 @@ import org.apache.carbondata.horizon.rest.model.view.CreateTableRequest;
 import org.apache.carbondata.horizon.rest.model.view.DropTableRequest;
 import org.apache.carbondata.horizon.rest.model.view.LoadRequest;
 import org.apache.carbondata.horizon.rest.model.view.SelectRequest;
-import org.apache.carbondata.store.api.exception.StoreException;
+import org.apache.carbondata.sdk.store.exception.CarbonException;
 
 import org.apache.commons.lang.StringUtils;
 
 public class RequestValidator {
 
-  public static void validateSelect(SelectRequest request) throws StoreException {
+  public static void validateSelect(SelectRequest request) throws CarbonException {
     if (request == null) {
-      throw new StoreException("Select should not be null");
+      throw new CarbonException("Select should not be null");
     }
     if (StringUtils.isEmpty(request.getDatabaseName())) {
-      throw new StoreException("database name is invalid");
+      throw new CarbonException("database name is invalid");
     }
     if (StringUtils.isEmpty(request.getTableName())) {
-      throw new StoreException("table name is invalid");
+      throw new CarbonException("table name is invalid");
     }
   }
 
-  public static void validateTable(CreateTableRequest request) throws StoreException {
+  public static void validateTable(CreateTableRequest request) throws CarbonException {
     if (request == null) {
-      throw new StoreException("TableDescriptor should not be null");
+      throw new CarbonException("TableDescriptor should not be null");
     }
     if (StringUtils.isEmpty(request.getDatabaseName())) {
-      throw new StoreException("database name is invalid");
+      throw new CarbonException("database name is invalid");
     }
     if (StringUtils.isEmpty(request.getTableName())) {
-      throw new StoreException("table name is invalid");
+      throw new CarbonException("table name is invalid");
     }
     if (request.getFields() == null || request.getFields().length == 0) {
-      throw new StoreException("fields should not be empty");
+      throw new CarbonException("fields should not be empty");
     }
   }
 
-  public static void validateLoad(LoadRequest request)  throws StoreException {
+  public static void validateLoad(LoadRequest request)  throws CarbonException {
     if (request == null) {
-      throw new StoreException("LoadDescriptor should not be null");
+      throw new CarbonException("LoadDescriptor should not be null");
     }
     if (StringUtils.isEmpty(request.getDatabaseName())) {
-      throw new StoreException("database name is invalid");
+      throw new CarbonException("database name is invalid");
     }
     if (StringUtils.isEmpty(request.getTableName())) {
-      throw new StoreException("table name is invalid");
+      throw new CarbonException("table name is invalid");
     }
     if (StringUtils.isEmpty(request.getInputPath())) {
-      throw new StoreException("input path is invalid");
+      throw new CarbonException("input path is invalid");
     }
   }
 
-  public static void validateDrop(DropTableRequest request)  throws StoreException {
+  public static void validateDrop(DropTableRequest request)  throws CarbonException {
     if (request == null) {
-      throw new StoreException("DropTableRequest should not be null");
+      throw new CarbonException("DropTableRequest should not be null");
     }
     if (StringUtils.isEmpty(request.getDatabaseName())) {
-      throw new StoreException("database name is invalid");
+      throw new CarbonException("database name is invalid");
     }
     if (StringUtils.isEmpty(request.getTableName())) {
-      throw new StoreException("table name is invalid");
+      throw new CarbonException("table name is invalid");
     }
   }
 }

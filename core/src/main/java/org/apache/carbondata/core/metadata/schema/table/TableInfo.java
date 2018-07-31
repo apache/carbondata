@@ -44,7 +44,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTable
  * Store the information about the table.
  * it stores the fact table as well as aggregate table present in the schema
  */
-public class TableInfo implements Serializable, Writable {
+public class TableInfo implements Serializable, Writable, org.apache.hadoop.io.Writable {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(TableInfo.class.getName());
