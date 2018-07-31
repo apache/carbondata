@@ -137,7 +137,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
           
      | Properties | Default value | Description |
      | ---------- | ------------- | ----------- |
-     | LOCAL_DICTIONARY_ENABLE | true | By default, local dictionary will be enabled for the table | 
+     | LOCAL_DICTIONARY_ENABLE | false | By default, local dictionary will not be enabled for the table | 
      | LOCAL_DICTIONARY_THRESHOLD | 10000 | The maximum cardinality for local dictionary generation (range- 1000 to 100000) |
      | LOCAL_DICTIONARY_INCLUDE | all no-dictionary string/varchar columns | Columns for which Local Dictionary is generated. |
      | LOCAL_DICTIONARY_EXCLUDE | none | Columns for which Local Dictionary is not generated |

@@ -160,7 +160,8 @@ private[sql] case class CarbonDescribeFormattedCommand(
         }
       }
     } else {
-      results ++= Seq(("Local Dictionary Enabled", "false", ""))
+      results ++=
+      Seq(("Local Dictionary Enabled", CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT, ""))
     }
 
     /**
