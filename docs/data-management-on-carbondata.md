@@ -286,8 +286,12 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
    - **String longer than 32000 characters** (Alpha Feature 1.4.1)
 
-     In common scenarios, the length of string is less than 32000, so carbondata store the length of content using Short to reduce memory and space consumption.
-     If your string content exceeds the 32000 characters limitation, you can specify the columns as 'long string column' using below tblProperties:
+     In common scenarios, the length of string is less than 32000,
+     so carbondata stores the length of content using Short to reduce memory and space consumption.
+     To support string longer than 32000 characters, carbondata introduces a table property called `LONG_STRING_COLUMNS`.
+     For these columns, carbondata internally stores the length of content using Integer.
+
+     You can specify the columns as 'long string column' using below tblProperties:
 
      ```
      // specify col1, col2 as long string columns
