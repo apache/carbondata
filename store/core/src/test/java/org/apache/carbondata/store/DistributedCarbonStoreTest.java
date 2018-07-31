@@ -28,7 +28,7 @@ import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
-import org.apache.carbondata.sdk.store.descriptor.SelectDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
@@ -114,17 +114,17 @@ public class DistributedCarbonStoreTest {
     store.loadData(load);
 
     // select row
-    SelectDescriptor select = SelectDescriptor
+    ScanDescriptor select = ScanDescriptor
         .builder()
         .table(tableIdentifier)
         .select("intField", "stringField")
         .limit(5)
         .create();
-    List<CarbonRow> result = store.select(select);
+    List<CarbonRow> result = store.scan(select);
     Assert.assertEquals(5, result.size());
 
     // select row with filter
-    SelectDescriptor select2 = SelectDescriptor
+    ScanDescriptor select2 = ScanDescriptor
         .builder()
         .table(tableIdentifier)
         .select("intField", "stringField")
@@ -133,7 +133,7 @@ public class DistributedCarbonStoreTest {
             new LiteralExpression(11, DataTypes.INT)))
         .limit(5)
         .create();
-    List<CarbonRow> result2 = store.select(select2);
+    List<CarbonRow> result2 = store.scan(select2);
     Assert.assertEquals(1, result2.size());
 
     store.dropTable(tableIdentifier);

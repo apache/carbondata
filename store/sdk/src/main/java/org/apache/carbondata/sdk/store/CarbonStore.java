@@ -23,8 +23,9 @@ import java.util.List;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
-import org.apache.carbondata.sdk.store.descriptor.SelectDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
@@ -53,6 +54,14 @@ public interface CarbonStore extends Closeable {
    * @throws CarbonException if any error occurs
    */
   void dropTable(TableIdentifier table) throws CarbonException;
+
+  /**
+   * Return CarbonTable object by specified identifier
+   * @param table table identifier
+   * @return CarbonTable object
+   * @throws CarbonException if any error occurs
+   */
+  CarbonTable getTable(TableIdentifier table) throws CarbonException;
 
   /**
    * @return all table created
@@ -123,12 +132,22 @@ public interface CarbonStore extends Closeable {
   ////////////////////////////////////////////////////////////////////
 
   /**
-   * Scan a Table and return matched rows
-   * @param select descriptor for scan operation, including required column, filter, etc
+   * Scan a Table and return matched rows, using default select option
+   * see {@link #scan(ScanDescriptor, SelectOption)} for more information
+   *
+   * @param select descriptor for select operation
    * @return matched rows
    * @throws CarbonException if any error occurs
    */
-  List<CarbonRow> select(SelectDescriptor select) throws CarbonException;
+  List<CarbonRow> scan(ScanDescriptor select) throws CarbonException;
+
+  /**
+   * Scan a Table and return matched rows
+   * @param select descriptor for select operation, including required column, filter, etc
+   * @return matched rows
+   * @throws CarbonException if any error occurs
+   */
+  List<CarbonRow> scan(ScanDescriptor select, SelectOption option) throws CarbonException;
 
   /**
    * @return a new Scanner

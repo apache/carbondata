@@ -20,8 +20,8 @@ package org.apache.carbondata.horizon.rest.model.view;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.carbondata.store.api.descriptor.LoadDescriptor;
-import org.apache.carbondata.store.api.descriptor.TableIdentifier;
+import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 
 public class LoadRequest extends Request {
 

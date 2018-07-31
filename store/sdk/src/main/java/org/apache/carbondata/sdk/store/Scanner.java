@@ -18,13 +18,11 @@
 package org.apache.carbondata.sdk.store;
 
 import java.util.Iterator;
-import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
-import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.sdk.store.descriptor.SelectDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
 
@@ -36,26 +34,8 @@ import org.apache.carbondata.sdk.store.exception.CarbonException;
 public interface Scanner {
 
   /**
-   * Scan a Table and return matched rows, using default select option
-   * see {@link #scan(SelectDescriptor, SelectOption)} for more information
-   *
-   * @param select descriptor for select operation
-   * @return matched rows
-   * @throws CarbonException if any error occurs
-   */
-  List<CarbonRow> scan(SelectDescriptor select) throws CarbonException;
-
-  /**
-   * Scan a Table and return matched rows
-   * @param select descriptor for select operation, including required column, filter, etc
-   * @return matched rows
-   * @throws CarbonException if any error occurs
-   */
-  List<CarbonRow> scan(SelectDescriptor select, SelectOption option) throws CarbonException;
-
-  /**
    * Return an array of ScanUnit which will be the input in
-   * {@link #scan(ScanUnit, SelectDescriptor, SelectOption)}
+   * {@link #scan(ScanUnit, ScanDescriptor, SelectOption)}
    *
    * Implementation will leverage index to prune using specified filter expression
    *
@@ -82,7 +62,7 @@ public interface Scanner {
    * @return scan result, the result is returned in batch
    * @throws CarbonException if any error occurs
    */
-  <T> Iterator<ResultBatch<T>> scan(ScanUnit input, SelectDescriptor select,
+  <T> Iterator<ResultBatch<T>> scan(ScanUnit input, ScanDescriptor select,
       SelectOption option) throws CarbonException;
 
 }

@@ -25,17 +25,17 @@ import org.apache.carbondata.core.scan.expression.Expression;
 
 @InterfaceAudience.User
 @InterfaceStability.Evolving
-public class SelectDescriptor {
+public class ScanDescriptor {
 
   private TableIdentifier table;
   private String[] projection;
   private Expression filter;
   private long limit;
 
-  private SelectDescriptor() {
+  private ScanDescriptor() {
   }
 
-  public SelectDescriptor(TableIdentifier table, String[] projection,
+  public ScanDescriptor(TableIdentifier table, String[] projection,
       Expression filter, long limit) {
     Objects.requireNonNull(table);
     Objects.requireNonNull(projection);
@@ -78,10 +78,10 @@ public class SelectDescriptor {
   }
 
   public static class Builder {
-    private SelectDescriptor select;
+    private ScanDescriptor select;
 
     private Builder() {
-      select = new SelectDescriptor();
+      select = new ScanDescriptor();
     }
 
     public Builder table(TableIdentifier tableIdentifier) {
@@ -104,7 +104,7 @@ public class SelectDescriptor {
       return this;
     }
 
-    public SelectDescriptor create() {
+    public ScanDescriptor create() {
       return select;
     }
   }

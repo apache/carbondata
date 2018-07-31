@@ -36,14 +36,14 @@ import org.apache.carbondata.horizon.rest.model.view.DropTableRequest;
 import org.apache.carbondata.horizon.rest.model.view.LoadRequest;
 import org.apache.carbondata.horizon.rest.model.view.SelectRequest;
 import org.apache.carbondata.horizon.rest.model.view.SelectResponse;
-import org.apache.carbondata.store.api.CarbonStore;
-import org.apache.carbondata.store.api.CarbonStoreFactory;
-import org.apache.carbondata.store.api.conf.StoreConf;
-import org.apache.carbondata.store.api.descriptor.LoadDescriptor;
-import org.apache.carbondata.store.api.descriptor.SelectDescriptor;
-import org.apache.carbondata.store.api.descriptor.TableDescriptor;
-import org.apache.carbondata.store.api.descriptor.TableIdentifier;
-import org.apache.carbondata.store.api.exception.StoreException;
+import org.apache.carbondata.sdk.store.CarbonStore;
+import org.apache.carbondata.sdk.store.CarbonStoreFactory;
+import org.apache.carbondata.sdk.store.conf.StoreConf;
+import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.TableDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
+import org.apache.carbondata.sdk.store.exception.CarbonException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -61,7 +61,7 @@ public class HorizonController {
 
   private CarbonStore store;
 
-  public HorizonController() throws StoreException {
+  public HorizonController() throws CarbonException {
     String storeFile = System.getProperty("carbonstore.conf.file");
     StoreConf storeConf = new StoreConf();
     try {
@@ -77,9 +77,9 @@ public class HorizonController {
       }
 
     } catch (UnknownHostException e) {
-      throw new StoreException(e);
+      throw new CarbonException(e);
     } catch (IOException e) {
-      throw new StoreException(e);
+      throw new CarbonException(e);
     }
 
     store = CarbonStoreFactory.getDistributedStore("GlobalStore", storeConf);
@@ -92,7 +92,7 @@ public class HorizonController {
 
   @RequestMapping(value = "/table/create", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<String> createTable(
-      @RequestBody CreateTableRequest request) throws StoreException, IOException {
+      @RequestBody CreateTableRequest request) throws CarbonException {
     RequestValidator.validateTable(request);
     TableDescriptor tableDescriptor = request.convertToDto();
     store.createTable(tableDescriptor);
@@ -101,7 +101,7 @@ public class HorizonController {
 
   @RequestMapping(value = "/table/drop", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<String> dropTable(
-      @RequestBody DropTableRequest request) throws StoreException, IOException {
+      @RequestBody DropTableRequest request) throws CarbonException {
     RequestValidator.validateDrop(request);
     store.dropTable(new TableIdentifier(request.getTableName(), request.getDatabaseName()));
     return new ResponseEntity<>(String.valueOf(true), HttpStatus.OK);
@@ -109,7 +109,7 @@ public class HorizonController {
 
   @RequestMapping(value = "/table/load", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<String> load(@RequestBody LoadRequest request)
-      throws StoreException, IOException {
+      throws CarbonException, IOException {
     RequestValidator.validateLoad(request);
     LoadDescriptor loadDescriptor = request.convertToDto();
     store.loadData(loadDescriptor);
@@ -118,15 +118,15 @@ public class HorizonController {
 
   @RequestMapping(value = "/table/select", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<SelectResponse> select(@RequestBody SelectRequest request)
-      throws StoreException, IOException {
+      throws CarbonException {
     long start = System.currentTimeMillis();
     RequestValidator.validateSelect(request);
     TableIdentifier table = new TableIdentifier(request.getTableName(), request.getDatabaseName());
     CarbonTable carbonTable = store.getTable(table);
     Expression expression = Parser.parseFilter(request.getFilter(), carbonTable);
-    SelectDescriptor selectDescriptor = new SelectDescriptor(
+    ScanDescriptor selectDescriptor = new ScanDescriptor(
         table, request.getSelect(), expression, request.getLimit());
-    List<CarbonRow> result = store.select(selectDescriptor);
+    List<CarbonRow> result = store.scan(selectDescriptor);
     Iterator<CarbonRow> iterator = result.iterator();
     Object[][] output = new Object[result.size()][];
     int i = 0;

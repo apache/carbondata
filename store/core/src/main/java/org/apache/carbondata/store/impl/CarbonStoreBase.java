@@ -87,6 +87,16 @@ public abstract class CarbonStoreBase implements CarbonStore {
   }
 
   @Override
+  public CarbonTable getTable(TableIdentifier table) throws CarbonException {
+    Objects.requireNonNull(table);
+    try {
+      return metaProcessor.getTable(table);
+    } catch (IOException e) {
+      throw new CarbonException(e);
+    }
+  }
+
+  @Override
   public List<TableDescriptor> listTable() throws CarbonException {
     throw new UnsupportedOperationException();
   }

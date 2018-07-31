@@ -41,7 +41,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
 import org.apache.carbondata.sdk.store.{CarbonStore, CarbonStoreFactory}
 import org.apache.carbondata.sdk.store.conf.StoreConf
-import org.apache.carbondata.sdk.store.descriptor.{SelectDescriptor, TableIdentifier}
+import org.apache.carbondata.sdk.store.descriptor.{ScanDescriptor, TableIdentifier}
 import org.apache.carbondata.store.WorkerManager
 
 /**
@@ -237,7 +237,7 @@ class CarbonSession(@transient val sc: SparkContext,
       maxRows: Option[Long] = None,
       localMaxRows: Option[Long] = None): DataFrame = {
     val table = relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
-    val select = new SelectDescriptor(
+    val select = new ScanDescriptor(
       new TableIdentifier(table.getTableName, table.getDatabaseName),
       columns.map(_.name).toArray,
       if (expr != null) CarbonFilters.transformExpression(expr) else null,

@@ -46,9 +46,10 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModelBuilder;
 import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 import org.apache.carbondata.sdk.store.Loader;
 import org.apache.carbondata.sdk.store.Scanner;
+import org.apache.carbondata.sdk.store.SelectOption;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
 import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
-import org.apache.carbondata.sdk.store.descriptor.SelectDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
 import org.apache.carbondata.sdk.store.exception.ExecutionTimeoutException;
 import org.apache.carbondata.store.impl.master.Schedulable;
@@ -125,7 +126,7 @@ class DistributedCarbonStore extends CarbonStoreBase {
   }
 
   @Override
-  public List<CarbonRow> select(SelectDescriptor select) throws CarbonException {
+  public List<CarbonRow> scan(ScanDescriptor select) throws CarbonException {
     Objects.requireNonNull(select);
     try {
       CarbonTable carbonTable = metaProcessor.getTable(select.getTableIdentifier());
@@ -138,6 +139,12 @@ class DistributedCarbonStore extends CarbonStoreBase {
     } catch (IOException e) {
       throw new CarbonException(e);
     }
+  }
+
+  @Override
+  public List<CarbonRow> scan(ScanDescriptor select, SelectOption option)
+      throws CarbonException {
+    throw new UnsupportedOperationException();
   }
 
   @Override
