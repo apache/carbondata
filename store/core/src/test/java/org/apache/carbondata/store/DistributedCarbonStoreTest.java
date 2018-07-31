@@ -27,14 +27,15 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
-import org.apache.carbondata.store.api.CarbonStore;
-import org.apache.carbondata.store.api.CarbonStoreFactory;
-import org.apache.carbondata.store.api.conf.StoreConf;
-import org.apache.carbondata.store.api.descriptor.LoadDescriptor;
-import org.apache.carbondata.store.api.descriptor.SelectDescriptor;
-import org.apache.carbondata.store.api.descriptor.TableDescriptor;
-import org.apache.carbondata.store.api.descriptor.TableIdentifier;
-import org.apache.carbondata.store.api.exception.StoreException;
+import org.apache.carbondata.sdk.store.CarbonStore;
+import org.apache.carbondata.sdk.store.CarbonStoreFactory;
+import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.TableDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
+import org.apache.carbondata.sdk.store.exception.CarbonException;
+import org.apache.carbondata.sdk.store.conf.StoreConf;
+import org.apache.carbondata.store.impl.master.Master;
 import org.apache.carbondata.store.impl.worker.Worker;
 
 import org.junit.After;
@@ -50,24 +51,36 @@ public class DistributedCarbonStoreTest {
   private static CarbonStore store;
 
   @BeforeClass
-  public static void beforeAll() throws IOException, StoreException {
+  public static void beforeAll() throws IOException, CarbonException, InterruptedException {
     projectFolder = new File(DistributedCarbonStoreTest.class.getResource("/").getPath() +
         "../../../../").getCanonicalPath();
+
     String confFile = projectFolder + "/store/conf/store.conf";
     StoreConf storeConf = new StoreConf(confFile);
 
-    store = CarbonStoreFactory.getDistributedStore("DistributedCarbonStoreTest", storeConf);
-    projectFolder = new File(LocalCarbonStoreTest.class.getResource("/").getPath() + "../../../../")
-        .getCanonicalPath();
+    new Thread(() -> {
+      try {
+        Master.main(new String[]{"", confFile});
+      } catch (InterruptedException | IOException e) {
+        throw new RuntimeException("failed to start master");
+      }
+    }).start();
+    Thread.sleep(1000);
 
     // start worker
     Worker worker = new Worker(storeConf);
     worker.start();
+
+    Thread.sleep(1000);
+
+    store = CarbonStoreFactory.getDistributedStore("DistributedCarbonStoreTest", storeConf);
   }
 
   @AfterClass
   public static void afterAll() throws IOException {
-    store.close();
+    if (store != null) {
+      store.close();
+    }
   }
 
   @Before
@@ -81,13 +94,13 @@ public class DistributedCarbonStoreTest {
   }
 
   @Test
-  public void testSelect() throws IOException, StoreException {
+  public void testSelect() throws CarbonException {
     TableIdentifier tableIdentifier = new TableIdentifier("table_1", "default");
     store.dropTable(tableIdentifier);
-    TableDescriptor table = TableDescriptor
+    TableDescriptor descriptor = TableDescriptor
         .builder()
-        .ifNotExists()
         .table(tableIdentifier)
+        .ifNotExists()
         .comment("first table")
         .column("shortField", DataTypes.SHORT, "short field")
         .column("intField", DataTypes.INT, "int field")
@@ -101,7 +114,7 @@ public class DistributedCarbonStoreTest {
         .column("floatField", DataTypes.DOUBLE, "float field")
         .tblProperties(CarbonCommonConstants.SORT_COLUMNS, "intField")
         .create();
-    store.createTable(table);
+    store.createTable(descriptor);
 
     // load one segment
     LoadDescriptor load = LoadDescriptor
@@ -114,26 +127,26 @@ public class DistributedCarbonStoreTest {
     store.loadData(load);
 
     // select row
-    SelectDescriptor select = SelectDescriptor
+    ScanDescriptor select = ScanDescriptor
         .builder()
         .table(tableIdentifier)
-        .select("intField", "stringField")
+        .select(new String[]{"intField", "stringField"})
         .limit(5)
         .create();
-    List<CarbonRow> result = store.select(select);
+    List<CarbonRow> result = store.scan(select);
     Assert.assertEquals(5, result.size());
 
     // select row with filter
-    SelectDescriptor select2 = SelectDescriptor
+    ScanDescriptor select2 = ScanDescriptor
         .builder()
         .table(tableIdentifier)
-        .select("intField", "stringField")
+        .select(new String[]{"intField", "stringField"})
         .filter(new EqualToExpression(
             new ColumnExpression("intField", DataTypes.INT),
             new LiteralExpression(11, DataTypes.INT)))
         .limit(5)
         .create();
-    List<CarbonRow> result2 = store.select(select2);
+    List<CarbonRow> result2 = store.scan(select2);
     Assert.assertEquals(1, result2.size());
 
     store.dropTable(tableIdentifier);

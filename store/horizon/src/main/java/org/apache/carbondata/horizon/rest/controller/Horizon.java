@@ -17,7 +17,8 @@
 
 package org.apache.carbondata.horizon.rest.controller;
 
-import org.apache.carbondata.store.api.conf.StoreConf;
+
+import org.apache.carbondata.sdk.store.conf.StoreConf;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -26,7 +26,7 @@ import org.apache.carbondata.horizon.rest.model.validate.RequestValidator;
 import org.apache.carbondata.horizon.rest.model.view.SqlRequest;
 import org.apache.carbondata.horizon.rest.model.view.SqlResponse;
 import org.apache.carbondata.horizon.rest.sql.SparkSqlWrapper;
-import org.apache.carbondata.store.api.exception.StoreException;
+import org.apache.carbondata.store.api.exception.CarbonException;
 
 import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.Dataset;
@@ -46,7 +46,7 @@ public class SqlHorizonController {
       LogServiceFactory.getLogService(SqlHorizonController.class.getName());
 
   @RequestMapping(value = "/table/sql", produces = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity<SqlResponse> sql(@RequestBody SqlRequest request) throws StoreException {
+  public ResponseEntity<SqlResponse> sql(@RequestBody SqlRequest request) throws CarbonException {
     RequestValidator.validateSql(request);
     List<Row> rows;
     Dataset<Row> sqlDataFrame = null;
@@ -56,10 +56,10 @@ public class SqlHorizonController {
       rows = sqlDataFrame.collectAsList();
     } catch (AnalysisException e) {
       LOGGER.error(e);
-      throw new StoreException(e.getSimpleMessage());
+      throw new CarbonException(e.getSimpleMessage());
     } catch (Exception e) {
       LOGGER.error(e);
-      throw new StoreException(e.getMessage());
+      throw new CarbonException(e.getMessage());
     }
     final String[] fieldNames = sqlDataFrame.schema().fieldNames();
     Object[][] responseData = new Object[0][];

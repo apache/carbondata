@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
@@ -30,6 +31,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDi
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.StructField;
+import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
@@ -239,9 +241,9 @@ public class AvroCarbonWriter extends CarbonWriter {
         return new Field(FieldName, DataTypes.DOUBLE);
       case RECORD:
         // recursively get the sub fields
-        ArrayList<StructField> structSubFields = new ArrayList<>();
+        ArrayList<Field> structSubFields = new ArrayList<>();
         for (Schema.Field avroSubField : childSchema.getFields()) {
-          StructField structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
+          Field structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
           if (structField != null) {
             structSubFields.add(structField);
           }
@@ -249,9 +251,9 @@ public class AvroCarbonWriter extends CarbonWriter {
         return new Field(FieldName, "struct", structSubFields);
       case ARRAY:
         // recursively get the sub fields
-        ArrayList<StructField> arraySubField = new ArrayList<>();
+        ArrayList<Field> arraySubField = new ArrayList<>();
         // array will have only one sub field.
-        StructField structField = prepareSubFields("val", childSchema.getElementType());
+        Field structField = prepareSubFields("val", childSchema.getElementType());
         if (structField != null) {
           arraySubField.add(structField);
           return new Field(FieldName, "array", arraySubField);
@@ -266,51 +268,51 @@ public class AvroCarbonWriter extends CarbonWriter {
     }
   }
 
-  private static StructField prepareSubFields(String FieldName, Schema childSchema) {
+  private static Field prepareSubFields(String FieldName, Schema childSchema) {
     Schema.Type type = childSchema.getType();
     LogicalType logicalType = childSchema.getLogicalType();
     switch (type) {
       case BOOLEAN:
-        return new StructField(FieldName, DataTypes.BOOLEAN);
+        return new Field(FieldName, DataTypes.BOOLEAN);
       case INT:
         if (logicalType instanceof LogicalTypes.Date) {
-          return new StructField(FieldName, DataTypes.DATE);
+          return new Field(FieldName, DataTypes.DATE);
         } else {
           LOGGER.warn("Unsupported logical type. Considering Data Type as INT for " + childSchema
               .getName());
-          return new StructField(FieldName, DataTypes.INT);
+          return new Field(FieldName, DataTypes.INT);
         }
       case LONG:
         if (logicalType instanceof LogicalTypes.TimestampMillis
             || logicalType instanceof LogicalTypes.TimestampMicros) {
-          return new StructField(FieldName, DataTypes.TIMESTAMP);
+          return new Field(FieldName, DataTypes.TIMESTAMP);
         } else {
           LOGGER.warn("Unsupported logical type. Considering Data Type as LONG for " + childSchema
               .getName());
-          return new StructField(FieldName, DataTypes.LONG);
+          return new Field(FieldName, DataTypes.LONG);
         }
       case DOUBLE:
-        return new StructField(FieldName, DataTypes.DOUBLE);
+        return new Field(FieldName, DataTypes.DOUBLE);
       case STRING:
-        return new StructField(FieldName, DataTypes.STRING);
+        return new Field(FieldName, DataTypes.STRING);
       case FLOAT:
-        return new StructField(FieldName, DataTypes.DOUBLE);
+        return new Field(FieldName, DataTypes.DOUBLE);
       case RECORD:
         // recursively get the sub fields
-        ArrayList<StructField> structSubFields = new ArrayList<>();
+        ArrayList<Field> structSubFields = new ArrayList<>();
         for (Schema.Field avroSubField : childSchema.getFields()) {
-          StructField structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
+          Field structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
           if (structField != null) {
             structSubFields.add(structField);
           }
         }
-        return (new StructField(FieldName, DataTypes.createStructType(structSubFields)));
+        return (new Field(FieldName, createStructType(structSubFields)));
       case ARRAY:
         // recursively get the sub fields
         // array will have only one sub field.
         DataType subType = getMappingDataTypeForArrayRecord(childSchema.getElementType());
         if (subType != null) {
-          return (new StructField(FieldName, DataTypes.createArrayType(subType)));
+          return (new Field(FieldName, DataTypes.createArrayType(subType)));
         } else {
           return null;
         }
@@ -320,6 +322,14 @@ public class AvroCarbonWriter extends CarbonWriter {
         throw new UnsupportedOperationException(
             "carbon not support " + type.toString() + " avro type yet");
     }
+  }
+
+  private static StructType createStructType(List<Field> fields) {
+    List<StructField> f = fields.stream().map(field ->
+        new StructField(field.getFieldName(), field.getDataType(),
+            createStructType(field.getChildren()).getFields())
+    ).collect(Collectors.toList());
+    return DataTypes.createStructType(f);
   }
 
   private static DataType getMappingDataTypeForArrayRecord(Schema childSchema) {
@@ -360,14 +370,14 @@ public class AvroCarbonWriter extends CarbonWriter {
         return DataTypes.DOUBLE;
       case RECORD:
         // recursively get the sub fields
-        ArrayList<StructField> structSubFields = new ArrayList<>();
+        ArrayList<Field> structSubFields = new ArrayList<>();
         for (Schema.Field avroSubField : childSchema.getFields()) {
-          StructField structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
+          Field structField = prepareSubFields(avroSubField.name(), avroSubField.schema());
           if (structField != null) {
             structSubFields.add(structField);
           }
         }
-        return DataTypes.createStructType(structSubFields);
+        return createStructType(structSubFields);
       case ARRAY:
         // array will have only one sub field.
         DataType subType = getMappingDataTypeForArrayRecord(childSchema.getElementType());

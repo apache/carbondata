@@ -19,6 +19,7 @@ package org.apache.carbondata.store.impl;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -28,11 +29,13 @@ import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
+import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 import org.apache.carbondata.processing.loading.DataLoadExecutor;
@@ -40,12 +43,17 @@ import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
 import org.apache.carbondata.processing.loading.csvinput.CSVRecordReaderIterator;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModelBuilder;
-import org.apache.carbondata.store.api.conf.StoreConf;
-import org.apache.carbondata.store.api.descriptor.LoadDescriptor;
-import org.apache.carbondata.store.api.descriptor.SelectDescriptor;
-import org.apache.carbondata.store.api.exception.StoreException;
-import org.apache.carbondata.store.impl.rpc.model.Scan;
-import org.apache.carbondata.store.util.StoreUtil;
+import org.apache.carbondata.sdk.store.CarbonStore;
+import org.apache.carbondata.sdk.store.KeyedRow;
+import org.apache.carbondata.sdk.store.PrimaryKey;
+import org.apache.carbondata.sdk.store.Row;
+import org.apache.carbondata.sdk.store.conf.StoreConf;
+import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
+import org.apache.carbondata.sdk.store.exception.CarbonException;
+import org.apache.carbondata.sdk.store.util.StoreUtil;
+import org.apache.carbondata.store.impl.service.model.ScanRequest;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -63,7 +71,7 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
  */
 @InterfaceAudience.User
 @InterfaceStability.Unstable
-class LocalCarbonStore extends CarbonStoreBase {
+public class LocalCarbonStore extends MetaOperation implements CarbonStore {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(LocalCarbonStore.class.getName());
@@ -72,11 +80,11 @@ class LocalCarbonStore extends CarbonStoreBase {
   private Configuration configuration;
   private SegmentTxnManager txnManager;
 
-  LocalCarbonStore(StoreConf storeConf) {
+  public LocalCarbonStore(StoreConf storeConf) {
     this(storeConf, new Configuration());
   }
 
-  LocalCarbonStore(StoreConf storeConf, Configuration hadoopConf) {
+  private LocalCarbonStore(StoreConf storeConf, Configuration hadoopConf) {
     super(storeConf);
     this.storeConf = storeConf;
     this.txnManager = SegmentTxnManager.getInstance();
@@ -84,17 +92,20 @@ class LocalCarbonStore extends CarbonStoreBase {
   }
 
   @Override
-  public void loadData(LoadDescriptor load) throws IOException, StoreException {
+  public void loadData(LoadDescriptor load) throws CarbonException {
     Objects.requireNonNull(load);
-    CarbonTable table = metaProcessor.getTable(load.getTable());
-    CarbonLoadModelBuilder modelBuilder = new CarbonLoadModelBuilder(table);
-    modelBuilder.setInputPath(load.getInputPath());
     CarbonLoadModel loadModel;
     try {
+      TableInfo tableInfo = getTable(load.getTable(), storeConf);
+      CarbonTable table = CarbonTable.buildFromTableInfo(tableInfo);
+      CarbonLoadModelBuilder modelBuilder = new CarbonLoadModelBuilder(table);
+      modelBuilder.setInputPath(load.getInputPath());
       loadModel = modelBuilder.build(load.getOptions(), System.currentTimeMillis(), "0");
     } catch (InvalidLoadOptionException e) {
       LOGGER.error(e, "Invalid loadDescriptor options");
-      throw new StoreException(e.getMessage());
+      throw new CarbonException(e);
+    } catch (IOException e) {
+      throw new CarbonException(e);
     }
 
     if (loadModel.getFactTimeStamp() == 0) {
@@ -106,10 +117,25 @@ class LocalCarbonStore extends CarbonStoreBase {
       loadData(loadModel);
       txnManager.commitSegment(loadModel);
     } catch (Exception e) {
-      txnManager.closeSegment(loadModel);
       LOGGER.error(e, "Failed to load data");
-      throw new StoreException(e);
+      try {
+        txnManager.closeSegment(loadModel);
+      } catch (IOException ex) {
+        LOGGER.error(ex, "Failed to close segment");
+        // Ignoring the exception
+      }
+      throw new CarbonException(e);
     }
+  }
+
+  @Override
+  public void upsert(Iterator<KeyedRow> row, StructType schema) throws CarbonException {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void delete(Iterator<PrimaryKey> keys) throws CarbonException {
+    throw new UnsupportedOperationException();
   }
 
   private void loadData(CarbonLoadModel model) throws Exception {
@@ -146,19 +172,34 @@ class LocalCarbonStore extends CarbonStoreBase {
   }
 
   @Override
-  public List<CarbonRow> select(SelectDescriptor select) throws IOException {
-    Objects.requireNonNull(select);
-    CarbonTable table = metaProcessor.getTable(select.getTable());
-    List<Distributable> blocks = pruneBlock(table, select.getProjection(), select.getFilter());
-    CarbonMultiBlockSplit split = new CarbonMultiBlockSplit(blocks, "");
-    Scan scan = new Scan(
-        0, split, table.getTableInfo(), select.getProjection(), select.getFilter(),
-        select.getLimit());
-    return scan(table, scan);
+  public List<CarbonRow> scan(ScanDescriptor scanDescriptor) throws CarbonException {
+    Objects.requireNonNull(scanDescriptor);
+    try {
+      TableInfo tableInfo = getTable(scanDescriptor.getTableIdentifier(), storeConf);
+      List<CarbonInputSplit> blocks =
+          IndexOperation.pruneBlock(tableInfo, scanDescriptor.getFilter());
+      CarbonMultiBlockSplit split = new CarbonMultiBlockSplit(blocks, new String[0]);
+      ScanRequest scan =
+          new ScanRequest(0, split, tableInfo, scanDescriptor.getProjection(),
+              scanDescriptor.getFilter(), scanDescriptor.getLimit());
+      return DataOperation.scan(tableInfo, scan);
+    } catch (IOException e) {
+      throw new CarbonException(e);
+    }
+  }
+
+  @Override
+  public Row lookup(PrimaryKey key) throws CarbonException {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public List<Row> lookup(TableIdentifier tableIdentifier, String filterExpression)
+      throws CarbonException {
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public void close() throws IOException {
-
   }
 }

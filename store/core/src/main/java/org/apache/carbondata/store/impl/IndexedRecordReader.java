@@ -65,7 +65,7 @@ class IndexedRecordReader extends CarbonRecordReader<CarbonRow> {
   private int queryId;
   private CarbonTable table;
 
-  public IndexedRecordReader(int queryId, CarbonTable table, QueryModel queryModel) {
+  IndexedRecordReader(int queryId, CarbonTable table, QueryModel queryModel) {
     super(queryModel, new CarbonRowReadSupport());
     this.queryId = queryId;
     this.table = table;
