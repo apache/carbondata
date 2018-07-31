@@ -115,8 +115,14 @@ public class BlockletDataMapUtil {
         CarbonTable.updateTableByTableInfo(carbonTable, carbonTable.getTableInfo());
       }
       String blockPath = footer.getBlockInfo().getTableBlockInfo().getFilePath();
-      if (null == blockMetaInfoMap.get(blockPath) && FileFactory.isFileExist(blockPath)) {
-        blockMetaInfoMap.put(blockPath, createBlockMetaInfo(fileNameToMetaInfoMapping, blockPath));
+      if (null == blockMetaInfoMap.get(blockPath)) {
+        BlockMetaInfo blockMetaInfo = createBlockMetaInfo(fileNameToMetaInfoMapping, blockPath);
+        // if blockMetaInfo is null that means the file has been deleted from the file system.
+        // This can happen in case IUD scenarios where after deleting or updating the data the
+        // complete block is deleted but the entry still exists in index or merge index file
+        if (null != blockMetaInfo) {
+          blockMetaInfoMap.put(blockPath, blockMetaInfo);
+        }
       }
     }
     return blockMetaInfoMap;
@@ -152,10 +158,14 @@ public class BlockletDataMapUtil {
   }
 
   private static BlockMetaInfo createBlockMetaInfo(
-      Map<String, BlockMetaInfo> fileNameToMetaInfoMapping, String carbonDataFile) {
+      Map<String, BlockMetaInfo> fileNameToMetaInfoMapping, String carbonDataFile)
+      throws IOException {
     FileFactory.FileType fileType = FileFactory.getFileType(carbonDataFile);
     switch (fileType) {
       case LOCAL:
+        if (!FileFactory.isFileExist(carbonDataFile)) {
+          return null;
+        }
         CarbonFile carbonFile = FileFactory.getCarbonFile(carbonDataFile, fileType);
         return new BlockMetaInfo(new String[] { "localhost" }, carbonFile.getSize());
       default:

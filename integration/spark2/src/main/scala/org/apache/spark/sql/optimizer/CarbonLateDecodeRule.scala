@@ -743,7 +743,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
             attrName.contains(n)
           })
         case ar : ArrayType =>
-          attrName.contains(a.name + "[")
+          attrName.contains(a.name + "[") || attrName.contains(a.name + ".")
         case _ => false
       }
     }

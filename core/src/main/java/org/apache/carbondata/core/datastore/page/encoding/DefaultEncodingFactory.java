@@ -300,18 +300,23 @@ public class DefaultEncodingFactory extends EncodingFactory {
       return new DirectCompressCodec(DataTypes.DOUBLE);
     } else {
       // double
-      long max = (long) (Math.pow(10, decimalCount) * absMaxValue);
-      DataType adaptiveDataType = fitLongMinMax(max, 0);
-      DataType deltaDataType = compareMinMaxAndSelectDataType(
-          (long) (Math.pow(10, decimalCount) * (maxValue - minValue)));
-      if (adaptiveDataType.getSizeInBytes() > deltaDataType.getSizeInBytes()) {
-        return new AdaptiveDeltaFloatingCodec(srcDataType, deltaDataType, stats);
-      } else if (adaptiveDataType.getSizeInBytes() < DataTypes.DOUBLE.getSizeInBytes() || (
-          (isComplexPrimitive) && (adaptiveDataType.getSizeInBytes() == DataTypes.DOUBLE
-              .getSizeInBytes()))) {
-        return new AdaptiveFloatingCodec(srcDataType, adaptiveDataType, stats);
-      } else {
+      // If absMaxValue exceeds LONG.MAX_VALUE, then go for direct compression
+      if ((Math.pow(10, decimalCount) * absMaxValue) > Long.MAX_VALUE) {
         return new DirectCompressCodec(DataTypes.DOUBLE);
+      } else {
+        long max = (long) (Math.pow(10, decimalCount) * absMaxValue);
+        DataType adaptiveDataType = fitLongMinMax(max, 0);
+        DataType deltaDataType = compareMinMaxAndSelectDataType(
+            (long) (Math.pow(10, decimalCount) * (maxValue - minValue)));
+        if (adaptiveDataType.getSizeInBytes() > deltaDataType.getSizeInBytes()) {
+          return new AdaptiveDeltaFloatingCodec(srcDataType, deltaDataType, stats);
+        } else if (adaptiveDataType.getSizeInBytes() < DataTypes.DOUBLE.getSizeInBytes() || (
+            (isComplexPrimitive) && (adaptiveDataType.getSizeInBytes() == DataTypes.DOUBLE
+                .getSizeInBytes()))) {
+          return new AdaptiveFloatingCodec(srcDataType, adaptiveDataType, stats);
+        } else {
+          return new DirectCompressCodec(DataTypes.DOUBLE);
+        }
       }
     }
   }

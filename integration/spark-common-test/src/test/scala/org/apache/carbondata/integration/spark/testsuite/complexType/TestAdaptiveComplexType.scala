@@ -551,4 +551,21 @@ trait TestAdaptiveComplexType extends QueryTest {
       Seq(Row(1, Row(true, "abc", mutable.WrappedArray.make(Array(false, true, false))))))
   }
 
+  test("test Double with large decimalcount") {
+    sql("Drop table if exists adaptive")
+    sql(
+      "create table adaptive(array1 array<struct<double1:double,double2:double,double3:double>>) " +
+      "stored by 'carbondata'")
+    sql(
+      "insert into adaptive values('10.35:40000.35:1.7976931348623157$67890985.888:65.5656:200')," +
+      "('20.25:50000.25:4.945464565654656546546546324$10000000:300000:3000')")
+    checkExistence(sql("select * from adaptive"), true, "1.0E7,300000.0,3000.0")
+    sql("Drop table if exists adaptive")
+    sql("create table adaptive(struct_arr struct<array_db1:array<double>>) stored by 'carbondata'")
+    sql("insert into adaptive values('5555555.9559:12345678991234567:3444.999')")
+    checkExistence(sql("select * from adaptive"),
+      true,
+      "5555555.9559, 1.2345678991234568E16, 3444.999")
+  }
+
 }

@@ -174,6 +174,7 @@ public class DiskBasedDataMapStatusProvider implements DataMapStatusStorageProvi
       brWriter.write(metadataInstance);
     } catch (IOException ioe) {
       LOG.error("Error message: " + ioe.getLocalizedMessage());
+      fileWrite.setFailed();
       throw ioe;
     } finally {
       if (null != brWriter) {
