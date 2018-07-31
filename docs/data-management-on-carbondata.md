@@ -286,9 +286,9 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 	 ALTER TABLE employee SET TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
 	 ```
 	 
-	 - **Support Flat folder**
+	 - **Support Flat folder same as Hive/Parquet**
 	 
-	  This feature allows all carbondata and carbonindex files to keep directy under tablepath. Currently all carbondata/carbonindex files written under tablepath/Fact/Part0/Segment_NUM folder and it is not same as hive/parquet folder structure. This feature makes all files written will be directly under tablepath, it does not maintain any segment folder structure.
+	  This feature allows all carbondata and index files to keep directy under tablepath. Currently all carbondata/carbonindex files written under tablepath/Fact/Part0/Segment_NUM folder and it is not same as hive/parquet folder structure. This feature makes all files written will be directly under tablepath, it does not maintain any segment folder structure.This is useful for interoperability between the execution engines and plugin with other execution engines like hive or presto becomes easier.
 	  
 	  Following table property enables this feature and default value is false.
 	  ```
