@@ -87,6 +87,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    */
   protected QueryExecutorProperties queryProperties;
 
+  // whether to clear/free unsafe memory or not
+  private boolean freeUnsafeMemory;
+
   /**
    * query result iterator which will execute the query
    * and give the result
@@ -114,6 +117,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         queryModel.getQueryId());
     LOGGER.info("Query will be executed on table: " + queryModel.getAbsoluteTableIdentifier()
         .getCarbonTableIdentifier().getTableName());
+    this.freeUnsafeMemory = queryModel.isFreeUnsafeMemory();
     // Initializing statistics list to record the query statistics
     // creating copy on write to handle concurrent scenario
     queryProperties.queryStatisticsRecorder = queryModel.getStatisticsRecorder();
@@ -641,8 +645,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         exceptionOccurred = e;
       }
     }
-    // clear all the unsafe memory used for the given task ID
-    UnsafeMemoryManager.INSTANCE.freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId());
+    // clear all the unsafe memory used for the given task ID only if it is neccessary to be cleared
+    if (freeUnsafeMemory) {
+      UnsafeMemoryManager.INSTANCE
+          .freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId());
+    }
     if (null != queryProperties.executorService) {
       // In case of limit query when number of limit records is already found so executors
       // must stop all the running execution otherwise it will keep running and will hit

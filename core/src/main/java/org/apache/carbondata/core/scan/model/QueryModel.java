@@ -114,6 +114,9 @@ public class QueryModel {
    */
   private boolean isFG;
 
+  // whether to clear/free unsafe memory or not
+  private boolean freeUnsafeMemory = true;
+
   private QueryModel(CarbonTable carbonTable) {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
     invalidSegmentIds = new ArrayList<>();
@@ -389,5 +392,13 @@ public class QueryModel {
         table.getDatabaseName(), table.getTableName(),
         projection.getDimensions().size() + projection.getMeasures().size(),
         filterExpressionResolverTree.getFilterExpression().toString());
+  }
+
+  public boolean isFreeUnsafeMemory() {
+    return freeUnsafeMemory;
+  }
+
+  public void setFreeUnsafeMemory(boolean freeUnsafeMemory) {
+    this.freeUnsafeMemory = freeUnsafeMemory;
   }
 }
