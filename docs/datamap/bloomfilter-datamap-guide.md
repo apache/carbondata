@@ -119,6 +119,7 @@ Data management with BloomFilter datamap has no difference with that on Lucene d
  and smaller `BLOOM_FPP` will increase runtime calculation while performing query.
 + '0' skipped blocklets of BloomFilter datamap in explain output indicates that
  BloomFilter datamap does not prune better than Main datamap.
+ (For example since the data is not ordered, a specific value may be contained in many blocklets. In this case, bloom may not work better than Main DataMap.)
  If this occurs very often, it means that current BloomFilter is useless. You can disable or drop it.
  Sometimes we cannot see any pruning result about BloomFilter datamap in the explain output,
  this indicates that the previous datamap has pruned all the blocklets and there is no need to continue pruning.
