@@ -88,6 +88,14 @@ public final class DeleteLoadFolders {
     }
   }
 
+  /**
+   * Delete the invalid data physically from table.
+   * @param absoluteTableIdentifier table identifier
+   * @param loadDetails Load details which need clean up
+   * @param isForceDelete is Force delete requested by user
+   * @param specs Partition specs
+   * @param currLoadDetails Current table status load details which are required for update manager.
+   */
   private static void physicalFactAndMeasureMetadataDeletion(
       AbsoluteTableIdentifier absoluteTableIdentifier, LoadMetadataDetails[] loadDetails,
       boolean isForceDelete, List<PartitionSpec> specs, LoadMetadataDetails[] currLoadDetails) {
