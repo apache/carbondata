@@ -34,7 +34,7 @@ import org.apache.carbondata.horizon.rest.model.view.SelectResponse;
 import org.apache.carbondata.store.api.conf.StoreConf;
 import org.apache.carbondata.store.api.exception.StoreException;
 import org.apache.carbondata.store.impl.worker.Worker;
-import org.apache.carbondata.store.util.StoreUtil;
+import org.apache.carbondata.sdk.store.util.StoreUtil;
 
 import org.junit.AfterClass;
 import org.junit.Assert;

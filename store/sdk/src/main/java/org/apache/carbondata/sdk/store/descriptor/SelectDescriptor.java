@@ -15,12 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.api.descriptor;
+package org.apache.carbondata.sdk.store.descriptor;
 
 import java.util.Objects;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.scan.expression.Expression;
 
+@InterfaceAudience.User
+@InterfaceStability.Evolving
 public class SelectDescriptor {
 
   private TableIdentifier table;
@@ -41,11 +45,11 @@ public class SelectDescriptor {
     this.limit = limit;
   }
 
-  public TableIdentifier getTable() {
+  public TableIdentifier getTableIdentifier() {
     return table;
   }
 
-  public void setTable(TableIdentifier table) {
+  public void setTableIdentifier(TableIdentifier table) {
     this.table = table;
   }
 
@@ -81,7 +85,7 @@ public class SelectDescriptor {
     }
 
     public Builder table(TableIdentifier tableIdentifier) {
-      select.setTable(tableIdentifier);
+      select.setTableIdentifier(tableIdentifier);
       return this;
     }
 

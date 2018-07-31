@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
-import org.apache.carbondata.store.util.StoreUtil;
+import org.apache.carbondata.sdk.store.util.StoreUtil;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;

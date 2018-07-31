@@ -36,7 +36,8 @@ import org.apache.carbondata.processing.loading.DataLoadExecutor;
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
 import org.apache.carbondata.processing.loading.csvinput.CSVRecordReaderIterator;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
-import org.apache.carbondata.store.api.conf.StoreConf;
+import org.apache.carbondata.sdk.store.conf.StoreConf;
+import org.apache.carbondata.sdk.store.util.StoreUtil;
 import org.apache.carbondata.store.impl.CarbonStoreBase;
 import org.apache.carbondata.store.impl.Status;
 import org.apache.carbondata.store.impl.rpc.model.BaseResponse;
@@ -45,7 +46,6 @@ import org.apache.carbondata.store.impl.rpc.model.QueryResponse;
 import org.apache.carbondata.store.impl.rpc.model.Scan;
 import org.apache.carbondata.store.impl.rpc.model.ShutdownRequest;
 import org.apache.carbondata.store.impl.rpc.model.ShutdownResponse;
-import org.apache.carbondata.store.util.StoreUtil;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;

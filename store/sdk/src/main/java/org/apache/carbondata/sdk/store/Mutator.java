@@ -15,37 +15,34 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.api;
+package org.apache.carbondata.sdk.store;
 
-import java.io.IOException;
-import java.util.List;
+import java.util.Iterator;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
-import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.store.api.descriptor.LoadDescriptor;
-import org.apache.carbondata.store.api.descriptor.SelectDescriptor;
-import org.apache.carbondata.store.api.exception.StoreException;
+import org.apache.carbondata.core.metadata.datatype.StructType;
+import org.apache.carbondata.sdk.store.exception.CarbonException;
 
 /**
- * Public interface to write and read data in CarbonStore
+ * A Mutator is used to perform insert, update, delete operation on the table
  */
 @InterfaceAudience.User
 @InterfaceStability.Unstable
-public interface DataStore {
+public interface Mutator extends TransactionalOperation {
 
   /**
-   * Load data into a Table
-   * @param load descriptor for load operation
-   * @throws IOException if network or disk IO error occurs
+   * Insert a batch of rows if key is not exist, otherwise update the row
+   * @param row rows to be upsert
+   * @param schema schema of the input row (fields without the primary key)
+   * @throws CarbonException if any error occurs
    */
-  void loadData(LoadDescriptor load) throws IOException, StoreException;
+  void upsert(Iterator<KeyedRow> row, StructType schema) throws CarbonException;
 
   /**
-   * Scan a Table and return matched rows
-   * @param select descriptor for scan operation, including required column, filter, etc
-   * @return matched rows
-   * @throws IOException if network or disk IO error occurs
+   * Delete a batch of rows
+   * @param keys keys to be deleted
+   * @throws CarbonException if any error occurs
    */
-  List<CarbonRow> select(SelectDescriptor select) throws IOException, StoreException;
+  void delete(Iterator<PrimaryKey> keys) throws CarbonException;
 }

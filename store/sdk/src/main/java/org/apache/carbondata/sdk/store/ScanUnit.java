@@ -15,20 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.api;
+package org.apache.carbondata.sdk.store;
 
-import java.io.IOException;
-import java.util.List;
+import java.io.Serializable;
 
-import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 
-public interface SqlStore {
+/**
+ * An unit for the scanner in Carbon Store
+ */
+@InterfaceAudience.User
+@InterfaceStability.Unstable
+public interface ScanUnit extends Serializable {
 
   /**
-   * Executor a SQL statement
-   * @param sqlString SQL statement
-   * @return matched rows
-   * @throws IOException if network or disk IO error occurs
+   * Return the list of preferred location of this ScanUnit.
+   * The default return value is empty string array, which means this ScanUnit
+   * has no location preference.
    */
-  List<CarbonRow> sql(String sqlString) throws IOException;
+  default String[] preferredLocations() {
+    return new String[0];
+  }
 }

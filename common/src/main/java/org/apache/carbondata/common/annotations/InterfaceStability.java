@@ -42,7 +42,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience.*;
  * </ul>
  */
 @InterfaceAudience.User
-@org.apache.hadoop.classification.InterfaceStability.Evolving
+@InterfaceStability.Evolving
 public class InterfaceStability {
   /**
    * Can evolve while retaining compatibility for minor release boundaries.;

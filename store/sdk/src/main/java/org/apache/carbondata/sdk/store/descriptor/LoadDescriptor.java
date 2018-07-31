@@ -15,12 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.api.descriptor;
+package org.apache.carbondata.sdk.store.descriptor;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
+
+@InterfaceAudience.User
+@InterfaceStability.Evolving
 public class LoadDescriptor {
 
   private TableIdentifier table;

@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.api.exception;
+package org.apache.carbondata.sdk.store;
 
-public class SchedulerException extends RuntimeException {
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 
-  public SchedulerException(String message) {
-    super(message);
-  }
+@InterfaceAudience.User
+@InterfaceStability.Unstable
+public interface ColumnVector {
 
 }

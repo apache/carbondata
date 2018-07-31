@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.api.conf;
+package org.apache.carbondata.sdk.store.conf;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.store.util.StoreUtil;
+import org.apache.carbondata.sdk.store.util.StoreUtil;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;

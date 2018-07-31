@@ -25,9 +25,9 @@ import org.apache.spark.sql.SparkSession
 import org.apache.carbondata.common.annotations.InterfaceAudience
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.sdk.store.CarbonStoreFactory
+import org.apache.carbondata.sdk.store.conf.StoreConf
 import org.apache.carbondata.spark.util.Util
-import org.apache.carbondata.store.api.CarbonStoreFactory
-import org.apache.carbondata.store.api.conf.StoreConf
 import org.apache.carbondata.store.impl.worker.Worker
 
 /**

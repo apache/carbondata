@@ -15,23 +15,33 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.api.descriptor;
+package org.apache.carbondata.sdk.store;
 
-public class TableIdentifier {
-  private String tableName;
-  private String databaseName;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 
-  public TableIdentifier(String tableName, String databaseName) {
-    this.tableName = tableName;
-    this.databaseName = databaseName;
+@InterfaceAudience.User
+@InterfaceStability.Unstable
+public interface ResultBatch<T> {
+
+  /**
+   * Return true if the result is returned in columnar batch, otherwise is row by row.
+   * By default, it is columnar batch.
+   */
+  default boolean isColumnar() {
+    return true;
   }
 
-  public String getTableName() {
-    return tableName;
-  }
+  /**
+   * Return true if there is more elements in this batch.
+   */
+  boolean hasNext();
 
-  public String getDatabaseName() {
-    return databaseName;
-  }
-
+  /**
+   * Return next item.
+   * If {@link #isColumnar()} return true, there is only one element in this batch
+   * which is {@link ColumnarBatch}, otherwise, this batch return row by row, caller
+   * should call next() until no element left.
+   */
+  T next();
 }

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.api;
+package org.apache.carbondata.sdk.store;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -23,9 +23,16 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.carbondata.store.api.conf.StoreConf;
-import org.apache.carbondata.store.api.exception.StoreException;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.sdk.store.conf.StoreConf;
+import org.apache.carbondata.sdk.store.exception.CarbonException;
 
+/**
+ * Factory class to create {@link CarbonStore}
+ */
+@InterfaceAudience.User
+@InterfaceStability.Unstable
 public class CarbonStoreFactory {
   private static Map<String, CarbonStore> distributedStores = new ConcurrentHashMap<>();
   private static Map<String, CarbonStore> localStores = new ConcurrentHashMap<>();
@@ -34,7 +41,7 @@ public class CarbonStoreFactory {
   }
 
   public static CarbonStore getDistributedStore(String storeName, StoreConf storeConf)
-      throws StoreException {
+      throws CarbonException {
     if (distributedStores.containsKey(storeName)) {
       return distributedStores.get(storeName);
     }
@@ -47,7 +54,7 @@ public class CarbonStoreFactory {
       return store;
     } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException |
         InstantiationException e) {
-      throw new StoreException(e);
+      throw new CarbonException(e);
     }
   }
 
@@ -59,7 +66,7 @@ public class CarbonStoreFactory {
   }
 
   public static CarbonStore getLocalStore(String storeName, StoreConf storeConf)
-      throws StoreException {
+      throws CarbonException {
     if (localStores.containsKey(storeName)) {
       return localStores.get(storeName);
     }
@@ -72,7 +79,7 @@ public class CarbonStoreFactory {
       return store;
     } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException |
         InstantiationException e) {
-      throw new StoreException(e);
+      throw new CarbonException(e);
     }
   }
 

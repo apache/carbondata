@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.api.descriptor;
+package org.apache.carbondata.sdk.store.descriptor;
 
 import java.util.ArrayList;
 import java.util.HashMap;

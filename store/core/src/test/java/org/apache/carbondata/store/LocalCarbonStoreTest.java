@@ -22,20 +22,19 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
-import org.apache.carbondata.store.api.CarbonStore;
-import org.apache.carbondata.store.api.CarbonStoreFactory;
-import org.apache.carbondata.store.api.conf.StoreConf;
-import org.apache.carbondata.store.api.descriptor.LoadDescriptor;
-import org.apache.carbondata.store.api.descriptor.SelectDescriptor;
-import org.apache.carbondata.store.api.descriptor.TableDescriptor;
-import org.apache.carbondata.store.api.descriptor.TableIdentifier;
-import org.apache.carbondata.store.api.exception.StoreException;
+import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.SelectDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.TableDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
+import org.apache.carbondata.sdk.store.exception.CarbonException;
+import org.apache.carbondata.sdk.store.CarbonStore;
+import org.apache.carbondata.sdk.store.CarbonStoreFactory;
+import org.apache.carbondata.sdk.store.conf.StoreConf;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -50,7 +49,7 @@ public class LocalCarbonStoreTest {
   private static CarbonStore store;
 
   @BeforeClass
-  public static void setup() throws IOException, StoreException {
+  public static void setup() throws IOException, CarbonException {
     StoreConf conf = new StoreConf("test", "./");
     conf.conf(StoreConf.STORE_TEMP_LOCATION, "./temp");
     store = CarbonStoreFactory.getLocalStore("LocalCarbonStoreTest", conf);
@@ -74,13 +73,13 @@ public class LocalCarbonStoreTest {
   }
 
   @Test
-  public void testWriteAndReadFiles() throws IOException, StoreException {
+  public void testWriteAndReadFiles() throws IOException, CarbonException {
     TableIdentifier tableIdentifier = new TableIdentifier("table_1", "default");
     store.dropTable(tableIdentifier);
-    TableDescriptor table = TableDescriptor
+    TableDescriptor descriptor = TableDescriptor
         .builder()
-        .ifNotExists()
         .table(tableIdentifier)
+        .ifNotExists()
         .comment("first table")
         .column("shortField", DataTypes.SHORT, "short field")
         .column("intField", DataTypes.INT, "int field")
@@ -94,7 +93,7 @@ public class LocalCarbonStoreTest {
         .column("floatField", DataTypes.DOUBLE, "float field")
         .tblProperties(CarbonCommonConstants.SORT_COLUMNS, "intField")
         .create();
-    store.createTable(table);
+    store.createTable(descriptor);
 
     // load one segment
     LoadDescriptor load = LoadDescriptor

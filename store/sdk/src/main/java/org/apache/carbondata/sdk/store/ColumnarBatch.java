@@ -15,19 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.api.exception;
+package org.apache.carbondata.sdk.store;
 
-public class StoreException extends Exception {
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 
-  public StoreException() {
-    super();
-  }
-
-  public StoreException(String message) {
-    super(message);
-  }
-
-  public StoreException(Exception e) {
-    super(e);
-  }
+@InterfaceAudience.User
+@InterfaceStability.Unstable
+public interface ColumnarBatch {
+  ColumnVector get(int ordinal);
 }

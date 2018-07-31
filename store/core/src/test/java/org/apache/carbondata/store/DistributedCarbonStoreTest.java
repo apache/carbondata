@@ -27,14 +27,14 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
-import org.apache.carbondata.store.api.CarbonStore;
-import org.apache.carbondata.store.api.CarbonStoreFactory;
-import org.apache.carbondata.store.api.conf.StoreConf;
-import org.apache.carbondata.store.api.descriptor.LoadDescriptor;
-import org.apache.carbondata.store.api.descriptor.SelectDescriptor;
-import org.apache.carbondata.store.api.descriptor.TableDescriptor;
-import org.apache.carbondata.store.api.descriptor.TableIdentifier;
-import org.apache.carbondata.store.api.exception.StoreException;
+import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.SelectDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.TableDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
+import org.apache.carbondata.sdk.store.exception.CarbonException;
+import org.apache.carbondata.sdk.store.CarbonStore;
+import org.apache.carbondata.sdk.store.CarbonStoreFactory;
+import org.apache.carbondata.sdk.store.conf.StoreConf;
 import org.apache.carbondata.store.impl.worker.Worker;
 
 import org.junit.After;
@@ -50,7 +50,7 @@ public class DistributedCarbonStoreTest {
   private static CarbonStore store;
 
   @BeforeClass
-  public static void beforeAll() throws IOException, StoreException {
+  public static void beforeAll() throws IOException, CarbonException {
     projectFolder = new File(DistributedCarbonStoreTest.class.getResource("/").getPath() +
         "../../../../").getCanonicalPath();
     String confFile = projectFolder + "/store/conf/store.conf";
@@ -81,13 +81,13 @@ public class DistributedCarbonStoreTest {
   }
 
   @Test
-  public void testSelect() throws IOException, StoreException {
+  public void testSelect() throws IOException, CarbonException {
     TableIdentifier tableIdentifier = new TableIdentifier("table_1", "default");
     store.dropTable(tableIdentifier);
-    TableDescriptor table = TableDescriptor
+    TableDescriptor descriptor = TableDescriptor
         .builder()
-        .ifNotExists()
         .table(tableIdentifier)
+        .ifNotExists()
         .comment("first table")
         .column("shortField", DataTypes.SHORT, "short field")
         .column("intField", DataTypes.INT, "int field")
@@ -101,7 +101,7 @@ public class DistributedCarbonStoreTest {
         .column("floatField", DataTypes.DOUBLE, "float field")
         .tblProperties(CarbonCommonConstants.SORT_COLUMNS, "intField")
         .create();
-    store.createTable(table);
+    store.createTable(descriptor);
 
     // load one segment
     LoadDescriptor load = LoadDescriptor

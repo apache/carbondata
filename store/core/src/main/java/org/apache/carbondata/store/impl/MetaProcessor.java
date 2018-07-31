@@ -42,9 +42,9 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.ThriftWriter;
 import org.apache.carbondata.sdk.file.CarbonWriterBuilder;
 import org.apache.carbondata.sdk.file.Field;
-import org.apache.carbondata.store.api.descriptor.TableDescriptor;
-import org.apache.carbondata.store.api.descriptor.TableIdentifier;
-import org.apache.carbondata.store.api.exception.StoreException;
+import org.apache.carbondata.sdk.store.descriptor.TableDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
+import org.apache.carbondata.sdk.store.exception.CarbonException;
 
 class MetaProcessor {
 
@@ -60,21 +60,23 @@ class MetaProcessor {
   // mapping of table path to CarbonTable object
   private Map<String, CarbonTable> cache = new HashMap<>();
 
-  public void createTable(TableDescriptor descriptor) throws StoreException {
+  public void createTable(TableDescriptor descriptor) throws
+      CarbonException {
+    TableIdentifier table = descriptor.getTable();
     Field[] fields = descriptor.getSchema().getFields();
     // sort_columns
     List<String> sortColumnsList = null;
     try {
       sortColumnsList = descriptor.getSchema().prepareSortColumns(descriptor.getProperties());
     } catch (MalformedCarbonCommandException e) {
-      throw new StoreException(e.getMessage());
+      throw new CarbonException(e.getMessage());
     }
     ColumnSchema[] sortColumnsSchemaList = new ColumnSchema[sortColumnsList.size()];
 
     TableSchemaBuilder builder = TableSchema.builder();
     CarbonWriterBuilder.buildTableSchema(fields, builder, sortColumnsList, sortColumnsSchemaList);
 
-    TableSchema schema = builder.tableName(descriptor.getTable().getTableName())
+    TableSchema schema = builder.tableName(table.getTableName())
         .properties(descriptor.getProperties())
         .setSortColumns(Arrays.asList(sortColumnsSchemaList))
         .build();
@@ -82,17 +84,16 @@ class MetaProcessor {
     SchemaEvolutionEntry schemaEvolutionEntry = new SchemaEvolutionEntry();
     schemaEvolutionEntry.setTimeStamp(System.currentTimeMillis());
     schema.getSchemaEvolution().getSchemaEvolutionEntryList().add(schemaEvolutionEntry);
-    schema.setTableName(descriptor.getTable().getTableName());
+    schema.setTableName(table.getTableName());
 
     String tablePath = descriptor.getTablePath();
     if (tablePath == null) {
-      tablePath = store.getTablePath(
-          descriptor.getTable().getTableName(), descriptor.getTable().getDatabaseName());
+      tablePath = store.getTablePath(table.getTableName(), table.getDatabaseName());
     }
 
     TableInfo tableInfo = CarbonTable.builder()
-        .databaseName(descriptor.getTable().getDatabaseName())
-        .tableName(descriptor.getTable().getTableName())
+        .databaseName(table.getDatabaseName())
+        .tableName(table.getTableName())
         .tablePath(tablePath)
         .tableSchema(schema)
         .isTransactionalTable(true)
@@ -102,7 +103,7 @@ class MetaProcessor {
       createTable(tableInfo, descriptor.isIfNotExists());
     } catch (IOException e) {
       LOGGER.error(e, "create tableDescriptor failed");
-      throw new StoreException(e.getMessage());
+      throw new CarbonException(e.getMessage());
     }
   }
 

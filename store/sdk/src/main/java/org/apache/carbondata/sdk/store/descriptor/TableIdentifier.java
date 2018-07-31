@@ -15,36 +15,30 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.api;
+package org.apache.carbondata.sdk.store.descriptor;
 
-import java.io.IOException;
+import java.io.Serializable;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.store.api.descriptor.TableDescriptor;
-import org.apache.carbondata.store.api.descriptor.TableIdentifier;
-import org.apache.carbondata.store.api.exception.StoreException;
 
-/**
- * Public interface to manage table in CarbonStore
- */
 @InterfaceAudience.User
-@InterfaceStability.Unstable
-public interface MetaStore {
-  /**
-   * Create a Table
-   * @param table descriptor for create table operation
-   * @throws IOException if network or disk IO error occurs
-   */
-  void createTable(TableDescriptor table) throws IOException, StoreException;
+@InterfaceStability.Evolving
+public class TableIdentifier implements Serializable {
+  private String tableName;
+  private String databaseName;
 
-  /**
-   * Drop a Table, and remove all data in it
-   * @param table table identifier
-   * @throws IOException if network or disk IO error occurs
-   */
-  void dropTable(TableIdentifier table) throws IOException;
+  public TableIdentifier(String tableName, String databaseName) {
+    this.tableName = tableName;
+    this.databaseName = databaseName;
+  }
 
-  CarbonTable getTable(TableIdentifier table) throws IOException;
+  public String getTableName() {
+    return tableName;
+  }
+
+  public String getDatabaseName() {
+    return databaseName;
+  }
+
 }

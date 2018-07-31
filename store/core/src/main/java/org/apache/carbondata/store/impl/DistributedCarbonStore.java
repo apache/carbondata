@@ -44,11 +44,13 @@ import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModelBuilder;
 import org.apache.carbondata.processing.util.CarbonLoaderUtil;
-import org.apache.carbondata.store.api.conf.StoreConf;
-import org.apache.carbondata.store.api.descriptor.LoadDescriptor;
-import org.apache.carbondata.store.api.descriptor.SelectDescriptor;
-import org.apache.carbondata.store.api.exception.ExecutionTimeoutException;
-import org.apache.carbondata.store.api.exception.StoreException;
+import org.apache.carbondata.sdk.store.Loader;
+import org.apache.carbondata.sdk.store.Scanner;
+import org.apache.carbondata.sdk.store.conf.StoreConf;
+import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.SelectDescriptor;
+import org.apache.carbondata.sdk.store.exception.CarbonException;
+import org.apache.carbondata.sdk.store.exception.ExecutionTimeoutException;
 import org.apache.carbondata.store.impl.master.Schedulable;
 import org.apache.carbondata.store.impl.master.Scheduler;
 import org.apache.carbondata.store.impl.rpc.model.BaseResponse;
@@ -75,9 +77,14 @@ class DistributedCarbonStore extends CarbonStoreBase {
   }
 
   @Override
-  public void loadData(LoadDescriptor load) throws IOException, StoreException {
+  public void loadData(LoadDescriptor load) throws CarbonException {
     Objects.requireNonNull(load);
-    CarbonTable table = metaProcessor.getTable(load.getTable());
+    CarbonTable table = null;
+    try {
+      table = metaProcessor.getTable(load.getTable());
+    } catch (IOException e) {
+      throw new CarbonException(e);
+    }
     CarbonLoadModelBuilder builder = new CarbonLoadModelBuilder(table);
     builder.setInputPath(load.getInputPath());
     CarbonLoadModel loadModel;
@@ -85,10 +92,10 @@ class DistributedCarbonStore extends CarbonStoreBase {
       loadModel = builder.build(load.getOptions(), System.currentTimeMillis(), "0");
     } catch (InvalidLoadOptionException e) {
       LOGGER.error(e, "Invalid loadDescriptor options");
-      throw new StoreException(e);
+      throw new CarbonException(e);
     } catch (IOException e) {
       LOGGER.error(e, "Failed to loadDescriptor data");
-      throw e;
+      throw new CarbonException(e);
     }
 
     Schedulable worker = scheduler.pickNexWorker();
@@ -103,23 +110,39 @@ class DistributedCarbonStore extends CarbonStoreBase {
         txnManager.commitSegment(loadModel);
       } else {
         txnManager.closeSegment(loadModel);
-        throw new StoreException(response.getMessage());
+        throw new CarbonException(response.getMessage());
       }
+    } catch (IOException e) {
+      throw new CarbonException(e);
     } finally {
       worker.workload.decrementAndGet();
     }
   }
 
   @Override
-  public List<CarbonRow> select(SelectDescriptor select) throws IOException, StoreException {
+  public Loader newLoader(LoadDescriptor load) throws CarbonException {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public List<CarbonRow> select(SelectDescriptor select) throws CarbonException {
     Objects.requireNonNull(select);
-    CarbonTable carbonTable = metaProcessor.getTable(select.getTable());
-    return select(
-        carbonTable,
-        select.getProjection(),
-        select.getFilter(),
-        select.getLimit(),
-        select.getLimit());
+    try {
+      CarbonTable carbonTable = metaProcessor.getTable(select.getTableIdentifier());
+      return select(
+          carbonTable,
+          select.getProjection(),
+          select.getFilter(),
+          select.getLimit(),
+          select.getLimit());
+    } catch (IOException e) {
+      throw new CarbonException(e);
+    }
+  }
+
+  @Override
+  public Scanner newScanner() throws CarbonException {
+    throw new UnsupportedOperationException();
   }
 
   /**

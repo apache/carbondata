@@ -40,11 +40,11 @@ import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.api.CarbonInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
-import org.apache.carbondata.store.api.CarbonStore;
-import org.apache.carbondata.store.api.conf.StoreConf;
-import org.apache.carbondata.store.api.descriptor.TableDescriptor;
-import org.apache.carbondata.store.api.descriptor.TableIdentifier;
-import org.apache.carbondata.store.api.exception.StoreException;
+import org.apache.carbondata.sdk.store.CarbonStore;
+import org.apache.carbondata.sdk.store.conf.StoreConf;
+import org.apache.carbondata.sdk.store.descriptor.TableDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
+import org.apache.carbondata.sdk.store.exception.CarbonException;
 import org.apache.carbondata.store.impl.rpc.model.Scan;
 
 import org.apache.hadoop.conf.Configuration;
@@ -71,21 +71,34 @@ public abstract class CarbonStoreBase implements CarbonStore {
   }
 
   @Override
-  public void createTable(TableDescriptor table) throws IOException, StoreException {
-    Objects.requireNonNull(table);
-    metaProcessor.createTable(table);
+  public void createTable(TableDescriptor descriptor) throws CarbonException {
+    Objects.requireNonNull(descriptor);
+    metaProcessor.createTable(descriptor);
   }
 
   @Override
-  public void dropTable(TableIdentifier table) throws IOException {
+  public void dropTable(TableIdentifier table) throws CarbonException {
     Objects.requireNonNull(table);
-    metaProcessor.dropTable(table);
+    try {
+      metaProcessor.dropTable(table);
+    } catch (IOException e) {
+      throw new CarbonException(e);
+    }
   }
 
   @Override
-  public CarbonTable getTable(TableIdentifier table) throws IOException {
-    Objects.requireNonNull(table);
-    return metaProcessor.getTable(table);
+  public List<TableDescriptor> listTable() throws CarbonException {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public TableDescriptor getDescriptor(TableIdentifier table) throws CarbonException {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void alterTable(TableIdentifier table, TableDescriptor newTable) throws CarbonException {
+    throw new UnsupportedOperationException();
   }
 
   public String getTablePath(String tableName, String databaseName) {

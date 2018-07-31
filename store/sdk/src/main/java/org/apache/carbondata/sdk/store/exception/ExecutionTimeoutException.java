@@ -15,8 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.api.exception;
+package org.apache.carbondata.sdk.store.exception;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
+
+@InterfaceAudience.User
+@InterfaceStability.Evolving
 public class ExecutionTimeoutException extends RuntimeException {
 
 }
