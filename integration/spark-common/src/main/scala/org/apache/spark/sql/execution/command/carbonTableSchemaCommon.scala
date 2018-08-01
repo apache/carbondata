@@ -689,12 +689,8 @@ class TableNewProcessor(cm: TableModel) {
         }
       }
     }
-    // dimensions that are not varchar
-    cm.dimCols.filter(field => !cm.varcharCols.get.contains(field.column))
-      .foreach(addDimensionCol(_))
-    // dimensions that are varchar
-    cm.dimCols.filter(field => cm.varcharCols.get.contains(field.column))
-      .foreach(addDimensionCol(_))
+    // add all dimensions
+    cm.dimCols.foreach(addDimensionCol(_))
 
     // check whether the column is a local dictionary column and set in column schema
     if (null != cm.tableProperties) {

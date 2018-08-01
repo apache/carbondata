@@ -33,8 +33,10 @@ public class TableFieldStat implements Serializable {
   private int dictSortDimCnt = 0;
   private int dictNoSortDimCnt = 0;
   private int noDictSortDimCnt = 0;
-  // for columns that are no_dict_dim and no_sort_dim and complex, except the varchar dims
+  // for columns that are no_dict_dim and no_sort_dim, except complex/varchar dims
   private int noDictNoSortDimCnt = 0;
+  // for columns that are complex data type
+  private int complexDimCnt = 0;
   // for columns that are varchar data type
   private int varcharDimCnt = 0;
   // whether sort column is of dictionary type or not
@@ -49,17 +51,19 @@ public class TableFieldStat implements Serializable {
   private int[] dictNoSortDimIdx;
   // indices for no-dict & sort dimension columns
   private int[] noDictSortDimIdx;
-  // indices for no-dict & no-sort dimension columns, including complex columns
+  // indices for no-dict & no-sort dimension columns, excluding complex/varchar columns
   private int[] noDictNoSortDimIdx;
   // indices for varchar dimension columns
   private int[] varcharDimIdx;
+  // indices for varchar dimension columns
+  private int [] complexDimIdx;
   // indices for measure columns
   private int[] measureIdx;
 
   public TableFieldStat(SortParameters sortParameters) {
     int noDictDimCnt = sortParameters.getNoDictionaryCount();
-    int complexDimCnt = sortParameters.getComplexDimColCount();
     int dictDimCnt = sortParameters.getDimColCount() - noDictDimCnt;
+    this.complexDimCnt = sortParameters.getComplexDimColCount();
     this.isSortColNoDictFlags = sortParameters.getNoDictionarySortColumn();
     this.isVarcharDimFlags = sortParameters.getIsVarcharDimensionColumn();
     int sortColCnt = isSortColNoDictFlags.length;
@@ -83,8 +87,8 @@ public class TableFieldStat implements Serializable {
     this.dictSortDimIdx = new int[dictSortDimCnt];
     this.dictNoSortDimIdx = new int[dictDimCnt - dictSortDimCnt];
     this.noDictSortDimIdx = new int[noDictSortDimCnt];
-    this.noDictNoSortDimIdx = new int[noDictDimCnt + complexDimCnt - noDictSortDimCnt
-        - varcharDimCnt];
+    this.noDictNoSortDimIdx = new int[noDictDimCnt - noDictSortDimCnt - varcharDimCnt];
+    this.complexDimIdx = new int[complexDimCnt];
     this.varcharDimIdx = new int[varcharDimCnt];
     this.measureIdx = new int[measureCnt];
 
@@ -113,13 +117,13 @@ public class TableFieldStat implements Serializable {
       }
     }
     dictNoSortDimCnt = tmpDictNoSortCnt;
+    noDictNoSortDimCnt = tmpNoDictNoSortCnt;
 
     int base = isDimNoDictFlags.length;
-    // adding complex dimension columns
+    // indices for complex dimension columns
     for (int i = 0; i < complexDimCnt; i++) {
-      noDictNoSortDimIdx[tmpNoDictNoSortCnt++] = base + i;
+      complexDimIdx[i] = base + i;
     }
-    noDictNoSortDimCnt = tmpNoDictNoSortCnt;
 
     base += complexDimCnt;
     // indices for measure columns
@@ -142,6 +146,10 @@ public class TableFieldStat implements Serializable {
 
   public int getNoDictNoSortDimCnt() {
     return noDictNoSortDimCnt;
+  }
+
+  public int getComplexDimCnt() {
+    return complexDimCnt;
   }
 
   public int getVarcharDimCnt() {
@@ -180,6 +188,10 @@ public class TableFieldStat implements Serializable {
     return noDictNoSortDimIdx;
   }
 
+  public int[] getComplexDimIdx() {
+    return complexDimIdx;
+  }
+
   public int[] getVarcharDimIdx() {
     return varcharDimIdx;
   }
@@ -196,12 +208,13 @@ public class TableFieldStat implements Serializable {
         && dictNoSortDimCnt == that.dictNoSortDimCnt
         && noDictSortDimCnt == that.noDictSortDimCnt
         && noDictNoSortDimCnt == that.noDictNoSortDimCnt
+        && complexDimCnt == that.complexDimCnt
         && varcharDimCnt == that.varcharDimCnt
         && measureCnt == that.measureCnt;
   }
 
   @Override public int hashCode() {
     return Objects.hash(dictSortDimCnt, dictNoSortDimCnt, noDictSortDimCnt,
-        noDictNoSortDimCnt, varcharDimCnt, measureCnt);
+        noDictNoSortDimCnt, complexDimCnt, varcharDimCnt, measureCnt);
   }
 }

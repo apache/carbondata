@@ -225,17 +225,24 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
   protected val escapedIdentifier = "`([^`]+)`".r
 
-  private def reorderDimensions(dims: Seq[Field]): Seq[Field] = {
-    var complexDimensions: Seq[Field] = Seq()
+  private def reorderDimensions(dims: Seq[Field], varcharCols: Seq[String]): Seq[Field] = {
     var dimensions: Seq[Field] = Seq()
+    var varcharDimensions: Seq[Field] = Seq()
+    var complexDimensions: Seq[Field] = Seq()
     dims.foreach { dimension =>
       dimension.dataType.getOrElse("NIL") match {
         case "Array" => complexDimensions = complexDimensions :+ dimension
         case "Struct" => complexDimensions = complexDimensions :+ dimension
+        case "String" =>
+          if (varcharCols.exists(dimension.column.equalsIgnoreCase)) {
+            varcharDimensions = varcharDimensions :+ dimension
+          } else {
+            dimensions = dimensions :+ dimension
+          }
         case _ => dimensions = dimensions :+ dimension
       }
     }
-    dimensions ++ complexDimensions
+    dimensions ++ varcharDimensions ++ complexDimensions
   }
 
   /**
@@ -415,7 +422,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       dbName,
       tableName,
       tableProperties.toMap,
-      reorderDimensions(dims.map(f => normalizeType(f)).map(f => addParent(f))),
+      reorderDimensions(dims.map(f => normalizeType(f)).map(f => addParent(f)), varcharColumns),
       msrs.map(f => normalizeType(f)),
       Option(sortKeyDims),
       Option(varcharColumns),
