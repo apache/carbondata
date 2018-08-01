@@ -38,6 +38,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.SQLExecution
 import org.apache.spark.sql.profiler.{GetPartition, Profiler, QueryTaskEnd}
 import org.apache.spark.sql.util.SparkSQLUtil.sessionState
+import org.apache.spark.util.{CarbonReflectionUtils, TaskCompletionListener}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonCommonConstantsInternal}
@@ -457,17 +458,29 @@ class CarbonScanRDD[T: ClassTag](
         }
       }
 
-      // add task completion before calling initialize as initialize method will internally call
-      // for usage of unsafe method for processing of one blocklet and if there is any exception
-      // while doing that the unsafe memory occupied for that task will not get cleared
-      context.addTaskCompletionListener { _ =>
-        closeReader.apply()
-        close()
-        logStatistics(executionId, taskId, queryStartTime, model.getStatisticsRecorder, split)
-      }
       // create a statistics recorder
       val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder(model.getQueryId())
       model.setStatisticsRecorder(recorder)
+
+      // TODO: rewrite this logic to call free memory in FailureListener on failures. On success,
+      // no memory leak should be there, resources should be freed on success completion.
+      val listeners = CarbonReflectionUtils.getField("onCompleteCallbacks", context)
+        .asInstanceOf[ArrayBuffer[TaskCompletionListener]]
+      val isAdded = listeners.exists(p => p.isInstanceOf[InsertTaskCompletionListener])
+      model.setFreeUnsafeMemory(!isAdded)
+      // add task completion before calling initialize as initialize method will internally call
+      // for usage of unsafe method for processing of one blocklet and if there is any exception
+      // while doing that the unsafe memory occupied for that task will not get cleared
+      context.addTaskCompletionListener { new QueryTaskCompletionListener(!isAdded,
+        reader,
+        inputMetricsStats,
+        executionId,
+        taskId,
+        queryStartTime,
+        model.getStatisticsRecorder,
+        split,
+        queryId)
+      }
       // initialize the reader
       reader.initialize(inputSplit, attemptContext)
 
@@ -623,43 +636,6 @@ class CarbonScanRDD[T: ClassTag](
       }
     }
     format
-  }
-
-  def logStatistics(
-      executionId: String,
-      taskId: Long,
-      queryStartTime: Long,
-      recorder: QueryStatisticsRecorder,
-      split: Partition
-  ): Unit = {
-    if (null != recorder) {
-      val queryStatistic = new QueryStatistic()
-      queryStatistic.addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
-        System.currentTimeMillis - queryStartTime)
-      recorder.recordStatistics(queryStatistic)
-      // print executor query statistics for each task_id
-      val statistics = recorder.statisticsForTask(taskId, queryStartTime)
-      if (statistics != null && executionId != null) {
-        Profiler.invokeIfEnable {
-          val inputSplit = split.asInstanceOf[CarbonSparkPartition].split.value
-          inputSplit.calculateLength()
-          val size = inputSplit.getLength
-          val files = inputSplit.getAllSplits.asScala.map { s =>
-            s.getSegmentId + "/" + s.getPath.getName
-          }.toArray[String]
-          Profiler.send(
-            QueryTaskEnd(
-              executionId.toLong,
-              queryId,
-              statistics.getValues,
-              size,
-              files
-            )
-          )
-        }
-      }
-      recorder.logStatisticsForTask(statistics)
-    }
   }
 
   /**
