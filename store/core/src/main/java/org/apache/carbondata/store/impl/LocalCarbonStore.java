@@ -180,7 +180,8 @@ class LocalCarbonStore extends CarbonStoreBase {
     throw new UnsupportedOperationException();
   }
 
-  @Override public Scanner newScanner() throws CarbonException {
+  @Override
+  public Scanner newScanner() throws CarbonException {
     throw new UnsupportedOperationException();
   }
 

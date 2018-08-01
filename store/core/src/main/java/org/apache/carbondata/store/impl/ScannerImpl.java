@@ -37,7 +37,7 @@ import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
 
-public class ScannerImpl implements Scanner {
+class ScannerImpl implements Scanner {
 
   private DistributedCarbonStore store;
 
@@ -60,6 +60,7 @@ public class ScannerImpl implements Scanner {
     }
   }
 
+  // TODO: implement option
   @Override
   public Iterator<ResultBatch<CarbonRow>> scan(ScanUnit input, ScanDescriptor select,
       SelectOption option) throws CarbonException {
