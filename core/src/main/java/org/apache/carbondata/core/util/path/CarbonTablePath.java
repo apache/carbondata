@@ -694,6 +694,14 @@ public class CarbonTablePath {
   }
 
   /**
+   * Get the segment file path of table
+   */
+  public static String getSegmentFilePath(String tablePath, String segmentFileName) {
+    return getMetadataPath(tablePath) + CarbonCommonConstants.FILE_SEPARATOR + "segments"
+        + CarbonCommonConstants.FILE_SEPARATOR + segmentFileName;
+  }
+
+  /**
    * Get the lock files directory
    */
   public static String getLockFilesDirPath(String tablePath) {
