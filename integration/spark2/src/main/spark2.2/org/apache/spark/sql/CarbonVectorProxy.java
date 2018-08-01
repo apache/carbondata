@@ -120,26 +120,27 @@ public class CarbonVectorProxy {
         if (null == value) {
             putNull(rowId, offset);
         } else {
+            String valueToString = String.valueOf(value);
             if (t == org.apache.spark.sql.types.DataTypes.BooleanType) {
-                putBoolean(rowId, (boolean) value, offset);
+                putBoolean(rowId, Boolean.parseBoolean(valueToString), offset);
             } else if (t == org.apache.spark.sql.types.DataTypes.ByteType) {
-                putByte(rowId, (byte) value, offset);
+                putByte(rowId, Byte.parseByte(valueToString), offset);
             } else if (t == org.apache.spark.sql.types.DataTypes.ShortType) {
-                putShort(rowId, (short) value, offset);
+                putShort(rowId, Short.parseShort(valueToString), offset);
             } else if (t == org.apache.spark.sql.types.DataTypes.IntegerType) {
-                putInt(rowId, (int) value, offset);
+                putInt(rowId, Integer.parseInt(valueToString), offset);
             } else if (t == org.apache.spark.sql.types.DataTypes.LongType) {
-                putLong(rowId, (long) value, offset);
+                putLong(rowId, Long.parseLong(valueToString), offset);
             } else if (t == org.apache.spark.sql.types.DataTypes.FloatType) {
-                putFloat(rowId, (float) value, offset);
+                putFloat(rowId, Float.parseFloat(valueToString), offset);
             } else if (t == org.apache.spark.sql.types.DataTypes.DoubleType) {
-                putDouble(rowId, (double) value, offset);
+                putDouble(rowId, Double.parseDouble(valueToString), offset);
             } else if (t == org.apache.spark.sql.types.DataTypes.StringType) {
-                UTF8String v = (UTF8String) value;
+                UTF8String v = UTF8String.fromString(valueToString);
                 putByteArray(rowId, v.getBytes(), offset);
             } else if (t instanceof org.apache.spark.sql.types.DecimalType) {
                 DecimalType dt = (DecimalType) t;
-                Decimal d = Decimal.fromDecimal(value);
+                Decimal d = Decimal.fromDecimal(valueToString);
                 if (dt.precision() <= Decimal.MAX_INT_DIGITS()) {
                     putInt(rowId, (int) d.toUnscaledLong(), offset);
                 } else if (dt.precision() <= Decimal.MAX_LONG_DIGITS()) {
@@ -150,13 +151,13 @@ public class CarbonVectorProxy {
                     putByteArray(rowId, bytes, 0, bytes.length, offset);
                 }
             } else if (t instanceof CalendarIntervalType) {
-                CalendarInterval c = (CalendarInterval) value;
+                CalendarInterval c = CalendarInterval.fromString(valueToString);
                 columnarBatch.column(offset).getChildColumn(0).putInt(rowId, c.months);
                 columnarBatch.column(offset).getChildColumn(1).putLong(rowId, c.microseconds);
             } else if (t instanceof org.apache.spark.sql.types.DateType) {
-                putInt(rowId, (int) value, offset);
+                putInt(rowId, Integer.parseInt(valueToString), offset);
             } else if (t instanceof org.apache.spark.sql.types.TimestampType) {
-                putLong(rowId, (long) value, offset);
+                putLong(rowId, Long.parseLong(valueToString), offset);
             }
         }
     }

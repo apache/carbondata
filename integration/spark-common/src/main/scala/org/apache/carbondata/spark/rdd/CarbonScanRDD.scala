@@ -453,10 +453,13 @@ class CarbonScanRDD[T: ClassTag](
           externalRecordReader.setQueryModel(model)
           if (vectorReader) {
             externalRecordReader.setReadSupport(CarbonReflectionUtils
-              .getInstance("VectorCsvReadSupport").asInstanceOf[CarbonReadSupport[Object]])
+              .getInstance("org.apache.carbondata.spark.format.VectorCsvReadSupport")
+              .asInstanceOf[CarbonReadSupport[Object]])
           } else {
-            externalRecordReader.setReadSupport(CarbonReflectionUtils
-              .getInstance("CsvReadSupport").asInstanceOf[CarbonReadSupport[Object]])
+            externalRecordReader
+              .setReadSupport(CarbonReflectionUtils
+                .getInstance("org.apache.carbondata.spark.format.CsvReadSupport")
+                .asInstanceOf[CarbonReadSupport[Object]])
           }
           externalRecordReader
         case _ =>

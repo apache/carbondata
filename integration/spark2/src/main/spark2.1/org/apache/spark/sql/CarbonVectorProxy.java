@@ -90,12 +90,12 @@ public class CarbonVectorProxy {
         }
     }
 
-    public void putNotNull(int rowId, int ordinal) {
-        columnarBatch.column(ordinal).putNotNull(rowId);
+    public void putNull(int rowId, int ordinal) {
+        columnarBatch.column(ordinal).putNull(rowId);
     }
 
-    public void putNotNulls(int rowId, int count, int ordinal) {
-        columnarBatch.column(ordinal).putNotNulls(rowId, count);
+    public void putNulls(int rowId, int count, int ordinal) {
+        columnarBatch.column(ordinal).putNulls(rowId, count);
     }
 
     /**
@@ -238,32 +238,13 @@ public class CarbonVectorProxy {
         columnarBatch.column(ordinal).putByteArray(rowId, (byte[]) value, offset, length);
     }
 
-    public void putNull(int rowId, int ordinal) {
-        columnarBatch.column(ordinal).putNull(rowId);
-    }
-
-    public void putNulls(int rowId, int count, int ordinal) {
-        columnarBatch.column(ordinal).putNulls(rowId, count);
-    }
-
     public boolean isNullAt(int rowId, int ordinal) {
-        return columnarBatch.column(ordinal).isNullAt(rowId);
+        return columnarBatch
+                .column(ordinal).isNullAt(rowId);
     }
 
     public DataType dataType(int ordinal) {
         return columnarBatch.column(ordinal).dataType();
-    }
-
-    public void setDictionary(Object dictionary, int ordinal) {
-        if (dictionary instanceof Dictionary) {
-            columnarBatch.column(ordinal).setDictionary((Dictionary) dictionary);
-        } else {
-            columnarBatch.column(ordinal).setDictionary(null);
-        }
-    }
-
-    public boolean hasDictionary(int ordinal) {
-        return columnarBatch.column(ordinal).hasDictionary();
     }
 
     public void putNotNull(int rowId, int ordinal) {
@@ -274,15 +255,7 @@ public class CarbonVectorProxy {
         columnarBatch.column(ordinal).putNotNulls(rowId, count);
     }
 
-    public DataType dataType(int ordinal) {
-        return columnarBatch.column(ordinal).dataType();
-    }
-
-    public ColumnVector getColumnVector(int ordinal) {
-        return columnarBatch.column(ordinal);
-    }
-
-    public Object reserveDictionaryIds(int capacity , int ordinal) {
-        return columnarBatch.column(ordinal).reserveDictionaryIds(capacity);
+    public void putDictionaryInt(int rowId, int value, int ordinal) {
+        columnarBatch.column(ordinal).getDictionaryIds().putInt(rowId, (int) value);
     }
 }
