@@ -19,6 +19,7 @@ package org.apache.carbondata.store.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,6 +29,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
@@ -41,23 +44,31 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
+import org.apache.carbondata.hadoop.api.CarbonInputFormat;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModelBuilder;
 import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 import org.apache.carbondata.sdk.store.Loader;
+import org.apache.carbondata.sdk.store.ResultBatch;
+import org.apache.carbondata.sdk.store.ScanUnit;
 import org.apache.carbondata.sdk.store.Scanner;
 import org.apache.carbondata.sdk.store.SelectOption;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
 import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
 import org.apache.carbondata.sdk.store.exception.ExecutionTimeoutException;
 import org.apache.carbondata.store.impl.master.Schedulable;
 import org.apache.carbondata.store.impl.master.Scheduler;
 import org.apache.carbondata.store.impl.rpc.model.BaseResponse;
 import org.apache.carbondata.store.impl.rpc.model.LoadDataRequest;
+import org.apache.carbondata.store.impl.rpc.model.PruneRequest;
+import org.apache.carbondata.store.impl.rpc.model.PruneResponse;
 import org.apache.carbondata.store.impl.rpc.model.QueryResponse;
 import org.apache.carbondata.store.impl.rpc.model.Scan;
+
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * A CarbonStore that leverage multiple servers via RPC calls (Master and Workers)
@@ -145,7 +156,7 @@ class DistributedCarbonStore extends CarbonStoreBase {
       // prune data and get a mapping of worker hostname to list of blocks,
       // then add these blocks to the Scan and fire the RPC call
       List<Distributable> blockInfos = pruneBlock(carbonTable, scanDescriptor.getFilter());
-      return doScan(carbonTable, scanDescriptor.getProjection(), scanDescriptor.getFilter(),
+      return doRemoteScan(carbonTable, scanDescriptor.getProjection(), scanDescriptor.getFilter(),
           scanDescriptor.getLimit(), blockInfos);
     } catch (IOException e) {
       throw new CarbonException(e);
@@ -154,7 +165,58 @@ class DistributedCarbonStore extends CarbonStoreBase {
 
   @Override
   public Scanner newScanner() throws CarbonException {
-    return new ScannerImpl(this);
+    return new Scanner() {
+      @Override
+      public List<ScanUnit> prune(TableIdentifier table, Expression filterExpression)
+          throws CarbonException {
+        try {
+          return doRemotePrune(table, filterExpression);
+        } catch (IOException e) {
+          throw new CarbonException(e);
+        }
+      }
+
+      @Override
+      public Iterator<ResultBatch<CarbonRow>> scan(ScanUnit input, ScanDescriptor select,
+          SelectOption option) throws CarbonException {
+        List<Distributable> toBeScan = new ArrayList<>();
+        if (input instanceof BlockScanUnit) {
+          toBeScan.add(((BlockScanUnit) input).getInputSplit());
+        } else {
+          throw new CarbonException(input.getClass().getName() + " is not supported");
+        }
+        CarbonTable carbonTable = getTable(select.getTableIdentifier());
+        try {
+          List<CarbonRow> rows = doRemoteScan(
+              carbonTable, select.getProjection(), select.getFilter(), select.getLimit(), toBeScan);
+          return rows.stream()
+              .map((Function<CarbonRow, ResultBatch<CarbonRow>>) carbonRow ->
+                  new RowMajorResultBatch(rows))
+              .collect(Collectors.toList())
+              .iterator();
+        } catch (IOException e) {
+          throw new CarbonException(e);
+        }
+      }
+    };
+  }
+
+  /**
+   * Trigger a RPC to Carbon Master to do pruning
+   * @param table table identifier
+   * @param filterExpression filter expression
+   * @return list ScanUnit
+   * @throws IOException if network or disk IO error
+   */
+  private List<ScanUnit> doRemotePrune(TableIdentifier table, Expression filterExpression)
+      throws IOException {
+    Configuration configuration = new Configuration();
+    CarbonInputFormat.setTableName(configuration, table.getTableName());
+    CarbonInputFormat.setDatabaseName(configuration, table.getDatabaseName());
+    CarbonInputFormat.setFilterPredicates(configuration, filterExpression);
+    PruneRequest request = new PruneRequest(configuration);
+    PruneResponse response = scheduler.sendRequest(request);
+    return response.getScanUnits();
   }
 
   /**
@@ -166,8 +228,8 @@ class DistributedCarbonStore extends CarbonStoreBase {
    * @param limit max number of rows required
    * @return CarbonRow
    */
-  List<CarbonRow> doScan(CarbonTable table, String[] requiredColumns, Expression filter,
-      long limit, List<Distributable> blockInfos)
+  private List<CarbonRow> doRemoteScan(CarbonTable table, String[] requiredColumns,
+      Expression filter, long limit, List<Distributable> blockInfos)
       throws IOException {
     int queryId = random.nextInt();
     List<CarbonRow> output = new ArrayList<>();

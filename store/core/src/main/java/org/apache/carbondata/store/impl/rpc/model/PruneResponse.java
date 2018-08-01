@@ -15,37 +15,53 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl;
+package org.apache.carbondata.store.impl.rpc.model;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.apache.carbondata.hadoop.CarbonInputSplit;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.sdk.store.ScanUnit;
+import org.apache.carbondata.store.impl.BlockScanUnit;
 
-public class BlockScanUnit implements ScanUnit {
-  private CarbonInputSplit inputSplit;
+import org.apache.hadoop.io.Writable;
 
-  public BlockScanUnit() {
+@InterfaceAudience.Internal
+public class PruneResponse implements Serializable, Writable {
+
+  private List<ScanUnit> scanUnits;
+
+  public PruneResponse() {
   }
 
-  public BlockScanUnit(CarbonInputSplit inputSplit) {
-    this.inputSplit = inputSplit;
+  public PruneResponse(List<ScanUnit> scanUnits) {
+    this.scanUnits = scanUnits;
   }
 
-  public CarbonInputSplit getInputSplit() {
-    return inputSplit;
+  public List<ScanUnit> getScanUnits() {
+    return scanUnits;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    inputSplit.write(out);
+    out.writeInt(scanUnits.size());
+    for (ScanUnit scanUnit : scanUnits) {
+      scanUnit.write(out);
+    }
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    inputSplit = new CarbonInputSplit();
-    inputSplit.readFields(in);
+    int size = in.readInt();
+    scanUnits = new ArrayList<>(size);
+    for (int i = 0; i < size; i++) {
+      BlockScanUnit scanUnit = new BlockScanUnit();
+      scanUnit.readFields(in);
+      scanUnits.add(scanUnit);
+    }
   }
 }

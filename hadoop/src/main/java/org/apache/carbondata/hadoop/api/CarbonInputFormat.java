@@ -185,9 +185,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * It sets unresolved filter expression.
    *
-   * @param configuration
-   * @para    DataMapJob dataMapJob = getDataMapJob(job.getConfiguration());
-m filterExpression
+   * @param configuration Hadoop conf
+   * @param filterExpression filter expression
    */
   public static void setFilterPredicates(Configuration configuration, Expression filterExpression) {
     if (filterExpression == null) {
@@ -243,6 +242,17 @@ m filterExpression
 
   public static String getColumnProjection(Configuration configuration) {
     return configuration.get(COLUMN_PROJECTION);
+  }
+
+  public static String[] getProjectionColumns(Configuration configuration) {
+    String projectionString = getColumnProjection(configuration);
+    String[] projectColumns;
+    if (projectionString != null) {
+      projectColumns = projectionString.split(",");
+    } else {
+      projectColumns = new String[]{};
+    }
+    return projectColumns;
   }
 
   public static void setFgDataMapPruning(Configuration configuration, boolean enable) {
@@ -353,7 +363,7 @@ m filterExpression
    */
   @Override public abstract List<InputSplit> getSplits(JobContext job) throws IOException;
 
-  protected Expression getFilterPredicates(Configuration configuration) {
+  public static Expression getFilterPredicates(Configuration configuration) {
     try {
       String filterExprString = configuration.get(FILTER_PREDICATE);
       if (filterExprString == null) {
@@ -524,7 +534,7 @@ m filterExpression
     return prunedBlocklets;
   }
 
-  private List<ExtendedBlocklet> getPrunedFiles4ExternalFormat(JobContext job,
+  public List<ExtendedBlocklet> getPrunedFiles4ExternalFormat(JobContext job,
       CarbonTable carbonTable,
       FilterResolverIntf resolver, List<Segment> segmentIds) throws IOException {
     ExplainCollector.addPruningInfo(carbonTable.getTableName());
@@ -664,13 +674,7 @@ m filterExpression
     CarbonTable carbonTable = getOrCreateCarbonTable(configuration);
 
     // set projection column in the query model
-    String projectionString = getColumnProjection(configuration);
-    String[] projectColumns;
-    if (projectionString != null) {
-      projectColumns = projectionString.split(",");
-    } else {
-      projectColumns = new String[]{};
-    }
+    String[] projectColumns = getProjectionColumns(configuration);
     QueryModel queryModel = new QueryModelBuilder(carbonTable)
         .projectColumns(projectColumns)
         .filterExpression(getFilterPredicates(configuration))

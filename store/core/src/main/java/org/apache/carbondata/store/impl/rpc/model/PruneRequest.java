@@ -15,37 +15,39 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl;
+package org.apache.carbondata.store.impl.rpc.model;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 
-import org.apache.carbondata.hadoop.CarbonInputSplit;
-import org.apache.carbondata.sdk.store.ScanUnit;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Writable;
 
-public class BlockScanUnit implements ScanUnit {
-  private CarbonInputSplit inputSplit;
+public class PruneRequest implements Serializable, Writable {
 
-  public BlockScanUnit() {
+  private Configuration hadoopConf;
+
+  public PruneRequest() {
   }
 
-  public BlockScanUnit(CarbonInputSplit inputSplit) {
-    this.inputSplit = inputSplit;
+  public PruneRequest(Configuration hadoopConf) {
+    this.hadoopConf = hadoopConf;
   }
 
-  public CarbonInputSplit getInputSplit() {
-    return inputSplit;
+  public Configuration getHadoopConf() {
+    return hadoopConf;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    inputSplit.write(out);
+    hadoopConf.write(out);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    inputSplit = new CarbonInputSplit();
-    inputSplit.readFields(in);
+    this.hadoopConf = new Configuration();
+    this.hadoopConf.readFields(in);
   }
 }

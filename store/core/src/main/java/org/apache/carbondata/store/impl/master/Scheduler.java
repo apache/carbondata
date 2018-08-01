@@ -33,8 +33,11 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
 import org.apache.carbondata.sdk.store.exception.SchedulerException;
+import org.apache.carbondata.store.impl.rpc.PruneService;
 import org.apache.carbondata.store.impl.rpc.model.BaseResponse;
 import org.apache.carbondata.store.impl.rpc.model.LoadDataRequest;
+import org.apache.carbondata.store.impl.rpc.model.PruneRequest;
+import org.apache.carbondata.store.impl.rpc.model.PruneResponse;
 import org.apache.carbondata.store.impl.rpc.model.QueryResponse;
 import org.apache.carbondata.store.impl.rpc.model.Scan;
 import org.apache.carbondata.store.impl.rpc.model.ShutdownRequest;
@@ -53,7 +56,7 @@ public class Scheduler {
 
   public Scheduler(StoreConf storeConf) throws IOException {
     master = Master.getInstance(storeConf);
-    master.startService();
+    master.startRegistryService();
   }
 
   /**
@@ -77,6 +80,13 @@ public class Scheduler {
     LOGGER.info("sending load data request to worker " + worker);
     worker.workload.incrementAndGet();
     return worker.service.loadData(request);
+  }
+
+  private PruneService pruneService;
+
+  public PruneResponse sendRequest(final PruneRequest request) throws IOException {
+    LOGGER.info("sending prune request to " + pruneService);
+    return pruneService.prune(request);
   }
 
   public Schedulable pickWorker(String splitAddress) {
@@ -127,7 +137,7 @@ public class Scheduler {
   }
 
   public void stopService() throws InterruptedException {
-    master.stopService();
+    master.stopRegistryService();
   }
 
   public List<String> getAllWorkerAddresses() {

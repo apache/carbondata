@@ -27,6 +27,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
 import org.apache.carbondata.sdk.store.util.StoreUtil;
+import org.apache.carbondata.store.impl.rpc.PruneService;
 import org.apache.carbondata.store.impl.rpc.RegistryService;
 import org.apache.carbondata.store.impl.rpc.ServiceFactory;
 import org.apache.carbondata.store.impl.rpc.StoreService;
@@ -37,8 +38,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.ipc.RPC;
 
 /**
- * Master of CarbonSearch.
- * It provides a Registry service for worker to register.
+ * Master of CarbonStore.
+ * It provides a Registry service and Prune service.
  */
 class Master {
 
@@ -46,10 +47,10 @@ class Master {
 
   private static LogService LOGGER = LogServiceFactory.getLogService(Master.class.getName());
 
-  // worker host address map to EndpointRef
   private StoreConf conf;
   private Configuration hadoopConf;
   private RPC.Server registryServer = null;
+  private RPC.Server pruneServer = null;
 
   // mapping of worker IP address to worker instance
   Map<String, Schedulable> workers = new ConcurrentHashMap<>();
@@ -60,9 +61,9 @@ class Master {
   }
 
   /**
-   * start service and listen on port passed in constructor
+   * start registry service and listen on port passed in constructor
    */
-  public void startService() throws IOException {
+  public void startRegistryService() throws IOException {
     if (registryServer == null) {
 
       BindException exception;
@@ -99,15 +100,67 @@ class Master {
       }
       LOGGER.info("registry-service started");
     } else {
-      LOGGER.info("Search mode master has already started");
+      LOGGER.info("registry-service has already started");
     }
   }
 
-  public void stopService() throws InterruptedException {
+  public void stopRegistryService() throws InterruptedException {
     if (registryServer != null) {
       registryServer.stop();
       registryServer.join();
       registryServer = null;
+    }
+  }
+
+  /**
+   * start registry service and listen on port passed in constructor
+   */
+  public void startPruneService() throws IOException {
+    if (pruneServer == null) {
+
+      BindException exception;
+      // we will try to create service at worse case 100 times
+      int numTry = 100;
+      String host = conf.masterHost();
+      int port = conf.prunePort();
+      LOGGER.info("building prune-service on " + host + ":" + port);
+
+      PruneService pruneService = new PruneServiceImpl();
+      do {
+        try {
+          pruneServer = new RPC.Builder(hadoopConf)
+              .setBindAddress(host)
+              .setPort(port)
+              .setProtocol(PruneService.class)
+              .setInstance(pruneService)
+              .build();
+
+          pruneServer.start();
+          numTry = 0;
+          exception = null;
+        } catch (BindException e) {
+          // port is occupied, increase the port number and try again
+          exception = e;
+          LOGGER.error(e, "start prune-service failed");
+          port = port + 1;
+          numTry = numTry - 1;
+        }
+      } while (numTry > 0);
+      if (exception != null) {
+        // we have tried many times, but still failed to find an available port
+        throw exception;
+      }
+      LOGGER.info("prune-service started");
+    } else {
+      LOGGER.info("prune-service has already started");
+    }
+  }
+
+  public void stopPruneService() throws InterruptedException {
+    if (pruneServer != null) {
+      pruneServer.stop();
+      pruneServer.join();
+      pruneServer = null;
     }
   }
 
@@ -146,7 +199,7 @@ class Master {
     return instance;
   }
 
-  public static void main(String[] args) throws InterruptedException {
+  public static void main(String[] args) throws InterruptedException, IOException {
     if (args.length != 2) {
       System.err.println("Usage: Master <log4j file> <properties file>");
       return;
@@ -155,7 +208,9 @@ class Master {
     StoreUtil.initLog4j(args[0]);
     StoreConf conf = new StoreConf(args[1]);
     Master master = getInstance(conf);
-    master.stopService();
+    master.startRegistryService();
+    master.startPruneService();
+    Thread.sleep(Long.MAX_VALUE);
   }
 
 }

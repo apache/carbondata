@@ -15,37 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl;
+package org.apache.carbondata.store.impl.rpc;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.carbondata.hadoop.CarbonInputSplit;
-import org.apache.carbondata.sdk.store.ScanUnit;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.store.impl.rpc.model.PruneRequest;
+import org.apache.carbondata.store.impl.rpc.model.PruneResponse;
 
-public class BlockScanUnit implements ScanUnit {
-  private CarbonInputSplit inputSplit;
+import org.apache.hadoop.ipc.VersionedProtocol;
 
-  public BlockScanUnit() {
-  }
-
-  public BlockScanUnit(CarbonInputSplit inputSplit) {
-    this.inputSplit = inputSplit;
-  }
-
-  public CarbonInputSplit getInputSplit() {
-    return inputSplit;
-  }
-
-  @Override
-  public void write(DataOutput out) throws IOException {
-    inputSplit.write(out);
-  }
-
-  @Override
-  public void readFields(DataInput in) throws IOException {
-    inputSplit = new CarbonInputSplit();
-    inputSplit.readFields(in);
-  }
+@InterfaceAudience.Internal
+public interface PruneService extends VersionedProtocol {
+  long versionID = 1L;
+  PruneResponse prune(PruneRequest request) throws IOException;
 }

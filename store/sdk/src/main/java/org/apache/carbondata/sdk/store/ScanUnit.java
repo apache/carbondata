@@ -21,13 +21,14 @@ import java.io.Serializable;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.metadata.schema.table.Writable;
 
 /**
  * An unit for the scanner in Carbon Store
  */
 @InterfaceAudience.User
 @InterfaceStability.Unstable
-public interface ScanUnit<T> extends Serializable {
+public interface ScanUnit<T> extends Serializable, Writable {
 
   /**
    * Return the list of preferred location of this ScanUnit.

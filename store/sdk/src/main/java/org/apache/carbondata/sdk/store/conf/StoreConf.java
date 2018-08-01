@@ -45,6 +45,7 @@ public class StoreConf implements Serializable, Writable {
   public static final String WORKER_CORE_NUM = "carbon.worker.core.num";
   public static final String MASTER_HOST = "carbon.master.host";
   public static final String MASTER_PORT = "carbon.master.port";
+  public static final String PRUNE_PORT = "carbon.master.prune.port";
 
   public static final String STORE_TEMP_LOCATION = "carbon.store.temp.location";
   public static final String STORE_LOCATION = "carbon.store.location";
@@ -110,6 +111,10 @@ public class StoreConf implements Serializable, Writable {
 
   public int masterPort() {
     return intValue(MASTER_PORT);
+  }
+
+  public int prunePort() {
+    return intValue(PRUNE_PORT);
   }
 
   public String workerHost() {

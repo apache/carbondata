@@ -40,4 +40,10 @@ public class ServiceFactory {
     return RPC.getProxy(
         RegistryService.class, RegistryService.versionID, address, new Configuration());
   }
+
+  public static PruneService createPruneService(String host, int port) throws IOException {
+    InetSocketAddress address = new InetSocketAddress(InetAddress.getByName(host), port);
+    return RPC.getProxy(
+        PruneService.class, PruneService.versionID, address, new Configuration());
+  }
 }
