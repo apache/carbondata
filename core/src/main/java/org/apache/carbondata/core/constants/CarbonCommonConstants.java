@@ -1276,6 +1276,10 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String UNSAFE_WORKING_MEMORY_IN_MB = "carbon.unsafe.working.memory.in.mb";
   public static final String UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT = "512";
+
+  @CarbonProperty
+  public static final String UNSAFE_DRIVER_WORKING_MEMORY_IN_MB =
+      "carbon.unsafe.driver.working.memory.in.mb";
   /**
    * Sorts the data in batches and writes the batch data to store with index file.
    */
