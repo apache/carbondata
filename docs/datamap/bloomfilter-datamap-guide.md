@@ -103,15 +103,16 @@ which will show the transformed logical plan, and thus user can check whether th
 If the datamap does not prune blocklets well, you can try to increase the value of property `BLOOM_SIZE` and decrease the value of property `BLOOM_FPP`.
 
 ## Data Management With BloomFilter DataMap
-Data management with BloomFilter datamap has no difference with that on Lucene datamap. You can refer to the corresponding section in `CarbonData BloomFilter DataMap`.
+Data management with BloomFilter datamap has no difference with that on Lucene datamap.
+You can refer to the corresponding section in `CarbonData Lucene DataMap`.
 
 ## Useful Tips
-+ BloomFilter DataMap is suggested to create on the high cardinality columns.
-+ BloomFilter datamap requires that the query conditions on index columns are always simple `equal` or `in`,
- such as 'col1=XX', 'col1 in (XX, YY)'. Otherwise the queries cannot benefit from BloomFilter datamap.
++ BloomFilter DataMap is suggested to be created on the high cardinality columns.
+ Query conditions on these columns are always simple `equal` or `in`,
+ such as 'col1=XX', 'col1 in (XX, YY)'.
 + We can create multiple BloomFilter datamaps on one table,
- also we can create one BloomFilter datamap that contains multiple index columns.
- We do recommend the later behavior since the data loading and query performance will be better.
+ but we do recommend you to create one BloomFilter datamap that contains multiple index columns,
+ because the data loading and query performance will be better.
 + `BLOOM_FPP` is only the expected number from user, the actually FPP may be worse.
  If the BloomFilter datamap does not work well,
  you can try to increase `BLOOM_SIZE` and decrease `BLOOM_FPP` at the same time.
@@ -123,6 +124,7 @@ Data management with BloomFilter datamap has no difference with that on Lucene d
  If this occurs very often, it means that current BloomFilter is useless. You can disable or drop it.
  Sometimes we cannot see any pruning result about BloomFilter datamap in the explain output,
  this indicates that the previous datamap has pruned all the blocklets and there is no need to continue pruning.
-+ In some scenario, the BloomFilter datamap may not enhance the query performance significantly
++ In some scenarios, the BloomFilter datamap may not enhance the query performance significantly
  but if it can reduce the number of spark task,
- there is still chance that BloomFilter datamap can enhance the performance of concurrent query.
+ there is still a chance that BloomFilter datamap can enhance the performance for concurrent query.
++ Note that BloomFilter datamap will decrease the data loading performance and may cause slightly storage expansion (for datamap index file).
