@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.sdk.store;
 
+import java.io.Serializable;
 import java.util.Iterator;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -29,7 +30,7 @@ import org.apache.carbondata.sdk.store.exception.CarbonException;
  */
 @InterfaceAudience.User
 @InterfaceStability.Unstable
-public interface Loader extends TransactionalOperation {
+public interface Loader extends TransactionalOperation, Serializable {
   /**
    * Trigger the load operation
    * @throws CarbonException if any error occurs

@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.sdk.store;
 
+import java.io.Serializable;
 import java.util.Iterator;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -31,7 +32,7 @@ import org.apache.carbondata.sdk.store.exception.CarbonException;
  */
 @InterfaceAudience.User
 @InterfaceStability.Unstable
-public interface Scanner {
+public interface Scanner extends Serializable {
 
   /**
    * Return an array of ScanUnit which will be the input in

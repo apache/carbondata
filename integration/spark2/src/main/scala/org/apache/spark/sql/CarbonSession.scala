@@ -243,7 +243,7 @@ class CarbonSession(@transient val sc: SparkContext,
       if (expr != null) CarbonFilters.transformExpression(expr) else null,
       localMaxRows.getOrElse(Long.MaxValue)
     )
-    val rows = store.select(select).iterator()
+    val rows = store.scan(select).iterator()
     val output = new java.util.ArrayList[Row]()
     val maxRowCount = maxRows.getOrElse(Long.MaxValue)
     var rowCount = 0
