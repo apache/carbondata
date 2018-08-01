@@ -69,15 +69,15 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
    * default size for bloom filter, cardinality of the column.
    */
   private static final int DEFAULT_BLOOM_FILTER_SIZE =
-      CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+      CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT * 20;
   /**
    * property for fpp(false-positive-probability) of bloom filter
    */
   private static final String BLOOM_FPP = "bloom_fpp";
   /**
-   * default value for fpp of bloom filter is 1%
+   * default value for fpp of bloom filter is 0.001%
    */
-  private static final double DEFAULT_BLOOM_FILTER_FPP = 0.01d;
+  private static final double DEFAULT_BLOOM_FILTER_FPP = 0.00001d;
 
   /**
    * property for compressing bloom while saving to disk.
