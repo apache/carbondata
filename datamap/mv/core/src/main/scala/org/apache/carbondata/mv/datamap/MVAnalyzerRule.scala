@@ -82,6 +82,9 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
     }
   }
 
+  /**
+   * Whether the plan is valid for doing modular plan matching and datamap replacing.
+   */
   def isValidPlan(plan: LogicalPlan, catalog: SummaryDatasetCatalog): Boolean = {
     if (!plan.isInstanceOf[Command]  && !plan.isInstanceOf[DeserializeToObject]) {
       val catalogs = extractCatalogs(plan)
@@ -95,14 +98,14 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
   /**
    * Check whether datamap table already updated in the query.
    *
-   * @param mvs
-   * @return
+   * @param mvdataSetArray Array of available mvdataset which include modular plans
+   * @return Boolean whether already datamap replaced in the plan or not
    */
   def isDataMapReplaced(
-      mvs: Array[SummaryDataset],
+      mvdataSetArray: Array[SummaryDataset],
       catalogs: Seq[Option[CatalogTable]]): Boolean = {
     catalogs.exists { c =>
-      mvs.exists { mv =>
+      mvdataSetArray.exists { mv =>
         val identifier = mv.dataMapSchema.getRelationIdentifier
         identifier.getTableName.equals(c.get.identifier.table) &&
         identifier.getDatabaseName.equals(c.get.database)
@@ -111,7 +114,8 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
   }
 
   /**
-   * Check whether any suitable datamaps exists for this plan.
+   * Check whether any suitable datamaps(like datamap which parent tables are present in the plan)
+   * exists for this plan.
    *
    * @param mvs
    * @return
@@ -127,7 +131,7 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
     }
   }
 
-  private def extractCatalogs(plan: LogicalPlan) = {
+  private def extractCatalogs(plan: LogicalPlan): Seq[Option[CatalogTable]] = {
     val catalogs = plan collect {
       case l: LogicalRelation => l.catalogTable
     }
