@@ -16,22 +16,9 @@
  */
 package org.apache.carbondata.core.metadata;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Serializable;
+import java.io.*;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -511,11 +498,13 @@ public class SegmentFileStore {
     for (Map.Entry<String, byte[]> entry : carbonIndexMap.entrySet()) {
       List<DataFileFooter> indexInfo =
           fileFooterConverter.getIndexInfo(entry.getKey(), entry.getValue());
-      List<String> blocks = new ArrayList<>();
+      // carbonindex file stores blocklets so block filename will be duplicated, use set to remove
+      // duplicates
+      Set<String> blocks = new LinkedHashSet<>();
       for (DataFileFooter footer : indexInfo) {
         blocks.add(footer.getBlockInfo().getTableBlockInfo().getFilePath());
       }
-      indexFilesMap.put(entry.getKey(), blocks);
+      indexFilesMap.put(entry.getKey(), new ArrayList<>(blocks));
       boolean added = false;
       for (Map.Entry<String, List<String>> mergeFile : indexFileStore
           .getCarbonMergeFileToIndexFilesMap().entrySet()) {
