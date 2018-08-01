@@ -41,11 +41,28 @@ public class UnsafeMemoryManager {
           CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT));
   private static Map<Long,Set<MemoryBlock>> taskIdToMemoryBlockMap;
   static {
-    long size;
+    long size = 0L;
     try {
-      size = Long.parseLong(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB,
-              CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT));
+      // check if driver unsafe memory is configured and JVM process is in driver. In that case
+      // initialize unsafe memory configured for driver
+      boolean isDriver = Boolean.parseBoolean(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "false"));
+      boolean initializedWithUnsafeDriverMemory = false;
+      if (isDriver) {
+        String driverUnsafeMemorySize = CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.UNSAFE_DRIVER_WORKING_MEMORY_IN_MB);
+        if (null != driverUnsafeMemorySize) {
+          size = Long.parseLong(CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.UNSAFE_DRIVER_WORKING_MEMORY_IN_MB,
+                  CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT));
+          initializedWithUnsafeDriverMemory = true;
+        }
+      }
+      if (!initializedWithUnsafeDriverMemory) {
+        size = Long.parseLong(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB,
+                CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT));
+      }
     } catch (Exception e) {
       size = Long.parseLong(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT);
       LOGGER.info("Wrong memory size given, "
