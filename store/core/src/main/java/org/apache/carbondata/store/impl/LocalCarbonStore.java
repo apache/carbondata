@@ -165,7 +165,7 @@ class LocalCarbonStore extends CarbonStoreBase {
     Objects.requireNonNull(select);
     try {
       CarbonTable table = metaProcessor.getTable(select.getTableIdentifier());
-      List<Distributable> blocks = pruneBlock(table, select.getProjection(), select.getFilter());
+      List<Distributable> blocks = pruneBlock(table, select.getFilter());
       CarbonMultiBlockSplit split = new CarbonMultiBlockSplit(blocks, "");
       Scan scan = new Scan(0, split, table.getTableInfo(), select.getProjection(),
           select.getFilter(), select.getLimit());

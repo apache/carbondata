@@ -127,57 +127,50 @@ class DistributedCarbonStore extends CarbonStoreBase {
 
   @Override
   public List<CarbonRow> scan(ScanDescriptor select) throws CarbonException {
-    Objects.requireNonNull(select);
+    return scan(select, null);
+  }
+
+  @Override
+  public List<CarbonRow> scan(ScanDescriptor scanDescriptor, SelectOption option)
+      throws CarbonException {
+    Objects.requireNonNull(scanDescriptor);
     try {
-      CarbonTable carbonTable = metaProcessor.getTable(select.getTableIdentifier());
-      return select(
-          carbonTable,
-          select.getProjection(),
-          select.getFilter(),
-          select.getLimit(),
-          select.getLimit());
+      CarbonTable carbonTable = metaProcessor.getTable(scanDescriptor.getTableIdentifier());
+      Objects.requireNonNull(carbonTable);
+      Objects.requireNonNull(scanDescriptor.getProjection());
+      if (scanDescriptor.getLimit() < 0) {
+        throw new IllegalArgumentException("limit should be positive");
+      }
+
+      // prune data and get a mapping of worker hostname to list of blocks,
+      // then add these blocks to the Scan and fire the RPC call
+      List<Distributable> blockInfos = pruneBlock(carbonTable, scanDescriptor.getFilter());
+      return doScan(carbonTable, scanDescriptor.getProjection(), scanDescriptor.getFilter(),
+          scanDescriptor.getLimit(), blockInfos);
     } catch (IOException e) {
       throw new CarbonException(e);
     }
   }
 
   @Override
-  public List<CarbonRow> scan(ScanDescriptor select, SelectOption option)
-      throws CarbonException {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public Scanner newScanner() throws CarbonException {
-    throw new UnsupportedOperationException();
+    return new ScannerImpl(this);
   }
 
   /**
-   * Execute search by firing RPC call to worker, return the result rows
+   * Execute scan by firing RPC call to worker, return the result rows
    *
    * @param table       table to search
-   * @param columns     projection column names
+   * @param requiredColumns     projection column names
    * @param filter      filter expression
-   * @param globalLimit max number of rows required in Master
-   * @param localLimit  max number of rows required in Worker
+   * @param limit max number of rows required
    * @return CarbonRow
    */
-  private List<CarbonRow> select(CarbonTable table, String[] columns, Expression filter,
-      long globalLimit, long localLimit) throws IOException {
-    Objects.requireNonNull(table);
-    Objects.requireNonNull(columns);
-    if (globalLimit < 0 || localLimit < 0) {
-      throw new IllegalArgumentException("limit should be positive");
-    }
-
+  List<CarbonRow> doScan(CarbonTable table, String[] requiredColumns, Expression filter,
+      long limit, List<Distributable> blockInfos)
+      throws IOException {
     int queryId = random.nextInt();
-
     List<CarbonRow> output = new ArrayList<>();
-
-    // prune data and get a mapping of worker hostname to list of blocks,
-    // then add these blocks to the Scan and fire the RPC call
-    List<Distributable> blockInfos = pruneBlock(table, columns, filter);
-
     Map<String, List<Distributable>> nodeBlockMapping =
         CarbonLoaderUtil.nodeBlockMapping(
             blockInfos, -1, scheduler.getAllWorkerAddresses(),
@@ -189,7 +182,7 @@ class DistributedCarbonStore extends CarbonStoreBase {
     for (Map.Entry<String, List<Distributable>> entry : entries) {
       CarbonMultiBlockSplit split = new CarbonMultiBlockSplit(entry.getValue(), entry.getKey());
       Scan scan =
-          new Scan(queryId, split, table.getTableInfo(), columns, filter, localLimit);
+          new Scan(queryId, split, table.getTableInfo(), requiredColumns, filter, limit);
 
       // Find an Endpoind and send the request to it
       // This RPC is non-blocking so that we do not need to wait before send to next worker
@@ -203,7 +196,7 @@ class DistributedCarbonStore extends CarbonStoreBase {
     for (int i = 0; i < length; i++) {
       Future<QueryResponse> future = futures.get(i);
       Schedulable worker = workers.get(i);
-      if (rowCount < globalLimit) {
+      if (rowCount < limit) {
         // wait for worker
         QueryResponse response = null;
         try {
@@ -217,7 +210,7 @@ class DistributedCarbonStore extends CarbonStoreBase {
           worker.workload.decrementAndGet();
         }
         LOGGER.info("[QueryId: " + queryId + "] receive search response from worker " + worker);
-        rowCount += onSuccess(queryId, response, output, globalLimit);
+        rowCount += onSuccess(queryId, response, output, limit);
       }
     }
     return output;

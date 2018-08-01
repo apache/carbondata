@@ -15,13 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store;
+package org.apache.carbondata.store.impl;
 
-import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.datastore.block.Distributable;
+import org.apache.carbondata.sdk.store.ScanUnit;
 
-@InterfaceAudience.User
-@InterfaceStability.Unstable
-public interface ColumnVector {
+public class BlockScanUnit implements ScanUnit {
+  private Distributable distributable;
 
+  public BlockScanUnit(Distributable distributable) {
+    this.distributable = distributable;
+  }
+
+  public Distributable getDistributable() {
+    return distributable;
+  }
 }

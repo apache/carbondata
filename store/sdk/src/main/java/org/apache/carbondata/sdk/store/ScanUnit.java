@@ -27,7 +27,7 @@ import org.apache.carbondata.common.annotations.InterfaceStability;
  */
 @InterfaceAudience.User
 @InterfaceStability.Unstable
-public interface ScanUnit extends Serializable {
+public interface ScanUnit<T> extends Serializable {
 
   /**
    * Return the list of preferred location of this ScanUnit.

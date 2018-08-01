@@ -19,9 +19,11 @@ package org.apache.carbondata.sdk.store;
 
 import java.io.Serializable;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
@@ -42,10 +44,11 @@ public interface Scanner extends Serializable {
    *
    * @param table table identifier
    * @param filterExpression expression of filter predicate given by user
-   * @return unit of scan
+   * @return list of ScanUnit which should be passed to
+   *         {@link #scan(ScanUnit, ScanDescriptor, SelectOption)}
    * @throws CarbonException if any error occurs
    */
-  ScanUnit[] prune(TableIdentifier table, Expression filterExpression) throws CarbonException;
+  List<ScanUnit> prune(TableIdentifier table, Expression filterExpression) throws CarbonException;
 
   /**
    * Perform a scan in a distributed compute framework like Spark, Presto, etc.
@@ -63,7 +66,7 @@ public interface Scanner extends Serializable {
    * @return scan result, the result is returned in batch
    * @throws CarbonException if any error occurs
    */
-  <T> Iterator<ResultBatch<T>> scan(ScanUnit input, ScanDescriptor select,
+  Iterator<ResultBatch<CarbonRow>> scan(ScanUnit input, ScanDescriptor select,
       SelectOption option) throws CarbonException;
 
 }

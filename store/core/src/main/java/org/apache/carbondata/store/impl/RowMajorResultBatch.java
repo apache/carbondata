@@ -15,13 +15,36 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store;
+package org.apache.carbondata.store.impl;
 
-import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.annotations.InterfaceStability;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 
-@InterfaceAudience.User
-@InterfaceStability.Unstable
-public interface ColumnarBatch {
-  ColumnVector get(int ordinal);
+import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.sdk.store.ResultBatch;
+
+public class RowMajorResultBatch implements ResultBatch<CarbonRow> {
+
+  private Iterator<CarbonRow> iterator;
+
+  RowMajorResultBatch(List<CarbonRow> rows) {
+    Objects.requireNonNull(rows);
+    this.iterator = rows.iterator();
+  }
+
+  @Override
+  public boolean isColumnar() {
+    return false;
+  }
+
+  @Override
+  public boolean hasNext() {
+    return iterator.hasNext();
+  }
+
+  @Override
+  public CarbonRow next() {
+    return iterator.next();
+  }
 }

@@ -122,16 +122,15 @@ public abstract class CarbonStoreBase implements CarbonStore {
    * Return a mapping of host address to list of block.
    * This should be invoked in driver side.
    */
-  public static List<Distributable> pruneBlock(CarbonTable table, String[] columns,
-      Expression filter) throws IOException {
+  static List<Distributable> pruneBlock(CarbonTable table, Expression filter) throws IOException {
     Objects.requireNonNull(table);
-    Objects.requireNonNull(columns);
     JobConf jobConf = new JobConf(new Configuration());
     Job job = new Job(jobConf);
     CarbonTableInputFormat format;
     try {
+      // We just want to do pruning, so passing empty projection columns
       format = CarbonInputFormatUtil.createCarbonTableInputFormat(
-          job, table, columns, filter, null, null, true);
+          job, table, new String[0], filter, null, null, true);
     } catch (InvalidConfigurationException e) {
       throw new IOException(e.getMessage());
     }
