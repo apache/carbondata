@@ -588,7 +588,7 @@ public class BlockDataMap extends CoarseGrainDataMap
 
   private boolean useMinMaxForExecutorPruning(FilterResolverIntf filterResolverIntf) {
     boolean useMinMaxForPruning = false;
-    if (this instanceof BlockletDataMap) {
+    if (!isLegacyStore && this instanceof BlockletDataMap) {
       useMinMaxForPruning = BlockletDataMapUtil
           .useMinMaxForBlockletPruning(filterResolverIntf, getMinMaxCacheColumns());
     }

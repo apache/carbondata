@@ -1160,10 +1160,11 @@ public class CarbonTable implements Serializable {
    * @param tableInfo
    */
   private static void setLocalDictInfo(CarbonTable table, TableInfo tableInfo) {
-    String isLocalDictionaryEnabled = tableInfo.getFactTable().getTableProperties()
-        .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE);
-    String localDictionaryThreshold = tableInfo.getFactTable().getTableProperties()
-        .get(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD);
+    Map<String, String> tableProperties = tableInfo.getFactTable().getTableProperties();
+    String isLocalDictionaryEnabled =
+        tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE);
+    String localDictionaryThreshold =
+        tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD);
     if (null != isLocalDictionaryEnabled) {
       table.setLocalDictionaryEnabled(Boolean.parseBoolean(isLocalDictionaryEnabled));
       if (null != localDictionaryThreshold) {
@@ -1176,6 +1177,7 @@ public class CarbonTable implements Serializable {
       // in case of old tables, local dictionary enable property will not be present in
       // tableProperties, so disable the local dictionary generation
       table.setLocalDictionaryEnabled(Boolean.parseBoolean("false"));
+      tableProperties.put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE, "false");
     }
   }
 

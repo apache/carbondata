@@ -149,7 +149,38 @@ class FlatFolderTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
     sql("clean files for table flatfolder_delete")
     assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles().filter(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)).length == 1)
     assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles().filter(_.getName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)).length == 0)
+    sql("drop table if exists flatfolder_delete")
+  }
 
+  test("merge index flat folder and delete delta issue with GLOBAL SORT") {
+    sql("drop table if exists flatfolder_delete")
+    sql(
+      """
+        | CREATE TABLE flatfolder_delete (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int,empno int)
+        | STORED BY 'org.apache.carbondata.format' tblproperties('flat_folder'='true', 'SORT_SCOPE'='GLOBAL_SORT' )
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE flatfolder_delete OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"', 'GLOBAL_SORT_PARTITIONS'='4')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE flatfolder_delete OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"', 'GLOBAL_SORT_PARTITIONS'='4')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE flatfolder_delete OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"', 'GLOBAL_SORT_PARTITIONS'='4')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE flatfolder_delete OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"', 'GLOBAL_SORT_PARTITIONS'='4')""")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "flatfolder_delete")
+    sql(s"""delete from flatfolder_delete where empname='anandh'""")
+    sql(s"""delete from flatfolder_delete where empname='arvind'""")
+    sql(s"""select * from flatfolder_delete""").show()
+    assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles()
+             .filter(_.getName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)).length == 8)
+    sql("Alter table flatfolder_delete compact 'minor'")
+    assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles()
+             .filter(_.getName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)).length == 8)
+    sql("clean files for table flatfolder_delete")
+    assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles()
+             .filter(_.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)).length == 1)
+    assert(FileFactory.getCarbonFile(carbonTable.getTablePath).listFiles()
+             .filter(_.getName.endsWith(CarbonCommonConstants.DELETE_DELTA_FILE_EXT)).length == 0)
+    sql("drop table if exists flatfolder_delete")
   }
 
   override def afterAll = {
