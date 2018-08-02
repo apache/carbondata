@@ -324,7 +324,7 @@ class IndexDataMapRebuildRDD[K, V](
       inputMetrics.initBytesReadCallback(context, inputSplit)
 
       val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
-      val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
+      val attemptContext = new TaskAttemptContextImpl(getConf, attemptId)
       val format = createInputFormat(segment.get, attemptContext)
 
       val model = format.createQueryModel(inputSplit, attemptContext)
@@ -444,7 +444,7 @@ class IndexDataMapRebuildRDD[K, V](
     if (!dataMapSchema.isIndexDataMap) {
       throw new UnsupportedOperationException
     }
-    val conf = new Configuration()
+    val conf = getConf
     val jobConf = new JobConf(conf)
     SparkHadoopUtil.get.addCredentials(jobConf)
     val job = Job.getInstance(jobConf)

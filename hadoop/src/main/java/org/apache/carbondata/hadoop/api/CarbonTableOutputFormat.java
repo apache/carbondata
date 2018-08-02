@@ -233,6 +233,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
   @Override
   public RecordWriter<NullWritable, ObjectArrayWritable> getRecordWriter(
       TaskAttemptContext taskAttemptContext) throws IOException {
+
     final CarbonLoadModel loadModel = getLoadModel(taskAttemptContext.getConfiguration());
     //if loadModel having taskNo already(like in SDK) then no need to overwrite
     if (null == loadModel.getTaskNo() || loadModel.getTaskNo().isEmpty()) {

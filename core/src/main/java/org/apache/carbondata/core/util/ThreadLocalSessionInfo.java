@@ -29,6 +29,21 @@ public class ThreadLocalSessionInfo {
   }
 
   public static CarbonSessionInfo getCarbonSessionInfo() {
+    CarbonSessionInfo currentThreadSessionInfo = threadLocal.get();
+    if (currentThreadSessionInfo == null) {
+      threadLocal.set(new CarbonSessionInfo());
+    } else {
+      try {
+        threadLocal.set(threadLocal.get().clone());
+      } catch (CloneNotSupportedException e) {
+        throw new RuntimeException(e);
+      }
+    }
     return threadLocal.get();
   }
+
+  public static void unsetAll() {
+    threadLocal.remove();
+  }
+
 }
