@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
@@ -98,8 +99,14 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
                 .createCarbonFactHandler(model);
             carbonFactHandler.initialise();
             processBatch(next, carbonFactHandler);
-            finish(tableName, carbonFactHandler);
-            this.carbonFactHandler = null;
+            try {
+              finish(tableName, carbonFactHandler);
+            } finally {
+              // we need to make carbonFactHandler =null as finish will call closehandler
+              // even finish throws exception
+              // otherwise close() will call finish method again for same handler.
+              this.carbonFactHandler = null;
+            }
           }
         }
         i++;
@@ -119,19 +126,31 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
   }
 
   private void finish(String tableName, CarbonFactHandler dataHandler) {
+    CarbonDataWriterException exception = null;
     try {
       dataHandler.finish();
     } catch (Exception e) {
+      // if throw exception from here dataHandler will not be closed.
+      // so just holding exception and later throwing exception
       LOGGER.error(e, "Failed for table: " + tableName + " in  finishing data handler");
+      exception = new CarbonDataWriterException(
+          "Failed for table: " + tableName + " in  finishing data handler", e);
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordTotalRecords(rowCounter.get());
-    processingComplete(dataHandler);
+    try {
+      processingComplete(dataHandler);
+    } catch (Exception e) {
+      exception = new CarbonDataWriterException(e.getMessage(), e);
+    }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
         .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PATITION_ID,
             System.currentTimeMillis());
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
         .recordMdkGenerateTotalTime(CarbonTablePath.DEPRECATED_PATITION_ID,
             System.currentTimeMillis());
+    if (null != exception) {
+      throw exception;
+    }
   }
 
   private void processingComplete(CarbonFactHandler dataHandler) {

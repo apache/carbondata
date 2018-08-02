@@ -415,19 +415,29 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
    * @throws CarbonDataWriterException
    */
   protected void closeExecutorService() throws CarbonDataWriterException {
+    CarbonDataWriterException exception = null;
     try {
       listener.finish();
+      listener = null;
+    } catch (IOException e) {
+      exception = new CarbonDataWriterException(e);
+    }
+    try {
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.HOURS);
       for (int i = 0; i < executorServiceSubmitList.size(); i++) {
         executorServiceSubmitList.get(i).get();
       }
-      listener = null;
-    } catch (InterruptedException | ExecutionException | IOException e) {
-      throw new CarbonDataWriterException(e);
+    } catch (InterruptedException | ExecutionException e) {
+      if (null == exception) {
+        exception = new CarbonDataWriterException(e);
+      }
     }
     if (null != fallbackExecutorService) {
       fallbackExecutorService.shutdownNow();
+    }
+    if (exception != null) {
+      throw exception;
     }
   }
 
