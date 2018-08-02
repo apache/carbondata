@@ -147,7 +147,7 @@ object Utils extends PredicateHelper {
                                alias_m(alias.toAttribute).child.asInstanceOf[AggregateExpression]
                                  .aggregateFunction.isInstanceOf[Min] => {
             val min_a = alias_m(alias.toAttribute).child.asInstanceOf[AggregateExpression]
-            val expr_a = min_a.aggregateFunction.asInstanceOf[Max].child
+            val expr_a = min_a.aggregateFunction.asInstanceOf[Min].child
             if (min_a.isDistinct != min_q.isDistinct) {
               false
             } else {
