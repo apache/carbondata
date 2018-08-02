@@ -49,6 +49,8 @@ import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 
+import org.apache.commons.lang.StringUtils;
+
 /**
  * utility class for load merging.
  */
@@ -649,8 +651,14 @@ public final class CarbonDataMergerUtil {
       // variable to store one  segment size across partition.
       long sizeOfOneSegmentAcrossPartition;
       if (segment.getSegmentFile() != null) {
-        sizeOfOneSegmentAcrossPartition = CarbonUtil.getSizeOfSegment(
-            carbonTable.getTablePath(), new Segment(segId, segment.getSegmentFile()));
+        // If LoadMetaDataDetail already has data size no need to calculate the data size from
+        // index files. If not there then read the index file and calculate size.
+        if (!StringUtils.isEmpty(segment.getDataSize())) {
+          sizeOfOneSegmentAcrossPartition = Long.parseLong(segment.getDataSize());
+        } else {
+          sizeOfOneSegmentAcrossPartition = CarbonUtil.getSizeOfSegment(carbonTable.getTablePath(),
+              new Segment(segId, segment.getSegmentFile()));
+        }
       } else {
         sizeOfOneSegmentAcrossPartition = getSizeOfSegment(carbonTable.getTablePath(), segId);
       }
