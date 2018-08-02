@@ -130,7 +130,7 @@ public class TestSdkJson {
        testJsonSdkWriter();
    }
    
-   public void testJsonSdkWriter() throws InvalidLoadOptionException {
+   public static void testJsonSdkWriter() throws InvalidLoadOptionException {
     String path = "./target/testJsonSdkWriter";
 
     Field[] fields = new Field[2];
@@ -297,7 +297,7 @@ public CarbonWriterBuilder persistSchemaFile(boolean persist);
 *               by default it is system time in nano seconds.
 * @return updated CarbonWriterBuilder
 */
-public CarbonWriterBuilder taskNo(String taskNo);
+public CarbonWriterBuilder taskNo(long taskNo);
 ```
 
 ```
@@ -340,7 +340,7 @@ public CarbonWriterBuilder withLoadOptions(Map<String, String> options);
 * @throws IOException
 * @throws InvalidLoadOptionException
 */
-public CarbonWriter buildWriterForCSVInput() throws IOException, InvalidLoadOptionException;
+public CarbonWriter buildWriterForCSVInput(org.apache.carbondata.sdk.file.Schema schema) throws IOException, InvalidLoadOptionException;
 ```
 
 ```  
@@ -351,7 +351,7 @@ public CarbonWriter buildWriterForCSVInput() throws IOException, InvalidLoadOpti
 * @throws IOException
 * @throws InvalidLoadOptionException
 */
-public CarbonWriter buildWriterForAvroInput() throws IOException, InvalidLoadOptionException;
+public CarbonWriter buildWriterForAvroInput(org.apache.avro.Schema schema) throws IOException, InvalidLoadOptionException;
 ```
 
 ```

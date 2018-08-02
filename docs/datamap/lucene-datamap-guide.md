@@ -1,4 +1,4 @@
-# CarbonData Lucene DataMap (Alpha feature in 1.4.0)
+# CarbonData Lucene DataMap (Alpha Feature)
   
 * [DataMap Management](#datamap-management)
 * [Lucene Datamap](#lucene-datamap-introduction)

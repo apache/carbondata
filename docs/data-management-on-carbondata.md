@@ -87,6 +87,25 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      * BATCH_SORT: It increases the load performance but decreases the query performance if identified blocks > parallelism.
      * GLOBAL_SORT: It increases the query performance, especially high concurrent point query.
        And if you care about loading resources isolation strictly, because the system uses the spark GroupBy to sort data, the resource can be controlled by spark. 
+	 
+	### Example:
+
+   ```
+    CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
+                                   productNumber INT,
+                                   productName STRING,
+                                   storeCity STRING,
+                                   storeProvince STRING,
+                                   productCategory STRING,
+                                   productBatch STRING,
+                                   saleQuantity INT,
+                                   revenue INT)
+    STORED BY 'carbondata'
+    TBLPROPERTIES ('SORT_COLUMNS'='productName,storeCity',
+                   'SORT_SCOPE'='NO_SORT')
+   ```
+   
+   **NOTE:** CarbonData also supports "using carbondata". Find example code at [SparkSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/SparkSessionExample.scala) in the CarbonData repo.
  
    - **Table Block Size Configuration**
 
@@ -170,23 +189,6 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      TBLPROPERTIES('LOCAL_DICTIONARY_ENABLE'='true','LOCAL_DICTIONARY_THRESHOLD'='1000',
      'LOCAL_DICTIONARY_INCLUDE'='column1','LOCAL_DICTIONARY_EXCLUDE'='column2')
    ```
-### Example:
-
-   ```
-    CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
-                                   productNumber INT,
-                                   productName STRING,
-                                   storeCity STRING,
-                                   storeProvince STRING,
-                                   productCategory STRING,
-                                   productBatch STRING,
-                                   saleQuantity INT,
-                                   revenue INT)
-    STORED BY 'carbondata'
-    TBLPROPERTIES ('SORT_COLUMNS'='productName,storeCity',
-                   'SORT_SCOPE'='NO_SORT')
-   ```
-  **NOTE:** CarbonData also supports "using carbondata". Find example code at [SparkSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/SparkSessionExample.scala) in the CarbonData repo.
    
    - **Caching Min/Max Value for Required Columns**
      By default, CarbonData caches min and max values of all the columns in schema.  As the load increases, the memory required to hold the min and max values increases considerably. This feature enables you to configure min and max values only for the required columns, resulting in optimized memory usage. 
@@ -210,7 +212,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 	 COLUMN_META_CACHE=’col1,col2,col3,…’
 	 ```
 	 
-	 Columns to be cached can be specifies either while creating tale or after creation of the table.
+	 Columns to be cached can be specified either while creating table or after creation of the table.
 	 During create table operation; specify the columns to be cached in table properties.
 	 
 	 Syntax:
@@ -574,6 +576,7 @@ Users can specify which columns to include and exclude for local dictionary gene
   ```
   REFRESH TABLE dbcarbon.productSalesTable
   ```
+  
   **NOTE:** 
   * The new database name and the old database name should be same.
   * Before executing this command the old table schema and data should be copied into the new database location.
