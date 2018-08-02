@@ -883,6 +883,14 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
          | ('3', 'name3', '31.1', '2018-07-03'),
          | ('4', 'name4', '41.1', '2018-07-04')
        """.stripMargin)
+    sql(
+      s"""
+         | INSERT INTO $normalTable VALUES
+         | ('1', 'name1', '11.1', '2018-07-01'),
+         | ('2', 'name2', '21.1', '2018-07-02'),
+         | ('3', 'name3', '31.1', '2018-07-03'),
+         | ('4', 'name4', '41.1', '2018-07-04')
+       """.stripMargin)
     val preAggOnBase = "preagg_on_base"
     sql(
       s"""

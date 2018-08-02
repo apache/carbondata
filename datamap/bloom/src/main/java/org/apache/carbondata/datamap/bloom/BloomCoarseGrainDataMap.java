@@ -110,14 +110,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     for (CarbonColumn col : indexedColumn) {
       this.name2Col.put(col.getColName(), col);
     }
-    String parentTablePath = "";
-    if (carbonTable.isChildDataMap()) {
-      RelationIdentifier parentIdentifier =
-          carbonTable.getTableInfo().getParentRelationIdentifiers().get(0);
-      CarbonTable parentTable = CarbonMetadata.getInstance().getCarbonTable(
-          parentIdentifier.getDatabaseName(), parentIdentifier.getTableName());
-      parentTablePath = parentTable.getTablePath();
-    }
+    String parentTablePath = getAncestorTablePath(carbonTable);
 
     try {
       this.name2Converters = new HashMap<>(indexedColumn.size());
@@ -148,6 +141,22 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     }
     this.badRecordLogHolder = new BadRecordLogHolder();
     this.badRecordLogHolder.setLogged(false);
+  }
+
+  /**
+   * recursively find the ancestor's table path. This is used for dictionary scenario
+   * where preagg will use the dictionary of the parent table.
+   */
+  private String getAncestorTablePath(CarbonTable currentTable) {
+    if (!currentTable.isChildDataMap()) {
+      return currentTable.getTablePath();
+    }
+
+    RelationIdentifier parentIdentifier =
+        currentTable.getTableInfo().getParentRelationIdentifiers().get(0);
+    CarbonTable parentTable = CarbonMetadata.getInstance().getCarbonTable(
+        parentIdentifier.getDatabaseName(), parentIdentifier.getTableName());
+    return getAncestorTablePath(parentTable);
   }
 
   @Override
