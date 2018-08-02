@@ -21,6 +21,8 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfterAll{
 
@@ -1405,7 +1407,58 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     }
   }
 
+  test("test alter table add column system level property and table level property") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE, "false")
+    sql("drop table if exists local1")
+    sql(
+      """
+        | CREATE TABLE local1(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format' tblproperties('local_dictionary_enable'='true',
+        | 'local_dictionary_threshold'='20000','local_dictionary_include'='city','no_inverted_index'='name')
+      """.stripMargin)
+    sql("alter table local1 add columns (alt string) tblproperties('local_dictionary_include'='alt')")
+    val descLoc = sql("describe formatted local1").collect
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
+      case Some(row) => assert(row.get(1).toString.contains("20000"))
+      case None => assert(false)
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
+      case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
+    }
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
+      case Some(row) => assert(row.get(1).toString.contains("city,alt"))
+      case None => assert(false)
+    }
+  }
+
+  test("test alter table add column system level property") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE, "false")
+    sql("drop table if exists local1")
+    sql(
+      """
+        | CREATE TABLE local1(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format' tblproperties
+        | ('local_dictionary_threshold'='20000','local_dictionary_include'='city',
+        | 'no_inverted_index'='name')
+      """.stripMargin)
+    // exception will not be thrown as validation is not done, because table level local
+    // dictionary property is not configured, but system level it is configured false
+    sql(
+      "alter table local1 add columns (alt int)")
+    val descLoc = sql("describe formatted local1").collect
+    descLoc.find(_.get(0).toString.contains("Local Dictionary Enable")) match {
+      case Some(row) => assert(row.get(1).toString.contains("false"))
+      case None => assert(false)
+    }
+  }
+
   override protected def afterAll(): Unit = {
     sql("DROP TABLE IF EXISTS LOCAL1")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE,
+        CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
   }
 }

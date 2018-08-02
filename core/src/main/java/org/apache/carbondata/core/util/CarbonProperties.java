@@ -875,6 +875,15 @@ public final class CarbonProperties {
   }
 
   /**
+   * This method will be used to add a new property which need not be serialized
+   *
+   * @param key
+   */
+  public void addNonSerializableProperty(String key, String value) {
+    carbonProperties.setProperty(key, value);
+  }
+
+  /**
    * Remove the specified key in property
    */
   public CarbonProperties removeProperty(String key) {

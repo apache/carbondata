@@ -27,8 +27,7 @@ import org.apache.spark.sql.catalyst.parser.ParserUtils.operationNotAllowed
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{PartitionerField, TableModel, TableNewProcessor}
-import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand,
-CarbonCreateTableCommand}
+import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand, CarbonCreateTableCommand}
 import org.apache.spark.sql.types.StructField
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -37,6 +36,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.SchemaReader
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
@@ -164,7 +164,9 @@ object CarbonSparkSqlParserUtil {
       if (null == isLocalDic_enabled) {
         table.getFactTable.getTableProperties
           .put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
-            CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
+            CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE,
+                CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT))
       }
       isLocalDic_enabled = table.getFactTable.getTableProperties
         .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)
