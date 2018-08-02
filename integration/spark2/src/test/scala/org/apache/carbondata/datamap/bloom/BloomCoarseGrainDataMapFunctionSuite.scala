@@ -830,6 +830,8 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
     sql("drop table if exists test_rcd").collect()
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.BLOCKLET_SIZE,
       CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
+    CarbonProperties.getInstance().addProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB,
+      CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE)
   }
 
   /**
