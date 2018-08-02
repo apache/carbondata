@@ -1,4 +1,4 @@
-# CarbonData BloomFilter DataMap (Alpha feature in 1.4.0)
+# CarbonData BloomFilter DataMap (Alpha Feature)
 
 * [DataMap Management](#datamap-management)
 * [BloomFilter Datamap Introduction](#bloomfilter-datamap-introduction)
@@ -41,10 +41,10 @@ Disable Datamap
 
 ## BloomFilter DataMap Introduction
 A Bloom filter is a space-efficient probabilistic data structure that is used to test whether an element is a member of a set.
-Carbondata introduce BloomFilter as an index datamap to enhance the performance of querying with precise value.
+Carbondata introduced BloomFilter as an index datamap to enhance the performance of querying with precise value.
 It is well suitable for queries that do precise match on high cardinality columns(such as Name/ID).
 Internally, CarbonData maintains a BloomFilter per blocklet for each index column to indicate that whether a value of the column is in this blocklet.
-Just like the other datamaps, BloomFilter datamap is managed ablong with main tables by CarbonData.
+Just like the other datamaps, BloomFilter datamap is managed along with main tables by CarbonData.
 User can create BloomFilter datamap on specified columns with specified BloomFilter configurations such as size and probability.
 
 For instance, main table called **datamap_test** which is defined as:
@@ -83,9 +83,9 @@ User can create BloomFilter datamap using the Create DataMap DDL:
 
 | Property | Is Required | Default Value | Description |
 |-------------|----------|--------|---------|
-| INDEX_COLUMNS | YES |  | Carbondata will generate BloomFilter index on these columns. Queries on there columns are usually like 'COL = VAL'. |
-| BLOOM_SIZE | NO | 640000 | This value is internally used by BloomFilter as the number of expected insertions, it will affects the size of BloomFilter index. Since each blocklet has a BloomFilter here, so the default value is the approximate distinct index values in a blocklet assuming that each blocklet contains 20 pages and each page contains 32000 records. The value should be an integer. |
-| BLOOM_FPP | NO | 0.00001 | This value is internally used by BloomFilter as the False-Positive Probability, it will affects the size of bloomfilter index as well as the number of hash functions for the BloomFilter. The value should be in range (0, 1). In one test scenario, a 96GB TPCH customer table with bloom_size=320000 and bloom_fpp=0.00001 will result in 18 false positive samples. |
+| INDEX_COLUMNS | YES |  | Carbondata will generate BloomFilter index on these columns. Queries on these columns are usually like 'COL = VAL'. |
+| BLOOM_SIZE | NO | 640000 | This value is internally used by BloomFilter as the number of expected insertions, it will affect the size of BloomFilter index. Since each blocklet has a BloomFilter here, so the default value is the approximate distinct index values in a blocklet assuming that each blocklet contains 20 pages and each page contains 32000 records. The value should be an integer. |
+| BLOOM_FPP | NO | 0.00001 | This value is internally used by BloomFilter as the False-Positive Probability, it will affect the size of bloomfilter index as well as the number of hash functions for the BloomFilter. The value should be in the range (0, 1). In one test scenario, a 96GB TPCH customer table with bloom_size=320000 and bloom_fpp=0.00001 will result in 18 false positive samples. |
 | BLOOM_COMPRESS | NO | true | Whether to compress the BloomFilter index files. |
 
 
