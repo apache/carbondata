@@ -58,12 +58,12 @@ We do recommend you to use this management for index datamap.
 When user creates a datamap specifying maunal refresh semantic, the datamap is created with status *disabled* and query will NOT use this datamap until user can issue REBUILD DATAMAP command to build the datamap. For every REBUILD DATAMAP command, system will trigger a full rebuild of the datamap. After rebuild is done, system will change datamap status to *enabled*, so that it can be used in query rewrite.
 
 For every new data loading, data update, delete, the related datamap will be made *disabled*,
-which means that the following queries will not benefit from the datamap before it becomes *enable* again.
+which means that the following queries will not benefit from the datamap before it becomes *enabled* again.
 
 If the main table is dropped by user, the related datamap will be dropped immediately.
 
 **Note**:
-+ If you are creating a datamap on external table, you need to do manual managment of the datamap.
++ If you are creating a datamap on external table, you need to do manual management of the datamap.
 + For index datamap such as BloomFilter datamap, there is no need to do manual refresh.
  By default it is automatic refresh,
  which means its data will get refreshed immediately after the datamap is created or the main table is loaded.
