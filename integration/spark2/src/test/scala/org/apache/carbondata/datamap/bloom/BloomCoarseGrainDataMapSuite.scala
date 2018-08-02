@@ -32,6 +32,7 @@ import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 
 class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
+  val carbonSession = sqlContext.sparkSession.asInstanceOf[CarbonSession]
   val bigFile = s"$resourcesPath/bloom_datamap_input_big.csv"
   val smallFile = s"$resourcesPath/bloom_datamap_input_small.csv"
   val normalTable = "carbon_normal"
@@ -247,6 +248,61 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable").show(false)
     checkExistence(sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable"), true, dataMapName)
     checkQuery(dataMapName)
+    sql(s"DROP TABLE IF EXISTS $normalTable")
+    sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
+  }
+
+  test("test using search mode to query tabel with bloom datamap") {
+    sql(
+      s"""
+         | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128')
+         |  """.stripMargin)
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128')
+         |  """.stripMargin)
+
+    // load two segments
+    (1 to 2).foreach { i =>
+      sql(
+        s"""
+           | LOAD DATA LOCAL INPATH '$bigFile' INTO TABLE $normalTable
+           | OPTIONS('header'='false')
+         """.stripMargin)
+      sql(
+        s"""
+           | LOAD DATA LOCAL INPATH '$bigFile' INTO TABLE $bloomDMSampleTable
+           | OPTIONS('header'='false')
+         """.stripMargin)
+    }
+
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+    checkExistence(sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable"), true, dataMapName)
+
+    // get answer before search mode is enable
+    val expectedAnswer1 = sql(s"select * from $normalTable where id = 1").collect()
+    val expectedAnswer2 = sql(s"select * from $normalTable where city in ('city_999')").collect()
+
+    carbonSession.startSearchMode()
+    assert(carbonSession.isSearchModeEnabled)
+
+    checkAnswer(
+      sql(s"select * from $bloomDMSampleTable where id = 1"), expectedAnswer1)
+    checkAnswer(
+      sql(s"select * from $bloomDMSampleTable where city in ('city_999')"), expectedAnswer2)
+
+    carbonSession.stopSearchMode()
+    assert(!carbonSession.isSearchModeEnabled)
+
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
   }
@@ -848,6 +904,10 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
   }
 
   override protected def afterAll(): Unit = {
+    // in case of search mode test case failed, stop search mode again
+    if (carbonSession.isSearchModeEnabled) {
+      carbonSession.stopSearchMode()
+    }
     deleteFile(bigFile)
     deleteFile(smallFile)
     sql(s"DROP TABLE IF EXISTS $normalTable")
