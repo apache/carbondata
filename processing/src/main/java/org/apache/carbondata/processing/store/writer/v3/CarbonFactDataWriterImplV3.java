@@ -350,14 +350,25 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
    * @throws CarbonDataWriterException
    */
   public void closeWriter() throws CarbonDataWriterException {
-    commitCurrentFile(true);
+    CarbonDataWriterException exception = null;
     try {
+      commitCurrentFile(true);
       writeIndexFile();
-    } catch (IOException e) {
+    } catch (Exception e) {
       LOGGER.error(e, "Problem while writing the index file");
-      throw new CarbonDataWriterException("Problem while writing the index file", e);
+      exception = new CarbonDataWriterException("Problem while writing the index file", e);
+    } finally {
+      try {
+        closeExecutorService();
+      } catch (CarbonDataWriterException e) {
+        if (null == exception) {
+          exception = e;
+        }
+      }
     }
-    closeExecutorService();
+    if (null != exception) {
+      throw exception;
+    }
   }
 
   @Override public void writeFooterToFile() throws CarbonDataWriterException {
