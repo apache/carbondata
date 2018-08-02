@@ -163,7 +163,10 @@ public class ColumnPageWrapper implements DimensionColumnPage {
 
   @Override
   public void freeMemory() {
-
+    if (null != columnPage) {
+      columnPage.freeMemory();
+      columnPage = null;
+    }
   }
 
   public boolean isAdaptiveComplexPrimitive() {
