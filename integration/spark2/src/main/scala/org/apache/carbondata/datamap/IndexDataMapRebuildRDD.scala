@@ -131,7 +131,6 @@ object IndexDataMapRebuildRDD {
     if (failedSegments.nonEmpty) {
       throw new Exception(s"Failed to refresh datamap ${ schema.getDataMapName }")
     }
-    DataMapStoreManager.getInstance().clearDataMaps(tableIdentifier)
 
     val buildDataMapPostExecutionEvent = new BuildDataMapPostExecutionEvent(sparkSession,
       tableIdentifier)
