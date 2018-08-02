@@ -17,13 +17,13 @@
 
 package org.apache.carbondata.sdk.file;
 
+import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -32,11 +32,11 @@ import org.apache.carbondata.core.util.DataTypeUtil;
  */
 @InterfaceAudience.User
 @InterfaceStability.Unstable
-public class Field {
+public class Field implements Serializable {
 
   private String name;
   private DataType type;
-  private List<StructField> children;
+  private List<Field> children;
   private String parent;
   private String storeType = "columnnar";
   private int schemaOrdinal = -1;
@@ -54,11 +54,11 @@ public class Field {
     this(name, DataTypeUtil.valueOf(type));
   }
 
-  public Field(String name, String type, List<StructField> fields) {
+  public Field(String name, String type, List<Field> fields) {
     this(name, DataTypeUtil.valueOf(type), fields);
   }
 
-  public Field(String name, DataType type, List<StructField> fields) {
+  public Field(String name, DataType type, List<Field> fields) {
     this.name = name;
     this.type = type;
     this.children = fields;
@@ -91,11 +91,11 @@ public class Field {
     return type;
   }
 
-  public List<StructField> getChildren() {
+  public List<Field> getChildren() {
     return children;
   }
 
-  public void setChildren(List<StructField> children) {
+  public void setChildren(List<Field> children) {
     this.children = children;
   }
 
@@ -150,4 +150,5 @@ public class Field {
   public void setColumnComment(String columnComment) {
     this.columnComment = columnComment;
   }
+
 }

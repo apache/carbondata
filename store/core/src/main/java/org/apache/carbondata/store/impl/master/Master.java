@@ -19,18 +19,21 @@ package org.apache.carbondata.store.impl.master;
 
 import java.io.IOException;
 import java.net.BindException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.sdk.store.Schedulable;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
+import org.apache.carbondata.sdk.store.service.PruneService;
+import org.apache.carbondata.sdk.store.service.StoreService;
 import org.apache.carbondata.sdk.store.util.StoreUtil;
-import org.apache.carbondata.store.impl.rpc.PruneService;
 import org.apache.carbondata.store.impl.rpc.RegistryService;
-import org.apache.carbondata.store.impl.rpc.ServiceFactory;
-import org.apache.carbondata.store.impl.rpc.StoreService;
 import org.apache.carbondata.store.impl.rpc.model.RegisterWorkerRequest;
 import org.apache.carbondata.store.impl.rpc.model.RegisterWorkerResponse;
 
@@ -41,7 +44,8 @@ import org.apache.hadoop.ipc.RPC;
  * Master of CarbonStore.
  * It provides a Registry service and Prune service.
  */
-class Master {
+@InterfaceAudience.Internal
+public class Master {
 
   private static Master instance = null;
 
@@ -51,26 +55,26 @@ class Master {
   private Configuration hadoopConf;
   private RPC.Server registryServer = null;
   private RPC.Server pruneServer = null;
+  private RPC.Server storeServer = null;
 
   // mapping of worker IP address to worker instance
   Map<String, Schedulable> workers = new ConcurrentHashMap<>();
 
-  private Master(StoreConf conf) {
+  public Master(StoreConf conf) {
     this.conf = conf;
     this.hadoopConf = conf.newHadoopConf();
   }
 
   /**
-   * start registry service and listen on port passed in constructor
+   * start registry service
    */
-  public void startRegistryService() throws IOException {
+  private void startRegistryService() throws IOException {
     if (registryServer == null) {
-
       BindException exception;
       // we will try to create service at worse case 100 times
       int numTry = 100;
       String host = conf.masterHost();
-      int port = conf.masterPort();
+      int port = conf.registryServicePort();
       LOGGER.info("building registry-service on " + host + ":" + port);
 
       RegistryService registryService = new RegistryServiceImpl(this);
@@ -104,7 +108,7 @@ class Master {
     }
   }
 
-  public void stopRegistryService() throws InterruptedException {
+  private void stopRegistryService() throws InterruptedException {
     if (registryServer != null) {
       registryServer.stop();
       registryServer.join();
@@ -113,16 +117,15 @@ class Master {
   }
 
   /**
-   * start registry service and listen on port passed in constructor
+   * start prune service
    */
-  public void startPruneService() throws IOException {
+  private void startPruneService() throws IOException {
     if (pruneServer == null) {
-
       BindException exception;
       // we will try to create service at worse case 100 times
       int numTry = 100;
       String host = conf.masterHost();
-      int port = conf.prunePort();
+      int port = conf.pruneServicePort();
       LOGGER.info("building prune-service on " + host + ":" + port);
 
       PruneService pruneService = new PruneServiceImpl();
@@ -134,7 +137,7 @@ class Master {
               .setProtocol(PruneService.class)
               .setInstance(pruneService)
               .build();
-
+          ((PruneServiceImpl) pruneService).setScheduler(new Scheduler(this));
           pruneServer.start();
           numTry = 0;
           exception = null;
@@ -156,7 +159,7 @@ class Master {
     }
   }
 
-  public void stopPruneService() throws InterruptedException {
+  private void stopPruneService() throws InterruptedException {
     if (pruneServer != null) {
       pruneServer.stop();
       pruneServer.join();
@@ -165,9 +168,60 @@ class Master {
   }
 
   /**
+   * start store service
+   */
+  private void startStoreService() throws IOException {
+    if (storeServer == null) {
+      BindException exception;
+      // we will try to create service at worse case 100 times
+      int numTry = 100;
+      String host = conf.masterHost();
+      int port = conf.storeServicePort();
+      LOGGER.info("building store-service on " + host + ":" + port);
+
+      StoreService storeService = new StoreServiceImpl(conf);
+      do {
+        try {
+          storeServer = new RPC.Builder(hadoopConf)
+              .setBindAddress(host)
+              .setPort(port)
+              .setProtocol(StoreService.class)
+              .setInstance(storeService)
+              .build();
+
+          storeServer.start();
+          numTry = 0;
+          exception = null;
+        } catch (BindException e) {
+          // port is occupied, increase the port number and try again
+          exception = e;
+          LOGGER.error(e, "start store-service failed");
+          port = port + 1;
+          numTry = numTry - 1;
+        }
+      } while (numTry > 0);
+      if (exception != null) {
+        // we have tried many times, but still failed to find an available port
+        throw exception;
+      }
+      LOGGER.info("store-service started");
+    } else {
+      LOGGER.info("store-service has already started");
+    }
+  }
+
+  private void stopStoreService() throws InterruptedException {
+    if (storeServer != null) {
+      storeServer.stop();
+      storeServer.join();
+      storeServer = null;
+    }
+  }
+
+  /**
    * A new searcher is trying to register, add it to the map and connect to this searcher
    */
-  public RegisterWorkerResponse addWorker(RegisterWorkerRequest request) throws IOException {
+  RegisterWorkerResponse addWorker(RegisterWorkerRequest request) throws IOException {
     LOGGER.info(
         "Receive Register request from worker " + request.getHostAddress() + ":" + request.getPort()
             + " with " + request.getCores() + " cores");
@@ -178,9 +232,7 @@ class Master {
         "connecting to worker " + request.getHostAddress() + ":" + request.getPort() + ", workerId "
             + workerId);
 
-    StoreService searchService = ServiceFactory.createStoreService(workerAddress, workerPort);
-    addWorker(
-        new Schedulable(workerId, workerAddress, workerPort, request.getCores(), searchService));
+    addWorker(new Schedulable(workerId, workerAddress, workerPort, request.getCores()));
     LOGGER.info("worker " + request + " registered");
     return new RegisterWorkerResponse(workerId);
   }
@@ -199,6 +251,15 @@ class Master {
     return instance;
   }
 
+  public void stopService() throws InterruptedException {
+    stopRegistryService();
+    stopPruneService();
+  }
+
+  public List<String> getAllWorkerAddresses() {
+    return new ArrayList<>(workers.keySet());
+  }
+
   public static void main(String[] args) throws InterruptedException, IOException {
     if (args.length != 2) {
       System.err.println("Usage: Master <log4j file> <properties file>");
@@ -208,6 +269,7 @@ class Master {
     StoreUtil.initLog4j(args[0]);
     StoreConf conf = new StoreConf(args[1]);
     Master master = getInstance(conf);
+    master.startStoreService();
     master.startRegistryService();
     master.startPruneService();
     Thread.sleep(Long.MAX_VALUE);

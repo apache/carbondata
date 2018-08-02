@@ -17,6 +17,9 @@
 
 package org.apache.carbondata.sdk.store.descriptor;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,13 +27,16 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.sdk.file.Field;
 import org.apache.carbondata.sdk.file.Schema;
 
-public class TableDescriptor {
+import org.apache.hadoop.io.Writable;
 
-  private boolean ifNotExists;
+public class TableDescriptor implements Writable {
+
   private TableIdentifier table;
+  private boolean ifNotExists;
   private String tablePath;
   private Schema schema;
   private Map<String, String> properties;
@@ -97,6 +103,40 @@ public class TableDescriptor {
 
   public String getTablePath() {
     return tablePath;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    table.write(out);
+    out.writeBoolean(ifNotExists);
+    out.writeBoolean(tablePath != null);
+    if (tablePath != null) {
+      out.writeUTF(tablePath);
+    }
+    out.writeUTF(ObjectSerializationUtil.convertObjectToString(schema));
+    out.writeInt(properties.size());
+    for (Map.Entry<String, String> entry : properties.entrySet()) {
+      out.writeUTF(entry.getKey());
+      out.writeUTF(entry.getValue());
+    }
+    out.writeUTF(comment);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    table = new TableIdentifier();
+    table.readFields(in);
+    ifNotExists = in.readBoolean();
+    if (in.readBoolean()) {
+      tablePath = in.readUTF();
+    }
+    schema = (Schema) ObjectSerializationUtil.convertStringToObject(in.readUTF());
+    int size = in.readInt();
+    properties = new HashMap<>(size);
+    for (int i = 0; i < size; i++) {
+      properties.put(in.readUTF(), in.readUTF());
+    }
+    comment = in.readUTF();
   }
 
   public static class Builder {

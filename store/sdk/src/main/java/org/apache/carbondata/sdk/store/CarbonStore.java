@@ -142,18 +142,10 @@ public interface CarbonStore extends Closeable {
   List<CarbonRow> scan(ScanDescriptor select) throws CarbonException;
 
   /**
-   * Scan a Table and return matched rows
-   * @param select descriptor for select operation, including required column, filter, etc
-   * @return matched rows
-   * @throws CarbonException if any error occurs
-   */
-  List<CarbonRow> scan(ScanDescriptor select, SelectOption option) throws CarbonException;
-
-  /**
    * @return a new Scanner
    * @throws CarbonException if any error occurs
    */
-  Scanner newScanner() throws CarbonException;
+  Scanner newScanner(TableIdentifier tableIdentifier) throws CarbonException;
 
   /**
    * @return a new Fetcher

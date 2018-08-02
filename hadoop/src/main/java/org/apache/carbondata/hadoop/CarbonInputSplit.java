@@ -444,4 +444,16 @@ public class CarbonInputSplit extends FileSplit
   public Blocklet makeBlocklet() {
     return new Blocklet(getPath().getName(), blockletId);
   }
+
+  public String[] preferredLocations() {
+    if (CarbonProperties.isTaskLocality()) {
+      try {
+        return getLocations();
+      } catch (IOException e) {
+        return new String[0];
+      }
+    } else {
+      return new String[0];
+    }
+  }
 }

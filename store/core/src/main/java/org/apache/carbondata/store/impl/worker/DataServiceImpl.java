@@ -20,25 +20,21 @@ package org.apache.carbondata.store.impl.worker;
 import java.io.IOException;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.store.impl.rpc.StoreService;
-import org.apache.carbondata.store.impl.rpc.model.BaseResponse;
-import org.apache.carbondata.store.impl.rpc.model.LoadDataRequest;
-import org.apache.carbondata.store.impl.rpc.model.QueryResponse;
-import org.apache.carbondata.store.impl.rpc.model.Scan;
-import org.apache.carbondata.store.impl.rpc.model.ShutdownRequest;
-import org.apache.carbondata.store.impl.rpc.model.ShutdownResponse;
+import org.apache.carbondata.sdk.store.service.DataService;
+import org.apache.carbondata.sdk.store.service.model.BaseResponse;
+import org.apache.carbondata.sdk.store.service.model.LoadDataRequest;
+import org.apache.carbondata.sdk.store.service.model.ScanRequest;
+import org.apache.carbondata.sdk.store.service.model.ScanResponse;
 
 import org.apache.hadoop.ipc.ProtocolSignature;
 
 @InterfaceAudience.Internal
-public class StoreServiceImpl implements StoreService {
+public class DataServiceImpl implements DataService {
 
-  private Worker worker;
-  RequestHandler handler;
+  private DataRequestHandler handler;
 
-  public StoreServiceImpl(Worker worker) {
-    this.worker = worker;
-    this.handler = new RequestHandler(worker.getConf(), worker.getHadoopConf());
+  DataServiceImpl(Worker worker) {
+    this.handler = new DataRequestHandler(worker.getConf(), worker.getHadoopConf());
   }
 
   @Override
@@ -47,13 +43,8 @@ public class StoreServiceImpl implements StoreService {
   }
 
   @Override
-  public QueryResponse query(Scan scan) {
+  public ScanResponse scan(ScanRequest scan) {
     return handler.handleScan(scan);
-  }
-
-  @Override
-  public ShutdownResponse shutdown(ShutdownRequest request) {
-    return handler.handleShutdown(request);
   }
 
   @Override
@@ -67,11 +58,4 @@ public class StoreServiceImpl implements StoreService {
     return null;
   }
 
-  public Worker getWorker() {
-    return worker;
-  }
-
-  public void setWorker(Worker worker) {
-    this.worker = worker;
-  }
 }

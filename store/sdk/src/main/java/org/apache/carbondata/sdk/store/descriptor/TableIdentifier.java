@@ -17,16 +17,24 @@
 
 package org.apache.carbondata.sdk.store.descriptor;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serializable;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 
+import org.apache.hadoop.io.Writable;
+
 @InterfaceAudience.User
 @InterfaceStability.Evolving
-public class TableIdentifier implements Serializable {
+public class TableIdentifier implements Serializable, Writable {
   private String tableName;
   private String databaseName;
+
+  public TableIdentifier() {
+  }
 
   public TableIdentifier(String tableName, String databaseName) {
     this.tableName = tableName;
@@ -41,4 +49,15 @@ public class TableIdentifier implements Serializable {
     return databaseName;
   }
 
+  @Override
+  public void write(DataOutput out) throws IOException {
+    out.writeUTF(databaseName);
+    out.writeUTF(tableName);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    this.databaseName = in.readUTF();
+    this.tableName = in.readUTF();
+  }
 }

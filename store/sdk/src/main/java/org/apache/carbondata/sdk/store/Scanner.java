@@ -66,7 +66,7 @@ public interface Scanner extends Serializable {
    * @return scan result, the result is returned in batch
    * @throws CarbonException if any error occurs
    */
-  Iterator<ResultBatch<CarbonRow>> scan(ScanUnit input, ScanDescriptor select,
+  Iterator<? extends ResultBatch<CarbonRow>> scan(ScanUnit input, ScanDescriptor select,
       SelectOption option) throws CarbonException;
 
 }

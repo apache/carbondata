@@ -27,14 +27,15 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.sdk.store.CarbonStore;
+import org.apache.carbondata.sdk.store.CarbonStoreFactory;
 import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
-import org.apache.carbondata.sdk.store.CarbonStore;
-import org.apache.carbondata.sdk.store.CarbonStoreFactory;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
+import org.apache.carbondata.store.impl.master.Master;
 import org.apache.carbondata.store.impl.worker.Worker;
 
 import org.junit.After;
@@ -44,30 +45,42 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class DistributedCarbonStoreTest {
+public class RemoteCarbonStoreTest {
 
   private static String projectFolder;
   private static CarbonStore store;
 
   @BeforeClass
-  public static void beforeAll() throws IOException, CarbonException {
-    projectFolder = new File(DistributedCarbonStoreTest.class.getResource("/").getPath() +
+  public static void beforeAll() throws IOException, CarbonException, InterruptedException {
+    projectFolder = new File(RemoteCarbonStoreTest.class.getResource("/").getPath() +
         "../../../../").getCanonicalPath();
+
     String confFile = projectFolder + "/store/conf/store.conf";
     StoreConf storeConf = new StoreConf(confFile);
 
-    store = CarbonStoreFactory.getDistributedStore("DistributedCarbonStoreTest", storeConf);
-    projectFolder = new File(LocalCarbonStoreTest.class.getResource("/").getPath() + "../../../../")
-        .getCanonicalPath();
+    new Thread(() -> {
+      try {
+        Master.main(new String[]{"", confFile});
+      } catch (InterruptedException | IOException e) {
+        throw new RuntimeException("failed to start master");
+      }
+    }).start();
+    Thread.sleep(1000);
 
     // start worker
     Worker worker = new Worker(storeConf);
     worker.start();
+
+    Thread.sleep(1000);
+
+    store = CarbonStoreFactory.getRemoteStore("RemoteCarbonStoreTest", storeConf);
   }
 
   @AfterClass
   public static void afterAll() throws IOException {
-    store.close();
+    if (store != null) {
+      store.close();
+    }
   }
 
   @Before
@@ -81,7 +94,7 @@ public class DistributedCarbonStoreTest {
   }
 
   @Test
-  public void testSelect() throws IOException, CarbonException {
+  public void testSelect() throws CarbonException {
     TableIdentifier tableIdentifier = new TableIdentifier("table_1", "default");
     store.dropTable(tableIdentifier);
     TableDescriptor descriptor = TableDescriptor

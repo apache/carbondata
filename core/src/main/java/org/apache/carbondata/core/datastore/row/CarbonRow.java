@@ -17,13 +17,21 @@
 
 package org.apache.carbondata.core.datastore.row;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
+
+import org.apache.carbondata.core.metadata.schema.table.Writable;
+import org.apache.carbondata.core.util.ObjectSerializationUtil;
+
+import org.apache.hadoop.io.WritableUtils;
 
 /**
  * This row class is used to transfer the row data from one step to other step
  */
-public class CarbonRow implements Serializable {
+public class CarbonRow implements Serializable, Writable {
 
   private Object[] data;
 
@@ -86,5 +94,25 @@ public class CarbonRow implements Serializable {
 
   public void clearData() {
     this.data = null;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    WritableUtils.writeCompressedByteArray(out, ObjectSerializationUtil.serialize(data));
+    WritableUtils.writeCompressedByteArray(out, ObjectSerializationUtil.serialize(rawData));
+    out.writeShort(rangeId);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    try {
+      data = (Object[]) ObjectSerializationUtil.deserialize(
+          WritableUtils.readCompressedByteArray(in));
+      rawData = (Object[]) ObjectSerializationUtil.deserialize(
+          WritableUtils.readCompressedByteArray(in));
+    } catch (ClassNotFoundException e) {
+      throw new IOException(e);
+    }
+    rangeId = in.readShort();
   }
 }

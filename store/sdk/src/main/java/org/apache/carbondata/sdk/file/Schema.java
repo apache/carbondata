@@ -18,6 +18,7 @@
 package org.apache.carbondata.sdk.file;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -44,7 +45,7 @@ import org.apache.commons.lang.StringUtils;
  */
 @InterfaceAudience.User
 @InterfaceStability.Unstable
-public class Schema {
+public class Schema implements Serializable {
 
   private Field[] fields;
 

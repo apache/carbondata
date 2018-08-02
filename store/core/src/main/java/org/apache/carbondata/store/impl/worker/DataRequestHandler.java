@@ -37,13 +37,13 @@ import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
 import org.apache.carbondata.processing.loading.csvinput.CSVRecordReaderIterator;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
+import org.apache.carbondata.sdk.store.service.model.BaseResponse;
+import org.apache.carbondata.sdk.store.service.model.LoadDataRequest;
+import org.apache.carbondata.sdk.store.service.model.ScanRequest;
+import org.apache.carbondata.sdk.store.service.model.ScanResponse;
 import org.apache.carbondata.sdk.store.util.StoreUtil;
-import org.apache.carbondata.store.impl.CarbonStoreBase;
 import org.apache.carbondata.store.impl.Status;
-import org.apache.carbondata.store.impl.rpc.model.BaseResponse;
-import org.apache.carbondata.store.impl.rpc.model.LoadDataRequest;
-import org.apache.carbondata.store.impl.rpc.model.QueryResponse;
-import org.apache.carbondata.store.impl.rpc.model.Scan;
+import org.apache.carbondata.store.impl.TableManager;
 import org.apache.carbondata.store.impl.rpc.model.ShutdownRequest;
 import org.apache.carbondata.store.impl.rpc.model.ShutdownResponse;
 
@@ -58,27 +58,27 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 
 /**
- * It handles request from master.
+ * It handles data request from client.
  */
 @InterfaceAudience.Internal
-class RequestHandler {
+class DataRequestHandler {
 
   private StoreConf storeConf;
   private Configuration hadoopConf;
 
-  RequestHandler(StoreConf conf, Configuration hadoopConf) {
+  DataRequestHandler(StoreConf conf, Configuration hadoopConf) {
     this.storeConf = conf;
     this.hadoopConf = hadoopConf;
   }
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(RequestHandler.class.getName());
+      LogServiceFactory.getLogService(DataRequestHandler.class.getName());
 
-  QueryResponse handleScan(Scan scan) {
+  ScanResponse handleScan(ScanRequest scan) {
     try {
       LOGGER.info(String.format("[QueryId:%d] receive search request", scan.getRequestId()));
       CarbonTable table = CarbonTable.buildFromTableInfo(scan.getTableInfo());
-      List<CarbonRow> rows = CarbonStoreBase.scan(table, scan);
+      List<CarbonRow> rows = TableManager.scan(table, scan);
       LOGGER.info(String.format("[QueryId:%d] sending success response", scan.getRequestId()));
       return createSuccessResponse(scan, rows);
     } catch (IOException e) {
@@ -99,22 +99,22 @@ class RequestHandler {
   /**
    * create a failure response
    */
-  private QueryResponse createFailureResponse(Scan scan, Throwable throwable) {
-    return new QueryResponse(scan.getRequestId(), Status.FAILURE.ordinal(),
+  private ScanResponse createFailureResponse(ScanRequest scan, Throwable throwable) {
+    return new ScanResponse(scan.getRequestId(), Status.FAILURE.ordinal(),
         throwable.getMessage(), new Object[0][]);
   }
 
   /**
    * create a success response with result rows
    */
-  private QueryResponse createSuccessResponse(Scan scan, List<CarbonRow> rows) {
+  private ScanResponse createSuccessResponse(ScanRequest scan, List<CarbonRow> rows) {
     Iterator<CarbonRow> itor = rows.iterator();
     Object[][] output = new Object[rows.size()][];
     int i = 0;
     while (itor.hasNext()) {
       output[i++] = itor.next().getData();
     }
-    return new QueryResponse(scan.getRequestId(), Status.SUCCESS.ordinal(), "", output);
+    return new ScanResponse(scan.getRequestId(), Status.SUCCESS.ordinal(), "", output);
   }
 
   public BaseResponse handleLoadData(LoadDataRequest request) {

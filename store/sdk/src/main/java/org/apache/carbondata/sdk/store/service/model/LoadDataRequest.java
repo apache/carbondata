@@ -15,39 +15,46 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.rpc.model;
+package org.apache.carbondata.sdk.store.service.model;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 
-import org.apache.hadoop.conf.Configuration;
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
+import org.apache.carbondata.sdk.store.util.StoreUtil;
+
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableUtils;
 
-public class PruneRequest implements Serializable, Writable {
+public class LoadDataRequest implements Serializable, Writable {
 
-  private Configuration hadoopConf;
+  private CarbonLoadModel model;
 
-  public PruneRequest() {
+  public LoadDataRequest() {
   }
 
-  public PruneRequest(Configuration hadoopConf) {
-    this.hadoopConf = hadoopConf;
+  public LoadDataRequest(CarbonLoadModel model) {
+    this.model = model;
   }
 
-  public Configuration getHadoopConf() {
-    return hadoopConf;
+  public CarbonLoadModel getModel() {
+    return model;
+  }
+
+  public void setModel(CarbonLoadModel model) {
+    this.model = model;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    hadoopConf.write(out);
+    WritableUtils.writeCompressedByteArray(out, StoreUtil.serialize(model));
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    this.hadoopConf = new Configuration();
-    this.hadoopConf.readFields(in);
+    byte[] bytes = WritableUtils.readCompressedByteArray(in);
+    model = (CarbonLoadModel) StoreUtil.deserialize(bytes);
   }
 }

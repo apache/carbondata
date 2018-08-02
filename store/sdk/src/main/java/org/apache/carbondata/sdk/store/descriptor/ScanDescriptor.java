@@ -17,15 +17,21 @@
 
 package org.apache.carbondata.sdk.store.descriptor;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.Objects;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.util.ObjectSerializationUtil;
+
+import org.apache.hadoop.io.Writable;
 
 @InterfaceAudience.User
 @InterfaceStability.Evolving
-public class ScanDescriptor {
+public class ScanDescriptor implements Writable {
 
   private TableIdentifier table;
   private String[] projection;
@@ -75,6 +81,35 @@ public class ScanDescriptor {
 
   public void setLimit(long limit) {
     this.limit = limit;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    table.write(out);
+    out.writeInt(projection.length);
+    for (String s : projection) {
+      out.writeUTF(s);
+    }
+    out.writeBoolean(filter != null);
+    if (filter != null) {
+      out.writeUTF(ObjectSerializationUtil.convertObjectToString(filter));
+    }
+    out.writeLong(limit);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    table = new TableIdentifier();
+    table.readFields(in);
+    int size = in.readInt();
+    projection = new String[size];
+    for (int i = 0; i < size; i++) {
+      projection[i] = in.readUTF();
+    }
+    if (in.readBoolean()) {
+      filter = (Expression) ObjectSerializationUtil.convertStringToObject(in.readUTF());
+    }
+    limit = in.readLong();
   }
 
   public static class Builder {

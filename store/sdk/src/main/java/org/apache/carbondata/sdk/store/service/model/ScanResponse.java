@@ -15,53 +15,59 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.rpc.model;
+package org.apache.carbondata.sdk.store.service.model;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.sdk.store.ScanUnit;
-import org.apache.carbondata.store.impl.BlockScanUnit;
+import org.apache.carbondata.core.util.ObjectSerializationUtil;
 
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableUtils;
 
 @InterfaceAudience.Internal
-public class PruneResponse implements Serializable, Writable {
+public class ScanResponse extends BaseResponse implements Serializable, Writable {
+  private int queryId;
+  private Object[][] rows;
 
-  private List<ScanUnit> scanUnits;
-
-  public PruneResponse() {
+  public ScanResponse() {
+    super();
   }
 
-  public PruneResponse(List<ScanUnit> scanUnits) {
-    this.scanUnits = scanUnits;
+  public ScanResponse(int queryId, int status, String message, Object[][] rows) {
+    super(status, message);
+    this.queryId = queryId;
+    this.rows = rows;
   }
 
-  public List<ScanUnit> getScanUnits() {
-    return scanUnits;
+  public int getQueryId() {
+    return queryId;
+  }
+
+
+  public Object[][] getRows() {
+    return rows;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    out.writeInt(scanUnits.size());
-    for (ScanUnit scanUnit : scanUnits) {
-      scanUnit.write(out);
-    }
+    super.write(out);
+    out.writeInt(queryId);
+    WritableUtils.writeCompressedByteArray(out, ObjectSerializationUtil.serialize(rows));
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    int size = in.readInt();
-    scanUnits = new ArrayList<>(size);
-    for (int i = 0; i < size; i++) {
-      BlockScanUnit scanUnit = new BlockScanUnit();
-      scanUnit.readFields(in);
-      scanUnits.add(scanUnit);
+    super.readFields(in);
+    queryId = in.readInt();
+    try {
+      rows = (Object[][])ObjectSerializationUtil.deserialize(
+          WritableUtils.readCompressedByteArray(in));
+    } catch (ClassNotFoundException e) {
+      throw new IOException(e);
     }
   }
 }

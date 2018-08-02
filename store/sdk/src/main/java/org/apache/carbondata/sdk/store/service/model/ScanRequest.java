@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.rpc.model;
+package org.apache.carbondata.sdk.store.service.model;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -31,7 +31,7 @@ import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.hadoop.io.Writable;
 
 @InterfaceAudience.Internal
-public class Scan implements Serializable, Writable {
+public class ScanRequest implements Serializable, Writable {
   private int requestId;
   private CarbonMultiBlockSplit split;
   private TableInfo tableInfo;
@@ -39,10 +39,10 @@ public class Scan implements Serializable, Writable {
   private Expression filterExpression;
   private long limit;
 
-  public Scan() {
+  public ScanRequest() {
   }
 
-  public Scan(int requestId, CarbonMultiBlockSplit split,
+  public ScanRequest(int requestId, CarbonMultiBlockSplit split,
       TableInfo tableInfo, String[] projectColumns, Expression filterExpression, long limit) {
     this.requestId = requestId;
     this.split = split;

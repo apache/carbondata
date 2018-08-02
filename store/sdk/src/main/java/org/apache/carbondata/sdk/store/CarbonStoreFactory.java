@@ -34,23 +34,23 @@ import org.apache.carbondata.sdk.store.exception.CarbonException;
 @InterfaceAudience.User
 @InterfaceStability.Unstable
 public class CarbonStoreFactory {
-  private static Map<String, CarbonStore> distributedStores = new ConcurrentHashMap<>();
+  private static Map<String, CarbonStore> remoteStore = new ConcurrentHashMap<>();
   private static Map<String, CarbonStore> localStores = new ConcurrentHashMap<>();
 
   private CarbonStoreFactory() {
   }
 
-  public static CarbonStore getDistributedStore(String storeName, StoreConf storeConf)
+  public static CarbonStore getRemoteStore(String storeName, StoreConf storeConf)
       throws CarbonException {
-    if (distributedStores.containsKey(storeName)) {
-      return distributedStores.get(storeName);
+    if (remoteStore.containsKey(storeName)) {
+      return remoteStore.get(storeName);
     }
 
     // create a new instance
     try {
-      String className = "org.apache.carbondata.store.impl.DistributedCarbonStore";
+      String className = "org.apache.carbondata.sdk.store.RemoteCarbonStore";
       CarbonStore store = createCarbonStore(storeConf, className);
-      distributedStores.put(storeName, store);
+      remoteStore.put(storeName, store);
       return store;
     } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException |
         InstantiationException e) {
@@ -59,9 +59,9 @@ public class CarbonStoreFactory {
   }
 
   public static void removeDistributedStore(String storeName) throws IOException {
-    if (distributedStores.containsKey(storeName)) {
-      distributedStores.get(storeName).close();
-      distributedStores.remove(storeName);
+    if (remoteStore.containsKey(storeName)) {
+      remoteStore.get(storeName).close();
+      remoteStore.remove(storeName);
     }
   }
 
@@ -80,13 +80,6 @@ public class CarbonStoreFactory {
     } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException |
         InstantiationException e) {
       throw new CarbonException(e);
-    }
-  }
-
-  public static void removeLocalStore(String storeName) throws IOException {
-    if (localStores.containsKey(storeName)) {
-      localStores.get(storeName).close();
-      localStores.remove(storeName);
     }
   }
 

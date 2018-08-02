@@ -15,55 +15,56 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.rpc.model;
+package org.apache.carbondata.sdk.store;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.Serializable;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.hadoop.CarbonInputSplit;
 
-import org.apache.hadoop.io.Writable;
-
+/**
+ * It contains a block to scan, and a destination worker who should scan it
+ */
 @InterfaceAudience.Internal
-public class BaseResponse implements Serializable, Writable {
-  private int status;
-  private String message;
+public class BlockScanUnit implements ScanUnit {
 
-  public BaseResponse() {
+  // the data block to scan
+  private CarbonInputSplit inputSplit;
+
+  // the worker who should scan this unit
+  private Schedulable schedulable;
+
+  public BlockScanUnit() {
   }
 
-  public BaseResponse(int status, String message) {
-    this.status = status;
-    this.message = message;
+  public BlockScanUnit(CarbonInputSplit inputSplit, Schedulable schedulable) {
+    this.inputSplit = inputSplit;
+    this.schedulable = schedulable;
   }
 
-  public int getStatus() {
-    return status;
+  public CarbonInputSplit getInputSplit() {
+    return inputSplit;
   }
 
-  public void setStatus(int status) {
-    this.status = status;
+  public Schedulable getSchedulable() {
+    return schedulable;
   }
 
-  public String getMessage() {
-    return message;
-  }
-
-  public void setMessage(String message) {
-    this.message = message;
+  @Override
+  public String[] preferredLocations() {
+    return inputSplit.preferredLocations();
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    out.writeInt(status);
-    out.writeUTF(message);
+    inputSplit.write(out);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    status = in.readInt();
-    message = in.readUTF();
+    inputSplit = new CarbonInputSplit();
+    inputSplit.readFields(in);
   }
 }

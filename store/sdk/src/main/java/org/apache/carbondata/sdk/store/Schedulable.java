@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.master;
+package org.apache.carbondata.sdk.store;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.store.impl.rpc.StoreService;
 
 @InterfaceAudience.Internal
 public class Schedulable {
@@ -29,15 +28,13 @@ public class Schedulable {
   private String address;
   private int port;
   private int cores;
-  public StoreService service;
   public AtomicInteger workload;
 
-  public Schedulable(String id, String address, int port, int cores, StoreService service) {
+  public Schedulable(String id, String address, int port, int cores) {
     this.id = id;
     this.address = address;
     this.port = port;
     this.cores = cores;
-    this.service = service;
     this.workload = new AtomicInteger();
   }
 
@@ -65,7 +62,7 @@ public class Schedulable {
     this.port = port;
   }
 
-  int getCores() {
+  public int getCores() {
     return cores;
   }
 

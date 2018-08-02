@@ -15,26 +15,35 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.rpc;
+package org.apache.carbondata.sdk.store;
 
-import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.store.impl.rpc.model.BaseResponse;
-import org.apache.carbondata.store.impl.rpc.model.LoadDataRequest;
-import org.apache.carbondata.store.impl.rpc.model.QueryResponse;
-import org.apache.carbondata.store.impl.rpc.model.Scan;
-import org.apache.carbondata.store.impl.rpc.model.ShutdownRequest;
-import org.apache.carbondata.store.impl.rpc.model.ShutdownResponse;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 
-import org.apache.hadoop.ipc.VersionedProtocol;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 
-@InterfaceAudience.Internal
-public interface StoreService extends VersionedProtocol {
+public class RowMajorResultBatch implements ResultBatch<CarbonRow> {
 
-  long versionID = 1L;
+  private Iterator<CarbonRow> iterator;
 
-  BaseResponse loadData(LoadDataRequest request);
+  RowMajorResultBatch(List<CarbonRow> rows) {
+    Objects.requireNonNull(rows);
+    this.iterator = rows.iterator();
+  }
 
-  QueryResponse query(Scan scan);
+  @Override
+  public boolean isColumnar() {
+    return false;
+  }
 
-  ShutdownResponse shutdown(ShutdownRequest request);
+  @Override
+  public boolean hasNext() {
+    return iterator.hasNext();
+  }
+
+  @Override
+  public CarbonRow next() {
+    return iterator.next();
+  }
 }

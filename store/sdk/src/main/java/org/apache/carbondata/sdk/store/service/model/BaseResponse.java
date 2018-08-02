@@ -15,37 +15,55 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl;
+package org.apache.carbondata.sdk.store.service.model;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 
-import org.apache.carbondata.hadoop.CarbonInputSplit;
-import org.apache.carbondata.sdk.store.ScanUnit;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 
-public class BlockScanUnit implements ScanUnit {
-  private CarbonInputSplit inputSplit;
+import org.apache.hadoop.io.Writable;
 
-  public BlockScanUnit() {
+@InterfaceAudience.Internal
+public class BaseResponse implements Serializable, Writable {
+  private int status;
+  private String message;
+
+  public BaseResponse() {
   }
 
-  public BlockScanUnit(CarbonInputSplit inputSplit) {
-    this.inputSplit = inputSplit;
+  public BaseResponse(int status, String message) {
+    this.status = status;
+    this.message = message;
   }
 
-  public CarbonInputSplit getInputSplit() {
-    return inputSplit;
+  public int getStatus() {
+    return status;
+  }
+
+  public void setStatus(int status) {
+    this.status = status;
+  }
+
+  public String getMessage() {
+    return message;
+  }
+
+  public void setMessage(String message) {
+    this.message = message;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    inputSplit.write(out);
+    out.writeInt(status);
+    out.writeUTF(message);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    inputSplit = new CarbonInputSplit();
-    inputSplit.readFields(in);
+    status = in.readInt();
+    message = in.readUTF();
   }
 }

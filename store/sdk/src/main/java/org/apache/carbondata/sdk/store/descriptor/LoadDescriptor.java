@@ -17,6 +17,9 @@
 
 package org.apache.carbondata.sdk.store.descriptor;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -24,9 +27,11 @@ import java.util.Objects;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 
+import org.apache.hadoop.io.Writable;
+
 @InterfaceAudience.User
 @InterfaceStability.Evolving
-public class LoadDescriptor {
+public class LoadDescriptor implements Writable {
 
   private TableIdentifier table;
   private String inputPath;
@@ -76,6 +81,31 @@ public class LoadDescriptor {
 
   public void setOverwrite(boolean overwrite) {
     isOverwrite = overwrite;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    table.write(out);
+    out.writeUTF(inputPath);
+    out.writeInt(options.size());
+    for (Map.Entry<String, String> entry : options.entrySet()) {
+      out.writeUTF(entry.getKey());
+      out.writeUTF(entry.getValue());
+    }
+    out.writeBoolean(isOverwrite);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    table = new TableIdentifier();
+    table.readFields(in);
+    inputPath = in.readUTF();
+    int size = in.readInt();
+    options = new HashMap<>(size);
+    for (int i = 0; i < size; i++) {
+      options.put(in.readUTF(), in.readUTF());
+    }
+    isOverwrite = in.readBoolean();
   }
 
   public static class Builder {

@@ -15,36 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl;
+package org.apache.carbondata.sdk.store.service;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import java.io.IOException;
 
-import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.sdk.store.ResultBatch;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.sdk.store.service.model.PruneRequest;
+import org.apache.carbondata.sdk.store.service.model.PruneResponse;
 
-public class RowMajorResultBatch implements ResultBatch<CarbonRow> {
+import org.apache.hadoop.ipc.VersionedProtocol;
 
-  private Iterator<CarbonRow> iterator;
-
-  RowMajorResultBatch(List<CarbonRow> rows) {
-    Objects.requireNonNull(rows);
-    this.iterator = rows.iterator();
-  }
-
-  @Override
-  public boolean isColumnar() {
-    return false;
-  }
-
-  @Override
-  public boolean hasNext() {
-    return iterator.hasNext();
-  }
-
-  @Override
-  public CarbonRow next() {
-    return iterator.next();
-  }
+@InterfaceAudience.Internal
+public interface PruneService extends VersionedProtocol {
+  long versionID = 1L;
+  PruneResponse prune(PruneRequest request) throws IOException;
 }

@@ -40,15 +40,16 @@ import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
 import org.apache.carbondata.processing.loading.csvinput.CSVRecordReaderIterator;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModelBuilder;
+import org.apache.carbondata.sdk.store.CarbonStore;
 import org.apache.carbondata.sdk.store.Loader;
 import org.apache.carbondata.sdk.store.Scanner;
-import org.apache.carbondata.sdk.store.SelectOption;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
 import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
+import org.apache.carbondata.sdk.store.service.model.ScanRequest;
 import org.apache.carbondata.sdk.store.util.StoreUtil;
-import org.apache.carbondata.store.impl.rpc.model.Scan;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -66,7 +67,7 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
  */
 @InterfaceAudience.User
 @InterfaceStability.Unstable
-class LocalCarbonStore extends CarbonStoreBase {
+public class LocalCarbonStore extends TableManager implements CarbonStore {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(LocalCarbonStore.class.getName());
@@ -75,11 +76,11 @@ class LocalCarbonStore extends CarbonStoreBase {
   private Configuration configuration;
   private SegmentTxnManager txnManager;
 
-  LocalCarbonStore(StoreConf storeConf) {
+  public LocalCarbonStore(StoreConf storeConf) {
     this(storeConf, new Configuration());
   }
 
-  LocalCarbonStore(StoreConf storeConf, Configuration hadoopConf) {
+  public LocalCarbonStore(StoreConf storeConf, Configuration hadoopConf) {
     super(storeConf);
     this.storeConf = storeConf;
     this.txnManager = SegmentTxnManager.getInstance();
@@ -91,7 +92,7 @@ class LocalCarbonStore extends CarbonStoreBase {
     Objects.requireNonNull(load);
     CarbonLoadModel loadModel;
     try {
-      CarbonTable table = metaProcessor.getTable(load.getTable());
+      CarbonTable table = getTable(load.getTable());
       CarbonLoadModelBuilder modelBuilder = new CarbonLoadModelBuilder(table);
       modelBuilder.setInputPath(load.getInputPath());
       loadModel = modelBuilder.build(load.getOptions(), System.currentTimeMillis(), "0");
@@ -161,14 +162,15 @@ class LocalCarbonStore extends CarbonStoreBase {
   }
 
   @Override
-  public List<CarbonRow> scan(ScanDescriptor select) throws CarbonException {
-    Objects.requireNonNull(select);
+  public List<CarbonRow> scan(ScanDescriptor scanDescriptor) throws CarbonException {
+    Objects.requireNonNull(scanDescriptor);
     try {
-      CarbonTable table = metaProcessor.getTable(select.getTableIdentifier());
-      List<Distributable> blocks = pruneBlock(table, select.getFilter());
+      CarbonTable table = getTable(scanDescriptor.getTableIdentifier());
+      List<Distributable> blocks = pruneBlock(table, scanDescriptor.getFilter());
       CarbonMultiBlockSplit split = new CarbonMultiBlockSplit(blocks, "");
-      Scan scan = new Scan(0, split, table.getTableInfo(), select.getProjection(),
-          select.getFilter(), select.getLimit());
+      ScanRequest scan =
+          new ScanRequest(0, split, table.getTableInfo(), scanDescriptor.getProjection(),
+              scanDescriptor.getFilter(), scanDescriptor.getLimit());
       return scan(table, scan);
     } catch (IOException e) {
       throw new CarbonException(e);
@@ -176,17 +178,11 @@ class LocalCarbonStore extends CarbonStoreBase {
   }
 
   @Override
-  public List<CarbonRow> scan(ScanDescriptor select, SelectOption option) throws CarbonException {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Scanner newScanner() throws CarbonException {
+  public Scanner newScanner(TableIdentifier tableIdentifier) throws CarbonException {
     throw new UnsupportedOperationException();
   }
 
   @Override
   public void close() throws IOException {
-
   }
 }

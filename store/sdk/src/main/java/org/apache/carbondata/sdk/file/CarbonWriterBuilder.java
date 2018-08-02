@@ -513,8 +513,8 @@ public class CarbonWriterBuilder {
           } else if (field.getDataType().getName().equalsIgnoreCase("STRUCT")) {
             // Loop through the inner columns and for a StructData
             List<StructField> structFieldsArray =
-                new ArrayList<StructField>(field.getChildren().size());
-            for (StructField childFld : field.getChildren()) {
+                new ArrayList<>(field.getChildren().size());
+            for (Field childFld : field.getChildren()) {
               structFieldsArray
                   .add(new StructField(childFld.getFieldName(), childFld.getDataType()));
             }

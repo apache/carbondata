@@ -24,11 +24,12 @@ import java.util.stream.Collectors;
 
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
+import org.apache.carbondata.sdk.store.BlockScanUnit;
 import org.apache.carbondata.sdk.store.ScanUnit;
-import org.apache.carbondata.store.impl.BlockScanUnit;
-import org.apache.carbondata.store.impl.rpc.PruneService;
-import org.apache.carbondata.store.impl.rpc.model.PruneRequest;
-import org.apache.carbondata.store.impl.rpc.model.PruneResponse;
+import org.apache.carbondata.sdk.store.Schedulable;
+import org.apache.carbondata.sdk.store.service.PruneService;
+import org.apache.carbondata.sdk.store.service.model.PruneRequest;
+import org.apache.carbondata.sdk.store.service.model.PruneResponse;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.ipc.ProtocolSignature;
@@ -37,17 +38,29 @@ import org.apache.hadoop.mapreduce.Job;
 
 public class PruneServiceImpl implements PruneService {
 
+  private Scheduler scheduler;
+
+  public void setScheduler(Scheduler scheduler) {
+    this.scheduler = scheduler;
+  }
+
   @Override
   public PruneResponse prune(PruneRequest request) throws IOException {
     Configuration hadoopConf = request.getHadoopConf();
     Job job = new Job(hadoopConf);
     CarbonTableInputFormat format = new CarbonTableInputFormat(hadoopConf);
     List<InputSplit> prunedResult = format.getSplits(job);
-
-    List<ScanUnit> output = prunedResult.stream().map(
-        (Function<InputSplit, ScanUnit>) inputSplit ->
-            new BlockScanUnit((CarbonInputSplit) inputSplit)
-    ).collect(Collectors.toList());
+    List<ScanUnit> output =
+        prunedResult.stream().map((Function<InputSplit, ScanUnit>) inputSplit -> {
+          String[] locations = ((CarbonInputSplit) inputSplit).preferredLocations();
+          Schedulable worker;
+          if (locations.length == 0) {
+            worker = scheduler.pickNexWorker();
+          } else {
+            worker = scheduler.pickWorker(locations[0]);
+          }
+          return new BlockScanUnit((CarbonInputSplit) inputSplit, worker);
+        }).collect(Collectors.toList());
     return new PruneResponse(output);
   }
 

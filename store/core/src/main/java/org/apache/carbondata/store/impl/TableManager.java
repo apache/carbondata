@@ -19,33 +19,51 @@ package org.apache.carbondata.store.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.block.Distributable;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
+import org.apache.carbondata.core.fileoperations.FileWriteOperation;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.converter.SchemaConverter;
+import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
+import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.TableInfo;
+import org.apache.carbondata.core.metadata.schema.table.TableSchema;
+import org.apache.carbondata.core.metadata.schema.table.TableSchemaBuilder;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.util.CarbonTaskInfo;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.core.writer.ThriftWriter;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.api.CarbonInputFormat;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
-import org.apache.carbondata.sdk.store.CarbonStore;
+import org.apache.carbondata.sdk.file.CarbonWriterBuilder;
+import org.apache.carbondata.sdk.file.Field;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
 import org.apache.carbondata.sdk.store.descriptor.TableDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
-import org.apache.carbondata.store.impl.rpc.model.Scan;
+import org.apache.carbondata.sdk.store.service.model.ScanRequest;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
@@ -53,60 +71,147 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Job;
 
 /**
- * Provides base functionality of CarbonStore, it contains basic implementation of metadata
- * management, data pruning and data scan logic.
+ * Provides table management.
  */
 @InterfaceAudience.Internal
-public abstract class CarbonStoreBase implements CarbonStore {
+public class TableManager {
 
   private static LogService LOGGER =
-      LogServiceFactory.getLogService(CarbonStoreBase.class.getCanonicalName());
+      LogServiceFactory.getLogService(TableManager.class.getCanonicalName());
 
-  MetaProcessor metaProcessor;
   private StoreConf storeConf;
 
-  CarbonStoreBase(StoreConf storeConf) {
+  // mapping of table path to CarbonTable object
+  private Map<String, CarbonTable> cache = new HashMap<>();
+
+  public TableManager(StoreConf storeConf) {
     this.storeConf = storeConf;
-    this.metaProcessor = new MetaProcessor(this);
   }
 
-  @Override
   public void createTable(TableDescriptor descriptor) throws CarbonException {
-    Objects.requireNonNull(descriptor);
-    metaProcessor.createTable(descriptor);
+    TableIdentifier table = descriptor.getTable();
+    Field[] fields = descriptor.getSchema().getFields();
+    // sort_columns
+    List<String> sortColumnsList = null;
+    try {
+      sortColumnsList = descriptor.getSchema().prepareSortColumns(descriptor.getProperties());
+    } catch (MalformedCarbonCommandException e) {
+      throw new CarbonException(e.getMessage());
+    }
+    ColumnSchema[] sortColumnsSchemaList = new ColumnSchema[sortColumnsList.size()];
+
+    TableSchemaBuilder builder = TableSchema.builder();
+    CarbonWriterBuilder.buildTableSchema(fields, builder, sortColumnsList, sortColumnsSchemaList);
+
+    TableSchema schema = builder.tableName(table.getTableName())
+        .properties(descriptor.getProperties())
+        .setSortColumns(Arrays.asList(sortColumnsSchemaList))
+        .build();
+
+    SchemaEvolutionEntry schemaEvolutionEntry = new SchemaEvolutionEntry();
+    schemaEvolutionEntry.setTimeStamp(System.currentTimeMillis());
+    schema.getSchemaEvolution().getSchemaEvolutionEntryList().add(schemaEvolutionEntry);
+    schema.setTableName(table.getTableName());
+
+    String tablePath = descriptor.getTablePath();
+    if (tablePath == null) {
+      tablePath = getTablePath(table.getTableName(), table.getDatabaseName());
+    }
+
+    TableInfo tableInfo = CarbonTable.builder()
+        .databaseName(table.getDatabaseName())
+        .tableName(table.getTableName())
+        .tablePath(tablePath)
+        .tableSchema(schema)
+        .isTransactionalTable(true)
+        .buildTableInfo();
+
+    try {
+      createTable(tableInfo, descriptor.isIfNotExists());
+    } catch (IOException e) {
+      LOGGER.error(e, "create tableDescriptor failed");
+      throw new CarbonException(e.getMessage());
+    }
   }
 
-  @Override
+  private void createTable(TableInfo tableInfo, boolean ifNotExists) throws IOException {
+    AbsoluteTableIdentifier identifier = tableInfo.getOrCreateAbsoluteTableIdentifier();
+    boolean tableExists = FileFactory.isFileExist(identifier.getTablePath());
+    if (tableExists) {
+      if (ifNotExists) {
+        return;
+      } else {
+        throw new IOException(
+            "car't create table " + tableInfo.getDatabaseName() + "." + tableInfo.getFactTable()
+                .getTableName() + ", because it already exists");
+      }
+    }
+
+    SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
+    String databaseName = tableInfo.getDatabaseName();
+    String tableName = tableInfo.getFactTable().getTableName();
+    org.apache.carbondata.format.TableInfo thriftTableInfo =
+        schemaConverter.fromWrapperToExternalTableInfo(tableInfo, databaseName, tableName);
+
+    String schemaFilePath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath());
+    String schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath);
+    FileFactory.FileType fileType = FileFactory.getFileType(schemaMetadataPath);
+    try {
+      if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
+        boolean isDirCreated = FileFactory.mkdirs(schemaMetadataPath, fileType);
+        if (!isDirCreated) {
+          throw new IOException("Failed to create the metadata directory " + schemaMetadataPath);
+        }
+      }
+      ThriftWriter thriftWriter = new ThriftWriter(schemaFilePath, false);
+      thriftWriter.open(FileWriteOperation.OVERWRITE);
+      thriftWriter.write(thriftTableInfo);
+      thriftWriter.close();
+    } catch (IOException e) {
+      LOGGER.error(e, "Failed to handle create table");
+      throw e;
+    }
+  }
+
   public void dropTable(TableIdentifier table) throws CarbonException {
-    Objects.requireNonNull(table);
+    String tablePath = getTablePath(table.getTableName(), table.getDatabaseName());
+    cache.remove(tablePath);
     try {
-      metaProcessor.dropTable(table);
+      FileFactory.deleteFile(tablePath);
     } catch (IOException e) {
       throw new CarbonException(e);
     }
   }
 
-  @Override
   public CarbonTable getTable(TableIdentifier table) throws CarbonException {
-    Objects.requireNonNull(table);
-    try {
-      return metaProcessor.getTable(table);
-    } catch (IOException e) {
-      throw new CarbonException(e);
+    String tablePath = getTablePath(table.getTableName(), table.getDatabaseName());
+    if (cache.containsKey(tablePath)) {
+      return cache.get(tablePath);
+    } else {
+      org.apache.carbondata.format.TableInfo formatTableInfo = null;
+      try {
+        formatTableInfo = CarbonUtil.readSchemaFile(CarbonTablePath.getSchemaFilePath(tablePath));
+      } catch (IOException e) {
+        throw new CarbonException(e);
+      }
+      SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
+      TableInfo tableInfo = schemaConverter.fromExternalToWrapperTableInfo(
+          formatTableInfo, table.getDatabaseName(), table.getTableName(), tablePath);
+      tableInfo.setTablePath(tablePath);
+      CarbonTable carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
+      cache.put(tablePath, carbonTable);
+      return carbonTable;
     }
   }
 
-  @Override
   public List<TableDescriptor> listTable() throws CarbonException {
     throw new UnsupportedOperationException();
   }
 
-  @Override
   public TableDescriptor getDescriptor(TableIdentifier table) throws CarbonException {
     throw new UnsupportedOperationException();
   }
 
-  @Override
   public void alterTable(TableIdentifier table, TableDescriptor newTable) throws CarbonException {
     throw new UnsupportedOperationException();
   }
@@ -152,7 +257,7 @@ public abstract class CarbonStoreBase implements CarbonStore {
    * @return matched rows
    * @throws IOException if IO error occurs
    */
-  public static List<CarbonRow> scan(CarbonTable table, Scan scan) throws IOException {
+  public static List<CarbonRow> scan(CarbonTable table, ScanRequest scan) throws IOException {
     CarbonTaskInfo carbonTaskInfo = new CarbonTaskInfo();
     carbonTaskInfo.setTaskId(System.nanoTime());
     ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo);
@@ -185,7 +290,7 @@ public abstract class CarbonStoreBase implements CarbonStore {
     return rows;
   }
 
-  private static QueryModel createQueryModel(CarbonTable table, Scan scan) {
+  private static QueryModel createQueryModel(CarbonTable table, ScanRequest scan) {
     String[] projectColumns = scan.getProjectColumns();
     Expression filter = null;
     if (scan.getFilterExpression() != null) {
