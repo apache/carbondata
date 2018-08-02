@@ -405,7 +405,7 @@ public class SegmentIndexFileStore {
       // get the index header
       org.apache.carbondata.format.IndexHeader indexHeader = indexReader.readIndexHeader();
       DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
-      String filePath = indexFile.getCanonicalPath();
+      String filePath = FileFactory.getUpdatedFilePath(indexFile.getCanonicalPath());
       String parentPath =
           filePath.substring(0, filePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
       while (indexReader.hasNext()) {

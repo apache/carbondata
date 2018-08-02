@@ -118,12 +118,18 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
                   .put(loadMetadataDetails.getLoadName,
                     String.valueOf(loadMetadataDetails.getLoadStartTime))
               })
-              CommonUtil.mergeIndexFiles(sparkSession.sparkContext,
-                validSegmentIds,
-                segmentFileNameMap,
-                carbonMainTable.getTablePath,
-                carbonMainTable,
-                true)
+              // in case of merge index file creation using Alter DDL command
+              // readFileFooterFromCarbonDataFile flag should be true. This flag is check for legacy
+              // store (store <= 1.1 version) and create merge Index file as per new store so that
+              // old store is also upgraded to new store
+              CommonUtil.mergeIndexFiles(
+                sparkContext = sparkSession.sparkContext,
+                segmentIds = validSegmentIds,
+                segmentFileNameToSegmentIdMap = segmentFileNameMap,
+                tablePath = carbonMainTable.getTablePath,
+                carbonTable = carbonMainTable,
+                mergeIndexProperty = true,
+                readFileFooterFromCarbonDataFile = true)
               // clear Block dataMap Cache
               clearBlockDataMapCache(carbonMainTable, validSegmentIds)
               val requestMessage = "Compaction request completed for table "
