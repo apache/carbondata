@@ -116,7 +116,8 @@ class CarbonEnv {
 
           CarbonMetaStoreFactory.createCarbonMetaStore(sparkSession.conf)
         }
-        CarbonProperties.getInstance.addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
+        CarbonProperties.getInstance
+          .addNonSerializableProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
         initialized = true
       }
     }

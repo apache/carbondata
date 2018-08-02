@@ -306,9 +306,12 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
       }
     } else if (!isAlterFlow) {
-      // if LOCAL_DICTIONARY_ENABLE is not defined, consider the default value which is true
-      tableProperties.put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
-        CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
+      // if LOCAL_DICTIONARY_ENABLE is not defined, try to get from system level property
+      tableProperties
+        .put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
+          CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE,
+              CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT))
     }
 
     // validate the local dictionary threshold property if defined
@@ -328,9 +331,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     // is enabled, else it is not validated
     // if it is preaggregate flow no need to validate anything, as all the properties will be
     // inherited from parent table
-    if (!(tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE).isDefined &&
+    if ((tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE).isDefined &&
           tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE).trim
-            .equalsIgnoreCase("false")) && !isPreAggFlow || isAlterFlow) {
+            .equalsIgnoreCase("true")) && !isPreAggFlow) {
       var localDictIncludeColumns: Seq[String] = Seq[String]()
       var localDictExcludeColumns: Seq[String] = Seq[String]()
       val isLocalDictIncludeDefined = tableProperties
@@ -343,13 +346,19 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         localDictIncludeColumns =
           tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE).split(",").map(_.trim)
         // validate all the local dictionary include columns
-        validateLocalDictionaryColumns(fields, tableProperties, localDictIncludeColumns)
+        CarbonScalaUtil
+          .validateLocalConfiguredDictionaryColumns(fields,
+            tableProperties,
+            localDictIncludeColumns)
       }
       if (isLocalDictExcludeDefined) {
         localDictExcludeColumns =
           tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE).split(",").map(_.trim)
         // validate all the local dictionary exclude columns
-        validateLocalDictionaryColumns(fields, tableProperties, localDictExcludeColumns)
+        CarbonScalaUtil
+          .validateLocalConfiguredDictionaryColumns(fields,
+            tableProperties,
+            localDictExcludeColumns)
       }
 
       // validate if both local dictionary include and exclude contains same column
@@ -432,78 +441,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       bucketFields: Option[BucketFields],
       partitionInfo,
       tableComment)
-  }
-
-  /**
-   * This method validates all the child columns of complex column recursively to check whether
-   * any of the child column is of string dataType or not
-   *
-   * @param field
-   */
-  def validateChildColumnsRecursively(field: Field): Boolean = {
-    if (field.children.isDefined && null != field.children.get) {
-      field.children.get.exists { childColumn =>
-        if (childColumn.children.isDefined && null != childColumn.children.get) {
-          validateChildColumnsRecursively(childColumn)
-        } else {
-          childColumn.dataType.get.equalsIgnoreCase("string")
-        }
-      }
-    } else {
-      false
-    }
-  }
-
-  /**
-   * This method validates the local dictionary configured columns
-   *
-   * @param fields
-   * @param tableProperties
-   */
-  private def validateLocalDictionaryColumns(fields: Seq[Field],
-      tableProperties: Map[String, String], localDictColumns: Seq[String]): Unit = {
-    var dictIncludeColumns: Seq[String] = Seq[String]()
-
-    // validate the local dict columns
-    CarbonScalaUtil.validateLocalDictionaryColumns(tableProperties, localDictColumns)
-    // check if the column specified exists in table schema
-    localDictColumns.foreach { distCol =>
-      if (!fields.exists(x => x.column.equalsIgnoreCase(distCol.trim))) {
-        val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " + distCol.trim +
-                       " does not exist in table. Please check the DDL."
-        throw new MalformedCarbonCommandException(errormsg)
-      }
-    }
-
-    // check if column is other than STRING or VARCHAR datatype
-    localDictColumns.foreach { dictColm =>
-      if (fields
-        .exists(x => x.column.equalsIgnoreCase(dictColm) &&
-                     !x.dataType.get.equalsIgnoreCase("STRING") &&
-                     !x.dataType.get.equalsIgnoreCase("VARCHAR") &&
-                     !x.dataType.get.equalsIgnoreCase("STRUCT") &&
-                     !x.dataType.get.equalsIgnoreCase("ARRAY"))) {
-        val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
-                       dictColm.trim +
-                       " is not a string/complex/varchar datatype column. LOCAL_DICTIONARY_COLUMN" +
-                       " should be no dictionary string/complex/varchar datatype column." +
-                       "Please check the DDL."
-        throw new MalformedCarbonCommandException(errormsg)
-      }
-    }
-
-    // Validate whether any of the child columns of complex dataType column is a string column
-    localDictColumns.foreach { dictColm =>
-      if (fields
-        .exists(x => x.column.equalsIgnoreCase(dictColm) && x.children.isDefined &&
-                     null != x.children.get &&
-                     !validateChildColumnsRecursively(x))) {
-        val errMsg =
-          s"None of the child columns of complex dataType column $dictColm specified in " +
-          "local_dictionary_include are not of string dataType."
-        throw new MalformedCarbonCommandException(errMsg)
-      }
-    }
   }
 
   /**

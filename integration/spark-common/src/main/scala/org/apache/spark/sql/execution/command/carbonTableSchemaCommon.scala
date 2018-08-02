@@ -39,10 +39,8 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, DecimalType}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema._
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier,
-  TableInfo, TableSchema}
-import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema,
-  ParentColumnTableRelation}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier, TableInfo, TableSchema}
+import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema, ParentColumnTableRelation}
 import org.apache.carbondata.core.service.impl.ColumnUniqueIdGenerator
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
@@ -50,7 +48,7 @@ import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.CompactionType
 import org.apache.carbondata.spark.CarbonSparkFactory
-import org.apache.carbondata.spark.util.DataTypeConverterUtil
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil}
 
 case class TableModel(
     ifNotExistsSet: Boolean,
@@ -378,19 +376,58 @@ class AlterTableColumnSchemaGenerator(
       }
     }
 
+    val isLocalDictEnabledForMainTable = tableSchema.getTableProperties
+      .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)
 
-    if (alterTableModel.tableProperties != null) {
+    val alterMutableTblProperties: scala.collection.mutable.Map[String, String] = mutable
+      .Map(alterTableModel.tableProperties.toSeq: _*)
+
+    // if local dictionary is enabled, then validate include and exclude columns if defined
+    if (null != isLocalDictEnabledForMainTable && isLocalDictEnabledForMainTable.toBoolean) {
+      var localDictIncludeColumns: Seq[String] = Seq[String]()
+      var localDictExcludeColumns: Seq[String] = Seq[String]()
+      // validate local dictionary include columns if defined
+      if (alterTableModel.tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE)
+        .isDefined) {
+        localDictIncludeColumns =
+          alterTableModel.tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE).split(",")
+            .map(_.trim)
+        CarbonScalaUtil
+          .validateLocalDictionaryColumns(alterMutableTblProperties, localDictIncludeColumns)
+        CarbonScalaUtil
+          .validateLocalConfiguredDictionaryColumns(
+            alterTableModel.dimCols ++ alterTableModel.msrCols,
+            alterMutableTblProperties,
+            localDictIncludeColumns)
+      }
+
+      // validate local dictionary exclude columns if defined
+      if (alterTableModel.tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE)
+        .isDefined) {
+        localDictExcludeColumns =
+          alterTableModel.tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE).split(",")
+            .map(_.trim)
+        CarbonScalaUtil
+          .validateLocalDictionaryColumns(alterMutableTblProperties, localDictExcludeColumns)
+        CarbonScalaUtil
+          .validateLocalConfiguredDictionaryColumns(
+            alterTableModel.dimCols ++ alterTableModel.msrCols,
+            alterMutableTblProperties,
+            localDictExcludeColumns)
+      }
+
+      // validate if both local dictionary include and exclude contains same column
+      CarbonScalaUtil.validateDuplicateLocalDictIncludeExcludeColmns(alterMutableTblProperties)
+
       CarbonUtil
         .setLocalDictColumnsToWrapperSchema(newCols.asJava,
           alterTableModel.tableProperties.asJava,
-          tableSchema.getTableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE))
+          isLocalDictEnabledForMainTable)
     }
 
     val includeExcludeColOfMainTable = getLocalDictColumnList(tableSchema.getTableProperties
       .asScala,
       columnsWithoutNewCols)
-    val alterMutableTblProperties: scala.collection.mutable.Map[String, String] = mutable
-      .Map(alterTableModel.tableProperties.toSeq: _*)
     val includeExcludeColOfAlterTable = getLocalDictColumnList(alterMutableTblProperties,
       newCols.to[mutable.ListBuffer])
 

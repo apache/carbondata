@@ -21,6 +21,8 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfterAll {
 
@@ -67,7 +69,6 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
 
   test("test local dictionary custom configurations for local dict columns _002") {
     sql("drop table if exists local1")
-
     intercept[MalformedCarbonCommandException] {
       sql(
         """
@@ -2426,7 +2427,39 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
+
+  test("test local dictionary for system level configuration") {
+    sql("drop table if exists local1")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE, "false")
+    // should not throw exception as system level it is false and table level is not configured
+      sql(
+        """
+          | CREATE TABLE local1(id int, name string, city string, age int)
+          | STORED BY 'org.apache.carbondata.format'
+          | tblproperties('local_dictionary_include'='name,name')
+        """.stripMargin)
+  }
+
+  test("test local dictionary for system level configuration and table level priority") {
+    sql("drop table if exists local1")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE, "false")
+    // should not throw exception as system level it is false and table level is not configured
+    intercept[MalformedCarbonCommandException] {
+      sql(
+        """
+        | CREATE TABLE local1(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+        | tblproperties('local_dictionary_enable'='true','local_dictionary_include'='name,name')
+      """.
+          stripMargin)
+      }
+  }
+
+
   override protected def afterAll(): Unit = {
     sql("DROP TABLE IF EXISTS LOCAL1")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE,
+        CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
   }
 }
