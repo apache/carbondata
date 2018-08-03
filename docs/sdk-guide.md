@@ -130,7 +130,7 @@ public class TestSdkJson {
        testJsonSdkWriter();
    }
    
-   public void testJsonSdkWriter() throws InvalidLoadOptionException {
+   public static void testJsonSdkWriter() throws InvalidLoadOptionException {
     String path = "./target/testJsonSdkWriter";
 
     Field[] fields = new Field[2];

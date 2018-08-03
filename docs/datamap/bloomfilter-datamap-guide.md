@@ -41,7 +41,7 @@ Disable Datamap
 
 ## BloomFilter DataMap Introduction
 A Bloom filter is a space-efficient probabilistic data structure that is used to test whether an element is a member of a set.
-Carbondata introduce BloomFilter as an index datamap to enhance the performance of querying with precise value.
+Carbondata introduced BloomFilter as an index datamap to enhance the performance of querying with precise value.
 It is well suitable for queries that do precise match on high cardinality columns(such as Name/ID).
 Internally, CarbonData maintains a BloomFilter per blocklet for each index column to indicate that whether a value of the column is in this blocklet.
 Just like the other datamaps, BloomFilter datamap is managed along with main tables by CarbonData.
