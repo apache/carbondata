@@ -36,7 +36,7 @@ import org.apache.carbondata.presto.readers.ShortStreamReader;
 import org.apache.carbondata.presto.readers.SliceStreamReader;
 import org.apache.carbondata.presto.readers.TimestampStreamReader;
 
-import com.facebook.presto.spi.block.SliceArrayBlock;
+import com.facebook.presto.spi.block.Block;
 
 public class CarbonVectorBatch {
 
@@ -63,7 +63,7 @@ public class CarbonVectorBatch {
 
     for (int i = 0; i < schema.length; ++i) {
       columns[i] = createDirectStreamReader(maxRows, dataTypes[i], schema[i], dictionaries[i],
-          readSupport.getSliceArrayBlock(i));
+          readSupport.getDictionaryBlock(i));
     }
   }
 
@@ -73,7 +73,7 @@ public class CarbonVectorBatch {
   }
 
   private CarbonColumnVectorImpl createDirectStreamReader(int batchSize, DataType dataType,
-      StructField field, Dictionary dictionary, SliceArrayBlock dictionarySliceArrayBlock) {
+      StructField field, Dictionary dictionary, Block dictionaryBlock) {
     if (dataType == DataTypes.BOOLEAN) {
       return new BooleanStreamReader(batchSize, field.getDataType(), dictionary);
     } else if (dataType == DataTypes.SHORT) {
@@ -87,7 +87,7 @@ public class CarbonVectorBatch {
     } else if (dataType == DataTypes.DOUBLE) {
       return new DoubleStreamReader(batchSize, field.getDataType(), dictionary);
     } else if (dataType == DataTypes.STRING) {
-      return new SliceStreamReader(batchSize, field.getDataType(), dictionarySliceArrayBlock);
+      return new SliceStreamReader(batchSize, field.getDataType(), dictionaryBlock);
     } else if (DataTypes.isDecimal(dataType)) {
       return new DecimalSliceStreamReader(batchSize, (DecimalType) field.getDataType(), dictionary);
     } else {

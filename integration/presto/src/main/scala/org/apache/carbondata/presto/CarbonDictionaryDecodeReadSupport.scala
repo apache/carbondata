@@ -16,8 +16,9 @@
  */
 package org.apache.carbondata.presto
 
-import com.facebook.presto.spi.block.SliceArrayBlock
-import io.airlift.slice.{Slice, Slices}
+import java.util.Optional
+
+import com.facebook.presto.spi.block.{Block, VariableWidthBlock}
 import io.airlift.slice.Slices._
 
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
@@ -36,7 +37,7 @@ import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
   private var dictionaries: Array[Dictionary] = _
   private var dataTypes: Array[DataType] = _
-  private var dictionarySliceArray: Array[SliceArrayBlock] = _
+  private var dictionaryBlock: Array[Block] = _
 
   /**
    * This initialization is done inside executor task
@@ -49,7 +50,7 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
 
     dictionaries = new Array[Dictionary](carbonColumns.length)
     dataTypes = new Array[DataType](carbonColumns.length)
-    dictionarySliceArray = new Array[SliceArrayBlock](carbonColumns.length)
+    dictionaryBlock = new Array[Block](carbonColumns.length)
 
     carbonColumns.zipWithIndex.foreach {
       case (carbonColumn, index) => if (carbonColumn.hasEncoding(Encoding.DICTIONARY) &&
@@ -67,7 +68,7 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
             carbonColumn.getColumnIdentifier, dataTypes(index), dictionaryPath))
         // in case of string data type create dictionarySliceArray same as that of presto code
         if (dataTypes(index).equals(DataTypes.STRING)) {
-          dictionarySliceArray(index) = createSliceArrayBlock(dictionaries(index))
+          dictionaryBlock(index) = createDictionaryBlock(dictionaries(index))
         }
       }
 
@@ -84,25 +85,42 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
    * @param dictionaryData
    * @return
    */
-  private def createSliceArrayBlock(dictionaryData: Dictionary): SliceArrayBlock = {
+  private def createDictionaryBlock(dictionaryData: Dictionary): Block = {
     val chunks: DictionaryChunksWrapper = dictionaryData.getDictionaryChunks
-    val sliceArray = new Array[Slice](chunks.getSize + 1)
-    // Initialize Slice Array with Empty Slice as per Presto's code
-    sliceArray(0) = Slices.EMPTY_SLICE
-    var count = 1
+    val positionCount = chunks.getSize;
+
+   // In dictionary there will be only one null and the key value will be 1 by default in carbon,
+   // hence the isNullVector will be populated only once with null value it has no bearing on
+   // actual data.
+
+    val offsetVector : Array[Int] = new Array[Int](positionCount + 2 )
+    val isNullVector: Array[Boolean] = new Array[Boolean](positionCount + 1)
+    // the first value is just a filler as we always start with index 1 in carbon
+    isNullVector(0) = true
+    isNullVector(1) = true
+    var count = 0
+    var byteArray = new Array[Byte](0)
+    // The Carbondata key starts from 1 so we need a filler at 0th position hence adding filler to
+    // offset, hence 0th Position -> 0
+    offsetVector(0) = 0
     while (chunks.hasNext) {
-      {
-        val value: Array[Byte] = chunks.next
-        if (count == 1) {
-          sliceArray(count) = null
-        }
-        else {
-          sliceArray(count) = wrappedBuffer(value, 0, value.length)
-        }
-        count += 1
+      val value: Array[Byte] = chunks.next
+      if (count == 0) {
+        // 1 index is actually Null to map to carbondata null values .
+        // 1st Position -> 0 (For actual Null)
+        offsetVector(count + 1) = 0
+        // 2nd Postion -> 0 as the byte[] is still null so starting point will be 0 only
+        offsetVector(count + 2) = 0
+      } else {
+        byteArray = byteArray ++ value
+        offsetVector(count + 2) = byteArray.length
       }
+      count += 1
     }
-    new SliceArrayBlock(sliceArray.length, sliceArray, true)
+    new VariableWidthBlock(positionCount + 1,
+      wrappedBuffer(byteArray, 0, byteArray.length),
+      offsetVector,
+      Optional.ofNullable(isNullVector))
   }
 
   override def readRow(data: Array[AnyRef]): T = {
@@ -115,8 +133,8 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
    * @param columnNo
    * @return
    */
-  def getSliceArrayBlock(columnNo: Int): SliceArrayBlock = {
-    dictionarySliceArray(columnNo)
+  def getDictionaryBlock(columnNo: Int): Block = {
+    dictionaryBlock(columnNo)
   }
 
   def getDictionaries: Array[Dictionary] = {
