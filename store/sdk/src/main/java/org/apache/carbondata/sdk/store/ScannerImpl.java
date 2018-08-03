@@ -52,13 +52,14 @@ class ScannerImpl implements Scanner {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(ScannerImpl.class.getCanonicalName());
 
-  private PruneService pruneService;
   private TableInfo tableInfo;
+  private String pruneServiceHost;
+  private int pruneServiePort;
 
   ScannerImpl(StoreConf conf, TableInfo tableInfo) throws IOException {
-    this.pruneService = ServiceFactory.createPruneService(
-        conf.masterHost(), conf.registryServicePort());
     this.tableInfo = tableInfo;
+    this.pruneServiceHost = conf.masterHost();
+    this.pruneServiePort = conf.pruneServicePort();
   }
 
   /**
@@ -77,6 +78,8 @@ class ScannerImpl implements Scanner {
       CarbonInputFormat.setDatabaseName(configuration, table.getDatabaseName());
       CarbonInputFormat.setFilterPredicates(configuration, filterExpression);
       PruneRequest request = new PruneRequest(configuration);
+      PruneService pruneService = ServiceFactory.createPruneService(
+          pruneServiceHost, pruneServiePort);
       PruneResponse response = pruneService.prune(request);
       return response.getScanUnits();
     } catch (IOException e) {
