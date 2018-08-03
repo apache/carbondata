@@ -64,7 +64,8 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
   }
 
   public ConnectorSplitSource getSplits(ConnectorTransactionHandle transactionHandle,
-      ConnectorSession session, ConnectorTableLayoutHandle layout) {
+      ConnectorSession session, ConnectorTableLayoutHandle layout,
+      SplitSchedulingStrategy splitSchedulingStrategy) {
     CarbondataTableLayoutHandle layoutHandle = (CarbondataTableLayoutHandle) layout;
     CarbondataTableHandle tableHandle = layoutHandle.getTable();
     SchemaTableName key = tableHandle.getSchemaTableName();
