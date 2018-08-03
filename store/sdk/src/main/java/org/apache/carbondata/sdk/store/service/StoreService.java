@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableDescriptor;
@@ -38,7 +39,7 @@ public interface StoreService extends VersionedProtocol {
 
   void dropTable(TableIdentifier table) throws CarbonException;
 
-  CarbonTable getTable(TableIdentifier table) throws CarbonException;
+  TableInfo getTable(TableIdentifier table) throws CarbonException;
 
   List<TableDescriptor> listTable() throws CarbonException;
 

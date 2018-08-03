@@ -56,14 +56,6 @@ public interface CarbonStore extends Closeable {
   void dropTable(TableIdentifier table) throws CarbonException;
 
   /**
-   * Return CarbonTable object by specified identifier
-   * @param table table identifier
-   * @return CarbonTable object
-   * @throws CarbonException if any error occurs
-   */
-  CarbonTable getTable(TableIdentifier table) throws CarbonException;
-
-  /**
    * @return all table created
    * @throws CarbonException if any error occurs
    */
@@ -98,7 +90,7 @@ public interface CarbonStore extends Closeable {
   void loadData(LoadDescriptor load) throws CarbonException;
 
   /**
-   * Create a new Loader, which can be used to load data in distributed compute framework
+   * Return a new Loader that can be used to load data in distributed compute framework
    * @param load descriptor for load operation
    * @return a new Loader
    * @throws CarbonException if any error occurs
@@ -132,16 +124,18 @@ public interface CarbonStore extends Closeable {
   ////////////////////////////////////////////////////////////////////
 
   /**
-   * Scan a Table and return matched rows, using default select option
-   * see {@link #scan(ScanDescriptor, SelectOption)} for more information
+   * Scan the specified table and return matched rows
    *
-   * @param select descriptor for select operation
+   * @param select descriptor for scan operation
    * @return matched rows
    * @throws CarbonException if any error occurs
    */
   List<CarbonRow> scan(ScanDescriptor select) throws CarbonException;
 
   /**
+   * Return a new Scanner that can be used in for parallel scan
+   *
+   * @param tableIdentifier table to scan
    * @return a new Scanner
    * @throws CarbonException if any error occurs
    */

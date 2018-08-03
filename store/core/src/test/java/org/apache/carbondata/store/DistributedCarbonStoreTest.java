@@ -45,14 +45,14 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class RemoteCarbonStoreTest {
+public class DistributedCarbonStoreTest {
 
   private static String projectFolder;
   private static CarbonStore store;
 
   @BeforeClass
   public static void beforeAll() throws IOException, CarbonException, InterruptedException {
-    projectFolder = new File(RemoteCarbonStoreTest.class.getResource("/").getPath() +
+    projectFolder = new File(DistributedCarbonStoreTest.class.getResource("/").getPath() +
         "../../../../").getCanonicalPath();
 
     String confFile = projectFolder + "/store/conf/store.conf";
@@ -73,7 +73,7 @@ public class RemoteCarbonStoreTest {
 
     Thread.sleep(1000);
 
-    store = CarbonStoreFactory.getRemoteStore("RemoteCarbonStoreTest", storeConf);
+    store = CarbonStoreFactory.getRemoteStore("DistributedCarbonStoreTest", storeConf);
   }
 
   @AfterClass

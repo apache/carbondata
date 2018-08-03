@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
 import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
@@ -38,18 +38,18 @@ import org.apache.carbondata.sdk.store.service.StoreService;
 /**
  * A CarbonStore that leverage multiple servers via RPC calls (Master and Workers)
  */
-public class RemoteCarbonStore implements CarbonStore {
+public class DistributedCarbonStore implements CarbonStore {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(RemoteCarbonStore.class.getCanonicalName());
+      LogServiceFactory.getLogService(DistributedCarbonStore.class.getCanonicalName());
 
   private static final long versionID = 1L;
 
   private StoreService storeService;
   private StoreConf storeConf;
-  private Map<TableIdentifier, CarbonTable> tableCache = new ConcurrentHashMap<>();
+  private Map<TableIdentifier, TableInfo> tableCache = new ConcurrentHashMap<>();
 
-  public RemoteCarbonStore(StoreConf conf) throws IOException {
+  public DistributedCarbonStore(StoreConf conf) throws IOException {
     this.storeService =
         ServiceFactory.createStoreService(conf.masterHost(), conf.storeServicePort());
     this.storeConf = conf;
@@ -71,11 +71,6 @@ public class RemoteCarbonStore implements CarbonStore {
     } catch (Exception e)  {
       System.out.println(e.getMessage());
     }
-  }
-
-  @Override
-  public CarbonTable getTable(TableIdentifier table) throws CarbonException {
-    return storeService.getTable(table);
   }
 
   @Override
@@ -115,10 +110,10 @@ public class RemoteCarbonStore implements CarbonStore {
 
   @Override
   public Scanner newScanner(TableIdentifier identifier) throws CarbonException {
-    CarbonTable table = tableCache.getOrDefault(identifier, storeService.getTable(identifier));
-    tableCache.putIfAbsent(identifier, table);
+    TableInfo tableInfo = tableCache.getOrDefault(identifier, storeService.getTable(identifier));
+    tableCache.putIfAbsent(identifier, tableInfo);
     try {
-      return new ScannerImpl(storeConf, table.getTableInfo());
+      return new ScannerImpl(storeConf, tableInfo);
     } catch (IOException e) {
       throw new CarbonException(e);
     }

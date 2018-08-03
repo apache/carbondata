@@ -48,7 +48,7 @@ public class CarbonStoreFactory {
 
     // create a new instance
     try {
-      String className = "org.apache.carbondata.sdk.store.RemoteCarbonStore";
+      String className = "org.apache.carbondata.sdk.store.DistributedCarbonStore";
       CarbonStore store = createCarbonStore(storeConf, className);
       remoteStore.put(storeName, store);
       return store;

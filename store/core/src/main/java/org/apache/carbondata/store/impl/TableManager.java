@@ -82,7 +82,7 @@ public class TableManager {
   private StoreConf storeConf;
 
   // mapping of table path to CarbonTable object
-  private Map<String, CarbonTable> cache = new HashMap<>();
+  private Map<String, TableInfo> cache = new HashMap<>();
 
   public TableManager(StoreConf storeConf) {
     this.storeConf = storeConf;
@@ -183,7 +183,7 @@ public class TableManager {
     }
   }
 
-  public CarbonTable getTable(TableIdentifier table) throws CarbonException {
+  public TableInfo getTable(TableIdentifier table) throws CarbonException {
     String tablePath = getTablePath(table.getTableName(), table.getDatabaseName());
     if (cache.containsKey(tablePath)) {
       return cache.get(tablePath);
@@ -198,9 +198,8 @@ public class TableManager {
       TableInfo tableInfo = schemaConverter.fromExternalToWrapperTableInfo(
           formatTableInfo, table.getDatabaseName(), table.getTableName(), tablePath);
       tableInfo.setTablePath(tablePath);
-      CarbonTable carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
-      cache.put(tablePath, carbonTable);
-      return carbonTable;
+      cache.put(tablePath, tableInfo);
+      return tableInfo;
     }
   }
 

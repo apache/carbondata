@@ -31,6 +31,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
@@ -92,7 +93,8 @@ public class LocalCarbonStore extends TableManager implements CarbonStore {
     Objects.requireNonNull(load);
     CarbonLoadModel loadModel;
     try {
-      CarbonTable table = getTable(load.getTable());
+      TableInfo tableInfo = getTable(load.getTable());
+      CarbonTable table = CarbonTable.buildFromTableInfo(tableInfo);
       CarbonLoadModelBuilder modelBuilder = new CarbonLoadModelBuilder(table);
       modelBuilder.setInputPath(load.getInputPath());
       loadModel = modelBuilder.build(load.getOptions(), System.currentTimeMillis(), "0");
@@ -165,11 +167,12 @@ public class LocalCarbonStore extends TableManager implements CarbonStore {
   public List<CarbonRow> scan(ScanDescriptor scanDescriptor) throws CarbonException {
     Objects.requireNonNull(scanDescriptor);
     try {
-      CarbonTable table = getTable(scanDescriptor.getTableIdentifier());
+      TableInfo tableInfo = getTable(scanDescriptor.getTableIdentifier());
+      CarbonTable table = CarbonTable.buildFromTableInfo(tableInfo);
       List<Distributable> blocks = pruneBlock(table, scanDescriptor.getFilter());
       CarbonMultiBlockSplit split = new CarbonMultiBlockSplit(blocks, "");
       ScanRequest scan =
-          new ScanRequest(0, split, table.getTableInfo(), scanDescriptor.getProjection(),
+          new ScanRequest(0, split, tableInfo, scanDescriptor.getProjection(),
               scanDescriptor.getFilter(), scanDescriptor.getLimit());
       return scan(table, scan);
     } catch (IOException e) {
