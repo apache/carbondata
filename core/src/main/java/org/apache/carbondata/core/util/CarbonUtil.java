@@ -43,6 +43,7 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
+import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.localdictionary.generator.ColumnLocalDictionaryGenerator;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
@@ -88,7 +89,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockletHeader;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
-import org.apache.carbondata.format.FileHeader;
+import org.apache.carbondata.format.IndexHeader;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -3194,11 +3195,33 @@ public final class CarbonUtil {
    */
   public static ColumnarFormatVersion getFormatVersion(CarbonTable carbonTable)
       throws IOException {
-    String storePath = null;
-    // if the carbontable is support flat folder
+    String segmentPath = null;
     boolean supportFlatFolder = carbonTable.isSupportFlatFolder();
+    CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
+    ColumnarFormatVersion version = null;
+    SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
+    CarbonProperties carbonProperties = CarbonProperties.getInstance();
+    // if the carbontable is support flat folder
     if (supportFlatFolder) {
-      storePath = carbonTable.getTablePath();
+      segmentPath = carbonTable.getTablePath();
+      FileFactory.FileType fileType = FileFactory.getFileType(segmentPath);
+      if (FileFactory.isFileExist(segmentPath, fileType)) {
+        fileStore.readAllIIndexOfSegment(segmentPath);
+        Map<String, byte[]> carbonIndexMap = fileStore.getCarbonIndexMap();
+        if (carbonIndexMap.size() == 0) {
+          version = carbonProperties.getFormatVersion();
+        }
+        for (byte[] fileData : carbonIndexMap.values()) {
+          try {
+            indexReader.openThriftReader(fileData);
+            IndexHeader indexHeader = indexReader.readIndexHeader();
+            version = ColumnarFormatVersion.valueOf((short)indexHeader.getVersion());
+            break;
+          } finally {
+            indexReader.closeThriftReader();
+          }
+        }
+      }
     } else {
       // get the valid segments
       SegmentStatusManager segmentStatusManager =
@@ -3206,34 +3229,44 @@ public final class CarbonUtil {
       SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegmentsInfo =
           segmentStatusManager.getValidAndInvalidSegments();
       List<Segment> validSegments = validAndInvalidSegmentsInfo.getValidSegments();
-      CarbonProperties carbonProperties = CarbonProperties.getInstance();
       if (validSegments.isEmpty()) {
         return carbonProperties.getFormatVersion();
       }
-      storePath = carbonTable.getSegmentPath(validSegments.get(0).getSegmentNo());
-    }
-
-    CarbonFile[] carbonFiles = FileFactory
-        .getCarbonFile(storePath)
-        .listFiles(new CarbonFileFilter() {
-          @Override
-          public boolean accept(CarbonFile file) {
-            if (file == null) {
-              return false;
-            }
-            return file.getName().endsWith("carbondata");
+      // get the carbon index file header from a valid segment
+      for (Segment segment : validSegments) {
+        segmentPath = carbonTable.getSegmentPath(segment.getSegmentNo());
+        FileFactory.FileType fileType = FileFactory.getFileType(segmentPath);
+        if (FileFactory.isFileExist(segmentPath, fileType)) {
+          fileStore.readAllIIndexOfSegment(segmentPath);
+          Map<String, byte[]> carbonIndexMap = fileStore.getCarbonIndexMap();
+          if (carbonIndexMap.size() == 0) {
+            LOGGER.warn("the valid segment path: " + segmentPath +
+                " does not exist in the system of table: " + carbonTable.getTableUniqueName());
+            continue;
           }
-        });
-    if (carbonFiles == null || carbonFiles.length < 1) {
-      return CarbonProperties.getInstance().getFormatVersion();
+          for (byte[] fileData : carbonIndexMap.values()) {
+            try {
+              indexReader.openThriftReader(fileData);
+              IndexHeader indexHeader = indexReader.readIndexHeader();
+              version = ColumnarFormatVersion.valueOf((short)indexHeader.getVersion());
+              break;
+            } finally {
+              indexReader.closeThriftReader();
+            }
+          }
+          // if get the carbon file version from a valid segment, then end
+          if (version != null) {
+            break;
+          }
+        }
+      }
+      // if all valid segments path does not in the system,
+      // then the carbon file verion as default
+      if (version == null) {
+        version = CarbonProperties.getInstance().getFormatVersion();
+      }
     }
-
-    CarbonFile carbonFile = carbonFiles[0];
-    // get the carbon file header
-    CarbonHeaderReader headerReader = new CarbonHeaderReader(carbonFile.getCanonicalPath());
-    FileHeader fileHeader = headerReader.readHeader();
-    int version = fileHeader.getVersion();
-    return ColumnarFormatVersion.valueOf((short)version);
+    return version;
   }
 
   /**
