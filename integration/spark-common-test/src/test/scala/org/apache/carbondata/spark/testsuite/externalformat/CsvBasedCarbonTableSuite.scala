@@ -151,7 +151,7 @@ class CsvBasedCarbonTableSuite extends QueryTest
       )
     }
 
-    assert(expectedException.getMessage.contains("Currently we only support csv as external file format"))
+    assert(expectedException.getMessage.contains("Unsupported external format parquet"))
   }
 
   test("test csv based carbon table: the sequence of header does not match schema") {

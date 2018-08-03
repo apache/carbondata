@@ -17,10 +17,27 @@
 
 package org.apache.carbondata.core.statusmanager;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Provides the constant name for the file format properties
  */
 public class FileFormatProperties {
+  private static final Set<String> SUPPORTED_EXTERNAL_FORMAT = new HashSet<String>() {
+    {
+      add("csv");
+      add("kafka");
+    }
+  };
+
+  public static boolean isExternalFormatSupported(String format) {
+    return SUPPORTED_EXTERNAL_FORMAT.contains(format.toLowerCase());
+  }
+  public static Set<String> getSupportedExternalFormat() {
+    return SUPPORTED_EXTERNAL_FORMAT;
+  }
+
   public static class CSV {
     public static final String HEADER = "csv.header";
     public static final String DELIMITER = "csv.delimiter";

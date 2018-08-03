@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -39,12 +40,10 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, DecimalType}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema._
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier,
-  TableInfo, TableSchema}
-import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema,
-  ParentColumnTableRelation}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier, TableInfo, TableSchema}
+import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema, ParentColumnTableRelation}
 import org.apache.carbondata.core.service.impl.ColumnUniqueIdGenerator
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
+import org.apache.carbondata.core.statusmanager.{FileFormatProperties, LoadMetadataDetails, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -859,8 +858,11 @@ class TableNewProcessor(cm: TableModel) {
     tableInfo.setFactTable(tableSchema)
     val format = cm.tableProperties.get(CarbonCommonConstants.FORMAT)
     if (format.isDefined) {
-      if (!format.get.equalsIgnoreCase("csv")) {
-        CarbonException.analysisException(s"Currently we only support csv as external file format")
+      if (!FileFormatProperties.isExternalFormatSupported(format.get)) {
+        CarbonException.analysisException(
+          s"Unsupported external format ${format.get}, currently carbondata only support" +
+          s" ${FileFormatProperties.getSupportedExternalFormat.asScala.mkString(", ")}" +
+          s" as external file format")
       }
       tableInfo.setFormat(format.get)
       val formatProperties = cm.tableProperties.filter(pair =>
