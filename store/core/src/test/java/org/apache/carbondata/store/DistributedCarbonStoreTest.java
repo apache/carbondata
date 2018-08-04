@@ -73,7 +73,7 @@ public class DistributedCarbonStoreTest {
 
     Thread.sleep(1000);
 
-    store = CarbonStoreFactory.getRemoteStore("DistributedCarbonStoreTest", storeConf);
+    store = CarbonStoreFactory.getDistributedStore("DistributedCarbonStoreTest", storeConf);
   }
 
   @AfterClass

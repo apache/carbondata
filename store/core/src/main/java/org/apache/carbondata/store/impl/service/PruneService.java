@@ -15,18 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.rpc;
+package org.apache.carbondata.store.impl.service;
 
 import java.io.IOException;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.store.impl.rpc.model.RegisterWorkerRequest;
-import org.apache.carbondata.store.impl.rpc.model.RegisterWorkerResponse;
+import org.apache.carbondata.store.impl.service.model.PruneRequest;
+import org.apache.carbondata.store.impl.service.model.PruneResponse;
 
 import org.apache.hadoop.ipc.VersionedProtocol;
 
 @InterfaceAudience.Internal
-public interface RegistryService extends VersionedProtocol {
+public interface PruneService extends VersionedProtocol {
   long versionID = 1L;
-  RegisterWorkerResponse registerWorker(RegisterWorkerRequest request) throws IOException;
+  PruneResponse prune(PruneRequest request) throws IOException;
 }

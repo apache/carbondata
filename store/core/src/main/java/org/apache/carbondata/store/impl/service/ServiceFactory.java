@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.rpc;
+package org.apache.carbondata.store.impl.service;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -33,6 +33,18 @@ public class ServiceFactory {
     InetSocketAddress address = new InetSocketAddress(InetAddress.getByName(host), port);
     return RPC.getProxy(
         RegistryService.class, RegistryService.versionID, address, new Configuration());
+  }
+
+  public static PruneService createPruneService(String host, int port) throws IOException {
+    InetSocketAddress address = new InetSocketAddress(InetAddress.getByName(host), port);
+    return RPC.getProxy(
+        PruneService.class, PruneService.versionID, address, new Configuration());
+  }
+
+  public static DataService createDataService(String host, int port) throws IOException {
+    InetSocketAddress address = new InetSocketAddress(InetAddress.getByName(host), port);
+    return RPC.getProxy(
+        DataService.class, DataService.versionID, address, new Configuration());
   }
 
 }

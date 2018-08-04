@@ -24,8 +24,8 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.sdk.store.Schedulable;
 import org.apache.carbondata.sdk.store.exception.SchedulerException;
+import org.apache.carbondata.store.impl.Schedulable;
 
 /**
  * [[Master]] uses Scheduler to pick a Worker to send request

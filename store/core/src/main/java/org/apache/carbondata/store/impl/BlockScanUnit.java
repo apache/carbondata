@@ -15,59 +15,60 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store.service.model;
+package org.apache.carbondata.store.impl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.Serializable;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.core.util.ObjectSerializationUtil;
+import org.apache.carbondata.hadoop.CarbonInputSplit;
+import org.apache.carbondata.store.devapi.ScanUnit;
 
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableUtils;
-
+/**
+ * It contains a block to scan, and a destination worker who should scan it
+ */
 @InterfaceAudience.Internal
-public class ScanResponse extends BaseResponse implements Serializable, Writable {
-  private int queryId;
-  private Object[][] rows;
+public class BlockScanUnit implements ScanUnit {
 
-  public ScanResponse() {
-    super();
+  // the data block to scan
+  private CarbonInputSplit inputSplit;
+
+  // the worker who should scan this unit
+  private Schedulable schedulable;
+
+  public BlockScanUnit() {
   }
 
-  public ScanResponse(int queryId, int status, String message, Object[][] rows) {
-    super(status, message);
-    this.queryId = queryId;
-    this.rows = rows;
+  public BlockScanUnit(CarbonInputSplit inputSplit, Schedulable schedulable) {
+    this.inputSplit = inputSplit;
+    this.schedulable = schedulable;
   }
 
-  public int getQueryId() {
-    return queryId;
+  public CarbonInputSplit getInputSplit() {
+    return inputSplit;
   }
 
+  public Schedulable getSchedulable() {
+    return schedulable;
+  }
 
-  public Object[][] getRows() {
-    return rows;
+  @Override
+  public String[] preferredLocations() {
+    return inputSplit.preferredLocations();
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    super.write(out);
-    out.writeInt(queryId);
-    WritableUtils.writeCompressedByteArray(out, ObjectSerializationUtil.serialize(rows));
+    inputSplit.write(out);
+    schedulable.write(out);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    super.readFields(in);
-    queryId = in.readInt();
-    try {
-      rows = (Object[][])ObjectSerializationUtil.deserialize(
-          WritableUtils.readCompressedByteArray(in));
-    } catch (ClassNotFoundException e) {
-      throw new IOException(e);
-    }
+    inputSplit = new CarbonInputSplit();
+    inputSplit.readFields(in);
+    schedulable = new Schedulable();
+    schedulable.readFields(in);
   }
 }

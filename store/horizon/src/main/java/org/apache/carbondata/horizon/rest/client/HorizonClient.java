@@ -28,7 +28,7 @@ import org.apache.carbondata.horizon.rest.model.view.CreateTableRequest;
 import org.apache.carbondata.horizon.rest.model.view.DropTableRequest;
 import org.apache.carbondata.horizon.rest.model.view.LoadRequest;
 import org.apache.carbondata.horizon.rest.model.view.SelectRequest;
-import org.apache.carbondata.store.api.exception.StoreException;
+import org.apache.carbondata.sdk.store.exception.CarbonException;
 
 /**
  * Client to send REST request to Horizon service
@@ -40,9 +40,9 @@ public interface HorizonClient extends Closeable {
   /**
    * Create a Table
    * @param create descriptor for create table operation
-   * @throws IOException if network or disk IO error occurs
+   * @throws CarbonException if network or disk IO error occurs
    */
-  void createTable(CreateTableRequest create) throws IOException, StoreException;
+  void createTable(CreateTableRequest create) throws CarbonException;
 
   /**
    * Drop a Table, and remove all data in it
@@ -56,7 +56,7 @@ public interface HorizonClient extends Closeable {
    * @param load descriptor for load operation
    * @throws IOException if network or disk IO error occurs
    */
-  void loadData(LoadRequest load) throws IOException, StoreException;
+  void loadData(LoadRequest load) throws IOException, CarbonException;
 
   /**
    * Scan a Table and return matched rows
@@ -64,7 +64,7 @@ public interface HorizonClient extends Closeable {
    * @return matched rows
    * @throws IOException if network or disk IO error occurs
    */
-  List<CarbonRow> select(SelectRequest select) throws IOException, StoreException;
+  List<CarbonRow> select(SelectRequest select) throws IOException, CarbonException;
 
   /**
    * Executor a SQL statement

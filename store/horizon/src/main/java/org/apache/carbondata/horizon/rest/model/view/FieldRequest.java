@@ -108,7 +108,7 @@ public class FieldRequest {
     field.setPrecision(precision);
     field.setScale(scale);
     field.setColumnComment(comment);
-    field.setChildren(new LinkedList<StructField>());
+    field.setChildren(new LinkedList<Field>());
     return field;
   }
 }

@@ -20,11 +20,11 @@ package org.apache.carbondata.store.impl.worker;
 import java.io.IOException;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.sdk.store.service.DataService;
-import org.apache.carbondata.sdk.store.service.model.BaseResponse;
-import org.apache.carbondata.sdk.store.service.model.LoadDataRequest;
-import org.apache.carbondata.sdk.store.service.model.ScanRequest;
-import org.apache.carbondata.sdk.store.service.model.ScanResponse;
+import org.apache.carbondata.store.impl.service.DataService;
+import org.apache.carbondata.store.impl.service.model.BaseResponse;
+import org.apache.carbondata.store.impl.service.model.LoadDataRequest;
+import org.apache.carbondata.store.impl.service.model.ScanRequest;
+import org.apache.carbondata.store.impl.service.model.ScanResponse;
 
 import org.apache.hadoop.ipc.ProtocolSignature;
 

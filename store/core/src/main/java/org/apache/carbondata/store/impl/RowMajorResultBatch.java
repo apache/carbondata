@@ -15,40 +15,35 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.rpc.model;
+package org.apache.carbondata.store.impl;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.Serializable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 
-import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.store.devapi.ResultBatch;
 
-import org.apache.hadoop.io.Writable;
+public class RowMajorResultBatch<T> implements ResultBatch<T> {
 
-@InterfaceAudience.Internal
-public class RegisterWorkerResponse implements Serializable, Writable {
+  private Iterator<T> iterator;
 
-  private String workerId;
-
-  public RegisterWorkerResponse() {
-  }
-
-  public RegisterWorkerResponse(String workerId) {
-    this.workerId = workerId;
-  }
-
-  public String getWorkerId() {
-    return workerId;
+  RowMajorResultBatch(List<T> rows) {
+    Objects.requireNonNull(rows);
+    this.iterator = rows.iterator();
   }
 
   @Override
-  public void write(DataOutput out) throws IOException {
-    out.writeUTF(workerId);
+  public boolean isColumnar() {
+    return false;
   }
 
   @Override
-  public void readFields(DataInput in) throws IOException {
-    workerId = in.readUTF();
+  public boolean hasNext() {
+    return iterator.hasNext();
+  }
+
+  @Override
+  public T next() {
+    return iterator.next();
   }
 }

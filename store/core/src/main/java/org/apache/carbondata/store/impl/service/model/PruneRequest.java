@@ -15,21 +15,39 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store;
+package org.apache.carbondata.store.impl.service.model;
 
-import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.annotations.InterfaceStability;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.io.Serializable;
 
-@InterfaceAudience.User
-@InterfaceStability.Unstable
-public interface TransactionalOperation {
-  /**
-   * commit the transaction when operation succeed
-   */
-  void commit();
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Writable;
 
-  /**
-   * close the transaction when operation failed
-   */
-  void close();
+public class PruneRequest implements Serializable, Writable {
+
+  private Configuration hadoopConf;
+
+  public PruneRequest() {
+  }
+
+  public PruneRequest(Configuration hadoopConf) {
+    this.hadoopConf = hadoopConf;
+  }
+
+  public Configuration getHadoopConf() {
+    return hadoopConf;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    hadoopConf.write(out);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    this.hadoopConf = new Configuration();
+    this.hadoopConf.readFields(in);
+  }
 }

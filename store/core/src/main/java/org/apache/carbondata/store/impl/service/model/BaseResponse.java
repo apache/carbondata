@@ -15,59 +15,55 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store;
+package org.apache.carbondata.store.impl.service.model;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.hadoop.CarbonInputSplit;
 
-/**
- * It contains a block to scan, and a destination worker who should scan it
- */
+import org.apache.hadoop.io.Writable;
+
 @InterfaceAudience.Internal
-public class BlockScanUnit implements ScanUnit {
+public class BaseResponse implements Serializable, Writable {
+  private int status;
+  private String message;
 
-  // the data block to scan
-  private CarbonInputSplit inputSplit;
-
-  // the worker who should scan this unit
-  private Schedulable schedulable;
-
-  public BlockScanUnit() {
+  public BaseResponse() {
   }
 
-  public BlockScanUnit(CarbonInputSplit inputSplit, Schedulable schedulable) {
-    this.inputSplit = inputSplit;
-    this.schedulable = schedulable;
+  public BaseResponse(int status, String message) {
+    this.status = status;
+    this.message = message;
   }
 
-  public CarbonInputSplit getInputSplit() {
-    return inputSplit;
+  public int getStatus() {
+    return status;
   }
 
-  public Schedulable getSchedulable() {
-    return schedulable;
+  public void setStatus(int status) {
+    this.status = status;
   }
 
-  @Override
-  public String[] preferredLocations() {
-    return inputSplit.preferredLocations();
+  public String getMessage() {
+    return message;
+  }
+
+  public void setMessage(String message) {
+    this.message = message;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    inputSplit.write(out);
-    schedulable.write(out);
+    out.writeInt(status);
+    out.writeUTF(message);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    inputSplit = new CarbonInputSplit();
-    inputSplit.readFields(in);
-    schedulable = new Schedulable();
-    schedulable.readFields(in);
+    status = in.readInt();
+    message = in.readUTF();
   }
 }

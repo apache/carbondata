@@ -31,7 +31,7 @@ import org.apache.carbondata.horizon.rest.model.view.DropTableRequest;
 import org.apache.carbondata.horizon.rest.model.view.LoadRequest;
 import org.apache.carbondata.horizon.rest.model.view.SelectRequest;
 import org.apache.carbondata.horizon.rest.model.view.SelectResponse;
-import org.apache.carbondata.store.api.exception.StoreException;
+import org.apache.carbondata.sdk.store.exception.CarbonException;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
@@ -52,7 +52,7 @@ public class SimpleHorizonClient implements HorizonClient {
   }
 
   @Override
-  public void createTable(CreateTableRequest create) throws IOException, StoreException {
+  public void createTable(CreateTableRequest create) throws CarbonException {
     Objects.requireNonNull(create);
     restTemplate.postForEntity(serviceUri + "/table/create", create, String.class);
   }
@@ -64,18 +64,18 @@ public class SimpleHorizonClient implements HorizonClient {
   }
 
   @Override
-  public void loadData(LoadRequest load) throws IOException, StoreException {
+  public void loadData(LoadRequest load) throws IOException, CarbonException {
     Objects.requireNonNull(load);
     restTemplate.postForEntity(serviceUri + "/table/load", load, String.class);
   }
 
   @Override
-  public List<CarbonRow> select(SelectRequest select) throws IOException, StoreException {
+  public List<CarbonRow> select(SelectRequest select) throws IOException, CarbonException {
     Objects.requireNonNull(select);
     ResponseEntity<SelectResponse> response =
         restTemplate.postForEntity(serviceUri + "/table/select", select, SelectResponse.class);
-    Object[][] rows = Objects.requireNonNull(response.getBody()).getRows();
-    List<CarbonRow> output = new ArrayList<>(rows.length);
+    List<Object[]> rows = Objects.requireNonNull(response.getBody()).getRows();
+    List<CarbonRow> output = new ArrayList<>(rows.size());
     for (Object[] row : rows) {
       output.add(new CarbonRow(row));
     }

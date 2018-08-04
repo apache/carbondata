@@ -15,20 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store;
+package org.apache.carbondata.store.devapi;
 
-import java.io.IOException;
-import java.util.List;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 
-import org.apache.carbondata.core.datastore.row.CarbonRow;
-
-public interface SqlOperation {
-
-  /**
-   * Executor a SQL statement
-   * @param sqlString SQL statement
-   * @return matched rows
-   * @throws IOException if network or disk IO error occurs
-   */
-  List<CarbonRow> sql(String sqlString) throws IOException;
+@InterfaceAudience.User
+@InterfaceStability.Unstable
+public class ScanOption {
+  public static final String BATCH_SIZE = "batchSize";
+  public static final String ENABLE_ROW_MAJOR = "rowMajor";
 }

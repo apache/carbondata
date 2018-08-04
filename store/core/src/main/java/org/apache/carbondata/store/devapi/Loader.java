@@ -15,33 +15,35 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store.service;
+package org.apache.carbondata.store.devapi;
 
+import java.io.Serializable;
+import java.util.Iterator;
+
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.metadata.datatype.StructType;
+import org.apache.carbondata.sdk.store.Row;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
-import org.apache.carbondata.sdk.store.service.model.BaseResponse;
-import org.apache.carbondata.sdk.store.service.model.LoadDataRequest;
-import org.apache.carbondata.sdk.store.service.model.ScanRequest;
-import org.apache.carbondata.sdk.store.service.model.ScanResponse;
 
-import org.apache.hadoop.ipc.VersionedProtocol;
-
-public interface DataService extends VersionedProtocol {
-
-  long versionID = 1L;
-
+/**
+ * A Loader is used to load data from files to the table
+ */
+@InterfaceAudience.User
+@InterfaceStability.Unstable
+public interface Loader extends TransactionalOperation, Serializable {
   /**
-   * Load data into a Table
-   * @param load descriptor for load operation
+   * Trigger the load operation
    * @throws CarbonException if any error occurs
    */
-  BaseResponse loadData(LoadDataRequest load) throws CarbonException;
+  void load() throws CarbonException;
 
   /**
-   * Scan a Table and return matched rows
-   * @param scan descriptor for scan operation, including required column, filter, etc
-   * @return matched rows
+   * Append a batch of rows.
+   * @param rows rows to append
+   * @param schema schema of the input row
    * @throws CarbonException if any error occurs
    */
-  ScanResponse scan(ScanRequest scan) throws CarbonException;
+  void append(Iterator<Row> rows, StructType schema) throws CarbonException;
 
 }

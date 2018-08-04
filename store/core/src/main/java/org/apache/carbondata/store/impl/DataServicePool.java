@@ -15,39 +15,27 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store.service.model;
+package org.apache.carbondata.store.impl;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
-import java.io.Serializable;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.Writable;
+import org.apache.carbondata.store.impl.service.DataService;
+import org.apache.carbondata.store.impl.service.ServiceFactory;
 
-public class PruneRequest implements Serializable, Writable {
+class DataServicePool {
+  private static final Map<Schedulable, DataService> dataServicePool = new ConcurrentHashMap<>();
 
-  private Configuration hadoopConf;
-
-  public PruneRequest() {
+  private DataServicePool() {
   }
 
-  public PruneRequest(Configuration hadoopConf) {
-    this.hadoopConf = hadoopConf;
+  static DataService getOrCreateDataService(Schedulable schedulable) throws IOException {
+    DataService service = dataServicePool.getOrDefault(
+        schedulable,
+        ServiceFactory.createDataService(schedulable.getAddress(), schedulable.getPort()));
+    dataServicePool.putIfAbsent(schedulable, service);
+    return service;
   }
 
-  public Configuration getHadoopConf() {
-    return hadoopConf;
-  }
-
-  @Override
-  public void write(DataOutput out) throws IOException {
-    hadoopConf.write(out);
-  }
-
-  @Override
-  public void readFields(DataInput in) throws IOException {
-    this.hadoopConf = new Configuration();
-    this.hadoopConf.readFields(in);
-  }
 }

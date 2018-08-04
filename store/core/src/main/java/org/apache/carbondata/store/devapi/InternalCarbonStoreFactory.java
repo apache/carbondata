@@ -15,14 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store;
+package org.apache.carbondata.store.devapi;
 
-import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.annotations.InterfaceStability;
+import java.io.IOException;
 
-@InterfaceAudience.User
-@InterfaceStability.Unstable
-public class ScanOption {
-  public static final String BATCH_SIZE = "batchSize";
-  public static final String ENABLE_ROW_MAJOR = "rowMajor";
+import org.apache.carbondata.sdk.store.conf.StoreConf;
+
+public class InternalCarbonStoreFactory {
+
+  public static InternalCarbonStore getStore(StoreConf conf) throws IOException {
+    return new InternalCarbonStoreImpl(conf);
+  }
+
 }

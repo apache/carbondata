@@ -18,18 +18,18 @@
 package org.apache.carbondata.horizon.rest.model.validate;
 
 import org.apache.carbondata.horizon.rest.model.view.SqlRequest;
-import org.apache.carbondata.store.api.exception.StoreException;
+import org.apache.carbondata.sdk.store.exception.CarbonException;
 
 import org.apache.commons.lang.StringUtils;
 
 public class RequestValidator {
 
-  public static void validateSql(SqlRequest request) throws StoreException {
+  public static void validateSql(SqlRequest request) throws CarbonException {
     if (request == null) {
-      throw new StoreException("Select should not be null");
+      throw new CarbonException("Select should not be null");
     }
     if (StringUtils.isEmpty(request.getSqlStatement())) {
-      throw new StoreException("sql statement is invalid");
+      throw new CarbonException("sql statement is invalid");
     }
   }
 }

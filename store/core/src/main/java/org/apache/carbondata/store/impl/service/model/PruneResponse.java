@@ -15,47 +15,53 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.rpc.model;
+package org.apache.carbondata.store.impl.service.model;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.store.devapi.ScanUnit;
+import org.apache.carbondata.store.impl.BlockScanUnit;
 
 import org.apache.hadoop.io.Writable;
 
 @InterfaceAudience.Internal
-public class ShutdownResponse implements Serializable, Writable {
-  private int status;
-  private String message;
+public class PruneResponse implements Serializable, Writable {
 
-  public ShutdownResponse() {
+  private List<ScanUnit> scanUnits;
+
+  public PruneResponse() {
   }
 
-  public ShutdownResponse(int status, String message) {
-    this.status = status;
-    this.message = message;
+  public PruneResponse(List<ScanUnit> scanUnits) {
+    this.scanUnits = scanUnits;
   }
 
-  public int getStatus() {
-    return status;
-  }
-
-  public String getMessage() {
-    return message;
+  public List<ScanUnit> getScanUnits() {
+    return scanUnits;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    out.writeInt(status);
-    out.writeUTF(message);
+    out.writeInt(scanUnits.size());
+    for (ScanUnit scanUnit : scanUnits) {
+      scanUnit.write(out);
+    }
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    status = in.readInt();
-    message = in.readUTF();
+    int size = in.readInt();
+    scanUnits = new ArrayList<>(size);
+    for (int i = 0; i < size; i++) {
+      BlockScanUnit scanUnit = new BlockScanUnit();
+      scanUnit.readFields(in);
+      scanUnits.add(scanUnit);
+    }
   }
 }

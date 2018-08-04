@@ -32,7 +32,7 @@ import org.apache.carbondata.horizon.rest.model.view.LoadRequest;
 import org.apache.carbondata.horizon.rest.model.view.SelectRequest;
 import org.apache.carbondata.horizon.rest.model.view.SelectResponse;
 import org.apache.carbondata.store.api.conf.StoreConf;
-import org.apache.carbondata.store.api.exception.StoreException;
+import org.apache.carbondata.store.api.exception.CarbonException;
 import org.apache.carbondata.store.impl.worker.Worker;
 import org.apache.carbondata.sdk.store.util.StoreUtil;
 
@@ -109,13 +109,13 @@ public class HorizonTest {
     SelectRequest select = createSelectRequest(5, null, "intField", "stringField");
     SelectResponse result =
         restTemplate.postForObject(serviceUri + "/table/select", select, SelectResponse.class);
-    Assert.assertEquals(5, result.getRows().length);
+    Assert.assertEquals(5, result.getRows().size());
 
     // select row with filter
     SelectRequest filter = createSelectRequest(5, "intField = 11", "intField", "stringField");
     SelectResponse filterResult =
         restTemplate.postForObject(serviceUri + "/table/select", filter, SelectResponse.class);
-    Assert.assertEquals(1, filterResult.getRows().length);
+    Assert.assertEquals(1, filterResult.getRows().size());
 
     request = createDropTableRequest();
     response = restTemplate.postForObject(serviceUri + "/table/drop", request, String.class);
@@ -173,7 +173,7 @@ public class HorizonTest {
   }
 
   @Test
-  public void testHorizonClient() throws IOException, StoreException {
+  public void testHorizonClient() throws IOException, CarbonException {
     HorizonClient client = new SimpleHorizonClient(serviceUri);
     DropTableRequest drop = createDropTableRequest();
     client.dropTable(drop);

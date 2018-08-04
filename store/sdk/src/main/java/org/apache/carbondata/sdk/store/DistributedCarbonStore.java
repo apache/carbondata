@@ -18,14 +18,15 @@
 package org.apache.carbondata.sdk.store;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.metadata.schema.table.TableInfo;
+import org.apache.carbondata.core.metadata.datatype.StructType;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
 import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
@@ -38,21 +39,17 @@ import org.apache.carbondata.sdk.store.service.StoreService;
 /**
  * A CarbonStore that leverage multiple servers via RPC calls (Master and Workers)
  */
+@InterfaceAudience.User
 public class DistributedCarbonStore implements CarbonStore {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DistributedCarbonStore.class.getCanonicalName());
 
-  private static final long versionID = 1L;
-
-  private StoreService storeService;
-  private StoreConf storeConf;
-  private Map<TableIdentifier, TableInfo> tableCache = new ConcurrentHashMap<>();
+  protected StoreService storeService;
 
   public DistributedCarbonStore(StoreConf conf) throws IOException {
     this.storeService =
         ServiceFactory.createStoreService(conf.masterHost(), conf.storeServicePort());
-    this.storeConf = conf;
   }
 
   @Override
@@ -80,8 +77,8 @@ public class DistributedCarbonStore implements CarbonStore {
 
   @Override
   public TableDescriptor getDescriptor(TableIdentifier table) throws CarbonException {
-    TableInfo tableInfo = storeService.getTable(table);
-    // TODO: create TableDescriptor from tableInfo
+    CarbonTable carbonTable = storeService.getTable(table);
+    // TODO: create TableDescriptor from carbonTable
     return null;
   }
 
@@ -96,7 +93,12 @@ public class DistributedCarbonStore implements CarbonStore {
   }
 
   @Override
-  public Loader newLoader(LoadDescriptor load) throws CarbonException {
+  public void upsert(Iterator<KeyedRow> row, StructType schema) throws CarbonException {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void delete(Iterator<PrimaryKey> keys) throws CarbonException {
     throw new UnsupportedOperationException();
   }
 
@@ -111,14 +113,14 @@ public class DistributedCarbonStore implements CarbonStore {
   }
 
   @Override
-  public Scanner newScanner(TableIdentifier identifier) throws CarbonException {
-    TableInfo tableInfo = tableCache.getOrDefault(identifier, storeService.getTable(identifier));
-    tableCache.putIfAbsent(identifier, tableInfo);
-    try {
-      return new RowScanner(storeConf, tableInfo);
-    } catch (IOException e) {
-      throw new CarbonException(e);
-    }
+  public Row lookup(PrimaryKey key) throws CarbonException {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public List<Row> lookup(TableIdentifier tableIdentifier, String filterExpression)
+      throws CarbonException {
+    throw new UnsupportedOperationException();
   }
 
   @Override

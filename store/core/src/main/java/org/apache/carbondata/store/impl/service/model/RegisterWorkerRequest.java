@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.rpc.model;
+package org.apache.carbondata.store.impl.service.model;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -27,27 +27,47 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.hadoop.io.Writable;
 
 @InterfaceAudience.Internal
-public class ShutdownRequest implements Serializable, Writable {
-  private String reason;
+public class RegisterWorkerRequest implements Serializable, Writable {
+  private String hostAddress;
+  private int port;
+  private int cores;
 
-  public ShutdownRequest() {
+  public RegisterWorkerRequest() {
   }
 
-  public ShutdownRequest(String reason) {
-    this.reason = reason;
+  public RegisterWorkerRequest(String hostAddress, int port, int cores) {
+    this.hostAddress = hostAddress;
+    this.port = port;
+    this.cores = cores;
   }
 
-  public String getReason() {
-    return reason;
+  public String getHostAddress() {
+    return hostAddress;
+  }
+
+  public int getPort() {
+    return port;
+  }
+
+  public int getCores() {
+    return cores;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    out.writeUTF(reason);
+    out.writeUTF(hostAddress);
+    out.writeInt(port);
+    out.writeInt(cores);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    reason = in.readUTF();
+    hostAddress = in.readUTF();
+    port = in.readInt();
+    cores = in.readInt();
+  }
+
+  @Override public String toString() {
+    return "RegisterWorkerRequest{" + "hostAddress='" + hostAddress + '\'' + ", port=" + port + '}';
   }
 }

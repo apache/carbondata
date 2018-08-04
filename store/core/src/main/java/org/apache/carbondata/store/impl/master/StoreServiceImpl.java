@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
 import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
@@ -57,8 +58,9 @@ public class StoreServiceImpl implements StoreService {
   }
 
   @Override
-  public TableInfo getTable(TableIdentifier identifier) throws CarbonException {
-    return tableManager.getTable(identifier);
+  public CarbonTable getTable(TableIdentifier identifier) throws CarbonException {
+    TableInfo tableInfo = tableManager.getTable(identifier);
+    return CarbonTable.buildFromTableInfo(tableInfo);
   }
 
   @Override

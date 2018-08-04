@@ -15,33 +15,40 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store;
+package org.apache.carbondata.store.impl.service.model;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.io.Serializable;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.annotations.InterfaceStability;
 
-@InterfaceAudience.User
-@InterfaceStability.Unstable
-public interface ResultBatch<T> {
+import org.apache.hadoop.io.Writable;
 
-  /**
-   * Return true if the result is returned in columnar batch, otherwise is row by row.
-   * By default, it is columnar batch.
-   */
-  default boolean isColumnar() {
-    return true;
+@InterfaceAudience.Internal
+public class RegisterWorkerResponse implements Serializable, Writable {
+
+  private String workerId;
+
+  public RegisterWorkerResponse() {
   }
 
-  /**
-   * Return true if there is more elements in this batch.
-   */
-  boolean hasNext();
+  public RegisterWorkerResponse(String workerId) {
+    this.workerId = workerId;
+  }
 
-  /**
-   * Return next item.
-   * If {@link #isColumnar()} return true, there is only one element in this batch
-   * which is {@link ColumnarBatch}, otherwise, this batch return row by row, caller
-   * should call next() until no element left.
-   */
-  T next();
+  public String getWorkerId() {
+    return workerId;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    out.writeUTF(workerId);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    workerId = in.readUTF();
+  }
 }

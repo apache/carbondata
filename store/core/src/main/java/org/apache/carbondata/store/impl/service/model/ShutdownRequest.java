@@ -15,18 +15,39 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store.service;
+package org.apache.carbondata.store.impl.service.model;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.sdk.store.service.model.PruneRequest;
-import org.apache.carbondata.sdk.store.service.model.PruneResponse;
 
-import org.apache.hadoop.ipc.VersionedProtocol;
+import org.apache.hadoop.io.Writable;
 
 @InterfaceAudience.Internal
-public interface PruneService extends VersionedProtocol {
-  long versionID = 1L;
-  PruneResponse prune(PruneRequest request) throws IOException;
+public class ShutdownRequest implements Serializable, Writable {
+  private String reason;
+
+  public ShutdownRequest() {
+  }
+
+  public ShutdownRequest(String reason) {
+    this.reason = reason;
+  }
+
+  public String getReason() {
+    return reason;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    out.writeUTF(reason);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    reason = in.readUTF();
+  }
 }

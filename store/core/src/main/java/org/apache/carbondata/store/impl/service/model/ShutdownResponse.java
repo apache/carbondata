@@ -15,46 +15,47 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store.service.model;
+package org.apache.carbondata.store.impl.service.model;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 
-import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
-import org.apache.carbondata.sdk.store.util.StoreUtil;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableUtils;
 
-public class LoadDataRequest implements Serializable, Writable {
+@InterfaceAudience.Internal
+public class ShutdownResponse implements Serializable, Writable {
+  private int status;
+  private String message;
 
-  private CarbonLoadModel model;
-
-  public LoadDataRequest() {
+  public ShutdownResponse() {
   }
 
-  public LoadDataRequest(CarbonLoadModel model) {
-    this.model = model;
+  public ShutdownResponse(int status, String message) {
+    this.status = status;
+    this.message = message;
   }
 
-  public CarbonLoadModel getModel() {
-    return model;
+  public int getStatus() {
+    return status;
   }
 
-  public void setModel(CarbonLoadModel model) {
-    this.model = model;
+  public String getMessage() {
+    return message;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    WritableUtils.writeCompressedByteArray(out, StoreUtil.serialize(model));
+    out.writeInt(status);
+    out.writeUTF(message);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    byte[] bytes = WritableUtils.readCompressedByteArray(in);
-    model = (CarbonLoadModel) StoreUtil.deserialize(bytes);
+    status = in.readInt();
+    message = in.readUTF();
   }
 }

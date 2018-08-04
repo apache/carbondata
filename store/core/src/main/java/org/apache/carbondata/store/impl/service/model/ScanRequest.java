@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store.service.model;
+package org.apache.carbondata.store.impl.service.model;
 
 import java.io.DataInput;
 import java.io.DataOutput;

@@ -15,34 +15,33 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store;
-
-import java.util.Iterator;
+package org.apache.carbondata.store.devapi;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
-import org.apache.carbondata.core.metadata.datatype.StructType;
-import org.apache.carbondata.sdk.store.exception.CarbonException;
 
-/**
- * A Mutator is used to perform insert, update, delete operation on the table
- */
 @InterfaceAudience.User
 @InterfaceStability.Unstable
-public interface Mutator extends TransactionalOperation {
+public interface ResultBatch<T> {
 
   /**
-   * Insert a batch of rows if key is not exist, otherwise update the row
-   * @param row rows to be upsert
-   * @param schema schema of the input row (fields without the primary key)
-   * @throws CarbonException if any error occurs
+   * Return true if the result is returned in columnar batch, otherwise is row by row.
+   * By default, it is columnar batch.
    */
-  void upsert(Iterator<KeyedRow> row, StructType schema) throws CarbonException;
+  default boolean isColumnar() {
+    return true;
+  }
 
   /**
-   * Delete a batch of rows
-   * @param keys keys to be deleted
-   * @throws CarbonException if any error occurs
+   * Return true if there is more elements in this batch.
    */
-  void delete(Iterator<PrimaryKey> keys) throws CarbonException;
+  boolean hasNext();
+
+  /**
+   * Return next item.
+   * If {@link #isColumnar()} return true, there is only one element in this batch
+   * which is {@link ColumnarBatch}, otherwise, this batch return row by row, caller
+   * should call next() until no element left.
+   */
+  T next();
 }

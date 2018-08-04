@@ -63,7 +63,7 @@ import org.apache.carbondata.sdk.store.conf.StoreConf;
 import org.apache.carbondata.sdk.store.descriptor.TableDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
-import org.apache.carbondata.sdk.store.service.model.ScanRequest;
+import org.apache.carbondata.store.impl.service.model.ScanRequest;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;

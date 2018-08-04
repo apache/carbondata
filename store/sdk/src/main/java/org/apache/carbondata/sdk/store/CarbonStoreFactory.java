@@ -40,7 +40,7 @@ public class CarbonStoreFactory {
   private CarbonStoreFactory() {
   }
 
-  public static CarbonStore getRemoteStore(String storeName, StoreConf storeConf)
+  public static CarbonStore getDistributedStore(String storeName, StoreConf storeConf)
       throws CarbonException {
     if (remoteStore.containsKey(storeName)) {
       return remoteStore.get(storeName);

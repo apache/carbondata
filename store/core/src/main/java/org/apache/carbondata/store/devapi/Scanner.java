@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store;
+package org.apache.carbondata.store.devapi;
 
 import java.io.Serializable;
 import java.util.Iterator;

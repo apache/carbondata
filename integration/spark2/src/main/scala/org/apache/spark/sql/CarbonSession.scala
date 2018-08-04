@@ -205,7 +205,7 @@ class CarbonSession(@transient val sc: SparkContext,
       storeConf.conf(StoreConf.WORKER_PORT, CarbonProperties.getSearchWorkerPort)
       storeConf.conf(StoreConf.WORKER_CORE_NUM, 2)
 
-      store = CarbonStoreFactory.getRemoteStore("GlobalStore", storeConf)
+      store = CarbonStoreFactory.getDistributedStore("GlobalStore", storeConf)
       CarbonProperties.enableSearchMode(true)
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")

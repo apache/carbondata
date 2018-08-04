@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store;
+package org.apache.carbondata.store.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,38 +29,44 @@ import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.hadoop.api.CarbonInputFormat;
+import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
 import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
-import org.apache.carbondata.sdk.store.service.DataService;
-import org.apache.carbondata.sdk.store.service.PruneService;
-import org.apache.carbondata.sdk.store.service.ServiceFactory;
-import org.apache.carbondata.sdk.store.service.model.PruneRequest;
-import org.apache.carbondata.sdk.store.service.model.PruneResponse;
-import org.apache.carbondata.sdk.store.service.model.ScanRequest;
-import org.apache.carbondata.sdk.store.service.model.ScanResponse;
+import org.apache.carbondata.store.devapi.ResultBatch;
+import org.apache.carbondata.store.devapi.ScanUnit;
+import org.apache.carbondata.store.devapi.Scanner;
+import org.apache.carbondata.store.impl.service.DataService;
+import org.apache.carbondata.store.impl.service.PruneService;
+import org.apache.carbondata.store.impl.service.ServiceFactory;
+import org.apache.carbondata.store.impl.service.model.PruneRequest;
+import org.apache.carbondata.store.impl.service.model.PruneResponse;
+import org.apache.carbondata.store.impl.service.model.ScanRequest;
+import org.apache.carbondata.store.impl.service.model.ScanResponse;
 
 import org.apache.hadoop.conf.Configuration;
 
-class RowScanner implements Scanner<CarbonRow> {
+public class RowScanner<T> implements Scanner<T> {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(RowScanner.class.getCanonicalName());
 
   private TableInfo tableInfo;
   private String pruneServiceHost;
   private int pruneServiePort;
+  private CarbonReadSupport<T> readSupport;
 
-  RowScanner(StoreConf conf, TableInfo tableInfo) throws IOException {
-    this.tableInfo = tableInfo;
+  public RowScanner(StoreConf conf, CarbonTable carbonTable, CarbonReadSupport<T> readSupport) {
+    this.tableInfo = carbonTable.getTableInfo();
     this.pruneServiceHost = conf.masterHost();
     this.pruneServiePort = conf.pruneServicePort();
+    this.readSupport = readSupport;
   }
 
   @Override
@@ -82,7 +88,7 @@ class RowScanner implements Scanner<CarbonRow> {
   }
 
   @Override
-  public Iterator<? extends ResultBatch<CarbonRow>> scan(
+  public Iterator<? extends ResultBatch<T>> scan(
       ScanUnit input,
       ScanDescriptor scanDescriptor,
       Map<String, String> option) throws CarbonException {
@@ -100,11 +106,11 @@ class RowScanner implements Scanner<CarbonRow> {
       DataService dataService =
           DataServicePool.getOrCreateDataService(((BlockScanUnit) input).getSchedulable());
       ScanResponse response = dataService.scan(request);
-      List<CarbonRow> rows = Arrays.stream(response.getRows())
-          .map(CarbonRow::new)
+      List<T> rows = Arrays.stream(response.getRows())
+          .map(row -> readSupport.readRow(row))
           .collect(Collectors.toList());
 
-      return Collections.singletonList(new RowMajorResultBatch(rows)).iterator();
+      return Collections.singletonList(new RowMajorResultBatch<T>(rows)).iterator();
     } catch (IOException e) {
       throw new CarbonException(e);
     }

@@ -15,59 +15,86 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.rpc.model;
+package org.apache.carbondata.store.impl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 
 import org.apache.hadoop.io.Writable;
 
 @InterfaceAudience.Internal
-public class RegisterWorkerRequest implements Serializable, Writable {
-  private String hostAddress;
+public class Schedulable implements Writable {
+
+  private String id;
+  private String address;
   private int port;
   private int cores;
+  public AtomicInteger workload;
 
-  public RegisterWorkerRequest() {
+  public Schedulable() {
   }
 
-  public RegisterWorkerRequest(String hostAddress, int port, int cores) {
-    this.hostAddress = hostAddress;
+  public Schedulable(String id, String address, int port, int cores) {
+    this.id = id;
+    this.address = address;
     this.port = port;
     this.cores = cores;
+    this.workload = new AtomicInteger();
   }
 
-  public String getHostAddress() {
-    return hostAddress;
+  public String getId() {
+    return id;
+  }
+
+  public void setId(String id) {
+    this.id = id;
+  }
+
+  public String getAddress() {
+    return address;
+  }
+
+  public void setAddress(String address) {
+    this.address = address;
   }
 
   public int getPort() {
     return port;
   }
 
+  public void setPort(int port) {
+    this.port = port;
+  }
+
   public int getCores() {
     return cores;
   }
 
+  @Override public String toString() {
+    return "Schedulable{" + "id='" + id + '\'' + ", address='" + address + '\'' + ", port=" + port
+        + '}';
+  }
+
   @Override
   public void write(DataOutput out) throws IOException {
-    out.writeUTF(hostAddress);
+    out.writeUTF(id);
+    out.writeUTF(address);
     out.writeInt(port);
     out.writeInt(cores);
+    // We are not writing workload since it is only useful for
+    // Scheduler inside the Master. Client of the Master does
+    // not need it
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    hostAddress = in.readUTF();
+    id = in.readUTF();
+    address = in.readUTF();
     port = in.readInt();
     cores = in.readInt();
-  }
-
-  @Override public String toString() {
-    return "RegisterWorkerRequest{" + "hostAddress='" + hostAddress + '\'' + ", port=" + port + '}';
   }
 }

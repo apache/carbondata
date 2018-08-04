@@ -19,6 +19,7 @@ package org.apache.carbondata.store.impl;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -30,6 +31,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
@@ -42,15 +44,16 @@ import org.apache.carbondata.processing.loading.csvinput.CSVRecordReaderIterator
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModelBuilder;
 import org.apache.carbondata.sdk.store.CarbonStore;
-import org.apache.carbondata.sdk.store.Loader;
-import org.apache.carbondata.sdk.store.Scanner;
+import org.apache.carbondata.sdk.store.KeyedRow;
+import org.apache.carbondata.sdk.store.PrimaryKey;
+import org.apache.carbondata.sdk.store.Row;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
 import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
-import org.apache.carbondata.sdk.store.service.model.ScanRequest;
 import org.apache.carbondata.sdk.store.util.StoreUtil;
+import org.apache.carbondata.store.impl.service.model.ScanRequest;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -126,7 +129,12 @@ public class LocalCarbonStore extends TableManager implements CarbonStore {
   }
 
   @Override
-  public Loader newLoader(LoadDescriptor load) throws CarbonException {
+  public void upsert(Iterator<KeyedRow> row, StructType schema) throws CarbonException {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void delete(Iterator<PrimaryKey> keys) throws CarbonException {
     throw new UnsupportedOperationException();
   }
 
@@ -181,7 +189,13 @@ public class LocalCarbonStore extends TableManager implements CarbonStore {
   }
 
   @Override
-  public Scanner newScanner(TableIdentifier tableIdentifier) throws CarbonException {
+  public Row lookup(PrimaryKey key) throws CarbonException {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public List<Row> lookup(TableIdentifier tableIdentifier, String filterExpression)
+      throws CarbonException {
     throw new UnsupportedOperationException();
   }
 

@@ -15,53 +15,46 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store.service.model;
+package org.apache.carbondata.store.impl.service.model;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 
-import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.sdk.store.BlockScanUnit;
-import org.apache.carbondata.sdk.store.ScanUnit;
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
+import org.apache.carbondata.sdk.store.util.StoreUtil;
 
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableUtils;
 
-@InterfaceAudience.Internal
-public class PruneResponse implements Serializable, Writable {
+public class LoadDataRequest implements Serializable, Writable {
 
-  private List<ScanUnit> scanUnits;
+  private CarbonLoadModel model;
 
-  public PruneResponse() {
+  public LoadDataRequest() {
   }
 
-  public PruneResponse(List<ScanUnit> scanUnits) {
-    this.scanUnits = scanUnits;
+  public LoadDataRequest(CarbonLoadModel model) {
+    this.model = model;
   }
 
-  public List<ScanUnit> getScanUnits() {
-    return scanUnits;
+  public CarbonLoadModel getModel() {
+    return model;
+  }
+
+  public void setModel(CarbonLoadModel model) {
+    this.model = model;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    out.writeInt(scanUnits.size());
-    for (ScanUnit scanUnit : scanUnits) {
-      scanUnit.write(out);
-    }
+    WritableUtils.writeCompressedByteArray(out, StoreUtil.serialize(model));
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    int size = in.readInt();
-    scanUnits = new ArrayList<>(size);
-    for (int i = 0; i < size; i++) {
-      BlockScanUnit scanUnit = new BlockScanUnit();
-      scanUnit.readFields(in);
-      scanUnits.add(scanUnit);
-    }
+    byte[] bytes = WritableUtils.readCompressedByteArray(in);
+    model = (CarbonLoadModel) StoreUtil.deserialize(bytes);
   }
 }

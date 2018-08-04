@@ -18,11 +18,13 @@
 package org.apache.carbondata.sdk.store;
 
 import java.io.Closeable;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableDescriptor;
@@ -89,14 +91,6 @@ public interface CarbonStore extends Closeable {
   void loadData(LoadDescriptor load) throws CarbonException;
 
   /**
-   * Return a new Loader that can be used to load data in distributed compute framework
-   * @param load descriptor for load operation
-   * @return a new Loader
-   * @throws CarbonException if any error occurs
-   */
-  Loader newLoader(LoadDescriptor load) throws CarbonException;
-
-  /**
    * Return true if this table has primary key defined when create table using
    * {@link #createTable(TableDescriptor)}
    *
@@ -110,14 +104,19 @@ public interface CarbonStore extends Closeable {
   }
 
   /**
-   * Return a new mutator that supports realtime insert, upsert and delete using primary key
-   *
-   * @return a new mutator
+   * Insert a batch of rows if key is not exist, otherwise update the row
+   * @param row rows to be upsert
+   * @param schema schema of the input row (fields without the primary key)
    * @throws CarbonException if any error occurs
    */
-  default Mutator newMutator(TableIdentifier tableIdentifier) throws CarbonException {
-    throw new UnsupportedOperationException();
-  }
+  void upsert(Iterator<KeyedRow> row, StructType schema) throws CarbonException;
+
+  /**
+   * Delete a batch of rows
+   * @param keys keys to be deleted
+   * @throws CarbonException if any error occurs
+   */
+  void delete(Iterator<PrimaryKey> keys) throws CarbonException;
 
 
   ////////////////////////////////////////////////////////////////////
@@ -134,21 +133,20 @@ public interface CarbonStore extends Closeable {
   List<CarbonRow> scan(ScanDescriptor select) throws CarbonException;
 
   /**
-   * Return a new Scanner that can be used in for parallel scan
-   *
-   * @param tableIdentifier table to scan
-   * @return a new Scanner
+   * Lookup and return a row with specified primary key
+   * @param key key to lookup
+   * @return matched row for the specified key
    * @throws CarbonException if any error occurs
    */
-  Scanner newScanner(TableIdentifier tableIdentifier) throws CarbonException;
+  Row lookup(PrimaryKey key) throws CarbonException;
 
   /**
-   * Return a new Fetch that can be used for lookup operation
+   * Lookup by filter expression and return a list of matched row
    *
-   * @return a new Fetcher
+   * @param tableIdentifier table identifier
+   * @param filterExpression filter expression, like "col3 = 1"
+   * @return matched row for the specified filter
    * @throws CarbonException if any error occurs
    */
-  default Fetcher newFetcher(TableIdentifier tableIdentifier) throws CarbonException {
-    throw new UnsupportedOperationException();
-  }
+  List<Row> lookup(TableIdentifier tableIdentifier, String filterExpression) throws CarbonException;
 }

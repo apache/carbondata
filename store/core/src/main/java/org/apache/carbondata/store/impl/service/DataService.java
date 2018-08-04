@@ -15,23 +15,33 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store;
+package org.apache.carbondata.store.impl.service;
 
-import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
+import org.apache.carbondata.store.impl.service.model.BaseResponse;
+import org.apache.carbondata.store.impl.service.model.LoadDataRequest;
+import org.apache.carbondata.store.impl.service.model.ScanRequest;
+import org.apache.carbondata.store.impl.service.model.ScanResponse;
 
-/**
- * A Fetcher is used to lookup row by primary key
- */
-@InterfaceAudience.User
-@InterfaceStability.Unstable
-public interface Fetcher {
+import org.apache.hadoop.ipc.VersionedProtocol;
+
+public interface DataService extends VersionedProtocol {
+
+  long versionID = 1L;
+
   /**
-   * Lookup and return a row with specified primary key
-   * @param key key to lookup
-   * @return matched row for the specified key
+   * Load data into a Table
+   * @param load descriptor for load operation
    * @throws CarbonException if any error occurs
    */
-  Row lookup(PrimaryKey key) throws CarbonException;
+  BaseResponse loadData(LoadDataRequest load) throws CarbonException;
+
+  /**
+   * Scan a Table and return matched rows
+   * @param scan descriptor for scan operation, including required column, filter, etc
+   * @return matched rows
+   * @throws CarbonException if any error occurs
+   */
+  ScanResponse scan(ScanRequest scan) throws CarbonException;
+
 }

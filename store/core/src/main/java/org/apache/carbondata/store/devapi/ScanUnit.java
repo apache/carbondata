@@ -15,35 +15,27 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store;
+package org.apache.carbondata.store.devapi;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import java.io.Serializable;
 
-import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.metadata.schema.table.Writable;
 
-public class RowMajorResultBatch implements ResultBatch<CarbonRow> {
+/**
+ * An unit for the scanner in Carbon Store
+ */
+@InterfaceAudience.User
+@InterfaceStability.Unstable
+public interface ScanUnit extends Serializable, Writable {
 
-  private Iterator<CarbonRow> iterator;
-
-  RowMajorResultBatch(List<CarbonRow> rows) {
-    Objects.requireNonNull(rows);
-    this.iterator = rows.iterator();
-  }
-
-  @Override
-  public boolean isColumnar() {
-    return false;
-  }
-
-  @Override
-  public boolean hasNext() {
-    return iterator.hasNext();
-  }
-
-  @Override
-  public CarbonRow next() {
-    return iterator.next();
+  /**
+   * Return the list of preferred location of this ScanUnit.
+   * The default return value is empty string array, which means this ScanUnit
+   * has no location preference.
+   */
+  default String[] preferredLocations() {
+    return new String[0];
   }
 }

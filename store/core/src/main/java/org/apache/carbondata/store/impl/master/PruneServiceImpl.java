@@ -24,12 +24,12 @@ import java.util.stream.Collectors;
 
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
-import org.apache.carbondata.sdk.store.BlockScanUnit;
-import org.apache.carbondata.sdk.store.ScanUnit;
-import org.apache.carbondata.sdk.store.Schedulable;
-import org.apache.carbondata.sdk.store.service.PruneService;
-import org.apache.carbondata.sdk.store.service.model.PruneRequest;
-import org.apache.carbondata.sdk.store.service.model.PruneResponse;
+import org.apache.carbondata.store.devapi.ScanUnit;
+import org.apache.carbondata.store.impl.BlockScanUnit;
+import org.apache.carbondata.store.impl.Schedulable;
+import org.apache.carbondata.store.impl.service.PruneService;
+import org.apache.carbondata.store.impl.service.model.PruneRequest;
+import org.apache.carbondata.store.impl.service.model.PruneResponse;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.ipc.ProtocolSignature;

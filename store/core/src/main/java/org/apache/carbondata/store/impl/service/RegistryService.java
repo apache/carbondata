@@ -15,34 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.sdk.store;
+package org.apache.carbondata.store.impl.service;
 
-import java.io.Serializable;
-import java.util.Iterator;
+import java.io.IOException;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.annotations.InterfaceStability;
-import org.apache.carbondata.core.metadata.datatype.StructType;
-import org.apache.carbondata.sdk.store.exception.CarbonException;
+import org.apache.carbondata.store.impl.service.model.RegisterWorkerRequest;
+import org.apache.carbondata.store.impl.service.model.RegisterWorkerResponse;
 
-/**
- * A Loader is used to load data from files to the table
- */
-@InterfaceAudience.User
-@InterfaceStability.Unstable
-public interface Loader extends TransactionalOperation, Serializable {
-  /**
-   * Trigger the load operation
-   * @throws CarbonException if any error occurs
-   */
-  void load() throws CarbonException;
+import org.apache.hadoop.ipc.VersionedProtocol;
 
-  /**
-   * Append a batch of rows.
-   * @param rows rows to append
-   * @param schema schema of the input row
-   * @throws CarbonException if any error occurs
-   */
-  void append(Iterator<Row> rows, StructType schema) throws CarbonException;
-
+@InterfaceAudience.Internal
+public interface RegistryService extends VersionedProtocol {
+  long versionID = 1L;
+  RegisterWorkerResponse registerWorker(RegisterWorkerRequest request) throws IOException;
 }
