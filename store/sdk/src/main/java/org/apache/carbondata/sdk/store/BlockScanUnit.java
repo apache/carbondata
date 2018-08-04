@@ -60,11 +60,14 @@ public class BlockScanUnit implements ScanUnit {
   @Override
   public void write(DataOutput out) throws IOException {
     inputSplit.write(out);
+    schedulable.write(out);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
     inputSplit = new CarbonInputSplit();
     inputSplit.readFields(in);
+    schedulable = new Schedulable();
+    schedulable.readFields(in);
   }
 }

@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -48,27 +49,20 @@ import org.apache.carbondata.sdk.store.service.model.ScanResponse;
 
 import org.apache.hadoop.conf.Configuration;
 
-class ScannerImpl implements Scanner {
+class RowScanner implements Scanner<CarbonRow> {
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(ScannerImpl.class.getCanonicalName());
+      LogServiceFactory.getLogService(RowScanner.class.getCanonicalName());
 
   private TableInfo tableInfo;
   private String pruneServiceHost;
   private int pruneServiePort;
 
-  ScannerImpl(StoreConf conf, TableInfo tableInfo) throws IOException {
+  RowScanner(StoreConf conf, TableInfo tableInfo) throws IOException {
     this.tableInfo = tableInfo;
     this.pruneServiceHost = conf.masterHost();
     this.pruneServiePort = conf.pruneServicePort();
   }
 
-  /**
-   * Trigger a RPC to Carbon Master to do pruning
-   * @param table table identifier
-   * @param filterExpression expression of filter predicate given by user
-   * @return list of ScanUnit
-   * @throws CarbonException if any error occurs
-   */
   @Override
   public List<ScanUnit> prune(TableIdentifier table, Expression filterExpression)
       throws CarbonException {
@@ -87,17 +81,11 @@ class ScannerImpl implements Scanner {
     }
   }
 
-  /**
-   * Execute scan by firing RPC call to worker, return the result rows
-   * @param input one scan unit
-   * @param descriptor parameter for scan
-   * @param option scan options
-   * @return result batch
-   * @throws CarbonException  if any error occurs
-   */
   @Override
-  public Iterator<? extends ResultBatch<CarbonRow>> scan(ScanUnit input, ScanDescriptor descriptor,
-      SelectOption option) throws CarbonException {
+  public Iterator<? extends ResultBatch<CarbonRow>> scan(
+      ScanUnit input,
+      ScanDescriptor scanDescriptor,
+      Map<String, String> option) throws CarbonException {
     List<CarbonInputSplit> toBeScan = new ArrayList<>();
     if (input instanceof BlockScanUnit) {
       toBeScan.add(((BlockScanUnit) input).getInputSplit());
@@ -107,8 +95,8 @@ class ScannerImpl implements Scanner {
     int queryId = new Random().nextInt();
     CarbonMultiBlockSplit split = new CarbonMultiBlockSplit(toBeScan, input.preferredLocations());
     try {
-      ScanRequest request = new ScanRequest(queryId, split, tableInfo, descriptor.getProjection(),
-          descriptor.getFilter(), descriptor.getLimit());
+      ScanRequest request = new ScanRequest(queryId, split, tableInfo,
+          scanDescriptor.getProjection(), scanDescriptor.getFilter(), scanDescriptor.getLimit());
       DataService dataService =
           DataServicePool.getOrCreateDataService(((BlockScanUnit) input).getSchedulable());
       ScanResponse response = dataService.scan(request);

@@ -36,7 +36,7 @@ public class ScanDescriptor implements Writable {
   private TableIdentifier table;
   private String[] projection;
   private Expression filter;
-  private long limit;
+  private long limit = Long.MAX_VALUE;
 
   private ScanDescriptor() {
   }
@@ -124,7 +124,7 @@ public class ScanDescriptor implements Writable {
       return this;
     }
 
-    public Builder select(String... columnNames) {
+    public Builder select(String[] columnNames) {
       select.setProjection(columnNames);
       return this;
     }

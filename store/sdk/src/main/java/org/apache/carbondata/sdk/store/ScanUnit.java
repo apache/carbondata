@@ -28,7 +28,7 @@ import org.apache.carbondata.core.metadata.schema.table.Writable;
  */
 @InterfaceAudience.User
 @InterfaceStability.Unstable
-public interface ScanUnit<T> extends Serializable, Writable {
+public interface ScanUnit extends Serializable, Writable {
 
   /**
    * Return the list of preferred location of this ScanUnit.

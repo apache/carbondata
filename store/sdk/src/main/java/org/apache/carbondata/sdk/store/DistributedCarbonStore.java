@@ -80,7 +80,9 @@ public class DistributedCarbonStore implements CarbonStore {
 
   @Override
   public TableDescriptor getDescriptor(TableIdentifier table) throws CarbonException {
-    return storeService.getDescriptor(table);
+    TableInfo tableInfo = storeService.getTable(table);
+    // TODO: create TableDescriptor from tableInfo
+    return null;
   }
 
   @Override
@@ -113,7 +115,7 @@ public class DistributedCarbonStore implements CarbonStore {
     TableInfo tableInfo = tableCache.getOrDefault(identifier, storeService.getTable(identifier));
     tableCache.putIfAbsent(identifier, tableInfo);
     try {
-      return new ScannerImpl(storeConf, tableInfo);
+      return new RowScanner(storeConf, tableInfo);
     } catch (IOException e) {
       throw new CarbonException(e);
     }

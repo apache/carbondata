@@ -42,6 +42,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.internal.index.Block;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
@@ -55,6 +56,11 @@ public class CarbonInputSplit extends FileSplit
   public String taskId;
 
   private Segment segment;
+
+  // We use this filePath to store the block location instead of the
+  // filePath in FileSplit, because filePath in FileSplit is not Serializable
+  // before Hadoop 3, see HADOOP-13519
+  private String filePath;
 
   private String bucketId;
 
@@ -98,6 +104,7 @@ public class CarbonInputSplit extends FileSplit
     numberOfBlocklets = 0;
     invalidSegments = new ArrayList<>();
     version = CarbonProperties.getInstance().getFormatVersion();
+    filePath = "";
   }
 
   private CarbonInputSplit(String segmentId, String blockletId, Path path, long start, long length,
@@ -116,6 +123,7 @@ public class CarbonInputSplit extends FileSplit
     this.version = version;
     this.deleteDeltaFiles = deleteDeltaFiles;
     this.dataMapWritePath = dataMapWritePath;
+    this.filePath = path.toString();
   }
 
   public CarbonInputSplit(String segmentId, String blockletId, Path path, long start, long length,
@@ -136,6 +144,7 @@ public class CarbonInputSplit extends FileSplit
     numberOfBlocklets = 0;
     invalidSegments = new ArrayList<>();
     version = CarbonProperties.getInstance().getFormatVersion();
+    filePath = path.toString();
   }
 
   public CarbonInputSplit(String segmentId, Path path, long start, long length, String[] locations,
@@ -149,6 +158,7 @@ public class CarbonInputSplit extends FileSplit
     numberOfBlocklets = 0;
     invalidSegments = new ArrayList<>();
     version = CarbonProperties.getInstance().getFormatVersion();
+    filePath = path.toString();
   }
 
   /**
@@ -252,9 +262,24 @@ public class CarbonInputSplit extends FileSplit
     if (dataMapWriterPathExists) {
       dataMapWritePath = in.readUTF();
     }
+    boolean filePathExists = in.readBoolean();
+    if (filePathExists) {
+      filePath = in.readUTF();
+    } else {
+      filePath = super.getPath().toString();
+    }
   }
 
   @Override public void write(DataOutput out) throws IOException {
+    if (super.getPath() != null) {
+      super.write(out);
+    } else {
+      // see HADOOP-13519, after Java deserialization, super.filePath is
+      // null, so write our filePath instead
+      Text.writeString(out, filePath);
+      out.writeLong(getStart());
+      out.writeLong(getLength());
+    }
     super.write(out);
     out.writeUTF(segment.toString());
     out.writeShort(version.number());
@@ -277,6 +302,10 @@ public class CarbonInputSplit extends FileSplit
     out.writeBoolean(dataMapWritePath != null);
     if (dataMapWritePath != null) {
       out.writeUTF(dataMapWritePath);
+    }
+    out.writeBoolean(filePath != null);
+    if (filePath != null) {
+      out.writeUTF(filePath);
     }
   }
 
@@ -398,7 +427,7 @@ public class CarbonInputSplit extends FileSplit
   }
 
   @Override public String getBlockPath() {
-    return getPath().getName();
+    return filePath.substring(filePath.lastIndexOf("/") + 1);
   }
 
   @Override public List<Long> getMatchedBlocklets() {

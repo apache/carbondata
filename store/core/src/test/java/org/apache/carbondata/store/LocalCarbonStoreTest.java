@@ -109,7 +109,7 @@ public class LocalCarbonStoreTest {
     ScanDescriptor select = ScanDescriptor
         .builder()
         .table(tableIdentifier)
-        .select("intField", "stringField")
+        .select(new String[]{"intField", "stringField"})
         .limit(5)
         .create();
     List<CarbonRow> result = store.scan(select);
@@ -119,7 +119,7 @@ public class LocalCarbonStoreTest {
     ScanDescriptor select2 = ScanDescriptor
         .builder()
         .table(tableIdentifier)
-        .select("intField", "stringField")
+        .select(new String[]{"intField", "stringField"})
         .filter(new EqualToExpression(
             new ColumnExpression("intField", DataTypes.INT),
             new LiteralExpression(11, DataTypes.INT)))

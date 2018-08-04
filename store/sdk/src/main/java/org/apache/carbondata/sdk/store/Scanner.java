@@ -20,53 +20,62 @@ package org.apache.carbondata.sdk.store;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
-import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
 
 /**
- * A Scanner is used to scan the table
+ * A Scanner is used to scan the table in a distributed compute
+ * engine like Apache Spark
  */
 @InterfaceAudience.User
 @InterfaceStability.Unstable
-public interface Scanner extends Serializable {
+public interface Scanner<T> extends Serializable {
 
   /**
    * Return an array of ScanUnit which will be the input in
-   * {@link #scan(ScanUnit, ScanDescriptor, SelectOption)}
+   * {@link #scan(ScanUnit, ScanDescriptor, Map)}
    *
-   * Implementation will leverage index to prune using specified filter expression
+   * Implementation will leverage index to prune using specified
+   * filter expression
    *
    * @param table table identifier
    * @param filterExpression expression of filter predicate given by user
    * @return list of ScanUnit which should be passed to
-   *         {@link #scan(ScanUnit, ScanDescriptor, SelectOption)}
+   *         {@link #scan(ScanUnit, ScanDescriptor, Map)}
    * @throws CarbonException if any error occurs
    */
-  List<ScanUnit> prune(TableIdentifier table, Expression filterExpression) throws CarbonException;
+  List<ScanUnit> prune(
+      TableIdentifier table,
+      Expression filterExpression) throws CarbonException;
 
   /**
    * Perform a scan in a distributed compute framework like Spark, Presto, etc.
    * Filter/Projection/Limit operation is pushed down to the scan.
    *
-   * This should be used with {@link #prune(TableIdentifier, Expression)} in a distributed
-   * compute environment. It enables the framework to do a parallel scan by creating
-   * multiple {@link ScanUnit} and perform parallel scan in worker, such as Spark executor
+   * This should be used with {@link #prune(TableIdentifier, Expression)}
+   * in a distributed compute environment. It enables the framework to
+   * do a parallel scan by creating multiple {@link ScanUnit} and perform
+   * parallel scan in worker, such as Spark executor
    *
-   * The return result is in batch so that the caller can start next level of computation
-   * before getting all results, such as implementing a `prefetch` execution model.
+   * The return result is in batch so that the caller can start next
+   * level of computation before getting all results, such as
+   * implementing a `prefetch` execution model.
    *
    * @param input one scan unit
-   * @param select parameter for scanning
+   * @param scanDescriptor parameter for scanning
+   * @param scanOption options for scan, use {@link ScanOption} for the map key
    * @return scan result, the result is returned in batch
    * @throws CarbonException if any error occurs
    */
-  Iterator<? extends ResultBatch<CarbonRow>> scan(ScanUnit input, ScanDescriptor select,
-      SelectOption option) throws CarbonException;
+  Iterator<? extends ResultBatch<T>> scan(
+      ScanUnit input,
+      ScanDescriptor scanDescriptor,
+      Map<String, String> scanOption) throws CarbonException;
 
 }

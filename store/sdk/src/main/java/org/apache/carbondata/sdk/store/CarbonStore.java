@@ -23,7 +23,6 @@ import java.util.List;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableDescriptor;
@@ -101,7 +100,8 @@ public interface CarbonStore extends Closeable {
    * Return true if this table has primary key defined when create table using
    * {@link #createTable(TableDescriptor)}
    *
-   * For a such table, {@link #newMutator()} and {@link #newFetcher()} are supported
+   * For such table, {@link #newMutator(TableIdentifier)} and {@link #newFetcher(TableIdentifier)}
+   * are supported
    *
    * @return true if this table has primary key.
    */
@@ -110,11 +110,12 @@ public interface CarbonStore extends Closeable {
   }
 
   /**
-   * A mutator supports upsert and delete using primary key
+   * Return a new mutator that supports realtime insert, upsert and delete using primary key
+   *
    * @return a new mutator
    * @throws CarbonException if any error occurs
    */
-  default Mutator newMutator() throws CarbonException {
+  default Mutator newMutator(TableIdentifier tableIdentifier) throws CarbonException {
     throw new UnsupportedOperationException();
   }
 
@@ -142,10 +143,12 @@ public interface CarbonStore extends Closeable {
   Scanner newScanner(TableIdentifier tableIdentifier) throws CarbonException;
 
   /**
+   * Return a new Fetch that can be used for lookup operation
+   *
    * @return a new Fetcher
    * @throws CarbonException if any error occurs
    */
-  default Fetcher newFetcher() throws CarbonException {
+  default Fetcher newFetcher(TableIdentifier tableIdentifier) throws CarbonException {
     throw new UnsupportedOperationException();
   }
 }

@@ -17,18 +17,26 @@
 
 package org.apache.carbondata.sdk.store;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 
+import org.apache.hadoop.io.Writable;
+
 @InterfaceAudience.Internal
-public class Schedulable {
+public class Schedulable implements Writable {
 
   private String id;
   private String address;
   private int port;
   private int cores;
   public AtomicInteger workload;
+
+  public Schedulable() {
+  }
 
   public Schedulable(String id, String address, int port, int cores) {
     this.id = id;
@@ -69,5 +77,24 @@ public class Schedulable {
   @Override public String toString() {
     return "Schedulable{" + "id='" + id + '\'' + ", address='" + address + '\'' + ", port=" + port
         + '}';
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    out.writeUTF(id);
+    out.writeUTF(address);
+    out.writeInt(port);
+    out.writeInt(cores);
+    // We are not writing workload since it is only useful for
+    // Scheduler inside the Master. Client of the Master does
+    // not need it
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    id = in.readUTF();
+    address = in.readUTF();
+    port = in.readInt();
+    cores = in.readInt();
   }
 }

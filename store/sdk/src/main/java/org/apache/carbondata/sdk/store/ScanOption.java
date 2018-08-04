@@ -22,7 +22,7 @@ import org.apache.carbondata.common.annotations.InterfaceStability;
 
 @InterfaceAudience.User
 @InterfaceStability.Unstable
-public class SelectOption {
+public class ScanOption {
   public static final String BATCH_SIZE = "batchSize";
   public static final String ENABLE_ROW_MAJOR = "rowMajor";
 }
