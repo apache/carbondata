@@ -29,13 +29,13 @@ import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
+import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 import org.apache.carbondata.processing.loading.DataLoadExecutor;
@@ -71,7 +71,7 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
  */
 @InterfaceAudience.User
 @InterfaceStability.Unstable
-public class LocalCarbonStore extends TableManager implements CarbonStore {
+public class LocalCarbonStore extends MetaOperation implements CarbonStore {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(LocalCarbonStore.class.getName());
@@ -84,7 +84,7 @@ public class LocalCarbonStore extends TableManager implements CarbonStore {
     this(storeConf, new Configuration());
   }
 
-  public LocalCarbonStore(StoreConf storeConf, Configuration hadoopConf) {
+  private LocalCarbonStore(StoreConf storeConf, Configuration hadoopConf) {
     super(storeConf);
     this.storeConf = storeConf;
     this.txnManager = SegmentTxnManager.getInstance();
@@ -96,7 +96,7 @@ public class LocalCarbonStore extends TableManager implements CarbonStore {
     Objects.requireNonNull(load);
     CarbonLoadModel loadModel;
     try {
-      TableInfo tableInfo = getTable(load.getTable());
+      TableInfo tableInfo = getTable(load.getTable(), storeConf);
       CarbonTable table = CarbonTable.buildFromTableInfo(tableInfo);
       CarbonLoadModelBuilder modelBuilder = new CarbonLoadModelBuilder(table);
       modelBuilder.setInputPath(load.getInputPath());
@@ -175,14 +175,14 @@ public class LocalCarbonStore extends TableManager implements CarbonStore {
   public List<CarbonRow> scan(ScanDescriptor scanDescriptor) throws CarbonException {
     Objects.requireNonNull(scanDescriptor);
     try {
-      TableInfo tableInfo = getTable(scanDescriptor.getTableIdentifier());
-      CarbonTable table = CarbonTable.buildFromTableInfo(tableInfo);
-      List<Distributable> blocks = pruneBlock(table, scanDescriptor.getFilter());
-      CarbonMultiBlockSplit split = new CarbonMultiBlockSplit(blocks, "");
+      TableInfo tableInfo = getTable(scanDescriptor.getTableIdentifier(), storeConf);
+      List<CarbonInputSplit> blocks =
+          IndexOperation.pruneBlock(tableInfo, scanDescriptor.getFilter());
+      CarbonMultiBlockSplit split = new CarbonMultiBlockSplit(blocks, new String[0]);
       ScanRequest scan =
           new ScanRequest(0, split, tableInfo, scanDescriptor.getProjection(),
               scanDescriptor.getFilter(), scanDescriptor.getLimit());
-      return scan(table, scan);
+      return DataOperation.scan(tableInfo, scan);
     } catch (IOException e) {
       throw new CarbonException(e);
     }

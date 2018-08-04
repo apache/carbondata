@@ -15,17 +15,35 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.service;
+package org.apache.carbondata.store.devapi;
+
+import java.io.Serializable;
+import java.util.Iterator;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.metadata.datatype.StructType;
+import org.apache.carbondata.sdk.store.Row;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
-import org.apache.carbondata.store.impl.service.model.PruneRequest;
-import org.apache.carbondata.store.impl.service.model.PruneResponse;
 
-import org.apache.hadoop.ipc.VersionedProtocol;
+/**
+ * A Loader is used to load data from files to the table
+ */
+@InterfaceAudience.User
+@InterfaceStability.Unstable
+public interface DataLoader extends TransactionalOperation, Serializable {
+  /**
+   * Trigger the load operation
+   * @throws CarbonException if any error occurs
+   */
+  void load() throws CarbonException;
 
-@InterfaceAudience.Internal
-public interface PruneService extends VersionedProtocol {
-  long versionID = 1L;
-  PruneResponse prune(PruneRequest request) throws CarbonException;
+  /**
+   * Append a batch of rows.
+   * @param rows rows to append
+   * @param schema schema of the input row
+   * @throws CarbonException if any error occurs
+   */
+  void append(Iterator<Row> rows, StructType schema) throws CarbonException;
+
 }

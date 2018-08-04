@@ -17,33 +17,28 @@
 
 package org.apache.carbondata.store.devapi;
 
-import java.io.Serializable;
 import java.util.Iterator;
 
-import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.annotations.InterfaceStability;
-import org.apache.carbondata.core.metadata.datatype.StructType;
-import org.apache.carbondata.sdk.store.Row;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
 
-/**
- * A Loader is used to load data from files to the table
- */
-@InterfaceAudience.User
-@InterfaceStability.Unstable
-public interface Loader extends TransactionalOperation, Serializable {
-  /**
-   * Trigger the load operation
-   * @throws CarbonException if any error occurs
-   */
-  void load() throws CarbonException;
+public interface DataScanner<T> {
 
   /**
-   * Append a batch of rows.
-   * @param rows rows to append
-   * @param schema schema of the input row
+   * Perform a scan in a distributed compute framework like Spark, Presto, etc.
+   * Filter/Projection/Limit operation is pushed down to the scan.
+   *
+   * This should be used with {@link Pruner#prune(TableIdentifier, Expression)}
+   * in a distributed compute environment. It enables the framework to
+   * do a parallel scan by creating multiple {@link ScanUnit} and perform
+   * parallel scan in worker, such as Spark executor
+   *
+   * The return result is in batch so that the caller can start next
+   * level of computation before getting all results, such as
+   * implementing a `prefetch` execution model.
+   *
+   * @param input one scan unit
+   * @return scan result, the result is returned in batch
    * @throws CarbonException if any error occurs
    */
-  void append(Iterator<Row> rows, StructType schema) throws CarbonException;
-
+  Iterator<? extends ResultBatch<T>> scan(ScanUnit input) throws CarbonException;
 }

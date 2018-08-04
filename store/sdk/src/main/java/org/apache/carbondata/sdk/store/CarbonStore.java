@@ -94,12 +94,11 @@ public interface CarbonStore extends Closeable {
    * Return true if this table has primary key defined when create table using
    * {@link #createTable(TableDescriptor)}
    *
-   * For such table, {@link #newMutator(TableIdentifier)} and {@link #newFetcher(TableIdentifier)}
-   * are supported
+   * For such table, upsert, delete and lookup is supported
    *
    * @return true if this table has primary key.
    */
-  default boolean isPrimaryKeyDefined() {
+  default boolean isPrimaryKeyDefined(TableIdentifier identifier) {
     return false;
   }
 

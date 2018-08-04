@@ -26,7 +26,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.StructType;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
 import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
@@ -77,8 +77,8 @@ public class DistributedCarbonStore implements CarbonStore {
 
   @Override
   public TableDescriptor getDescriptor(TableIdentifier table) throws CarbonException {
-    CarbonTable carbonTable = storeService.getTable(table);
-    // TODO: create TableDescriptor from carbonTable
+    TableInfo tableInfo = storeService.getTable(table);
+    // TODO: create TableDescriptor from table info
     return null;
   }
 

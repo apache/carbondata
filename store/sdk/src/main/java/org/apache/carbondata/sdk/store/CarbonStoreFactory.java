@@ -34,23 +34,23 @@ import org.apache.carbondata.sdk.store.exception.CarbonException;
 @InterfaceAudience.User
 @InterfaceStability.Unstable
 public class CarbonStoreFactory {
-  private static Map<String, CarbonStore> remoteStore = new ConcurrentHashMap<>();
-  private static Map<String, CarbonStore> localStores = new ConcurrentHashMap<>();
+  private static final Map<String, CarbonStore> distributedStore = new ConcurrentHashMap<>();
+  private static final Map<String, CarbonStore> localStores = new ConcurrentHashMap<>();
 
   private CarbonStoreFactory() {
   }
 
-  public static CarbonStore getDistributedStore(String storeName, StoreConf storeConf)
-      throws CarbonException {
-    if (remoteStore.containsKey(storeName)) {
-      return remoteStore.get(storeName);
+  public static synchronized CarbonStore getDistributedStore(
+      String storeName, StoreConf storeConf) throws CarbonException {
+    if (distributedStore.containsKey(storeName)) {
+      return distributedStore.get(storeName);
     }
 
     // create a new instance
     try {
       String className = "org.apache.carbondata.sdk.store.DistributedCarbonStore";
       CarbonStore store = createCarbonStore(storeConf, className);
-      remoteStore.put(storeName, store);
+      distributedStore.put(storeName, store);
       return store;
     } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException |
         InstantiationException e) {
@@ -58,14 +58,14 @@ public class CarbonStoreFactory {
     }
   }
 
-  public static void removeDistributedStore(String storeName) throws IOException {
-    if (remoteStore.containsKey(storeName)) {
-      remoteStore.get(storeName).close();
-      remoteStore.remove(storeName);
+  public static synchronized void removeDistributedStore(String storeName) throws IOException {
+    if (distributedStore.containsKey(storeName)) {
+      distributedStore.get(storeName).close();
+      distributedStore.remove(storeName);
     }
   }
 
-  public static CarbonStore getLocalStore(String storeName, StoreConf storeConf)
+  public static synchronized CarbonStore getLocalStore(String storeName, StoreConf storeConf)
       throws CarbonException {
     if (localStores.containsKey(storeName)) {
       return localStores.get(storeName);

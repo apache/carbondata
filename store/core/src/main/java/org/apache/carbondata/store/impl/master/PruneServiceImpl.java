@@ -22,46 +22,58 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
-import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
+import org.apache.carbondata.sdk.store.conf.StoreConf;
+import org.apache.carbondata.sdk.store.exception.CarbonException;
 import org.apache.carbondata.store.devapi.ScanUnit;
 import org.apache.carbondata.store.impl.BlockScanUnit;
+import org.apache.carbondata.store.impl.IndexOperation;
+import org.apache.carbondata.store.impl.MetaOperation;
 import org.apache.carbondata.store.impl.Schedulable;
 import org.apache.carbondata.store.impl.service.PruneService;
 import org.apache.carbondata.store.impl.service.model.PruneRequest;
 import org.apache.carbondata.store.impl.service.model.PruneResponse;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.ipc.ProtocolSignature;
-import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.hadoop.mapreduce.Job;
 
 public class PruneServiceImpl implements PruneService {
 
+  private StoreConf storeConf;
   private Scheduler scheduler;
 
-  public void setScheduler(Scheduler scheduler) {
+  PruneServiceImpl(StoreConf storeConf, Scheduler scheduler) {
+    this.storeConf = storeConf;
     this.scheduler = scheduler;
   }
 
   @Override
-  public PruneResponse prune(PruneRequest request) throws IOException {
-    Configuration hadoopConf = request.getHadoopConf();
-    Job job = new Job(hadoopConf);
-    CarbonTableInputFormat format = new CarbonTableInputFormat(hadoopConf);
-    List<InputSplit> prunedResult = format.getSplits(job);
-    List<ScanUnit> output =
-        prunedResult.stream().map((Function<InputSplit, ScanUnit>) inputSplit -> {
-          String[] locations = ((CarbonInputSplit) inputSplit).preferredLocations();
-          Schedulable worker;
-          if (locations.length == 0) {
-            worker = scheduler.pickNexWorker();
-          } else {
-            worker = scheduler.pickWorker(locations[0]);
-          }
-          return new BlockScanUnit((CarbonInputSplit) inputSplit, worker);
-        }).collect(Collectors.toList());
-    return new PruneResponse(output);
+  public PruneResponse prune(PruneRequest request) throws CarbonException {
+    TableInfo tableInfo = MetaOperation.getTable(request.getTable(), storeConf);
+    try {
+      List<CarbonInputSplit> splits =
+          IndexOperation.pruneBlock(tableInfo, request.getFilterExpression());
+      List<ScanUnit> output = splits.stream()
+          .map((Function<CarbonInputSplit, ScanUnit>) inputSplit -> {
+            Schedulable worker;
+            String[] locations;
+            try {
+              locations = inputSplit.getLocations();
+              if (locations.length == 0) {
+                worker = scheduler.pickNexWorker();
+              } else {
+                worker = scheduler.pickWorker(locations[0]);
+              }
+            } catch (IOException e) {
+              // ignore it and pick next worker as no locality
+              worker = scheduler.pickNexWorker();
+            }
+            return new BlockScanUnit(inputSplit, worker);
+          }).collect(Collectors.toList());
+      return new PruneResponse(output);
+    } catch (IOException e) {
+      throw new CarbonException(e);
+    }
   }
 
   @Override

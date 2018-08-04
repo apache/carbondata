@@ -20,6 +20,7 @@ package org.apache.carbondata.sdk.store.descriptor;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Objects;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -31,7 +32,7 @@ import org.apache.hadoop.io.Writable;
 
 @InterfaceAudience.User
 @InterfaceStability.Evolving
-public class ScanDescriptor implements Writable {
+public class ScanDescriptor implements Serializable, Writable {
 
   private TableIdentifier table;
   private String[] projection;

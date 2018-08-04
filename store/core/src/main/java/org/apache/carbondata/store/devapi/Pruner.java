@@ -15,17 +15,28 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.store.impl.service;
+package org.apache.carbondata.store.devapi;
 
-import org.apache.carbondata.common.annotations.InterfaceAudience;
+import java.util.List;
+
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
-import org.apache.carbondata.store.impl.service.model.PruneRequest;
-import org.apache.carbondata.store.impl.service.model.PruneResponse;
 
-import org.apache.hadoop.ipc.VersionedProtocol;
+public interface Pruner {
 
-@InterfaceAudience.Internal
-public interface PruneService extends VersionedProtocol {
-  long versionID = 1L;
-  PruneResponse prune(PruneRequest request) throws CarbonException;
+  /**
+   * Return an array of ScanUnit which will be the input in
+   * {@link Scanner#scan(ScanUnit)}
+   *
+   * Implementation will leverage index to prune using specified
+   * filter expression
+   *
+   * @param table table identifier
+   * @param filterExpression expression of filter predicate given by user
+   * @return list of ScanUnit which should be passed to
+   *         {@link Scanner#scan(ScanUnit)}
+   * @throws CarbonException if any error occurs
+   */
+  List<ScanUnit> prune(TableIdentifier table, Expression filterExpression) throws CarbonException;
 }

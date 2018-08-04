@@ -51,7 +51,7 @@ public class Master {
 
   private static LogService LOGGER = LogServiceFactory.getLogService(Master.class.getName());
 
-  private StoreConf conf;
+  private StoreConf storeConf;
   private Configuration hadoopConf;
   private RPC.Server registryServer = null;
   private RPC.Server pruneServer = null;
@@ -60,9 +60,9 @@ public class Master {
   // mapping of worker IP address to worker instance
   Map<String, Schedulable> workers = new ConcurrentHashMap<>();
 
-  public Master(StoreConf conf) {
-    this.conf = conf;
-    this.hadoopConf = conf.newHadoopConf();
+  public Master(StoreConf storeConf) {
+    this.storeConf = storeConf;
+    this.hadoopConf = storeConf.newHadoopConf();
   }
 
   /**
@@ -73,8 +73,8 @@ public class Master {
       BindException exception;
       // we will try to create service at worse case 100 times
       int numTry = 100;
-      String host = conf.masterHost();
-      int port = conf.registryServicePort();
+      String host = storeConf.masterHost();
+      int port = storeConf.registryServicePort();
       LOGGER.info("building registry-service on " + host + ":" + port);
 
       RegistryService registryService = new RegistryServiceImpl(this);
@@ -124,11 +124,11 @@ public class Master {
       BindException exception;
       // we will try to create service at worse case 100 times
       int numTry = 100;
-      String host = conf.masterHost();
-      int port = conf.pruneServicePort();
+      String host = storeConf.masterHost();
+      int port = storeConf.pruneServicePort();
       LOGGER.info("building prune-service on " + host + ":" + port);
 
-      PruneService pruneService = new PruneServiceImpl();
+      PruneService pruneService = new PruneServiceImpl(storeConf, new Scheduler(this));
       do {
         try {
           pruneServer = new RPC.Builder(hadoopConf)
@@ -137,7 +137,6 @@ public class Master {
               .setProtocol(PruneService.class)
               .setInstance(pruneService)
               .build();
-          ((PruneServiceImpl) pruneService).setScheduler(new Scheduler(this));
           pruneServer.start();
           numTry = 0;
           exception = null;
@@ -175,11 +174,11 @@ public class Master {
       BindException exception;
       // we will try to create service at worse case 100 times
       int numTry = 100;
-      String host = conf.masterHost();
-      int port = conf.storeServicePort();
+      String host = storeConf.masterHost();
+      int port = storeConf.storeServicePort();
       LOGGER.info("building store-service on " + host + ":" + port);
 
-      StoreService storeService = new StoreServiceImpl(conf);
+      StoreService storeService = new StoreServiceImpl(storeConf);
       do {
         try {
           storeServer = new RPC.Builder(hadoopConf)

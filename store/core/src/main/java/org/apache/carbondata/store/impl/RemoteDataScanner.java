@@ -27,71 +27,36 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
-import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
-import org.apache.carbondata.hadoop.api.CarbonInputFormat;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
-import org.apache.carbondata.sdk.store.conf.StoreConf;
 import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
-import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
+import org.apache.carbondata.store.devapi.DataScanner;
 import org.apache.carbondata.store.devapi.ResultBatch;
 import org.apache.carbondata.store.devapi.ScanUnit;
-import org.apache.carbondata.store.devapi.Scanner;
 import org.apache.carbondata.store.impl.service.DataService;
-import org.apache.carbondata.store.impl.service.PruneService;
-import org.apache.carbondata.store.impl.service.ServiceFactory;
-import org.apache.carbondata.store.impl.service.model.PruneRequest;
-import org.apache.carbondata.store.impl.service.model.PruneResponse;
 import org.apache.carbondata.store.impl.service.model.ScanRequest;
 import org.apache.carbondata.store.impl.service.model.ScanResponse;
 
-import org.apache.hadoop.conf.Configuration;
-
-public class RowScanner<T> implements Scanner<T> {
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(RowScanner.class.getCanonicalName());
+public class RemoteDataScanner<T> implements DataScanner<T> {
 
   private TableInfo tableInfo;
-  private String pruneServiceHost;
-  private int pruneServiePort;
+  private ScanDescriptor scanDescriptor;
+  private Map<String, String> scanOption;
   private CarbonReadSupport<T> readSupport;
 
-  public RowScanner(StoreConf conf, CarbonTable carbonTable, CarbonReadSupport<T> readSupport) {
-    this.tableInfo = carbonTable.getTableInfo();
-    this.pruneServiceHost = conf.masterHost();
-    this.pruneServiePort = conf.pruneServicePort();
+  RemoteDataScanner(TableInfo tableInfo, ScanDescriptor scanDescriptor,
+      Map<String, String> scanOption, CarbonReadSupport<T> readSupport) {
+    this.tableInfo = tableInfo;
+    this.scanDescriptor = scanDescriptor;
+    this.scanOption = scanOption;
     this.readSupport = readSupport;
   }
 
   @Override
-  public List<ScanUnit> prune(TableIdentifier table, Expression filterExpression)
-      throws CarbonException {
-    try {
-      Configuration configuration = new Configuration();
-      CarbonInputFormat.setTableName(configuration, table.getTableName());
-      CarbonInputFormat.setDatabaseName(configuration, table.getDatabaseName());
-      CarbonInputFormat.setFilterPredicates(configuration, filterExpression);
-      PruneRequest request = new PruneRequest(configuration);
-      PruneService pruneService = ServiceFactory.createPruneService(
-          pruneServiceHost, pruneServiePort);
-      PruneResponse response = pruneService.prune(request);
-      return response.getScanUnits();
-    } catch (IOException e) {
-      throw new CarbonException(e);
-    }
-  }
-
-  @Override
-  public Iterator<? extends ResultBatch<T>> scan(
-      ScanUnit input,
-      ScanDescriptor scanDescriptor,
-      Map<String, String> option) throws CarbonException {
+  public Iterator<? extends ResultBatch<T>> scan(ScanUnit input) throws CarbonException {
     List<CarbonInputSplit> toBeScan = new ArrayList<>();
     if (input instanceof BlockScanUnit) {
       toBeScan.add(((BlockScanUnit) input).getInputSplit());
@@ -115,5 +80,4 @@ public class RowScanner<T> implements Scanner<T> {
       throw new CarbonException(e);
     }
   }
-
 }

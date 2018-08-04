@@ -18,10 +18,8 @@
 package org.apache.carbondata.store.impl;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -30,10 +28,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
@@ -44,47 +39,31 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableSchemaBuilder;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.core.scan.model.QueryModelBuilder;
-import org.apache.carbondata.core.util.CarbonTaskInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.ThriftWriter;
-import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
-import org.apache.carbondata.hadoop.CarbonRecordReader;
-import org.apache.carbondata.hadoop.api.CarbonInputFormat;
-import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 import org.apache.carbondata.sdk.file.CarbonWriterBuilder;
 import org.apache.carbondata.sdk.file.Field;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
 import org.apache.carbondata.sdk.store.descriptor.TableDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
-import org.apache.carbondata.store.impl.service.model.ScanRequest;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.hadoop.mapreduce.Job;
 
 /**
  * Provides table management.
  */
 @InterfaceAudience.Internal
-public class TableManager {
+public class MetaOperation {
 
-  private static LogService LOGGER =
-      LogServiceFactory.getLogService(TableManager.class.getCanonicalName());
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(MetaOperation.class.getCanonicalName());
 
   private StoreConf storeConf;
 
   // mapping of table path to CarbonTable object
-  private Map<String, TableInfo> cache = new HashMap<>();
+  private static final Map<String, TableInfo> cache = new HashMap<>();
 
-  public TableManager(StoreConf storeConf) {
+  public MetaOperation(StoreConf storeConf) {
     this.storeConf = storeConf;
   }
 
@@ -184,7 +163,12 @@ public class TableManager {
   }
 
   public TableInfo getTable(TableIdentifier table) throws CarbonException {
-    String tablePath = getTablePath(table.getTableName(), table.getDatabaseName());
+    return getTable(table, storeConf);
+  }
+
+  public static TableInfo getTable(TableIdentifier table, StoreConf storeConf)
+      throws CarbonException {
+    String tablePath = getTablePath(table.getTableName(), table.getDatabaseName(), storeConf);
     if (cache.containsKey(tablePath)) {
       return cache.get(tablePath);
     } else {
@@ -220,84 +204,9 @@ public class TableManager {
     Objects.requireNonNull(databaseName);
     return String.format("%s/%s", storeConf.storeLocation(), tableName);
   }
-
-  /**
-   * Prune data by using CarbonInputFormat.getSplit
-   * Return a mapping of host address to list of block.
-   * This should be invoked in driver side.
-   */
-  static List<Distributable> pruneBlock(CarbonTable table, Expression filter) throws IOException {
-    Objects.requireNonNull(table);
-    JobConf jobConf = new JobConf(new Configuration());
-    Job job = new Job(jobConf);
-    CarbonTableInputFormat format;
-    try {
-      // We just want to do pruning, so passing empty projection columns
-      format = CarbonInputFormatUtil.createCarbonTableInputFormat(
-          job, table, new String[0], filter, null, null, true);
-    } catch (InvalidConfigurationException e) {
-      throw new IOException(e.getMessage());
-    }
-
-    // We will do FG pruning in reader side, so don't do it here
-    CarbonInputFormat.setFgDataMapPruning(job.getConfiguration(), false);
-    List<InputSplit> splits = format.getSplits(job);
-    List<Distributable> blockInfos = new ArrayList<>(splits.size());
-    for (InputSplit split : splits) {
-      blockInfos.add((Distributable) split);
-    }
-    return blockInfos;
-  }
-
-  /**
-   * Scan data and return matched rows. This should be invoked in worker side.
-   * @param table carbon table
-   * @param scan scan parameter
-   * @return matched rows
-   * @throws IOException if IO error occurs
-   */
-  public static List<CarbonRow> scan(CarbonTable table, ScanRequest scan) throws IOException {
-    CarbonTaskInfo carbonTaskInfo = new CarbonTaskInfo();
-    carbonTaskInfo.setTaskId(System.nanoTime());
-    ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo);
-
-    CarbonMultiBlockSplit mbSplit = scan.getSplit();
-    long limit = scan.getLimit();
-    QueryModel queryModel = createQueryModel(table, scan);
-
-    LOGGER.info(String.format("[QueryId:%d] %s, number of block: %d", scan.getRequestId(),
-        queryModel.toString(), mbSplit.getAllSplits().size()));
-
-    // read all rows by the reader
-    List<CarbonRow> rows = new LinkedList<>();
-    try (CarbonRecordReader<CarbonRow> reader = new IndexedRecordReader(scan.getRequestId(),
-        table, queryModel)) {
-      reader.initialize(mbSplit, null);
-
-      // loop to read required number of rows.
-      // By default, if user does not specify the limit value, limit is Long.MaxValue
-      long rowCount = 0;
-      while (reader.nextKeyValue() && rowCount < limit) {
-        rows.add(reader.getCurrentValue());
-        rowCount++;
-      }
-    } catch (InterruptedException e) {
-      throw new IOException(e);
-    }
-    LOGGER.info(String.format("[QueryId:%d] scan completed, return %d rows",
-        scan.getRequestId(), rows.size()));
-    return rows;
-  }
-
-  private static QueryModel createQueryModel(CarbonTable table, ScanRequest scan) {
-    String[] projectColumns = scan.getProjectColumns();
-    Expression filter = null;
-    if (scan.getFilterExpression() != null) {
-      filter = scan.getFilterExpression();
-    }
-    return new QueryModelBuilder(table)
-        .projectColumns(projectColumns)
-        .filterExpression(filter)
-        .build();
+  public static String getTablePath(String tableName, String databaseName, StoreConf storeConf) {
+    Objects.requireNonNull(tableName);
+    Objects.requireNonNull(databaseName);
+    return String.format("%s/%s", storeConf.storeLocation(), tableName);
   }
 }

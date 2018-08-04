@@ -17,12 +17,53 @@
 
 package org.apache.carbondata.store.devapi;
 
+import java.util.Map;
+
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 
 @InterfaceAudience.User
 @InterfaceStability.Unstable
 public class ScanOption {
+
+  /** batch size in number of rows in one {@link ResultBatch} */
   public static final String BATCH_SIZE = "batchSize";
-  public static final String ENABLE_ROW_MAJOR = "rowMajor";
+
+  /**
+   * set to true if return in row major object in {@link ResultBatch},
+   * otherwise columnar object is returned
+   */
+  public static final String ROW_MAJOR = "rowMajor";
+
+  /**
+   * set to true if enable remote prune by RPC call,
+   * otherwise prune executes in caller's JVM
+   */
+  public static final String REMOTE_PRUNE = "remotePrune";
+
+  /**
+   * set to true if enable operator pushdown like scan and load
+   * otherwise operation executes in caller's JVM
+   */
+  public static final String OP_PUSHDOWN = "operatorPushDown";
+
+  /**
+   * Return true if REMOTE_PRUNE is set, default is false
+   */
+  public static boolean isRemotePrune(Map<String, String> options) {
+    if (options == null) {
+      return false;
+    }
+    return Boolean.valueOf(options.getOrDefault(REMOTE_PRUNE, "false"));
+  }
+
+  /**
+   * Return true if REMOTE_PRUNE is set, default is false
+   */
+  public static boolean isOperatorPushdown(Map<String, String> options) {
+    if (options == null) {
+      return false;
+    }
+    return Boolean.valueOf(options.getOrDefault(OP_PUSHDOWN, "false"));
+  }
 }

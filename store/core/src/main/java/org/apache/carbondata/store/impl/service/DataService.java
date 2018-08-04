@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.store.impl.service;
 
+import java.io.Closeable;
+
 import org.apache.carbondata.sdk.store.exception.CarbonException;
 import org.apache.carbondata.store.impl.service.model.BaseResponse;
 import org.apache.carbondata.store.impl.service.model.LoadDataRequest;
@@ -25,7 +27,7 @@ import org.apache.carbondata.store.impl.service.model.ScanResponse;
 
 import org.apache.hadoop.ipc.VersionedProtocol;
 
-public interface DataService extends VersionedProtocol {
+public interface DataService extends VersionedProtocol, Closeable {
 
   long versionID = 1L;
 

@@ -22,32 +22,43 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 
-import org.apache.hadoop.conf.Configuration;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.util.ObjectSerializationUtil;
+import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
+
 import org.apache.hadoop.io.Writable;
 
 public class PruneRequest implements Serializable, Writable {
 
-  private Configuration hadoopConf;
+  private TableIdentifier table;
+  private Expression filterExpression;
 
   public PruneRequest() {
   }
 
-  public PruneRequest(Configuration hadoopConf) {
-    this.hadoopConf = hadoopConf;
+  public PruneRequest(TableIdentifier table, Expression filterExpression) {
+    this.table = table;
+    this.filterExpression = filterExpression;
   }
 
-  public Configuration getHadoopConf() {
-    return hadoopConf;
+  public TableIdentifier getTable() {
+    return table;
+  }
+
+  public Expression getFilterExpression() {
+    return filterExpression;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    hadoopConf.write(out);
+    table.write(out);
+    out.writeUTF(ObjectSerializationUtil.convertObjectToString(filterExpression));
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    this.hadoopConf = new Configuration();
-    this.hadoopConf.readFields(in);
+    table = new TableIdentifier();
+    table.readFields(in);
+    filterExpression = (Expression) (ObjectSerializationUtil.convertStringToObject(in.readUTF()));
   }
 }

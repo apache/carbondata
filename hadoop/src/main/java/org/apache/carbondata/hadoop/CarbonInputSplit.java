@@ -280,7 +280,6 @@ public class CarbonInputSplit extends FileSplit
       out.writeLong(getStart());
       out.writeLong(getLength());
     }
-    super.write(out);
     out.writeUTF(segment.toString());
     out.writeShort(version.number());
     out.writeUTF(bucketId);

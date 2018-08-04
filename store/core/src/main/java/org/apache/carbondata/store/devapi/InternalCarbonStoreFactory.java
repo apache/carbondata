@@ -18,13 +18,24 @@
 package org.apache.carbondata.store.devapi;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.sdk.store.conf.StoreConf;
+import org.apache.carbondata.store.impl.InternalCarbonStoreImpl;
 
 public class InternalCarbonStoreFactory {
 
-  public static InternalCarbonStore getStore(StoreConf conf) throws IOException {
-    return new InternalCarbonStoreImpl(conf);
+  private static final Map<String, InternalCarbonStore> stores = new ConcurrentHashMap<>();
+
+  public static synchronized InternalCarbonStore getStore(String storeName, StoreConf conf)
+      throws IOException {
+    InternalCarbonStore store = stores.getOrDefault(storeName, newStore(conf));
+    stores.putIfAbsent(storeName, store);
+    return store;
   }
 
+  private static InternalCarbonStore newStore(StoreConf conf) throws IOException {
+    return new InternalCarbonStoreImpl(conf);
+  }
 }

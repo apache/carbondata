@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
 import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
@@ -31,7 +30,7 @@ import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
 import org.apache.carbondata.sdk.store.service.StoreService;
 import org.apache.carbondata.store.impl.LocalCarbonStore;
-import org.apache.carbondata.store.impl.TableManager;
+import org.apache.carbondata.store.impl.MetaOperation;
 
 import org.apache.hadoop.ipc.ProtocolSignature;
 
@@ -40,43 +39,42 @@ public class StoreServiceImpl implements StoreService {
   // TODO: simple implementation, load and scan inside master
   private LocalCarbonStore localStore;
 
-  private TableManager tableManager;
+  private MetaOperation metaOperation;
 
   StoreServiceImpl(StoreConf storeConf) {
     localStore = new LocalCarbonStore(storeConf);
-    tableManager = new TableManager(storeConf);
+    metaOperation = new MetaOperation(storeConf);
   }
 
   @Override
   public void createTable(TableDescriptor descriptor) throws CarbonException {
-    tableManager.createTable(descriptor);
+    metaOperation.createTable(descriptor);
   }
 
   @Override
   public void dropTable(TableIdentifier identifier) throws CarbonException {
-    tableManager.dropTable(identifier);
+    metaOperation.dropTable(identifier);
   }
 
   @Override
-  public CarbonTable getTable(TableIdentifier identifier) throws CarbonException {
-    TableInfo tableInfo = tableManager.getTable(identifier);
-    return CarbonTable.buildFromTableInfo(tableInfo);
+  public TableInfo getTable(TableIdentifier identifier) throws CarbonException {
+    return metaOperation.getTable(identifier);
   }
 
   @Override
   public List<TableDescriptor> listTable() throws CarbonException {
-    return tableManager.listTable();
+    return metaOperation.listTable();
   }
 
   @Override
   public TableDescriptor getDescriptor(TableIdentifier identifier) throws CarbonException {
-    return tableManager.getDescriptor(identifier);
+    return metaOperation.getDescriptor(identifier);
   }
 
   @Override
   public void alterTable(TableIdentifier identifier, TableDescriptor newTable)
       throws CarbonException {
-    tableManager.alterTable(identifier, newTable);
+    metaOperation.alterTable(identifier, newTable);
   }
 
   @Override

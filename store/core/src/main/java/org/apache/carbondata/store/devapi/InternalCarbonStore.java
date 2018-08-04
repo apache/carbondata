@@ -17,12 +17,15 @@
 
 package org.apache.carbondata.store.devapi;
 
+import java.util.Map;
+
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.sdk.store.CarbonStore;
 import org.apache.carbondata.sdk.store.descriptor.LoadDescriptor;
+import org.apache.carbondata.sdk.store.descriptor.ScanDescriptor;
 import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
 
@@ -48,18 +51,22 @@ public interface InternalCarbonStore extends CarbonStore {
    * @return a new Loader
    * @throws CarbonException if any error occurs
    */
-  Loader newLoader(LoadDescriptor load) throws CarbonException;
+  DataLoader newLoader(LoadDescriptor load) throws CarbonException;
 
   /**
    * Return a new Scanner that can be used in for parallel scan
    *
    * @param tableIdentifier table to scan
+   * @param scanOption options for scan, use {@link ScanOption} for the map key
    * @param readSupport read support to convert the row to output object
    * @param <T> the target object type contain in {@link ResultBatch}
    * @return a new Scanner
    * @throws CarbonException if any error occurs
    */
-  <T> Scanner<T> newRowScanner(TableIdentifier tableIdentifier, CarbonReadSupport<T> readSupport)
-      throws CarbonException;
+  <T> Scanner<T> newScanner(
+      TableIdentifier tableIdentifier,
+      ScanDescriptor scanDescriptor,
+      Map<String, String> scanOption,
+      CarbonReadSupport<T> readSupport) throws CarbonException;
 
 }
