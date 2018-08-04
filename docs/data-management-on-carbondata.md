@@ -174,6 +174,12 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
       
       Local Dictionary size = ((memory occupied by each unique value * cardinality of the column) * number of columns)
       
+      **Bad Records Path:**
+      
+      This property is used to specify the location where bad records would be written.
+      
+      ```TBLPROPERTIES('BAD_RECORDS_PATH'='/opt/badrecords'')```
+      
 ### Example:
  
    ```
@@ -775,6 +781,8 @@ Users can specify which columns to include and exclude for local dictionary gene
   * If the IGNORE option is used, then bad records are neither loaded nor written to the separate CSV file.
   * In loaded data, if all records are bad records, the BAD_RECORDS_ACTION is invalid and the load operation fails.
   * The default maximum number of characters per column is 32000. If there are more than 32000 characters in a column, please refer to *String longer than 32000 characters* section.
+  * Since Bad Records Path can be specified in create, load and carbon properties. 
+  Therefore, value specified in load will have the highest priority, and value specified in carbon properties will have the least priority.
 
   Example:
 
