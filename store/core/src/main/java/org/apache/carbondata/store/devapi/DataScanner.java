@@ -19,8 +19,12 @@ package org.apache.carbondata.store.devapi;
 
 import java.util.Iterator;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
 
+@InterfaceAudience.Developer("Integration")
+@InterfaceStability.Unstable
 public interface DataScanner<T> {
 
   /**

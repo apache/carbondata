@@ -20,7 +20,7 @@ package org.apache.carbondata.store.devapi;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 
-@InterfaceAudience.User
+@InterfaceAudience.Developer("Integration")
 @InterfaceStability.Unstable
 public interface TransactionalOperation {
   /**

@@ -22,7 +22,7 @@ import java.util.Map;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 
-@InterfaceAudience.User
+@InterfaceAudience.Developer("Integration")
 @InterfaceStability.Unstable
 public class ScanOption {
 

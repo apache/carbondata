@@ -21,9 +21,13 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
 import org.apache.carbondata.store.impl.InternalCarbonStoreImpl;
 
+@InterfaceAudience.Developer("Integration")
+@InterfaceStability.Unstable
 public class InternalCarbonStoreFactory {
 
   private static final Map<String, InternalCarbonStore> stores = new ConcurrentHashMap<>();

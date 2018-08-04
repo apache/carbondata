@@ -26,7 +26,7 @@ import org.apache.carbondata.common.annotations.InterfaceStability;
  * A Scanner is used to scan the table in a distributed compute
  * engine like Apache Spark
  */
-@InterfaceAudience.User
+@InterfaceAudience.Developer("Integration")
 @InterfaceStability.Unstable
 public interface Scanner<T> extends DataScanner<T>, Pruner, Serializable {
 

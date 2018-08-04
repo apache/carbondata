@@ -29,7 +29,7 @@ import org.apache.carbondata.sdk.store.exception.CarbonException;
 /**
  * A Loader is used to load data from files to the table
  */
-@InterfaceAudience.User
+@InterfaceAudience.Developer("Integration")
 @InterfaceStability.Unstable
 public interface DataLoader extends TransactionalOperation, Serializable {
   /**

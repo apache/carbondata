@@ -26,7 +26,7 @@ import org.apache.carbondata.core.metadata.schema.table.Writable;
 /**
  * An unit for the scanner in Carbon Store
  */
-@InterfaceAudience.User
+@InterfaceAudience.Developer("Integration")
 @InterfaceStability.Unstable
 public interface ScanUnit extends Serializable, Writable {
 
