@@ -40,6 +40,10 @@ import org.apache.carbondata.store.impl.service.DataService;
 import org.apache.carbondata.store.impl.service.model.ScanRequest;
 import org.apache.carbondata.store.impl.service.model.ScanResponse;
 
+/**
+ * This scanner scans in local JVM
+ * @param <T> scan output
+ */
 public class RemoteDataScanner<T> implements DataScanner<T> {
 
   private TableInfo tableInfo;
@@ -75,7 +79,7 @@ public class RemoteDataScanner<T> implements DataScanner<T> {
           .map(row -> readSupport.readRow(row))
           .collect(Collectors.toList());
 
-      return Collections.singletonList(new RowMajorResultBatch<T>(rows)).iterator();
+      return Collections.singletonList(new RowMajorResultBatch<>(rows)).iterator();
     } catch (IOException e) {
       throw new CarbonException(e);
     }

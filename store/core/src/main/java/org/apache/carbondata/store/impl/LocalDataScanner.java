@@ -35,6 +35,10 @@ import org.apache.carbondata.store.devapi.ResultBatch;
 import org.apache.carbondata.store.devapi.ScanUnit;
 import org.apache.carbondata.store.impl.service.model.ScanRequest;
 
+/**
+ * This scanner scans in local JVM
+ * @param <T> scan output
+ */
 public class LocalDataScanner<T> implements DataScanner<T> {
 
   private StoreConf storeConf;

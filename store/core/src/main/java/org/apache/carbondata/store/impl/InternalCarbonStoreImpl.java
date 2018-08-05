@@ -18,8 +18,6 @@
 package org.apache.carbondata.store.impl;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,7 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
-import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.sdk.store.DistributedCarbonStore;
 import org.apache.carbondata.sdk.store.conf.StoreConf;
@@ -39,9 +36,7 @@ import org.apache.carbondata.store.devapi.DataLoader;
 import org.apache.carbondata.store.devapi.DataScanner;
 import org.apache.carbondata.store.devapi.InternalCarbonStore;
 import org.apache.carbondata.store.devapi.Pruner;
-import org.apache.carbondata.store.devapi.ResultBatch;
 import org.apache.carbondata.store.devapi.ScanOption;
-import org.apache.carbondata.store.devapi.ScanUnit;
 import org.apache.carbondata.store.devapi.Scanner;
 
 /**
@@ -84,14 +79,17 @@ public class InternalCarbonStoreImpl extends DistributedCarbonStore implements I
       throws CarbonException {
     Objects.requireNonNull(identifier);
     Objects.requireNonNull(scanDescriptor);
+    boolean isRemotePrune;
+    boolean isOpPushdown;
     if (scanOption == null) {
-      return new RemoteScanner<>(storeConf, getCarbonTable(identifier), scanDescriptor, scanOption,
-          readSupport);
+      isRemotePrune = true;
+      isOpPushdown = true;
+    } else {
+      isRemotePrune = ScanOption.isRemotePrune(scanOption);
+      isOpPushdown = ScanOption.isOperatorPushdown(scanOption);
     }
-    TableInfo tableInfo = MetaOperation.getTable(identifier, storeConf);
-    boolean isRemotePrune = ScanOption.isRemotePrune(scanOption);
-    boolean isOpPushdown = ScanOption.isOperatorPushdown(scanOption);
 
+    TableInfo tableInfo = MetaOperation.getTable(identifier, storeConf);
     Pruner pruner;
     DataScanner<T> scanner;
 
@@ -106,17 +104,7 @@ public class InternalCarbonStoreImpl extends DistributedCarbonStore implements I
       scanner = new LocalDataScanner<>(storeConf, scanDescriptor, scanOption);
     }
 
-    return new Scanner<T>() {
-      @Override public List<ScanUnit> prune(TableIdentifier table, Expression filterExpression)
-          throws CarbonException {
-        return pruner.prune(table, filterExpression);
-      }
-
-      @Override public Iterator<? extends ResultBatch<T>> scan(ScanUnit input)
-          throws CarbonException {
-        return scanner.scan(input);
-      }
-    };
+    return new DelegatedScanner<>(pruner, scanner);
   }
 
 }

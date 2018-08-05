@@ -27,5 +27,15 @@ import org.apache.hadoop.ipc.VersionedProtocol;
 @InterfaceAudience.Internal
 public interface PruneService extends VersionedProtocol {
   long versionID = 1L;
+
+  /**
+   * Leveraging index and segment information to skip blocks,
+   * return a list of block eligible for scanning
+   *
+   * @param request prune request containing table identifier
+   *                and filter expression
+   * @return prune result containing blocks to scan
+   * @throws CarbonException if any error occurs
+   */
   PruneResponse prune(PruneRequest request) throws CarbonException;
 }
