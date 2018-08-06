@@ -119,7 +119,11 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
       index = new LinkedList<>();
     }
     for (String indexPath : index) {
-      indexFileStore.put(indexPath, null);
+      if (indexPath.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        indexFileStore.put(indexPath, indexPath.substring(indexPath.lastIndexOf('/') + 1));
+      } else {
+        indexFileStore.put(indexPath, null);
+      }
     }
     return indexFileStore;
   }
@@ -171,9 +175,9 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
             "No Index files are present in the table location :" + carbonFilePath);
       }
       for (int i = 0; i < carbonIndexFiles.length; i++) {
-        // TODO. If Required to support merge index, then this code has to be modified.
         // TODO. Nested File Paths.
-        if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+        if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)
+            || carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
           // Get Segment Name from the IndexFile.
           String indexFilePath =
               FileFactory.getUpdatedFilePath(carbonIndexFiles[i].getAbsolutePath());

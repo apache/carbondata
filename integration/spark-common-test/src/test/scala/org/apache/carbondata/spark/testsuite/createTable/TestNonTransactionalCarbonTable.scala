@@ -33,7 +33,7 @@ import org.apache.avro.file.DataFileWriter
 import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DecoderFactory, Encoder}
 import org.apache.commons.io.FileUtils
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
@@ -1096,6 +1096,26 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     cleanTestData()
   }
 
+  test("test SDK Read with merge index file") {
+    sql("DROP TABLE IF EXISTS normalTable1")
+    sql(
+      "create table if not exists normalTable1(name string, age int, height double) STORED BY " +
+      "'carbondata'")
+    sql(s"""insert into normalTable1 values ("aaaaa", 12, 20)""").show(200, false)
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    val carbonTable = CarbonEnv
+      .getCarbonTable(Option("default"), "normalTable1")(sqlContext.sparkSession)
+    sql("describe formatted normalTable1").show(200, false)
+    val fileLocation = carbonTable.getSegmentPath("0")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$fileLocation' """.stripMargin)
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row("aaaaa", 12, 20)))
+    sql("DROP TABLE sdkOutputTable")
+    sql("DROP TABLE normalTable1")
+  }
+
+  // --------------------------------------------- AVRO test cases ---------------------------
   private def WriteFilesWithAvroWriter(rows: Int,
       mySchema: String,
       json: String) = {
