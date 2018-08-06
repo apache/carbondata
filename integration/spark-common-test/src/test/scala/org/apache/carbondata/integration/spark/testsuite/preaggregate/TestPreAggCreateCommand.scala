@@ -437,16 +437,6 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("test pre agg datamap with deferred rebuild") {
-    val e = intercept[MalformedDataMapCommandException] {
-      sql("create datamap failure on table PreAggMain1 " +
-          "using 'preaggregate' " +
-          "with deferred rebuild " +
-          "as select a as a1,sum(b) as sum from PreAggMain1 group by a")
-    }
-    assert(e.getMessage.contains("DEFERRED REBUILD is not supported on this DataMap"))
-  }
-
   // TODO: Need to Fix
   ignore("test creation of multiple preaggregate of same name concurrently") {
     sql("DROP TABLE IF EXISTS tbl_concurr")

@@ -47,6 +47,13 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
+    convertToRow(getAllDataMaps(sparkSession))
+  }
+
+  /**
+   * get all datamaps for this table, including preagg, index datamaps and mv
+   */
+  def getAllDataMaps(sparkSession: SparkSession): util.List[DataMapSchema] = {
     val dataMapSchemaList: util.List[DataMapSchema] = new util.ArrayList[DataMapSchema]()
     tableIdentifier match {
       case Some(table) =>
@@ -59,10 +66,10 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
         if (!indexSchemas.isEmpty) {
           dataMapSchemaList.addAll(indexSchemas)
         }
-        convertToRow(dataMapSchemaList)
       case _ =>
-        convertToRow(DataMapStoreManager.getInstance().getAllDataMapSchemas)
+        dataMapSchemaList.addAll(DataMapStoreManager.getInstance().getAllDataMapSchemas)
     }
+    dataMapSchemaList
   }
 
   private def convertToRow(schemaList: util.List[DataMapSchema]) = {

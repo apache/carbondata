@@ -964,4 +964,40 @@ test("check load and select for avg double datatype") {
       .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
   }
 
+  test("test deferred rebuild is not supported for preagg") {
+    val baseTable = "maintable"
+    val preagg = "preaggtable"
+    sql(s"DROP TABLE IF EXISTS $baseTable")
+    sql(
+      s"""
+        | CREATE TABLE $baseTable(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    val deferredRebuildException = intercept[MalformedDataMapCommandException] {
+      sql(
+        s"""
+           | CREATE DATAMAP $preagg ON TABLE $baseTable
+           | USING 'preaggregate'
+           | WITH DEFERRED REBUILD
+           | AS select id, sum(age) from $baseTable group by id
+       """.stripMargin)
+    }
+    assert(deferredRebuildException.getMessage.contains(
+      s"DEFERRED REBUILD is not supported on this datamap $preagg with provider preaggregate"))
+
+    sql(
+      s"""
+         | CREATE DATAMAP $preagg ON TABLE $baseTable
+         | USING 'preaggregate'
+         | AS select id, sum(age) from $baseTable group by id
+       """.stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table $baseTable")
+    checkExistence(sql(s"SHOW DATAMAP ON TABLE $baseTable"), true, preagg, "preaggregate")
+    val exception = intercept[MalformedDataMapCommandException] {
+      sql(s"REBUILD DATAMAP $preagg ON TABLE $baseTable").show()
+    }
+    LOGGER.error(s"XU ${exception.getMessage}")
+    assert(exception.getMessage.contains(s"Non-lazy datamap $preagg does not support rebuild"))
+    sql(s"DROP TABLE IF EXISTS $baseTable")
+  }
 }

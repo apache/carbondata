@@ -177,7 +177,39 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
   }
 
-  test("test create bloom datamap and REBUILD DATAMAP") {
+  // for CARBONDATA-2820, we will first block deferred rebuild for bloom
+  test("test block deferred rebuild for bloom") {
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128')
+         |  """.stripMargin)
+    val deferredRebuildException = intercept[MalformedDataMapCommandException] {
+      sql(
+        s"""
+           | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable
+           | USING 'bloomfilter'
+           | WITH DEFERRED REBUILD
+           | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+    }
+    assert(deferredRebuildException.getMessage.contains(
+      s"DEFERRED REBUILD is not supported on this datamap $dataMapName with provider bloomfilter"))
+
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+    val exception = intercept[MalformedDataMapCommandException] {
+      sql(s"REBUILD DATAMAP $dataMapName ON TABLE $bloomDMSampleTable")
+    }
+    assert(exception.getMessage.contains(s"Non-lazy datamap $dataMapName does not support rebuild"))
+  }
+
+  ignore("test create bloom datamap and REBUILD DATAMAP") {
     sql(
       s"""
          | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
@@ -219,7 +251,7 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
   }
 
-  test("test create bloom datamap with DEFERRED REBUILD, query hit datamap") {
+  ignore("test create bloom datamap with DEFERRED REBUILD, query hit datamap") {
     sql(
       s"""
          | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
@@ -297,7 +329,7 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
   }
 
-  test("test create bloom datamap with DEFERRED REBUILD, query not hit datamap") {
+  ignore("test create bloom datamap with DEFERRED REBUILD, query not hit datamap") {
     sql(
       s"""
          | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
@@ -466,7 +498,7 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     sql(
       s"""
          | CREATE DATAMAP $dataMapName ON TABLE $normalTable
-         | USING 'bloomfilter' WITH DEFERRED REBUILD
+         | USING 'bloomfilter'
          | DMProperties( 'INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
       """.stripMargin)
     val exception: MalformedCarbonCommandException = intercept[MalformedCarbonCommandException] {
@@ -487,7 +519,6 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
       s"""
          | CREATE DATAMAP $dataMapName ON TABLE $normalTable
          | USING 'bloomfilter'
-         | WITH DEFERRED REBUILD
          | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
       """.stripMargin)
     val exception: MalformedCarbonCommandException = intercept[MalformedCarbonCommandException] {
@@ -544,7 +575,6 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
         s"""
            | CREATE DATAMAP $dataMapName ON TABLE $normalTable
            | USING 'bloomfilter'
-           | WITH DEFERRED REBUILD
            | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
            | """.stripMargin)
     }

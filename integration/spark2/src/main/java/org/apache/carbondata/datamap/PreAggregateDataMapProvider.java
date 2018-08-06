@@ -104,4 +104,9 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
   public DataMapFactory getDataMapFactory() {
     throw new UnsupportedOperationException();
   }
+
+  @Override
+  public boolean supportRebuild() {
+    return false;
+  }
 }

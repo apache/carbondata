@@ -173,4 +173,10 @@ public abstract class DataMapFactory<T extends DataMap> {
     return false;
   }
 
+  /**
+   * whether this datamap support rebuild
+   */
+  public boolean supportRebuild() {
+    return false;
+  }
 }
