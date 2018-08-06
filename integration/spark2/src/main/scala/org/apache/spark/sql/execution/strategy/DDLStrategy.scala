@@ -35,7 +35,6 @@ import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
-import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.util.CarbonProperties
 
 /**
@@ -257,18 +256,11 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(tableName)(sparkSession) => {
 
-        // TODO remove this limiation after streaming table support 'preaggregate' DataMap
-        // if the table has 'preaggregate' DataMap, it doesn't support streaming now
         val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .lookupRelation(tableName)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
         if (carbonTable != null && !carbonTable.getTableInfo.isTransactionalTable) {
           throw new MalformedCarbonCommandException(
             "Unsupported operation on non transactional table")
-        }
-
-        if (carbonTable != null && !carbonTable.canAllow(carbonTable, TableOperation.STREAMING)) {
-          throw new MalformedCarbonCommandException(
-            "streaming is not supported for index datamap")
         }
 
         // TODO remove this limitation later
