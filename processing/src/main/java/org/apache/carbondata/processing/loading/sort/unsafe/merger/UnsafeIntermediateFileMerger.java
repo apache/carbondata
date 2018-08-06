@@ -209,7 +209,8 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
 
     for (File tempFile : intermediateFiles) {
       // create chunk holder
-      sortTempFileChunkHolder = new UnsafeSortTempFileChunkHolder(tempFile, mergerParameters);
+      sortTempFileChunkHolder =
+          new UnsafeSortTempFileChunkHolder(tempFile, mergerParameters, false);
 
       sortTempFileChunkHolder.readRow();
       this.totalNumberOfRecords += sortTempFileChunkHolder.numberOfRows();
