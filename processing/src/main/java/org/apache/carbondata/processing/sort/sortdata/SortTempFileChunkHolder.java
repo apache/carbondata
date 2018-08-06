@@ -98,6 +98,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   private TableFieldStat tableFieldStat;
   private SortStepRowHandler sortStepRowHandler;
   private Comparator<IntermediateSortTempRow> comparator;
+  private boolean convertToActualField;
   /**
    * Constructor to initialize
    *
@@ -105,7 +106,8 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    * @param sortParameters
    * @param tableName
    */
-  public SortTempFileChunkHolder(File tempFile, SortParameters sortParameters, String tableName) {
+  public SortTempFileChunkHolder(File tempFile, SortParameters sortParameters, String tableName,
+      boolean convertToActualField) {
     // set temp file
     this.tempFile = tempFile;
     this.readBufferSize = sortParameters.getBufferSize();
@@ -116,6 +118,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
         tableFieldStat.getIsSortColNoDictFlags());
     this.executorService = Executors
         .newFixedThreadPool(1, new CarbonThreadFactory("SafeSortTempChunkHolderPool:" + tableName));
+    this.convertToActualField = convertToActualField;
   }
 
   /**
@@ -168,7 +171,11 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
       fillDataForPrefetch();
     } else {
       try {
-        this.returnRow = sortStepRowHandler.readIntermediateSortTempRowFromInputStream(stream);
+        if (convertToActualField) {
+          this.returnRow = sortStepRowHandler.readWithNoSortFieldConvert(stream);
+        } else {
+          this.returnRow = sortStepRowHandler.readWithoutNoSortFieldConvert(stream);
+        }
         this.numberOfObjectRead++;
       } catch (IOException e) {
         throw new CarbonSortKeyAndGroupByException("Problem while reading rows", e);
@@ -214,9 +221,11 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   private IntermediateSortTempRow[] readBatchedRowFromStream(int expected) throws IOException {
     IntermediateSortTempRow[] holders = new IntermediateSortTempRow[expected];
     for (int i = 0; i < expected; i++) {
-      IntermediateSortTempRow holder
-          = sortStepRowHandler.readIntermediateSortTempRowFromInputStream(stream);
-      holders[i] = holder;
+      if (convertToActualField) {
+        holders[i] = sortStepRowHandler.readWithNoSortFieldConvert(stream);
+      } else {
+        holders[i] = sortStepRowHandler.readWithoutNoSortFieldConvert(stream);
+      }
     }
     this.numberOfObjectRead += expected;
     return holders;

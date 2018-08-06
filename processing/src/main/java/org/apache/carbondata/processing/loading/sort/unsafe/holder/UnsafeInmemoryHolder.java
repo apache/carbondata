@@ -46,6 +46,7 @@ public class UnsafeInmemoryHolder implements SortTempChunkHolder {
     LOGGER.info("Processing unsafe inmemory rows page with size : " + actualSize);
     this.comparator = new IntermediateSortTempRowComparator(
         rowPage.getTableFieldStat().getIsSortColNoDictFlags());
+    this.rowPage.setReadConvertedNoSortField();
   }
 
   public boolean hasNext() {

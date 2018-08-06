@@ -16,12 +16,6 @@
  */
 package org.apache.carbondata.processing.loading.row;
 
-import java.nio.ByteBuffer;
-
-import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.util.DataTypeUtil;
-
 /**
  * During sort procedure, each row will be written to sort temp file in this logic format.
  * an intermediate sort temp row consists 3 parts:
@@ -30,7 +24,16 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 public class IntermediateSortTempRow {
   private int[] dictSortDims;
   private byte[][] noDictSortDims;
+  /**
+   * this will be used for intermediate merger when
+   * no sort field and measure field will not be
+   * used for sorting
+   */
   private byte[] noSortDimsAndMeasures;
+  /**
+   * for final merger keep the measures
+   */
+  private Object[] measures;
 
   public IntermediateSortTempRow(int[] dictSortDims, byte[][] noDictSortDims,
       byte[] noSortDimsAndMeasures) {
@@ -39,8 +42,19 @@ public class IntermediateSortTempRow {
     this.noSortDimsAndMeasures = noSortDimsAndMeasures;
   }
 
+  public IntermediateSortTempRow(int[] dictSortDims, byte[][] noDictSortDims,
+      Object[] measures) {
+    this.dictSortDims = dictSortDims;
+    this.noDictSortDims = noDictSortDims;
+    this.measures = measures;
+  }
+
   public int[] getDictSortDims() {
     return dictSortDims;
+  }
+
+  public Object[] getMeasures() {
+    return measures;
   }
 
   public byte[][] getNoDictSortDims() {
@@ -50,87 +64,4 @@ public class IntermediateSortTempRow {
   public byte[] getNoSortDimsAndMeasures() {
     return noSortDimsAndMeasures;
   }
-
-  /**
-   * deserialize from bytes array to get the no sort fields
-   * @param outDictNoSort stores the dict & no-sort fields
-   * @param outNoDictNoSort stores all no-dict & no-sort fields,
-   *                        including complex and varchar fields
-   * @param outMeasures stores the measure fields
-   * @param dataTypes data type for the measure
-   * @param varcharDimCnt number of varchar column
-   * @param complexDimCnt number of complex column
-   */
-  public void unpackNoSortFromBytes(int[] outDictNoSort, byte[][] outNoDictNoSort,
-      Object[] outMeasures, DataType[] dataTypes, int varcharDimCnt, int complexDimCnt) {
-    ByteBuffer rowBuffer = ByteBuffer.wrap(noSortDimsAndMeasures);
-    // read dict_no_sort
-    int dictNoSortCnt = outDictNoSort.length;
-    for (int i = 0; i < dictNoSortCnt; i++) {
-      outDictNoSort[i] = rowBuffer.getInt();
-    }
-
-    // read no_dict_no_sort
-    int noDictNoSortCnt = outNoDictNoSort.length - varcharDimCnt - complexDimCnt;
-    for (int i = 0; i < noDictNoSortCnt; i++) {
-      short len = rowBuffer.getShort();
-      byte[] bytes = new byte[len];
-      rowBuffer.get(bytes);
-      outNoDictNoSort[i] = bytes;
-    }
-
-    // read varchar dims
-    for (int i = 0; i < varcharDimCnt; i++) {
-      int len = rowBuffer.getInt();
-      byte[] bytes = new byte[len];
-      rowBuffer.get(bytes);
-      outNoDictNoSort[i + noDictNoSortCnt] = bytes;
-    }
-
-    // read complex dims
-    for (int i = 0; i < complexDimCnt; i++) {
-      short len = rowBuffer.getShort();
-      byte[] bytes = new byte[len];
-      rowBuffer.get(bytes);
-      outNoDictNoSort[i + noDictNoSortCnt + varcharDimCnt] = bytes;
-    }
-
-    // read measure
-    int measureCnt = outMeasures.length;
-    DataType tmpDataType;
-    Object tmpContent;
-    for (short idx = 0 ; idx < measureCnt; idx++) {
-      if ((byte) 0 == rowBuffer.get()) {
-        outMeasures[idx] = null;
-        continue;
-      }
-
-      tmpDataType = dataTypes[idx];
-      if (DataTypes.BOOLEAN == tmpDataType) {
-        if ((byte) 1 == rowBuffer.get()) {
-          tmpContent = true;
-        } else {
-          tmpContent = false;
-        }
-      } else if (DataTypes.SHORT == tmpDataType) {
-        tmpContent = rowBuffer.getShort();
-      } else if (DataTypes.INT == tmpDataType) {
-        tmpContent = rowBuffer.getInt();
-      } else if (DataTypes.LONG == tmpDataType) {
-        tmpContent = rowBuffer.getLong();
-      } else if (DataTypes.DOUBLE == tmpDataType) {
-        tmpContent = rowBuffer.getDouble();
-      } else if (DataTypes.isDecimal(tmpDataType)) {
-        short len = rowBuffer.getShort();
-        byte[] decimalBytes = new byte[len];
-        rowBuffer.get(decimalBytes);
-        tmpContent = DataTypeUtil.byteToBigDecimal(decimalBytes);
-      } else {
-        throw new IllegalArgumentException("Unsupported data type: " + tmpDataType);
-      }
-      outMeasures[idx] = tmpContent;
-    }
-  }
-
-
 }

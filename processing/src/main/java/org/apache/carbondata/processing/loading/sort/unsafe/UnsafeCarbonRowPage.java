@@ -49,6 +49,7 @@ public class UnsafeCarbonRowPage {
 
   private TableFieldStat tableFieldStat;
   private SortStepRowHandler sortStepRowHandler;
+  private boolean convertNoSortFields;
 
   public UnsafeCarbonRowPage(TableFieldStat tableFieldStat, MemoryBlock memoryBlock,
       boolean saveToDisk, long taskId) {
@@ -88,8 +89,13 @@ public class UnsafeCarbonRowPage {
    * @return one row
    */
   public IntermediateSortTempRow getRow(long address) {
-    return sortStepRowHandler.readIntermediateSortTempRowFromUnsafeMemory(
-        dataBlock.getBaseObject(), address);
+    if (convertNoSortFields) {
+      return sortStepRowHandler
+          .readRowFromMemoryWithNoSortFieldConvert(dataBlock.getBaseObject(), address);
+    } else {
+      return sortStepRowHandler
+          .readFromMemoryWithoutNoSortFieldConvert(dataBlock.getBaseObject(), address);
+    }
   }
 
   /**
@@ -145,5 +151,9 @@ public class UnsafeCarbonRowPage {
 
   public enum MemoryManagerType {
     UNSAFE_MEMORY_MANAGER, UNSAFE_SORT_MEMORY_MANAGER
+  }
+
+  public void setReadConvertedNoSortField() {
+    this.convertNoSortFields = true;
   }
 }
