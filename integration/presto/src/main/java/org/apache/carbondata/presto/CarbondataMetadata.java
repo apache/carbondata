@@ -17,12 +17,15 @@
 
 package org.apache.carbondata.presto;
 
-import javax.inject.Inject;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
+import javax.inject.Inject;
+
+import static java.util.Objects.requireNonNull;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -32,6 +35,8 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
+
+import static org.apache.carbondata.presto.Types.checkType;
 
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
@@ -60,8 +65,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Objects.requireNonNull;
-import static org.apache.carbondata.presto.Types.checkType;
 
 public class CarbondataMetadata implements ConnectorMetadata {
   private final String connectorId;
@@ -96,8 +99,9 @@ public class CarbondataMetadata implements ConnectorMetadata {
     ImmutableList.Builder<SchemaTableName> builder = ImmutableList.builder();
     for (String schemaName : schemaNames) {
       for (String tableName : carbonTableReader.getTableNames(schemaName)) {
-        if(!tableName.equalsIgnoreCase(".DS_Store"))
-        builder.add(new SchemaTableName(schemaName, tableName));
+        if (!tableName.equalsIgnoreCase(".DS_Store")) {
+          builder.add(new SchemaTableName(schemaName, tableName));
+        }
       }
     }
     return builder.build();
@@ -135,7 +139,8 @@ public class CarbondataMetadata implements ConnectorMetadata {
     CarbonTable carbonTable = carbonTableReader.getTable(schemaTableName);
 
     List<ColumnMetadata> columnsMetaList = new LinkedList<>();
-    List<CarbonColumn> carbonColumns = carbonTable.getCreateOrderColumn(schemaTableName.getTableName());
+    List<CarbonColumn> carbonColumns =
+        carbonTable.getCreateOrderColumn(schemaTableName.getTableName());
     for (CarbonColumn col : carbonColumns) {
       //show columns command will return these data
       ColumnSchema columnSchema = col.getColumnSchema();
@@ -176,18 +181,18 @@ public class CarbondataMetadata implements ConnectorMetadata {
 
       Type spiType = carbonDataType2SpiMapper(cs);
       columnHandles.put(cs.getColumnName(),
-          new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType, column.getSchemaOrdinal(),
-              column.getKeyOrdinal(), false,
-              cs.getColumnUniqueId(), cs.isUseInvertedIndex(), cs.getPrecision(), cs.getScale()));
+          new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType,
+              column.getSchemaOrdinal(), column.getKeyOrdinal(), false, cs.getColumnUniqueId(),
+              cs.isUseInvertedIndex(), cs.getPrecision(), cs.getScale()));
     }
 
     for (CarbonMeasure measure : cb.getMeasureByTableName(tableName)) {
       ColumnSchema cs = measure.getColumnSchema();
       Type spiType = carbonDataType2SpiMapper(cs);
       columnHandles.put(cs.getColumnName(),
-          new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType, cs.getSchemaOrdinal(),
-              measure.getOrdinal(), true,
-              cs.getColumnUniqueId(), cs.isUseInvertedIndex(), cs.getPrecision(), cs.getScale()));
+          new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType,
+              cs.getSchemaOrdinal(), measure.getOrdinal(), true, cs.getColumnUniqueId(),
+              cs.isUseInvertedIndex(), cs.getPrecision(), cs.getScale()));
     }
 
     columnHandleMap = columnHandles.build();
@@ -205,7 +210,7 @@ public class CarbondataMetadata implements ConnectorMetadata {
 
   @Override
   public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName) {
-      return new CarbondataTableHandle(connectorId, tableName);
+    return new CarbondataTableHandle(connectorId, tableName);
   }
 
   @Override public List<ConnectorTableLayoutResult> getTableLayouts(ConnectorSession session,

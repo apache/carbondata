@@ -17,6 +17,10 @@
 
 package org.apache.carbondata.presto;
 
+import java.util.Map;
+
+import static java.util.Objects.requireNonNull;
+
 import com.facebook.presto.spi.ConnectorHandleResolver;
 import com.facebook.presto.spi.classloader.ThreadContextClassLoader;
 import com.facebook.presto.spi.connector.*;
@@ -29,9 +33,6 @@ import io.airlift.bootstrap.Bootstrap;
 import io.airlift.bootstrap.LifeCycleManager;
 import io.airlift.json.JsonModule;
 
-import java.util.Map;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * Build Carbondata Connector
@@ -70,13 +71,13 @@ public class CarbondataConnectorFactory implements ConnectorFactory {
       LifeCycleManager lifeCycleManager = injector.getInstance(LifeCycleManager.class);
       ConnectorMetadata metadata = injector.getInstance(CarbondataMetadata.class);
       ConnectorSplitManager splitManager = injector.getInstance(ConnectorSplitManager.class);
-      ConnectorPageSourceProvider connectorPageSource = injector.getInstance(ConnectorPageSourceProvider.class);
+      ConnectorPageSourceProvider connectorPageSource =
+          injector.getInstance(ConnectorPageSourceProvider.class);
 
-      return new CarbondataConnector(lifeCycleManager, new ClassLoaderSafeConnectorMetadata(metadata,classLoader),
-          new ClassLoaderSafeConnectorSplitManager(splitManager, classLoader),
-          classLoader,
-          new ClassLoaderSafeConnectorPageSourceProvider(connectorPageSource, classLoader)
-      );
+      return new CarbondataConnector(lifeCycleManager,
+          new ClassLoaderSafeConnectorMetadata(metadata, classLoader),
+          new ClassLoaderSafeConnectorSplitManager(splitManager, classLoader), classLoader,
+          new ClassLoaderSafeConnectorPageSourceProvider(connectorPageSource, classLoader));
     } catch (Exception e) {
       throw Throwables.propagate(e);
     }

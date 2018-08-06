@@ -17,16 +17,16 @@
 
 package org.apache.carbondata.presto;
 
+import java.util.Objects;
+
+import static java.util.Locale.ENGLISH;
+import static java.util.Objects.requireNonNull;
+
 import com.facebook.presto.spi.ConnectorTableHandle;
 import com.facebook.presto.spi.SchemaTableName;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Joiner;
-
-import java.util.Objects;
-
-import static java.util.Locale.ENGLISH;
-import static java.util.Objects.requireNonNull;
 
 public class CarbondataTableHandle implements ConnectorTableHandle {
 
