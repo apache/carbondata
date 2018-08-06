@@ -160,46 +160,22 @@ public class SortStepRowHandler implements Serializable {
    * @return 3-parted row
    */
   public Object[] convertIntermediateSortTempRowTo3Parted(IntermediateSortTempRow sortTempRow) {
-    int[] dictDims = new int[this.dictSortDimCnt + this.dictNoSortDimCnt];
-    byte[][] noDictArray = new byte[this.noDictSortDimCnt + this.noDictNoSortDimCnt
-                                    + this.varcharDimCnt + this.complexDimCnt][];
-
-    int[] dictNoSortDims = new int[this.dictNoSortDimCnt];
-    byte[][] noDictNoSortAndVarcharComplexDims
-        = new byte[this.noDictNoSortDimCnt + this.varcharDimCnt + this.complexDimCnt][];
-    Object[] measures = new Object[this.measureCnt];
-
-    sortTempRow.unpackNoSortFromBytes(dictNoSortDims, noDictNoSortAndVarcharComplexDims, measures,
-        this.dataTypes, this.varcharDimCnt, this.complexDimCnt);
-
-    // dict dims
-    System.arraycopy(sortTempRow.getDictSortDims(), 0 , dictDims,
-        0, this.dictSortDimCnt);
-    System.arraycopy(dictNoSortDims, 0, dictDims,
-        this.dictSortDimCnt, this.dictNoSortDimCnt);;
-
-    // no dict dims, including complex
-    System.arraycopy(sortTempRow.getNoDictSortDims(), 0,
-        noDictArray, 0, this.noDictSortDimCnt);
-    System.arraycopy(noDictNoSortAndVarcharComplexDims, 0, noDictArray,
-        this.noDictSortDimCnt, this.noDictNoSortDimCnt + this.varcharDimCnt + this.complexDimCnt);
-
-    // measures are already here
-
-    Object[] holder = new Object[3];
-    NonDictionaryUtil.prepareOutObj(holder, dictDims, noDictArray, measures);
-    return holder;
+    Object[] out = new Object[3];
+    NonDictionaryUtil
+        .prepareOutObj(out, sortTempRow.getDictSortDims(), sortTempRow.getNoDictSortDims(),
+            sortTempRow.getMeasures());
+    return out;
   }
 
   /**
    * Read intermediate sort temp row from InputStream.
-   * This method is used during the merge sort phase to read row from sort temp file.
+   * This method is used during the intermediate merge sort phase to read row from sort temp file.
    *
    * @param inputStream input stream
    * @return a row that contains three parts
    * @throws IOException if error occrus while reading from stream
    */
-  public IntermediateSortTempRow readIntermediateSortTempRowFromInputStream(
+  public IntermediateSortTempRow readWithoutNoSortFieldConvert(
       DataInputStream inputStream) throws IOException {
     int[] dictSortDims = new int[this.dictSortDimCnt];
     byte[][] noDictSortDims = new byte[this.noDictSortDimCnt][];
@@ -221,8 +197,117 @@ public class SortStepRowHandler implements Serializable {
     int len = inputStream.readInt();
     byte[] noSortDimsAndMeasures = new byte[len];
     inputStream.readFully(noSortDimsAndMeasures);
-
+    // keeping no sort fields and measure in pack byte array as it will not participate in sort
     return new IntermediateSortTempRow(dictSortDims, noDictSortDims, noSortDimsAndMeasures);
+  }
+
+  /**
+   * Read intermediate sort temp row from InputStream.
+   * This method is used during the final merge sort phase to read row from sort temp file and
+   * merged sort temp file.
+   *
+   * @param inputStream input stream
+   * @return a row that contains three parts
+   * @throws IOException if error occrus while reading from stream
+   */
+  public IntermediateSortTempRow readWithNoSortFieldConvert(
+      DataInputStream inputStream) throws IOException {
+    int[] dictSortDims = new int[this.dictSortDimCnt + this.dictNoSortDimCnt];
+    byte[][] noDictSortDims =
+        new byte[this.noDictSortDimCnt + this.noDictNoSortDimCnt + this.varcharDimCnt
+            + this.complexDimCnt][];
+
+    // read dict & sort dim data
+    for (int idx = 0; idx < this.dictSortDimCnt; idx++) {
+      dictSortDims[idx] = inputStream.readInt();
+    }
+
+    // read no-dict & sort data
+    for (int idx = 0; idx < this.noDictSortDimCnt; idx++) {
+      short len = inputStream.readShort();
+      byte[] bytes = new byte[len];
+      inputStream.readFully(bytes);
+      noDictSortDims[idx] = bytes;
+    }
+
+    // read no-dict dims & measures
+    int len = inputStream.readInt();
+    byte[] noSortDimsAndMeasures = new byte[len];
+    inputStream.readFully(noSortDimsAndMeasures);
+    Object[] measure = new Object[this.measureCnt];
+    // unpack the no sort fields and measure fields
+    unpackNoSortFromBytes(noSortDimsAndMeasures, dictSortDims, noDictSortDims, measure);
+    return new IntermediateSortTempRow(dictSortDims, noDictSortDims,measure);
+  }
+
+  private void unpackNoSortFromBytes(byte[] noSortDimsAndMeasures, int[] dictDims,
+      byte[][] noDictDims, Object[] measures) {
+    ByteBuffer rowBuffer = ByteBuffer.wrap(noSortDimsAndMeasures);
+    // read dict_no_sort
+    for (int i = dictSortDimCnt; i < dictDims.length; i++) {
+      dictDims[i] = rowBuffer.getInt();
+    }
+
+    int noDictIndex = noDictSortDimCnt;
+    // read no_dict_no_sort
+    for (int i = 0; i < noDictNoSortDimCnt; i++) {
+      short len = rowBuffer.getShort();
+      byte[] bytes = new byte[len];
+      rowBuffer.get(bytes);
+      noDictDims[noDictIndex++] = bytes;
+    }
+
+    // read varchar dims
+    for (int i = 0; i < varcharDimCnt; i++) {
+      int len = rowBuffer.getInt();
+      byte[] bytes = new byte[len];
+      rowBuffer.get(bytes);
+      noDictDims[noDictIndex++] = bytes;
+    }
+
+    // read complex dims
+    for (int i = 0; i < complexDimCnt; i++) {
+      short len = rowBuffer.getShort();
+      byte[] bytes = new byte[len];
+      rowBuffer.get(bytes);
+      noDictDims[noDictIndex++] = bytes;
+    }
+
+    // read measure
+    int measureCnt = measures.length;
+    DataType tmpDataType;
+    Object tmpContent;
+    for (short idx = 0 ; idx < measureCnt; idx++) {
+      if ((byte) 0 == rowBuffer.get()) {
+        measures[idx] = null;
+        continue;
+      }
+
+      tmpDataType = dataTypes[idx];
+      if (DataTypes.BOOLEAN == tmpDataType) {
+        if ((byte) 1 == rowBuffer.get()) {
+          tmpContent = true;
+        } else {
+          tmpContent = false;
+        }
+      } else if (DataTypes.SHORT == tmpDataType) {
+        tmpContent = rowBuffer.getShort();
+      } else if (DataTypes.INT == tmpDataType) {
+        tmpContent = rowBuffer.getInt();
+      } else if (DataTypes.LONG == tmpDataType) {
+        tmpContent = rowBuffer.getLong();
+      } else if (DataTypes.DOUBLE == tmpDataType) {
+        tmpContent = rowBuffer.getDouble();
+      } else if (DataTypes.isDecimal(tmpDataType)) {
+        short len = rowBuffer.getShort();
+        byte[] decimalBytes = new byte[len];
+        rowBuffer.get(decimalBytes);
+        tmpContent = DataTypeUtil.byteToBigDecimal(decimalBytes);
+      } else {
+        throw new IllegalArgumentException("Unsupported data type: " + tmpDataType);
+      }
+      measures[idx] = tmpContent;
+    }
   }
 
   /**
@@ -298,7 +383,7 @@ public class SortStepRowHandler implements Serializable {
    * @param address address of the row
    * @return intermediate sort temp row
    */
-  public IntermediateSortTempRow readIntermediateSortTempRowFromUnsafeMemory(Object baseObject,
+  public IntermediateSortTempRow readFromMemoryWithoutNoSortFieldConvert(Object baseObject,
       long address) {
     int size = 0;
 
@@ -330,6 +415,51 @@ public class SortStepRowHandler implements Serializable {
         noSortDimsAndMeasures, CarbonUnsafe.BYTE_ARRAY_OFFSET, len);
 
     return new IntermediateSortTempRow(dictSortDims, noDictSortDims, noSortDimsAndMeasures);
+  }
+
+  /**
+   * Read intermediate sort temp row from unsafe memory.
+   * This method is used during merge sort phase for off-heap sort.
+   *
+   * @param baseObject base object of memory block
+   * @param address address of the row
+   * @return intermediate sort temp row
+   */
+  public IntermediateSortTempRow readRowFromMemoryWithNoSortFieldConvert(Object baseObject,
+      long address) {
+    int size = 0;
+
+    int[] dictSortDims = new int[this.dictSortDimCnt + this.dictNoSortDimCnt];
+    byte[][] noDictSortDims =
+        new byte[this.noDictSortDimCnt + this.noDictNoSortDimCnt + this.varcharDimCnt
+            + this.complexDimCnt][];
+
+    // read dict & sort dim
+    for (int idx = 0; idx < dictSortDimCnt; idx++) {
+      dictSortDims[idx] = CarbonUnsafe.getUnsafe().getInt(baseObject, address + size);
+      size += 4;
+    }
+
+    // read no-dict & sort dim
+    for (int idx = 0; idx < this.noDictSortDimCnt; idx++) {
+      short length = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
+      size += 2;
+      byte[] bytes = new byte[length];
+      CarbonUnsafe.getUnsafe().copyMemory(baseObject, address + size,
+          bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
+      size += length;
+      noDictSortDims[idx] = bytes;
+    }
+
+    // read no-sort dims & measures
+    int len = CarbonUnsafe.getUnsafe().getInt(baseObject, address + size);
+    size += 4;
+    byte[] noSortDimsAndMeasures = new byte[len];
+    CarbonUnsafe.getUnsafe().copyMemory(baseObject, address + size,
+        noSortDimsAndMeasures, CarbonUnsafe.BYTE_ARRAY_OFFSET, len);
+    Object[] measures = new Object[measureCnt];
+    unpackNoSortFromBytes(noSortDimsAndMeasures, dictSortDims, noDictSortDims, measures);
+    return new IntermediateSortTempRow(dictSortDims, noDictSortDims, measures);
   }
 
   /**
@@ -428,6 +558,8 @@ public class SortStepRowHandler implements Serializable {
     size += packSize;
     return size;
   }
+
+
 
   /**
    * Pack to no-sort fields to byte array

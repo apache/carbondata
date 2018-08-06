@@ -143,7 +143,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
       for (final File file : filesToMergeSort) {
 
         SortTempChunkHolder sortTempFileChunkHolder =
-            new UnsafeSortTempFileChunkHolder(file, parameters);
+            new UnsafeSortTempFileChunkHolder(file, parameters, true);
 
         // initialize
         sortTempFileChunkHolder.readRow();
@@ -197,8 +197,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
    */
   public Object[] next() {
     if (hasNext()) {
-      IntermediateSortTempRow sortTempRow = getSortedRecordFromFile();
-      return sortStepRowHandler.convertIntermediateSortTempRowTo3Parted(sortTempRow);
+      return sortStepRowHandler.convertIntermediateSortTempRowTo3Parted(getSortedRecordFromFile());
     } else {
       throw new NoSuchElementException("No more elements to return");
     }
