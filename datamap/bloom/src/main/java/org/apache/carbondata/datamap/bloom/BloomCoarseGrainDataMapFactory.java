@@ -391,7 +391,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
       case ALTER_CHANGE_DATATYPE:
         return true;
       case STREAMING:
-        return true;
+        return false;
       case DELETE:
         return true;
       case UPDATE:
