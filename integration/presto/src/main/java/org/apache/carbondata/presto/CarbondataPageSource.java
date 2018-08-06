@@ -20,6 +20,8 @@ package org.apache.carbondata.presto;
 import java.io.IOException;
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
+
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.presto.readers.PrestoVectorBlockBuilder;
@@ -35,7 +37,6 @@ import com.facebook.presto.spi.block.LazyBlock;
 import com.facebook.presto.spi.block.LazyBlockLoader;
 
 import static com.google.common.base.Preconditions.checkState;
-import static java.util.Objects.requireNonNull;
 
 /**
  * Carbondata Page Source class for custom Carbondata RecordSet Iteration.

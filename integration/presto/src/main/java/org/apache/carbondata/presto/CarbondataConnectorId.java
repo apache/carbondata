@@ -17,11 +17,11 @@
 
 package org.apache.carbondata.presto;
 
-import com.google.inject.Inject;
-
 import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
+
+import com.google.inject.Inject;
 
 public class CarbondataConnectorId {
   private final String id;

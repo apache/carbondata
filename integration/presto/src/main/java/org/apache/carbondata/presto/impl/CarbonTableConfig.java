@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.presto.impl;
 
-import io.airlift.configuration.Config;
-
 import javax.validation.constraints.NotNull;
+
+import io.airlift.configuration.Config;
 
 /**
  * Configuration read from etc/catalog/carbondata.properties
@@ -49,7 +49,8 @@ public class CarbonTableConfig {
     return dbPath;
   }
 
-  @Config("carbondata-store") public CarbonTableConfig setDbPath(String dbPath) {
+  @Config("carbondata-store")
+  public CarbonTableConfig setDbPath(String dbPath) {
     this.dbPath = dbPath;
     return this;
   }
@@ -58,7 +59,8 @@ public class CarbonTableConfig {
     return tablePath;
   }
 
-  @Config("carbondata-store") public CarbonTableConfig setTablePath(String tablePath) {
+  @Config("carbondata-store")
+  public CarbonTableConfig setTablePath(String tablePath) {
     this.tablePath = tablePath;
     return this;
   }
@@ -67,7 +69,8 @@ public class CarbonTableConfig {
     return storePath;
   }
 
-  @Config("carbondata-store") public CarbonTableConfig setStorePath(String storePath) {
+  @Config("carbondata-store")
+  public CarbonTableConfig setStorePath(String storePath) {
     this.storePath = storePath;
     return this;
   }

@@ -16,8 +16,10 @@
  */
 
 package org.apache.carbondata.presto;
+import java.util.List;
 
-import org.apache.carbondata.presto.impl.CarbonLocalInputSplit;
+import static java.util.Objects.requireNonNull;
+
 import org.apache.carbondata.presto.impl.CarbonLocalMultiBlockSplit;
 
 import com.facebook.presto.spi.ColumnHandle;
@@ -28,10 +30,6 @@ import com.facebook.presto.spi.predicate.TupleDomain;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
-
-import java.util.List;
-
-import static java.util.Objects.requireNonNull;
 
 public class CarbondataSplit implements ConnectorSplit {
 
