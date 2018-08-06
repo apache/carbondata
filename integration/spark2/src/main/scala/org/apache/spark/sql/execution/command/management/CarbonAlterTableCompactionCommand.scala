@@ -37,6 +37,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
@@ -122,6 +123,15 @@ case class CarbonAlterTableCompactionCommand(
           "Unsupported alter operation on carbon table: Merge index is not supported on streaming" +
           " table")
       }
+      val version = CarbonUtil.getFormatVersion(table)
+      val isOlderVersion = version == ColumnarFormatVersion.V1 ||
+                           version == ColumnarFormatVersion.V2
+      if (isOlderVersion) {
+        throw new MalformedCarbonCommandException(
+          "Unsupported alter operation on carbon table: Merge index is not supported on V1 V2 " +
+          "store segments")
+      }
+
       val alterTableMergeIndexEvent: AlterTableMergeIndexEvent =
         AlterTableMergeIndexEvent(sparkSession, table, alterTableModel)
       OperationListenerBus.getInstance
