@@ -97,6 +97,12 @@ case class CarbonCreateDataMapCommand(
         "For this datamap, main table is required. Use `CREATE DATAMAP ... ON TABLE ...` ")
     }
     dataMapProvider = DataMapManager.get.getDataMapProvider(mainTable, dataMapSchema, sparkSession)
+    if (deferredRebuild && !dataMapProvider.supportRebuild()) {
+      throw new MalformedDataMapCommandException(
+        s"DEFERRED REBUILD is not supported on this datamap $dataMapName" +
+        s" with provider ${dataMapSchema.getProviderName}")
+    }
+
     val systemFolderLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
     val operationContext: OperationContext = new OperationContext()
 
@@ -138,10 +144,6 @@ case class CarbonCreateDataMapCommand(
         dataMapProvider.initMeta(queryString.orNull)
         DataMapStatusManager.disableDataMap(dataMapName)
       case _ =>
-        if (deferredRebuild) {
-          throw new MalformedDataMapCommandException(
-            "DEFERRED REBUILD is not supported on this DataMap")
-        }
         dataMapProvider.initMeta(queryString.orNull)
     }
     val createDataMapPostExecutionEvent: CreateDataMapPostExecutionEvent =

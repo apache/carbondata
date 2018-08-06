@@ -1,17 +1,17 @@
 <!--
-    Licensed to the Apache Software Foundation (ASF) under one or more 
+    Licensed to the Apache Software Foundation (ASF) under one or more
     contributor license agreements.  See the NOTICE file distributed with
-    this work for additional information regarding copyright ownership. 
+    this work for additional information regarding copyright ownership.
     The ASF licenses this file to you under the Apache License, Version 2.0
-    (the "License"); you may not use this file except in compliance with 
+    (the "License"); you may not use this file except in compliance with
     the License.  You may obtain a copy of the License at
 
       http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software 
-    distributed under the License is distributed on an "AS IS" BASIS, 
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and 
+    See the License for the specific language governing permissions and
     limitations under the License.
 -->
 
@@ -31,15 +31,15 @@ DataMap can be created using following DDL
     SELECT statement
 ```
 
-Currently, there are 5 DataMap implementation in CarbonData.
+Currently, there are 5 DataMap implementations in CarbonData.
 
 | DataMap Provider | Description                              | DMPROPERTIES                             | Management       |
 | ---------------- | ---------------------------------------- | ---------------------------------------- | ---------------- |
 | preaggregate     | single table pre-aggregate table         | No DMPROPERTY is required                | Automatic        |
-| timeseries       | time dimension rollup table.             | event_time, xx_granularity, please refer to [Timeseries DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/timeseries-datamap-guide.md) | Automatic        |
-| mv               | multi-table pre-aggregate table,         | No DMPROPERTY is required                | Manual           |
-| lucene           | lucene indexing for text column          | index_columns to specifying the index columns | Manual/Automatic |
-| bloomfilter      | bloom filter for high cardinality column, geospatial column | index_columns to specifying the index columns | Manual/Automatic |
+| timeseries       | time dimension rollup table              | event_time, xx_granularity, please refer to [Timeseries DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/timeseries-datamap-guide.md) | Automatic        |
+| mv               | multi-table pre-aggregate table          | No DMPROPERTY is required                | Manual           |
+| lucene           | lucene indexing for text column          | index_columns to specifying the index columns | Automatic |
+| bloomfilter      | bloom filter for high cardinality column, geospatial column | index_columns to specifying the index columns | Automatic |
 
 ## DataMap Management
 
@@ -47,6 +47,9 @@ There are two kinds of management semantic for DataMap.
 
 1. Automatic Refresh: Create datamap without `WITH DEFERED REBUILD` in the statement, which is by default.
 2. Manual Refresh: Create datamap with `WITH DEFERED REBUILD` in the statement
+
+**CAUTION:**
+Manual refresh currently only works fine for MV, it has some bugs with other types of datamap in Carbondata 1.4.1, so we block this option for them in this version.
 
 ### Automatic Refresh
 

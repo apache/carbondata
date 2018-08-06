@@ -225,7 +225,6 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | create datamap $datamapName3 on table $tableName using 'bloomfilter'
-         | with deferred rebuild
          | DMPROPERTIES ('index_columns'='c')
        """.stripMargin)
     var result = sql(s"show datamap on table $tableName").cache()

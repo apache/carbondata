@@ -21,10 +21,10 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.DataCommand
 
-import org.apache.carbondata.core.datamap.{DataMapRegistry, DataMapStoreManager}
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.datamap.{DataMapManager, IndexDataMapRebuildRDD}
+import org.apache.carbondata.datamap.DataMapManager
 import org.apache.carbondata.events.{UpdateDataMapPostExecutionEvent, _}
 
 /**
@@ -36,7 +36,19 @@ case class CarbonDataMapRebuildCommand(
     tableIdentifier: Option[TableIdentifier]) extends DataCommand {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    val schema = DataMapStoreManager.getInstance().getDataMapSchema(dataMapName)
+    import scala.collection.JavaConverters._
+    val schemaOption = CarbonDataMapShowCommand(tableIdentifier).getAllDataMaps(sparkSession)
+      .asScala
+      .find(p => p.getDataMapName.equalsIgnoreCase(dataMapName))
+    if (schemaOption.isEmpty) {
+      throw new MalformedDataMapCommandException(
+        s"Datamap with name $dataMapName does not exist on table ${tableIdentifier.get.table}")
+    }
+    val schema = schemaOption.get
+    if (!schema.isLazy) {
+      throw new MalformedDataMapCommandException(
+        s"Non-lazy datamap $dataMapName does not support rebuild")
+    }
 
     val table = tableIdentifier match {
       case Some(identifier) =>
@@ -47,6 +59,7 @@ case class CarbonDataMapRebuildCommand(
           schema.getRelationIdentifier.getTableName
         )(sparkSession)
     }
+
     val provider = DataMapManager.get().getDataMapProvider(table, schema, sparkSession)
     provider.rebuild()
 

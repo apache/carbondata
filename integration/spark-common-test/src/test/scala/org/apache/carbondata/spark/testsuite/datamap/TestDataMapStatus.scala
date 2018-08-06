@@ -310,4 +310,6 @@ class TestDataMapFactory(
       }
     }
   }
+
+  override def supportRebuild(): Boolean = true
 }

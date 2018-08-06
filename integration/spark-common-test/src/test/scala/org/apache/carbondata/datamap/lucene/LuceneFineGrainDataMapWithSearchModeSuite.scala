@@ -133,7 +133,7 @@ class LuceneFineGrainDataMapWithSearchModeSuite extends QueryTest with BeforeAnd
     sql("DROP TABLE IF EXISTS datamap_test_table")
   }
 
-  test("test lucene fine grain datamap rebuild") {
+  ignore("test lucene fine grain datamap rebuild") {
     sql("DROP TABLE IF EXISTS datamap_test5")
     sql(
       """
