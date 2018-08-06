@@ -144,42 +144,55 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      ```
 
    - **Local Dictionary Configuration**
-     
-     Local Dictionary is generated only for no-dictionary string/varchar datatype columns. It helps in:
-     1. Getting more compression on dimension columns with less cardinality.
-     2. Filter queries and full scan queries on No-dictionary columns with local dictionary will be faster as filter will be done on encoded data.
-     3. Reducing the store size and memory footprint as only unique values will be stored as part of local dictionary and corresponding data will be stored as encoded data.
    
-     By default, Local Dictionary will be enabled and generated for all no-dictionary string/varchar datatype columns.
+   Columns for which dictionary is not generated needs more storage space and in turn more IO. Also since more data will have to be read during query, query performance also would suffer.Generating dictionary per blocklet for such columns would help in saving storage space and assist in improving query performance as carbondata is optimized for handling dictionary encoded columns more effectively.Generating dictionary internally per blocklet is termed as local dictionary. Please refer to [File structure of Carbondata](../file-structure-of-carbondata.md) for understanding about the file structure of carbondata and meaning of terms like blocklet.
+   
+   Local Dictionary helps in:
+   1. Getting more compression.
+   2. Filter queries and full scan queries will be faster as filter will be done on encoded data.
+   3. Reducing the store size and memory footprint as only unique values will be stored as part of local dictionary and corresponding data will be stored as encoded data.
+   4. Getting higher IO throughput.
+ 
+   **NOTE:** 
+   
+   * Following Data Types are Supported for Local Dictionary:
+      * STRING
+      * VARCHAR
+      * CHAR
+
+   * Following Data Types are not Supported for Local Dictionary: 
+      * SMALLINT
+      * INTEGER
+      * BIGINT
+      * DOUBLE
+      * DECIMAL
+      * TIMESTAMP
+      * DATE
+      * BOOLEAN
+   
+   * In case of multi-level complex dataType columns, primitive string/varchar/char columns are considered for local dictionary generation.
+   
+   Local dictionary will have to be enabled explicitly during create table or by enabling the system property 'carbon.local.dictionary.enable'. By default, Local Dictionary will be disabled for the carbondata table.
+    
+   Local Dictionary can be configured using the following properties during create table command: 
           
-     Users will be able to pass following properties in create table command: 
-          
-     | Properties | Default value | Description |
-     | ---------- | ------------- | ----------- |
-     | LOCAL_DICTIONARY_ENABLE | false | By default, local dictionary will not be enabled for the table |
-     | LOCAL_DICTIONARY_THRESHOLD | 10000 | The maximum cardinality for local dictionary generation (range- 1000 to 100000) |
-     | LOCAL_DICTIONARY_INCLUDE | all no-dictionary string/varchar columns | Columns for which Local Dictionary is generated. |
-     | LOCAL_DICTIONARY_EXCLUDE | none | Columns for which Local Dictionary is not generated |
+   | Properties | Default value | Description |
+   | ---------- | ------------- | ----------- |
+   | LOCAL_DICTIONARY_ENABLE | false | Whether to enable local dictionary generation. **NOTE:** If this property is defined, it will override the value configured at system level by 'carbon.local.dictionary.enable' |
+   | LOCAL_DICTIONARY_THRESHOLD | 10000 | The maximum cardinality of a column upto which carbondata can try to generate local dictionary (maximum - 100000) |
+   | LOCAL_DICTIONARY_INCLUDE | string/varchar/char columns| Columns for which Local Dictionary has to be generated.**NOTE:** Those string/varchar/char columns which are added into DICTIONARY_INCLUDE option will not be considered for local dictionary generation.|
+   | LOCAL_DICTIONARY_EXCLUDE | none | Columns for which Local Dictionary need not be generated. |
         
-      **NOTE:**  If the cardinality exceeds the threshold, this column will not use local dictionary encoding. And in this case, the data loading performance will decrease since there is a rollback procedure for local dictionary encoding.
-      
-      **Calculating Memory Usage for Local Dictionary:**
-      
-      Encoded data and Actual data are both stored when Local Dictionary is enabled.
-      Suppose 'x' columns are configured for Local Dictionary generation out of a total of 'y' string/varchar columns. 
-      
-      Total size will be 
-      
-      Memory size(y-x) + ((4 bytes * number of rows) * x) + (Local Dictionary size of x columns)
-      
-      Local Dictionary size = ((memory occupied by each unique value * cardinality of the column) * number of columns)
-      
-      **Bad Records Path:**
-      
-      This property is used to specify the location where bad records would be written.
-      
-      ```TBLPROPERTIES('BAD_RECORDS_PATH'='/opt/badrecords'')```
-      
+   **Fallback behavior:** 
+   
+   * When the cardinality of a column exceeds the threshold, it triggers a fallback and the generated dictionary will be reverted and data loading will be continued without dictionary encoding.
+   
+   **NOTE:** When fallback is triggered, the data loading performance will decrease as encoded data will be discarded and the actual data is written to the temporary sort files.
+   
+   **The cost for Local Dictionary:**
+   
+   The memory footprint will increase when local dictionary is configured as actual data will have to be stored along with dictionary encoded data.
+       
 ### Example:
  
    ```
@@ -195,7 +208,13 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      TBLPROPERTIES('LOCAL_DICTIONARY_ENABLE'='true','LOCAL_DICTIONARY_THRESHOLD'='1000',
      'LOCAL_DICTIONARY_INCLUDE'='column1','LOCAL_DICTIONARY_EXCLUDE'='column2')
    ```
+
+   **NOTE:** 
    
+   * We recommend to use Local Dictionary when cardinality is high but is distributed across multiple loads
+   * On a large cluster, decoding data can become a bottleneck for global dictionary as there will be many remote reads. In this scenario, it is better to use Local Dictionary.
+   * When cardinality is less, but loads are repetitive, it is better to use global dictionary as local dictionary generates multiple dictionary files at blocklet level increasing redundancy.
+
    - **Caching Min/Max Value for Required Columns**
      By default, CarbonData caches min and max values of all the columns in schema.  As the load increases, the memory required to hold the min and max values increases considerably. This feature enables you to configure min and max values only for the required columns, resulting in optimized memory usage. 
 	 
@@ -558,6 +577,9 @@ Users can specify which columns to include and exclude for local dictionary gene
     ```
    ALTER TABLE tablename UNSET TBLPROPERTIES('LOCAL_DICTIONARY_ENABLE','LOCAL_DICTIONARY_THRESHOLD','LOCAL_DICTIONARY_INCLUDE','LOCAL_DICTIONARY_EXCLUDE')
     ```
+    
+   **NOTE:** For old tables, by default, local dictionary is disabled. If user wants local dictionary for these tables, user can enable/disable local dictionary for new data at their discretion. 
+   This can be achieved by using the alter table set command.
 
 ### DROP TABLE
   
@@ -784,6 +806,14 @@ Users can specify which columns to include and exclude for local dictionary gene
   * Since Bad Records Path can be specified in create, load and carbon properties. 
   Therefore, value specified in load will have the highest priority, and value specified in carbon properties will have the least priority.
 
+   **Bad Records Path:**
+        
+   This property is used to specify the location where bad records would be written.
+        
+   ```
+   TBLPROPERTIES('BAD_RECORDS_PATH'='/opt/badrecords'')
+   ```
+        
   Example:
 
   ```
