@@ -1097,18 +1097,19 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test SDK Read with merge index file") {
-    sql("DROP TABLE IF EXISTS t1")
+    sql("DROP TABLE IF EXISTS normalTable1")
     sql(
-      "create table if not exists t1 (name string, age int, height double) STORED BY 'carbondata'")
-    sql(s"""insert into t1 values ("aaaaa", 12, 20)""").show(200, false)
+      "create table if not exists normalTable1(name string, age int, height double) STORED BY " +
+      "'carbondata'")
+    sql(s"""insert into normalTable1 values ("aaaaa", 12, 20)""").show(200, false)
     sql("DROP TABLE IF EXISTS sdkOutputTable")
-    val fileLocation = storeLocation + "/t1/Fact/Part0/Segment_0"
+    val fileLocation = storeLocation + "/normaltable1/Fact/Part0/Segment_0"
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
          |'$fileLocation' """.stripMargin)
     checkAnswer(sql("select * from sdkOutputTable"), Seq(Row("aaaaa", 12, 20)))
     sql("DROP TABLE sdkOutputTable")
-    sql("DROP TABLE t1")
+    sql("DROP TABLE normalTable1")
   }
 
   // --------------------------------------------- AVRO test cases ---------------------------
