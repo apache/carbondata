@@ -22,6 +22,8 @@ import org.apache.carbondata.core.datamap.dev.expr.DataMapWrapperSimpleInfo;
 
 /**
  * Used for EXPLAIN command
+ * Notice that after 1.4.1, carbondata do blocklet pruning by segments, so that we need to record
+ * and append it to the previous pruning result.
  */
 @InterfaceAudience.Internal
 public class TablePruningInfo {
@@ -46,22 +48,28 @@ public class TablePruningInfo {
     this.filterStatement = filterStatement;
   }
 
-  void setNumBlockletsAfterDefaultPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
-      int numBlocklets) {
-    this.defaultDataMap = dataMapWrapperSimpleInfo;
-    this.numBlockletsAfterDefaultPruning = numBlocklets;
+  public void setDefaultDataMap(DataMapWrapperSimpleInfo defaultDataMap) {
+    this.defaultDataMap = defaultDataMap;
   }
 
-  void setNumBlockletsAfterCGPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
-      int numBlocklets) {
-    this.cgDataMap = dataMapWrapperSimpleInfo;
-    this.numBlockletsAfterCGPruning = numBlocklets;
+  public void setCgDataMap(DataMapWrapperSimpleInfo cgDataMap) {
+    this.cgDataMap = cgDataMap;
   }
 
-  void setNumBlockletsAfterFGPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
-      int numBlocklets) {
-    this.fgDataMap = dataMapWrapperSimpleInfo;
-    this.numBlockletsAfterFGPruning = numBlocklets;
+  public void setFgDataMap(DataMapWrapperSimpleInfo fgDataMap) {
+    this.fgDataMap = fgDataMap;
+  }
+
+  void addNumBlockletsAfterDefaultPruning(int numBlocklets) {
+    this.numBlockletsAfterDefaultPruning += numBlocklets;
+  }
+
+  void addNumBlockletsAfterCGPruning(int numBlocklets) {
+    this.numBlockletsAfterCGPruning += numBlocklets;
+  }
+
+  void addNumBlockletsAfterFGPruning(int numBlocklets) {
+    this.numBlockletsAfterFGPruning += numBlocklets;
   }
 
   @Override
