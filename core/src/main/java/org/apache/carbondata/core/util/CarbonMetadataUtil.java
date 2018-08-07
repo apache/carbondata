@@ -368,7 +368,13 @@ public class CarbonMetadataUtil {
       secondBuffer.put(second);
       firstBuffer.flip();
       secondBuffer.flip();
-      return (int) (firstBuffer.getDouble() - secondBuffer.getDouble());
+      double compare = firstBuffer.getDouble() - secondBuffer.getDouble();
+      if (compare > 0) {
+        compare = 1;
+      } else if (compare < 0) {
+        compare = -1;
+      }
+      return (int) compare;
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.INT
         || dataType == DataTypes.SHORT) {
       firstBuffer = ByteBuffer.allocate(8);
@@ -377,7 +383,13 @@ public class CarbonMetadataUtil {
       secondBuffer.put(second);
       firstBuffer.flip();
       secondBuffer.flip();
-      return (int) (firstBuffer.getLong() - secondBuffer.getLong());
+      long compare = firstBuffer.getLong() - secondBuffer.getLong();
+      if (compare > 0) {
+        compare = 1;
+      } else if (compare < 0) {
+        compare = -1;
+      }
+      return (int) compare;
     } else if (DataTypes.isDecimal(dataType)) {
       return DataTypeUtil.byteToBigDecimal(first).compareTo(DataTypeUtil.byteToBigDecimal(second));
     } else {

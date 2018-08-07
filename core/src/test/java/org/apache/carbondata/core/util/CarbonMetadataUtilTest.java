@@ -17,40 +17,28 @@
 
 package org.apache.carbondata.core.util;
 
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.datastore.page.EncodedTablePage;
-import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
-import org.apache.carbondata.core.datastore.page.key.TablePageKey;
-import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.format.BlockIndex;
-import org.apache.carbondata.format.BlockletIndex;
 import org.apache.carbondata.format.BlockletInfo;
-import org.apache.carbondata.format.BlockletInfo3;
-import org.apache.carbondata.format.BlockletMinMaxIndex;
 import org.apache.carbondata.format.ColumnSchema;
 import org.apache.carbondata.format.DataChunk;
-import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataType;
 import org.apache.carbondata.format.Encoding;
-import org.apache.carbondata.format.FileFooter3;
 import org.apache.carbondata.format.IndexHeader;
 import org.apache.carbondata.format.SegmentInfo;
 
-import mockit.Mock;
-import mockit.MockUp;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.apache.carbondata.core.util.CarbonMetadataUtil.convertFileFooterVersion3;
 import static org.apache.carbondata.core.util.CarbonMetadataUtil.getBlockIndexInfo;
-import static org.apache.carbondata.core.util.CarbonMetadataUtil.getBlockletIndex;
 import static org.apache.carbondata.core.util.CarbonMetadataUtil.getIndexHeader;
 
 public class CarbonMetadataUtilTest {
@@ -203,6 +191,29 @@ public class CarbonMetadataUtilTest {
     List<BlockIndex> result = getBlockIndexInfo(blockIndexInfoList);
     String expected = "file";
     assertEquals(result.get(0).file_name, expected);
+  }
+
+  @Test public void testGetBlockletIndex() throws Exception {
+
+    long left = Long.MAX_VALUE;
+    long right = 100;
+    ByteBuffer buffer = ByteBuffer.allocate(8);
+    buffer.putLong(left);
+    buffer.flip();
+    byte[] l = buffer.array().clone();
+
+    buffer.rewind();
+    buffer.putLong(right);
+    buffer.flip();
+    byte[] r = buffer.array().clone();
+
+    Method method = CarbonMetadataUtil.class
+        .getDeclaredMethod("compareMeasureData", l.getClass(), r.getClass(),
+            org.apache.carbondata.core.metadata.datatype.DataType.class);
+    method.setAccessible(true);
+    int out = (int)method.invoke(method, l, r, DataTypes.LONG);
+    assertEquals(1, out);
+
   }
 
 }
