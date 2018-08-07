@@ -1409,7 +1409,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
 
   test("test alter table add column system level property and table level property") {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE, "false")
+      .addProperty(CarbonCommonConstants.ENABLE_SYSTEM_LEVEL_LOCAL_DICTIONARY, "false")
     sql("drop table if exists local1")
     sql(
       """
@@ -1435,7 +1435,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
 
   test("test alter table add column system level property") {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE, "false")
+      .addProperty(CarbonCommonConstants.ENABLE_SYSTEM_LEVEL_LOCAL_DICTIONARY, "false")
     sql("drop table if exists local1")
     sql(
       """
@@ -1458,7 +1458,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
   override protected def afterAll(): Unit = {
     sql("DROP TABLE IF EXISTS LOCAL1")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE,
+      .addProperty(CarbonCommonConstants.ENABLE_SYSTEM_LEVEL_LOCAL_DICTIONARY,
         CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
   }
 }

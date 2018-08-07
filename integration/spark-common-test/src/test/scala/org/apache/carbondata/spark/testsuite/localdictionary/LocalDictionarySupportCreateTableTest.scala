@@ -2430,7 +2430,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
 
   test("test local dictionary for system level configuration") {
     sql("drop table if exists local1")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE, "false")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_SYSTEM_LEVEL_LOCAL_DICTIONARY, "false")
     // should not throw exception as system level it is false and table level is not configured
       sql(
         """
@@ -2442,7 +2442,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
 
   test("test local dictionary for system level configuration and table level priority") {
     sql("drop table if exists local1")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE, "false")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_SYSTEM_LEVEL_LOCAL_DICTIONARY, "false")
     // should not throw exception as system level it is false and table level is not configured
     intercept[MalformedCarbonCommandException] {
       sql(
@@ -2459,7 +2459,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
   override protected def afterAll(): Unit = {
     sql("DROP TABLE IF EXISTS LOCAL1")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE,
+      .addProperty(CarbonCommonConstants.ENABLE_SYSTEM_LEVEL_LOCAL_DICTIONARY,
         CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
   }
 }

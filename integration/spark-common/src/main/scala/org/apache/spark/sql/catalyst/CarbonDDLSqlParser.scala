@@ -310,7 +310,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       tableProperties
         .put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
           CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE,
+            .getProperty(CarbonCommonConstants.ENABLE_SYSTEM_LEVEL_LOCAL_DICTIONARY,
               CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT))
     }
 
