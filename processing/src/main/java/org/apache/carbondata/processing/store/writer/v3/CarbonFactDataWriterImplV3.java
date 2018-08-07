@@ -365,4 +365,9 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       writeBlockletInfoToFile();
     }
   }
+
+  @Override public void forceClose() {
+    closeStreamsOnForceClose();
+    closeExecutorServiceOnForceClose();
+  }
 }

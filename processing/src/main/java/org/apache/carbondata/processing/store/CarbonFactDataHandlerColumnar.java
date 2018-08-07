@@ -373,6 +373,18 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.dataWriter = null;
   }
 
+  public void forceClose() {
+    if (null != producerExecutorService && !producerExecutorService.isShutdown()) {
+      producerExecutorService.shutdownNow();
+    }
+    if (null != consumerExecutorService && !consumerExecutorService.isShutdown()) {
+      consumerExecutorService.shutdownNow();
+    }
+    if (null != this.dataWriter) {
+      this.dataWriter.forceClose();
+    }
+  }
+
   /**
    * Below method will be to configure fact file writing configuration
    *
