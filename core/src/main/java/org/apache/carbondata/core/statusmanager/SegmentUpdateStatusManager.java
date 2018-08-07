@@ -779,6 +779,33 @@ public class SegmentUpdateStatusManager {
     }
     return range;
   }
+
+  /**
+   * Returns the invalid timestamp range of a segment.
+   * @return
+   */
+  public List<UpdateVO> getInvalidTimestampRange() {
+    List<UpdateVO> ranges = new ArrayList<UpdateVO>();
+    for (LoadMetadataDetails segment : segmentDetails) {
+      if ((SegmentStatus.LOAD_FAILURE == segment.getSegmentStatus()
+          || SegmentStatus.COMPACTED == segment.getSegmentStatus()
+          || SegmentStatus.MARKED_FOR_DELETE == segment.getSegmentStatus())) {
+        UpdateVO range = new UpdateVO();
+        range.setSegmentId(segment.getLoadName());
+        range.setFactTimestamp(segment.getLoadStartTime());
+        if (!segment.getUpdateDeltaStartTimestamp().isEmpty() &&
+            !segment.getUpdateDeltaEndTimestamp().isEmpty()) {
+          range.setUpdateDeltaStartTimestamp(
+              CarbonUpdateUtil.getTimeStampAsLong(segment.getUpdateDeltaStartTimestamp()));
+          range.setLatestUpdateTimestamp(
+              CarbonUpdateUtil.getTimeStampAsLong(segment.getUpdateDeltaEndTimestamp()));
+        }
+        ranges.add(range);
+      }
+    }
+    return ranges;
+  }
+
   /**
    *
    * @param block
