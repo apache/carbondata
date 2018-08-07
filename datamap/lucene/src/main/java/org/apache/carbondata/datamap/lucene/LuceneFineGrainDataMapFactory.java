@@ -98,7 +98,7 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
       case ALTER_CHANGE_DATATYPE:
         return true;
       case STREAMING:
-        return true;
+        return false;
       case DELETE:
         return true;
       case UPDATE:
