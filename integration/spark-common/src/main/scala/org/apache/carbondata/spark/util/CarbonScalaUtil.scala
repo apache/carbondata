@@ -535,7 +535,7 @@ object CarbonScalaUtil {
    * this method validates the local dictionary columns configurations
    *
    * @param tableProperties
-   * @param localDictColumns
+   * @param localDictColumns local dictionary columns for validation, can be include/exclude
    */
   def validateLocalDictionaryColumns(tableProperties: mutable.Map[String, String],
       localDictColumns: Seq[String]): Unit = {
@@ -664,8 +664,9 @@ object CarbonScalaUtil {
   /**
    * This method validates the local dictionary configured columns
    *
-   * @param fields
-   * @param tableProperties
+   * @param fields all the fields of table
+   * @param tableProperties table properties of table which has local dictionary configured props
+   * @param localDictColumns local dictionary columns, can be include/exclude columns
    */
   def validateLocalConfiguredDictionaryColumns(fields: Seq[Field],
       tableProperties: mutable.Map[String, String], localDictColumns: Seq[String]): Unit = {
