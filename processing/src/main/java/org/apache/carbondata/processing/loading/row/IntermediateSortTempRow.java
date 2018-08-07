@@ -24,7 +24,15 @@ package org.apache.carbondata.processing.loading.row;
 public class IntermediateSortTempRow {
   private int[] dictSortDims;
   private byte[][] noDictSortDims;
+  /**
+   * this will be used for intermediate merger when
+   * no sort field and measure field will not be
+   * used for sorting
+   */
   private byte[] noSortDimsAndMeasures;
+  /**
+   * for final merger keep the measures
+   */
   private Object[] measures;
 
   public IntermediateSortTempRow(int[] dictSortDims, byte[][] noDictSortDims,

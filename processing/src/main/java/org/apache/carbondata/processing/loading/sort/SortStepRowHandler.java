@@ -169,7 +169,7 @@ public class SortStepRowHandler implements Serializable {
 
   /**
    * Read intermediate sort temp row from InputStream.
-   * This method is used during the merge sort phase to read row from sort temp file.
+   * This method is used during the intermediate merge sort phase to read row from sort temp file.
    *
    * @param inputStream input stream
    * @return a row that contains three parts
@@ -197,13 +197,14 @@ public class SortStepRowHandler implements Serializable {
     int len = inputStream.readInt();
     byte[] noSortDimsAndMeasures = new byte[len];
     inputStream.readFully(noSortDimsAndMeasures);
-
+    // keeping no sort fields and measure in pack byte array as it will not participate in sort
     return new IntermediateSortTempRow(dictSortDims, noDictSortDims, noSortDimsAndMeasures);
   }
 
   /**
    * Read intermediate sort temp row from InputStream.
-   * This method is used during the merge sort phase to read row from sort temp file.
+   * This method is used during the final merge sort phase to read row from sort temp file and
+   * merged sort temp file.
    *
    * @param inputStream input stream
    * @return a row that contains three parts
@@ -234,6 +235,7 @@ public class SortStepRowHandler implements Serializable {
     byte[] noSortDimsAndMeasures = new byte[len];
     inputStream.readFully(noSortDimsAndMeasures);
     Object[] measure = new Object[this.measureCnt];
+    // unpack the no sort fields and measure fields
     unpackNoSortFromBytes(noSortDimsAndMeasures, dictSortDims, noDictSortDims, measure);
     return new IntermediateSortTempRow(dictSortDims, noDictSortDims,measure);
   }
