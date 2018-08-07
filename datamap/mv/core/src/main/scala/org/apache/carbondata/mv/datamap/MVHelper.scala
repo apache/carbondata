@@ -514,7 +514,7 @@ object MVHelper {
           list.map { s =>
             val expressions =
               updateOutPutList(
-                Seq(s.child.asInstanceOf[Attribute]),
+                Seq(s.child.asInstanceOf[NamedExpression]),
                 relation,
                 aliasMap,
                 keepAlias = false)
