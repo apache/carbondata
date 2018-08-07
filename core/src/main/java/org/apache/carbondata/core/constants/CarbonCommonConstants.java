@@ -932,6 +932,13 @@ public final class CarbonCommonConstants {
   public static final String LOCAL_DICTIONARY_ENABLE_DEFAULT = "false";
 
   /**
+   * System property to enable or disable local dictionary generation, If this is configured, then
+   * irrespective of table property configured for local dictionary, this value will be considered
+   */
+  public static final String ENABLE_SYSTEM_LEVEL_LOCAL_DICTIONARY =
+      "carbon.local.dictionary.enable";
+
+  /**
    * Threshold value for local dictionary
    */
   public static final String LOCAL_DICTIONARY_THRESHOLD = "local_dictionary_threshold";
