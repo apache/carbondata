@@ -132,7 +132,7 @@ public class CarbonCompactionExecutor {
         queryModel.setTableBlockInfos(list);
         resultList.add(
             new RawResultIterator(executeBlockList(list, segmentId, task), sourceSegProperties,
-                destinationSegProperties, false));
+                destinationSegProperties));
       }
     }
     return resultList;
