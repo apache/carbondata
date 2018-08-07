@@ -125,4 +125,5 @@ public abstract class DataMapProvider {
 
   public abstract DataMapFactory getDataMapFactory();
 
+  public abstract boolean supportRebuild();
 }

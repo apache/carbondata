@@ -122,4 +122,6 @@ class MVDataMapProvider(
   override def getDataMapFactory: DataMapFactory[_ <: DataMap[_ <: Blocklet]] = {
     throw new UnsupportedOperationException
   }
+
+  override def supportRebuild(): Boolean = true
 }
