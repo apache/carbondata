@@ -206,7 +206,8 @@ public class IntermediateFileMerger implements Callable<Void> {
     for (File tempFile : intermediateFiles) {
       // create chunk holder
       sortTempFileChunkHolder =
-          new SortTempFileChunkHolder(tempFile, mergerParameters, mergerParameters.getTableName());
+          new SortTempFileChunkHolder(tempFile, mergerParameters, mergerParameters.getTableName(),
+              false);
 
       // initialize
       sortTempFileChunkHolder.initialize();

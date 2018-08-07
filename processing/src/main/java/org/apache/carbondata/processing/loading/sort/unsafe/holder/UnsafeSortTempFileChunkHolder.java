@@ -96,10 +96,12 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
   private TableFieldStat tableFieldStat;
   private SortStepRowHandler sortStepRowHandler;
   private Comparator<IntermediateSortTempRow> comparator;
+  private boolean convertNoSortFields;
   /**
    * Constructor to initialize
    */
-  public UnsafeSortTempFileChunkHolder(File tempFile, SortParameters parameters) {
+  public UnsafeSortTempFileChunkHolder(File tempFile, SortParameters parameters,
+      boolean convertNoSortFields) {
     // set temp file
     this.tempFile = tempFile;
     this.readBufferSize = parameters.getBufferSize();
@@ -108,6 +110,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
     this.sortStepRowHandler = new SortStepRowHandler(tableFieldStat);
     this.executorService = Executors.newFixedThreadPool(1);
     comparator = new IntermediateSortTempRowComparator(parameters.getNoDictionarySortColumn());
+    this.convertNoSortFields = convertNoSortFields;
     initialize();
   }
 
@@ -162,7 +165,11 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
       fillDataForPrefetch();
     } else {
       try {
-        this.returnRow = sortStepRowHandler.readIntermediateSortTempRowFromInputStream(stream);
+        if (convertNoSortFields) {
+          this.returnRow = sortStepRowHandler.readWithNoSortFieldConvert(stream);
+        } else {
+          this.returnRow = sortStepRowHandler.readWithoutNoSortFieldConvert(stream);
+        }
         this.numberOfObjectRead++;
       } catch (IOException e) {
         throw new CarbonSortKeyAndGroupByException("Problems while reading row", e);
@@ -210,9 +217,11 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
       throws IOException {
     IntermediateSortTempRow[] holders = new IntermediateSortTempRow[expected];
     for (int i = 0; i < expected; i++) {
-      IntermediateSortTempRow holder
-          = sortStepRowHandler.readIntermediateSortTempRowFromInputStream(stream);
-      holders[i] = holder;
+      if (convertNoSortFields) {
+        holders[i] = sortStepRowHandler.readWithNoSortFieldConvert(stream);
+      } else {
+        holders[i] = sortStepRowHandler.readWithoutNoSortFieldConvert(stream);
+      }
     }
     this.numberOfObjectRead += expected;
     return holders;
