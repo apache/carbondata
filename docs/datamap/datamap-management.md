@@ -45,15 +45,16 @@ Currently, there are 5 DataMap implementations in CarbonData.
 
 There are two kinds of management semantic for DataMap.
 
-1. Automatic Refresh: Create datamap without `WITH DEFERED REBUILD` in the statement, which is by default.
-2. Manual Refresh: Create datamap with `WITH DEFERED REBUILD` in the statement
+1. Automatic Refresh: Create datamap without `WITH DEFERRED REBUILD` in the statement, which is by default.
+2. Manual Refresh: Create datamap with `WITH DEFERRED REBUILD` in the statement
 
 **CAUTION:**
 Manual refresh currently only works fine for MV, it has some bugs with other types of datamap in Carbondata 1.4.1, so we block this option for them in this version.
+If user create MV datamap without specifying `WITH DEFERRED REBUILD`, carbondata will give a warning and treat the datamap as deferred rebuild.
 
 ### Automatic Refresh
 
-When user creates a datamap on the main table without using `WITH DEFERED REBUILD` syntax, the datamap will be managed by system automatically.
+When user creates a datamap on the main table without using `WITH DEFERRED REBUILD` syntax, the datamap will be managed by system automatically.
 For every data load to the main table, system will immediately triger a load to the datamap automatically. These two data loading (to main table and datamap) is executed in a transactional manner, meaning that it will be either both success or neither success. 
 
 The data loading to datamap is incremental based on Segment concept, avoiding a expesive total rebuild.
