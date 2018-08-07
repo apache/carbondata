@@ -33,7 +33,7 @@ import org.apache.avro.file.DataFileWriter
 import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DecoderFactory, Encoder}
 import org.apache.commons.io.FileUtils
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
@@ -1103,7 +1103,10 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       "'carbondata'")
     sql(s"""insert into normalTable1 values ("aaaaa", 12, 20)""").show(200, false)
     sql("DROP TABLE IF EXISTS sdkOutputTable")
-    val fileLocation = storeLocation + "/normaltable1/Fact/Part0/Segment_0"
+    val carbonTable = CarbonEnv
+      .getCarbonTable(Option("default"), "normalTable1")(sqlContext.sparkSession)
+    sql("describe formatted normalTable1").show(200, false)
+    val fileLocation = carbonTable.getSegmentPath("0")
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
          |'$fileLocation' """.stripMargin)
