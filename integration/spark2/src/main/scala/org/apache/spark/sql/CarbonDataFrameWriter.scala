@@ -105,7 +105,10 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
     }
 
     val schemaWithoutPartition = if (options.partitionColumns.isDefined) {
-      val fields = schema.filterNot(field => options.partitionColumns.get.contains(field.name))
+      val partitionCols = options.partitionColumns.get
+      val fields = schema.filterNot {
+        field => partitionCols.exists(_.equalsIgnoreCase(field.name))
+      }
       StructType(fields)
     } else {
       schema
