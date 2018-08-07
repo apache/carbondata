@@ -48,6 +48,7 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll = {
     sql("DROP TABLE IF EXISTS main")
+    sql("set carbon.search.enabled = false")
     sqlContext.sparkSession.asInstanceOf[CarbonSession].stopSearchMode()
   }
 
@@ -117,6 +118,7 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("SELECT * FROM main WHERE TEXT_MATCH('id:100000')"),
       sql(s"SELECT * FROM main WHERE id='100000'"))
     sql("DROP DATAMAP if exists dm ON TABLE main")
+    sql("set carbon.search.enabled = false")
   }
 
   test("test lucene datamap with search mode 2") {
