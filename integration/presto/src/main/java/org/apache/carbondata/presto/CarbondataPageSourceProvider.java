@@ -100,7 +100,8 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
     checkArgument(carbondataSplit.getConnectorId().equals(connectorId),
         "split is not for this connector");
     QueryModel queryModel = createQueryModel(carbondataSplit, columns);
-    QueryExecutor queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
+    QueryExecutor queryExecutor =
+        QueryExecutorFactory.getQueryExecutor(queryModel, new Configuration());
     try {
       CarbonIterator iterator = queryExecutor.execute(queryModel);
       readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getTable());

@@ -17,7 +17,8 @@
 
 package org.apache.spark.rdd
 
-import org.apache.spark.{Partition, SparkContext, TaskContext}
+import org.apache.spark.{Partition, TaskContext}
+import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -35,20 +36,20 @@ case class CarbonMergeFilePartition(rddId: Int, idx: Int, segmentId: String)
 
 /**
  * RDD to merge all carbonindex files of each segment to carbonindex file into the same segment.
- * @param sc
+ * @param ss
  * @param carbonTable
  * @param segments segments to be merged
  */
 class CarbonMergeFilesRDD(
-  sc: SparkContext,
+  @transient ss: SparkSession,
   carbonTable: CarbonTable,
   segments: Seq[String],
   segmentFileNameToSegmentIdMap: java.util.Map[String, String],
   isHivePartitionedTable: Boolean,
   readFileFooterFromCarbonDataFile: Boolean)
-  extends CarbonRDD[String](sc, Nil, sc.hadoopConfiguration) {
+  extends CarbonRDD[String](ss, Nil) {
 
-  override def getPartitions: Array[Partition] = {
+  override def internalGetPartitions: Array[Partition] = {
     segments.zipWithIndex.map {s =>
       CarbonMergeFilePartition(id, s._2, s._1)
     }.toArray

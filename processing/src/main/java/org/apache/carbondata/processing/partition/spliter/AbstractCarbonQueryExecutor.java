@@ -35,6 +35,8 @@ import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.RowBatch;
 import org.apache.carbondata.core.util.CarbonUtil;
 
+import org.apache.hadoop.conf.Configuration;
+
 public abstract class AbstractCarbonQueryExecutor {
 
   private static final LogService LOGGER =
@@ -50,10 +52,11 @@ public abstract class AbstractCarbonQueryExecutor {
    * @param blockList
    * @return
    */
-  CarbonIterator<RowBatch> executeBlockList(List<TableBlockInfo> blockList)
+  CarbonIterator<RowBatch> executeBlockList(List<TableBlockInfo> blockList,
+      Configuration configuration)
       throws QueryExecutionException, IOException {
     queryModel.setTableBlockInfos(blockList);
-    this.queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
+    this.queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel, configuration);
     return queryExecutor.execute(queryModel);
   }
 

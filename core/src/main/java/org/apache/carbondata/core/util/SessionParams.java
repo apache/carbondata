@@ -20,6 +20,7 @@ package org.apache.carbondata.core.util;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.constants.LoggerAction;
 import org.apache.carbondata.common.logging.LogService;
@@ -57,12 +58,12 @@ public class SessionParams implements Serializable, Cloneable {
   private static final long serialVersionUID = -7801994600594915264L;
 
   private Map<String, String> sProps;
-  private Map<String, String> addedProps;
+  private ConcurrentHashMap<String, String> addedProps;
   // below field to be used when we want the objects to be serialized
   private Map<String, Object> extraInfo;
   public SessionParams() {
     sProps = new HashMap<>();
-    addedProps = new HashMap<>();
+    addedProps = new ConcurrentHashMap<>();
     extraInfo = new HashMap<>();
   }
 

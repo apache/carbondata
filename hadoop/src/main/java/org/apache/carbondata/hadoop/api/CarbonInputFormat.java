@@ -583,7 +583,8 @@ m filterExpression
     Configuration configuration = taskAttemptContext.getConfiguration();
     QueryModel queryModel = createQueryModel(inputSplit, taskAttemptContext);
     CarbonReadSupport<T> readSupport = getReadSupportClass(configuration);
-    return new CarbonRecordReader<T>(queryModel, readSupport);
+    return new CarbonRecordReader<T>(queryModel, readSupport,
+        taskAttemptContext.getConfiguration());
   }
 
   public QueryModel createQueryModel(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)

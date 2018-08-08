@@ -117,7 +117,7 @@ case class CarbonMergerMapping(
     var maxSegmentColCardinality: Array[Int],
     // maxSegmentColumnSchemaList is list of column schema of last segment of compaction
     var maxSegmentColumnSchemaList: List[ColumnSchema],
-    currentPartitions: Option[Seq[PartitionSpec]])
+    @transient currentPartitions: Option[Seq[PartitionSpec]])
 
 case class NodeInfo(TaskId: String, noOfBlocks: Int)
 

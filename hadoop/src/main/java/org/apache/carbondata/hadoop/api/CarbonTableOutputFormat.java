@@ -33,6 +33,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
 import org.apache.carbondata.processing.loading.DataLoadExecutor;
 import org.apache.carbondata.processing.loading.TableProcessingOperations;
@@ -231,7 +232,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
 
   @Override
   public RecordWriter<NullWritable, ObjectArrayWritable> getRecordWriter(
-      TaskAttemptContext taskAttemptContext) throws IOException {
+      final TaskAttemptContext taskAttemptContext) throws IOException {
     final CarbonLoadModel loadModel = getLoadModel(taskAttemptContext.getConfiguration());
     //if loadModel having taskNo already(like in SDK) then no need to overwrite
     short sdkUserCore = loadModel.getSdkUserCores();
@@ -249,10 +250,12 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     final String[] tempStoreLocations = getTempStoreLocations(taskAttemptContext);
     final DataLoadExecutor dataLoadExecutor = new DataLoadExecutor();
     final ExecutorService executorService = Executors.newFixedThreadPool(1,
-        new CarbonThreadFactory("CarbonRecordWriter:" + loadModel.getTableName()));;
+        new CarbonThreadFactory("CarbonRecordWriter:" + loadModel.getTableName()));
     // It should be started in new thread as the underlying iterator uses blocking queue.
     Future future = executorService.submit(new Thread() {
       @Override public void run() {
+        ThreadLocalSessionInfo.setConfigurationToCurrentThread(taskAttemptContext
+            .getConfiguration());
         try {
           dataLoadExecutor
               .execute(loadModel, tempStoreLocations, iterators);

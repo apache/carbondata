@@ -29,6 +29,8 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.util.CarbonSessionInfo;
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
 
 import org.apache.hadoop.conf.Configuration;
@@ -60,6 +62,7 @@ public class CarbonReaderBuilder {
   CarbonReaderBuilder(String tablePath, String tableName) {
     this.tablePath = tablePath;
     this.tableName = tableName;
+    ThreadLocalSessionInfo.setCarbonSessionInfo(new CarbonSessionInfo());
   }
 
 

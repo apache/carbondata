@@ -44,6 +44,8 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableSchemaBuilder;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.util.CarbonSessionInfo;
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.ThriftWriter;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
@@ -69,6 +71,10 @@ public class CarbonWriterBuilder {
   private String taskNo;
   private int localDictionaryThreshold;
   private boolean isLocalDictionaryEnabled;
+
+  public CarbonWriterBuilder() {
+    ThreadLocalSessionInfo.setCarbonSessionInfo(new CarbonSessionInfo());
+  }
 
   /**
    * Sets the output path of the writer builder

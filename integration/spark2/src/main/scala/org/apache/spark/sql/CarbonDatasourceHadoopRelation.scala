@@ -56,7 +56,6 @@ case class CarbonDatasourceHadoopRelation(
     caseInsensitiveMap("tablename"))
   lazy val databaseName: String = carbonTable.getDatabaseName
   lazy val tableName: String = carbonTable.getTableName
-  CarbonInputFormatUtil.setS3Configurations(sparkSession.sessionState.newHadoopConf())
   CarbonSession.updateSessionInfoToCurrentThread(sparkSession)
 
   @transient lazy val carbonRelation: CarbonRelation =
