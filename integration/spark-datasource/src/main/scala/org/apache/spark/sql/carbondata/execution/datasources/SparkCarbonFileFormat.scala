@@ -341,7 +341,8 @@ class SparkCarbonFileFormat extends FileFormat
         split.setDetailInfo(info)
         info.setBlockSize(file.length)
         // Read the footer offset and set.
-        val reader = FileFactory.getFileHolder(FileFactory.getFileType(file.filePath))
+        val reader = FileFactory.getFileHolder(FileFactory.getFileType(file.filePath),
+          broadcastedHadoopConf.value.value)
         val buffer = reader
           .readByteBuffer(FileFactory.getUpdatedFilePath(file.filePath), file.length - 8, 8)
         info.setBlockFooterOffset(buffer.getLong)

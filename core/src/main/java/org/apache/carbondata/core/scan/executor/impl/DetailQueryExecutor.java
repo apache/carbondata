@@ -27,12 +27,18 @@ import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.RowBatch;
 import org.apache.carbondata.core.scan.result.iterator.DetailQueryResultIterator;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Below class will be used to execute the detail query
  * For executing the detail query it will pass all the block execution
  * info to detail query result iterator and iterator will be returned
  */
 public class DetailQueryExecutor extends AbstractQueryExecutor<RowBatch> {
+
+  public DetailQueryExecutor(Configuration configuration) {
+    super(configuration);
+  }
 
   @Override
   public CarbonIterator<RowBatch> execute(QueryModel queryModel)

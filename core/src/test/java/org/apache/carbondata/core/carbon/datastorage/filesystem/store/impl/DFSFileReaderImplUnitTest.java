@@ -26,6 +26,7 @@ import org.apache.carbondata.core.datastore.impl.DFSFileReaderImpl;
 
 import mockit.Mock;
 import mockit.MockUp;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -45,7 +46,7 @@ public class DFSFileReaderImplUnitTest {
   private static File fileWithEmptyContent;
 
   @BeforeClass public static void setup() {
-    dfsFileHolder = new DFSFileReaderImpl();
+    dfsFileHolder = new DFSFileReaderImpl(new Configuration());
     file = new File("Test.carbondata");
     fileWithEmptyContent = new File("TestEXception.carbondata");
 

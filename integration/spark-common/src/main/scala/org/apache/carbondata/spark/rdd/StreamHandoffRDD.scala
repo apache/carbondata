@@ -98,11 +98,10 @@ class StreamingRawResultIterator(
  * execute streaming segment handoff
  */
 class StreamHandoffRDD[K, V](
-    sc: SparkContext,
+    @transient ss: SparkSession,
     result: HandoffResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    handOffSegmentId: String
-) extends CarbonRDD[(K, V)](sc, Nil, sc.hadoopConfiguration) {
+    handOffSegmentId: String) extends CarbonRDD[(K, V)](ss, Nil) {
 
   private val jobTrackerId: String = {
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
@@ -111,8 +110,7 @@ class StreamHandoffRDD[K, V](
 
   override def internalCompute(
       split: Partition,
-      context: TaskContext
-  ): Iterator[(K, V)] = {
+      context: TaskContext): Iterator[(K, V)] = {
     carbonLoadModel.setTaskNo("" + split.index)
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     DataTypeUtil.setDataTypeConverter(new SparkDataTypeConverterImpl)
@@ -148,7 +146,7 @@ class StreamHandoffRDD[K, V](
   ): util.ArrayList[RawResultIterator] = {
     val inputSplit = split.asInstanceOf[HandoffPartition].split.value
     val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
-    val hadoopConf = new Configuration()
+    val hadoopConf = getConf
     CarbonInputFormat.setDatabaseName(hadoopConf, carbonTable.getDatabaseName)
     CarbonInputFormat.setTableName(hadoopConf, carbonTable.getTableName)
     CarbonInputFormat.setTablePath(hadoopConf, carbonTable.getTablePath)
@@ -200,7 +198,7 @@ class StreamHandoffRDD[K, V](
   /**
    * get the partitions of the handoff segment
    */
-  override protected def getPartitions: Array[Partition] = {
+  override protected def internalGetPartitions: Array[Partition] = {
     val job = Job.getInstance(FileFactory.getConfiguration)
     val inputFormat = new CarbonTableInputFormat[Array[Object]]()
     val segmentList = new util.ArrayList[Segment](1)
@@ -323,7 +321,7 @@ object StreamHandoffRDD {
       // convert a streaming segment to columnar segment
 
       val status = new StreamHandoffRDD(
-        sparkSession.sparkContext,
+        sparkSession,
         new HandoffResultImpl(),
         carbonLoadModel,
         handoffSegmenId).collect()

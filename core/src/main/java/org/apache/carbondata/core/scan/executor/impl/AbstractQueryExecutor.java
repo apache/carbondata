@@ -65,13 +65,16 @@ import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonSessionInfo;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * This class provides a skeletal implementation of the {@link QueryExecutor}
@@ -96,7 +99,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    */
   protected CarbonIterator queryIterator;
 
-  public AbstractQueryExecutor() {
+  public AbstractQueryExecutor(Configuration configuration) {
+    CarbonSessionInfo info = ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo();
+    info.getNonSerializableExtraInfo().put("carbonConf", configuration);
     queryProperties = new QueryExecutorProperties();
   }
 

@@ -23,11 +23,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -85,7 +85,7 @@ public final class CarbonProperties {
   private static final CarbonProperties CARBONPROPERTIESINSTANCE = new CarbonProperties();
 
   /**
-   * porpeties .
+   * porpeties .setExtraInfo
    */
   private Properties carbonProperties;
 
@@ -94,7 +94,7 @@ public final class CarbonProperties {
   /**
    * It is purely for testing
    */
-  private Map<String, String> addedProperty = new HashMap<>();
+  private Map<String, String> addedProperty = new ConcurrentHashMap<>();
 
   /**
    * Private constructor this will call load properties method to load all the
@@ -407,7 +407,7 @@ public final class CarbonProperties {
    * @param lockTypeConfigured
    */
   private void validateAndConfigureLockType(String lockTypeConfigured) {
-    Configuration configuration = new Configuration(true);
+    Configuration configuration = FileFactory.getConfiguration();
     String defaultFs = configuration.get("fs.defaultFS");
     if (null != defaultFs && (defaultFs.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)
         || defaultFs.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) || defaultFs

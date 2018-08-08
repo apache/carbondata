@@ -17,10 +17,7 @@
 
 package org.apache.spark.sql
 
-import java.io.File
 import java.util.concurrent.ConcurrentHashMap
-
-import scala.util.Try
 
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
@@ -29,7 +26,6 @@ import org.apache.spark.sql.events.MergeIndexEventListener
 import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
 import org.apache.spark.sql.hive._
-import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -100,6 +96,8 @@ class CarbonEnv {
         if (currentThreadSesssionInfo != null) {
           threadLevelCarbonSessionInfo.setThreadParams(currentThreadSesssionInfo.getThreadParams)
         }
+        threadLevelCarbonSessionInfo.getNonSerializableExtraInfo.put("carbonConf", sparkSession
+          .sessionState.newHadoopConf())
         ThreadLocalSessionInfo.setCarbonSessionInfo(threadLevelCarbonSessionInfo)
         val config = new CarbonSQLConf(sparkSession)
         if (sparkSession.conf.getOption(CarbonCommonConstants.ENABLE_UNSAFE_SORT).isEmpty) {

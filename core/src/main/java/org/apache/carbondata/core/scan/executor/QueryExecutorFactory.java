@@ -23,24 +23,26 @@ import org.apache.carbondata.core.scan.executor.impl.VectorDetailQueryExecutor;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Factory class to get the query executor from RDD
  * This will return the executor based on query type
  */
 public class QueryExecutorFactory {
 
-  public static QueryExecutor getQueryExecutor(QueryModel queryModel) {
+  public static QueryExecutor getQueryExecutor(QueryModel queryModel, Configuration configuration) {
     if (CarbonProperties.isSearchModeEnabled()) {
       if (queryModel.isVectorReader()) {
-        return new SearchModeVectorDetailQueryExecutor();
+        return new SearchModeVectorDetailQueryExecutor(configuration);
       } else {
-        return new SearchModeDetailQueryExecutor();
+        return new SearchModeDetailQueryExecutor(configuration);
       }
     } else {
       if (queryModel.isVectorReader()) {
-        return new VectorDetailQueryExecutor();
+        return new VectorDetailQueryExecutor(configuration);
       } else {
-        return new DetailQueryExecutor();
+        return new DetailQueryExecutor(configuration);
       }
     }
   }

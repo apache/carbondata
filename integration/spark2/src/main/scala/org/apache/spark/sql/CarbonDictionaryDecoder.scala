@@ -41,9 +41,10 @@ import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.scan.executor.util.QueryUtil
-import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.util.{DataTypeUtil, ThreadLocalSessionInfo}
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
-import org.apache.carbondata.spark.rdd.CarbonRDDWithTableInfo
+import org.apache.carbondata.spark.rdd.{CarbonRDDWithTableInfo, SerializableConfiguration}
 
 /**
  * It decodes the data.
@@ -75,9 +76,13 @@ case class CarbonDictionaryDecoder(
         (carbonTable.getTableName, carbonTable)
       }.toMap
 
+      val conf = sparkSession.sparkContext.broadcast(new SerializableConfiguration(sparkSession
+        .sessionState.newHadoopConf()))
       if (CarbonDictionaryDecoder.isRequiredToDecode(getDictionaryColumnIds)) {
         val dataTypes = child.output.map { attr => attr.dataType }
         child.execute().mapPartitions { iter =>
+          ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getNonSerializableExtraInfo
+            .put("carbonConf", conf.value.value)
           val cacheProvider: CacheProvider = CacheProvider.getInstance
           val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
             cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
@@ -439,7 +444,9 @@ class CarbonDecoderRDD(
     val prev: RDD[InternalRow],
     output: Seq[Attribute],
     serializedTableInfo: Array[Byte])
-  extends CarbonRDDWithTableInfo[InternalRow](prev, serializedTableInfo) {
+  extends CarbonRDDWithTableInfo[InternalRow](relations.head.carbonRelation.sparkSession,
+    prev,
+    serializedTableInfo) {
 
   def canBeDecoded(attr: Attribute): Boolean = {
     profile match {
@@ -543,7 +550,8 @@ class CarbonDecoderRDD(
     dicts
   }
 
-  override protected def getPartitions: Array[Partition] = firstParent[InternalRow].partitions
+  override protected def internalGetPartitions: Array[Partition] =
+    firstParent[InternalRow].partitions
 }
 
 /**

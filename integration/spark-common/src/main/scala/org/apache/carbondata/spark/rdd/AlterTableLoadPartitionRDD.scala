@@ -39,7 +39,8 @@ class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
     partitionIds: Seq[String],
     bucketId: Int,
     identifier: AbsoluteTableIdentifier,
-    prev: RDD[Array[AnyRef]]) extends RDD[(K, V)](prev) {
+    prev: RDD[Array[AnyRef]])
+  extends CarbonRDD[(K, V)](alterPartitionModel.sqlContext.sparkSession, prev) {
 
   var storeLocation: String = null
   val carbonLoadModel = alterPartitionModel.carbonLoadModel
@@ -50,14 +51,14 @@ class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
   val factTableName = carbonTable.getTableName
   val partitionInfo = carbonTable.getPartitionInfo(factTableName)
 
-  override protected def getPartitions: Array[Partition] = {
+  override protected def internalGetPartitions: Array[Partition] = {
     val sc = alterPartitionModel.sqlContext.sparkContext
     sc.setLocalProperty("spark.scheduler.pool", "DDL")
     sc.setLocalProperty("spark.job.interruptOnCancel", "true")
     firstParent[Array[AnyRef]].partitions
   }
 
-  override def compute(split: Partition, context: TaskContext): Iterator[(K, V)] = {
+  override def internalCompute(split: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val rows = firstParent[Array[AnyRef]].iterator(split, context).toList.asJava
     val iter = new Iterator[(K, V)] {

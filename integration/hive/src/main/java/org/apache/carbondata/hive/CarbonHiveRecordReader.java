@@ -63,7 +63,7 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
 
   public CarbonHiveRecordReader(QueryModel queryModel, CarbonReadSupport<ArrayWritable> readSupport,
       InputSplit inputSplit, JobConf jobConf) throws IOException {
-    super(queryModel, readSupport);
+    super(queryModel, readSupport, jobConf);
     initialize(inputSplit, jobConf);
   }
 
