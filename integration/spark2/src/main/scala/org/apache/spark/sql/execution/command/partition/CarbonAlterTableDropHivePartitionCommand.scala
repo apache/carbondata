@@ -173,7 +173,7 @@ case class CarbonAlterTableDropHivePartitionCommand(
       val segments = new SegmentStatusManager(table.getAbsoluteTableIdentifier)
         .getValidAndInvalidSegments.getValidSegments
       // First drop the partitions from partition mapper files of each segment
-      val tuples = new CarbonDropPartitionRDD(sparkSession.sparkContext,
+      val tuples = new CarbonDropPartitionRDD(sparkSession,
         table.getTablePath,
         segments.asScala,
         carbonPartitionsTobeDropped,

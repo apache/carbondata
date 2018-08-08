@@ -30,6 +30,9 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.util.CarbonConfiguration;
+import org.apache.carbondata.core.util.SessionParams;
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -43,12 +46,6 @@ public final class FileFactory {
    */
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(FileFactory.class.getName());
-  private static Configuration configuration = null;
-
-  static {
-    configuration = new Configuration();
-    configuration.addResource(new Path("../core-default.xml"));
-  }
 
   private static FileTypeInterface fileFileTypeInterface = new DefaultFileTypeProvider();
   public static void setFileTypeInterface(FileTypeInterface fileTypeInterface) {
@@ -59,6 +56,32 @@ public final class FileFactory {
   }
 
   public static Configuration getConfiguration() {
+    Configuration configuration;
+    Object confObject = null;
+    if (ThreadLocalSessionInfo.getCarbonSessionInfo() != null && ThreadLocalSessionInfo
+        .getCarbonSessionInfo().getThreadParams() != null) {
+      SessionParams threadParams = ThreadLocalSessionInfo.getCarbonSessionInfo().getThreadParams();
+      confObject = threadParams.getExtraInfo("carbonConf");
+    }
+    if (confObject != null) {
+      CarbonConfiguration carbonConfiguration = (CarbonConfiguration) confObject;
+      // carbonConfiguration.getConfiguration will be null when the carbon configuration object
+      // has been serialized from driver to executor. In this case we need to creTate default
+      // configuration and fill extra conf.
+      if (carbonConfiguration.getConfiguration() == null) {
+        configuration = new Configuration();
+        configuration.addResource(new Path("../core-default.xml"));
+        configuration = carbonConfiguration.fillExtraConfigurations(configuration);
+      } else {
+        // If carbonConfiguration.getConfiguration is not null then it means that the
+        // configuration has not been serialized till now or it was broadcasted.
+        configuration = carbonConfiguration.getConfiguration();
+      }
+    } else {
+      LOGGER.error("Unable to get hadoop conf from thread local. Creating a new object");
+      configuration = new Configuration();
+      configuration.addResource(new Path("../core-default.xml"));
+    }
     return configuration;
   }
 
@@ -100,7 +123,7 @@ public final class FileFactory {
 
   public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize)
       throws IOException {
-    return getDataInputStream(path, fileType, bufferSize, configuration);
+    return getDataInputStream(path, fileType, bufferSize, getConfiguration());
   }
   public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize,
       Configuration configuration) throws IOException {
@@ -306,7 +329,7 @@ public final class FileFactory {
         // this method was new in hadoop 2.7, otherwise use CarbonFile.truncate to do this.
         try {
           Path pt = new Path(path);
-          FileSystem fs = pt.getFileSystem(configuration);
+          FileSystem fs = pt.getFileSystem(getConfiguration());
           Method truncateMethod = fs.getClass().getDeclaredMethod("truncate",
               new Class[]{Path.class, long.class});
           truncateMethod.invoke(fs, new Object[]{pt, newSize});
@@ -414,7 +437,7 @@ public final class FileFactory {
       case VIEWFS:
       case S3:
         Path path = new Path(filePath);
-        FileSystem fs = path.getFileSystem(configuration);
+        FileSystem fs = path.getFileSystem(getConfiguration());
         return fs.getContentSummary(path).getLength();
       case LOCAL:
       default:
@@ -442,7 +465,7 @@ public final class FileFactory {
    * @throws IOException
    */
   public static FileSystem getFileSystem(Path path) throws IOException {
-    return path.getFileSystem(configuration);
+    return path.getFileSystem(getConfiguration());
   }
 
 
@@ -455,7 +478,7 @@ public final class FileFactory {
       case VIEWFS:
         try {
           Path path = new Path(directoryPath);
-          FileSystem fs = path.getFileSystem(FileFactory.configuration);
+          FileSystem fs = path.getFileSystem(getConfiguration());
           if (!fs.exists(path)) {
             fs.mkdirs(path);
             fs.setPermission(path, permission);

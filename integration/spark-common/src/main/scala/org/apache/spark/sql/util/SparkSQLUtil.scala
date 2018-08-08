@@ -27,4 +27,8 @@ object SparkSQLUtil {
   def execute(logicalPlan: LogicalPlan, sparkSession: SparkSession): DataFrame = {
     Dataset.ofRows(sparkSession, logicalPlan)
   }
+
+  def getSparkSession: SparkSession = {
+    SparkSession.getDefaultSession.get
+  }
 }

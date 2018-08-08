@@ -50,6 +50,8 @@ import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeConverter;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Executor class for executing the query on the selected segments to be merged.
  * This will fire a select * query and get the raw result.
@@ -103,7 +105,8 @@ public class CarbonCompactionExecutor {
    *
    * @return List of Carbon iterators
    */
-  public List<RawResultIterator> processTableBlocks() throws QueryExecutionException, IOException {
+  public List<RawResultIterator> processTableBlocks(Configuration configuration) throws
+      QueryExecutionException, IOException {
     List<RawResultIterator> resultList =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     List<TableBlockInfo> list = null;
@@ -131,7 +134,8 @@ public class CarbonCompactionExecutor {
                 .size());
         queryModel.setTableBlockInfos(list);
         resultList.add(
-            new RawResultIterator(executeBlockList(list, segmentId, task), sourceSegProperties,
+            new RawResultIterator(executeBlockList(list, segmentId, task, configuration),
+                sourceSegProperties,
                 destinationSegProperties));
       }
     }
@@ -174,14 +178,14 @@ public class CarbonCompactionExecutor {
    * @return
    */
   private CarbonIterator<RowBatch> executeBlockList(List<TableBlockInfo> blockList,
-      String segmentId, String taskId)
+      String segmentId, String taskId, Configuration configuration)
       throws QueryExecutionException, IOException {
     queryModel.setTableBlockInfos(blockList);
     QueryStatisticsRecorder executorRecorder = CarbonTimeStatisticsFactory
         .createExecutorRecorder(queryModel.getQueryId() + "_" + segmentId + "_" + taskId);
     queryStatisticsRecorders.add(executorRecorder);
     queryModel.setStatisticsRecorder(executorRecorder);
-    QueryExecutor queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
+    QueryExecutor queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel, configuration);
     queryExecutorList.add(queryExecutor);
     return queryExecutor.execute(queryModel);
   }

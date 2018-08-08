@@ -39,8 +39,7 @@ import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 import org.apache.carbondata.common.annotations.InterfaceAudience
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
+import org.apache.carbondata.core.util.{CarbonConfiguration, CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
 import org.apache.carbondata.store.SparkCarbonStore
 import org.apache.carbondata.streaming.CarbonStreamingQueryListener
 
@@ -430,6 +429,8 @@ object CarbonSession {
         .foreach(entry => carbonSessionInfo.getSessionParams.addProperty(entry._1, entry._2))
       carbonSessionInfo.setThreadParams(currentThreadSessionInfo.getThreadParams)
     }
+    val configuration = new CarbonConfiguration(sparkSession.sessionState.newHadoopConf())
+    carbonSessionInfo.getThreadParams.setExtraInfo("carbonConf", configuration)
     // preserve thread parameters across call
     ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
   }

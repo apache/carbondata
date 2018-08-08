@@ -43,6 +43,7 @@ import org.apache.spark.util.{CarbonReflectionUtils, TaskCompletionListener}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonCommonConstantsInternal}
 import org.apache.carbondata.core.datastore.block.Distributable
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
@@ -78,7 +79,7 @@ class CarbonScanRDD[T: ClassTag](
     @transient val partitionNames: Seq[PartitionSpec],
     val dataTypeConverterClz: Class[_ <: DataTypeConverter] = classOf[SparkDataTypeConverterImpl],
     val readSupportClz: Class[_ <: CarbonReadSupport[_]] = SparkReadSupport.readSupportClass)
-  extends CarbonRDDWithTableInfo[T](spark.sparkContext, Nil, serializedTableInfo) {
+  extends CarbonRDDWithTableInfo[T](spark, Nil, serializedTableInfo) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
   private val jobTrackerId: String = {
@@ -104,7 +105,7 @@ class CarbonScanRDD[T: ClassTag](
     var numBlocks = 0
 
     try {
-      val conf = new Configuration()
+      val conf = FileFactory.getConfiguration
       val jobConf = new JobConf(conf)
       SparkHadoopUtil.get.addCredentials(jobConf)
       val job = Job.getInstance(jobConf)
@@ -404,7 +405,7 @@ class CarbonScanRDD[T: ClassTag](
     val executionId = context.getLocalProperty(SQLExecution.EXECUTION_ID_KEY)
     val taskId = split.index
     val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
-    val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
+    val attemptContext = new TaskAttemptContextImpl(FileFactory.getConfiguration, attemptId)
     val format = prepareInputFormatForExecutor(attemptContext.getConfiguration)
     val inputSplit = split.asInstanceOf[CarbonSparkPartition].split.value
     TaskMetricsMap.getInstance().registerThreadCallback()
@@ -435,14 +436,16 @@ class CarbonScanRDD[T: ClassTag](
               "true")
             if (carbonRecordReader == null) {
               new CarbonRecordReader(model,
-                format.getReadSupportClass(attemptContext.getConfiguration), inputMetricsStats)
+                format.getReadSupportClass(attemptContext.getConfiguration),
+                inputMetricsStats,
+                attemptContext.getConfiguration)
             } else {
               carbonRecordReader
             }
           } else {
             new CarbonRecordReader(model,
               format.getReadSupportClass(attemptContext.getConfiguration),
-              inputMetricsStats)
+              inputMetricsStats, attemptContext.getConfiguration)
           }
       }
 

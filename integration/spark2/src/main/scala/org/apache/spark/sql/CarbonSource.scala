@@ -329,7 +329,6 @@ object CarbonSource {
         .contains("true")
       tableInfo.setTransactionalTable(isTransactionalTable)
       if (isTransactionalTable && !metaStore.isReadFromHiveMetaStore) {
-        CarbonInputFormatUtil.setS3Configurations(sparkSession.sessionState.newHadoopConf())
         // save to disk
         metaStore.saveToDisk(tableInfo, properties("tablePath"))
         // remove schema string from map as we don't store carbon schema to hive metastore

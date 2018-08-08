@@ -292,14 +292,13 @@ class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Ar
 }
 
 class IndexDataMapRebuildRDD[K, V](
-    session: SparkSession,
+    @transient session: SparkSession,
     result: RefreshResult[K, V],
     @transient tableInfo: TableInfo,
     dataMapName: String,
     indexColumns: Array[CarbonColumn],
-    segments: Set[Segment]
-) extends CarbonRDDWithTableInfo[(K, V)](
-  session.sparkContext, Nil, tableInfo.serialize()) {
+    segments: Set[Segment])
+  extends CarbonRDDWithTableInfo[(K, V)](session, Nil, tableInfo.serialize()) {
 
   private val dataMapSchema = DataMapStoreManager.getInstance().getDataMapSchema(dataMapName)
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
@@ -323,7 +322,7 @@ class IndexDataMapRebuildRDD[K, V](
       inputMetrics.initBytesReadCallback(context, inputSplit)
 
       val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
-      val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
+      val attemptContext = new TaskAttemptContextImpl(FileFactory.getConfiguration, attemptId)
       val format = createInputFormat(segment.get, attemptContext)
 
       val model = format.createQueryModel(inputSplit, attemptContext)
@@ -351,7 +350,8 @@ class IndexDataMapRebuildRDD[K, V](
         } else {
           new OriginalReadSupport(indexColumns.map(_.getDataType))
         }
-        reader = new CarbonRecordReader[Array[Object]](model, readSupport, inputMetrics)
+        reader = new CarbonRecordReader[Array[Object]](model, readSupport, inputMetrics,
+          attemptContext.getConfiguration)
         reader.initialize(inputSplit, attemptContext)
         // skip clear datamap and we will do this adter rebuild
         reader.setSkipClearDataMapAtClose(true)
@@ -443,7 +443,7 @@ class IndexDataMapRebuildRDD[K, V](
     if (!dataMapSchema.isIndexDataMap) {
       throw new UnsupportedOperationException
     }
-    val conf = new Configuration()
+    val conf = FileFactory.getConfiguration
     val jobConf = new JobConf(conf)
     SparkHadoopUtil.get.addCredentials(jobConf)
     val job = Job.getInstance(jobConf)

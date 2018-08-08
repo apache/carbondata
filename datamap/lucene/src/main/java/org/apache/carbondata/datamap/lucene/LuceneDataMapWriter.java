@@ -165,7 +165,7 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
     // the indexWriter closes the FileSystem on closing the writer, so for a new configuration
     // and disable the cache for the index writer, it will be closed on closing the writer
-    Configuration conf = new Configuration();
+    Configuration conf = FileFactory.getConfiguration();
     conf.set("fs.hdfs.impl.disable.cache", "true");
 
     // create a index writer

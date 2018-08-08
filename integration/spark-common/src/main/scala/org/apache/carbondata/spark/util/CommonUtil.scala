@@ -30,7 +30,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.{SparkContext, SparkEnv}
 import org.apache.spark.rdd.CarbonMergeFilesRDD
-import org.apache.spark.sql.{Row, RowFactory}
+import org.apache.spark.sql.{Row, RowFactory, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
@@ -839,7 +839,7 @@ object CommonUtil {
    *                                         which do not store the blocklet info to current
    *                                         version
    */
-  def mergeIndexFiles(sparkContext: SparkContext,
+  def mergeIndexFiles(sparkSession: SparkSession,
     segmentIds: Seq[String],
     segmentFileNameToSegmentIdMap: java.util.Map[String, String],
     tablePath: String,
@@ -848,7 +848,7 @@ object CommonUtil {
     readFileFooterFromCarbonDataFile: Boolean = false): Unit = {
     if (mergeIndexProperty) {
       new CarbonMergeFilesRDD(
-        sparkContext,
+        sparkSession,
         carbonTable,
         segmentIds,
         segmentFileNameToSegmentIdMap,
@@ -860,7 +860,7 @@ object CommonUtil {
           CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
           CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT).toBoolean) {
           new CarbonMergeFilesRDD(
-            sparkContext,
+            sparkSession,
             carbonTable,
             segmentIds,
             segmentFileNameToSegmentIdMap,
@@ -871,7 +871,7 @@ object CommonUtil {
         case _: Exception =>
           if (CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT.toBoolean) {
             new CarbonMergeFilesRDD(
-              sparkContext,
+              sparkSession,
               carbonTable,
               segmentIds,
               segmentFileNameToSegmentIdMap,

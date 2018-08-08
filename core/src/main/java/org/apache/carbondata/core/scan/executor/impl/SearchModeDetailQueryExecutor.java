@@ -31,13 +31,15 @@ import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.iterator.SearchModeResultIterator;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+import org.apache.hadoop.conf.Configuration;
 
 public class SearchModeDetailQueryExecutor extends AbstractQueryExecutor<Object> {
   private static final LogService LOGGER =
           LogServiceFactory.getLogService(SearchModeDetailQueryExecutor.class.getName());
   private static ExecutorService executorService = null;
 
-  public SearchModeDetailQueryExecutor() {
+  public SearchModeDetailQueryExecutor(Configuration configuration) {
+    super(configuration);
     if (executorService == null) {
       initThreadPool();
     }
