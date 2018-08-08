@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.datamap;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,6 +25,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapProvider;
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -77,13 +79,15 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
   }
 
   @Override
-  public void cleanMeta() {
+  public void cleanMeta() throws IOException {
+    DataMapSchema dataMapSchema = getDataMapSchema();
     dropTableCommand = new CarbonDropTableCommand(
         true,
         new Some<>(dbName),
         tableName,
         true);
     dropTableCommand.processMetadata(sparkSession);
+    DataMapStoreManager.getInstance().dropDataMapSchema(dataMapSchema.getDataMapName());
   }
 
   @Override

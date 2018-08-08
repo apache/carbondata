@@ -286,6 +286,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     sql("create datamap p1 on table agg_table using 'preaggregate' as select name, sum(salary) from agg_table group by name")
     // No data should be loaded into aggregate table as hand-off is not yet fired
     checkAnswer(sql("select * from agg_table_p1"), Seq())
+    sql("drop table agg_table")
   }
 
   test("test if data is loaded into preaggregate after handoff is fired") {
@@ -618,6 +619,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         Row("name_12", 240000.0),
         Row("name_13", 260000.0),
         Row("name_14", 280000.0)))
+    sql("drop table agg_table3")
   }
 
   // bad records
