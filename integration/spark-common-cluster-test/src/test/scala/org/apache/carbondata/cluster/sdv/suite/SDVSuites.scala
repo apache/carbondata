@@ -153,6 +153,7 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
                     new TestPartitionWithGlobalSort ::
                     new SDKwriterTestCase ::
                     new SetParameterTestCase ::
+                    new ComplexDataTypeTestCase ::
                     new PartitionWithPreAggregateTestCase ::
                     new CreateTableWithLocalDictionaryTestCase :: Nil
 
