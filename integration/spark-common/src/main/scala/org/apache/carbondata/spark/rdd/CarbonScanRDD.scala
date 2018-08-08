@@ -463,9 +463,10 @@ class CarbonScanRDD[T: ClassTag](
       model.setStatisticsRecorder(recorder)
 
       // TODO: rewrite this logic to call free memory in FailureListener on failures. On success,
-      // no memory leak should be there, resources should be freed on success completion.
+      // TODO: no memory leak should be there, resources should be freed on success completion.
       val listeners = CarbonReflectionUtils.getField("onCompleteCallbacks", context)
         .asInstanceOf[ArrayBuffer[TaskCompletionListener]]
+
       val isAdded = listeners.exists(p => p.isInstanceOf[InsertTaskCompletionListener])
       model.setFreeUnsafeMemory(!isAdded)
       // add task completion before calling initialize as initialize method will internally call

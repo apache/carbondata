@@ -17,6 +17,8 @@
 
 package org.apache.spark.util
 
+import java.lang.reflect.Field
+
 import scala.reflect.runtime._
 import scala.reflect.runtime.universe._
 
@@ -50,10 +52,9 @@ object CarbonReflectionUtils {
    * @return
    */
   def getField[T: TypeTag : reflect.ClassTag](name: String, obj: T): Any = {
-    val im = rm.reflect(obj)
-
-    im.symbol.typeSignature.members.find(_.name.toString.equals(name))
-      .map(l => im.reflectField(l.asTerm).get).getOrElse(null)
+    val field = obj.getClass.getDeclaredField(name)
+    field.setAccessible(true)
+    field.get(obj)
   }
 
   def getUnresolvedRelation(
