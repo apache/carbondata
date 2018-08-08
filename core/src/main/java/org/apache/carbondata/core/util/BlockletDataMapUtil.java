@@ -115,7 +115,7 @@ public class BlockletDataMapUtil {
         CarbonTable.updateTableByTableInfo(carbonTable, carbonTable.getTableInfo());
       }
       String blockPath = footer.getBlockInfo().getTableBlockInfo().getFilePath();
-      if (null != fileNameToMetaInfoMapping && null == blockMetaInfoMap.get(blockPath)) {
+      if (null == blockMetaInfoMap.get(blockPath)) {
         BlockMetaInfo blockMetaInfo = createBlockMetaInfo(fileNameToMetaInfoMapping, blockPath);
         // if blockMetaInfo is null that means the file has been deleted from the file system.
         // This can happen in case IUD scenarios where after deleting or updating the data the
@@ -123,8 +123,6 @@ public class BlockletDataMapUtil {
         if (null != blockMetaInfo) {
           blockMetaInfoMap.put(blockPath, blockMetaInfo);
         }
-      } else {
-        blockMetaInfoMap.put(blockPath, new BlockMetaInfo(new String[] {},0));
       }
     }
     return blockMetaInfoMap;
