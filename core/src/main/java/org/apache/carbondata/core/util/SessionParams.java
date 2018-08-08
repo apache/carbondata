@@ -17,11 +17,13 @@
 
 package org.apache.carbondata.core.util;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.carbondata.common.constants.LoggerAction;
+import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.CacheProvider;
@@ -30,6 +32,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE;
@@ -213,13 +217,20 @@ public class SessionParams implements Serializable, Cloneable {
           isValid = true;
         } else if (key.startsWith(CarbonCommonConstants.CARBON_DATAMAP_VISIBLE)) {
           String[] keyArray = key.split("\\.");
-          isValid = DataMapStoreManager.getInstance().isDataMapExist(
-              keyArray[keyArray.length - 3],
-              keyArray[keyArray.length - 2],
-              keyArray[keyArray.length - 1]);
-          if (!isValid) {
+          try {
+            DataMapSchema dataMapSchema =
+                DataMapStoreManager.getInstance().getDataMapSchema(keyArray[keyArray.length - 1]);
+            if (DataMapClassProvider.PREAGGREGATE.getShortName()
+                .equalsIgnoreCase(dataMapSchema.getProviderName())) {
+              throw new InvalidConfigurationException(
+                  "Preagg datamap is not supported for this configuration.");
+            }
+          } catch (NoSuchDataMapException e) {
             throw new InvalidConfigurationException(
-                String.format("Invalid configuration of %s, datamap does not exist", key));
+                String.format("Invalid configuration of %s, datamap does not exist.", key));
+          } catch (IOException e) {
+            throw new InvalidConfigurationException("While getting datamap IOException happend,",
+                e);
           }
         } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL)) {
           isValid = CarbonUtil.validateBoolean(value);
