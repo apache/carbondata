@@ -114,12 +114,6 @@ case class CarbonDropDataMapCommand(
         LOGGER.audit(s"Deleting datamap [$dataMapName] under table [$tableName]")
 
         // drop index datamap on the main table
-        if (mainTable != null &&
-            DataMapStoreManager.getInstance().getAllDataMap(mainTable).size() > 0) {
-          dropDataMapFromSystemFolder(sparkSession)
-          return Seq.empty
-        }
-
         // If datamap to be dropped in parent table then drop the datamap from metastore and remove
         // entry from parent table.
         // If force drop is true then remove the datamap from hivemetastore. No need to remove from
@@ -144,11 +138,6 @@ case class CarbonDropDataMapCommand(
                 mainTable.getTableInfo,
                 dbName,
                 tableName))(sparkSession)
-            if (dataMapProvider == null) {
-              dataMapProvider =
-                DataMapManager.get.getDataMapProvider(mainTable, dataMapSchema, sparkSession)
-            }
-            dataMapProvider.cleanMeta()
 
             // fires the event after dropping datamap from main table schema
             val dropDataMapPostEvent =
@@ -180,18 +169,17 @@ case class CarbonDropDataMapCommand(
           }
         }
       }
-    } else {
-      try {
-        dropDataMapFromSystemFolder(sparkSession)
-      } catch {
-        case e: Exception =>
-          if (!ifExistsSet) {
-            throw e
-          }
-      }
     }
 
-      Seq.empty
+    try {
+      dropDataMapFromSystemFolder(sparkSession)
+    } catch {
+      case e: Exception =>
+        if (!ifExistsSet) {
+          throw e
+        }
+    }
+    Seq.empty
   }
 
   private def dropDataMapFromSystemFolder(sparkSession: SparkSession): Unit = {
