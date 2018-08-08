@@ -21,6 +21,7 @@ import org.scalatest.{BeforeAndAfterAll, Suites}
 
 import org.apache.carbondata.cluster.sdv.generated._
 import org.apache.carbondata.cluster.sdv.register.TestRegisterCarbonTable
+import org.apache.carbondata.spark.testsuite.localdictionary.LoadTableWithLocalDictionaryTestCase
 
 /**
  * Suite class for all tests.
@@ -63,7 +64,8 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
                               new TimeSeriesPreAggregateTestCase ::
                               new TestPartitionWithGlobalSort ::
                               new PartitionWithPreAggregateTestCase ::
-                              new CreateTableWithLocalDictionaryTestCase :: Nil
+                              new CreateTableWithLocalDictionaryTestCase ::
+                              new LoadTableWithLocalDictionaryTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
@@ -154,7 +156,8 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
                     new SDKwriterTestCase ::
                     new SetParameterTestCase ::
                     new PartitionWithPreAggregateTestCase ::
-                    new CreateTableWithLocalDictionaryTestCase :: Nil
+                    new CreateTableWithLocalDictionaryTestCase ::
+                    new LoadTableWithLocalDictionaryTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
