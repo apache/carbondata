@@ -93,9 +93,9 @@ class CarbonDecoderProcessor {
         val version = SPARK_VERSION
 
         val child: LogicalPlan = if (version.startsWith("2.1")) {
-          CarbonReflectionUtils.getField("child", i).get(i).asInstanceOf[LogicalPlan]
+          CarbonReflectionUtils.getField("child", i).asInstanceOf[LogicalPlan]
         } else if (version.startsWith("2.2")) {
-          CarbonReflectionUtils.getField("query", i).get(i).asInstanceOf[LogicalPlan]
+          CarbonReflectionUtils.getField("query", i).asInstanceOf[LogicalPlan]
         } else {
           throw new UnsupportedOperationException(s"Spark version $version is not supported")
         }

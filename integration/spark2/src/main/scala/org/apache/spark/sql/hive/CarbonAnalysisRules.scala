@@ -282,9 +282,9 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
       val version = SPARK_VERSION
       val newChild: LogicalPlan = if (newChildOutput == child.output) {
         if (version.startsWith("2.1")) {
-          CarbonReflectionUtils.getField("child", p).get(p).asInstanceOf[LogicalPlan]
+          CarbonReflectionUtils.getField("child", p).asInstanceOf[LogicalPlan]
         } else if (version.startsWith("2.2")) {
-          CarbonReflectionUtils.getField("query", p).get(p).asInstanceOf[LogicalPlan]
+          CarbonReflectionUtils.getField("query", p).asInstanceOf[LogicalPlan]
         } else {
           throw new UnsupportedOperationException(s"Spark version $version is not supported")
         }

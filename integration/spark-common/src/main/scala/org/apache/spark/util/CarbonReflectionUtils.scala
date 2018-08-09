@@ -51,10 +51,10 @@ object CarbonReflectionUtils {
    * @tparam T
    * @return
    */
-  def getField[T: TypeTag : reflect.ClassTag](name: String, obj: T): Field = {
+  def getField[T: TypeTag : reflect.ClassTag](name: String, obj: T): Any = {
     val field = obj.getClass.getDeclaredField(name)
     field.setAccessible(true)
-    field
+    field.get(obj)
   }
 
   def getUnresolvedRelation(
