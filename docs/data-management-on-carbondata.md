@@ -189,9 +189,13 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
    
    **NOTE:** When fallback is triggered, the data loading performance will decrease as encoded data will be discarded and the actual data is written to the temporary sort files.
    
-   **The cost for Local Dictionary:**
+   **Points to be noted:**
+      
+   1. Reduce Block size:
    
-   The memory footprint will increase when local dictionary is configured as actual data will have to be stored along with dictionary encoded data.
+      Number of Blocks generated is less in case of Local Dictionary as compression ratio is high. This may reduce the number of tasks launched during query, resulting in degradation of query performance if the pruned blocks are less compared to the number of parallel tasks which can be run. So it is recommended to configure smaller block size which in turn generates more number of blocks.
+            
+   2. All the page-level data for a blocklet needs to be maintained in memory until all the pages encoded for local dictionary is processed in order to handle fallback. Hence the memory required for local dictionary based table is more and this memory increase is proportional to number of columns. 
        
 ### Example:
  
