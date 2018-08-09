@@ -164,7 +164,7 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
       }
     }
     for (int indexColId = 0; indexColId < indexColumns.size(); indexColId++) {
-      String dmFile = BloomCoarseGrainDataMap.getBloomIndexFile(dataMapPath,
+      String dmFile = BloomIndexFileStore.getBloomIndexFile(dataMapPath,
           indexColumns.get(indexColId).getColName());
       DataOutputStream dataOutStream = null;
       try {

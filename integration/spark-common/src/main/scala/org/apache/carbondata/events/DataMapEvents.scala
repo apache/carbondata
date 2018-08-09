@@ -60,7 +60,7 @@ case class BuildDataMapPreExecutionEvent(sparkSession: SparkSession,
  * example: bloom datamap, Lucene datamap
  */
 case class BuildDataMapPostExecutionEvent(sparkSession: SparkSession,
-    identifier: AbsoluteTableIdentifier)
+    identifier: AbsoluteTableIdentifier, segmentIdList: Seq[String], isFromRebuild: Boolean)
   extends Event with TableEventInfo
 
 /**

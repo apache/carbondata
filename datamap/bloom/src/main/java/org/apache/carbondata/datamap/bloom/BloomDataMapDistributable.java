@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.datamap.bloom;
 
+import java.util.Set;
+
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 
@@ -27,11 +29,23 @@ class BloomDataMapDistributable extends DataMapDistributable {
    */
   private String indexPath;
 
-  BloomDataMapDistributable(String indexPath) {
+  /**
+   * List of index shards which are already got filtered through CG index operation.
+   * This is used for merge shard which cannot prune shard in `toDistributable` function.
+   * Other case will be set to Null
+   */
+  private Set<String> filteredShards;
+
+  BloomDataMapDistributable(String indexPath, Set<String> filteredShards) {
     this.indexPath = indexPath;
+    this.filteredShards = filteredShards;
   }
 
   public String getIndexPath() {
     return indexPath;
+  }
+
+  public Set<String> getFilteredShards() {
+    return filteredShards;
   }
 }

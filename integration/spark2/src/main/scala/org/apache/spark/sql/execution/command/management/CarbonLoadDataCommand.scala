@@ -245,7 +245,7 @@ case class CarbonLoadDataCommand(
         // Add pre event listener for index datamap
         val tableDataMaps = DataMapStoreManager.getInstance().getAllDataMap(table)
         val dataMapOperationContext = new OperationContext()
-        if (null != tableDataMaps) {
+        if (tableDataMaps.size() > 0) {
           val dataMapNames: mutable.Buffer[String] =
             tableDataMaps.asScala.map(dataMap => dataMap.getDataMapSchema.getDataMapName)
           val buildDataMapPreExecutionEvent: BuildDataMapPreExecutionEvent =
@@ -322,9 +322,9 @@ case class CarbonLoadDataCommand(
             table.getCarbonTableIdentifier,
             carbonLoadModel)
         OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
-        if (null != tableDataMaps) {
-          val buildDataMapPostExecutionEvent: BuildDataMapPostExecutionEvent =
-            BuildDataMapPostExecutionEvent(sparkSession, table.getAbsoluteTableIdentifier)
+        if (tableDataMaps.size() > 0) {
+          val buildDataMapPostExecutionEvent = BuildDataMapPostExecutionEvent(sparkSession,
+            table.getAbsoluteTableIdentifier, Seq(carbonLoadModel.getSegmentId), false)
           OperationListenerBus.getInstance()
             .fireEvent(buildDataMapPostExecutionEvent, dataMapOperationContext)
         }
