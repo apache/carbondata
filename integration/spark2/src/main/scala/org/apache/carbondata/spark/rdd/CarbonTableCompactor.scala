@@ -285,9 +285,9 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       OperationListenerBus.getInstance()
         .fireEvent(compactionLoadStatusPostEvent, operationContext)
       if (null != tableDataMaps) {
-        val buildDataMapPostExecutionEvent: BuildDataMapPostExecutionEvent =
-          new BuildDataMapPostExecutionEvent(sqlContext.sparkSession,
-            carbonTable.getAbsoluteTableIdentifier)
+        val buildDataMapPostExecutionEvent = new BuildDataMapPostExecutionEvent(
+          sqlContext.sparkSession, carbonTable.getAbsoluteTableIdentifier,
+          Seq(carbonLoadModel.getSegmentId), true)
         OperationListenerBus.getInstance()
           .fireEvent(buildDataMapPostExecutionEvent, dataMapOperationContext)
       }

@@ -36,6 +36,9 @@ public class CarbonBloomFilter extends BloomFilter {
 
   private int blockletNo;
 
+  // used for building blocklet when query
+  private String shardName;
+
   public CarbonBloomFilter() {
   }
 
@@ -166,4 +169,13 @@ public class CarbonBloomFilter extends BloomFilter {
   public int getBlockletNo() {
     return blockletNo;
   }
+
+  public String getShardName() {
+    return shardName;
+  }
+
+  public void setShardName(String shardName) {
+    this.shardName = shardName;
+  }
+
 }

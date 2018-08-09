@@ -133,7 +133,7 @@ object IndexDataMapRebuildRDD {
     }
 
     val buildDataMapPostExecutionEvent = new BuildDataMapPostExecutionEvent(sparkSession,
-      tableIdentifier)
+      tableIdentifier, validSegments.asScala.map(_.getSegmentNo), true)
     OperationListenerBus.getInstance().fireEvent(buildDataMapPostExecutionEvent, operationContext)
   }
 }
