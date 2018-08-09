@@ -464,7 +464,9 @@ class CarbonScanRDD[T: ClassTag](
 
       // TODO: rewrite this logic to call free memory in FailureListener on failures. On success,
       // TODO: no memory leak should be there, resources should be freed on success completion.
-      val listeners = CarbonReflectionUtils.getField("onCompleteCallbacks", context)
+      val onCompleteCallbacksField = context.getClass.getDeclaredField("onCompleteCallbacks")
+      onCompleteCallbacksField.setAccessible(true)
+      val listeners = onCompleteCallbacksField.get(context)
         .asInstanceOf[ArrayBuffer[TaskCompletionListener]]
 
       val isAdded = listeners.exists(p => p.isInstanceOf[InsertTaskCompletionListener])
