@@ -513,10 +513,10 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override public byte[] compress(Compressor compressor) throws MemoryException, IOException {
-    if (UnsafeMemoryManager.isOffHeap()) {
+    if (UnsafeMemoryManager.isOffHeap() && compressor.supportUnsafe()) {
       // use raw compression and copy to byte[]
       int inputSize = totalLength;
-      int compressedMaxSize = compressor.maxCompressedLength(inputSize);
+      long compressedMaxSize = compressor.maxCompressedLength(inputSize);
       MemoryBlock compressed =
           UnsafeMemoryManager.allocateMemoryWithRetry(taskId, compressedMaxSize);
       long outSize = compressor.rawCompress(baseOffset, inputSize, compressed.getBaseOffset());

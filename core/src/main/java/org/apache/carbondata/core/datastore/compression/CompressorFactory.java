@@ -17,25 +17,66 @@
 
 package org.apache.carbondata.core.datastore.compression;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.format.CompressionCodec;
 
 public class CompressorFactory {
-
   private static final CompressorFactory COMPRESSOR_FACTORY = new CompressorFactory();
 
-  private final Compressor snappyCompressor;
+  private final Map<String, SupportedCompressor> compressors = new HashMap<>();
+
+  public enum SupportedCompressor {
+    SNAPPY(CompressionCodec.SNAPPY, "snappy", SnappyCompressor.class),
+    ZSTD(CompressionCodec.ZSTD, "zstd", ZstdCompressor.class);
+
+    private CompressionCodec codec;
+    private String name;
+    private Class<Compressor> compressorClass;
+    private transient Compressor compressor;
+
+    SupportedCompressor(CompressionCodec codec, String name, Class compressorCls) {
+      this.codec = codec;
+      this.name = name;
+      this.compressorClass = compressorCls;
+    }
+
+    public CompressionCodec getCodec() {
+      return codec;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    /**
+     * we will load the compressor only if it is needed
+     */
+    public Compressor getCompressor() {
+      if (this.compressor == null) {
+        try {
+          this.compressor = compressorClass.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+          throw new RuntimeException("Exception occurs while getting compressor for " + name);
+        }
+      }
+      return this.compressor;
+    }
+  }
 
   private CompressorFactory() {
+    for (SupportedCompressor supportedCompressor : SupportedCompressor.values()) {
+      compressors.put(supportedCompressor.getName(), supportedCompressor);
+    }
+
     String compressorType = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.COMPRESSOR, CarbonCommonConstants.DEFAULT_COMPRESSOR);
-    switch (compressorType) {
-      case "snappy":
-        snappyCompressor = new SnappyCompressor();
-        break;
-      default:
-        throw new RuntimeException(
-            "Invalid compressor type provided! Please provide valid compressor type");
+    if (!compressors.keySet().contains(compressorType)) {
+      throw new RuntimeException(
+          "Invalid compressor type provided! Please provide valid compressor type");
     }
   }
 
@@ -43,16 +84,25 @@ public class CompressorFactory {
     return COMPRESSOR_FACTORY;
   }
 
+  // todo: many methods call this directly,
+  // should correct them to read the compressor from actual metadata
   public Compressor getCompressor() {
-    return getCompressor(CarbonCommonConstants.DEFAULT_COMPRESSOR);
+    String compressorType = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.COMPRESSOR, CarbonCommonConstants.DEFAULT_COMPRESSOR);
+    return getCompressor(compressorType);
   }
 
   public Compressor getCompressor(String name) {
-    if (name.equalsIgnoreCase("snappy")) {
-      return snappyCompressor;
-    } else {
-      throw new UnsupportedOperationException(name + " compressor is not supported");
+    if (compressors.containsKey(name.toLowerCase())) {
+      return compressors.get(name.toLowerCase()).getCompressor();
     }
+    throw new UnsupportedOperationException(name + " compressor is not supported");
   }
 
+  public CompressionCodec getCompressionCodec(String name) {
+    if (compressors.containsKey(name.toLowerCase())) {
+      return compressors.get(name.toLowerCase()).getCodec();
+    }
+    throw new UnsupportedOperationException(name + " compressor is not supported");
+  }
 }
