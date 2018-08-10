@@ -73,14 +73,6 @@ case class CarbonCreateDataMapCommand(
       }
     }
 
-    if (mainTable != null &&
-        mainTable.isStreamingSink &&
-        !(dmProviderName.equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.toString)
-          || dmProviderName.equalsIgnoreCase(DataMapClassProvider.TIMESERIES.toString))) {
-      throw new MalformedCarbonCommandException(s"Streaming table does not support creating " +
-                                                s"$dmProviderName datamap")
-    }
-
     if (mainTable !=null && CarbonUtil.getFormatVersion(mainTable) != ColumnarFormatVersion.V3) {
       throw new MalformedCarbonCommandException(s"Unsupported operation on table with " +
                                                 s"V1 or V2 format data")

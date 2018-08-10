@@ -35,6 +35,7 @@ import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 
 /**
@@ -278,6 +279,10 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
             if (!property.get._2.trim.equalsIgnoreCase("true")) {
               throw new MalformedCarbonCommandException(
                 "Streaming property value is incorrect")
+            }
+            if (CarbonTable.hasMVDataMap(carbonTable)) {
+              throw new MalformedCarbonCommandException(
+                "The table which has MV datamap does not support set streaming property")
             }
           }
         }
