@@ -33,6 +33,7 @@ import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.{DataMapSchema, RelationIdentifier}
@@ -80,6 +81,20 @@ object MVHelper {
     dmProperties.foreach(t => tableProperties.put(t._1, t._2))
 
     val selectTables = getTables(logicalPlan)
+    selectTables.foreach { selectTable =>
+      val mainCarbonTable = try {
+        Some(CarbonEnv.getCarbonTable(selectTable.identifier.database,
+          selectTable.identifier.table)(sparkSession))
+      } catch {
+        // Exception handling if it's not a CarbonTable
+        case ex : Exception => None
+      }
+
+      if (!mainCarbonTable.isEmpty && mainCarbonTable.get.isStreamingSink) {
+        throw new MalformedCarbonCommandException(
+          s"Streaming table does not support creating MV datamap")
+      }
+    }
 
     // TODO inherit the table properties like sort order, sort scope and block size from parent
     // tables to mv datamap table

@@ -917,6 +917,83 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists mvtable2")
   }
 
+  test("test create datamap with streaming table")  {
+    sql("drop datamap if exists dm_stream_test1")
+    sql("drop datamap if exists dm_stream_bloom")
+    sql("drop datamap if exists dm_stream_PreAggMax")
+    sql("drop table if exists fact_streaming_table1")
+    sql(
+      """
+        | CREATE TABLE fact_streaming_table1 (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | STORED BY 'org.apache.carbondata.format'
+        | tblproperties('streaming'='true')
+      """.stripMargin)
+    sql(
+      s"""
+         | CREATE DATAMAP dm_stream_bloom ON TABLE fact_streaming_table1
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='empname,deptname', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+
+    sql("create datamap dm_stream_PreAggMax on table fact_streaming_table1 using 'preaggregate' " +
+        "as select empname,max(salary) as max from fact_streaming_table1 group by empname")
+    
+    val exception_tb_mv: Exception = intercept[Exception] {
+      sql("create datamap dm_stream_test1 using 'mv' as select empname, sum(utilization) from " +
+          "fact_streaming_table1 group by empname")
+    }
+    assert(exception_tb_mv.getMessage
+      .contains("Streaming table does not support creating MV datamap"))
+  }
+
+  test("test create datamap with streaming table join carbon table and join non-carbon table ")  {
+    sql("drop datamap if exists dm_stream_test2")
+    sql("drop table if exists fact_streaming_table2")
+    sql("drop table if exists fact_table_parquet")
+    sql(
+      """
+        | CREATE TABLE fact_streaming_table2 (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | STORED BY 'org.apache.carbondata.format'
+        | tblproperties('streaming'='true')
+      """.stripMargin)
+    sql(
+      """
+        | CREATE TABLE fact_table_parquet (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | STORED AS parquet
+      """.stripMargin)
+    
+    val exception_tb_mv2: Exception = intercept[Exception] {
+      sql("create datamap dm_stream_test2 using 'mv' as select t1.empname as c1, t2.designation, " +
+          "t2.empname as c2 from (fact_table1 t1 inner join fact_streaming_table2 t2  " +
+          "on (t1.empname = t2.empname)) inner join fact_table_parquet t3 " +
+          "on (t1.empname = t3.empname)")
+    }
+    assert(exception_tb_mv2.getMessage
+      .contains("Streaming table does not support creating MV datamap"))
+  }
+
+  test("test set streaming property of the table which has MV datamap")  {
+    sql("drop datamap if exists dm_stream_test3")
+    sql("create datamap dm_stream_test3 using 'mv' as select empname, sum(utilization) from " +
+        "fact_table1 group by empname")
+    sql("rebuild datamap dm_stream_test3")
+    val exception_tb_mv3: Exception = intercept[Exception] {
+      sql("alter table fact_table1 set tblproperties('streaming'='true')")
+    }
+    assert(exception_tb_mv3.getMessage
+      .contains("The table which has MV datamap does not support set streaming property"))
+    sql("drop datamap if exists dm_stream_test3")
+  }
+
   def verifyMVDataMap(logicalPlan: LogicalPlan, dataMapName: String): Boolean = {
     val tables = logicalPlan collect {
       case l: LogicalRelation => l.catalogTable.get
@@ -931,6 +1008,9 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table IF EXISTS fact_table4")
     sql("drop table IF EXISTS fact_table5")
     sql("drop table IF EXISTS fact_table6")
+    sql("drop table IF EXISTS fact_streaming_table1")
+    sql("drop table IF EXISTS fact_streaming_table2")
+    sql("drop table IF EXISTS fact_table_parquet")
   }
 
   override def afterAll {
