@@ -60,8 +60,8 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
     }
     int surrogate = dimensionDataChunkStore.getSurrogate(rowId);
     if (surrogate == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {
-      vector.putNull(rowId);
-      vector.getDictionaryVector().putNull(rowId);
+      vector.putNull(vectorRow);
+      vector.getDictionaryVector().putNull(vectorRow);
       return;
     }
     vector.putNotNull(vectorRow);

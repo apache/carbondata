@@ -18,13 +18,12 @@
 package org.apache.spark.sql.hive
 
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartition}
+import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartition, ExternalCatalogUtils}
+import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
 import org.apache.spark.util.CarbonReflectionUtils
-import org.apache.spark.sql.catalyst.catalog.ExternalCatalogUtils
-import org.apache.spark.sql.catalyst.expressions.Expression
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 
@@ -49,10 +48,10 @@ object CarbonSessionUtil {
     var isRelationRefreshed = false
     rtnRelation match {
       case SubqueryAlias(_,
-      LogicalRelation(_: CarbonDatasourceHadoopRelation, _, _)
+      MatchLogicalRelation(_: CarbonDatasourceHadoopRelation, _, _)
       ) =>
         isRelationRefreshed = CarbonEnv.refreshRelationFromCache(name)(sparkSession)
-      case LogicalRelation(_: CarbonDatasourceHadoopRelation, _, _) =>
+      case MatchLogicalRelation(_: CarbonDatasourceHadoopRelation, _, _) =>
         isRelationRefreshed = CarbonEnv.refreshRelationFromCache(name)(sparkSession)
       case SubqueryAlias(_, relation) if
       relation.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||

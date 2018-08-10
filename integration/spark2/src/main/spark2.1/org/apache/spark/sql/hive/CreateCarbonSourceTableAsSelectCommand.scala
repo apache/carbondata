@@ -34,11 +34,9 @@ import org.apache.spark.sql.types.StructType
 
 /**
  * Create table 'using carbondata' and insert the query result into it.
- *
  * @param table the Catalog Table
  * @param mode  SaveMode:Ignore,OverWrite,ErrorIfExists,Append
  * @param query the query whose result will be insert into the new relation
- *
  */
 
 case class CreateCarbonSourceTableAsSelectCommand(

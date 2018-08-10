@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.streaming;
+package org.apache.carbondata.stream;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +31,7 @@ import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
+import org.apache.carbondata.streaming.CarbonStreamInputFormat;
 
 import junit.framework.TestCase;
 import org.apache.hadoop.conf.Configuration;
@@ -45,7 +46,7 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class CarbonStreamInputFormatTest extends TestCase {
+public class CarbonStreamRecordReaderTest extends TestCase {
 
   private TaskAttemptID taskAttemptId;
   private TaskAttemptContext taskAttemptContext;
