@@ -164,7 +164,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     checkAnswer(sql("select count(*) from loadpartitionwithspecialchar where empname='arvind,ss'"), Seq(Row(1)))
   }
 
-  test("concurrent global sort partition table load test") {
+  ignore("concurrent global sort partition table load test") {
     executorService = Executors.newCachedThreadPool()
     sql(
       """
