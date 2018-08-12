@@ -605,6 +605,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     For NonTransactional table, one of the reason for a segment refresh is below scenario.
     SDK is written one set of files with UUID, with same UUID it can write again.
     So, latest files content should reflect the new count by refreshing the segment */
+    LOG.info("****ci_issue: Filtered segment count " + filteredSegment.size());
     List<Segment> toBeCleanedSegments = new ArrayList<>();
     for (Segment eachSegment : filteredSegment) {
       boolean refreshNeeded = DataMapStoreManager.getInstance()
@@ -614,6 +615,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       if (refreshNeeded) {
         toBeCleanedSegments.add(eachSegment);
       }
+      LOG.info("****ci_issue: Filtered segment num: " + eachSegment.getSegmentNo());
     }
     if (toBeCleanedSegments.size() > 0) {
       DataMapStoreManager.getInstance()
@@ -622,6 +624,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     }
     List<ExtendedBlocklet> blocklets =
         blockletMap.prune(filteredSegment, null, partitions);
+    LOG.info("****ci_issue: pruned blocklet count: " + blocklets.size());
     for (ExtendedBlocklet blocklet : blocklets) {
       String blockName = blocklet.getPath();
       blockName = CarbonTablePath.getCarbonDataFileName(blockName);
@@ -650,6 +653,10 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       }
     }
 
+    for (Map.Entry<String, Long> entry : blockRowCountMapping.entrySet()) {
+      LOG.info(
+          "****ci_issue: map segment id: " + entry.getKey() + "rows scanned: " + entry.getValue());
+    }
     return new BlockMappingVO(blockRowCountMapping, segmentAndBlockCountMapping);
   }
 
