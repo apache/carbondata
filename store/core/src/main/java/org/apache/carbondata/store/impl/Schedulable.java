@@ -20,6 +20,7 @@ package org.apache.carbondata.store.impl;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -27,7 +28,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.hadoop.io.Writable;
 
 @InterfaceAudience.Internal
-public class Schedulable implements Writable {
+public class Schedulable implements Writable, Serializable {
 
   private String id;
   private String address;

@@ -655,6 +655,12 @@
         <module>integration/zeppelin</module>
       </modules>
     </profile>
+    <profile>
+      <id>sourcev2</id>
+      <modules>
+        <module>integration/spark2-sourcev2</module>
+      </modules>
+    </profile>
   </profiles>
 
 </project>
