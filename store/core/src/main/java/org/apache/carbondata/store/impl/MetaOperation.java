@@ -207,6 +207,6 @@ public class MetaOperation {
   public static String getTablePath(String tableName, String databaseName, StoreConf storeConf) {
     Objects.requireNonNull(tableName);
     Objects.requireNonNull(databaseName);
-    return String.format("%s/%s", storeConf.storeLocation(), tableName);
+    return String.format("%s/%s/%s", storeConf.storeLocation(), databaseName, tableName);
   }
 }
