@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.store
 
+import java.io.File
+
 import org.apache.carbondata.sdk.store.conf.StoreConf
 import org.apache.carbondata.store.impl.worker.Worker
 import org.apache.spark.SparkConf
@@ -25,12 +27,16 @@ import org.apache.spark.sql.{functions, SparkSession}
 class TestCarbonStoreScan extends org.scalatest.FunSuite {
 
   test("Test Scan with pruning and filter") {
-    val storeConfPath = "/home/root1/carbondata/carbondata/store/conf/store.conf"
+
+    val projectFolder = new File(classOf[TestCarbonStoreScan].getResource("/")
+      .getPath + "../../../../").getCanonicalPath
+
+    val storeConfPath = projectFolder + "/store/conf/store.conf"
     System.setProperty("CARBON_STORE_CONF", storeConfPath)
     val thread = new Thread {
       override def run {
         org.apache.carbondata.store.impl.master.Master.main(
-          Array("/home/root1/carbondata/carbondata/store/conf/log4j.properties", storeConfPath))
+          Array(projectFolder + "/store/conf/log4j.properties", storeConfPath))
       }
     }
     thread.start()
@@ -71,7 +77,7 @@ class TestCarbonStoreScan extends org.scalatest.FunSuite {
          | TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
 
-    val path = "/home/root1/carbondata/carbondata/examples/spark2/src/main/resources/data.csv"
+    val path = projectFolder + "/examples/spark2/src/main/resources/data.csv"
 
     // scalastyle:off
     spark.sql(
