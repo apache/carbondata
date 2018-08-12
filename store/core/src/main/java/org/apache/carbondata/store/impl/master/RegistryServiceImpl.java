@@ -27,7 +27,7 @@ import org.apache.carbondata.store.impl.service.model.RegisterWorkerResponse;
 import org.apache.hadoop.ipc.ProtocolSignature;
 
 @InterfaceAudience.Internal
-class egistryServiceImpl implements RegistryService {
+class RegistryServiceImpl implements RegistryService {
 
   private Master master;
 

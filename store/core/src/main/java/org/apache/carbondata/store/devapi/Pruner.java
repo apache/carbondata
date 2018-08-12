@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.store.devapi;
 
+import java.io.Serializable;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
@@ -27,7 +28,7 @@ import org.apache.carbondata.sdk.store.exception.CarbonException;
 
 @InterfaceAudience.Developer("Integration")
 @InterfaceStability.Unstable
-public interface Pruner {
+public interface Pruner extends Serializable {
 
   /**
    * Return an array of ScanUnit which will be the input in

@@ -162,7 +162,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
           case _ => throw new NoSuchTableException(database, tableIdentifier.table)
         }
         val identifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
-           catalogTable.location.toString, database, tableIdentifier.table)
+          catalogTable.storage.properties.get("tablePath").get, database, tableIdentifier.table)
         CarbonEnv.getInstance(sparkSession).carbonMetastore.
           createCarbonRelation(catalogTable.storage.properties, identifier, sparkSession)
       case _ => throw new NoSuchTableException(database, tableIdentifier.table)
