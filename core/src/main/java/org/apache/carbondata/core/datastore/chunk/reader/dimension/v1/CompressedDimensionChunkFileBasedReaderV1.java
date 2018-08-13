@@ -28,6 +28,7 @@ import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionCo
 import org.apache.carbondata.core.datastore.chunk.reader.dimension.AbstractChunkReader;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -55,6 +56,8 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
       final int[] eachColumnValueSize, final String filePath) {
     super(eachColumnValueSize, filePath, blockletInfo.getNumberOfRows());
     this.dimensionColumnChunk = blockletInfo.getDimensionColumnChunk();
+    // for v1 store, the compressor is snappy
+    this.compressor = CompressorFactory.SupportedCompressor.SNAPPY.getCompressor();
   }
 
   /**
@@ -108,7 +111,7 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
     FileReader fileReader = dimensionRawColumnChunk.getFileReader();
 
     ByteBuffer rawData = dimensionRawColumnChunk.getRawData();
-    dataPage = COMPRESSOR.unCompressByte(rawData.array(), (int) dimensionRawColumnChunk.getOffSet(),
+    dataPage = compressor.unCompressByte(rawData.array(), (int) dimensionRawColumnChunk.getOffSet(),
         dimensionRawColumnChunk.getLength());
 
     // if row id block is present then read the row id chunk and uncompress it

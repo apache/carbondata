@@ -115,6 +115,60 @@ class TestLoadDataWithCompressor extends QueryTest with BeforeAndAfterEach with 
     testQuery()
   }
 
+  test("test current zstd compressor on legacy store with snappy") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "snappy")
+    createTable()
+    loadData()
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "zstd")
+    loadData()
+    sql(s"SELECT * FROM $tableName").show(false)
+    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(16)))
+  }
+
+  test("test current snappy compressor on legacy store with zstd") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "zstd")
+    createTable()
+    loadData()
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "snappy")
+    loadData()
+    sql(s"SELECT * FROM $tableName").show(false)
+    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(16)))
+  }
+
+  test("test compaction with different compressor for each load") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "zstd")
+    createTable()
+    loadData()
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "false")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "snappy")
+    loadData()
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "zstd")
+    loadData()
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "snappy")
+    loadData()
+
+    // there are 8 loads
+    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(4 * 8)))
+    assert(sql(s"SHOW SEGMENTS FOR TABLE $tableName").count() == 8)
+    sql(s"ALTER TABLE $tableName COMPACT 'major'")
+    sql(s"CLEAN FILES FOR TABLE $tableName")
+    // after compaction and clean, there should be on segment
+    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(4 * 8)))
+    assert(sql(s"SHOW SEGMENTS FOR TABLE $tableName").count() == 1)
+  }
+
   test("test data loading with unsupported compressor and onheap") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "false")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "fake")

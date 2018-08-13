@@ -32,7 +32,7 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
   /**
    * compressor will be used to uncompress the data
    */
-  protected final Compressor COMPRESSOR = CompressorFactory.getInstance().getCompressor();
+  protected Compressor compressor;
 
   /**
    * size of the each column value

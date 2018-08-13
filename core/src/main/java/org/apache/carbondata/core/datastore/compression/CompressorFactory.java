@@ -84,8 +84,12 @@ public class CompressorFactory {
     return COMPRESSOR_FACTORY;
   }
 
-  // todo: many methods call this directly,
-  // should correct them to read the compressor from actual metadata
+  /**
+   * get the default compressor.
+   * This method can only be called in data load procedure to compress column page.
+   * In query procedure, we should read the compressor information from the metadata
+   * in datafiles when we want to decompress the content.
+   */
   public Compressor getCompressor() {
     String compressorType = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.COMPRESSOR, CarbonCommonConstants.DEFAULT_COMPRESSOR);

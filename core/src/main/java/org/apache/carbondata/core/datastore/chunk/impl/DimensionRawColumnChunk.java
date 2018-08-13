@@ -26,6 +26,7 @@ import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkReader;
+import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
@@ -144,7 +145,10 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
     if (null != getDataChunkV3() && null != getDataChunkV3().local_dictionary
         && null == localDictionary) {
       try {
-        localDictionary = getDictionary(getDataChunkV3().local_dictionary);
+        String compressorName =
+            getDataChunkV3().data_chunk_list.get(0).chunk_meta.getCompression_codec().name();
+        Compressor compressor = CompressorFactory.getInstance().getCompressor(compressorName);
+        localDictionary = getDictionary(getDataChunkV3().local_dictionary, compressor);
       } catch (IOException | MemoryException e) {
         throw new RuntimeException(e);
       }
@@ -160,8 +164,8 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
    * @throws IOException
    * @throws MemoryException
    */
-  private CarbonDictionary getDictionary(LocalDictionaryChunk localDictionaryChunk)
-      throws IOException, MemoryException {
+  private CarbonDictionary getDictionary(LocalDictionaryChunk localDictionaryChunk,
+      Compressor compressor) throws IOException, MemoryException {
     if (null != localDictionaryChunk) {
       List<Encoding> encodings = localDictionaryChunk.getDictionary_meta().getEncoders();
       List<ByteBuffer> encoderMetas = localDictionaryChunk.getDictionary_meta().getEncoder_meta();
@@ -169,8 +173,8 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
           DefaultEncodingFactory.getInstance().createDecoder(encodings, encoderMetas);
       ColumnPage decode = decoder.decode(localDictionaryChunk.getDictionary_data(), 0,
           localDictionaryChunk.getDictionary_data().length);
-      BitSet usedDictionary = BitSet.valueOf(CompressorFactory.getInstance().getCompressor()
-          .unCompressByte(localDictionaryChunk.getDictionary_values()));
+      BitSet usedDictionary = BitSet.valueOf(compressor.unCompressByte(
+          localDictionaryChunk.getDictionary_values()));
       int length = usedDictionary.length();
       int index = 0;
       byte[][] dictionary = new byte[length][];
