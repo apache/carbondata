@@ -57,7 +57,10 @@ object UpdateDataLoad {
 
       loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
       val executor = new DataLoadExecutor
-      TaskContext.get().addTaskCompletionListener { context =>
+      TaskContext.get().addTaskCompletionListener(new InsertTaskCompletionListener(executor))
+      // only in case of failure unsafe memory should be cleared. In case of success,
+      // system should take care of releasing the memory after finishing a task
+      TaskContext.get().addTaskFailureListener { (context, _) =>
         executor.close()
         CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
       }

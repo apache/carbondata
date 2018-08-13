@@ -215,9 +215,13 @@ class NewCarbonDataLoadRDD[K, V](
         // Initialize to set carbon properties
         loader.initialize()
         val executor = new DataLoadExecutor()
-        // in case of success, failure or cancelation clear memory and stop execution
-        context.addTaskCompletionListener { context => executor.close()
-          CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
+        context.addTaskCompletionListener(new InsertTaskCompletionListener(executor))
+        // only in case of failure unsafe memory should be cleared. In case of success,
+        // system should take care of releasing the memory after finishing a task
+        context.addTaskFailureListener { (context, _) =>
+          executor.close()
+          CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+        }
         executor.execute(model,
           loader.storeLocation,
           recordReaders)
@@ -371,6 +375,13 @@ class NewDataFrameLoaderRDD[K, V](
         val executor = new DataLoadExecutor
         // in case of success, failure or cancelation clear memory and stop execution
         context.addTaskCompletionListener (new InsertTaskCompletionListener(executor))
+
+        // only in case of failure unsafe memory should be cleared. In case of success,
+        // system should take care of releasing the memory after finishing a task
+        context.addTaskFailureListener { (context, _) =>
+          executor.close()
+          CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+        }
         executor.execute(model, loader.storeLocation, recordReaders.toArray)
       } catch {
         case e: NoRetryException =>
@@ -560,9 +571,13 @@ class PartitionTableDataLoaderRDD[K, V](
         // Initialize to set carbon properties
         loader.initialize()
         val executor = new DataLoadExecutor
-        // in case of success, failure or cancelation clear memory and stop execution
-        context.addTaskCompletionListener { context => executor.close()
-          CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
+        context.addTaskCompletionListener(new InsertTaskCompletionListener(executor))
+        // only in case of failure unsafe memory should be cleared. In case of success,
+        // system should take care of releasing the memory after finishing a task
+        context.addTaskFailureListener { (context, _) =>
+          executor.close()
+          CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+        }
         executor.execute(model, loader.storeLocation, recordReaders)
       } catch {
         case e: NoRetryException =>
