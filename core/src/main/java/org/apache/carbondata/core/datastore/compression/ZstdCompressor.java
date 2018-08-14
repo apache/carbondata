@@ -19,6 +19,13 @@ package org.apache.carbondata.core.datastore.compression;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
+
+import org.apache.carbondata.core.util.ByteUtil;
 
 import com.github.luben.zstd.Zstd;
 
@@ -59,111 +66,81 @@ public class ZstdCompressor implements Compressor {
 
   @Override
   public byte[] compressShort(short[] unCompInput) {
-    // short use 2 bytes
-    byte[] unCompArray = new byte[unCompInput.length * 2];
-    ByteBuffer unCompBuffer = ByteBuffer.wrap(unCompArray);
-    for (short input : unCompInput) {
-      unCompBuffer.putShort(input);
-    }
-    return Zstd.compress(unCompBuffer.array(), COMPRESS_LEVEL);
+    ByteBuffer unCompBuffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_SHORT);
+    unCompBuffer.asShortBuffer().put(unCompInput);
+    return compressByte(unCompBuffer.array());
   }
 
   @Override
   public short[] unCompressShort(byte[] compInput, int offset, int length) {
     byte[] unCompArray = unCompressByte(compInput, offset, length);
-    ByteBuffer unCompBuffer = ByteBuffer.wrap(unCompArray);
-    short[] shorts = new short[unCompArray.length / 2];
-    for (int i = 0; i < shorts.length; i++) {
-      shorts[i] = unCompBuffer.getShort();
-    }
+    ShortBuffer unCompBuffer = ByteBuffer.wrap(unCompArray).asShortBuffer();
+    short[] shorts = new short[unCompArray.length / ByteUtil.SIZEOF_SHORT];
+    unCompBuffer.get(shorts);
     return shorts;
   }
 
   @Override
   public byte[] compressInt(int[] unCompInput) {
-    // int use 4 bytes
-    byte[] unCompArray = new byte[unCompInput.length * 4];
-    ByteBuffer unCompBuffer = ByteBuffer.wrap(unCompArray);
-    for (int input : unCompInput) {
-      unCompBuffer.putInt(input);
-    }
-    return Zstd.compress(unCompBuffer.array(), COMPRESS_LEVEL);
+    ByteBuffer unCompBuffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_INT);
+    unCompBuffer.asIntBuffer().put(unCompInput);
+    return compressByte(unCompBuffer.array());
   }
 
   @Override
   public int[] unCompressInt(byte[] compInput, int offset, int length) {
     byte[] unCompArray = unCompressByte(compInput, offset, length);
-    ByteBuffer unCompBuffer = ByteBuffer.wrap(unCompArray);
-    int[] ints = new int[unCompArray.length / 4];
-    for (int i = 0; i < ints.length; i++) {
-      ints[i] = unCompBuffer.getInt();
-    }
+    IntBuffer unCompBuffer = ByteBuffer.wrap(unCompArray).asIntBuffer();
+    int[] ints = new int[unCompArray.length / ByteUtil.SIZEOF_INT];
+    unCompBuffer.get(ints);
     return ints;
   }
 
   @Override
   public byte[] compressLong(long[] unCompInput) {
-    // long use 8 bytes
-    byte[] unCompArray = new byte[unCompInput.length * 8];
-    ByteBuffer unCompBuffer = ByteBuffer.wrap(unCompArray);
-    for (long input : unCompInput) {
-      unCompBuffer.putLong(input);
-    }
-    return Zstd.compress(unCompBuffer.array(), COMPRESS_LEVEL);
+    ByteBuffer unCompBuffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_LONG);
+    unCompBuffer.asLongBuffer().put(unCompInput);
+    return compressByte(unCompBuffer.array());
   }
 
   @Override
   public long[] unCompressLong(byte[] compInput, int offset, int length) {
     byte[] unCompArray = unCompressByte(compInput, offset, length);
-    ByteBuffer unCompBuffer = ByteBuffer.wrap(unCompArray);
-    long[] longs = new long[unCompArray.length / 8];
-    for (int i = 0; i < longs.length; i++) {
-      longs[i] = unCompBuffer.getLong();
-    }
+    LongBuffer unCompBuffer = ByteBuffer.wrap(unCompArray).asLongBuffer();
+    long[] longs = new long[unCompArray.length / ByteUtil.SIZEOF_LONG];
+    unCompBuffer.get(longs);
     return longs;
   }
 
   @Override
   public byte[] compressFloat(float[] unCompInput) {
-    // float use 4 bytes
-    byte[] unCompArray = new byte[unCompInput.length * 4];
-    ByteBuffer unCompBuffer = ByteBuffer.wrap(unCompArray);
-    for (float input : unCompInput) {
-      unCompBuffer.putFloat(input);
-    }
-    return Zstd.compress(unCompBuffer.array(), COMPRESS_LEVEL);
+    ByteBuffer unCompBuffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_FLOAT);
+    unCompBuffer.asFloatBuffer().put(unCompInput);
+    return compressByte(unCompBuffer.array());
   }
 
   @Override
   public float[] unCompressFloat(byte[] compInput, int offset, int length) {
     byte[] unCompArray = unCompressByte(compInput, offset, length);
-    ByteBuffer unCompBuffer = ByteBuffer.wrap(unCompArray);
-    float[] floats = new float[unCompArray.length / 4];
-    for (int i = 0; i < floats.length; i++) {
-      floats[i] = unCompBuffer.getFloat();
-    }
+    FloatBuffer unCompBuffer = ByteBuffer.wrap(unCompArray).asFloatBuffer();
+    float[] floats = new float[unCompArray.length / ByteUtil.SIZEOF_FLOAT];
+    unCompBuffer.get(floats);
     return floats;
   }
 
   @Override
   public byte[] compressDouble(double[] unCompInput) {
-    // double use 8 bytes
-    byte[] unCompArray = new byte[unCompInput.length * 8];
-    ByteBuffer unCompBuffer = ByteBuffer.wrap(unCompArray);
-    for (double input : unCompInput) {
-      unCompBuffer.putDouble(input);
-    }
-    return Zstd.compress(unCompBuffer.array(), COMPRESS_LEVEL);
+    ByteBuffer unCompBuffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_DOUBLE);
+    unCompBuffer.asDoubleBuffer().put(unCompInput);
+    return compressByte(unCompBuffer.array());
   }
 
   @Override
   public double[] unCompressDouble(byte[] compInput, int offset, int length) {
     byte[] unCompArray = unCompressByte(compInput, offset, length);
-    ByteBuffer unCompBuffer = ByteBuffer.wrap(unCompArray);
-    double[] doubles = new double[unCompArray.length / 8];
-    for (int i = 0; i < doubles.length; i++) {
-      doubles[i] = unCompBuffer.getDouble();
-    }
+    DoubleBuffer unCompBuffer = ByteBuffer.wrap(unCompArray).asDoubleBuffer();
+    double[] doubles = new double[unCompArray.length / ByteUtil.SIZEOF_DOUBLE];
+    unCompBuffer.get(doubles);
     return doubles;
   }
 
