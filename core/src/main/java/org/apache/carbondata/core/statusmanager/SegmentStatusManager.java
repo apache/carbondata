@@ -934,6 +934,8 @@ public class SegmentStatusManager {
     CarbonLockUtil.deleteExpiredSegmentLockFiles(carbonTable);
     if (isLoadDeletionRequired(carbonTable.getMetadataPath())) {
       AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
+      boolean updationCompletionStatus = false;
+      LoadMetadataDetails[] newAddedLoadHistoryList = null;
       ReturnTuple tuple = isUpdationRequired(isForceDeletion, carbonTable, identifier);
       if (tuple.isUpdateRequired) {
         ICarbonLock carbonTableStatusLock =
@@ -958,7 +960,6 @@ public class SegmentStatusManager {
             int maxSegmentId = SegmentStatusManager.getMaxSegmentId(tuple2.details);
             int invisibleSegmentCnt = SegmentStatusManager.countInvisibleSegments(
                 tuple2.details, maxSegmentId);
-            LoadMetadataDetails[] newAddedLoadHistoryList = null;
             // if execute command 'clean files' or the number of invisible segment info
             // exceeds the value of 'carbon.invisible.segments.preserve.count',
             // it need to append the invisible segment list to 'tablestatus.history' file.
@@ -983,9 +984,7 @@ public class SegmentStatusManager {
                   updateLoadMetadataFromOldToNew(tuple2.details, latestMetadata);
               writeLoadMetadata(identifier, latestStatus);
             }
-            DeleteLoadFolders.physicalFactAndMeasureMetadataDeletion(
-                identifier, carbonTable.getMetadataPath(),
-                newAddedLoadHistoryList, isForceDeletion, partitionSpecs);
+            updationCompletionStatus = true;
           } else {
             String dbName = identifier.getCarbonTableIdentifier().getDatabaseName();
             String tableName = identifier.getCarbonTableIdentifier().getTableName();
@@ -1000,6 +999,11 @@ public class SegmentStatusManager {
         } finally {
           if (locked) {
             CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
+          }
+          if (updationCompletionStatus) {
+            DeleteLoadFolders.physicalFactAndMeasureMetadataDeletion(
+                identifier, carbonTable.getMetadataPath(),
+                newAddedLoadHistoryList, isForceDeletion, partitionSpecs);
           }
         }
       }
