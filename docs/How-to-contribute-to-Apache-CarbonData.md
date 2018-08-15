@@ -57,12 +57,9 @@ like fixing typos, do not require an associated issue.
 
 ### Design
 
-To avoid potential frustration during the code review cycle, we encourage you to clearly scope and
-design non-trivial contributions with the CarbonData community before you start coding.
+To clearly express your thoughts and get early feedback from other community members, we encourage you to clearly scope, document the design of non-trivial contributions and discuss with the CarbonData community before you start coding.
 
-Generally, the JIRA issue is the best place to gather relevant design docs, comments, or references.
-It’s great to explicitly include relevant stakeholders early in the conversation. For designs that
-may be generally interesting, we also encourage conversations on the developer’s mailing list.
+Generally, the JIRA issue is the best place to gather relevant design docs, comments, or references. It’s great to explicitly include relevant stakeholders early in the conversation. For designs that may be generally interesting, we also encourage conversations on the developer’s mailing list.
 
 ### Code
 
@@ -80,7 +77,7 @@ $ git config --global user.name "Your Name"
 #### Fork the repository on GitHub
 
 Go to the [Apache CarbonData GitHub mirror](https://github.com/apache/carbondata) and
-fork the repository to your own private account.
+fork the repository to your account.
 This will be your private workspace for staging changes.
 
 #### Clone the repository locally
