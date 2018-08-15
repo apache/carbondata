@@ -91,30 +91,28 @@ public class BloomDataMapWriter extends AbstractBloomDataMapWriter {
   @Override
   protected byte[] convertDictionaryValue(int indexColIdx, Object value) {
     // input value from onPageAdded in load process is byte[]
-    byte[] fakeMdkBytes;
-    // this means that we need to pad some fake bytes
-    // to get the whole MDK in corresponding position
-    if (columnarSplitter.getBlockKeySize().length > indexCol2MdkIdx.size()) {
-      int totalSize = 0;
-      for (int size : columnarSplitter.getBlockKeySize()) {
-        totalSize += size;
-      }
-      fakeMdkBytes = new byte[totalSize];
 
-      // put this bytes to corresponding position
-      int thisKeyIdx = indexCol2MdkIdx.get(indexColumns.get(indexColIdx).getColName());
-      int destPos = 0;
-      for (int keyIdx = 0; keyIdx < columnarSplitter.getBlockKeySize().length; keyIdx++) {
-        if (thisKeyIdx == keyIdx) {
-          System.arraycopy(value, 0,
-              fakeMdkBytes, destPos, columnarSplitter.getBlockKeySize()[thisKeyIdx]);
-          break;
-        }
-        destPos += columnarSplitter.getBlockKeySize()[keyIdx];
-      }
-    } else {
-      fakeMdkBytes = (byte[])value;
+    // This is used to deal with the multiple global dictionary column as index columns.
+    // The KeyGenerator works with the whole MDK while the value here only represent part of it,
+    // so we need to pad fake bytes to it in corresponding position.
+    int totalSize = 0;
+    for (int size : columnarSplitter.getBlockKeySize()) {
+      totalSize += size;
     }
+    byte[] fakeMdkBytes = new byte[totalSize];
+
+    // put this bytes to corresponding position
+    int thisKeyIdx = indexCol2MdkIdx.get(indexColumns.get(indexColIdx).getColName());
+    int destPos = 0;
+    for (int keyIdx = 0; keyIdx < columnarSplitter.getBlockKeySize().length; keyIdx++) {
+      if (thisKeyIdx == keyIdx) {
+        System.arraycopy(value, 0, fakeMdkBytes, destPos,
+            columnarSplitter.getBlockKeySize()[thisKeyIdx]);
+        break;
+      }
+      destPos += columnarSplitter.getBlockKeySize()[keyIdx];
+    }
+
     // for dict columns including dictionary and date columns
     // decode value to get the surrogate key
     int surrogateKey = (int) keyGenerator.getKey(fakeMdkBytes,
