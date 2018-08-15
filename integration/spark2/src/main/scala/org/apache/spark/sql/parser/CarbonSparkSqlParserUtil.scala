@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.parser
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.antlr.v4.runtime.tree.TerminalNode
@@ -142,15 +143,31 @@ object CarbonSparkSqlParserUtil {
             isTransactionalTable = false
             SchemaReader.inferSchema(identifier, false)
           }
-        }
-        else {
+        } else {
           SchemaReader.getTableInfo(identifier)
         }
-      }
-      catch {
+      } catch {
         case e: Throwable =>
           operationNotAllowed(s"Invalid table path provided: ${ tablePath.get } ", tableHeader)
       }
+
+      if (fields.nonEmpty) {
+        // user provided schema for this external table, honor the user schema
+        val rawSchema = table.getFactTable.getListOfColumns.asScala
+        // validate all fields provided by user exists in schema refered from the external table
+        fields.foreach { field =>
+          val exist = rawSchema.exists(_.getColumnName.equalsIgnoreCase(field.column))
+          if (!exist) {
+            operationNotAllowed(s"column '${field.column}' does not exist in " +
+                                s"files at location ${tablePath.get}", tableHeader)
+          }
+        }
+        // keep the column of what user specified only
+        val userProvidedColumns = fields.map(_.column)
+        val columns = rawSchema.filter(col => userProvidedColumns.contains(col.getColumnName))
+        table.getFactTable.setListOfColumns(columns.asJava)
+      }
+
       // set "_external" property, so that DROP TABLE will not delete the data
       if (provider.equalsIgnoreCase("'carbonfile'")) {
         table.getFactTable.getTableProperties.put("_filelevelformat", "true")
