@@ -17,7 +17,7 @@
 
 # Useful Tips
   This tutorial guides you to create CarbonData Tables and optimize performance.
-  The following sections will elaborate on the above topics :
+  The following sections will elaborate on the below topics :
 
   * [Suggestions to create CarbonData Table](#suggestions-to-create-carbondata-table)
   * [Configuration for Optimizing Data Loading performance for Massive Data](#configuration-for-optimizing-data-loading-performance-for-massive-data)
