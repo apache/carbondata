@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.execution.command.preaaggregate
 
+import java.util
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
@@ -35,9 +37,8 @@ import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.Segment
-import org.apache.carbondata.core.metadata.schema.partition.PartitionType
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier}
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 
 /**
@@ -118,7 +119,7 @@ case class PreAggregateTableHelper(
         if (!fieldNames.contains(newColName)) {
           throw new MalformedDataMapCommandException(
             CarbonCommonConstants.LONG_STRING_COLUMNS.toUpperCase() + ":" + colName
-              + " does not in datamap")
+            + " does not in datamap")
         }
         newColName
       }
@@ -216,6 +217,22 @@ case class PreAggregateTableHelper(
       queryString,
       "AGGREGATION")
     dmProperties.foreach(f => childSchema.getProperties.put(f._1, f._2))
+
+    // generate datamap dmschema file
+    val relationIdentifier: RelationIdentifier = new RelationIdentifier(table.getDatabaseName,
+      table.getTableName,
+      table.getTableInfo.getFactTable.getTableId)
+    childSchema.setRelationIdentifier(relationIdentifier)
+    val parentTableRelas: util.ArrayList[RelationIdentifier] =
+      new util.ArrayList[RelationIdentifier]
+    val parentTableRelaIdentifier: RelationIdentifier = new RelationIdentifier(
+      parentTable.getDatabaseName,
+      parentTable.getTableName,
+      parentTable.getTableInfo.getFactTable.getTableId)
+    parentTableRelas.add(parentTableRelaIdentifier)
+    childSchema.setParentTables(parentTableRelas)
+    childSchema.setCtasQuery(queryString)
+    DataMapStoreManager.getInstance.saveDataMapSchema(childSchema)
 
     try {
       // updating the parent table about child table

@@ -37,7 +37,7 @@ object PreAggregateDataMapExample {
 
   def exampleBody(spark : SparkSession): Unit = {
     val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
+                            + "../../../..").getCanonicalPath.replace("\\", "/")
     val testData = s"$rootPath/integration/spark-common-test/src/test/resources/sample.csv"
 
     // 1. simple usage for Pre-aggregate tables creation and query
@@ -175,7 +175,7 @@ object PreAggregateDataMapExample {
 
     // create pre-aggregate table by datamap
     spark.sql("""
-       CREATE datamap preagg_avg on table personTable using 'preaggregate' as
+       CREATE datamap preagg_avg_dm on table personTable using 'preaggregate' as
        | select id,avg(age) from personTable group by id
               """.stripMargin)
 
