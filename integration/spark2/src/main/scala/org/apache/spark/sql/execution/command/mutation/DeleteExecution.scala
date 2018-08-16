@@ -269,8 +269,7 @@ object DeleteExecution {
                                CarbonCommonConstants.FACT_FILE_EXT)
           val deleteDeletaPath = CarbonUpdateUtil
             .getDeleteDeltaFilePath(blockPath, blockName, timestamp)
-          val carbonDeleteWriter = new CarbonDeleteDeltaWriterImpl(deleteDeletaPath,
-            FileFactory.getFileType(deleteDeletaPath))
+          val carbonDeleteWriter = new CarbonDeleteDeltaWriterImpl(deleteDeletaPath)
 
 
 

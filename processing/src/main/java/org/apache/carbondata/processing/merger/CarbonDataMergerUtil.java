@@ -736,7 +736,7 @@ public final class CarbonDataMergerUtil {
   private static long getSizeOfSegment(String tablePath, String segId) {
     String loadPath = CarbonTablePath.getSegmentPath(tablePath, segId);
     CarbonFile segmentFolder =
-        FileFactory.getCarbonFile(loadPath, FileFactory.getFileType(loadPath));
+        FileFactory.getCarbonFile(loadPath);
     return getSizeOfFactFileInLoad(segmentFolder);
   }
 
@@ -1099,7 +1099,7 @@ public final class CarbonDataMergerUtil {
     String segmentPath = CarbonTablePath.getSegmentPath(
         identifier.getTablePath(), seg.getSegmentNo());
     CarbonFile segDir =
-        FileFactory.getCarbonFile(segmentPath, FileFactory.getFileType(segmentPath));
+        FileFactory.getCarbonFile(segmentPath);
     CarbonFile[] allSegmentFiles = segDir.listFiles();
 
     updateDeltaFiles = segmentUpdateStatusManager
@@ -1296,8 +1296,7 @@ public final class CarbonDataMergerUtil {
       throw new IOException();
     }
     CarbonDeleteDeltaWriterImpl carbonDeleteWriter =
-            new CarbonDeleteDeltaWriterImpl(fullBlockFilePath,
-                    FileFactory.getFileType(fullBlockFilePath));
+            new CarbonDeleteDeltaWriterImpl(fullBlockFilePath);
     try {
       carbonDeleteWriter.write(deleteDeltaBlockDetails);
     } catch (IOException e) {

@@ -40,7 +40,7 @@ public class TestFileProvider implements FileTypeInterface {
     FileFactory.FileType fileType = FileFactory.getFileType(path);
     switch (fileType) {
       case LOCAL:
-        return new LocalCarbonFile(FileFactory.getUpdatedFilePath(path, fileType));
+        return new LocalCarbonFile(FileFactory.getUpdatedFilePath(path));
       case HDFS:
         return new HDFSCarbonFile(path, configuration);
       case S3:
@@ -50,7 +50,7 @@ public class TestFileProvider implements FileTypeInterface {
       case VIEWFS:
         return new ViewFSCarbonFile(path);
       default:
-        return new LocalCarbonFile(FileFactory.getUpdatedFilePath(path, fileType));
+        return new LocalCarbonFile(FileFactory.getUpdatedFilePath(path));
     }
   }
 

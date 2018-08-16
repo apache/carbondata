@@ -138,8 +138,8 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
    */
   private void initialize() throws CarbonSortKeyAndGroupByException {
     try {
-      stream = FileFactory.getDataOutputStream(outPutFile.getPath(), FileFactory.FileType.LOCAL,
-          writeBufferSize, compressorName);
+      stream =
+          FileFactory.getDataOutputStream(outPutFile.getPath(), writeBufferSize, compressorName);
       this.stream.writeInt(this.totalNumberOfRecords);
     } catch (FileNotFoundException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while getting the file", e);

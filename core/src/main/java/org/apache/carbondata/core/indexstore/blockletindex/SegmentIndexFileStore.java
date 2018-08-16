@@ -300,7 +300,7 @@ public class SegmentIndexFileStore {
   public void readIndexFile(CarbonFile indexFile) throws IOException {
     String indexFilePath = indexFile.getCanonicalPath();
     DataInputStream dataInputStream = FileFactory
-        .getDataInputStream(indexFilePath, FileFactory.getFileType(indexFilePath), configuration);
+        .getDataInputStream(indexFilePath, configuration);
     byte[] bytes = new byte[(int) indexFile.getSize()];
     try {
       dataInputStream.readFully(bytes);

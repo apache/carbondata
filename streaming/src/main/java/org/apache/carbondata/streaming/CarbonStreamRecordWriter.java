@@ -170,11 +170,10 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
 
     // initialize data writer and compressor
     String filePath = segmentDir + File.separator + fileName;
-    FileFactory.FileType fileType = FileFactory.getFileType(filePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(filePath, fileType);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(filePath);
     if (carbonFile.exists()) {
       // if the file is existed, use the append api
-      outputStream = FileFactory.getDataOutputStreamUsingAppend(filePath, fileType);
+      outputStream = FileFactory.getDataOutputStreamUsingAppend(filePath);
       // get the compressor from the fileheader. In legacy store,
       // the compressor name is not set and it use snappy compressor
       FileHeader header = new CarbonHeaderReader(filePath).readHeader();
@@ -185,7 +184,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       }
     } else {
       // IF the file is not existed, use the create api
-      outputStream = FileFactory.getDataOutputStream(filePath, fileType);
+      outputStream = FileFactory.getDataOutputStream(filePath);
       compressorName = carbonTable.getTableInfo().getFactTable().getTableProperties().get(
           CarbonCommonConstants.COMPRESSOR);
       if (null == compressorName) {

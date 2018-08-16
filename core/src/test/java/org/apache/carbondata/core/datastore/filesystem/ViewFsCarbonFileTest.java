@@ -26,6 +26,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.viewfs.ViewFileSystem;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.hdfs.web.WebHdfsFileSystem;
+import org.apache.hadoop.security.AccessControlException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -84,22 +85,45 @@ public class ViewFsCarbonFileTest {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
+                return new ViewFileSystem();
+            }
+        };
+        new MockUp<ViewFileSystem>() {
+            @Mock
+            public boolean delete(Path f, boolean recursive) throws AccessControlException, FileNotFoundException, IOException {
                 throw new IOException();
             }
-
         };
         viewFSCarbonFile = new ViewFSCarbonFile(fileStatus);
-        viewFSCarbonFile.renameForce(fileName);
+        assert(!viewFSCarbonFile.renameForce(fileName));
     }
 
     @Test
     public void testListFilesWithOutDirectoryPermission() {
+      new MockUp<Path>() {
+        @Mock public FileSystem getFileSystem(Configuration conf) throws IOException {
+            return new ViewFileSystem();
+        }
+      };
+        new MockUp<ViewFileSystem>() {
+            @Mock
+            public FileStatus[] listStatus(Path f)
+                throws AccessControlException, FileNotFoundException, IOException {
+                return null;
+            }
+        };
         viewFSCarbonFile = new ViewFSCarbonFile(fileStatusWithOutDirectoryPermission);
         assertArrayEquals(viewFSCarbonFile.listFiles(), new CarbonFile[0]);
     }
 
     @Test
     public void testConstructorWithFilePath() {
+      new MockUp<Path>() {
+        @Mock
+        public FileSystem getFileSystem(Configuration conf) throws IOException {
+          return new ViewFileSystem();
+        }
+      };
         viewFSCarbonFile = new ViewFSCarbonFile(file.getAbsolutePath());
         assertTrue(viewFSCarbonFile instanceof ViewFSCarbonFile);
     }
@@ -137,7 +161,6 @@ public class ViewFsCarbonFileTest {
 
     @Test
     public void testListDirectory() {
-        viewFSCarbonFile = new ViewFSCarbonFile(fileStatus);
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
@@ -153,7 +176,7 @@ public class ViewFsCarbonFileTest {
             }
 
         };
-
+        viewFSCarbonFile = new ViewFSCarbonFile(fileStatus);
         assertTrue(viewFSCarbonFile.listFiles().length == 1);
     }
 
@@ -171,7 +194,7 @@ public class ViewFsCarbonFileTest {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
-                throw new IOException();
+                return new ViewFileSystem();
             }
 
         };
@@ -304,7 +327,7 @@ public class ViewFsCarbonFileTest {
             }
 
         };
-
+        viewFSCarbonFile = new ViewFSCarbonFile(fileStatus);
         assertTrue(viewFSCarbonFile.renameForce(fileName));
 
     }

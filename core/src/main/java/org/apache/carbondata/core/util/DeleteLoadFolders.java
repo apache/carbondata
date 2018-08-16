@@ -122,8 +122,8 @@ public final class DeleteLoadFolders {
           } else {
             String path = getSegmentPath(carbonTable.getAbsoluteTableIdentifier(), oneLoad);
             boolean status = false;
-            if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
-              CarbonFile file = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
+            if (FileFactory.isFileExist(path)) {
+              CarbonFile file = FileFactory.getCarbonFile(path);
               CarbonFile[] filesToBeDeleted = file.listFiles(new CarbonFileFilter() {
 
                 @Override

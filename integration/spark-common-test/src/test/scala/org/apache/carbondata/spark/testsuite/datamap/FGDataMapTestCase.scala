@@ -296,9 +296,9 @@ class FGDataMapWriter(carbonTable: CarbonTable,
     this.taskName = shardName
     if (stream == null) {
       val path = fgwritepath.substring(0, fgwritepath.lastIndexOf("/"))
-      FileFactory.mkdirs(path, FileFactory.getFileType(path))
+      FileFactory.mkdirs(path)
       stream = FileFactory
-        .getDataOutputStream(fgwritepath, FileFactory.getFileType(fgwritepath))
+        .getDataOutputStream(fgwritepath)
     }
   }
 
@@ -415,7 +415,7 @@ class FGDataMapWriter(carbonTable: CarbonTable,
    * class.
    */
   override def finish(): Unit = {
-    FileFactory.mkdirs(fgwritepath, FileFactory.getFileType(fgwritepath))
+    FileFactory.mkdirs(fgwritepath)
     val out = new ByteOutputStream()
     val outStream = new ObjectOutputStream(out)
     outStream.writeObject(maxMin)

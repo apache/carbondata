@@ -345,9 +345,8 @@ public class StoreCreator {
     thriftTableInfo.getFact_table().getSchema_evolution().getSchema_evolution_history()
         .add(schemaEvolutionEntry);
 
-    FileFactory.FileType fileType = FileFactory.getFileType(schemaMetadataPath);
-    if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
-      FileFactory.mkdirs(schemaMetadataPath, fileType);
+    if (!FileFactory.isFileExist(schemaMetadataPath)) {
+      FileFactory.mkdirs(schemaMetadataPath);
     }
 
     ThriftWriter thriftWriter = new ThriftWriter(schemaFilePath, false);

@@ -86,14 +86,13 @@ public class S3FileLock extends AbstractCarbonLock {
   public boolean lock() {
     try {
       if (!FileFactory.isFileExist(lockFileDir)) {
-        FileFactory.mkdirs(lockFileDir, FileFactory.getFileType(lockFileDir));
+        FileFactory.mkdirs(lockFileDir);
       }
       if (!FileFactory.isFileExist(lockFilePath)) {
-        FileFactory.createNewLockFile(lockFilePath, FileFactory.getFileType(lockFilePath));
+        FileFactory.createNewLockFile(lockFilePath);
       }
       dataOutputStream =
-          FileFactory.getDataOutputStreamUsingAppend(lockFilePath,
-              FileFactory.getFileType(lockFilePath));
+          FileFactory.getDataOutputStreamUsingAppend(lockFilePath);
       return true;
     } catch (IOException e) {
       LOGGER.error(e.getMessage(), e);

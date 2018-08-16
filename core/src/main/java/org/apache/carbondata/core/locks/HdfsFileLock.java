@@ -61,13 +61,12 @@ public class HdfsFileLock extends AbstractCarbonLock {
     try {
       if (null != this.lockFileDir &&
           !FileFactory.isFileExist(lockFileDir)) {
-        FileFactory.mkdirs(lockFileDir, FileFactory.getFileType(lockFileDir));
+        FileFactory.mkdirs(lockFileDir);
       }
       if (!FileFactory.isFileExist(lockFilePath)) {
-        FileFactory.createNewLockFile(lockFilePath, FileFactory.getFileType(lockFilePath));
+        FileFactory.createNewLockFile(lockFilePath);
       }
-      dataOutputStream = FileFactory.getDataOutputStreamUsingAppend(lockFilePath,
-          FileFactory.getFileType(lockFilePath));
+      dataOutputStream = FileFactory.getDataOutputStreamUsingAppend(lockFilePath);
 
       return true;
 

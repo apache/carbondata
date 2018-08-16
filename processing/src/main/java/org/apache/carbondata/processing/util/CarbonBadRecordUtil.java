@@ -77,15 +77,14 @@ public class CarbonBadRecordUtil {
     }
     badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
 
-    FileFactory.FileType fileType = FileFactory.getFileType(badLogStoreLocation);
     try {
-      if (!FileFactory.isFileExist(badLogStoreLocation, fileType)) {
+      if (!FileFactory.isFileExist(badLogStoreLocation)) {
         return;
       }
     } catch (IOException e1) {
       LOGGER.info("bad record folder does not exist");
     }
-    CarbonFile carbonFile = FileFactory.getCarbonFile(badLogStoreLocation, fileType);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(badLogStoreLocation);
 
     CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
       @Override

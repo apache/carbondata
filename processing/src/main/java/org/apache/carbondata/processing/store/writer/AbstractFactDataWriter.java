@@ -282,8 +282,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
           if (copyInCurrentThread) {
             CarbonUtil.copyCarbonDataFileToCarbonStorePath(carbonDataFileTempPath,
                 model.getCarbonDataDirectoryPath(), fileSizeInBytes);
-            FileFactory.deleteFile(carbonDataFileTempPath,
-                FileFactory.getFileType(carbonDataFileTempPath));
+            FileFactory.deleteFile(carbonDataFileTempPath);
           } else {
             executorServiceSubmitList
                 .add(executorService.submit(new CompleteHdfsBackendThread(carbonDataFileTempPath)));
@@ -304,7 +303,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
   }
 
   private void handleEmptyDataFile(String filePath) throws IOException {
-    FileFactory.deleteFile(filePath, FileFactory.getFileType(filePath));
+    FileFactory.deleteFile(filePath);
     if (blockIndexInfoList.size() > 0 && blockIndexInfoList.get(blockIndexInfoList.size() - 1)
         .getFileName().equals(carbonDataFileName)) {
       // no need add this entry in index file
@@ -331,8 +330,8 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
         // the block size will be twice the block_size specified by user to make sure that
         // one carbondata file only consists exactly one HDFS block.
         fileOutputStream = FileFactory
-            .getDataOutputStream(carbonDataFileStorePath, FileFactory.FileType.HDFS,
-                CarbonCommonConstants.BYTEBUFFER_SIZE, fileSizeInBytes * 2);
+            .getDataOutputStream(carbonDataFileStorePath, CarbonCommonConstants.BYTEBUFFER_SIZE,
+                fileSizeInBytes * 2);
       } else {
         //each time we initialize writer, we choose a local temp location randomly
         String[] tempFileLocations = model.getStoreLocation();
@@ -340,8 +339,9 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
             tempFileLocations[new Random().nextInt(tempFileLocations.length)];
         LOGGER.info("Randomly choose factdata temp location: " + chosenTempLocation);
         carbonDataFileTempPath = chosenTempLocation + File.separator + carbonDataFileName;
-        fileOutputStream = FileFactory.getDataOutputStream(carbonDataFileTempPath,
-            FileFactory.FileType.LOCAL, CarbonCommonConstants.BYTEBUFFER_SIZE, true);
+        fileOutputStream = FileFactory
+            .getDataOutputStream(carbonDataFileTempPath, CarbonCommonConstants.BYTEBUFFER_SIZE,
+                true);
       }
 
       this.fileCount++;
@@ -419,7 +419,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
           + CarbonTablePath.getCarbonIndexFileName(model.getCarbonDataFileAttributes().getTaskId(),
           model.getBucketId(), model.getTaskExtension(),
           "" + model.getCarbonDataFileAttributes().getFactTimeStamp(), model.getSegmentId());
-      indexFileName = FileFactory.getUpdatedFilePath(rawFileName, FileFactory.FileType.HDFS);
+      indexFileName = FileFactory.getUpdatedFilePath(rawFileName);
     } else {
       // randomly choose a temp location for index file
       String[] tempLocations = model.getStoreLocation();
@@ -445,7 +445,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
       CarbonUtil
           .copyCarbonDataFileToCarbonStorePath(indexFileName, model.getCarbonDataDirectoryPath(),
               fileSizeInBytes);
-      FileFactory.deleteFile(indexFileName, FileFactory.getFileType(indexFileName));
+      FileFactory.deleteFile(indexFileName);
     }
   }
 
@@ -509,7 +509,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     public Void call() throws Exception {
       CarbonUtil.copyCarbonDataFileToCarbonStorePath(fileName, model.getCarbonDataDirectoryPath(),
           fileSizeInBytes);
-      FileFactory.deleteFile(fileName, FileFactory.getFileType(fileName));
+      FileFactory.deleteFile(fileName);
       return null;
     }
   }

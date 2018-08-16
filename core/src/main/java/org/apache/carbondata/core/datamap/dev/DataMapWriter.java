@@ -120,7 +120,7 @@ public abstract class DataMapWriter {
     String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
     if (carbonFilePath.length() > 0) {
       carbonFilePath = segmentPath + carbonFilePath;
-      FileFactory.mkdirs(carbonFilePath, FileFactory.getFileType(carbonFilePath));
+      FileFactory.mkdirs(carbonFilePath);
     } else {
       carbonFilePath = segmentPath;
     }

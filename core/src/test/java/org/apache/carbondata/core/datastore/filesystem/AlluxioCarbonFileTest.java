@@ -25,9 +25,11 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FSInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
+import org.apache.hadoop.fs.Options;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.util.Progressable;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -89,9 +91,15 @@ public class AlluxioCarbonFileTest {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
-                throw new IOException();
+                return new DistributedFileSystem();
             }
 
+        };
+        new MockUp<DistributedFileSystem>() {
+            @Mock
+            public void rename(Path src, Path dst, final Options.Rename... options) throws IOException {
+                throw new IOException();
+            }
         };
         alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
         alluxioCarbonFile.renameForce(fileName);
@@ -99,6 +107,13 @@ public class AlluxioCarbonFileTest {
 
     @Test
     public void testListFilesWithOutDirectoryPermission() {
+        new MockUp<LocalFileSystem>() {
+            @Mock
+            public FileStatus[] listStatus(Path p) throws IOException {
+                return null;
+            }
+
+        };
         alluxioCarbonFile = new AlluxioCarbonFile(fileStatusWithOutDirectoryPermission);
         assertArrayEquals(alluxioCarbonFile.listFiles(), new CarbonFile[0]);
     }
@@ -174,11 +189,11 @@ public class AlluxioCarbonFileTest {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
-                throw new IOException();
+                return new DistributedFileSystem();
             }
 
         };
-        new MockUp<DummyAlluxioFileSystem>() {
+        new MockUp<DistributedFileSystem>() {
             @Mock
             public FileStatus[] listStatus(Path var1) throws IOException {
 

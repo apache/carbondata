@@ -70,8 +70,7 @@ object AllDictionaryUtil {
 
   def cleanDictionary(outputPath: String): Unit = {
     try {
-      val fileType = FileFactory.getFileType(outputPath)
-      val file = FileFactory.getCarbonFile(outputPath, fileType)
+      val file = FileFactory.getCarbonFile(outputPath)
       if (file.exists()) {
         file.delete()
       }
@@ -84,12 +83,11 @@ object AllDictionaryUtil {
   def saveToFile(contents: Array[String], outputPath: String): Unit = {
     var writer: DataOutputStream = null
     try {
-      val fileType = FileFactory.getFileType(outputPath)
-      val file = FileFactory.getCarbonFile(outputPath, fileType)
+      val file = FileFactory.getCarbonFile(outputPath)
       if (!file.exists()) {
         file.createNewFile()
       }
-      writer = FileFactory.getDataOutputStream(outputPath, fileType)
+      writer = FileFactory.getDataOutputStream(outputPath)
       for (content <- contents) {
         writer.writeBytes(content + "\n")
       }

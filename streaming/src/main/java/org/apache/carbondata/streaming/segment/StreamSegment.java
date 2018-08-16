@@ -317,12 +317,11 @@ public class StreamSegment {
    * 2. after job failed (CarbonAppendableStreamSink.writeDataFileJob)
    */
   public static void recoverSegmentIfRequired(String segmentDir) throws IOException {
-    FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);
-    if (FileFactory.isFileExist(segmentDir, fileType)) {
+    if (FileFactory.isFileExist(segmentDir)) {
       String indexName = CarbonTablePath.getCarbonStreamIndexFileName();
       String indexPath = segmentDir + File.separator + indexName;
-      CarbonFile index = FileFactory.getCarbonFile(indexPath, fileType);
-      CarbonFile[] files = listDataFiles(segmentDir, fileType);
+      CarbonFile index = FileFactory.getCarbonFile(indexPath);
+      CarbonFile[] files = listDataFiles(segmentDir);
       // TODO better to check backup index at first
       // index file exists
       if (index.exists()) {
@@ -343,7 +342,7 @@ public class StreamSegment {
               if (null == size || size == 0) {
                 file.delete();
               } else if (size < file.getSize()) {
-                FileFactory.truncateFile(file.getCanonicalPath(), fileType, size);
+                FileFactory.truncateFile(file.getCanonicalPath(), size);
               }
             }
           } finally {
@@ -370,11 +369,10 @@ public class StreamSegment {
       String fileName,
       String indexName) throws IOException {
 
-    FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);
     String filePath = segmentDir + File.separator + fileName;
-    CarbonFile file = FileFactory.getCarbonFile(filePath, fileType);
+    CarbonFile file = FileFactory.getCarbonFile(filePath);
     String indexPath = segmentDir + File.separator + indexName;
-    CarbonFile index = FileFactory.getCarbonFile(indexPath, fileType);
+    CarbonFile index = FileFactory.getCarbonFile(indexPath);
     if (file.exists() && index.exists()) {
       CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
       try {
@@ -385,7 +383,7 @@ public class StreamSegment {
             if (blockIndex.getFile_size() == 0) {
               file.delete();
             } else if (blockIndex.getFile_size() < file.getSize()) {
-              FileFactory.truncateFile(filePath, fileType, blockIndex.getFile_size());
+              FileFactory.truncateFile(filePath, blockIndex.getFile_size());
             }
             break;
           }
@@ -399,8 +397,8 @@ public class StreamSegment {
   /**
    * list all carbondata files of a segment
    */
-  public static CarbonFile[] listDataFiles(String segmentDir, FileFactory.FileType fileType) {
-    CarbonFile carbonDir = FileFactory.getCarbonFile(segmentDir, fileType);
+  public static CarbonFile[] listDataFiles(String segmentDir) {
+    CarbonFile carbonDir = FileFactory.getCarbonFile(segmentDir);
     if (carbonDir.exists()) {
       return carbonDir.listFiles(new CarbonFileFilter() {
         @Override
@@ -421,10 +419,10 @@ public class StreamSegment {
    * @return the list of BlockIndex in the index file
    * @throws IOException
    */
-  public static List<BlockIndex> readIndexFile(String indexPath, FileFactory.FileType fileType)
+  public static List<BlockIndex> readIndexFile(String indexPath)
       throws IOException {
     List<BlockIndex> blockIndexList = new ArrayList<>();
-    CarbonFile index = FileFactory.getCarbonFile(indexPath, fileType);
+    CarbonFile index = FileFactory.getCarbonFile(indexPath);
     if (index.exists()) {
       CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
       try {
@@ -590,9 +588,9 @@ public class StreamSegment {
    * merge new blocklet index and old file index to create new file index
    */
   private static void updateStreamFileIndex(Map<String, StreamFileIndex> indexMap,
-      String indexPath, FileFactory.FileType fileType, DataType[] msrDataTypes
+      String indexPath, DataType[] msrDataTypes
   ) throws IOException {
-    List<BlockIndex> blockIndexList = readIndexFile(indexPath, fileType);
+    List<BlockIndex> blockIndexList = readIndexFile(indexPath);
     for (BlockIndex blockIndex : blockIndexList) {
       BlockletMinMaxIndex fileIndex = CarbonMetadataUtil
           .convertExternalMinMaxIndex(blockIndex.getBlock_index().getMin_max_index());
@@ -614,20 +612,19 @@ public class StreamSegment {
    */
   public static void updateIndexFile(String segmentDir,
       StreamFileIndex[] blockIndexes, DataType[] msrDataTypes) throws IOException {
-    FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);
     String filePath = CarbonTablePath.getCarbonStreamIndexFilePath(segmentDir);
     // update min/max index
     Map<String, StreamFileIndex> indexMap = new HashMap<>();
     for (StreamFileIndex fileIndex : blockIndexes) {
       indexMap.put(fileIndex.getFileName(), fileIndex);
     }
-    updateStreamFileIndex(indexMap, filePath, fileType, msrDataTypes);
+    updateStreamFileIndex(indexMap, filePath, msrDataTypes);
 
     String tempFilePath = filePath + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
     CarbonIndexFileWriter writer = new CarbonIndexFileWriter();
     try {
       writer.openThriftWriter(tempFilePath);
-      CarbonFile[] files = listDataFiles(segmentDir, fileType);
+      CarbonFile[] files = listDataFiles(segmentDir);
       BlockIndex blockIndex;
       for (CarbonFile file : files) {
         blockIndex = new BlockIndex();
@@ -649,7 +646,7 @@ public class StreamSegment {
         writer.writeThrift(blockIndex);
       }
       writer.close();
-      CarbonFile tempFile = FileFactory.getCarbonFile(tempFilePath, fileType);
+      CarbonFile tempFile = FileFactory.getCarbonFile(tempFilePath);
       if (!tempFile.renameForce(filePath)) {
         throw new IOException(
             "temporary file renaming failed, src=" + tempFilePath + ", dest=" + filePath);
@@ -669,10 +666,9 @@ public class StreamSegment {
    */
   public static long size(String segmentDir) throws IOException {
     long size = 0;
-    FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);
-    if (FileFactory.isFileExist(segmentDir, fileType)) {
+    if (FileFactory.isFileExist(segmentDir)) {
       String indexPath = CarbonTablePath.getCarbonStreamIndexFilePath(segmentDir);
-      CarbonFile index = FileFactory.getCarbonFile(indexPath, fileType);
+      CarbonFile index = FileFactory.getCarbonFile(indexPath);
       if (index.exists()) {
         CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
         try {

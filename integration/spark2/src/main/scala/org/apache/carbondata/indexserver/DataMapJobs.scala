@@ -26,7 +26,6 @@ import org.apache.spark.util.SizeEstimator
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.{AbstractDataMapJob, DistributableDataMapFormat}
-import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.scan.expression.BinaryExpression
@@ -71,8 +70,7 @@ class DistributedDataMapJob extends AbstractDataMapJob {
         val tmpPath = CarbonUtil
           .getIndexServerTempPath(dataMapFormat.getCarbonTable.getTablePath,
             dataMapFormat.getQueryId)
-        if (null != splitFolderPath &&
-            !splitFolderPath.deleteFile(tmpPath, FileFactory.getFileType(tmpPath))) {
+        if (null != splitFolderPath && !splitFolderPath.deleteFile()) {
           LOGGER.error("Problem while deleting the temp directory:" + tmpPath)
         }
       }

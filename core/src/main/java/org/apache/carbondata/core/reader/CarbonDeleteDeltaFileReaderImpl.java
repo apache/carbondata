@@ -39,8 +39,6 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
 
   private String filePath;
 
-  private FileFactory.FileType fileType;
-
   private DataInputStream dataInputStream = null;
 
   private InputStreamReader inputStream = null;
@@ -49,12 +47,9 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
 
   /**
    * @param filePath
-   * @param fileType
    */
-  public CarbonDeleteDeltaFileReaderImpl(String filePath, FileFactory.FileType fileType) {
+  public CarbonDeleteDeltaFileReaderImpl(String filePath) {
     this.filePath = filePath;
-
-    this.fileType = fileType;
   }
 
   /**
@@ -71,7 +66,7 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
     // Configure Buffer based on our requirement
     char[] buffer = new char[DEFAULT_BUFFER_SIZE];
     StringWriter sw = new StringWriter();
-    dataInputStream = FileFactory.getDataInputStream(filePath, fileType);
+    dataInputStream = FileFactory.getDataInputStream(filePath);
     inputStream = new InputStreamReader(dataInputStream,
         CarbonCommonConstants.DEFAULT_CHARSET);
     int n = 0;
@@ -96,7 +91,7 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
     AtomicFileOperations fileOperation =
         AtomicFileOperationFactory.getAtomicFileOperations(filePath);
     try {
-      if (!FileFactory.isFileExist(filePath, FileFactory.getFileType(filePath))) {
+      if (!FileFactory.isFileExist(filePath)) {
         return new DeleteDeltaBlockDetails("");
       }
       dataInputStream = fileOperation.openForRead();

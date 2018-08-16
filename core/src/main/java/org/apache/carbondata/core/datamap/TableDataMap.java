@@ -399,7 +399,7 @@ public final class TableDataMap extends OperationEventListener {
         identifier.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR + dataMapSchema
             .getDataMapName();
     if (dataMapFactory.getDataMapLevel() == DataMapLevel.FG) {
-      FileFactory.mkdirs(writePath, FileFactory.getFileType(writePath));
+      FileFactory.mkdirs(writePath);
     }
     for (Blocklet blocklet : blocklets) {
       ExtendedBlocklet detailedBlocklet = blockletDetailsFetcher

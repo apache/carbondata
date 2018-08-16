@@ -40,12 +40,11 @@ class CarbonCustomBlockDistributionTest extends QueryTest with BeforeAndAfterAll
     testData(2) = "c"
     var writer: DataOutputStream = null
     try {
-      val fileType = FileFactory.getFileType(outputPath)
-      val file = FileFactory.getCarbonFile(outputPath, fileType)
+      val file = FileFactory.getCarbonFile(outputPath)
       if (!file.exists()) {
         file.createNewFile()
       }
-      writer = FileFactory.getDataOutputStream(outputPath, fileType)
+      writer = FileFactory.getDataOutputStream(outputPath)
       for (i <- 0 to 2) {
         for (j <- 0 to 240000) {
           writer.writeBytes(testData(i) + "," + j + "\n")
@@ -100,8 +99,7 @@ class CarbonCustomBlockDistributionTest extends QueryTest with BeforeAndAfterAll
     // delete the temp data file
     CarbonProperties.getInstance().addProperty("carbon.custom.distribution","false")
     try {
-      val fileType = FileFactory.getFileType(outputPath)
-      val file = FileFactory.getCarbonFile(outputPath, fileType)
+      val file = FileFactory.getCarbonFile(outputPath)
       if (file.exists()) {
         file.delete()
       }

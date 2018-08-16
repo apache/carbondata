@@ -64,8 +64,7 @@ public class BloomIndexFileStore {
     // Step 1. check current folders
 
     // get all shard paths of old store
-    CarbonFile segmentPath = FileFactory.getCarbonFile(dmSegmentPathString,
-            FileFactory.getFileType(dmSegmentPathString));
+    CarbonFile segmentPath = FileFactory.getCarbonFile(dmSegmentPathString);
     CarbonFile[] shardPaths = segmentPath.listFiles(new CarbonFileFilter() {
       @Override
       public boolean accept(CarbonFile file) {
@@ -81,15 +80,14 @@ public class BloomIndexFileStore {
     try {
       // delete mergeShard folder if exists
       if (FileFactory.isFileExist(mergeShardPath)) {
-        FileFactory.deleteFile(mergeShardPath, FileFactory.getFileType(mergeShardPath));
+        FileFactory.deleteFile(mergeShardPath);
       }
       // create flag file before creating mergeShard folder
       if (!FileFactory.isFileExist(mergeInprogressFile)) {
-        FileFactory.createNewFile(
-            mergeInprogressFile, FileFactory.getFileType(mergeInprogressFile));
+        FileFactory.createNewFile(mergeInprogressFile);
       }
       // create mergeShard output folder
-      if (!FileFactory.mkdirs(mergeShardPath, FileFactory.getFileType(mergeShardPath))) {
+      if (!FileFactory.mkdirs(mergeShardPath)) {
         throw new RuntimeException("Failed to create directory " + mergeShardPath);
       }
     } catch (IOException e) {
@@ -105,13 +103,12 @@ public class BloomIndexFileStore {
       DataInputStream dataInputStream = null;
       DataOutputStream dataOutputStream = null;
       try {
-        FileFactory.createNewFile(mergeIndexFile, FileFactory.getFileType(mergeIndexFile));
+        FileFactory.createNewFile(mergeIndexFile);
         dataOutputStream = FileFactory.getDataOutputStream(
-            mergeIndexFile, FileFactory.getFileType(mergeIndexFile));
+            mergeIndexFile);
         for (CarbonFile shardPath : shardPaths) {
           String bloomIndexFile = getBloomIndexFile(shardPath.getCanonicalPath(), indexCol);
-          dataInputStream = FileFactory.getDataInputStream(
-              bloomIndexFile, FileFactory.getFileType(bloomIndexFile));
+          dataInputStream = FileFactory.getDataInputStream(bloomIndexFile);
           byte[] fileData = new byte[(int) FileFactory.getCarbonFile(bloomIndexFile).getSize()];
           dataInputStream.readFully(fileData);
           byte[] shardName = shardPath.getName().getBytes(Charset.forName("UTF-8"));
@@ -135,7 +132,7 @@ public class BloomIndexFileStore {
 
     // Step 4. delete flag file and mergeShard can be used
     try {
-      FileFactory.deleteFile(mergeInprogressFile, FileFactory.getFileType(mergeInprogressFile));
+      FileFactory.deleteFile(mergeInprogressFile);
     } catch (IOException e) {
       LOGGER.error("Error occurs while deleting file " + mergeInprogressFile, e);
       throw new RuntimeException("Error occurs while deleting file " + mergeInprogressFile);
@@ -167,7 +164,7 @@ public class BloomIndexFileStore {
     List<CarbonBloomFilter> bloomFilters = new ArrayList<>();
     try {
       String indexFile = getBloomIndexFile(shardPath, colName);
-      dataInStream = FileFactory.getDataInputStream(indexFile, FileFactory.getFileType(indexFile));
+      dataInStream = FileFactory.getDataInputStream(indexFile);
       while (dataInStream.available() > 0) {
         CarbonBloomFilter bloomFilter = new CarbonBloomFilter();
         bloomFilter.readFields(dataInStream);
@@ -194,8 +191,7 @@ public class BloomIndexFileStore {
     DataInputStream mergeIndexInStream = null;
     List<CarbonBloomFilter> bloomFilters = new ArrayList<>();
     try {
-      mergeIndexInStream = FileFactory.getDataInputStream(
-          mergeIndexFile, FileFactory.getFileType(mergeIndexFile));
+      mergeIndexInStream = FileFactory.getDataInputStream(mergeIndexFile);
       while (mergeIndexInStream.available() > 0) {
         // read shard name
         int shardNameByteLength = mergeIndexInStream.readInt();

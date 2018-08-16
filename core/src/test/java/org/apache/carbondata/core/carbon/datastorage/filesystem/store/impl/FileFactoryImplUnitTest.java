@@ -70,11 +70,11 @@ public class FileFactoryImplUnitTest {
   }
 
   @Test public void testFileExistsForVIEWFSType() throws IOException {
-    FileFactory.isFileExist("fakefilePath", FileFactory.FileType.VIEWFS);
+    FileFactory.isFileExist("fakefilePath");
   }
 
   @Test public void testFileExistsForDefaultType() throws IOException {
-    FileFactory.isFileExist("fakefilePath", FileFactory.FileType.LOCAL);
+    FileFactory.isFileExist("fakefilePath");
   }
 
   @Test public void testFileExistsForDefaultTypeWithPerformFileCheck() throws IOException {
@@ -95,25 +95,25 @@ public class FileFactoryImplUnitTest {
 
   @Test public void testCreateNewFileWithDefaultFileType() throws IOException {
     cleanUp();
-    assertTrue(FileFactory.createNewFile(filePath, FileFactory.FileType.LOCAL));
+    assertTrue(FileFactory.createNewFile(filePath));
   }
 
   @Test public void testCreateNewLockFileWithDefaultFileType() throws IOException {
     cleanUp();
-    assertTrue(FileFactory.createNewLockFile(filePath, FileFactory.FileType.LOCAL));
+    assertTrue(FileFactory.createNewLockFile(filePath));
   }
 
   @Test public void testCreateNewLockFileWithViewFsFileType() throws IOException {
     cleanUp();
-    assertTrue(FileFactory.createNewLockFile(filePath, FileFactory.FileType.VIEWFS));
+    assertTrue(FileFactory.createNewLockFile(filePath));
   }
 
   @Test public void testCreateNewLockFileWithViewFsFileTypeWhenFileExists() throws IOException {
-    assertFalse(FileFactory.createNewLockFile(filePath, FileFactory.FileType.VIEWFS));
+    assertFalse(FileFactory.createNewLockFile(filePath));
   }
 
   @Test public void testCreateNewFileWithDefaultFileTypeWhenFileExists() throws IOException {
-    assertFalse(FileFactory.createNewFile(filePath, FileFactory.FileType.LOCAL));
+    assertFalse(FileFactory.createNewFile(filePath));
   }
 
   @Test public void testCreateNewFileWithVIEWFSFileType() throws IOException {
@@ -121,11 +121,11 @@ public class FileFactoryImplUnitTest {
     if (file.exists()) {
       file.delete();
     }
-    assertTrue(FileFactory.createNewFile(filePath, FileFactory.FileType.VIEWFS));
+    assertTrue(FileFactory.createNewFile(filePath));
   }
 
   @Test public void testCreateNewFileWithVIEWFSFileTypeWhenFileExists() throws IOException {
-    assertFalse(FileFactory.createNewFile(filePath, FileFactory.FileType.VIEWFS));
+    assertFalse(FileFactory.createNewFile(filePath));
   }
 
   @Test public void testMkDirWithVIEWFSFileType() throws IOException {
@@ -137,13 +137,13 @@ public class FileFactoryImplUnitTest {
       }
     };
     tearDown();
-    assertTrue(FileFactory.mkdirs(filePath, FileFactory.FileType.VIEWFS));
+    assertTrue(FileFactory.mkdirs(filePath));
   }
 
   @Test public void testGetDataOutputStreamUsingAppendeForException() throws IOException {
     DataOutputStream outputStream = null;
     try {
-      outputStream = FileFactory.getDataOutputStreamUsingAppend(filePath, FileFactory.FileType.VIEWFS);
+      outputStream = FileFactory.getDataOutputStreamUsingAppend(filePath);
     } catch (Exception exception) {
       assertEquals("Not supported", exception.getMessage());
     } finally {
@@ -154,20 +154,20 @@ public class FileFactoryImplUnitTest {
   }
 
   @Test public void getDataOutputStreamForVIEWFSType() throws IOException {
-    DataOutputStream outputStream = FileFactory.getDataOutputStream(filePath, FileFactory.FileType.VIEWFS);
+    DataOutputStream outputStream = FileFactory.getDataOutputStream(filePath);
     assertNotNull(outputStream);
     outputStream.close();
   }
 
   @Test public void getDataOutputStreamForLocalType() throws IOException {
-    DataOutputStream outputStream = FileFactory.getDataOutputStream(filePath, FileFactory.FileType.LOCAL);
+    DataOutputStream outputStream = FileFactory.getDataOutputStream(filePath);
     assertNotNull(outputStream);
     outputStream.close();
   }
 
   @Test public void testGetCarbonFile() throws IOException {
-    FileFactory.getDataOutputStream(filePath, FileFactory.FileType.VIEWFS);
-    assertNotNull(FileFactory.getCarbonFile(filePath, FileFactory.FileType.HDFS));
+    FileFactory.getDataOutputStream(filePath);
+    assertNotNull(FileFactory.getCarbonFile(filePath));
   }
 
   @Test public void testTruncateFile() {
@@ -187,7 +187,6 @@ public class FileFactoryImplUnitTest {
       // truncate file to 4000 bytes
       FileFactory.truncateFile(
           path,
-          FileFactory.getFileType(path),
           4000);
       file = FileFactory.getCarbonFile(path);
       assertEquals(file.getSize(), 4000L);
@@ -204,7 +203,7 @@ public class FileFactoryImplUnitTest {
       }
       if (path != null) {
         try {
-          FileFactory.deleteFile(path, FileFactory.getFileType(path));
+          FileFactory.deleteFile(path);
         } catch (IOException e) {
           e.printStackTrace();
         }
@@ -253,4 +252,3 @@ public class FileFactoryImplUnitTest {
   }
 
 }
-

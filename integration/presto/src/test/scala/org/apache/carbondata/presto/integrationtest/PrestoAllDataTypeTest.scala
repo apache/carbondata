@@ -530,14 +530,14 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
  }
 
   private def cleanUp(): Unit = {
-    FileFactory.deleteFile(s"$storePath/Fact", FileType.LOCAL)
+    FileFactory.deleteFile(s"$storePath/Fact")
     FileFactory
       .createDirectoryAndSetPermission(s"$storePath/_system",
         new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
     FileFactory
       .createDirectoryAndSetPermission(s"$storePath/.DS_Store",
         new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
-    FileFactory.createNewFile(s"$storePath/testdb/.DS_STORE",FileType.LOCAL)
+    FileFactory.createNewFile(s"$storePath/testdb/.DS_STORE")
   }
 
   test("test the OR operator on same column"){

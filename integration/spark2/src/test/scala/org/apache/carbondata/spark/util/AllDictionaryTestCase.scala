@@ -67,9 +67,8 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       LoadOption.getCsvHeaderColumns(carbonLoadModel, FileFactory.getConfiguration))
     // Create table and metadata folders if not exist
     val metadataDirectoryPath = CarbonTablePath.getMetadataPath(table.getTablePath)
-    val fileType = FileFactory.getFileType(metadataDirectoryPath)
-    if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
-      FileFactory.mkdirs(metadataDirectoryPath, fileType)
+    if (!FileFactory.isFileExist(metadataDirectoryPath)) {
+      FileFactory.mkdirs(metadataDirectoryPath)
     }
     import scala.collection.JavaConverters._
     val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala

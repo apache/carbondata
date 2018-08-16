@@ -47,7 +47,7 @@ abstract class MetaCachedCarbonStore implements CarbonStore {
     }
     String schemaPath = CarbonTablePath.getSchemaFilePath(path);
     TableInfo tableInfo;
-    if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath))) {
+    if (!FileFactory.isFileExist(schemaPath)) {
       tableInfo = SchemaReader.inferSchema(AbsoluteTableIdentifier.from(path), false);
     } else {
       org.apache.carbondata.format.TableInfo tableInfoFormat;

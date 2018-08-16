@@ -115,8 +115,7 @@ public class AbstractDictionaryCacheTest {
    * this method will delete the store path
    */
   protected void deleteStorePath() {
-    FileFactory.FileType fileType = FileFactory.getFileType(this.carbonStorePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(this.carbonStorePath, fileType);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(this.carbonStorePath);
     deleteRecursiveSilent(carbonFile);
   }
 

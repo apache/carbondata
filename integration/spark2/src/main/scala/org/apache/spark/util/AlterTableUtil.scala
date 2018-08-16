@@ -236,8 +236,7 @@ object AlterTableUtil {
     val database = oldCarbonTable.getDatabaseName
     val newCarbonTableIdentifier = new CarbonTableIdentifier(database, newTableName, tableId)
     val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-    val fileType = FileFactory.getFileType(tablePath)
-    if (FileFactory.isFileExist(tablePath, fileType)) {
+    if (FileFactory.isFileExist(tablePath)) {
       val tableInfo = metastore.getThriftTableInfo(oldCarbonTable)
       val evolutionEntryList = tableInfo.fact_table.schema_evolution.schema_evolution_history
       val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp

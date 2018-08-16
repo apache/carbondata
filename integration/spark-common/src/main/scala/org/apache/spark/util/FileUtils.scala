@@ -107,8 +107,7 @@ object FileUtils {
 
   def createDatabaseDirectory(dbName: String, storePath: String, sparkContext: SparkContext) {
     val databasePath: String = storePath + File.separator + dbName.toLowerCase
-    val fileType = FileFactory.getFileType(databasePath)
-    FileFactory.mkdirs(databasePath, fileType)
+    FileFactory.mkdirs(databasePath)
     val operationContext = new OperationContext
     val createDatabasePostExecutionEvent = new CreateDatabasePostExecutionEvent(dbName,
       databasePath, sparkContext)

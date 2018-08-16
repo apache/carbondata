@@ -46,7 +46,8 @@ public final class FileFactory {
    */
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(FileFactory.class.getName());
-  private static Configuration configuration = null;
+
+  private static Configuration configuration;
 
   static {
     configuration = new Configuration();
@@ -152,108 +153,98 @@ public final class FileFactory {
     return fileFileTypeInterface.getCarbonFile(path, getConfiguration());
   }
 
-  public static CarbonFile getCarbonFile(String path, FileType fileType) {
-    //TODO ignoring this fileType now to avoid refactoring. Remove the unused argument later.
-    return fileFileTypeInterface.getCarbonFile(path, getConfiguration());
-  }
-
   public static CarbonFile getCarbonFile(String path,
       Configuration hadoopConf) {
     return fileFileTypeInterface.getCarbonFile(path, hadoopConf);
   }
 
-  public static DataInputStream getDataInputStream(String path, FileType fileType)
+  public static DataInputStream getDataInputStream(String path)
       throws IOException {
-    return getDataInputStream(path, fileType, -1);
+    return getDataInputStream(path, -1);
   }
 
-  public static DataInputStream getDataInputStream(String path, FileType fileType,
+  public static DataInputStream getDataInputStream(String path,
       Configuration configuration) throws IOException {
-    return getDataInputStream(path, fileType, -1, configuration);
+    return getDataInputStream(path, -1, configuration);
   }
 
-  public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize)
+  public static DataInputStream getDataInputStream(String path, int bufferSize)
       throws IOException {
-    return getDataInputStream(path, fileType, bufferSize, getConfiguration());
+    return getDataInputStream(path, bufferSize, getConfiguration());
   }
 
-  public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize,
+  public static DataInputStream getDataInputStream(String path, int bufferSize,
       Configuration configuration) throws IOException {
-    return getCarbonFile(path).getDataInputStream(path, fileType, bufferSize, configuration);
+    return getCarbonFile(path, configuration).getDataInputStream(bufferSize);
   }
 
   /**
    * get data input stream
    * @param path
-   * @param fileType
    * @param bufferSize
    * @param compressorName name of compressor to read this file
    * @return data input stream
    * @throws IOException
    */
-  public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize,
+  public static DataInputStream getDataInputStream(String path, int bufferSize,
       String compressorName) throws IOException {
-    return getCarbonFile(path).getDataInputStream(path, fileType, bufferSize, compressorName);
+    return getCarbonFile(path).getDataInputStream(bufferSize, compressorName);
   }
 
   /**
    * return the datainputStream which is seek to the offset of file
    *
    * @param path
-   * @param fileType
    * @param bufferSize
    * @param offset
    * @return DataInputStream
    * @throws IOException
    */
-  public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize,
+  public static DataInputStream getDataInputStream(String path, int bufferSize,
       long offset) throws IOException {
-    return getCarbonFile(path).getDataInputStream(path, fileType, bufferSize, offset);
+    return getCarbonFile(path).getDataInputStream(bufferSize, offset);
   }
 
-  public static DataOutputStream getDataOutputStream(String path, FileType fileType)
+  public static DataOutputStream getDataOutputStream(String path)
       throws IOException {
-    return getCarbonFile(path).getDataOutputStream(path, fileType);
+    return getCarbonFile(path).getDataOutputStream();
   }
 
-  public static DataOutputStream getDataOutputStream(String path, FileType fileType, int bufferSize,
+  public static DataOutputStream getDataOutputStream(String path, int bufferSize,
       boolean append) throws IOException {
-    return getCarbonFile(path).getDataOutputStream(path, fileType, bufferSize, append);
+    return getCarbonFile(path).getDataOutputStream(bufferSize, append);
   }
 
-  public static DataOutputStream getDataOutputStream(String path, FileType fileType, int bufferSize,
+  public static DataOutputStream getDataOutputStream(String path, int bufferSize,
       long blockSize) throws IOException {
-    return getCarbonFile(path).getDataOutputStream(path, fileType, bufferSize, blockSize);
+    return getCarbonFile(path).getDataOutputStream(bufferSize, blockSize);
   }
 
   /**
    * get data output stream
    * @param path file path
-   * @param fileType file type
    * @param bufferSize write buffer size
    * @param blockSize block size
    * @param replication replication
    * @return data output stream
    * @throws IOException if error occurs
    */
-  public static DataOutputStream getDataOutputStream(String path, FileType fileType, int bufferSize,
+  public static DataOutputStream getDataOutputStream(String path, int bufferSize,
       long blockSize, short replication) throws IOException {
-    return getCarbonFile(path).getDataOutputStream(path, fileType, bufferSize, blockSize,
-        replication);
+    return getCarbonFile(path).getDataOutputStream(bufferSize, blockSize, replication);
   }
 
   /**
    * get data out put stream
    * @param path
-   * @param fileType
    * @param bufferSize
    * @param compressorName name of compressor to write this file
    * @return data out put stream
    * @throws IOException
    */
-  public static DataOutputStream getDataOutputStream(String path, FileType fileType, int bufferSize,
+  public static DataOutputStream getDataOutputStream(String path, int bufferSize,
       String compressorName) throws IOException {
-    return getCarbonFile(path).getDataOutputStream(path, fileType, bufferSize, compressorName);
+    return getCarbonFile(path).getDataOutputStream(bufferSize, compressorName);
   }
 
   /**
@@ -265,17 +256,7 @@ public final class FileFactory {
    */
   public static boolean isFileExist(String filePath, boolean performFileCheck)
       throws IOException {
-    return getCarbonFile(filePath).isFileExist(filePath, performFileCheck);
-  }
-
-  /**
-   * This method checks the given path exists or not.
-   *
-   * @param filePath - Path
-   * @param fileType - FileType Local/HDFS
-   */
-  public static boolean isFileExist(String filePath, FileType fileType) throws IOException {
-    return getCarbonFile(filePath).isFileExist(filePath);
+    return getCarbonFile(filePath).isFileExist(performFileCheck);
   }
 
   /**
@@ -284,23 +265,21 @@ public final class FileFactory {
    * @param filePath - Path
    */
   public static boolean isFileExist(String filePath) throws IOException {
-    return isFileExist(filePath, getFileType(filePath));
+    return getCarbonFile(filePath).isFileExist();
   }
 
-  public static boolean createNewFile(String filePath, FileType fileType) throws IOException {
-    return createNewFile(filePath, fileType, true, null);
+  public static boolean createNewFile(String filePath) throws IOException {
+    return createNewFile(filePath, null);
   }
 
   public static boolean createNewFile(
       String filePath,
-      FileType fileType,
-      boolean doAs,
       final FsPermission permission) throws IOException {
-    return getCarbonFile(filePath).createNewFile(filePath, fileType, doAs, permission);
+    return getCarbonFile(filePath).createNewFile(permission);
   }
 
-  public static boolean deleteFile(String filePath, FileType fileType) throws IOException {
-    return getCarbonFile(filePath).deleteFile(filePath, fileType);
+  public static boolean deleteFile(String filePath) throws IOException {
+    return getCarbonFile(filePath).deleteFile();
   }
 
   public static boolean deleteAllFilesOfDir(File path) {
@@ -334,40 +313,38 @@ public final class FileFactory {
     return path.delete();
   }
 
-  public static boolean mkdirs(String filePath, FileType fileType) throws IOException {
-    return getCarbonFile(filePath).mkdirs(filePath);
+  public static boolean mkdirs(String filePath) throws IOException {
+    return getCarbonFile(filePath).mkdirs();
   }
 
   public static boolean mkdirs(String filePath, Configuration configuration) throws IOException {
-    return getCarbonFile(filePath, configuration).mkdirs(filePath);
+    return getCarbonFile(filePath, configuration).mkdirs();
   }
 
   /**
    * for getting the dataoutput stream using the hdfs filesystem append API.
    *
    * @param path
-   * @param fileType
    * @return
    * @throws IOException
    */
-  public static DataOutputStream getDataOutputStreamUsingAppend(String path, FileType fileType)
+  public static DataOutputStream getDataOutputStreamUsingAppend(String path)
       throws IOException {
-    return getCarbonFile(path).getDataOutputStreamUsingAppend(path, fileType);
+    return getCarbonFile(path).getDataOutputStreamUsingAppend();
   }
 
   /**
    * this method will truncate the file to the new size.
    * @param path
-   * @param fileType
    * @param newSize
    * @throws IOException
    */
-  public static void truncateFile(String path, FileType fileType, long newSize) throws IOException {
+  public static void truncateFile(String path, long newSize) throws IOException {
     path = path.replace("\\", "/");
     FileChannel fileChannel = null;
-    switch (fileType) {
+    switch (getFileType(path)) {
       case LOCAL:
-        path = getUpdatedFilePath(path, fileType);
+        path = getUpdatedFilePath(path);
         fileChannel = new FileOutputStream(path, true).getChannel();
         try {
           fileChannel.truncate(newSize);
@@ -393,7 +370,7 @@ public final class FileFactory {
         } catch (NoSuchMethodException e) {
           LOGGER.error("the version of hadoop is below 2.7, there is no 'truncate'"
               + " method in FileSystem, It needs to use 'CarbonFile.truncate'.");
-          CarbonFile carbonFile = FileFactory.getCarbonFile(path, fileType);
+          CarbonFile carbonFile = FileFactory.getCarbonFile(path);
           carbonFile.truncate(path, newSize);
         } catch (Exception e) {
           LOGGER.error("Other exception occurred while truncating the file " + e.getMessage(), e);
@@ -417,12 +394,11 @@ public final class FileFactory {
    * then in case of abrupt shutdown then the stream to that file will be closed.
    *
    * @param filePath
-   * @param fileType
    * @return
    * @throws IOException
    */
-  public static boolean createNewLockFile(String filePath, FileType fileType) throws IOException {
-    return getCarbonFile(filePath).createNewLockFile(filePath, fileType);
+  public static boolean createNewLockFile(String filePath) throws IOException {
+    return getCarbonFile(filePath).createNewLockFile();
   }
 
   public enum FileType {
@@ -459,11 +435,10 @@ public final class FileFactory {
    * it removes the file:/ from the path
    *
    * @param filePath
-   * @param fileType
    * @return updated file path without url for local
    */
-  public static String getUpdatedFilePath(String filePath, FileType fileType) {
-    switch (fileType) {
+  public static String getUpdatedFilePath(String filePath) {
+    switch (getFileType(filePath)) {
       case HDFS:
       case VIEWFS:
       case S3:
@@ -493,19 +468,6 @@ public final class FileFactory {
   }
 
   /**
-   * below method will be used to update the file path
-   * for local type
-   * it removes the file:/ from the path
-   *
-   * @param filePath
-   * @return updated file path without url for local
-   */
-  public static String getUpdatedFilePath(String filePath) {
-    FileType fileType = getFileType(filePath);
-    return getUpdatedFilePath(filePath, fileType);
-  }
-
-  /**
    * It computes size of directory
    *
    * @param filePath
@@ -525,7 +487,7 @@ public final class FileFactory {
         return fs.getContentSummary(path).getLength();
       case LOCAL:
       default:
-        filePath = getUpdatedFilePath(filePath, fileType);
+        filePath = getUpdatedFilePath(filePath);
         File file = new File(filePath);
         return FileUtils.sizeOfDirectory(file);
     }
@@ -575,7 +537,7 @@ public final class FileFactory {
         return;
       case LOCAL:
       default:
-        directoryPath = FileFactory.getUpdatedFilePath(directoryPath, fileType);
+        directoryPath = FileFactory.getUpdatedFilePath(directoryPath);
         File file = new File(directoryPath);
         if (!file.mkdirs()) {
           LOGGER.error(" Failed to create directory path " + directoryPath);
@@ -634,26 +596,22 @@ public final class FileFactory {
    * set the file replication
    *
    * @param path file path
-   * @param fileType file type
    * @param replication replication
    * @return true, if success; false, if failed
    * @throws IOException if error occurs
    */
-  public static boolean setReplication(String path, FileFactory.FileType fileType,
-      short replication) throws IOException {
-    return getCarbonFile(path, fileType).setReplication(path, replication);
+  public static boolean setReplication(String path, short replication) throws IOException {
+    return getCarbonFile(path).setReplication(replication);
   }
 
   /**
    * get the default replication
    *
    * @param path file path
-   * @param fileType file type
    * @return replication
    * @throws IOException if error occurs
    */
-  public static short getDefaultReplication(String path, FileFactory.FileType fileType)
-      throws IOException {
-    return getCarbonFile(path, fileType).getDefaultReplication(path);
+  public static short getDefaultReplication(String path) {
+    return getCarbonFile(path).getDefaultReplication();
   }
 }

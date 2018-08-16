@@ -269,8 +269,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
       String datamapPath = CarbonTablePath
           .getDataMapStorePath(tableIdentifier.getTablePath(), segmentId, dataMapName);
       if (FileFactory.isFileExist(datamapPath)) {
-        CarbonFile file = FileFactory.getCarbonFile(datamapPath,
-            FileFactory.getFileType(datamapPath));
+        CarbonFile file = FileFactory.getCarbonFile(datamapPath);
         CarbonUtil.deleteFoldersAndFilesSilent(file);
       }
     } catch (InterruptedException ex) {
@@ -316,8 +315,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
           List<CarbonFile> indexFiles;
           String dmPath = CarbonTablePath.getDataMapStorePath(tablePath, segmentId,
               dataMap.getDataMapSchema().getDataMapName());
-          FileFactory.FileType fileType = FileFactory.getFileType(dmPath);
-          final CarbonFile dirPath = FileFactory.getCarbonFile(dmPath, fileType);
+          final CarbonFile dirPath = FileFactory.getCarbonFile(dmPath);
           indexFiles = Arrays.asList(dirPath.listFiles(new CarbonFileFilter() {
             @Override
             public boolean accept(CarbonFile file) {

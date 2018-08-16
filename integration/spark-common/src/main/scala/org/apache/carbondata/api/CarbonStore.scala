@@ -114,7 +114,7 @@ object CarbonStore {
             val indexFile = FileFactory.getCarbonFile(indexPath)
             if (indexFile.exists()) {
               val indices =
-                StreamSegment.readIndexFile(indexPath, FileFactory.getFileType(indexPath))
+                StreamSegment.readIndexFile(indexPath)
               (indices.asScala.map(_.getFile_size).sum, indexFile.getSize)
             } else {
               (-1L, -1L)
@@ -193,8 +193,7 @@ object CarbonStore {
       // in case of force clean the lock is not required
       if (forceTableClean) {
         FileFactory.deleteAllCarbonFilesOfDir(
-          FileFactory.getCarbonFile(absoluteTableIdentifier.getTablePath,
-            FileFactory.getFileType(absoluteTableIdentifier.getTablePath)))
+          FileFactory.getCarbonFile(absoluteTableIdentifier.getTablePath))
       } else {
         carbonCleanFilesLock =
           CarbonLockUtil
@@ -236,8 +235,7 @@ object CarbonStore {
       val loadMetadataDetails = SegmentStatusManager
         .readLoadMetadata(carbonTable.getMetadataPath)
 
-      val fileType = FileFactory.getFileType(carbonTable.getTablePath)
-      val carbonFile = FileFactory.getCarbonFile(carbonTable.getTablePath, fileType)
+      val carbonFile = FileFactory.getCarbonFile(carbonTable.getTablePath)
 
       // list all files from table path
       val listOfDefaultPartFilesIterator = carbonFile.listFiles(true)
@@ -252,9 +250,8 @@ object CarbonStore {
               val partitionLocation = partitionSpec.getLocation
               // For partition folder outside the tablePath
               if (!partitionLocation.toString.startsWith(carbonTable.getTablePath)) {
-                val fileType = FileFactory.getFileType(partitionLocation.toString)
                 val partitionCarbonFile = FileFactory
-                  .getCarbonFile(partitionLocation.toString, fileType)
+                  .getCarbonFile(partitionLocation.toString)
                 // list all files from partitionLoacation
                 val listOfExternalPartFilesIterator = partitionCarbonFile.listFiles(true)
                 // delete all files of @loadStartTime from externalPath
@@ -279,7 +276,7 @@ object CarbonStore {
         val fileName = carbonFile.getName
         if (CarbonTablePath.DataFileUtil.compareCarbonFileTimeStamp(fileName, timestamp)) {
           // delete the file
-          FileFactory.deleteFile(filePath, FileFactory.getFileType(filePath))
+          FileFactory.deleteFile(filePath)
         }
     }
   }

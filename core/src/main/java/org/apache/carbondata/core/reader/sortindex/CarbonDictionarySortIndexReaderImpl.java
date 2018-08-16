@@ -140,8 +140,7 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
           getChunkMetaObjectForLastSegmentEntry();
       long dictOffset = chunkMetaObjectForLastSegmentEntry.getEnd_offset();
       this.sortIndexFilePath = dictionaryColumnUniqueIdentifier.getSortIndexFilePath(dictOffset);
-      if (!FileFactory
-          .isFileExist(this.sortIndexFilePath, FileFactory.getFileType(this.sortIndexFilePath))) {
+      if (!FileFactory.isFileExist(this.sortIndexFilePath)) {
         this.sortIndexFilePath = dictionaryColumnUniqueIdentifier.getSortIndexFilePath();
       }
     } catch (IOException e) {

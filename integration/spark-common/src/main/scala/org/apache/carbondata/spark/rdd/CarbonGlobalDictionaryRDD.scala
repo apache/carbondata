@@ -392,8 +392,7 @@ class CarbonGlobalDictionaryGenerateRDD(
           } is locked for updation. Please try after some time")
         }
         val t2 = System.currentTimeMillis
-        val fileType = FileFactory.getFileType(model.dictFilePaths(split.index))
-        val isDictFileExists = FileFactory.isFileExist(model.dictFilePaths(split.index), fileType)
+        val isDictFileExists = FileFactory.isFileExist(model.dictFilePaths(split.index))
         dictionaryForDistinctValueLookUp = if (isDictFileExists) {
           CarbonLoaderUtil.getDictionary(model.table,
             model.columnIdentifier(split.index),
@@ -532,8 +531,7 @@ class CarbonColumnDictGenerateRDD(
     var inputStream: DataInputStream = null
     var colDictData: java.util.Iterator[Array[String]] = null
     try {
-      inputStream = FileFactory.getDataInputStream(preDefDictFilePath,
-        FileFactory.getFileType(preDefDictFilePath))
+      inputStream = FileFactory.getDataInputStream(preDefDictFilePath)
       csvReader = new CSVReader(new InputStreamReader(inputStream, Charset.defaultCharset),
         carbonLoadModel.getCsvDelimiter.charAt(0))
       // read the column data to list iterator

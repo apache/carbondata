@@ -117,8 +117,7 @@ public class StreamPruner {
       String segmentDir = CarbonTablePath.getSegmentPath(
           carbonTable.getAbsoluteTableIdentifier().getTablePath(), segment.getSegmentNo());
       String indexFile = CarbonTablePath.getCarbonStreamIndexFilePath(segmentDir);
-      FileFactory.FileType fileType = FileFactory.getFileType(indexFile);
-      if (FileFactory.isFileExist(indexFile, fileType)) {
+      if (FileFactory.isFileExist(indexFile)) {
         CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
         indexReader.openThriftReader(indexFile);
         try {

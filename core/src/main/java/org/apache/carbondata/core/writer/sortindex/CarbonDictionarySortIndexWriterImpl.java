@@ -148,7 +148,7 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
    * @param dictPath
    */
   protected void cleanUpOldSortIndex(String dictPath) {
-    CarbonFile dictFile = FileFactory.getCarbonFile(dictPath, FileFactory.getFileType(dictPath));
+    CarbonFile dictFile = FileFactory.getCarbonFile(dictPath);
     CarbonFile[] files = CarbonTablePath.getSortIndexFiles(dictFile.getParentFile(),
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
     int maxTime;

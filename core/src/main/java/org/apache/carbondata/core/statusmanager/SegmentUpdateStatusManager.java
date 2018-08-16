@@ -198,7 +198,7 @@ public class SegmentUpdateStatusManager {
     String segmentPath = CarbonTablePath.getSegmentPath(
         identifier.getTablePath(), segmentId);
     CarbonFile segDir =
-        FileFactory.getCarbonFile(segmentPath, FileFactory.getFileType(segmentPath));
+        FileFactory.getCarbonFile(segmentPath);
     for (LoadMetadataDetails eachSeg : segmentDetails) {
       if (eachSeg.getLoadName().equalsIgnoreCase(segmentId)) {
         // if the segment is found then take the start and end time stamp.
@@ -406,7 +406,7 @@ public class SegmentUpdateStatusManager {
     String segmentPath = CarbonTablePath.getSegmentPath(
         identifier.getTablePath(), segmentId.getSegmentNo());
     CarbonFile segDir =
-        FileFactory.getCarbonFile(segmentPath, FileFactory.getFileType(segmentPath));
+        FileFactory.getCarbonFile(segmentPath);
     for (SegmentUpdateDetails block : updateDetails) {
       if ((block.getBlockName().equalsIgnoreCase(blockName)) &&
           (block.getSegmentName().equalsIgnoreCase(segmentId.getSegmentNo()))
@@ -661,7 +661,7 @@ public class SegmentUpdateStatusManager {
 
     try {
       if (!FileFactory
-          .isFileExist(tableUpdateStatusPath, FileFactory.getFileType(tableUpdateStatusPath))) {
+          .isFileExist(tableUpdateStatusPath)) {
         return new SegmentUpdateDetails[0];
       }
       dataInputStream = fileOperation.openForRead();

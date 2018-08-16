@@ -182,9 +182,8 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
     carbonLoadModel.setMaxColumns("100")
     // Create table and metadata folders if not exist
     val metadataDirectoryPath = CarbonTablePath.getMetadataPath(table.getTablePath)
-    val fileType = FileFactory.getFileType(metadataDirectoryPath)
-    if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
-      FileFactory.mkdirs(metadataDirectoryPath, fileType)
+    if (!FileFactory.isFileExist(metadataDirectoryPath)) {
+      FileFactory.mkdirs(metadataDirectoryPath)
     }
     import scala.collection.JavaConverters._
     val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala

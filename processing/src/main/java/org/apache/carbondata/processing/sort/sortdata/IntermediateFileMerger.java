@@ -134,7 +134,7 @@ public class IntermediateFileMerger implements Callable<Void> {
    */
   private void initialize() throws CarbonSortKeyAndGroupByException {
     try {
-      stream = FileFactory.getDataOutputStream(outPutFile.getPath(), FileFactory.FileType.LOCAL,
+      stream = FileFactory.getDataOutputStream(outPutFile.getPath(),
           writeBufferSize, compressorName);
       this.stream.writeInt(this.totalNumberOfRecords);
     } catch (FileNotFoundException e) {

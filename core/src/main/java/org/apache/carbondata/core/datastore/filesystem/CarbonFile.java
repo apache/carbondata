@@ -22,9 +22,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.carbondata.core.datastore.impl.FileFactory;
-
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.fs.permission.FsPermission;
 
@@ -42,7 +39,6 @@ public interface CarbonFile {
 
   /**
    * It returns list of files with location details.
-   * @return
    */
   CarbonFile[] locationAwareListFiles(PathFilter pathFilter) throws IOException;
 
@@ -84,80 +80,60 @@ public interface CarbonFile {
    *
    * @param fileTimeStamp time to be compared with latest timestamp of file
    * @param endOffset     file length to be compared with current length of file
-   * @return
    */
   boolean isFileModified(long fileTimeStamp, long endOffset);
 
-  DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType, int bufferSize,
-      boolean append) throws IOException;
+  DataOutputStream getDataOutputStream(int bufferSize, boolean append) throws IOException;
 
-  DataInputStream getDataInputStream(String path, FileFactory.FileType fileType, int bufferSize,
-      Configuration configuration) throws IOException;
+  DataInputStream getDataInputStream(int bufferSize) throws
+      IOException;
 
   /**
    * get data input stream
-   * @param path
-   * @param fileType
-   * @param bufferSize
    * @param compressor name of compressor to write this file
    * @return dataInputStream
    * @throws IOException
    */
-  DataInputStream getDataInputStream(String path, FileFactory.FileType fileType, int bufferSize,
-      String compressor) throws IOException;
+  DataInputStream getDataInputStream(int bufferSize, String compressor) throws IOException;
 
-  DataInputStream getDataInputStream(String path, FileFactory.FileType fileType, int bufferSize,
-      long offset) throws IOException;
+  DataInputStream getDataInputStream(int bufferSize, long offset) throws IOException;
 
-  DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType)
-      throws IOException;
+  DataOutputStream getDataOutputStream() throws IOException;
 
-  DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType, int bufferSize,
-      long blockSize) throws IOException;
+  DataOutputStream getDataOutputStream(int bufferSize, long blockSize) throws IOException;
 
   /**
    * get data output stream
-   * @param path file path
-   * @param fileType file type
    * @param bufferSize write buffer size
    * @param blockSize block size
    * @param replication replication for this file
    * @return data output stream
    * @throws IOException if error occurs
    */
-  DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType, int bufferSize,
+  DataOutputStream getDataOutputStream(int bufferSize,
       long blockSize, short replication) throws IOException;
 
   /**
    * get data output stream
-   * @param path
-   * @param fileType
-   * @param bufferSize
    * @param compressor name of compressor to write this file
    * @return DataOutputStream
    * @throws IOException
    */
-  DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType, int bufferSize,
-      String compressor) throws IOException;
+  DataOutputStream getDataOutputStream(int bufferSize, String compressor) throws IOException;
 
-  boolean isFileExist(String filePath, boolean performFileCheck)
-      throws IOException;
+  boolean isFileExist(boolean performFileCheck) throws IOException;
 
-  boolean isFileExist(String filePath) throws IOException;
+  boolean isFileExist() throws IOException;
 
-  boolean createNewFile(String filePath, FileFactory.FileType fileType) throws IOException;
+  boolean createNewFile(final FsPermission permission) throws IOException;
 
-  boolean createNewFile(String filePath, FileFactory.FileType fileType, boolean doAs,
-      final FsPermission permission) throws IOException;
+  boolean deleteFile() throws IOException;
 
-  boolean deleteFile(String filePath, FileFactory.FileType fileType) throws IOException;
+  boolean mkdirs() throws IOException;
 
-  boolean mkdirs(String filePath) throws IOException;
+  DataOutputStream getDataOutputStreamUsingAppend() throws IOException;
 
-  DataOutputStream getDataOutputStreamUsingAppend(String path, FileFactory.FileType fileType)
-      throws IOException;
-
-  boolean createNewLockFile(String filePath, FileFactory.FileType fileType) throws IOException;
+  boolean createNewLockFile() throws IOException;
 
   /**
    * Returns locations of the file
@@ -168,24 +144,21 @@ public interface CarbonFile {
   /**
    * set the replication factor for this file
    *
-   * @param filePath file path
    * @param replication replication
    * @return true, if success; false, if failed
    * @throws IOException if error occurs
    */
-  boolean setReplication(String filePath, short replication) throws IOException;
+  boolean setReplication(short replication) throws IOException;
 
   /**
    * get the default replication for this file
-   * @param filePath file path
    * @return replication factor
-   * @throws IOException if error occurs
    */
-  short getDefaultReplication(String filePath) throws IOException;
+  short getDefaultReplication();
 
   /**
    * Get the length of this file, in bytes.
    * @return the length of this file, in bytes.
    */
-  long getLength();
+  long getLength() throws IOException;
 }

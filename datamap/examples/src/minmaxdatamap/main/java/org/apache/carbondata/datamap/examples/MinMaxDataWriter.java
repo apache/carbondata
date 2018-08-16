@@ -244,8 +244,8 @@ public class MinMaxDataWriter extends DataMapWriter {
     BufferedWriter brWriter = null;
     DataOutputStream dataOutStream = null;
     try {
-      FileFactory.createNewFile(filePath, FileFactory.getFileType(filePath));
-      dataOutStream = FileFactory.getDataOutputStream(filePath, FileFactory.getFileType(filePath));
+      FileFactory.createNewFile(filePath);
+      dataOutStream = FileFactory.getDataOutputStream(filePath);
       Gson gsonObjectToWrite = new Gson();
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutStream, "UTF-8"));
       String minmaxIndexData = gsonObjectToWrite.toJson(minMaxIndexBlockDetails);

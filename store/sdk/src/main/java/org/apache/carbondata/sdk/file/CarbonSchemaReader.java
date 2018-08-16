@@ -314,7 +314,7 @@ public class CarbonSchemaReader {
    */
   public static String getVersionDetails(String dataFilePath) throws IOException {
     long fileSize =
-        FileFactory.getCarbonFile(dataFilePath, FileFactory.getFileType(dataFilePath)).getSize();
+        FileFactory.getCarbonFile(dataFilePath).getSize();
     FileReader fileReader = FileFactory.getFileHolder(FileFactory.getFileType(dataFilePath));
     ByteBuffer buffer =
         fileReader.readByteBuffer(FileFactory.getUpdatedFilePath(dataFilePath), fileSize - 8, 8);

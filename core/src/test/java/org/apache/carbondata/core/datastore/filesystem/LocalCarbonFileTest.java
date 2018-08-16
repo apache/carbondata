@@ -162,7 +162,7 @@ public class LocalCarbonFileTest {
         };
         new MockUp<FileFactory>() {
             @Mock
-            public boolean isFileExist(String filePath, FileFactory.FileType fileType) throws IOException {
+            public boolean isFileExist(String filePath) throws IOException {
                 {
                     return true;
                 }
@@ -176,7 +176,7 @@ public class LocalCarbonFileTest {
         };
         new MockUp<FileFactory>() {
             @Mock
-            public boolean createNewFile(String filePath, FileFactory.FileType fileType) throws IOException {
+            public boolean createNewFile(String filePath) throws IOException {
                 {
                     return true;
                 }
@@ -184,7 +184,7 @@ public class LocalCarbonFileTest {
         };
         new MockUp<FileFactory>() {
             @Mock
-            public CarbonFile getCarbonFile(String path, FileFactory.FileType fileType) {
+            public CarbonFile getCarbonFile(String path) {
                 {
                     return new LocalCarbonFile(path);
                 }
@@ -231,7 +231,7 @@ public class LocalCarbonFileTest {
         };
         new MockUp<FileFactory>() {
             @Mock
-            public boolean isFileExist(String filePath, FileFactory.FileType fileType) throws IOException {
+            public boolean isFileExist(String filePath) throws IOException {
                 {
                     return true;
                 }
@@ -239,7 +239,7 @@ public class LocalCarbonFileTest {
         };
         new MockUp<FileFactory>() {
             @Mock
-            public CarbonFile getCarbonFile(String path, FileFactory.FileType fileType) {
+            public CarbonFile getCarbonFile(String path) {
                 {
                     return new LocalCarbonFile(path);
                 }
@@ -253,7 +253,7 @@ public class LocalCarbonFileTest {
         };
         new MockUp<FileFactory>() {
             @Mock
-            public boolean createNewFile(String filePath, FileFactory.FileType fileType) throws IOException {
+            public boolean createNewFile(String filePath) throws IOException {
                 {
                     throw new IOException();
                 }

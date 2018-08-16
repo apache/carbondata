@@ -25,7 +25,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import org.apache.log4j.Logger;
@@ -39,22 +38,18 @@ class AtomicFileOperationsImpl implements AtomicFileOperations {
       LogServiceFactory.getLogService(AtomicFileOperationsImpl.class.getName());
   private String filePath;
 
-  private FileType fileType;
-
   private String tempWriteFilePath;
 
   private DataOutputStream dataOutStream;
   private boolean setFailed;
 
-  AtomicFileOperationsImpl(String filePath, FileType fileType) {
+  AtomicFileOperationsImpl(String filePath) {
     this.filePath = filePath;
-
-    this.fileType = fileType;
   }
 
   @Override
   public DataInputStream openForRead() throws IOException {
-    return FileFactory.getDataInputStream(filePath, fileType);
+    return FileFactory.getDataInputStream(filePath);
   }
 
   @Override
@@ -64,13 +59,13 @@ class AtomicFileOperationsImpl implements AtomicFileOperations {
 
     tempWriteFilePath = filePath + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
 
-    if (FileFactory.isFileExist(tempWriteFilePath, fileType)) {
-      FileFactory.getCarbonFile(tempWriteFilePath, fileType).delete();
+    if (FileFactory.isFileExist(tempWriteFilePath)) {
+      FileFactory.getCarbonFile(tempWriteFilePath).delete();
     }
 
-    FileFactory.createNewFile(tempWriteFilePath, fileType);
+    FileFactory.createNewFile(tempWriteFilePath);
 
-    dataOutStream = FileFactory.getDataOutputStream(tempWriteFilePath, fileType);
+    dataOutStream = FileFactory.getDataOutputStream(tempWriteFilePath);
 
     return dataOutStream;
 
@@ -78,10 +73,9 @@ class AtomicFileOperationsImpl implements AtomicFileOperations {
 
   @Override
   public void close() throws IOException {
-
     if (null != dataOutStream) {
       CarbonUtil.closeStream(dataOutStream);
-      CarbonFile tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
+      CarbonFile tempFile = FileFactory.getCarbonFile(tempWriteFilePath);
       if (!this.setFailed) {
         if (!tempFile.renameForce(filePath)) {
           throw new IOException(

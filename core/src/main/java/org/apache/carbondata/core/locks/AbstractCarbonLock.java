@@ -94,7 +94,7 @@ public abstract class AbstractCarbonLock implements ICarbonLock {
 
   public boolean releaseLockManually(String lockFile) {
     try {
-      return FileFactory.deleteFile(lockFile, FileFactory.getFileType(lockFile));
+      return FileFactory.deleteFile(lockFile);
     } catch (Exception e) {
       return false;
     }

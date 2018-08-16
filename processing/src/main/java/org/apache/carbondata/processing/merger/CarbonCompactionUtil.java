@@ -200,10 +200,8 @@ public class CarbonCompactionUtil {
     String majorCompactionStatusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
         + CarbonCommonConstants.majorCompactionRequiredFile;
     try {
-      if (FileFactory.isFileExist(minorCompactionStatusFile,
-          FileFactory.getFileType(minorCompactionStatusFile)) || FileFactory
-          .isFileExist(majorCompactionStatusFile,
-              FileFactory.getFileType(majorCompactionStatusFile))) {
+      if (FileFactory.isFileExist(minorCompactionStatusFile) || FileFactory
+          .isFileExist(majorCompactionStatusFile)) {
         return true;
       }
     } catch (IOException e) {
@@ -224,12 +222,10 @@ public class CarbonCompactionUtil {
     String majorCompactionStatusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
         + CarbonCommonConstants.majorCompactionRequiredFile;
     try {
-      if (FileFactory.isFileExist(minorCompactionStatusFile,
-          FileFactory.getFileType(minorCompactionStatusFile))) {
+      if (FileFactory.isFileExist(minorCompactionStatusFile)) {
         return CompactionType.MINOR;
       }
-      if (FileFactory.isFileExist(majorCompactionStatusFile,
-          FileFactory.getFileType(majorCompactionStatusFile))) {
+      if (FileFactory.isFileExist(majorCompactionStatusFile)) {
         return CompactionType.MAJOR;
       }
 
@@ -257,9 +253,9 @@ public class CarbonCompactionUtil {
     }
     try {
       if (FileFactory
-          .isFileExist(compactionRequiredFile, FileFactory.getFileType(compactionRequiredFile))) {
+          .isFileExist(compactionRequiredFile)) {
         if (FileFactory
-            .getCarbonFile(compactionRequiredFile, FileFactory.getFileType(compactionRequiredFile))
+            .getCarbonFile(compactionRequiredFile)
             .delete()) {
           LOGGER.info("Deleted the compaction request file " + compactionRequiredFile);
           return true;
@@ -292,8 +288,8 @@ public class CarbonCompactionUtil {
           + CarbonCommonConstants.majorCompactionRequiredFile;
     }
     try {
-      if (!FileFactory.isFileExist(statusFile, FileFactory.getFileType(statusFile))) {
-        if (FileFactory.createNewFile(statusFile, FileFactory.getFileType(statusFile))) {
+      if (!FileFactory.isFileExist(statusFile)) {
+        if (FileFactory.createNewFile(statusFile)) {
           LOGGER.info("successfully created a compaction required file - " + statusFile);
           return true;
         } else {

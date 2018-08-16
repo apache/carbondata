@@ -326,7 +326,7 @@ case class CarbonAddLoadCommand(
       // delete corresponding segment file from metadata
       val segmentFile = CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath) +
                         File.separator + segment.getSegmentFileName
-      FileFactory.deleteFile(segmentFile, FileFactory.getFileType(segmentFile))
+      FileFactory.deleteFile(segmentFile)
       clearDataMapFiles(carbonTable, model.getSegmentId)
       LOGGER.info("********clean up done**********")
       LOGGER.error("Data load failed due to failure in table status updation.")

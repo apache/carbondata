@@ -288,8 +288,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
         Some(wrapperTableInfo)
       } else {
         val tableMetadataFile = CarbonTablePath.getSchemaFilePath(tablePath)
-        val fileType = FileFactory.getFileType(tableMetadataFile)
-        if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
+        if (FileFactory.isFileExist(tableMetadataFile)) {
           val tableInfo: TableInfo = CarbonUtil.readSchemaFile(tableMetadataFile)
           val wrapperTableInfo =
             schemaConverter.fromExternalToWrapperTableInfo(tableInfo, dbName, tableName, tablePath)
@@ -414,8 +413,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
       thriftTableInfo: TableInfo): String = {
     val schemaFilePath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath)
     val schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath)
-    val fileType = FileFactory.getFileType(schemaMetadataPath)
-    if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
+    if (!FileFactory.isFileExist(schemaMetadataPath)) {
       val isDirCreated = FileFactory
         .mkdirs(schemaMetadataPath, SparkSession.getActiveSession.get.sessionState.newHadoopConf())
       if (!isDirCreated) {
@@ -463,8 +461,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
     try {
       val tablePath = lookupRelation(tableIdentifier)(sparkSession)
         .asInstanceOf[CarbonRelation].carbonTable.getTablePath
-      val fileType = FileFactory.getFileType(tablePath)
-      FileFactory.isFileExist(tablePath, fileType)
+      FileFactory.isFileExist(tablePath)
     } catch {
       case _: Exception =>
        false
@@ -506,7 +503,6 @@ class CarbonFileMetastore extends CarbonMetaStore {
     tableModifiedTimeStore.put(tableUniqueId, timeStamp)
     CarbonFileMetastore.updateTableSchemaModifiedTime(tableUniqueId, timeStamp)
   }
-
 
   override def isSchemaRefreshed(absoluteTableIdentifier: AbsoluteTableIdentifier,
       sparkSession: SparkSession): Boolean = {

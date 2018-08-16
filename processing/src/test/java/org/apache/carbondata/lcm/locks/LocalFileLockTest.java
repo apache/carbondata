@@ -48,7 +48,7 @@ public class LocalFileLockTest {
   @Before public void setUp() throws Exception {
     rootPath = new File(this.getClass().getResource("/").getPath()
         + "../../..").getCanonicalPath();
-    String storeLocation = rootPath + "/target/store";
+    String storeLocation = rootPath + "/target/store_new/";
     CarbonProperties.getInstance()
         .addProperty("carbon.storelocation", storeLocation);
   }
@@ -60,6 +60,8 @@ public class LocalFileLockTest {
     Field f = secretClass.getDeclaredField("lockPath");
     f.setAccessible(true);
     f.set(secretClass, "");
+    String storeLocation = rootPath + "/target/store_new/";
+    new File(storeLocation).delete();
   }
 
   @Test public void testingLocalFileLockingByAcquiring2Locks() {
@@ -88,7 +90,7 @@ public class LocalFileLockTest {
       f.set(secretClass, rootPath + "/target/");
       AbsoluteTableIdentifier absoluteTableIdentifier = AbsoluteTableIdentifier
           .from(CarbonProperties.getInstance().getProperty("carbon.storelocation"), "databaseName",
-              "tableName", "1");
+              "tableName1", "1");
       ICarbonLock carbonLock = CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier, LockUsage.TABLE_STATUS_LOCK);
       carbonLock.lockWithRetries();
       assert (new File(rootPath + "/target/1/LockFiles/tablestatus.lock").exists());

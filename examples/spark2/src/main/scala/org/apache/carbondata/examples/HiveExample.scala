@@ -115,10 +115,10 @@ object HiveExample {
     val dbLockPath = FileFactory.getUpdatedFilePath(s"$metaStoreLoc/db.lck")
     val dbexLockPath = FileFactory.getUpdatedFilePath(s"$metaStoreLoc/dbex.lck")
     if(FileFactory.isFileExist(dbLockPath)) {
-      FileFactory.deleteFile(dbLockPath, FileFactory.getFileType(dbLockPath))
+      FileFactory.deleteFile(dbLockPath)
     }
     if(FileFactory.isFileExist(dbexLockPath)) {
-      FileFactory.deleteFile(dbexLockPath, FileFactory.getFileType(dbexLockPath))
+      FileFactory.deleteFile(dbexLockPath)
     }
   }
 

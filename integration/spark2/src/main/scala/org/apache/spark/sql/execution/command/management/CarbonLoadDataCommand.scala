@@ -334,9 +334,8 @@ case class CarbonLoadDataCommand(
       // Create table and metadata folders if not exist
       if (carbonLoadModel.isCarbonTransactionalTable) {
         val metadataDirectoryPath = CarbonTablePath.getMetadataPath(table.getTablePath)
-        val fileType = FileFactory.getFileType(metadataDirectoryPath)
-        if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
-          FileFactory.mkdirs(metadataDirectoryPath, fileType)
+        if (!FileFactory.isFileExist(metadataDirectoryPath)) {
+          FileFactory.mkdirs(metadataDirectoryPath)
         }
       } else {
         carbonLoadModel.setSegmentId(System.currentTimeMillis().toString)
@@ -401,9 +400,8 @@ case class CarbonLoadDataCommand(
       val partitionLocation = CarbonProperties.getStorePath + "/partition/" +
                               table.getDatabaseName + "/" +
                               table.getTableName + "/"
-      val fileType = FileFactory.getFileType(partitionLocation)
-      if (FileFactory.isFileExist(partitionLocation, fileType)) {
-        val file = FileFactory.getCarbonFile(partitionLocation, fileType)
+      if (FileFactory.isFileExist(partitionLocation)) {
+        val file = FileFactory.getCarbonFile(partitionLocation)
         CarbonUtil.deleteFoldersAndFiles(file)
       }
     }

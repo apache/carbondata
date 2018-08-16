@@ -58,9 +58,8 @@ public class TableProcessingOperations {
 
     //delete folder which metadata no exist in tablestatus
     String partitionPath = CarbonTablePath.getPartitionDir(carbonTable.getTablePath());
-    FileFactory.FileType fileType = FileFactory.getFileType(partitionPath);
-    if (FileFactory.isFileExist(partitionPath, fileType)) {
-      CarbonFile carbonFile = FileFactory.getCarbonFile(partitionPath, fileType);
+    if (FileFactory.isFileExist(partitionPath)) {
+      CarbonFile carbonFile = FileFactory.getCarbonFile(partitionPath);
       CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
         @Override
         public boolean accept(CarbonFile path) {

@@ -575,10 +575,9 @@ object GlobalDictionaryUtil {
    * @return (isNonempty, isDirectory)
    */
   private def validateAllDictionaryPath(allDictionaryPath: String): Boolean = {
-    val fileType = FileFactory.getFileType(allDictionaryPath)
     val filePath = new Path(allDictionaryPath)
-    val file = FileFactory.getCarbonFile(filePath.toString, fileType)
-    val parentFile = FileFactory.getCarbonFile(filePath.getParent.toString, fileType)
+    val file = FileFactory.getCarbonFile(filePath.toString)
+    val parentFile = FileFactory.getCarbonFile(filePath.getParent.toString)
     // filepath regex, look like "/path/*.dictionary"
     if (filePath.getName.startsWith("*")) {
       val dictExt = filePath.getName.substring(1)

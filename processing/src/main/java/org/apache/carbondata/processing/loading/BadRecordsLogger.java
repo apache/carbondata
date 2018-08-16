@@ -30,7 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 
@@ -177,16 +176,15 @@ public class BadRecordsLogger {
     }
     try {
       if (null == bufferedWriter) {
-        FileType fileType = FileFactory.getFileType(storePath);
-        if (!FileFactory.isFileExist(this.storePath, fileType)) {
+        if (!FileFactory.isFileExist(this.storePath)) {
           // create the folders if not exist
-          FileFactory.mkdirs(this.storePath, fileType);
+          FileFactory.mkdirs(this.storePath);
 
           // create the files
-          FileFactory.createNewFile(logFilePath, fileType);
+          FileFactory.createNewFile(logFilePath);
         }
 
-        outStream = FileFactory.getDataOutputStream(logFilePath, fileType);
+        outStream = FileFactory.getDataOutputStream(logFilePath);
 
         bufferedWriter = new BufferedWriter(new OutputStreamWriter(outStream,
             Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
@@ -217,16 +215,15 @@ public class BadRecordsLogger {
     }
     try {
       if (null == bufferedCSVWriter) {
-        FileType fileType = FileFactory.getFileType(storePath);
-        if (!FileFactory.isFileExist(this.storePath, fileType)) {
+        if (!FileFactory.isFileExist(this.storePath)) {
           // create the folders if not exist
-          FileFactory.mkdirs(this.storePath, fileType);
+          FileFactory.mkdirs(this.storePath);
 
           // create the files
-          FileFactory.createNewFile(csvFilePath, fileType);
+          FileFactory.createNewFile(csvFilePath);
         }
 
-        outCSVStream = FileFactory.getDataOutputStream(csvFilePath, fileType);
+        outCSVStream = FileFactory.getDataOutputStream(csvFilePath);
 
         bufferedCSVWriter = new BufferedWriter(new OutputStreamWriter(outCSVStream,
             Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));

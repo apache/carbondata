@@ -29,7 +29,6 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
@@ -42,12 +41,12 @@ public class S3CarbonFile extends HDFSCarbonFile {
     super(filePath);
   }
 
-  public S3CarbonFile(String filePath, Configuration hadoopConf) {
-    super(filePath, hadoopConf);
+  public S3CarbonFile(FileStatus fileStatus) {
+    super(fileStatus);
   }
 
-  public S3CarbonFile(Path path, Configuration hadoopConf) {
-    super(path, hadoopConf);
+  public S3CarbonFile(String filePath, Configuration hadoopConf) {
+    super(filePath, hadoopConf);
   }
 
   /**
@@ -60,22 +59,19 @@ public class S3CarbonFile extends HDFSCarbonFile {
           Refer CARBONDATA-2670 for tracking this.
    */
   @Override
-  public boolean renameForce(String changeToName) {
-    FileSystem fs;
+  public boolean renameForce(String changetoName) {
     try {
-      deleteFile(changeToName, FileFactory.getFileType(changeToName));
-      fs = fileStatus.getPath().getFileSystem(hadoopConf);
-      return fs.rename(fileStatus.getPath(), new Path(changeToName));
+      // check if any file with the new name exists and delete it.
+      CarbonFile newCarbonFile = FileFactory.getCarbonFile(changetoName);
+      newCarbonFile.delete();
+      // rename the old file to the new name.
+      return fileSystem.rename(path, new Path(changetoName));
     } catch (IOException e) {
       LOGGER.error("Exception occured: " + e.getMessage(), e);
       return false;
     }
   }
 
-  /**
-   * @param listStatus
-   * @return
-   */
   @Override
   protected CarbonFile[] getFiles(FileStatus[] listStatus) {
     if (listStatus == null) {
@@ -83,50 +79,40 @@ public class S3CarbonFile extends HDFSCarbonFile {
     }
     CarbonFile[] files = new CarbonFile[listStatus.length];
     for (int i = 0; i < files.length; i++) {
-      files[i] = new HDFSCarbonFile(listStatus[i]);
+      files[i] = new S3CarbonFile(listStatus[i]);
     }
     return files;
   }
 
   @Override
-  public DataOutputStream getDataOutputStreamUsingAppend(String path, FileFactory.FileType fileType)
+  public DataOutputStream getDataOutputStreamUsingAppend()
       throws IOException {
-    return getDataOutputStream(path, fileType, CarbonCommonConstants.BYTEBUFFER_SIZE, true);
+    return getDataOutputStream(CarbonCommonConstants.BYTEBUFFER_SIZE, true);
   }
 
   @Override
-  public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
-      int bufferSize, boolean append) throws IOException {
-    Path pt = new Path(path);
-    FileSystem fileSystem = pt.getFileSystem(FileFactory.getConfiguration());
+  public DataOutputStream getDataOutputStream(int bufferSize, boolean append) throws
+      IOException {
     FSDataOutputStream stream;
     if (append) {
       // append to a file only if file already exists else file not found
       // exception will be thrown by hdfs
-      if (CarbonUtil.isFileExists(path)) {
-        DataInputStream dataInputStream = fileSystem.open(pt);
+      if (CarbonUtil.isFileExists(getAbsolutePath())) {
+        DataInputStream dataInputStream = fileSystem.open(path);
         int count = dataInputStream.available();
         // create buffer
         byte[] byteStreamBuffer = new byte[count];
         int bytesRead = dataInputStream.read(byteStreamBuffer);
         dataInputStream.close();
-        stream = fileSystem.create(pt, true, bufferSize);
-        if (bytesRead > 0) {
-          stream.write(byteStreamBuffer, 0, bytesRead);
-        }
+        stream = fileSystem.create(path, true, bufferSize);
+        stream.write(byteStreamBuffer, 0, bytesRead);
       } else {
-        stream = fileSystem.create(pt, true, bufferSize);
+        stream = fileSystem.create(path, true, bufferSize);
       }
     } else {
-      stream = fileSystem.create(pt, true, bufferSize);
+      stream = fileSystem.create(path, true, bufferSize);
     }
     return stream;
-  }
-
-  @Override
-  public CarbonFile getParentFile() {
-    Path parent = fileStatus.getPath().getParent();
-    return null == parent ? null : new S3CarbonFile(parent, hadoopConf);
   }
 
 }

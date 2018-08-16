@@ -413,7 +413,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     val identifier = carbonTable.getAbsoluteTableIdentifier()
     val dataFilesDir = CarbonTablePath.getSegmentPath(identifier.getTablePath, "0")
     val carbonFile =
-        FileFactory.getCarbonFile(dataFilesDir, FileFactory.getFileType(dataFilesDir))
+        FileFactory.getCarbonFile(dataFilesDir)
 
     var updateDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
     var deletaDeltaFiles = getDeltaFiles(carbonFile, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)

@@ -29,6 +29,7 @@ import mockit.MockUp;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Options;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
@@ -41,6 +42,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 
@@ -100,12 +102,18 @@ public class HDFSCarbonFileTest {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
-                throw new IOException();
+                return new DistributedFileSystem();
             }
 
         };
+        new MockUp<DistributedFileSystem>() {
+            @Mock
+            public void rename(Path src, Path dst, final Options.Rename... options) throws IOException {
+               throw new IOException();
+            }
+        };
         hdfsCarbonFile = new HDFSCarbonFile(fileStatus);
-        hdfsCarbonFile.renameForce(fileName);
+        assertFalse(hdfsCarbonFile.renameForce(fileName));
     }
 
     @Test
@@ -131,6 +139,13 @@ public class HDFSCarbonFileTest {
             @Mock
             public Path getPath() {
                 return new Path(fileName);
+            }
+
+        };
+        new MockUp<LocalFileSystem>() {
+            @Mock
+            public FileStatus[] listStatus(Path p) throws IOException {
+                return null;
             }
 
         };
@@ -200,7 +215,7 @@ public class HDFSCarbonFileTest {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
-                throw new IOException();
+                return new DistributedFileSystem();
             }
 
         };
@@ -298,10 +313,10 @@ public class HDFSCarbonFileTest {
             }
 
         };
-        new MockUp<FileStatus>() {
+        new MockUp<DistributedFileSystem>() {
             @Mock
-            public Path getPath() {
-                return new Path(fileName);
+            public FileStatus getFileStatus(Path f) throws IOException {
+                return new FileStatus();
             }
 
         };
@@ -362,7 +377,6 @@ public class HDFSCarbonFileTest {
 
     @Test
     public void testForNonDisributedSystem() {
-        new HDFSCarbonFile(fileStatus);
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
@@ -376,7 +390,8 @@ public class HDFSCarbonFileTest {
                 return true;
             }
         };
-        assertEquals(hdfsCarbonFile.renameForce(fileName), true);
+
+        assertEquals(new HDFSCarbonFile(fileStatus).renameForce(fileName), true);
     }
 
     @Test

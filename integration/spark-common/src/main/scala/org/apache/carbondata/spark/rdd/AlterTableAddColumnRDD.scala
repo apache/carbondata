@@ -80,9 +80,8 @@ class AlterTableAddColumnRDD[K, V](
           CarbonProperties.getInstance.addProperty(CarbonCommonConstants.LOCK_TYPE, lockType)
           // Create table and metadata folders if not exist
           val metadataDirectoryPath = CarbonTablePath.getMetadataPath(identifier.getTablePath)
-          val fileType = FileFactory.getFileType(metadataDirectoryPath)
-          if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
-            FileFactory.mkdirs(metadataDirectoryPath, fileType)
+          if (!FileFactory.isFileExist(metadataDirectoryPath)) {
+            FileFactory.mkdirs(metadataDirectoryPath)
           }
           GlobalDictionaryUtil.loadDefaultDictionaryValueForNewColumn(
             columnSchema,
