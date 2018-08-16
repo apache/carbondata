@@ -43,8 +43,7 @@ object ResourceRegisterAndCopier {
   def copyResourcesifNotExists(hdfsPath: String,
       resourcePath: String,
       dataFilesPath: String): Unit = {
-    val fileType = FileFactory.getFileType(hdfsPath)
-    val file = FileFactory.getCarbonFile(hdfsPath, fileType)
+    val file = FileFactory.getCarbonFile(hdfsPath)
     if (!file.exists()) {
       sys.error(s"""Provided path $hdfsPath does not exist""")
     }
@@ -57,7 +56,7 @@ object ResourceRegisterAndCopier {
         val resources = readDataFiles(dataFilesPath)
         resources.foreach { file =>
           val hdfsDataPath = hdfsPath + "/" + file
-          val rsFile = FileFactory.getCarbonFile(hdfsDataPath, fileType)
+          val rsFile = FileFactory.getCarbonFile(hdfsDataPath)
           val target = resourcePath + "/" + file
           if (!rsFile.exists()) {
             if (file.lastIndexOf("/") > -1) {
@@ -125,11 +124,9 @@ object ResourceRegisterAndCopier {
   def copyLocalFile(dst: String,
       src: String): Unit = {
     LOGGER.info(s"Copying file : $src to  $dst")
-    if (FileFactory.isFileExist(src, FileFactory.getFileType(src))) {
-      val dataOutputStream = FileFactory.getDataOutputStream(dst,
-        FileFactory.getFileType(dst))
-      val dataInputStream = FileFactory.getDataInputStream(src,
-        FileFactory.getFileType(src))
+    if (FileFactory.isFileExist(src)) {
+      val dataOutputStream = FileFactory.getDataOutputStream(dst)
+      val dataInputStream = FileFactory.getDataInputStream(src)
       IOUtils.copyBytes(dataInputStream, dataOutputStream, 8 * 1024)
       CarbonUtil.closeStream(dataInputStream)
       CarbonUtil.closeStream(dataOutputStream)

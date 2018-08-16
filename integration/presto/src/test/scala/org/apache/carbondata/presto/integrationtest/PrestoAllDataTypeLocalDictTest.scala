@@ -26,7 +26,6 @@ import org.scalatest.{BeforeAndAfterAll, FunSuiteLike}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.datastore.impl.FileFactory.FileType
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.presto.server.PrestoServer
 
@@ -288,14 +287,14 @@ class PrestoAllDataTypeLocalDictTest extends FunSuiteLike with BeforeAndAfterAll
   }
 
   private def cleanUp(): Unit = {
-    FileFactory.deleteFile(s"$storePath/Fact", FileType.LOCAL)
+    FileFactory.deleteFile(s"$storePath/Fact")
     FileFactory
       .createDirectoryAndSetPermission(s"$storePath/_system",
         new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
     FileFactory
       .createDirectoryAndSetPermission(s"$storePath/.DS_Store",
         new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
-    FileFactory.createNewFile(s"$storePath/testdb/.DS_STORE",FileType.LOCAL)
+    FileFactory.createNewFile(s"$storePath/testdb/.DS_STORE")
   }
 
 }

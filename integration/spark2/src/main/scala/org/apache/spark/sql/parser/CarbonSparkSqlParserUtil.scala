@@ -157,7 +157,7 @@ object CarbonSparkSqlParserUtil {
         tableIdentifier.table.toLowerCase())
       val table = try {
         val schemaPath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath)
-        if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath))) {
+        if (!FileFactory.isFileExist(schemaPath)) {
           if (provider.equalsIgnoreCase("'carbonfile'")) {
             SchemaReader.inferSchema(identifier, true)
           } else {

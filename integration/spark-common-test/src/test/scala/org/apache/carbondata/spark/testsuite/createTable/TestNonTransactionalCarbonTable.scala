@@ -238,8 +238,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   def deleteFile(path: String, extension: String): Unit = {
-    val file: CarbonFile = FileFactory
-      .getCarbonFile(path, FileFactory.getFileType(path))
+    val file: CarbonFile = FileFactory.getCarbonFile(path)
 
     for (eachDir <- file.listFiles) {
       if (!eachDir.isDirectory) {
@@ -747,11 +746,11 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val path1 = writerPath + "/0testdir"
     val path2 = writerPath + "/testdir"
 
-    FileFactory.getCarbonFile(path1, FileFactory.getFileType(path1))
-    FileFactory.mkdirs(path1, FileFactory.getFileType(path1))
+    FileFactory.getCarbonFile(path1)
+    FileFactory.mkdirs(path1)
 
-    FileFactory.getCarbonFile(path2, FileFactory.getFileType(path2))
-    FileFactory.mkdirs(path2, FileFactory.getFileType(path2))
+    FileFactory.getCarbonFile(path2)
+    FileFactory.mkdirs(path2)
 
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 

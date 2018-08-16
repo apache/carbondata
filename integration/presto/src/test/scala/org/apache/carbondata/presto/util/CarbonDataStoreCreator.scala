@@ -318,10 +318,8 @@ object CarbonDataStoreCreator {
         tableInfo.getLastUpdatedTime)
     thriftTableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history
       .add(schemaEvolutionEntry)
-    val fileType: FileFactory.FileType =
-      FileFactory.getFileType(schemaMetadataPath)
-    if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
-      FileFactory.mkdirs(schemaMetadataPath, fileType)
+    if (!FileFactory.isFileExist(schemaMetadataPath)) {
+      FileFactory.mkdirs(schemaMetadataPath)
     }
     val thriftWriter: ThriftWriter = new ThriftWriter(schemaFilePath, false)
     thriftWriter.open()

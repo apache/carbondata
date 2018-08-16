@@ -32,9 +32,8 @@ class DictionaryDetailHelper extends DictionaryDetailService {
     val dictFileExists = new Array[Boolean](primDimensions.length)
     val columnIdentifier = new Array[ColumnIdentifier](primDimensions.length)
 
-    val fileType = FileFactory.getFileType(dictfolderPath)
     // Metadata folder
-    val metadataDirectory = FileFactory.getCarbonFile(dictfolderPath, fileType)
+    val metadataDirectory = FileFactory.getCarbonFile(dictfolderPath)
     // need list all dictionary file paths with exists flag
     val carbonFiles = metadataDirectory.listFiles(new CarbonFileFilter {
       @Override def accept(pathname: CarbonFile): Boolean = {

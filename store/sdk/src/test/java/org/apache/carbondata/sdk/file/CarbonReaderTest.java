@@ -218,11 +218,11 @@ public class CarbonReaderTest extends TestCase {
 
     FileUtils.deleteDirectory(new File(path));
 
-    FileFactory.getCarbonFile(path1, FileFactory.getFileType(path1));
-    FileFactory.mkdirs(path1, FileFactory.getFileType(path1));
+    FileFactory.getCarbonFile(path1);
+    FileFactory.mkdirs(path1);
 
-    FileFactory.getCarbonFile(path2, FileFactory.getFileType(path2));
-    FileFactory.mkdirs(path2, FileFactory.getFileType(path2));
+    FileFactory.getCarbonFile(path2);
+    FileFactory.mkdirs(path2);
 
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);

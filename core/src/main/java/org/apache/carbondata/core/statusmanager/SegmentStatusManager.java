@@ -100,10 +100,10 @@ public class SegmentStatusManager {
   public static long getTableStatusLastModifiedTime(AbsoluteTableIdentifier identifier)
       throws IOException {
     String tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
-    if (!FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
+    if (!FileFactory.isFileExist(tableStatusPath)) {
       return 0L;
     } else {
-      return FileFactory.getCarbonFile(tableStatusPath, FileFactory.getFileType(tableStatusPath))
+      return FileFactory.getCarbonFile(tableStatusPath)
           .getLastModifiedTime();
     }
   }
@@ -264,7 +264,7 @@ public class SegmentStatusManager {
     AtomicFileOperations fileOperation =
         AtomicFileOperationFactory.getAtomicFileOperations(tableStatusPath);
 
-    if (!FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
+    if (!FileFactory.isFileExist(tableStatusPath)) {
       return new LoadMetadataDetails[0];
     }
 
@@ -388,7 +388,7 @@ public class SegmentStatusManager {
 
         String dataLoadLocation = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
         LoadMetadataDetails[] listOfLoadFolderDetailsArray = null;
-        if (!FileFactory.isFileExist(dataLoadLocation, FileFactory.getFileType(dataLoadLocation))) {
+        if (!FileFactory.isFileExist(dataLoadLocation)) {
           // log error.
           LOG.error("Load metadata file is not present.");
           return loadIds;
@@ -467,7 +467,7 @@ public class SegmentStatusManager {
         String dataLoadLocation = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
         LoadMetadataDetails[] listOfLoadFolderDetailsArray = null;
 
-        if (!FileFactory.isFileExist(dataLoadLocation, FileFactory.getFileType(dataLoadLocation))) {
+        if (!FileFactory.isFileExist(dataLoadLocation)) {
           // Table status file is not present, maybe table is empty, ignore this operation
           LOG.warn("Trying to update table metadata file which is not present.");
           return invalidLoadTimestamps;

@@ -97,8 +97,7 @@ public class ThriftReader {
    */
   public void open() throws IOException {
     Configuration conf = configuration != null ? configuration : FileFactory.getConfiguration();
-    FileFactory.FileType fileType = FileFactory.getFileType(fileName);
-    dataInputStream = FileFactory.getDataInputStream(fileName, fileType, conf);
+    dataInputStream = FileFactory.getDataInputStream(fileName, conf);
     binaryIn = new TCompactProtocol(new TIOStreamTransport(dataInputStream));
   }
 

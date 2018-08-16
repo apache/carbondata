@@ -212,9 +212,7 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
   }
 
   def deleteFile(path: String, extension: String): Unit = {
-    val file: CarbonFile = FileFactory
-      .getCarbonFile(path, FileFactory.getFileType(path))
-
+    val file: CarbonFile = FileFactory.getCarbonFile(path)
     for (eachDir <- file.listFiles) {
       if (!eachDir.isDirectory) {
         if (eachDir.getName.endsWith(extension)) {

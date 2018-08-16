@@ -155,7 +155,7 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
 
   private void initDataMapFile() throws IOException {
     if (!FileFactory.isFileExist(dataMapPath)) {
-      if (!FileFactory.mkdirs(dataMapPath, FileFactory.getFileType(dataMapPath))) {
+      if (!FileFactory.mkdirs(dataMapPath)) {
         throw new IOException("Failed to create directory " + dataMapPath);
       }
     }
@@ -164,9 +164,8 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
           indexColumns.get(indexColId).getColName());
       DataOutputStream dataOutStream = null;
       try {
-        FileFactory.createNewFile(dmFile, FileFactory.getFileType(dmFile));
-        dataOutStream = FileFactory.getDataOutputStream(dmFile,
-            FileFactory.getFileType(dmFile));
+        FileFactory.createNewFile(dmFile);
+        dataOutStream = FileFactory.getDataOutputStream(dmFile);
       } catch (IOException e) {
         CarbonUtil.closeStreams(dataOutStream);
         throw new IOException(e);

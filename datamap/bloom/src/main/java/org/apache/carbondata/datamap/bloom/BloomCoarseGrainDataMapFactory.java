@@ -359,8 +359,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
       String datamapPath = CarbonTablePath
           .getDataMapStorePath(getCarbonTable().getTablePath(), segmentId, dataMapName);
       if (FileFactory.isFileExist(datamapPath)) {
-        CarbonFile file = FileFactory.getCarbonFile(datamapPath,
-            FileFactory.getFileType(datamapPath));
+        CarbonFile file = FileFactory.getCarbonFile(datamapPath);
         CarbonUtil.deleteFoldersAndFilesSilent(file);
       }
       clear(segmentId);

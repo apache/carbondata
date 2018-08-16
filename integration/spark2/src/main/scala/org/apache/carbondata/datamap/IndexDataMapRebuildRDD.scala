@@ -96,7 +96,7 @@ object IndexDataMapRebuildRDD {
     }.filter(p => !FileFactory.isFileExist(p._2)).toMap
 
     segments2DmStorePath.foreach { case (_, dmPath) =>
-      if (!FileFactory.mkdirs(dmPath, FileFactory.getFileType(dmPath))) {
+      if (!FileFactory.mkdirs(dmPath)) {
         throw new IOException(
           s"Failed to create directory $dmPath for rebuilding datamap ${ schema.getDataMapName }")
       }

@@ -18,14 +18,11 @@
 package org.apache.carbondata.core.datastore.filesystem;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.log4j.Logger;
@@ -74,41 +71,14 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
   }
 
   @Override
-  public CarbonFile[] listFiles(final CarbonFileFilter fileFilter) {
-    CarbonFile[] files = listFiles();
-    if (files != null && files.length >= 1) {
-      List<CarbonFile> fileList = new ArrayList<CarbonFile>(files.length);
-      for (int i = 0; i < files.length; i++) {
-        if (fileFilter.accept(files[i])) {
-          fileList.add(files[i]);
-        }
-      }
-      if (fileList.size() >= 1) {
-        return fileList.toArray(new CarbonFile[fileList.size()]);
-      } else {
-        return new CarbonFile[0];
-      }
-    }
-    return files;
-  }
-
-  @Override
-  public CarbonFile getParentFile() {
-    Path parent = fileStatus.getPath().getParent();
-    return null == parent ? null : new HDFSCarbonFile(parent, hadoopConf);
-  }
-
-  @Override
-  public boolean renameForce(String changeToName) {
-    FileSystem fs;
+  public boolean renameForce(String changetoName) {
     try {
-      fs = fileStatus.getPath().getFileSystem(hadoopConf);
-      if (fs instanceof DistributedFileSystem) {
-        ((DistributedFileSystem) fs).rename(fileStatus.getPath(), new Path(changeToName),
+      if (fileSystem instanceof DistributedFileSystem) {
+        ((DistributedFileSystem) fileSystem).rename(path, new Path(changetoName),
             org.apache.hadoop.fs.Options.Rename.OVERWRITE);
         return true;
       } else {
-        return fs.rename(fileStatus.getPath(), new Path(changeToName));
+        return fileSystem.rename(path, new Path(changetoName));
       }
     } catch (IOException e) {
       LOGGER.error("Exception occured: " + e.getMessage(), e);

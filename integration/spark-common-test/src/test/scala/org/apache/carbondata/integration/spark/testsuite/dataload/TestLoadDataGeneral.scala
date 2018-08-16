@@ -50,9 +50,6 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName)
     val partitionPath =
       CarbonTablePath.getPartitionDir(carbonTable.getAbsoluteTableIdentifier.getTablePath)
-    val fileType: FileFactory.FileType = FileFactory.getFileType(partitionPath)
-    val carbonFile = FileFactory.getCarbonFile(partitionPath, fileType)
-    val segments: ArrayBuffer[String] = ArrayBuffer()
     val segment = Segment.getSegment(segmentId, carbonTable.getAbsoluteTableIdentifier.getTablePath)
     segment != null
   }

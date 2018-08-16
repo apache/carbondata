@@ -143,7 +143,7 @@ public class DataFileFooterConverterTest {
     final DataInputStream dataInputStream = new DataInputStream(byteArrayInputStream);
     new MockUp<FileFactory>() {
       @SuppressWarnings("unused") @Mock
-      public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
+      public DataInputStream getDataInputStream(String path,
           int bufferSize, Configuration configuration) {
         return dataInputStream;
       }

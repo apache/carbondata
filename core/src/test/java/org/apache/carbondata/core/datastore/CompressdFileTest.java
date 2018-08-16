@@ -98,7 +98,7 @@ public class CompressdFileTest
 
       try {
         fileReader =
-            FileFactory.getDataInputStream(path, FileType.HDFS);
+            FileFactory.getDataInputStream(path);
         bufferedReader = new BufferedReader(new InputStreamReader(fileReader,
             Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
         readLine = bufferedReader.readLine();

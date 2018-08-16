@@ -656,7 +656,7 @@ public class CarbonUtilTest {
   public void testToReadHeaderWithFileNotFoundException() throws IOException {
     new MockUp<FileFactory>() {
       @SuppressWarnings("unused") @Mock
-      public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType)
+      public DataInputStream getDataInputStream(String path)
           throws FileNotFoundException {
         throw new FileNotFoundException();
       }
@@ -669,7 +669,7 @@ public class CarbonUtilTest {
   public void testToReadHeaderWithIOException() throws IOException {
     new MockUp<FileFactory>() {
       @SuppressWarnings("unused") @Mock
-      public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType)
+      public DataInputStream getDataInputStream(String path)
           throws IOException {
         throw new IOException();
       }

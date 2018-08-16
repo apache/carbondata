@@ -186,7 +186,7 @@ public class BlockletDataMapUtil {
         if (!FileFactory.isFileExist(carbonDataFile)) {
           return null;
         }
-        CarbonFile carbonFile = FileFactory.getCarbonFile(carbonDataFile, fileType);
+        CarbonFile carbonFile = FileFactory.getCarbonFile(carbonDataFile);
         return new BlockMetaInfo(new String[] { "localhost" }, carbonFile.getSize());
       default:
         return fileNameToMetaInfoMapping.get(carbonDataFile);

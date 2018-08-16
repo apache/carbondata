@@ -15,18 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.fileoperations;
+package org.apache.carbondata.core.exception;
 
-import org.apache.carbondata.core.datastore.impl.FileFactory;
+/**
+ * Thrown when any file related operation fails.
+ */
+public class CarbonFileException extends RuntimeException {
 
-public class AtomicFileOperationFactory {
+  public CarbonFileException(String message, Exception e) {
+    super(message, e);
+  }
 
-  public static AtomicFileOperations getAtomicFileOperations(String filePath) {
-    FileFactory.FileType fileType = FileFactory.getFileType(filePath);
-    if (fileType == FileFactory.FileType.S3 || fileType == FileFactory.FileType.ALLUXIO) {
-      return new AtomicFileOperationS3Impl(filePath);
-    } else {
-      return new AtomicFileOperationsImpl(filePath);
-    }
+  public CarbonFileException(Exception e) {
+    super(e);
   }
 }

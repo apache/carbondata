@@ -251,8 +251,7 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
         + sortParameters.getRangeId() + '_' + System.nanoTime()
         + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
     outputStream = FileFactory.getDataOutputStream(outputFile.getPath(),
-        FileFactory.FileType.LOCAL, sortParameters.getFileWriteBufferSize(),
-        sortParameters.getSortTempCompressorName());
+        sortParameters.getFileWriteBufferSize(), sortParameters.getSortTempCompressorName());
     outputStream.writeInt(totalSize);
   }
 

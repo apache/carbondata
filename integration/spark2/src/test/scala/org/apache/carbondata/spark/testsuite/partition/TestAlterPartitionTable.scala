@@ -864,7 +864,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
   def getDataFiles(carbonTable: CarbonTable, segmentId: String): Array[String] = {
     val segment = Segment.getSegment(segmentId, carbonTable.getTablePath)
     val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentId)
-    val carbonFile = FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir))
+    val carbonFile = FileFactory.getCarbonFile(segmentDir)
     val dataFiles = carbonFile.listFiles(new CarbonFileFilter() {
       override def accept(file: CarbonFile): Boolean = {
         return file.getName.endsWith(".carbondata")

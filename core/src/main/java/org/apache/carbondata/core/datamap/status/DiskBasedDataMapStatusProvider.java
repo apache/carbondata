@@ -72,8 +72,7 @@ public class DiskBasedDataMapStatusProvider implements DataMapStatusStorageProvi
       if (!FileFactory.isFileExist(statusPath)) {
         return new DataMapStatusDetail[0];
       }
-      dataInputStream =
-          FileFactory.getDataInputStream(statusPath, FileFactory.getFileType(statusPath));
+      dataInputStream = FileFactory.getDataInputStream(statusPath);
       inStream = new InputStreamReader(dataInputStream,
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
       buffReader = new BufferedReader(inStream);

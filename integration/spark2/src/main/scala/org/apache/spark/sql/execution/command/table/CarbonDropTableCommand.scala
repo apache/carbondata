@@ -227,12 +227,10 @@ case class CarbonDropTableCommand(
       ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
       // delete the table folder
       val tablePath = carbonTable.getTablePath
-      val fileType = FileFactory.getFileType(tablePath)
-
       // delete table data only if it is not external table
-      if (FileFactory.isFileExist(tablePath, fileType) &&
+      if (FileFactory.isFileExist(tablePath) &&
           !(carbonTable.isExternalTable || carbonTable.isFileLevelFormat)) {
-        val file = FileFactory.getCarbonFile(tablePath, fileType)
+        val file = FileFactory.getCarbonFile(tablePath)
         CarbonUtil.deleteFoldersAndFilesSilent(file)
       }
       // Delete lock directory if external lock path is specified.

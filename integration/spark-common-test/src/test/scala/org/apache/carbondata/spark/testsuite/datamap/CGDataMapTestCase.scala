@@ -329,10 +329,10 @@ class CGDataMapWriter(
    * class.
    */
   override def finish(): Unit = {
-    FileFactory.mkdirs(dataMapPath, FileFactory.getFileType(dataMapPath))
+    FileFactory.mkdirs(dataMapPath)
     val file = dataMapPath + "/testcg.datamap"
     val stream: DataOutputStream = FileFactory
-      .getDataOutputStream(file, FileFactory.getFileType(file))
+      .getDataOutputStream(file)
     val out = new ByteOutputStream()
     val outStream = new ObjectOutputStream(out)
     outStream.writeObject(maxMin)

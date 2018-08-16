@@ -239,7 +239,7 @@ public class CarbonTablePath {
       final String segmentId, final String bucketNumber) {
     String segmentDir = getSegmentPath(tablePath, segmentId);
     CarbonFile carbonFile =
-        FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir));
+        FileFactory.getCarbonFile(segmentDir);
 
     CarbonFile[] files = carbonFile.listFiles(new CarbonFileFilter() {
       @Override

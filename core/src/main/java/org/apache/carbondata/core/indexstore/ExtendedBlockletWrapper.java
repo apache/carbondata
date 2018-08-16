@@ -82,13 +82,12 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
       try {
         final CarbonFile carbonFile = FileFactory.getCarbonFile(folderPath);
         boolean isFolderExists = true;
-        if (!carbonFile.isFileExist(folderPath)) {
+        if (!carbonFile.isFileExist()) {
           LOGGER.warn("Folder:" + folderPath + "doesn't exists, data will be send through netwrok");
           isFolderExists = false;
         }
         if (isFolderExists) {
           stream = FileFactory.getDataOutputStream(folderPath + "/" + fileName,
-              FileFactory.getFileType(folderPath),
                   BUFFER_SIZE, BLOCK_SIZE, (short) 1);
           writeBlockletToStream(stream, bytes, uniqueLocations, extendedBlockletList);
           this.dataSize = stream.size();
@@ -182,7 +181,7 @@ public class ExtendedBlockletWrapper implements Writable, Serializable {
           final String folderPath = CarbonUtil.getIndexServerTempPath(tablePath, queryId);
           String fileName = new String(bytes, CarbonCommonConstants.DEFAULT_CHARSET);
           stream = FileFactory
-              .getDataInputStream(folderPath + "/" + fileName, FileFactory.getFileType(folderPath));
+              .getDataInputStream(folderPath + "/" + fileName);
           data = new byte[dataSize];
           stream.readFully(data);
         } finally {

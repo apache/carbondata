@@ -73,7 +73,7 @@ case class RefreshCarbonTableCommand(
       val schemaFilePath = CarbonTablePath.getSchemaFilePath(identifier.getTablePath)
       // if schema file does not exist then the table will either non carbon table or stale
       // carbon table
-      if (FileFactory.isFileExist(schemaFilePath, FileFactory.getFileType(schemaFilePath))) {
+      if (FileFactory.isFileExist(schemaFilePath)) {
         // read TableInfo
         val tableInfo = SchemaReader.getTableInfo(identifier)
         // refresh the column schema in case of store before V3
@@ -196,7 +196,7 @@ case class RefreshCarbonTableCommand(
       val tablePath = CarbonEnv.getTablePath(Some(dbName), tableName)(sparkSession)
       val schemaFilePath = CarbonTablePath.getSchemaFilePath(tablePath)
       try {
-        fileExist = FileFactory.isFileExist(schemaFilePath, FileFactory.getFileType(schemaFilePath))
+        fileExist = FileFactory.isFileExist(schemaFilePath)
       } catch {
         case e: Exception =>
           fileExist = false

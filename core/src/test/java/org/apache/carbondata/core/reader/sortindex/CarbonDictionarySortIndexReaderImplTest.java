@@ -120,8 +120,7 @@ public class CarbonDictionarySortIndexReaderImplTest {
    * this method will delete the store path
    */
   private void deleteStorePath() {
-    FileFactory.FileType fileType = FileFactory.getFileType(this.storePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(this.storePath, fileType);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(this.storePath);
     deleteRecursiveSilent(carbonFile);
   }
 

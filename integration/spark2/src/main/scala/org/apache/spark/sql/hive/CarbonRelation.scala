@@ -168,8 +168,7 @@ case class CarbonRelation(
   def sizeInBytes: Long = {
     if (carbonTable.isExternalTable) {
       val tablePath = carbonTable.getTablePath
-      val fileType = FileFactory.getFileType(tablePath)
-      if (FileFactory.isFileExist(tablePath, fileType)) {
+      if (FileFactory.isFileExist(tablePath)) {
         sizeInBytesLocalValue = FileFactory.getDirectorySize(tablePath)
       }
     } else {
@@ -182,8 +181,7 @@ case class CarbonRelation(
           sizeInBytesLocalValue = 0L
         } else {
           val tablePath = carbonTable.getTablePath
-          val fileType = FileFactory.getFileType(tablePath)
-          if (FileFactory.isFileExist(tablePath, fileType)) {
+          if (FileFactory.isFileExist(tablePath)) {
             // get the valid segments
             val segments = allSegments.getValidSegments.asScala
             var size = 0L

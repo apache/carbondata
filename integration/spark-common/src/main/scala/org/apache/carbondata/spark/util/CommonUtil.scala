@@ -707,9 +707,8 @@ object CommonUtil {
       return
     }
     try {
-      val fileType = FileFactory.getFileType(databaseLocation)
-      if (FileFactory.isFileExist(databaseLocation, fileType)) {
-        val file = FileFactory.getCarbonFile(databaseLocation, fileType)
+      if (FileFactory.isFileExist(databaseLocation)) {
+        val file = FileFactory.getCarbonFile(databaseLocation)
         if (file.isDirectory) {
           val tableFolders = file.listFiles()
           tableFolders.foreach { tableFolder =>
@@ -719,7 +718,7 @@ object CommonUtil {
               val tableUniqueName = dbName + "_" + tableFolder.getName
               val tableStatusFile =
                 CarbonTablePath.getTableStatusFilePath(tablePath)
-              if (FileFactory.isFileExist(tableStatusFile, fileType)) {
+              if (FileFactory.isFileExist(tableStatusFile)) {
                 try {
                   val carbonTable = CarbonMetadata.getInstance
                     .getCarbonTable(tableUniqueName)

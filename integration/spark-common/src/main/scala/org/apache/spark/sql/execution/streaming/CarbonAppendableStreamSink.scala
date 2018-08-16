@@ -179,13 +179,12 @@ class CarbonAppendableStreamSink(
     val segmentId = StreamSegment.open(carbonTable)
     if (segmentId.equals(currentSegmentId)) {
       val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, currentSegmentId)
-      val fileType = FileFactory.getFileType(segmentDir)
       if (segmentMaxSize <= StreamSegment.size(segmentDir)) {
         val newSegmentId = StreamSegment.close(carbonTable, currentSegmentId)
         currentSegmentId = newSegmentId
         val newSegmentDir =
           CarbonTablePath.getSegmentPath(carbonTable.getTablePath, currentSegmentId)
-        FileFactory.mkdirs(newSegmentDir, fileType)
+        FileFactory.mkdirs(newSegmentDir)
 
         // trigger hand off operation
         if (enableAutoHandoff) {
@@ -200,8 +199,7 @@ class CarbonAppendableStreamSink(
       currentSegmentId = segmentId
       val newSegmentDir =
         CarbonTablePath.getSegmentPath(carbonTable.getTablePath, currentSegmentId)
-      val fileType = FileFactory.getFileType(newSegmentDir)
-      FileFactory.mkdirs(newSegmentDir, fileType)
+      FileFactory.mkdirs(newSegmentDir)
     }
   }
 }

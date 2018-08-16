@@ -22,10 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 
 import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.viewfs.ViewFileSystem;
 import org.apache.log4j.Logger;
@@ -39,10 +37,6 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
 
   public ViewFSCarbonFile(String filePath) {
     super(filePath);
-  }
-
-  public ViewFSCarbonFile(Path path) {
-    super(path);
   }
 
   public ViewFSCarbonFile(FileStatus fileStatus) {
@@ -70,9 +64,9 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
     CarbonFile[] files = listFiles();
     if (files != null && files.length >= 1) {
       List<CarbonFile> fileList = new ArrayList<CarbonFile>(files.length);
-      for (int i = 0; i < files.length; i++) {
-        if (fileFilter.accept(files[i])) {
-          fileList.add(files[i]);
+      for (CarbonFile file : files) {
+        if (fileFilter.accept(file)) {
+          fileList.add(file);
         }
       }
       if (fileList.size() >= 1) {
@@ -85,19 +79,11 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
   }
 
   @Override
-  public CarbonFile getParentFile() {
-    Path parent = fileStatus.getPath().getParent();
-    return null == parent ? null : new ViewFSCarbonFile(parent);
-  }
-
-  @Override
   public boolean renameForce(String changeToName) {
-    FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
-      if (fs instanceof ViewFileSystem) {
-        fs.delete(new Path(changeToName), true);
-        fs.rename(fileStatus.getPath(), new Path(changeToName));
+      if (fileSystem instanceof ViewFileSystem) {
+        fileSystem.delete(new Path(changeToName), true);
+        fileSystem.rename(path, new Path(changeToName));
         return true;
       } else {
         return false;

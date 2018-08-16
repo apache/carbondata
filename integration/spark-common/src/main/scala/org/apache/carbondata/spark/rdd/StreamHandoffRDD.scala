@@ -379,9 +379,8 @@ object StreamHandoffRDD {
     val metaDataFilepath = loadModel.getCarbonDataLoadSchema.getCarbonTable.getMetadataPath
     val identifier = loadModel.getCarbonDataLoadSchema.getCarbonTable.getAbsoluteTableIdentifier
     val metadataPath = CarbonTablePath.getMetadataPath(identifier.getTablePath)
-    val fileType = FileFactory.getFileType(metadataPath)
-    if (!FileFactory.isFileExist(metadataPath, fileType)) {
-      FileFactory.mkdirs(metadataPath, fileType)
+    if (!FileFactory.isFileExist(metadataPath)) {
+      FileFactory.mkdirs(metadataPath)
     }
     val tableStatusPath = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath)
     val segmentStatusManager = new SegmentStatusManager(identifier)

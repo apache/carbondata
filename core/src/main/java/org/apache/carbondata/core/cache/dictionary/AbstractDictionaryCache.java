@@ -144,8 +144,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
   private CarbonFile getDictionaryMetaCarbonFile(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) throws IOException {
     String dictionaryFilePath = dictionaryColumnUniqueIdentifier.getDictionaryFilePath();
-    FileFactory.FileType fileType = FileFactory.getFileType(dictionaryFilePath);
-    CarbonFile dictFile = FileFactory.getCarbonFile(dictionaryFilePath, fileType);
+    CarbonFile dictFile = FileFactory.getCarbonFile(dictionaryFilePath);
     // When rename table triggered parallely with select query, dictionary files may not exist
     if (!dictFile.exists()) {
       throw new IOException("Dictionary file does not exist: " + dictionaryFilePath);

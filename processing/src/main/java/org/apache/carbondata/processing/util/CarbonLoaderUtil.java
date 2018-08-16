@@ -43,7 +43,6 @@ import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
 import org.apache.carbondata.core.locks.CarbonLockUtil;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -114,8 +113,7 @@ public final class CarbonLoaderUtil {
     int fileCount = 0;
     String segmentPath = CarbonTablePath.getSegmentPath(
         loadModel.getTablePath(), currentLoad + "");
-    CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath,
-        FileFactory.getFileType(segmentPath));
+    CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
     CarbonFile[] files = carbonFile.listFiles(new CarbonFileFilter() {
 
       @Override
@@ -139,9 +137,8 @@ public final class CarbonLoaderUtil {
 
   public static void deleteStorePath(String path) {
     try {
-      FileType fileType = FileFactory.getFileType(path);
-      if (FileFactory.isFileExist(path, fileType)) {
-        CarbonFile carbonFile = FileFactory.getCarbonFile(path, fileType);
+      if (FileFactory.isFileExist(path)) {
+        CarbonFile carbonFile = FileFactory.getCarbonFile(path);
         CarbonUtil.deleteFoldersAndFiles(carbonFile);
       }
     } catch (IOException | InterruptedException e) {
@@ -229,9 +226,8 @@ public final class CarbonLoaderUtil {
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
     if (loadModel.isCarbonTransactionalTable()) {
       String metadataPath = CarbonTablePath.getMetadataPath(identifier.getTablePath());
-      FileType fileType = FileFactory.getFileType(metadataPath);
-      if (!FileFactory.isFileExist(metadataPath, fileType)) {
-        FileFactory.mkdirs(metadataPath, fileType);
+      if (!FileFactory.isFileExist(metadataPath)) {
+        FileFactory.mkdirs(metadataPath);
       }
     }
     String tableStatusPath;
@@ -397,7 +393,7 @@ public final class CarbonLoaderUtil {
         identifier.getTablePath(), entry.getLoadName());
     // add to the deletion list only if file exist else HDFS file system will throw
     // exception while deleting the file if file path does not exist
-    if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
+    if (FileFactory.isFileExist(path)) {
       staleFolders.add(FileFactory.getCarbonFile(path));
     }
   }
@@ -1192,7 +1188,7 @@ public final class CarbonLoaderUtil {
 
   private static void deleteFiles(List<String> filesToBeDeleted) throws IOException {
     for (String filePath : filesToBeDeleted) {
-      FileFactory.deleteFile(filePath, FileFactory.getFileType(filePath));
+      FileFactory.deleteFile(filePath);
     }
   }
 

@@ -235,7 +235,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
       this.chunk_start_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
       validateDictionaryFileOffsetWithLastSegmentEntryOffset();
     } else if (dictFileExists) {
-      FileFactory.getCarbonFile(dictionaryFilePath, FileFactory.getFileType(dictionaryFilePath))
+      FileFactory.getCarbonFile(dictionaryFilePath)
           .delete();
     }
     openThriftWriter(this.dictionaryFilePath);
@@ -282,8 +282,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
       LOGGER.info("some inconsistency in dictionary file for column "
           + this.dictionaryColumnUniqueIdentifier.getColumnIdentifier());
       // truncate the dictionary data till chunk meta end offset
-      FileFactory.FileType fileType = FileFactory.getFileType(this.dictionaryFilePath);
-      CarbonFile carbonFile = FileFactory.getCarbonFile(this.dictionaryFilePath, fileType);
+      CarbonFile carbonFile = FileFactory.getCarbonFile(this.dictionaryFilePath);
       boolean truncateSuccess = carbonFile
           .truncate(this.dictionaryFilePath, chunkMetaObjectForLastSegmentEntry.getEnd_offset());
       if (!truncateSuccess) {

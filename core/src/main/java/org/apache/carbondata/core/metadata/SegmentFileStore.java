@@ -95,7 +95,7 @@ public class SegmentFileStore {
     String writePath = CarbonTablePath.getSegmentFilesLocation(tablePath) + "/" + tempFolderLoc;
     CarbonFile carbonFile = FileFactory.getCarbonFile(writePath);
     if (!carbonFile.exists()) {
-      carbonFile.mkdirs(writePath);
+      carbonFile.mkdirs();
     }
     CarbonFile tempFolder = null;
     if (isMergeIndexFlow) {
@@ -233,7 +233,7 @@ public class SegmentFileStore {
       String segmentFileFolder = CarbonTablePath.getSegmentFilesLocation(tablePath);
       CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFileFolder);
       if (!carbonFile.exists()) {
-        carbonFile.mkdirs(segmentFileFolder);
+        carbonFile.mkdirs();
       }
       // write segment info to new file.
       writeSegmentFile(segmentFile,
@@ -279,7 +279,7 @@ public class SegmentFileStore {
       String segmentFileFolder = CarbonTablePath.getSegmentFilesLocation(tablePath);
       CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFileFolder);
       if (!carbonFile.exists()) {
-        carbonFile.mkdirs(segmentFileFolder);
+        carbonFile.mkdirs();
       }
       // write segment info to new file.
       writeSegmentFile(segmentFile,
@@ -345,7 +345,7 @@ public class SegmentFileStore {
       String segmentFileFolder = CarbonTablePath.getSegmentFilesLocation(tablePath);
       CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFileFolder);
       if (!carbonFile.exists()) {
-        carbonFile.mkdirs(segmentFileFolder);
+        carbonFile.mkdirs();
       }
       String segmentFileName = genSegmentFileName(segmentId, UUID) + CarbonTablePath.SEGMENT_EXT;
       // write segment info to new file.
@@ -625,7 +625,7 @@ public class SegmentFileStore {
         AtomicFileOperationFactory.getAtomicFileOperations(segmentFilePath);
 
     try {
-      if (!FileFactory.isFileExist(segmentFilePath, FileFactory.getFileType(segmentFilePath))) {
+      if (!FileFactory.isFileExist(segmentFilePath)) {
         return null;
       }
       dataInputStream = fileOperation.openForRead();
@@ -971,10 +971,10 @@ public class SegmentFileStore {
         }
         if (toBeDeletedIndexFiles.size() > 0) {
           for (String dataFile : toBeDeletedIndexFiles) {
-            FileFactory.deleteFile(dataFile, FileFactory.getFileType(dataFile));
+            FileFactory.deleteFile(dataFile);
           }
           for (String dataFile : toBeDeletedDataFiles) {
-            FileFactory.deleteFile(dataFile, FileFactory.getFileType(dataFile));
+            FileFactory.deleteFile(dataFile);
           }
         }
       }
@@ -996,21 +996,21 @@ public class SegmentFileStore {
         FileFactory.getConfiguration());
     Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
     for (Map.Entry<String, List<String>> entry : indexFilesMap.entrySet()) {
-      FileFactory.deleteFile(entry.getKey(), FileFactory.getFileType(entry.getKey()));
+      FileFactory.deleteFile(entry.getKey());
       for (String file : entry.getValue()) {
         String[] deltaFilePaths =
             updateStatusManager.getDeleteDeltaFilePath(file, segment.getSegmentNo());
         for (String deltaFilePath : deltaFilePaths) {
-          FileFactory.deleteFile(deltaFilePath, FileFactory.getFileType(deltaFilePath));
+          FileFactory.deleteFile(deltaFilePath);
         }
-        FileFactory.deleteFile(file, FileFactory.getFileType(file));
+        FileFactory.deleteFile(file);
       }
     }
     deletePhysicalPartition(partitionSpecs, indexFilesMap, indexOrMergeFiles, tablePath);
     String segmentFilePath =
         CarbonTablePath.getSegmentFilePath(tablePath, segment.getSegmentFileName());
     // Deletes the physical segment file
-    FileFactory.deleteFile(segmentFilePath, FileFactory.getFileType(segmentFilePath));
+    FileFactory.deleteFile(segmentFilePath);
   }
 
   /**

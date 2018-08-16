@@ -237,7 +237,7 @@ public class SortDataRows {
     DataOutputStream stream = null;
     try {
       // open stream
-      stream = FileFactory.getDataOutputStream(file.getPath(), FileFactory.FileType.LOCAL,
+      stream = FileFactory.getDataOutputStream(file.getPath(),
           parameters.getFileWriteBufferSize(), parameters.getSortTempCompressorName());
       // write number of entries to the file
       stream.writeInt(entryCountLocal);

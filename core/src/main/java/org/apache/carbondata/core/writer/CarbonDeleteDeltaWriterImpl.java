@@ -43,17 +43,13 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
 
   private String filePath;
 
-  private FileFactory.FileType fileType;
-
   private DataOutputStream dataOutStream = null;
 
   /**
    * @param filePath
-   * @param fileType
    */
-  public CarbonDeleteDeltaWriterImpl(String filePath, FileFactory.FileType fileType) {
+  public CarbonDeleteDeltaWriterImpl(String filePath) {
     this.filePath = filePath;
-    this.fileType = fileType;
 
   }
 
@@ -66,8 +62,8 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
   public void write(DeleteDeltaBlockDetails deleteDeltaBlockDetails) throws IOException {
     BufferedWriter brWriter = null;
     try {
-      FileFactory.createNewFile(filePath, fileType);
-      dataOutStream = FileFactory.getDataOutputStream(filePath, fileType);
+      FileFactory.createNewFile(filePath);
+      dataOutStream = FileFactory.getDataOutputStream(filePath);
       Gson gsonObjectToWrite = new Gson();
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutStream,
           CarbonCommonConstants.DEFAULT_CHARSET));

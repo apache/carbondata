@@ -67,17 +67,16 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
     DataOutputStream dataOutputStream = null;
     Gson gsonObjectToWrite = new Gson();
     String schemaPath = getSchemaPath(storePath, dataMapSchema.getDataMapName());
-    FileFactory.FileType fileType = FileFactory.getFileType(schemaPath);
-    if (FileFactory.isFileExist(schemaPath, fileType)) {
+    if (FileFactory.isFileExist(schemaPath)) {
       throw new IOException(
           "DataMap with name " + dataMapSchema.getDataMapName() + " already exists in storage");
     }
     // write the datamap shema in json format.
     try {
-      FileFactory.mkdirs(storePath, fileType);
-      FileFactory.createNewFile(schemaPath, fileType);
+      FileFactory.mkdirs(storePath);
+      FileFactory.createNewFile(schemaPath);
       dataOutputStream =
-          FileFactory.getDataOutputStream(schemaPath, fileType);
+          FileFactory.getDataOutputStream(schemaPath);
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
 
@@ -153,7 +152,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
         String absolutePath = file.getAbsolutePath();
         dataInputStream =
             FileFactory.getDataInputStream(
-                absolutePath, FileFactory.getFileType(absolutePath));
+                absolutePath);
         inStream = new InputStreamReader(dataInputStream,
             Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         buffReader = new BufferedReader(inStream);
@@ -169,7 +168,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
   public void dropSchema(String dataMapName)
       throws IOException {
     String schemaPath = getSchemaPath(storePath, dataMapName);
-    if (!FileFactory.isFileExist(schemaPath, FileFactory.getFileType(schemaPath))) {
+    if (!FileFactory.isFileExist(schemaPath)) {
       throw new IOException("DataMap with name " + dataMapName + " does not exists in storage");
     }
     Iterator<DataMapSchema> iterator = dataMapSchemas.iterator();
@@ -180,7 +179,7 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
       }
     }
     touchMDTFile();
-    if (!FileFactory.deleteFile(schemaPath, FileFactory.getFileType(schemaPath))) {
+    if (!FileFactory.deleteFile(schemaPath)) {
       throw new IOException("DataMap with name " + dataMapName + " cannot be deleted");
     }
   }
@@ -209,8 +208,6 @@ public class DiskBasedDMSchemaStorageProvider implements DataMapSchemaStoragePro
     if (!FileFactory.isFileExist(mdtFilePath)) {
       FileFactory.createNewFile(
           mdtFilePath,
-          FileFactory.getFileType(mdtFilePath),
-          true,
           new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL));
     }
     long lastModifiedTime = System.currentTimeMillis();

@@ -712,8 +712,7 @@ public final class CarbonUtil {
    */
   public static boolean isFileExists(String fileName) {
     try {
-      FileFactory.FileType fileType = FileFactory.getFileType(fileName);
-      if (FileFactory.isFileExist(fileName, fileType)) {
+      if (FileFactory.isFileExist(fileName)) {
         return true;
       }
     } catch (IOException e) {
@@ -728,11 +727,10 @@ public final class CarbonUtil {
   public static boolean checkAndCreateFolder(String path) {
     boolean created = false;
     try {
-      FileFactory.FileType fileType = FileFactory.getFileType(path);
-      if (FileFactory.isFileExist(path, fileType)) {
+      if (FileFactory.isFileExist(path)) {
         created = true;
       } else {
-        created = FileFactory.mkdirs(path, fileType);
+        created = FileFactory.mkdirs(path);
       }
     } catch (IOException e) {
       LOGGER.error(e.getMessage(), e);
@@ -747,8 +745,7 @@ public final class CarbonUtil {
   public static boolean checkAndCreateFolderWithPermission(String path) {
     boolean created = false;
     try {
-      FileFactory.FileType fileType = FileFactory.getFileType(path);
-      if (FileFactory.isFileExist(path, fileType)) {
+      if (FileFactory.isFileExist(path)) {
         created = true;
       } else {
         FileFactory.createDirectoryAndSetPermission(path,
@@ -765,8 +762,7 @@ public final class CarbonUtil {
    * This method will return the size of a given file
    */
   public static long getFileSize(String filePath) {
-    FileFactory.FileType fileType = FileFactory.getFileType(filePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(filePath, fileType);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(filePath);
     return carbonFile.getSize();
   }
 
@@ -1017,7 +1013,7 @@ public final class CarbonUtil {
                 .getTimeStampFromFileName(tableBlockInfoList.get(0).getFilePath()),
             tableBlockInfoList.get(0).getVersion());
     CarbonFile carbonFile = FileFactory
-        .getCarbonFile(carbonIndexFilePath, FileFactory.getFileType(carbonIndexFilePath));
+        .getCarbonFile(carbonIndexFilePath);
     // in case of carbonIndex file whole file is meta only so reading complete file.
     return carbonFile.getSize();
   }
@@ -1268,7 +1264,7 @@ public final class CarbonUtil {
 
     try {
       fileReader =
-          FileFactory.getDataInputStream(csvFilePath, FileFactory.getFileType(csvFilePath));
+          FileFactory.getDataInputStream(csvFilePath);
       bufferedReader = new BufferedReader(new InputStreamReader(fileReader,
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       readLine = bufferedReader.readLine();
@@ -1287,7 +1283,7 @@ public final class CarbonUtil {
 
     try {
       fileReader = FileFactory.getDataInputStream(
-          csvFilePath, FileFactory.getFileType(csvFilePath), -1, hadoopConf);
+          csvFilePath, -1, hadoopConf);
       bufferedReader = new BufferedReader(new InputStreamReader(fileReader,
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       readLine = bufferedReader.readLine();
@@ -2352,9 +2348,8 @@ public final class CarbonUtil {
 
   public static void dropDatabaseDirectory(String databasePath)
       throws IOException, InterruptedException {
-    FileFactory.FileType fileType = FileFactory.getFileType(databasePath);
-    if (FileFactory.isFileExist(databasePath, fileType)) {
-      CarbonFile dbPath = FileFactory.getCarbonFile(databasePath, fileType);
+    if (FileFactory.isFileExist(databasePath)) {
+      CarbonFile dbPath = FileFactory.getCarbonFile(databasePath);
       CarbonUtil.deleteFoldersAndFiles(dbPath);
     }
   }
@@ -2535,10 +2530,9 @@ public final class CarbonUtil {
           }
           String tableStatusPath =
               CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
-          if (FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
+          if (FileFactory.isFileExist(tableStatusPath)) {
             lastUpdateTime =
-                FileFactory.getCarbonFile(tableStatusPath, FileFactory.getFileType(tableStatusPath))
-                    .getLastModifiedTime();
+                FileFactory.getCarbonFile(tableStatusPath).getLastModifiedTime();
           }
           if (!FileFactory.isFileExist(metadataPath)) {
             dataSize = FileFactory.getDirectorySize(carbonTable.getTablePath());
@@ -2598,7 +2592,7 @@ public final class CarbonUtil {
         break;
       case LOCAL:
       default:
-        segmentPath = FileFactory.getUpdatedFilePath(segmentPath, fileType);
+        segmentPath = FileFactory.getUpdatedFilePath(segmentPath);
         File file = new File(segmentPath);
         File[] segmentFiles = file.listFiles();
         if (null != segmentFiles) {
@@ -2827,10 +2821,10 @@ public final class CarbonUtil {
             + " (bytes");
       }
       dataOutputStream = FileFactory
-          .getDataOutputStream(carbonStoreFilePath, FileFactory.getFileType(carbonStoreFilePath),
+          .getDataOutputStream(carbonStoreFilePath,
               bufferSize, blockSize);
       dataInputStream = FileFactory
-          .getDataInputStream(localFilePath, FileFactory.getFileType(localFilePath), bufferSize);
+          .getDataInputStream(localFilePath, bufferSize);
       IOUtils.copyBytes(dataInputStream, dataOutputStream, bufferSize);
     } finally {
       CarbonUtil.closeStream(dataInputStream);
@@ -3173,8 +3167,7 @@ public final class CarbonUtil {
     // if the carbontable is support flat folder
     if (supportFlatFolder) {
       segmentPath = carbonTable.getTablePath();
-      FileFactory.FileType fileType = FileFactory.getFileType(segmentPath);
-      if (FileFactory.isFileExist(segmentPath, fileType)) {
+      if (FileFactory.isFileExist(segmentPath)) {
         fileStore.readAllIIndexOfSegment(segmentPath);
         Map<String, byte[]> carbonIndexMap = fileStore.getCarbonIndexMap();
         if (carbonIndexMap.size() == 0) {
@@ -3204,8 +3197,7 @@ public final class CarbonUtil {
       // get the carbon index file header from a valid segment
       for (Segment segment : validSegments) {
         segmentPath = carbonTable.getSegmentPath(segment.getSegmentNo());
-        FileFactory.FileType fileType = FileFactory.getFileType(segmentPath);
-        if (FileFactory.isFileExist(segmentPath, fileType)) {
+        if (FileFactory.isFileExist(segmentPath)) {
           fileStore.readAllIIndexOfSegment(segmentPath);
           Map<String, byte[]> carbonIndexMap = fileStore.getCarbonIndexMap();
           if (carbonIndexMap.size() == 0) {
@@ -3382,7 +3374,7 @@ public final class CarbonUtil {
       throws IOException {
     final String path = getIndexServerTempPath(tablePath, queryId);
     CarbonFile file = FileFactory.getCarbonFile(path);
-    if (!file.mkdirs(path)) {
+    if (!file.mkdirs()) {
       LOGGER.info("Unable to create table directory for index server");
       return null;
     } else {

@@ -22,7 +22,6 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -48,7 +47,6 @@ import net.jpountz.lz4.LZ4BlockOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.apache.commons.io.FileUtils;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.fs.permission.FsPermission;
@@ -59,15 +57,22 @@ import org.xerial.snappy.SnappyOutputStream;
 public class LocalCarbonFile implements CarbonFile {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(LocalCarbonFile.class.getName());
+
   private File file;
+
+  private String absoluteFilePath;
 
   public LocalCarbonFile(String filePath) {
     Path pathWithoutSchemeAndAuthority = Path.getPathWithoutSchemeAndAuthority(new Path(filePath));
-    file = new File(pathWithoutSchemeAndAuthority.toString());
+    filePath = pathWithoutSchemeAndAuthority.toString().replace("\\", "/");
+    absoluteFilePath = FileFactory.getUpdatedFilePath(filePath);
+    file = new File(absoluteFilePath);
   }
 
-  public LocalCarbonFile(File file) {
+  LocalCarbonFile(File file) {
     this.file = file;
+    String filePath = file.getAbsolutePath().replace("\\", "/");
+    absoluteFilePath = FileFactory.getUpdatedFilePath(filePath);
   }
 
   @Override
@@ -77,28 +82,17 @@ public class LocalCarbonFile implements CarbonFile {
 
   @Override
   public CarbonFile[] listFiles(final CarbonFileFilter fileFilter) {
-    if (!file.isDirectory()) {
+    if (!isDirectory()) {
       return new CarbonFile[0];
     }
-
-    File[] files = file.listFiles(new FileFilter() {
-
-      @Override
-      public boolean accept(File pathname) {
-        return fileFilter.accept(new LocalCarbonFile(pathname));
-      }
-    });
-
+    File[] files = file.listFiles(pathname -> fileFilter.accept(new LocalCarbonFile(pathname)));
     if (files == null) {
       return new CarbonFile[0];
     }
-
     CarbonFile[] carbonFiles = new CarbonFile[files.length];
-
     for (int i = 0; i < carbonFiles.length; i++) {
       carbonFiles[i] = new LocalCarbonFile(files[i]);
     }
-
     return carbonFiles;
   }
 
@@ -114,10 +108,7 @@ public class LocalCarbonFile implements CarbonFile {
 
   @Override
   public boolean exists() {
-    if (file != null) {
-      return file.exists();
-    }
-    return false;
+    return file.exists();
   }
 
   @Override
@@ -145,14 +136,14 @@ public class LocalCarbonFile implements CarbonFile {
     return file.length();
   }
 
-  public boolean renameTo(String changeToName) {
-    changeToName = FileFactory.getUpdatedFilePath(changeToName, FileFactory.FileType.LOCAL);
-    return file.renameTo(new File(changeToName));
+  public boolean renameTo(String changetoName) {
+    changetoName = FileFactory.getUpdatedFilePath(changetoName);
+    return file.renameTo(new File(changetoName));
   }
 
   public boolean delete() {
     try {
-      return deleteFile(file.getAbsolutePath(), FileFactory.getFileType(file.getAbsolutePath()));
+      return deleteFile();
     } catch (IOException e) {
       LOGGER.error("Exception occurred:" + e.getMessage(), e);
       return false;
@@ -161,7 +152,6 @@ public class LocalCarbonFile implements CarbonFile {
 
   @Override
   public CarbonFile[] listFiles() {
-
     if (!file.isDirectory()) {
       return new CarbonFile[0];
     }
@@ -173,21 +163,16 @@ public class LocalCarbonFile implements CarbonFile {
     for (int i = 0; i < carbonFiles.length; i++) {
       carbonFiles[i] = new LocalCarbonFile(files[i]);
     }
-
     return carbonFiles;
-
   }
 
   @Override
   public List<CarbonFile> listFiles(Boolean recursive) {
-    if (!file.isDirectory()) {
-      return new ArrayList<CarbonFile>();
+    if (!isDirectory()) {
+      return new ArrayList<>();
     }
     Collection<File> fileCollection = FileUtils.listFiles(file, null, true);
-    if (fileCollection == null) {
-      return new ArrayList<CarbonFile>();
-    }
-    List<CarbonFile> carbonFiles = new ArrayList<CarbonFile>();
+    List<CarbonFile> carbonFiles = new ArrayList<>();
     for (File file : fileCollection) {
       carbonFiles.add(new LocalCarbonFile(file));
     }
@@ -198,13 +183,13 @@ public class LocalCarbonFile implements CarbonFile {
   public List<CarbonFile> listFiles(boolean recursive, CarbonFileFilter fileFilter)
       throws IOException {
     if (!file.isDirectory()) {
-      return new ArrayList<CarbonFile>();
+      return new ArrayList<>();
     }
     Collection<File> fileCollection = FileUtils.listFiles(file, null, recursive);
-    if (fileCollection == null) {
-      return new ArrayList<CarbonFile>();
+    if (fileCollection.isEmpty()) {
+      return new ArrayList<>();
     }
-    List<CarbonFile> carbonFiles = new ArrayList<CarbonFile>();
+    List<CarbonFile> carbonFiles = new ArrayList<>();
     for (File file : fileCollection) {
       CarbonFile carbonFile = new LocalCarbonFile(file);
       if (fileFilter.accept(carbonFile)) {
@@ -243,17 +228,16 @@ public class LocalCarbonFile implements CarbonFile {
     boolean fileTruncatedSuccessfully = false;
     // temporary file name
     String tempWriteFilePath = fileName + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
-    FileFactory.FileType fileType = FileFactory.getFileType(fileName);
     try {
-      CarbonFile tempFile = null;
+      CarbonFile tempFile;
       // delete temporary file if it already exists at a given path
-      if (FileFactory.isFileExist(tempWriteFilePath, fileType)) {
-        tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
+      if (isFileExist()) {
+        tempFile = FileFactory.getCarbonFile(tempWriteFilePath);
         tempFile.delete();
       }
       // create new temporary file
-      FileFactory.createNewFile(tempWriteFilePath, fileType);
-      tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
+      FileFactory.createNewFile(tempWriteFilePath);
+      tempFile = FileFactory.getCarbonFile(tempWriteFilePath);
       source = new FileInputStream(fileName).getChannel();
       destination = new FileOutputStream(tempWriteFilePath).getChannel();
       long read = destination.transferFrom(source, 0, validDataEndOffset);
@@ -282,7 +266,7 @@ public class LocalCarbonFile implements CarbonFile {
    *
    * @param fileTimeStamp time to be compared with latest timestamp of file
    * @param endOffset     file length to be compared with current length of file
-   * @return
+   * @return true if the file is modified otherwise return false.
    */
   @Override
   public boolean isFileModified(long fileTimeStamp, long endOffset) {
@@ -305,38 +289,34 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   @Override
-  public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
-      int bufferSize, boolean append) throws FileNotFoundException {
-    path = FileFactory.getUpdatedFilePath(path, FileFactory.FileType.LOCAL);
+  public DataOutputStream getDataOutputStream(int bufferSize, boolean append) throws
+      FileNotFoundException {
     return new DataOutputStream(
-        new BufferedOutputStream(new FileOutputStream(path, append), bufferSize));
+        new BufferedOutputStream(new FileOutputStream(absoluteFilePath, append), bufferSize));
   }
 
   @Override
-  public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
-      int bufferSize, Configuration configuration) throws IOException {
-    return getDataInputStream(path, fileType, bufferSize,
-        CarbonUtil.inferCompressorFromFileName(path));
+  public DataInputStream getDataInputStream(int bufferSize) throws IOException {
+    return getDataInputStream(bufferSize,
+        CarbonUtil.inferCompressorFromFileName(file.getAbsolutePath()));
   }
 
   @Override
-  public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
-      int bufferSize, String compressor) throws IOException {
-    path = path.replace("\\", "/");
-    path = FileFactory.getUpdatedFilePath(path, fileType);
+  public DataInputStream getDataInputStream(int bufferSize, String compressor)
+      throws IOException {
     InputStream inputStream;
     if (compressor.isEmpty()) {
-      inputStream = new FileInputStream(path);
+      inputStream = new FileInputStream(absoluteFilePath);
     } else if ("GZIP".equalsIgnoreCase(compressor)) {
-      inputStream = new GZIPInputStream(new FileInputStream(path));
+      inputStream = new GZIPInputStream(new FileInputStream(absoluteFilePath));
     } else if ("BZIP2".equalsIgnoreCase(compressor)) {
-      inputStream = new BZip2CompressorInputStream(new FileInputStream(path));
+      inputStream = new BZip2CompressorInputStream(new FileInputStream(absoluteFilePath));
     } else if ("SNAPPY".equalsIgnoreCase(compressor)) {
-      inputStream = new SnappyInputStream(new FileInputStream(path));
+      inputStream = new SnappyInputStream(new FileInputStream(absoluteFilePath));
     } else if ("LZ4".equalsIgnoreCase(compressor)) {
-      inputStream = new LZ4BlockInputStream(new FileInputStream(path));
+      inputStream = new LZ4BlockInputStream(new FileInputStream(absoluteFilePath));
     } else if ("ZSTD".equalsIgnoreCase(compressor)) {
-      inputStream = new ZstdInputStream(new FileInputStream(path));
+      inputStream = new ZstdInputStream(new FileInputStream(absoluteFilePath));
     } else {
       throw new IOException("Unsupported compressor: " + compressor);
     }
@@ -351,19 +331,15 @@ public class LocalCarbonFile implements CarbonFile {
   /**
    * return the datainputStream which is seek to the offset of file
    *
-   * @param path
-   * @param fileType
    * @param bufferSize
    * @param offset
    * @return DataInputStream
    * @throws IOException
    */
   @Override
-  public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
-      int bufferSize, long offset) throws IOException {
-    path = path.replace("\\", "/");
-    path = FileFactory.getUpdatedFilePath(path, fileType);
-    FileInputStream fis = new FileInputStream(path);
+  public DataInputStream getDataInputStream(int bufferSize, long offset) throws
+      IOException {
+    FileInputStream fis = new FileInputStream(absoluteFilePath);
     long actualSkipSize = 0;
     long skipSize = offset;
     try {
@@ -379,47 +355,41 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   @Override
-  public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType)
+  public DataOutputStream getDataOutputStream()
       throws IOException {
-    path = path.replace("\\", "/");
-    path = FileFactory.getUpdatedFilePath(path, FileFactory.FileType.LOCAL);
-    return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
+    return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(absoluteFilePath)));
   }
 
   @Override
-  public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
-      int bufferSize, long blockSize) throws IOException {
-    return getDataOutputStream(path, fileType, bufferSize, blockSize, (short) 1);
+  public DataOutputStream getDataOutputStream(int bufferSize, long blockSize) throws IOException {
+    return getDataOutputStream(bufferSize, blockSize, (short) 1);
   }
 
   @Override
-  public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
-      int bufferSize, long blockSize, short replication) throws IOException {
-    path = path.replace("\\", "/");
-    path = FileFactory.getUpdatedFilePath(path, fileType);
-    return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path), bufferSize));
+  public DataOutputStream getDataOutputStream(int bufferSize, long blockSize, short replication)
+      throws IOException {
+    return new DataOutputStream(
+        new BufferedOutputStream(new FileOutputStream(absoluteFilePath), bufferSize));
   }
 
   @Override
-  public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
-      int bufferSize, String compressor) throws IOException {
-    path = path.replace("\\", "/");
-    path = FileFactory.getUpdatedFilePath(path, fileType);
+  public DataOutputStream getDataOutputStream(int bufferSize, String compressor)
+      throws IOException {
     OutputStream outputStream;
     if (compressor.isEmpty()) {
-      outputStream = new FileOutputStream(path);
+      outputStream = new FileOutputStream(absoluteFilePath);
     } else if ("GZIP".equalsIgnoreCase(compressor)) {
-      outputStream = new GZIPOutputStream(new FileOutputStream(path));
+      outputStream = new GZIPOutputStream(new FileOutputStream(absoluteFilePath));
     } else if ("BZIP2".equalsIgnoreCase(compressor)) {
-      outputStream = new BZip2CompressorOutputStream(new FileOutputStream(path));
+      outputStream = new BZip2CompressorOutputStream(new FileOutputStream(absoluteFilePath));
     } else if ("SNAPPY".equalsIgnoreCase(compressor)) {
-      outputStream = new SnappyOutputStream(new FileOutputStream(path));
+      outputStream = new SnappyOutputStream(new FileOutputStream(absoluteFilePath));
     } else if ("LZ4".equalsIgnoreCase(compressor)) {
-      outputStream = new LZ4BlockOutputStream(new FileOutputStream(path));
+      outputStream = new LZ4BlockOutputStream(new FileOutputStream(absoluteFilePath));
     } else if ("ZSTD".equalsIgnoreCase(compressor)) {
       // compression level 1 is cost-effective for sort temp file
       // which is not used for storage
-      outputStream = new ZstdOutputStream(new FileOutputStream(path), 1);
+      outputStream = new ZstdOutputStream(new FileOutputStream(absoluteFilePath), 1);
     } else {
       throw new IOException("Unsupported compressor: " + compressor);
     }
@@ -432,78 +402,42 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   @Override
-  public boolean isFileExist(String filePath, boolean performFileCheck)
-      throws IOException {
-    filePath = filePath.replace("\\", "/");
-    filePath = FileFactory.getUpdatedFilePath(filePath);
-    File defaultFile = new File(filePath);
-
+  public boolean isFileExist(boolean performFileCheck) throws IOException {
     if (performFileCheck) {
-      return defaultFile.exists() && defaultFile.isFile();
+      return file.exists() && file.isFile();
     } else {
-      return defaultFile.exists();
+      return file.exists();
     }
   }
 
   @Override
-  public boolean isFileExist(String filePath)
-      throws IOException {
-    filePath = filePath.replace("\\", "/");
-    filePath = FileFactory.getUpdatedFilePath(filePath);
-    File defaultFile = new File(filePath);
-    return defaultFile.exists();
+  public boolean isFileExist() throws IOException {
+    return file.exists();
   }
 
   @Override
-  public boolean createNewFile(String filePath, FileFactory.FileType fileType)
-      throws IOException {
-    filePath = filePath.replace("\\", "/");
-    filePath = FileFactory.getUpdatedFilePath(filePath, fileType);
-    File file = new File(filePath);
+  public boolean createNewFile(final FsPermission permission) throws IOException {
     return file.createNewFile();
   }
 
   @Override
-  public boolean createNewFile(String filePath, FileFactory.FileType fileType, boolean doAs,
-      final FsPermission permission) throws IOException {
-    filePath = filePath.replace("\\", "/");
-    filePath = FileFactory.getUpdatedFilePath(filePath, fileType);
-    File file = new File(filePath);
-    return file.createNewFile();
-  }
-
-  @Override
-  public boolean deleteFile(String filePath, FileFactory.FileType fileType)
-      throws IOException {
-    filePath = filePath.replace("\\", "/");
-    filePath = FileFactory.getUpdatedFilePath(filePath, fileType);
-    File file = new File(filePath);
+  public boolean deleteFile() throws IOException {
     return FileFactory.deleteAllFilesOfDir(file);
   }
 
   @Override
-  public boolean mkdirs(String filePath)
-      throws IOException {
-    filePath = filePath.replace("\\", "/");
-    filePath = FileFactory.getUpdatedFilePath(filePath);
-    File file = new File(filePath);
+  public boolean mkdirs() throws IOException {
     return file.mkdirs();
   }
 
   @Override
-  public DataOutputStream getDataOutputStreamUsingAppend(String path, FileFactory.FileType fileType)
-      throws IOException {
-    path = path.replace("\\", "/");
-    path = FileFactory.getUpdatedFilePath(path, fileType);
-    return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path, true)));
+  public DataOutputStream getDataOutputStreamUsingAppend() throws IOException {
+    return new DataOutputStream(
+        new BufferedOutputStream(new FileOutputStream(absoluteFilePath, true)));
   }
 
   @Override
-  public boolean createNewLockFile(String filePath, FileFactory.FileType fileType)
-      throws IOException {
-    filePath = filePath.replace("\\", "/");
-    filePath = FileFactory.getUpdatedFilePath(filePath, fileType);
-    File file = new File(filePath);
+  public boolean createNewLockFile() throws IOException {
     return file.createNewFile();
   }
 
@@ -518,13 +452,13 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   @Override
-  public boolean setReplication(String filePath, short replication) throws IOException {
+  public boolean setReplication(short replication) throws IOException {
     // local carbon file does not need replication
     return true;
   }
 
   @Override
-  public short getDefaultReplication(String filePath) throws IOException {
+  public short getDefaultReplication() {
     return 1;
   }
 

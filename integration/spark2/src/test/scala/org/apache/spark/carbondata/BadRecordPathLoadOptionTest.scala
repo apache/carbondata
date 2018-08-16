@@ -62,8 +62,7 @@ class BadRecordPathLoadOptionTest extends Spark2QueryTest with BeforeAndAfterAll
     val badStorePath =
       CarbonEnv.getCarbonTable(Some("default"), "salestest")(sqlContext.sparkSession).getTableInfo
         .getFactTable.getTableProperties.get("bad_record_path") + "/0/0"
-    val carbonFile: CarbonFile = FileFactory
-      .getCarbonFile(badStorePath, FileFactory.getFileType(badStorePath))
+    val carbonFile: CarbonFile = FileFactory.getCarbonFile(badStorePath)
     var exists: Boolean = carbonFile.exists()
     if (exists) {
       val listFiles: Array[CarbonFile] = carbonFile.listFiles(new CarbonFileFilter {
