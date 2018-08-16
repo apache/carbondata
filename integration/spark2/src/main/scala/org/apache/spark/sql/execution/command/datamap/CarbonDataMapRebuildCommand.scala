@@ -41,8 +41,13 @@ case class CarbonDataMapRebuildCommand(
       .asScala
       .find(p => p.getDataMapName.equalsIgnoreCase(dataMapName))
     if (schemaOption.isEmpty) {
-      throw new MalformedDataMapCommandException(
-        s"Datamap with name $dataMapName does not exist on table ${tableIdentifier.get.table}")
+      if (tableIdentifier.isDefined) {
+        throw new MalformedDataMapCommandException(
+          s"Datamap with name $dataMapName does not exist on table ${tableIdentifier.get.table}")
+      } else {
+        throw new MalformedDataMapCommandException(
+          s"Datamap with name $dataMapName does not exist on any table")
+      }
     }
     val schema = schemaOption.get
     if (!schema.isLazy) {
