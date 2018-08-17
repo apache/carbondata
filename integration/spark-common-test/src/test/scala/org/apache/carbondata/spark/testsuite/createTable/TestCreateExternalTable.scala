@@ -90,6 +90,25 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("create external table with specified schema") {
+    assert(new File(originDataPath).exists())
+    sql("DROP TABLE IF EXISTS source")
+    val ex = intercept[AnalysisException] {
+      sql(
+        s"""
+           |CREATE EXTERNAL TABLE source (key INT)
+           |STORED BY 'carbondata'
+           |LOCATION '$storeLocation/origin'
+     """.stripMargin)
+    }
+    assert(ex.message.contains("Schema may not be specified for external table"))
+
+    sql("DROP TABLE IF EXISTS source")
+
+    // DROP TABLE should not delete data
+    assert(new File(originDataPath).exists())
+  }
+
   test("create external table with empty folder") {
     val exception = intercept[AnalysisException] {
       sql(
