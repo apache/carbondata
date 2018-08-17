@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.parser
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.antlr.v4.runtime.tree.TerminalNode
@@ -127,6 +128,12 @@ object CarbonSparkSqlParserUtil {
     var isTransactionalTable: Boolean = true
 
     val tableInfo = if (external) {
+      if (fields.nonEmpty) {
+        // user provided schema for this external table, this is not allow currently
+        // see CARBONDATA-2866
+        operationNotAllowed(
+          "Schema may not be specified for external table", columns)
+      }
       // read table info from schema file in the provided table path
       // external table also must convert table name to lower case
       val identifier = AbsoluteTableIdentifier.from(
@@ -142,15 +149,21 @@ object CarbonSparkSqlParserUtil {
             isTransactionalTable = false
             SchemaReader.inferSchema(identifier, false)
           }
-        }
-        else {
+        } else {
           SchemaReader.getTableInfo(identifier)
         }
-      }
-      catch {
+      } catch {
         case e: Throwable =>
           operationNotAllowed(s"Invalid table path provided: ${ tablePath.get } ", tableHeader)
       }
+
+      if (fields.nonEmpty) {
+        // user provided schema for this external table, this is not allow currently
+        // see CARBONDATA-2866
+        operationNotAllowed(s" " +
+                            s"files at location ${tablePath.get}", tableHeader)
+      }
+
       // set "_external" property, so that DROP TABLE will not delete the data
       if (provider.equalsIgnoreCase("'carbonfile'")) {
         table.getFactTable.getTableProperties.put("_filelevelformat", "true")
