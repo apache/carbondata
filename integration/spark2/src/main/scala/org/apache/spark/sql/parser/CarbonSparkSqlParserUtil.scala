@@ -157,13 +157,6 @@ object CarbonSparkSqlParserUtil {
           operationNotAllowed(s"Invalid table path provided: ${ tablePath.get } ", tableHeader)
       }
 
-      if (fields.nonEmpty) {
-        // user provided schema for this external table, this is not allow currently
-        // see CARBONDATA-2866
-        operationNotAllowed(s" " +
-                            s"files at location ${tablePath.get}", tableHeader)
-      }
-
       // set "_external" property, so that DROP TABLE will not delete the data
       if (provider.equalsIgnoreCase("'carbonfile'")) {
         table.getFactTable.getTableProperties.put("_filelevelformat", "true")
