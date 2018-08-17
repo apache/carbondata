@@ -35,7 +35,7 @@ public class InternalCarbonStoreFactory {
   public static synchronized InternalCarbonStore getStore(String storeName, StoreConf conf)
       throws IOException {
     InternalCarbonStore store = stores.getOrDefault(storeName, newStore(conf));
-    stores.putIfAbsent(storeName, store);
+    stores.put(storeName, store);
     return store;
   }
 

@@ -61,7 +61,7 @@ public class InternalCarbonStoreImpl extends DistributedCarbonStore implements I
     CarbonTable carbonTable = tableCache.getOrDefault(
         tableIdentifier,
         CarbonTable.buildFromTableInfo(storeService.getTable(tableIdentifier)));
-    tableCache.putIfAbsent(tableIdentifier, carbonTable);
+    tableCache.put(tableIdentifier, carbonTable);
     return carbonTable;
   }
 
@@ -75,7 +75,7 @@ public class InternalCarbonStoreImpl extends DistributedCarbonStore implements I
    */
   @Override
   public <T> Scanner<T> newScanner(TableIdentifier identifier, ScanDescriptor scanDescriptor,
-      Map<String, String> scanOption, CarbonReadSupport<T> readSupport)
+      Map<String, String> scanOption, Class<? extends CarbonReadSupport<T>> readSupportClass)
       throws CarbonException {
     Objects.requireNonNull(identifier);
     Objects.requireNonNull(scanDescriptor);
@@ -99,7 +99,7 @@ public class InternalCarbonStoreImpl extends DistributedCarbonStore implements I
       pruner = new LocalPruner(storeConf);
     }
     if (isOpPushdown) {
-      scanner = new RemoteDataScanner<>(tableInfo, scanDescriptor, scanOption, readSupport);
+      scanner = new RemoteDataScanner<>(tableInfo, scanDescriptor, scanOption, readSupportClass);
     } else {
       scanner = new LocalDataScanner<>(storeConf, scanDescriptor, scanOption);
     }

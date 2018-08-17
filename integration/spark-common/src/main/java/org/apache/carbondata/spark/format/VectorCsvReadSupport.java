@@ -45,6 +45,7 @@ import org.apache.spark.unsafe.types.UTF8String;
 @InterfaceStability.Evolving
 @InterfaceAudience.Internal
 public class VectorCsvReadSupport<T> implements CarbonReadSupport<T> {
+
   private static final int MAX_BATCH_SIZE =
       CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
   private CarbonColumn[] carbonColumns;

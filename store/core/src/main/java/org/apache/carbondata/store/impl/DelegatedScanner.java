@@ -20,8 +20,6 @@ package org.apache.carbondata.store.impl;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
@@ -32,8 +30,8 @@ import org.apache.carbondata.store.devapi.ScanUnit;
 import org.apache.carbondata.store.devapi.Scanner;
 
 public class DelegatedScanner<T> implements Scanner<T> {
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(DelegatedScanner.class.getCanonicalName());
+
+  private static final long serialVersionUID = -503428726252745193L;
 
   private Pruner pruner;
   private DataScanner<T> scanner;

@@ -31,10 +31,10 @@ import org.apache.carbondata.horizon.rest.model.view.DropTableRequest;
 import org.apache.carbondata.horizon.rest.model.view.LoadRequest;
 import org.apache.carbondata.horizon.rest.model.view.SelectRequest;
 import org.apache.carbondata.horizon.rest.model.view.SelectResponse;
-import org.apache.carbondata.store.api.conf.StoreConf;
-import org.apache.carbondata.store.api.exception.CarbonException;
-import org.apache.carbondata.store.impl.worker.Worker;
+import org.apache.carbondata.sdk.store.conf.StoreConf;
+import org.apache.carbondata.sdk.store.exception.CarbonException;
 import org.apache.carbondata.sdk.store.util.StoreUtil;
+import org.apache.carbondata.store.impl.worker.Worker;
 
 import org.junit.AfterClass;
 import org.junit.Assert;

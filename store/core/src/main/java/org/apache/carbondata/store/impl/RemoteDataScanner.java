@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
@@ -46,17 +46,19 @@ import org.apache.carbondata.store.impl.service.model.ScanResponse;
  */
 public class RemoteDataScanner<T> implements DataScanner<T> {
 
+  private static final long serialVersionUID = 8373625968314105193L;
+
   private TableInfo tableInfo;
   private ScanDescriptor scanDescriptor;
-  private Map<String, String> scanOption;
-  private CarbonReadSupport<T> readSupport;
+  //  private Map<String, String> scanOption;
+  private Class<? extends CarbonReadSupport<T>> readSupportClass;
 
   RemoteDataScanner(TableInfo tableInfo, ScanDescriptor scanDescriptor,
-      Map<String, String> scanOption, CarbonReadSupport<T> readSupport) {
+      Map<String, String> scanOption, Class<? extends CarbonReadSupport<T>> readSupportClass) {
     this.tableInfo = tableInfo;
     this.scanDescriptor = scanDescriptor;
-    this.scanOption = scanOption;
-    this.readSupport = readSupport;
+    // this.scanOption = scanOption;
+    this.readSupportClass = readSupportClass;
   }
 
   @Override
@@ -67,7 +69,7 @@ public class RemoteDataScanner<T> implements DataScanner<T> {
     } else {
       throw new CarbonException(input.getClass().getName() + " is not supported");
     }
-    int queryId = new Random().nextInt();
+    int queryId = ThreadLocalRandom.current().nextInt();
     CarbonMultiBlockSplit split = new CarbonMultiBlockSplit(toBeScan, input.preferredLocations());
     try {
       ScanRequest request = new ScanRequest(queryId, split, tableInfo,
@@ -75,12 +77,13 @@ public class RemoteDataScanner<T> implements DataScanner<T> {
       DataService dataService =
           DataServicePool.getOrCreateDataService(((BlockScanUnit) input).getSchedulable());
       ScanResponse response = dataService.scan(request);
+      CarbonReadSupport<T> readSupport = readSupportClass.newInstance();
       List<T> rows = Arrays.stream(response.getRows())
-          .map(row -> readSupport.readRow(row))
+          .map(readSupport::readRow)
           .collect(Collectors.toList());
 
       return Collections.singletonList(new RowMajorResultBatch<>(rows)).iterator();
-    } catch (IOException e) {
+    } catch (IOException | IllegalAccessException | InstantiationException e) {
       throw new CarbonException(e);
     }
   }

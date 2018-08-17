@@ -34,7 +34,7 @@ class DataServicePool {
     DataService service = dataServicePool.getOrDefault(
         schedulable,
         ServiceFactory.createDataService(schedulable.getAddress(), schedulable.getPort()));
-    dataServicePool.putIfAbsent(schedulable, service);
+    dataServicePool.put(schedulable, service);
     return service;
   }
 

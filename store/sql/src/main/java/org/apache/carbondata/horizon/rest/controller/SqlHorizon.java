@@ -25,7 +25,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.store.api.conf.StoreConf;
+import org.apache.carbondata.sdk.store.conf.StoreConf;
 
 import org.apache.spark.sql.CarbonSessionBuilder;
 import org.apache.spark.sql.SparkSession;

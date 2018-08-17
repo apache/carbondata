@@ -26,7 +26,7 @@ import org.apache.carbondata.horizon.rest.model.validate.RequestValidator;
 import org.apache.carbondata.horizon.rest.model.view.SqlRequest;
 import org.apache.carbondata.horizon.rest.model.view.SqlResponse;
 import org.apache.carbondata.horizon.rest.sql.SparkSqlWrapper;
-import org.apache.carbondata.store.api.exception.CarbonException;
+import org.apache.carbondata.sdk.store.exception.CarbonException;
 
 import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.Dataset;

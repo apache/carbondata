@@ -18,12 +18,8 @@
 package org.apache.carbondata.store.impl.service;
 
 import java.io.Closeable;
-import java.util.Iterator;
 
-import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
-import org.apache.carbondata.store.devapi.ResultBatch;
-import org.apache.carbondata.store.devapi.ScanUnit;
 import org.apache.carbondata.store.impl.service.model.BaseResponse;
 import org.apache.carbondata.store.impl.service.model.LoadDataRequest;
 import org.apache.carbondata.store.impl.service.model.ScanRequest;

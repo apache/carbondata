@@ -57,8 +57,9 @@ public interface InternalCarbonStore extends CarbonStore {
    * Return a new Scanner that can be used in for parallel scan
    *
    * @param tableIdentifier table to scan
+   * @param scanDescriptor parameter for scan, like projection column and filter expression
    * @param scanOption options for scan, use {@link ScanOption} for the map key
-   * @param readSupport read support to convert the row to output object
+   * @param readSupportClass read support class to convert the row to output object
    * @param <T> the target object type contain in {@link ResultBatch}
    * @return a new Scanner
    * @throws CarbonException if any error occurs
@@ -67,6 +68,6 @@ public interface InternalCarbonStore extends CarbonStore {
       TableIdentifier tableIdentifier,
       ScanDescriptor scanDescriptor,
       Map<String, String> scanOption,
-      CarbonReadSupport<T> readSupport) throws CarbonException;
+      Class<? extends CarbonReadSupport<T>> readSupportClass) throws CarbonException;
 
 }

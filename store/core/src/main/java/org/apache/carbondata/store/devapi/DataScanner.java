@@ -22,8 +22,6 @@ import java.util.Iterator;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
-import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.sdk.store.descriptor.TableIdentifier;
 import org.apache.carbondata.sdk.store.exception.CarbonException;
 
 @InterfaceAudience.Developer("Integration")

@@ -17,7 +17,6 @@
 package org.apache.carbondata.hadoop.readsupport;
 
 import java.io.IOException;
-import java.io.Serializable;
 
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -25,7 +24,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 /**
  * This is the interface to convert data reading from RecordReader to row representation.
  */
-public interface CarbonReadSupport<T> extends Serializable {
+public interface CarbonReadSupport<T> {
 
   /**
    * Initialization if needed based on the projected column list

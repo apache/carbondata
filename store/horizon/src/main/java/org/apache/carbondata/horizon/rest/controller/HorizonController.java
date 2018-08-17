@@ -19,7 +19,6 @@ package org.apache.carbondata.horizon.rest.controller;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -30,6 +29,7 @@ import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.hadoop.readsupport.impl.CarbonRowReadSupport;
 import org.apache.carbondata.horizon.antlr.Parser;
 import org.apache.carbondata.horizon.rest.model.validate.RequestValidator;
 import org.apache.carbondata.horizon.rest.model.view.CreateTableRequest;
@@ -80,7 +80,7 @@ public class HorizonController {
         storeConf.load(storeFile);
       }
 
-      store = InternalCarbonStoreFactory.getStore(storeConf);
+      store = InternalCarbonStoreFactory.getStore("HorizonController", storeConf);
     } catch (IOException e) {
       throw new CarbonException(e);
     }
@@ -125,15 +125,14 @@ public class HorizonController {
     TableIdentifier table = new TableIdentifier(request.getTableName(), request.getDatabaseName());
     CarbonTable carbonTable = store.getCarbonTable(table);
     Expression expression = Parser.parseFilter(request.getFilter(), carbonTable);
-    Scanner<CarbonRow> scanner = store.newScanner(table);
-    List<ScanUnit> scanUnits = scanner.prune(table, expression);
     ScanDescriptor scanDescriptor = new ScanDescriptor(
         table, request.getSelect(), expression, request.getLimit());
+    Scanner<CarbonRow> scanner = store.newScanner(table, scanDescriptor, null,
+        CarbonRowReadSupport.class);
+    List<ScanUnit> scanUnits = scanner.prune(table, expression);
     ArrayList<Object[]> output = new ArrayList<>();
     for (ScanUnit scanUnit : scanUnits) {
-      Iterator<? extends ResultBatch<CarbonRow>> iterator = scanner.scan(
-          scanUnit, scanDescriptor, new HashMap<String, String>());
-
+      Iterator<? extends ResultBatch<CarbonRow>> iterator = scanner.scan(scanUnit);
       while (iterator.hasNext()) {
         ResultBatch<CarbonRow> rows = iterator.next();
         while (rows.hasNext()) {

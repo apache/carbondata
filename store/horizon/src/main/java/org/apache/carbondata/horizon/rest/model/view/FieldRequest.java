@@ -19,7 +19,6 @@ package org.apache.carbondata.horizon.rest.model.view;
 
 import java.util.LinkedList;
 
-import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.sdk.file.Field;
 

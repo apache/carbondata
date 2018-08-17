@@ -31,8 +31,8 @@ import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.sdk.file.CarbonWriterBuilder;
 import org.apache.carbondata.sdk.file.Field;
 import org.apache.carbondata.horizon.rest.model.view.CreateTableRequest;
-import org.apache.carbondata.store.api.descriptor.TableDescriptor;
 import org.apache.carbondata.horizon.antlr.Parser;
+import org.apache.carbondata.sdk.store.descriptor.TableDescriptor;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;

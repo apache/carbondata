@@ -41,6 +41,8 @@ import org.apache.carbondata.store.impl.service.model.ScanRequest;
  */
 public class LocalDataScanner<T> implements DataScanner<T> {
 
+  private static final long serialVersionUID = -983728796814105193L;
+
   private StoreConf storeConf;
   private ScanDescriptor scanDescriptor;
   private Map<String, String> scanOption;

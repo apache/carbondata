@@ -31,6 +31,7 @@ import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
+import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 import org.apache.carbondata.sdk.store.conf.StoreConf
 import org.apache.carbondata.sdk.store.descriptor.{ScanDescriptor, TableIdentifier}
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
@@ -102,9 +103,12 @@ case class CarbonSourceRelation(
     scanOptions.put(ScanOption.REMOTE_PRUNE, "true");
     scanOptions.put(ScanOption.OP_PUSHDOWN, "true")
     val scanner: Scanner[CarbonRow] =
-      store.newScanner(tableIdentifier, scanDesc,
-        scanOptions, new SparkRowReadSupportImpl())
-        .asInstanceOf[Scanner[CarbonRow]]
+      store.newScanner(
+        tableIdentifier,
+        scanDesc,
+        scanOptions,
+        classOf[SparkRowReadSupportImpl].asInstanceOf[Class[CarbonReadSupport[CarbonRow]]]
+      )
 
     // create RDD
     new CarbonStoreScanRDD[Row, CarbonRow](sparkSession.sparkContext,
