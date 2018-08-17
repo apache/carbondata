@@ -15,7 +15,7 @@
     limitations under the License.
 -->
 
-#S3 Guide (Alpha Feature 1.4.1)
+# S3 Guide (Alpha Feature 1.4.1)
 
 Object storage is the recommended storage format in cloud as it can support storing large data 
 files. S3 APIs are widely used for accessing object stores. This can be 
@@ -26,7 +26,7 @@ data and the data can be accessed from anywhere at any time.
 Carbondata can support any Object Storage that conforms to Amazon S3 API.
 Carbondata relies on Hadoop provided S3 filesystem APIs to access Object stores.
 
-#Writing to Object Storage
+# Writing to Object Storage
 
 To store carbondata files onto Object Store, `carbon.storelocation` property will have 
 to be configured with Object Store path in CarbonProperties file. 
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS db1.table1(col1 string, col2 int) STORED AS carbondat
 
 For more details on create table, Refer [data-management-on-carbondata](./data-management-on-carbondata.md#create-table)
 
-#Authentication
+# Authentication
 
 Authentication properties will have to be configured to store the carbondata files on to S3 location. 
 
@@ -80,12 +80,11 @@ sparkSession.sparkContext.hadoopConfiguration.set("fs.s3a.secret.key", "123")
 sparkSession.sparkContext.hadoopConfiguration.set("fs.s3a.access.key","456")
 ```
 
-#Recommendations
+# Recommendations
 
 1. Object Storage like S3 does not support file leasing mechanism(supported by HDFS) that is 
 required to take locks which ensure consistency between concurrent operations therefore, it is 
 recommended to set the configurable lock path property([carbon.lock.path](https://github.com/apache/carbondata/blob/master/docs/configuration-parameters.md#miscellaneous-configuration))
  to a HDFS directory.
 2. Concurrent data manipulation operations are not supported. Object stores follow eventual 
-consistency semantics, i.e., any put request might take some time to reflect when trying to list
-.This behaviour causes not to ensure the data read is always consistent or latest.
+consistency semantics, i.e., any put request might take some time to reflect when trying to list. This behaviour causes not to ensure the data read is always consistent or latest.
