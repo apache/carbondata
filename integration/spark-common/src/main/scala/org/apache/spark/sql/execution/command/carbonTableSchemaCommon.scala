@@ -22,9 +22,7 @@ import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
-import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -33,8 +31,6 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
-import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, DecimalType}
@@ -900,8 +896,10 @@ class TableNewProcessor(cm: TableModel) {
           s" as external file format")
       }
       tableInfo.setFormat(format.get)
-      val formatProperties = cm.tableProperties.filter(pair =>
-        pair._1.startsWith(s"${format.get.toLowerCase}.")).asJava
+      val formatProperties = new util.HashMap[String, String]()
+      cm.tableProperties
+        .filter(pair => pair._1.startsWith(s"${format.get.toLowerCase}."))
+        .foreach(p => formatProperties.put(p._1, p._2))
       tableInfo.setFormatProperties(formatProperties)
     }
     tableInfo

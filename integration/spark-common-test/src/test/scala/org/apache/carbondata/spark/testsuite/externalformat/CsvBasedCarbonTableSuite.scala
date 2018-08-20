@@ -24,6 +24,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -121,7 +122,7 @@ class CsvBasedCarbonTableSuite extends QueryTest
     val metadataPath = CarbonTablePath.getMetadataPath(tblInfo.getTablePath)
     val details = SegmentStatusManager.readLoadMetadata(metadataPath)
     assertResult(1)(details.length)
-    assertResult(csvFile)(details(0).getFactFilePath)
+    assertResult(FileFactory.getCarbonFile(csvFile).getAbsolutePath)(details(0).getFactFilePath)
 
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "true")
     // check query on csv based carbontable

@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.execution.command.management
 
+import java.util
 import java.util.UUID
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
@@ -26,8 +27,11 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{FileFormat, LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonUtil
@@ -36,6 +40,7 @@ import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.loading.events.LoadEvents.LoadMetadataEvent
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
+import org.apache.carbondata.spark.rdd.FileLevelDataMapBuildRdd
 
 /**
  * support `alter table tableName add segment location 'path'` command.
@@ -83,7 +88,20 @@ case class CarbonAddSegmentCommand(
     // create new segment folder in carbon store
     CarbonLoaderUtil.checkAndCreateCarbonDataLocation(newSegmentId, carbonTable)
 
-    val factFilePath = FileUtils.getPaths(filePathFromUser)
+    def getSubFiles(file: CarbonFile): Seq[CarbonFile] = {
+      if (file.isDirectory) {
+        file.listFiles().map(p => getSubFiles(p)).flatten.filter(!_.isDirectory)
+      } else {
+        Seq(file)
+      }
+    }
+
+    val filePathWithQualifier = FileUtils.getPaths(filePathFromUser)
+    // we will go through the directory and flatten the fact files,
+    // then we will remove the duplicated files
+    val factFiles = filePathWithQualifier.split(",")
+      .map(path => getSubFiles(FileFactory.getCarbonFile(path)).map(p => p.getAbsolutePath))
+      .flatten.distinct
 
     val uuid = if (carbonTable.isChildDataMap) {
       Option(operationContext.getProperty("uuid")).getOrElse("").toString
@@ -101,12 +119,21 @@ case class CarbonAddSegmentCommand(
     loadModel.setCarbonTransactionalTable(carbonTable.isTransactionalTable)
     loadModel.readAndSetLoadMetadataDetails()
     loadModel.setFactTimeStamp(CarbonUpdateUtil.readCurrentTime())
+    loadModel.setFactFilePath(factFiles.mkString(","))
     val loadSchema: CarbonDataLoadSchema = new CarbonDataLoadSchema(carbonTable)
     loadModel.setCarbonDataLoadSchema(loadSchema)
 
     val newLoadMetadataDetail: LoadMetadataDetails = new LoadMetadataDetails
 
-    // for external datasource table, there are no index files, so no need to write segment file
+    // generate indexes and MVs
+    import scala.collection.JavaConverters._
+    val dmSchemas = DataMapStoreManager.getInstance().getAllDataMap(carbonTable).asScala
+      .filter(!_.getDataMapSchema.isLazy)
+      .map(_.getDataMapSchema)
+    if (dmSchemas.nonEmpty) {
+      FileLevelDataMapBuildRdd.directlyBuildDataMap(sparkSession, carbonTable,
+        loadModel.getSegment, loadModel.getFactFilePath, dmSchemas.toList)
+    }
 
     // update table status file
     newLoadMetadataDetail.setSegmentFile(null)
@@ -116,7 +143,7 @@ case class CarbonAddSegmentCommand(
     newLoadMetadataDetail.setIndexSize("1")
     newLoadMetadataDetail.setDataSize("1")
     newLoadMetadataDetail.setFileFormat(FileFormat.EXTERNAL)
-    newLoadMetadataDetail.setFactFilePath(factFilePath)
+    newLoadMetadataDetail.setFactFilePath(factFiles.mkString(","))
 
     val done = CarbonLoaderUtil.recordNewLoadMetadata(newLoadMetadataDetail, loadModel, true,
       false, uuid)

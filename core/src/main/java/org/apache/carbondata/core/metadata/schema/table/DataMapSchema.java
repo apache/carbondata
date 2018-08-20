@@ -236,7 +236,7 @@ public class DataMapSchema implements Serializable, Writable {
     } else if (StringUtils.isBlank(columns)) {
       throw new MalformedDataMapCommandException(INDEX_COLUMNS + " DMPROPERTY is blank");
     } else {
-      return columns.split(",", -1);
+      return StringUtils.stripAll(columns.split(",", -1));
     }
   }
 

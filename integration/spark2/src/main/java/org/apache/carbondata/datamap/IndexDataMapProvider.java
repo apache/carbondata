@@ -33,6 +33,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.spark.rdd.FileLevelDataMapBuildRdd;
 
 import org.apache.spark.sql.SparkSession;
 
@@ -99,7 +100,15 @@ public class IndexDataMapProvider extends DataMapProvider {
 
   @Override
   public void rebuild() {
-    IndexDataMapRebuildRDD.rebuildDataMap(sparkSession, getMainTable(), getDataMapSchema());
+    CarbonTable mainTable = getMainTable();
+    if (mainTable.getTableInfo().getFormat().equalsIgnoreCase("carbondata")
+        || mainTable.getTableInfo().getFormat().isEmpty()) {
+      IndexDataMapRebuildRDD.rebuildDataMap(sparkSession, getMainTable(), getDataMapSchema());
+    } else {
+      List<DataMapSchema> dmSchema = new ArrayList<>(1);
+      dmSchema.add(getDataMapSchema());
+      FileLevelDataMapBuildRdd.buildDataMapOnExistedTable(sparkSession, mainTable, dmSchema);
+    }
   }
 
   private DataMapFactory<? extends DataMap> createDataMapFactory()
