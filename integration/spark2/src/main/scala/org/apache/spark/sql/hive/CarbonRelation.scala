@@ -63,6 +63,9 @@ case class CarbonRelation(
         case "struct" =>
           CarbonMetastoreTypes.toDataType(
             s"struct<${SparkTypeConverter.getStructChildren(carbonTable, dim.getColName)}>")
+        case "map" =>
+          CarbonMetastoreTypes.toDataType(
+            s"map<${SparkTypeConverter.getMapChildren(carbonTable, dim.getColName)}>")
         case dType =>
           val dataType = addDecimalScaleAndPrecision(dimval, dType)
           CarbonMetastoreTypes.toDataType(dataType)
@@ -105,6 +108,9 @@ case class CarbonRelation(
           case "struct" =>
             CarbonMetastoreTypes.toDataType(
               s"struct<${SparkTypeConverter.getStructChildren(carbonTable, column.getColName)}>")
+          case "map" =>
+            CarbonMetastoreTypes.toDataType(
+              s"map<${SparkTypeConverter.getMapChildren(carbonTable, column.getColName)}>")
           case dType =>
             val dataType = SparkTypeConverter.addDecimalScaleAndPrecision(column, dType)
             CarbonMetastoreTypes.toDataType(dataType)

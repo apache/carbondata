@@ -88,6 +88,8 @@ object CarbonMetastoreTypes extends RegexParsers {
           fields.map(f => s"${ f.name }:${ toMetastoreType(f.dataType) }")
             .mkString(",")
         }>"
+      case MapType(keyType, valueType, _) =>
+        s"map<${ toMetastoreType(keyType) }, ${ toMetastoreType(valueType) }>"
       case StringType => "string"
       case FloatType => "float"
       case IntegerType => "int"

@@ -38,7 +38,7 @@ public class Field {
   private DataType type;
   private List<StructField> children;
   private String parent;
-  private String storeType = "columnnar";
+  private String storeType = "columnar";
   private int schemaOrdinal = -1;
   private int precision = 0;
   private int scale = 0;
@@ -78,8 +78,9 @@ public class Field {
       this.type = DataTypes.createDefaultArrayType();
     } else if (type.equalsIgnoreCase("struct")) {
       this.type = DataTypes.createDefaultStructType();
-    }
-    else {
+    } else if (type.equalsIgnoreCase("map")) {
+      this.type = DataTypes.createDefaultMapType();
+    } else {
       throw new IllegalArgumentException("unsupported data type: " + type);
     }
   }
@@ -113,8 +114,7 @@ public class Field {
       this.type = DataTypes.createArrayType(fields.get(0).getDataType());
     } else if (type.equalsIgnoreCase("struct")) {
       this.type = DataTypes.createStructType(fields);
-    }
-    else {
+    } else {
       throw new IllegalArgumentException("unsupported data type: " + type);
     }
   }

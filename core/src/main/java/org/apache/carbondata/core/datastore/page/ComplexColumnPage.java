@@ -117,6 +117,7 @@ public class ComplexColumnPage {
     if ((complexColumnInfoList.get(columnPageIndex).isNoDictionary() &&
         !((DataTypes.isStructType(dataType) ||
             DataTypes.isArrayType(dataType) ||
+            DataTypes.isMapType(dataType) ||
             (dataType == DataTypes.STRING) ||
             (dataType == DataTypes.VARCHAR) ||
             (dataType == DataTypes.DATE) ||

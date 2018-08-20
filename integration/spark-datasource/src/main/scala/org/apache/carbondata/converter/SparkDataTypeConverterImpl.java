@@ -29,6 +29,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.util.DataTypeConverter;
 
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
+import org.apache.spark.sql.catalyst.util.ArrayBasedMapData;
 import org.apache.spark.sql.catalyst.util.GenericArrayData;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.DecimalType;
@@ -98,6 +99,17 @@ public final class SparkDataTypeConverterImpl implements DataTypeConverter, Seri
   @Override
   public Object wrapWithGenericRow(Object[] fields) {
     return new GenericInternalRow(fields);
+  }
+
+  @Override
+  public Object wrapWithArrayBasedMapData(Object[] keyArray, Object[] valueArray) {
+    return new ArrayBasedMapData(new GenericArrayData(keyArray), new GenericArrayData(valueArray));
+  }
+
+  @Override
+  public Object[] unwrapGenericRowToObject(Object data) {
+    GenericInternalRow row = (GenericInternalRow) data;
+    return row.values();
   }
 
   private static org.apache.spark.sql.types.DataType convertCarbonToSparkDataType(

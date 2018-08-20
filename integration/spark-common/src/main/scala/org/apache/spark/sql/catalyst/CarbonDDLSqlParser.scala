@@ -174,6 +174,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val BIGINT = carbonKeyWord("BIGINT")
   protected val ARRAY = carbonKeyWord("ARRAY")
   protected val STRUCT = carbonKeyWord("STRUCT")
+  protected val MAP = carbonKeyWord("MAP")
   protected val SMALLINT = carbonKeyWord("SMALLINT")
   protected val CHANGE = carbonKeyWord("CHANGE")
   protected val TBLPROPERTIES = carbonKeyWord("TBLPROPERTIES")
@@ -233,6 +234,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       dimension.dataType.getOrElse("NIL") match {
         case "Array" => complexDimensions = complexDimensions :+ dimension
         case "Struct" => complexDimensions = complexDimensions :+ dimension
+        case "Map" => complexDimensions = complexDimensions :+ dimension
         case "String" =>
           if (varcharCols.exists(dimension.column.equalsIgnoreCase)) {
             varcharDimensions = varcharDimensions :+ dimension
@@ -867,7 +869,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * detects whether complex dimension is part of dictionary_exclude
    */
   def isComplexDimDictionaryExclude(dimensionDataType: String): Boolean = {
-    val dimensionType = Array("array", "struct")
+    val dimensionType = Array("array", "struct", "map")
     dimensionType.exists(x => x.equalsIgnoreCase(dimensionDataType))
   }
 
@@ -875,7 +877,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * detects whether datatype is part of sort_column
    */
   private def isDataTypeSupportedForSortColumn(columnDataType: String): Boolean = {
-    val dataTypes = Array("array", "struct", "double", "float", "decimal")
+    val dataTypes = Array("array", "struct", "map", "double", "float", "decimal")
     dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
   }
 
@@ -883,7 +885,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * detects whether datatype is part of dictionary_exclude
    */
   def isDataTypeSupportedForDictionary_Exclude(columnDataType: String): Boolean = {
-    val dataTypes = Array("string", "timestamp", "int", "long", "bigint", "struct", "array")
+    val dataTypes = Array("string", "timestamp", "int", "long", "bigint", "struct", "array", "map")
     dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
   }
 
@@ -1187,7 +1189,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     }
   }
 
-  protected lazy val nestedType: Parser[Field] = structFieldType | arrayFieldType |
+  protected lazy val nestedType: Parser[Field] = structFieldType | arrayFieldType | mapFieldType |
                                                  primitiveFieldType
 
   lazy val anyFieldDef: Parser[Field] =
@@ -1226,6 +1228,15 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     ((STRUCT ^^^ "struct") ~> "<" ~> repsep(anyFieldDef, ",") <~ ">") ^^ {
       case e1 =>
         Field("unknown", Some("struct"), Some("unknown"), Some(e1))
+    }
+
+  protected lazy val mapFieldType: Parser[Field] =
+    (MAP ^^^ "map") ~> "<" ~> primitiveFieldType ~ ("," ~> nestedType) <~ ">" ^^ {
+      case key ~ value =>
+        Field("unknown", Some("map"), Some("unknown"),
+          Some(List(
+            Field("key", key.dataType, Some("key"), key.children),
+            Field("value", value.dataType, Some("value"), value.children))))
     }
 
   protected lazy val measureCol: Parser[Field] =
@@ -1280,6 +1291,11 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           field.children.map(f => f.map(normalizeType(_))),
           field.parent, field.storeType, field.schemaOrdinal,
           field.precision, field.scale, field.rawSchema, field.columnComment)
+      case "map" =>
+        Field(field.column, Some("Map"), field.name,
+          field.children.map(f => f.map(normalizeType(_))),
+          field.parent, field.storeType, field.schemaOrdinal,
+          field.precision, field.scale, field.rawSchema, field.columnComment)
       case "bigint" => Field(field.column, Some("BigInt"), field.name, Some(null), field.parent,
         field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
         field.columnComment)
@@ -1319,6 +1335,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         field.children.map(f => f.map(appendParentForEachChild(_, field.column))), field.parent,
         field.storeType, field.schemaOrdinal, rawSchema = field.rawSchema,
         columnComment = field.columnComment)
+      case "Map" => Field(field.column, Some("Map"), field.name,
+        field.children.map(f => f.map(appendParentForEachChild(_, field.column))), field.parent,
+        field.storeType, field.schemaOrdinal, rawSchema = field.rawSchema,
+        columnComment = field.columnComment)
       case _ => field
     }
   }
@@ -1349,6 +1369,11 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           .map(f => f.map(appendParentForEachChild(_, parentName + "." + field.column))),
         parentName)
       case "Struct" => Field(parentName + "." + field.column, Some("Struct"),
+        Some(parentName + "." + field.name.getOrElse(None)),
+        field.children
+          .map(f => f.map(appendParentForEachChild(_, parentName + "." + field.column))),
+        parentName)
+      case "Map" => Field(parentName + "." + field.column, Some("Map"),
         Some(parentName + "." + field.name.getOrElse(None)),
         field.children
           .map(f => f.map(appendParentForEachChild(_, parentName + "." + field.column))),

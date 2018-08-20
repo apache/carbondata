@@ -2227,6 +2227,8 @@ public final class CarbonUtil {
         return DataTypes.createDefaultArrayType();
       case STRUCT:
         return DataTypes.createDefaultStructType();
+      case MAP:
+        return DataTypes.createDefaultMapType();
       case VARCHAR:
         return DataTypes.VARCHAR;
       default:

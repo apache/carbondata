@@ -1116,7 +1116,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   // --------------------------------------------- AVRO test cases ---------------------------
-  private def WriteFilesWithAvroWriter(rows: Int,
+  def WriteFilesWithAvroWriter(rows: Int,
       mySchema: String,
       json: String) = {
     // conversion to GenericData.Record
