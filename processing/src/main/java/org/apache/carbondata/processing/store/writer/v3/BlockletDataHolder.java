@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutorService;
 
 import org.apache.carbondata.core.datastore.blocklet.EncodedBlocklet;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
+import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.TablePage;
 
 public class BlockletDataHolder {
@@ -31,8 +32,11 @@ public class BlockletDataHolder {
 
   private EncodedBlocklet encodedBlocklet;
 
-  public BlockletDataHolder(ExecutorService fallbackpool) {
+  private CarbonFactDataHandlerModel model;
+
+  public BlockletDataHolder(ExecutorService fallbackpool, CarbonFactDataHandlerModel model) {
     encodedBlocklet = new EncodedBlocklet(fallbackpool);
+    this.model = model;
   }
 
   public void clear() {
@@ -43,7 +47,7 @@ public class BlockletDataHolder {
   public void addPage(TablePage rawTablePage) {
     EncodedTablePage encodedTablePage = rawTablePage.getEncodedTablePage();
     currentSize += encodedTablePage.getEncodedSize();
-    encodedBlocklet.addEncodedTablePage(encodedTablePage);
+    encodedBlocklet.addEncodedTablePage(encodedTablePage, model.getColumnLocalDictGenMap());
   }
 
   public long getSize() {

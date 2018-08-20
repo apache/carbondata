@@ -29,6 +29,7 @@ import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.localdictionary.PageLevelDictionary;
 import org.apache.carbondata.core.localdictionary.exception.DictionaryThresholdReachedException;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * Column page implementation for Local dictionary generated columns
@@ -179,7 +180,12 @@ public class LocalDictColumnPage extends ColumnPage {
   }
 
   @Override public void freeMemory() {
-    if (null == pageLevelDictionary) {
+    if (Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK,
+            CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT))) {
+      actualDataColumnPage.freeMemory();
+      isActualPageMemoryFreed = true;
+    } else if (null == pageLevelDictionary) {
       actualDataColumnPage.freeMemory();
       isActualPageMemoryFreed = true;
     }

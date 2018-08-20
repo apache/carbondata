@@ -82,7 +82,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       blockletSizeThreshold = fileSizeInBytes;
       LOGGER.info("Blocklet size configure for table is: " + blockletSizeThreshold);
     }
-    blockletDataHolder = new BlockletDataHolder(fallbackExecutorService);
+    blockletDataHolder = new BlockletDataHolder(fallbackExecutorService, model);
   }
 
   @Override protected void writeBlockletInfoToFile()

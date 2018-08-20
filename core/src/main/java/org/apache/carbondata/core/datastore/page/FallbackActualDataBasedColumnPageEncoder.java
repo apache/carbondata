@@ -19,9 +19,8 @@ package org.apache.carbondata.core.datastore.page;
 import java.util.concurrent.Callable;
 
 import org.apache.carbondata.core.datastore.TableSpec;
-import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
-import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * Below class will be used to encode column pages for which local dictionary was generated
@@ -29,7 +28,8 @@ import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
  * This is required as all the pages of a column in blocklet either it will be local dictionary
  * encoded or without local dictionary encoded.
  */
-public class FallbackColumnPageEncoder implements Callable<FallbackEncodedColumnPage> {
+public class FallbackActualDataBasedColumnPageEncoder
+    implements Callable<FallbackEncodedColumnPage> {
 
   /**
    * actual local dictionary generated column page
@@ -44,7 +44,8 @@ public class FallbackColumnPageEncoder implements Callable<FallbackEncodedColumn
    */
   private int pageIndex;
 
-  public FallbackColumnPageEncoder(EncodedColumnPage encodedColumnPage, int pageIndex) {
+  public FallbackActualDataBasedColumnPageEncoder(EncodedColumnPage encodedColumnPage,
+      int pageIndex) {
     this.encodedColumnPage = encodedColumnPage;
     this.pageIndex = pageIndex;
   }
@@ -52,31 +53,11 @@ public class FallbackColumnPageEncoder implements Callable<FallbackEncodedColumn
   @Override public FallbackEncodedColumnPage call() throws Exception {
     // disable encoding using local dictionary
     encodedColumnPage.getActualPage().disableLocalDictEncoding();
-    // new encoded column page
-    EncodedColumnPage newEncodedColumnPage;
 
     // get column spec for existing column page
     TableSpec.ColumnSpec columnSpec = encodedColumnPage.getActualPage().getColumnSpec();
-    switch (columnSpec.getColumnType()) {
-      case COMPLEX_ARRAY:
-      case COMPLEX_STRUCT:
-      case COMPLEX:
-        throw new RuntimeException("Unsupported DataType. Only COMPLEX_PRIMITIVE should come");
-
-      case COMPLEX_PRIMITIVE:
-        // for complex type column
-        newEncodedColumnPage = ColumnPageEncoder.encodedColumn(
-            encodedColumnPage.getActualPage());
-        break;
-      default:
-        // for primitive column
-        ColumnPageEncoder columnPageEncoder = DefaultEncodingFactory.getInstance()
-            .createEncoder(encodedColumnPage.getActualPage().getColumnSpec(),
-                encodedColumnPage.getActualPage());
-        newEncodedColumnPage = columnPageEncoder.encode(encodedColumnPage.getActualPage());
-    }
-    FallbackEncodedColumnPage fallbackEncodedColumnPage =
-        new FallbackEncodedColumnPage(newEncodedColumnPage, pageIndex);
+    FallbackEncodedColumnPage fallbackEncodedColumnPage = CarbonUtil
+        .getFallBackEncodedColumnPage(encodedColumnPage.getActualPage(), pageIndex, columnSpec);
     // here freeing the memory of raw column page as fallback is done and column page will not
     // be used.
     // This is required to free the memory once it is of no use

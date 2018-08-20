@@ -18,10 +18,14 @@ package org.apache.carbondata.core.datastore.blocklet;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.core.datastore.page.key.TablePageKey;
+import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * Holds the blocklet level data and metadata to be written in carbondata file
@@ -87,19 +91,24 @@ public class EncodedBlocklet {
    * @param encodedTablePage
    * encoded table page
    */
-  private void addEncodedMeasurePage(EncodedTablePage encodedTablePage) {
+  private void addEncodedMeasurePage(EncodedTablePage encodedTablePage,
+      Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap) {
     // for first page create new list
     if (null == encodedMeasureColumnPages) {
       encodedMeasureColumnPages = new ArrayList<>();
       // adding measure pages
       for (int i = 0; i < encodedTablePage.getNumMeasures(); i++) {
-        BlockletEncodedColumnPage blockletEncodedColumnPage = new BlockletEncodedColumnPage(null);
-        blockletEncodedColumnPage.addEncodedColumnColumnPage(encodedTablePage.getMeasure(i));
+        BlockletEncodedColumnPage blockletEncodedColumnPage = new BlockletEncodedColumnPage(null,
+            Boolean.parseBoolean(CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK,
+                    CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT)));
+        blockletEncodedColumnPage.addEncodedColumnColumnPage(encodedTablePage.getMeasure(i), null);
         encodedMeasureColumnPages.add(blockletEncodedColumnPage);
       }
     } else {
       for (int i = 0; i < encodedTablePage.getNumMeasures(); i++) {
-        encodedMeasureColumnPages.get(i).addEncodedColumnColumnPage(encodedTablePage.getMeasure(i));
+        encodedMeasureColumnPages.get(i)
+            .addEncodedColumnColumnPage(encodedTablePage.getMeasure(i), null);
       }
     }
   }
@@ -110,21 +119,30 @@ public class EncodedBlocklet {
    * @param encodedTablePage
    * encoded table page
    */
-  private void addEncodedDimensionPage(EncodedTablePage encodedTablePage) {
+  private void addEncodedDimensionPage(EncodedTablePage encodedTablePage,
+      Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap) {
     // for first page create new list
     if (null == encodedDimensionColumnPages) {
       encodedDimensionColumnPages = new ArrayList<>();
       // adding measure pages
       for (int i = 0; i < encodedTablePage.getNumDimensions(); i++) {
         BlockletEncodedColumnPage blockletEncodedColumnPage =
-            new BlockletEncodedColumnPage(executorService);
-        blockletEncodedColumnPage.addEncodedColumnColumnPage(encodedTablePage.getDimension(i));
+            new BlockletEncodedColumnPage(executorService, Boolean.parseBoolean(
+                CarbonProperties.getInstance()
+                    .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK,
+                        CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT)));
+        blockletEncodedColumnPage.addEncodedColumnColumnPage(encodedTablePage.getDimension(i),
+            localDictionaryGeneratorMap.get(
+                encodedTablePage.getDimension(i).getActualPage().getColumnSpec().getFieldName()));
         encodedDimensionColumnPages.add(blockletEncodedColumnPage);
       }
     } else {
       for (int i = 0; i < encodedTablePage.getNumDimensions(); i++) {
         encodedDimensionColumnPages.get(i)
-            .addEncodedColumnColumnPage(encodedTablePage.getDimension(i));
+            .addEncodedColumnColumnPage(encodedTablePage.getDimension(i),
+                localDictionaryGeneratorMap.get(
+                    encodedTablePage.getDimension(i).getActualPage().getColumnSpec()
+                        .getFieldName()));
       }
     }
   }
@@ -135,10 +153,11 @@ public class EncodedBlocklet {
    * @param encodedTablePage
    * encoded table page
    */
-  public void addEncodedTablePage(EncodedTablePage encodedTablePage) {
+  public void addEncodedTablePage(EncodedTablePage encodedTablePage,
+      Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap) {
     addPageMetadata(encodedTablePage);
-    addEncodedDimensionPage(encodedTablePage);
-    addEncodedMeasurePage(encodedTablePage);
+    addEncodedDimensionPage(encodedTablePage, localDictionaryGeneratorMap);
+    addEncodedMeasurePage(encodedTablePage, localDictionaryGeneratorMap);
   }
 
   public int getBlockletSize() {
