@@ -278,16 +278,18 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     // with partition
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
-         |'carbondata' LOCATION
-         |'$writerPath' """.stripMargin)
+      s"""
+         | CREATE EXTERNAL TABLE sdkOutputTable
+         | STORED BY 'carbondata'
+         | LOCATION '$writerPath'
+      """.stripMargin)
 
     sql("drop table if exists t1")
     sql("create table if not exists t1 (name string, age int, height double) STORED BY 'org.apache.carbondata.format'")
-    var i =0;
+    var i =0
     while (i<50){
       sql (s"""insert into t1 values ("aaaaa", 12, 20)""").show(200,false)
-      i = i+1;
+      i = i+1
     }
     checkAnswer(sql("select count(*) from t1"),Seq(Row(50)))
     val one = Future {
@@ -400,7 +402,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     // with partition
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
@@ -413,7 +415,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     // with partition
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
@@ -425,7 +427,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     // with partition
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
@@ -437,7 +439,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     // with partition
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
@@ -464,7 +466,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     // with partition
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
@@ -487,7 +489,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     // with partition
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
@@ -520,7 +522,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     // with partition
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
@@ -558,7 +560,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     // with partition
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable(name string) PARTITIONED BY (age int) STORED BY
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
@@ -737,7 +739,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     // with schema
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable(age int) STORED BY
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
@@ -2260,7 +2262,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     writer.write(record)
     writer.close()
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable(dateType date, course_details struct<course_struct_course_time: date>) STORED BY
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(java.sql.Date.valueOf("1970-04-12"), Row(java.sql.Date.valueOf("1970-01-11")))))
@@ -2306,7 +2308,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     writer.write(record)
     writer.close()
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable(dateType timestamp, course_details struct<course_struct_course_time: timestamp>) STORED BY
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(Timestamp.valueOf("1970-01-02 16:00:00"), Row(Timestamp.valueOf("1970-01-02 16:00:00")))))
@@ -2353,7 +2355,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     writer.write(record)
     writer.close()
     sql(
-      s"""CREATE EXTERNAL TABLE sdkOutputTable(dateType timestamp, course_details struct<course_struct_course_time: timestamp>) STORED BY
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(Timestamp.valueOf("1970-01-02 16:00:00"), Row(Timestamp.valueOf("1970-01-02 16:00:00")))))

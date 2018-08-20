@@ -134,6 +134,10 @@ object CarbonSparkSqlParserUtil {
         operationNotAllowed(
           "Schema may not be specified for external table", columns)
       }
+      if (partitionByStructFields.nonEmpty) {
+        operationNotAllowed(
+          "Partition is not supported for external table", partitionColumns)
+      }
       // read table info from schema file in the provided table path
       // external table also must convert table name to lower case
       val identifier = AbsoluteTableIdentifier.from(
