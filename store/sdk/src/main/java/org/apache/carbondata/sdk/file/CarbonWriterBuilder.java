@@ -653,6 +653,12 @@ public class CarbonWriterBuilder {
             DataType complexType = DataTypes.createStructType(structFieldsArray);
             tableSchemaBuilder
                 .addColumn(new StructField(field.getFieldName(), complexType), valIndex, false);
+          } else if (field.getDataType().getName().equalsIgnoreCase("MAP")) {
+            // Loop through the inner columns for MapType
+            DataType mapType =
+                DataTypes.createMapType(DataTypes.STRING, field.getChildren().get(0).getDataType());
+            tableSchemaBuilder
+                .addColumn(new StructField(field.getFieldName(), mapType), valIndex, false);
           }
         } else {
           ColumnSchema columnSchema = tableSchemaBuilder

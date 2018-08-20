@@ -156,6 +156,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       return org.apache.carbondata.format.DataType.ARRAY;
     } else if (DataTypes.isStructType(dataType)) {
       return org.apache.carbondata.format.DataType.STRUCT;
+    } else if (DataTypes.isMapType(dataType)) {
+      return org.apache.carbondata.format.DataType.MAP;
     } else if (dataType.getId() == DataTypes.VARCHAR.getId()) {
       return org.apache.carbondata.format.DataType.VARCHAR;
     } else {
@@ -496,6 +498,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return DataTypes.createDefaultArrayType();
       case STRUCT:
         return DataTypes.createDefaultStructType();
+      case MAP:
+        return DataTypes.createDefaultMapType();
       case VARCHAR:
         return DataTypes.VARCHAR;
       default:

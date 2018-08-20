@@ -751,7 +751,7 @@ m filterExpression
     List<String> projectColumn = new ArrayList<>();
     for (ColumnSchema cols : colList) {
       if (cols.getSchemaOrdinal() != -1) {
-        projectColumn.add(cols.getColumnUniqueId());
+        projectColumn.add(cols.getColumnName());
       }
     }
     String[] projectionColumns = new String[projectColumn.size()];

@@ -422,6 +422,7 @@ object CarbonFilters {
       case TimestampType => true
       case ArrayType(_, _) => true
       case StructType(_) => true
+      case MapType(_, _, _) => true
       case DecimalType() => true
       case _ => false
     }

@@ -372,13 +372,17 @@ public final class CarbonDataProcessorUtil {
     for (int i = 0; i < hierarchies.length; i++) {
       String[] levels = hierarchies[i].split(CarbonCommonConstants.HASH_SPC_CHARACTER);
       String[] levelInfo = levels[0].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
-      GenericDataType g = levelInfo[1].toLowerCase().contains(CarbonCommonConstants.ARRAY) ?
+      String level1Info = levelInfo[1].toLowerCase();
+      GenericDataType g = (level1Info.contains(CarbonCommonConstants.ARRAY) || level1Info
+          .contains(CarbonCommonConstants.MAP)) ?
           new ArrayDataType(levelInfo[0], "", levelInfo[3]) :
           new StructDataType(levelInfo[0], "", levelInfo[3]);
       complexTypesMap.put(levelInfo[0], g);
       for (int j = 1; j < levels.length; j++) {
         levelInfo = levels[j].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
-        if (levelInfo[1].toLowerCase().contains(CarbonCommonConstants.ARRAY)) {
+        String levelInfo1 = levelInfo[1].toLowerCase();
+        if (levelInfo1.contains(CarbonCommonConstants.ARRAY) || levelInfo1
+            .contains(CarbonCommonConstants.MAP)) {
           g.addChildren(new ArrayDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
         } else if (levelInfo[1].toLowerCase().contains(CarbonCommonConstants.STRUCT)) {
           g.addChildren(new StructDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
