@@ -881,6 +881,16 @@ public final class CarbonCommonConstants {
   public static final String LOCAL_DICTIONARY_SYSTEM_ENABLE = "carbon.local.dictionary.enable";
 
   /**
+   * System property to enable or disable decoder based local dictionary fallback
+   */
+  public static final String LOCAL_DICTIONARY_DECODER_BASED_FALLBACK =
+      "carbon.local.dictionary.decoder.fallback";
+
+  /**
+   * System property to enable or disable decoder based local dictionary fallback default value
+   */
+  public static final String LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT = "true";
+  /**
    * Threshold value for local dictionary
    */
   public static final String LOCAL_DICTIONARY_THRESHOLD = "local_dictionary_threshold";

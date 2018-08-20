@@ -80,19 +80,4 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
     this.numberOfRows = numberOfRows;
   }
 
-  /**
-   * Below method will be used to create the inverted index reverse
-   * this will be used to point to actual data in the chunk
-   *
-   * @param invertedIndex inverted index
-   * @return reverse inverted index
-   */
-  protected int[] getInvertedReverseIndex(int[] invertedIndex) {
-    int[] columnIndexTemp = new int[invertedIndex.length];
-
-    for (int i = 0; i < invertedIndex.length; i++) {
-      columnIndexTemp[invertedIndex[i]] = i;
-    }
-    return columnIndexTemp;
-  }
 }

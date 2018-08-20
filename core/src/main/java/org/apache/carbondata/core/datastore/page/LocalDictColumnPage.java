@@ -67,11 +67,15 @@ public class LocalDictColumnPage extends ColumnPage {
   private KeyGenerator keyGenerator;
 
   private int[] dummyKey;
+
+  private boolean isDecoderBasedFallBackEnabled;
+
   /**
    * Create a new column page with input data type and page size.
    */
   protected LocalDictColumnPage(ColumnPage actualDataColumnPage, ColumnPage encodedColumnpage,
-      LocalDictionaryGenerator localDictionaryGenerator, boolean isComplexTypePrimitive) {
+      LocalDictionaryGenerator localDictionaryGenerator, boolean isComplexTypePrimitive,
+      boolean isDecoderBasedFallBackEnabled) {
     super(actualDataColumnPage.getColumnSpec(), actualDataColumnPage.getDataType(),
         actualDataColumnPage.getPageSize());
     // if threshold is not reached then create page level dictionary
@@ -88,6 +92,7 @@ public class LocalDictColumnPage extends ColumnPage {
       // else free the encoded column page memory as its of no use
       encodedColumnpage.freeMemory();
     }
+    this.isDecoderBasedFallBackEnabled = isDecoderBasedFallBackEnabled;
     this.actualDataColumnPage = actualDataColumnPage;
   }
 
@@ -179,7 +184,16 @@ public class LocalDictColumnPage extends ColumnPage {
   }
 
   @Override public void freeMemory() {
-    if (null == pageLevelDictionary) {
+    // free the encoded column page as data is already encoded and it is of no use, during fallback
+    // if goes to actual databased fallback, we need actual data and decoder based fallback we need
+    // just the encoded data to form a new page
+    if (null != encodedDataColumnPage) {
+      encodedDataColumnPage.freeMemory();
+    }
+    if (isDecoderBasedFallBackEnabled) {
+      actualDataColumnPage.freeMemory();
+      isActualPageMemoryFreed = true;
+    } else if (null == pageLevelDictionary) {
       actualDataColumnPage.freeMemory();
       isActualPageMemoryFreed = true;
     }
@@ -190,7 +204,6 @@ public class LocalDictColumnPage extends ColumnPage {
       actualDataColumnPage.freeMemory();
       isActualPageMemoryFreed = true;
     }
-    freeEncodedColumnPage();
   }
 
   private void freeEncodedColumnPage() {

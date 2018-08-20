@@ -153,11 +153,11 @@ public class CompressedDimChunkFileBasedPageLevelReaderV3
         .get(dimensionRawColumnChunk.getColumnIndex()) + dataChunk3.getPage_offset()
         .get(pageNumber);
     int length = pageMetadata.data_page_length;
-    if (hasEncoding(pageMetadata.encoders, Encoding.INVERTED_INDEX)) {
+    if (CarbonUtil.hasEncoding(pageMetadata.encoders, Encoding.INVERTED_INDEX)) {
       length += pageMetadata.rowid_page_length;
     }
 
-    if (hasEncoding(pageMetadata.encoders, Encoding.RLE)) {
+    if (CarbonUtil.hasEncoding(pageMetadata.encoders, Encoding.RLE)) {
       length += pageMetadata.rle_page_length;
     }
     // get the data buffer

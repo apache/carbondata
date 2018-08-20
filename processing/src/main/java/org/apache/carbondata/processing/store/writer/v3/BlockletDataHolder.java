@@ -18,8 +18,11 @@ package org.apache.carbondata.processing.store.writer.v3;
 
 import java.util.concurrent.ExecutorService;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.blocklet.EncodedBlocklet;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
+import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.TablePage;
 
 public class BlockletDataHolder {
@@ -31,8 +34,12 @@ public class BlockletDataHolder {
 
   private EncodedBlocklet encodedBlocklet;
 
-  public BlockletDataHolder(ExecutorService fallbackpool) {
-    encodedBlocklet = new EncodedBlocklet(fallbackpool);
+  public BlockletDataHolder(ExecutorService fallbackpool, CarbonFactDataHandlerModel model) {
+    encodedBlocklet = new EncodedBlocklet(fallbackpool, Boolean.parseBoolean(
+        CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK,
+                CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT)),
+        model.getColumnLocalDictGenMap());
   }
 
   public void clear() {

@@ -26,10 +26,12 @@ import java.util.concurrent.Future;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.page.FallbackColumnPageEncoder;
+import org.apache.carbondata.core.datastore.page.ActualDataBasedFallbackEncoder;
+import org.apache.carbondata.core.datastore.page.DecoderBasedFallbackEncoder;
 import org.apache.carbondata.core.datastore.page.FallbackEncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.localdictionary.PageLevelDictionary;
+import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.format.LocalDictionaryChunk;
 
@@ -75,9 +77,22 @@ public class BlockletEncodedColumnPage {
 
   private String columnName;
 
-  BlockletEncodedColumnPage(ExecutorService fallbackExecutorService) {
+  /**
+   * is decoder based fallback enabled
+   */
+  private boolean isDecoderBasedFallBackEnabled;
+
+  /**
+   * Local dictionary generator for column
+   */
+  private LocalDictionaryGenerator localDictionaryGenerator;
+
+  BlockletEncodedColumnPage(ExecutorService fallbackExecutorService,
+      boolean isDecoderBasedFallBackEnabled, LocalDictionaryGenerator localDictionaryGenerator) {
     this.fallbackExecutorService = fallbackExecutorService;
     this.fallbackFutureQueue = new ArrayDeque<>();
+    this.isDecoderBasedFallBackEnabled = isDecoderBasedFallBackEnabled;
+    this.localDictionaryGenerator = localDictionaryGenerator;
   }
 
   /**
@@ -86,7 +101,7 @@ public class BlockletEncodedColumnPage {
    * @param encodedColumnPage
    * encoded column page
    */
-  void addEncodedColumnColumnPage(EncodedColumnPage encodedColumnPage) {
+  void addEncodedColumnPage(EncodedColumnPage encodedColumnPage) {
     if (null == encodedColumnPageList) {
       this.encodedColumnPageList = new ArrayList<>();
       // if dimension page is local dictionary enabled and encoded with local dictionary
@@ -105,8 +120,7 @@ public class BlockletEncodedColumnPage {
       LOGGER.info(
           "Local dictionary Fallback is initiated for column: " + this.columnName + " for page:"
               + encodedColumnPageList.size());
-      fallbackFutureQueue.add(fallbackExecutorService
-          .submit(new FallbackColumnPageEncoder(encodedColumnPage, encodedColumnPageList.size())));
+      initiateFallBack(encodedColumnPage, encodedColumnPageList.size());
       // fill null so once page is decoded again fill the re-encoded page again
       this.encodedColumnPageList.add(null);
     }
@@ -128,8 +142,7 @@ public class BlockletEncodedColumnPage {
       // submit all the older pages encoded with dictionary for fallback
       for (int pageIndex = 0; pageIndex < encodedColumnPageList.size(); pageIndex++) {
         if (encodedColumnPageList.get(pageIndex).getActualPage().isLocalDictGeneratedPage()) {
-          fallbackFutureQueue.add(fallbackExecutorService.submit(
-              new FallbackColumnPageEncoder(encodedColumnPageList.get(pageIndex), pageIndex)));
+          initiateFallBack(encodedColumnPageList.get(pageIndex), pageIndex);
         }
       }
       //add to page list
@@ -187,5 +200,20 @@ public class BlockletEncodedColumnPage {
       }
     }
     return null;
+  }
+
+  /**
+   * This method initiates the fallback for local dictionary encoded column page
+   * @param encodedColumnPage
+   * @param pageIndex
+   */
+  private void initiateFallBack(EncodedColumnPage encodedColumnPage, int pageIndex) {
+    if (isDecoderBasedFallBackEnabled) {
+      fallbackFutureQueue.add(fallbackExecutorService.submit(
+          new DecoderBasedFallbackEncoder(encodedColumnPage, pageIndex, localDictionaryGenerator)));
+    } else {
+      fallbackFutureQueue.add(fallbackExecutorService.submit(
+          new ActualDataBasedFallbackEncoder(encodedColumnPage, encodedColumnPageList.size())));
+    }
   }
 }
