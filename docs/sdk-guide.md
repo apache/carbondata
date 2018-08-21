@@ -369,6 +369,7 @@ public CarbonWriterBuilder withTableProperties(Map<String, String> options);
 
 ```
 /**
+* this writer is not thread safe, use buildThreadSafeWriterForCSVInput in multi thread environment
 * Build a {@link CarbonWriter}, which accepts row in CSV format object
 * @param schema carbon Schema object {org.apache.carbondata.sdk.file.Schema}
 * @return CSVCarbonWriter
@@ -378,8 +379,24 @@ public CarbonWriterBuilder withTableProperties(Map<String, String> options);
 public CarbonWriter buildWriterForCSVInput(org.apache.carbondata.sdk.file.Schema schema) throws IOException, InvalidLoadOptionException;
 ```
 
+```
+/**
+* Can use this writer in multi-thread instance.
+* Build a {@link CarbonWriter}, which accepts row in CSV format
+* @param schema carbon Schema object {org.apache.carbondata.sdk.file.Schema}
+* @param numOfThreads number of threads() in which .write will be called.              
+* @return CSVCarbonWriter
+* @throws IOException
+* @throws InvalidLoadOptionException
+*/
+public CarbonWriter buildThreadSafeWriterForCSVInput(Schema schema, short numOfThreads)
+  throws IOException, InvalidLoadOptionException;
+```
+
+
 ```  
 /**
+* this writer is not thread safe, use buildThreadSafeWriterForAvroInput in multi thread environment
 * Build a {@link CarbonWriter}, which accepts Avro format object
 * @param avroSchema avro Schema object {org.apache.avro.Schema}
 * @return AvroCarbonWriter 
@@ -391,6 +408,22 @@ public CarbonWriter buildWriterForAvroInput(org.apache.avro.Schema schema) throw
 
 ```
 /**
+* Can use this writer in multi-thread instance.
+* Build a {@link CarbonWriter}, which accepts Avro object
+* @param avroSchema avro Schema object {org.apache.avro.Schema}
+* @param numOfThreads number of threads() in which .write will be called.
+* @return AvroCarbonWriter
+* @throws IOException
+* @throws InvalidLoadOptionException
+*/
+public CarbonWriter buildThreadSafeWriterForAvroInput(org.apache.avro.Schema avroSchema, short numOfThreads)
+  throws IOException, InvalidLoadOptionException
+```
+
+
+```
+/**
+* this writer is not thread safe, use buildThreadSafeWriterForJsonInput in multi thread environment
 * Build a {@link CarbonWriter}, which accepts Json object
 * @param carbonSchema carbon Schema object
 * @return JsonCarbonWriter
@@ -398,6 +431,19 @@ public CarbonWriter buildWriterForAvroInput(org.apache.avro.Schema schema) throw
 * @throws InvalidLoadOptionException
 */
 public JsonCarbonWriter buildWriterForJsonInput(Schema carbonSchema);
+```
+
+```
+/**
+* Can use this writer in multi-thread instance.
+* Build a {@link CarbonWriter}, which accepts Json object
+* @param carbonSchema carbon Schema object
+* @param numOfThreads number of threads() in which .write will be called.
+* @return JsonCarbonWriter
+* @throws IOException
+* @throws InvalidLoadOptionException
+*/
+public JsonCarbonWriter buildThreadSafeWriterForJsonInput(Schema carbonSchema, short numOfThreads)
 ```
 
 ### Class org.apache.carbondata.sdk.file.CarbonWriter
@@ -408,7 +454,7 @@ public JsonCarbonWriter buildWriterForJsonInput(Schema carbonSchema);
 *                      which is one row of data.
 * If CSVCarbonWriter, object is of type String[], which is one row of data
 * If JsonCarbonWriter, object is of type String, which is one row of json
-* Note: This API is not thread safe
+* Note: This API is not thread safe if writer is not built with number of threads argument.
 * @param object
 * @throws IOException
 */
@@ -696,7 +742,6 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    *
    * @param dataFilePath complete path including carbondata file name
    * @return Schema object
-   * @throws IOException
    */
   public static Schema readSchemaInDataFile(String dataFilePath);
 ```

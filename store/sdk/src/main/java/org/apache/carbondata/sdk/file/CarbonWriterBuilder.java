@@ -374,6 +374,8 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   * This writer is not thread safe,
+   * use buildThreadSafeWriterForCSVInput in multi thread environment
    * Build a {@link CarbonWriter}, which accepts row in CSV format
    * @param schema carbon Schema object {org.apache.carbondata.sdk.file.Schema}
    * @return CSVCarbonWriter
@@ -390,6 +392,31 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   *
+   * Build a {@link CarbonWriter}, which accepts row in CSV format
+   * @param schema carbon Schema object {org.apache.carbondata.sdk.file.Schema}
+   * @param numOfThreads number of threads() in which .write will be called.
+   * @return CSVCarbonWriter
+   * @throws IOException
+   * @throws InvalidLoadOptionException
+   */
+  public CarbonWriter buildThreadSafeWriterForCSVInput(Schema schema, short numOfThreads)
+      throws IOException, InvalidLoadOptionException {
+    Objects.requireNonNull(schema, "schema should not be null");
+    Objects.requireNonNull(numOfThreads, "numOfThreads should not be null");
+    Objects.requireNonNull(path, "path should not be null");
+    this.schema = schema;
+    if (numOfThreads <= 0) {
+      throw new IllegalArgumentException(" numOfThreads must be greater than 0");
+    }
+    CarbonLoadModel loadModel = createLoadModel();
+    loadModel.setSdkUserCores(numOfThreads);
+    return new CSVCarbonWriter(loadModel);
+  }
+
+  /**
+   * This writer is not thread safe,
+   * use buildThreadSafeWriterForAvroInput in multi thread environment
    * Build a {@link CarbonWriter}, which accepts Avro object
    * @param avroSchema avro Schema object {org.apache.avro.Schema}
    * @return AvroCarbonWriter
@@ -411,6 +438,36 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   * Build a {@link CarbonWriter}, which accepts Avro object
+   * @param avroSchema avro Schema object {org.apache.avro.Schema}
+   * @param numOfThreads number of threads() in which .write will be called.
+   * @return AvroCarbonWriter
+   * @throws IOException
+   * @throws InvalidLoadOptionException
+   */
+  public CarbonWriter buildThreadSafeWriterForAvroInput(org.apache.avro.Schema avroSchema,
+      short numOfThreads)
+      throws IOException, InvalidLoadOptionException {
+    this.schema = AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema);
+    Objects.requireNonNull(schema, "schema should not be null");
+    Objects.requireNonNull(path, "path should not be null");
+    Objects.requireNonNull(numOfThreads, "numOfThreads should not be null");
+    if (numOfThreads <= 0) {
+      throw new IllegalArgumentException(" numOfThreads must be greater than 0");
+    }
+    CarbonLoadModel loadModel = createLoadModel();
+    // AVRO records are pushed to Carbon as Object not as Strings. This was done in order to
+    // handle multi level complex type support. As there are no conversion converter step is
+    // removed from the load. LoadWithoutConverter flag is going to point to the Loader Builder
+    // which will skip Conversion Step.
+    loadModel.setLoadWithoutConverterStep(true);
+    loadModel.setSdkUserCores(numOfThreads);
+    return new AvroCarbonWriter(loadModel);
+  }
+
+  /**
+   * This writer is not thread safe,
+   * use buildThreadSafeWriterForJsonInput in multi thread environment
    * Build a {@link CarbonWriter}, which accepts Json object
    * @param carbonSchema carbon Schema object
    * @return JsonCarbonWriter
@@ -424,6 +481,31 @@ public class CarbonWriterBuilder {
     this.schema = carbonSchema;
     CarbonLoadModel loadModel = buildLoadModel(carbonSchema);
     loadModel.setJsonFileLoad(true);
+    return new JsonCarbonWriter(loadModel);
+  }
+
+  /**
+   * Can use this writer in multi-thread instance.
+   *
+   * Build a {@link CarbonWriter}, which accepts Json object
+   * @param carbonSchema carbon Schema object
+   * @param numOfThreads number of threads() in which .write will be called.
+   * @return JsonCarbonWriter
+   * @throws IOException
+   * @throws InvalidLoadOptionException
+   */
+  public JsonCarbonWriter buildThreadSafeWriterForJsonInput(Schema carbonSchema, short numOfThreads)
+      throws IOException, InvalidLoadOptionException {
+    Objects.requireNonNull(carbonSchema, "schema should not be null");
+    Objects.requireNonNull(path, "path should not be null");
+    Objects.requireNonNull(numOfThreads, "numOfThreads should not be null");
+    if (numOfThreads <= 0) {
+      throw new IllegalArgumentException(" numOfThreads must be greater than 0");
+    }
+    this.schema = carbonSchema;
+    CarbonLoadModel loadModel = createLoadModel();
+    loadModel.setJsonFileLoad(true);
+    loadModel.setSdkUserCores(numOfThreads);
     return new JsonCarbonWriter(loadModel);
   }
 
