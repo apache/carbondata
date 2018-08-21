@@ -52,10 +52,12 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<Object[]> {
       // already might be closed forcefully
       return;
     }
-    if (!loadBatch.addRow(row)) {
-      loadBatch.readyRead();
-      queue.put(loadBatch);
-      loadBatch = new RowBatch(batchSize);
+    synchronized (this) {
+      if (!loadBatch.addRow(row)) {
+        loadBatch.readyRead();
+        queue.put(loadBatch);
+        loadBatch = new RowBatch(batchSize);
+      }
     }
   }
 
