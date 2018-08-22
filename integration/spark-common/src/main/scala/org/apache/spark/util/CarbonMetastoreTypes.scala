@@ -17,18 +17,10 @@
 
 package org.apache.spark.util
 
-import java.util
-import java.util.{ArrayList, List}
-
 import scala.util.parsing.combinator.RegexParsers
 
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CarbonException
-
-import org.apache.carbondata.core.metadata.datatype
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
-import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 object CarbonMetastoreTypes extends RegexParsers {
   protected lazy val primitiveType: Parser[DataType] =
@@ -109,43 +101,4 @@ object CarbonMetastoreTypes extends RegexParsers {
       case DateType => "date"
     }
   }
-
-  def convertToSparkSchema(table: CarbonTable, carbonColumns: Array[ColumnSchema]): StructType = {
-    val fields: util.List[StructField] = new util.ArrayList[StructField](carbonColumns.length)
-    var i: Int = 0
-    while ( { i < carbonColumns.length }) {
-      val carbonColumn: ColumnSchema = carbonColumns(i)
-      val dataType: datatype.DataType = carbonColumn.getDataType
-      if (org.apache.carbondata.core.metadata.datatype.DataTypes.isDecimal(dataType)) fields
-        .add(new StructField(carbonColumn.getColumnName,
-          new DecimalType(carbonColumn.getPrecision, carbonColumn.getScale),
-          true,
-          Metadata.empty))
-      else if (org.apache.carbondata.core.metadata.datatype.DataTypes.isStructType(dataType)) fields
-        .add(new StructField(carbonColumn.getColumnName,
-          CarbonMetastoreTypes
-            .toDataType(String
-              .format("struct<%s>",
-                SparkTypeConverter.getStructChildren(table, carbonColumn.getColumnName))),
-          true,
-          Metadata.empty))
-      else if (org.apache.carbondata.core.metadata.datatype.DataTypes.isArrayType(dataType)) fields
-        .add(new StructField(carbonColumn.getColumnName,
-          CarbonMetastoreTypes
-            .toDataType(String
-              .format("array<%s>",
-                SparkTypeConverter.getArrayChildren(table, carbonColumn.getColumnName))),
-          true,
-          Metadata.empty))
-      else fields
-        .add(new StructField(carbonColumn.getColumnName,
-          CarbonScalaUtil.convertCarbonToSparkDataType (carbonColumn.getDataType),
-          true,
-          Metadata.empty))
-
-      { i += 1; i - 1 }
-    }
-    new StructType(fields.toArray(new Array[StructField](0)))
-  }
-
 }

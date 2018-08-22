@@ -35,6 +35,10 @@ import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonInputFormat}
 
+/**
+ * Its a custom implementation which uses carbon's driver pruning feature to prune carbondata files
+ * using carbonindex.
+ */
 class CarbonFileIndex(
     sparkSession: SparkSession,
     dataSchema: StructType,
@@ -72,39 +76,46 @@ class CarbonFileIndex(
 
   private def prune(dataFilters: Seq[Expression],
       directories: Seq[PartitionDirectory]) = {
-    val hadoopConf = new Configuration(sparkSession.sparkContext.hadoopConfiguration)
-    val filters = dataFilters.flatMap(DataSourceStrategy.translateFilter)
-    val filter: Option[CarbonExpression] = filters.flatMap { filter =>
-      CarbonSparkDataSourceUtil.createCarbonFilter(dataSchema, filter)
-    }.reduceOption(new AndExpression(_, _))
+    val tablePath = parameters.get("path")
+    if (tablePath.nonEmpty) {
+      val hadoopConf = new Configuration(sparkSession.sparkContext.hadoopConfiguration)
+      // convert t sparks source filter
+      val filters = dataFilters.flatMap(DataSourceStrategy.translateFilter)
 
-    val tablePath = parameters("path")
-    val model = CarbonSparkDataSourceUtil.prepareLoadModel(parameters, dataSchema)
-    CarbonInputFormat.setTableInfo(
-      hadoopConf,
-      model.getCarbonDataLoadSchema.getCarbonTable.getTableInfo)
-    CarbonInputFormat.setTransactionalTable(hadoopConf, false)
-    if (rootPaths.nonEmpty) {
-      if (!rootPaths.head.equals(new Path(tablePath)) &&
-          rootPaths.head.toString.contains(tablePath)) {
-        CarbonInputFormat.setSubFoldersToRead(hadoopConf, rootPaths.map(_.toUri.toString).toArray)
+      // convert to carbon filter expressions
+      val filter: Option[CarbonExpression] = filters.flatMap { filter =>
+        CarbonSparkDataSourceUtil.createCarbonFilter(dataSchema, filter)
+      }.reduceOption(new AndExpression(_, _))
+      val model = CarbonSparkDataSourceUtil.prepareLoadModel(parameters, dataSchema)
+      CarbonInputFormat.setTableInfo(
+        hadoopConf,
+        model.getCarbonDataLoadSchema.getCarbonTable.getTableInfo)
+      CarbonInputFormat.setTransactionalTable(hadoopConf, false)
+      if (rootPaths.nonEmpty) {
+        // Check for any subfolders are present here.
+        if (!rootPaths.head.equals(new Path(tablePath.get)) &&
+            rootPaths.head.toString.contains(tablePath.get)) {
+          CarbonInputFormat.setSubFoldersToRead(hadoopConf, rootPaths.map(_.toUri.toString).toArray)
+        }
       }
+      filter match {
+        case Some(c) => CarbonInputFormat.setFilterPredicates(hadoopConf, c)
+        case None => None
+      }
+      val format: CarbonFileInputFormat[Object] = new CarbonFileInputFormat[Object]
+      val jobConf = new JobConf(hadoopConf)
+      SparkHadoopUtil.get.addCredentials(jobConf)
+      val splits = format.getSplits(Job.getInstance(jobConf))
+        .asInstanceOf[util.List[CarbonInputSplit]].asScala
+      val prunedDirs = directories.map { dir =>
+        val files = dir.files
+          .filter(d => splits.exists(_.getBlockPath.equalsIgnoreCase(d.getPath.getName)))
+        PartitionDirectory(dir.values, files)
+      }
+      prunedDirs
+    } else {
+      directories
     }
-    filter match {
-      case Some(c) => CarbonInputFormat.setFilterPredicates(hadoopConf, c)
-      case None => None
-    }
-    val format: CarbonFileInputFormat[Object] = new CarbonFileInputFormat[Object]
-    val jobConf = new JobConf(hadoopConf)
-    SparkHadoopUtil.get.addCredentials(jobConf)
-    val splits = format.getSplits(Job.getInstance(jobConf))
-      .asInstanceOf[util.List[CarbonInputSplit]].asScala
-    val prunedDirs = directories.map { dir =>
-      val files = dir.files
-        .filter(d => splits.exists(_.getBlockPath.equalsIgnoreCase(d.getPath.getName)))
-      PartitionDirectory(dir.values, files)
-    }
-    prunedDirs
   }
 
   override def listFiles(filters: Seq[Expression]): Seq[PartitionDirectory] = {

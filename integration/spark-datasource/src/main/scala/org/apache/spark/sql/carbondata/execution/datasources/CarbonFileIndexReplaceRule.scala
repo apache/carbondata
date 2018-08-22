@@ -26,13 +26,19 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
+/**
+ * Rule to replace FileIndex with CarbonFileIndex for better driver pruning.
+ */
 class CarbonFileIndexReplaceRule extends Rule[LogicalPlan] {
 
-  val createSubFolder = CarbonProperties.getInstance()
+  /**
+   * This property creates subfolder for every load
+   */
+  private val createSubFolder = CarbonProperties.getInstance()
     .getProperty("carbonfileformat.create.folder.perload", "false").toBoolean
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    val p = plan.transform {
+    val transformedPlan = plan.transform {
       case l: LogicalRelation
         if l.relation.isInstanceOf[HadoopFsRelation] &&
            l.relation.asInstanceOf[HadoopFsRelation].fileFormat.toString.equals("carbon") &&
@@ -54,10 +60,10 @@ class CarbonFileIndexReplaceRule extends Rule[LogicalPlan] {
         val path = new Path(insert.outputPath, System.nanoTime().toString)
         insert.copy(outputPath = path)
     }
-    p
+    transformedPlan
   }
 
-  def updateFileIndex(fileIndex: InMemoryFileIndex,
+  private def updateFileIndex(fileIndex: InMemoryFileIndex,
       hadoopFsRelation: HadoopFsRelation): InMemoryFileIndex = {
     if (fileIndex.rootPaths.length == 1) {
       val carbonFile = FileFactory.getCarbonFile(fileIndex.rootPaths.head.toUri.toString)

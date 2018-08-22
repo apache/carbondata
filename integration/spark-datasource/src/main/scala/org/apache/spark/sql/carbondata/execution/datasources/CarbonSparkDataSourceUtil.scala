@@ -32,6 +32,9 @@ import org.apache.carbondata.sdk.file.{CarbonWriterBuilder, Field, Schema}
 
 object CarbonSparkDataSourceUtil {
 
+  /**
+   * Convert from carbon datatype to sparks datatype
+   */
   def convertCarbonToSparkDataType(dataType: CarbonDataType): types.DataType = {
     if (CarbonDataTypes.isDecimal(dataType)) {
       DecimalType(dataType.asInstanceOf[CarbonDecimalType].getPrecision,
@@ -51,7 +54,9 @@ object CarbonSparkDataSourceUtil {
     }
   }
 
-  // TODO: move this to spark module
+  /**
+   * Convert from sparks datatype to carbon datatype
+   */
   def convertSparkToCarbonDataType(dataType: DataType): CarbonDataType = {
     dataType match {
       case StringType => CarbonDataTypes.STRING
@@ -185,6 +190,9 @@ object CarbonSparkDataSourceUtil {
     javaList
   }
 
+  /**
+   * Create load model for carbon
+   */
   def prepareLoadModel(options: Map[String, String],
       dataSchema: StructType): CarbonLoadModel = {
     val schema = new Schema(dataSchema.fields.map { field =>
@@ -206,7 +214,7 @@ object CarbonSparkDataSourceUtil {
     })
     val builder = new CarbonWriterBuilder
     builder.isTransactionalTable(false)
-    builder.outputPath(options("path"))
+    builder.outputPath(options.getOrElse("path", ""))
     val blockSize = options.get(CarbonCommonConstants.TABLE_BLOCKSIZE).map(_.toInt)
     if (blockSize.isDefined) {
       builder.withBlockSize(blockSize.get)

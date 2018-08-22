@@ -17,29 +17,13 @@
 package org.apache.spark.sql.carbondata.datasource
 
 
-import java.io.File
-
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
+import org.apache.spark.sql.carbondata.datasource.TestUtil._
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 import org.apache.carbondata.core.datastore.impl.FileFactory
 
 class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
 
-  val rootPath = new File(this.getClass.getResource("/").getPath
-                          + "../../../..").getCanonicalPath
-  val warehouse1 = s"$rootPath/integration/spark-datasource/target/warehouse"
-  val metastoredb1 = s"$rootPath/integration/spark-datasource/target"
-  val spark = SparkSession
-    .builder()
-    .master("local")
-    .config("spark.sql.warehouse.dir", warehouse1)
-    .config("spark.driver.host", "localhost")
-    .config("spark.sql.crossJoin.enabled", "true")
-    .getOrCreate()
-  spark.sparkContext.setLogLevel("ERROR")
-  spark.experimental.extraOptimizations = Seq(new CarbonFileIndexReplaceRule)
 
   test("test write using dataframe") {
     import spark.implicits._
@@ -228,9 +212,6 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
 
   override def afterAll():Unit = {
     drop
-    if (spark != null) {
-      spark.close()
-    }
   }
 
   private def drop = {

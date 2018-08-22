@@ -15,30 +15,30 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.testsuite.createTable
+package org.apache.spark.sql.carbondata.datasource
 
 import java.io.File
 
 import org.apache.commons.io.FileUtils
-import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.apache.spark.sql.carbondata.datasource.TestUtil._
 
-import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
 
-class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAndAfterAll {
+class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndAfterAll {
+
 
 
   override def beforeAll(): Unit = {
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
   }
 
   override def afterAll(): Unit = {
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
   }
 
   var writerPath = new File(this.getClass.getResource("/").getPath
@@ -108,46 +108,46 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
   test("read carbondata files (sdk Writer Output) using the SparkCarbonFileFormat ") {
     buildTestData(false)
     assert(new File(filePath).exists())
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     //data source file format
-    if (sqlContext.sparkContext.version.startsWith("2.1")) {
+    if (spark.sparkContext.version.startsWith("2.1")) {
       //data source file format
-      sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
-    } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+      spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$filePath') """)
+    } else if (spark.sparkContext.version.startsWith("2.2")) {
       //data source file format
-      sql(
-        s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
+      spark.sql(
+        s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
            |'$filePath' """.stripMargin)
     } else{
       // TO DO
     }
 
-    sql("Describe formatted sdkOutputTable").show(false)
+    spark.sql("Describe formatted sdkOutputTable").show(false)
 
-    sql("select * from sdkOutputTable").show(false)
+    spark.sql("select * from sdkOutputTable").show(false)
 
-    sql("select * from sdkOutputTable limit 3").show(false)
+    spark.sql("select * from sdkOutputTable limit 3").show(false)
 
-    sql("select name from sdkOutputTable").show(false)
+    spark.sql("select name from sdkOutputTable").show(false)
 
-    sql("select age from sdkOutputTable").show(false)
+    spark.sql("select age from sdkOutputTable").show(false)
 
-    sql("select * from sdkOutputTable where age > 2 and age < 8").show(200,false)
+    spark.sql("select * from sdkOutputTable where age > 2 and age < 8").show(200,false)
 
-    sql("select * from sdkOutputTable where name = 'robot3'").show(200,false)
+    spark.sql("select * from sdkOutputTable where name = 'robot3'").show(200,false)
 
-    sql("select * from sdkOutputTable where name like 'robo%' limit 5").show(200,false)
+    spark.sql("select * from sdkOutputTable where name like 'robo%' limit 5").show(200,false)
 
-    sql("select * from sdkOutputTable where name like '%obot%' limit 2").show(200,false)
+    spark.sql("select * from sdkOutputTable where name like '%obot%' limit 2").show(200,false)
 
-    sql("select sum(age) from sdkOutputTable where name like 'robot1%' ").show(200,false)
+    spark.sql("select sum(age) from sdkOutputTable where name like 'robot1%' ").show(200,false)
 
-    sql("select count(*) from sdkOutputTable where name like 'robot%' ").show(200,false)
+    spark.sql("select count(*) from sdkOutputTable where name like 'robot%' ").show(200,false)
 
-    sql("select count(*) from sdkOutputTable").show(200,false)
+    spark.sql("select count(*) from sdkOutputTable").show(200,false)
 
-    sql("DROP TABLE sdkOutputTable")
+    spark.sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
     assert(new File(filePath).exists())
     cleanTestData()
@@ -156,78 +156,48 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
   test("Running SQL directly and read carbondata files (sdk Writer Output) using the SparkCarbonFileFormat ") {
     buildTestData(false)
     assert(new File(filePath).exists())
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     //data source file format
-    if (sqlContext.sparkContext.version.startsWith("2.1")) {
+    if (spark.sparkContext.version.startsWith("2.1")) {
       //data source file format
-      sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
-    } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+      spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$filePath') """)
+    } else if (spark.sparkContext.version.startsWith("2.2")) {
       //data source file format
-      sql(
-        s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
+      spark.sql(
+        s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
            |'$filePath' """.stripMargin)
     } else {
       // TO DO
     }
 
-    val directSQL = sql(s"""select * FROM  carbonfile.`$filePath`""".stripMargin)
+    val directSQL = spark.sql(s"""select * FROM  carbon.`$filePath`""".stripMargin)
     directSQL.show(false)
-    checkAnswer(sql("select * from sdkOutputTable"), directSQL)
+    TestUtil.checkAnswer(spark.sql("select * from sdkOutputTable"), directSQL)
 
-    sql("DROP TABLE sdkOutputTable")
+    spark.sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
     assert(new File(filePath).exists())
     cleanTestData()
   }
 
-
-  test("should not allow to alter datasource carbontable ") {
-    buildTestData(false)
-    assert(new File(filePath).exists())
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
-
-
-    if (sqlContext.sparkContext.version.startsWith("2.1")) {
-      //data source file format
-      sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
-    } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
-      //data source file format
-      sql(
-        s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
-           |'$filePath' """.stripMargin)
-    } else{
-      // TO DO
-    }
-
-    val exception = intercept[MalformedCarbonCommandException]
-      {
-        sql("Alter table sdkOutputTable change age age BIGINT")
-      }
-    assert(exception.getMessage().contains("Unsupported alter operation on hive table"))
-
-    sql("DROP TABLE sdkOutputTable")
-    // drop table should not delete the files
-    assert(new File(filePath).exists())
-    cleanTestData()
-  }
 
   // TODO: Make the sparkCarbonFileFormat to work without index file
   test("Read sdk writer output file without Carbondata file should fail") {
     buildTestData(false)
     deleteIndexFile(writerPath, CarbonCommonConstants.FACT_FILE_EXT)
     assert(new File(filePath).exists())
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     val exception = intercept[org.apache.spark.SparkException] {
       //    data source file format
-      if (sqlContext.sparkContext.version.startsWith("2.1")) {
+      if (spark.sparkContext.version.startsWith("2.1")) {
         //data source file format
-        sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
-      } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+        spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$filePath') """)
+      } else if (spark.sparkContext.version.startsWith("2.2")) {
         //data source file format
-        sql(
-          s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
+        spark.sql(
+          s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
              |'$filePath' """.stripMargin)
       } else{
         // TO DO
@@ -247,23 +217,23 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     deleteIndexFile(writerPath, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
     deleteIndexFile(writerPath, CarbonCommonConstants.FACT_FILE_EXT)
     assert(new File(filePath).exists())
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     val exception = intercept[org.apache.spark.SparkException] {
       //data source file format
-      if (sqlContext.sparkContext.version.startsWith("2.1")) {
+      if (spark.sparkContext.version.startsWith("2.1")) {
         //data source file format
-        sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
-      } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+        spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$filePath') """)
+      } else if (spark.sparkContext.version.startsWith("2.2")) {
         //data source file format
-        sql(
-          s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
+        spark.sql(
+          s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
              |'$filePath' """.stripMargin)
       } else{
         // TO DO
       }
 
-      sql("select * from sdkOutputTable").show(false)
+      spark.sql("select * from sdkOutputTable").show(false)
     }
     assert(exception.getMessage()
       .contains("CarbonData file is not present in the location mentioned in DDL"))
@@ -276,48 +246,48 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
   test("Read sdk writer output file withSchema") {
     buildTestData(true)
     assert(new File(filePath).exists())
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     //data source file format
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
-    if (sqlContext.sparkContext.version.startsWith("2.1")) {
+    if (spark.sparkContext.version.startsWith("2.1")) {
       //data source file format
-      sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
-    } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+      spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$filePath') """)
+    } else if (spark.sparkContext.version.startsWith("2.2")) {
       //data source file format
-      sql(
-        s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
+      spark.sql(
+        s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
            |'$filePath' """.stripMargin)
     } else{
       // TO DO
     }
 
-    sql("Describe formatted sdkOutputTable").show(false)
+    spark.sql("Describe formatted sdkOutputTable").show(false)
 
-    sql("select * from sdkOutputTable").show(false)
+    spark.sql("select * from sdkOutputTable").show(false)
 
-    sql("select * from sdkOutputTable limit 3").show(false)
+    spark.sql("select * from sdkOutputTable limit 3").show(false)
 
-    sql("select name from sdkOutputTable").show(false)
+    spark.sql("select name from sdkOutputTable").show(false)
 
-    sql("select age from sdkOutputTable").show(false)
+    spark.sql("select age from sdkOutputTable").show(false)
 
-    sql("select * from sdkOutputTable where age > 2 and age < 8").show(200, false)
+    spark.sql("select * from sdkOutputTable where age > 2 and age < 8").show(200, false)
 
-    sql("select * from sdkOutputTable where name = 'robot3'").show(200, false)
+    spark.sql("select * from sdkOutputTable where name = 'robot3'").show(200, false)
 
-    sql("select * from sdkOutputTable where name like 'robo%' limit 5").show(200, false)
+    spark.sql("select * from sdkOutputTable where name like 'robo%' limit 5").show(200, false)
 
-    sql("select * from sdkOutputTable where name like '%obot%' limit 2").show(200, false)
+    spark.sql("select * from sdkOutputTable where name like '%obot%' limit 2").show(200, false)
 
-    sql("select sum(age) from sdkOutputTable where name like 'robot1%' ").show(200, false)
+    spark.sql("select sum(age) from sdkOutputTable where name like 'robot1%' ").show(200, false)
 
-    sql("select count(*) from sdkOutputTable where name like 'robot%' ").show(200, false)
+    spark.sql("select count(*) from sdkOutputTable where name like 'robot%' ").show(200, false)
 
-    sql("select count(*) from sdkOutputTable").show(200, false)
+    spark.sql("select count(*) from sdkOutputTable").show(200, false)
 
-    sql("DROP TABLE sdkOutputTable")
+    spark.sql("DROP TABLE sdkOutputTable")
 
     // drop table should not delete the files
     assert(new File(filePath).exists())
@@ -328,27 +298,27 @@ class TestCreateTableUsingSparkCarbonFileFormat extends QueryTest with BeforeAnd
     buildTestData(false)
     deleteIndexFile(writerPath, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
     assert(new File(filePath).exists())
-    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
-    if (sqlContext.sparkContext.version.startsWith("2.1")) {
+    if (spark.sparkContext.version.startsWith("2.1")) {
       //data source file format
-      sql(s"""CREATE TABLE sdkOutputTable USING carbonfile OPTIONS (PATH '$filePath') """)
-    } else if (sqlContext.sparkContext.version.startsWith("2.2")) {
+      spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$filePath') """)
+    } else if (spark.sparkContext.version.startsWith("2.2")) {
       //data source file format
-      sql(
-        s"""CREATE TABLE sdkOutputTable USING carbonfile LOCATION
+      spark.sql(
+        s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
            |'$filePath' """.stripMargin)
     } else{
       // TO DO
     }
     //org.apache.spark.SparkException: Index file not present to read the carbondata file
-    val exception = intercept[org.apache.spark.SparkException]
+    val exception = intercept[Exception]
       {
-        sql("select * from sdkOutputTable").show(false)
+        spark.sql("select * from sdkOutputTable").show(false)
       }
     assert(exception.getMessage().contains("Error while taking index snapshot"))
 
-    sql("DROP TABLE sdkOutputTable")
+    spark.sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
     assert(new File(filePath).exists())
     cleanTestData()

@@ -16,13 +16,31 @@
  */
 package org.apache.spark.sql.carbondata.datasource
 
+import java.io.File
+
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical
 import org.apache.spark.sql.catalyst.util.sideBySide
 
 object TestUtil {
+
+  val rootPath = new File(this.getClass.getResource("/").getPath
+                          + "../../../..").getCanonicalPath
+  val warehouse1 = s"$rootPath/integration/spark-datasource/target/warehouse"
+  val metastoredb1 = s"$rootPath/integration/spark-datasource/target"
+  val spark = SparkSession
+    .builder()
+    .master("local")
+    .config("spark.sql.warehouse.dir", warehouse1)
+    .config("spark.driver.host", "localhost")
+    .config("spark.sql.crossJoin.enabled", "true")
+    .getOrCreate()
+  spark.sparkContext.setLogLevel("ERROR")
+
+  spark.experimental.extraOptimizations = Seq(new CarbonFileIndexReplaceRule)
 
   def checkAnswer(df: DataFrame, expectedAnswer: java.util.List[Row]): String = {
     checkAnswer(df, expectedAnswer.asScala) match {

@@ -57,6 +57,9 @@ import org.apache.carbondata.hadoop.internal.ObjectArrayWritable
 import org.apache.carbondata.processing.loading.complexobjects.{ArrayObject, StructObject}
 import org.apache.carbondata.spark.vectorreader.VectorizedCarbonRecordReader
 
+/**
+ * Used to read and write data stored in carbondata files to/from the spark execution engine.
+ */
 @InterfaceAudience.User
 @InterfaceStability.Evolving
 class SparkCarbonFileFormat extends FileFormat
@@ -66,46 +69,53 @@ class SparkCarbonFileFormat extends FileFormat
 
   @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
+  /**
+   * If user does not provide schema while reading the data then spark calls this method to infer
+   * schema from the carbodata files. It reads the schema present in carbondata files and return it.
+   */
   override def inferSchema(sparkSession: SparkSession,
       options: Map[String, String],
       files: Seq[FileStatus]): Option[StructType] = {
     val filePath = if (options.isEmpty) {
-      val carbondataFiles = files.seq.filter { each =>
-        if (each.isFile) {
-          each.getPath.getName.contains(".carbondata")
-        } else {
-          false
-        }
+      val carbondataFiles = files.filter { file =>
+        file.getPath.getName.endsWith(CarbonTablePath.CARBON_DATA_EXT)
       }
-
       if (carbondataFiles.nonEmpty) {
-        carbondataFiles.head.getPath.toString
+        Some(carbondataFiles.head.getPath.toString)
       } else {
-        null
+        None
       }
     } else {
-      CarbonUtil.getFilePathExternalFilePath(
-        options("path"))
+      options.get("path") match {
+        case Some(path) => Some(CarbonUtil.getFilePathExternalFilePath(path))
+        case _ => None
+      }
+
     }
 
-    if (filePath == null) {
+    if (filePath.isEmpty) {
       throw new SparkException("CarbonData file is not present in the location mentioned in DDL")
     }
-    val carbonHeaderReader: CarbonHeaderReader = new CarbonHeaderReader(filePath)
+    val carbonHeaderReader: CarbonHeaderReader = new CarbonHeaderReader(filePath.get)
     val fileHeader = carbonHeaderReader.readHeader
-    val table_columns: java.util.List[org.apache.carbondata.format.ColumnSchema] = fileHeader
-      .getColumn_schema
+    val table_columns = fileHeader.getColumn_schema
     var colArray = ArrayBuffer[StructField]()
+    // TODO support complex types
     for (i <- 0 until table_columns.size()) {
       val col = CarbonUtil.thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i))
-      colArray += new StructField(col.getColumnName,
-        CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(col.getDataType), false)
+      colArray += StructField(col.getColumnName,
+        CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(col.getDataType))
     }
     colArray.+:(Nil)
 
     Some(StructType(colArray))
   }
 
+
+  /**
+   * Prepares a write job and returns an [[OutputWriterFactory]].  Client side job preparation is
+   * done here.
+   */
   override def prepareWrite(sparkSession: SparkSession,
       job: Job,
       options: Map[String, String],
@@ -122,7 +132,7 @@ class SparkCarbonFileFormat extends FileFormat
           path: String,
           dataSchema: StructType,
           context: TaskAttemptContext): OutputWriter = {
-        val updatedPath = if (path.endsWith(".carbondata")) {
+        val updatedPath = if (path.endsWith(CarbonTablePath.CARBON_DATA_EXT)) {
           new Path(path).getParent.toString
         } else {
           path
@@ -133,7 +143,7 @@ class SparkCarbonFileFormat extends FileFormat
       }
 
       override def getFileExtension(context: TaskAttemptContext): String = {
-        ".carbondata"
+        CarbonTablePath.CARBON_DATA_EXT
       }
     }
   }
@@ -153,6 +163,9 @@ class SparkCarbonFileFormat extends FileFormat
   }
 
 
+  /**
+   * Writer class for carbondata files
+   */
   private class CarbonOutputWriter(path: String,
       context: TaskAttemptContext,
       fieldTypes: Array[StructField]) extends OutputWriter with AbstractCarbonOutputWriter {
@@ -162,7 +175,9 @@ class SparkCarbonFileFormat extends FileFormat
     val recordWriter: RecordWriter[NullWritable, ObjectArrayWritable] =
       new CarbonTableOutputFormat().getRecordWriter(context)
 
-
+    /**
+     * Write sparks internal row to carbondata record writer
+     */
     def writeCarbon(row: InternalRow): Unit = {
       val data: Array[AnyRef] = extractData(row, fieldTypes)
       writable.set(data)
@@ -173,6 +188,9 @@ class SparkCarbonFileFormat extends FileFormat
       writeCarbon(row)
     }
 
+    /**
+     * Convert the internal row to carbondata understandable object
+     */
     private def extractData(row: InternalRow, fieldTypes: Array[StructField]): Array[AnyRef] = {
       val data = new Array[AnyRef](fieldTypes.length)
       var i = 0
@@ -196,6 +214,9 @@ class SparkCarbonFileFormat extends FileFormat
       data
     }
 
+    /**
+     * Convert the internal row to carbondata understandable object
+     */
     private def extractData(row: ArrayData, fieldType: DataType): Array[AnyRef] = {
       val data = new Array[AnyRef](row.numElements())
       var i = 0
@@ -228,7 +249,11 @@ class SparkCarbonFileFormat extends FileFormat
 
   override def equals(other: Any): Boolean = other.isInstanceOf[SparkCarbonFileFormat]
 
-  def supportVector(sparkSession: SparkSession, schema: StructType): Boolean = {
+  /**
+   * Whether to support vector reader while reading data.
+   * In case of complex types it is not required to support it
+   */
+  private def supportVector(sparkSession: SparkSession, schema: StructType): Boolean = {
     val vectorizedReader = {
       if (sparkSession.sqlContext.sparkSession.conf
         .contains(CarbonCommonConstants.ENABLE_VECTOR_READER)) {
@@ -244,6 +269,9 @@ class SparkCarbonFileFormat extends FileFormat
   }
 
 
+  /**
+   * Returns whether this format support returning columnar batch or not.
+   */
   override def supportBatch(sparkSession: SparkSession, schema: StructType): Boolean = {
     val conf = sparkSession.sessionState.conf
     conf.wholeStageEnabled &&
@@ -251,14 +279,17 @@ class SparkCarbonFileFormat extends FileFormat
     schema.forall(_.dataType.isInstanceOf[AtomicType])
   }
 
-
+  /**
+   * Returns a function that can be used to read a single carbondata file in as an
+   * Iterator of InternalRow.
+   */
   override def buildReaderWithPartitionValues(sparkSession: SparkSession,
       dataSchema: StructType,
       partitionSchema: StructType,
       requiredSchema: StructType,
       filters: Seq[Filter],
       options: Map[String, String],
-      hadoopConf: Configuration): (PartitionedFile) => Iterator[InternalRow] = {
+      hadoopConf: Configuration): PartitionedFile => Iterator[InternalRow] = {
     val filter: Option[CarbonExpression] = filters.flatMap { filter =>
       CarbonSparkDataSourceUtil.createCarbonFilter(dataSchema, filter)
     }.reduceOption(new AndExpression(_, _))

@@ -25,6 +25,9 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport
 
+/**
+ * Read support class which converts carbon row array format to sparks Internal row.
+ */
 class SparkUnsafeRowReadSuport(requiredSchema: StructType)
   extends DictionaryDecodeReadSupport[InternalRow] {
   private val unsafeProjection = UnsafeProjection.create(requiredSchema)
