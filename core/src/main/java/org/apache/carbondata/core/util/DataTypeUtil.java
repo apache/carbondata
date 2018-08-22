@@ -82,8 +82,8 @@ public final class DataTypeUtil {
    * @return
    */
   public static Object getMeasureValueBasedOnDataType(String msrValue, DataType dataType,
-      CarbonMeasure carbonMeasure) {
-    return getMeasureValueBasedOnDataType(msrValue, dataType,carbonMeasure, false);
+      int scale, int precision) {
+    return getMeasureValueBasedOnDataType(msrValue, dataType, scale, precision, false);
   }
 
   /**
@@ -95,13 +95,13 @@ public final class DataTypeUtil {
    * @return
    */
   public static Object getMeasureValueBasedOnDataType(String msrValue, DataType dataType,
-      CarbonMeasure carbonMeasure, boolean useConverter) {
+      int scale, int precision, boolean useConverter) {
     if (dataType == DataTypes.BOOLEAN) {
       return BooleanConvert.parseBoolean(msrValue);
     } else if (DataTypes.isDecimal(dataType)) {
       BigDecimal bigDecimal =
-          new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
-      BigDecimal decimal = normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
+          new BigDecimal(msrValue).setScale(scale, RoundingMode.HALF_UP);
+      BigDecimal decimal = normalizeDecimalValue(bigDecimal, precision);
       if (useConverter) {
         return converter.convertFromBigDecimalToDecimal(decimal);
       } else {
@@ -400,6 +400,38 @@ public final class DataTypeUtil {
     }
     if (actualDataType == DataTypes.BOOLEAN) {
       return ByteUtil.toBytes((Boolean) dimensionValue);
+    } else if (actualDataType == DataTypes.SHORT) {
+      return ByteUtil.toXorBytes((Short) dimensionValue);
+    } else if (actualDataType == DataTypes.INT) {
+      return ByteUtil.toXorBytes((Integer) dimensionValue);
+    } else if (actualDataType == DataTypes.LONG) {
+      return ByteUtil.toXorBytes((Long) dimensionValue);
+    } else if (actualDataType == DataTypes.TIMESTAMP) {
+      return ByteUtil.toXorBytes((Long)dimensionValue);
+    } else {
+      // Default action for String/Varchar
+      return ByteUtil.toBytes(dimensionValue.toString());
+    }
+  }
+
+  /**
+   * Convert the min/max values to bytes for no dictionary column
+   *
+   * @param dimensionValue
+   * @param actualDataType
+   * @return
+   */
+  public static byte[] getMinMaxBytesBasedOnDataTypeForNoDictionaryColumn(Object dimensionValue,
+      DataType actualDataType) {
+    if (dimensionValue == null) {
+      if (actualDataType == DataTypes.STRING) {
+        return CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
+      } else {
+        return new byte[0];
+      }
+    }
+    if (actualDataType == DataTypes.BOOLEAN) {
+      return ByteUtil.toBytes(Boolean.valueOf(ByteUtil.toBoolean((byte) dimensionValue)));
     } else if (actualDataType == DataTypes.SHORT) {
       return ByteUtil.toXorBytes((Short) dimensionValue);
     } else if (actualDataType == DataTypes.INT) {
@@ -974,6 +1006,22 @@ public final class DataTypeUtil {
       value = ByteUtil.toXorLong(data, currentDataOffset, length);
     }
     return value;
+  }
+
+  /**
+   * Check if the column is a no dictionary primitive column
+   *
+   * @param dataType
+   * @return
+   */
+  public static boolean isPrimitiveColumn(DataType dataType) {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE || dataType == DataTypes.SHORT
+        || dataType == DataTypes.INT || dataType == DataTypes.LONG || DataTypes.isDecimal(dataType)
+        || dataType == DataTypes.FLOAT || dataType == DataTypes.DOUBLE
+        || dataType == DataTypes.BYTE_ARRAY) {
+      return true;
+    }
+    return false;
   }
 
 }

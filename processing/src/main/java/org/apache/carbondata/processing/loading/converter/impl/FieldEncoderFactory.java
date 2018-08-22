@@ -32,6 +32,7 @@ import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.ArrayDataType;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
@@ -111,6 +112,11 @@ public class FieldEncoderFactory {
             createComplexDataType(dataField, absoluteTableIdentifier,
                 client, useOnePass, localCache, index, nullFormat, isEmptyBadRecord), index);
       } else {
+        // if the no dictionary column is a numeric column then treat is as measure col
+        // so that the adaptive encoding can be applied on it easily
+        if (DataTypeUtil.isPrimitiveColumn(dataField.getColumn().getDataType())) {
+          return new MeasureFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);
+        }
         return new NonDictionaryFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);
       }
     } else {

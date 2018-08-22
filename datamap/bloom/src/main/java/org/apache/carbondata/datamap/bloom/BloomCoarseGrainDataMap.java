@@ -62,6 +62,7 @@ import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.loading.converter.FieldConverter;
@@ -343,8 +344,18 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       // for dictionary/date columns, convert the surrogate key to bytes
       internalFilterValue = CarbonUtil.getValueAsBytes(DataTypes.INT, convertedValue);
     } else {
-      // for non dictionary dimensions, is already bytes,
-      internalFilterValue = (byte[]) convertedValue;
+      // for non dictionary dimensions, numeric columns will be of original data,
+      // so convert the data to bytes
+      if (DataTypeUtil.isPrimitiveColumn(carbonColumn.getDataType())) {
+        if (convertedValue == null) {
+          convertedValue = DataConvertUtil.getNullValueForMeasure(carbonColumn.getDataType(),
+              carbonColumn.getColumnSchema().getScale());
+        }
+        internalFilterValue =
+            CarbonUtil.getValueAsBytes(carbonColumn.getDataType(), convertedValue);
+      } else {
+        internalFilterValue = (byte[]) convertedValue;
+      }
     }
     if (internalFilterValue.length == 0) {
       internalFilterValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;

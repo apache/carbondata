@@ -805,7 +805,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       model.setSegmentId("0")
       store.createCarbonStore(model)
       FileFactory.deleteAllFilesOfDir(new File(warehouse1 + "/testdb/testtable/Fact/Part0/Segment_0/0"))
-      store.setSortColumns(new util.ArrayList[String](Seq("country,phonetype").asJava))
+      store.setSortColumns(new util.ArrayList[String](Seq("country","phonetype").asJava))
       model = store.createTableAndLoadModel(false)
       model.setSegmentId("1")
       store.createCarbonStore(model)

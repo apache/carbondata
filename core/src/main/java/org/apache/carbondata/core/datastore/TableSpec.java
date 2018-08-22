@@ -104,6 +104,23 @@ public class TableSpec {
     }
   }
 
+  /**
+   * No dictionary and complex dimensions of the table
+   *
+   * @return
+   */
+  public DimensionSpec[] getNoDictAndComplexDimensions() {
+    List<DimensionSpec> noDictAndComplexDimensions = new ArrayList<>();
+    for (int i = 0; i < dimensionSpec.length; i++) {
+      if (dimensionSpec[i].getColumnType() == ColumnType.PLAIN_VALUE
+          || dimensionSpec[i].getColumnType() == ColumnType.COMPLEX_PRIMITIVE
+          || dimensionSpec[i].getColumnType() == ColumnType.COMPLEX) {
+        noDictAndComplexDimensions.add(dimensionSpec[i]);
+      }
+    }
+    return noDictAndComplexDimensions.toArray(new DimensionSpec[noDictAndComplexDimensions.size()]);
+  }
+
   public DimensionSpec getDimensionSpec(int dimensionIndex) {
     return dimensionSpec[dimensionIndex];
   }

@@ -116,7 +116,7 @@ public class NonDictionaryUtil {
     return measures[index];
   }
 
-  public static void prepareOutObj(Object[] out, int[] dimArray, byte[][] byteBufferArr,
+  public static void prepareOutObj(Object[] out, int[] dimArray, Object[] byteBufferArr,
       Object[] measureArray) {
     out[WriteStepRowUtil.DICTIONARY_DIMENSION] = dimArray;
     out[WriteStepRowUtil.NO_DICTIONARY_AND_COMPLEX] = byteBufferArr;

@@ -273,19 +273,19 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     int dictIndex = 0;
     int nonDicIndex = 0;
     int[] dim = new int[this.dimensionCount];
-    byte[][] nonDicArray = new byte[this.noDictWithComplextCount][];
+    Object[] nonDicArray = new Object[this.noDictWithComplextCount];
     // read dimension values
     int dimCount = 0;
     for (; dimCount < isNoDictionaryDimensionColumn.length; dimCount++) {
       if (isNoDictionaryDimensionColumn[dimCount]) {
-        nonDicArray[nonDicIndex++] = (byte[]) row.getObject(dimCount);
+        nonDicArray[nonDicIndex++] = row.getObject(dimCount);
       } else {
         dim[dictIndex++] = (int) row.getObject(dimCount);
       }
     }
 
     for (; dimCount < this.dimensionWithComplexCount; dimCount++) {
-      nonDicArray[nonDicIndex++] = (byte[]) row.getObject(dimCount);
+      nonDicArray[nonDicIndex++] = row.getObject(dimCount);
     }
 
     Object[] measures = new Object[measureCount];

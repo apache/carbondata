@@ -3243,6 +3243,28 @@ public final class CarbonUtil {
   }
 
   /**
+   * Check if the page is adaptive encoded
+   *
+   * @param encodings
+   * @return
+   */
+  public static boolean isEncodedWithMeta(List<org.apache.carbondata.format.Encoding> encodings) {
+    if (encodings != null && !encodings.isEmpty()) {
+      org.apache.carbondata.format.Encoding encoding = encodings.get(0);
+      switch (encoding) {
+        case DIRECT_COMPRESS:
+        case DIRECT_STRING:
+        case ADAPTIVE_INTEGRAL:
+        case ADAPTIVE_DELTA_INTEGRAL:
+        case ADAPTIVE_FLOATING:
+        case ADAPTIVE_DELTA_FLOATING:
+          return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Check whether it is standard table means tablepath has Fact/Part0/Segment_ tail present with
    * all carbon files. In other cases carbon files present directly under tablepath or
    * tablepath/partition folder

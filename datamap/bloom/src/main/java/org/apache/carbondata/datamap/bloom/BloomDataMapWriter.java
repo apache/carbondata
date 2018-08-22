@@ -29,6 +29,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
@@ -73,11 +74,14 @@ public class BloomDataMapWriter extends AbstractBloomDataMapWriter {
     }
   }
 
-  protected byte[] convertNonDictionaryValue(int indexColIdx, byte[] value) {
+  protected byte[] convertNonDictionaryValue(int indexColIdx, Object value) {
     if (DataTypes.VARCHAR == indexColumns.get(indexColIdx).getDataType()) {
-      return DataConvertUtil.getRawBytesForVarchar(value);
+      return DataConvertUtil.getRawBytesForVarchar((byte[]) value);
+    } else if (DataTypeUtil.isPrimitiveColumn(indexColumns.get(indexColIdx).getDataType())) {
+      // get bytes for the original value of the no dictionary column
+      return CarbonUtil.getValueAsBytes(indexColumns.get(indexColIdx).getDataType(), value);
     } else {
-      return DataConvertUtil.getRawBytes(value);
+      return DataConvertUtil.getRawBytes((byte[]) value);
     }
   }
 

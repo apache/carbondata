@@ -91,6 +91,8 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * boolean mapping for no dictionary columns in schema
    */
   private boolean[] noDictionaryColMapping;
+
+  private boolean[] sortColumnMapping;
   /**
    * boolean mapping for long string dimension
    */
@@ -275,7 +277,15 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
         preparedRow[i] = dictionaryValues[dictionaryIndex++];
       } else {
         // no dictionary dims
-        preparedRow[i] = wrapper.getNoDictionaryKeyByIndex(noDictionaryIndex++);
+        byte[] noDictionaryKeyByIndex = wrapper.getNoDictionaryKeyByIndex(noDictionaryIndex++);
+        if (DataTypeUtil.isPrimitiveColumn(dims.getDataType())) {
+          // no dictionary measure columns are expected as original data
+          preparedRow[i] = DataTypeUtil
+              .getDataBasedOnDataTypeForNoDictionaryColumn(noDictionaryKeyByIndex,
+                  dims.getDataType());
+        } else {
+          preparedRow[i] = noDictionaryKeyByIndex;
+        }
       }
     }
     // fill all the measures
@@ -357,12 +367,16 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     measureCount = carbonTable.getMeasureByTableName(tableName).size();
     List<CarbonDimension> dimensions = carbonTable.getDimensionByTableName(tableName);
     noDictionaryColMapping = new boolean[dimensions.size()];
+    sortColumnMapping = new boolean[dimensions.size()];
     isVarcharDimMapping = new boolean[dimensions.size()];
     int i = 0;
     for (CarbonDimension dimension : dimensions) {
       if (CarbonUtil.hasEncoding(dimension.getEncoder(), Encoding.DICTIONARY)) {
         i++;
         continue;
+      }
+      if (dimension.isSortColumn()) {
+        sortColumnMapping[i] = true;
       }
       noDictionaryColMapping[i] = true;
       if (dimension.getColumnSchema().getDataType() == DataTypes.VARCHAR) {
@@ -395,8 +409,8 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     return SortParameters
         .createSortParameters(carbonTable, carbonLoadModel.getDatabaseName(), tableName,
             dimensionColumnCount, segmentProperties.getComplexDimensions().size(), measureCount,
-            noDictionaryCount, segmentId,
-            carbonLoadModel.getTaskNo(), noDictionaryColMapping, isVarcharDimMapping, true);
+            noDictionaryCount, segmentId, carbonLoadModel.getTaskNo(), noDictionaryColMapping,
+            sortColumnMapping, isVarcharDimMapping, true);
   }
 
   /**
@@ -404,14 +418,8 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * sort temp files
    */
   private void initializeFinalThreadMergerForMergeSort() {
-    boolean[] noDictionarySortColumnMapping = null;
-    if (noDictionaryColMapping.length == this.segmentProperties.getNumberOfSortColumns()) {
-      noDictionarySortColumnMapping = noDictionaryColMapping;
-    } else {
-      noDictionarySortColumnMapping = new boolean[this.segmentProperties.getNumberOfSortColumns()];
-      System.arraycopy(noDictionaryColMapping, 0,
-          noDictionarySortColumnMapping, 0, noDictionarySortColumnMapping.length);
-    }
+    boolean[] noDictionarySortColumnMapping = CarbonDataProcessorUtil
+        .getNoDictSortColMapping(carbonTable.getDatabaseName(), carbonTable.getTableName());
     sortParameters.setNoDictionarySortColumn(noDictionarySortColumnMapping);
     String[] sortTempFileLocation = CarbonDataProcessorUtil.arrayAppend(tempStoreLocation,
         CarbonCommonConstants.FILE_SEPARATOR, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);

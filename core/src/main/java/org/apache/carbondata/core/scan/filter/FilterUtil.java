@@ -645,8 +645,9 @@ public final class FilterUtil {
           continue;
         }
 
-        filterValuesList
-            .add(DataTypeUtil.getMeasureValueBasedOnDataType(result, dataType, carbonMeasure));
+        filterValuesList.add(DataTypeUtil
+            .getMeasureValueBasedOnDataType(result, dataType, carbonMeasure.getScale(),
+                carbonMeasure.getPrecision()));
 
       }
     } catch (Throwable ex) {
@@ -2178,4 +2179,41 @@ public final class FilterUtil {
     }
     return filterExecuter;
   }
+
+  /**
+   * This method is used to compare the filter value with min and max values.
+   * This is used in case of filter queries on no dictionary column.
+   *
+   * @param filterValue
+   * @param minMaxBytes
+   * @param carbonDimension
+   * @param isMin
+   * @return
+   */
+  public static int compareValues(byte[] filterValue, byte[] minMaxBytes,
+      CarbonDimension carbonDimension, boolean isMin) {
+    DataType dataType = carbonDimension.getDataType();
+    if (DataTypeUtil.isPrimitiveColumn(dataType) && !carbonDimension
+        .hasEncoding(Encoding.DICTIONARY)) {
+      Object value =
+          DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(minMaxBytes, dataType);
+      // filter value should be in range of max and min value i.e
+      // max>filtervalue>min
+      // so filter-max should be negative
+      Object data = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(filterValue, dataType);
+      SerializableComparator comparator = Comparator.getComparator(dataType);
+      if (isMin) {
+        return comparator.compare(value, data);
+      } else {
+        return comparator.compare(data, value);
+      }
+    } else {
+      if (isMin) {
+        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(minMaxBytes, filterValue);
+      } else {
+        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValue, minMaxBytes);
+      }
+    }
+  }
+
 }

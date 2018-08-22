@@ -48,6 +48,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
 
@@ -240,9 +241,17 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private boolean isVarcharColumnFull(CarbonRow row) {
     if (model.getVarcharDimIdxInNoDict().size() > 0) {
-      byte[][] nonDictArray = WriteStepRowUtil.getNoDictAndComplexDimension(row);
+      Object[] nonDictArray = WriteStepRowUtil.getNoDictAndComplexDimension(row);
       for (int i = 0; i < model.getVarcharDimIdxInNoDict().size(); i++) {
-        varcharColumnSizeInByte[i] += nonDictArray[model.getVarcharDimIdxInNoDict().get(i)].length;
+        if (DataTypeUtil
+            .isPrimitiveColumn(model.getNoDictAndComplexColumns()[i].getDataType())) {
+          // get the size from the data type
+          varcharColumnSizeInByte[i] +=
+              model.getNoDictAndComplexColumns()[i].getDataType().getSizeInBytes();
+        } else {
+          varcharColumnSizeInByte[i] +=
+              ((byte[]) nonDictArray[model.getVarcharDimIdxInNoDict().get(i)]).length;
+        }
         if (SnappyCompressor.MAX_BYTE_TO_COMPRESS -
                 (varcharColumnSizeInByte[i] + dataRows.size() * 4) < (2 << 20)) {
           LOGGER.info("Limited by varchar column, page size is " + dataRows.size());

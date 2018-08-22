@@ -20,7 +20,11 @@ package org.apache.carbondata.processing.loading.sort.unsafe.comparator;
 import java.util.Comparator;
 
 import org.apache.carbondata.core.memory.CarbonUnsafe;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
+import org.apache.carbondata.core.util.CarbonUnsafeUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.comparator.SerializableComparator;
 import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeCarbonRow;
 import org.apache.carbondata.processing.sort.sortdata.TableFieldStat;
@@ -52,6 +56,7 @@ public class UnsafeRowComparator implements Comparator<UnsafeCarbonRow> {
     long rowA = rowL.address;
     long rowB = rowR.address;
     int sizeInDictPartA = 0;
+    int noDicSortIdx = 0;
 
     int sizeInNonDictPartA = 0;
     int sizeInDictPartB = 0;
@@ -60,25 +65,50 @@ public class UnsafeRowComparator implements Comparator<UnsafeCarbonRow> {
       if (isNoDictionary) {
         short lengthA = CarbonUnsafe.getUnsafe().getShort(baseObjectL,
             rowA + dictSizeInMemory + sizeInNonDictPartA);
-        byte[] byteArr1 = new byte[lengthA];
         sizeInNonDictPartA += 2;
-        CarbonUnsafe.getUnsafe()
-            .copyMemory(baseObjectL, rowA + dictSizeInMemory + sizeInNonDictPartA,
-                byteArr1, CarbonUnsafe.BYTE_ARRAY_OFFSET, lengthA);
-        sizeInNonDictPartA += lengthA;
-
         short lengthB = CarbonUnsafe.getUnsafe().getShort(baseObjectR,
             rowB + dictSizeInMemory + sizeInNonDictPartB);
-        byte[] byteArr2 = new byte[lengthB];
         sizeInNonDictPartB += 2;
-        CarbonUnsafe.getUnsafe()
-            .copyMemory(baseObjectR, rowB + dictSizeInMemory + sizeInNonDictPartB,
-                byteArr2, CarbonUnsafe.BYTE_ARRAY_OFFSET, lengthB);
-        sizeInNonDictPartB += lengthB;
+        DataType dataType = tableFieldStat.getNoDictDataType()[noDicSortIdx++];
+        if (DataTypeUtil.isPrimitiveColumn(dataType)) {
+          Object data1 = null;
+          if (0 != lengthA) {
+            data1 = CarbonUnsafeUtil
+                .getDataFromUnsafe(dataType, baseObjectL, rowA + dictSizeInMemory,
+                    sizeInNonDictPartA, lengthA);
+            sizeInNonDictPartA += lengthA;
+          }
+          Object data2 = null;
+          if (0 != lengthB) {
+            data2 = CarbonUnsafeUtil
+                .getDataFromUnsafe(dataType, baseObjectR, rowB + dictSizeInMemory,
+                    sizeInNonDictPartB, lengthB);
+            sizeInNonDictPartB += lengthB;
+          }
+          // use the data type based comparator for the no dictionary encoded columns
+          SerializableComparator comparator =
+              org.apache.carbondata.core.util.comparator.Comparator.getComparator(dataType);
+          int difference = comparator.compare(data1, data2);
+          if (difference != 0) {
+            return difference;
+          }
+        } else {
+          byte[] byteArr1 = new byte[lengthA];
+          CarbonUnsafe.getUnsafe()
+              .copyMemory(baseObjectL, rowA + dictSizeInMemory + sizeInNonDictPartA, byteArr1,
+                  CarbonUnsafe.BYTE_ARRAY_OFFSET, lengthA);
+          sizeInNonDictPartA += lengthA;
 
-        int difference = UnsafeComparer.INSTANCE.compareTo(byteArr1, byteArr2);
-        if (difference != 0) {
-          return difference;
+          byte[] byteArr2 = new byte[lengthB];
+          CarbonUnsafe.getUnsafe()
+              .copyMemory(baseObjectR, rowB + dictSizeInMemory + sizeInNonDictPartB, byteArr2,
+                  CarbonUnsafe.BYTE_ARRAY_OFFSET, lengthB);
+          sizeInNonDictPartB += lengthB;
+
+          int difference = UnsafeComparer.INSTANCE.compareTo(byteArr1, byteArr2);
+          if (difference != 0) {
+            return difference;
+          }
         }
       } else {
         int dimFieldA = CarbonUnsafe.getUnsafe().getInt(baseObjectL, rowA + sizeInDictPartA);

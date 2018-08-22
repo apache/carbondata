@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.page.encoding;
 
 import java.math.BigDecimal;
 
+import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.DecimalColumnPage;
@@ -36,6 +37,7 @@ import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
  * Default factory will select encoding base on column page data type and statistics
@@ -57,8 +59,11 @@ public class DefaultEncodingFactory extends EncodingFactory {
   @Override
   public ColumnPageEncoder createEncoder(TableSpec.ColumnSpec columnSpec, ColumnPage inputPage) {
     // TODO: add log
-    if (columnSpec instanceof TableSpec.MeasureSpec) {
-      return createEncoderForMeasure(inputPage);
+    // choose the encoding type for measure type and no dictionary primitive type columns
+    if (columnSpec instanceof TableSpec.MeasureSpec || (
+        DataTypeUtil.isPrimitiveColumn(columnSpec.getSchemaDataType())
+            && columnSpec.getColumnType() == ColumnType.PLAIN_VALUE)) {
+      return createEncoderForMeasureOrNoDictionaryPrimitive(inputPage, columnSpec);
     } else {
       if (newWay) {
         return createEncoderForDimension((TableSpec.DimensionSpec) columnSpec, inputPage);
@@ -107,7 +112,8 @@ public class DefaultEncodingFactory extends EncodingFactory {
     }
   }
 
-  private ColumnPageEncoder createEncoderForMeasure(ColumnPage columnPage) {
+  private ColumnPageEncoder createEncoderForMeasureOrNoDictionaryPrimitive(ColumnPage columnPage,
+      TableSpec.ColumnSpec columnSpec) {
     SimpleStatsResult stats = columnPage.getStatistics();
     DataType dataType = stats.getDataType();
     if (dataType == DataTypes.BOOLEAN) {
@@ -116,11 +122,11 @@ public class DefaultEncodingFactory extends EncodingFactory {
         dataType == DataTypes.SHORT ||
         dataType == DataTypes.INT ||
         dataType == DataTypes.LONG) {
-      return selectCodecByAlgorithmForIntegral(stats, false).createEncoder(null);
+      return selectCodecByAlgorithmForIntegral(stats, false, columnSpec).createEncoder(null);
     } else if (DataTypes.isDecimal(dataType)) {
-      return createEncoderForDecimalDataTypeMeasure(columnPage);
+      return createEncoderForDecimalDataTypeMeasure(columnPage, columnSpec);
     } else if (dataType == DataTypes.FLOAT || dataType == DataTypes.DOUBLE) {
-      return selectCodecByAlgorithmForFloating(stats, false).createEncoder(null);
+      return selectCodecByAlgorithmForFloating(stats, false, columnSpec).createEncoder(null);
     } else if (dataType == DataTypes.BYTE_ARRAY) {
       return new DirectCompressCodec(columnPage.getDataType()).createEncoder(null);
     } else {
@@ -128,13 +134,15 @@ public class DefaultEncodingFactory extends EncodingFactory {
     }
   }
 
-  private ColumnPageEncoder createEncoderForDecimalDataTypeMeasure(ColumnPage columnPage) {
+  private ColumnPageEncoder createEncoderForDecimalDataTypeMeasure(ColumnPage columnPage,
+      TableSpec.ColumnSpec columnSpec) {
     DecimalConverterFactory.DecimalConverterType decimalConverterType =
         ((DecimalColumnPage) columnPage).getDecimalConverter().getDecimalConverterType();
     switch (decimalConverterType) {
       case DECIMAL_INT:
       case DECIMAL_LONG:
-        return selectCodecByAlgorithmForDecimal(columnPage.getStatistics(), decimalConverterType)
+        return selectCodecByAlgorithmForDecimal(columnPage.getStatistics(), decimalConverterType,
+            columnSpec)
             .createEncoder(null);
       default:
         return new DirectCompressCodec(columnPage.getDataType()).createEncoder(null);
@@ -245,7 +253,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
    * size is smaller
    */
   static ColumnPageCodec selectCodecByAlgorithmForIntegral(SimpleStatsResult stats,
-      boolean isComplexPrimitive) {
+      boolean isComplexPrimitive, TableSpec.ColumnSpec columnSpec) {
     DataType srcDataType = stats.getDataType();
     DataType adaptiveDataType = fitMinMax(stats.getDataType(), stats.getMax(), stats.getMin());
 
@@ -260,19 +268,40 @@ public class DefaultEncodingFactory extends EncodingFactory {
         return new DirectCompressCodec(stats.getDataType());
       }
     }
+    boolean isInvertedIndex = isInvertedIndex(isComplexPrimitive, columnSpec);
     if (adaptiveDataType.getSizeInBytes() <= deltaDataType.getSizeInBytes()) {
       // choose adaptive encoding
-      return new AdaptiveIntegralCodec(stats.getDataType(), adaptiveDataType, stats);
+      return new AdaptiveIntegralCodec(stats.getDataType(), adaptiveDataType, stats,
+          isInvertedIndex);
     } else {
       // choose delta adaptive encoding
-      return new AdaptiveDeltaIntegralCodec(stats.getDataType(), deltaDataType, stats);
+      return new AdaptiveDeltaIntegralCodec(stats.getDataType(), deltaDataType, stats,
+          isInvertedIndex);
     }
+  }
+
+  /**
+   * Check whether the column is sort column and inverted index column
+   *
+   * @param isComplexPrimitive
+   * @param columnSpec
+   * @return
+   */
+  private static boolean isInvertedIndex(boolean isComplexPrimitive,
+      TableSpec.ColumnSpec columnSpec) {
+    boolean isSort;
+    boolean isInvertedIndex = false;
+    if (columnSpec instanceof TableSpec.DimensionSpec && !isComplexPrimitive) {
+      isSort = ((TableSpec.DimensionSpec) columnSpec).isInSortColumns();
+      isInvertedIndex = isSort && ((TableSpec.DimensionSpec) columnSpec).isDoInvertedIndex();
+    }
+    return isInvertedIndex;
   }
 
   // choose between upscale adaptive encoder or upscale delta adaptive encoder,
   // based on whose target data type size is smaller
   static ColumnPageCodec selectCodecByAlgorithmForFloating(SimpleStatsResult stats,
-      boolean isComplexPrimitive) {
+      boolean isComplexPrimitive, TableSpec.ColumnSpec columnSpec) {
     DataType srcDataType = stats.getDataType();
     double maxValue = (double) stats.getMax();
     double minValue = (double) stats.getMin();
@@ -290,7 +319,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
     double absMaxValue = Math.max(Math.abs(maxValue), Math.abs(minValue));
     if (decimalCount == 0) {
       // short, int, long
-      return selectCodecByAlgorithmForIntegral(stats, false);
+      return selectCodecByAlgorithmForIntegral(stats, false, columnSpec);
     } else if (decimalCount < 0 && !isComplexPrimitive) {
       return new DirectCompressCodec(DataTypes.DOUBLE);
     } else {
@@ -304,11 +333,13 @@ public class DefaultEncodingFactory extends EncodingFactory {
         DataType deltaDataType = compareMinMaxAndSelectDataType(
             (long) (Math.pow(10, decimalCount) * (maxValue - minValue)));
         if (adaptiveDataType.getSizeInBytes() > deltaDataType.getSizeInBytes()) {
-          return new AdaptiveDeltaFloatingCodec(srcDataType, deltaDataType, stats);
+          return new AdaptiveDeltaFloatingCodec(srcDataType, deltaDataType, stats,
+              isInvertedIndex(isComplexPrimitive, columnSpec));
         } else if (adaptiveDataType.getSizeInBytes() < DataTypes.DOUBLE.getSizeInBytes() || (
             (isComplexPrimitive) && (adaptiveDataType.getSizeInBytes() == DataTypes.DOUBLE
                 .getSizeInBytes()))) {
-          return new AdaptiveFloatingCodec(srcDataType, adaptiveDataType, stats);
+          return new AdaptiveFloatingCodec(srcDataType, adaptiveDataType, stats,
+              isInvertedIndex(isComplexPrimitive, columnSpec));
         } else {
           return new DirectCompressCodec(DataTypes.DOUBLE);
         }
@@ -321,7 +352,8 @@ public class DefaultEncodingFactory extends EncodingFactory {
    * size is smaller for decimal data type
    */
   static ColumnPageCodec selectCodecByAlgorithmForDecimal(SimpleStatsResult stats,
-      DecimalConverterFactory.DecimalConverterType decimalConverterType) {
+      DecimalConverterFactory.DecimalConverterType decimalConverterType,
+      TableSpec.ColumnSpec columnSpec) {
     DataType srcDataType = stats.getDataType();
     DataType adaptiveDataType =
         fitMinMaxForDecimalType(stats.getDataType(), stats.getMax(), stats.getMin(),
@@ -343,10 +375,12 @@ public class DefaultEncodingFactory extends EncodingFactory {
     }
     if (adaptiveDataType.getSizeInBytes() <= deltaDataType.getSizeInBytes()) {
       // choose adaptive encoding
-      return new AdaptiveIntegralCodec(stats.getDataType(), adaptiveDataType, stats);
+      return new AdaptiveIntegralCodec(stats.getDataType(), adaptiveDataType, stats,
+          isInvertedIndex(columnSpec.getColumnType() == ColumnType.COMPLEX_PRIMITIVE, columnSpec));
     } else {
       // choose delta adaptive encoding
-      return new AdaptiveDeltaIntegralCodec(stats.getDataType(), deltaDataType, stats);
+      return new AdaptiveDeltaIntegralCodec(stats.getDataType(), deltaDataType, stats,
+          isInvertedIndex(columnSpec.getColumnType() == ColumnType.COMPLEX_PRIMITIVE, columnSpec));
     }
   }
 

@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.page.statistics;
 
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 // Statistics of dimension and measure column in a TablePage
 public class TablePageStatistics {
@@ -58,8 +59,17 @@ public class TablePageStatistics {
   private void updateDimensionMinMax(EncodedColumnPage[] dimensions) {
     for (int i = 0; i < dimensions.length; i++) {
       SimpleStatsResult stats = dimensions[i].getStats();
-      dimensionMaxValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), stats.getMax());
-      dimensionMinValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), stats.getMin());
+      Object min = stats.getMin();
+      Object max = stats.getMax();
+      if (CarbonUtil.isEncodedWithMeta(dimensions[i].getPageMetadata().getEncoders())) {
+        dimensionMaxValue[i] = DataTypeUtil
+            .getMinMaxBytesBasedOnDataTypeForNoDictionaryColumn(max, stats.getDataType());
+        dimensionMinValue[i] = DataTypeUtil
+            .getMinMaxBytesBasedOnDataTypeForNoDictionaryColumn(min, stats.getDataType());
+      } else {
+        dimensionMaxValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), max);
+        dimensionMinValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), min);
+      }
       writeMinMaxForDimensions[i] = stats.writeMinMax();
     }
   }

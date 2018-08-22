@@ -240,10 +240,9 @@ public abstract class BlockletScannedResult {
    * Fill the column data to vector
    */
   public void fillColumnarNoDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
-    int column = 0;
     for (int i = 0; i < this.noDictionaryColumnChunkIndexes.length; i++) {
-      column = dimensionColumnPages[noDictionaryColumnChunkIndexes[i]][pageCounter]
-          .fillVector(vectorInfo, column);
+      dimensionColumnPages[noDictionaryColumnChunkIndexes[i]][pageCounter]
+          .fillVector(vectorInfo, i);
     }
   }
 
