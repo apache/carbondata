@@ -100,6 +100,7 @@
     <module>processing</module>
     <module>hadoop</module>
     <module>integration/spark-common</module>
+    <module>integration/spark-datasource</module>
     <module>integration/spark-common-test</module>
     <module>datamap/examples</module>
     <module>store/sdk</module>

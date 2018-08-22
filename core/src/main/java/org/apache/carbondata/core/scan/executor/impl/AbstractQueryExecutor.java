@@ -216,7 +216,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         }
         if (null == segmentProperties) {
           segmentProperties = new SegmentProperties(fileFooter.getColumnInTable(),
-              blockInfo.getDetailInfo().getDimLens());
+              fileFooter.getSegmentInfo().getColumnCardinality());
           filePathToSegmentPropertiesMap.put(blockInfo.getFilePath(), segmentProperties);
         }
         readAndFillBlockletInfo(tableBlockInfos, blockInfo,

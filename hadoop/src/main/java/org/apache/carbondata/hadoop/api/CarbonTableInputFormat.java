@@ -660,7 +660,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       if (job.getConfiguration().getBoolean(CARBON_TRANSACTIONAL_TABLE, true)) {
         readCommittedScope = new TableStatusReadCommittedScope(identifier);
       } else {
-        readCommittedScope = new LatestFilesReadCommittedScope(identifier.getTablePath());
+        readCommittedScope = new LatestFilesReadCommittedScope(identifier.getTablePath(),
+            getSubFoldersToRead(job.getConfiguration()));
       }
       this.readCommittedScope = readCommittedScope;
     }

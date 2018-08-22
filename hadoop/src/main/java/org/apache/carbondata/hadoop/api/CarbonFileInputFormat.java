@@ -116,7 +116,8 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
         readCommittedScope = new LatestFilesReadCommittedScope(
             identifier.getTablePath() + "/Fact/Part0/Segment_null/");
       } else {
-        readCommittedScope = new LatestFilesReadCommittedScope(identifier.getTablePath());
+        readCommittedScope = new LatestFilesReadCommittedScope(identifier.getTablePath(),
+            getSubFoldersToRead(job.getConfiguration()));
       }
       Expression filter = getFilterPredicates(job.getConfiguration());
       // this will be null in case of corrupt schema file.

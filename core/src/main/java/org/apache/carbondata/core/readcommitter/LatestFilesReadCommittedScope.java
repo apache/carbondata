@@ -36,12 +36,14 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
  */
 @InterfaceAudience.Internal
 @InterfaceStability.Stable
-public class LatestFilesReadCommittedScope implements ReadCommittedScope {
+public class LatestFilesReadCommittedScope
+    implements ReadCommittedScope {
 
   private String carbonFilePath;
   private String segmentId;
   private ReadCommittedIndexFileSnapShot readCommittedIndexFileSnapShot;
   private LoadMetadataDetails[] loadMetadataDetails;
+  private String[] subFolders;
 
   /**
    * a new constructor of this class
@@ -66,7 +68,23 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
    * @param path carbon file path
    */
   public LatestFilesReadCommittedScope(String path) {
-    this(path, null);
+    this(path, (String) null);
+  }
+
+  /**
+   * a new constructor with path
+   *
+   * @param path carbon file path
+   */
+  public LatestFilesReadCommittedScope(String path, String[] subFolders) {
+    Objects.requireNonNull(path);
+    this.carbonFilePath = path;
+    this.subFolders = subFolders;
+    try {
+      takeCarbonIndexFileSnapShot();
+    } catch (IOException ex) {
+      throw new RuntimeException("Error while taking index snapshot", ex);
+    }
   }
 
   private void prepareLoadMetadata() {
@@ -128,8 +146,9 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
     return indexFileStore;
   }
 
-  @Override public SegmentRefreshInfo getCommittedSegmentRefreshInfo(
-      Segment segment, UpdateVO updateVo) throws IOException {
+  @Override
+  public SegmentRefreshInfo getCommittedSegmentRefreshInfo(Segment segment, UpdateVO updateVo)
+      throws IOException {
     Map<String, SegmentRefreshInfo> snapShot =
         readCommittedIndexFileSnapShot.getSegmentTimestampUpdaterMap();
     String segName;
@@ -147,8 +166,8 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
       // This is CarbonFile case where the Index files are present inside the Segment Folder
       // So the Segment has to be extracted from the path not from the CarbonIndex file.
       String segString = indexFilePath.substring(0, indexFilePath.lastIndexOf("/") + 1);
-      String segName = segString
-          .substring(segString.lastIndexOf("_") + 1, segString.lastIndexOf("/"));
+      String segName =
+          segString.substring(segString.lastIndexOf("_") + 1, segString.lastIndexOf("/"));
       return segName;
     } else {
       String fileName = carbonIndexFileName;
@@ -165,7 +184,16 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
     CarbonFile[] carbonIndexFiles = null;
     if (file.isDirectory()) {
       if (segmentId == null) {
-        carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(file);
+        if (subFolders != null) {
+          List<CarbonFile> allIndexFiles = new ArrayList<>();
+          for (String subFolder : subFolders) {
+            CarbonFile[] files = SegmentIndexFileStore.getCarbonIndexFiles(subFolder);
+            allIndexFiles.addAll(Arrays.asList(files));
+          }
+          carbonIndexFiles = allIndexFiles.toArray(new CarbonFile[0]);
+        } else {
+          carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(file);
+        }
       } else {
         String segmentPath = CarbonTablePath.getSegmentPath(carbonFilePath, segmentId);
         carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(segmentPath);
@@ -181,8 +209,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
           // Get Segment Name from the IndexFile.
           String indexFilePath =
               FileFactory.getUpdatedFilePath(carbonIndexFiles[i].getAbsolutePath());
-          String segId =
-              getSegmentID(carbonIndexFiles[i].getName(), indexFilePath);
+          String segId = getSegmentID(carbonIndexFiles[i].getName(), indexFilePath);
           // TODO. During Partition table handling, place Segment File Name.
           List<String> indexList;
           SegmentRefreshInfo segmentRefreshInfo;

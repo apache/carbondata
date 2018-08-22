@@ -22,6 +22,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
@@ -115,6 +116,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private static final String PARTITIONS_TO_PRUNE =
       "mapreduce.input.carboninputformat.partitions.to.prune";
   private static final String FGDATAMAP_PRUNING = "mapreduce.input.carboninputformat.fgdatamap";
+  private static final String SUB_FOLDERS = "mapreduce.input.carboninputformat.subfolders";
 
   // record segment number and hit blocks
   protected int numSegments = 0;
@@ -335,6 +337,29 @@ m filterExpression
     } catch (InvalidConfigurationException e) {
       throw new IOException(e);
     }
+  }
+
+  public static void setSubFoldersToRead(Configuration configuration, String[] subFoldersToRead) {
+    if (subFoldersToRead == null) {
+      return;
+    }
+    try {
+      String subFoldersString =
+          ObjectSerializationUtil.convertObjectToString(subFoldersToRead);
+      configuration.set(SUB_FOLDERS, subFoldersString);
+    } catch (Exception e) {
+      throw new RuntimeException(
+          "Error while setting subfolders information to Job" + Arrays.toString(subFoldersToRead),
+          e);
+    }
+  }
+
+  public static String[] getSubFoldersToRead(Configuration configuration) throws IOException {
+    String subFoldersString = configuration.get(SUB_FOLDERS);
+    if (subFoldersString != null) {
+      return (String[]) ObjectSerializationUtil.convertStringToObject(subFoldersString);
+    }
+    return null;
   }
 
   /**
