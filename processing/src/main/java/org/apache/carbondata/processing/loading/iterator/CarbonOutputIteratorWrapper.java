@@ -45,7 +45,7 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<Object[]> {
 
   private RowBatch readBatch;
 
-  private static Object lockObject = new Object();
+  private static final Object lockObject = new Object();
   private ArrayBlockingQueue<RowBatch> queue = new ArrayBlockingQueue<>(10);
 
   public void write(Object[] row) throws InterruptedException {
