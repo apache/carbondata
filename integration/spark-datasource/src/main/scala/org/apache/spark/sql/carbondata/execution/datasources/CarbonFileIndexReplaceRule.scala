@@ -35,7 +35,7 @@ class CarbonFileIndexReplaceRule extends Rule[LogicalPlan] {
     val p = plan.transform {
       case l: LogicalRelation
         if l.relation.isInstanceOf[HadoopFsRelation] &&
-           l.relation.asInstanceOf[HadoopFsRelation].fileFormat.toString.equals("carbondata") &&
+           l.relation.asInstanceOf[HadoopFsRelation].fileFormat.toString.equals("carbon") &&
            l.relation.asInstanceOf[HadoopFsRelation].location.isInstanceOf[InMemoryFileIndex] =>
         val fsRelation = l.relation.asInstanceOf[HadoopFsRelation]
         val fileIndex = fsRelation.location.asInstanceOf[InMemoryFileIndex]
@@ -47,7 +47,7 @@ class CarbonFileIndexReplaceRule extends Rule[LogicalPlan] {
         val logicalRelation = l.copy(relation = fsRelationCopy.asInstanceOf[BaseRelation])
         logicalRelation
       case insert: InsertIntoHadoopFsRelationCommand
-        if createSubFolder && insert.fileFormat.toString.equals("carbondata") &&
+        if createSubFolder && insert.fileFormat.toString.equals("carbon") &&
            FileFactory.getUpdatedFilePath(insert.outputPath.toString).equals(
              FileFactory.getUpdatedFilePath(insert.options("path"))) &&
            insert.partitionColumns.isEmpty =>

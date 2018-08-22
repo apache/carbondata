@@ -188,12 +188,12 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
   }
 
   override def  afterAll {
-    dropTable()
+//    dropTable()
     sql("USE default")
-    sql("DROP DATABASE IF EXISTS streaming CASCADE")
+//    sql("DROP DATABASE IF EXISTS streaming CASCADE")
     var csvDataDir = integrationPath + "/spark2/target/csvdatanew"
     badRecordFilePath.delete()
-    new File(csvDataDir).delete()
+//    new File(csvDataDir).delete()
     csvDataDir = integrationPath + "/spark2/target/csvdata"
     new File(csvDataDir).delete()
   }
@@ -275,7 +275,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       .asInstanceOf[CarbonRelation].metaData.carbonTable
     val csvDataDir = new File("target/csvdatanew").getCanonicalPath
     // streaming ingest 10 rows
-    val thread = createFileStreamingThread(spark, carbonTable, csvDataDir, intervalSecond = 1,
+    val thread = createFileStreamingThread(spark, carbonTable, csvDataDir, intervalSecond = 5,
       identifier)
     thread.start()
     Thread.sleep(5000)

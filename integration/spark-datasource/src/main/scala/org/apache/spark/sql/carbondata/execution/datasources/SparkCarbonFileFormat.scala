@@ -220,9 +220,9 @@ class SparkCarbonFileFormat extends FileFormat
     }
   }
 
-  override def shortName(): String = "carbondata"
+  override def shortName(): String = "carbon"
 
-  override def toString: String = "carbondata"
+  override def toString: String = "carbon"
 
   override def hashCode(): Int = getClass.hashCode()
 

@@ -47,9 +47,9 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
       .map(x => ("a" + x % 10, "b", x))
       .toDF("c1", "c2", "number")
     spark.sql("drop table if exists testformat")
-    // Saves dataframe to carbondata file
+    // Saves dataframe to carbon file
     df.write
-      .format("carbondata").saveAsTable("testformat")
+      .format("carbon").saveAsTable("testformat")
     assert(spark.sql("select * from testformat").count() == 10)
     assert(spark.sql("select * from testformat where c1='a0'").count() == 1)
     assert(spark.sql("select * from testformat").count() == 10)
@@ -63,10 +63,10 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
       .toDF("c1", "c2", "number")
     spark.sql("drop table if exists testparquet")
     spark.sql("drop table if exists testformat")
-    // Saves dataframe to carbondata file
+    // Saves dataframe to carbon file
     df.write
       .format("parquet").saveAsTable("testparquet")
-    spark.sql("create table carbon_table(c1 string, c2 string, number int) using carbondata")
+    spark.sql("create table carbon_table(c1 string, c2 string, number int) using carbon")
     spark.sql("insert into carbon_table select * from testparquet")
     TestUtil.checkAnswer(spark.sql("select * from carbon_table"), spark.sql("select * from testparquet"))
     spark.sql("drop table if exists testparquet")
@@ -80,10 +80,10 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
       .map(x => ("a" + x % 10, "b", x))
       .toDF("c1", "c2", "number")
 
-    // Saves dataframe to carbondata file
-    df.write.format("carbondata").save(warehouse1 + "/test_folder/")
+    // Saves dataframe to carbon file
+    df.write.format("carbon").save(warehouse1 + "/test_folder/")
 
-    val frame = spark.read.format("carbondata").load(warehouse1 + "/test_folder")
+    val frame = spark.read.format("carbon").load(warehouse1 + "/test_folder")
     frame.show()
     assert(frame.count() == 10)
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_folder"))
@@ -96,12 +96,12 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
       .map(x => ("a" + x % 10, "b", x))
       .toDF("c1", "c2", "number")
 
-    // Saves dataframe to carbondata file
-    df.write.format("carbondata").save(warehouse1 + "/test_folder/"+System.nanoTime())
-    df.write.format("carbondata").save(warehouse1 + "/test_folder/"+System.nanoTime())
-    df.write.format("carbondata").save(warehouse1 + "/test_folder/"+System.nanoTime())
+    // Saves dataframe to carbon file
+    df.write.format("carbon").save(warehouse1 + "/test_folder/"+System.nanoTime())
+    df.write.format("carbon").save(warehouse1 + "/test_folder/"+System.nanoTime())
+    df.write.format("carbon").save(warehouse1 + "/test_folder/"+System.nanoTime())
 
-    val frame = spark.read.format("carbondata").load(warehouse1 + "/test_folder")
+    val frame = spark.read.format("carbon").load(warehouse1 + "/test_folder")
     assert(frame.count() == 30)
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_folder"))
   }
@@ -114,10 +114,10 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
       .map(x => ("a" + x % 10, "b", x))
       .toDF("c1", "c2", "number")
 
-    // Saves dataframe to carbondata file
+    // Saves dataframe to carbon file
     df.write
       .format("parquet").partitionBy("c2").saveAsTable("testparquet")
-    spark.sql("create table carbon_table(c1 string, c2 string, number int) using carbondata  PARTITIONED by (c2)")
+    spark.sql("create table carbon_table(c1 string, c2 string, number int) using carbon  PARTITIONED by (c2)")
     spark.sql("insert into carbon_table select * from testparquet")
     assert(spark.sql("select * from carbon_table").count() == 10)
     TestUtil.checkAnswer(spark.sql("select * from carbon_table"), spark.sql("select * from testparquet"))
@@ -136,7 +136,7 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
     df.write
       .format("parquet").saveAsTable("parquet_table")
     spark.sql("describe parquet_table").show(false)
-    spark.sql("create table carbon_table(c1 string, c2 struct<a1:string, a2:string>, number int) using carbondata")
+    spark.sql("create table carbon_table(c1 string, c2 struct<a1:string, a2:string>, number int) using carbon")
     spark.sql("insert into carbon_table select * from parquet_table")
     assert(spark.sql("select * from carbon_table").count() == 10)
     TestUtil.checkAnswer(spark.sql("select * from carbon_table"), spark.sql("select * from parquet_table"))
@@ -155,7 +155,7 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
     df.write
       .format("parquet").saveAsTable("parquet_table")
     spark.sql("describe parquet_table").show(false)
-    spark.sql("create table carbon_table(c1 string, c2 array<string>, number int) using carbondata")
+    spark.sql("create table carbon_table(c1 string, c2 array<string>, number int) using carbon")
     spark.sql("insert into carbon_table select * from parquet_table")
     assert(spark.sql("select * from carbon_table").count() == 10)
     TestUtil.checkAnswer(spark.sql("select * from carbon_table"), spark.sql("select * from parquet_table"))
@@ -174,7 +174,7 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
     df.write
       .format("parquet").saveAsTable("parquet_table")
     spark.sql("describe parquet_table").show(false)
-    spark.sql("create table carbon_table(c1 string, c2 array<struct<a1:string, a2:string>>, number int) using carbondata")
+    spark.sql("create table carbon_table(c1 string, c2 array<struct<a1:string, a2:string>>, number int) using carbon")
     spark.sql("insert into carbon_table select * from parquet_table")
     assert(spark.sql("select * from carbon_table").count() == 10)
     TestUtil.checkAnswer(spark.sql("select * from carbon_table"), spark.sql("select * from parquet_table"))
@@ -193,7 +193,7 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
     df.write
       .format("parquet").saveAsTable("parquet_table")
     spark.sql("describe parquet_table").show(false)
-    spark.sql("create table carbon_table(c1 string, c2 struct<a1:array<string>, a2:struct<a1:string, a2:string>>, number int) using carbondata")
+    spark.sql("create table carbon_table(c1 string, c2 struct<a1:array<string>, a2:struct<a1:string, a2:string>>, number int) using carbon")
     spark.sql("insert into carbon_table select * from parquet_table")
     assert(spark.sql("select * from carbon_table").count() == 10)
     TestUtil.checkAnswer(spark.sql("select * from carbon_table"), spark.sql("select * from parquet_table"))
@@ -210,10 +210,10 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
       .map(x => ("a" + x % 10, "b", x))
       .toDF("c1", "c2", "number")
 
-    // Saves dataframe to carbondata file
+    // Saves dataframe to carbon file
     df.write
       .format("parquet").saveAsTable("testparquet")
-    spark.sql("create table carbon_table(c1 string, c2 string, number int) using carbondata options('table_blocksize'='256')")
+    spark.sql("create table carbon_table(c1 string, c2 string, number int) using carbon options('table_blocksize'='256')")
     TestUtil.checkExistence(spark.sql("describe formatted carbon_table"), true, "table_blocksize")
     spark.sql("insert into carbon_table select * from testparquet")
     spark.sql("select * from carbon_table").show()
