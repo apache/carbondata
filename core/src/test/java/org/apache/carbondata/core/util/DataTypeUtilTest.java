@@ -62,13 +62,13 @@ public class DataTypeUtilTest {
   @Test public void testGetMeasureValueBasedOnDataType() {
     ColumnSchema columnSchema = new ColumnSchema();
     CarbonMeasure carbonMeasure = new CarbonMeasure(columnSchema, 1);
-    Object resultInt = getMeasureValueBasedOnDataType("1", DataTypes.INT, carbonMeasure);
+    Object resultInt = getMeasureValueBasedOnDataType("1", DataTypes.INT, carbonMeasure.getScale(), carbonMeasure.getPrecision());
     Object expectedInt = Double.valueOf(1).intValue();
     assertEquals(expectedInt, resultInt);
-    Object resultLong = getMeasureValueBasedOnDataType("1", DataTypes.LONG, carbonMeasure);
+    Object resultLong = getMeasureValueBasedOnDataType("1", DataTypes.LONG, carbonMeasure.getScale(), carbonMeasure.getPrecision());
     Object expectedLong = Long.valueOf(1);
     assertEquals(expectedLong, resultLong);
-    Object resultDefault = getMeasureValueBasedOnDataType("1", DataTypes.DOUBLE, carbonMeasure);
+    Object resultDefault = getMeasureValueBasedOnDataType("1", DataTypes.DOUBLE, carbonMeasure.getScale(), carbonMeasure.getPrecision());
     Double expectedDefault = Double.valueOf(1);
     assertEquals(expectedDefault, resultDefault);
 

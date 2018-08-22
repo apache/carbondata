@@ -20,7 +20,9 @@ package org.apache.carbondata.core.datastore.row;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 // Utility to create and retrieve data from CarbonRow in write step.
 public class WriteStepRowUtil {
@@ -34,7 +36,7 @@ public class WriteStepRowUtil {
   public static final int NO_DICTIONARY_AND_COMPLEX = 1;
   public static final int MEASURE = 2;
 
-  public static CarbonRow fromColumnCategory(int[] dictDimensions, byte[][] noDictAndComplex,
+  public static CarbonRow fromColumnCategory(int[] dictDimensions, Object[] noDictAndComplex,
       Object[] measures) {
     Object[] row = new Object[3];
     row[DICTIONARY_DIMENSION] = dictDimensions;
@@ -43,7 +45,8 @@ public class WriteStepRowUtil {
     return new CarbonRow(row);
   }
 
-  public static CarbonRow fromMergerRow(Object[] row, SegmentProperties segmentProperties) {
+  public static CarbonRow fromMergerRow(Object[] row, SegmentProperties segmentProperties,
+      CarbonColumn[] noDicAndComplexColumns) {
     Object[] converted = new Object[3];
 
     // dictionary dimension
@@ -55,8 +58,23 @@ public class WriteStepRowUtil {
     }
     converted[DICTIONARY_DIMENSION] = dictDimensions;
 
+    byte[][] noDictionaryKeys = ((ByteArrayWrapper) row[0]).getNoDictionaryKeys();
+    Object[] noDictKeys = new Object[noDictionaryKeys.length];
+    for (int i = 0; i < noDictionaryKeys.length; i++) {
+      // in case of compaction rows are collected from result collector and are in byte[].
+      // Convert the no dictionary columns to original data,
+      // as load expects the no dictionary column with original data.
+      if (DataTypeUtil.isPrimitiveColumn(noDicAndComplexColumns[i].getDataType())) {
+        noDictKeys[i] = DataTypeUtil
+            .getDataBasedOnDataTypeForNoDictionaryColumn(noDictionaryKeys[i],
+                noDicAndComplexColumns[i].getDataType());
+      } else {
+        noDictKeys[i] = noDictionaryKeys[i];
+      }
+    }
+
     // no dictionary and complex dimension
-    converted[NO_DICTIONARY_AND_COMPLEX] = ((ByteArrayWrapper) row[0]).getNoDictionaryKeys();
+    converted[NO_DICTIONARY_AND_COMPLEX] = noDictKeys;
 
     // measure
     int measureCount = row.length - 1;
@@ -75,8 +93,8 @@ public class WriteStepRowUtil {
     return keyGenerator.generateKey(getDictDimension(row));
   }
 
-  public static byte[][] getNoDictAndComplexDimension(CarbonRow row) {
-    return (byte[][]) row.getData()[NO_DICTIONARY_AND_COMPLEX];
+  public static Object[] getNoDictAndComplexDimension(CarbonRow row) {
+    return (Object[]) row.getData()[NO_DICTIONARY_AND_COMPLEX];
   }
 
   public static Object[] getMeasure(CarbonRow row) {

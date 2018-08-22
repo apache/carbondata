@@ -121,13 +121,13 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
       CarbonDimension dimension = this.dimColEvaluatorInfo.getDimension();
       byte[] defaultValue = dimension.getDefaultValue();
       if (null != defaultValue) {
-        int maxCompare =
-            ByteUtil.UnsafeComparer.INSTANCE.compareTo(defaultValue, filterRangesValues[0]);
         int minCompare =
-            ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterRangesValues[1], defaultValue);
+            FilterUtil.compareValues(filterRangesValues[0], defaultValue, dimension, true);
+        int maxCompare =
+            FilterUtil.compareValues(filterRangesValues[1], defaultValue, dimension, false);
 
-        if (((greaterThanExp && maxCompare > 0) || (greaterThanEqualExp && maxCompare >= 0))
-            && ((lessThanExp && minCompare > 0) || (lessThanEqualExp && minCompare >= 0))) {
+        if (((greaterThanExp && maxCompare > 0) || (greaterThanEqualExp && maxCompare >= 0)) && (
+            (lessThanExp && minCompare > 0) || (lessThanEqualExp && minCompare >= 0))) {
           isDefaultValuePresentInFilter = true;
         }
       }
@@ -275,30 +275,35 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
     // Case D: Filter Values Completely overlaps Block Min and Max then all bits are set.
     //                       Block Min <-----------------------> Block Max
     //         Filter Min <-----------------------------------------------> Filter Max
+    // for no dictionary measure column comparison can be done
+    // on the original data as like measure column
 
     if (isDimensionPresentInCurrentBlock) {
+      CarbonDimension carbonDimension = dimColEvaluatorInfo.getDimension();
       if (((lessThanExp) && (
-          ByteUtil.UnsafeComparer.INSTANCE.compareTo(blockMinValue, filterValues[1]) >= 0)) || (
-          (lessThanEqualExp) && (
-              ByteUtil.UnsafeComparer.INSTANCE.compareTo(blockMinValue, filterValues[1]) > 0)) || (
+          FilterUtil.compareValues(filterValues[1], blockMinValue, carbonDimension, true) >= 0))
+          || ((lessThanEqualExp) && (
+          FilterUtil.compareValues(filterValues[1], blockMinValue, carbonDimension, true) > 0)) || (
           (greaterThanExp) && (
-              ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[0], blockMaxValue) >= 0)) || (
-          (greaterThanEqualExp) && (
-              ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[0], blockMaxValue) > 0))) {
+              FilterUtil.compareValues(filterValues[0], blockMaxValue, carbonDimension, false)
+                  >= 0)) || ((greaterThanEqualExp) && (
+          FilterUtil.compareValues(filterValues[0], blockMaxValue, carbonDimension, false) > 0))) {
         // completely out of block boundary
         isScanRequired = false;
       } else {
         if (((greaterThanExp) && (
-            ByteUtil.UnsafeComparer.INSTANCE.compareTo(blockMinValue, filterValues[0]) > 0)) || (
-            (greaterThanEqualExp) && (
-                ByteUtil.UnsafeComparer.INSTANCE.compareTo(blockMinValue, filterValues[0]) >= 0))) {
+            FilterUtil.compareValues(filterValues[0], blockMinValue, carbonDimension, true) > 0))
+            || ((greaterThanEqualExp) && (
+            FilterUtil.compareValues(filterValues[0], blockMinValue, carbonDimension, true)
+                >= 0))) {
           startBlockMinIsDefaultStart = true;
         }
 
         if (((lessThanExp) && (
-            ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[1], blockMaxValue) > 0)) || (
-            (lessThanEqualExp) && (
-                ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[1], blockMaxValue) >= 0))) {
+            FilterUtil.compareValues(filterValues[1], blockMaxValue, carbonDimension, false) > 0))
+            || ((lessThanEqualExp) && (
+            FilterUtil.compareValues(filterValues[1], blockMaxValue, carbonDimension, false)
+                >= 0))) {
           endBlockMaxisDefaultEnd = true;
         }
 

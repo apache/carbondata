@@ -203,7 +203,9 @@ public class SortDataRows {
       toSort = new Object[entryCount][];
       System.arraycopy(recordHolderList, 0, toSort, 0, entryCount);
       if (parameters.getNumberOfNoDictSortColumns() > 0) {
-        Arrays.sort(toSort, new NewRowComparator(parameters.getNoDictionarySortColumn()));
+        Arrays.sort(toSort, new NewRowComparator(parameters.getNoDictionaryDimnesionColumn(),
+            parameters.getNoDictionarySortColumn(),
+            parameters.getNoDictDataType()));
       } else {
         Arrays.sort(toSort, new NewRowComparatorForNormalDims(parameters.getNumberOfSortColumns()));
       }
@@ -315,7 +317,8 @@ public class SortDataRows {
         long startTime = System.currentTimeMillis();
         if (parameters.getNumberOfNoDictSortColumns() > 0) {
           Arrays.sort(recordHolderArray,
-              new NewRowComparator(parameters.getNoDictionarySortColumn()));
+              new NewRowComparator(parameters.getNoDictionaryDimnesionColumn(),
+                  parameters.getNoDictionarySortColumn(), parameters.getNoDictDataType()));
         } else {
           Arrays.sort(recordHolderArray,
               new NewRowComparatorForNormalDims(parameters.getNumberOfSortColumns()));

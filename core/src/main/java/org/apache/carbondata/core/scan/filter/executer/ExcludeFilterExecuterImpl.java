@@ -397,7 +397,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
       return bitSet;
     }
     // binary search can only be applied if column is sorted
-    if (isNaturalSorted) {
+    if (isNaturalSorted && dimensionColumnPage.isExplicitSorted()) {
       int startIndex = 0;
       for (int i = 0; i < filterValues.length; i++) {
         if (startIndex >= numerOfRows) {

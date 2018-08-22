@@ -25,7 +25,7 @@ import org.apache.carbondata.core.util.ByteUtil;
 /**
  * Below class will be used to for no inverted index
  */
-public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStorage<short[]> {
+public class BlockIndexerStorageForNoInvertedIndexForShort extends BlockIndexerStorage<byte[][]> {
 
   /**
    * column data
@@ -78,14 +78,6 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
     }
   }
 
-  private short[] convertToArray(List<Short> list) {
-    short[] shortArray = new short[list.size()];
-    for (int i = 0; i < shortArray.length; i++) {
-      shortArray[i] = list.get(i);
-    }
-    return shortArray;
-  }
-
   private byte[][] convertToDataPage(List<byte[]> list) {
     byte[][] shortArray = new byte[list.size()][];
     for (int i = 0; i < shortArray.length; i++) {
@@ -98,7 +90,7 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
     return dataRlePage;
   }
 
-  @Override public int getDataRlePageLengthInBytes() {
+  public int getDataRlePageLengthInBytes() {
     if (dataRlePage != null) {
       return dataRlePage.length * 2;
     } else {
@@ -115,7 +107,7 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
     return new short[0];
   }
 
-  @Override public int getRowIdPageLengthInBytes() {
+  public int getRowIdPageLengthInBytes() {
     return 0;
   }
 
@@ -128,7 +120,7 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
     return new short[0];
   }
 
-  @Override public int getRowIdRlePageLengthInBytes() {
+  public int getRowIdRlePageLengthInBytes() {
     return 0;
   }
 
@@ -138,4 +130,5 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
   public byte[][] getDataPage() {
     return dataPage;
   }
+
 }

@@ -34,6 +34,7 @@ import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -53,6 +54,8 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
   private SegmentProperties segprop;
   private CarbonLoadModel loadModel;
   private PartitionSpec partitionSpec;
+
+  CarbonColumn[] noDicAndComplexColumns;
   /**
    * record holder heap
    */
@@ -86,6 +89,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
     setDataFileAttributesInModel(loadModel, compactionType, carbonFactDataHandlerModel);
     carbonFactDataHandlerModel.setCompactionFlow(true);
     carbonFactDataHandlerModel.setSegmentId(loadModel.getSegmentId());
+    this.noDicAndComplexColumns = carbonFactDataHandlerModel.getNoDictAndComplexColumns();
     dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
   }
 
@@ -200,7 +204,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
    * @throws SliceMergerException
    */
   private void addRow(Object[] carbonTuple) throws SliceMergerException {
-    CarbonRow row = WriteStepRowUtil.fromMergerRow(carbonTuple, segprop);
+    CarbonRow row = WriteStepRowUtil.fromMergerRow(carbonTuple, segprop, noDicAndComplexColumns);
     try {
       this.dataHandler.addDataToStore(row);
     } catch (CarbonDataWriterException e) {

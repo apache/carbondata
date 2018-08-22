@@ -86,7 +86,7 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
       if (null != defaultValue) {
         for (int k = 0; k < filterRangeValues.length; k++) {
           int maxCompare =
-              ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterRangeValues[k], defaultValue);
+              FilterUtil.compareValues(filterRangeValues[k], defaultValue, dimension, false);
           if (maxCompare <= 0) {
             isDefaultValuePresentInFilter = true;
             break;
@@ -124,8 +124,16 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
             isScanRequired(maxValue, msrFilterRangeValues, msrColEvalutorInfoList.get(0).getType());
       } else {
         maxValue = blockMaxValue[dimensionChunkIndex[0]];
-        isScanRequired =
+        DataType dataType = dimColEvaluatorInfoList.get(0).getDimension().getDataType();
+        // for no dictionary measure column comparison can be done
+        // on the original data as like measure column
+        if (DataTypeUtil.isPrimitiveColumn(dataType) && !dimColEvaluatorInfoList.get(0)
+            .getDimension().hasEncoding(Encoding.DICTIONARY)) {
+          isScanRequired = isScanRequired(maxValue, filterRangeValues, dataType);
+        } else {
+          isScanRequired =
             isScanRequired(maxValue, filterRangeValues, isMinMaxSet[dimensionChunkIndex[0]]);
+        }
       }
     } else {
       isScanRequired = isDefaultValuePresentInFilter;
@@ -148,6 +156,32 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
       // max>filtervalue>min
       // so filter-max should be negative
       int maxCompare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMaxValue);
+      // if any filter value is in range than this block needs to be
+      // scanned less than equal to max range.
+      if (maxCompare <= 0) {
+        isScanRequired = true;
+        break;
+      }
+    }
+    return isScanRequired;
+  }
+
+  private boolean isScanRequired(byte[] blockMaxValue, byte[][] filterValues, DataType dataType) {
+    boolean isScanRequired = false;
+    Object maxValue =
+        DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(blockMaxValue, dataType);
+    for (int k = 0; k < filterValues.length; k++) {
+      if (ByteUtil.UnsafeComparer.INSTANCE
+          .compareTo(filterValues[k], CarbonCommonConstants.EMPTY_BYTE_ARRAY) == 0) {
+        return true;
+      }
+      // filter value should be in range of max and min value i.e
+      // max>filtervalue>min
+      // so filter-max should be negative
+      Object data =
+          DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(filterValues[k], dataType);
+      SerializableComparator comparator = Comparator.getComparator(dataType);
+      int maxCompare = comparator.compare(data, maxValue);
       // if any filter value is in range than this block needs to be
       // scanned less than equal to max range.
       if (maxCompare <= 0) {
@@ -199,8 +233,19 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
       boolean isExclude = false;
       for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
         if (rawColumnChunk.getMaxValues() != null) {
-          if (isScanRequired(rawColumnChunk.getMaxValues()[i], this.filterRangeValues,
-              rawColumnChunk.getMinMaxFlagArray()[i])) {
+          boolean scanRequired;
+          DataType dataType = dimColEvaluatorInfoList.get(0).getDimension().getDataType();
+          // for no dictionary measure column comparison can be done
+          // on the original data as like measure column
+          if (DataTypeUtil.isPrimitiveColumn(dataType) && !dimColEvaluatorInfoList.get(0)
+              .getDimension().hasEncoding(Encoding.DICTIONARY)) {
+            scanRequired =
+                isScanRequired(rawColumnChunk.getMaxValues()[i], this.filterRangeValues, dataType);
+          } else {
+            scanRequired = isScanRequired(rawColumnChunk.getMaxValues()[i], this.filterRangeValues,
+              rawColumnChunk.getMinMaxFlagArray()[i]);
+          }
+          if (scanRequired) {
             int compare = ByteUtil.UnsafeComparer.INSTANCE
                 .compareTo(filterRangeValues[0], rawColumnChunk.getMinValues()[i]);
             if (compare <= 0) {
@@ -411,7 +456,7 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
     BitSet bitSet = new BitSet(numerOfRows);
     byte[][] filterValues = this.filterRangeValues;
     // binary search can only be applied if column is sorted
-    if (isNaturalSorted) {
+    if (isNaturalSorted && dimensionColumnPage.isExplicitSorted()) {
       int start = 0;
       int last = 0;
       int startIndex = 0;

@@ -61,7 +61,8 @@ public class TablePageKey {
   /** update all keys based on the input row */
   public void update(int rowId, CarbonRow row, byte[] mdk) {
     if (hasNoDictionary) {
-      currentNoDictionaryKey = WriteStepRowUtil.getNoDictAndComplexDimension(row);
+      Object[] noDictAndComplexDimension = WriteStepRowUtil.getNoDictAndComplexDimension(row);
+      currentNoDictionaryKey = new byte[noDictAndComplexDimension.length][0];
     }
     if (rowId == 0) {
       startKey = mdk;

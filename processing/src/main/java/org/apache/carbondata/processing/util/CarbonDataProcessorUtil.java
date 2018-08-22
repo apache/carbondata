@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -426,12 +427,81 @@ public final class CarbonDataProcessorUtil {
     return type;
   }
 
-  public static DataType[] getMeasureDataType(int measureCount, DataField[] measureFields) {
-    DataType[] type = new DataType[measureCount];
-    for (int i = 0; i < type.length; i++) {
-      type[i] = measureFields[i].getColumn().getDataType();
+  /**
+   * Get the no dictionary data types on the table
+   *
+   * @param databaseName
+   * @param tableName
+   * @return
+   */
+  public static DataType[] getNoDictDataTypes(String databaseName, String tableName) {
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
+    List<CarbonDimension> dimensions = carbonTable.getDimensionByTableName(tableName);
+    List<DataType> type = new ArrayList<>();
+    for (int i = 0; i < dimensions.size(); i++) {
+      if (!dimensions.get(i).hasEncoding(Encoding.DICTIONARY)) {
+        type.add(dimensions.get(i).getDataType());
+      }
     }
-    return type;
+    return type.toArray(new DataType[type.size()]);
+  }
+
+  /**
+   * Get the no dictionary sort column mapping of the table
+   *
+   * @param databaseName
+   * @param tableName
+   * @return
+   */
+  public static boolean[] getNoDictSortColMapping(String databaseName, String tableName) {
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
+    List<CarbonDimension> dimensions = carbonTable.getDimensionByTableName(tableName);
+    List<Boolean> noDicSortColMap = new ArrayList<>();
+    for (int i = 0; i < dimensions.size(); i++) {
+      if (!dimensions.get(i).hasEncoding(Encoding.DICTIONARY)) {
+        if (dimensions.get(i).isSortColumn()) {
+          noDicSortColMap.add(true);
+        } else {
+          noDicSortColMap.add(false);
+        }
+      }
+    }
+    Boolean[] mapping = noDicSortColMap.toArray(new Boolean[noDicSortColMap.size()]);
+    boolean[] noDicSortColMapping = new boolean[mapping.length];
+    for (int i = 0; i < mapping.length; i++) {
+      noDicSortColMapping[i] = mapping[i].booleanValue();
+    }
+    return noDicSortColMapping;
+  }
+
+  /**
+   * Get the data types of the no dictionary sort columns
+   *
+   * @param databaseName
+   * @param tableName
+   * @return
+   */
+  public static Map<String, DataType[]> getNoDictSortAndNoSortDataTypes(String databaseName,
+      String tableName) {
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
+    List<CarbonDimension> dimensions = carbonTable.getDimensionByTableName(tableName);
+    List<DataType> noDictSortType = new ArrayList<>();
+    List<DataType> noDictNoSortType = new ArrayList<>();
+    for (int i = 0; i < dimensions.size(); i++) {
+      if (!dimensions.get(i).hasEncoding(Encoding.DICTIONARY)) {
+        if (dimensions.get(i).isSortColumn()) {
+          noDictSortType.add(dimensions.get(i).getDataType());
+        } else {
+          noDictNoSortType.add(dimensions.get(i).getDataType());
+        }
+      }
+    }
+    DataType[] noDictSortTypes = noDictSortType.toArray(new DataType[noDictSortType.size()]);
+    DataType[] noDictNoSortTypes = noDictNoSortType.toArray(new DataType[noDictNoSortType.size()]);
+    Map<String, DataType[]> noDictSortAndNoSortTypes = new HashMap<>(2);
+    noDictSortAndNoSortTypes.put("noDictSortDataTypes", noDictSortTypes);
+    noDictSortAndNoSortTypes.put("noDictNoSortDataTypes", noDictNoSortTypes);
+    return noDictSortAndNoSortTypes;
   }
 
   /**

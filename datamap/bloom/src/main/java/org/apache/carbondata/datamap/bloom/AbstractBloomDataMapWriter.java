@@ -144,7 +144,7 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
           || indexColumns.get(indexColIdx).hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         indexValue = convertDictionaryValue(indexColIdx, value);
       } else {
-        indexValue = convertNonDictionaryValue(indexColIdx, (byte[]) value);
+        indexValue = convertNonDictionaryValue(indexColIdx, value);
       }
     }
     if (indexValue.length == 0) {
@@ -155,7 +155,7 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
 
   protected abstract byte[] convertDictionaryValue(int indexColIdx, Object value);
 
-  protected abstract byte[] convertNonDictionaryValue(int indexColIdx, byte[] value);
+  protected abstract byte[] convertNonDictionaryValue(int indexColIdx, Object value);
 
   private void initDataMapFile() throws IOException {
     if (!FileFactory.isFileExist(dataMapPath)) {

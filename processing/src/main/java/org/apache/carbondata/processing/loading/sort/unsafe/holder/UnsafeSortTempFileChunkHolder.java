@@ -109,7 +109,8 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
     this.tableFieldStat = new TableFieldStat(parameters);
     this.sortStepRowHandler = new SortStepRowHandler(tableFieldStat);
     this.executorService = Executors.newFixedThreadPool(1);
-    comparator = new IntermediateSortTempRowComparator(parameters.getNoDictionarySortColumn());
+    comparator = new IntermediateSortTempRowComparator(parameters.getNoDictionarySortColumn(),
+        parameters.getNoDictDataType());
     this.convertNoSortFields = convertNoSortFields;
     initialize();
   }
