@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.spark.util
+package org.apache.spark.sql.util
 
 import scala.util.parsing.combinator.RegexParsers
 
+import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.util.CarbonException
 
 object CarbonMetastoreTypes extends RegexParsers {
   protected lazy val primitiveType: Parser[DataType] =
@@ -76,7 +76,7 @@ object CarbonMetastoreTypes extends RegexParsers {
     parseAll(dataType, metastoreType) match {
       case Success(result, _) => result
       case _: NoSuccess =>
-        CarbonException.analysisException(s"Unsupported dataType: $metastoreType")
+        throw new AnalysisException(s"Unsupported dataType: $metastoreType")
     }
   }
 

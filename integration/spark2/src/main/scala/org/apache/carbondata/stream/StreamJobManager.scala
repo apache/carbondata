@@ -22,6 +22,7 @@ import java.util.concurrent.{ConcurrentHashMap, CountDownLatch, TimeUnit}
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.streaming.StreamingQuery
 import org.apache.spark.sql.types.{StructField, StructType}
 
@@ -30,7 +31,6 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.spark.StreamingOption
-import org.apache.carbondata.spark.util.CarbonScalaUtil
 import org.apache.carbondata.streaming.CarbonStreamException
 
 /**
@@ -60,7 +60,7 @@ object StreamJobManager {
     }
     val fields = sink.getCreateOrderColumn(sink.getTableName).asScala.map { column =>
       StructField(column.getColName,
-        CarbonScalaUtil.convertCarbonToSparkDataType(column.getDataType))
+        CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(column.getDataType))
     }
     if (!querySchema.equals(StructType(fields))) {
       throw new MalformedCarbonCommandException(s"Schema of table ${sink.getTableName} " +

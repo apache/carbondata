@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.util
+package org.apache.spark.sql.util
 
 import java.util.Objects
 
@@ -134,4 +134,5 @@ private[spark] object SparkTypeConverter {
       }:${ addDecimalScaleAndPrecision(childDim, dType) }"
     }
   }
+
 }

@@ -47,6 +47,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.profiler.ExplainCollector;
+import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
@@ -115,6 +116,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private static final String PARTITIONS_TO_PRUNE =
       "mapreduce.input.carboninputformat.partitions.to.prune";
   private static final String FGDATAMAP_PRUNING = "mapreduce.input.carboninputformat.fgdatamap";
+  private static final String READ_COMMITTED_SCOPE =
+      "mapreduce.input.carboninputformat.read.committed.scope";
 
   // record segment number and hit blocks
   protected int numSegments = 0;
@@ -335,6 +338,29 @@ m filterExpression
     } catch (InvalidConfigurationException e) {
       throw new IOException(e);
     }
+  }
+
+  public static void setReadCommittedScope(Configuration configuration,
+      ReadCommittedScope committedScope) {
+    if (committedScope == null) {
+      return;
+    }
+    try {
+      String subFoldersString = ObjectSerializationUtil.convertObjectToString(committedScope);
+      configuration.set(READ_COMMITTED_SCOPE, subFoldersString);
+    } catch (Exception e) {
+      throw new RuntimeException(
+          "Error while setting committedScope information to Job" + committedScope, e);
+    }
+  }
+
+  public static ReadCommittedScope getReadCommittedScope(Configuration configuration)
+      throws IOException {
+    String subFoldersString = configuration.get(READ_COMMITTED_SCOPE);
+    if (subFoldersString != null) {
+      return (ReadCommittedScope) ObjectSerializationUtil.convertStringToObject(subFoldersString);
+    }
+    return null;
   }
 
   /**

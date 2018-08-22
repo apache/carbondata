@@ -39,7 +39,6 @@ import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
@@ -2237,24 +2236,20 @@ public final class CarbonUtil {
     }
   }
 
-  public static List<String> getFilePathExternalFilePath(String path) {
+  public static String getFilePathExternalFilePath(String path) {
 
     // return the list of carbondata files in the given path.
     CarbonFile segment = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
-    CarbonFile[] dataFiles = segment.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile file) {
 
-        if (file.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
-          return true;
-        }
-        return false;
+    CarbonFile[] dataFiles = segment.listFiles();
+    for (CarbonFile dataFile : dataFiles) {
+      if (dataFile.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
+        return dataFile.getAbsolutePath();
+      } else if (dataFile.isDirectory()) {
+        return getFilePathExternalFilePath(dataFile.getAbsolutePath());
       }
-    });
-    List<String> filePaths = new ArrayList<>(dataFiles.length);
-    for (CarbonFile dfiles : dataFiles) {
-      filePaths.add(dfiles.getAbsolutePath());
     }
-    return filePaths;
+    return null;
   }
 
   /**
@@ -2264,16 +2259,13 @@ public final class CarbonUtil {
    */
   public static org.apache.carbondata.format.TableInfo inferSchema(String carbonDataFilePath,
       String tableName, boolean isCarbonFileProvider) throws IOException {
-    List<String> filePaths;
-    if (isCarbonFileProvider) {
-      filePaths = getFilePathExternalFilePath(carbonDataFilePath + "/Fact/Part0/Segment_null");
-    } else {
-      filePaths = getFilePathExternalFilePath(carbonDataFilePath);
-    }
     String fistFilePath = null;
-    try {
-      fistFilePath = filePaths.get(0);
-    } catch (Exception e) {
+    if (isCarbonFileProvider) {
+      fistFilePath = getFilePathExternalFilePath(carbonDataFilePath + "/Fact/Part0/Segment_null");
+    } else {
+      fistFilePath = getFilePathExternalFilePath(carbonDataFilePath);
+    }
+    if (fistFilePath == null) {
       // Check if we can infer the schema from the hive metastore.
       LOGGER.error("CarbonData file is not present in the table location");
       throw new IOException("CarbonData file is not present in the table location");

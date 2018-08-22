@@ -385,7 +385,7 @@ public class CarbonWriterBuilder {
     Objects.requireNonNull(schema, "schema should not be null");
     Objects.requireNonNull(path, "path should not be null");
     this.schema = schema;
-    CarbonLoadModel loadModel = createLoadModel();
+    CarbonLoadModel loadModel = buildLoadModel(schema);
     return new CSVCarbonWriter(loadModel);
   }
 
@@ -401,7 +401,7 @@ public class CarbonWriterBuilder {
     this.schema = AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema);
     Objects.requireNonNull(schema, "schema should not be null");
     Objects.requireNonNull(path, "path should not be null");
-    CarbonLoadModel loadModel = createLoadModel();
+    CarbonLoadModel loadModel = buildLoadModel(schema);
     // AVRO records are pushed to Carbon as Object not as Strings. This was done in order to
     // handle multi level complex type support. As there are no conversion converter step is
     // removed from the load. LoadWithoutConverter flag is going to point to the Loader Builder
@@ -422,7 +422,7 @@ public class CarbonWriterBuilder {
     Objects.requireNonNull(carbonSchema, "schema should not be null");
     Objects.requireNonNull(path, "path should not be null");
     this.schema = carbonSchema;
-    CarbonLoadModel loadModel = createLoadModel();
+    CarbonLoadModel loadModel = buildLoadModel(carbonSchema);
     loadModel.setJsonFileLoad(true);
     return new JsonCarbonWriter(loadModel);
   }
@@ -444,7 +444,9 @@ public class CarbonWriterBuilder {
     model.setCsvHeaderColumns(columns);
   }
 
-  private CarbonLoadModel createLoadModel() throws IOException, InvalidLoadOptionException {
+  public CarbonLoadModel buildLoadModel(Schema carbonSchema)
+      throws IOException, InvalidLoadOptionException {
+    this.schema = carbonSchema;
     // build CarbonTable using schema
     CarbonTable table = buildCarbonTable();
     if (persistSchemaFile) {

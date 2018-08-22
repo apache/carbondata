@@ -26,7 +26,7 @@ public class CarbonDictionaryWrapper extends Dictionary {
 
   private Binary[] binaries;
 
-  public CarbonDictionaryWrapper(Encoding encoding, CarbonDictionary dictionary) {
+  CarbonDictionaryWrapper(Encoding encoding, CarbonDictionary dictionary) {
     super(encoding);
     binaries = new Binary[dictionary.getDictionarySize()];
     for (int i = 0; i < binaries.length; i++) {
