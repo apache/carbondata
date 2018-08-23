@@ -2364,6 +2364,83 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(Timestamp.valueOf("1970-01-02 16:00:00"), Row(Timestamp.valueOf("1970-01-02 16:00:00")))))
   }
 
+  test("test Sort Scope with Local_Sort for SDK") {
+
+    cleanTestData()
+    var options = Map("sort_scope" -> "local_sort").asJava
+
+    val fields: Array[Field] = new Array[Field](4)
+    fields(0) = new Field("stringField", DataTypes.STRING)
+    fields(1) = new Field("intField", DataTypes.INT)
+
+    val builder: CarbonWriterBuilder = CarbonWriter.builder
+      .outputPath(writerPath).isTransactionalTable(false).withLoadOptions(options)
+
+    val writer: CarbonWriter = builder.buildWriterForCSVInput(new Schema(fields))
+    writer.write(Array("carbon","1"));
+    writer.write(Array("hydrogen","10"));
+    writer.write(Array("boron","4"));
+    writer.write(Array("zirconium","5"));
+    writer.write(Array("iron","8"));
+    writer.write(Array("manganese","4"));
+    writer.write(Array("gold","6"));
+    writer.write(Array("silver","3"));
+    writer.write(Array("copper","9"));
+    writer.write(Array("aluminium","9"));
+    writer.close()
+
+    assert(new File(writerPath).exists())
+
+    sql("DROP TABLE IF EXISTS sdkTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    checkAnswer(sql("select * from sdkTable"), Seq(
+      Row("aluminium",9),Row("boron",4),Row("carbon",1),Row("copper",9),Row("gold",6),Row("hydrogen",10),Row("iron",8),Row("manganese",4),Row("silver",3),Row("zirconium",5)
+    ))
+    sql("DROP TABLE sdkTable")
+    cleanTestData()
+  }
+
+  test("test Sort Scope with No_Sort for SDK") {
+
+    cleanTestData()
+    var options = Map("sort_scope" -> "no_sort").asJava
+
+    val fields: Array[Field] = new Array[Field](4)
+    fields(0) = new Field("stringField", DataTypes.STRING)
+    fields(1) = new Field("intField", DataTypes.INT)
+
+    val builder: CarbonWriterBuilder = CarbonWriter.builder
+      .outputPath(writerPath).isTransactionalTable(false).withLoadOptions(options)
+
+    val writer: CarbonWriter = builder.buildWriterForCSVInput(new Schema(fields))
+    writer.write(Array("carbon","1"));
+    writer.write(Array("hydrogen","10"));
+    writer.write(Array("boron","4"));
+    writer.write(Array("zirconium","5"));
+    writer.write(Array("iron","8"));
+    writer.write(Array("manganese","4"));
+    writer.write(Array("gold","6"));
+    writer.write(Array("silver","3"));
+    writer.write(Array("copper","9"));
+    writer.write(Array("aluminium","9"));
+    writer.close()
+
+    assert(new File(writerPath).exists())
+
+    sql("DROP TABLE IF EXISTS sdkTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+    checkAnswer(sql("select * from sdkTable"), Seq(
+      Row("carbon",1),Row("hydrogen",10),Row("boron",4),Row("zirconium",5),Row("iron",8),Row("manganese",4),Row("gold",6),Row("silver",3),Row("copper",9),Row("aluminium",9)))
+    sql("DROP TABLE sdkTable")
+    cleanTestData()
+  }
+
   test("test LocalDictionary with True") {
     FileUtils.deleteDirectory(new File(writerPath))
     val builder = CarbonWriter.builder.isTransactionalTable(false)

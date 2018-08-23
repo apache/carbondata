@@ -246,8 +246,8 @@ public class CarbonWriterBuilder {
     Objects.requireNonNull(options, "Load options should not be null");
     //validate the options.
     if (options.size() > 9) {
-      throw new IllegalArgumentException("Supports only nine options now. "
-          + "Refer method header or documentation");
+      throw new IllegalArgumentException(
+          "Supports only ten options now. Refer method header or documentation");
     }
 
     for (String option: options.keySet()) {
@@ -259,7 +259,8 @@ public class CarbonWriterBuilder {
           !option.equalsIgnoreCase("complex_delimiter_level_1") &&
           !option.equalsIgnoreCase("complex_delimiter_level_2") &&
           !option.equalsIgnoreCase("quotechar") &&
-          !option.equalsIgnoreCase("escapechar")) {
+          !option.equalsIgnoreCase("escapechar") &&
+          !option.equalsIgnoreCase("sort_scope")) {
         throw new IllegalArgumentException("Unsupported options. "
             + "Refer method header or documentation");
       }
@@ -267,6 +268,14 @@ public class CarbonWriterBuilder {
 
     // convert it to treeMap as keys need to be case insensitive
     Map<String, String> optionsTreeMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    if (options.containsKey("sort_scope")) {
+      String sortScope = options.get("sort_scope");
+      if (!((sortScope.equalsIgnoreCase("local_sort")) ||
+          (sortScope.equalsIgnoreCase("batch_sort"))
+          || (sortScope.equalsIgnoreCase("no_sort")))) {
+        throw new IllegalArgumentException("Invalid Sort Scope Option");
+      }
+    }
     optionsTreeMap.putAll(options);
     this.options = optionsTreeMap;
     return this;

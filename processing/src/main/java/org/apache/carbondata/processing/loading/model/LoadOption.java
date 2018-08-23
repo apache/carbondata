@@ -59,7 +59,7 @@ public class LoadOption {
     optionsFinal.put("fileheader", Maps.getOrDefault(options, "fileheader", ""));
     optionsFinal.put("commentchar", Maps.getOrDefault(options, "commentchar", "#"));
     optionsFinal.put("columndict", Maps.getOrDefault(options, "columndict", null));
-
+    optionsFinal.put("sort_scope",Maps.getOrDefault(options,"sort_scope","local_sort"));
     optionsFinal.put(
         "escapechar",
         CarbonLoaderUtil.getEscapeChar(Maps.getOrDefault(options,"escapechar", "\\")));
@@ -183,7 +183,6 @@ public class LoadOption {
     }
 
     optionsFinal.put("single_pass", String.valueOf(singlePass));
-    optionsFinal.put("sort_scope", "local_sort");
     optionsFinal.put("sort_column_bounds", Maps.getOrDefault(options, "sort_column_bounds", ""));
     optionsFinal.put(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
         Maps.getOrDefault(options,CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
