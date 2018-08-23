@@ -183,7 +183,7 @@ object CarbonSparkDataSourceUtil {
 
   // Convert scala list to java list, Cannot use scalaList.asJava as while deserializing it is
   // not able find the classes inside scala list and gives ClassNotFoundException.
-  private def convertToJavaList(
+  def convertToJavaList(
       scalaList: Seq[CarbonExpression]): java.util.List[CarbonExpression] = {
     val javaList = new java.util.ArrayList[CarbonExpression]()
     scalaList.foreach(javaList.add)
@@ -230,9 +230,22 @@ object CarbonSparkDataSourceUtil {
         CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT).toInt)
     builder.sortBy(
       options.get(CarbonCommonConstants.SORT_COLUMNS).map(_.split(",").map(_.trim)).orNull)
-    builder.isTransactionalTable(false)
     builder.uniqueIdentifier(System.currentTimeMillis())
     val model = builder.buildLoadModel(schema)
+    val tableInfo = model.getCarbonDataLoadSchema.getCarbonTable.getTableInfo
+    val properties =
+      tableInfo.getFactTable.getTableProperties
+    // Add the meta cache level
+    options.map{ case (key, value) =>
+      if (key.equalsIgnoreCase(CarbonCommonConstants.COLUMN_META_CACHE)) {
+        val columnsToBeCached = value.split(",").map(x => x.trim.toLowerCase).toSeq
+        // make the columns in create table order and then add it to table properties
+        val createOrder =
+          tableInfo.getFactTable.getListOfColumns.asScala.map(_.getColumnName).filter(
+            col => columnsToBeCached.contains(col))
+        properties.put(CarbonCommonConstants.COLUMN_META_CACHE, createOrder.mkString(","))
+      }
+    }
     model
   }
 }

@@ -316,7 +316,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
       {
         spark.sql("select * from sdkOutputTable").show(false)
       }
-    assert(exception.getMessage().contains("Error while taking index snapshot"))
+    assert(exception.getMessage().contains("No Index files are present in the table location"))
 
     spark.sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files

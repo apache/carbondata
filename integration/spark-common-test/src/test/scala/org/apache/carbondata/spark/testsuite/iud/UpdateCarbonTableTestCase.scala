@@ -537,15 +537,15 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("Update operation on carbon table with singlepass") {
     sql(s"""set ${ CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS }=true""")
-    sql("drop database if exists carbon cascade")
-    sql(s"create database carbon location '$dblocation'")
-    sql("use carbon")
+    sql("drop database if exists carbon1 cascade")
+    sql(s"create database carbon1 location '$dblocation'")
+    sql("use carbon1")
     sql("""CREATE TABLE carbontable(id int, name string, city string, age int)
          STORED BY 'org.apache.carbondata.format'""")
     val testData = s"$resourcesPath/sample.csv"
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table carbontable")
     // update operation
-    sql("""update carbon.carbontable d  set (d.id) = (d.id + 1) where d.id > 2""").show()
+    sql("""update carbon1.carbontable d  set (d.id) = (d.id + 1) where d.id > 2""").show()
     checkAnswer(
       sql("select count(*) from carbontable"),
       Seq(Row(6))
@@ -556,15 +556,15 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("Update operation on carbon table with persist false") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.isPersistEnabled, "false")
-    sql("drop database if exists carbon cascade")
-    sql(s"create database carbon location '$dblocation'")
-    sql("use carbon")
+    sql("drop database if exists carbon1 cascade")
+    sql(s"create database carbon1 location '$dblocation'")
+    sql("use carbon1")
     sql("""CREATE TABLE carbontable(id int, name string, city string, age int)
          STORED BY 'org.apache.carbondata.format'""")
     val testData = s"$resourcesPath/sample.csv"
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table carbontable")
     // update operation
-    sql("""update carbon.carbontable d  set (d.id) = (d.id + 1) where d.id > 2""").show()
+    sql("""update carbon1.carbontable d  set (d.id) = (d.id + 1) where d.id > 2""").show()
     checkAnswer(
       sql("select count(*) from carbontable"),
       Seq(Row(6))

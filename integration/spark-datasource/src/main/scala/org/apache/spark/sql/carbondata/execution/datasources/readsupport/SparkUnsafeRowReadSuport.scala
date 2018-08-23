@@ -23,13 +23,12 @@ import org.apache.spark.sql.types.StructType
 
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
-import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport
+import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 
 /**
  * Read support class which converts carbon row array format to sparks Internal row.
  */
-class SparkUnsafeRowReadSuport(requiredSchema: StructType)
-  extends DictionaryDecodeReadSupport[InternalRow] {
+class SparkUnsafeRowReadSuport(requiredSchema: StructType) extends CarbonReadSupport[InternalRow] {
   private val unsafeProjection = UnsafeProjection.create(requiredSchema)
   override def initialize(carbonColumns: Array[CarbonColumn],
       carbonTable: CarbonTable): Unit = {
@@ -37,5 +36,9 @@ class SparkUnsafeRowReadSuport(requiredSchema: StructType)
 
   override def readRow(data: Array[AnyRef]): InternalRow = {
     unsafeProjection(new GenericInternalRow(data.asInstanceOf[Array[Any]]))
+  }
+
+  override def close(): Unit = {
+    // Nothing to close
   }
 }

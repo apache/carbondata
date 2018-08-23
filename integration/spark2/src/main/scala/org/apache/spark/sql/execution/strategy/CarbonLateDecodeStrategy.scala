@@ -34,6 +34,7 @@ import org.apache.spark.sql.optimizer.{CarbonDecoderRelation, CarbonFilters}
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
+import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -445,7 +446,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         attrRef match {
           case Some(attr: AttributeReference) =>
             Some(AttributeReference(attr.name,
-              CarbonScalaUtil.convertCarbonToSparkDataType(n.getDataType),
+              CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(n.getDataType),
               attr.nullable,
               attr.metadata)(attr.exprId, attr.qualifier))
           case _ => None

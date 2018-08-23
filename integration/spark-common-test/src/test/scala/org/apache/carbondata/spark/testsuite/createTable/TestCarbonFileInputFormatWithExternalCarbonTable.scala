@@ -180,11 +180,11 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
          |'$writerPath' """.stripMargin)
 
     //org.apache.spark.SparkException: Index file not present to read the carbondata file
-    val exception = intercept[java.lang.RuntimeException]
+    val exception = intercept[Exception]
     {
       sql("select * from sdkOutputTable").show(false)
     }
-    assert(exception.getMessage().contains("Error while taking index snapshot"))
+    assert(exception.getMessage().contains("No Index files are present in the table location"))
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files

@@ -329,8 +329,7 @@ class SparkCarbonFileFormat extends FileFormat
     file: PartitionedFile => {
       assert(file.partitionValues.numFields == partitionSchema.size)
 
-      if (!(file.filePath.endsWith(CarbonTablePath.INDEX_FILE_EXT) ||
-            file.filePath.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT))) {
+      if (file.filePath.endsWith(CarbonTablePath.CARBON_DATA_EXT)) {
         val split = new CarbonInputSplit("null",
           new Path(file.filePath),
           file.start,
