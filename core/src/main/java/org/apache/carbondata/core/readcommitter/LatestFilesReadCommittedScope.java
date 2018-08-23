@@ -36,14 +36,13 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
  */
 @InterfaceAudience.Internal
 @InterfaceStability.Stable
-public class LatestFilesReadCommittedScope
-    implements ReadCommittedScope {
+public class LatestFilesReadCommittedScope implements ReadCommittedScope {
 
   private String carbonFilePath;
   private String segmentId;
   private ReadCommittedIndexFileSnapShot readCommittedIndexFileSnapShot;
   private LoadMetadataDetails[] loadMetadataDetails;
-  private String[] subFolders;
+  private String[] dataFolders;
 
   /**
    * a new constructor of this class
@@ -51,15 +50,11 @@ public class LatestFilesReadCommittedScope
    * @param path      carbon file path
    * @param segmentId segment id
    */
-  public LatestFilesReadCommittedScope(String path, String segmentId) {
+  public LatestFilesReadCommittedScope(String path, String segmentId) throws IOException {
     Objects.requireNonNull(path);
     this.carbonFilePath = path;
     this.segmentId = segmentId;
-    try {
-      takeCarbonIndexFileSnapShot();
-    } catch (IOException ex) {
-      throw new RuntimeException("Error while taking index snapshot", ex);
-    }
+    takeCarbonIndexFileSnapShot();
   }
 
   /**
@@ -67,7 +62,7 @@ public class LatestFilesReadCommittedScope
    *
    * @param path carbon file path
    */
-  public LatestFilesReadCommittedScope(String path) {
+  public LatestFilesReadCommittedScope(String path) throws IOException {
     this(path, (String) null);
   }
 
@@ -75,16 +70,13 @@ public class LatestFilesReadCommittedScope
    * a new constructor with path
    *
    * @param path carbon file path
+   * @param dataFolders Folders where carbondata files exists
    */
-  public LatestFilesReadCommittedScope(String path, String[] subFolders) {
+  public LatestFilesReadCommittedScope(String path, String[] dataFolders) throws IOException {
     Objects.requireNonNull(path);
     this.carbonFilePath = path;
-    this.subFolders = subFolders;
-    try {
-      takeCarbonIndexFileSnapShot();
-    } catch (IOException ex) {
-      throw new RuntimeException("Error while taking index snapshot", ex);
-    }
+    this.dataFolders = dataFolders;
+    takeCarbonIndexFileSnapShot();
   }
 
   private void prepareLoadMetadata() {
@@ -184,9 +176,9 @@ public class LatestFilesReadCommittedScope
     CarbonFile[] carbonIndexFiles = null;
     if (file.isDirectory()) {
       if (segmentId == null) {
-        if (subFolders != null) {
+        if (dataFolders != null) {
           List<CarbonFile> allIndexFiles = new ArrayList<>();
-          for (String subFolder : subFolders) {
+          for (String subFolder : dataFolders) {
             CarbonFile[] files = SegmentIndexFileStore.getCarbonIndexFiles(subFolder);
             allIndexFiles.addAll(Arrays.asList(files));
           }

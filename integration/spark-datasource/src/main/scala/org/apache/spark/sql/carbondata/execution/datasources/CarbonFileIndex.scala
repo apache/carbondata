@@ -95,7 +95,8 @@ class CarbonFileIndex(
         // Check for any subfolders are present here.
         if (!rootPaths.head.equals(new Path(tablePath.get)) &&
             rootPaths.head.toString.contains(tablePath.get)) {
-          CarbonInputFormat.setSubFoldersToRead(hadoopConf, rootPaths.map(_.toUri.toString).toArray)
+          CarbonInputFormat.setDataFoldersToRead(hadoopConf,
+            rootPaths.map(_.toUri.toString).toArray)
         }
       }
       filter match {

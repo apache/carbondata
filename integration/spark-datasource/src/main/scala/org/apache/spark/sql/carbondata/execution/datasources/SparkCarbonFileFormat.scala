@@ -48,12 +48,10 @@ import org.apache.carbondata.core.indexstore.BlockletDetailInfo
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnarFormatVersion}
 import org.apache.carbondata.core.metadata.schema.SchemaReader
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
-import org.apache.carbondata.core.reader.CarbonHeaderReader
 import org.apache.carbondata.core.scan.expression.{Expression => CarbonExpression}
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.core.statusmanager.{FileFormat => CarbonFileFormatVersion}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonProjection, CarbonRecordReader}
 import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonInputFormat, CarbonTableOutputFormat}
@@ -158,9 +156,11 @@ class SparkCarbonFileFormat extends FileFormat
       context: TaskAttemptContext,
       fieldTypes: Array[StructField]) extends OutputWriter with AbstractCarbonOutputWriter {
 
-    val writable = new ObjectArrayWritable
+    private val writable = new ObjectArrayWritable
 
-    val recordWriter: RecordWriter[NullWritable, ObjectArrayWritable] =
+    private val cutOffDate = Integer.MAX_VALUE >> 1
+
+    private val recordWriter: RecordWriter[NullWritable, ObjectArrayWritable] =
       new CarbonTableOutputFormat().getRecordWriter(context)
 
     /**
@@ -193,31 +193,51 @@ class SparkCarbonFileFormat extends FileFormat
               data(i) = new StructObject(extractData(row.getStruct(i, s.fields.length), s.fields))
             case s: ArrayType =>
               data(i) = new ArrayObject(extractData(row.getArray(i), s.elementType))
+            case d: DateType =>
+              data(i) = (row.getInt(i) + cutOffDate).asInstanceOf[AnyRef]
+            case d: TimestampType =>
+              data(i) = (row.getLong(i) / 1000).asInstanceOf[AnyRef]
             case other =>
               data(i) = row.get(i, other)
           }
+        } else {
+          setNull(fieldTypes(i).dataType, data, i)
         }
         i += 1
       }
       data
     }
 
+    private def setNull(dataType: DataType, data: Array[AnyRef], i: Int) = {
+      dataType match {
+        case d: DateType =>
+          // 1  as treated as null in carbon
+          data(i) = 1.asInstanceOf[AnyRef]
+        case _ =>
+      }
+    }
+
     /**
      * Convert the internal row to carbondata understandable object
      */
-    private def extractData(row: ArrayData, fieldType: DataType): Array[AnyRef] = {
+    private def extractData(row: ArrayData, dataType: DataType): Array[AnyRef] = {
       val data = new Array[AnyRef](row.numElements())
       var i = 0
       while (i < data.length) {
-
-        fieldType match {
-          case d: DecimalType =>
-            data(i) = row.getDecimal(i, d.precision, d.scale).toJavaBigDecimal
-          case s: StructType =>
-            data(i) = new StructObject(extractData(row.getStruct(i, s.fields.length), s.fields))
-          case s: ArrayType =>
-            data(i) = new ArrayObject(extractData(row.getArray(i), s.elementType))
-          case other => data(i) = row.get(i, fieldType)
+        if (!row.isNullAt(i)) {
+          dataType match {
+            case d: DecimalType =>
+              data(i) = row.getDecimal(i, d.precision, d.scale).toJavaBigDecimal
+            case s: StructType =>
+              data(i) = new StructObject(extractData(row.getStruct(i, s.fields.length), s.fields))
+            case s: ArrayType =>
+              data(i) = new ArrayObject(extractData(row.getArray(i), s.elementType))
+            case d: DateType =>
+              data(i) = (row.getInt(i) + cutOffDate).asInstanceOf[AnyRef]
+            case other => data(i) = row.get(i, dataType)
+          }
+        } else {
+          setNull(dataType, data, i)
         }
         i += 1
       }

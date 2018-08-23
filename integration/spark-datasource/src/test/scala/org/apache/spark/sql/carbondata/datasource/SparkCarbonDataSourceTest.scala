@@ -219,12 +219,58 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
     frame.write.format("carbon").save(warehouse1 + "/test_carbon_folder")
     val dfread = spark.read.format("carbon").load(warehouse1 + "/test_carbon_folder")
     dfread.show(false)
-//    TestUtil
-//      .checkAnswer(spark.sql("select * from carbon_table"),
-//        spark.sql("select * from parquet_table"))
     FileFactory
       .deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_carbon_folder"))
     spark.sql("drop table if exists parquet_table")
+  }
+
+
+  test("test read and write with date datatype") {
+    spark.sql("drop table if exists date_table")
+    spark.sql("drop table if exists date_parquet_table")
+    spark.sql("create table date_table(empno int, empname string, projdate Date) using carbon")
+    spark.sql("insert into  date_table select 11, 'ravi', '2017-11-11'")
+    spark.sql("create table date_parquet_table(empno int, empname string, projdate Date) using parquet")
+    spark.sql("insert into  date_parquet_table select 11, 'ravi', '2017-11-11'")
+    checkAnswer(spark.sql("select * from date_table"), spark.sql("select * from date_parquet_table"))
+    spark.sql("drop table if exists date_table")
+    spark.sql("drop table if exists date_parquet_table")
+  }
+
+  test("test read and write with date datatype with wrong format") {
+    spark.sql("drop table if exists date_table")
+    spark.sql("drop table if exists date_parquet_table")
+    spark.sql("create table date_table(empno int, empname string, projdate Date) using carbon")
+    spark.sql("insert into  date_table select 11, 'ravi', '11-11-2017'")
+    spark.sql("create table date_parquet_table(empno int, empname string, projdate Date) using parquet")
+    spark.sql("insert into  date_parquet_table select 11, 'ravi', '11-11-2017'")
+    checkAnswer(spark.sql("select * from date_table"), spark.sql("select * from date_parquet_table"))
+    spark.sql("drop table if exists date_table")
+    spark.sql("drop table if exists date_parquet_table")
+  }
+
+  test("test read and write with timestamp datatype") {
+    spark.sql("drop table if exists date_table")
+    spark.sql("drop table if exists date_parquet_table")
+    spark.sql("create table date_table(empno int, empname string, projdate timestamp) using carbon")
+    spark.sql("insert into  date_table select 11, 'ravi', '2017-11-11 00:00:01'")
+    spark.sql("create table date_parquet_table(empno int, empname string, projdate timestamp) using parquet")
+    spark.sql("insert into  date_parquet_table select 11, 'ravi', '2017-11-11 00:00:01'")
+    checkAnswer(spark.sql("select * from date_table"), spark.sql("select * from date_parquet_table"))
+    spark.sql("drop table if exists date_table")
+    spark.sql("drop table if exists date_parquet_table")
+  }
+
+  test("test read and write with timestamp datatype with wrong format") {
+    spark.sql("drop table if exists date_table")
+    spark.sql("drop table if exists date_parquet_table")
+    spark.sql("create table date_table(empno int, empname string, projdate timestamp) using carbon")
+    spark.sql("insert into  date_table select 11, 'ravi', '11-11-2017 00:00:01'")
+    spark.sql("create table date_parquet_table(empno int, empname string, projdate timestamp) using parquet")
+    spark.sql("insert into  date_parquet_table select 11, 'ravi', '11-11-2017 00:00:01'")
+    checkAnswer(spark.sql("select * from date_table"), spark.sql("select * from date_parquet_table"))
+    spark.sql("drop table if exists date_table")
+    spark.sql("drop table if exists date_parquet_table")
   }
 
 

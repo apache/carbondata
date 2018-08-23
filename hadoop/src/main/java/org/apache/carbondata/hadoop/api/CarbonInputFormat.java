@@ -116,7 +116,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private static final String PARTITIONS_TO_PRUNE =
       "mapreduce.input.carboninputformat.partitions.to.prune";
   private static final String FGDATAMAP_PRUNING = "mapreduce.input.carboninputformat.fgdatamap";
-  private static final String SUB_FOLDERS = "mapreduce.input.carboninputformat.subfolders";
+  private static final String DATA_FOLDERS = "mapreduce.input.carboninputformat.datafolders";
 
   // record segment number and hit blocks
   protected int numSegments = 0;
@@ -339,23 +339,23 @@ m filterExpression
     }
   }
 
-  public static void setSubFoldersToRead(Configuration configuration, String[] subFoldersToRead) {
-    if (subFoldersToRead == null) {
+  public static void setDataFoldersToRead(Configuration configuration, String[] dataFoldersToRead) {
+    if (dataFoldersToRead == null) {
       return;
     }
     try {
       String subFoldersString =
-          ObjectSerializationUtil.convertObjectToString(subFoldersToRead);
-      configuration.set(SUB_FOLDERS, subFoldersString);
+          ObjectSerializationUtil.convertObjectToString(dataFoldersToRead);
+      configuration.set(DATA_FOLDERS, subFoldersString);
     } catch (Exception e) {
       throw new RuntimeException(
-          "Error while setting subfolders information to Job" + Arrays.toString(subFoldersToRead),
+          "Error while setting subfolders information to Job" + Arrays.toString(dataFoldersToRead),
           e);
     }
   }
 
-  public static String[] getSubFoldersToRead(Configuration configuration) throws IOException {
-    String subFoldersString = configuration.get(SUB_FOLDERS);
+  public static String[] getDataFoldersToRead(Configuration configuration) throws IOException {
+    String subFoldersString = configuration.get(DATA_FOLDERS);
     if (subFoldersString != null) {
       return (String[]) ObjectSerializationUtil.convertStringToObject(subFoldersString);
     }
