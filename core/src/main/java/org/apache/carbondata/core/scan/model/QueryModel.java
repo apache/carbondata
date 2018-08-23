@@ -110,11 +110,6 @@ public class QueryModel {
    */
   private boolean requiredRowId;
 
-  /**
-   * whether it is FG with search mode
-   */
-  private boolean isFG;
-
   // whether to clear/free unsafe memory or not
   private boolean freeUnsafeMemory = true;
 

@@ -61,7 +61,7 @@ public class CarbonInterpreter extends Interpreter {
   /**
    * These are the queries which need Table like output format
    */
-  private static final String[] SEARCH_QUERIES = {"select", "list", "show", "desc"};
+  private static final String[] SEARCH_QUERIES = {"select", "list", "show", "desc", "explain"};
 
   public CarbonInterpreter(Properties properties) {
     super(properties);

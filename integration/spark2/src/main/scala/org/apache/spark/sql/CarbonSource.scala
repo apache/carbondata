@@ -367,7 +367,7 @@ object CarbonSource {
       CarbonUtil.convertToMultiStringMap(tableInfo)
     }
     properties.foreach(e => map.put(e._1, e._2))
-    map.put("tablepath", identifier.getTablePath)
+    map.put("tablePath", identifier.getTablePath)
     map.put("dbname", identifier.getDatabaseName)
     if (map.containsKey("tableName")) {
       val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)

@@ -634,10 +634,24 @@ public class AvroCarbonWriter extends CarbonWriter {
 
   private static StructType createStructType(List<Field> fields) {
     List<StructField> f = fields.stream().map(field ->
-        new StructField(field.getFieldName(), field.getDataType(),
-            createStructType(field.getChildren()).getFields())
+        getStructField(field)
     ).collect(Collectors.toList());
     return DataTypes.createStructType(f);
+  }
+
+  /**
+   * convert Field to StructField
+   *
+   * @param field Field object for SDK
+   * @return StructField object of Carbon
+   */
+  private static StructField getStructField(Field field) {
+    if (field.getChildren() != null) {
+      return new StructField(field.getFieldName(), field.getDataType(),
+          createStructType(field.getChildren()).getFields());
+    } else {
+      return new StructField(field.getFieldName(), field.getDataType());
+    }
   }
 
   private static DataType getMappingDataTypeForCollectionRecord(Schema childSchema) {

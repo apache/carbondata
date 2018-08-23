@@ -47,6 +47,7 @@ public class SqlHorizonController {
 
   @RequestMapping(value = "/table/sql", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<SqlResponse> sql(@RequestBody SqlRequest request) throws CarbonException {
+    long startTime = System.nanoTime();
     RequestValidator.validateSql(request);
     List<Row> rows;
     Dataset<Row> sqlDataFrame = null;
@@ -71,7 +72,9 @@ public class SqlHorizonController {
                 result[index + 1][col] = rows.get(index).get(col)));
       responseData = result;
     }
-
+    long endTime = System.nanoTime();
+    LOGGER.info(request.getSqlStatement() + " runtime is: " +
+        (endTime - startTime) / 1000000.0 + " ms");
     return new ResponseEntity<>(
         new SqlResponse(request, "SUCCESS", responseData), HttpStatus.OK);
   }

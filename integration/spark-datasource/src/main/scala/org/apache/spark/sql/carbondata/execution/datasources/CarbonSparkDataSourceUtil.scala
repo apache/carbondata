@@ -198,7 +198,7 @@ object CarbonSparkDataSourceUtil {
       val dataType = convertSparkToCarbonDataType(field.dataType)
       dataType match {
         case s: CarbonStructType =>
-          new Field(field.name, s, s.getFields)
+          new Field(field.name, s)
         case _ => new Field(field.name, dataType)
       }
     })

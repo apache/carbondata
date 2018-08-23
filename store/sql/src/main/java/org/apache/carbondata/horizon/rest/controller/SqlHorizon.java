@@ -97,6 +97,10 @@ public class SqlHorizon extends Horizon {
         .config("spark.hadoop.fs.defaultFS", args[9]);
 
     session = new CarbonSessionBuilder(baseBuilder).build(storeLocation, null, false);
+    if (args.length > 12) {
+      session.sparkContext().hadoopConfiguration().addResource(args[11]);
+      session.sparkContext().hadoopConfiguration().addResource(args[12]);
+    }
   }
 
   static SparkSession getSession() {

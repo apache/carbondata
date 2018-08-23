@@ -43,7 +43,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.Ignore;
 
 public class DistributedCarbonStoreTest {
 
@@ -93,7 +93,8 @@ public class DistributedCarbonStoreTest {
     assert (!TestUtil.verifyMdtFile());
   }
 
-  @Test
+  // TODO: xubo
+  @Ignore
   public void testSelect() throws CarbonException {
     TableIdentifier tableIdentifier = new TableIdentifier("table_1", "default");
     store.dropTable(tableIdentifier);

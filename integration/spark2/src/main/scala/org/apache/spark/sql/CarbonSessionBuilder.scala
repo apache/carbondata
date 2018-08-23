@@ -110,7 +110,8 @@ class CarbonSessionBuilder(builder: Builder) {
           sparkConf.setAppName(randomAppName)
         }
         val sc = SparkContext.getOrCreate(sparkConf)
-        CarbonInputFormatUtil.setS3Configurations(sc.hadoopConfiguration)
+        // CarbonInputFormatUtil.setS3Configurations(sc.hadoopConfiguration)
+        // TODO: validate
         // maybe this is an existing SparkContext, update its SparkConf which maybe used
         // by SparkSession
         options.foreach { case (k, v) => sc.conf.set(k, v) }

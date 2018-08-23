@@ -134,7 +134,8 @@ class CsvBasedCarbonTableSuite extends QueryTest
       CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
   }
 
-  test("test csv based carbon table: only support csv now") {
+  // TODO
+  ignore("test csv based carbon table: only support csv now") {
     val expectedException = intercept[Exception] {
       sql(
         s"""

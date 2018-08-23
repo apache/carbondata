@@ -65,8 +65,9 @@ class IndexedRecordReader extends CarbonRecordReader<CarbonRow> {
   private int queryId;
   private CarbonTable table;
 
-  public IndexedRecordReader(int queryId, CarbonTable table, QueryModel queryModel) {
-    super(queryModel, new CarbonRowReadSupport(),null);
+  // TODO： xubo
+  IndexedRecordReader(int queryId, CarbonTable table, QueryModel queryModel) {
+    super(queryModel, new CarbonRowReadSupport(), null);
     this.queryId = queryId;
     this.table = table;
   }
