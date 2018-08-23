@@ -41,13 +41,15 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, DeleteDeltaBlockDetails, SegmentUpdateDetails, TupleIdEnum}
 import org.apache.carbondata.core.mutate.data.RowCountDetailsVO
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonConfiguration, CarbonUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.exception.MultipleMatchingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.spark.DeleteDelataResultImpl
+import org.apache.carbondata.spark.rdd.SerializableConfiguration
 
 object DeleteExecution {
   val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
@@ -118,17 +120,19 @@ object DeleteExecution {
         blockMappingVO.getCompleteBlockRowDetailVO.asScala.toSeq,
         keyRdd.partitions.length)
 
+    val conf = sparkSession.sparkContext.broadcast(new SerializableConfiguration(sparkSession
+      .sessionState.newHadoopConf()))
+
     val rdd = rowContRdd.join(keyRdd)
     res = rdd.mapPartitionsWithIndex(
       (index: Int, records: Iterator[((String), (RowCountDetailsVO, Iterable[Row]))]) =>
         Iterator[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))]] {
-
+          ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getThreadParams
+            .setExtraInfo("carbonConf", new CarbonConfiguration(conf.value.value))
           var result = List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))]()
           while (records.hasNext) {
             val ((key), (rowCountDetailsVO, groupedRows)) = records.next
             val segmentId = key.substring(0, key.indexOf(CarbonCommonConstants.FILE_SEPARATOR))
-            val loadDetail =
-              metadataDetails.find(_.getLoadName.equals(segmentId)).get
             result = result ++
                      deleteDeltaFunc(index,
                        key,
@@ -138,8 +142,7 @@ object DeleteExecution {
                        isStandardTable)
           }
           result
-        }
-    ).collect()
+        }).collect()
 
     // if no loads are present then no need to do anything.
     if (res.flatten.isEmpty) {
@@ -328,7 +331,7 @@ object DeleteExecution {
   private def createCarbonInputFormat(absoluteTableIdentifier: AbsoluteTableIdentifier) :
   (CarbonTableInputFormat[Array[Object]], Job) = {
     val carbonInputFormat = new CarbonTableInputFormat[Array[Object]]()
-    val jobConf: JobConf = new JobConf(new Configuration)
+    val jobConf: JobConf = new JobConf(FileFactory.getConfiguration)
     val job: Job = new Job(jobConf)
     FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getTablePath))
     (carbonInputFormat, job)

@@ -33,6 +33,7 @@ import org.apache.carbondata.core.scan.result.iterator.ChunkRowIterator;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
@@ -57,15 +58,16 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
   private boolean skipClearDataMapAtClose = false;
 
   public CarbonRecordReader(QueryModel queryModel, CarbonReadSupport<T> readSupport,
-      InputMetricsStats inputMetricsStats) {
-    this(queryModel, readSupport);
+      InputMetricsStats inputMetricsStats, Configuration configuration) {
+    this(queryModel, readSupport, configuration);
     this.inputMetricsStats = inputMetricsStats;
   }
 
-  public CarbonRecordReader(QueryModel queryModel, CarbonReadSupport<T> readSupport) {
+  public CarbonRecordReader(QueryModel queryModel, CarbonReadSupport<T> readSupport,
+      Configuration configuration) {
     this.queryModel = queryModel;
     this.readSupport = readSupport;
-    this.queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
+    this.queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel, configuration);
   }
 
   @Override

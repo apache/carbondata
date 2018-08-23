@@ -32,6 +32,7 @@ import com.facebook.presto.tests.DistributedQueryRunner
 import com.google.common.collect.ImmutableMap
 import org.slf4j.{Logger, LoggerFactory}
 
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.presto.CarbondataPlugin
 
 object PrestoServer {
@@ -98,6 +99,7 @@ object PrestoServer {
   def executeQuery(query: String): List[Map[String, Any]] = {
 
     Try {
+      ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo()
       val conn: Connection = createJdbcConnection
       logger.info(s"***** executing the query ***** \n $query")
       val statement = conn.createStatement()

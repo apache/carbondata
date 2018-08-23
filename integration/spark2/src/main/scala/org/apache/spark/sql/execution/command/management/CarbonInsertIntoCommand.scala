@@ -25,7 +25,7 @@ import org.apache.spark.storage.StorageLevel
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonConfiguration, CarbonProperties, ThreadLocalSessionInfo}
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 case class CarbonInsertIntoCommand(
@@ -45,6 +45,10 @@ case class CarbonInsertIntoCommand(
         case other => false
       } isDefined
     }
+
+    ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getThreadParams
+      .setExtraInfo("carbonConf",
+        new CarbonConfiguration(sparkSession.sessionState.newHadoopConf()))
     val isPersistEnabledUserValue = CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.CARBON_INSERT_PERSIST_ENABLED,
         CarbonCommonConstants.CARBON_INSERT_PERSIST_ENABLED_DEFAULT)

@@ -43,6 +43,7 @@ import org.apache.carbondata.common.annotations.{InterfaceAudience, InterfaceSta
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapChooser, DataMapStoreManager, Segment}
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, ColumnarFormatVersion}
@@ -186,7 +187,7 @@ class SparkCarbonFileFormat extends FileFormat
     val carbonProjection = new CarbonProjection
     projection.foreach(carbonProjection.addColumn)
 
-    val conf = new Configuration()
+    val conf = FileFactory.getConfiguration
     val jobConf = new JobConf(conf)
     SparkHadoopUtil.get.addCredentials(jobConf)
     val job = Job.getInstance(jobConf)

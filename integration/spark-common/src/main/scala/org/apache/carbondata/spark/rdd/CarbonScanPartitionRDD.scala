@@ -27,6 +27,7 @@ import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{Partition, TaskContext}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.command.AlterPartitionModel
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.util.CarbonException
@@ -35,6 +36,7 @@ import org.apache.spark.util.PartitionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.block.{Distributable, SegmentProperties, TaskBlockInfo}
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataTypes
@@ -65,7 +67,7 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
     absoluteTableIdentifier: AbsoluteTableIdentifier,
     partitionIds: Seq[String],
     bucketId: Int)
-  extends RDD[(AnyRef, Array[AnyRef])](alterPartitionModel.sqlContext.sparkContext, Nil) {
+  extends CarbonRDD[(AnyRef, Array[AnyRef])](alterPartitionModel.sqlContext.sparkSession, Nil) {
 
   private val queryId = alterPartitionModel.sqlContext.sparkContext.getConf
     .get("queryId", System.nanoTime() + "")
@@ -93,7 +95,7 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
 
   override def getPartitions: Array[Partition] = {
     val parallelism = sparkContext.defaultParallelism
-    val jobConf = new JobConf(new Configuration)
+    val jobConf = new JobConf(FileFactory.getConfiguration)
     val job = new Job(jobConf)
     val format = CarbonInputFormatUtil.createCarbonTableInputFormat(absoluteTableIdentifier,
       partitionIds.toList.asJava, job)
@@ -127,8 +129,8 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
     result.toArray(new Array[Partition](result.size()))
   }
 
-  override def compute(split: Partition, context: TaskContext):
-    Iterator[(AnyRef, Array[AnyRef])] = {
+  override def internalCompute(split: Partition, context: TaskContext):
+  Iterator[(AnyRef, Array[AnyRef])] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
       var exec : CarbonSplitExecutor = null
       val rows : java.util.List[(AnyRef, Array[AnyRef])] = new ArrayList[(AnyRef, Array[AnyRef])]()
@@ -142,7 +144,8 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
         var result : java.util.List[PartitionSpliterRawResultIterator] = null
         try {
           exec = new CarbonSplitExecutor(segmentMapping, carbonTable)
-          result = exec.processDataBlocks(segmentId, new SparkDataTypeConverterImpl())
+          result = exec.processDataBlocks(segmentId, new SparkDataTypeConverterImpl(),
+            FileFactory.getConfiguration)
         } catch {
           case e: Throwable =>
             LOGGER.error(e)

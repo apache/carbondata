@@ -54,6 +54,7 @@ import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.readsupport.impl.CarbonRowReadSupport;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.search.SearchRequest;
 import org.apache.spark.search.SearchResult;
 import org.apache.spark.search.ShutdownRequest;
@@ -135,7 +136,7 @@ public class SearchRequestHandler {
 
     // In search mode, reader will read multiple blocks by using a thread pool
     CarbonRecordReader<CarbonRow> reader =
-        new CarbonRecordReader<>(queryModel, new CarbonRowReadSupport());
+        new CarbonRecordReader<>(queryModel, new CarbonRowReadSupport(), new Configuration());
 
     // read all rows by the reader
     List<CarbonRow> rows = new LinkedList<>();

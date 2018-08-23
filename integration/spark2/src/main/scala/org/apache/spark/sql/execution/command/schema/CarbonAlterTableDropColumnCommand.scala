@@ -149,7 +149,7 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
       sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
       // TODO: 1. add check for deletion of index tables
       // delete dictionary files for dictionary column and clear dictionary cache from memory
-      new AlterTableDropColumnRDD(sparkSession.sparkContext,
+      new AlterTableDropColumnRDD(sparkSession,
         dictionaryColumns,
         carbonTable.getAbsoluteTableIdentifier).collect()
 

@@ -461,9 +461,11 @@ object GlobalDictionaryUtil {
       dictFolderPath, forPreDefDict = true)
     // new RDD to achieve distributed column dict generation
     val extInputRDD = new CarbonColumnDictGenerateRDD(carbonLoadModel, dictLoadModel,
-      sqlContext.sparkContext, table, dimensions, dictFolderPath)
+      sqlContext.sparkSession, table, dimensions, dictFolderPath)
       .partitionBy(new ColumnPartitioner(dictLoadModel.primDimensions.length))
-    val statusList = new CarbonGlobalDictionaryGenerateRDD(extInputRDD, dictLoadModel).collect()
+    val statusList = new CarbonGlobalDictionaryGenerateRDD(sqlContext.sparkSession, extInputRDD,
+      dictLoadModel)
+      .collect()
     // check result status
     checkStatus(carbonLoadModel, sqlContext, dictLoadModel, statusList)
   }
@@ -670,10 +672,13 @@ object GlobalDictionaryUtil {
           val model = createDictionaryLoadModel(carbonLoadModel, carbonTableIdentifier,
             requireDimension, dictfolderPath, false)
           // combine distinct value in a block and partition by column
-          val inputRDD = new CarbonBlockDistinctValuesCombineRDD(dictRdd, model)
+          val inputRDD = new CarbonBlockDistinctValuesCombineRDD(sqlContext.sparkSession, dictRdd,
+            model)
             .partitionBy(new ColumnPartitioner(model.primDimensions.length))
           // generate global dictionary files
-          val statusList = new CarbonGlobalDictionaryGenerateRDD(inputRDD, model).collect()
+          val statusList = new CarbonGlobalDictionaryGenerateRDD(sqlContext.sparkSession,
+            inputRDD, model)
+            .collect()
           // check result status
           checkStatus(carbonLoadModel, sqlContext, model, statusList)
         } else {
@@ -731,10 +736,13 @@ object GlobalDictionaryUtil {
         val allDictionaryRdd = readAllDictionaryFiles(sqlContext, headers,
           requireColumnNames, allDictionaryPathAppended, accumulator)
         // read exist dictionary and combine
-        val inputRDD = new CarbonAllDictionaryCombineRDD(allDictionaryRdd, model)
+        val inputRDD = new CarbonAllDictionaryCombineRDD(sqlContext.sparkSession,
+          allDictionaryRdd, model)
           .partitionBy(new ColumnPartitioner(model.primDimensions.length))
         // generate global dictionary files
-        val statusList = new CarbonGlobalDictionaryGenerateRDD(inputRDD, model).collect()
+        val statusList = new CarbonGlobalDictionaryGenerateRDD(sqlContext.sparkSession, inputRDD,
+          model)
+          .collect()
         // check result status
         checkStatus(carbonLoadModel, sqlContext, model, statusList)
         // if the dictionary contains wrong format record, throw ex

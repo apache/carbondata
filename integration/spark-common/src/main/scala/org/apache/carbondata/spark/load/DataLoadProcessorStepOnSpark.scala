@@ -20,6 +20,7 @@ package org.apache.carbondata.spark.load
 import scala.util.Random
 
 import com.univocity.parsers.common.TextParsingException
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{Accumulator, SparkEnv, TaskContext}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.Row
@@ -29,7 +30,8 @@ import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException
 import org.apache.carbondata.core.datastore.row.CarbonRow
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonConfiguration, CarbonProperties, ThreadLocalSessionInfo}
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.loading.{BadRecordsLogger, BadRecordsLoggerProvider, CarbonDataLoadConfiguration, DataLoadProcessBuilder, TableProcessingOperations}
 import org.apache.carbondata.processing.loading.converter.impl.RowConverterImpl
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
@@ -227,7 +229,10 @@ object DataLoadProcessorStepOnSpark {
       rows: Iterator[CarbonRow],
       index: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
-      rowCounter: Accumulator[Int]) {
+      rowCounter: Accumulator[Int],
+      conf: CarbonConfiguration) {
+    ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getThreadParams
+      .setExtraInfo("carbonConf", conf)
     var model: CarbonLoadModel = null
     var tableName: String = null
     var rowConverter: RowConverterImpl = null

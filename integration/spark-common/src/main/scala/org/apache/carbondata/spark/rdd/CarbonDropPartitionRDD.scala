@@ -21,7 +21,8 @@ import java.util
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.{Partition, SparkContext, TaskContext}
+import org.apache.spark.{Partition, TaskContext}
+import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.indexstore.PartitionSpec
@@ -37,17 +38,17 @@ case class CarbonDropPartition(rddId: Int, val idx: Int, segment: Segment)
 
 /**
  * RDD to drop the partitions from segment files of all segments.
- * @param sc
+ * @param ss
  * @param tablePath
  * @param segments segments to be cleaned
  */
 class CarbonDropPartitionRDD(
-    sc: SparkContext,
+    @transient ss: SparkSession,
     tablePath: String,
     segments: Seq[Segment],
     partitions: util.List[PartitionSpec],
     uniqueId: String)
-  extends CarbonRDD[(String, String)](sc, Nil, sc.hadoopConfiguration) {
+  extends CarbonRDD[(String, String)](ss, Nil) {
 
   override def getPartitions: Array[Partition] = {
     segments.zipWithIndex.map {s =>

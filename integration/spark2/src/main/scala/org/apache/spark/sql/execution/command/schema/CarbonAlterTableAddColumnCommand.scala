@@ -82,7 +82,7 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
         carbonTable.getAbsoluteTableIdentifier,
         sparkSession.sparkContext).process
       // generate dictionary files for the newly added columns
-      new AlterTableAddColumnRDD(sparkSession.sparkContext,
+      new AlterTableAddColumnRDD(sparkSession,
         newCols,
         carbonTable.getAbsoluteTableIdentifier).collect()
       timeStamp = System.currentTimeMillis
@@ -110,7 +110,7 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
         LOGGER.error(e, "Alter table add columns failed")
         if (newCols.nonEmpty) {
           LOGGER.info("Cleaning up the dictionary files as alter table add operation failed")
-          new AlterTableDropColumnRDD(sparkSession.sparkContext,
+          new AlterTableDropColumnRDD(sparkSession,
             newCols,
             carbonTable.getAbsoluteTableIdentifier).collect()
           AlterTableUtil.revertAddColumnChanges(dbName, tableName, timeStamp)(sparkSession)

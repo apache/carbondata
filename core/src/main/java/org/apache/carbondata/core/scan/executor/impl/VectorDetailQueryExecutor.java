@@ -26,10 +26,16 @@ import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.iterator.VectorDetailQueryResultIterator;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Below class will be used to execute the detail query and returns columnar vectors.
  */
 public class VectorDetailQueryExecutor extends AbstractQueryExecutor<Object> {
+
+  public VectorDetailQueryExecutor(Configuration configuration) {
+    super(configuration);
+  }
 
   @Override
   public CarbonIterator<Object> execute(QueryModel queryModel)
