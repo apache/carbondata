@@ -45,8 +45,9 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   // storage data type of this column, it could be different from data type in the column spec
   private DataType storeDataType;
 
-  // compressor name for compressing and decompressing this column
-  private String compressorName;
+  // compressor name for compressing and decompressing this column.
+  // Make it protected for RLEEncoderMeta
+  protected String compressorName;
 
   public ColumnPageEncoderMeta() {
   }

@@ -34,8 +34,9 @@ public abstract class DecimalColumnPage extends VarLengthColumnPageBase {
    */
   DecimalConverterFactory.DecimalConverter decimalConverter;
 
-  DecimalColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize) {
-    super(columnSpec, dataType, pageSize);
+  DecimalColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
+      String compressorName) {
+    super(columnSpec, dataType, pageSize, compressorName);
     decimalConverter = DecimalConverterFactory.INSTANCE
         .getDecimalConverter(columnSpec.getPrecision(), columnSpec.getScale());
   }

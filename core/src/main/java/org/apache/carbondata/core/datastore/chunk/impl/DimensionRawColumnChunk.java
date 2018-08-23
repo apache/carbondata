@@ -169,8 +169,8 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
     if (null != localDictionaryChunk) {
       List<Encoding> encodings = localDictionaryChunk.getDictionary_meta().getEncoders();
       List<ByteBuffer> encoderMetas = localDictionaryChunk.getDictionary_meta().getEncoder_meta();
-      ColumnPageDecoder decoder =
-          DefaultEncodingFactory.getInstance().createDecoder(encodings, encoderMetas);
+      ColumnPageDecoder decoder = DefaultEncodingFactory.getInstance().createDecoder(
+          encodings, encoderMetas, compressor.getName());
       ColumnPage decode = decoder.decode(localDictionaryChunk.getDictionary_data(), 0,
           localDictionaryChunk.getDictionary_data().length);
       BitSet usedDictionary = BitSet.valueOf(compressor.unCompressByte(

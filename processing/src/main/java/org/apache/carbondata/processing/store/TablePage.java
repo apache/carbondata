@@ -85,12 +85,16 @@ public class TablePage {
 
   // used for complex column to deserilize the byte array in input CarbonRow
   private Map<Integer, GenericDataType> complexIndexMap = null;
+  // name of compressor that used to compress column data,
+  // currently all the columns share the same compressor.
+  private String columnCompressor;
 
   TablePage(CarbonFactDataHandlerModel model, int pageSize) throws MemoryException {
     this.model = model;
     this.pageSize = pageSize;
     int numDictDimension = model.getMDKeyGenerator().getDimCount();
     TableSpec tableSpec = model.getTableSpec();
+    this.columnCompressor = model.getColumnCompressor();
 
     dictDimensionPages = new ColumnPage[numDictDimension];
     noDictDimensionPages = new ColumnPage[model.getNoDictionaryCount()];
@@ -102,7 +106,7 @@ public class TablePage {
       ColumnPage page;
       if (ColumnType.GLOBAL_DICTIONARY == columnType
           || ColumnType.DIRECT_DICTIONARY == columnType) {
-        page = ColumnPage.newPage(spec, DataTypes.BYTE_ARRAY, pageSize);
+        page = ColumnPage.newPage(spec, DataTypes.BYTE_ARRAY, pageSize, columnCompressor);
         page.setStatsCollector(KeyPageStatsCollector.newInstance(DataTypes.BYTE_ARRAY));
         dictDimensionPages[tmpNumDictDimIdx++] = page;
       } else {
@@ -114,10 +118,10 @@ public class TablePage {
           dataType = DataTypes.VARCHAR;
         }
         if (null != localDictionaryGenerator) {
-          page = ColumnPage
-              .newLocalDictPage(spec, dataType, pageSize, localDictionaryGenerator, false);
+          page = ColumnPage.newLocalDictPage(
+              spec, dataType, pageSize, localDictionaryGenerator, false, columnCompressor);
         } else {
-          page = ColumnPage.newPage(spec, dataType, pageSize);
+          page = ColumnPage.newPage(spec, dataType, pageSize, columnCompressor);
         }
         if (DataTypes.VARCHAR == dataType) {
           page.setStatsCollector(LVLongStringStatsCollector.newInstance());
@@ -139,9 +143,9 @@ public class TablePage {
       TableSpec.MeasureSpec spec = model.getTableSpec().getMeasureSpec(i);
       ColumnPage page;
       if (DataTypes.isDecimal(spec.getSchemaDataType())) {
-        page = ColumnPage.newDecimalPage(spec, dataTypes[i], pageSize);
+        page = ColumnPage.newDecimalPage(spec, dataTypes[i], pageSize, columnCompressor);
       } else {
-        page = ColumnPage.newPage(spec, dataTypes[i], pageSize);
+        page = ColumnPage.newPage(spec, dataTypes[i], pageSize, columnCompressor);
       }
       page.setStatsCollector(
           PrimitivePageStatsCollector.newInstance(dataTypes[i]));
@@ -239,8 +243,8 @@ public class TablePage {
       complexDataType.getComplexColumnInfo(complexColumnInfoList);
       complexDimensionPages[index] = new ComplexColumnPage(complexColumnInfoList);
       try {
-        complexDimensionPages[index]
-            .initialize(model.getColumnLocalDictGenMap(), pageSize);
+        complexDimensionPages[index].initialize(
+            model.getColumnLocalDictGenMap(), pageSize, columnCompressor);
       } catch (MemoryException e) {
         throw new RuntimeException(e);
       }

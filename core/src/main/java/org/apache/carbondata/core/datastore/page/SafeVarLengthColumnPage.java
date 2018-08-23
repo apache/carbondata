@@ -32,8 +32,9 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
   // for string and decimal data
   private List<byte[]> byteArrayData;
 
-  SafeVarLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize) {
-    super(columnSpec, dataType, pageSize);
+  SafeVarLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
+      String compressorName) {
+    super(columnSpec, dataType, pageSize, compressorName);
     byteArrayData = new ArrayList<>();
   }
 

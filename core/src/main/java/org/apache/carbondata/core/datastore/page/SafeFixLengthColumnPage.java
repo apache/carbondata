@@ -45,8 +45,9 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   // total number of entries in array
   private int arrayElementCount = 0;
 
-  SafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize) {
-    super(columnSpec, dataType, pageSize);
+  SafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
+      String compressorName) {
+    super(columnSpec, dataType, pageSize, compressorName);
     this.fixedLengthdata = new byte[pageSize][];
   }
 

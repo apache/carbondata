@@ -61,9 +61,9 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   private static final int floatBits = DataTypes.FLOAT.getSizeBits();
   private static final int doubleBits = DataTypes.DOUBLE.getSizeBits();
 
-  UnsafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize)
-      throws MemoryException {
-    super(columnSpec, dataType, pageSize);
+  UnsafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
+      String compressorName) throws MemoryException {
+    super(columnSpec, dataType, pageSize, compressorName);
     if (dataType == DataTypes.BOOLEAN ||
         dataType == DataTypes.BYTE ||
         dataType == DataTypes.SHORT ||
@@ -89,9 +89,8 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   }
 
   UnsafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
-      int eachRowSize)
-      throws MemoryException {
-    this(columnSpec, dataType, pageSize);
+      int eachRowSize, String compressorName) throws MemoryException {
+    this(columnSpec, dataType, pageSize, compressorName);
     this.eachRowSize = eachRowSize;
     totalLength = 0;
     if (dataType == DataTypes.BYTE_ARRAY) {

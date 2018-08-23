@@ -32,16 +32,16 @@ import org.apache.carbondata.core.util.ByteUtil;
  */
 public class UnsafeDecimalColumnPage extends DecimalColumnPage {
 
-  UnsafeDecimalColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize)
-      throws MemoryException {
-    super(columnSpec, dataType, pageSize);
+  UnsafeDecimalColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
+      String compressorName) throws MemoryException {
+    super(columnSpec, dataType, pageSize, compressorName);
     capacity = (int) (pageSize * DEFAULT_ROW_SIZE * FACTOR);
     initMemory();
   }
 
   UnsafeDecimalColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
-      int capacity) throws MemoryException {
-    super(columnSpec, dataType, pageSize);
+      int capacity, String compressorName) throws MemoryException {
+    super(columnSpec, dataType, pageSize, compressorName);
     this.capacity = capacity;
     initMemory();
   }

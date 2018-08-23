@@ -213,7 +213,8 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
       throws MemoryException, IOException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
-    ColumnPageDecoder codec = encodingFactory.createDecoder(encodings, encoderMetas);
+    ColumnPageDecoder codec = encodingFactory.createDecoder(encodings, encoderMetas,
+        pageMetadata.getChunk_meta().getCompression_codec().name());
     return codec.decode(pageData.array(), offset, pageMetadata.data_page_length);
   }
 

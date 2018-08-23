@@ -78,7 +78,6 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
   @Override
   public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
     return new ColumnPageEncoder() {
-      final Compressor compressor = CompressorFactory.getInstance().getCompressor();
 
       @Override
       protected byte[] encodeData(ColumnPage input) throws MemoryException, IOException {
@@ -86,8 +85,10 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
           throw new IllegalStateException("already encoded");
         }
         encodedPage = ColumnPage.newPage(input.getColumnSpec(), targetDataType,
-            input.getPageSize());
+            input.getPageSize(), input.getColumnCompressorName());
         input.convertValue(converter);
+        Compressor compressor = CompressorFactory.getInstance().getCompressor(
+            input.getColumnCompressorName());
         byte[] result = encodedPage.compress(compressor);
         encodedPage.freeMemory();
         return result;
@@ -96,7 +97,7 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
       @Override
       protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
         return new ColumnPageEncoderMeta(inputPage.getColumnSpec(), targetDataType,
-            inputPage.getStatistics(), compressor.getName());
+            inputPage.getStatistics(), inputPage.getColumnCompressorName());
       }
 
       @Override

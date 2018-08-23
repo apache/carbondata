@@ -46,7 +46,7 @@ public class RLECodecTest {
       this.inputByteData = inputByteData;
       inputBytePage = ColumnPage.newPage(
           TableSpec.ColumnSpec.newInstance("test", DataTypes.BYTE, ColumnType.MEASURE),
-          DataTypes.BYTE, inputByteData.length);
+          DataTypes.BYTE, inputByteData.length, "snappy");
       inputBytePage.setStatsCollector(PrimitivePageStatsCollector.newInstance(DataTypes.BYTE));
       for (int i = 0; i < inputByteData.length; i++) {
         inputBytePage.putData(i, inputByteData[i]);
@@ -131,7 +131,7 @@ public class RLECodecTest {
     RLECodec codec = new RLECodec();
     RLEEncoderMeta meta = new RLEEncoderMeta(
         TableSpec.ColumnSpec.newInstance("test", DataTypes.BYTE, ColumnType.MEASURE),
-        DataTypes.BYTE, expectedDecodedBytes.length, null);
+        DataTypes.BYTE, expectedDecodedBytes.length, null, "snappy");
     ColumnPageDecoder decoder = codec.createDecoder(meta);
     ColumnPage page = decoder.decode(inputBytes, 0, inputBytes.length);
     byte[] decoded = page.getBytePage();

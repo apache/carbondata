@@ -39,8 +39,8 @@ public class RLEEncoderMeta extends ColumnPageEncoderMeta implements Writable {
   }
 
   public RLEEncoderMeta(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
-      SimpleStatsResult stats) {
-    super(columnSpec, dataType, stats, "");
+      SimpleStatsResult stats, String compressorName) {
+    super(columnSpec, dataType, stats, compressorName);
     this.pageSize = pageSize;
   }
 

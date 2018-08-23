@@ -27,6 +27,7 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
@@ -35,6 +36,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.reader.CarbonHeaderReader;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -89,6 +91,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   private int measureCount;
   private DataType[] measureDataTypes;
   private StreamBlockletWriter output = null;
+  private String compressorName;
 
   // data write
   private String segmentDir;
@@ -155,6 +158,29 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     converter = new RowConverterImpl(configuration.getDataFields(), configuration, badRecordLogger);
     configuration.setCardinalityFinder(converter);
     converter.initialize();
+
+    // initialize data writer and compressor
+    String filePath = segmentDir + File.separator + fileName;
+    FileFactory.FileType fileType = FileFactory.getFileType(filePath);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(filePath, fileType);
+    if (carbonFile.exists()) {
+      // if the file is existed, use the append api
+      outputStream = FileFactory.getDataOutputStreamUsingAppend(filePath, fileType);
+      // get the compressor from the fileheader. In legacy store,
+      // the compressor name is not set and it use snappy compressor
+      FileHeader header = new CarbonHeaderReader(filePath).readHeader();
+      if (header.isSetCompressionCodec()) {
+        compressorName = header.getCompressionCodec().name();
+      } else {
+        compressorName = CompressorFactory.SupportedCompressor.SNAPPY.getName();
+      }
+    } else {
+      // IF the file is not existed, use the create api
+      outputStream = FileFactory.getDataOutputStream(filePath, fileType);
+      compressorName = CompressorFactory.getInstance().getCompressor().getName();
+      writeFileHeader();
+    }
+
     // initialize encoder
     nullBitSet = new BitSet(dataFields.length);
     int rowBufferSize = hadoopConf.getInt(CarbonStreamOutputFormat.CARBON_ENCODER_ROW_BUFFER_SIZE,
@@ -162,18 +188,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     output = new StreamBlockletWriter(maxCacheSize, maxRowNums, rowBufferSize,
         isNoDictionaryDimensionColumn.length, measureCount,
         measureDataTypes);
-    // initialize data writer
-    String filePath = segmentDir + File.separator + fileName;
-    FileFactory.FileType fileType = FileFactory.getFileType(filePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(filePath, fileType);
-    if (carbonFile.exists()) {
-      // if the file is existed, use the append api
-      outputStream = FileFactory.getDataOutputStreamUsingAppend(filePath, fileType);
-    } else {
-      // IF the file is not existed, use the create api
-      outputStream = FileFactory.getDataOutputStream(filePath, fileType);
-      writeFileHeader();
-    }
+
     isFirstRow = false;
   }
 
@@ -295,6 +310,8 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     fileHeader.setIs_footer_present(false);
     fileHeader.setIs_splitable(true);
     fileHeader.setSync_marker(CarbonStreamOutputFormat.CARBON_SYNC_MARKER);
+    fileHeader.setCompressionCodec(
+        CompressorFactory.getInstance().getCompressionCodec(compressorName));
     outputStream.write(CarbonUtil.getByteArray(fileHeader));
   }
 

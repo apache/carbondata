@@ -36,8 +36,9 @@ public class SafeDecimalColumnPage extends DecimalColumnPage {
   private byte[] shortIntData;
   private byte[][] byteArrayData;
 
-  SafeDecimalColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize) {
-    super(columnSpec, dataType, pageSize);
+  SafeDecimalColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
+      String compressorName) {
+    super(columnSpec, dataType, pageSize, compressorName);
     byteArrayData = new byte[pageSize][];
   }
 

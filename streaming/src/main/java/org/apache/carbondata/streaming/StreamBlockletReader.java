@@ -41,13 +41,13 @@ public class StreamBlockletReader {
   private final long limitStart;
   private final long limitEnd;
   private boolean isAlreadySync = false;
-  private Compressor compressor = CompressorFactory.getInstance().getCompressor();
+  private Compressor compressor;
   private int rowNums = 0;
   private int rowIndex = 0;
   private boolean isHeaderPresent;
 
   public StreamBlockletReader(byte[] syncMarker, InputStream in, long limit,
-      boolean isHeaderPresent) {
+      boolean isHeaderPresent, String compressorName) {
     this.syncMarker = syncMarker;
     syncLen = syncMarker.length;
     syncBuffer = new byte[syncLen];
@@ -55,6 +55,7 @@ public class StreamBlockletReader {
     limitStart = limit;
     limitEnd = limitStart + syncLen;
     this.isHeaderPresent = isHeaderPresent;
+    this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
   }
 
   private void ensureCapacity(int capacity) {

@@ -71,8 +71,8 @@ public class ComplexColumnPage {
    * @throws MemoryException
    * if memory is not sufficient
    */
-  public void initialize(Map<String, LocalDictionaryGenerator> columnToDictMap, int pageSize)
-      throws MemoryException {
+  public void initialize(Map<String, LocalDictionaryGenerator> columnToDictMap, int pageSize,
+      String columnCompressor) throws MemoryException {
     DataType dataType;
     for (int i = 0; i < this.columnPages.length; i++) {
       LocalDictionaryGenerator localDictionaryGenerator =
@@ -83,15 +83,16 @@ public class ComplexColumnPage {
         if (isColumnPageBasedOnDataType(i)) {
           // no dictionary primitive types need adaptive encoding,
           // hence store as actual value instead of byte array
-          this.columnPages[i] = ColumnPage.newPage(spec, dataType, pageSize);
+          this.columnPages[i] = ColumnPage.newPage(spec, dataType, pageSize, columnCompressor);
           this.columnPages[i].setStatsCollector(PrimitivePageStatsCollector.newInstance(dataType));
         } else {
-          this.columnPages[i] = ColumnPage.newPage(spec, DataTypes.BYTE_ARRAY, pageSize);
+          this.columnPages[i] = ColumnPage.newPage(spec, DataTypes.BYTE_ARRAY,
+              pageSize, columnCompressor);
           this.columnPages[i].setStatsCollector(new DummyStatsCollector());
         }
       } else {
-        this.columnPages[i] = ColumnPage
-            .newLocalDictPage(spec, DataTypes.BYTE_ARRAY, pageSize, localDictionaryGenerator, true);
+        this.columnPages[i] = ColumnPage.newLocalDictPage(
+            spec, DataTypes.BYTE_ARRAY, pageSize, localDictionaryGenerator, true, columnCompressor);
         this.columnPages[i].setStatsCollector(new DummyStatsCollector());
       }
     }

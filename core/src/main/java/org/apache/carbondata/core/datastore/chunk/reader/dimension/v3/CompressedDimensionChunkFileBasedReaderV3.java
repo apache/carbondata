@@ -201,7 +201,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     // get the data buffer
     ByteBuffer rawData = rawColumnPage.getRawData();
     DataChunk2 pageMetadata = dataChunk3.getData_chunk_list().get(pageNumber);
-    String compressorName = pageMetadata.chunk_meta.compression_codec.name();
+    String compressorName = pageMetadata.getChunk_meta().getCompression_codec().name();
     this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
     // calculating the start point of data
     // as buffer can contain multiple column data, start point will be datachunkoffset +
@@ -217,7 +217,8 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       throws IOException, MemoryException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
-    ColumnPageDecoder decoder = encodingFactory.createDecoder(encodings, encoderMetas);
+    ColumnPageDecoder decoder = encodingFactory.createDecoder(encodings, encoderMetas,
+        pageMetadata.getChunk_meta().getCompression_codec().name());
     return decoder
         .decode(pageData.array(), offset, pageMetadata.data_page_length, isLocalDictEncodedPage);
   }

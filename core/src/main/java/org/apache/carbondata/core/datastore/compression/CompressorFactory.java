@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.compression;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -71,13 +72,6 @@ public class CompressorFactory {
     for (SupportedCompressor supportedCompressor : SupportedCompressor.values()) {
       compressors.put(supportedCompressor.getName(), supportedCompressor);
     }
-
-    String compressorType = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.COMPRESSOR, CarbonCommonConstants.DEFAULT_COMPRESSOR);
-    if (!compressors.keySet().contains(compressorType)) {
-      throw new RuntimeException(
-          "Invalid compressor type provided! Please provide valid compressor type");
-    }
   }
 
   public static CompressorFactory getInstance() {
@@ -93,6 +87,11 @@ public class CompressorFactory {
   public Compressor getCompressor() {
     String compressorType = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.COMPRESSOR, CarbonCommonConstants.DEFAULT_COMPRESSOR);
+    if (!compressors.keySet().contains(compressorType)) {
+      throw new UnsupportedOperationException(
+          "Invalid compressor type provided! Currently we only support "
+              + Arrays.toString(SupportedCompressor.values()));
+    }
     return getCompressor(compressorType);
   }
 
@@ -100,13 +99,17 @@ public class CompressorFactory {
     if (compressors.containsKey(name.toLowerCase())) {
       return compressors.get(name.toLowerCase()).getCompressor();
     }
-    throw new UnsupportedOperationException(name + " compressor is not supported");
+    throw new UnsupportedOperationException(
+        name + " compressor is not supported, currently we only support "
+            + Arrays.toString(SupportedCompressor.values()));
   }
 
   public CompressionCodec getCompressionCodec(String name) {
     if (compressors.containsKey(name.toLowerCase())) {
       return compressors.get(name.toLowerCase()).getCodec();
     }
-    throw new UnsupportedOperationException(name + " compressor is not supported");
+    throw new UnsupportedOperationException(
+        name + " compressor is not supported, currently we only support "
+            + Arrays.toString(SupportedCompressor.values()));
   }
 }
