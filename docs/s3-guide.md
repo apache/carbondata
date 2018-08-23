@@ -86,5 +86,4 @@ sparkSession.sparkContext.hadoopConfiguration.set("fs.s3a.access.key","456")
 required to take locks which ensure consistency between concurrent operations therefore, it is 
 recommended to set the configurable lock path property([carbon.lock.path](https://github.com/apache/carbondata/blob/master/docs/configuration-parameters.md#miscellaneous-configuration))
  to a HDFS directory.
-2. Concurrent data manipulation operations are not supported. Object stores follow eventual 
-consistency semantics, i.e., any put request might take some time to reflect when trying to list. This behaviour causes not to ensure the data read is always consistent or latest.
+2. Concurrent data manipulation operations are not supported. Object stores follow eventual consistency semantics, i.e., any put request might take some time to reflect when trying to list. This behaviour causes the data read is always not consistent or not the latest.
