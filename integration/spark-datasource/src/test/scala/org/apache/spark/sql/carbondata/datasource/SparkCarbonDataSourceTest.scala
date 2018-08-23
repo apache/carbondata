@@ -176,7 +176,6 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
 
     df.write
       .format("parquet").saveAsTable("parquet_table")
-    spark.sql("describe parquet_table").show(false)
     spark.sql("create table carbon_table(c1 string, c2 struct<a1:array<string>, a2:struct<a1:string, a2:string>>, number int) using carbon")
     spark.sql("insert into carbon_table select * from parquet_table")
     assert(spark.sql("select * from carbon_table").count() == 10)
@@ -203,6 +202,29 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
     spark.sql("select * from carbon_table").show()
     spark.sql("drop table if exists carbon_table")
     spark.sql("drop table if exists testparquet")
+  }
+
+  test("test read with nested struct and array type without creating table") {
+    FileFactory
+      .deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_carbon_folder"))
+    spark.sql("drop table if exists parquet_table")
+    import spark.implicits._
+    val df = spark.sparkContext.parallelize(1 to 10)
+      .map(x => ("a" + x % 10, (Array("1", "2"), ("3", "4")), x))
+      .toDF("c1", "c2", "number")
+
+    df.write
+      .format("parquet").saveAsTable("parquet_table")
+    val frame = spark.sql("select * from parquet_table")
+    frame.write.format("carbon").save(warehouse1 + "/test_carbon_folder")
+    val dfread = spark.read.format("carbon").load(warehouse1 + "/test_carbon_folder")
+    dfread.show(false)
+//    TestUtil
+//      .checkAnswer(spark.sql("select * from carbon_table"),
+//        spark.sql("select * from parquet_table"))
+    FileFactory
+      .deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_carbon_folder"))
+    spark.sql("drop table if exists parquet_table")
   }
 
 

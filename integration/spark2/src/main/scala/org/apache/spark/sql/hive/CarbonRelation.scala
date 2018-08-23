@@ -20,14 +20,12 @@ import java.util.LinkedHashSet
 
 import scala.Array.canBuildFrom
 import scala.collection.JavaConverters._
-import scala.util.parsing.combinator.RegexParsers
 
 import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan}
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.util.CarbonException
-import org.apache.spark.util.{CarbonMetastoreTypes, SparkTypeConverter}
+import org.apache.spark.sql.util.{CarbonMetastoreTypes, SparkTypeConverter}
 
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes

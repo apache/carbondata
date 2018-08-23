@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.carbondata.execution.datasources
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
@@ -36,6 +36,7 @@ import org.apache.spark.sql.catalyst.util.ArrayData
 import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.sources.{DataSourceRegister, Filter}
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.util.SparkTypeConverter
 import org.apache.spark.util.SerializableConfiguration
 
 import org.apache.carbondata.common.annotations.{InterfaceAudience, InterfaceStability}
@@ -44,7 +45,10 @@ import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo
-import org.apache.carbondata.core.metadata.ColumnarFormatVersion
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnarFormatVersion}
+import org.apache.carbondata.core.metadata.schema.SchemaReader
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.reader.CarbonHeaderReader
 import org.apache.carbondata.core.scan.expression.{Expression => CarbonExpression}
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
@@ -76,39 +80,23 @@ class SparkCarbonFileFormat extends FileFormat
   override def inferSchema(sparkSession: SparkSession,
       options: Map[String, String],
       files: Seq[FileStatus]): Option[StructType] = {
-    val filePath = if (options.isEmpty) {
-      val carbondataFiles = files.filter { file =>
-        file.getPath.getName.endsWith(CarbonTablePath.CARBON_DATA_EXT)
-      }
-      if (carbondataFiles.nonEmpty) {
-        Some(carbondataFiles.head.getPath.toString)
-      } else {
-        None
-      }
-    } else {
-      options.get("path") match {
-        case Some(path) => Some(CarbonUtil.getFilePathExternalFilePath(path))
-        case _ => None
-      }
-
+    val tablePath = options.get("path") match {
+      case Some(path) => path
+      case _ => FileFactory.getUpdatedFilePath(files.head.getPath.getParent.toUri.toString)
     }
 
-    if (filePath.isEmpty) {
-      throw new SparkException("CarbonData file is not present in the location mentioned in DDL")
+    val tableInfo = SchemaReader.inferSchema(AbsoluteTableIdentifier.from(tablePath, "", ""), false)
+    val table = CarbonTable.buildFromTableInfo(tableInfo)
+    var schema = new StructType
+    tableInfo.getFactTable.getListOfColumns.asScala.foreach { col =>
+      // TODO find better way to know its a child
+      if (!col.getColumnName.contains(".")) {
+        schema = schema.add(
+          col.getColumnName,
+          SparkTypeConverter.convertCarbonToSparkDataType(col, table))
+      }
     }
-    val carbonHeaderReader: CarbonHeaderReader = new CarbonHeaderReader(filePath.get)
-    val fileHeader = carbonHeaderReader.readHeader
-    val table_columns = fileHeader.getColumn_schema
-    var colArray = ArrayBuffer[StructField]()
-    // TODO support complex types
-    for (i <- 0 until table_columns.size()) {
-      val col = CarbonUtil.thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i))
-      colArray += StructField(col.getColumnName,
-        CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(col.getDataType))
-    }
-    colArray.+:(Nil)
-
-    Some(StructType(colArray))
+    Some(schema)
   }
 
 

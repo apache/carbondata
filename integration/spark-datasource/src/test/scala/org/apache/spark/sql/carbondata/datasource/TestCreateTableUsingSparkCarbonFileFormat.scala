@@ -189,7 +189,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     assert(new File(filePath).exists())
     spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
-    val exception = intercept[org.apache.spark.SparkException] {
+    val exception = intercept[Exception] {
       //    data source file format
       if (spark.sparkContext.version.startsWith("2.1")) {
         //data source file format
@@ -204,7 +204,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
       }
     }
     assert(exception.getMessage()
-      .contains("CarbonData file is not present in the location mentioned in DDL"))
+      .contains("CarbonData file is not present in the table location"))
 
     // drop table should not delete the files
     assert(new File(filePath).exists())
@@ -219,7 +219,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     assert(new File(filePath).exists())
     spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
-    val exception = intercept[org.apache.spark.SparkException] {
+    val exception = intercept[Exception] {
       //data source file format
       if (spark.sparkContext.version.startsWith("2.1")) {
         //data source file format
@@ -236,7 +236,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
       spark.sql("select * from sdkOutputTable").show(false)
     }
     assert(exception.getMessage()
-      .contains("CarbonData file is not present in the location mentioned in DDL"))
+      .contains("CarbonData file is not present in the table location"))
 
     // drop table should not delete the files
     assert(new File(filePath).exists())

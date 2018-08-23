@@ -31,8 +31,8 @@ import org.apache.spark.sql.types.DecimalType;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.apache.spark.util.CarbonMetastoreTypes;
-import org.apache.spark.util.SparkTypeConverter;
+import org.apache.spark.sql.util.CarbonMetastoreTypes;
+import org.apache.spark.sql.util.SparkTypeConverter;
 import org.apache.spark.util.Utils;
 
 public class Util {
