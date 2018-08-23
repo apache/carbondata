@@ -221,6 +221,7 @@ with Serializable {
 
     }
   }
+  override def equals(other: Any): Boolean = other.isInstanceOf[SparkCarbonTableFormat]
 }
 
 case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, isAppend: Boolean)
