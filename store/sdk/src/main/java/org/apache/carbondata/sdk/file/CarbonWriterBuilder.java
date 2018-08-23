@@ -273,6 +273,56 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   * To support the table properties for sdk writer
+   *
+   * @param options key,value pair of create table properties.
+   * supported keys values are
+   * a. blocksize -- [1-2048] values in MB. Default value is 1024
+   * b. blockletsize -- values in MB. Default value is 64 MB
+   * c. localDictionaryThreshold -- positive value, default is 10000
+   * d. enableLocalDictionary -- true / false. Default is false
+   * e. sortcolumns -- comma separated column. "c1,c2". Default all dimensions are sorted.
+   *
+   * @return updated CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder withTableProperties(Map<String, String> options) {
+    Objects.requireNonNull(options, "Table properties should not be null");
+    //validate the options.
+    if (options.size() > 5) {
+      throw new IllegalArgumentException("Supports only 5 options now. "
+          + "Refer method header or documentation");
+    }
+
+    Set<String> supportedOptions = new HashSet<>(Arrays
+        .asList("blocksize", "blockletsize", "localdictionarythreshold", "enablelocaldictionary",
+            "sortcolumns"));
+
+    for (String key : options.keySet()) {
+      if (!supportedOptions.contains(key.toLowerCase())) {
+        throw new IllegalArgumentException(
+            "Unsupported options. " + "Refer method header or documentation");
+      }
+    }
+
+    for (Map.Entry<String, String> entry : options.entrySet()) {
+      if (entry.getKey().equalsIgnoreCase("equalsIgnoreCase")) {
+        this.withBlockSize(Integer.parseInt(entry.getValue()));
+      } else if (entry.getKey().equalsIgnoreCase("blockletsize")) {
+        this.withBlockletSize(Integer.parseInt(entry.getValue()));
+      } else if (entry.getKey().equalsIgnoreCase("localDictionaryThreshold")) {
+        this.localDictionaryThreshold(Integer.parseInt(entry.getValue()));
+      } else if (entry.getKey().equalsIgnoreCase("enableLocalDictionary")) {
+        this.enableLocalDictionary((entry.getValue().equalsIgnoreCase("true")));
+      } else {
+        //sort columns
+        String[] sortColumns = entry.getValue().split(",");
+        this.sortBy(sortColumns);
+      }
+    }
+    return this;
+  }
+
+  /**
    * To set the carbondata file size in MB between 1MB-2048MB
    * @param blockSize is size in MB between 1MB to 2048 MB
    * default value is 1024 MB
@@ -293,7 +343,7 @@ public class CarbonWriterBuilder {
   public CarbonWriterBuilder localDictionaryThreshold(int localDictionaryThreshold) {
     if (localDictionaryThreshold <= 0) {
       throw new IllegalArgumentException(
-          "Local Dictionary Threshold should be between greater than 0");
+          "Local Dictionary Threshold should be greater than 0");
     }
     this.localDictionaryThreshold = localDictionaryThreshold;
     return this;
