@@ -20,7 +20,9 @@ package org.apache.spark.sql.carbondata.datasource
 import org.apache.spark.sql.carbondata.datasource.TestUtil._
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
+import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 
 class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
 
@@ -53,6 +55,9 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
     spark.sql("create table carbon_table(c1 string, c2 string, number int) using carbon")
     spark.sql("insert into carbon_table select * from testparquet")
     TestUtil.checkAnswer(spark.sql("select * from carbon_table"), spark.sql("select * from testparquet"))
+    val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+    DataMapStoreManager.getInstance().clearDataMaps(AbsoluteTableIdentifier.from(warehouse1+"/carbon_table", "", ""))
+    assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
     spark.sql("drop table if exists testparquet")
     spark.sql("drop table if exists testformat")
   }
