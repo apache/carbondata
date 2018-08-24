@@ -33,8 +33,8 @@ import org.apache.avro.file.DataFileWriter
 import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DecoderFactory, Encoder}
 import org.apache.commons.io.FileUtils
-import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
@@ -2386,9 +2386,13 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   test("test LocalDictionary with custom Threshold") {
     FileUtils.deleteDirectory(new File(writerPath))
+    val tablePropertiesMap: util.Map[String, String] =
+      Map("blocksize" -> "12",
+        "sortcolumns" -> "name",
+        "localDictionaryThreshold" -> "200",
+        "enableLocalDictionary" -> "true").asJava
     val builder = CarbonWriter.builder.isTransactionalTable(false)
-      .sortBy(Array[String]("name")).withBlockSize(12).enableLocalDictionary(true)
-      .localDictionaryThreshold(200)
+      .withTableProperties(tablePropertiesMap)
       .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath)
     generateCarbonData(builder)
     assert(FileFactory.getCarbonFile(writerPath).exists())
