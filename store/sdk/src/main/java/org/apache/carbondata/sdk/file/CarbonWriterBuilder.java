@@ -409,7 +409,7 @@ public class CarbonWriterBuilder {
     if (numOfThreads <= 0) {
       throw new IllegalArgumentException(" numOfThreads must be greater than 0");
     }
-    CarbonLoadModel loadModel = createLoadModel();
+    CarbonLoadModel loadModel = buildLoadModel(schema);
     loadModel.setSdkUserCores(numOfThreads);
     return new CSVCarbonWriter(loadModel);
   }
@@ -455,7 +455,7 @@ public class CarbonWriterBuilder {
     if (numOfThreads <= 0) {
       throw new IllegalArgumentException(" numOfThreads must be greater than 0");
     }
-    CarbonLoadModel loadModel = createLoadModel();
+    CarbonLoadModel loadModel = buildLoadModel(schema);
     // AVRO records are pushed to Carbon as Object not as Strings. This was done in order to
     // handle multi level complex type support. As there are no conversion converter step is
     // removed from the load. LoadWithoutConverter flag is going to point to the Loader Builder
@@ -503,7 +503,7 @@ public class CarbonWriterBuilder {
       throw new IllegalArgumentException(" numOfThreads must be greater than 0");
     }
     this.schema = carbonSchema;
-    CarbonLoadModel loadModel = createLoadModel();
+    CarbonLoadModel loadModel = buildLoadModel(schema);
     loadModel.setJsonFileLoad(true);
     loadModel.setSdkUserCores(numOfThreads);
     return new JsonCarbonWriter(loadModel);
