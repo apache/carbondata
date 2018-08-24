@@ -285,6 +285,44 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
     spark.sql("drop table if exists date_parquet_table")
   }
 
+  test("test write with array type with filter") {
+    spark.sql("drop table if exists carbon_table")
+    spark.sql("drop table if exists parquet_table")
+    import spark.implicits._
+    val df = spark.sparkContext.parallelize(1 to 10)
+      .map(x => ("a" + x % 10, Array("b", "c"), x))
+      .toDF("c1", "c2", "number")
+
+    df.write
+      .format("parquet").saveAsTable("parquet_table")
+    spark.sql("create table carbon_table(c1 string, c2 array<string>, number int) using carbon")
+    spark.sql("insert into carbon_table select * from parquet_table")
+    assert(spark.sql("select * from carbon_table").count() == 10)
+    TestUtil.checkAnswer(spark.sql("select * from carbon_table where c1='a1' and c2[0]='b'"), spark.sql("select * from parquet_table where c1='a1' and c2[0]='b'"))
+    TestUtil.checkAnswer(spark.sql("select * from carbon_table"), spark.sql("select * from parquet_table"))
+    spark.sql("drop table if exists carbon_table")
+    spark.sql("drop table if exists parquet_table")
+  }
+
+  test("test write with struct type with filter") {
+    spark.sql("drop table if exists carbon_table")
+    spark.sql("drop table if exists parquet_table")
+    import spark.implicits._
+    val df = spark.sparkContext.parallelize(1 to 10)
+      .map(x => ("a" + x % 10, ("b", "c"), x))
+      .toDF("c1", "c2", "number")
+
+    df.write
+      .format("parquet").saveAsTable("parquet_table")
+    spark.sql("create table carbon_table(c1 string, c2 struct<a1:string, a2:string>, number int) using carbon")
+    spark.sql("insert into carbon_table select * from parquet_table")
+    assert(spark.sql("select * from carbon_table").count() == 10)
+    TestUtil.checkAnswer(spark.sql("select * from carbon_table"), spark.sql("select * from parquet_table"))
+    TestUtil.checkAnswer(spark.sql("select * from carbon_table where c2.a1='b' and c1='a1'"), spark.sql("select * from parquet_table where c2._1='b' and c1='a1'"))
+    spark.sql("drop table if exists carbon_table")
+    spark.sql("drop table if exists parquet_table")
+  }
+
 
   override protected def beforeAll(): Unit = {
     drop

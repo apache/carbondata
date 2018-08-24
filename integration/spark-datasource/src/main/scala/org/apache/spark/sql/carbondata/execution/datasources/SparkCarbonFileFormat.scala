@@ -297,7 +297,13 @@ class SparkCarbonFileFormat extends FileFormat
       filters: Seq[Filter],
       options: Map[String, String],
       hadoopConf: Configuration): PartitionedFile => Iterator[InternalRow] = {
-    val filter: Option[CarbonExpression] = filters.flatMap { filter =>
+    val dataTypeMap = dataSchema.map(f => f.name -> f.dataType).toMap
+    // Filter out the complex filters as carbon does not support them.
+    val filter: Option[CarbonExpression] = filters.filterNot{ ref =>
+      ref.references.exists{ p =>
+        !dataTypeMap(p).isInstanceOf[AtomicType]
+      }
+    }.flatMap { filter =>
       CarbonSparkDataSourceUtil.createCarbonFilter(dataSchema, filter)
     }.reduceOption(new AndExpression(_, _))
 
