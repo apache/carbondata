@@ -293,14 +293,14 @@ public class CarbonWriterBuilder {
           + "Refer method header or documentation");
     }
 
-    for (String option: options.keySet()) {
-      if (!option.equalsIgnoreCase("blocksize") &&
-          !option.equalsIgnoreCase("blockletsize") &&
-          !option.equalsIgnoreCase("localDictionaryThreshold") &&
-          !option.equalsIgnoreCase("enableLocalDictionary") &&
-          !option.equalsIgnoreCase("sortcolumns")) {
-        throw new IllegalArgumentException("Unsupported options. "
-            + "Refer method header or documentation");
+    Set<String> supportedOptions = new HashSet<>(Arrays
+        .asList("blocksize", "blockletsize", "localdictionarythreshold", "enablelocaldictionary",
+            "sortcolumns"));
+
+    for (String key : options.keySet()) {
+      if (!supportedOptions.contains(key.toLowerCase())) {
+        throw new IllegalArgumentException(
+            "Unsupported options. " + "Refer method header or documentation");
       }
     }
 
