@@ -22,8 +22,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.datatype
-import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, DecimalType => CarbonDecimalType, StructField => CarbonStructField}
+import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, DecimalType => CarbonDecimalType, StructField => CarbonStructField, StructType => CarbonStructType}
 import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
 import org.apache.carbondata.core.scan.expression.conditional._
 import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
@@ -196,20 +195,11 @@ object CarbonSparkDataSourceUtil {
   def prepareLoadModel(options: Map[String, String],
       dataSchema: StructType): CarbonLoadModel = {
     val schema = new Schema(dataSchema.fields.map { field =>
-      field.dataType match {
-        case s: StructType =>
-          new Field(field.name,
-            field.dataType.typeName,
-            s.fields
-              .map(f => new datatype.StructField(f.name,
-                CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(f.dataType))).toList.asJava)
-        case a: ArrayType =>
-          new Field(field.name,
-            field.dataType.typeName,
-            Seq(new datatype.StructField(field.name,
-              CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(a.elementType))).toList.asJava)
-        case other =>
-          new Field(field.name, field.dataType.simpleString)
+      val dataType = convertSparkToCarbonDataType(field.dataType)
+      dataType match {
+        case s: CarbonStructType =>
+          new Field(field.name, s, s.getFields)
+        case _ => new Field(field.name, dataType)
       }
     })
     val builder = new CarbonWriterBuilder
@@ -228,8 +218,16 @@ object CarbonSparkDataSourceUtil {
     builder.localDictionaryThreshold(
       options.getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD,
         CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD_DEFAULT).toInt)
-    builder.sortBy(
-      options.get(CarbonCommonConstants.SORT_COLUMNS).map(_.split(",").map(_.trim)).orNull)
+    val sortCols = options.get(CarbonCommonConstants.SORT_COLUMNS) match {
+      case Some(cols) =>
+        if (cols.trim.isEmpty) {
+          Array[String]()
+        } else {
+          cols.split(",").map(_.trim)
+        }
+      case _ => null
+    }
+    builder.sortBy(sortCols)
     builder.uniqueIdentifier(System.currentTimeMillis())
     val model = builder.buildLoadModel(schema)
     val tableInfo = model.getCarbonDataLoadSchema.getCarbonTable.getTableInfo

@@ -79,7 +79,14 @@ class SparkCarbonFileFormat extends FileFormat
       options: Map[String, String],
       files: Seq[FileStatus]): Option[StructType] = {
     val tablePath = options.get("path") match {
-      case Some(path) => path
+      case Some(path) =>
+        val defaultFsUrl =
+          sparkSession.sparkContext.hadoopConfiguration.get(CarbonCommonConstants.FS_DEFAULT_FS)
+        if (defaultFsUrl == null) {
+          path
+        } else {
+          defaultFsUrl + CarbonCommonConstants.FILE_SEPARATOR + path
+        }
       case _ => FileFactory.getUpdatedFilePath(files.head.getPath.getParent.toUri.toString)
     }
 
@@ -225,6 +232,8 @@ class SparkCarbonFileFormat extends FileFormat
       while (i < data.length) {
         if (!row.isNullAt(i)) {
           dataType match {
+            case StringType =>
+              data(i) = row.getUTF8String(i).toString
             case d: DecimalType =>
               data(i) = row.getDecimal(i, d.precision, d.scale).toJavaBigDecimal
             case s: StructType =>
@@ -233,6 +242,8 @@ class SparkCarbonFileFormat extends FileFormat
               data(i) = new ArrayObject(extractData(row.getArray(i), s.elementType))
             case d: DateType =>
               data(i) = (row.getInt(i) + cutOffDate).asInstanceOf[AnyRef]
+            case d: TimestampType =>
+              data(i) = (row.getLong(i) / 1000).asInstanceOf[AnyRef]
             case other => data(i) = row.get(i, dataType)
           }
         } else {
@@ -281,7 +292,7 @@ class SparkCarbonFileFormat extends FileFormat
    */
   override def supportBatch(sparkSession: SparkSession, schema: StructType): Boolean = {
     val conf = sparkSession.sessionState.conf
-    conf.wholeStageEnabled &&
+    supportVector(sparkSession, schema) && conf.wholeStageEnabled &&
     schema.length <= conf.wholeStageMaxNumFields &&
     schema.forall(_.dataType.isInstanceOf[AtomicType])
   }
@@ -297,7 +308,13 @@ class SparkCarbonFileFormat extends FileFormat
       filters: Seq[Filter],
       options: Map[String, String],
       hadoopConf: Configuration): PartitionedFile => Iterator[InternalRow] = {
-    val filter: Option[CarbonExpression] = filters.flatMap { filter =>
+    val dataTypeMap = dataSchema.map(f => f.name -> f.dataType).toMap
+    // Filter out the complex filters as carbon does not support them.
+    val filter: Option[CarbonExpression] = filters.filterNot{ ref =>
+      ref.references.exists{ p =>
+        !dataTypeMap(p).isInstanceOf[AtomicType]
+      }
+    }.flatMap { filter =>
       CarbonSparkDataSourceUtil.createCarbonFilter(dataSchema, filter)
     }.reduceOption(new AndExpression(_, _))
 
@@ -305,13 +322,11 @@ class SparkCarbonFileFormat extends FileFormat
     val carbonProjection = new CarbonProjection
     projection.foreach(carbonProjection.addColumn)
 
-    var supportBatchValue: Boolean = false
-
     val resultSchema = StructType(partitionSchema.fields ++ requiredSchema.fields)
-    val readVector = supportVector(sparkSession, resultSchema)
-    if (readVector) {
-      supportBatchValue = supportBatch(sparkSession, resultSchema)
-    }
+
+    var supportBatchValue: Boolean = supportBatch(sparkSession, resultSchema)
+    val readVector = supportVector(sparkSession, resultSchema) && supportBatchValue
+
     val model = CarbonSparkDataSourceUtil.prepareLoadModel(options, dataSchema)
     CarbonInputFormat
       .setTableInfo(hadoopConf, model.getCarbonDataLoadSchema.getCarbonTable.getTableInfo)
