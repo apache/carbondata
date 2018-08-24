@@ -296,7 +296,7 @@ public class RestructureUtil {
         value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         noDictionaryDefaultValue = Long.parseLong(value);
       } else if (datatype == DataTypes.TIMESTAMP) {
-        long timestampValue = ByteUtil.toLong(defaultValue, 0, defaultValue.length);
+        long timestampValue = ByteUtil.toXorLong(defaultValue, 0, defaultValue.length);
         noDictionaryDefaultValue = timestampValue * 1000L;
       } else {
         noDictionaryDefaultValue =

@@ -324,13 +324,13 @@ public final class DataTypeUtil {
     if (actualDataType == DataTypes.BOOLEAN) {
       return ByteUtil.toBytes(BooleanConvert.parseBoolean(dimensionValue));
     } else if (actualDataType == DataTypes.SHORT) {
-      return ByteUtil.toBytes(Short.parseShort(dimensionValue));
+      return ByteUtil.toXorBytes(Short.parseShort(dimensionValue));
     } else if (actualDataType == DataTypes.INT) {
-      return ByteUtil.toBytes(Integer.parseInt(dimensionValue));
+      return ByteUtil.toXorBytes(Integer.parseInt(dimensionValue));
     } else if (actualDataType == DataTypes.LONG) {
-      return ByteUtil.toBytes(Long.parseLong(dimensionValue));
+      return ByteUtil.toXorBytes(Long.parseLong(dimensionValue));
     } else if (actualDataType == DataTypes.DOUBLE) {
-      return ByteUtil.toBytes(Double.parseDouble(dimensionValue));
+      return ByteUtil.toXorBytes(Double.parseDouble(dimensionValue));
     } else if (DataTypes.isDecimal(actualDataType)) {
       return bigDecimalToByte(new BigDecimal(dimensionValue));
     } else if (actualDataType == DataTypes.TIMESTAMP) {
@@ -344,7 +344,7 @@ public final class DataTypeUtil {
           dateFormatter = timeStampformatter.get();
         }
         dateToStr = dateFormatter.parse(dimensionValue);
-        return ByteUtil.toBytes(dateToStr.getTime());
+        return ByteUtil.toXorBytes(dateToStr.getTime());
       } catch (ParseException e) {
         throw new NumberFormatException(e.getMessage());
       }
@@ -401,13 +401,13 @@ public final class DataTypeUtil {
     if (actualDataType == DataTypes.BOOLEAN) {
       return ByteUtil.toBytes((Boolean) dimensionValue);
     } else if (actualDataType == DataTypes.SHORT) {
-      return ByteUtil.toBytes((Short) dimensionValue);
+      return ByteUtil.toXorBytes((Short) dimensionValue);
     } else if (actualDataType == DataTypes.INT) {
-      return ByteUtil.toBytes((Integer) dimensionValue);
+      return ByteUtil.toXorBytes((Integer) dimensionValue);
     } else if (actualDataType == DataTypes.LONG) {
-      return ByteUtil.toBytes((Long) dimensionValue);
+      return ByteUtil.toXorBytes((Long) dimensionValue);
     } else if (actualDataType == DataTypes.TIMESTAMP) {
-      return ByteUtil.toBytes((Long)dimensionValue);
+      return ByteUtil.toXorBytes((Long)dimensionValue);
     } else {
       // Default action for String/Varchar
       return ByteUtil.toBytes(dimensionValue.toString());
@@ -465,31 +465,31 @@ public final class DataTypeUtil {
         if (isEmptyByteArray(dataInBytes)) {
           return null;
         }
-        return ByteUtil.toShort(dataInBytes, 0, dataInBytes.length);
+        return ByteUtil.toXorShort(dataInBytes, 0, dataInBytes.length);
       } else if (actualDataType == DataTypes.INT) {
         if (isEmptyByteArray(dataInBytes)) {
           return null;
         }
-        return ByteUtil.toInt(dataInBytes, 0, dataInBytes.length);
+        return ByteUtil.toXorInt(dataInBytes, 0, dataInBytes.length);
       } else if (actualDataType == DataTypes.LONG) {
         if (isEmptyByteArray(dataInBytes)) {
           return null;
         }
-        return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length);
+        return ByteUtil.toXorLong(dataInBytes, 0, dataInBytes.length);
       } else if (actualDataType == DataTypes.TIMESTAMP) {
         if (isEmptyByteArray(dataInBytes)) {
           return null;
         }
         if (isTimeStampConversion) {
-          return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length) * 1000L;
+          return ByteUtil.toXorLong(dataInBytes, 0, dataInBytes.length) * 1000L;
         } else {
-          return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length);
+          return ByteUtil.toXorLong(dataInBytes, 0, dataInBytes.length);
         }
       } else if (actualDataType == DataTypes.DOUBLE) {
         if (isEmptyByteArray(dataInBytes)) {
           return null;
         }
-        return ByteUtil.toDouble(dataInBytes, 0, dataInBytes.length);
+        return ByteUtil.toXorDouble(dataInBytes, 0, dataInBytes.length);
       } else if (DataTypes.isDecimal(actualDataType)) {
         if (isEmptyByteArray(dataInBytes)) {
           return null;
@@ -774,7 +774,7 @@ public final class DataTypeUtil {
           try {
             timeStampformatter.remove();
             Date dateToStr = timeStampformatter.get().parse(data);
-            return ByteUtil.toBytes(dateToStr.getTime());
+            return ByteUtil.toXorBytes(dateToStr.getTime());
           } catch (ParseException e) {
             LOGGER.error(
                 "Cannot convert value to Time/Long type value. Value is considered as null" + e
@@ -969,9 +969,9 @@ public final class DataTypeUtil {
       int currentDataOffset, int length) {
     long value = 0L;
     if (restructuredDataType == DataTypes.INT) {
-      value = ByteUtil.toInt(data, currentDataOffset, length);
+      value = ByteUtil.toXorInt(data, currentDataOffset, length);
     } else if (restructuredDataType == DataTypes.LONG) {
-      value = ByteUtil.toLong(data, currentDataOffset, length);
+      value = ByteUtil.toXorLong(data, currentDataOffset, length);
     }
     return value;
   }
