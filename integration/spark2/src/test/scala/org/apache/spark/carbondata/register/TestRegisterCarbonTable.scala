@@ -160,9 +160,11 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   test("Update operation on carbon table should pass after registration or refresh") {
     sql("drop database if exists carbon cascade")
-    sql(s"create database carbon location '$dblocation'")
-    sql("use carbon")
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+    sql("drop database if exists carbon1 cascade")
+    sql(s"create database carbon1 location '$dblocation'")
+    sql("use carbon1")
+    sql("drop table if exists carbontable")
+    sql("""create table carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
     backUpData(dblocation, "carbontable")
@@ -171,19 +173,19 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
       restoreData(dblocation, "carbontable")
       sql("refresh table carbontable")
       // update operation
-      sql("""update carbon.carbontable d  set (d.c2) = (d.c2 + 1) where d.c1 = 'a'""").show()
-      sql("""update carbon.carbontable d  set (d.c2) = (d.c2 + 1) where d.c1 = 'b'""").show()
+      sql("""update carbon1.carbontable d  set (d.c2) = (d.c2 + 1) where d.c1 = 'a'""").show()
+      sql("""update carbon1.carbontable d  set (d.c2) = (d.c2 + 1) where d.c1 = 'b'""").show()
       checkAnswer(
-        sql("""select c1,c2,c3,c5 from carbon.carbontable"""),
+        sql("""select c1,c2,c3,c5 from carbon1.carbontable"""),
         Seq(Row("a", 2, "aa", "aaa"), Row("b", 2, "bb", "bbb"))
       )
     }
   }
 
   test("Update operation on carbon table") {
-    sql("drop database if exists carbon cascade")
-    sql(s"create database carbon location '$dblocation'")
-    sql("use carbon")
+    sql("drop database if exists carbon1 cascade")
+    sql(s"create database carbon1 location '$dblocation'")
+    sql("use carbon1")
     sql(
       """
          CREATE TABLE automerge(id int, name string, city string, age int)
@@ -197,7 +199,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
       restoreData(dblocation, "automerge")
       sql("refresh table automerge")
       // update operation
-      sql("""update carbon.automerge d  set (d.id) = (d.id + 1) where d.id > 2""").show()
+      sql("""update carbon1.automerge d  set (d.id) = (d.id + 1) where d.id > 2""").show()
       checkAnswer(
         sql("select count(*) from automerge"),
         Seq(Row(6))

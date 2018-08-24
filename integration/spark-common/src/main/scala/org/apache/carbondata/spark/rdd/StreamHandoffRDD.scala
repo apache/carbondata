@@ -29,6 +29,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -47,7 +48,7 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CompactionResultSortProcessor, CompactionType}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.{HandoffResult, HandoffResultImpl}
-import org.apache.carbondata.spark.util.{CommonUtil, SparkDataTypeConverterImpl}
+import org.apache.carbondata.spark.util.CommonUtil
 import org.apache.carbondata.streaming.{CarbonStreamInputFormat, CarbonStreamRecordReader}
 
 

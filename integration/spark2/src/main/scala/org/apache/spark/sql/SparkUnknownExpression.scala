@@ -21,6 +21,7 @@ import java.util.{ArrayList, List}
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression, GenericInternalRow}
 
@@ -29,7 +30,6 @@ import org.apache.carbondata.core.scan.expression.{ColumnExpression, Expression,
 import org.apache.carbondata.core.scan.expression.conditional.ConditionalExpression
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException
 import org.apache.carbondata.core.scan.filter.intf.{ExpressionType, RowIntf}
-import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 
 class SparkUnknownExpression(
@@ -57,7 +57,8 @@ class SparkUnknownExpression(
       } else {
         result
       }
-      new ExpressionResult(CarbonScalaUtil.convertSparkToCarbonDataType(sparkExp.dataType),
+      new ExpressionResult(
+        CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(sparkExp.dataType),
         sparkRes
       )
     } catch {

@@ -29,6 +29,7 @@ import scala.util.Try
 import com.univocity.parsers.common.TextParsingException
 import org.apache.spark.SparkException
 import org.apache.spark.sql._
+import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.execution.command.{Field, UpdateTableModel}
@@ -43,7 +44,7 @@ import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumn
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory
 import org.apache.carbondata.core.metadata.ColumnIdentifier
-import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, DecimalType => CarbonDecimalType, StructField => CarbonStructField}
+import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
@@ -57,55 +58,6 @@ import org.apache.carbondata.streaming.parser.FieldConverter
 object CarbonScalaUtil {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
-  // TODO: move this to spark module
-  def convertSparkToCarbonDataType(dataType: DataType): CarbonDataType = {
-    dataType match {
-      case StringType => CarbonDataTypes.STRING
-      case ShortType => CarbonDataTypes.SHORT
-      case IntegerType => CarbonDataTypes.INT
-      case LongType => CarbonDataTypes.LONG
-      case DoubleType => CarbonDataTypes.DOUBLE
-      case FloatType => CarbonDataTypes.FLOAT
-      case DateType => CarbonDataTypes.DATE
-      case BooleanType => CarbonDataTypes.BOOLEAN
-      case TimestampType => CarbonDataTypes.TIMESTAMP
-      case ArrayType(elementType, _) =>
-        CarbonDataTypes.createArrayType(CarbonScalaUtil.convertSparkToCarbonDataType(elementType))
-      case StructType(fields) =>
-        val carbonFields = new util.ArrayList[CarbonStructField]
-        fields.map { field =>
-          carbonFields.add(
-            new CarbonStructField(
-              field.name,
-              CarbonScalaUtil.convertSparkToCarbonDataType(field.dataType)))
-        }
-        CarbonDataTypes.createStructType(carbonFields)
-      case NullType => CarbonDataTypes.NULL
-      case decimal: DecimalType =>
-        CarbonDataTypes.createDecimalType(decimal.precision, decimal.scale)
-      case _ => throw new UnsupportedOperationException("getting " + dataType + " from spark")
-    }
-  }
-
-  def convertCarbonToSparkDataType(dataType: CarbonDataType): types.DataType = {
-    if (CarbonDataTypes.isDecimal(dataType)) {
-      DecimalType(dataType.asInstanceOf[CarbonDecimalType].getPrecision,
-        dataType.asInstanceOf[CarbonDecimalType].getScale)
-    } else {
-      dataType match {
-        case CarbonDataTypes.STRING => StringType
-        case CarbonDataTypes.SHORT => ShortType
-        case CarbonDataTypes.INT => IntegerType
-        case CarbonDataTypes.LONG => LongType
-        case CarbonDataTypes.DOUBLE => DoubleType
-        case CarbonDataTypes.BOOLEAN => BooleanType
-        case CarbonDataTypes.TIMESTAMP => TimestampType
-        case CarbonDataTypes.DATE => DateType
-        case CarbonDataTypes.VARCHAR => StringType
-      }
-    }
-  }
 
   def getString(value: Any,
       serializationNullFormat: String,
@@ -150,7 +102,8 @@ object CarbonScalaUtil {
         case _ =>
           val convertedValue =
             DataTypeUtil
-              .getDataBasedOnDataType(value, convertSparkToCarbonDataType(dataType))
+              .getDataBasedOnDataType(value,
+                CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(dataType))
           if (convertedValue == null) {
             if (defaultValue) {
               return dataType match {
@@ -301,7 +254,8 @@ object CarbonScalaUtil {
         pvalue
       }
       val carbonColumn = table.getColumnByName(table.getTableName, col.toLowerCase)
-      val dataType = CarbonScalaUtil.convertCarbonToSparkDataType(carbonColumn.getDataType)
+      val dataType =
+        CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(carbonColumn.getDataType)
       try {
         if (value.equals(hivedefaultpartition)) {
           (col, value)

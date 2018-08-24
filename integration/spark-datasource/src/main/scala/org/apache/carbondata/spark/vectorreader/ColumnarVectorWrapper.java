@@ -22,9 +22,9 @@ import java.math.BigDecimal;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
-import org.apache.carbondata.spark.util.CarbonScalaUtil;
 
 import org.apache.parquet.column.Encoding;
+import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil;
 import org.apache.spark.sql.execution.vectorized.ColumnVector;
 import org.apache.spark.sql.types.Decimal;
 
@@ -237,7 +237,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   }
 
   @Override public DataType getType() {
-    return CarbonScalaUtil.convertSparkToCarbonDataType(columnVector.dataType());
+    return CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(columnVector.dataType());
   }
 
   @Override

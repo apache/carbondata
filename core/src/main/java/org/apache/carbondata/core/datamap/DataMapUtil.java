@@ -94,6 +94,9 @@ public class DataMapUtil {
       throws IOException {
     String dataMapJobClassName = "org.apache.carbondata.spark.rdd.SparkDataMapJob";
     DataMapJob dataMapJob = (DataMapJob) createDataMapJob(dataMapJobClassName);
+    if (dataMapJob == null) {
+      return;
+    }
     String className = "org.apache.carbondata.core.datamap.DistributableDataMapFormat";
     SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegmentsInfo =
         getValidAndInvalidSegments(carbonTable);

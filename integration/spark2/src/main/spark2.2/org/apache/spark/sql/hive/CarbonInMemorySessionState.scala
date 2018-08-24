@@ -18,13 +18,14 @@ package org.apache.spark.sql.hive
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
+import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, FunctionRegistry}
 import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.parser.ParserInterface
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy, StreamingTableStrategy}
@@ -92,7 +93,8 @@ class InMemorySessionCatalog(
     var newStructType = structType
     newColumns.get.foreach {cols =>
       newStructType = structType
-        .add(cols.getColumnName, CarbonScalaUtil.convertCarbonToSparkDataType(cols.getDataType))
+        .add(cols.getColumnName,
+          CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(cols.getDataType))
     }
     alterSchema(newStructType, catalogTable, tableIdentifier)
   }
@@ -119,7 +121,7 @@ class InMemorySessionCatalog(
       columns.get.map { col =>
         if (col.getColumnName.equalsIgnoreCase(field.name)) {
           StructField(col.getColumnName,
-            CarbonScalaUtil.convertCarbonToSparkDataType(col.getDataType))
+            CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(col.getDataType))
         } else {
           field
         }

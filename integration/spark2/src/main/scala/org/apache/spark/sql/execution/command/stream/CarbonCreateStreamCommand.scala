@@ -30,7 +30,7 @@ import org.apache.spark.sql.types.{StringType, StructType}
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.spark.StreamingOption
-import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
+import org.apache.carbondata.spark.util.Util
 import org.apache.carbondata.stream.StreamJobManager
 
 /**
@@ -124,7 +124,7 @@ case class CarbonCreateStreamCommand(
     val cols = sourceTable.getTableInfo.getFactTable.getListOfColumns.asScala.toArray
     val sortedCols = cols.filter(_.getSchemaOrdinal != -1)
       .sortWith(_.getSchemaOrdinal < _.getSchemaOrdinal)
-    SparkDataTypeConverterImpl.convertToSparkSchema(sourceTable, sortedCols)
+    Util.convertToSparkSchema(sourceTable, sortedCols)
   }
 
 }

@@ -36,6 +36,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.Decimal
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datamap.dev.DataMapBuilder
@@ -60,7 +61,6 @@ import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputForm
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 import org.apache.carbondata.spark.{RefreshResult, RefreshResultImpl}
 import org.apache.carbondata.spark.rdd.{CarbonRDDWithTableInfo, CarbonSparkPartition}
-import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
 
 
 /**

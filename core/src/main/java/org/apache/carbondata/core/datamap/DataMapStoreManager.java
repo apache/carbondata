@@ -53,6 +53,8 @@ import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV;
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.PREAGGREGATE;
 
+import org.apache.hadoop.fs.Path;
+
 /**
  * It maintains all the DataMaps in it.
  */
@@ -69,6 +71,11 @@ public final class DataMapStoreManager {
    * Contains the list of datamaps for each table.
    */
   private Map<String, List<TableDataMap>> allDataMaps = new ConcurrentHashMap<>();
+
+  /**
+   * Contains the table name to the tablepath mapping.
+   */
+  private Map<String, String> tablePathMap = new ConcurrentHashMap<>();
 
   /**
    * Contains the datamap catalog for each datamap provider.
@@ -388,6 +395,7 @@ public final class DataMapStoreManager {
 
     tableIndices.add(dataMap);
     allDataMaps.put(tableUniqueName, tableIndices);
+    tablePathMap.put(tableUniqueName, table.getTablePath());
     return dataMap;
   }
 
@@ -426,6 +434,16 @@ public final class DataMapStoreManager {
     CarbonTable carbonTable = getCarbonTable(identifier);
     String tableUniqueName = identifier.getCarbonTableIdentifier().getTableUniqueName();
     List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
+    if (tableIndices == null && identifier.getTablePath() != null) {
+      // Try get using table path
+      for (Map.Entry<String, String> entry : tablePathMap.entrySet()) {
+        if (new Path(entry.getValue()).equals(new Path(identifier.getTablePath()))) {
+          tableIndices = allDataMaps.get(entry.getKey());
+          tableUniqueName = entry.getKey();
+          break;
+        }
+      }
+    }
     if (null != carbonTable && tableIndices != null) {
       try {
         DataMapUtil.executeDataMapJobForClearingDataMaps(carbonTable);
@@ -437,6 +455,7 @@ public final class DataMapStoreManager {
     segmentRefreshMap.remove(identifier.uniqueName());
     clearDataMaps(tableUniqueName);
     allDataMaps.remove(tableUniqueName);
+    tablePathMap.remove(tableUniqueName);
   }
 
   /**
@@ -477,6 +496,7 @@ public final class DataMapStoreManager {
       }
     }
     allDataMaps.remove(tableUniqName);
+    tablePathMap.remove(tableUniqName);
   }
 
   /**
