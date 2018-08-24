@@ -50,13 +50,14 @@ public class ConcurrentSdkWriterTest {
       CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields));
       // write in multi-thread
       for (int i = 0; i < poolSize; i++) {
-        executorService.submit(new writeLogic(writer));
+        executorService.submit(new WriteLogic(writer));
       }
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.HOURS);
       writer.close();
     } catch (Exception e) {
       e.printStackTrace();
+      Assert.fail(e.getMessage());
     }
 
     // read the files and verify the count
@@ -74,15 +75,16 @@ public class ConcurrentSdkWriterTest {
       reader.close();
     } catch (InterruptedException e) {
       e.printStackTrace();
+      Assert.fail(e.getMessage());
     }
 
     FileUtils.deleteDirectory(new File(path));
   }
 
-  class writeLogic implements Runnable {
+  class WriteLogic implements Runnable {
     CarbonWriter writer;
 
-    writeLogic(CarbonWriter writer) {
+    WriteLogic(CarbonWriter writer) {
       this.writer = writer;
     }
 
@@ -95,6 +97,7 @@ public class ConcurrentSdkWriterTest {
         }
       } catch (IOException e) {
         e.printStackTrace();
+        Assert.fail(e.getMessage());
       }
     }
   }
