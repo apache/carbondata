@@ -82,9 +82,9 @@ public class ColumnPageWrapper implements DimensionColumnPage {
         double doubleData = columnPage.getDouble(rowId);
         if (srcDataType == DataTypes.FLOAT) {
           float out = (float) doubleData;
-          return ByteUtil.toBytes(out);
+          return ByteUtil.toXorBytes(out);
         } else {
-          return ByteUtil.toBytes(doubleData);
+          return ByteUtil.toXorBytes(doubleData);
         }
       } else if (DataTypes.isDecimal(srcDataType)) {
         throw new RuntimeException("unsupported type: " + srcDataType);
@@ -95,22 +95,22 @@ public class ColumnPageWrapper implements DimensionColumnPage {
         long longData = columnPage.getLong(rowId);
         if ((srcDataType == DataTypes.BYTE)) {
           byte out = (byte) longData;
-          return ByteUtil.toBytes(out);
+          return ByteUtil.toXorBytes(out);
         } else if (srcDataType == DataTypes.BOOLEAN) {
           byte out = (byte) longData;
           return ByteUtil.toBytes(ByteUtil.toBoolean(out));
         } else if (srcDataType == DataTypes.SHORT) {
           short out = (short) longData;
-          return ByteUtil.toBytes(out);
+          return ByteUtil.toXorBytes(out);
         } else if (srcDataType == DataTypes.SHORT_INT) {
           int out = (int) longData;
-          return ByteUtil.toBytes(out);
+          return ByteUtil.toXorBytes(out);
         } else if (srcDataType == DataTypes.INT) {
           int out = (int) longData;
-          return ByteUtil.toBytes(out);
+          return ByteUtil.toXorBytes(out);
         } else {
           // timestamp and long
-          return ByteUtil.toBytes(longData);
+          return ByteUtil.toXorBytes(longData);
         }
       } else if ((targetDataType == DataTypes.STRING) || (targetDataType == DataTypes.VARCHAR) || (
           targetDataType == DataTypes.BYTE_ARRAY)) {
@@ -126,7 +126,7 @@ public class ColumnPageWrapper implements DimensionColumnPage {
       } else if (srcDataType == DataTypes.BYTE_ARRAY) {
         return columnPage.getBytes(rowId);
       }  else if (srcDataType == DataTypes.DOUBLE) {
-        return ByteUtil.toBytes(columnPage.getDouble(rowId));
+        return ByteUtil.toXorBytes(columnPage.getDouble(rowId));
       } else {
         throw new RuntimeException("unsupported type: " + targetDataType);
       }
