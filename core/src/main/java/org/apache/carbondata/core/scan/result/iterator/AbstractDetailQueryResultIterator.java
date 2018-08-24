@@ -254,6 +254,11 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
 
   private DataBlockIterator getDataBlockIterator() {
     if (blockExecutionInfos.size() > 0) {
+      try {
+        fileReader.finish();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
       BlockExecutionInfo executionInfo = blockExecutionInfos.get(0);
       blockExecutionInfos.remove(executionInfo);
       return new DataBlockIterator(executionInfo, fileReader, batchSize, queryStatisticsModel,
