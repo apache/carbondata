@@ -71,6 +71,10 @@ public class AbsoluteTableIdentifier implements Serializable {
     return from(tablePath, dbName, tableName, "");
   }
 
+  public static AbsoluteTableIdentifier from(String tablePath) {
+    return from(tablePath, "", "", "");
+  }
+
   public static AbsoluteTableIdentifier from(
       String tablePath,
       CarbonTableIdentifier carbonTableIdentifier) {

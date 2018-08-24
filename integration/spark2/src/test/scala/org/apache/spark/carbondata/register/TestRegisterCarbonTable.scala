@@ -159,6 +159,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Update operation on carbon table should pass after registration or refresh") {
+    sql("drop database if exists carbon cascade")
     sql("drop database if exists carbon1 cascade")
     sql(s"create database carbon1 location '$dblocation'")
     sql("use carbon1")

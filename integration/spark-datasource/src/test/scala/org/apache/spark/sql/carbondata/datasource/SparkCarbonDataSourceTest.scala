@@ -56,7 +56,7 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
     spark.sql("insert into carbon_table select * from testparquet")
     TestUtil.checkAnswer(spark.sql("select * from carbon_table"), spark.sql("select * from testparquet"))
     val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
-    DataMapStoreManager.getInstance().clearDataMaps(AbsoluteTableIdentifier.from(warehouse1+"/carbon_table", "", ""))
+    DataMapStoreManager.getInstance().clearDataMaps(AbsoluteTableIdentifier.from(warehouse1+"/carbon_table"))
     assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
     spark.sql("drop table if exists testparquet")
     spark.sql("drop table if exists testformat")
@@ -92,6 +92,9 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
 
     val frame = spark.read.format("carbon").load(warehouse1 + "/test_folder")
     assert(frame.count() == 30)
+    val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+    DataMapStoreManager.getInstance().clearDataMaps(AbsoluteTableIdentifier.from(warehouse1+"/test_folder"))
+    assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
     FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_folder"))
   }
 
@@ -148,7 +151,6 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
 
     df.write
       .format("parquet").saveAsTable("parquet_table")
-    spark.sql("describe parquet_table").show(false)
     spark.sql("create table carbon_table(c1 string, c2 array<string>, number int) using carbon")
     spark.sql("insert into carbon_table select * from parquet_table")
     assert(spark.sql("select * from carbon_table").count() == 10)

@@ -19,7 +19,7 @@ package org.apache.spark.sql.carbondata.execution.datasources
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.datasources.{HadoopFsRelation, InMemoryFileIndex, InsertIntoHadoopFsRelationCommand, LogicalRelation}
+import org.apache.spark.sql.execution.datasources.{FileIndex, HadoopFsRelation, InMemoryFileIndex, InsertIntoHadoopFsRelationCommand, LogicalRelation}
 import org.apache.spark.sql.sources.BaseRelation
 
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -42,9 +42,9 @@ class CarbonFileIndexReplaceRule extends Rule[LogicalPlan] {
       case l: LogicalRelation
         if l.relation.isInstanceOf[HadoopFsRelation] &&
            l.relation.asInstanceOf[HadoopFsRelation].fileFormat.toString.equals("carbon") &&
-           l.relation.asInstanceOf[HadoopFsRelation].location.isInstanceOf[InMemoryFileIndex] =>
+           !l.relation.asInstanceOf[HadoopFsRelation].location.isInstanceOf[CarbonFileIndex] =>
         val fsRelation = l.relation.asInstanceOf[HadoopFsRelation]
-        val fileIndex = fsRelation.location.asInstanceOf[InMemoryFileIndex]
+        val fileIndex = fsRelation.location
         val carbonFileIndex = new CarbonFileIndex(fsRelation.sparkSession,
           fsRelation.schema,
           fsRelation.options,
@@ -63,9 +63,9 @@ class CarbonFileIndexReplaceRule extends Rule[LogicalPlan] {
     transformedPlan
   }
 
-  private def updateFileIndex(fileIndex: InMemoryFileIndex,
-      hadoopFsRelation: HadoopFsRelation): InMemoryFileIndex = {
-    if (fileIndex.rootPaths.length == 1) {
+  private def updateFileIndex(fileIndex: FileIndex,
+      hadoopFsRelation: HadoopFsRelation): FileIndex = {
+    if (fileIndex.isInstanceOf[InMemoryFileIndex] && fileIndex.rootPaths.length == 1) {
       val carbonFile = FileFactory.getCarbonFile(fileIndex.rootPaths.head.toUri.toString)
       val carbonFiles = carbonFile.listFiles()
       if (carbonFiles.nonEmpty &&

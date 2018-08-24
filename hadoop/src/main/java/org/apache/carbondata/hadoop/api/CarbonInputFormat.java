@@ -22,7 +22,6 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
@@ -48,6 +47,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.profiler.ExplainCollector;
+import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
@@ -116,7 +116,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private static final String PARTITIONS_TO_PRUNE =
       "mapreduce.input.carboninputformat.partitions.to.prune";
   private static final String FGDATAMAP_PRUNING = "mapreduce.input.carboninputformat.fgdatamap";
-  private static final String DATA_FOLDERS = "mapreduce.input.carboninputformat.datafolders";
+  private static final String READ_COMMITTED_SCOPE =
+      "mapreduce.input.carboninputformat.read.committed.scope";
 
   // record segment number and hit blocks
   protected int numSegments = 0;
@@ -339,25 +340,25 @@ m filterExpression
     }
   }
 
-  public static void setDataFoldersToRead(Configuration configuration, String[] dataFoldersToRead) {
-    if (dataFoldersToRead == null) {
+  public static void setReadCommittedScope(Configuration configuration,
+      ReadCommittedScope committedScope) {
+    if (committedScope == null) {
       return;
     }
     try {
-      String subFoldersString =
-          ObjectSerializationUtil.convertObjectToString(dataFoldersToRead);
-      configuration.set(DATA_FOLDERS, subFoldersString);
+      String subFoldersString = ObjectSerializationUtil.convertObjectToString(committedScope);
+      configuration.set(READ_COMMITTED_SCOPE, subFoldersString);
     } catch (Exception e) {
       throw new RuntimeException(
-          "Error while setting subfolders information to Job" + Arrays.toString(dataFoldersToRead),
-          e);
+          "Error while setting committedScope information to Job" + committedScope, e);
     }
   }
 
-  public static String[] getDataFoldersToRead(Configuration configuration) throws IOException {
-    String subFoldersString = configuration.get(DATA_FOLDERS);
+  public static ReadCommittedScope getReadCommittedScope(Configuration configuration)
+      throws IOException {
+    String subFoldersString = configuration.get(READ_COMMITTED_SCOPE);
     if (subFoldersString != null) {
-      return (String[]) ObjectSerializationUtil.convertStringToObject(subFoldersString);
+      return (ReadCommittedScope) ObjectSerializationUtil.convertStringToObject(subFoldersString);
     }
     return null;
   }

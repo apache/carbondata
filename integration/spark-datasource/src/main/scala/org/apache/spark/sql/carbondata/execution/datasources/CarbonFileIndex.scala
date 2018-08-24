@@ -16,6 +16,7 @@
  */
 package org.apache.spark.sql.carbondata.execution.datasources
 
+import java.io.IOException
 import java.util
 
 import scala.collection.JavaConverters._
@@ -30,8 +31,11 @@ import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.execution.datasources.{InMemoryFileIndex, _}
 import org.apache.spark.sql.types.StructType
 
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, HDFSCarbonFile}
+import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope
 import org.apache.carbondata.core.scan.expression.{Expression => CarbonExpression}
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonInputFormat}
 
@@ -43,18 +47,18 @@ class CarbonFileIndex(
     sparkSession: SparkSession,
     dataSchema: StructType,
     parameters: Map[String, String],
-    inMemoryFileIndex: InMemoryFileIndex)
+    fileIndex: FileIndex)
   extends FileIndex with AbstractCarbonFileIndex {
 
-  override def rootPaths: Seq[Path] = inMemoryFileIndex.rootPaths
+  override def rootPaths: Seq[Path] = fileIndex.rootPaths
 
-  override def inputFiles: Array[String] = inMemoryFileIndex.inputFiles
+  override def inputFiles: Array[String] = fileIndex.inputFiles
 
-  override def refresh(): Unit = inMemoryFileIndex.refresh()
+  override def refresh(): Unit = fileIndex.refresh()
 
-  override def sizeInBytes: Long = inMemoryFileIndex.sizeInBytes
+  override def sizeInBytes: Long = fileIndex.sizeInBytes
 
-  override def partitionSchema: StructType = inMemoryFileIndex.partitionSchema
+  override def partitionSchema: StructType = fileIndex.partitionSchema
 
   /**
    * It lists the pruned files after applying partition and data filters.
@@ -65,10 +69,10 @@ class CarbonFileIndex(
    */
   override def listFiles(partitionFilters: Seq[Expression],
       dataFilters: Seq[Expression]): Seq[PartitionDirectory] = {
-    val method = inMemoryFileIndex.getClass.getMethods.find(_.getName == "listFiles").get
+    val method = fileIndex.getClass.getMethods.find(_.getName == "listFiles").get
     val directories =
       method.invoke(
-        inMemoryFileIndex,
+        fileIndex,
         partitionFilters,
         dataFilters).asInstanceOf[Seq[PartitionDirectory]]
     prune(dataFilters, directories)
@@ -78,7 +82,7 @@ class CarbonFileIndex(
       directories: Seq[PartitionDirectory]) = {
     val tablePath = parameters.get("path")
     if (tablePath.nonEmpty) {
-      val hadoopConf = new Configuration(sparkSession.sparkContext.hadoopConfiguration)
+      val hadoopConf = sparkSession.sessionState.newHadoopConf()
       // convert t sparks source filter
       val filters = dataFilters.flatMap(DataSourceStrategy.translateFilter)
 
@@ -91,14 +95,20 @@ class CarbonFileIndex(
         hadoopConf,
         model.getCarbonDataLoadSchema.getCarbonTable.getTableInfo)
       CarbonInputFormat.setTransactionalTable(hadoopConf, false)
-      if (rootPaths.nonEmpty) {
-        // Check for any subfolders are present here.
-        if (!rootPaths.head.equals(new Path(tablePath.get)) &&
-            rootPaths.head.toString.contains(tablePath.get)) {
-          CarbonInputFormat.setDataFoldersToRead(hadoopConf,
-            rootPaths.map(_.toUri.toString).toArray)
-        }
+      var totalFiles = 0
+      val indexFiles = directories.flatMap { dir =>
+        totalFiles += dir.files.length
+        dir.files.filter{f =>
+          f.getPath.getName.endsWith(CarbonTablePath.INDEX_FILE_EXT) ||
+          f.getPath.getName.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)}.
+          map(new HDFSCarbonFile(_))
+      }.toArray.asInstanceOf[Array[CarbonFile]]
+      if (indexFiles.length == 0 && totalFiles > 0) {
+        throw new IOException("No Index files are present in the table location :" + tablePath.get)
       }
+      CarbonInputFormat.setReadCommittedScope(
+        hadoopConf,
+        new LatestFilesReadCommittedScope(indexFiles))
       filter match {
         case Some(c) => CarbonInputFormat.setFilterPredicates(hadoopConf, c)
         case None => None
@@ -120,9 +130,9 @@ class CarbonFileIndex(
   }
 
   override def listFiles(filters: Seq[Expression]): Seq[PartitionDirectory] = {
-    val method = inMemoryFileIndex.getClass.getMethods.find(_.getName == "listFiles").get
+    val method = fileIndex.getClass.getMethods.find(_.getName == "listFiles").get
     val directories =
-      method.invoke(inMemoryFileIndex, filters).asInstanceOf[Seq[PartitionDirectory]]
+      method.invoke(fileIndex, filters).asInstanceOf[Seq[PartitionDirectory]]
     prune(filters, directories)
   }
 }

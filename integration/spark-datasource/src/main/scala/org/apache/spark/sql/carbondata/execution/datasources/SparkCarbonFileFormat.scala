@@ -24,7 +24,7 @@ import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-import org.apache.spark.{SparkException, TaskContext}
+import org.apache.spark.TaskContext
 import org.apache.spark.internal.Logging
 import org.apache.spark.memory.MemoryMode
 import org.apache.spark.sql._
@@ -96,7 +96,6 @@ class SparkCarbonFileFormat extends FileFormat
     }
     Some(schema)
   }
-
 
   /**
    * Prepares a write job and returns an [[OutputWriterFactory]].  Client side job preparation is
