@@ -29,11 +29,16 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsCollector;
+import org.apache.carbondata.core.datastore.page.statistics.KeyPageStatsCollector;
+import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
+import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -56,7 +61,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskID;
-
 /**
  * Stream record writer
  */
@@ -94,6 +98,10 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   private DataOutputStream outputStream;
   private boolean isFirstRow = true;
   private boolean hasException = false;
+
+  // stats collector
+  private ColumnPageStatsCollector[] dimensionStatsCollectors;
+  private ColumnPageStatsCollector[] measureStatsCollectors;
 
   CarbonStreamRecordWriter(TaskAttemptContext job) throws IOException {
     initialize(job);
@@ -171,7 +179,58 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       writeFileHeader();
     }
 
+    initializeStatsCollector();
+
     isFirstRow = false;
+  }
+
+  private void initializeStatsCollector() {
+    // dimension stats collectors
+    // not require to collector stats for complex type
+    // so it only contains dictionary dimensions and no-dictionary dimensions
+    dimensionStatsCollectors = new ColumnPageStatsCollector[isNoDictionaryDimensionColumn.length];
+    // measure stats collectors
+    measureStatsCollectors = new ColumnPageStatsCollector[measureCount];
+
+    int dimCount = 0;
+    for (; dimCount < isNoDictionaryDimensionColumn.length; dimCount++) {
+      dimensionStatsCollectors[dimCount] =
+        KeyPageStatsCollector.newInstance(DataTypes.BYTE_ARRAY);
+    }
+
+    for (int msrCount = 0; msrCount < measureCount; msrCount++) {
+      measureStatsCollectors[msrCount] =
+          PrimitivePageStatsCollector.newInstance(measureDataTypes[msrCount]);
+    }
+  }
+
+  public SimpleStatsResult[] getDimensionStats() {
+    if (dimensionStatsCollectors == null) {
+      return new SimpleStatsResult[0];
+    }
+
+    SimpleStatsResult[] stats = new SimpleStatsResult[dimensionStatsCollectors.length];
+
+    int dimCount = 0;
+    for (; dimCount < dimensionStatsCollectors.length; dimCount++) {
+      stats[dimCount] = dimensionStatsCollectors[dimCount].getPageStats();
+    }
+
+    return stats;
+  }
+
+  public SimpleStatsResult[] getMeasureStats() {
+    if (measureStatsCollectors == null) {
+      return new SimpleStatsResult[0];
+    }
+
+    SimpleStatsResult[] stats = new SimpleStatsResult[measureStatsCollectors.length];
+
+    for (int mrsCount = 0; mrsCount < measureStatsCollectors.length; mrsCount++) {
+      stats[mrsCount] = measureStatsCollectors[mrsCount].getPageStats();
+    }
+
+    return stats;
   }
 
   @Override public void write(Void key, Object value) throws IOException, InterruptedException {
@@ -212,9 +271,13 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
             byte[] col = (byte[]) columnValue;
             output.writeShort(col.length);
             output.writeBytes(col);
+            dimensionStatsCollectors[dimCount].update(col);
           } else {
             output.writeInt((int) columnValue);
+            dimensionStatsCollectors[dimCount].update(ByteUtil.toBytes((int) columnValue));
           }
+        } else {
+          dimensionStatsCollectors[dimCount].updateNull(0);
         }
       }
       // complex type dimension
@@ -234,19 +297,25 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
           dataType = measureDataTypes[msrCount];
           if (dataType == DataTypes.BOOLEAN) {
             output.writeBoolean((boolean) columnValue);
+            measureStatsCollectors[msrCount].update((byte) ((boolean) columnValue ? 1 : 0));
           } else if (dataType == DataTypes.SHORT) {
             output.writeShort((short) columnValue);
+            measureStatsCollectors[msrCount].update((short) columnValue);
           } else if (dataType == DataTypes.INT) {
             output.writeInt((int) columnValue);
+            measureStatsCollectors[msrCount].update((int) columnValue);
           } else if (dataType == DataTypes.LONG) {
             output.writeLong((long) columnValue);
+            measureStatsCollectors[msrCount].update((long) columnValue);
           } else if (dataType == DataTypes.DOUBLE) {
             output.writeDouble((double) columnValue);
+            measureStatsCollectors[msrCount].update((double) columnValue);
           } else if (DataTypes.isDecimal(dataType)) {
             BigDecimal val = (BigDecimal) columnValue;
             byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
             output.writeShort(bigDecimalInBytes.length);
             output.writeBytes(bigDecimalInBytes);
+            measureStatsCollectors[msrCount].update((BigDecimal) columnValue);
           } else {
             String msg =
                 "unsupported data type:" + dataFields[dimCount + msrCount].getColumn().getDataType()
@@ -254,6 +323,8 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
             LOGGER.error(msg);
             throw new IOException(msg);
           }
+        } else {
+          measureStatsCollectors[msrCount].updateNull(0);
         }
       }
     }
