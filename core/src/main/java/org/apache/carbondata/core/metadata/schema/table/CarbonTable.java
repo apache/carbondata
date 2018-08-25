@@ -1276,4 +1276,9 @@ public class CarbonTable implements Serializable {
     }
     return false;
   }
+
+  public boolean isExternalFormatTable() {
+    return !this.tableInfo.getFormat().isEmpty()
+        && !this.tableInfo.getFormat().equalsIgnoreCase("carbondata");
+  }
 }

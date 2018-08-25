@@ -35,7 +35,7 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
+import org.apache.carbondata.core.datamap.{DataMapStoreManager, DataMapUtil, Segment}
 import org.apache.carbondata.core.datamap.dev.DataMapBuilder
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, TableInfo}
@@ -176,7 +176,6 @@ class FileLevelDataMapBuildRdd[K, V](
     dmSchemas: List[DataMapSchema],
     @transient tableInfo: TableInfo) extends CarbonRDDWithTableInfo[(K, V)](
   sparkSession.sparkContext, Nil, tableInfo.serialize()) {
-  val FILE_LEVEL_INDEX_SHARD_PREFIX: String = "FileLevel_"
 
   private val jobTrackerId: String = {
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
@@ -235,7 +234,7 @@ class FileLevelDataMapBuildRdd[K, V](
             DataMapStoreManager.getInstance().getDataMapFactoryClass(carbonTable, dmSchema)
           // the name of the shard here is base64 encoded fact file path
           val builder = dmFactory.createBuilder(segment.get,
-            FILE_LEVEL_INDEX_SHARD_PREFIX + CarbonUtil.encodeToString(inputFilePath.getBytes), null)
+            DataMapUtil.constructShardName4FileLevelDataMap(segmentId, inputFilePath), null)
           builder.initialize()
           builder
         }

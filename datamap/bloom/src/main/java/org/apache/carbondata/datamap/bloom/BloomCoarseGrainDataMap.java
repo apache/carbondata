@@ -26,10 +26,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -68,6 +66,7 @@ import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.loading.converter.FieldConverter;
 import org.apache.carbondata.processing.loading.converter.impl.FieldEncoderFactory;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.bloom.CarbonBloomFilter;
 import org.apache.hadoop.util.bloom.Key;
@@ -162,7 +161,10 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
   @Override
   public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
       List<PartitionSpec> partitions) throws IOException {
-    Set<Blocklet> hitBlocklets = new HashSet<>();
+    // we will store the result in hitBlocklets. If it is not first pruning, we will do
+    // intersection with the previous result.
+    boolean isFirstPruning = true;
+    List<Blocklet> hitBlocklets = new ArrayList<>();
     if (filterExp == null) {
       // null is different from empty here. Empty means after pruning, no blocklet need to scan.
       return null;
@@ -175,26 +177,50 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       LOGGER.error(e, "Exception occurs while creating query model");
       throw new RuntimeException(e);
     }
+    // the relationship for BloomQueryModels here is AND, so we do intersection to reduce
+    // pruned result. We will return immediately if the datamap filter out all the blocklets
     for (BloomQueryModel bloomQueryModel : bloomQueryModels) {
-      LOGGER.debug("prune blocklet for query: " + bloomQueryModel);
-      BloomCacheKeyValue.CacheKey cacheKey = new BloomCacheKeyValue.CacheKey(
-          this.indexPath.toString(), bloomQueryModel.columnName);
-      BloomCacheKeyValue.CacheValue cacheValue = cache.get(cacheKey);
-      List<CarbonBloomFilter> bloomIndexList = cacheValue.getBloomFilters();
-      for (CarbonBloomFilter bloomFilter : bloomIndexList) {
-        boolean scanRequired = bloomFilter.membershipTest(new Key(bloomQueryModel.filterValue));
-        if (scanRequired) {
-          LOGGER.debug(String.format("BloomCoarseGrainDataMap: Need to scan -> blocklet#%s",
-              String.valueOf(bloomFilter.getBlockletNo())));
-          Blocklet blocklet = new Blocklet(shardName, String.valueOf(bloomFilter.getBlockletNo()));
-          hitBlocklets.add(blocklet);
-        } else {
-          LOGGER.debug(String.format("BloomCoarseGrainDataMap: Skip scan -> blocklet#%s",
-              String.valueOf(bloomFilter.getBlockletNo())));
+      List<Blocklet> prunedResult = pruneByBloomQueryModel(bloomQueryModel);
+      if (prunedResult.isEmpty()) {
+        hitBlocklets = prunedResult;
+        break;
+      }
+      if (isFirstPruning) {
+        hitBlocklets = prunedResult;
+        isFirstPruning = false;
+      } else {
+        hitBlocklets = (List) CollectionUtils.intersection(hitBlocklets, prunedResult);
+        if (hitBlocklets.isEmpty()) {
+          break;
         }
       }
     }
     return new ArrayList<>(hitBlocklets);
+  }
+
+  private List<Blocklet> pruneByBloomQueryModel(BloomQueryModel bloomQueryModel)
+      throws IOException {
+    List<Blocklet> hitBlocklets = new ArrayList<>();
+    LOGGER.debug("prune blocklet for query: " + bloomQueryModel);
+    BloomCacheKeyValue.CacheKey cacheKey = new BloomCacheKeyValue.CacheKey(
+        this.indexPath.toString(), bloomQueryModel.columnName);
+    BloomCacheKeyValue.CacheValue cacheValue = cache.get(cacheKey);
+    List<CarbonBloomFilter> bloomIndexList = cacheValue.getBloomFilters();
+    for (CarbonBloomFilter bloomFilter : bloomIndexList) {
+      boolean scanRequired = bloomFilter.membershipTest(new Key(bloomQueryModel.filterValue));
+      if (scanRequired) {
+        LOGGER.debug(
+            String.format("BloomCoarseGrainDataMap: Need to scan -> shard-%s & blocklet#%s",
+                shardName, String.valueOf(bloomFilter.getBlockletNo())));
+        Blocklet blocklet = new Blocklet(shardName, String.valueOf(bloomFilter.getBlockletNo()));
+        hitBlocklets.add(blocklet);
+      } else {
+        LOGGER.debug(
+            String.format("BloomCoarseGrainDataMap: Skip scan -> shard-%s & blocklet#%s",
+                shardName, String.valueOf(bloomFilter.getBlockletNo())));
+      }
+    }
+    return hitBlocklets;
   }
 
   private List<BloomQueryModel> createQueryModel(Expression expression)

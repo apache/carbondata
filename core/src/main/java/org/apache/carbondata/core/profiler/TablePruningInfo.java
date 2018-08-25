@@ -75,7 +75,11 @@ public class TablePruningInfo {
       builder
           .append(" - pruned by Main DataMap").append("\n")
           .append("    - skipped blocklets: ").append(skipBlocklets).append("\n");
+    } else {
+      // this means we do not have default datamap for pruning, so reuse the original value
+      numBlockletsAfterDefaultPruning = totalBlocklets;
     }
+
     if (cgDataMap != null) {
       int skipBlocklets = numBlockletsAfterDefaultPruning - numBlockletsAfterCGPruning;
       builder
@@ -83,7 +87,10 @@ public class TablePruningInfo {
           .append("    - name: ").append(cgDataMap.getDataMapWrapperName()).append("\n")
           .append("    - provider: ").append(cgDataMap.getDataMapWrapperProvider()).append("\n")
           .append("    - skipped blocklets: ").append(skipBlocklets).append("\n");
+    } else {
+      numBlockletsAfterCGPruning = numBlockletsAfterDefaultPruning;
     }
+
     if (fgDataMap != null) {
       int skipBlocklets;
       if (numBlockletsAfterCGPruning != 0) {

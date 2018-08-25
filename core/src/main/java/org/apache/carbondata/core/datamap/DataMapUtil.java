@@ -18,19 +18,23 @@
 package org.apache.carbondata.core.datamap;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 
 public class DataMapUtil {
@@ -154,4 +158,26 @@ public class DataMapUtil {
     return ssm.getValidAndInvalidSegments();
   }
 
+  public static String constructShardName4FileLevelDataMap(String segmentId, String factFileName) {
+    try {
+      return segmentId + '_' + CarbonUtil.encodeToString(
+          factFileName.getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS));
+    } catch (UnsupportedEncodingException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static String[] decomposeShardName4FileLevelDataMap(String shardName) {
+    try {
+      String[] result = new String[2];
+      result[0] = StringUtils.substring(shardName, 0, shardName.indexOf('_'));
+
+      result[1] = new String(CarbonUtil.decodeStringToBytes(
+          StringUtils.substring(shardName, result.length, shardName.length())),
+          CarbonCommonConstants.DEFAULT_CHARSET);
+      return result;
+    } catch (UnsupportedEncodingException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

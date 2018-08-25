@@ -31,28 +31,6 @@ class CsvExternalFormatWithIndexDataMapSuite extends QueryTest
   val indexOnCsvCarbonTablePrefix = "index_on_fact_csv_"
   val csvFile = s"$resourcesPath/datawithoutheader.csv"
 
-  private def createNormalTableForComparison(): Unit = {
-    sql(
-      s"""
-         | CREATE TABLE $carbonTable(empno smallint, empname String, designation string,
-         | doj String, workgroupcategory int, workgroupcategoryname String,deptno int,
-         | deptname String, projectcode int, projectjoindate String,projectenddate String,
-         | attendance String, utilization String,salary String)
-         | STORED BY 'carbondata'
-       """.stripMargin
-    )
-  }
-
-  private def loadNormalTableForComparison(): Unit = {
-    sql(
-      s"""
-         | LOAD DATA LOCAL INPATH '$csvFile' INTO TABLE $carbonTable
-         | OPTIONS('DELIMITER'=',',
-         | 'QUOTECHAR'='\"',
-         | 'FILEHEADER'='EMPno, empname,designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, SALARY')
-        """.stripMargin)
-  }
-
   override protected def afterAll(): Unit = {
     sql(s"DROP TABLE IF EXISTS $carbonTable")
     sql(s"DROP TABLE IF EXISTS $csvCarbonTable")
@@ -89,8 +67,29 @@ class CsvExternalFormatWithIndexDataMapSuite extends QueryTest
       sql(s"SELECT designation, sum(empno), avg(empno) FROM $carbonTable GROUP BY designation"))
   }
 
-  test("building and rebuilding bloomfilter datamap on CSV external format table") {
-    createNormalTableForComparison()
+  private def createNormalTableForComparison(): Unit = {
+    sql(
+      s"""
+         | CREATE TABLE $carbonTable(empno smallint, empname String, designation string,
+         | doj String, workgroupcategory int, workgroupcategoryname String,deptno int,
+         | deptname String, projectcode int, projectjoindate String,projectenddate String,
+         | attendance String, utilization String,salary String)
+         | STORED BY 'carbondata'
+       """.stripMargin
+    )
+  }
+
+  private def loadNormalTableForComparison(): Unit = {
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$csvFile' INTO TABLE $carbonTable
+         | OPTIONS('DELIMITER'=',',
+         | 'QUOTECHAR'='\"',
+         | 'FILEHEADER'='EMPno, empname,designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, SALARY')
+        """.stripMargin)
+  }
+
+  private def createCsvExternalFormatTable(): Unit = {
     sql(
       s"""
          | CREATE TABLE $csvCarbonTable(empno smallint, empname String, designation string,
@@ -104,11 +103,27 @@ class CsvExternalFormatWithIndexDataMapSuite extends QueryTest
          | )
        """.stripMargin
     )
+  }
+
+  private def loadCsvExternalFormatTable(): Unit = {
+    sql(s"ALTER TABLE $csvCarbonTable ADD SEGMENT LOCATION '$csvFile'")
+  }
+  /**
+   * This test case test the:
+   * 1. direct generate bloom datamap index
+   * 2. build bloom datamap on existing data
+   * 3. multiple loads
+   * 4. multiple datamaps
+   * 5. query with multiple datamaps
+   */
+  test("test building and rebuilding bloomfilter multiple datamaps on CSV external format table and querying on it") {
+    createNormalTableForComparison()
+    createCsvExternalFormatTable()
 
     loadNormalTableForComparison()
     loadNormalTableForComparison()
-    sql(s"ALTER TABLE $csvCarbonTable ADD SEGMENT LOCATION '$csvFile'")
-    sql(s"ALTER TABLE $csvCarbonTable ADD SEGMENT LOCATION '$csvFile'")
+    loadCsvExternalFormatTable()
+    loadCsvExternalFormatTable()
     // create index datamap on external format table, this will trigger rebuiding datamap on existing data
     sql(
       s"""
@@ -125,7 +140,7 @@ class CsvExternalFormatWithIndexDataMapSuite extends QueryTest
          | ON TABLE $csvCarbonTable
          | USING 'bloomfilter'
          | DMPROPERTIES(
-         | 'INDEX_COLUMNS'='deptno,designation, doj, workgroupcategory, workgroupcategoryname'
+         | 'INDEX_COLUMNS'='deptno, designation, doj, workgroupcategory, workgroupcategoryname'
          | )
        """.stripMargin)
     sql(
@@ -143,12 +158,28 @@ class CsvExternalFormatWithIndexDataMapSuite extends QueryTest
     loadNormalTableForComparison()
     loadNormalTableForComparison()
     // add segment for csv based carbontable, this will trigger direct building datamap
-    sql(s"ALTER TABLE $csvCarbonTable ADD SEGMENT LOCATION '$csvFile'")
-    sql(s"ALTER TABLE $csvCarbonTable ADD SEGMENT LOCATION '$csvFile'")
+    loadCsvExternalFormatTable()
+    loadCsvExternalFormatTable()
 
-    assert(sql(s"SHOW SEGMENTS FOR TABLE $csvCarbonTable").collect().length == sql(s"SHOW SEGMENTS FOR TABLE $csvCarbonTable").collect().length)
+    assert(sql(s"SHOW SEGMENTS FOR TABLE $csvCarbonTable").collect().length ==
+           sql(s"SHOW SEGMENTS FOR TABLE $csvCarbonTable").collect().length)
 
-    // note that currently the query does not use datamap yet
+    // this will skip 0 blocklets
+    sql(s"explain SELECT empno,empname, deptname, doj FROM $csvCarbonTable WHERE empno = 15").show(false)
+    checkExistence(sql(s"explain SELECT empno,empname, deptname, doj FROM $csvCarbonTable WHERE empno = 15"),
+      true, "bloomfilter", s"${indexOnCsvCarbonTablePrefix}1", "skipped blocklets: 0")
+    sql(s"explain SELECT empno,empname, deptname, doj FROM $csvCarbonTable WHERE empno = 15 AND empname='ayushi' AND designation='SSA' AND deptno=12 AND projectcode=928375").show(false)
+    checkExistence(sql(s"explain SELECT empno,empname, deptname, doj FROM $csvCarbonTable WHERE empno = 15 AND empname='ayushi' AND designation='SSA' AND deptno=12 AND projectcode=928375"),
+      true, "bloomfilter", s"${indexOnCsvCarbonTablePrefix}1", s"${indexOnCsvCarbonTablePrefix}2", s"${indexOnCsvCarbonTablePrefix}3", "skipped blocklets: 0")
+
+    // this will skip all the blocklets
+    sql(s"explain SELECT empno,empname, deptname, doj FROM $csvCarbonTable WHERE empno = 155").show(false)
+    checkExistence(sql(s"explain SELECT empno,empname, deptname, doj FROM $csvCarbonTable WHERE empno = 155"),
+      true, "bloomfilter", s"${indexOnCsvCarbonTablePrefix}1", "skipped blocklets: 4")
+    sql(s"explain SELECT empno,empname, deptname, doj FROM $csvCarbonTable WHERE empno = 15 AND empname='fake_ayushi' AND designation='SSA' AND deptno=12 AND projectcode=928375").show(false)
+    checkExistence(sql(s"explain SELECT empno,empname, deptname, doj FROM $csvCarbonTable WHERE empno = 15 AND empname='fake_ayushi' AND designation='SSA' AND deptno=12 AND projectcode=928375"),
+      true, "bloomfilter", s"${indexOnCsvCarbonTablePrefix}1", s"${indexOnCsvCarbonTablePrefix}2", s"${indexOnCsvCarbonTablePrefix}3", "skipped blocklets: 4")
+
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
     checkQuery()
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "true")
@@ -156,5 +187,4 @@ class CsvExternalFormatWithIndexDataMapSuite extends QueryTest
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
       CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
   }
-
 }

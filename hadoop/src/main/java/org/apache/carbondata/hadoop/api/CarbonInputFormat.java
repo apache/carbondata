@@ -553,20 +553,49 @@ m filterExpression
     } else {
       ExplainCollector.setFilterStatement("none");
     }
+    // no default datamap is provided for external format table
 
-    // there is no default datamap for external format, so return all files
+    boolean distributedCG = Boolean.parseBoolean(CarbonProperties.getInstance().getProperty(
+        CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
+        CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT));
+    if (distributedCG) {
+      LOG.error("Currently we do not support distributed datamap pruning for external format"
+          + " table, so carbondata do pruning in driver side now.");
+    }
+
+    List<PartitionSpec> partitionsToPrune = getPartitionsToPrune(job.getConfiguration());
     List<ExtendedBlocklet> prunedFiles = new ArrayList<>();
+
     LoadMetadataDetails[] loadMetadatas = SegmentStatusManager.readTableStatusFile(
         CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath()));
     for (LoadMetadataDetails loadMetadata : loadMetadatas) {
-      for (String file : loadMetadata.getFactFilePath().split(",")) {
-        ExtendedBlocklet extendedBlocklet = new ExtendedBlocklet(file, "0");
-        extendedBlocklet.setSegmentId(loadMetadata.getLoadName());
-        prunedFiles.add(extendedBlocklet);
-      }
+      // todo: assume that the files had been flattened before
+      ExplainCollector.addTotalBlocklets(loadMetadata.getFactFilePath().split(",").length);
     }
 
-    // todo: skip datamap prune now, will add it back later
+    // pruning using index datamaps.
+    // Note that for external format table, there is no default datamap.
+    DataMapChooser dataMapChooser =
+        new DataMapChooser(getOrCreateCarbonTable(job.getConfiguration()));
+    DataMapExprWrapper cgDataMapExprWrapper = dataMapChooser.chooseCGDataMap(resolver);
+    if (cgDataMapExprWrapper == null) {
+      for (LoadMetadataDetails loadMetadata : loadMetadatas) {
+        for (String file : loadMetadata.getFactFilePath().split(",")) {
+          ExtendedBlocklet extendedBlocklet = new ExtendedBlocklet(file, "0");
+          extendedBlocklet.setSegmentId(loadMetadata.getLoadName());
+          prunedFiles.add(extendedBlocklet);
+        }
+      }
+    } else {
+      // currently we do not prune the segments from the pruned blocklets
+      prunedFiles = cgDataMapExprWrapper.prune(segmentIds, partitionsToPrune);
+      ExplainCollector.recordCGDataMapPruning(
+          DataMapWrapperSimpleInfo.fromDataMapWrapper(cgDataMapExprWrapper),
+          prunedFiles.size());
+    }
+
+    // external format table does not support fine grain datamap now
+
     return prunedFiles;
   }
 
