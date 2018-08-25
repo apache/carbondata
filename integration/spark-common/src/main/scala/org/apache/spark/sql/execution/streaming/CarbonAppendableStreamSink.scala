@@ -19,8 +19,6 @@ package org.apache.spark.sql.execution.streaming
 
 import java.util.Date
 
-import scala.collection.JavaConverters._
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
@@ -49,6 +47,7 @@ import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePost
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.rdd.StreamHandoffRDD
 import org.apache.carbondata.streaming.{CarbonStreamException, CarbonStreamOutputFormat}
+import org.apache.carbondata.streaming.index.StreamFileIndex
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
 import org.apache.carbondata.streaming.segment.StreamSegment
 
@@ -236,7 +235,7 @@ object CarbonAppendableStreamSink {
 
     // run write data file job
     SQLExecution.withNewExecutionId(sparkSession, queryExecution) {
-      var result: Array[TaskCommitMessage] = null
+      var result: Array[(TaskCommitMessage, StreamFileIndex)] = null
       try {
         committer.setupJob(job)
         // initialize dictionary server
@@ -275,7 +274,8 @@ object CarbonAppendableStreamSink {
 
         // update data file info in index file
         StreamSegment.updateIndexFile(
-          CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentId))
+          CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentId),
+          result.map(_._2))
 
       } catch {
         // catch fault of executor side
@@ -286,7 +286,7 @@ object CarbonAppendableStreamSink {
           committer.abortJob(job)
           throw new CarbonStreamException("Job failed to write data file", t)
       }
-      committer.commitJob(job, result)
+      committer.commitJob(job, result.map(_._1))
       LOGGER.info(s"Job ${ job.getJobID } committed.")
     }
   }
@@ -302,8 +302,7 @@ object CarbonAppendableStreamSink {
       sparkAttemptNumber: Int,
       committer: FileCommitProtocol,
       iterator: Iterator[InternalRow],
-      rowSchema: StructType
-  ): TaskCommitMessage = {
+      rowSchema: StructType): (TaskCommitMessage, StreamFileIndex) = {
 
     val jobId = CarbonInputFormatUtil.getJobId(new Date, sparkStageId)
     val taskId = new TaskID(jobId, TaskType.MAP, sparkPartitionId)
@@ -325,6 +324,7 @@ object CarbonAppendableStreamSink {
     committer.setupTask(taskAttemptContext)
 
     try {
+      var blockIndex: StreamFileIndex = null
       Utils.tryWithSafeFinallyAndFailureCallbacks(block = {
 
         val parserName = taskAttemptContext.getConfiguration.get(
@@ -335,13 +335,13 @@ object CarbonAppendableStreamSink {
           Class.forName(parserName).newInstance.asInstanceOf[CarbonStreamParser]
         streamParser.initialize(taskAttemptContext.getConfiguration, rowSchema)
 
-        StreamSegment.appendBatchData(new InputIterator(iterator, streamParser),
+        blockIndex = StreamSegment.appendBatchData(new InputIterator(iterator, streamParser),
           taskAttemptContext, carbonLoadModel)
       })(catchBlock = {
         committer.abortTask(taskAttemptContext)
         LOGGER.error(s"Job $jobId aborted.")
       })
-      committer.commitTask(taskAttemptContext)
+      (committer.commitTask(taskAttemptContext), blockIndex)
     } catch {
       case t: Throwable =>
         throw new CarbonStreamException("Task failed while writing rows", t)

@@ -205,8 +205,8 @@ class StreamHandoffRDD[K, V](
     segmentList.add(Segment.toSegment(handOffSegmentId, null))
     val splits = inputFormat.getSplitsOfStreaming(
       job,
-      carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getAbsoluteTableIdentifier,
-      segmentList
+      segmentList,
+      carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     )
 
     (0 until splits.size()).map { index =>
@@ -334,9 +334,9 @@ object StreamHandoffRDD {
     } catch {
       case ex: Exception =>
         loadStatus = SegmentStatus.LOAD_FAILURE
+        LOGGER.error(ex, s"Handoff failed on streaming segment $handoffSegmenId")
         errorMessage = errorMessage + ": " + ex.getCause.getMessage
         LOGGER.error(errorMessage)
-        LOGGER.error(ex, s"Handoff failed on streaming segment $handoffSegmenId")
     }
 
     if (loadStatus == SegmentStatus.LOAD_FAILURE) {

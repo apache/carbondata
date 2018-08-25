@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.hadoop.api;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,7 +33,6 @@ import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
-import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
@@ -48,7 +46,6 @@ import org.apache.carbondata.core.mutate.data.BlockMappingVO;
 import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
-import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
@@ -56,9 +53,10 @@ import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
+import org.apache.carbondata.core.stream.StreamFile;
+import org.apache.carbondata.core.stream.StreamPruner;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
 import org.apache.commons.logging.Log;
@@ -158,12 +156,12 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         streamSegments = segments.getStreamSegments();
         streamSegments = getFilteredSegment(job, streamSegments, true, readCommittedScope);
         if (validSegments.size() == 0) {
-          return getSplitsOfStreaming(job, identifier, streamSegments);
+          return getSplitsOfStreaming(job, streamSegments, carbonTable);
         }
         List<Segment> filteredSegmentToAccess =
             getFilteredSegment(job, segments.getValidSegments(), true, readCommittedScope);
         if (filteredSegmentToAccess.size() == 0) {
-          return getSplitsOfStreaming(job, identifier, streamSegments);
+          return getSplitsOfStreaming(job, streamSegments, carbonTable);
         } else {
           setSegmentsToAccess(job.getConfiguration(), filteredSegmentToAccess);
         }
@@ -173,7 +171,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
                 getSegmentsToAccess(job, readCommittedScope));
         streamSegments = segments.getStreamSegments();
         if (filteredNormalSegments.size() == 0) {
-          return getSplitsOfStreaming(job, identifier, streamSegments);
+          return getSplitsOfStreaming(job, streamSegments, carbonTable);
         }
         setSegmentsToAccess(job.getConfiguration(),filteredNormalSegments);
       }
@@ -231,7 +229,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     }
 
     // add all splits of streaming
-    List<InputSplit> splitsOfStreaming = getSplitsOfStreaming(job, identifier, streamSegments);
+    List<InputSplit> splitsOfStreaming =
+        getSplitsOfStreaming(job, streamSegments, carbonTable, filterInterface);
     if (!splitsOfStreaming.isEmpty()) {
       splits.addAll(splitsOfStreaming);
     }
@@ -339,64 +338,60 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     return filteredSegmentToAccess;
   }
 
+  public List<InputSplit> getSplitsOfStreaming(JobContext job, List<Segment> streamSegments,
+      CarbonTable carbonTable) throws IOException {
+    return getSplitsOfStreaming(job, streamSegments, carbonTable, null);
+  }
+
   /**
    * use file list in .carbonindex file to get the split of streaming.
    */
-  public List<InputSplit> getSplitsOfStreaming(JobContext job, AbsoluteTableIdentifier identifier,
-      List<Segment> streamSegments) throws IOException {
+  public List<InputSplit> getSplitsOfStreaming(JobContext job, List<Segment> streamSegments,
+      CarbonTable carbonTable, FilterResolverIntf filterResolverIntf) throws IOException {
     List<InputSplit> splits = new ArrayList<InputSplit>();
     if (streamSegments != null && !streamSegments.isEmpty()) {
       numStreamSegments = streamSegments.size();
       long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
       long maxSize = getMaxSplitSize(job);
-      for (Segment segment : streamSegments) {
-        String segmentDir =
-            CarbonTablePath.getSegmentPath(identifier.getTablePath(), segment.getSegmentNo());
-        FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);
-        if (FileFactory.isFileExist(segmentDir, fileType)) {
-          SegmentIndexFileStore segmentIndexFileStore = new SegmentIndexFileStore();
-          segmentIndexFileStore.readAllIIndexOfSegment(segmentDir);
-          Map<String, byte[]> carbonIndexMap = segmentIndexFileStore.getCarbonIndexMap();
-          CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
-          for (byte[] fileData : carbonIndexMap.values()) {
-            indexReader.openThriftReader(fileData);
-            try {
-              // map block index
-              while (indexReader.hasNext()) {
-                BlockIndex blockIndex = indexReader.readBlockIndexInfo();
-                String filePath = segmentDir + File.separator + blockIndex.getFile_name();
-                Path path = new Path(filePath);
-                long length = blockIndex.getFile_size();
-                if (length != 0) {
-                  BlockLocation[] blkLocations;
-                  FileSystem fs = FileFactory.getFileSystem(path);
-                  FileStatus file = fs.getFileStatus(path);
-                  blkLocations = fs.getFileBlockLocations(path, 0, length);
-                  long blockSize = file.getBlockSize();
-                  long splitSize = computeSplitSize(blockSize, minSize, maxSize);
-                  long bytesRemaining = length;
-                  while (((double) bytesRemaining) / splitSize > 1.1) {
-                    int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
-                    splits.add(makeSplit(segment.getSegmentNo(), path, length - bytesRemaining,
-                        splitSize, blkLocations[blkIndex].getHosts(),
-                        blkLocations[blkIndex].getCachedHosts(), FileFormat.ROW_V1));
-                    bytesRemaining -= splitSize;
-                  }
-                  if (bytesRemaining != 0) {
-                    int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
-                    splits.add(makeSplit(segment.getSegmentNo(), path, length - bytesRemaining,
-                        bytesRemaining, blkLocations[blkIndex].getHosts(),
-                        blkLocations[blkIndex].getCachedHosts(), FileFormat.ROW_V1));
-                  }
-                } else {
-                  //Create empty hosts array for zero length files
-                  splits.add(makeSplit(segment.getSegmentNo(), path, 0, length, new String[0],
-                      FileFormat.ROW_V1));
-                }
-              }
-            } finally {
-              indexReader.closeThriftReader();
-            }
+      if (filterResolverIntf == null) {
+        if (carbonTable != null) {
+          Expression filter = getFilterPredicates(job.getConfiguration());
+          if (filter != null) {
+            carbonTable.processFilterExpression(filter, null, null);
+            filterResolverIntf = carbonTable.resolveFilter(filter);
+          }
+        }
+      }
+      StreamPruner streamPruner = new StreamPruner(carbonTable);
+      streamPruner.init(filterResolverIntf);
+      List<StreamFile> streamFiles = streamPruner.prune(streamSegments);
+
+      for (StreamFile streamFile : streamFiles) {
+        Path path = new Path(streamFile.getFilePath());
+        long length = streamFile.getFileSize();
+        if (length != 0) {
+          BlockLocation[] blkLocations;
+          FileSystem fs = FileFactory.getFileSystem(path);
+          FileStatus file = fs.getFileStatus(path);
+          blkLocations = fs.getFileBlockLocations(path, 0, length);
+          long blockSize = file.getBlockSize();
+          long splitSize = computeSplitSize(blockSize, minSize, maxSize);
+          long bytesRemaining = length;
+          // split the stream file to small splits
+          // there is 10% slop to avoid to generate very small split in the end
+          while (((double) bytesRemaining) / splitSize > 1.1) {
+            int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
+            splits.add(
+                makeSplit(streamFile.getSegmentNo(), path, length - bytesRemaining,
+                    splitSize, blkLocations[blkIndex].getHosts(),
+                    blkLocations[blkIndex].getCachedHosts(), FileFormat.ROW_V1));
+            bytesRemaining -= splitSize;
+          }
+          if (bytesRemaining != 0) {
+            int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
+            splits.add(makeSplit(streamFile.getSegmentNo(), path, length - bytesRemaining,
+                bytesRemaining, blkLocations[blkIndex].getHosts(),
+                blkLocations[blkIndex].getCachedHosts(), FileFormat.ROW_V1));
           }
         }
       }

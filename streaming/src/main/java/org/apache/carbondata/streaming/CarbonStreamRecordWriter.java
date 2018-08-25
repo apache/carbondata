@@ -30,10 +30,12 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -51,12 +53,12 @@ import org.apache.carbondata.processing.loading.parser.RowParser;
 import org.apache.carbondata.processing.loading.parser.impl.RowParserImpl;
 import org.apache.carbondata.processing.store.writer.AbstractFactDataWriter;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+import org.apache.carbondata.streaming.segment.StreamSegment;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskID;
-
 /**
  * Stream record writer
  */
@@ -95,6 +97,10 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   private boolean isFirstRow = true;
   private boolean hasException = false;
 
+  // batch level stats collector
+  private BlockletMinMaxIndex batchMinMaxIndex;
+  private boolean isClosed = false;
+
   CarbonStreamRecordWriter(TaskAttemptContext job) throws IOException {
     initialize(job);
   }
@@ -132,7 +138,6 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   }
 
   private void initializeAtFirstRow() throws IOException, InterruptedException {
-
     // initialize metadata
     isNoDictionaryDimensionColumn =
         CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields());
@@ -144,20 +149,19 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       measureDataTypes[i] =
           dataFields[dimensionWithComplexCount + i].getColumn().getDataType();
     }
-
     // initialize parser and converter
     rowParser = new RowParserImpl(dataFields, configuration);
     badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(configuration);
     converter = new RowConverterImpl(configuration.getDataFields(), configuration, badRecordLogger);
     configuration.setCardinalityFinder(converter);
     converter.initialize();
-
     // initialize encoder
     nullBitSet = new BitSet(dataFields.length);
     int rowBufferSize = hadoopConf.getInt(CarbonStreamOutputFormat.CARBON_ENCODER_ROW_BUFFER_SIZE,
         CarbonStreamOutputFormat.CARBON_ENCODER_ROW_BUFFER_SIZE_DEFAULT);
-    output = new StreamBlockletWriter(maxCacheSize, maxRowNums, rowBufferSize);
-
+    output = new StreamBlockletWriter(maxCacheSize, maxRowNums, rowBufferSize,
+        isNoDictionaryDimensionColumn.length, measureCount,
+        measureDataTypes);
     // initialize data writer
     String filePath = segmentDir + File.separator + fileName;
     FileFactory.FileType fileType = FileFactory.getFileType(filePath);
@@ -170,7 +174,6 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       outputStream = FileFactory.getDataOutputStream(filePath, fileType);
       writeFileHeader();
     }
-
     isFirstRow = false;
   }
 
@@ -178,7 +181,6 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     if (isFirstRow) {
       initializeAtFirstRow();
     }
-
     // null bit set
     nullBitSet.clear();
     Object[] rowData = (Object[]) value;
@@ -203,7 +205,6 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       }
       int dimCount = 0;
       Object columnValue;
-
       // primitive type dimension
       for (; dimCount < isNoDictionaryDimensionColumn.length; dimCount++) {
         columnValue = currentRow.getObject(dimCount);
@@ -212,9 +213,13 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
             byte[] col = (byte[]) columnValue;
             output.writeShort(col.length);
             output.writeBytes(col);
+            output.dimStatsCollectors[dimCount].update(col);
           } else {
             output.writeInt((int) columnValue);
+            output.dimStatsCollectors[dimCount].update(ByteUtil.toBytes((int) columnValue));
           }
+        } else {
+          output.dimStatsCollectors[dimCount].updateNull(0);
         }
       }
       // complex type dimension
@@ -234,19 +239,25 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
           dataType = measureDataTypes[msrCount];
           if (dataType == DataTypes.BOOLEAN) {
             output.writeBoolean((boolean) columnValue);
+            output.msrStatsCollectors[msrCount].update((byte) ((boolean) columnValue ? 1 : 0));
           } else if (dataType == DataTypes.SHORT) {
             output.writeShort((short) columnValue);
+            output.msrStatsCollectors[msrCount].update((short) columnValue);
           } else if (dataType == DataTypes.INT) {
             output.writeInt((int) columnValue);
+            output.msrStatsCollectors[msrCount].update((int) columnValue);
           } else if (dataType == DataTypes.LONG) {
             output.writeLong((long) columnValue);
+            output.msrStatsCollectors[msrCount].update((long) columnValue);
           } else if (dataType == DataTypes.DOUBLE) {
             output.writeDouble((double) columnValue);
+            output.msrStatsCollectors[msrCount].update((double) columnValue);
           } else if (DataTypes.isDecimal(dataType)) {
             BigDecimal val = (BigDecimal) columnValue;
             byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
             output.writeShort(bigDecimalInBytes.length);
             output.writeBytes(bigDecimalInBytes);
+            output.msrStatsCollectors[msrCount].update((BigDecimal) columnValue);
           } else {
             String msg =
                 "unsupported data type:" + dataFields[dimCount + msrCount].getColumn().getDataType()
@@ -254,6 +265,8 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
             LOGGER.error(msg);
             throw new IOException(msg);
           }
+        } else {
+          output.msrStatsCollectors[msrCount].updateNull(0);
         }
       }
     }
@@ -294,12 +307,27 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     }
     output.apppendBlocklet(outputStream);
     outputStream.flush();
+    if (!isClosed) {
+      batchMinMaxIndex = StreamSegment.mergeBlockletMinMax(
+          batchMinMaxIndex, output.generateBlockletMinMax(), measureDataTypes);
+    }
     // reset data
     output.reset();
   }
 
-  @Override public void close(TaskAttemptContext context) throws IOException, InterruptedException {
+  public BlockletMinMaxIndex getBatchMinMaxIndex() {
+    return StreamSegment.mergeBlockletMinMax(
+        batchMinMaxIndex, output.generateBlockletMinMax(), measureDataTypes);
+  }
+
+  public DataType[] getMeasureDataTypes() {
+    return measureDataTypes;
+  }
+
+  @Override
+  public void close(TaskAttemptContext context) throws IOException, InterruptedException {
     try {
+      isClosed = true;
       // append remain buffer data
       if (!hasException && !isFirstRow) {
         appendBlockletToDataFile();
