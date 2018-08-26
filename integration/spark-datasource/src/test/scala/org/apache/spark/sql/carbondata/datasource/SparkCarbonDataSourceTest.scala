@@ -309,16 +309,17 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
     spark.sql("drop table if exists parquet_table")
     import spark.implicits._
     val df = spark.sparkContext.parallelize(1 to 10)
-      .map(x => ("a" + x % 10, ("b", "c"), x))
-      .toDF("c1", "c2", "number")
+      .map(x => ("a" + x % 10, (Array("1", "2"), ("3", "4")),Array(("1", 1), ("2", 2)), x))
+      .toDF("c1", "c2", "c3",  "number")
 
     df.write
       .format("parquet").saveAsTable("parquet_table")
-    spark.sql("create table carbon_table(c1 string, c2 struct<a1:string, a2:string>, number int) using carbon")
+    spark.sql("create table carbon_table(c1 string, c2 struct<a1:array<string>, a2:struct<a1:string, a2:string>>, c3 array<struct<a1:string, a2:int>>, number int) using carbon")
     spark.sql("insert into carbon_table select * from parquet_table")
     assert(spark.sql("select * from carbon_table").count() == 10)
     TestUtil.checkAnswer(spark.sql("select * from carbon_table"), spark.sql("select * from parquet_table"))
-    TestUtil.checkAnswer(spark.sql("select * from carbon_table where c2.a1='b' and c1='a1'"), spark.sql("select * from parquet_table where c2._1='b' and c1='a1'"))
+    TestUtil.checkAnswer(spark.sql("select * from carbon_table where c2.a1[0]='1' and c1='a1'"), spark.sql("select * from parquet_table where c2._1[0]='1' and c1='a1'"))
+    TestUtil.checkAnswer(spark.sql("select * from carbon_table where c2.a1[0]='1' and c3[0].a2=1"), spark.sql("select * from parquet_table where c2._1[0]='1' and c3[0]._2=1"))
     spark.sql("drop table if exists carbon_table")
     spark.sql("drop table if exists parquet_table")
   }
