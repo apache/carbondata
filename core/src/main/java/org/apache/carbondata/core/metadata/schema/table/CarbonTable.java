@@ -36,7 +36,6 @@ import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -239,22 +238,12 @@ public class CarbonTable implements Serializable {
       String tablePath,
       String tableName) throws IOException {
     TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, "null", "null");
-    CarbonFile[] carbonFiles = FileFactory
-        .getCarbonFile(tablePath)
-        .listFiles(new CarbonFileFilter() {
-          @Override
-          public boolean accept(CarbonFile file) {
-            if (file == null) {
-              return false;
-            }
-            return file.getName().endsWith("carbonindex");
-          }
-        });
-    if (carbonFiles == null || carbonFiles.length < 1) {
+    CarbonFile carbonFile = getFirstIndexFile(FileFactory.getCarbonFile(tablePath));
+    if (carbonFile == null) {
       throw new RuntimeException("Carbon index file not exists.");
     }
     org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil
-        .inferSchemaFromIndexFile(carbonFiles[0].getPath(), tableName);
+        .inferSchemaFromIndexFile(carbonFile.getPath(), tableName);
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     for (org.apache.carbondata.format.ColumnSchema thriftColumnSchema : tableInfo
         .getFact_table().getTable_columns()) {
@@ -266,6 +255,18 @@ public class CarbonTable implements Serializable {
     }
     tableInfoInfer.getFactTable().setListOfColumns(columnSchemaList);
     return CarbonTable.buildFromTableInfo(tableInfoInfer);
+  }
+
+  private static CarbonFile getFirstIndexFile(CarbonFile tablePath) {
+    CarbonFile[] carbonFiles = tablePath.listFiles();
+    for (CarbonFile carbonFile : carbonFiles) {
+      if (carbonFile.isDirectory()) {
+        return getFirstIndexFile(carbonFile);
+      } else if (carbonFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+        return carbonFile;
+      }
+    }
+    return null;
   }
 
   public static CarbonTable buildDummyTable(String tablePath) throws IOException {

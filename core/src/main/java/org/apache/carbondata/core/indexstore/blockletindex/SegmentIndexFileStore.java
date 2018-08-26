@@ -341,6 +341,24 @@ public class SegmentIndexFileStore {
   /**
    * List all the index files of the segment.
    *
+   * @param carbonFile directory
+   */
+  public static void getCarbonIndexFilesRecursively(CarbonFile carbonFile,
+      List<CarbonFile> indexFiles) {
+    CarbonFile[] carbonFiles = carbonFile.listFiles();
+    for (CarbonFile file : carbonFiles) {
+      if (file.isDirectory()) {
+        getCarbonIndexFilesRecursively(file, indexFiles);
+      } else if ((file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
+          .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) && file.getSize() > 0) {
+        indexFiles.add(file);
+      }
+    }
+  }
+
+  /**
+   * List all the index files of the segment.
+   *
    * @param segmentPath
    * @return
    */
