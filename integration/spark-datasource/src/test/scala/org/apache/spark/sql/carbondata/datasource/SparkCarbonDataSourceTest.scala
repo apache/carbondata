@@ -590,7 +590,29 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     }
   }
 
+  test("test write using multi subfolder") {
+    if (!spark.sparkContext.version.startsWith("2.1")) {
+      FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_folder"))
+      import spark.implicits._
+      val df = spark.sparkContext.parallelize(1 to 10)
+        .map(x => ("a" + x % 10, "b", x))
+        .toDF("c1", "c2", "number")
 
+      // Saves dataframe to carbon file
+      df.write.format("carbon").save(warehouse1 + "/test_folder/1/" + System.nanoTime())
+      df.write.format("carbon").save(warehouse1 + "/test_folder/2/" + System.nanoTime())
+      df.write.format("carbon").save(warehouse1 + "/test_folder/3/" + System.nanoTime())
+
+      val frame = spark.read.format("carbon").load(warehouse1 + "/test_folder")
+      assert(frame.count() == 30)
+      assert(frame.where("c1='a1'").count() == 3)
+      val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+      DataMapStoreManager.getInstance()
+        .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/test_folder"))
+      assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
+      FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_folder"))
+    }
+  }
   override protected def beforeAll(): Unit = {
     drop
   }

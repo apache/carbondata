@@ -16,12 +16,15 @@
  */
 package org.apache.spark.sql.carbondata.execution.datasources
 
+import scala.collection.mutable.ArrayBuffer
+
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.{FileIndex, HadoopFsRelation, InMemoryFileIndex, InsertIntoHadoopFsRelationCommand, LogicalRelation}
 import org.apache.spark.sql.sources.BaseRelation
 
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -67,10 +70,10 @@ class CarbonFileIndexReplaceRule extends Rule[LogicalPlan] {
       hadoopFsRelation: HadoopFsRelation): FileIndex = {
     if (fileIndex.isInstanceOf[InMemoryFileIndex] && fileIndex.rootPaths.length == 1) {
       val carbonFile = FileFactory.getCarbonFile(fileIndex.rootPaths.head.toUri.toString)
-      val carbonFiles = carbonFile.listFiles()
-      if (carbonFiles.nonEmpty &&
-          !carbonFiles.exists(_.getName.endsWith(CarbonTablePath.CARBON_DATA_EXT))) {
-        val paths = carbonFiles.map(p => new Path(p.getAbsolutePath)).toSeq
+      val dataFolders = new ArrayBuffer[CarbonFile]()
+      getDataFolders(carbonFile, dataFolders)
+      if (dataFolders.nonEmpty && dataFolders.length > 1) {
+        val paths = dataFolders.map(p => new Path(p.getAbsolutePath))
         new InMemoryFileIndex(hadoopFsRelation.sparkSession,
           paths,
           hadoopFsRelation.options,
@@ -80,6 +83,25 @@ class CarbonFileIndexReplaceRule extends Rule[LogicalPlan] {
       }
     } else {
       fileIndex
+    }
+  }
+
+  /**
+   * Get datafolders recursively
+   */
+  private def getDataFolders(
+      tableFolder: CarbonFile,
+      dataFolders: ArrayBuffer[CarbonFile]): Unit = {
+    val files = tableFolder.listFiles()
+    files.foreach { f =>
+      if (f.isDirectory) {
+        val files = f.listFiles()
+        if (files.nonEmpty && !files(0).isDirectory) {
+          dataFolders += f
+        } else {
+          getDataFolders(f, dataFolders)
+        }
+      }
     }
   }
 }
