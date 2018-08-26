@@ -49,9 +49,9 @@ case class CarbonCreateTableCommand(
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val tableName = tableInfo.getFactTable.getTableName
     var databaseOpt : Option[String] = None
-    ThreadLocalSessionInfo.getCarbonSessionInfo.getNonSerializableExtraInfo.put("carbonConf",
-      sparkSession.sessionState.newHadoopConf())
-    if(tableInfo.getDatabaseName != null) {
+    ThreadLocalSessionInfo
+      .setConfigurationToCurrentThread(sparkSession.sessionState.newHadoopConf())
+    if (tableInfo.getDatabaseName != null) {
       databaseOpt = Some(tableInfo.getDatabaseName)
     }
     val dbName = CarbonEnv.getDatabaseName(databaseOpt)(sparkSession)

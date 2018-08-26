@@ -65,7 +65,6 @@ import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.CarbonSessionInfo;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -100,8 +99,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
   protected CarbonIterator queryIterator;
 
   public AbstractQueryExecutor(Configuration configuration) {
-    CarbonSessionInfo info = ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo();
-    info.getNonSerializableExtraInfo().put("carbonConf", configuration);
+    ThreadLocalSessionInfo.setConfigurationToCurrentThread(configuration);
     queryProperties = new QueryExecutorProperties();
   }
 

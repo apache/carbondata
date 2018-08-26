@@ -99,7 +99,6 @@ object PrestoServer {
   def executeQuery(query: String): List[Map[String, Any]] = {
 
     Try {
-      ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo()
       val conn: Connection = createJdbcConnection
       logger.info(s"***** executing the query ***** \n $query")
       val statement = conn.createStatement()

@@ -195,8 +195,7 @@ object HorizontalCompaction {
         .sessionState.newHadoopConf()))
       val result = rdd1.mapPartitions(iter =>
         new Iterator[Seq[CarbonDataMergerUtilResult]] {
-          ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getNonSerializableExtraInfo
-            .get("carbonConf", conf.value.value)
+          ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf.value.value)
           override def hasNext: Boolean = iter.hasNext
 
           override def next(): Seq[CarbonDataMergerUtilResult] = {

@@ -81,8 +81,7 @@ case class CarbonDictionaryDecoder(
       if (CarbonDictionaryDecoder.isRequiredToDecode(getDictionaryColumnIds)) {
         val dataTypes = child.output.map { attr => attr.dataType }
         child.execute().mapPartitions { iter =>
-          ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getNonSerializableExtraInfo
-            .put("carbonConf", conf.value.value)
+          ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf.value.value)
           val cacheProvider: CacheProvider = CacheProvider.getInstance
           val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
             cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)

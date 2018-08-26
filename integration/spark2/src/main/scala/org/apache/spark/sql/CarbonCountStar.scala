@@ -46,8 +46,8 @@ case class CarbonCountStar(
     outUnsafeRows: Boolean = true) extends LeafExecNode {
 
   override def doExecute(): RDD[InternalRow] = {
-    ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getNonSerializableExtraInfo
-      .put("carbonConf", sparkSession.sessionState.newHadoopConf())
+    ThreadLocalSessionInfo
+      .setConfigurationToCurrentThread(sparkSession.sessionState.newHadoopConf())
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val (job, tableInputFormat) = createCarbonInputFormat(absoluteTableIdentifier)
     CarbonInputFormat.setQuerySegment(job.getConfiguration, absoluteTableIdentifier)

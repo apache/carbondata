@@ -56,8 +56,7 @@ abstract class CarbonRDD[T: ClassTag](@transient ss: SparkSession,
   protected def internalGetPartitions: Array[Partition]
 
   override def getPartitions: Array[Partition] = {
-    ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getNonSerializableExtraInfo
-      .put("carbonConf", config.value.value)
+    ThreadLocalSessionInfo.setConfigurationToCurrentThread(config.value.value)
     internalGetPartitions
   }
 

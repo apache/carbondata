@@ -725,8 +725,7 @@ object CarbonDataRDDFactory {
       // so segmentIdIndex=partitionId/parallelism, this has been verified.
       val conf = sqlContext.sparkContext.broadcast(new SerializableConfiguration(hadoopConf))
       partitionByRdd.map(_._2).mapPartitions { partition =>
-        ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getNonSerializableExtraInfo
-          .put("carbonConf", conf.value.value)
+        ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf.value.value)
         val partitionId = TaskContext.getPartitionId()
         val segIdIndex = partitionId / segmentUpdateParallelism
         val randomPart = partitionId - segIdIndex * segmentUpdateParallelism

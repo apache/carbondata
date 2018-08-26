@@ -91,8 +91,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           case e: NoSuchDatabaseException =>
             CarbonProperties.getStorePath
         }
-        ThreadLocalSessionInfo.getCarbonSessionInfo.getNonSerializableExtraInfo.put("carbonConf",
-          sparkSession.sessionState.newHadoopConf())
+        ThreadLocalSessionInfo
+          .setConfigurationToCurrentThread(sparkSession.sessionState.newHadoopConf())
         FileUtils.createDatabaseDirectory(dbName, dbLocation, sparkSession.sparkContext)
         ExecutedCommandExec(createDb) :: Nil
       case drop@DropDatabaseCommand(dbName, ifExists, isCascade) =>

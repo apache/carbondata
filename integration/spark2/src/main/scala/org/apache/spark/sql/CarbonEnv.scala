@@ -96,9 +96,9 @@ class CarbonEnv {
         if (currentThreadSesssionInfo != null) {
           threadLevelCarbonSessionInfo.setThreadParams(currentThreadSesssionInfo.getThreadParams)
         }
-        threadLevelCarbonSessionInfo.getNonSerializableExtraInfo.put("carbonConf", sparkSession
-          .sessionState.newHadoopConf())
         ThreadLocalSessionInfo.setCarbonSessionInfo(threadLevelCarbonSessionInfo)
+        ThreadLocalSessionInfo.setConfigurationToCurrentThread(sparkSession
+          .sessionState.newHadoopConf())
         val config = new CarbonSQLConf(sparkSession)
         if (sparkSession.conf.getOption(CarbonCommonConstants.ENABLE_UNSAFE_SORT).isEmpty) {
           config.addDefaultCarbonParams()

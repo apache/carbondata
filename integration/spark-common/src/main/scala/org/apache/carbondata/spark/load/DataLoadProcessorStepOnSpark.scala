@@ -231,8 +231,7 @@ object DataLoadProcessorStepOnSpark {
       modelBroadcast: Broadcast[CarbonLoadModel],
       rowCounter: Accumulator[Int],
       conf: Broadcast[SerializableConfiguration]) {
-    ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getNonSerializableExtraInfo
-      .put("carbonConf", conf.value.value)
+    ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf.value.value)
     var model: CarbonLoadModel = null
     var tableName: String = null
     var rowConverter: RowConverterImpl = null

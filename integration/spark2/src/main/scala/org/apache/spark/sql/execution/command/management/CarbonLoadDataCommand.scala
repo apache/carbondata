@@ -981,8 +981,7 @@ case class CarbonLoadDataCommand(
       .broadcast(new SerializableConfiguration(sparkSession.sessionState.newHadoopConf()))
     val finalRDD = convertRDD.mapPartitionsWithIndex { case(index, rows) =>
         DataTypeUtil.setDataTypeConverter(new SparkDataTypeConverterImpl)
-      ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getNonSerializableExtraInfo
-        .put("carbonConf", conf.value.value)
+      ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf.value.value)
         DataLoadProcessorStepOnSpark.inputAndconvertFunc(
           rows,
           index,

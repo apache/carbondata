@@ -44,8 +44,8 @@ case class CarbonInsertIntoCommand(
       } isDefined
     }
 
-    ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getNonSerializableExtraInfo
-      .put("carbonConf", sparkSession.sessionState.newHadoopConf())
+    ThreadLocalSessionInfo
+      .setConfigurationToCurrentThread(sparkSession.sessionState.newHadoopConf())
     val isPersistEnabledUserValue = CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.CARBON_INSERT_PERSIST_ENABLED,
         CarbonCommonConstants.CARBON_INSERT_PERSIST_ENABLED_DEFAULT)

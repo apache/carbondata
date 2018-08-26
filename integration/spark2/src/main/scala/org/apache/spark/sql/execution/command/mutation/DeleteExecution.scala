@@ -127,8 +127,7 @@ object DeleteExecution {
     res = rdd.mapPartitionsWithIndex(
       (index: Int, records: Iterator[((String), (RowCountDetailsVO, Iterable[Row]))]) =>
         Iterator[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))]] {
-          ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getNonSerializableExtraInfo
-            .put("carbonConf", conf.value.value)
+          ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf.value.value)
           var result = List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))]()
           while (records.hasNext) {
             val ((key), (rowCountDetailsVO, groupedRows)) = records.next

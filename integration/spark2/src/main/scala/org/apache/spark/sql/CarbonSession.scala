@@ -429,10 +429,10 @@ object CarbonSession {
         .foreach(entry => carbonSessionInfo.getSessionParams.addProperty(entry._1, entry._2))
       carbonSessionInfo.setThreadParams(currentThreadSessionInfo.getThreadParams)
     }
-    carbonSessionInfo.getNonSerializableExtraInfo
-      .put("carbonConf", sparkSession.sessionState.newHadoopConf())
     // preserve thread parameters across call
     ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
+    ThreadLocalSessionInfo
+      .setConfigurationToCurrentThread(sparkSession.sessionState.newHadoopConf())
   }
 
 }

@@ -85,7 +85,7 @@ public final class CarbonProperties {
   private static final CarbonProperties CARBONPROPERTIESINSTANCE = new CarbonProperties();
 
   /**
-   * porpeties .setExtraInfo
+   * porpeties .
    */
   private Properties carbonProperties;
 

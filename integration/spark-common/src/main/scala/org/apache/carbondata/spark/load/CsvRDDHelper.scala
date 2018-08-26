@@ -118,8 +118,7 @@ object CsvRDDHelper {
             val formatter = new SimpleDateFormat("yyyyMMddHHmmss", Locale.US)
             formatter.format(new Date())
           }
-          ThreadLocalSessionInfo.getOrCreateCarbonSessionInfo().getNonSerializableExtraInfo
-            .put("carbonConf", serializableConfiguration.value)
+          ThreadLocalSessionInfo.setConfigurationToCurrentThread(serializableConfiguration.value)
           val attemptId = new TaskAttemptID(jobTrackerId, 0, TaskType.MAP, 0, 0)
           val hadoopAttemptContext = new TaskAttemptContextImpl(FileFactory.getConfiguration,
             attemptId)
