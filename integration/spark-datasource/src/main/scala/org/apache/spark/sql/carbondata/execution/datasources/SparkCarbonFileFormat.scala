@@ -32,7 +32,7 @@ import org.apache.spark.sql.carbondata.execution.datasources.readsupport.SparkUn
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.JoinedRow
 import org.apache.spark.sql.catalyst.expressions.codegen.GenerateUnsafeProjection
-import org.apache.spark.sql.catalyst.util.ArrayData
+import org.apache.spark.sql.catalyst.util.{ArrayData, MapData}
 import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.sources.{DataSourceRegister, Filter}
 import org.apache.spark.sql.types._
@@ -200,8 +200,10 @@ class SparkCarbonFileFormat extends FileFormat
               data(i) = row.getDecimal(i, d.precision, d.scale).toJavaBigDecimal
             case s: StructType =>
               data(i) = new StructObject(extractData(row.getStruct(i, s.fields.length), s.fields))
-            case s: ArrayType =>
-              data(i) = new ArrayObject(extractData(row.getArray(i), s.elementType))
+            case a: ArrayType =>
+              data(i) = new ArrayObject(extractData(row.getArray(i), a.elementType))
+            case m: MapType =>
+              data(i) = extractMapData(row.getMap(i), m)
             case d: DateType =>
               data(i) = (row.getInt(i) + cutOffDate).asInstanceOf[AnyRef]
             case d: TimestampType =>
@@ -215,6 +217,15 @@ class SparkCarbonFileFormat extends FileFormat
         i += 1
       }
       data
+    }
+
+    private def extractMapData(data: AnyRef, mapType: MapType): ArrayObject = {
+      val mapData = data.asInstanceOf[MapData]
+      val keys = extractData(mapData.keyArray(), mapType.keyType)
+      val values = extractData(mapData.valueArray(), mapType.valueType)
+      new ArrayObject(keys.zip(values).map { case (key, value) =>
+        new StructObject(Array(key, value))
+      })
     }
 
     private def setNull(dataType: DataType, data: Array[AnyRef], i: Int) = {
@@ -241,8 +252,10 @@ class SparkCarbonFileFormat extends FileFormat
               data(i) = row.getDecimal(i, d.precision, d.scale).toJavaBigDecimal
             case s: StructType =>
               data(i) = new StructObject(extractData(row.getStruct(i, s.fields.length), s.fields))
-            case s: ArrayType =>
-              data(i) = new ArrayObject(extractData(row.getArray(i), s.elementType))
+            case a: ArrayType =>
+              data(i) = new ArrayObject(extractData(row.getArray(i), a.elementType))
+            case m: MapType =>
+              data(i) = extractMapData(row.getMap(i), m)
             case d: DateType =>
               data(i) = (row.getInt(i) + cutOffDate).asInstanceOf[AnyRef]
             case d: TimestampType =>

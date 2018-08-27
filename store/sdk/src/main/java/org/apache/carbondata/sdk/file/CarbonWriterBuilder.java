@@ -38,6 +38,7 @@ import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.MapType;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
@@ -673,8 +674,8 @@ public class CarbonWriterBuilder {
                 .addColumn(new StructField(field.getFieldName(), complexType), valIndex, false);
           } else if (field.getDataType().getName().equalsIgnoreCase("MAP")) {
             // Loop through the inner columns for MapType
-            DataType mapType =
-                DataTypes.createMapType(DataTypes.STRING, field.getChildren().get(0).getDataType());
+            DataType mapType = DataTypes.createMapType(((MapType) field.getDataType()).getKeyType(),
+                field.getChildren().get(0).getDataType());
             tableSchemaBuilder
                 .addColumn(new StructField(field.getFieldName(), mapType), valIndex, false);
           }
