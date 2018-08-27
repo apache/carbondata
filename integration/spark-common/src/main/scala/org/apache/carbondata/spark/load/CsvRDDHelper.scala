@@ -37,6 +37,8 @@ import org.apache.spark.sql.execution.datasources.{FilePartition, FileScanRDD, P
 import org.apache.spark.sql.util.SparkSQLUtil.sessionState
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.rdd.SerializableConfiguration
@@ -108,17 +110,18 @@ object CsvRDDHelper {
     closePartition()
 
     // 2. read function
-    val serializableConfiguration = new SerializableConfiguration(jobConf)
+    val serializableConfiguration = new SerializableConfiguration(hadoopConf)
     val readFunction = new (PartitionedFile => Iterator[InternalRow]) with Serializable {
       override def apply(file: PartitionedFile): Iterator[InternalRow] = {
         new Iterator[InternalRow] {
-          val hadoopConf = serializableConfiguration.value
           val jobTrackerId: String = {
             val formatter = new SimpleDateFormat("yyyyMMddHHmmss", Locale.US)
             formatter.format(new Date())
           }
+          ThreadLocalSessionInfo.setConfigurationToCurrentThread(serializableConfiguration.value)
           val attemptId = new TaskAttemptID(jobTrackerId, 0, TaskType.MAP, 0, 0)
-          val hadoopAttemptContext = new TaskAttemptContextImpl(hadoopConf, attemptId)
+          val hadoopAttemptContext = new TaskAttemptContextImpl(FileFactory.getConfiguration,
+            attemptId)
           val inputSplit =
             new FileSplit(new Path(file.filePath), file.start, file.length, file.locations)
           var finished = false

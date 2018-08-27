@@ -32,7 +32,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.events.{CreateTablePostExecutionEvent, CreateTablePreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
@@ -49,7 +49,9 @@ case class CarbonCreateTableCommand(
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val tableName = tableInfo.getFactTable.getTableName
     var databaseOpt : Option[String] = None
-    if(tableInfo.getDatabaseName != null) {
+    ThreadLocalSessionInfo
+      .setConfigurationToCurrentThread(sparkSession.sessionState.newHadoopConf())
+    if (tableInfo.getDatabaseName != null) {
       databaseOpt = Some(tableInfo.getDatabaseName)
     }
     val dbName = CarbonEnv.getDatabaseName(databaseOpt)(sparkSession)

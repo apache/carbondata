@@ -54,7 +54,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
         val sparkSession = SparkSession.getActiveSession.get
         if(!carbonTable.isStreamingSink) {
           if (null != compactedSegments && !compactedSegments.isEmpty) {
-            mergeIndexFilesForCompactedSegments(sparkSession.sparkContext,
+            mergeIndexFilesForCompactedSegments(sparkSession,
               carbonTable,
               compactedSegments)
           } else {
@@ -63,7 +63,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
 
             segmentFileNameMap
               .put(loadModel.getSegmentId, String.valueOf(loadModel.getFactTimeStamp))
-            CommonUtil.mergeIndexFiles(sparkSession.sparkContext,
+            CommonUtil.mergeIndexFiles(sparkSession,
               Seq(loadModel.getSegmentId),
               segmentFileNameMap,
               carbonTable.getTablePath,
@@ -77,9 +77,9 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
         val alterTableCompactionPostEvent = event.asInstanceOf[AlterTableCompactionPostEvent]
         val carbonTable = alterTableCompactionPostEvent.carbonTable
         val mergedLoads = alterTableCompactionPostEvent.compactedLoads
-        val sparkContext = alterTableCompactionPostEvent.sparkSession.sparkContext
+        val sparkSession = alterTableCompactionPostEvent.sparkSession
         if(!carbonTable.isStreamingSink) {
-          mergeIndexFilesForCompactedSegments(sparkContext, carbonTable, mergedLoads)
+          mergeIndexFilesForCompactedSegments(sparkSession, carbonTable, mergedLoads)
         }
       case alterTableMergeIndexEvent: AlterTableMergeIndexEvent =>
         val exceptionEvent = event.asInstanceOf[AlterTableMergeIndexEvent]
@@ -123,7 +123,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
               // store (store <= 1.1 version) and create merge Index file as per new store so that
               // old store is also upgraded to new store
               CommonUtil.mergeIndexFiles(
-                sparkContext = sparkSession.sparkContext,
+                sparkSession = sparkSession,
                 segmentIds = validSegmentIds,
                 segmentFileNameToSegmentIdMap = segmentFileNameMap,
                 tablePath = carbonMainTable.getTablePath,
@@ -155,7 +155,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
     }
   }
 
-  def mergeIndexFilesForCompactedSegments(sparkContext: SparkContext,
+  def mergeIndexFilesForCompactedSegments(sparkSession: SparkSession,
     carbonTable: CarbonTable,
     mergedLoads: util.List[String]): Unit = {
     // get only the valid segments of the table
@@ -182,7 +182,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
     val validMergedSegIds = validSegments
       .filter { seg => mergedSegmentIds.contains(seg.getSegmentNo) }.map(_.getSegmentNo)
     if (null != validMergedSegIds && !validMergedSegIds.isEmpty) {
-      CommonUtil.mergeIndexFiles(sparkContext,
+      CommonUtil.mergeIndexFiles(sparkSession,
           validMergedSegIds,
           segmentFileNameMap,
           carbonTable.getTablePath,

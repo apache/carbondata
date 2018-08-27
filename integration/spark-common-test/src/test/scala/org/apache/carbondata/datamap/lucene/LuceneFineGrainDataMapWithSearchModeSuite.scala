@@ -41,8 +41,7 @@ class LuceneFineGrainDataMapWithSearchModeSuite extends QueryTest with BeforeAnd
     val n = 500000
     sqlContext.sparkSession.asInstanceOf[CarbonSession].startSearchMode()
     CarbonProperties
-      .getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_SEARCH_QUERY_TIMEOUT, "100s")
+      .getInstance().addProperty(CarbonCommonConstants.CARBON_SEARCH_QUERY_TIMEOUT, "100s")
     LuceneFineGrainDataMapSuite.createFile(file2, n)
     sql("create database if not exists lucene")
     sql("use lucene")

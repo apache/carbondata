@@ -28,6 +28,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 
 /**
@@ -39,7 +40,7 @@ object TableLoader {
   def extractOptions(propertiesFile: String): immutable.Map[String, String] = {
     val props = new Properties
     val path = new Path(propertiesFile)
-    val fs = path.getFileSystem(new Configuration())
+    val fs = path.getFileSystem(FileFactory.getConfiguration)
     props.load(fs.open(path))
     val elments = props.entrySet().iterator()
     val map = new mutable.HashMap[String, String]()

@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.util;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * This class maintains ThreadLocal session params
  */
@@ -30,5 +32,23 @@ public class ThreadLocalSessionInfo {
 
   public static CarbonSessionInfo getCarbonSessionInfo() {
     return threadLocal.get();
+  }
+
+  public static synchronized CarbonSessionInfo getOrCreateCarbonSessionInfo() {
+    CarbonSessionInfo info = threadLocal.get();
+    if (info == null || info.getSessionParams() == null) {
+      info = new CarbonSessionInfo();
+      info.setSessionParams(new SessionParams());
+      threadLocal.set(info);
+    }
+    return info;
+  }
+
+  public static void setConfigurationToCurrentThread(Configuration configuration) {
+    getOrCreateCarbonSessionInfo().getNonSerializableExtraInfo().put("carbonConf", configuration);
+  }
+
+  public static void unsetAll() {
+    threadLocal.remove();
   }
 }

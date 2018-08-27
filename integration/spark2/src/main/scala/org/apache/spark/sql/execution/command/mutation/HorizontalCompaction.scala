@@ -32,7 +32,10 @@ import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
+import org.apache.carbondata.core.util.{ThreadLocalSessionInfo}
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CarbonDataMergerUtilResult, CompactionType}
+import org.apache.carbondata.spark.rdd.SerializableConfiguration
 
 object HorizontalCompaction {
 
@@ -188,8 +191,11 @@ object HorizontalCompaction {
 
       val timestamp = factTimeStamp
       val updateStatusDetails = segmentUpdateStatusManager.getUpdateStatusDetails
+      val conf = sparkSession.sparkContext.broadcast(new SerializableConfiguration(sparkSession
+        .sessionState.newHadoopConf()))
       val result = rdd1.mapPartitions(iter =>
         new Iterator[Seq[CarbonDataMergerUtilResult]] {
+          ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf.value.value)
           override def hasNext: Boolean = iter.hasNext
 
           override def next(): Seq[CarbonDataMergerUtilResult] = {

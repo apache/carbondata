@@ -32,7 +32,7 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{Partition, SerializableWritable, SparkContext, SparkEnv, TaskContext}
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionWrap, RDD}
 import org.apache.spark.serializer.SerializerInstance
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.util.SparkUtil
 
@@ -41,11 +41,11 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalTaskInfo}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalSessionInfo, ThreadLocalTaskInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses, TableProcessingOperations}
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator}
 import org.apache.carbondata.processing.loading.exception.NoRetryException
@@ -160,29 +160,20 @@ class SparkPartitionLoader(model: CarbonLoadModel,
  * It loads the data to carbon using @AbstractDataLoadProcessorStep
  */
 class NewCarbonDataLoadRDD[K, V](
-    sc: SparkContext,
+    @transient ss: SparkSession,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    blocksGroupBy: Array[(String, Array[BlockDetails])],
-    @transient hadoopConf: Configuration)
-  extends CarbonRDD[(K, V)](sc, Nil, hadoopConf) {
+    blocksGroupBy: Array[(String, Array[BlockDetails])])
+  extends CarbonRDD[(K, V)](ss, Nil) {
 
-  sc.setLocalProperty("spark.scheduler.pool", "DDL")
+  ss.sparkContext.setLocalProperty("spark.scheduler.pool", "DDL")
 
   private val jobTrackerId: String = {
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
     formatter.format(new Date())
   }
 
-  private val confBytes = {
-    val bao = new ByteArrayOutputStream()
-    val oos = new ObjectOutputStream(bao)
-    hadoopConf.write(oos)
-    oos.close()
-    CompressorFactory.getInstance().getCompressor.compressByte(bao.toByteArray)
-  }
-
-  override def getPartitions: Array[Partition] = {
+  override def internalGetPartitions: Array[Partition] = {
     blocksGroupBy.zipWithIndex.map { b =>
       new CarbonNodePartition(id, b._2, b._1._1, b._1._2)
     }
@@ -245,10 +236,7 @@ class NewCarbonDataLoadRDD[K, V](
 
       def getInputIterators: Array[CarbonIterator[Array[AnyRef]]] = {
         val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, theSplit.index, 0)
-        var configuration: Configuration = getConf
-        if (configuration == null) {
-          configuration = new Configuration()
-        }
+        val configuration: Configuration = FileFactory.getConfiguration
         CommonUtil.configureCSVInputFormat(configuration, carbonLoadModel)
         val hadoopAttemptContext = new TaskAttemptContextImpl(configuration, attemptId)
         val format = new CSVInputFormat
@@ -319,24 +307,13 @@ class NewCarbonDataLoadRDD[K, V](
  *  @see org.apache.carbondata.processing.newflow.DataLoadExecutor
  */
 class NewDataFrameLoaderRDD[K, V](
-    sc: SparkContext,
+    @transient ss: SparkSession,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    prev: DataLoadCoalescedRDD[Row],
-    @transient hadoopConf: Configuration) extends CarbonRDD[(K, V)](prev) {
-
-  private val confBytes = {
-    val bao = new ByteArrayOutputStream()
-    val oos = new ObjectOutputStream(bao)
-    hadoopConf.write(oos)
-    oos.close()
-    CompressorFactory.getInstance().getCompressor.compressByte(bao.toByteArray)
-  }
+    prev: DataLoadCoalescedRDD[Row]) extends CarbonRDD[(K, V)](ss, prev) {
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    val hadoopConf = getConf
-    CarbonInputFormatUtil.setS3Configurations(hadoopConf)
     val iter = new Iterator[(K, V)] {
       val loadMetadataDetails = new LoadMetadataDetails()
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
@@ -404,7 +381,7 @@ class NewDataFrameLoaderRDD[K, V](
     }
     iter
   }
-  override protected def getPartitions: Array[Partition] = firstParent[Row].partitions
+  override protected def internalGetPartitions: Array[Partition] = firstParent[Row].partitions
 }
 
 /**
@@ -528,10 +505,10 @@ class LazyRddIterator(serializer: SerializerInstance,
  *  @see org.apache.carbondata.processing.newflow.DataLoadExecutor
  */
 class PartitionTableDataLoaderRDD[K, V](
-    sc: SparkContext,
+    @transient ss: SparkSession,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    prev: RDD[Row]) extends CarbonRDD[(K, V)](prev) {
+    prev: RDD[Row]) extends CarbonRDD[(K, V)](ss, prev) {
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -596,6 +573,6 @@ class PartitionTableDataLoaderRDD[K, V](
     iter
   }
 
-  override protected def getPartitions: Array[Partition] = firstParent[Row].partitions
+  override protected def internalGetPartitions: Array[Partition] = firstParent[Row].partitions
 
 }

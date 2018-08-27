@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileReader;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -37,7 +38,10 @@ public class DFSFileReaderImpl implements FileReader {
 
   private boolean readPageByPage;
 
-  public DFSFileReaderImpl() {
+  private Configuration configuration;
+
+  public DFSFileReaderImpl(Configuration configuration) {
+    this.configuration = configuration;
     this.fileNameAndStreamCache =
         new HashMap<String, FSDataInputStream>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   }
@@ -60,7 +64,7 @@ public class DFSFileReaderImpl implements FileReader {
     FSDataInputStream fileChannel = fileNameAndStreamCache.get(filePath);
     if (null == fileChannel) {
       Path pt = new Path(filePath);
-      FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
+      FileSystem fs = pt.getFileSystem(configuration);
       fileChannel = fs.open(pt);
       fileNameAndStreamCache.put(filePath, fileChannel);
     }

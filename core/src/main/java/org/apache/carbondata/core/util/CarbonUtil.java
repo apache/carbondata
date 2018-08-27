@@ -134,8 +134,6 @@ public final class CarbonUtil {
    */
   private static final int CONST_HUNDRED = 100;
 
-  private static final Configuration conf = new Configuration(true);
-
   /**
    * dfs.bytes-per-checksum
    * HDFS checksum length, block size for a file should be exactly divisible
@@ -662,7 +660,7 @@ public final class CarbonUtil {
    */
   public static String checkAndAppendHDFSUrl(String filePath) {
     String currentPath = filePath;
-    String defaultFsUrl = conf.get(CarbonCommonConstants.FS_DEFAULT_FS);
+    String defaultFsUrl = FileFactory.getConfiguration().get(CarbonCommonConstants.FS_DEFAULT_FS);
     String baseDFSUrl = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL, "");
     if (checkIfPrefixExists(filePath)) {
@@ -699,7 +697,7 @@ public final class CarbonUtil {
       filePath = "/" + filePath;
     }
     currentPath = filePath;
-    String defaultFsUrl = conf.get(CarbonCommonConstants.FS_DEFAULT_FS);
+    String defaultFsUrl = FileFactory.getConfiguration().get(CarbonCommonConstants.FS_DEFAULT_FS);
     if (defaultFsUrl == null) {
       return currentPath;
     }

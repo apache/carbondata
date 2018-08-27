@@ -40,7 +40,6 @@ import org.apache.carbondata.common.annotations.InterfaceAudience
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.store.SparkCarbonStore
 import org.apache.carbondata.streaming.CarbonStreamingQueryListener
 
@@ -432,6 +431,8 @@ object CarbonSession {
     }
     // preserve thread parameters across call
     ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
+    ThreadLocalSessionInfo
+      .setConfigurationToCurrentThread(sparkSession.sessionState.newHadoopConf())
   }
 
 }
