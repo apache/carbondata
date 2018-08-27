@@ -26,11 +26,10 @@ import scala.util.Random
 
 import org.apache.commons.lang3.RandomStringUtils
 import org.apache.spark.sql.streaming.{StreamingQuery, Trigger}
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SaveMode}
+import org.apache.spark.sql.{CarbonEnv, Row, SaveMode}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
-import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
@@ -201,11 +200,10 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "false")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "fake")
     createTable()
-    val exception = intercept[InvalidLoadOptionException] {
+    val exception = intercept[UnsupportedOperationException] {
       loadData()
     }
-    LOGGER.error(exception)
-
+    assert(exception.getMessage.contains("Invalid compressor type provided"))
   }
 
   test("test compaction with unsupported compressor") {
@@ -214,10 +212,10 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     loadData()
 
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "fake")
-    val exception = intercept[AnalysisException] {
+    val exception = intercept[UnsupportedOperationException] {
       sql(s"ALTER TABLE $tableName COMPACT 'major'")
     }
-    assert(exception.message.contains("Invalid compressor type provided"))
+    assert(exception.getMessage.contains("Invalid compressor type provided"))
   }
 
   private def generateAllDataTypeDF(lineNum: Int) = {

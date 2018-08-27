@@ -30,6 +30,7 @@ import org.apache.spark.sql.execution.streaming.{CarbonAppendableStreamSink, Sin
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.{DictionaryServer, NonSecureDictionaryServer}
 import org.apache.carbondata.core.dictionary.service.NonSecureDictionaryServiceProvider
@@ -271,6 +272,7 @@ object StreamSinkFactory {
       getConf.get("spark.driver.host")
     carbonLoadModel.setDictionaryServerHost(sparkDriverHost)
     carbonLoadModel.setDictionaryServerPort(dictionaryServerPort.toInt)
+    carbonLoadModel.setColumnCompressor(CompressorFactory.getInstance().getCompressor.getName)
     carbonLoadModel
   }
 }

@@ -22,7 +22,6 @@ import java.util.concurrent.ExecutorService
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.execution.command.CompactionModel
 
-import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.events.OperationContext
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 
@@ -38,8 +37,6 @@ object CompactionFactory {
       storeLocation: String,
       mergedLoads: java.util.List[String],
       operationContext: OperationContext): Compactor = {
-    val columnCompressor = CompressorFactory.getInstance().getCompressor.getName
-    carbonLoadModel.setColumnCompressor(columnCompressor)
     if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildDataMap) {
       new AggregateDataMapCompactor(
         carbonLoadModel,

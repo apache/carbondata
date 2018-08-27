@@ -377,8 +377,11 @@ public class CarbonLoadModelBuilder {
   private void validateAndSetColumnCompressor(CarbonLoadModel carbonLoadModel)
       throws InvalidLoadOptionException {
     try {
-      String columnCompressor = CarbonProperties.getInstance().getProperty(
-          CarbonCommonConstants.COMPRESSOR, CarbonCommonConstants.DEFAULT_COMPRESSOR);
+      String columnCompressor = carbonLoadModel.getColumnCompressor();
+      if (StringUtils.isBlank(columnCompressor)) {
+        columnCompressor = CarbonProperties.getInstance().getProperty(
+            CarbonCommonConstants.COMPRESSOR, CarbonCommonConstants.DEFAULT_COMPRESSOR);
+      }
       // check and load compressor
       CompressorFactory.getInstance().getCompressor(columnCompressor);
       carbonLoadModel.setColumnCompressor(columnCompressor);
