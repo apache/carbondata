@@ -156,39 +156,48 @@ case class CarbonRelation(
   private var sizeInBytesLocalValue = 0L
 
   def sizeInBytes: Long = {
-    val tableStatusNewLastUpdatedTime = SegmentStatusManager.getTableStatusLastModifiedTime(
-      carbonTable.getAbsoluteTableIdentifier)
-    if (tableStatusLastUpdateTime != tableStatusNewLastUpdatedTime) {
-      if (new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
-        .getValidAndInvalidSegments.getValidSegments.isEmpty) {
-        sizeInBytesLocalValue = 0L
-      } else {
-        val tablePath = carbonTable.getTablePath
-        val fileType = FileFactory.getFileType(tablePath)
-        if (FileFactory.isFileExist(tablePath, fileType)) {
-          // get the valid segments
-          val segments = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
-            .getValidAndInvalidSegments.getValidSegments.asScala
-          var size = 0L
-          // for each segment calculate the size
-          segments.foreach {validSeg =>
-            // for older store
-            if (null != validSeg.getLoadMetadataDetails.getDataSize &&
-                null != validSeg.getLoadMetadataDetails.getIndexSize) {
-              size = size + validSeg.getLoadMetadataDetails.getDataSize.toLong +
-                     validSeg.getLoadMetadataDetails.getIndexSize.toLong
-            } else {
-              size = size + FileFactory.getDirectorySize(
-                CarbonTablePath.getSegmentPath(tablePath, validSeg.getSegmentNo))
+    if (carbonTable.isExternalTable) {
+      val tablePath = carbonTable.getTablePath
+      val fileType = FileFactory.getFileType(tablePath)
+      if (FileFactory.isFileExist(tablePath, fileType)) {
+        sizeInBytesLocalValue = FileFactory.getDirectorySize(tablePath)
+      }
+    } else {
+      val tableStatusNewLastUpdatedTime = SegmentStatusManager.getTableStatusLastModifiedTime(
+        carbonTable.getAbsoluteTableIdentifier)
+      if (tableStatusLastUpdateTime != tableStatusNewLastUpdatedTime) {
+        if (new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
+          .getValidAndInvalidSegments.getValidSegments.isEmpty) {
+          sizeInBytesLocalValue = 0L
+        } else {
+          val tablePath = carbonTable.getTablePath
+          val fileType = FileFactory.getFileType(tablePath)
+          if (FileFactory.isFileExist(tablePath, fileType)) {
+            // get the valid segments
+            val segments = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
+              .getValidAndInvalidSegments.getValidSegments.asScala
+            var size = 0L
+            // for each segment calculate the size
+            segments.foreach { validSeg =>
+              // for older store
+              if (null != validSeg.getLoadMetadataDetails.getDataSize &&
+                  null != validSeg.getLoadMetadataDetails.getIndexSize) {
+                size = size + validSeg.getLoadMetadataDetails.getDataSize.toLong +
+                       validSeg.getLoadMetadataDetails.getIndexSize.toLong
+              } else {
+                size = size + FileFactory.getDirectorySize(
+                  CarbonTablePath.getSegmentPath(tablePath, validSeg.getSegmentNo))
+              }
             }
+            // update the new table status time
+            tableStatusLastUpdateTime = tableStatusNewLastUpdatedTime
+            // update the new size
+            sizeInBytesLocalValue = size
           }
-          // update the new table status time
-          tableStatusLastUpdateTime = tableStatusNewLastUpdatedTime
-          // update the new size
-          sizeInBytesLocalValue = size
         }
       }
     }
+
     sizeInBytesLocalValue
   }
 
