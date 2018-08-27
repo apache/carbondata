@@ -21,14 +21,13 @@ import java.util
 
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.execution.datasources.{InMemoryFileIndex, _}
+import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.types.StructType
 
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, HDFSCarbonFile}
@@ -81,7 +80,7 @@ class CarbonFileIndex(
   private def prune(dataFilters: Seq[Expression],
       directories: Seq[PartitionDirectory]) = {
     val tablePath = parameters.get("path")
-    if (tablePath.nonEmpty) {
+    if (tablePath.nonEmpty && dataFilters.nonEmpty) {
       val hadoopConf = sparkSession.sessionState.newHadoopConf()
       // convert t sparks source filter
       val filters = dataFilters.flatMap(DataSourceStrategy.translateFilter)
@@ -125,7 +124,11 @@ class CarbonFileIndex(
       }
       prunedDirs
     } else {
-      directories
+      directories.map { dir =>
+        val files = dir.files
+          .filter(_.getPath.getName.endsWith(CarbonTablePath.CARBON_DATA_EXT))
+        PartitionDirectory(dir.values, files)
+      }
     }
   }
 

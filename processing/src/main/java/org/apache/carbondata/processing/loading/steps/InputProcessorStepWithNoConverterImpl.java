@@ -302,16 +302,6 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
               GenericDataType complextType =
                   dataFieldsWithComplexDataType.get(dataFields[i].getColumn().getOrdinal());
               complextType.writeByteArray(data[orderOfData[i]], dataOutputStream, logHolder);
-              if (!logHolder.isLogged() && logHolder.isBadRecordNotAdded()) {
-                badRecordLogger.addBadRecordsToBuilder(data, logHolder.getReason());
-                if (badRecordLogger.isDataLoadFail()) {
-                  String error = "Data load failed due to bad record: " + logHolder.getReason();
-                  if (!badRecordLogger.isBadRecordLoggerEnable()) {
-                    error += "Please enable bad record logger to know the detail reason.";
-                  }
-                  throw new BadRecordFoundException(error);
-                }
-              }
               dataOutputStream.close();
               newData[i] = byteArray.toByteArray();
             } catch (BadRecordFoundException e) {

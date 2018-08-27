@@ -46,7 +46,7 @@ class CarbonFileIndexReplaceRule extends Rule[LogicalPlan] {
         val fsRelation = l.relation.asInstanceOf[HadoopFsRelation]
         val fileIndex = fsRelation.location
         val carbonFileIndex = new CarbonFileIndex(fsRelation.sparkSession,
-          fsRelation.schema,
+          fsRelation.dataSchema,
           fsRelation.options,
           updateFileIndex(fileIndex, fsRelation))
         val fsRelationCopy = fsRelation.copy(location = carbonFileIndex)(fsRelation.sparkSession)

@@ -54,7 +54,7 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
       .format("parquet").saveAsTable("testparquet")
     spark.sql("create table carbon_table(c1 string, c2 string, number int) using carbon")
     spark.sql("insert into carbon_table select * from testparquet")
-    TestUtil.checkAnswer(spark.sql("select * from carbon_table"), spark.sql("select * from testparquet"))
+    TestUtil.checkAnswer(spark.sql("select * from carbon_table where c1='a1'"), spark.sql("select * from testparquet where c1='a1'"))
     val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
     DataMapStoreManager.getInstance().clearDataMaps(AbsoluteTableIdentifier.from(warehouse1+"/carbon_table"))
     assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
@@ -91,7 +91,7 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
     df.write.format("carbon").save(warehouse1 + "/test_folder/"+System.nanoTime())
 
     val frame = spark.read.format("carbon").load(warehouse1 + "/test_folder")
-    assert(frame.count() == 30)
+    assert(frame.where("c1='a1'").count() == 3)
     val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
     DataMapStoreManager.getInstance().clearDataMaps(AbsoluteTableIdentifier.from(warehouse1+"/test_folder"))
     assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
@@ -375,6 +375,43 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
     spark.sql("drop table if exists test123")
     spark.sql("drop table if exists test123_par")
   }
+
+  test("test complex columns mismatch") {
+    spark.sql("drop table if exists array_com_hive")
+    spark.sql(s"drop table if exists array_com")
+    spark.sql("create table array_com_hive (CUST_ID string, YEAR int, MONTH int, AGE int, GENDER string, EDUCATED string, IS_MARRIED string, ARRAY_INT array<int>,ARRAY_STRING array<string>,ARRAY_DATE array<timestamp>,CARD_COUNT int,DEBIT_COUNT int, CREDIT_COUNT int, DEPOSIT double, HQ_DEPOSIT double) row format delimited fields terminated by ',' collection items terminated by '$'")
+    spark.sql(s"load data local inpath '$resource/Array.csv' into table array_com_hive")
+    spark.sql("create table Array_com (CUST_ID string, YEAR int, MONTH int, AGE int, GENDER string, EDUCATED string, IS_MARRIED string, ARRAY_INT array<int>,ARRAY_STRING array<string>,ARRAY_DATE array<timestamp>,CARD_COUNT int,DEBIT_COUNT int, CREDIT_COUNT int, DEPOSIT double, HQ_DEPOSIT double) using carbon")
+    spark.sql("insert into Array_com select * from array_com_hive")
+    TestUtil.checkAnswer(spark.sql("select * from Array_com order by CUST_ID ASC limit 3"), spark.sql("select * from array_com_hive order by CUST_ID ASC limit 3"))
+    spark.sql("drop table if exists array_com_hive")
+    spark.sql(s"drop table if exists array_com")
+  }
+
+  test("test complex columns fail while insert ") {
+    spark.sql("drop table if exists STRUCT_OF_ARRAY_com_hive")
+    spark.sql(s"drop table if exists STRUCT_OF_ARRAY_com")
+    spark.sql(" create table STRUCT_OF_ARRAY_com_hive (CUST_ID string, YEAR int, MONTH int, AGE int, GENDER string, EDUCATED string, IS_MARRIED string, STRUCT_OF_ARRAY struct<ID: int,CHECK_DATE: timestamp ,SNo: array<int>,sal1: array<double>,state: array<string>,date1: array<timestamp>>,CARD_COUNT int,DEBIT_COUNT int, CREDIT_COUNT int, DEPOSIT float, HQ_DEPOSIT double) row format delimited fields terminated by ',' collection items terminated by '$' map keys terminated by '&'")
+    spark.sql(s"load data local inpath '$resource/structofarray.csv' into table STRUCT_OF_ARRAY_com_hive")
+    spark.sql("create table STRUCT_OF_ARRAY_com (CUST_ID string, YEAR int, MONTH int, AGE int, GENDER string, EDUCATED string, IS_MARRIED string, STRUCT_OF_ARRAY struct<ID: int,CHECK_DATE: timestamp,SNo: array<int>,sal1: array<double>,state: array<string>,date1: array<timestamp>>,CARD_COUNT int,DEBIT_COUNT int, CREDIT_COUNT int, DEPOSIT double, HQ_DEPOSIT double) using carbon")
+    spark.sql(" insert into STRUCT_OF_ARRAY_com select * from STRUCT_OF_ARRAY_com_hive")
+    TestUtil.checkAnswer(spark.sql("select * from STRUCT_OF_ARRAY_com  order by CUST_ID ASC"), spark.sql("select * from STRUCT_OF_ARRAY_com_hive  order by CUST_ID ASC"))
+    spark.sql("drop table if exists STRUCT_OF_ARRAY_com_hive")
+    spark.sql(s"drop table if exists STRUCT_OF_ARRAY_com")
+  }
+
+  test("test partition error in carbon") {
+    spark.sql("drop table if exists carbon_par")
+    spark.sql("drop table if exists parquet_par")
+    spark.sql("create table carbon_par (name string, age int, country string) using carbon partitioned by (country)")
+    spark.sql("insert into carbon_par select 'b', '12', 'aa'")
+    spark.sql("create table parquet_par (name string, age int, country string) using carbon partitioned by (country)")
+    spark.sql("insert into parquet_par select 'b', '12', 'aa'")
+    checkAnswer(spark.sql("select * from carbon_par"), spark.sql("select * from parquet_par"))
+    spark.sql("drop table if exists carbon_par")
+    spark.sql("drop table if exists parquet_par")
+  }
+
 
   override protected def beforeAll(): Unit = {
     drop

@@ -225,6 +225,8 @@ class SparkCarbonFileFormat extends FileFormat
       while (i < data.length) {
         if (!row.isNullAt(i)) {
           dataType match {
+            case StringType =>
+              data(i) = row.getUTF8String(i).toString
             case d: DecimalType =>
               data(i) = row.getDecimal(i, d.precision, d.scale).toJavaBigDecimal
             case s: StructType =>
@@ -233,6 +235,8 @@ class SparkCarbonFileFormat extends FileFormat
               data(i) = new ArrayObject(extractData(row.getArray(i), s.elementType))
             case d: DateType =>
               data(i) = (row.getInt(i) + cutOffDate).asInstanceOf[AnyRef]
+            case d: TimestampType =>
+              data(i) = (row.getLong(i) / 1000).asInstanceOf[AnyRef]
             case other => data(i) = row.get(i, dataType)
           }
         } else {

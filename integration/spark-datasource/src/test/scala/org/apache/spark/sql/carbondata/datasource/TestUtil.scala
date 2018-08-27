@@ -30,9 +30,11 @@ object TestUtil {
   val rootPath = new File(this.getClass.getResource("/").getPath
                           + "../../../..").getCanonicalPath
   val warehouse1 = s"$rootPath/integration/spark-datasource/target/warehouse"
+  val resource = s"$rootPath/integration/spark-datasource/src/test/resources"
   val metastoredb1 = s"$rootPath/integration/spark-datasource/target"
   val spark = SparkSession
     .builder()
+    .enableHiveSupport()
     .master("local")
     .config("spark.sql.warehouse.dir", warehouse1)
     .config("spark.driver.host", "localhost")
@@ -42,9 +44,9 @@ object TestUtil {
 
   spark.experimental.extraOptimizations = Seq(new CarbonFileIndexReplaceRule)
 
-  def checkAnswer(df: DataFrame, expectedAnswer: java.util.List[Row]): String = {
+  def checkAnswer(df: DataFrame, expectedAnswer: java.util.List[Row]):Unit = {
     checkAnswer(df, expectedAnswer.asScala) match {
-      case Some(errorMessage) => errorMessage
+      case Some(errorMessage) => assert(false, errorMessage)
       case None => null
     }
   }
@@ -61,7 +63,10 @@ object TestUtil {
   }
 
   def checkAnswer(df: DataFrame, expectedAnswer: DataFrame): Unit = {
-    checkAnswer(df, expectedAnswer.collect())
+    checkAnswer(df, expectedAnswer.collect()) match {
+      case Some(errorMessage) => assert(false, errorMessage)
+      case None => null
+    }
   }
 
   /**
