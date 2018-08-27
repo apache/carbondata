@@ -73,7 +73,7 @@ For instance, main table called **datamap_test** which is defined as:
     age int,
     city string,
     country string)
-  STORED BY 'carbondata'
+  STORED AS carbondata
   TBLPROPERTIES('SORT_COLUMNS'='id')
   ```
 
@@ -145,3 +145,4 @@ You can refer to the corresponding section in `CarbonData Lucene DataMap`.
  but if it can reduce the number of spark task,
  there is still a chance that BloomFilter datamap can enhance the performance for concurrent query.
 + Note that BloomFilter datamap will decrease the data loading performance and may cause slightly storage expansion (for datamap index file).
+

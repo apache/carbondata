@@ -64,7 +64,7 @@ Start spark-shell in new terminal, type :paste, then copy and run the following 
       | country string,
       | quantity int,
       | price bigint)
-      | STORED BY 'carbondata'
+      | STORED AS carbondata
     """.stripMargin)
  
  // Create pre-aggregate table on the main table
@@ -126,7 +126,7 @@ kinds of DataMap:
    a. 'path' is used to specify the store location of the datamap.('path'='/location/').
    b. 'partitioning' when set to false enables user to disable partitioning of the datamap.
        Default value is true for this property.
-2. timeseries, for timeseries roll-up table. Please refer to [Timeseries DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/timeseries-datamap-guide.md)
+2. timeseries, for timeseries roll-up table. Please refer to [Timeseries DataMap](./timeseries-datamap-guide.md)
 
 DataMap can be dropped using following DDL
   ```
@@ -162,7 +162,7 @@ It will show all DataMaps created on main table.
     country string,
     quantity int,
     price bigint)
-  STORED BY 'carbondata'
+  STORED AS carbondata
   ```
   
   User can create pre-aggregate tables using the Create DataMap DDL
@@ -269,5 +269,4 @@ release, user can do as following:
 2. Carry out the data management operation on main table
 3. Create the pre-aggregate table again by `CREATE DATAMAP` command
 Basically, user can manually trigger the operation by re-building the datamap.
-
 
