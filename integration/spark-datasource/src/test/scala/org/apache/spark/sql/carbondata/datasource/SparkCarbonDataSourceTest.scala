@@ -325,6 +325,57 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
   }
 
 
+  test("test read with df write string issue") {
+    spark.sql("drop table if exists test123")
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_folder"))
+    import spark.implicits._
+    val df = spark.sparkContext.parallelize(1 to 10)
+      .map(x => ("a" + x % 10, "b", x.toShort , x, x.toLong, x.toDouble, BigDecimal.apply(x),  Array(x+1, x), ("b", BigDecimal.apply(x))))
+      .toDF("c1", "c2", "shortc", "intc", "longc", "doublec", "bigdecimalc", "arrayc", "structc")
+
+
+    // Saves dataframe to carbon file
+    df.write.format("carbon").save(warehouse1 + "/test_folder/")
+
+    spark.sql(s"create table test123 (c1 string, c2 string, arrayc array<int>, structc struct<_1:string, _2:decimal(38,18)>, shortc smallint,intc int, longc bigint,  doublec double, bigdecimalc decimal(38,18)) using carbon location '$warehouse1/test_folder/'")
+    checkAnswer(spark.sql("select * from test123"), spark.read.format("carbon").load(warehouse1 + "/test_folder/"))
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_folder"))
+    spark.sql("drop table if exists test123")
+  }
+
+  test("test read with df write with empty data") {
+    spark.sql("drop table if exists test123")
+    spark.sql("drop table if exists test123_par")
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_folder"))
+    // Saves dataframe to carbon file
+
+    spark.sql(s"create table test123 (c1 string, c2 string, arrayc array<int>, structc struct<_1:string, _2:decimal(38,18)>, shortc smallint,intc int, longc bigint,  doublec double, bigdecimalc decimal(38,18)) using carbon location '$warehouse1/test_folder/'")
+    spark.sql(s"create table test123_par (c1 string, c2 string, arrayc array<int>, structc struct<_1:string, _2:decimal(38,18)>, shortc smallint,intc int, longc bigint,  doublec double, bigdecimalc decimal(38,18)) using carbon location '$warehouse1/test_folder/'")
+    TestUtil.checkAnswer(spark.sql("select count(*) from test123"), spark.sql("select count(*) from test123_par"))
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_folder"))
+    spark.sql("drop table if exists test123")
+    spark.sql("drop table if exists test123_par")
+  }
+
+  test("test write with nosort columns") {
+    spark.sql("drop table if exists test123")
+    spark.sql("drop table if exists test123_par")
+    import spark.implicits._
+    val df = spark.sparkContext.parallelize(1 to 10)
+      .map(x => ("a" + x % 10, "b", x.toShort , x, x.toLong, x.toDouble, BigDecimal.apply(x),  Array(x+1, x), ("b", BigDecimal.apply(x))))
+      .toDF("c1", "c2", "shortc", "intc", "longc", "doublec", "bigdecimalc", "arrayc", "structc")
+
+
+    // Saves dataframe to carbon file
+    df.write.format("parquet").saveAsTable("test123_par")
+
+    spark.sql(s"create table test123 (c1 string, c2 string, shortc smallint,intc int, longc bigint,  doublec double, bigdecimalc decimal(38,18), arrayc array<int>, structc struct<_1:string, _2:decimal(38,18)>) using carbon options('sort_columns'='') location '$warehouse1/test_folder/'")
+    spark.sql(s"insert into test123 select * from test123_par")
+    checkAnswer(spark.sql("select * from test123"), spark.sql(s"select * from test123_par"))
+    spark.sql("drop table if exists test123")
+    spark.sql("drop table if exists test123_par")
+  }
+
   override protected def beforeAll(): Unit = {
     drop
   }
