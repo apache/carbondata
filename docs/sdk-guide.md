@@ -7,7 +7,7 @@
     the License.  You may obtain a copy of the License at
 
       http://www.apache.org/licenses/LICENSE-2.0
-
+    
     Unless required by applicable law or agreed to in writing, software 
     distributed under the License is distributed on an "AS IS" BASIS, 
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,8 +16,17 @@
 -->
 
 # SDK Guide
-In the carbon jars package, there exist a carbondata-store-sdk-x.x.x-SNAPSHOT.jar, including SDK writer and reader.
+
+CarbonData provides SDK to facilitate
+
+1. [Writing carbondata files from other application which does not use Spark](#sdk-writer)
+2. [Reading carbondata files from other application which does not use Spark](#sdk-reader)
+3. [DSL for Streaming so that user's need not write there application to control the streaming](carbondata-stream-sql.md)
+
 # SDK Writer
+
+In the carbon jars package, there exist a carbondata-store-sdk-x.x.x-SNAPSHOT.jar, including SDK writer and reader.
+
 This SDK writer, writes carbondata file and carbonindex file at a given path.
 External client can make use of this writer to convert other format data or live data to create carbondata and index files.
 These SDK writer output contains just a carbondata and carbonindex files. No metadata folder will be present.
@@ -865,4 +874,10 @@ public String getProperty(String key);
 */
 public String getProperty(String key, String defaultValue);
 ```
-Reference : [list of carbon properties](http://carbondata.apache.org/configuration-parameters.html)
+Reference : [list of carbon properties](./configuration-parameters.md)
+
+
+<script>
+// Show selected style on nav item
+$(function() { $('.b-nav__api').addClass('selected'); });
+</script>

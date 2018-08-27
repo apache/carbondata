@@ -420,3 +420,9 @@ _Checklist to declare the process completed:_
 1. Release announced on the user@ mailing list.
 2. Release announced on the Incubator's general@ mailing list.
 3. Completion declared on the dev@ mailing list.
+
+
+<script>
+// Show selected style on nav item
+$(function() { $('.b-nav__release').addClass('selected'); });
+</script>

@@ -21,7 +21,7 @@
 
   * [Suggestions to create CarbonData Table](#suggestions-to-create-carbondata-table)
   * [Configuration for Optimizing Data Loading performance for Massive Data](#configuration-for-optimizing-data-loading-performance-for-massive-data)
-  * [Optimizing Mass Data Loading](#configurations-for-optimizing-carbondata-performance)
+  * [Optimizing Query Performance](#configurations-for-optimizing-carbondata-performance)
 
 ## Suggestions to Create CarbonData Table
 
@@ -175,3 +175,9 @@
 | carbon.load.min.size.enabled | spark/carbonlib/carbon.properties | Data loading | Whether to enable node minumun input data size allocation strategy for data loading.| When loading, carbondata will use node minumun input data size allocation strategy for task distribution. It will make sure the node load the minimum amount of data -- It's useful if the size of your input data files very small, say 1MB~256MB,Avoid generating a large number of small files. |
 
   Note: If your CarbonData instance is provided only for query, you may specify the property 'spark.speculation=true' which is in conf directory of spark.
+
+
+<script>
+// Show selected style on nav item
+$(function() { $('.b-nav__perf').addClass('selected'); });
+</script>

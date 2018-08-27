@@ -173,4 +173,15 @@ release, user can do as following:
 3. Create the lucene datamap again by `CREATE DATAMAP` command.
 Basically, user can manually trigger the operation by re-building the datamap.
 
+<script>
+$(function() {
+  // Show selected style on nav item
+  $('.b-nav__datamap').addClass('selected');
+  
+  if (!$('.b-nav__datamap').parent().hasClass('nav__item__with__subs--expanded')) {
+    // Display datamap subnav items
+    $('.b-nav__datamap').parent().toggleClass('nav__item__with__subs--expanded');
+  }
+});
+</script>
 

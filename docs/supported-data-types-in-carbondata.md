@@ -36,7 +36,7 @@
     * VARCHAR
 
     **NOTE**: For string longer than 32000 characters, use `LONG_STRING_COLUMNS` in table property.
-    Please refer to TBLProperties in [CreateTable](https://github.com/apache/carbondata/blob/master/docs/data-management-on-carbondata.md#create-table) for more information.
+    Please refer to TBLProperties in [CreateTable](./ddl-of-carbondata.md#create-table) for more information.
 
   * Complex Types
     * arrays: ARRAY``<data_type>``
@@ -46,3 +46,15 @@
 
   * Other Types
     * BOOLEAN
+    
+<script>
+$(function() {
+  // Show selected style on nav item
+  $('.b-nav__docs').addClass('selected');
+
+  // Display docs subnav items
+  if (!$('.b-nav__docs').parent().hasClass('nav__item__with__subs--expanded')) {
+    $('.b-nav__docs').parent().toggleClass('nav__item__with__subs--expanded');
+  }
+});
+</script>

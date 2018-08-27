@@ -7,7 +7,7 @@
     the License.  You may obtain a copy of the License at
 
       http://www.apache.org/licenses/LICENSE-2.0
-
+    
     Unless required by applicable law or agreed to in writing, software 
     distributed under the License is distributed on an "AS IS" BASIS, 
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,24 +15,57 @@
     limitations under the License.
 -->
 
-# Data Management on CarbonData
+# CarbonData Data Definition Language
 
-This tutorial is going to introduce all commands and data operations on CarbonData.
+CarbonData DDL statements are documented here,which includes:
 
 * [CREATE TABLE](#create-table)
+  * [Dictionary Encoding](#dictionary-encoding-configuration)
+  * [Inverted Index](#inverted-index-configuration)
+  * [Sort Columns](#sort-columns-configuration)
+  * [Sort Scope](#sort-scope-configuration)
+  * [Table Block Size](#table-block-size-configuration)
+  * [Table Compaction](#table-compaction-configuration)
+  * [Streaming](#streaming)
+  * [Local Dictionary](#local-dictionary-configuration)
+  * [Caching Column Min/Max](#caching-minmax-value-for-required-columns)
+  * [Caching Level](#caching-at-block-or-blocklet-level)
+  * [Hive/Parquet folder Structure](#support-flat-folder-same-as-hiveparquet)
+  * [Extra Long String columns](#string-longer-than-32000-characters)
+* [CREATE TABLE AS SELECT](#create-table-as-select)
+* [CREATE EXTERNAL TABLE](#create-external-table)
+  * [External Table on Transactional table location](#create-external-table-on-managed-table-data-location)
+  * [External Table on non-transactional table location](#create-external-table-on-non-transactional-table-data-location)
 * [CREATE DATABASE](#create-database)
 * [TABLE MANAGEMENT](#table-management)
-* [LOAD DATA](#load-data)
-* [UPDATE AND DELETE](#update-and-delete)
-* [COMPACTION](#compaction)
+  * [SHOW TABLE](#show-table)
+  * [ALTER TABLE](#alter-table)
+    * [RENAME TABLE](#rename-table)
+    * [ADD COLUMNS](#add-columns)
+    * [DROP COLUMNS](#drop-columns)
+    * [CHANGE DATA TYPE](#change-data-type)
+    * [MERGE INDEXES](#merge-index)
+    * [SET/UNSET Local Dictionary Properties](#set-and-unset-for-local-dictionary-properties)
+  * [DROP TABLE](#drop-table)
+  * [REFRESH TABLE](#refresh-table)
+  * [COMMENTS](#table-and-column-comment)
 * [PARTITION](#partition)
+  * [STANDARD PARTITION(HIVE)](#standard-partition)
+    * [INSERT OVERWRITE PARTITION](#insert-overwrite)
+  * [CARBONDATA PARTITION](#create-hash-partition-table)
+    * [HASH PARTITION](#create-hash-partition-table)
+    * [RANGE PARTITION](#create-range-partition-table)
+    * [LIST PARTITION](#create-list-partition-table)
+  * [SHOW PARTITIONS](#show-partitions)
+  * [ADD PARTITION](#add-a-new-partition)
+  * [SPLIT PARTITION](#split-a-partition)
+  * [DROP PARTITION](#drop-a-partition)
 * [BUCKETING](#bucketing)
-* [SEGMENT MANAGEMENT](#segment-management)
 
 ## CREATE TABLE
 
   This command can be used to create a CarbonData table by specifying the list of fields along with the table properties. You can also specify the location where the table needs to be stored.
-  
+
   ```
   CREATE TABLE [IF NOT EXISTS] [db_name.]table_name[(col_name data_type , ...)]
   STORED AS carbondata
@@ -42,19 +75,29 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   **NOTE:** CarbonData also supports "STORED AS carbondata" and "USING carbondata". Find example code at [CarbonSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/CarbonSessionExample.scala) in the CarbonData repo.
 ### Usage Guidelines
 
-  Following are the guidelines for TBLPROPERTIES, CarbonData's additional table options can be set via carbon.properties.
-  
-   - **Dictionary Encoding Configuration**
+**Supported properties:** [DICTIONARY_INCLUDE](#dictionary-encoding-configuration),[NO_INVERTED_INDEX](#inverted-index-configuration),[SORT_COLUMNS](#sort-columns-configuration),[SORT_SCOPE](#sort-scope-configuration),[TABLE_BLOCKSIZE](#table-block-size-configuration),[MAJOR_COMPACTION_SIZE](#table-compaction-configuration),
+
+[AUTO_LOAD_MERGE](#table-compaction-configuration),[COMPACTION_LEVEL_THRESHOLD](#table-compaction-configuration),[COMPACTION_PRESERVE_SEGMENTS](#table-compaction-configuration),[ALLOWED_COMPACTION_DAYS](#table-compaction-configuration),
+
+[streaming](#streaming),[LOCAL_DICTIONARY_ENABLE](#local-dictionary-configuration),[LOCAL_DICTIONARY_THRESHOLD](#local-dictionary-configuration),[LOCAL_DICTIONARY_INCLUDE](#local-dictionary-configuration),
+
+[LOCAL_DICTIONARY_EXCLUDE](#local-dictionary-configuration),[COLUMN_META_CACHE](#caching-minmax-value-for-required-columns),[CACHE_LEVEL](#caching-at-block-or-blocklet-level),[flat_folder](#support-flat-folder-same-as-hiveparquet),[LONG_STRING_COLUMNS](#string-longer-than-32000-characters),[BUCKETNUMBER](#bucketing),
+
+[BUCKETCOLUMNS](#bucketing)
+
+ Following are the guidelines for TBLPROPERTIES, CarbonData's additional table options can be set via carbon.properties.
+
+   - ##### Dictionary Encoding Configuration
 
      Dictionary encoding is turned off for all columns by default from 1.3 onwards, you can use this command for including or excluding columns to do dictionary encoding.
      Suggested use cases : do dictionary encoding for low cardinality columns, it might help to improve data compression ratio and performance.
 
      ```
      TBLPROPERTIES ('DICTIONARY_INCLUDE'='column1, column2')
-	 ```
+	```
 	 NOTE: Dictionary Include/Exclude for complex child columns is not supported.
-	 
-   - **Inverted Index Configuration**
+	
+   - ##### Inverted Index Configuration
 
      By default inverted index is enabled, it might help to improve compression ratio and query speed, especially for low cardinality columns which are in reward position.
      Suggested use cases : For high cardinality columns, you can disable the inverted index for improving the data loading performance.
@@ -63,7 +106,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      TBLPROPERTIES ('NO_INVERTED_INDEX'='column1, column3')
      ```
 
-   - **Sort Columns Configuration**
+   - ##### Sort Columns Configuration
 
      This property is for users to specify which columns belong to the MDK(Multi-Dimensions-Key) index.
      * If users don't specify "SORT_COLUMN" property, by default MDK index be built by using all dimension columns except complex data type column. 
@@ -78,7 +121,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      ```
      NOTE: Sort_Columns for Complex datatype columns is not supported.
 
-   - **Sort Scope Configuration**
+   - ##### Sort Scope Configuration
    
      This property is for users to specify the scope of the sort during data load, following are the types of sort scope.
      
@@ -87,7 +130,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      * BATCH_SORT: It increases the load performance but decreases the query performance if identified blocks > parallelism.
      * GLOBAL_SORT: It increases the query performance, especially high concurrent point query.
        And if you care about loading resources isolation strictly, because the system uses the spark GroupBy to sort data, the resource can be controlled by spark. 
-	 
+	
 	### Example:
 
    ```
@@ -104,27 +147,19 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
     TBLPROPERTIES ('SORT_COLUMNS'='productName,storeCity',
                    'SORT_SCOPE'='NO_SORT')
    ```
-   
-   **NOTE:** CarbonData also supports "using carbondata". Find example code at [SparkSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/SparkSessionExample.scala) in the CarbonData repo.
- 
-   - **Table Block Size Configuration**
 
-     This property is for setting block size of this table, the default value is 1024 MB and supports a range of 1 MB to 2048 MB.
+   **NOTE:** CarbonData also supports "using carbondata". Find example code at [SparkSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/SparkSessionExample.scala) in the CarbonData repo.
+
+   - ##### Table Block Size Configuration
+
+     This command is for setting block size of this table, the default value is 1024 MB and supports a range of 1 MB to 2048 MB.
 
      ```
      TBLPROPERTIES ('TABLE_BLOCKSIZE'='512')
      ```
      **NOTE:** 512 or 512M both are accepted.
 
-   - **Table Blocklet Size Configuration**
-
-     This property is for setting blocklet size of this table, the default value is 64 MB.
-
-     ```
-     TBLPROPERTIES ('TABLE_BLOCKLET_SIZE'='32')
-     ```
-
-   - **Table Compaction Configuration**
+   - ##### Table Compaction Configuration
    
      These properties are table level compaction configurations, if not specified, system level configurations in carbon.properties will be used.
      Following are 5 configurations:
@@ -143,7 +178,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
                     'ALLOWED_COMPACTION_DAYS'='5')
      ```
      
-   - **Streaming**
+   - ##### Streaming
 
      CarbonData supports streaming ingestion for real-time data. You can create the ‘streaming’ table using the following table properties.
 
@@ -151,18 +186,18 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      TBLPROPERTIES ('streaming'='true')
      ```
 
-   - **Local Dictionary Configuration**
-   
-   Columns for which dictionary is not generated needs more storage space and in turn more IO. Also since more data will have to be read during query, query performance also would suffer.Generating dictionary per blocklet for such columns would help in saving storage space and assist in improving query performance as carbondata is optimized for handling dictionary encoded columns more effectively.Generating dictionary internally per blocklet is termed as local dictionary. Please refer to [File structure of Carbondata](../file-structure-of-carbondata.md) for understanding about the file structure of carbondata and meaning of terms like blocklet.
-   
+   - ##### Local Dictionary Configuration
+
+   Columns for which dictionary is not generated needs more storage space and in turn more IO. Also since more data will have to be read during query, query performance also would suffer.Generating dictionary per blocklet for such columns would help in saving storage space and assist in improving query performance as carbondata is optimized for handling dictionary encoded columns more effectively.Generating dictionary internally per blocklet is termed as local dictionary. Please refer to [File structure of Carbondata](./file-structure-of-carbondata.md) for understanding about the file structure of carbondata and meaning of terms like blocklet.
+
    Local Dictionary helps in:
    1. Getting more compression.
    2. Filter queries and full scan queries will be faster as filter will be done on encoded data.
    3. Reducing the store size and memory footprint as only unique values will be stored as part of local dictionary and corresponding data will be stored as encoded data.
    4. Getting higher IO throughput.
- 
+
    **NOTE:** 
-   
+
    * Following Data Types are Supported for Local Dictionary:
       * STRING
       * VARCHAR
@@ -179,34 +214,35 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
       * BOOLEAN
    
    * In case of multi-level complex dataType columns, primitive string/varchar/char columns are considered for local dictionary generation.
-   
-   Local dictionary will have to be enabled explicitly during create table or by enabling the system property 'carbon.local.dictionary.enable'. By default, Local Dictionary will be disabled for the carbondata table.
+
+   Local dictionary will have to be enabled explicitly during create table or by enabling the **system property** ***carbon.local.dictionary.enable***. By default, Local Dictionary will be disabled for the carbondata table.
     
    Local Dictionary can be configured using the following properties during create table command: 
           
-   | Properties | Default value | Description |
-   | ---------- | ------------- | ----------- |
-   | LOCAL_DICTIONARY_ENABLE | false | Whether to enable local dictionary generation. **NOTE:** If this property is defined, it will override the value configured at system level by 'carbon.local.dictionary.enable' |
-   | LOCAL_DICTIONARY_THRESHOLD | 10000 | The maximum cardinality of a column upto which carbondata can try to generate local dictionary (maximum - 100000) |
-   | LOCAL_DICTIONARY_INCLUDE | string/varchar/char columns| Columns for which Local Dictionary has to be generated.**NOTE:** Those string/varchar/char columns which are added into DICTIONARY_INCLUDE option will not be considered for local dictionary generation.|
-   | LOCAL_DICTIONARY_EXCLUDE | none | Columns for which Local Dictionary need not be generated. |
-        
+
+| Properties | Default value | Description |
+| ---------- | ------------- | ----------- |
+| LOCAL_DICTIONARY_ENABLE | false | Whether to enable local dictionary generation. **NOTE:** If this property is defined, it will override the value configured at system level by 'carbon.local.dictionary.enable' |
+| LOCAL_DICTIONARY_THRESHOLD | 10000 | The maximum cardinality of a column upto which carbondata can try to generate local dictionary (maximum - 100000) |
+| LOCAL_DICTIONARY_INCLUDE | string/varchar/char columns| Columns for which Local Dictionary has to be generated.**NOTE:** Those string/varchar/char columns which are added into DICTIONARY_INCLUDE option will not be considered for local dictionary generation.|
+| LOCAL_DICTIONARY_EXCLUDE | none | Columns for which Local Dictionary need not be generated. |
+
    **Fallback behavior:** 
-   
+
    * When the cardinality of a column exceeds the threshold, it triggers a fallback and the generated dictionary will be reverted and data loading will be continued without dictionary encoding.
-   
+
    **NOTE:** When fallback is triggered, the data loading performance will decrease as encoded data will be discarded and the actual data is written to the temporary sort files.
-   
+
    **Points to be noted:**
-      
+
    1. Reduce Block size:
    
       Number of Blocks generated is less in case of Local Dictionary as compression ratio is high. This may reduce the number of tasks launched during query, resulting in degradation of query performance if the pruned blocks are less compared to the number of parallel tasks which can be run. So it is recommended to configure smaller block size which in turn generates more number of blocks.
-            
+      
    2. All the page-level data for a blocklet needs to be maintained in memory until all the pages encoded for local dictionary is processed in order to handle fallback. Hence the memory required for local dictionary based table is more and this memory increase is proportional to number of columns. 
-       
+      
 ### Example:
- 
+
    ```
    CREATE TABLE carbontable(
              
@@ -222,123 +258,124 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
    ```
 
    **NOTE:** 
-   
+
    * We recommend to use Local Dictionary when cardinality is high but is distributed across multiple loads
    * On a large cluster, decoding data can become a bottleneck for global dictionary as there will be many remote reads. In this scenario, it is better to use Local Dictionary.
    * When cardinality is less, but loads are repetitive, it is better to use global dictionary as local dictionary generates multiple dictionary files at blocklet level increasing redundancy.
 
-   - **Caching Min/Max Value for Required Columns**
+   - ##### Caching Min/Max Value for Required Columns
+
      By default, CarbonData caches min and max values of all the columns in schema.  As the load increases, the memory required to hold the min and max values increases considerably. This feature enables you to configure min and max values only for the required columns, resulting in optimized memory usage. 
-	 
-	 Following are the valid values for COLUMN_META_CACHE:
-	 * If you want no column min/max values to be cached in the driver.
-	 
-	 ```
-	 COLUMN_META_CACHE=’’
-	 ```
-	 
-	 * If you want only col1 min/max values to be cached in the driver.
-	 
-	 ```
-	 COLUMN_META_CACHE=’col1’
-	 ```
-	 
-	 * If you want min/max values to be cached in driver for all the specified columns.
-	 
-	 ```
-	 COLUMN_META_CACHE=’col1,col2,col3,…’
-	 ```
-	 
-	 Columns to be cached can be specified either while creating table or after creation of the table.
-	 During create table operation; specify the columns to be cached in table properties.
-	 
-	 Syntax:
-	 
-	 ```
-	 CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED BY ‘carbondata’ TBLPROPERTIES (‘COLUMN_META_CACHE’=’col1,col2,…’)
-	 ```
-	 
-	 Example:
-	 
-	 ```
-	 CREATE TABLE employee (name String, city String, id int) STORED BY ‘carbondata’ TBLPROPERTIES (‘COLUMN_META_CACHE’=’name’)
-	 ```
-	 
-	 After creation of table or on already created tables use the alter table command to configure the columns to be cached.
-	 
-	 Syntax:
-	 
-	 ```
-	 ALTER TABLE [dbName].tableName SET TBLPROPERTIES (‘COLUMN_META_CACHE’=’col1,col2,…’)
-	 ```
-	 
-	 Example:
-	 
-	 ```
-	 ALTER TABLE employee SET TBLPROPERTIES (‘COLUMN_META_CACHE’=’city’)
-	 ```
-	 
-   - **Caching at Block or Blocklet Level**
+
+      Following are the valid values for COLUMN_META_CACHE:
+      * If you want no column min/max values to be cached in the driver.
+
+      ```
+      COLUMN_META_CACHE=’’
+      ```
+
+      * If you want only col1 min/max values to be cached in the driver.
+
+      ```
+      COLUMN_META_CACHE=’col1’
+      ```
+
+      * If you want min/max values to be cached in driver for all the specified columns.
+
+      ```
+      COLUMN_META_CACHE=’col1,col2,col3,…’
+      ```
+
+      Columns to be cached can be specified either while creating table or after creation of the table.
+      During create table operation; specify the columns to be cached in table properties.
+
+      Syntax:
+
+      ```
+      CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED BY ‘carbondata’ TBLPROPERTIES (‘COLUMN_META_CACHE’=’col1,col2,…’)
+      ```
+
+      Example:
+
+      ```
+      CREATE TABLE employee (name String, city String, id int) STORED BY ‘carbondata’ TBLPROPERTIES (‘COLUMN_META_CACHE’=’name’)
+      ```
+
+      After creation of table or on already created tables use the alter table command to configure the columns to be cached.
+
+      Syntax:
+
+      ```
+      ALTER TABLE [dbName].tableName SET TBLPROPERTIES (‘COLUMN_META_CACHE’=’col1,col2,…’)
+      ```
+
+      Example:
+
+      ```
+      ALTER TABLE employee SET TBLPROPERTIES (‘COLUMN_META_CACHE’=’city’)
+      ```
+
+   - ##### Caching at Block or Blocklet Level
 
      This feature allows you to maintain the cache at Block level, resulting in optimized usage of the memory. The memory consumption is high if the Blocklet level caching is maintained as a Block can have multiple Blocklet.
-	 
-	 Following are the valid values for CACHE_LEVEL:
 
-	 *Configuration for caching in driver at Block level (default value).*
-	 
-	 ```
-	 CACHE_LEVEL= ‘BLOCK’
-	 ```
-	 
-	 *Configuration for caching in driver at Blocklet level.*
-	 
-	 ```
-	 CACHE_LEVEL= ‘BLOCKLET’
-	 ```
-	 
-	 Cache level can be specified either while creating table or after creation of the table.
-	 During create table operation specify the cache level in table properties.
-	 
-	 Syntax:
-	 
-	 ```
-	 CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED BY ‘carbondata’ TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
-	 ```
-	 
-	 Example:
-	 
-	 ```
-	 CREATE TABLE employee (name String, city String, id int) STORED BY ‘carbondata’ TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
-	 ```
-	 
-	 After creation of table or on already created tables use the alter table command to configure the cache level.
-	 
-	 Syntax:
-	 
-	 ```
-	 ALTER TABLE [dbName].tableName SET TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
-	 ```
-	 
-	 Example:
-	 
-	 ```
-	 ALTER TABLE employee SET TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
-	 ```
+      Following are the valid values for CACHE_LEVEL:
 
-    - **Support Flat folder same as Hive/Parquet**
+      *Configuration for caching in driver at Block level (default value).*
 
-	  This feature allows all carbondata and index files to keep directy under tablepath. Currently all carbondata/carbonindex files written under tablepath/Fact/Part0/Segment_NUM folder and it is not same as hive/parquet folder structure. This feature makes all files written will be directly under tablepath, it does not maintain any segment folder structure.This is useful for interoperability between the execution engines and plugin with other execution engines like hive or presto becomes easier.
+      ```
+      CACHE_LEVEL= ‘BLOCK’
+      ```
 
-	  Following table property enables this feature and default value is false.
-	  ```
-	   'flat_folder'='true'
-	  ```
-	  Example:
-	  ```
-	  CREATE TABLE employee (name String, city String, id int) STORED BY ‘carbondata’ TBLPROPERTIES ('flat_folder'='true')
-	  ```
+      *Configuration for caching in driver at Blocklet level.*
 
-    - **String longer than 32000 characters**
+      ```
+      CACHE_LEVEL= ‘BLOCKLET’
+      ```
+
+      Cache level can be specified either while creating table or after creation of the table.
+      During create table operation specify the cache level in table properties.
+
+      Syntax:
+
+      ```
+      CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED BY ‘carbondata’ TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+      ```
+
+      Example:
+
+      ```
+      CREATE TABLE employee (name String, city String, id int) STORED BY ‘carbondata’ TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+      ```
+
+      After creation of table or on already created tables use the alter table command to configure the cache level.
+
+      Syntax:
+
+      ```
+      ALTER TABLE [dbName].tableName SET TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+      ```
+
+      Example:
+
+      ```
+      ALTER TABLE employee SET TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+      ```
+
+   - ##### Support Flat folder same as Hive/Parquet
+
+       This feature allows all carbondata and index files to keep directy under tablepath. Currently all carbondata/carbonindex files written under tablepath/Fact/Part0/Segment_NUM folder and it is not same as hive/parquet folder structure. This feature makes all files written will be directly under tablepath, it does not maintain any segment folder structure.This is useful for interoperability between the execution engines and plugin with other execution engines like hive or presto becomes easier.
+
+       Following table property enables this feature and default value is false.
+       ```
+        'flat_folder'='true'
+       ```
+       Example:
+       ```
+       CREATE TABLE employee (name String, city String, id int) STORED BY ‘carbondata’ TBLPROPERTIES ('flat_folder'='true')
+       ```
+
+   - ##### String longer than 32000 characters
 
      In common scenarios, the length of string is less than 32000,
      so carbondata stores the length of content using Short to reduce memory and space consumption.
@@ -406,11 +443,11 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   CREATE EXTERNAL TABLE [IF NOT EXISTS] [db_name.]table_name 
   STORED BY 'carbondata' LOCATION ‘$FilesPath’
   ```
-  
+
 ### Create external table on managed table data location.
   Managed table data location provided will have both FACT and Metadata folder. 
   This data can be generated by creating a normal carbon table and use this path as $FilesPath in the above syntax.
-  
+
   **Example:**
   ```
   sql("CREATE TABLE origin(key INT, value STRING) STORED BY 'carbondata'")
@@ -425,28 +462,28 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   """.stripMargin)
   checkAnswer(sql("SELECT count(*) from source"), sql("SELECT count(*) from origin"))
   ```
-  
+
 ### Create external table on Non-Transactional table data location.
   Non-Transactional table data location will have only carbondata and carbonindex files, there will not be a metadata folder (table status and schema).
   Our SDK module currently support writing data in this format.
-  
+
   **Example:**
   ```
   sql(
   s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
   |'$writerPath' """.stripMargin)
   ```
-  
+
   Here writer path will have carbondata and index files.
-  This can be SDK output. Refer [SDK Writer Guide](https://github.com/apache/carbondata/blob/master/docs/sdk-writer-guide.md). 
-  
+  This can be SDK output. Refer [SDK Guide](./sdk-guide.md). 
+
   **Note:**
   1. Dropping of the external table should not delete the files present in the location.
   2. When external table is created on non-transactional table data, 
-  external table will be registered with the schema of carbondata files.
-  If multiple files with different schema is present, exception will be thrown.
-  So, If table registered with one schema and files are of different schema, 
-  suggest to drop the external table and create again to register table with new schema.  
+    external table will be registered with the schema of carbondata files.
+    If multiple files with different schema is present, exception will be thrown.
+    So, If table registered with one schema and files are of different schema, 
+    suggest to drop the external table and create again to register table with new schema.  
 
 
 ## CREATE DATABASE 
@@ -454,7 +491,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   ```
   CREATE DATABASE [IF NOT EXISTS] database_name [LOCATION path];
   ```
-  
+
 ### Example
   ```
   CREATE DATABASE carbon LOCATION “hdfs://name_cluster/dir1/carbonstore”;
@@ -480,7 +517,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
   The following section introduce the commands to modify the physical or logical state of the existing table(s).
 
-   - **RENAME TABLE**
+   - ##### RENAME TABLE
    
      This command is used to rename the existing table.
      ```
@@ -494,7 +531,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      ALTER TABLE test_db.carbon RENAME TO test_db.carbonTable
      ```
 
-   - **ADD COLUMNS**
+   - ##### ADD COLUMNS
    
      This command is used to add a new column to the existing table.
      ```
@@ -522,7 +559,7 @@ Users can specify which columns to include and exclude for local dictionary gene
      ALTER TABLE carbon ADD COLUMNS (a1 STRING, b1 STRING) TBLPROPERTIES('LOCAL_DICTIONARY_INCLUDE'='a1','LOCAL_DICTIONARY_EXCLUDE'='b1')
   ```
 
-   - **DROP COLUMNS**
+   - ##### DROP COLUMNS
    
      This command is used to delete the existing column(s) in a table.
      ```
@@ -539,7 +576,7 @@ Users can specify which columns to include and exclude for local dictionary gene
      ```
      NOTE: Drop Complex child column is not supported.
 
-   - **CHANGE DATA TYPE**
+   - ##### CHANGE DATA TYPE
    
      This command is used to change the data type from INT to BIGINT or decimal precision from lower to higher.
      Change of decimal data type from lower precision to higher precision will only be supported for cases where there is no data loss.
@@ -561,21 +598,22 @@ Users can specify which columns to include and exclude for local dictionary gene
      ```
      ALTER TABLE test_db.carbon CHANGE a1 a1 DECIMAL(18,2)
      ```
-- **MERGE INDEX**
-   
+- ##### MERGE INDEX
+
      This command is used to merge all the CarbonData index files (.carbonindex) inside a segment to a single CarbonData index merge file (.carbonindexmerge). This enhances the first query performance.
      ```
       ALTER TABLE [db_name.]table_name COMPACT 'SEGMENT_INDEX'
-      ```
-      
+     ```
+
       Examples:
       ```
       ALTER TABLE test_db.carbon COMPACT 'SEGMENT_INDEX'
       ```
       **NOTE:**
+
       * Merge index is not supported on streaming table.
-      
-- **SET and UNSET for Local Dictionary Properties**
+
+- ##### SET and UNSET for Local Dictionary Properties
 
    When set command is used, all the newly set properties will override the corresponding old properties if exists.
   
@@ -584,17 +622,17 @@ Users can specify which columns to include and exclude for local dictionary gene
    ALTER TABLE tablename SET TBLPROPERTIES('LOCAL_DICTIONARY_ENABLE'='false','LOCAL_DICTIONARY_THRESHOLD'='1000','LOCAL_DICTIONARY_INCLUDE'='column1','LOCAL_DICTIONARY_EXCLUDE'='column2')
     ```
    When Local Dictionary properties are unset, corresponding default values will be used for these properties.
-      
+   
    Example to UNSET Local Dictionary Properties:
     ```
    ALTER TABLE tablename UNSET TBLPROPERTIES('LOCAL_DICTIONARY_ENABLE','LOCAL_DICTIONARY_THRESHOLD','LOCAL_DICTIONARY_INCLUDE','LOCAL_DICTIONARY_EXCLUDE')
     ```
-    
+   
    **NOTE:** For old tables, by default, local dictionary is disabled. If user wants local dictionary for these tables, user can enable/disable local dictionary for new data at their discretion. 
    This can be achieved by using the alter table set command.
 
 ### DROP TABLE
-  
+
   This command is used to delete an existing table.
   ```
   DROP TABLE [IF EXISTS] [db_name.]table_name
@@ -604,19 +642,19 @@ Users can specify which columns to include and exclude for local dictionary gene
   ```
   DROP TABLE IF EXISTS productSchema.productSalesTable
   ```
- 
+
 ### REFRESH TABLE
- 
+
   This command is used to register Carbon table to HIVE meta store catalogue from existing Carbon table data.
   ```
   REFRESH TABLE $db_NAME.$table_NAME
   ```
-  
+
   Example:
   ```
   REFRESH TABLE dbcarbon.productSalesTable
   ```
-  
+
   **NOTE:** 
   * The new database name and the old database name should be same.
   * Before executing this command the old table schema and data should be copied into the new database location.
@@ -628,14 +666,14 @@ Users can specify which columns to include and exclude for local dictionary gene
 
   You can provide more information on table by using table comment. Similarly you can provide more information about a particular column using column comment. 
   You can see the column comment of an existing table using describe formatted command.
-  
+
   ```
   CREATE TABLE [IF NOT EXISTS] [db_name.]table_name[(col_name data_type [COMMENT col_comment], ...)]
     [COMMENT table_comment]
   STORED BY 'carbondata'
   [TBLPROPERTIES (property_name=property_value, ...)]
   ```
-  
+
   Example:
   ```
   CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
@@ -647,367 +685,15 @@ Users can specify which columns to include and exclude for local dictionary gene
   You can also SET and UNSET table comment using ALTER command.
 
   Example to SET table comment:
-  
+
   ```
   ALTER TABLE carbon SET TBLPROPERTIES ('comment'='this table comment is modified');
   ```
-  
+
   Example to UNSET table comment:
-  
+
   ```
   ALTER TABLE carbon UNSET TBLPROPERTIES ('comment');
-  ```
-
-## LOAD DATA
-
-### LOAD FILES TO CARBONDATA TABLE
-  
-  This command is used to load csv files to carbondata, OPTIONS are not mandatory for data loading process. 
-  Inside OPTIONS user can provide any options like DELIMITER, QUOTECHAR, FILEHEADER, ESCAPECHAR, MULTILINE as per requirement.
-  
-  ```
-  LOAD DATA [LOCAL] INPATH 'folder_path' 
-  INTO TABLE [db_name.]table_name 
-  OPTIONS(property_name=property_value, ...)
-  ```
-
-  You can use the following options to load data:
-  
-  - **DELIMITER:** Delimiters can be provided in the load command.
-
-    ``` 
-    OPTIONS('DELIMITER'=',')
-    ```
-
-  - **QUOTECHAR:** Quote Characters can be provided in the load command.
-
-    ```
-    OPTIONS('QUOTECHAR'='"')
-    ```
-
-  - **COMMENTCHAR:** Comment Characters can be provided in the load command if user want to comment lines.
-
-    ```
-    OPTIONS('COMMENTCHAR'='#')
-    ```
-
-  - **HEADER:** When you load the CSV file without the file header and the file header is the same with the table schema, then add 'HEADER'='false' to load data SQL as user need not provide the file header. By default the value is 'true'.
-  false: CSV file is without file header.
-  true: CSV file is with file header.
-  
-    ```
-    OPTIONS('HEADER'='false') 
-    ```
-
-	**NOTE:** If the HEADER option exist and is set to 'true', then the FILEHEADER option is not required.
-	
-  - **FILEHEADER:** Headers can be provided in the LOAD DATA command if headers are missing in the source files.
-
-    ```
-    OPTIONS('FILEHEADER'='column1,column2') 
-    ```
-
-  - **MULTILINE:** CSV with new line character in quotes.
-
-    ```
-    OPTIONS('MULTILINE'='true') 
-    ```
-
-  - **ESCAPECHAR:** Escape char can be provided if user want strict validation of escape character in CSV files.
-
-    ```
-    OPTIONS('ESCAPECHAR'='\') 
-    ```
-  - **SKIP_EMPTY_LINE:** This option will ignore the empty line in the CSV file during the data load.
-
-    ```
-    OPTIONS('SKIP_EMPTY_LINE'='TRUE/FALSE') 
-    ```
-
-  - **COMPLEX_DELIMITER_LEVEL_1:** Split the complex type data column in a row (eg., a$b$c --> Array = {a,b,c}).
-
-    ```
-    OPTIONS('COMPLEX_DELIMITER_LEVEL_1'='$') 
-    ```
-
-  - **COMPLEX_DELIMITER_LEVEL_2:** Split the complex type nested data column in a row. Applies level_1 delimiter & applies level_2 based on complex data type (eg., a:b$c:d --> Array> = {{a,b},{c,d}}).
-
-    ```
-    OPTIONS('COMPLEX_DELIMITER_LEVEL_2'=':')
-    ```
-
-  - **ALL_DICTIONARY_PATH:** All dictionary files path.
-
-    ```
-    OPTIONS('ALL_DICTIONARY_PATH'='/opt/alldictionary/data.dictionary')
-    ```
-
-  - **COLUMNDICT:** Dictionary file path for specified column.
-
-    ```
-    OPTIONS('COLUMNDICT'='column1:dictionaryFilePath1,column2:dictionaryFilePath2')
-    ```
-    **NOTE:** ALL_DICTIONARY_PATH and COLUMNDICT can't be used together.
-    
-  - **DATEFORMAT/TIMESTAMPFORMAT:** Date and Timestamp format for specified column.
-
-    ```
-    OPTIONS('DATEFORMAT' = 'yyyy-MM-dd','TIMESTAMPFORMAT'='yyyy-MM-dd HH:mm:ss')
-    ```
-    **NOTE:** Date formats are specified by date pattern strings. The date pattern letters in CarbonData are same as in JAVA. Refer to [SimpleDateFormat](http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html).
-
-  - **SORT COLUMN BOUNDS:** Range bounds for sort columns.
-
-    Suppose the table is created with 'SORT_COLUMNS'='name,id' and the range for name is aaa~zzz, the value range for id is 0~1000. Then during data loading, we can specify the following option to enhance data loading performance.
-    ```
-    OPTIONS('SORT_COLUMN_BOUNDS'='f,250;l,500;r,750')
-    ```
-    Each bound is separated by ';' and each field value in bound is separated by ','. In the example above, we provide 3 bounds to distribute records to 4 partitions. The values 'f','l','r' can evenly distribute the records. Inside carbondata, for a record we compare the value of sort columns with that of the bounds and decide which partition the record will be forwarded to.
-
-    **NOTE:**
-    * SORT_COLUMN_BOUNDS will be used only when the SORT_SCOPE is 'local_sort'.
-    * Carbondata will use these bounds as ranges to process data concurrently during the final sort percedure. The records will be sorted and written out inside each partition. Since the partition is sorted, all records will be sorted.
-    * Since the actual order and literal order of the dictionary column are not necessarily the same, we do not recommend you to use this feature if the first sort column is 'dictionary_include'.
-    * The option works better if your CPU usage during loading is low. If your system is already CPU tense, better not to use this option. Besides, it depends on the user to specify the bounds. If user does not know the exactly bounds to make the data distributed evenly among the bounds, loading performance will still be better than before or at least the same as before.
-    * Users can find more information about this option in the description of PR1953.
-
-  - **SINGLE_PASS:** Single Pass Loading enables single job to finish data loading with dictionary generation on the fly. It enhances performance in the scenarios where the subsequent data loading after initial load involves fewer incremental updates on the dictionary.
-
-  This option specifies whether to use single pass for loading data or not. By default this option is set to FALSE.
-
-   ```
-    OPTIONS('SINGLE_PASS'='TRUE')
-   ```
-
-   **NOTE:**
-   * If this option is set to TRUE then data loading will take less time.
-   * If this option is set to some invalid value other than TRUE or FALSE then it uses the default value.
-
-   Example:
-
-   ```
-   LOAD DATA local inpath '/opt/rawdata/data.csv' INTO table carbontable
-   options('DELIMITER'=',', 'QUOTECHAR'='"','COMMENTCHAR'='#',
-   'HEADER'='false',
-   'FILEHEADER'='empno,empname,designation,doj,workgroupcategory,
-   workgroupcategoryname,deptno,deptname,projectcode,
-   projectjoindate,projectenddate,attendance,utilization,salary',
-   'MULTILINE'='true','ESCAPECHAR'='\','COMPLEX_DELIMITER_LEVEL_1'='$',
-   'COMPLEX_DELIMITER_LEVEL_2'=':',
-   'ALL_DICTIONARY_PATH'='/opt/alldictionary/data.dictionary',
-   'SINGLE_PASS'='TRUE')
-   ```
-
-  - **BAD RECORDS HANDLING:** Methods of handling bad records are as follows:
-
-    * Load all of the data before dealing with the errors.
-    * Clean or delete bad records before loading data or stop the loading when bad records are found.
-
-    ```
-    OPTIONS('BAD_RECORDS_LOGGER_ENABLE'='true', 'BAD_RECORD_PATH'='hdfs://hacluster/tmp/carbon', 'BAD_RECORDS_ACTION'='REDIRECT', 'IS_EMPTY_DATA_BAD_RECORD'='false')
-    ```
-
-  **NOTE:**
-  * BAD_RECORDS_ACTION property can have four type of actions for bad records FORCE, REDIRECT, IGNORE and FAIL.
-  * FAIL option is its Default value. If the FAIL option is used, then data loading fails if any bad records are found.
-  * If the REDIRECT option is used, CarbonData will add all bad records in to a separate CSV file. However, this file must not be used for subsequent data loading because the content may not exactly match the source record. You are advised to cleanse the original source record for further data ingestion. This option is used to remind you which records are bad records.
-  * If the FORCE option is used, then it auto-converts the data by storing the bad records as NULL before Loading data.
-  * If the IGNORE option is used, then bad records are neither loaded nor written to the separate CSV file.
-  * In loaded data, if all records are bad records, the BAD_RECORDS_ACTION is invalid and the load operation fails.
-  * The default maximum number of characters per column is 32000. If there are more than 32000 characters in a column, please refer to *String longer than 32000 characters* section.
-  * Since Bad Records Path can be specified in create, load and carbon properties. 
-  Therefore, value specified in load will have the highest priority, and value specified in carbon properties will have the least priority.
-
-   **Bad Records Path:**
-        
-   This property is used to specify the location where bad records would be written.
-        
-   ```
-   TBLPROPERTIES('BAD_RECORDS_PATH'='/opt/badrecords'')
-   ```
-        
-  Example:
-
-  ```
-  LOAD DATA INPATH 'filepath.csv' INTO TABLE tablename
-  OPTIONS('BAD_RECORDS_LOGGER_ENABLE'='true','BAD_RECORD_PATH'='hdfs://hacluster/tmp/carbon',
-  'BAD_RECORDS_ACTION'='REDIRECT','IS_EMPTY_DATA_BAD_RECORD'='false')
-  ```
-
-  - **GLOBAL_SORT_PARTITIONS:** If the SORT_SCOPE is defined as GLOBAL_SORT, then user can specify the number of partitions to use while shuffling data for sort using GLOBAL_SORT_PARTITIONS. If it is not configured, or configured less than 1, then it uses the number of map task as reduce task. It is recommended that each reduce task deal with 512MB-1GB data.
-
-  ```
-  OPTIONS('GLOBAL_SORT_PARTITIONS'='2')
-  ```
-
-   NOTE:
-   * GLOBAL_SORT_PARTITIONS should be Integer type, the range is [1,Integer.MaxValue].
-   * It is only used when the SORT_SCOPE is GLOBAL_SORT.
-
-### INSERT DATA INTO CARBONDATA TABLE
-
-  This command inserts data into a CarbonData table, it is defined as a combination of two queries Insert and Select query respectively. 
-  It inserts records from a source table into a target CarbonData table, the source table can be a Hive table, Parquet table or a CarbonData table itself. 
-  It comes with the functionality to aggregate the records of a table by performing Select query on source table and load its corresponding resultant records into a CarbonData table.
-
-  ```
-  INSERT INTO TABLE <CARBONDATA TABLE> SELECT * FROM sourceTableName 
-  [ WHERE { <filter_condition> } ]
-  ```
-
-  You can also omit the `table` keyword and write your query as:
- 
-  ```
-  INSERT INTO <CARBONDATA TABLE> SELECT * FROM sourceTableName 
-  [ WHERE { <filter_condition> } ]
-  ```
-
-  Overwrite insert data:
-  ```
-  INSERT OVERWRITE TABLE <CARBONDATA TABLE> SELECT * FROM sourceTableName 
-  [ WHERE { <filter_condition> } ]
-  ```
-
-  **NOTE:**
-  * The source table and the CarbonData table must have the same table schema.
-  * The data type of source and destination table columns should be same
-  * INSERT INTO command does not support partial success if bad records are found, it will fail.
-  * Data cannot be loaded or updated in source table while insert from source table to target table is in progress.
-
-  Examples
-  ```
-  INSERT INTO table1 SELECT item1, sum(item2 + 1000) as result FROM table2 group by item1
-  ```
-
-  ```
-  INSERT INTO table1 SELECT item1, item2, item3 FROM table2 where item2='xyz'
-  ```
-
-  ```
-  INSERT OVERWRITE TABLE table1 SELECT * FROM TABLE2
-  ```
-
-## UPDATE AND DELETE
-  
-### UPDATE
-  
-  This command will allow to update the CarbonData table based on the column expression and optional filter conditions.
-    
-  ```
-  UPDATE <table_name> 
-  SET (column_name1, column_name2, ... column_name n) = (column1_expression , column2_expression, ... column n_expression )
-  [ WHERE { <filter_condition> } ]
-  ```
-  
-  alternatively the following command can also be used for updating the CarbonData Table :
-  
-  ```
-  UPDATE <table_name>
-  SET (column_name1, column_name2) =(select sourceColumn1, sourceColumn2 from sourceTable [ WHERE { <filter_condition> } ] )
-  [ WHERE { <filter_condition> } ]
-  ```
-  
-  **NOTE:** The update command fails if multiple input rows in source table are matched with single row in destination table.
-  
-  Examples:
-  ```
-  UPDATE t3 SET (t3_salary) = (t3_salary + 9) WHERE t3_name = 'aaa1'
-  ```
-  
-  ```
-  UPDATE t3 SET (t3_date, t3_country) = ('2017-11-18', 'india') WHERE t3_salary < 15003
-  ```
-  
-  ```
-  UPDATE t3 SET (t3_country, t3_name) = (SELECT t5_country, t5_name FROM t5 WHERE t5_id = 5) WHERE t3_id < 5
-  ```
-  
-  ```
-  UPDATE t3 SET (t3_date, t3_serialname, t3_salary) = (SELECT '2099-09-09', t5_serialname, '9999' FROM t5 WHERE t5_id = 5) WHERE t3_id < 5
-  ```
-  
-  
-  ```
-  UPDATE t3 SET (t3_country, t3_salary) = (SELECT t5_country, t5_salary FROM t5 FULL JOIN t3 u WHERE u.t3_id = t5_id and t5_id=6) WHERE t3_id >6
-  ```
-   NOTE: Update Complex datatype columns is not supported.
-    
-### DELETE
-
-  This command allows us to delete records from CarbonData table.
-  ```
-  DELETE FROM table_name [WHERE expression]
-  ```
-  
-  Examples:
-  
-  ```
-  DELETE FROM carbontable WHERE column1  = 'china'
-  ```
-  
-  ```
-  DELETE FROM carbontable WHERE column1 IN ('china', 'USA')
-  ```
-  
-  ```
-  DELETE FROM carbontable WHERE column1 IN (SELECT column11 FROM sourceTable2)
-  ```
-  
-  ```
-  DELETE FROM carbontable WHERE column1 IN (SELECT column11 FROM sourceTable2 WHERE column1 = 'USA')
-  ```
-
-## COMPACTION
-
-  Compaction improves the query performance significantly. 
-  
-  There are several types of compaction.
-  
-  ```
-  ALTER TABLE [db_name.]table_name COMPACT 'MINOR/MAJOR/CUSTOM'
-  ```
-
-  - **Minor Compaction**
-  
-  In Minor compaction, user can specify the number of loads to be merged. 
-  Minor compaction triggers for every data load if the parameter carbon.enable.auto.load.merge is set to true. 
-  If any segments are available to be merged, then compaction will run parallel with data load, there are 2 levels in minor compaction:
-  * Level 1: Merging of the segments which are not yet compacted.
-  * Level 2: Merging of the compacted segments again to form a larger segment.
-  
-  ```
-  ALTER TABLE table_name COMPACT 'MINOR'
-  ```
-  
-  - **Major Compaction**
-  
-  In Major compaction, multiple segments can be merged into one large segment. 
-  User will specify the compaction size until which segments can be merged, Major compaction is usually done during the off-peak time.
-  Configure the property carbon.major.compaction.size with appropriate value in MB.
-  
-  This command merges the specified number of segments into one segment: 
-     
-  ```
-  ALTER TABLE table_name COMPACT 'MAJOR'
-  ```
-  
-  - **Custom Compaction**
-  
-  In Custom compaction, user can directly specify segment ids to be merged into one large segment. 
-  All specified segment ids should exist and be valid, otherwise compaction will fail. 
-  Custom compaction is usually done during the off-peak time. 
-  
-  ```
-  ALTER TABLE table_name COMPACT 'CUSTOM' WHERE SEGMENT.ID IN (2,3,4)
-  ```
-  NOTE: Compaction is unsupported for table containing Complex columns.
-  
-
-  - **CLEAN SEGMENTS AFTER Compaction**
-  
-  Clean the segments which are compacted:
-  ```
-  CLEAN FILES FOR TABLE carbon_table
   ```
 
 ## PARTITION
@@ -1015,11 +701,11 @@ Users can specify which columns to include and exclude for local dictionary gene
 ### STANDARD PARTITION
 
   The partition is similar as spark and hive partition, user can use any column to build partition:
-  
+
 #### Create Partition Table
 
   This command allows you to create table with partition.
-  
+
   ```
   CREATE TABLE [IF NOT EXISTS] [db_name.]table_name 
     [(col_name data_type , ...)]
@@ -1028,7 +714,7 @@ Users can specify which columns to include and exclude for local dictionary gene
     [STORED BY file_format]
     [TBLPROPERTIES (property_name=property_value, ...)]
   ```
-  
+
   Example:
   ```
    CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
@@ -1043,38 +729,6 @@ Users can specify which columns to include and exclude for local dictionary gene
   ```
    NOTE: Hive partition is not supported on complex datatype columns.
 		
-#### Load Data Using Static Partition 
-
-  This command allows you to load data using static partition.
-  
-  ```
-  LOAD DATA [LOCAL] INPATH 'folder_path' 
-  INTO TABLE [db_name.]table_name PARTITION (partition_spec) 
-  OPTIONS(property_name=property_value, ...)    
-  INSERT INTO INTO TABLE [db_name.]table_name PARTITION (partition_spec) <SELECT STATEMENT>
-  ```
-  
-  Example:
-  ```
-  LOAD DATA LOCAL INPATH '${env:HOME}/staticinput.csv'
-  INTO TABLE locationTable
-  PARTITION (country = 'US', state = 'CA')  
-  INSERT INTO TABLE locationTable
-  PARTITION (country = 'US', state = 'AL')
-  SELECT <columns list excluding partition columns> FROM another_user
-  ```
-
-#### Load Data Using Dynamic Partition
-
-  This command allows you to load data using dynamic partition. If partition spec is not specified, then the partition is considered as dynamic.
-
-  Example:
-  ```
-  LOAD DATA LOCAL INPATH '${env:HOME}/staticinput.csv'
-  INTO TABLE locationTable          
-  INSERT INTO TABLE locationTable
-  SELECT <columns list excluding partition columns> FROM another_user
-  ```
 
 #### Show Partitions
 
@@ -1090,22 +744,22 @@ Users can specify which columns to include and exclude for local dictionary gene
   ```
   ALTER TABLE table_name DROP [IF EXISTS] PARTITION (part_spec, ...)
   ```
-  
+
   Example:
   ```
   ALTER TABLE locationTable DROP PARTITION (country = 'US');
   ```
-  
+
 #### Insert OVERWRITE
-  
+
   This command allows you to insert or load overwrite on a specific partition.
-  
+
   ```
    INSERT OVERWRITE TABLE table_name
    PARTITION (column = 'partition_name')
    select_statement
   ```
-  
+
   Example:
   ```
   INSERT OVERWRITE TABLE partitioned_user
@@ -1121,7 +775,7 @@ Users can specify which columns to include and exclude for local dictionary gene
 ### Create Hash Partition Table
 
   This command allows us to create hash partition.
-  
+
   ```
   CREATE TABLE [IF NOT EXISTS] [db_name.]table_name
                     [(col_name data_type , ...)]
@@ -1228,7 +882,7 @@ Users can specify which columns to include and exclude for local dictionary gene
    Only drop partition definition, but keep data
   ```
     ALTER TABLE [db_name].table_name DROP PARTITION(partition_id)
-   ```
+  ```
 
   Drop both partition definition and data
   ```
@@ -1283,120 +937,16 @@ Users can specify which columns to include and exclude for local dictionary gene
   STORED BY 'carbondata'
   TBLPROPERTIES ('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='productName')
   ```
-  
-## SEGMENT MANAGEMENT  
 
-### SHOW SEGMENT
+<script>
+$(function() {
+  // Show selected style on nav item
+  $('.b-nav__docs').addClass('selected');
 
-  This command is used to list the segments of CarbonData table.
+  // Display docs subnav items
+  if (!$('.b-nav__docs').parent().hasClass('nav__item__with__subs--expanded')) {
+    $('.b-nav__docs').parent().toggleClass('nav__item__with__subs--expanded');
+  }
+});
+</script>
 
-  ```
-  SHOW [HISTORY] SEGMENTS FOR TABLE [db_name.]table_name LIMIT number_of_segments
-  ```
-  
-  Example:
-  Show visible segments
-  ```
-  SHOW SEGMENTS FOR TABLE CarbonDatabase.CarbonTable LIMIT 4
-  ```
-  Show all segments, include invisible segments
-  ```
-  SHOW HISTORY SEGMENTS FOR TABLE CarbonDatabase.CarbonTable LIMIT 4
-  ```
-
-### DELETE SEGMENT BY ID
-
-  This command is used to delete segment by using the segment ID. Each segment has a unique segment ID associated with it. 
-  Using this segment ID, you can remove the segment.
-
-  The following command will get the segmentID.
-
-  ```
-  SHOW SEGMENTS FOR TABLE [db_name.]table_name LIMIT number_of_segments
-  ```
-
-  After you retrieve the segment ID of the segment that you want to delete, execute the following command to delete the selected segment.
-
-  ```
-  DELETE FROM TABLE [db_name.]table_name WHERE SEGMENT.ID IN (segment_id1, segments_id2, ...)
-  ```
-
-  Example:
-
-  ```
-  DELETE FROM TABLE CarbonDatabase.CarbonTable WHERE SEGMENT.ID IN (0)
-  DELETE FROM TABLE CarbonDatabase.CarbonTable WHERE SEGMENT.ID IN (0,5,8)
-  ```
-
-### DELETE SEGMENT BY DATE
-
-  This command will allow to delete the CarbonData segment(s) from the store based on the date provided by the user in the DML command. 
-  The segment created before the particular date will be removed from the specific stores.
-
-  ```
-  DELETE FROM TABLE [db_name.]table_name WHERE SEGMENT.STARTTIME BEFORE DATE_VALUE
-  ```
-
-  Example:
-  ```
-  DELETE FROM TABLE CarbonDatabase.CarbonTable WHERE SEGMENT.STARTTIME BEFORE '2017-06-01 12:05:06' 
-  ```
-
-### QUERY DATA WITH SPECIFIED SEGMENTS
-
-  This command is used to read data from specified segments during CarbonScan.
-  
-  Get the Segment ID:
-  ```
-  SHOW SEGMENTS FOR TABLE [db_name.]table_name LIMIT number_of_segments
-  ```
-  
-  Set the segment IDs for table
-  ```
-  SET carbon.input.segments.<database_name>.<table_name> = <list of segment IDs>
-  ```
-  
-  **NOTE:**
-  carbon.input.segments: Specifies the segment IDs to be queried. This property allows you to query specified segments of the specified table. The CarbonScan will read data from specified segments only.
-  
-  If user wants to query with segments reading in multi threading mode, then CarbonSession. threadSet can be used instead of SET query.
-  ```
-  CarbonSession.threadSet ("carbon.input.segments.<database_name>.<table_name>","<list of segment IDs>");
-  ```
-  
-  Reset the segment IDs
-  ```
-  SET carbon.input.segments.<database_name>.<table_name> = *;
-  ```
-  
-  If user wants to query with segments reading in multi threading mode, then CarbonSession. threadSet can be used instead of SET query. 
-  ```
-  CarbonSession.threadSet ("carbon.input.segments.<database_name>.<table_name>","*");
-  ```
-  
-  **Examples:**
-  
-  * Example to show the list of segment IDs,segment status, and other required details and then specify the list of segments to be read.
-  
-  ```
-  SHOW SEGMENTS FOR carbontable1;
-  
-  SET carbon.input.segments.db.carbontable1 = 1,3,9;
-  ```
-  
-  * Example to query with segments reading in multi threading mode:
-  
-  ```
-  CarbonSession.threadSet ("carbon.input.segments.db.carbontable_Multi_Thread","1,3");
-  ```
-  
-  * Example for threadset in multithread environment (following shows how it is used in Scala code):
-  
-  ```
-  def main(args: Array[String]) {
-  Future {          
-    CarbonSession.threadSet ("carbon.input.segments.db.carbontable_Multi_Thread","1")
-    spark.sql("select count(empno) from carbon.input.segments.db.carbontable_Multi_Thread").show();
-     }
-   }
-  ```

@@ -126,7 +126,7 @@ kinds of DataMap:
    a. 'path' is used to specify the store location of the datamap.('path'='/location/').
    b. 'partitioning' when set to false enables user to disable partitioning of the datamap.
        Default value is true for this property.
-2. timeseries, for timeseries roll-up table. Please refer to [Timeseries DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/timeseries-datamap-guide.md)
+2. timeseries, for timeseries roll-up table. Please refer to [Timeseries DataMap](./timeseries-datamap-guide.md)
 
 DataMap can be dropped using following DDL
   ```
@@ -271,3 +271,14 @@ release, user can do as following:
 Basically, user can manually trigger the operation by re-building the datamap.
 
 
+<script>
+$(function() {
+  // Show selected style on nav item
+  $('.b-nav__datamap').addClass('selected');
+  
+  if (!$('.b-nav__datamap').parent().hasClass('nav__item__with__subs--expanded')) {
+    // Display datamap subnav items
+    $('.b-nav__datamap').parent().toggleClass('nav__item__with__subs--expanded');
+  }
+});
+</script>
