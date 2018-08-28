@@ -14,16 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.datamap.examples
+package org.apache.carbondata.datamap.minmax
 
 import java.io.{File, PrintWriter}
 import java.util.UUID
 
 import scala.util.Random
 
-import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.datamap.examples.MinMaxIndexDataMapFactory
 
 class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
   val inputFile = s"$resourcesPath/minmax_datamap_input.csv"
