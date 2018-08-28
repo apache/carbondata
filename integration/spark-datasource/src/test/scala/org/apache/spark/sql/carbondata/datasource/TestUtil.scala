@@ -41,8 +41,9 @@ object TestUtil {
     .config("spark.sql.crossJoin.enabled", "true")
     .getOrCreate()
   spark.sparkContext.setLogLevel("ERROR")
-
-  spark.experimental.extraOptimizations = Seq(new CarbonFileIndexReplaceRule)
+  if (!spark.sparkContext.version.startsWith("2.1")) {
+    spark.experimental.extraOptimizations = Seq(new CarbonFileIndexReplaceRule)
+  }
 
   def checkAnswer(df: DataFrame, expectedAnswer: java.util.List[Row]):Unit = {
     checkAnswer(df, expectedAnswer.asScala) match {
