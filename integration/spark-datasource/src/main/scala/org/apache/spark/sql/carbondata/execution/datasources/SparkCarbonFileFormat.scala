@@ -285,7 +285,7 @@ class SparkCarbonFileFormat extends FileFormat
    */
   override def supportBatch(sparkSession: SparkSession, schema: StructType): Boolean = {
     val conf = sparkSession.sessionState.conf
-    conf.wholeStageEnabled &&
+    supportVector(sparkSession, schema) && conf.wholeStageEnabled &&
     schema.length <= conf.wholeStageMaxNumFields &&
     schema.forall(_.dataType.isInstanceOf[AtomicType])
   }
@@ -315,13 +315,11 @@ class SparkCarbonFileFormat extends FileFormat
     val carbonProjection = new CarbonProjection
     projection.foreach(carbonProjection.addColumn)
 
-    var supportBatchValue: Boolean = false
-
     val resultSchema = StructType(partitionSchema.fields ++ requiredSchema.fields)
-    val readVector = supportVector(sparkSession, resultSchema)
-    if (readVector) {
-      supportBatchValue = supportBatch(sparkSession, resultSchema)
-    }
+
+    var supportBatchValue: Boolean = supportBatch(sparkSession, resultSchema)
+    val readVector = supportVector(sparkSession, resultSchema) && supportBatchValue
+
     val model = CarbonSparkDataSourceUtil.prepareLoadModel(options, dataSchema)
     CarbonInputFormat
       .setTableInfo(hadoopConf, model.getCarbonDataLoadSchema.getCarbonTable.getTableInfo)

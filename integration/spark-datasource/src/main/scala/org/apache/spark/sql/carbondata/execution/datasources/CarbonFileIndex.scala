@@ -78,7 +78,7 @@ class CarbonFileIndex(
   }
 
   private def prune(dataFilters: Seq[Expression],
-      directories: Seq[PartitionDirectory]) = {
+      directories: Seq[PartitionDirectory]): Seq[PartitionDirectory] = {
     val tablePath = parameters.get("path")
     if (tablePath.nonEmpty && dataFilters.nonEmpty) {
       val hadoopConf = sparkSession.sessionState.newHadoopConf()
@@ -103,7 +103,7 @@ class CarbonFileIndex(
           map(new HDFSCarbonFile(_))
       }.toArray.asInstanceOf[Array[CarbonFile]]
       if (indexFiles.length == 0 && totalFiles > 0) {
-        throw new IOException("No Index files are present in the table location :" + tablePath.get)
+        return directories
       }
       CarbonInputFormat.setReadCommittedScope(
         hadoopConf,
