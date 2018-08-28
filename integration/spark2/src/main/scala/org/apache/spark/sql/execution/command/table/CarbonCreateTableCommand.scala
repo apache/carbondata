@@ -23,6 +23,7 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, _}
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
 import org.apache.spark.sql.execution.command.MetadataCommand
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -95,6 +96,24 @@ case class CarbonCreateTableCommand(
 
       if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
         throwMetadataException(dbName, tableName, "Table should have at least one column.")
+      }
+
+      // if table use external format and has tblproperty '{format}.header',
+      // then will check all table columns if exits in '{format}.header'
+      val format = tableInfo.getFormat
+      if (format != null && format.length != 0) {
+        val headerOp = tableInfo.getFormatProperties.asScala.find(pair =>
+          pair._1.equalsIgnoreCase(s"$format.header"))
+        if (headerOp.isDefined) {
+          var headers = headerOp.get._2.split(CarbonCommonConstants.COMMA).toList
+          val column = tableInfo.getFactTable.getListOfColumns.asScala.find(col =>
+            !headers.exists(_.trim.equalsIgnoreCase(col.getColumnName))
+          )
+          if (column.isDefined) {
+            throwMetadataException(dbName, tableName, s"column '${ column.get.getColumnName }' " +
+                                                      s"not in tblproperty '${ headerOp.get._1 }'")
+          }
+        }
       }
 
       val operationContext = new OperationContext

@@ -207,6 +207,15 @@ private[sql] case class CarbonDescribeFormattedCommand(
         tblProps.get(CarbonCommonConstants.FLAT_FOLDER),
         CarbonCommonConstants.DEFAULT_FLAT_FOLDER))
     }
+    // if table use external format, then add the external format Information.
+    if (carbonTable.isExternalFormatTable) {
+      results ++= Seq(("", "", ""), ("##Detailed External-Format Information", "", ""))
+      results ++= Seq((CarbonCommonConstants.FORMAT, carbonTable.getTableInfo.getFormat, ""))
+      results ++= carbonTable.getTableInfo.getFormatProperties.asScala.map(pair => {
+        (pair._1, pair._2.replaceAll("\r|\n", "")
+          .replaceAll("\\s", ""), "")
+      })
+    }
 
     results ++= Seq(("", "", ""), ("##Detailed Column property", "", ""))
     if (colPropStr.length() > 0) {

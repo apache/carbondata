@@ -59,6 +59,9 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
       // up relation should be called after acquiring the lock
       val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
       carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
+      if (carbonTable.isExternalFormatTable) {
+        throw new MalformedCarbonCommandException("Unsupported operation on external format table")
+      }
       if (!carbonTable.canAllow(carbonTable, TableOperation.ALTER_ADD_COLUMN)) {
         throw new MalformedCarbonCommandException(
           "alter table add column is not supported for index datamap")

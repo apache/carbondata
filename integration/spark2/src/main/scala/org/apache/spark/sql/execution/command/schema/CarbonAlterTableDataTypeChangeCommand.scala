@@ -55,6 +55,9 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
       val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
       carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
+      if (carbonTable.isExternalFormatTable) {
+        throw new MalformedCarbonCommandException("Unsupported operation on external format table")
+      }
       if (!carbonTable.canAllow(carbonTable, TableOperation.ALTER_CHANGE_DATATYPE,
         alterTableDataTypeChangeModel.columnName)) {
         throw new MalformedCarbonCommandException(

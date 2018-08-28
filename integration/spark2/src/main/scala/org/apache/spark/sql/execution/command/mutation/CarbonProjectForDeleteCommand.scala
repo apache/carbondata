@@ -49,7 +49,9 @@ private[sql] case class CarbonProjectForDeleteCommand(
     if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
-
+    if (carbonTable.isExternalFormatTable) {
+      throw new MalformedCarbonCommandException("Unsupported operation on external format table")
+    }
     if (SegmentStatusManager.isCompactionInProgress(carbonTable)) {
       throw new ConcurrentOperationException(carbonTable, "compaction", "data delete")
     }

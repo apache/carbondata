@@ -23,12 +23,14 @@ import org.apache.spark.sql.test.Spark2TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
-class CsvBasedCarbonTableSuite extends QueryTest
+class CsvExternalFormatBasicFunctionSuite extends QueryTest
   with BeforeAndAfterEach with BeforeAndAfterAll {
 
   val carbonTable = "fact_carbon_table"
@@ -240,5 +242,102 @@ class CsvBasedCarbonTableSuite extends QueryTest
     checkQuery()
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
       CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
+  }
+
+  test("block update data on external format table") {
+    createCsvCaronTable
+    // block update data on external table.
+    var exception = intercept[MalformedCarbonCommandException] {
+      sql(s"update $csvCarbonTable set (empname) = ('b') where designation = 'a' ").collect
+    }
+    assert(exception.getMessage.contains("Unsupported operation on external format table"))
+  }
+
+  test("block delete data on external format table") {
+    createCsvCaronTable
+    val exception = intercept[MalformedCarbonCommandException] {
+      sql(s"delete from $csvCarbonTable where designation = 'a' ")
+    }
+    assert(exception.getMessage.contains("Unsupported operation on external format table"))
+  }
+
+  test("block add columns on external format table") {
+    createCsvCaronTable
+    val exception = intercept[MalformedCarbonCommandException] {
+      sql(s"alter table $csvCarbonTable add columns(addcolumn int)")
+    }
+    assert(exception.getMessage.contains("Unsupported operation on external format table"))
+  }
+
+  test("block drop columns on external format table") {
+    createCsvCaronTable
+    val exception = intercept[MalformedCarbonCommandException] {
+      sql(s"alter table $csvCarbonTable drop columns(empname,empno)")
+    }
+    assert(exception.getMessage.contains("Unsupported operation on external format table"))
+  }
+
+  test("block change datatype on external format table") {
+    createCsvCaronTable
+    val exception = intercept[MalformedCarbonCommandException] {
+      sql(s"alter table $csvCarbonTable change empno empno bigint")
+    }
+    assert(exception.getMessage.contains("Unsupported operation on external format table"))
+  }
+
+  test("block create external format table if columns not in format.header") {
+    val exception = intercept[ProcessMetaDataException] {
+      sql(
+        s"""
+           | CREATE TABLE $csvCarbonTable(empname String, empno smallint, designation string,
+           | deptname String, projectcode int, projectjoindate String,projectenddate String,
+           | doj String, workgroupcategory int, workgroupcategoryname String,deptno int,
+           | attendance String, utilization String,salary String)
+           | STORED BY 'carbondata'
+           | TBLPROPERTIES(
+           | 'format'='csv',
+           | 'csv.header'='empname, designation, doj,
+           | workgroupcategory, workgroupcategoryname, deptno,
+           | deptname, projectcode, projectjoindate, projectenddate,
+           | attendance, utilization, SALARY',
+           | 'csv.delimiter'='|'
+           | )
+       """.stripMargin
+      )
+    }
+    assert(exception.getMessage.contains("column 'empno' not in tblproperty 'csv.header'"))
+  }
+
+  test("test desc formatted for external format table") {
+    createCsvCaronTable
+    val result = sql(s"desc formatted $csvCarbonTable").collect()
+    assert(result.exists(_.mkString("|").replaceAll("\\s","")
+      .contains("format|csv")))
+    assert(result.exists(_.mkString("|").replaceAll("\\s","")
+      .contains("csv.delimiter||")))
+    assert(result.exists(_.mkString("|").replaceAll("\\s","")
+      .contains("csv.header|empno,empname,designation,doj,workgroupcategory," +
+                "workgroupcategoryname,deptno,deptname,projectcode,projectjoindate," +
+                "projectenddate,attendance,utilization,salary")))
+  }
+
+  def createCsvCaronTable(): Unit = {
+    sql(
+      s"""
+         | CREATE TABLE $csvCarbonTable(empname String, empno smallint, designation string,
+         | deptname String, projectcode int, projectjoindate String,projectenddate String,
+         | doj String, workgroupcategory int, workgroupcategoryname String,deptno int,
+         | attendance String, utilization String,salary String)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES(
+         | 'format'='csv',
+         | 'csv.header'='empno, empname, designation, doj,
+         | workgroupcategory, workgroupcategoryname, deptno,
+         | deptname, projectcode, projectjoindate, projectenddate,
+         | attendance, utilization, SALARY',
+         | 'csv.delimiter'='|'
+         | )
+       """.stripMargin
+    )
   }
 }

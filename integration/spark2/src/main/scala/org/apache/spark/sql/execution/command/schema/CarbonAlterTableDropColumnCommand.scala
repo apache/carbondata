@@ -58,6 +58,9 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
       val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
       carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
+      if (carbonTable.isExternalFormatTable) {
+        throw new MalformedCarbonCommandException("Unsupported operation on external format table")
+      }
       if (!carbonTable.canAllow(carbonTable, TableOperation.ALTER_DROP,
           alterTableDropColumnModel.columns.asJava)) {
         throw new MalformedCarbonCommandException(

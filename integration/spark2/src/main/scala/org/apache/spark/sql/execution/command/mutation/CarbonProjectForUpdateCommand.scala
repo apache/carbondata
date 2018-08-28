@@ -67,6 +67,9 @@ private[sql] case class CarbonProjectForUpdateCommand(
       }
 
     }
+    if (carbonTable.isExternalFormatTable) {
+      throw new MalformedCarbonCommandException("Unsupported operation on external format table")
+    }
     if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }

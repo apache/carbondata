@@ -64,6 +64,8 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV;
 import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Mapping class for Carbon actual table
  */
@@ -1275,5 +1277,14 @@ public class CarbonTable implements Serializable {
       }
     }
     return false;
+  }
+
+  /**
+   * if format is 'carbondata' or '' or null, return false
+   * else return true.
+   */
+  public boolean isExternalFormatTable() {
+    String format = tableInfo.getFormat();
+    return StringUtils.isNotEmpty(format) && !format.equalsIgnoreCase("carbondata");
   }
 }
