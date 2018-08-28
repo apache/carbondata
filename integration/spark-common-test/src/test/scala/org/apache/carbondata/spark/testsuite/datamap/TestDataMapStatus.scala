@@ -35,6 +35,7 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
@@ -261,6 +262,8 @@ class TestDataMapFactory(
 
   override def getMeta: DataMapMeta = new DataMapMeta(carbonTable.getIndexedColumns(dataMapSchema),
     Seq(ExpressionType.EQUALS).asJava)
+
+  override def isSupport(expression: Expression): Boolean = ???
 
   override def toDistributable(segmentId: Segment): util.List[DataMapDistributable] = {
     util.Collections.emptyList()

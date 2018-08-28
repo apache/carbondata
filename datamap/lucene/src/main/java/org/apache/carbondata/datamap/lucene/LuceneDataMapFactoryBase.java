@@ -47,6 +47,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -290,6 +291,25 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
    */
   public DataMapMeta getMeta() {
     return dataMapMeta;
+  }
+
+  @Override
+  public boolean isSupport(Expression expression) {
+    switch (expression.getFilterExpressionType()) {
+      case TEXT_MATCH:
+        // a Lucene query string is alike "column:query term"
+        String[] queryItems = expression.getString().split(":", 2);
+        if (queryItems.length == 2) {
+          String filterColumnName = queryItems[0].toLowerCase();
+          if (dataMapMeta.getIndexedColumnNames().contains(filterColumnName)) {
+            return true;
+          }
+        }
+        break;
+      default:
+        return false;
+    }
+    return false;
   }
 
   /**

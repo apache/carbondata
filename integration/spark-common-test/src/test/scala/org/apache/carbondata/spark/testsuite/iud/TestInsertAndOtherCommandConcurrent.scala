@@ -38,6 +38,7 @@ import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
@@ -338,6 +339,8 @@ class WaitingDataMapFactory(
   }
 
   override def getMeta: DataMapMeta = new DataMapMeta(carbonTable.getIndexedColumns(dataMapSchema), Seq(ExpressionType.EQUALS).asJava)
+
+  override def isSupport(expression: Expression): Boolean = ???
 
   override def toDistributable(segmentId: Segment): util.List[DataMapDistributable] = {
     util.Collections.emptyList()

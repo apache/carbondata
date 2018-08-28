@@ -59,6 +59,7 @@ import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.scan.expression.conditional.InExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
+import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -264,12 +265,15 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         LOGGER.warn(errorMsg);
         throw new RuntimeException(errorMsg);
       }
+    } else if (expression instanceof AndExpression) {
+      queryModels.addAll(createQueryModel(((AndExpression) expression).getLeft()));
+      queryModels.addAll(createQueryModel(((AndExpression) expression).getRight()));
+      return queryModels;
+    } else {
+      String errorMsg = "BloomFilter received unsupport expression";
+      LOGGER.warn(errorMsg);
+      throw new RuntimeException(errorMsg);
     }
-
-    for (Expression child : expression.getChildren()) {
-      queryModels.addAll(createQueryModel(child));
-    }
-    return queryModels;
   }
 
   private BloomQueryModel buildQueryModelForEqual(ColumnExpression ce,

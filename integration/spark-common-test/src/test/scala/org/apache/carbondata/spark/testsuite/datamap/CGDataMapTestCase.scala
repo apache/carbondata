@@ -40,7 +40,7 @@ import org.apache.carbondata.core.indexstore.{Blocklet, PartitionSpec}
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, DiskBasedDMSchemaStorageProvider}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
-import org.apache.carbondata.core.scan.expression.Expression
+import org.apache.carbondata.core.scan.expression.{ColumnExpression, Expression, LiteralExpression}
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf
@@ -134,7 +134,28 @@ class CGDataMapFactory(
    */
   override def getMeta: DataMapMeta = {
     new DataMapMeta(carbonTable.getIndexedColumns(dataMapSchema),
-      List(ExpressionType.EQUALS, ExpressionType.IN).asJava)
+      List(ExpressionType.EQUALS).asJava)
+  }
+
+  override def isSupport(expression: Expression): Boolean = {
+    var filterColumn:ColumnExpression = null
+    if (expression.isInstanceOf[EqualToExpression]) {
+      val equalToExpr = expression.asInstanceOf[EqualToExpression]
+      if (equalToExpr.getLeft.isInstanceOf[ColumnExpression]
+        && equalToExpr.getRight.isInstanceOf[LiteralExpression]) {
+        filterColumn = equalToExpr.getLeft.asInstanceOf[ColumnExpression]
+      } else if (equalToExpr.getRight.isInstanceOf[ColumnExpression]
+        && equalToExpr.getLeft.isInstanceOf[LiteralExpression]) {
+        filterColumn = equalToExpr.getRight.asInstanceOf[ColumnExpression]
+      }
+    } else {
+      return false
+    }
+    if (null != filterColumn
+      && getMeta.getIndexedColumnNames.contains(filterColumn.getColumnName.toLowerCase)) {
+      return true
+    }
+    return false
   }
 
   /**

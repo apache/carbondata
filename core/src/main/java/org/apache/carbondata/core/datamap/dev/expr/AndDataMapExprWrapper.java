@@ -49,6 +49,11 @@ public class AndDataMapExprWrapper implements DataMapExprWrapper {
   public List<ExtendedBlocklet> prune(List<Segment> segments, List<PartitionSpec> partitionsToPrune)
       throws IOException {
     List<ExtendedBlocklet> leftPrune = left.prune(segments, partitionsToPrune);
+    if (leftPrune.size() == 0) {
+      // short circuit: empty result intersect with any result will be empty
+      return leftPrune;
+    }
+
     List<ExtendedBlocklet> rightPrune = right.prune(segments, partitionsToPrune);
     List<ExtendedBlocklet> andBlocklets = new ArrayList<>();
     for (ExtendedBlocklet blocklet : leftPrune) {
@@ -64,6 +69,10 @@ public class AndDataMapExprWrapper implements DataMapExprWrapper {
       List<PartitionSpec> partitionsToPrune)
           throws IOException {
     List<ExtendedBlocklet> leftPrune = left.prune(distributable, partitionsToPrune);
+    if (leftPrune.size() == 0) {
+      return leftPrune;
+    }
+
     List<ExtendedBlocklet> rightPrune = right.prune(distributable, partitionsToPrune);
     List<ExtendedBlocklet> andBlocklets = new ArrayList<>();
     for (ExtendedBlocklet blocklet : leftPrune) {
@@ -77,6 +86,10 @@ public class AndDataMapExprWrapper implements DataMapExprWrapper {
   @Override public List<ExtendedBlocklet> pruneBlocklets(List<ExtendedBlocklet> blocklets)
       throws IOException {
     List<ExtendedBlocklet> leftPrune = left.pruneBlocklets(blocklets);
+    if (leftPrune.size() == 0) {
+      return leftPrune;
+    }
+
     List<ExtendedBlocklet> rightPrune = right.pruneBlocklets(blocklets);
     List<ExtendedBlocklet> andBlocklets = new ArrayList<>();
     for (ExtendedBlocklet blocklet : leftPrune) {

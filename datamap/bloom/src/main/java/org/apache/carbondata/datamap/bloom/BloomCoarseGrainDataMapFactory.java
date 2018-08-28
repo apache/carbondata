@@ -44,6 +44,12 @@ import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.scan.expression.ColumnExpression;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.LiteralExpression;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.core.scan.expression.conditional.InExpression;
+import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -121,6 +127,42 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
       LOGGER.error(e);
       throw new MalformedDataMapCommandException(e.getMessage());
     }
+  }
+
+  @Override
+  public boolean isSupport(Expression expression) {
+    ColumnExpression filterColumn = null;
+    // First check type of child nodes, and get filter column name
+    switch (expression.getFilterExpressionType()) {
+      case IN:
+        InExpression inExpr = (InExpression) expression;
+        if (inExpr.getLeft() instanceof ColumnExpression &&
+            inExpr.getRight() instanceof ListExpression) {
+          filterColumn = (ColumnExpression) inExpr.getLeft();
+        } else if (inExpr.getRight() instanceof ColumnExpression &&
+            inExpr.getLeft() instanceof ListExpression) {
+          filterColumn = (ColumnExpression) inExpr.getRight();
+        }
+        break;
+      case EQUALS:
+        EqualToExpression equalToExpr = (EqualToExpression) expression;
+        if (equalToExpr.getLeft() instanceof ColumnExpression &&
+            equalToExpr.getRight() instanceof LiteralExpression) {
+          filterColumn = (ColumnExpression) equalToExpr.getLeft();
+        } else if (equalToExpr.getRight() instanceof ColumnExpression &&
+            equalToExpr.getLeft() instanceof LiteralExpression) {
+          filterColumn = (ColumnExpression) equalToExpr.getRight();
+        }
+        break;
+      default:
+        return false;
+    }
+    // Then check if filter column is in index columns
+    if (null != filterColumn && dataMapMeta.getIndexedColumnNames().contains(
+          filterColumn.getColumnName().toLowerCase())) {
+      return true;
+    }
+    return false;
   }
 
   /**

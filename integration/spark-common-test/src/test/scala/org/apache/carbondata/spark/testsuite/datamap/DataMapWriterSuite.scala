@@ -35,6 +35,7 @@ import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
@@ -57,6 +58,8 @@ class C2DataMapFactory(
 
   override def createWriter(segment: Segment, shardName: String, segmentProperties: SegmentProperties): DataMapWriter =
     DataMapWriterSuite.dataMapWriterC2Mock(identifier, "testdm", segment, shardName)
+
+  override def isSupport(expression: Expression): Boolean = ???
 
   override def getMeta: DataMapMeta =
     new DataMapMeta(carbonTable.getIndexedColumns(dataMapSchema), List(ExpressionType.EQUALS).asJava)
