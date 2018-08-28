@@ -79,7 +79,14 @@ class SparkCarbonFileFormat extends FileFormat
       options: Map[String, String],
       files: Seq[FileStatus]): Option[StructType] = {
     val tablePath = options.get("path") match {
-      case Some(path) => path
+      case Some(path) =>
+        val defaultFsUrl =
+          sparkSession.sparkContext.hadoopConfiguration.get(CarbonCommonConstants.FS_DEFAULT_FS)
+        if (defaultFsUrl == null) {
+          path
+        } else {
+          defaultFsUrl + CarbonCommonConstants.FILE_SEPARATOR + path
+        }
       case _ => FileFactory.getUpdatedFilePath(files.head.getPath.getParent.toUri.toString)
     }
 

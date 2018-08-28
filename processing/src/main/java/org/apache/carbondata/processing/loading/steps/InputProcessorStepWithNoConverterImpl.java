@@ -214,6 +214,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
     private DirectDictionaryGenerator timestampDictionaryGenerator;
 
+    private BadRecordLogHolder logHolder = new BadRecordLogHolder();
+
     public InputProcessorIterator(List<CarbonIterator<Object[]>> inputIterators, int batchSize,
         boolean preFetch, AtomicLong rowCounter, int[] orderOfData, boolean[] noDictionaryMapping,
         DataType[] dataTypes, CarbonDataLoadConfiguration configuration,
@@ -281,7 +283,6 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
     private Object[] convertToNoDictionaryToBytes(Object[] data, DataField[] dataFields) {
       Object[] newData = new Object[data.length];
-      BadRecordLogHolder logHolder = new BadRecordLogHolder();
       for (int i = 0; i < data.length; i++) {
         if (i < noDictionaryMapping.length && noDictionaryMapping[i]) {
           newData[i] = DataTypeUtil
