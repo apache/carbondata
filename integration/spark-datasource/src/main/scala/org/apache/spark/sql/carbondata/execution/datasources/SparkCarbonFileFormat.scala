@@ -80,16 +80,15 @@ class SparkCarbonFileFormat extends FileFormat
       files: Seq[FileStatus]): Option[StructType] = {
     val tablePath = options.get("path") match {
       case Some(path) =>
-        val defaultFsUrl =
-          sparkSession.sparkContext.hadoopConfiguration.get(CarbonCommonConstants.FS_DEFAULT_FS)
-        if (defaultFsUrl == null) {
-          path
-        } else {
-          defaultFsUrl + CarbonCommonConstants.FILE_SEPARATOR + path
-        }
-      case _ => FileFactory.getUpdatedFilePath(files.head.getPath.getParent.toUri.toString)
+        FileFactory.checkAndAppendDefaultFs(path, sparkSession.sparkContext.hadoopConfiguration)
+      case _ if files.nonEmpty =>
+        FileFactory.getUpdatedFilePath(files.head.getPath.getParent.toUri.toString)
+      case _ =>
+        return None
     }
-
+    if (options.get(CarbonCommonConstants.SORT_COLUMNS).isDefined) {
+      throw new UnsupportedOperationException("Cannot use sort columns during infer schema")
+    }
     val tableInfo = SchemaReader.inferSchema(AbsoluteTableIdentifier.from(tablePath, "", ""), false)
     val table = CarbonTable.buildFromTableInfo(tableInfo)
     var schema = new StructType
