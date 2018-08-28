@@ -490,6 +490,26 @@ public final class FileFactory {
   }
 
   /**
+   * Check and append the hadoop's defaultFS to the path
+   */
+  public static String checkAndAppendDefaultFs(String path, Configuration conf) {
+    String defaultFs = conf.get(CarbonCommonConstants.FS_DEFAULT_FS);
+    String lowerPath = path.toLowerCase();
+    if (lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) || lowerPath
+        .startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX) || lowerPath
+        .startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) || lowerPath
+        .startsWith(CarbonCommonConstants.S3N_PREFIX) || lowerPath
+        .startsWith(CarbonCommonConstants.S3A_PREFIX) || lowerPath
+        .startsWith(CarbonCommonConstants.S3_PREFIX)) {
+      return path;
+    } else if (defaultFs != null) {
+      return defaultFs + CarbonCommonConstants.FILE_SEPARATOR + path;
+    } else {
+      return path;
+    }
+  }
+
+  /**
    * set the file replication
    *
    * @param path file path
