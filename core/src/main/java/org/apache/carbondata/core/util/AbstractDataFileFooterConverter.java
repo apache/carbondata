@@ -289,7 +289,7 @@ public abstract class AbstractDataFileFooterConverter {
     ColumnSchema wrapperColumnSchema = new ColumnSchema();
     wrapperColumnSchema.setColumnUniqueId(externalColumnSchema.getColumn_id());
     wrapperColumnSchema.setColumnName(externalColumnSchema.getColumn_name());
-    DataType dataType = thriftDataTyopeToWrapperDataType(externalColumnSchema.data_type);
+    DataType dataType = CarbonUtil.thriftDataTyopeToWrapperDataType(externalColumnSchema.data_type);
     if (DataTypes.isDecimal(dataType)) {
       DecimalType decimalType = (DecimalType) dataType;
       decimalType.setPrecision(externalColumnSchema.getPrecision());
@@ -400,45 +400,6 @@ public abstract class AbstractDataFileFooterConverter {
     return new BlockletIndex(
         new BlockletBTreeIndex(btreeIndex.getStart_key(), btreeIndex.getEnd_key()),
         new BlockletMinMaxIndex(minMaxIndex.getMin_values(), minMaxIndex.getMax_values()));
-  }
-
-  /**
-   * Below method will be used to convert the thrift data type to wrapper data
-   * type
-   *
-   * @param dataTypeThrift
-   * @return dataType wrapper
-   */
-  protected DataType thriftDataTyopeToWrapperDataType(
-      org.apache.carbondata.format.DataType dataTypeThrift) {
-    switch (dataTypeThrift) {
-      case BOOLEAN:
-        return DataTypes.BOOLEAN;
-      case STRING:
-        return DataTypes.STRING;
-      case SHORT:
-        return DataTypes.SHORT;
-      case INT:
-        return DataTypes.INT;
-      case LONG:
-        return DataTypes.LONG;
-      case DOUBLE:
-        return DataTypes.DOUBLE;
-      case DECIMAL:
-        return DataTypes.createDefaultDecimalType();
-      case DATE:
-        return DataTypes.DATE;
-      case TIMESTAMP:
-        return DataTypes.TIMESTAMP;
-      case ARRAY:
-        return DataTypes.createDefaultArrayType();
-      case STRUCT:
-        return DataTypes.createDefaultStructType();
-      case VARCHAR:
-        return DataTypes.VARCHAR;
-      default:
-        return DataTypes.STRING;
-    }
   }
 
   /**

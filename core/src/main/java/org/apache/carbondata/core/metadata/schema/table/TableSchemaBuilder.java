@@ -32,6 +32,7 @@ import org.apache.carbondata.core.metadata.datatype.ArrayType;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalType;
+import org.apache.carbondata.core.metadata.datatype.MapType;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -195,7 +196,7 @@ public class TableSchemaBuilder {
     newColumn.setColumnReferenceId(newColumn.getColumnUniqueId());
     newColumn.setEncodingList(createEncoding(field.getDataType(), isSortColumn, isComplexChild));
     if (field.getDataType().isComplexType()) {
-      if (field.getDataType().getName().equalsIgnoreCase("ARRAY")) {
+      if (DataTypes.isArrayType(field.getDataType()) || DataTypes.isMapType(field.getDataType())) {
         newColumn.setNumberOfChild(1);
       } else {
         newColumn.setNumberOfChild(((StructType) field.getDataType()).getFields().size());
@@ -209,8 +210,9 @@ public class TableSchemaBuilder {
     if (!isSortColumn) {
       if (!newColumn.isDimensionColumn()) {
         measures.add(newColumn);
-      } else if (DataTypes.isStructType(field.getDataType()) ||
-          DataTypes.isArrayType(field.getDataType()) || isComplexChild) {
+      } else if (DataTypes.isStructType(field.getDataType()) || DataTypes
+          .isArrayType(field.getDataType()) || DataTypes.isMapType(field.getDataType())
+          || isComplexChild) {
         complex.add(newColumn);
       } else {
         dimension.add(newColumn);
@@ -221,17 +223,21 @@ public class TableSchemaBuilder {
     }
     if (field.getDataType().isComplexType()) {
       String parentFieldName = newColumn.getColumnName();
-      if (field.getDataType().getName().equalsIgnoreCase("ARRAY")) {
+      if (DataTypes.isArrayType(field.getDataType())) {
         String colName = getColNameForArray(valIndex);
         addColumn(new StructField(colName, ((ArrayType) field.getDataType()).getElementType()),
             field.getFieldName(), valIndex, false, true);
-      } else if (field.getDataType().getName().equalsIgnoreCase("STRUCT")
+      } else if (DataTypes.isStructType(field.getDataType())
           && ((StructType) field.getDataType()).getFields().size() > 0) {
         // This field has children.
         List<StructField> fields = ((StructType) field.getDataType()).getFields();
         for (int i = 0; i < fields.size(); i++) {
           addColumn(fields.get(i), parentFieldName, valIndex, false, true);
         }
+      } else if (DataTypes.isMapType(field.getDataType())) {
+        String colName = getColNameForArray(valIndex);
+        addColumn(new StructField(colName, ((MapType) field.getDataType()).getValueType()),
+            parentFieldName, valIndex, false, true);
       }
     }
     // todo: need more information such as long_string_columns

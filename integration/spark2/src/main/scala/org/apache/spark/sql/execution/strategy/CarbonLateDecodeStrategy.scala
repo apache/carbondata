@@ -465,6 +465,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   private def isComplexAttribute(attribute: Attribute) = attribute.dataType match {
     case ArrayType(dataType, _) => true
     case StructType(_) => true
+    case MapType(_, _, _) => true
     case _ => false
   }
 

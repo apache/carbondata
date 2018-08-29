@@ -139,7 +139,7 @@ public class FieldEncoderFactory {
       AbsoluteTableIdentifier absoluteTableIdentifier, DictionaryClient client, Boolean useOnePass,
       Map<Object, Integer> localCache, int index, String nullFormat, Boolean isEmptyBadRecords) {
     DataType dataType = carbonColumn.getDataType();
-    if (DataTypes.isArrayType(dataType)) {
+    if (DataTypes.isArrayType(dataType) || DataTypes.isMapType(dataType)) {
       List<CarbonDimension> listOfChildDimensions =
           ((CarbonDimension) carbonColumn).getListOfChildDimensions();
       // Create array parser with complex delimiter
@@ -165,8 +165,6 @@ public class FieldEncoderFactory {
                 client, useOnePass, localCache, index, nullFormat, isEmptyBadRecords));
       }
       return structDataType;
-    } else if (DataTypes.isMapType(dataType)) {
-      throw new UnsupportedOperationException("Complex type Map is not supported yet");
     } else {
       return new PrimitiveDataType(carbonColumn, parentName, carbonColumn.getColumnId(),
           (CarbonDimension) carbonColumn, absoluteTableIdentifier, client, useOnePass,

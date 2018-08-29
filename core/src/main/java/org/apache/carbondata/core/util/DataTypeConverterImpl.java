@@ -88,8 +88,19 @@ public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
   }
 
   @Override
+  public Object[] unwrapGenericRowToObject(Object data) {
+    Object[] splitData = (Object[]) data;
+    return splitData;
+  }
+
+  @Override
   public Object wrapWithGenericRow(Object[] fields) {
     return fields;
+  }
+
+  @Override
+  public Object wrapWithArrayBasedMapData(Object[] keyArray, Object[] valueArray) {
+    return new Object[] { keyArray, valueArray };
   }
 
   @Override

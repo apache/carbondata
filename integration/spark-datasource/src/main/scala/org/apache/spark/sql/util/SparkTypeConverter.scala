@@ -20,6 +20,7 @@ package org.apache.spark.sql.util
 import java.util.Objects
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.spark.sql.types
 import org.apache.spark.sql.types._
@@ -69,6 +70,9 @@ private[spark] object SparkTypeConverter {
     } else if (CarbonDataTypes.isStructType(columnSchema.getDataType)) {
       CarbonMetastoreTypes
         .toDataType(s"struct<${ getStructChildren(table, columnSchema.getColumnName) }>")
+    } else if (CarbonDataTypes.isMapType(columnSchema.getDataType)) {
+      CarbonMetastoreTypes
+        .toDataType(s"map<${ getMapChildren(table, columnSchema.getColumnName) }>")
     } else {
       columnSchema.getDataType match {
         case CarbonDataTypes.STRING => StringType
@@ -88,6 +92,7 @@ private[spark] object SparkTypeConverter {
       childDim.getDataType.getName.toLowerCase match {
         case "array" => s"array<${ getArrayChildren(table, childDim.getColName) }>"
         case "struct" => s"struct<${ getStructChildren(table, childDim.getColName) }>"
+        case "map" => s"map<${ getMapChildren(table, childDim.getColName) }>"
         case dType => addDecimalScaleAndPrecision(childDim, dType)
       }
     }).mkString(",")
@@ -104,10 +109,31 @@ private[spark] object SparkTypeConverter {
         }:struct<${ table.getChildren(childDim.getColName)
           .asScala.map(f => s"${ recursiveMethod(table, childDim.getColName, f) }").mkString(",")
         }>"
+        case "map" => s"${
+          childDim.getColName.substring(dimName.length + 1)
+        }:map<${ getMapChildren(table, childDim.getColName) }>"
         case dType => s"${ childDim.getColName
           .substring(dimName.length() + 1) }:${ addDecimalScaleAndPrecision(childDim, dType) }"
       }
     }).mkString(",")
+  }
+
+  def getMapChildren(table: CarbonTable, dimName: String): String = {
+    table.getChildren(dimName).asScala.flatMap { childDim =>
+      // Map<String, String> is stored internally as Map<Struct<String, String>> in carbon schema
+      // and stored as Array<Struct<String, String>> in the actual data storage. So while parsing
+      // the map dataType we can ignore the struct child and directly get the children of struct
+      // which are actual children of map
+      val structChildren = table.getChildren(childDim.getColName).asScala
+      structChildren.map { structChild =>
+        structChild.getDataType.getName.toLowerCase match {
+          case "array" => s"array<${ getArrayChildren(table, structChild.getColName) }>"
+          case "struct" => s"struct<${ getStructChildren(table, structChild.getColName) }>"
+          case "map" => s"map<${ getMapChildren(table, structChild.getColName) }>"
+          case dType => addDecimalScaleAndPrecision(structChild, dType)
+        }
+      }
+    }.mkString(",")
   }
 
   def addDecimalScaleAndPrecision(dimval: CarbonColumn, dataType: String): String = {
@@ -128,6 +154,9 @@ private[spark] object SparkTypeConverter {
       case "struct" => s"${
         childDim.getColName.substring(dimName.length + 1)
       }:struct<${ getStructChildren(table, childDim.getColName) }>"
+      case "map" => s"${
+        childDim.getColName.substring(dimName.length + 1)
+      }:map<${ getMapChildren(table, childDim.getColName) }>"
       case dType => s"${
         childDim.getColName
           .substring(dimName.length + 1)

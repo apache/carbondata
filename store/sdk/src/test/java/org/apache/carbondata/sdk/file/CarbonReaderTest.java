@@ -1505,7 +1505,8 @@ public class CarbonReaderTest extends TestCase {
     }
   }
 
-  private void WriteAvroComplexData(String mySchema, String json, String[] sortColumns, String path)
+  private void WriteAvroComplexData(String mySchema, String json, String[] sortColumns, String path,
+      boolean isTransactionalTable)
       throws IOException, InvalidLoadOptionException {
 
     // conversion to GenericData.Record
@@ -1515,7 +1516,7 @@ public class CarbonReaderTest extends TestCase {
     try {
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)
-          .isTransactionalTable(true)
+          .isTransactionalTable(isTransactionalTable)
           .buildWriterForAvroInput(nn);
 
       for (int i = 0; i < 100; i++) {
@@ -1566,7 +1567,7 @@ public class CarbonReaderTest extends TestCase {
         + "   \"doorNum\" : [1,2,3,4]}";
 
     try {
-      WriteAvroComplexData(mySchema, json, null, path);
+      WriteAvroComplexData(mySchema, json, null, path, true);
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
     }
@@ -1597,6 +1598,71 @@ public class CarbonReaderTest extends TestCase {
       System.out.println((schema.getFields())[i].getFieldName() + "\t" + schema.getFields()[i].getSchemaOrdinal());
     }
     FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testReadMapType() throws IOException, InterruptedException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    String mySchema =
+        "{ "+
+            "  \"name\": \"address\", "+
+            "  \"type\": \"record\", "+
+            "  \"fields\": [ "+
+            "    { "+
+            "      \"name\": \"name\", "+
+            "      \"type\": \"string\" "+
+            "    }, "+
+            "    { "+
+            "      \"name\": \"age\", "+
+            "      \"type\": \"int\" "+
+            "    }, "+
+            "    { "+
+            "      \"name\": \"mapRecord\", "+
+            "      \"type\": { "+
+            "        \"type\": \"map\", "+
+            "        \"values\": \"string\" "+
+            "      } "+
+            "    } "+
+            "  ] "+
+            "} ";
+
+    String json =
+        "{\"name\":\"bob\", \"age\":10, \"mapRecord\": {\"street\": \"k-lane\", \"city\": \"bangalore\"}}";
+
+    try {
+      WriteAvroComplexData(mySchema, json, null, path, false);
+    } catch (InvalidLoadOptionException e) {
+      e.printStackTrace();
+    }
+
+    Field[] fields = new Field[3];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+    fields[2] = new Field("mapRecord", DataTypes.createMapType(DataTypes.STRING, DataTypes.STRING));
+
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .isTransactionalTable(false)
+        .build();
+
+    // expected output
+    String name = "bob";
+    int age = 10;
+    Object[] mapKeValue = new Object[2];
+    mapKeValue[0] = new Object[] { "city", "street" };
+    mapKeValue[1] = new Object[] { "bangalore", "k-lane" };
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      Assert.assertEquals(name, row[0]);
+      Assert.assertArrayEquals(mapKeValue, (Object[]) row[1]);
+      Assert.assertEquals(age, row[2]);
+      i++;
+    }
+    reader.close();
+    Assert.assertEquals(i, 100);
   }
 
 }
