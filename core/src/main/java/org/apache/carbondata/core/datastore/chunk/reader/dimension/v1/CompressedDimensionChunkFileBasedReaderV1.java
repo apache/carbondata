@@ -125,7 +125,7 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
           .getUnCompressColumnIndex(dataChunk.getRowIdPageLength(),
               columnIndexData, numberComressor, 0);
       // get the reverse index
-      invertedIndexesReverse = getInvertedReverseIndex(invertedIndexes);
+      invertedIndexesReverse = CarbonUtil.getInvertedReverseIndex(invertedIndexes);
     }
     // if rle is applied then read the rle block chunk and then uncompress
     //then actual data based on rle block

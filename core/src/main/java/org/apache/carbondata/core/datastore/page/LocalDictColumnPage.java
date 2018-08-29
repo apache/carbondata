@@ -29,7 +29,6 @@ import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.localdictionary.PageLevelDictionary;
 import org.apache.carbondata.core.localdictionary.exception.DictionaryThresholdReachedException;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
-import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * Column page implementation for Local dictionary generated columns
@@ -68,11 +67,15 @@ public class LocalDictColumnPage extends ColumnPage {
   private KeyGenerator keyGenerator;
 
   private int[] dummyKey;
+
+  private boolean isDecoderBasedFallBackEnabled;
+
   /**
    * Create a new column page with input data type and page size.
    */
   protected LocalDictColumnPage(ColumnPage actualDataColumnPage, ColumnPage encodedColumnpage,
-      LocalDictionaryGenerator localDictionaryGenerator, boolean isComplexTypePrimitive) {
+      LocalDictionaryGenerator localDictionaryGenerator, boolean isComplexTypePrimitive,
+      boolean isDecoderBasedFallBackEnabled) {
     super(actualDataColumnPage.getColumnSpec(), actualDataColumnPage.getDataType(),
         actualDataColumnPage.getPageSize());
     // if threshold is not reached then create page level dictionary
@@ -89,6 +92,7 @@ public class LocalDictColumnPage extends ColumnPage {
       // else free the encoded column page memory as its of no use
       encodedColumnpage.freeMemory();
     }
+    this.isDecoderBasedFallBackEnabled = isDecoderBasedFallBackEnabled;
     this.actualDataColumnPage = actualDataColumnPage;
   }
 
@@ -180,9 +184,7 @@ public class LocalDictColumnPage extends ColumnPage {
   }
 
   @Override public void freeMemory() {
-    if (Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK,
-            CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT))) {
+    if (isDecoderBasedFallBackEnabled) {
       actualDataColumnPage.freeMemory();
       isActualPageMemoryFreed = true;
     } else if (null == pageLevelDictionary) {

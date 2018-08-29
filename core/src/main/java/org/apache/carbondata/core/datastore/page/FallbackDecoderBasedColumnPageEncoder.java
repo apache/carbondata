@@ -16,10 +16,12 @@
  */
 package org.apache.carbondata.core.datastore.page;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.Callable;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.TableSpec;
+import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
@@ -27,6 +29,7 @@ import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.format.Encoding;
 
 public class FallbackDecoderBasedColumnPageEncoder implements Callable<FallbackEncodedColumnPage> {
   /**
@@ -52,11 +55,41 @@ public class FallbackDecoderBasedColumnPageEncoder implements Callable<FallbackE
   }
 
   @Override public FallbackEncodedColumnPage call() throws Exception {
+    int pageSize =
+        encodedColumnPage.getActualPage().getPageSize();
+    int offset = 0;
+    int[] reverseInvertedIndex = new int[pageSize];
+    for (int i = 0; i < pageSize; i++) {
+      reverseInvertedIndex[i] = i;
+    }
+    int[] rlePage;
 
     // uncompress the encoded column page
     byte[] bytes = CompressorFactory.getInstance().getCompressor()
-        .unCompressByte(encodedColumnPage.getEncodedData().array(), 0,
-            encodedColumnPage.getPageMetadata().getData_page_length());
+        .unCompressByte(encodedColumnPage.getEncodedData().array(), offset,
+            encodedColumnPage.getPageMetadata().data_page_length);
+
+    offset += encodedColumnPage.getPageMetadata().data_page_length;
+    ByteBuffer data = ByteBuffer.wrap(encodedColumnPage.getEncodedData().array());
+
+    // if encoded with inverted index, get all the inverted indexes
+    if (CarbonUtil
+        .hasEncoding(encodedColumnPage.getPageMetadata().encoders, Encoding.INVERTED_INDEX)) {
+      int[] invertedIndexes = CarbonUtil
+          .getUnCompressColumnIndex(encodedColumnPage.getPageMetadata().rowid_page_length, data,
+              offset);
+      offset += encodedColumnPage.getPageMetadata().rowid_page_length;
+      // get all the reverse inverted index
+      reverseInvertedIndex = CarbonUtil.getInvertedReverseIndex(invertedIndexes);
+    }
+    // if rle is applied then uncompress then actual data based on rle
+    if (CarbonUtil.hasEncoding(encodedColumnPage.getPageMetadata().encoders, Encoding.RLE)) {
+      rlePage =
+          CarbonUtil.getIntArray(data, offset, encodedColumnPage.getPageMetadata().rle_page_length);
+      // uncompress the data with rle indexes
+      bytes = UnBlockIndexer
+          .uncompressData(bytes, rlePage, CarbonCommonConstants.LOCAL_DICT_ENCODED_BYTEARRAY_SIZE);
+    }
 
     // disable encoding using local dictionary
     encodedColumnPage.getActualPage().disableLocalDictEncoding();
@@ -68,9 +101,8 @@ public class FallbackDecoderBasedColumnPageEncoder implements Callable<FallbackE
     DataType dataType = encodedColumnPage.getActualPage().getDataType();
 
     // create a new column page which will have actual data instead of encoded data
-    ColumnPage actualDataColumnPage = ColumnPage
-        .newPage(columnSpec, dataType,
-            encodedColumnPage.getActualPage().getPageSize());
+    ColumnPage actualDataColumnPage =
+        ColumnPage.newPage(columnSpec, dataType, encodedColumnPage.getActualPage().getPageSize());
 
     // uncompressed data from encoded column page is dictionary data, get the dictionary data using
     // keygenerator
@@ -81,10 +113,11 @@ public class FallbackDecoderBasedColumnPageEncoder implements Callable<FallbackE
 
     // get the actual data for each dictionary data and put the actual data in new page
     int rowId = 0;
-    for (int i = 0; i < bytes.length; i = i + 3) {
-      int keyArray = (int) keyGenerator.getKeyArray(bytes, i)[0];
+    for (int i = 0; i < pageSize; i++) {
+      int index = reverseInvertedIndex[i] * 3;
+      int keyArray = (int) keyGenerator.getKeyArray(bytes, index)[0];
       actualDataColumnPage
-          .putData(rowId++, localDictionaryGenerator.getDictionaryKeyBasedOnValue(keyArray));
+          .putBytes(rowId++, localDictionaryGenerator.getDictionaryKeyBasedOnValue(keyArray));
     }
 
     FallbackEncodedColumnPage fallBackEncodedColumnPage =
@@ -95,4 +128,5 @@ public class FallbackDecoderBasedColumnPageEncoder implements Callable<FallbackE
     actualDataColumnPage.freeMemory();
     return fallBackEncodedColumnPage;
   }
+
 }
