@@ -120,6 +120,10 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   private PrimitivePageStatsCollector(DataType dataType) {
     this.dataType = dataType;
+    resetPageStats();
+  }
+
+  private void resetPageStats() {
     if (dataType == DataTypes.BOOLEAN) {
       minByte = TRUE_VALUE;
       maxByte = FALSE_VALUE;
@@ -343,4 +347,8 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     return dataType;
   }
 
+  @Override
+  public void clear() {
+    resetPageStats();
+  }
 }

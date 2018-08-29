@@ -107,6 +107,11 @@ public class KeyPageStatsCollector implements ColumnPageStatsCollector {
         return dataType;
       }
 
+      @Override
+      public void clear() {
+        min = null;
+        max = null;
+      }
     };
   }
 }

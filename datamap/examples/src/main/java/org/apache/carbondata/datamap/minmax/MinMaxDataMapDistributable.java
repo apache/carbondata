@@ -15,22 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.page.statistics;
+package org.apache.carbondata.datamap.minmax;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.core.datamap.DataMapDistributable;
 
-public interface SimpleStatsResult {
-
-  Object getMin();
-
-  Object getMax();
-
-  int getDecimalCount();
-
-  DataType getDataType();
-
+@InterfaceAudience.Internal
+public class MinMaxDataMapDistributable extends DataMapDistributable {
   /**
-   * clear the statistics info for resuse
+   * parent folder of the minmaxindex file
    */
-  void clear();
+  private String indexPath;
+
+  MinMaxDataMapDistributable(String indexPath) {
+    this.indexPath = indexPath;
+  }
+
+  public String getIndexPath() {
+    return indexPath;
+  }
 }

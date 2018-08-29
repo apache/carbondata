@@ -105,6 +105,11 @@ public abstract class LVStringStatsCollector implements ColumnPageStatsCollector
         return DataTypes.STRING;
       }
 
+      @Override
+      public void clear() {
+        min = null;
+        max = null;
+      }
     };
   }
 }

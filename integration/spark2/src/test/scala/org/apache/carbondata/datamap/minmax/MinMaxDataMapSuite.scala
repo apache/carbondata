@@ -24,8 +24,6 @@ import scala.util.Random
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.datamap.examples.MinMaxIndexDataMapFactory
-
 class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
   val inputFile = s"$resourcesPath/minmax_datamap_input.csv"
   val normalTable = "carbonNormal"
@@ -55,7 +53,8 @@ class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
         | CREATE DATAMAP $dataMapName ON TABLE $minMaxDMSampleTable
-        | USING '${classOf[MinMaxIndexDataMapFactory].getName}'
+        | USING '${classOf[MinMaxDataMapFactory].getName}'
+        | DMPROPERTIES('INDEX_COLUMNS'='id, city')
       """.stripMargin)
 
     sql(
@@ -69,10 +68,9 @@ class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
          | OPTIONS('header'='false')
        """.stripMargin)
 
-    sql(s"show datamap on table $minMaxDMSampleTable").show(false)
+    checkExistence(sql(s"show datamap on table $minMaxDMSampleTable"), true, dataMapName)
     // not that the table will use default dimension as sort_columns, so for the following cases,
     // the pruning result will differ.
-    // 1 blocklet
     checkAnswer(sql(s"select * from $minMaxDMSampleTable where id = 1"),
       sql(s"select * from $normalTable where id = 1"))
     // 6 blocklet

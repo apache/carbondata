@@ -48,6 +48,10 @@ public class DummyStatsCollector implements ColumnPageStatsCollector {
       return BYTE_ARRAY;
     }
 
+    @Override
+    public void clear() {
+
+    }
   };
 
   @Override public void updateNull(int rowId) {
