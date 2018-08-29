@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
@@ -460,27 +461,29 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
 
     private CarbonOutputIteratorWrapper[] iterators;
 
-    private int counter;
+    private AtomicLong counter;
 
     CarbonMultiRecordWriter(CarbonOutputIteratorWrapper[] iterators,
         DataLoadExecutor dataLoadExecutor, CarbonLoadModel loadModel, Future future,
         ExecutorService executorService) {
       super(null, dataLoadExecutor, loadModel, future, executorService);
       this.iterators = iterators;
+      counter = new AtomicLong(0);
     }
 
-    @Override public synchronized void write(NullWritable aVoid, ObjectArrayWritable objects)
+    @Override public void write(NullWritable aVoid, ObjectArrayWritable objects)
         throws InterruptedException {
-      iterators[counter].write(objects.get());
-      if (++counter == iterators.length) {
-        //round robin reset
-        counter = 0;
+      int hash = (int) (counter.incrementAndGet() % iterators.length);
+      synchronized (iterators[hash]) {
+        iterators[hash].write(objects.get());
       }
     }
 
     @Override public void close(TaskAttemptContext taskAttemptContext) throws InterruptedException {
-      for (CarbonOutputIteratorWrapper itr : iterators) {
-        itr.closeWriter(false);
+      for (int i = 0; i < iterators.length; i++) {
+        synchronized (iterators[i]) {
+          iterators[i].closeWriter(false);
+        }
       }
       super.close(taskAttemptContext);
     }
