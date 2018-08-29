@@ -153,6 +153,7 @@ object TestQueryExecutor {
     TestQueryExecutor.projectPath + "/core/target",
     TestQueryExecutor.projectPath + "/hadoop/target",
     TestQueryExecutor.projectPath + "/processing/target",
+    TestQueryExecutor.projectPath + "/integration/spark-datasource/target",
     TestQueryExecutor.projectPath + "/integration/spark-common/target",
     TestQueryExecutor.projectPath + "/integration/spark2/target",
     TestQueryExecutor.projectPath + "/integration/spark-common/target/jars",

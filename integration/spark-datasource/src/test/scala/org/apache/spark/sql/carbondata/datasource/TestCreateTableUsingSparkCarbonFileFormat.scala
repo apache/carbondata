@@ -294,7 +294,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     cleanTestData()
   }
 
-  test("Read sdk writer output file without index file should fail") {
+  test("Read sdk writer output file without index file should not fail") {
     buildTestData(false)
     deleteIndexFile(writerPath, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
     assert(new File(filePath).exists())
@@ -312,11 +312,8 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
       // TO DO
     }
     //org.apache.spark.SparkException: Index file not present to read the carbondata file
-    val exception = intercept[Exception]
-      {
-        spark.sql("select * from sdkOutputTable").show(false)
-      }
-    assert(exception.getMessage().contains("No Index files are present in the table location"))
+    assert(spark.sql("select * from sdkOutputTable").collect().length == 100)
+    assert(spark.sql("select * from sdkOutputTable where name='robot0'").collect().length == 1)
 
     spark.sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
