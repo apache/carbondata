@@ -60,7 +60,7 @@ public class CarbonLoadModel implements Serializable {
   private boolean carbonTransactionalTable = true;
 
   /* Number of thread in which sdk writer is used */
-  private short sdkUserCores;
+  private short sdkWriterCores;
 
   private String csvHeader;
   private String[] csvHeaderColumns;
@@ -472,7 +472,7 @@ public class CarbonLoadModel implements Serializable {
     copy.sortColumnsBoundsStr = sortColumnsBoundsStr;
     copy.loadMinSize = loadMinSize;
     copy.parentTablePath = parentTablePath;
-    copy.sdkUserCores = sdkUserCores;
+    copy.sdkWriterCores = sdkWriterCores;
     return copy;
   }
 
@@ -528,7 +528,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.sortColumnsBoundsStr = sortColumnsBoundsStr;
     copyObj.loadMinSize = loadMinSize;
     copyObj.parentTablePath = parentTablePath;
-    copyObj.sdkUserCores = sdkUserCores;
+    copyObj.sdkWriterCores = sdkWriterCores;
     return copyObj;
   }
 
@@ -914,11 +914,11 @@ public class CarbonLoadModel implements Serializable {
     return mergedSegmentIds;
   }
 
-  public short getSdkUserCores() {
-    return sdkUserCores;
+  public short getSdkWriterCores() {
+    return sdkWriterCores;
   }
 
-  public void setSdkUserCores(short sdkUserCores) {
-    this.sdkUserCores = sdkUserCores;
+  public void setSdkWriterCores(short sdkWriterCores) {
+    this.sdkWriterCores = sdkWriterCores;
   }
 }

@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
@@ -235,8 +236,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
       final TaskAttemptContext taskAttemptContext) throws IOException {
     final CarbonLoadModel loadModel = getLoadModel(taskAttemptContext.getConfiguration());
     //if loadModel having taskNo already(like in SDK) then no need to overwrite
-    short sdkUserCore = loadModel.getSdkUserCores();
-    int itrSize = (sdkUserCore > 0) ? sdkUserCore : 1;
+    short sdkWriterCores = loadModel.getSdkWriterCores();
+    int itrSize = (sdkWriterCores > 0) ? sdkWriterCores : 1;
     final CarbonOutputIteratorWrapper[] iterators = new CarbonOutputIteratorWrapper[itrSize];
     for (int i = 0; i < itrSize; i++) {
       iterators[i] = new CarbonOutputIteratorWrapper();
@@ -273,7 +274,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
       }
     });
 
-    if (sdkUserCore > 0) {
+    if (sdkWriterCores > 0) {
       // CarbonMultiRecordWriter handles the load balancing of the write rows in round robin.
       return new CarbonMultiRecordWriter(iterators, dataLoadExecutor, loadModel, future,
           executorService);
@@ -460,27 +461,31 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
 
     private CarbonOutputIteratorWrapper[] iterators;
 
-    private int counter;
+    // keep counts of number of writes called
+    // and it is used to load balance each write call to one iterator.
+    private AtomicLong counter;
 
     CarbonMultiRecordWriter(CarbonOutputIteratorWrapper[] iterators,
         DataLoadExecutor dataLoadExecutor, CarbonLoadModel loadModel, Future future,
         ExecutorService executorService) {
       super(null, dataLoadExecutor, loadModel, future, executorService);
       this.iterators = iterators;
+      counter = new AtomicLong(0);
     }
 
-    @Override public synchronized void write(NullWritable aVoid, ObjectArrayWritable objects)
+    @Override public void write(NullWritable aVoid, ObjectArrayWritable objects)
         throws InterruptedException {
-      iterators[counter].write(objects.get());
-      if (++counter == iterators.length) {
-        //round robin reset
-        counter = 0;
+      int iteratorNum = (int) (counter.incrementAndGet() % iterators.length);
+      synchronized (iterators[iteratorNum]) {
+        iterators[iteratorNum].write(objects.get());
       }
     }
 
     @Override public void close(TaskAttemptContext taskAttemptContext) throws InterruptedException {
-      for (CarbonOutputIteratorWrapper itr : iterators) {
-        itr.closeWriter(false);
+      for (int i = 0; i < iterators.length; i++) {
+        synchronized (iterators[i]) {
+          iterators[i].closeWriter(false);
+        }
       }
       super.close(taskAttemptContext);
     }

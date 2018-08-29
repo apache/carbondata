@@ -416,7 +416,7 @@ public class CarbonWriterBuilder {
       throw new IllegalArgumentException(" numOfThreads must be greater than 0");
     }
     CarbonLoadModel loadModel = buildLoadModel(schema);
-    loadModel.setSdkUserCores(numOfThreads);
+    loadModel.setSdkWriterCores(numOfThreads);
     return new CSVCarbonWriter(loadModel);
   }
 
@@ -467,7 +467,7 @@ public class CarbonWriterBuilder {
     // removed from the load. LoadWithoutConverter flag is going to point to the Loader Builder
     // which will skip Conversion Step.
     loadModel.setLoadWithoutConverterStep(true);
-    loadModel.setSdkUserCores(numOfThreads);
+    loadModel.setSdkWriterCores(numOfThreads);
     return new AvroCarbonWriter(loadModel);
   }
 
@@ -511,7 +511,7 @@ public class CarbonWriterBuilder {
     this.schema = carbonSchema;
     CarbonLoadModel loadModel = buildLoadModel(schema);
     loadModel.setJsonFileLoad(true);
-    loadModel.setSdkUserCores(numOfThreads);
+    loadModel.setSdkWriterCores(numOfThreads);
     return new JsonCarbonWriter(loadModel);
   }
 
