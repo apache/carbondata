@@ -62,6 +62,8 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
 
   private AtomicLong rowCounter;
 
+  /* will be incremented for each batch. This ID is used in sort temp files name,
+   to identify files of that batch */
   private AtomicInteger batchId;
 
   public UnsafeBatchParallelReadMergeSorterImpl(AtomicLong rowCounter) {
