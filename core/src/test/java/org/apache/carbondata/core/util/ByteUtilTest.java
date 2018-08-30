@@ -41,8 +41,8 @@ public class ByteUtilTest extends TestCase {
   /**
    * This method will form one single byte [] for all the high card dims.
    *
-   * @param byteBufferArr
-   * @return
+   * @param byteBufferArr ByteBuffer array
+   * @return byte array
    */
   public static byte[] packByteBufferIntoSingleByteArray(ByteBuffer[] byteBufferArr) {
     // for empty array means there is no data to remove dictionary.
@@ -100,11 +100,13 @@ public class ByteUtilTest extends TestCase {
   /**
    * @throws Exception
    */
-  @Before public void setUp() throws Exception {
+  @Before
+  public void setUp() throws Exception {
 
   }
 
-  @Test public void testLessThan() {
+  @Test
+  public void testLessThan() {
     dimensionValue1 = "aaaaa6aa1235";
     dimensionValue2 = "aaaaa5aa1234";
 
@@ -112,13 +114,15 @@ public class ByteUtilTest extends TestCase {
     assertFalse(UnsafeComparer.INSTANCE.compareTo(buff1, buff2) < 0);
   }
 
-  @Test public void testIntConversion() {
+  @Test
+  public void testIntConversion() {
     byte[] data = new byte[4];
     ByteUtil.setInt(data, 0, 968);
     assertEquals(ByteUtil.toInt(data, 0), 968);
   }
 
-  @Test public void testEqualToCase() {
+  @Test
+  public void testEqualToCase() {
     dimensionValue1 = "aaaaaaaa1234";
     dimensionValue2 = "aaaaaaaa1234";
 
@@ -126,7 +130,8 @@ public class ByteUtilTest extends TestCase {
     assertTrue(UnsafeComparer.INSTANCE.compareTo(buff1, buff2) == 0);
   }
 
-  @Test public void testLessThanInBoundaryCondition() {
+  @Test
+  public void testLessThanInBoundaryCondition() {
     dimensionValue1 = "aaaaaaaa12341";
     dimensionValue2 = "aaaaaaaa12344";
 
@@ -164,7 +169,8 @@ public class ByteUtilTest extends TestCase {
     buff2.limit(buff2.position() + dimensionValue2.length());
   }
 
-  @Test public void testToBytes() {
+  @Test
+  public void testToBytes() {
     assertTrue(ByteUtil.toBoolean(ByteUtil.toBytes(true)));
     assertFalse(ByteUtil.toBoolean(ByteUtil.toBytes(false)));
 
@@ -213,7 +219,8 @@ public class ByteUtilTest extends TestCase {
         ByteUtil.toDouble(ByteUtil.toBytes(Double.MIN_VALUE), 0, 8));
   }
 
-  @Test public void testToXorBytes() {
+  @Test
+  public void testToXorBytes() {
     assertEquals(Short.MAX_VALUE,
         ByteUtil.toXorShort(ByteUtil.toXorBytes(Short.MAX_VALUE), 0, 2));
     assertEquals((short) (Short.MAX_VALUE / 2),
