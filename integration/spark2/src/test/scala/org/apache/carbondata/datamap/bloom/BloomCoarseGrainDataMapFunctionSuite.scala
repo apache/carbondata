@@ -709,7 +709,7 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
       s"""
          | CREATE TABLE $bloomDMSampleTable(empno string, doj date, salary float)
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('SORT_COLUMNS'='empno,doj', 'DICTIONARY_INCLUDE'='doj')
+         | TBLPROPERTIES('SORT_COLUMNS'='empno,doj', 'DICTIONARY_INCLUDE'='doj,empno')
        """.stripMargin)
     sql(
       s"""

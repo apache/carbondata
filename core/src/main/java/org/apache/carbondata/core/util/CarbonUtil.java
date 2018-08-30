@@ -1840,7 +1840,7 @@ public final class CarbonUtil {
         surrogate ^= data[startOffsetOfData + 3] & 0xFF;
         return surrogate;
       default:
-        throw new IllegalArgumentException("Int cannot me more than 4 bytes");
+        throw new IllegalArgumentException("Int cannot be more than 4 bytes");
     }
   }
   /**
