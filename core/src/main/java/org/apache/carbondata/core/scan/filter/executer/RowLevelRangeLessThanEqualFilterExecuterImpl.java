@@ -323,7 +323,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
         defaultValue = FilterUtil.getMaskKey(key, currentBlockDimension,
             this.segmentProperties.getSortColumnsGenerator());
       } else {
-        defaultValue = ByteUtil.toBytes(key);
+        defaultValue = ByteUtil.toXorBytes(key);
       }
     } else if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() != DataTypes.STRING) {
       defaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;

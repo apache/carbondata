@@ -154,15 +154,15 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
       } else if (dt == DataTypes.BOOLEAN) {
         vector.putBoolean(vectorRow, ByteUtil.toBoolean(data[currentDataOffset]));
       } else if (dt == DataTypes.SHORT) {
-        vector.putShort(vectorRow, ByteUtil.toShort(data, currentDataOffset, length));
+        vector.putShort(vectorRow, ByteUtil.toXorShort(data, currentDataOffset, length));
       } else if (dt == DataTypes.INT) {
-        vector.putInt(vectorRow, ByteUtil.toInt(data, currentDataOffset, length));
+        vector.putInt(vectorRow, ByteUtil.toXorInt(data, currentDataOffset, length));
       } else if (dt == DataTypes.LONG) {
         vector.putLong(vectorRow,
             DataTypeUtil.getDataBasedOnRestructuredDataType(data, vector.getBlockDataType(),
                 currentDataOffset, length));
       } else if (dt  == DataTypes.TIMESTAMP) {
-        vector.putLong(vectorRow, ByteUtil.toLong(data, currentDataOffset, length) * 1000L);
+        vector.putLong(vectorRow, ByteUtil.toXorLong(data, currentDataOffset, length) * 1000L);
       }
     }
   }

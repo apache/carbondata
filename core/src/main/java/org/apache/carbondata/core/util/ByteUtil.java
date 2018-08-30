@@ -414,7 +414,6 @@ public final class ByteUtil {
    * @return
    */
   public static byte[] toBytes(short val) {
-    val = (short)(val ^ Short.MIN_VALUE);
     byte[] b = new byte[SIZEOF_SHORT];
     b[1] = (byte) val;
     val >>= 8;
@@ -448,7 +447,7 @@ public final class ByteUtil {
       n <<= 8;
       n ^= bytes[offset + 1] & 0xFF;
     }
-    return (short)(n ^ Short.MIN_VALUE);
+    return n;
   }
 
   /**
@@ -458,7 +457,6 @@ public final class ByteUtil {
    * @return
    */
   public static byte[] toBytes(int val) {
-    val = val ^ Integer.MIN_VALUE;
     byte[] b = new byte[4];
     for (int i = 3; i > 0; i--) {
       b[i] = (byte) val;
@@ -519,7 +517,7 @@ public final class ByteUtil {
         n ^= bytes[i] & 0xFF;
       }
     }
-    return n ^ Integer.MIN_VALUE;
+    return n;
   }
 
   public static int toInt(byte[] bytes, int offset) {
@@ -550,7 +548,6 @@ public final class ByteUtil {
    * @return
    */
   public static byte[] toBytes(long val) {
-    val = val ^ Long.MIN_VALUE;
     byte[] b = new byte[8];
     for (int i = 7; i > 0; i--) {
       b[i] = (byte) val;
@@ -589,7 +586,7 @@ public final class ByteUtil {
         l ^= bytes[i] & 0xFF;
       }
     }
-    return l ^ Long.MIN_VALUE;
+    return l;
   }
 
   private static IllegalArgumentException explainWrongLengthOrOffset(final byte[] bytes,
@@ -669,4 +666,54 @@ public final class ByteUtil {
     return flattenedData;
   }
 
+  /**
+   * If number type column is in sort_columns, the column will be no-dictionary column.
+   * It will compare byte arrays to sort the data.
+   * For example the binary string of int value as follows.
+   * 1  : 00000000 00000000 00000000 00000001
+   * -1 : 11111111 11111111 11111111 11111111
+   * In this case, the compare method of byte arrays will return a wrong result.(1 < -1)
+   * The root cause is that the sign bit of negative number is 1.
+   * These XOR methods will change the sign bit as follows.
+   * 1  ^ MIN_VALUE : 10000000 00000000 00000000 00000001
+   * -1 ^ MIN_VALUE : 01111111 11111111 11111111 11111111
+   * After the transform, the compare method of byte arrays will return a right result.(1 > -1)
+   */
+  public static byte[] toXorBytes(short val) {
+    val = (short) (val ^ Short.MIN_VALUE);
+    return toBytes(val);
+  }
+
+  public static byte[] toXorBytes(int val) {
+    val = val ^ Integer.MIN_VALUE;
+    return toBytes(val);
+  }
+
+  public static byte[] toXorBytes(long val) {
+    val = val ^ Long.MIN_VALUE;
+    return toBytes(val);
+  }
+
+  public static byte[] toXorBytes(double val) {
+    return toXorBytes(Double.doubleToLongBits(val));
+  }
+
+  /**
+   * The following methods convert byte array back to the real value.
+   */
+  public static short toXorShort(byte[] bytes, int offset, final int length) {
+    return (short) (toShort(bytes, offset, length) ^ Short.MIN_VALUE);
+  }
+
+  public static int toXorInt(byte[] bytes, int offset, final int length) {
+    return toInt(bytes, offset, length) ^ Integer.MIN_VALUE;
+  }
+
+  public static long toXorLong(byte[] bytes, int offset, final int length) {
+    return toLong(bytes, offset, length) ^ Long.MIN_VALUE;
+  }
+
+  public static double toXorDouble(byte[] value, int offset, int length) {
+    return Double.longBitsToDouble(toXorLong(value, offset, length));
+  }
 }

@@ -615,7 +615,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
           defaultValue = FilterUtil.getMaskKey(key, currentBlockDimension,
               this.segmentProperties.getSortColumnsGenerator());
         } else {
-          defaultValue = ByteUtil.toBytes(key);
+          defaultValue = ByteUtil.toXorBytes(key);
         }
       } else {
         if (dimColEvaluatorInfo.getDimension().getDataType() == DataTypes.STRING) {

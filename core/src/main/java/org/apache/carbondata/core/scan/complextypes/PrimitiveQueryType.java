@@ -155,7 +155,7 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
           actualData = null;
         } else {
           actualData = this.directDictGenForDate.getValueFromSurrogate(
-              ByteUtil.toInt(value, 0, CarbonCommonConstants.INT_SIZE_IN_BYTE));
+              ByteUtil.toXorInt(value, 0, CarbonCommonConstants.INT_SIZE_IN_BYTE));
         }
       } else {
         actualData = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(value, this.dataType);
