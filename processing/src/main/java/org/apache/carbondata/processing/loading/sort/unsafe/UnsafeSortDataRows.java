@@ -127,8 +127,11 @@ public class UnsafeSortDataRows {
   /**
    * This method will be used to initialize
    */
-  public void initialize() throws MemoryException, CarbonSortKeyAndGroupByException {
+  public void initialize() throws MemoryException {
     this.rowPage = createUnsafeRowPage();
+    if (this.rowPage == null) {
+      throw new MemoryException(" Not enough memory ");
+    }
     // Delete if any older file exists in sort temp folder
     deleteSortLocationIfExists();
 
@@ -140,19 +143,25 @@ public class UnsafeSortDataRows {
     semaphore = new Semaphore(parameters.getNumberOfCores());
   }
 
-  private UnsafeCarbonRowPage createUnsafeRowPage()
-      throws MemoryException, CarbonSortKeyAndGroupByException {
-    MemoryBlock baseBlock =
-        UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
-    boolean isMemoryAvailable =
-        UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(baseBlock.size());
-    if (isMemoryAvailable) {
-      UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(baseBlock.size());
-    } else {
-      // merge and spill in-memory pages to disk if memory is not enough
-      unsafeInMemoryIntermediateFileMerger.tryTriggerInmemoryMerging(true);
+  private UnsafeCarbonRowPage createUnsafeRowPage() {
+    try {
+      MemoryBlock baseBlock =
+          UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
+      boolean isMemoryAvailable =
+          UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(baseBlock.size());
+      if (isMemoryAvailable) {
+        UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(baseBlock.size());
+      } else {
+        // merge and spill in-memory pages to disk if memory is not enough
+        unsafeInMemoryIntermediateFileMerger.tryTriggerInmemoryMerging(true);
+      }
+      return new UnsafeCarbonRowPage(tableFieldStat, baseBlock, !isMemoryAvailable, taskId);
+    } catch (MemoryException | CarbonSortKeyAndGroupByException e) {
+      // This will set rowPage reference to null. If not set, other threads will use same reference.
+      // As handlePreviousPage() free the rowPage.
+      // If not set to null, rowPage will be accessed again after free by other thread.
+      return null;
     }
-    return new UnsafeCarbonRowPage(tableFieldStat, baseBlock, !isMemoryAvailable, taskId);
   }
 
   public boolean canAdd() {
@@ -188,6 +197,9 @@ public class UnsafeSortDataRows {
   }
 
   private void addBatch(Object[][] rowBatch, int size) throws CarbonSortKeyAndGroupByException {
+    if (rowPage == null) {
+      return;
+    }
     for (int i = 0; i < size; i++) {
       if (rowPage.canAdd()) {
         bytesAdded += rowPage.addRow(rowBatch[i], rowBuffer.get());
@@ -195,6 +207,9 @@ public class UnsafeSortDataRows {
         try {
           handlePreviousPage();
           rowPage = createUnsafeRowPage();
+          if (rowPage == null) {
+            throw new MemoryException(" Not enough memory ");
+          }
           bytesAdded += rowPage.addRow(rowBatch[i], rowBuffer.get());
         } catch (Exception e) {
           LOGGER.error(
@@ -210,6 +225,9 @@ public class UnsafeSortDataRows {
    * This method will be used to add new row
    */
   public void addRow(Object[] row) throws CarbonSortKeyAndGroupByException {
+    if (rowPage == null) {
+      return;
+    }
     // if record holder list size is equal to sort buffer size then it will
     // sort the list and then write current list data to file
     if (rowPage.canAdd()) {
@@ -218,6 +236,9 @@ public class UnsafeSortDataRows {
       try {
         handlePreviousPage();
         rowPage = createUnsafeRowPage();
+        if (rowPage == null) {
+          throw new MemoryException(" Not enough memory ");
+        }
         rowPage.addRow(row, rowBuffer.get());
       } catch (Exception e) {
         LOGGER.error(
