@@ -17,6 +17,7 @@
 package org.apache.spark.sql.carbondata.datasource
 
 
+import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.carbondata.datasource.TestUtil._
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
@@ -24,7 +25,7 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 
-class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
+class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
 
 
   test("test write using dataframe") {
@@ -508,12 +509,93 @@ class SparkCarbonDataSourceTest extends FunSuite  with BeforeAndAfterAll {
     spark.sql("drop table if exists c_jin")
   }
 
+  test("test write and create table with sort columns not allow") {
+    spark.sql("drop table if exists test123")
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_folder"))
+    import spark.implicits._
+    val df = spark.sparkContext.parallelize(1 to 10)
+      .map(x => ("a" + x % 10, "b", "c" + x, "d" + x, x.toShort, x, x.toLong, x.toDouble, BigDecimal
+        .apply(x)))
+      .toDF("c1", "c2", "c3", "c4", "shortc", "intc", "longc", "doublec", "bigdecimalc")
+
+    // Saves dataframe to carbon file
+    df.write.format("carbon").save(s"$warehouse1/test_folder/")
+    if (!spark.sparkContext.version.startsWith("2.1")) {
+      intercept[UnsupportedOperationException] {
+        spark
+          .sql(s"create table test123 using carbon options('sort_columns'='shortc,c2') location " +
+               s"'$warehouse1/test_folder/'")
+      }
+    }
+    spark.sql("drop table if exists test123")
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_folder"))
+  }
+
+  test("valdate if path not specified during table creation") {
+    spark.sql("drop table if exists test123")
+    val ex = intercept[AnalysisException] {
+      spark.sql(s"create table test123 using carbon options('sort_columns'='shortc,c2')")
+    }
+    assert(ex.getMessage().contains("Unable to infer schema for carbon"))
+  }
+
+  test("test double boundary") {
+    spark.sql("drop table if exists par")
+    spark.sql("drop table if exists car")
+
+    spark.sql("create table par (c1 string, c2 double, n int) using parquet")
+    spark.sql("create table car (c1 string, c2 double, n int) using carbon")
+    spark.sql("insert into par select 'a', 1.7986931348623157E308, 215565665556")
+        spark.sql("insert into car select 'a', 1.7986931348623157E308, 215565665556")
+
+    checkAnswer(spark.sql("select * from car"), spark.sql("select * from par"))
+    spark.sql("drop table if exists par")
+    spark.sql("drop table if exists car")
+  }
+
+  test("test clearing datamaps") {
+    if (!spark.sparkContext.version.startsWith("2.1")) {
+      import spark.implicits._
+      val df = spark.sparkContext.parallelize(1 to 10)
+        .map(x => ("a" + x % 10, "b", x))
+        .toDF("c1", "c2", "number")
+      spark.sql("drop table if exists testparquet")
+      spark.sql("drop table if exists carbon_table")
+      spark.sql("drop table if exists carbon_table1")
+      // Saves dataframe to carbon file
+      df.write
+        .format("parquet").saveAsTable("testparquet")
+      spark.sql("create table carbon_table(c1 string, c2 string, number int) using carbon")
+      spark.sql("create table carbon_table1(c1 string, c2 string, number int) using carbon")
+      spark.sql("insert into carbon_table select * from testparquet")
+      spark.sql("insert into carbon_table1 select * from testparquet")
+      DataMapStoreManager.getInstance().getAllDataMaps.clear()
+      spark.sql("select * from carbon_table where c1='a1'").collect()
+      assert(DataMapStoreManager.getInstance().getAllDataMaps.size() == 1)
+      spark.sql("select * from carbon_table where c1='a2'").collect()
+      assert(DataMapStoreManager.getInstance().getAllDataMaps.size() == 1)
+      spark.sql("select * from carbon_table1 where c1='a1'").collect()
+      assert(DataMapStoreManager.getInstance().getAllDataMaps.size() == 2)
+      spark.sql("select * from carbon_table1 where c1='a2'").collect()
+      assert(DataMapStoreManager.getInstance().getAllDataMaps.size() == 2)
+      DataMapStoreManager.getInstance()
+        .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table"))
+      assert(DataMapStoreManager.getInstance().getAllDataMaps.size() == 1)
+      DataMapStoreManager.getInstance()
+        .clearDataMaps(AbsoluteTableIdentifier.from(warehouse1 + "/carbon_table1"))
+      assert(DataMapStoreManager.getInstance().getAllDataMaps.size() == 0)
+      spark.sql("drop table if exists testparquet")
+      spark.sql("drop table if exists carbon_table")
+      spark.sql("drop table if exists carbon_table1")
+    }
+  }
+
 
   override protected def beforeAll(): Unit = {
     drop
   }
 
-  override def afterAll():Unit = {
+  override def afterAll(): Unit = {
     drop
   }
 

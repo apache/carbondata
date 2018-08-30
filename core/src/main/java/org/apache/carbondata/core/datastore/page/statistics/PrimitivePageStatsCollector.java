@@ -222,11 +222,17 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
    * TODO: it operation is costly, optimize for performance
    */
   private int getDecimalCount(double value) {
-    String strValue = BigDecimal.valueOf(Math.abs(value)).toPlainString();
-    int integerPlaces = strValue.indexOf('.');
     int decimalPlaces = 0;
-    if (-1 != integerPlaces) {
-      decimalPlaces = strValue.length() - integerPlaces - 1;
+    try {
+      String strValue = BigDecimal.valueOf(Math.abs(value)).toPlainString();
+      int integerPlaces = strValue.indexOf('.');
+      if (-1 != integerPlaces) {
+        decimalPlaces = strValue.length() - integerPlaces - 1;
+      }
+    } catch (NumberFormatException e) {
+      if (!Double.isInfinite(value)) {
+        throw e;
+      }
     }
     return decimalPlaces;
   }

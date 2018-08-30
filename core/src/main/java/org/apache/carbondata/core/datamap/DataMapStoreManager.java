@@ -315,6 +315,13 @@ public final class DataMapStoreManager {
     String tableUniqueName =
         table.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableUniqueName();
     List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
+    if (tableIndices == null) {
+      String keyUsingTablePath = getKeyUsingTablePath(table.getTablePath());
+      if (keyUsingTablePath != null) {
+        tableUniqueName = keyUsingTablePath;
+        tableIndices = allDataMaps.get(tableUniqueName);
+      }
+    }
     TableDataMap dataMap = null;
     if (tableIndices != null) {
       dataMap = getTableDataMap(dataMapSchema.getDataMapName(), tableIndices);
@@ -339,6 +346,18 @@ public final class DataMapStoreManager {
       throw new RuntimeException("Datamap does not exist");
     }
     return dataMap;
+  }
+
+  private String getKeyUsingTablePath(String tablePath) {
+    if (tablePath != null) {
+      // Try get using table path
+      for (Map.Entry<String, String> entry : tablePathMap.entrySet()) {
+        if (new Path(entry.getValue()).equals(new Path(tablePath))) {
+          return entry.getKey();
+        }
+      }
+    }
+    return null;
   }
 
   /**
@@ -378,6 +397,13 @@ public final class DataMapStoreManager {
     // Just update the segmentRefreshMap with the table if not added.
     getTableSegmentRefresher(table);
     List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
+    if (tableIndices == null) {
+      String keyUsingTablePath = getKeyUsingTablePath(table.getTablePath());
+      if (keyUsingTablePath != null) {
+        tableUniqueName = keyUsingTablePath;
+        tableIndices = allDataMaps.get(tableUniqueName);
+      }
+    }
     if (tableIndices == null) {
       tableIndices = new ArrayList<>();
     }
@@ -434,14 +460,11 @@ public final class DataMapStoreManager {
     CarbonTable carbonTable = getCarbonTable(identifier);
     String tableUniqueName = identifier.getCarbonTableIdentifier().getTableUniqueName();
     List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
-    if (tableIndices == null && identifier.getTablePath() != null) {
-      // Try get using table path
-      for (Map.Entry<String, String> entry : tablePathMap.entrySet()) {
-        if (new Path(entry.getValue()).equals(new Path(identifier.getTablePath()))) {
-          tableIndices = allDataMaps.get(entry.getKey());
-          tableUniqueName = entry.getKey();
-          break;
-        }
+    if (tableIndices == null) {
+      String keyUsingTablePath = getKeyUsingTablePath(identifier.getTablePath());
+      if (keyUsingTablePath != null) {
+        tableUniqueName = keyUsingTablePath;
+        tableIndices = allDataMaps.get(tableUniqueName);
       }
     }
     if (null != carbonTable && tableIndices != null) {
@@ -473,7 +496,7 @@ public final class DataMapStoreManager {
             .buildFromTablePath(identifier.getTableName(), identifier.getDatabaseName(),
                 identifier.getTablePath(), identifier.getCarbonTableIdentifier().getTableId());
       } catch (IOException e) {
-        LOGGER.error("failed to get carbon table from table Path");
+        LOGGER.warn("failed to get carbon table from table Path" + e.getMessage());
         // ignoring exception
       }
     }
