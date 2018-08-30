@@ -33,6 +33,7 @@ import org.apache.carbondata.core.indexstore.blockletindex.{BlockDataMap, Blockl
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema
 import org.apache.carbondata.core.indexstore.Blocklet
 import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.scan.expression.conditional.NotEqualsExpression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
@@ -300,7 +301,8 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     val notEqualsExpression = new NotEqualsExpression(columnExpression, literalNullExpression)
     val equalsExpression = new NotEqualsExpression(columnExpression, literalValueExpression)
     val andExpression = new AndExpression(notEqualsExpression, equalsExpression)
-    val resolveFilter: FilterResolverIntf = carbonTable.resolveFilter(andExpression)
+    val resolveFilter: FilterResolverIntf =
+      CarbonTable.resolveFilter(andExpression, carbonTable.getAbsoluteTableIdentifier)
     val exprWrapper = DataMapChooser.getDefaultDataMap(carbonTable, resolveFilter)
     val segment = new Segment("0")
     // get the pruned blocklets

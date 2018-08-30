@@ -28,7 +28,7 @@ import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.execution.datasources._
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types.{AtomicType, StructType}
 
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, HDFSCarbonFile}
 import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope
@@ -84,9 +84,13 @@ class CarbonFileIndex(
       val hadoopConf = sparkSession.sessionState.newHadoopConf()
       // convert t sparks source filter
       val filters = dataFilters.flatMap(DataSourceStrategy.translateFilter)
-
+      val dataTypeMap = dataSchema.map(f => f.name -> f.dataType).toMap
       // convert to carbon filter expressions
-      val filter: Option[CarbonExpression] = filters.flatMap { filter =>
+      val filter: Option[CarbonExpression] = filters.filterNot{ ref =>
+        ref.references.exists{ p =>
+          !dataTypeMap(p).isInstanceOf[AtomicType]
+        }
+      }.flatMap { filter =>
         CarbonSparkDataSourceUtil.createCarbonFilter(dataSchema, filter)
       }.reduceOption(new AndExpression(_, _))
       val model = CarbonSparkDataSourceUtil.prepareLoadModel(parameters, dataSchema)

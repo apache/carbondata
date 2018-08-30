@@ -52,12 +52,16 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
+import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
+import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
@@ -214,12 +218,20 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         if (null == fileFooter) {
           blockInfo.setDetailInfo(null);
           fileFooter = CarbonUtil.readMetadatFile(blockInfo);
+          // In case of non transactional table just set columnuniqueid as columnName to support
+          // backward compatabiity. non transactional tables column uniqueid is always equal to
+          // columnname
+          if (!queryModel.getTable().isTransactionalTable()) {
+            QueryUtil.updateColumnUniqueIdForNonTransactionTable(fileFooter.getColumnInTable());
+          }
           filePathToFileFooterMapping.put(blockInfo.getFilePath(), fileFooter);
           blockInfo.setDetailInfo(blockletDetailInfo);
         }
         if (null == segmentProperties) {
           segmentProperties = new SegmentProperties(fileFooter.getColumnInTable(),
               fileFooter.getSegmentInfo().getColumnCardinality());
+          createFilterExpression(queryModel, segmentProperties);
+          updateColumns(queryModel, fileFooter.getColumnInTable(), blockInfo.getFilePath());
           filePathToSegmentPropertiesMap.put(blockInfo.getFilePath(), segmentProperties);
         }
         readAndFillBlockletInfo(tableBlockInfos, blockInfo,
@@ -228,6 +240,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         if (null == segmentProperties) {
           segmentProperties = new SegmentProperties(blockInfo.getDetailInfo().getColumnSchemas(),
               blockInfo.getDetailInfo().getDimLens());
+          createFilterExpression(queryModel, segmentProperties);
+          updateColumns(queryModel, blockInfo.getDetailInfo().getColumnSchemas(),
+              blockInfo.getFilePath());
           filePathToSegmentPropertiesMap.put(blockInfo.getFilePath(), segmentProperties);
         }
         tableBlockInfos.add(blockInfo);
@@ -239,6 +254,88 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           filePathToSegmentPropertiesMap.get(tableBlockInfos.get(0).getFilePath())));
     }
     return indexList;
+  }
+
+  /**
+   * It updates dimensions and measures of query model. In few scenarios like SDK user can configure
+   * sort options per load, so if first load has c1 as integer column and configure as sort column
+   * then carbon treat that as dimension.But in second load if user change the sort option then the
+   * c1 become measure as bydefault integers are measures. So this method updates the measures to
+   * dimensions and vice versa as per the indexfile schema.
+   */
+  private void updateColumns(QueryModel queryModel, List<ColumnSchema> columnsInTable,
+      String filePath) throws IOException {
+    if (queryModel.getTable().isTransactionalTable()) {
+      return;
+    }
+    // First validate the schema of the carbondata file
+    boolean sameColumnSchemaList = BlockletDataMapUtil.isSameColumnSchemaList(columnsInTable,
+        queryModel.getTable().getTableInfo().getFactTable().getListOfColumns());
+    if (!sameColumnSchemaList) {
+      LOGGER.error("Schema of " + filePath + " doesn't match with the table's schema");
+      throw new IOException("All the files doesn't have same schema. "
+          + "Unsupported operation on nonTransactional table. Check logs.");
+    }
+    List<ProjectionDimension> dimensions = queryModel.getProjectionDimensions();
+    List<ProjectionMeasure> measures = queryModel.getProjectionMeasures();
+    List<ProjectionDimension> updatedDims = new ArrayList<>();
+    List<ProjectionMeasure> updatedMsrs = new ArrayList<>();
+
+    // Check and update dimensions to measures if it is measure in indexfile schema
+    for (ProjectionDimension dimension : dimensions) {
+      int index = columnsInTable.indexOf(dimension.getDimension().getColumnSchema());
+      if (index > -1) {
+        if (!columnsInTable.get(index).isDimensionColumn()) {
+          ProjectionMeasure measure = new ProjectionMeasure(
+              new CarbonMeasure(columnsInTable.get(index), dimension.getDimension().getOrdinal(),
+                  dimension.getDimension().getSchemaOrdinal()));
+          measure.setOrdinal(dimension.getOrdinal());
+          updatedMsrs.add(measure);
+        } else {
+          updatedDims.add(dimension);
+        }
+      } else {
+        updatedDims.add(dimension);
+      }
+    }
+
+    // Check and update measure to dimension if it is dimension in indexfile schema.
+    for (ProjectionMeasure measure : measures) {
+      int index = columnsInTable.indexOf(measure.getMeasure().getColumnSchema());
+      if (index > -1) {
+        if (columnsInTable.get(index).isDimensionColumn()) {
+          ProjectionDimension dimension = new ProjectionDimension(
+              new CarbonDimension(columnsInTable.get(index), measure.getMeasure().getOrdinal(),
+                  measure.getMeasure().getSchemaOrdinal(), -1, -1));
+          dimension.setOrdinal(measure.getOrdinal());
+          updatedDims.add(dimension);
+        } else {
+          updatedMsrs.add(measure);
+        }
+      } else {
+        updatedMsrs.add(measure);
+      }
+    }
+    // Clear and update the query model projections.
+    dimensions.clear();
+    dimensions.addAll(updatedDims);
+    measures.clear();
+    measures.addAll(updatedMsrs);
+  }
+
+  private void createFilterExpression(QueryModel queryModel, SegmentProperties properties) {
+    Expression expression = queryModel.getFilterExpression();
+    if (expression != null) {
+      QueryModel.FilterProcessVO processVO =
+          new QueryModel.FilterProcessVO(properties.getDimensions(), properties.getMeasures(),
+              new ArrayList<CarbonDimension>());
+      QueryModel.processFilterExpression(processVO, expression, null, null);
+      // Optimize Filter Expression and fit RANGE filters is conditions apply.
+      FilterOptimizer rangeFilterOptimizer = new RangeFilterOptmizer(expression);
+      rangeFilterOptimizer.optimizeFilter();
+      queryModel.setFilterExpressionResolverTree(
+          CarbonTable.resolveFilter(expression, queryModel.getAbsoluteTableIdentifier()));
+    }
   }
 
   /**

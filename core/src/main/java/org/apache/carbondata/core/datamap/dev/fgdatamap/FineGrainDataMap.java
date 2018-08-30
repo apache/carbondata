@@ -16,9 +16,16 @@
  */
 package org.apache.carbondata.core.datamap.dev.fgdatamap;
 
+import java.io.IOException;
+import java.util.List;
+
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datamap.dev.DataMap;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.indexstore.PartitionSpec;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.scan.expression.Expression;
 
 /**
  * DataMap for Fine Grain level, see {@link org.apache.carbondata.core.datamap.DataMapLevel#FG}
@@ -27,4 +34,9 @@ import org.apache.carbondata.core.datamap.dev.DataMap;
 @InterfaceStability.Evolving
 public abstract class FineGrainDataMap implements DataMap<FineGrainBlocklet> {
 
+  @Override
+  public List<FineGrainBlocklet> prune(Expression filter, SegmentProperties segmentProperties,
+      List<PartitionSpec> partitions, AbsoluteTableIdentifier identifier) throws IOException {
+    throw new UnsupportedOperationException("Filter expression not supported");
+  }
 }

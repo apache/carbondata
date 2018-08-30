@@ -30,8 +30,10 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
 import org.apache.carbondata.core.datamap.DataMapChooser;
 import org.apache.carbondata.core.datamap.DataMapJob;
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.DataMapUtil;
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapWrapperSimpleInfo;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
@@ -390,7 +392,7 @@ m filterExpression
    * get data blocks of given segment
    */
   protected List<CarbonInputSplit> getDataBlocksOfSegment(JobContext job, CarbonTable carbonTable,
-      FilterResolverIntf resolver, BitSet matchedPartitions, List<Segment> segmentIds,
+      Expression expression, BitSet matchedPartitions, List<Segment> segmentIds,
       PartitionInfo partitionInfo, List<Integer> oldPartitionIdList) throws IOException {
 
     QueryStatisticsRecorder recorder = CarbonTimeStatisticsFactory.createDriverRecorder();
@@ -400,7 +402,7 @@ m filterExpression
     TokenCache.obtainTokensForNamenodes(job.getCredentials(),
         new Path[] { new Path(carbonTable.getTablePath()) }, job.getConfiguration());
     List<ExtendedBlocklet> prunedBlocklets =
-        getPrunedBlocklets(job, carbonTable, resolver, segmentIds);
+        getPrunedBlocklets(job, carbonTable, expression, segmentIds);
 
     List<CarbonInputSplit> resultFilteredBlocks = new ArrayList<>();
     int partitionIndex = 0;
@@ -447,10 +449,13 @@ m filterExpression
    * First pruned with default blocklet datamap, then pruned with CG and FG datamaps
    */
   private List<ExtendedBlocklet> getPrunedBlocklets(JobContext job, CarbonTable carbonTable,
-      FilterResolverIntf resolver, List<Segment> segmentIds) throws IOException {
+      Expression expression, List<Segment> segmentIds) throws IOException {
     ExplainCollector.addPruningInfo(carbonTable.getTableName());
-    if (resolver != null) {
-      ExplainCollector.setFilterStatement(resolver.getFilterExpression().getStatement());
+    FilterResolverIntf resolver = null;
+    if (expression != null) {
+      carbonTable.processFilterExpression(expression, null, null);
+      resolver = CarbonTable.resolveFilter(expression, carbonTable.getAbsoluteTableIdentifier());
+      ExplainCollector.setFilterStatement(expression.getStatement());
     } else {
       ExplainCollector.setFilterStatement("none");
     }
@@ -461,10 +466,13 @@ m filterExpression
     DataMapJob dataMapJob = DataMapUtil.getDataMapJob(job.getConfiguration());
     List<PartitionSpec> partitionsToPrune = getPartitionsToPrune(job.getConfiguration());
     // First prune using default datamap on driver side.
-    DataMapExprWrapper dataMapExprWrapper = DataMapChooser
-        .getDefaultDataMap(getOrCreateCarbonTable(job.getConfiguration()), resolver);
-    List<ExtendedBlocklet> prunedBlocklets =
-        dataMapExprWrapper.prune(segmentIds, partitionsToPrune);
+    TableDataMap defaultDataMap = DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable);
+    List<ExtendedBlocklet> prunedBlocklets = null;
+    if (carbonTable.isTransactionalTable()) {
+      prunedBlocklets = defaultDataMap.prune(segmentIds, resolver, partitionsToPrune);
+    } else {
+      prunedBlocklets = defaultDataMap.prune(segmentIds, expression, partitionsToPrune);
+    }
 
     if (prunedBlocklets.size() == 0) {
       return prunedBlocklets;

@@ -98,6 +98,13 @@ public class ColumnExpression extends LeafExpression {
     return dataType;
   }
 
+  public void reset() {
+    dimension = null;
+    measure = null;
+    isDimension = false;
+    isMeasure = false;
+  }
+
   @Override
   public ExpressionResult evaluate(RowIntf value) {
     return new ExpressionResult(dataType, (null == value ? null : value.getVal(colIndex)));
