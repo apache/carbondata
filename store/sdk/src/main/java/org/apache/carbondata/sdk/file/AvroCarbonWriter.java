@@ -18,6 +18,8 @@
 package org.apache.carbondata.sdk.file;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -29,6 +31,7 @@ import java.util.UUID;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -46,6 +49,7 @@ import org.apache.avro.LogicalType;
 import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
+import org.apache.avro.util.Utf8;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.JobID;
@@ -103,42 +107,6 @@ public class AvroCarbonWriter extends CarbonWriter {
     Schema.Type type = avroField.schema().getType();
     LogicalType logicalType = avroField.schema().getLogicalType();
     switch (type) {
-      case INT:
-        if (logicalType != null) {
-          if (logicalType instanceof LogicalTypes.Date) {
-            int dateIntValue = (int) fieldValue;
-            out = dateIntValue * DateDirectDictionaryGenerator.MILLIS_PER_DAY;
-          } else {
-            LOGGER.warn("Actual type: INT, Logical Type: " + logicalType.getName());
-            out = fieldValue;
-          }
-        } else {
-          out = fieldValue;
-        }
-        break;
-      case BOOLEAN:
-      case LONG:
-        if (logicalType != null && !(logicalType instanceof LogicalTypes.TimestampMillis)) {
-          if (logicalType instanceof LogicalTypes.TimestampMicros) {
-            long dateIntValue = (long) fieldValue;
-            out = dateIntValue / 1000L;
-          } else {
-            LOGGER.warn("Actual type: INT, Logical Type: " + logicalType.getName());
-            out = fieldValue;
-          }
-        } else {
-          out = fieldValue;
-        }
-        break;
-      case DOUBLE:
-      case STRING:
-        out = fieldValue;
-        break;
-      case FLOAT:
-        // direct conversion will change precision. So parse from string.
-        // also carbon internally needs float as double
-        out = Double.parseDouble(fieldValue.toString());
-        break;
       case MAP:
         // Note: Avro object takes care of removing the duplicates so we should not handle it again
         // Map will be internally stored as Array<Struct<Key,Value>>
@@ -213,12 +181,234 @@ public class AvroCarbonWriter extends CarbonWriter {
         }
         out = new ArrayObject(arrayChildObjects);
         break;
+      case UNION:
+        // Union type will be internally stored as Struct<col:type>
+        // Fill data object only if fieldvalue is instance of datatype
+        // For other field datatypes, fill value as Null
+        List<Schema> unionFields = avroField.schema().getTypes();
+        int notNullUnionFieldsCount = 0;
+        for (Schema unionField : unionFields) {
+          if (!unionField.getType().equals(Schema.Type.NULL)) {
+            notNullUnionFieldsCount++;
+          }
+        }
+        Object[] values = new Object[notNullUnionFieldsCount];
+        int j = 0;
+        for (Schema unionField : unionFields) {
+          if (unionField.getType().equals(Schema.Type.NULL)) {
+            continue;
+          }
+          if (checkFieldValueType(unionField.getType(), fieldValue)) {
+            values[j] = avroFieldToObjectForUnionType(unionField, fieldValue, avroField);
+            break;
+          }
+          j++;
+        }
+        out = new StructObject(values);
+        break;
+      default:
+        out = avroPrimitiveFieldToObject(type, logicalType, fieldValue);
+    }
+    return out;
+  }
+
+  /**
+   * For Union type, fill data if Schema.Type is instance of fieldValue
+   * and return result
+   *
+   * @param type
+   * @param fieldValue
+   * @return
+   */
+  private boolean checkFieldValueType(Schema.Type type, Object fieldValue) {
+    switch (type) {
+      case INT:
+        return (fieldValue instanceof Integer);
+      case BOOLEAN:
+        return (fieldValue instanceof Boolean);
+      case LONG:
+        return (fieldValue instanceof Long);
+      case DOUBLE:
+        return (fieldValue instanceof Double);
+      case STRING:
+        return (fieldValue instanceof Utf8 || fieldValue instanceof String);
+      case FLOAT:
+        return (fieldValue instanceof Float);
+      case RECORD:
+        return (fieldValue instanceof GenericData.Record);
+      case ARRAY:
+        return (fieldValue instanceof GenericData.Array || fieldValue instanceof ArrayList);
+      case BYTES:
+        return (fieldValue instanceof ByteBuffer);
+      case MAP:
+        return (fieldValue instanceof HashMap);
+      case ENUM:
+        return (fieldValue instanceof GenericData.EnumSymbol);
+      default:
+        return false;
+    }
+  }
+
+  private Object avroPrimitiveFieldToObject(Schema.Type type, LogicalType logicalType,
+      Object fieldValue) {
+    Object out = null;
+    switch (type) {
+      case INT:
+        if (logicalType != null) {
+          if (logicalType instanceof LogicalTypes.Date) {
+            int dateIntValue = (int) fieldValue;
+            out = dateIntValue * DateDirectDictionaryGenerator.MILLIS_PER_DAY;
+          } else {
+            LOGGER.warn("Actual type: INT, Logical Type: " + logicalType.getName());
+            out = fieldValue;
+          }
+        } else {
+          out = fieldValue;
+        }
+        break;
+      case BOOLEAN:
+      case LONG:
+        if (logicalType != null && !(logicalType instanceof LogicalTypes.TimestampMillis)) {
+          if (logicalType instanceof LogicalTypes.TimestampMicros) {
+            long dateIntValue = (long) fieldValue;
+            out = dateIntValue / 1000L;
+          } else {
+            LOGGER.warn("Actual type: INT, Logical Type: " + logicalType.getName());
+            out = fieldValue;
+          }
+        } else {
+          out = fieldValue;
+        }
+        break;
+      case DOUBLE:
+      case STRING:
+      case ENUM:
+        out = fieldValue;
+        break;
+      case FLOAT:
+        // direct conversion will change precision. So parse from string.
+        // also carbon internally needs float as double
+        out = Double.parseDouble(fieldValue.toString());
+        break;
+      case BYTES:
+        // DECIMAL type is defined in Avro as a BYTE type with the logicalType property
+        // set to "decimal" and a specified precision and scale
+        // As binary type is not supported yet,value will be null
+        if (logicalType instanceof LogicalTypes.Decimal) {
+          out = new BigDecimal(new String(((ByteBuffer) fieldValue).array(),
+              CarbonCommonConstants.DEFAULT_CHARSET_CLASS));
+        }
+        break;
       case NULL:
         out = null;
         break;
       default:
         throw new UnsupportedOperationException(
             "carbon not support " + type.toString() + " avro type yet");
+    }
+    return out;
+  }
+
+  /**
+   * fill fieldvalue for union type
+   *
+   * @param avroField
+   * @param fieldValue
+   * @param avroFields
+   * @return
+   */
+  private Object avroFieldToObjectForUnionType(Schema avroField, Object fieldValue,
+      Schema.Field avroFields) {
+    Object out;
+    Schema.Type type = avroField.getType();
+    LogicalType logicalType = avroField.getLogicalType();
+    switch (type) {
+      case RECORD:
+        if (fieldValue instanceof GenericData.Record) {
+          List<Schema.Field> fields = avroField.getFields();
+
+          Object[] structChildObjects = new Object[fields.size()];
+          for (int i = 0; i < fields.size(); i++) {
+            Object childObject =
+                avroFieldToObject(fields.get(i), ((GenericData.Record) fieldValue).get(i));
+            if (childObject != null) {
+              structChildObjects[i] = childObject;
+            }
+          }
+          out = new StructObject(structChildObjects);
+        } else {
+          out = null;
+        }
+        break;
+      case ARRAY:
+        if (fieldValue instanceof GenericData.Array || fieldValue instanceof ArrayList) {
+          Object[] arrayChildObjects;
+          if (fieldValue instanceof GenericData.Array) {
+            int size = ((GenericData.Array) fieldValue).size();
+            arrayChildObjects = new Object[size];
+            for (int i = 0; i < size; i++) {
+              Object childObject = avroFieldToObject(
+                  new Schema.Field(avroFields.name(), avroField.getElementType(), avroFields.doc(),
+                      avroFields.defaultVal()), ((GenericData.Array) fieldValue).get(i));
+              if (childObject != null) {
+                arrayChildObjects[i] = childObject;
+              }
+            }
+          } else {
+            int size = ((ArrayList) fieldValue).size();
+            arrayChildObjects = new Object[size];
+            for (int i = 0; i < size; i++) {
+              Object childObject = avroFieldToObject(
+                  new Schema.Field(avroFields.name(), avroField.getElementType(), avroFields.doc(),
+                      avroFields.defaultVal()), ((ArrayList) fieldValue).get(i));
+              if (childObject != null) {
+                arrayChildObjects[i] = childObject;
+              }
+            }
+          }
+          out = new ArrayObject(arrayChildObjects);
+        } else {
+          out = null;
+        }
+        break;
+      case MAP:
+        // Note: Avro object takes care of removing the duplicates so we should not handle it again
+        // Map will be internally stored as Array<Struct<Key,Value>>
+        if (fieldValue instanceof HashMap) {
+          Map mapEntries = (HashMap) fieldValue;
+          Object[] arrayMapChildObjects = new Object[mapEntries.size()];
+          if (!mapEntries.isEmpty()) {
+            Iterator iterator = mapEntries.entrySet().iterator();
+            int counter = 0;
+            while (iterator.hasNext()) {
+              // size is 2 because map will have key and value
+              Object[] mapChildObjects = new Object[2];
+              Map.Entry mapEntry = (HashMap.Entry) iterator.next();
+              // evaluate key
+              Object keyObject = avroFieldToObject(
+                  new Schema.Field(avroFields.name(), Schema.create(Schema.Type.STRING),
+                      avroFields.doc(), avroFields.defaultVal()), mapEntry.getKey());
+              // evaluate value
+              Object valueObject = avroFieldToObject(
+                  new Schema.Field(avroFields.name(), avroField.getValueType(), avroFields.doc(),
+                      avroFields.defaultVal()), mapEntry.getValue());
+              if (keyObject != null) {
+                mapChildObjects[0] = keyObject;
+              }
+              if (valueObject != null) {
+                mapChildObjects[1] = valueObject;
+              }
+              StructObject keyValueObject = new StructObject(mapChildObjects);
+              arrayMapChildObjects[counter++] = keyValueObject;
+            }
+          }
+          out = new ArrayObject(arrayMapChildObjects);
+        } else {
+          out = null;
+        }
+        break;
+      default:
+        out = avroPrimitiveFieldToObject(type, logicalType, fieldValue);
     }
     return out;
   }
@@ -270,6 +460,7 @@ public class AvroCarbonWriter extends CarbonWriter {
         }
       case DOUBLE:
         return new Field(fieldName, DataTypes.DOUBLE);
+      case ENUM:
       case STRING:
         return new Field(fieldName, DataTypes.STRING);
       case FLOAT:
@@ -310,6 +501,32 @@ public class AvroCarbonWriter extends CarbonWriter {
         } else {
           return null;
         }
+      case UNION:
+        int i = 0;
+        // Get union types and store as Struct<type>
+        ArrayList<StructField> unionFields = new ArrayList<>();
+        for (Schema avroSubField : avroField.schema().getTypes()) {
+          if (!avroSubField.getType().equals(Schema.Type.NULL)) {
+            StructField unionField = prepareSubFields(avroField.name() + i++, avroSubField);
+            if (unionField != null) {
+              unionFields.add(unionField);
+            }
+          }
+        }
+        if (unionFields.isEmpty()) {
+          throw new UnsupportedOperationException(
+              "Carbon do not support Avro UNION with only null type");
+        }
+        return new Field(fieldName, "struct", unionFields);
+      case BYTES:
+        // DECIMAL type is defined in Avro as a BYTE type with the logicalType property
+        // set to "decimal" and a specified precision and scale
+        if (logicalType instanceof LogicalTypes.Decimal) {
+          int precision = ((LogicalTypes.Decimal) childSchema.getLogicalType()).getPrecision();
+          int scale = ((LogicalTypes.Decimal) childSchema.getLogicalType()).getScale();
+          return new Field(fieldName, DataTypes.createDecimalType(precision, scale));
+        }
+        return null;
       case NULL:
         return null;
       default:
@@ -343,6 +560,7 @@ public class AvroCarbonWriter extends CarbonWriter {
         }
       case DOUBLE:
         return new StructField(fieldName, DataTypes.DOUBLE);
+      case ENUM:
       case STRING:
         return new StructField(fieldName, DataTypes.STRING);
       case FLOAT:
@@ -385,6 +603,26 @@ public class AvroCarbonWriter extends CarbonWriter {
         } else {
           return null;
         }
+      case UNION:
+        // recursively get the union types
+        int i = 0;
+        ArrayList<StructField> structSubTypes = new ArrayList<>();
+        for (Schema avroSubField : childSchema.getTypes()) {
+          StructField structField = prepareSubFields(fieldName + i++, avroSubField);
+          if (structField != null) {
+            structSubTypes.add(structField);
+          }
+        }
+        return (new StructField(fieldName, DataTypes.createStructType(structSubTypes)));
+      case BYTES:
+        // DECIMAL type is defined in Avro as a BYTE type with the logicalType property
+        // set to "decimal" and a specified precision and scale
+        if (logicalType instanceof LogicalTypes.Decimal) {
+          int precision = ((LogicalTypes.Decimal) childSchema.getLogicalType()).getPrecision();
+          int scale = ((LogicalTypes.Decimal) childSchema.getLogicalType()).getScale();
+          return new StructField(fieldName, DataTypes.createDecimalType(precision, scale));
+        }
+        return null;
       case NULL:
         return null;
       default:
@@ -425,6 +663,7 @@ public class AvroCarbonWriter extends CarbonWriter {
         }
       case DOUBLE:
         return DataTypes.DOUBLE;
+      case ENUM:
       case STRING:
         return DataTypes.STRING;
       case FLOAT:
@@ -457,6 +696,26 @@ public class AvroCarbonWriter extends CarbonWriter {
         } else {
           return null;
         }
+      case UNION:
+        int i = 0;
+        // recursively get the union types and create struct type
+        ArrayList<StructField> unionFields = new ArrayList<>();
+        for (Schema avroSubField : childSchema.getTypes()) {
+          StructField unionField = prepareSubFields(avroSubField.getName() + i++, avroSubField);
+          if (unionField != null) {
+            unionFields.add(unionField);
+          }
+        }
+        return DataTypes.createStructType(unionFields);
+      case BYTES:
+        // DECIMAL type is defined in Avro as a BYTE type with the logicalType property
+        // set to "decimal" and a specified precision and scale
+        if (logicalType instanceof LogicalTypes.Decimal) {
+          int precision = ((LogicalTypes.Decimal) childSchema.getLogicalType()).getPrecision();
+          int scale = ((LogicalTypes.Decimal) childSchema.getLogicalType()).getScale();
+          return DataTypes.createDecimalType(precision, scale);
+        }
+        return null;
       case NULL:
         return null;
       default:
