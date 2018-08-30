@@ -91,17 +91,18 @@ public class BlockletDataMapUtil {
           identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
               .getIndexFileName()) });
     }
-    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
     Map<String, BlockMetaInfo> blockMetaInfoMap = new HashMap<>();
-    List<DataFileFooter> indexInfo = fileFooterConverter.getIndexInfo(
-        identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
-            .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()));
     CarbonTable carbonTable = identifierWrapper.getCarbonTable();
     if (carbonTable != null) {
       isTransactionalTable = carbonTable.getTableInfo().isTransactionalTable();
       tableColumnList =
           carbonTable.getTableInfo().getFactTable().getListOfColumns();
     }
+    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
+    List<DataFileFooter> indexInfo = fileFooterConverter.getIndexInfo(
+        identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
+            .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()),
+        isTransactionalTable);
     for (DataFileFooter footer : indexInfo) {
       if ((!isTransactionalTable) && (tableColumnList.size() != 0) &&
           !isSameColumnSchemaList(footer.getColumnInTable(), tableColumnList)) {
@@ -255,7 +256,7 @@ public class BlockletDataMapUtil {
       return false;
     }
     for (int i = 0; i < tableColumnList.size(); i++) {
-      if (!indexFileColumnList.get(i).equalsWithStrictCheck(tableColumnList.get(i))) {
+      if (!tableColumnList.contains(indexFileColumnList.get(i))) {
         return false;
       }
     }

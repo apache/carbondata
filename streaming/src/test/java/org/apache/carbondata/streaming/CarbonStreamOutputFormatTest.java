@@ -70,7 +70,8 @@ public class CarbonStreamOutputFormatTest extends TestCase {
             tablePath,
             new CarbonTableIdentifier(dbName, tableName, UUID.randomUUID().toString()));
 
-    CarbonTable table = StoreCreator.createTable(identifier);
+    CarbonTable table = new StoreCreator(new File("target/store").getAbsolutePath(),
+        new File("../hadoop/src/test/resources/data.csv").getCanonicalPath()).createTable(identifier);
 
     String factFilePath = new File("../hadoop/src/test/resources/data.csv").getCanonicalPath();
     carbonLoadModel = StoreCreator.buildCarbonLoadModel(table, factFilePath, identifier);

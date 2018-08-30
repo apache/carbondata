@@ -92,14 +92,18 @@ class SparkCarbonFileFormat extends FileFormat
     val tableInfo = SchemaReader.inferSchema(AbsoluteTableIdentifier.from(tablePath, "", ""), false)
     val table = CarbonTable.buildFromTableInfo(tableInfo)
     var schema = new StructType
-    tableInfo.getFactTable.getListOfColumns.asScala.foreach { col =>
+    val fields = tableInfo.getFactTable.getListOfColumns.asScala.map { col =>
       // TODO find better way to know its a child
       if (!col.getColumnName.contains(".")) {
-        schema = schema.add(
-          col.getColumnName,
-          SparkTypeConverter.convertCarbonToSparkDataType(col, table))
+        Some((col.getSchemaOrdinal,
+          StructField(col.getColumnName,
+            SparkTypeConverter.convertCarbonToSparkDataType(col, table))))
+      } else {
+        None
       }
-    }
+    }.filter(_.nonEmpty).map(_.get)
+    // Maintain the schema order.
+    fields.sortBy(_._1).foreach(f => schema = schema.add(f._2))
     Some(schema)
   }
 

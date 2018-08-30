@@ -56,13 +56,16 @@ import org.junit.Test;
 
 public class CarbonTableInputFormatTest {
   // changed setUp to static init block to avoid un wanted multiple time store creation
+  private static StoreCreator creator;
   static {
     CarbonProperties.getInstance().
         addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords");
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, "/tmp/carbon/");
     try {
-      StoreCreator.createCarbonStore();
+      creator = new StoreCreator(new File("target/store").getAbsolutePath(),
+          new File("../hadoop/src/test/resources/data.csv").getCanonicalPath());
+      creator.createCarbonStore();
     } catch (Exception e) {
       Assert.fail("create table failed: " + e.getMessage());
     }
@@ -73,10 +76,10 @@ public class CarbonTableInputFormatTest {
     JobConf jobConf = new JobConf(new Configuration());
     Job job = Job.getInstance(jobConf);
     job.getConfiguration().set("query.id", UUID.randomUUID().toString());
-    String tblPath = StoreCreator.getAbsoluteTableIdentifier().getTablePath();
+    String tblPath = creator.getAbsoluteTableIdentifier().getTablePath();
     FileInputFormat.addInputPath(job, new Path(tblPath));
-    CarbonTableInputFormat.setDatabaseName(job.getConfiguration(), StoreCreator.getAbsoluteTableIdentifier().getDatabaseName());
-    CarbonTableInputFormat.setTableName(job.getConfiguration(), StoreCreator.getAbsoluteTableIdentifier().getTableName());
+    CarbonTableInputFormat.setDatabaseName(job.getConfiguration(), creator.getAbsoluteTableIdentifier().getDatabaseName());
+    CarbonTableInputFormat.setTableName(job.getConfiguration(), creator.getAbsoluteTableIdentifier().getTableName());
     Expression expression = new EqualToExpression(new ColumnExpression("country", DataTypes.STRING),
         new LiteralExpression("china", DataTypes.STRING));
     CarbonTableInputFormat.setFilterPredicates(job.getConfiguration(), expression);
@@ -92,12 +95,12 @@ public class CarbonTableInputFormatTest {
     JobConf jobConf = new JobConf(new Configuration());
     Job job = Job.getInstance(jobConf);
     job.getConfiguration().set("query.id", UUID.randomUUID().toString());
-    String tblPath = StoreCreator.getAbsoluteTableIdentifier().getTablePath();
+    String tblPath = creator.getAbsoluteTableIdentifier().getTablePath();
     FileInputFormat.addInputPath(job, new Path(tblPath));
-    CarbonTableInputFormat.setDatabaseName(job.getConfiguration(), StoreCreator.getAbsoluteTableIdentifier().getDatabaseName());
-    CarbonTableInputFormat.setTableName(job.getConfiguration(), StoreCreator.getAbsoluteTableIdentifier().getTableName());
+    CarbonTableInputFormat.setDatabaseName(job.getConfiguration(), creator.getAbsoluteTableIdentifier().getDatabaseName());
+    CarbonTableInputFormat.setTableName(job.getConfiguration(), creator.getAbsoluteTableIdentifier().getTableName());
     // list files to get the carbondata file
-    String segmentPath = CarbonTablePath.getSegmentPath(StoreCreator.getAbsoluteTableIdentifier().getTablePath(), "0");
+    String segmentPath = CarbonTablePath.getSegmentPath(creator.getAbsoluteTableIdentifier().getTablePath(), "0");
     File segmentDir = new File(segmentPath);
     if (segmentDir.exists() && segmentDir.isDirectory()) {
       File[] files = segmentDir.listFiles(new FileFilter() {
@@ -134,7 +137,7 @@ public class CarbonTableInputFormatTest {
       Assert.assertTrue("failed", false);
       throw e;
     } finally {
-      StoreCreator.clearDataMaps();
+      creator.clearDataMaps();
     }
   }
 
@@ -153,7 +156,7 @@ public class CarbonTableInputFormatTest {
       e.printStackTrace();
       Assert.assertTrue("failed", false);
     } finally {
-      StoreCreator.clearDataMaps();
+      creator.clearDataMaps();
     }
   }
 
@@ -173,7 +176,7 @@ public class CarbonTableInputFormatTest {
     } catch (Exception e) {
       Assert.assertTrue("failed", false);
     } finally {
-      StoreCreator.clearDataMaps();
+      creator.clearDataMaps();
     }
   }
 
@@ -245,7 +248,7 @@ public class CarbonTableInputFormatTest {
     job.setMapperClass(Map.class);
     job.setInputFormatClass(CarbonTableInputFormat.class);
     job.setOutputFormatClass(TextOutputFormat.class);
-    AbsoluteTableIdentifier abs = StoreCreator.getAbsoluteTableIdentifier();
+    AbsoluteTableIdentifier abs = creator.getAbsoluteTableIdentifier();
     if (projection != null) {
       CarbonTableInputFormat.setColumnProjection(job.getConfiguration(), projection);
     }

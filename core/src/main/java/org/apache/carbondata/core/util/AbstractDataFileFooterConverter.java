@@ -135,6 +135,18 @@ public abstract class AbstractDataFileFooterConverter {
    * @throws IOException problem while reading the index file
    */
   public List<DataFileFooter> getIndexInfo(String filePath, byte[] fileData) throws IOException {
+    return getIndexInfo(filePath, fileData, true);
+  }
+
+  /**
+   * Below method will be used to get the index info from index file
+   *
+   * @param filePath           file path of the index file
+   * @return list of index info
+   * @throws IOException problem while reading the index file
+   */
+  public List<DataFileFooter> getIndexInfo(String filePath, byte[] fileData,
+      boolean isTransactionalTable) throws IOException {
     CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
     List<DataFileFooter> dataFileFooters = new ArrayList<DataFileFooter>();
     String parentPath = filePath.substring(0, filePath.lastIndexOf("/"));
@@ -152,6 +164,14 @@ public abstract class AbstractDataFileFooterConverter {
           readIndexHeader.getTable_columns();
       for (int i = 0; i < table_columns.size(); i++) {
         columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
+      }
+      // In case of non transactional table just set columnuniqueid as columnName to support
+      // backward compatabiity. non transactional tables column uniqueid is always equal to
+      // columnname
+      if (!isTransactionalTable) {
+        for (ColumnSchema columnSchema : columnSchemaList) {
+          columnSchema.setColumnUniqueId(columnSchema.getColumnName());
+        }
       }
       // get the segment info
       SegmentInfo segmentInfo = getSegmentInfo(readIndexHeader.getSegment_info());

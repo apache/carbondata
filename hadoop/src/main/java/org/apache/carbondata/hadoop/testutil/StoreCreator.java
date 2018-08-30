@@ -101,18 +101,32 @@ public class StoreCreator {
 
   private static LogService LOG =
       LogServiceFactory.getLogService(StoreCreator.class.getCanonicalName());
-  private static AbsoluteTableIdentifier absoluteTableIdentifier;
-  private static String storePath = null;
+  private AbsoluteTableIdentifier absoluteTableIdentifier;
+  private String storePath = null;
+  private String csvPath;
+  private boolean dictionary;
+  private List<String> sortCOls = new ArrayList<>();
 
-  static {
-    storePath = new File("target/store").getAbsolutePath();
-    String dbName = "testdb";
-    String tableName = "testtable";
-    absoluteTableIdentifier = AbsoluteTableIdentifier.from(storePath + "/testdb/testtable",
-        new CarbonTableIdentifier(dbName, tableName, UUID.randomUUID().toString()));
+  public StoreCreator(String storePath, String csvPath) {
+    this(storePath, csvPath, false);
   }
 
-  public static AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
+  public StoreCreator(String storePath, String csvPath, boolean dictionary) {
+    this.storePath = storePath;
+    this.csvPath = csvPath;
+    String dbName = "testdb";
+    String tableName = "testtable";
+    sortCOls.add("date");
+    sortCOls.add("country");
+    sortCOls.add("name");
+    sortCOls.add("phonetype");
+    sortCOls.add("serialname");
+    absoluteTableIdentifier = AbsoluteTableIdentifier.from(storePath + "/testdb/testtable",
+        new CarbonTableIdentifier(dbName, tableName, UUID.randomUUID().toString()));
+    this.dictionary = dictionary;
+  }
+
+  public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
     return absoluteTableIdentifier;
   }
 
@@ -159,30 +173,43 @@ public class StoreCreator {
   /**
    * Create store without any restructure
    */
-  public static void createCarbonStore() throws Exception {
+  public void createCarbonStore() throws Exception {
     CarbonLoadModel loadModel = createTableAndLoadModel();
+    loadData(loadModel, storePath);
+  }
+
+  /**
+   * Create store without any restructure
+   */
+  public void createCarbonStore(CarbonLoadModel loadModel) throws Exception {
     loadData(loadModel, storePath);
   }
 
   /**
    * Method to clear the data maps
    */
-  public static void clearDataMaps() throws IOException {
+  public void clearDataMaps() throws IOException {
     DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier);
   }
 
-  public static CarbonLoadModel createTableAndLoadModel() throws Exception {
-    String factFilePath =
-        new File("../hadoop/src/test/resources/data.csv").getCanonicalPath();
-    File storeDir = new File(storePath);
-    CarbonUtil.deleteFoldersAndFiles(storeDir);
+  public CarbonLoadModel createTableAndLoadModel(boolean deleteOldStore) throws Exception {
+    if (deleteOldStore) {
+      File storeDir = new File(storePath);
+      CarbonUtil.deleteFoldersAndFiles(storeDir);
+    }
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS,
+        storePath);
 
     CarbonTable table = createTable(absoluteTableIdentifier);
-    writeDictionary(factFilePath, table);
-    return buildCarbonLoadModel(table, factFilePath, absoluteTableIdentifier);
+    writeDictionary(csvPath, table);
+    return buildCarbonLoadModel(table, csvPath, absoluteTableIdentifier);
   }
 
-  public static CarbonTable createTable(
+  public CarbonLoadModel createTableAndLoadModel() throws Exception {
+    return createTableAndLoadModel(true);
+  }
+
+  public CarbonTable createTable(
       AbsoluteTableIdentifier identifier) throws IOException {
     TableInfo tableInfo = new TableInfo();
     tableInfo.setDatabaseName(identifier.getCarbonTableIdentifier().getDatabaseName());
@@ -190,14 +217,21 @@ public class StoreCreator {
     tableSchema.setTableName(identifier.getCarbonTableIdentifier().getTableName());
     List<ColumnSchema> columnSchemas = new ArrayList<ColumnSchema>();
     ArrayList<Encoding> encodings = new ArrayList<>();
-    encodings.add(Encoding.DICTIONARY);
+    if (dictionary) {
+      encodings.add(Encoding.DICTIONARY);
+    }
+    int schemaOrdinal = 0;
     ColumnSchema id = new ColumnSchema();
-    id.setColumnName("ID");
+    id.setColumnName("id");
     id.setDataType(DataTypes.INT);
     id.setEncodingList(encodings);
     id.setColumnUniqueId(UUID.randomUUID().toString());
     id.setColumnReferenceId(id.getColumnUniqueId());
     id.setDimensionColumn(true);
+    id.setSchemaOrdinal(schemaOrdinal++);
+    if (sortCOls.contains(id.getColumnName())) {
+      id.setSortColumn(true);
+    }
     columnSchemas.add(id);
 
     ColumnSchema date = new ColumnSchema();
@@ -206,8 +240,11 @@ public class StoreCreator {
     date.setEncodingList(encodings);
     date.setColumnUniqueId(UUID.randomUUID().toString());
     date.setDimensionColumn(true);
-    date.setSortColumn(true);
     date.setColumnReferenceId(id.getColumnUniqueId());
+    date.setSchemaOrdinal(schemaOrdinal++);
+    if (sortCOls.contains(date.getColumnName())) {
+      date.setSortColumn(true);
+    }
     columnSchemas.add(date);
 
     ColumnSchema country = new ColumnSchema();
@@ -217,6 +254,10 @@ public class StoreCreator {
     country.setColumnUniqueId(UUID.randomUUID().toString());
     country.setDimensionColumn(true);
     country.setSortColumn(true);
+    country.setSchemaOrdinal(schemaOrdinal++);
+    if (sortCOls.contains(country.getColumnName())) {
+      country.setSortColumn(true);
+    }
     country.setColumnReferenceId(id.getColumnUniqueId());
     columnSchemas.add(country);
 
@@ -226,7 +267,10 @@ public class StoreCreator {
     name.setEncodingList(encodings);
     name.setColumnUniqueId(UUID.randomUUID().toString());
     name.setDimensionColumn(true);
-    name.setSortColumn(true);
+    name.setSchemaOrdinal(schemaOrdinal++);
+    if (sortCOls.contains(name.getColumnName())) {
+      name.setSortColumn(true);
+    }
     name.setColumnReferenceId(id.getColumnUniqueId());
     columnSchemas.add(name);
 
@@ -236,7 +280,10 @@ public class StoreCreator {
     phonetype.setEncodingList(encodings);
     phonetype.setColumnUniqueId(UUID.randomUUID().toString());
     phonetype.setDimensionColumn(true);
-    phonetype.setSortColumn(true);
+    phonetype.setSchemaOrdinal(schemaOrdinal++);
+    if (sortCOls.contains(phonetype.getColumnName())) {
+      phonetype.setSortColumn(true);
+    }
     phonetype.setColumnReferenceId(id.getColumnUniqueId());
     columnSchemas.add(phonetype);
 
@@ -246,10 +293,12 @@ public class StoreCreator {
     serialname.setEncodingList(encodings);
     serialname.setColumnUniqueId(UUID.randomUUID().toString());
     serialname.setDimensionColumn(true);
-    serialname.setSortColumn(true);
+    serialname.setSchemaOrdinal(schemaOrdinal++);
+    if (sortCOls.contains(serialname.getColumnName())) {
+      serialname.setSortColumn(true);
+    }
     serialname.setColumnReferenceId(id.getColumnUniqueId());
     columnSchemas.add(serialname);
-
     ColumnSchema salary = new ColumnSchema();
     salary.setColumnName("salary");
     salary.setDataType(DataTypes.INT);
@@ -257,6 +306,7 @@ public class StoreCreator {
     salary.setColumnUniqueId(UUID.randomUUID().toString());
     salary.setDimensionColumn(false);
     salary.setColumnReferenceId(id.getColumnUniqueId());
+    salary.setSchemaOrdinal(schemaOrdinal++);
     columnSchemas.add(salary);
 
     tableSchema.setListOfColumns(columnSchemas);
@@ -297,7 +347,7 @@ public class StoreCreator {
     return CarbonMetadata.getInstance().getCarbonTable(tableInfo.getTableUniqueName());
   }
 
-  private static void writeDictionary(String factFilePath, CarbonTable table) throws Exception {
+  private void writeDictionary(String factFilePath, CarbonTable table) throws Exception {
     BufferedReader reader = new BufferedReader(new InputStreamReader(
         new FileInputStream(factFilePath), "UTF-8"));
     List<CarbonDimension> dims = table.getDimensionByTableName(table.getTableName());
@@ -347,6 +397,10 @@ public class StoreCreator {
       }
     }
     reader.close();
+  }
+
+  public void setSortCOls(List<String> sortCOls) {
+    this.sortCOls = sortCOls;
   }
 
   /**
@@ -477,7 +531,8 @@ public class StoreCreator {
   }
 
   public static void main(String[] args) throws Exception {
-    StoreCreator.createCarbonStore();
+    new StoreCreator(new File("target/store").getAbsolutePath(),
+        new File("../hadoop/src/test/resources/data.csv").getCanonicalPath()).createCarbonStore();
   }
 
 }

@@ -17,6 +17,11 @@
 package org.apache.spark.sql.carbondata.datasource
 
 
+import java.io.File
+import java.util
+
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.carbondata.datasource.TestUtil._
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
@@ -24,6 +29,7 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.hadoop.testutil.StoreCreator
 
 class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
 
@@ -612,6 +618,55 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
       FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(warehouse1 + "/test_folder"))
     }
+  }
+
+  test("test read using old data") {
+    val store = new StoreCreator(new File(warehouse1).getAbsolutePath,
+      new File(warehouse1 + "../../../../../hadoop/src/test/resources/data.csv").getCanonicalPath,
+      false)
+    store.createCarbonStore()
+    FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/testdb/testtable/Fact/Part0/Segment_0/0"))
+    val dfread = spark.read.format("carbon").load(warehouse1+"/testdb/testtable/Fact/Part0/Segment_0")
+    dfread.show(false)
+    spark.sql("drop table if exists parquet_table")
+  }
+
+  test("test read using different sort order data") {
+    spark.sql("drop table if exists old_comp")
+    FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/testdb"))
+    val store = new StoreCreator(new File(warehouse1).getAbsolutePath,
+      new File(warehouse1 + "../../../../../hadoop/src/test/resources/data.csv").getCanonicalPath,
+      false)
+    store.setSortCOls(new util.ArrayList[String](Seq ("name").asJava))
+    var model = store.createTableAndLoadModel(false)
+    model.setSegmentId("0")
+    store.createCarbonStore(model)
+    FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/testdb/testtable/Fact/Part0/Segment_0/0"))
+    store.setSortCOls(new util.ArrayList[String](Seq ("country,phonetype").asJava))
+    model = store.createTableAndLoadModel(false)
+    model.setSegmentId("1")
+    store.createCarbonStore(model)
+    FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/testdb/testtable/Fact/Part0/Segment_1/0"))
+    store.setSortCOls(new util.ArrayList[String](Seq ("date").asJava))
+    model = store.createTableAndLoadModel(false)
+    model.setSegmentId("2")
+    store.createCarbonStore(model)
+    FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/testdb/testtable/Fact/Part0/Segment_2/0"))
+    store.setSortCOls(new util.ArrayList[String](Seq ("serialname").asJava))
+    model = store.createTableAndLoadModel(false)
+    model.setSegmentId("3")
+    store.createCarbonStore(model)
+    FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/testdb/testtable/Fact/Part0/Segment_3/0"))
+    spark.sql(s"create table old_comp(id int, date string, country string, name string, phonetype string, serialname string, salary int) using carbon options(path='$warehouse1/testdb/testtable/Fact/Part0/', 'sort_columns'='name')")
+    assert(spark.sql("select * from old_comp where country='china'").count() == 3396)
+    assert(spark.sql("select * from old_comp ").count() == 4000)
+    spark.sql("drop table if exists old_comp")
+
+    spark.sql(s"create table old_comp1 using carbon options(path='$warehouse1/testdb/testtable/Fact/Part0/')")
+    assert(spark.sql("select * from old_comp1 where country='china'").count() == 3396)
+    assert(spark.sql("select * from old_comp1 ").count() == 4000)
+    spark.sql("drop table if exists old_comp1")
+    FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/testdb"))
   }
   override protected def beforeAll(): Unit = {
     drop

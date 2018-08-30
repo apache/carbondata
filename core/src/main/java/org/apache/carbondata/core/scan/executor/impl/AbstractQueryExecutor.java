@@ -52,6 +52,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
@@ -214,6 +215,14 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         if (null == fileFooter) {
           blockInfo.setDetailInfo(null);
           fileFooter = CarbonUtil.readMetadatFile(blockInfo);
+          // In case of non transactional table just set columnuniqueid as columnName to support
+          // backward compatabiity. non transactional tables column uniqueid is always equal to
+          // columnname
+          if (!queryModel.getTable().isTransactionalTable()) {
+            for (ColumnSchema columnSchema : fileFooter.getColumnInTable()) {
+              columnSchema.setColumnUniqueId(columnSchema.getColumnName());
+            }
+          }
           filePathToFileFooterMapping.put(blockInfo.getFilePath(), fileFooter);
           blockInfo.setDetailInfo(blockletDetailInfo);
         }
