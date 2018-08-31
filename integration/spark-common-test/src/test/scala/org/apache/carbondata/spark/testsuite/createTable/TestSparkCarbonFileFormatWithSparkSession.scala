@@ -70,8 +70,7 @@ object TestSparkCarbonFileFormatWithSparkSession {
       }
       writer.close()
     } catch {
-      case ex: Exception => None
-      case _ => None
+      case ex: Throwable => throw new RuntimeException(ex)
     }
   }
 

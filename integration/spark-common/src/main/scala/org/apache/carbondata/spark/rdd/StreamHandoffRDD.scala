@@ -98,7 +98,7 @@ class StreamingRawResultIterator(
  * execute streaming segment handoff
  */
 class StreamHandoffRDD[K, V](
-    @transient ss: SparkSession,
+    @transient private val ss: SparkSession,
     result: HandoffResult[K, V],
     carbonLoadModel: CarbonLoadModel,
     handOffSegmentId: String) extends CarbonRDD[(K, V)](ss, Nil) {
@@ -371,7 +371,6 @@ object StreamHandoffRDD {
         LOGGER.error("Handoff failed due to failure in table status updation.")
         throw new Exception(errorMessage)
       }
-      done
     }
 
   }

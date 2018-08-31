@@ -272,8 +272,6 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
         carbonDSRelation.carbonTable.isHivePartitionTable) {
       val newChildOutput = child.output.zipWithIndex.map { columnWithIndex =>
         columnWithIndex._1 match {
-          case attr: Alias =>
-            Alias(attr.child, s"col${ columnWithIndex._2 }")(attr.exprId)
           case attr: Attribute =>
             Alias(attr, s"col${ columnWithIndex._2 }")(NamedExpression.newExprId)
           case attr => attr

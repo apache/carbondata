@@ -193,6 +193,7 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) {
                 hostMapPartitionIds.get(loc) match {
                   case Some(parts) =>
                     parts.remove(partitionId)
+                  case None =>
                 }
               }
           }

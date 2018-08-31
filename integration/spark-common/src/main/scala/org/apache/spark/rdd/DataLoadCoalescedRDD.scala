@@ -28,8 +28,8 @@ import org.apache.carbondata.spark.rdd.CarbonRDD
 case class DataLoadPartitionWrap[T: ClassTag](rdd: RDD[T], partition: Partition)
 
 class DataLoadCoalescedRDD[T: ClassTag](
-    @transient sparkSession: SparkSession,
-    @transient var prev: RDD[T],
+    @transient private val sparkSession: SparkSession,
+    @transient private var prev: RDD[T],
     nodeList: Array[String])
   extends CarbonRDD[DataLoadPartitionWrap[T]](sparkSession, Nil) {
 

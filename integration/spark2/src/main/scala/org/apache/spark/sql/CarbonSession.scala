@@ -50,7 +50,7 @@ import org.apache.carbondata.streaming.CarbonStreamingQueryListener
  */
 class CarbonSession(@transient val sc: SparkContext,
     @transient private val existingSharedState: Option[SharedState],
-    @transient useHiveMetaStore: Boolean = true
+    @transient private val useHiveMetaStore: Boolean = true
 ) extends SparkSession(sc) { self =>
 
   def this(sc: SparkContext) {
