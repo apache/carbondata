@@ -83,7 +83,7 @@ public class AvroCarbonWriterTest {
     GenericData.Record record = TestUtil.jsonToAvro(json, avroSchema);
     try {
       CarbonWriter writer = CarbonWriter.builder().outputPath(path).isTransactionalTable(true)
-          .buildWriterForAvroInput(new Schema.Parser().parse(avroSchema));
+          .buildWriterForAvroInput(new Schema.Parser().parse(avroSchema), TestUtil.configuration);
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -151,7 +151,7 @@ public class AvroCarbonWriterTest {
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)
           .isTransactionalTable(true)
-          .buildWriterForAvroInput(new Schema.Parser().parse(avroSchema));
+          .buildWriterForAvroInput(new Schema.Parser().parse(avroSchema), TestUtil.configuration);
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -243,7 +243,7 @@ public class AvroCarbonWriterTest {
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)
           .isTransactionalTable(true)
-          .buildWriterForAvroInput(nn);
+          .buildWriterForAvroInput(nn, TestUtil.configuration);
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -304,7 +304,7 @@ public class AvroCarbonWriterTest {
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)
           .isTransactionalTable(true)
-          .buildWriterForAvroInput(nn);
+          .buildWriterForAvroInput(nn, TestUtil.configuration);
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -340,7 +340,7 @@ public class AvroCarbonWriterTest {
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)
           .isTransactionalTable(true).sortBy(sortColumns)
-          .buildWriterForAvroInput(nn);
+          .buildWriterForAvroInput(nn, TestUtil.configuration);
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -458,7 +458,7 @@ public class AvroCarbonWriterTest {
         .uniqueIdentifier(System.currentTimeMillis()).outputPath(path);
 
     try {
-      writer.buildWriterForCSVInput(new org.apache.carbondata.sdk.file.Schema(field));
+      writer.buildWriterForCSVInput(new org.apache.carbondata.sdk.file.Schema(field), TestUtil.configuration);
       Assert.fail();
     } catch (Exception e) {
       assert(e.getMessage().contains("Duplicate column name found in table schema"));
@@ -478,7 +478,7 @@ public class AvroCarbonWriterTest {
       Map<String, String> loadOptions = new HashMap<String, String>();
       loadOptions.put("bad_records_action", "fail");
       CarbonWriter carbonWriter =
-          writer.isTransactionalTable(false).withLoadOptions(loadOptions).buildWriterForCSVInput(new org.apache.carbondata.sdk.file.Schema(field));
+          writer.isTransactionalTable(false).withLoadOptions(loadOptions).buildWriterForCSVInput(new org.apache.carbondata.sdk.file.Schema(field), TestUtil.configuration);
       carbonWriter.write(new String[] { "k", "20-02-2233" });
       carbonWriter.close();
       Assert.fail();

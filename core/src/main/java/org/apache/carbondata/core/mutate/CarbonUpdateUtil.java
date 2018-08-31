@@ -228,7 +228,7 @@ public class CarbonUpdateUtil {
             }
 
             // if the segments is in the list of marked for delete then update the status.
-            if (segmentsToBeDeleted.contains(new Segment(loadMetadata.getLoadName(), null))) {
+            if (segmentsToBeDeleted.contains(new Segment(loadMetadata.getLoadName()))) {
               loadMetadata.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
               loadMetadata.setModificationOrdeletionTimesStamp(Long.parseLong(updatedTimeStamp));
             }
@@ -391,7 +391,7 @@ public class CarbonUpdateUtil {
     List<String> dataFiles = new ArrayList<>();
     if (segment.getSegmentFileName() != null) {
       SegmentFileStore fileStore = new SegmentFileStore(tablePath, segment.getSegmentFileName());
-      fileStore.readIndexFiles();
+      fileStore.readIndexFiles(FileFactory.getConfiguration());
       Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
       List<String> dataFilePaths = new ArrayList<>();
       for (List<String> paths : indexFilesMap.values()) {
@@ -737,7 +737,7 @@ public class CarbonUpdateUtil {
     for (Map.Entry<String, Long> eachSeg : segmentBlockCount.entrySet()) {
 
       if (eachSeg.getValue() == 0) {
-        segmentsToBeDeleted.add(new Segment(eachSeg.getKey(), null));
+        segmentsToBeDeleted.add(new Segment(eachSeg.getKey(), ""));
       }
 
     }

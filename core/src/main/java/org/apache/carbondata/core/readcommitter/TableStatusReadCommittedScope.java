@@ -31,6 +31,8 @@ import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * ReadCommittedScope for the managed carbon table
  */
@@ -38,18 +40,24 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 @InterfaceStability.Stable
 public class TableStatusReadCommittedScope implements ReadCommittedScope {
 
+  private static final long serialVersionUID = 2324397174595872738L;
   private LoadMetadataDetails[] loadMetadataDetails;
 
   private AbsoluteTableIdentifier identifier;
 
-  public TableStatusReadCommittedScope(AbsoluteTableIdentifier identifier) throws IOException {
+  private transient Configuration configuration;
+
+  public TableStatusReadCommittedScope(AbsoluteTableIdentifier identifier,
+      Configuration configuration) throws IOException {
     this.identifier = identifier;
+    this.configuration = configuration;
     takeCarbonIndexFileSnapShot();
   }
 
   public TableStatusReadCommittedScope(AbsoluteTableIdentifier identifier,
-      LoadMetadataDetails[] loadMetadataDetails) throws IOException {
+      LoadMetadataDetails[] loadMetadataDetails, Configuration configuration) throws IOException {
     this.identifier = identifier;
+    this.configuration = configuration;
     this.loadMetadataDetails = loadMetadataDetails;
   }
 
@@ -97,4 +105,11 @@ public class TableStatusReadCommittedScope implements ReadCommittedScope {
         .readTableStatusFile(CarbonTablePath.getTableStatusFilePath(identifier.getTablePath()));
   }
 
+  @Override public Configuration getConfiguration() {
+    return configuration;
+  }
+
+  @Override public void setConfiguration(Configuration configuration) {
+    this.configuration = configuration;
+  }
 }

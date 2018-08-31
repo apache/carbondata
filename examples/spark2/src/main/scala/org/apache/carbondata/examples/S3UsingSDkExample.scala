@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.examples
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
 import org.apache.spark.sql.SparkSession
 import org.slf4j.{Logger, LoggerFactory}
@@ -52,12 +53,12 @@ object S3UsingSDKExample {
           builder.outputPath(writerPath).isTransactionalTable(true)
             .uniqueIdentifier(
               System.currentTimeMillis)
-            .buildWriterForCSVInput(new Schema(fields))
+            .buildWriterForCSVInput(new Schema(fields), new Configuration(false))
         } else {
           builder.outputPath(writerPath).isTransactionalTable(true)
             .uniqueIdentifier(
               System.currentTimeMillis).withBlockSize(2)
-            .buildWriterForCSVInput(new Schema(fields))
+            .buildWriterForCSVInput(new Schema(fields), new Configuration(false))
         }
       var i = 0
       var row = num

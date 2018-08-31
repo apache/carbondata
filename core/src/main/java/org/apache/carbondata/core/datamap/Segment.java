@@ -32,6 +32,8 @@ import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Represents one load of carbondata
  */
@@ -62,6 +64,11 @@ public class Segment implements Serializable {
 
   public Segment(String segmentNo) {
     this.segmentNo = segmentNo;
+  }
+
+  public Segment(String segmentNo, ReadCommittedScope readCommittedScope) {
+    this.segmentNo = segmentNo;
+    this.readCommittedScope = readCommittedScope;
   }
 
   /**
@@ -200,6 +207,10 @@ public class Segment implements Serializable {
       }
     }
     return null;
+  }
+
+  public Configuration getConfiguration() {
+    return readCommittedScope.getConfiguration();
   }
 
   public Set<String> getFilteredIndexShardNames() {

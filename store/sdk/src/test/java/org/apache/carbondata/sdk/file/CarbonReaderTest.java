@@ -40,10 +40,13 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import junit.framework.TestCase;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.CharEncoding;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.*;
 
 public class CarbonReaderTest extends TestCase {
 
+  private Configuration conf = new Configuration(false);
+  
   @Before
   public void cleanFile() {
     assert (TestUtil.cleanMdtFile());
@@ -72,7 +75,7 @@ public class CarbonReaderTest extends TestCase {
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path, true);
 
     CarbonReader reader = CarbonReader.builder(path, "_temp").isTransactionalTable(true)
-        .projection(new String[]{"name", "age"}).build();
+        .projection(new String[]{"name", "age"}).build(conf);
 
     // expected output after sorting
     String[] name = new String[200];
@@ -99,7 +102,7 @@ public class CarbonReaderTest extends TestCase {
         .builder(path, "_temp")
         .isTransactionalTable(true)
         .projection(new String[]{"name", "age"})
-        .build();
+        .build(conf);
 
     i = 0;
     while (reader2.hasNext()) {
@@ -134,7 +137,7 @@ public class CarbonReaderTest extends TestCase {
         .isTransactionalTable(true)
         .projection(new String[]{"name", "age"})
         .filter(equalToExpression)
-        .build();
+        .build(conf);
 
     int i = 0;
     while (reader.hasNext()) {
@@ -176,7 +179,7 @@ public class CarbonReaderTest extends TestCase {
         .isTransactionalTable(true)
         .projection(new String[]{"name", "age", "doubleField"})
         .filter(andExpression)
-        .build();
+        .build(conf);
 
     int i = 0;
     while (reader.hasNext()) {
@@ -213,7 +216,7 @@ public class CarbonReaderTest extends TestCase {
         .isTransactionalTable(false)
         .projection(new String[]{"name", "age"})
         .filter(equalToExpression)
-        .build();
+        .build(conf);
 
     int i = 0;
     while (reader.hasNext()) {
@@ -249,7 +252,7 @@ public class CarbonReaderTest extends TestCase {
         .isTransactionalTable(false)
         .projection(new String[]{"name", "age"})
         .filter(equalToExpression)
-        .build();
+        .build(conf);
 
     int i = 0;
     while (reader.hasNext()) {
@@ -292,7 +295,7 @@ public class CarbonReaderTest extends TestCase {
         .isTransactionalTable(false)
         .projection(new String[]{"name", "age", "doubleField"})
         .filter(andExpression)
-        .build();
+        .build(conf);
 
     int i = 0;
     while (reader.hasNext()) {
@@ -335,7 +338,7 @@ public class CarbonReaderTest extends TestCase {
         .isTransactionalTable(false)
         .projection(new String[]{"name", "age", "doubleField"})
         .filter(orExpression)
-        .build();
+        .build(conf);
 
     int i = 0;
     while (reader.hasNext()) {
@@ -378,7 +381,7 @@ public class CarbonReaderTest extends TestCase {
         .isTransactionalTable(false)
         .projection(new String[]{"name", "age", "doubleField"})
         .filter(andExpression)
-        .build();
+        .build(conf);
 
     int i = 0;
     while (reader.hasNext()) {
@@ -421,7 +424,7 @@ public class CarbonReaderTest extends TestCase {
         .isTransactionalTable(false)
         .projection(new String[]{"name", "age", "doubleField"})
         .filter(andExpression)
-        .build();
+        .build(conf);
 
     int i = 0;
     while (reader.hasNext()) {
@@ -464,7 +467,7 @@ public class CarbonReaderTest extends TestCase {
         .isTransactionalTable(false)
         .projection(new String[]{"name", "age", "doubleField"})
         .filter(andExpression)
-        .build();
+        .build(conf);
 
     int i = 0;
     while (reader.hasNext()) {
@@ -507,7 +510,7 @@ public class CarbonReaderTest extends TestCase {
         .isTransactionalTable(false)
         .projection(new String[]{"name", "age", "doubleField"})
         .filter(andExpression)
-        .build();
+        .build(conf);
 
     int i = 0;
     while (reader.hasNext()) {
@@ -550,7 +553,7 @@ public class CarbonReaderTest extends TestCase {
         .isTransactionalTable(false)
         .projection(new String[]{"name", "age", "doubleField"})
         .filter(andExpression)
-        .build();
+        .build(conf);
 
     int i = 0;
     while (reader.hasNext()) {
@@ -582,7 +585,7 @@ public class CarbonReaderTest extends TestCase {
     CarbonWriter carbonWriter = null;
     try {
       carbonWriter = builder.outputPath(path1).isTransactionalTable(false).uniqueIdentifier(12345)
-  .buildWriterForCSVInput(schema);
+  .buildWriterForCSVInput(schema, TestUtil.configuration);
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
     }
@@ -597,7 +600,7 @@ public class CarbonReaderTest extends TestCase {
     CarbonWriter carbonWriter1 = null;
     try {
       carbonWriter1 = builder1.outputPath(path2).isTransactionalTable(false).uniqueIdentifier(12345)
-   .buildWriterForCSVInput(schema1);
+   .buildWriterForCSVInput(schema1, TestUtil.configuration);
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
     }
@@ -608,14 +611,14 @@ public class CarbonReaderTest extends TestCase {
        CarbonReader reader =
        CarbonReader.builder(path1, "_temp").
        projection(new String[] { "c1", "c3" })
-       .isTransactionalTable(false).build();
+       .isTransactionalTable(false).build(conf);
     } catch (Exception e){
        System.out.println("Success");
     }
     CarbonReader reader1 =
          CarbonReader.builder(path2, "_temp1")
      .projection(new String[] { "p1", "p2" })
-     .isTransactionalTable(false).build();
+     .isTransactionalTable(false).build(conf);
 
     while (reader1.hasNext()) {
        Object[] row1 = (Object[]) reader1.readNextRow();
@@ -643,7 +646,7 @@ public class CarbonReaderTest extends TestCase {
         .builder(path, "_temp")
         .projection(new String[]{"name", "name", "age", "name"})
         .isTransactionalTable(true)
-        .build();
+        .build(conf);
 
     // expected output after sorting
     String[] name = new String[100];
@@ -685,13 +688,13 @@ public class CarbonReaderTest extends TestCase {
         .builder(path, "_temp")
         .projection(new String[]{"name", "age"})
         .isTransactionalTable(true)
-        .build();
+        .build(conf);
     // Reader 2
     CarbonReader reader2 = CarbonReader
         .builder(path, "_temp")
         .projection(new String[]{"name", "age"})
         .isTransactionalTable(true)
-        .build();
+        .build(conf);
 
     while (reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
@@ -719,7 +722,7 @@ public class CarbonReaderTest extends TestCase {
     TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
 
     CarbonReader reader = CarbonReader.builder(path, "_temp").isTransactionalTable(true)
-        .projection(new String[]{"name", "age"}).build();
+        .projection(new String[]{"name", "age"}).build(conf);
 
     reader.close();
     String msg = "CarbonReader not initialise, please create it first.";
@@ -762,7 +765,7 @@ public class CarbonReaderTest extends TestCase {
         .builder(path)
         .projection(new String[]{"name", "age"})
         .isTransactionalTable(true)
-        .build();
+        .build(conf);
 
     // expected output after sorting
     String[] name = new String[100];
@@ -799,7 +802,7 @@ public class CarbonReaderTest extends TestCase {
 
     CarbonReader reader = CarbonReader
         .builder(path)
-        .build();
+        .build(conf);
 
     // expected output after sorting
     String[] name = new String[100];
@@ -910,7 +913,7 @@ public class CarbonReaderTest extends TestCase {
 
     CarbonReader reader = CarbonReader.builder(path, "_temp")
         .projection(new String[]{"name", "age"})
-        .build();
+        .build(conf);
 
     // expected output after sorting
     String[] name = new String[100];
@@ -987,7 +990,7 @@ public class CarbonReaderTest extends TestCase {
           .persistSchemaFile(true)
           .outputPath(path);
 
-      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields));
+      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
 
       for (int i = 0; i < 100; i++) {
         String[] row = new String[]{
@@ -1045,7 +1048,7 @@ public class CarbonReaderTest extends TestCase {
             , "dateField"
             , "timeField"
             , "decimalField"})
-        .build();
+        .build(conf);
 
     int i = 0;
     while (reader.hasNext()) {
@@ -1108,7 +1111,7 @@ public class CarbonReaderTest extends TestCase {
           .persistSchemaFile(true)
           .outputPath(path);
 
-      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields));
+      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
 
       for (int i = 0; i < 100; i++) {
         String[] row2 = new String[]{
@@ -1161,7 +1164,7 @@ public class CarbonReaderTest extends TestCase {
         .builder(path, "_temp")
         .isTransactionalTable(true)
         .projection(strings)
-        .build();
+        .build(conf);
 
     int i = 0;
     while (reader.hasNext()) {
@@ -1224,7 +1227,7 @@ public class CarbonReaderTest extends TestCase {
           .persistSchemaFile(true)
           .outputPath(path);
 
-      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields));
+      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
 
       for (int i = 0; i < 100; i++) {
         String[] row2 = new String[]{
@@ -1275,7 +1278,7 @@ public class CarbonReaderTest extends TestCase {
         .builder(path, "_temp")
         .projection(strings)
         .isTransactionalTable(true)
-        .build();
+        .build(conf);
 
     int i = 0;
     while (reader.hasNext()) {
@@ -1338,7 +1341,7 @@ public class CarbonReaderTest extends TestCase {
           .persistSchemaFile(true)
           .outputPath(path);
 
-      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields));
+      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
 
       for (int i = 0; i < 100; i++) {
         String[] row2 = new String[]{
@@ -1381,7 +1384,7 @@ public class CarbonReaderTest extends TestCase {
         .builder(path, "_temp")
         .isTransactionalTable(true)
         .projection(strings)
-        .build();
+        .build(conf);
 
     int i = 0;
     while (reader.hasNext()) {
@@ -1423,7 +1426,7 @@ public class CarbonReaderTest extends TestCase {
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
         .isTransactionalTable(true)
-        .build();
+        .build(conf);
 
     // expected output after sorting
     String[] name = new String[100];
@@ -1461,7 +1464,7 @@ public class CarbonReaderTest extends TestCase {
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
         .isTransactionalTable(true)
-        .build();
+        .build(conf);
 
     // expected output after sorting
     String[] name = new String[100];
@@ -1498,7 +1501,7 @@ public class CarbonReaderTest extends TestCase {
           .builder(path, "_temp")
           .projection(new String[]{})
           .isTransactionalTable(true)
-          .build();
+          .build(conf);
       assert (false);
     } catch (RuntimeException e) {
       assert (e.getMessage().equalsIgnoreCase("Projection can't be empty"));
@@ -1517,7 +1520,7 @@ public class CarbonReaderTest extends TestCase {
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)
           .isTransactionalTable(isTransactionalTable)
-          .buildWriterForAvroInput(nn);
+          .buildWriterForAvroInput(nn, TestUtil.configuration);
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -1645,7 +1648,7 @@ public class CarbonReaderTest extends TestCase {
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
         .isTransactionalTable(false)
-        .build();
+        .build(conf);
 
     // expected output
     String name = "bob";
@@ -1688,7 +1691,7 @@ public class CarbonReaderTest extends TestCase {
         .isTransactionalTable(false)
         .projection(new String[]{"name", "age"})
         .filter(equalToExpression)
-        .build();
+        .build(conf);
 
     int i = 0;
     while (reader.hasNext()) {

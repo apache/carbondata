@@ -55,6 +55,7 @@ import org.apache.carbondata.core.util.DeleteLoadFolders;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import com.google.gson.Gson;
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * Manages Load/Segment status
@@ -66,8 +67,16 @@ public class SegmentStatusManager {
 
   private AbsoluteTableIdentifier identifier;
 
+  private Configuration configuration;
+
   public SegmentStatusManager(AbsoluteTableIdentifier identifier) {
     this.identifier = identifier;
+    configuration = FileFactory.getConfiguration();
+  }
+
+  public SegmentStatusManager(AbsoluteTableIdentifier identifier, Configuration configuration) {
+    this.identifier = identifier;
+    this.configuration = configuration;
   }
 
   /**
@@ -93,19 +102,8 @@ public class SegmentStatusManager {
     }
   }
 
-  /**
-   * get valid segment for given table
-   *
-   * @return
-   * @throws IOException
-   */
   public ValidAndInvalidSegmentsInfo getValidAndInvalidSegments() throws IOException {
     return getValidAndInvalidSegments(null, null);
-  }
-
-  public ValidAndInvalidSegmentsInfo getValidAndInvalidSegments(
-      LoadMetadataDetails[] loadMetadataDetails) throws IOException {
-    return getValidAndInvalidSegments(loadMetadataDetails, null);
   }
 
   /**
@@ -129,7 +127,8 @@ public class SegmentStatusManager {
       }
 
       if (readCommittedScope == null) {
-        readCommittedScope = new TableStatusReadCommittedScope(identifier, loadMetadataDetails);
+        readCommittedScope = new TableStatusReadCommittedScope(identifier, loadMetadataDetails,
+            configuration);
       }
       //just directly iterate Array
       for (LoadMetadataDetails segment : loadMetadataDetails) {

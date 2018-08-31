@@ -78,9 +78,10 @@ class SparkCarbonFileFormat extends FileFormat
   override def inferSchema(sparkSession: SparkSession,
       options: Map[String, String],
       files: Seq[FileStatus]): Option[StructType] = {
+    val conf = sparkSession.sessionState.newHadoopConf()
     val tablePath = options.get("path") match {
       case Some(path) =>
-        FileFactory.checkAndAppendDefaultFs(path, sparkSession.sparkContext.hadoopConfiguration)
+        FileFactory.checkAndAppendDefaultFs(path, conf)
       case _ if files.nonEmpty =>
         FileFactory.getUpdatedFilePath(files.head.getPath.getParent.toUri.toString)
       case _ =>
@@ -89,7 +90,8 @@ class SparkCarbonFileFormat extends FileFormat
     if (options.get(CarbonCommonConstants.SORT_COLUMNS).isDefined) {
       throw new UnsupportedOperationException("Cannot use sort columns during infer schema")
     }
-    val tableInfo = SchemaReader.inferSchema(AbsoluteTableIdentifier.from(tablePath, "", ""), false)
+    val tableInfo = SchemaReader.inferSchema(AbsoluteTableIdentifier.from(tablePath, "", ""),
+      false, conf)
     val table = CarbonTable.buildFromTableInfo(tableInfo)
     var schema = new StructType
     val fields = tableInfo.getFactTable.getListOfColumns.asScala.map { col =>
@@ -395,7 +397,7 @@ class SparkCarbonFileFormat extends FileFormat
           vectorizedReader
         } else {
           val reader = new CarbonRecordReader(model,
-            new SparkUnsafeRowReadSuport(requiredSchema), null)
+            new SparkUnsafeRowReadSuport(requiredSchema), broadcastedHadoopConf.value.value)
           reader.initialize(split, hadoopAttemptContext)
           reader
         }

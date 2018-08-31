@@ -24,6 +24,7 @@ import java.io.IOException;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
@@ -55,6 +56,8 @@ public class ThriftReader {
    */
   private TProtocol binaryIn;
 
+  private Configuration configuration;
+
   /**
    * Constructor.
    */
@@ -63,11 +66,25 @@ public class ThriftReader {
     this.creator = creator;
   }
 
+  public ThriftReader(String fileName, TBaseCreator creator, Configuration configuration) {
+    this.fileName = fileName;
+    this.configuration = configuration;
+    this.creator = creator;
+  }
+
   /**
    * Constructor.
    */
   public ThriftReader(String fileName) {
     this.fileName = fileName;
+  }
+
+  /**
+   * Constructor.
+   */
+  public ThriftReader(String fileName, Configuration configuration) {
+    this.fileName = fileName;
+    this.configuration = configuration;
   }
 
   /**
@@ -82,8 +99,9 @@ public class ThriftReader {
    * Opens the fileName for reading.
    */
   public void open() throws IOException {
+    Configuration conf = configuration != null ? configuration : FileFactory.getConfiguration();
     FileFactory.FileType fileType = FileFactory.getFileType(fileName);
-    dataInputStream = FileFactory.getDataInputStream(fileName, fileType, bufferSize);
+    dataInputStream = FileFactory.getDataInputStream(fileName, fileType, bufferSize, conf);
     binaryIn = new TCompactProtocol(new TIOStreamTransport(dataInputStream));
   }
 

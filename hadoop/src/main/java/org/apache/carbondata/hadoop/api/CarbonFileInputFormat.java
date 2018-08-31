@@ -113,11 +113,14 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
       ReadCommittedScope readCommittedScope = null;
       if (carbonTable.isTransactionalTable()) {
         readCommittedScope = new LatestFilesReadCommittedScope(
-            identifier.getTablePath() + "/Fact/Part0/Segment_null/");
+            identifier.getTablePath() + "/Fact/Part0/Segment_null/", job.getConfiguration());
       } else {
         readCommittedScope = getReadCommittedScope(job.getConfiguration());
         if (readCommittedScope == null) {
-          readCommittedScope = new LatestFilesReadCommittedScope(identifier.getTablePath());
+          readCommittedScope = new LatestFilesReadCommittedScope(identifier.getTablePath(), job
+              .getConfiguration());
+        } else {
+          readCommittedScope.setConfiguration(job.getConfiguration());
         }
       }
       // this will be null in case of corrupt schema file.

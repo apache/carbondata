@@ -40,10 +40,12 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
+import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
 
 import mockit.Deencapsulation;
 import mockit.Mock;
 import mockit.MockUp;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -103,7 +105,8 @@ public class TestBlockletDataMapFactory {
             BlockletDataMapIndexWrapper.class);
     method.setAccessible(true);
     method.invoke(blockletDataMapFactory, tableBlockIndexUniqueIdentifierWrapper,
-        new BlockletDataMapIndexWrapper(tableBlockIndexUniqueIdentifier.getSegmentId(), dataMaps));
+        new BlockletDataMapIndexWrapper(tableBlockIndexUniqueIdentifier.getSegmentId(), dataMaps,
+            tableBlockIndexUniqueIdentifierWrapper.getConfiguration()));
     BlockletDataMapIndexWrapper result = cache.getIfPresent(tableBlockIndexUniqueIdentifierWrapper);
     assert null != result;
   }
@@ -111,7 +114,8 @@ public class TestBlockletDataMapFactory {
   @Test public void getValidDistributables() throws IOException {
     BlockletDataMapDistributable blockletDataMapDistributable = new BlockletDataMapDistributable(
         "/opt/store/default/carbon_table/Fact/Part0/Segment_0/0_batchno0-0-1521012756709.carbonindex");
-    Segment segment = new Segment("0", null);
+    Segment segment = new Segment("0", null, new TableStatusReadCommittedScope(carbonTable
+        .getAbsoluteTableIdentifier(), new Configuration(false)));
     blockletDataMapDistributable.setSegment(segment);
     BlockletDataMapDistributable blockletDataMapDistributable1 = new BlockletDataMapDistributable(
         "/opt/store/default/carbon_table/Fact/Part0/Segment_0/0_batchno0-0-1521012756701.carbonindex");

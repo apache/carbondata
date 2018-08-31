@@ -49,6 +49,7 @@ import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import com.google.gson.Gson;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
 /**
@@ -469,8 +470,8 @@ public class SegmentFileStore {
    * @readSegment method before calling it.
    * @throws IOException
    */
-  public void readIndexFiles() throws IOException {
-    readIndexFiles(SegmentStatus.SUCCESS, false);
+  public void readIndexFiles(Configuration configuration) throws IOException {
+    readIndexFiles(SegmentStatus.SUCCESS, false, configuration);
   }
 
   public SegmentFile getSegmentFile() {
@@ -484,8 +485,8 @@ public class SegmentFileStore {
    * @param ignoreStatus
    * @throws IOException
    */
-  private List<String> readIndexFiles(SegmentStatus status, boolean ignoreStatus)
-      throws IOException {
+  private List<String> readIndexFiles(SegmentStatus status, boolean ignoreStatus,
+      Configuration configuration) throws IOException {
     if (indexFilesMap != null) {
       return new ArrayList<>();
     }
@@ -494,7 +495,7 @@ public class SegmentFileStore {
     indexFilesMap = new HashMap<>();
     indexFileStore.readAllIIndexOfSegment(this.segmentFile, tablePath, status, ignoreStatus);
     Map<String, byte[]> carbonIndexMap = indexFileStore.getCarbonIndexMapWithFullPath();
-    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
+    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter(configuration);
     for (Map.Entry<String, byte[]> entry : carbonIndexMap.entrySet()) {
       List<DataFileFooter> indexInfo =
           fileFooterConverter.getIndexInfo(entry.getKey(), entry.getValue());
@@ -538,8 +539,8 @@ public class SegmentFileStore {
     Map<String, byte[]> carbonIndexMap = indexFileStore.getCarbonIndexMapWithFullPath();
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
     for (Map.Entry<String, byte[]> entry : carbonIndexMap.entrySet()) {
-      List<DataFileFooter> indexInfo =
-          fileFooterConverter.getIndexInfo(entry.getKey(), entry.getValue());
+      List<DataFileFooter> indexInfo = fileFooterConverter
+          .getIndexInfo(entry.getKey(), entry.getValue());
       if (indexInfo.size() > 0) {
         schemaMap.put(entry.getKey(), indexInfo.get(0).getColumnInTable());
       }
@@ -733,8 +734,8 @@ public class SegmentFileStore {
         // take the list of files from this segment.
         SegmentFileStore fileStore =
             new SegmentFileStore(table.getTablePath(), segment.getSegmentFile());
-        List<String> indexOrMergeFiles =
-            fileStore.readIndexFiles(SegmentStatus.MARKED_FOR_DELETE, false);
+        List<String> indexOrMergeFiles = fileStore
+            .readIndexFiles(SegmentStatus.MARKED_FOR_DELETE, false, FileFactory.getConfiguration());
         if (forceDelete) {
           deletePhysicalPartition(
               partitionSpecs,
@@ -791,7 +792,8 @@ public class SegmentFileStore {
       List<PartitionSpec> partitionSpecs,
       SegmentUpdateStatusManager updateStatusManager) throws Exception {
     SegmentFileStore fileStore = new SegmentFileStore(tablePath, segment.getSegmentFileName());
-    List<String> indexOrMergeFiles = fileStore.readIndexFiles(SegmentStatus.SUCCESS, true);
+    List<String> indexOrMergeFiles = fileStore.readIndexFiles(SegmentStatus.SUCCESS, true,
+        FileFactory.getConfiguration());
     Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
     for (Map.Entry<String, List<String>> entry : indexFilesMap.entrySet()) {
       FileFactory.deleteFile(entry.getKey(), FileFactory.getFileType(entry.getKey()));

@@ -36,6 +36,8 @@ import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * This is a readCommittedScope for non transactional carbon table
  */
@@ -43,10 +45,12 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 @InterfaceStability.Stable
 public class LatestFilesReadCommittedScope implements ReadCommittedScope {
 
+  private static final long serialVersionUID = -839970494288861816L;
   private String carbonFilePath;
   private String segmentId;
   private ReadCommittedIndexFileSnapShot readCommittedIndexFileSnapShot;
   private LoadMetadataDetails[] loadMetadataDetails;
+  private transient Configuration configuration;
 
   /**
    * a new constructor of this class
@@ -54,7 +58,9 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
    * @param path      carbon file path
    * @param segmentId segment id
    */
-  public LatestFilesReadCommittedScope(String path, String segmentId) throws IOException {
+  public LatestFilesReadCommittedScope(String path, String segmentId, Configuration configuration)
+      throws IOException {
+    this.configuration = configuration;
     Objects.requireNonNull(path);
     this.carbonFilePath = path;
     this.segmentId = segmentId;
@@ -66,8 +72,9 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
    *
    * @param path carbon file path
    */
-  public LatestFilesReadCommittedScope(String path) throws IOException {
-    this(path, null);
+  public LatestFilesReadCommittedScope(String path, Configuration configuration)
+      throws IOException {
+    this(path, null, configuration);
   }
 
   /**
@@ -75,7 +82,8 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
    *
    * @param indexFiles carbon index files
    */
-  public LatestFilesReadCommittedScope(CarbonFile[] indexFiles) {
+  public LatestFilesReadCommittedScope(CarbonFile[] indexFiles, Configuration configuration) {
+    this.configuration = configuration;
     takeCarbonIndexFileSnapShot(indexFiles);
   }
 
@@ -180,7 +188,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
         carbonIndexFiles = indexFiles.toArray(new CarbonFile[0]);
       } else {
         String segmentPath = CarbonTablePath.getSegmentPath(carbonFilePath, segmentId);
-        carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(segmentPath);
+        carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(segmentPath, configuration);
       }
       if (carbonIndexFiles.length == 0) {
         throw new IOException(
@@ -232,4 +240,11 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
     prepareLoadMetadata();
   }
 
+  public Configuration getConfiguration() {
+    return configuration;
+  }
+
+  @Override public void setConfiguration(Configuration configuration) {
+    this.configuration = configuration;
+  }
 }

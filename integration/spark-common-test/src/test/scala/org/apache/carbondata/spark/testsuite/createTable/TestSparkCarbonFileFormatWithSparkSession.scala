@@ -20,6 +20,7 @@ package org.apache.carbondata.spark.testsuite.createTable
 import java.io.File
 
 import org.apache.commons.io.FileUtils
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -58,9 +59,11 @@ object TestSparkCarbonFileFormatWithSparkSession {
       val writer =
         if (persistSchema) {
           builder.persistSchemaFile(true)
-          builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema))
+          builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema), new
+              Configuration(false))
         } else {
-          builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema))
+          builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema), new
+              Configuration(false))
         }
 
       var i = 0

@@ -111,6 +111,11 @@ public final class FileFactory {
     return getDataInputStream(path, fileType, -1);
   }
 
+  public static DataInputStream getDataInputStream(String path, FileType fileType,
+      Configuration configuration) throws IOException {
+    return getDataInputStream(path, fileType, -1, configuration);
+  }
+
   public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize)
       throws IOException {
     return getDataInputStream(path, fileType, bufferSize, getConfiguration());

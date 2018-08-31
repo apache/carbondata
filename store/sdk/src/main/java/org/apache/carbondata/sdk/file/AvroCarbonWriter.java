@@ -74,8 +74,7 @@ public class AvroCarbonWriter extends CarbonWriter {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonTable.class.getName());
 
-  AvroCarbonWriter(CarbonLoadModel loadModel) throws IOException {
-    Configuration hadoopConf = new Configuration();
+  AvroCarbonWriter(CarbonLoadModel loadModel, Configuration hadoopConf) throws IOException {
     CarbonTableOutputFormat.setLoadModel(hadoopConf, loadModel);
     CarbonTableOutputFormat format = new CarbonTableOutputFormat();
     JobID jobId = new JobID(UUID.randomUUID().toString(), 0);

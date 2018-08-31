@@ -25,6 +25,8 @@ import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.sdk.file.*;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Example for testing CarbonWriter on S3
  */
@@ -56,7 +58,7 @@ public class SDKS3Example {
                 .setEndPoint(args[2])
                 .outputPath(path);
 
-        CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields));
+        CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), new Configuration(false));
 
         for (int i = 0; i < num; i++) {
             writer.write(new String[]{"robot" + (i % 10), String.valueOf(i)});
@@ -75,7 +77,7 @@ public class SDKS3Example {
             .setAccessKey(args[0])
             .setSecretKey(args[1])
             .setEndPoint(args[2])
-            .build();
+            .build(new Configuration(false));
 
         System.out.println("\nData:");
         int i = 0;
