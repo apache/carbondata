@@ -684,8 +684,8 @@ public class CarbonUtilTest {
 
   @Test public void testToGetSegmentString() {
     List<Segment> list = new ArrayList<>();
-    list.add(new Segment("1", null));
-    list.add(new Segment("2", null));
+    list.add(new Segment("1", null, null));
+    list.add(new Segment("2", null, null));
     String segments = CarbonUtil.convertToString(list);
     assertEquals(segments, "1,2");
   }

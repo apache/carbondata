@@ -103,11 +103,13 @@ public class BlockDataMap extends CoarseGrainDataMap
    */
   protected boolean isFilePathStored;
 
-  @Override public void init(DataMapModel dataMapModel) throws IOException, MemoryException {
+  @Override public void init(DataMapModel dataMapModel)
+      throws IOException, MemoryException {
     long startTime = System.currentTimeMillis();
     assert (dataMapModel instanceof BlockletDataMapModel);
     BlockletDataMapModel blockletDataMapInfo = (BlockletDataMapModel) dataMapModel;
-    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
+    DataFileFooterConverter fileFooterConverter =
+        new DataFileFooterConverter(dataMapModel.getConfiguration());
     List<DataFileFooter> indexInfo = fileFooterConverter
         .getIndexInfo(blockletDataMapInfo.getFilePath(), blockletDataMapInfo.getFileData(),
             blockletDataMapInfo.getCarbonTable().isTransactionalTable());

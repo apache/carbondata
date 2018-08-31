@@ -20,6 +20,7 @@ package org.apache.carbondata.examples
 import java.io.File
 
 import org.apache.commons.io.FileUtils
+import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.examples.util.ExampleUtils
@@ -36,7 +37,7 @@ object DirectSQLExample {
   def buildTestData(
       path: String,
       num: Int = 3,
-      persistSchema: Boolean = false): Any = {
+      persistSchema: Boolean = false, sparkSession: SparkSession): Any = {
 
     // getCanonicalPath gives path with \, but the code expects /.
     val writerPath = path.replace("\\", "/");
@@ -56,7 +57,8 @@ object DirectSQLExample {
       if (persistSchema) {
         builder.persistSchemaFile(true)
       }
-      val writer = builder.buildWriterForCSVInput(new Schema(fields))
+      val writer = builder
+        .buildWriterForCSVInput(new Schema(fields), sparkSession.sparkContext.hadoopConfiguration)
       var i = 0
       while (i < num) {
         writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
@@ -82,7 +84,7 @@ object DirectSQLExample {
     import carbonSession._
     // 1. generate data file
     cleanTestData(path)
-    buildTestData(path, 20)
+    buildTestData(path, 20, sparkSession = carbonSession)
     val readPath = path + "Fact/Part0/Segment_null"
 
     println("Running SQL on carbon files directly")

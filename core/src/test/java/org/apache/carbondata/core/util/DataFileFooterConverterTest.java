@@ -46,6 +46,7 @@ import org.apache.carbondata.format.IndexHeader;
 
 import mockit.Mock;
 import mockit.MockUp;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertEquals;
@@ -143,7 +144,7 @@ public class DataFileFooterConverterTest {
     new MockUp<FileFactory>() {
       @SuppressWarnings("unused") @Mock
       public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
-          int bufferSize) {
+          int bufferSize, Configuration configuration) {
         return dataInputStream;
       }
     };

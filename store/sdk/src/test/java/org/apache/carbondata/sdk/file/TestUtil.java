@@ -38,9 +38,12 @@ import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.io.JsonDecoder;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Assert;
 
 public class TestUtil {
+
+  public static Configuration configuration = new Configuration();
 
   public static GenericData.Record jsonToAvro(String json, String avroSchema) throws IOException {
     InputStream input = null;
@@ -130,7 +133,7 @@ public class TestUtil {
         builder = builder.withBlockSize(blockSize);
       }
 
-      CarbonWriter writer = builder.buildWriterForCSVInput(schema);
+      CarbonWriter writer = builder.buildWriterForCSVInput(schema, configuration);
 
       for (int i = 0; i < rows; i++) {
         writer.write(new String[]{"robot" + (i % 10), String.valueOf(i), String.valueOf((double) i / 2)});

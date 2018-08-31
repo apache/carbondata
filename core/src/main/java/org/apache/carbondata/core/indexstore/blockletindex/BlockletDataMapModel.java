@@ -22,6 +22,8 @@ import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.indexstore.BlockMetaInfo;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * It is the model object to keep the information to build or initialize BlockletDataMap.
  */
@@ -37,9 +39,9 @@ public class BlockletDataMapModel extends DataMapModel {
 
   private boolean addToUnsafe = true;
 
-  public BlockletDataMapModel(CarbonTable carbonTable, String filePath,
-      byte[] fileData, Map<String, BlockMetaInfo> blockMetaInfoMap, String segmentId) {
-    super(filePath);
+  public BlockletDataMapModel(CarbonTable carbonTable, String filePath, byte[] fileData,
+      Map<String, BlockMetaInfo> blockMetaInfoMap, String segmentId, Configuration configuration) {
+    super(filePath, configuration);
     this.fileData = fileData;
     this.blockMetaInfoMap = blockMetaInfoMap;
     this.segmentId = segmentId;
@@ -48,8 +50,8 @@ public class BlockletDataMapModel extends DataMapModel {
 
   public BlockletDataMapModel(CarbonTable carbonTable, String filePath,
       byte[] fileData, Map<String, BlockMetaInfo> blockMetaInfoMap, String segmentId,
-      boolean addToUnsafe) {
-    this(carbonTable, filePath, fileData, blockMetaInfoMap, segmentId);
+      boolean addToUnsafe, Configuration configuration) {
+    this(carbonTable, filePath, fileData, blockMetaInfoMap, segmentId, configuration);
     this.addToUnsafe = addToUnsafe;
   }
 

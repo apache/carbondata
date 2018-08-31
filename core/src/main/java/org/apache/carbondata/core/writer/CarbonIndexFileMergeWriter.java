@@ -28,6 +28,7 @@ import java.util.Map;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
@@ -77,7 +78,8 @@ public class CarbonIndexFileMergeWriter {
       List<CarbonFile> indexCarbonFiles = sfs.getIndexCarbonFiles();
       indexFiles = indexCarbonFiles.toArray(new CarbonFile[indexCarbonFiles.size()]);
     } else {
-      indexFiles = SegmentIndexFileStore.getCarbonIndexFiles(segmentPath);
+      indexFiles =
+          SegmentIndexFileStore.getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
     }
     if (isCarbonIndexFilePresent(indexFiles) || indexFileNamesTobeAdded != null) {
       if (sfs == null) {

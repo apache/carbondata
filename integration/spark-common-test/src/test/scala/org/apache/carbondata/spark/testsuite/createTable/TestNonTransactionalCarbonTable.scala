@@ -142,7 +142,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
             .outputPath(writerPath)
             .isTransactionalTable(false)
             .uniqueIdentifier(System.currentTimeMillis)
-            .buildWriterForCSVInput(Schema.parseJson(schema))
+            .buildWriterForCSVInput(Schema.parseJson(schema),
+              sqlContext.sparkContext.hadoopConfiguration)
         } else {
           if (options != null) {
             builder.outputPath(writerPath)
@@ -150,14 +151,16 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
               .sortBy(sortColumns.toArray)
               .uniqueIdentifier(
                 System.currentTimeMillis).withBlockSize(2).withLoadOptions(options)
-              .buildWriterForCSVInput(Schema.parseJson(schema))
+              .buildWriterForCSVInput(Schema.parseJson(schema),
+                sqlContext.sparkContext.hadoopConfiguration)
           } else {
             builder.outputPath(writerPath)
               .isTransactionalTable(false)
               .sortBy(sortColumns.toArray)
               .uniqueIdentifier(
                 System.currentTimeMillis).withBlockSize(2)
-              .buildWriterForCSVInput(Schema.parseJson(schema))
+              .buildWriterForCSVInput(Schema.parseJson(schema),
+                sqlContext.sparkContext.hadoopConfiguration)
           }
         }
       var i = 0
@@ -194,7 +197,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         builder.outputPath(writerPath)
           .isTransactionalTable(false)
           .uniqueIdentifier(System.currentTimeMillis()).withBlockSize(2).sortBy(sortColumns)
-          .buildWriterForCSVInput(new Schema(fields))
+          .buildWriterForCSVInput(new Schema(fields),
+            sqlContext.sparkContext.hadoopConfiguration)
 
       var i = 0
       while (i < rows) {
@@ -228,7 +232,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
           .sortBy(sortColumns.toArray)
           .uniqueIdentifier(
             123).withBlockSize(2)
-          .buildWriterForCSVInput(Schema.parseJson(schema))
+          .buildWriterForCSVInput(Schema.parseJson(schema),
+            sqlContext.sparkContext.hadoopConfiguration)
       var i = 0
       while (i < rows) {
         writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
@@ -992,7 +997,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val builder: CarbonWriterBuilder = CarbonWriter.builder
       .outputPath(writerPath).isTransactionalTable(false).withLoadOptions(options)
 
-    val writer: CarbonWriter = builder.buildWriterForCSVInput(new Schema(fields))
+    val writer: CarbonWriter = builder.buildWriterForCSVInput(new Schema(fields),
+      sqlContext.sparkContext.hadoopConfiguration)
     writer.write(Array("babu","1","02-01-2002","02-01-2002 01:01:00"));
     writer.close()
 
@@ -1117,7 +1123,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     try {
       val writer = CarbonWriter.builder
         .outputPath(writerPath).isTransactionalTable(false)
-        .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput(nn)
+        .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput(nn,
+        sqlContext.sparkContext.hadoopConfiguration)
       var i = 0
       while (i < rows) {
         writer.write(record)
@@ -2091,7 +2098,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     assert(intercept[RuntimeException] {
       val writer = CarbonWriter.builder.sortBy(Array("name", "id"))
-        .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+        .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn,
+        sqlContext.sparkContext.hadoopConfiguration)
       writer.write(record)
       writer.close()
     }.getMessage.toLowerCase.contains("column: name specified in sort columns"))
@@ -2131,7 +2139,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn,
+      sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
   }
@@ -2169,7 +2178,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder.sortBy(Array("id"))
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn,
+      sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
   }
@@ -2213,7 +2223,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val record = testUtil.jsonToAvro(json1, schema)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn,
+      sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
   }
@@ -2253,7 +2264,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn,
+      sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -2299,7 +2311,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn,
+      sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -2346,7 +2359,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn,
+      sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -2366,7 +2380,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val writer: CarbonWriter = CarbonWriter.builder
       .outputPath(writerPath)
       .withTableProperties(options)
-      .buildWriterForCSVInput(new Schema(fields))
+      .buildWriterForCSVInput(new Schema(fields), sqlContext.sparkContext.hadoopConfiguration)
     writer.write(Array("carbon", "1"))
     writer.write(Array("hydrogen", "10"))
     writer.write(Array("boron", "4"))
@@ -2384,7 +2398,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     // write local sort data
     val writer1: CarbonWriter = CarbonWriter.builder
       .outputPath(writerPath)
-      .buildWriterForCSVInput(new Schema(fields))
+      .buildWriterForCSVInput(new Schema(fields), sqlContext.sparkContext.hadoopConfiguration)
     writer1.write(Array("carbon", "1"))
     writer1.write(Array("hydrogen", "10"))
     writer1.write(Array("boron", "4"))
@@ -2493,7 +2507,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     fields(0) = new Field("name", DataTypes.STRING)
     fields(1) = new Field("surname", DataTypes.STRING)
     fields(2) = new Field("age", DataTypes.INT)
-    val carbonWriter = builder.buildWriterForCSVInput(new Schema(fields))
+    val carbonWriter = builder.buildWriterForCSVInput(new Schema(fields),
+      sqlContext.sparkContext.hadoopConfiguration)
     var i = 0
     while (i < 100) {
       {

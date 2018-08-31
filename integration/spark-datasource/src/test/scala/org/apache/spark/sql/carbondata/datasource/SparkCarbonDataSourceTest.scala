@@ -868,7 +868,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
         builder.outputPath(writerPath)
           .isTransactionalTable(false)
           .uniqueIdentifier(System.nanoTime()).withBlockSize(2).sortBy(sortColumns)
-          .buildWriterForCSVInput(new Schema(fields))
+          .buildWriterForCSVInput(new Schema(fields), spark.sparkContext.hadoopConfiguration)
 
       var i = 0
       while (i < rows) {

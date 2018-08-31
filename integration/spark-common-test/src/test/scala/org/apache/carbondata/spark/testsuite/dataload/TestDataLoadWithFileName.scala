@@ -18,8 +18,9 @@
 package org.apache.carbondata.spark.testsuite.dataload
 
 import scala.collection.JavaConverters._
-
 import java.io.{File, FilenameFilter}
+
+import org.apache.hadoop.conf.Configuration
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.reader.CarbonIndexFileReader
@@ -64,7 +65,7 @@ class TestDataLoadWithFileName extends QueryTest with BeforeAndAfterAll {
     } else {
       val segment = Segment.getSegment("0", carbonTable.getTablePath)
       val store = new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName)
-      store.readIndexFiles()
+      store.readIndexFiles(new Configuration(false))
       store.getIndexCarbonFiles.asScala.map(f => new File(f.getAbsolutePath)).toArray
     }
     for (carbonIndexPath <- carbonIndexPaths) {

@@ -29,6 +29,7 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainDataMap;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -53,8 +54,8 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
     FineGrainDataMap dataMap = new LuceneFineGrainDataMap(analyzer, getDataMapSchema());
     try {
       dataMap.init(new DataMapModel(
-          DataMapWriter.getDefaultDataMapPath(
-              tableIdentifier.getTablePath(), segment.getSegmentNo(), dataMapName)));
+          DataMapWriter.getDefaultDataMapPath(tableIdentifier.getTablePath(),
+              segment.getSegmentNo(), dataMapName), segment.getConfiguration()));
     } catch (MemoryException e) {
       LOGGER.error("failed to get lucene datamap , detail is {}" + e.getMessage());
       return lstDataMap;
@@ -73,7 +74,7 @@ public class LuceneFineGrainDataMapFactory extends LuceneDataMapFactoryBase<Fine
     FineGrainDataMap dataMap = new LuceneFineGrainDataMap(analyzer, getDataMapSchema());
     String indexPath = ((LuceneDataMapDistributable) distributable).getIndexPath();
     try {
-      dataMap.init(new DataMapModel(indexPath));
+      dataMap.init(new DataMapModel(indexPath, FileFactory.getConfiguration()));
     } catch (MemoryException e) {
       LOGGER.error(String.format("failed to get lucene datamap , detail is %s", e.getMessage()));
       return lstDataMap;

@@ -98,7 +98,8 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
         .outputPath(writerPath).isTransactionalTable(false)
         .uniqueIdentifier(System.currentTimeMillis())
         .withLoadOptions(options)
-        .buildWriterForJsonInput(carbonSchema)
+        .buildWriterForJsonInput(carbonSchema,
+          sqlContext.sparkContext.hadoopConfiguration)
       writer.write(jsonRow)
       writer.close()
     }

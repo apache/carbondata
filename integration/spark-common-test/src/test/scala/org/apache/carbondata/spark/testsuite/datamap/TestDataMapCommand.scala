@@ -18,9 +18,9 @@
 package org.apache.carbondata.spark.testsuite.datamap
 
 import scala.collection.JavaConverters._
-
 import java.io.{File, FilenameFilter}
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -337,7 +337,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     } else {
       val segment = Segment.getSegment("0", path)
       val store = new SegmentFileStore(path, segment.getSegmentFileName)
-      store.readIndexFiles()
+      store.readIndexFiles(new Configuration(false))
       val size = store.getIndexFilesMap.asScala.map(f => f._2.size()).sum
       assertResult(true)(size > 0)
     }

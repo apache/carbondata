@@ -68,11 +68,13 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
         CarbonWriter.builder
           .outputPath(writerPath).isTransactionalTable(false).enableLocalDictionary(true)
           .localDictionaryThreshold(2000)
-          .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput(nn)
+          .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput(nn,
+          sqlContext.sparkContext.hadoopConfiguration)
       } else {
         CarbonWriter.builder
           .outputPath(writerPath).isTransactionalTable(false)
-          .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput(nn)
+          .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput(nn,
+          sqlContext.sparkContext.hadoopConfiguration)
       }
       var i = 0
       while (i < rows) {
@@ -268,7 +270,8 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
       """.stripMargin
     val pschema= org.apache.avro.Schema.parse(mySchema)
     val records = testUtil.jsonToAvro(jsonvalue, mySchema)
-    val writer=CarbonWriter.builder().outputPath(writerPath).buildWriterForAvroInput(pschema)
+    val writer=CarbonWriter.builder().outputPath(writerPath).buildWriterForAvroInput(pschema,
+      sqlContext.sparkContext.hadoopConfiguration)
     writer.write(records)
     writer.close()
     sql("DROP TABLE IF EXISTS sdkOutputTable")

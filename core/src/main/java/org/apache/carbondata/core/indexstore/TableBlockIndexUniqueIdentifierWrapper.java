@@ -19,7 +19,10 @@ package org.apache.carbondata.core.indexstore;
 
 import java.io.Serializable;
 
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * Class holds reference to TableBlockIndexUniqueIdentifier and carbonTable related info
@@ -35,6 +38,8 @@ public class TableBlockIndexUniqueIdentifierWrapper implements Serializable {
 
   // holds the reference to CarbonTable
   private CarbonTable carbonTable;
+
+  private transient Configuration configuration;
   /**
    * flag to specify whether to load table block metadata in unsafe or safe. Default value is true
    */
@@ -44,6 +49,15 @@ public class TableBlockIndexUniqueIdentifierWrapper implements Serializable {
       TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier, CarbonTable carbonTable) {
     this.tableBlockIndexUniqueIdentifier = tableBlockIndexUniqueIdentifier;
     this.carbonTable = carbonTable;
+    this.configuration = FileFactory.getConfiguration();
+  }
+
+  public TableBlockIndexUniqueIdentifierWrapper(
+      TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier, CarbonTable carbonTable,
+      Configuration configuration) {
+    this.tableBlockIndexUniqueIdentifier = tableBlockIndexUniqueIdentifier;
+    this.carbonTable = carbonTable;
+    this.configuration = configuration;
   }
 
   // Note: The constructor is getting used in extensions with other functionalities.
@@ -53,6 +67,7 @@ public class TableBlockIndexUniqueIdentifierWrapper implements Serializable {
       boolean addTableBlockToUnsafe) {
     this(tableBlockIndexUniqueIdentifier, carbonTable);
     this.addTableBlockToUnsafe = addTableBlockToUnsafe;
+    this.configuration = FileFactory.getConfiguration();
   }
 
 
@@ -66,5 +81,9 @@ public class TableBlockIndexUniqueIdentifierWrapper implements Serializable {
 
   public boolean isAddTableBlockToUnsafe() {
     return addTableBlockToUnsafe;
+  }
+
+  public Configuration getConfiguration() {
+    return configuration;
   }
 }

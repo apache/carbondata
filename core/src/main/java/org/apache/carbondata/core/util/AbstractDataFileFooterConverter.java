@@ -47,10 +47,18 @@ import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockIndex;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Footer reader class
  */
 public abstract class AbstractDataFileFooterConverter {
+
+  protected Configuration configuration;
+
+  AbstractDataFileFooterConverter(Configuration configuration) {
+    this.configuration = configuration;
+  }
 
   /**
    * Below method will be used to convert the thrift presence meta to wrapper
@@ -77,7 +85,8 @@ public abstract class AbstractDataFileFooterConverter {
    * @return list of index info
    * @throws IOException problem while reading the index file
    */
-  public List<DataFileFooter> getIndexInfo(String filePath, List<TableBlockInfo> tableBlockInfoList)
+  public List<DataFileFooter> getIndexInfo(String filePath, List<TableBlockInfo>
+      tableBlockInfoList)
       throws IOException {
     CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
     List<DataFileFooter> dataFileFooters = new ArrayList<DataFileFooter>();
@@ -144,7 +153,7 @@ public abstract class AbstractDataFileFooterConverter {
    */
   public List<DataFileFooter> getIndexInfo(String filePath, byte[] fileData,
       boolean isTransactionalTable) throws IOException {
-    CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
+    CarbonIndexFileReader indexReader = new CarbonIndexFileReader(configuration);
     List<DataFileFooter> dataFileFooters = new ArrayList<DataFileFooter>();
     String parentPath = filePath.substring(0, filePath.lastIndexOf("/"));
     try {
@@ -188,7 +197,7 @@ public abstract class AbstractDataFileFooterConverter {
         }
         if (readBlockIndexInfo.isSetBlocklet_info()) {
           List<BlockletInfo> blockletInfoList = new ArrayList<BlockletInfo>();
-          BlockletInfo blockletInfo = new DataFileFooterConverterV3()
+          BlockletInfo blockletInfo = new DataFileFooterConverterV3(configuration)
               .getBlockletInfo(readBlockIndexInfo.getBlocklet_info(),
                   CarbonUtil.getNumberOfDimensionColumns(columnSchemaList));
           blockletInfo.setBlockletIndex(blockletIndex);

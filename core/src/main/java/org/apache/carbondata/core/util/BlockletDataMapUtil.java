@@ -61,6 +61,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 
@@ -80,7 +81,7 @@ public class BlockletDataMapUtil {
         && indexFileStore.getFileData(identifier.getIndexFileName()) == null) {
       CarbonFile indexMergeFile = FileFactory.getCarbonFile(
           identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
-              .getMergeIndexFileName());
+              .getMergeIndexFileName(), identifierWrapper.getConfiguration());
       if (indexMergeFile.exists() && !filesRead.contains(indexMergeFile.getPath())) {
         indexFileStore.readAllIIndexOfSegment(new CarbonFile[] { indexMergeFile });
         filesRead.add(indexMergeFile.getPath());
@@ -89,7 +90,7 @@ public class BlockletDataMapUtil {
     if (indexFileStore.getFileData(identifier.getIndexFileName()) == null) {
       indexFileStore.readAllIIndexOfSegment(new CarbonFile[] { FileFactory.getCarbonFile(
           identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
-              .getIndexFileName()) });
+              .getIndexFileName(), identifierWrapper.getConfiguration()) });
     }
     Map<String, BlockMetaInfo> blockMetaInfoMap = new HashMap<>();
     CarbonTable carbonTable = identifierWrapper.getCarbonTable();
@@ -98,7 +99,8 @@ public class BlockletDataMapUtil {
       tableColumnList =
           carbonTable.getTableInfo().getFactTable().getListOfColumns();
     }
-    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
+    DataFileFooterConverter fileFooterConverter =
+        new DataFileFooterConverter(identifierWrapper.getConfiguration());
     List<DataFileFooter> indexInfo = fileFooterConverter.getIndexInfo(
         identifier.getIndexFilePath() + CarbonCommonConstants.FILE_SEPARATOR + identifier
             .getIndexFileName(), indexFileStore.getFileData(identifier.getIndexFileName()),
@@ -139,9 +141,9 @@ public class BlockletDataMapUtil {
    * @throws IOException
    */
   public static Map<String, BlockMetaInfo> createCarbonDataFileBlockMetaInfoMapping(
-      String segmentFilePath) throws IOException {
+      String segmentFilePath, Configuration configuration) throws IOException {
     Map<String, BlockMetaInfo> fileNameToMetaInfoMapping = new TreeMap();
-    CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFilePath);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(segmentFilePath, configuration);
     if (carbonFile instanceof AbstractDFSCarbonFile) {
       PathFilter pathFilter = new PathFilter() {
         @Override public boolean accept(Path path) {

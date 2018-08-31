@@ -59,9 +59,11 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
       val writer =
       if (persistSchema) {
         builder.persistSchemaFile(true)
-        builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema))
+        builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema),
+          sqlContext.sparkContext.hadoopConfiguration)
       } else {
-        builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema))
+        builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema),
+          sqlContext.sparkContext.hadoopConfiguration)
       }
 
       var i = 0

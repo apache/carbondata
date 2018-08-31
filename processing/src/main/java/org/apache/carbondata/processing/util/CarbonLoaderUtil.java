@@ -326,7 +326,7 @@ public final class CarbonLoaderUtil {
 
         for (LoadMetadataDetails detail: listOfLoadFolderDetails) {
           // if the segments is in the list of marked for delete then update the status.
-          if (segmentsToBeDeleted.contains(new Segment(detail.getLoadName(), null))) {
+          if (segmentsToBeDeleted.contains(new Segment(detail.getLoadName()))) {
             detail.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
           } else if (segmentFilesTobeUpdated
               .contains(Segment.toSegment(detail.getLoadName(), null))) {

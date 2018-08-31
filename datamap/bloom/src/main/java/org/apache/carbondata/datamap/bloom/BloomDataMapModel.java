@@ -19,13 +19,16 @@ package org.apache.carbondata.datamap.bloom;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class BloomDataMapModel extends DataMapModel {
 
   private Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> cache;
 
   public BloomDataMapModel(String filePath,
-      Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> cache) {
-    super(filePath);
+      Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> cache,
+      Configuration configuration) {
+    super(filePath, configuration);
     this.cache = cache;
   }
 
