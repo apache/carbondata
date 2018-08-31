@@ -266,24 +266,20 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
             "Unsupported operation on non transactional table")
         }
 
-        // TODO remove this limitation later
         val property = properties.find(_._1.equalsIgnoreCase("streaming"))
         if (property.isDefined) {
           if (carbonTable.getTablePath.startsWith("s3") && property.get._2.equalsIgnoreCase("s3")) {
             throw new UnsupportedOperationException("streaming is not supported with s3 store")
           }
-          if (carbonTable.isStreamingSink) {
+          property.get._2.toLowerCase.trim match {
+            case "true" | "false" =>
+            case others =>
+              throw new MalformedCarbonCommandException("Streaming property value is incorrect")
+          }
+          if (CarbonTable.hasMVDataMap(carbonTable)) {
             throw new MalformedCarbonCommandException(
-              "Streaming property can not be changed once it is 'true'")
-          } else {
-            if (!property.get._2.trim.equalsIgnoreCase("true")) {
-              throw new MalformedCarbonCommandException(
-                "Streaming property value is incorrect")
-            }
-            if (CarbonTable.hasMVDataMap(carbonTable)) {
-              throw new MalformedCarbonCommandException(
-                "The table which has MV datamap does not support set streaming property")
-            }
+              s"Table ${carbonTable.getTableName} has MV datamap does not support set " +
+              s"streaming property")
           }
         }
         ExecutedCommandExec(CarbonAlterTableSetCommand(tableName, properties, isView)) :: Nil
