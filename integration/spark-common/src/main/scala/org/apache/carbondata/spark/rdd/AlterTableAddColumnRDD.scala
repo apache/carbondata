@@ -48,8 +48,9 @@ class AddColumnPartition(rddId: Int, idx: Int, schema: ColumnSchema) extends Par
 /**
  * This class is aimed at generating dictionary file for the newly added columns
  */
-class AlterTableAddColumnRDD[K, V](@transient sparkSession: SparkSession,
-    @transient newColumns: Seq[ColumnSchema],
+class AlterTableAddColumnRDD[K, V](
+    @transient private val sparkSession: SparkSession,
+    @transient private val newColumns: Seq[ColumnSchema],
     identifier: AbsoluteTableIdentifier)
   extends CarbonRDD[(Int, SegmentStatus)](sparkSession, Nil) {
 

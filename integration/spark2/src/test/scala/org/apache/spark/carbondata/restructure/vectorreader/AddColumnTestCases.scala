@@ -254,7 +254,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       assert(true)
     }
     catch {
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 

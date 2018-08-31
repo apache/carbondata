@@ -80,8 +80,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
       }
       writer.close()
     } catch {
-      case ex: Exception => None
-      case _ => None
+      case _: Throwable => None
     }
   }
 

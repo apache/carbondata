@@ -176,9 +176,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       }
       writer.close()
     } catch {
-      case ex: Exception => throw new RuntimeException(ex)
-
-      case _ => None
+      case ex: Throwable => throw new RuntimeException(ex)
     }
   }
 
@@ -205,8 +203,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       }
       writer.close()
     } catch {
-      case ex: Exception => throw new RuntimeException(ex)
-      case _ => None
+      case ex: Throwable => throw new RuntimeException(ex)
     }
   }
 
@@ -239,9 +236,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       }
       writer.close()
     } catch {
-      case ex: Exception => throw new RuntimeException(ex)
-
-      case _ => None
+      case ex: Throwable => throw new RuntimeException(ex)
     }
   }
 

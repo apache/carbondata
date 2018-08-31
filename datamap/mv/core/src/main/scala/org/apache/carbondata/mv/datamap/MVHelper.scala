@@ -525,8 +525,8 @@ object MVHelper {
       aliasMap: Map[AttributeKey, NamedExpression]): Seq[Seq[Any]] = {
     val updatedFlagSpec = select.flagSpec.map { f =>
       f.map {
-        case list: ArrayBuffer[SortOrder] =>
-          list.map { s =>
+        case list: ArrayBuffer[_] =>
+          list.map { case s: SortOrder =>
             val expressions =
               updateOutPutList(
                 Seq(s.child.asInstanceOf[Attribute]),

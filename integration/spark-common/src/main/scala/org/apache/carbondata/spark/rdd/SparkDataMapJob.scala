@@ -57,7 +57,8 @@ class DataMapRDDPartition(rddId: Int, idx: Int, val inputSplit: InputSplit) exte
  * @param ss
  * @param dataMapFormat
  */
-class DataMapPruneRDD(@transient ss: SparkSession,
+class DataMapPruneRDD(
+    @transient private val ss: SparkSession,
     dataMapFormat: DistributableDataMapFormat,
     resolverIntf: FilterResolverIntf)
   extends CarbonRDD[(ExtendedBlocklet)](ss, Nil) {

@@ -43,7 +43,7 @@ case class CarbonDropPartition(rddId: Int, val idx: Int, segment: Segment)
  * @param segments segments to be cleaned
  */
 class CarbonDropPartitionRDD(
-    @transient ss: SparkSession,
+    @transient private val ss: SparkSession,
     tablePath: String,
     segments: Seq[Segment],
     partitions: util.List[PartitionSpec],

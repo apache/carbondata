@@ -60,6 +60,8 @@ object PartitionDropper {
         String.valueOf(oldPartitionIds(partitionIndex + 1))
       }
       case PartitionType.LIST => "0"
+      case _ => throw new UnsupportedOperationException(
+        s"${partitionInfo.getPartitionType} is not supported")
     }
 
     if (!dropWithData) {

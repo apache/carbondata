@@ -38,9 +38,7 @@ class BadRecordPathLoadOptionTest extends Spark2QueryTest with BeforeAndAfterAll
   var hiveContext: HiveContext = _
 
   override def beforeAll {
-    try {
-            sql("drop table IF EXISTS salestest")
-    }
+    sql("drop table IF EXISTS salestest")
   }
 
   test("data load log file and csv file written at the configured location") {

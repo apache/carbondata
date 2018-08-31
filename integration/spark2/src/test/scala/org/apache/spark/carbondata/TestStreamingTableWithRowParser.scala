@@ -788,7 +788,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
             .start()
           qry.awaitTermination()
         } catch {
-          case ex =>
+          case ex: Throwable =>
             throw new Exception(ex.getMessage)
         } finally {
           if (null != qry) {
