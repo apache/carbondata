@@ -313,8 +313,8 @@ public final class DataLoadProcessBuilder {
     }
     TableSpec tableSpec = new TableSpec(carbonTable);
     configuration.setTableSpec(tableSpec);
-    if (loadModel.getSdkUserCores() > 0) {
-      configuration.setWritingCoresCount(loadModel.getSdkUserCores());
+    if (loadModel.getSdkWriterCores() > 0) {
+      configuration.setWritingCoresCount(loadModel.getSdkWriterCores());
     }
     return configuration;
   }

@@ -63,13 +63,14 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
   private Map<Integer, GenericDataType> dataFieldsWithComplexDataType;
 
-  private short sdkUserCore;
+  // cores used in SDK writer, set by the user
+  private short sdkWriterCores;
 
   public InputProcessorStepWithNoConverterImpl(CarbonDataLoadConfiguration configuration,
       CarbonIterator<Object[]>[] inputIterators) {
     super(configuration, null);
     this.inputIterators = inputIterators;
-    sdkUserCore = configuration.getWritingCoresCount();
+    sdkWriterCores = configuration.getWritingCoresCount();
   }
 
   @Override public DataField[] getOutput() {
@@ -136,7 +137,7 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
   @Override public Iterator<CarbonRowBatch>[] execute() {
     int batchSize = CarbonProperties.getInstance().getBatchSize();
     List<CarbonIterator<Object[]>>[] readerIterators =
-        CarbonDataProcessorUtil.partitionInputReaderIterators(this.inputIterators, sdkUserCore);
+        CarbonDataProcessorUtil.partitionInputReaderIterators(this.inputIterators, sdkWriterCores);
     Iterator<CarbonRowBatch>[] outIterators = new Iterator[readerIterators.length];
     for (int i = 0; i < outIterators.length; i++) {
       outIterators[i] =

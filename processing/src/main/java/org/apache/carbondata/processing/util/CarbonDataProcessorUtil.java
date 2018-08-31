@@ -659,11 +659,11 @@ public final class CarbonDataProcessorUtil {
    * @return
    */
   public static List<CarbonIterator<Object[]>>[] partitionInputReaderIterators(
-      CarbonIterator<Object[]>[] inputIterators, short sdkUserCores) {
+      CarbonIterator<Object[]>[] inputIterators, short sdkWriterCores) {
     // Get the number of cores configured in property.
     int numberOfCores;
-    if (sdkUserCores > 0) {
-      numberOfCores = sdkUserCores;
+    if (sdkWriterCores > 0) {
+      numberOfCores = sdkWriterCores;
     } else {
       numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
     }

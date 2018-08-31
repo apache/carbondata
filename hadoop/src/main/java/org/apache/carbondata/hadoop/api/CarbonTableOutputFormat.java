@@ -236,8 +236,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
       final TaskAttemptContext taskAttemptContext) throws IOException {
     final CarbonLoadModel loadModel = getLoadModel(taskAttemptContext.getConfiguration());
     //if loadModel having taskNo already(like in SDK) then no need to overwrite
-    short sdkUserCore = loadModel.getSdkUserCores();
-    int itrSize = (sdkUserCore > 0) ? sdkUserCore : 1;
+    short sdkWriterCores = loadModel.getSdkWriterCores();
+    int itrSize = (sdkWriterCores > 0) ? sdkWriterCores : 1;
     final CarbonOutputIteratorWrapper[] iterators = new CarbonOutputIteratorWrapper[itrSize];
     for (int i = 0; i < itrSize; i++) {
       iterators[i] = new CarbonOutputIteratorWrapper();
@@ -274,7 +274,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
       }
     });
 
-    if (sdkUserCore > 0) {
+    if (sdkWriterCores > 0) {
       // CarbonMultiRecordWriter handles the load balancing of the write rows in round robin.
       return new CarbonMultiRecordWriter(iterators, dataLoadExecutor, loadModel, future,
           executorService);
@@ -461,6 +461,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
 
     private CarbonOutputIteratorWrapper[] iterators;
 
+    // keep counts of number of writes called
+    // and it is used to load balance each write call to one iterator.
     private AtomicLong counter;
 
     CarbonMultiRecordWriter(CarbonOutputIteratorWrapper[] iterators,
@@ -473,9 +475,10 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
 
     @Override public void write(NullWritable aVoid, ObjectArrayWritable objects)
         throws InterruptedException {
-      int hash = (int) (counter.incrementAndGet() % iterators.length);
-      synchronized (iterators[hash]) {
-        iterators[hash].write(objects.get());
+      int iteratorLength = iterators.length;
+      int iteratorNum = (int) (counter.incrementAndGet() % iteratorLength);
+      synchronized (iterators[iteratorNum]) {
+        iterators[iteratorNum].write(objects.get());
       }
     }
 
