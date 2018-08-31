@@ -463,7 +463,6 @@ object CarbonScalaUtil {
         }
         i += 1
       }
-      table
     } catch {
       case e: Exception =>
         // ignore it

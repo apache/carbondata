@@ -173,7 +173,7 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
       sql("drop database testdb")
       sys.error("drop db should fail as one table exist in db")
     } catch {
-      case e =>
+      case e: Throwable =>
         println(e.getMessage)
     }
     checkAnswer(sql("select count(*) from testdb.test1"), Seq(Row(2)))

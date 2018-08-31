@@ -33,7 +33,8 @@ import org.apache.carbondata.core.util._
 /**
  * This RDD maintains session level ThreadLocal
  */
-abstract class CarbonRDD[T: ClassTag](@transient ss: SparkSession,
+abstract class CarbonRDD[T: ClassTag](
+    @transient private val ss: SparkSession,
     @transient private var deps: Seq[Dependency[_]]) extends RDD[T](ss.sparkContext, deps) {
 
   val carbonSessionInfo: CarbonSessionInfo = {
@@ -86,7 +87,7 @@ abstract class CarbonRDD[T: ClassTag](@transient ss: SparkSession,
  * This RDD contains TableInfo object which is serialized and deserialized in driver and executor
  */
 abstract class CarbonRDDWithTableInfo[T: ClassTag](
-    @transient ss: SparkSession,
+    @transient private val ss: SparkSession,
     @transient private var deps: Seq[Dependency[_]],
     serializedTableInfo: Array[Byte]) extends CarbonRDD[T](ss, deps) {
 

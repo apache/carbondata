@@ -89,6 +89,8 @@ case class CarbonAlterTableDropPartitionCommand(
       case PartitionType.RANGE_INTERVAL =>
         throwMetadataException(dbName, tableName,
           "Dropping range interval partition is unsupported")
+      case _ => throw new UnsupportedOperationException(
+        s"${partitionInfo.getPartitionType} is not supported")
     }
     partitionInfo.dropPartition(partitionIndex)
 

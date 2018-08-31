@@ -292,9 +292,9 @@ class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Ar
 }
 
 class IndexDataMapRebuildRDD[K, V](
-    @transient session: SparkSession,
+    @transient private val session: SparkSession,
     result: RefreshResult[K, V],
-    @transient tableInfo: TableInfo,
+    @transient private val tableInfo: TableInfo,
     dataMapName: String,
     indexColumns: Array[CarbonColumn],
     segments: Set[Segment])

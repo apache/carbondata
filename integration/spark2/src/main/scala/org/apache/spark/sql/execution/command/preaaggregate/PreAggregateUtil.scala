@@ -764,7 +764,7 @@ object PreAggregateUtil {
           aggExp.isDistinct))
       case Sum(_: Expression) =>
         Seq(aggExp)
-      case Count(MatchCastExpression(exp: Seq[Expression], changeDataType: DataType)) =>
+      case Count(MatchCastExpression(exp: Seq[_], changeDataType: DataType)) =>
         Seq(AggregateExpression(Count(Cast(
           exp,
           changeDataType)),

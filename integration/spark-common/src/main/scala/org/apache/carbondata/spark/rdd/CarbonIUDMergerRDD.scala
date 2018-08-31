@@ -16,12 +16,8 @@
  */
 package org.apache.carbondata.spark.rdd
 
-import java.util
-import java.util.List
-
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.Partition
@@ -42,7 +38,7 @@ import org.apache.carbondata.spark.MergeResult
  * IUD carbon merger RDD
  * */
 class CarbonIUDMergerRDD[K, V](
-    @transient ss: SparkSession,
+    @transient private val ss: SparkSession,
     result: MergeResult[K, V],
     carbonLoadModel: CarbonLoadModel,
     carbonMergerMapping: CarbonMergerMapping,

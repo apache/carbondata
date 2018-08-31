@@ -54,13 +54,13 @@ class CarbonSparkSqlParser(conf: SQLConf, sparkSession: SparkSession) extends Ab
       case ce: MalformedCarbonCommandException =>
         CarbonScalaUtil.cleanParserThreadLocals
         throw ce
-      case ex =>
+      case ex: Throwable =>
         try {
           parser.parse(sqlText)
         } catch {
           case mce: MalformedCarbonCommandException =>
             throw mce
-          case e =>
+          case e: Throwable =>
             CarbonException.analysisException(
               s"""== Parse1 ==
                  |${ex.getMessage}

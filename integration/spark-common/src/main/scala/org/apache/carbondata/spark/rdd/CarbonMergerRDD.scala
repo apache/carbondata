@@ -61,7 +61,7 @@ import org.apache.carbondata.spark.MergeResult
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
 
 class CarbonMergerRDD[K, V](
-    @transient ss: SparkSession,
+    @transient private val ss: SparkSession,
     result: MergeResult[K, V],
     carbonLoadModel: CarbonLoadModel,
     carbonMergerMapping: CarbonMergerMapping,

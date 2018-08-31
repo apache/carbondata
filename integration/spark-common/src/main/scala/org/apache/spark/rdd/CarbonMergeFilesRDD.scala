@@ -41,7 +41,7 @@ case class CarbonMergeFilePartition(rddId: Int, idx: Int, segmentId: String)
  * @param segments segments to be merged
  */
 class CarbonMergeFilesRDD(
-  @transient ss: SparkSession,
+  @transient private val ss: SparkSession,
   carbonTable: CarbonTable,
   segments: Seq[String],
   segmentFileNameToSegmentIdMap: java.util.Map[String, String],
