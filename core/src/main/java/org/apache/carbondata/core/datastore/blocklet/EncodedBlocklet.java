@@ -21,11 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.core.datastore.page.key.TablePageKey;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
-import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * Holds the blocklet level data and metadata to be written in carbondata file
@@ -64,8 +62,14 @@ public class EncodedBlocklet {
    */
   private int numberOfPages;
 
-  public EncodedBlocklet(ExecutorService executorService) {
+  /**
+   * is decoder based fallback is enabled or not
+   */
+  private boolean isDecoderBasedFallBackEnabled;
+
+  public EncodedBlocklet(ExecutorService executorService, boolean isDecoderBasedFallBackEnabled) {
     this.executorService = executorService;
+    this.isDecoderBasedFallBackEnabled = isDecoderBasedFallBackEnabled;
   }
 
   /**
@@ -98,17 +102,14 @@ public class EncodedBlocklet {
       encodedMeasureColumnPages = new ArrayList<>();
       // adding measure pages
       for (int i = 0; i < encodedTablePage.getNumMeasures(); i++) {
-        BlockletEncodedColumnPage blockletEncodedColumnPage = new BlockletEncodedColumnPage(null,
-            Boolean.parseBoolean(CarbonProperties.getInstance()
-                .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK,
-                    CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT)));
-        blockletEncodedColumnPage.addEncodedColumnColumnPage(encodedTablePage.getMeasure(i), null);
+        BlockletEncodedColumnPage blockletEncodedColumnPage =
+            new BlockletEncodedColumnPage(null, false, null);
+        blockletEncodedColumnPage.addEncodedColumnPage(encodedTablePage.getMeasure(i));
         encodedMeasureColumnPages.add(blockletEncodedColumnPage);
       }
     } else {
       for (int i = 0; i < encodedTablePage.getNumMeasures(); i++) {
-        encodedMeasureColumnPages.get(i)
-            .addEncodedColumnColumnPage(encodedTablePage.getMeasure(i), null);
+        encodedMeasureColumnPages.get(i).addEncodedColumnPage(encodedTablePage.getMeasure(i));
       }
     }
   }
@@ -127,22 +128,16 @@ public class EncodedBlocklet {
       // adding measure pages
       for (int i = 0; i < encodedTablePage.getNumDimensions(); i++) {
         BlockletEncodedColumnPage blockletEncodedColumnPage =
-            new BlockletEncodedColumnPage(executorService, Boolean.parseBoolean(
-                CarbonProperties.getInstance()
-                    .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK,
-                        CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT)));
-        blockletEncodedColumnPage.addEncodedColumnColumnPage(encodedTablePage.getDimension(i),
-            localDictionaryGeneratorMap.get(
-                encodedTablePage.getDimension(i).getActualPage().getColumnSpec().getFieldName()));
+            new BlockletEncodedColumnPage(executorService, isDecoderBasedFallBackEnabled,
+                localDictionaryGeneratorMap.get(
+                    encodedTablePage.getDimension(i).getActualPage().getColumnSpec()
+                        .getFieldName()));
+        blockletEncodedColumnPage.addEncodedColumnPage(encodedTablePage.getDimension(i));
         encodedDimensionColumnPages.add(blockletEncodedColumnPage);
       }
     } else {
       for (int i = 0; i < encodedTablePage.getNumDimensions(); i++) {
-        encodedDimensionColumnPages.get(i)
-            .addEncodedColumnColumnPage(encodedTablePage.getDimension(i),
-                localDictionaryGeneratorMap.get(
-                    encodedTablePage.getDimension(i).getActualPage().getColumnSpec()
-                        .getFieldName()));
+        encodedDimensionColumnPages.get(i).addEncodedColumnPage(encodedTablePage.getDimension(i));
       }
     }
   }

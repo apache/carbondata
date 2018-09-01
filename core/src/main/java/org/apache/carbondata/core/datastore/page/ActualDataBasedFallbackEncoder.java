@@ -28,7 +28,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
  * This is required as all the pages of a column in blocklet either it will be local dictionary
  * encoded or without local dictionary encoded.
  */
-public class FallbackActualDataBasedColumnPageEncoder
+public class ActualDataBasedFallbackEncoder
     implements Callable<FallbackEncodedColumnPage> {
 
   /**
@@ -44,7 +44,7 @@ public class FallbackActualDataBasedColumnPageEncoder
    */
   private int pageIndex;
 
-  public FallbackActualDataBasedColumnPageEncoder(EncodedColumnPage encodedColumnPage,
+  public ActualDataBasedFallbackEncoder(EncodedColumnPage encodedColumnPage,
       int pageIndex) {
     this.encodedColumnPage = encodedColumnPage;
     this.pageIndex = pageIndex;

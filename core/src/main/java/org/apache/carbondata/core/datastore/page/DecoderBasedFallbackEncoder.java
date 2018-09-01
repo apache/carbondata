@@ -31,7 +31,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.Encoding;
 
-public class FallbackDecoderBasedColumnPageEncoder implements Callable<FallbackEncodedColumnPage> {
+public class DecoderBasedFallbackEncoder implements Callable<FallbackEncodedColumnPage> {
   /**
    * actual local dictionary generated column page
    */
@@ -47,7 +47,7 @@ public class FallbackDecoderBasedColumnPageEncoder implements Callable<FallbackE
 
   private LocalDictionaryGenerator localDictionaryGenerator;
 
-  public FallbackDecoderBasedColumnPageEncoder(EncodedColumnPage encodedColumnPage, int pageIndex,
+  public DecoderBasedFallbackEncoder(EncodedColumnPage encodedColumnPage, int pageIndex,
       LocalDictionaryGenerator localDictionaryGenerator) {
     this.encodedColumnPage = encodedColumnPage;
     this.pageIndex = pageIndex;
