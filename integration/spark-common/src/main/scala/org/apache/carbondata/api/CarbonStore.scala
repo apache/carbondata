@@ -21,12 +21,12 @@ import java.lang.Long
 
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.fs.{LocatedFileStatus, Path, RemoteIterator}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.unsafe.types.UTF8String
 
+import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -104,7 +104,9 @@ object CarbonStore {
               endTime,
               mergedTo,
               load.getFileFormat.toString,
-              load.getVisibility())
+              load.getVisibility(),
+              Strings.formatSize(if (load.getDataSize == null) 0 else load.getDataSize.toFloat),
+              Strings.formatSize(if (load.getIndexSize == null) 0 else load.getIndexSize.toFloat))
           } else {
             Row(
               load.getLoadName,
@@ -112,7 +114,9 @@ object CarbonStore {
               startTime,
               endTime,
               mergedTo,
-              load.getFileFormat.toString)
+              load.getFileFormat.toString,
+              Strings.formatSize(if (load.getDataSize == null) 0 else load.getDataSize.toFloat),
+              Strings.formatSize(if (load.getIndexSize == null) 0 else load.getIndexSize.toFloat))
           }
         }.toSeq
     } else {
