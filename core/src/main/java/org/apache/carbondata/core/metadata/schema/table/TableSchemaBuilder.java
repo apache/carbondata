@@ -117,7 +117,7 @@ public class TableSchemaBuilder {
       property.put(CarbonCommonConstants.TABLE_BLOCKSIZE, String.valueOf(blockSize));
     }
     if (blockletSize > 0) {
-      property.put(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB, String.valueOf(blockletSize));
+      property.put(CarbonCommonConstants.TABLE_BLOCKLET_SIZE, String.valueOf(blockletSize));
     }
 
     // Adding local dictionary, applicable only for String(dictionary exclude)
