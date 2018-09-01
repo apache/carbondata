@@ -50,11 +50,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-mv-core</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-sql_${scala.binary.version}</artifactId>
     </dependency>
@@ -208,6 +203,16 @@
       <properties>
         <maven.test.skip>true</maven.test.skip>
       </properties>
+    </profile>
+    <profile>
+      <id>mv</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.carbondata</groupId>
+          <artifactId>carbondata-mv-core</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
     </profile>
   </profiles>
 </project>

@@ -115,6 +115,9 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
   }
 
   test("MVDataMapExample") {
-    MVDataMapExample.exampleBody(spark)
+    // MV only works for 2.2 and above
+    if (!spark.sparkContext.version.startsWith("2.1")) {
+      MVDataMapExample.exampleBody(spark)
+    }
   }
 }
