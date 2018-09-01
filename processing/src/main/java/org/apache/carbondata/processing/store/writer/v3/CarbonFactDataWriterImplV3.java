@@ -24,7 +24,6 @@ import java.util.List;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.blocklet.BlockletEncodedColumnPage;
 import org.apache.carbondata.core.datastore.blocklet.EncodedBlocklet;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
@@ -43,6 +42,9 @@ import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.TablePage;
 import org.apache.carbondata.processing.store.writer.AbstractFactDataWriter;
 
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.TABLE_BLOCKLET_SIZE;
+import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB;
+import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE;
 
 /**
  * Below class will be used to write the data in V3 format
@@ -68,11 +70,14 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
 
   public CarbonFactDataWriterImplV3(CarbonFactDataHandlerModel model) {
     super(model);
-    blockletSizeThreshold = Long.parseLong(CarbonProperties.getInstance()
-        .getProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB,
-            CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE))
-        * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
-        * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR;
+    String blockletSize =
+        model.getTableSpec().getCarbonTable().getTableInfo().getFactTable().getTableProperties()
+            .get(TABLE_BLOCKLET_SIZE);
+    if (blockletSize == null) {
+      blockletSize = CarbonProperties.getInstance().getProperty(
+          BLOCKLET_SIZE_IN_MB, BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE);
+    }
+    blockletSizeThreshold = Long.parseLong(blockletSize) << 20;
     if (blockletSizeThreshold > fileSizeInBytes) {
       blockletSizeThreshold = fileSizeInBytes;
       LOGGER.info("Blocklet size configure for table is: " + blockletSizeThreshold);
