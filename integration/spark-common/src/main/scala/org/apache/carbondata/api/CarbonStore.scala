@@ -21,7 +21,6 @@ import java.lang.Long
 
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.fs.{LocatedFileStatus, Path, RemoteIterator}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.util.CarbonException
@@ -104,7 +103,9 @@ object CarbonStore {
               endTime,
               mergedTo,
               load.getFileFormat.toString,
-              load.getVisibility())
+              load.getVisibility(),
+              formatSize(load.getDataSize.toFloat),
+              formatSize(load.getIndexSize.toFloat))
           } else {
             Row(
               load.getLoadName,
@@ -112,11 +113,33 @@ object CarbonStore {
               startTime,
               endTime,
               mergedTo,
-              load.getFileFormat.toString)
+              load.getFileFormat.toString,
+              formatSize(load.getDataSize.toFloat),
+              formatSize(load.getIndexSize.toFloat))
           }
         }.toSeq
     } else {
       Seq.empty
+    }
+  }
+
+  private def formatSize(size: Float): String = {
+    val KB = 1024L
+    val MB = KB << 10
+    val GB = MB << 10
+    val TB = GB << 10
+    if (size < 0) {
+      "NA"
+    } else if (size >= 0 && size < KB) {
+      s"${size}B"
+    } else if (size >= KB && size < MB) {
+      s"${(size / KB).formatted("%.2f")}KB"
+    } else if (size >= MB && size < GB) {
+      s"${(size / MB).formatted("%.2f")}MB"
+    } else if (size >= GB && size < TB) {
+      s"${(size / GB).formatted("%.2f")}GB"
+    } else {
+      s"${(size / TB).formatted("%.2f")}TB"
     }
   }
 
