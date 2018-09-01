@@ -104,8 +104,8 @@ object CarbonStore {
               mergedTo,
               load.getFileFormat.toString,
               load.getVisibility(),
-              formatSize(load.getDataSize.toFloat),
-              formatSize(load.getIndexSize.toFloat))
+              formatSize(if (load.getDataSize == null) 0 else load.getDataSize.toFloat),
+              formatSize(if (load.getIndexSize == null) 0 else load.getIndexSize.toFloat))
           } else {
             Row(
               load.getLoadName,
@@ -114,8 +114,8 @@ object CarbonStore {
               endTime,
               mergedTo,
               load.getFileFormat.toString,
-              formatSize(load.getDataSize.toFloat),
-              formatSize(load.getIndexSize.toFloat))
+              formatSize(if (load.getDataSize == null) 0 else load.getDataSize.toFloat),
+              formatSize(if (load.getIndexSize == null) 0 else load.getIndexSize.toFloat))
           }
         }.toSeq
     } else {
