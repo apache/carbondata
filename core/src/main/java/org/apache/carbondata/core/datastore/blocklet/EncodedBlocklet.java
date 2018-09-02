@@ -67,9 +67,16 @@ public class EncodedBlocklet {
    */
   private boolean isDecoderBasedFallBackEnabled;
 
-  public EncodedBlocklet(ExecutorService executorService, boolean isDecoderBasedFallBackEnabled) {
+  /**
+   * local dictionary generator map of all local dictionary columns
+   */
+  private Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap;
+
+  public EncodedBlocklet(ExecutorService executorService, boolean isDecoderBasedFallBackEnabled,
+      Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap) {
     this.executorService = executorService;
     this.isDecoderBasedFallBackEnabled = isDecoderBasedFallBackEnabled;
+    this.localDictionaryGeneratorMap = localDictionaryGeneratorMap;
   }
 
   /**
@@ -95,8 +102,7 @@ public class EncodedBlocklet {
    * @param encodedTablePage
    * encoded table page
    */
-  private void addEncodedMeasurePage(EncodedTablePage encodedTablePage,
-      Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap) {
+  private void addEncodedMeasurePage(EncodedTablePage encodedTablePage) {
     // for first page create new list
     if (null == encodedMeasureColumnPages) {
       encodedMeasureColumnPages = new ArrayList<>();
@@ -120,8 +126,7 @@ public class EncodedBlocklet {
    * @param encodedTablePage
    * encoded table page
    */
-  private void addEncodedDimensionPage(EncodedTablePage encodedTablePage,
-      Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap) {
+  private void addEncodedDimensionPage(EncodedTablePage encodedTablePage) {
     // for first page create new list
     if (null == encodedDimensionColumnPages) {
       encodedDimensionColumnPages = new ArrayList<>();
@@ -148,11 +153,10 @@ public class EncodedBlocklet {
    * @param encodedTablePage
    * encoded table page
    */
-  public void addEncodedTablePage(EncodedTablePage encodedTablePage,
-      Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap) {
+  public void addEncodedTablePage(EncodedTablePage encodedTablePage) {
     addPageMetadata(encodedTablePage);
-    addEncodedDimensionPage(encodedTablePage, localDictionaryGeneratorMap);
-    addEncodedMeasurePage(encodedTablePage, localDictionaryGeneratorMap);
+    addEncodedDimensionPage(encodedTablePage);
+    addEncodedMeasurePage(encodedTablePage);
   }
 
   public int getBlockletSize() {

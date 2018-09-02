@@ -34,14 +34,12 @@ public class BlockletDataHolder {
 
   private EncodedBlocklet encodedBlocklet;
 
-  private CarbonFactDataHandlerModel model;
-
   public BlockletDataHolder(ExecutorService fallbackpool, CarbonFactDataHandlerModel model) {
     encodedBlocklet = new EncodedBlocklet(fallbackpool, Boolean.parseBoolean(
         CarbonProperties.getInstance()
             .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK,
-                CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT)));
-    this.model = model;
+                CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT)),
+        model.getColumnLocalDictGenMap());
   }
 
   public void clear() {
@@ -52,7 +50,7 @@ public class BlockletDataHolder {
   public void addPage(TablePage rawTablePage) {
     EncodedTablePage encodedTablePage = rawTablePage.getEncodedTablePage();
     currentSize += encodedTablePage.getEncodedSize();
-    encodedBlocklet.addEncodedTablePage(encodedTablePage, model.getColumnLocalDictGenMap());
+    encodedBlocklet.addEncodedTablePage(encodedTablePage);
   }
 
   public long getSize() {
