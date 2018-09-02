@@ -475,8 +475,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
 
     @Override public void write(NullWritable aVoid, ObjectArrayWritable objects)
         throws InterruptedException {
-      int iteratorLength = iterators.length;
-      int iteratorNum = (int) (counter.incrementAndGet() % iteratorLength);
+      int iteratorNum = (int) (counter.incrementAndGet() % iterators.length);
       synchronized (iterators[iteratorNum]) {
         iterators[iteratorNum].write(objects.get());
       }
