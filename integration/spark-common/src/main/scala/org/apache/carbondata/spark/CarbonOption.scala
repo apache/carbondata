@@ -50,6 +50,8 @@ class CarbonOption(options: Map[String, String]) {
 
   lazy val sortColumns: Option[String] = options.get("sort_columns")
 
+  lazy val sortScope: Option[String] = options.get("sort_scope")
+
   lazy val dictionaryInclude: Option[String] = options.get("dictionary_include")
 
   lazy val dictionaryExclude: Option[String] = options.get("dictionary_exclude")

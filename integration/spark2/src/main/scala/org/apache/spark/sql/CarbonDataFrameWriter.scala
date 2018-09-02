@@ -81,6 +81,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
   private def makeCreateTableString(schema: StructType, options: CarbonOption): String = {
     val property = Map(
       "SORT_COLUMNS" -> options.sortColumns,
+      "SORT_SCOPE" -> options.sortScope,
       "DICTIONARY_INCLUDE" -> options.dictionaryInclude,
       "DICTIONARY_EXCLUDE" -> options.dictionaryExclude,
       "LONG_STRING_COLUMNS" -> options.longStringColumns,
