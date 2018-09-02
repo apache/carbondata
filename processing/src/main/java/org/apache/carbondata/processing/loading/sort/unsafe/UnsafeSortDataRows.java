@@ -127,11 +127,8 @@ public class UnsafeSortDataRows {
   /**
    * This method will be used to initialize
    */
-  public void initialize() throws MemoryException {
+  public void initialize() throws MemoryException, CarbonSortKeyAndGroupByException {
     this.rowPage = createUnsafeRowPage();
-    if (this.rowPage == null) {
-      throw new MemoryException(" Not enough memory ");
-    }
     // Delete if any older file exists in sort temp folder
     deleteSortLocationIfExists();
 
@@ -143,8 +140,8 @@ public class UnsafeSortDataRows {
     semaphore = new Semaphore(parameters.getNumberOfCores());
   }
 
-  private UnsafeCarbonRowPage createUnsafeRowPage() {
-    try {
+  private UnsafeCarbonRowPage createUnsafeRowPage()
+      throws MemoryException, CarbonSortKeyAndGroupByException {
       MemoryBlock baseBlock =
           UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
       boolean isMemoryAvailable =
@@ -156,12 +153,6 @@ public class UnsafeSortDataRows {
         unsafeInMemoryIntermediateFileMerger.tryTriggerInmemoryMerging(true);
       }
       return new UnsafeCarbonRowPage(tableFieldStat, baseBlock, !isMemoryAvailable, taskId);
-    } catch (MemoryException | CarbonSortKeyAndGroupByException e) {
-      // This will set rowPage reference to null. If not set, other threads will use same reference.
-      // As handlePreviousPage() free the rowPage.
-      // If not set to null, rowPage will be accessed again after free by other thread.
-      return null;
-    }
   }
 
   public boolean canAdd() {
@@ -206,9 +197,14 @@ public class UnsafeSortDataRows {
       } else {
         try {
           handlePreviousPage();
-          rowPage = createUnsafeRowPage();
-          if (rowPage == null) {
-            throw new MemoryException(" Not enough memory ");
+          try {
+            rowPage = createUnsafeRowPage();
+          } catch (Exception ex) {
+            // row page has freed in handlePreviousPage(), so other iterator may try to access it.
+            rowPage = null;
+            LOGGER.error(
+                "exception occurred while trying to acquire a semaphore lock: " + ex.getMessage());
+            throw new CarbonSortKeyAndGroupByException(ex);
           }
           bytesAdded += rowPage.addRow(rowBatch[i], rowBuffer.get());
         } catch (Exception e) {
@@ -235,9 +231,13 @@ public class UnsafeSortDataRows {
     } else {
       try {
         handlePreviousPage();
-        rowPage = createUnsafeRowPage();
-        if (rowPage == null) {
-          throw new MemoryException(" Not enough memory ");
+        try {
+          rowPage = createUnsafeRowPage();
+        } catch (Exception ex) {
+          rowPage = null;
+          LOGGER.error(
+              "exception occurred while trying to acquire a semaphore lock: " + ex.getMessage());
+          throw new CarbonSortKeyAndGroupByException(ex);
         }
         rowPage.addRow(row, rowBuffer.get());
       } catch (Exception e) {
