@@ -142,17 +142,17 @@ public class UnsafeSortDataRows {
 
   private UnsafeCarbonRowPage createUnsafeRowPage()
       throws MemoryException, CarbonSortKeyAndGroupByException {
-      MemoryBlock baseBlock =
-          UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
-      boolean isMemoryAvailable =
-          UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(baseBlock.size());
-      if (isMemoryAvailable) {
-        UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(baseBlock.size());
-      } else {
-        // merge and spill in-memory pages to disk if memory is not enough
-        unsafeInMemoryIntermediateFileMerger.tryTriggerInmemoryMerging(true);
-      }
-      return new UnsafeCarbonRowPage(tableFieldStat, baseBlock, !isMemoryAvailable, taskId);
+    MemoryBlock baseBlock =
+        UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
+    boolean isMemoryAvailable =
+        UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(baseBlock.size());
+    if (isMemoryAvailable) {
+      UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(baseBlock.size());
+    } else {
+      // merge and spill in-memory pages to disk if memory is not enough
+      unsafeInMemoryIntermediateFileMerger.tryTriggerInmemoryMerging(true);
+    }
+    return new UnsafeCarbonRowPage(tableFieldStat, baseBlock, !isMemoryAvailable, taskId);
   }
 
   public boolean canAdd() {
