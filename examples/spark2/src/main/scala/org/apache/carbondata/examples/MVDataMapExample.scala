@@ -18,6 +18,7 @@
 package org.apache.carbondata.examples
 
 import java.io.File
+import java.util.Random
 
 import org.apache.spark.sql.SparkSession
 
@@ -32,6 +33,7 @@ object MVDataMapExample {
   def main(args: Array[String]) {
     val spark = ExampleUtils.createCarbonSession("MVDataMapExample")
     exampleBody(spark)
+    performanceTest(spark)
     spark.close()
   }
 
@@ -81,7 +83,7 @@ object MVDataMapExample {
     // Check the physical plan which uses MV table simple_sub_projection_table instead of mainTable
     spark.sql(s"""select sum(id) from mainTable""").explain(true)
 
-    // aggregate functions to be hit
+    // 2. aggregate functions to be hit
     spark.sql(
       s"""create datamap simple_agg using 'mv' as
          | select id,sum(age) from mainTable group by id""".stripMargin)
@@ -97,7 +99,7 @@ object MVDataMapExample {
 
 
 
-    // join with another table and aggregate functions to be hit
+    // 3.join with another table and aggregate functions to be hit
     spark.sql(s"""create datamap simple_agg_with_join using 'mv' as
          | select id,address, sum(age) from mainTable inner join dimtable on mainTable
          | .name=dimtable.name group by id ,address""".stripMargin)
@@ -121,5 +123,99 @@ object MVDataMapExample {
 
     spark.sql("DROP TABLE IF EXISTS mainTable")
     spark.sql("DROP TABLE IF EXISTS dimtable")
+  }
+
+  private def performanceTest(spark: SparkSession): Unit = {
+    spark.sql("DROP TABLE IF EXISTS employee_salary")
+    spark.sql("DROP TABLE IF EXISTS employee_salary_without_mv")
+    spark.sql("DROP TABLE IF EXISTS emp_address")
+
+    createFactTable(spark, "employee_salary")
+    createFactTable(spark, "employee_salary_without_mv")
+
+    spark.sql(
+      """
+        | CREATE TABLE emp_address
+        | (name String,
+        | address String)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    spark.sql(
+      s"""insert into emp_address select name, concat(city, ' street1') as address from
+         |employee_salary group by name, address""".stripMargin)
+
+    spark.sql(
+      s"""create datamap simple_agg_employee using 'mv' as
+         | select id,sum(salary) from employee_salary group by id""".stripMargin)
+    spark.sql(s"""rebuild datamap simple_agg_employee""")
+
+    // Test performance of aggregate queries with mv datamap
+    val timeWithOutMv = time(spark
+      .sql("select id, name, sum(salary) from employee_salary_without_mv group by id,name")
+      .collect())
+    val timeWithMv = time(spark
+      .sql("select id,name,sum(salary) from employee_salary group by id,name").collect())
+    // scalastyle:off
+    println("Time of table with MV is : " + timeWithMv + " time withoutmv : " + timeWithOutMv)
+    // scalastyle:on
+    val timeWithOutMvFilter = time(spark
+      .sql(
+        "select id, name, sum(salary) from employee_salary_without_mv where name='name10' group " +
+        "by id,name")
+      .collect())
+    val timeWithMvFilter = time(spark
+      .sql("select id,name,sum(salary) from employee_salary where name='name10' group by id,name")
+      .collect())
+    // scalastyle:off
+    println("Time of table with MV with filter is : " + timeWithMvFilter + " time withoutmv : " +
+            timeWithOutMvFilter)
+    // scalastyle:on
+
+    // Tests performance of aggregate with join queries.
+    spark.sql(
+      s"""create datamap simple_join_agg_employee using 'mv' as
+         | select id,address, sum(salary) from employee_salary f join emp_address d
+         | on f.name=d.name group by id,address""".stripMargin)
+    spark.sql(s"""rebuild datamap simple_join_agg_employee""")
+
+    val timeWithMVJoin =
+      time(spark.sql(
+        s"""select id,address, sum(salary) from employee_salary f join emp_address d
+           | on f.name=d.name group by id,address""".stripMargin).collect())
+    val timeWithOutMVJoin =
+      time(spark.sql(
+        s"""select id,address, sum(salary) from employee_salary_without_mv f
+           |join emp_address d on f.name=d.name group by id,address""".stripMargin).collect())
+    // scalastyle:off
+    println("Time of table with MV with join is : " + timeWithMVJoin + " time withoutmv : " +
+            timeWithOutMVJoin)
+    // scalastyle:on
+
+    spark.sql("DROP TABLE IF EXISTS employee_salary")
+    spark.sql("DROP TABLE IF EXISTS emp_address")
+    spark.sql("DROP TABLE IF EXISTS employee_salary_without_mv")
+  }
+
+  private def createFactTable(spark: SparkSession, tableName: String): Unit = {
+    import spark.implicits._
+    val rand = new Random()
+    // Create fact table with datamap
+    val df = spark.sparkContext.parallelize(1 to 1000000)
+      .map(x => (x % 1000, "name" + x % 1000, "city" + x % 100, rand.nextInt()))
+      .toDF("id", "name", "city", "salary")
+
+    df.write
+      .format("carbondata")
+      .option("tableName", tableName)
+      .save()
+  }
+
+  // define time function
+  private def time(code: => Unit): Double = {
+    val start = System.currentTimeMillis()
+    code
+    // return time in second
+    (System.currentTimeMillis() - start).toDouble / 1000
   }
 }
