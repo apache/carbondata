@@ -33,9 +33,15 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_MAJOR_COMPACTION_SIZE;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_OFFHEAP_SORT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_UNSAFE_SORT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_VECTOR_READER;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.NUM_CORES_COMPACTING;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.NUM_CORES_LOADING;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH;
@@ -47,6 +53,7 @@ import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CAR
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT;
+import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB;
 
 /**
  * This class maintains carbon session params
@@ -153,6 +160,8 @@ public class SessionParams implements Serializable, Cloneable {
       case CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD:
       case CARBON_OPTIONS_SINGLE_PASS:
       case CARBON_SEARCH_MODE_ENABLE:
+      case ENABLE_VECTOR_READER:
+      case ENABLE_UNSAFE_IN_QUERY_EXECUTION:
         isValid = CarbonUtil.validateBoolean(value);
         if (!isValid) {
           throw new InvalidConfigurationException("Invalid value " + value + " for key " + key);
@@ -176,6 +185,10 @@ public class SessionParams implements Serializable, Cloneable {
         break;
       case CARBON_OPTIONS_BATCH_SORT_SIZE_INMB:
       case CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS:
+      case NUM_CORES_LOADING:
+      case NUM_CORES_COMPACTING:
+      case BLOCKLET_SIZE_IN_MB:
+      case CARBON_MAJOR_COMPACTION_SIZE:
         isValid = CarbonUtil.validateValidIntType(value);
         if (!isValid) {
           throw new InvalidConfigurationException(
@@ -198,6 +211,14 @@ public class SessionParams implements Serializable, Cloneable {
         break;
       // no validation needed while set for CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT
       case CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT:
+        isValid = true;
+        break;
+      case COMPACTION_SEGMENT_LEVEL_THRESHOLD:
+        int[] values = CarbonProperties.getInstance().getIntArray(value);
+        if (values.length != 2) {
+          throw new InvalidConfigurationException(
+              "Invalid COMPACTION_SEGMENT_LEVEL_THRESHOLD: " + value);
+        }
         isValid = true;
         break;
       default:
