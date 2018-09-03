@@ -69,6 +69,7 @@ public class QueryModel {
    * table block information in which query will be executed
    */
   private List<TableBlockInfo> tableBlockInfos;
+
   /**
    * To handle most of the computation in query engines like spark and hive, carbon should give
    * raw detailed records to it.
@@ -108,11 +109,6 @@ public class QueryModel {
    * whether it require to output the row id
    */
   private boolean requiredRowId;
-
-  /**
-   * whether it is FG with search mode
-   */
-  private boolean isFG;
 
   // whether to clear/free unsafe memory or not
   private boolean freeUnsafeMemory = true;
@@ -378,20 +374,13 @@ public class QueryModel {
     this.requiredRowId = requiredRowId;
   }
 
-  public boolean isFG() {
-    return isFG;
-  }
-
-  public void setFG(boolean FG) {
-    isFG = FG;
-  }
-
   @Override
   public String toString() {
     return String.format("scan on table %s.%s, %d projection columns with filter (%s)",
         table.getDatabaseName(), table.getTableName(),
         projection.getDimensions().size() + projection.getMeasures().size(),
-        filterExpressionResolverTree.getFilterExpression().toString());
+        filterExpressionResolverTree == null ? "" :
+            filterExpressionResolverTree.getFilterExpression().toString());
   }
 
   public boolean isFreeUnsafeMemory() {

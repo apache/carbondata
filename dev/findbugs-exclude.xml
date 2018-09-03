@@ -21,6 +21,10 @@
   </Match>
 
   <Match>
+    <Package name="org.apache.carbondata.horizon.antlr.gen"/>
+  </Match>
+
+  <Match>
     <Source name="~.*\.scala" />
   </Match>
 

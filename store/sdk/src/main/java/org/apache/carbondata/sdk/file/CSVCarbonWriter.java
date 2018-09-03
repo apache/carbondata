@@ -40,13 +40,13 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
  * Implementation to write rows in CSV format to carbondata file.
  */
 @InterfaceAudience.Internal
-class CSVCarbonWriter extends CarbonWriter {
+public class CSVCarbonWriter extends CarbonWriter {
 
   private RecordWriter<NullWritable, ObjectArrayWritable> recordWriter;
   private TaskAttemptContext context;
   private ObjectArrayWritable writable;
 
-  CSVCarbonWriter(CarbonLoadModel loadModel) throws IOException {
+  public CSVCarbonWriter(CarbonLoadModel loadModel) throws IOException {
     Configuration hadoopConf = new Configuration();
     CarbonTableOutputFormat.setLoadModel(hadoopConf, loadModel);
     CarbonTableOutputFormat format = new CarbonTableOutputFormat();

@@ -71,7 +71,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobContext;
+import org.apache.hadoop.mapreduce.JobID;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+import org.apache.hadoop.mapreduce.task.JobContextImpl;
 
 /**
  * InputFormat for reading carbondata files with table level metadata support,
@@ -97,6 +99,15 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
   // a cache for carbon table, it will be used in task side
   private CarbonTable carbonTable;
   private ReadCommittedScope readCommittedScope;
+
+  public CarbonTableInputFormat() {
+  }
+
+  public CarbonTableInputFormat(Configuration conf) throws IOException {
+    this.carbonTable = getOrCreateCarbonTable(conf);
+    this.readCommittedScope = getReadCommitted(
+        new JobContextImpl(conf, new JobID()), carbonTable.getAbsoluteTableIdentifier());
+  }
 
   /**
    * Get the cached CarbonTable or create it by TableInfo in `configuration`
@@ -531,9 +542,15 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
 
     // for each segment fetch blocks matching filter in Driver BTree
-    List<org.apache.carbondata.hadoop.CarbonInputSplit> dataBlocksOfSegment =
-        getDataBlocksOfSegment(job, carbonTable, filterResolver, matchedPartitions,
-            validSegments, partitionInfo, oldPartitionIdList);
+    List<org.apache.carbondata.hadoop.CarbonInputSplit> dataBlocksOfSegment;
+    if (carbonTable.getTableInfo().getFormat().equals("")
+        || carbonTable.getTableInfo().getFormat().equals("carbondata")) {
+      dataBlocksOfSegment = getDataBlocksOfSegment(job, carbonTable, filterResolver,
+          matchedPartitions, validSegments, partitionInfo, oldPartitionIdList);
+    } else {
+      dataBlocksOfSegment = getDataBlocksOfSegment4ExternalFormat(job, carbonTable, filterResolver,
+          validSegments);
+    }
     numBlocks = dataBlocksOfSegment.size();
     for (org.apache.carbondata.hadoop.CarbonInputSplit inputSplit : dataBlocksOfSegment) {
 

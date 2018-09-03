@@ -1,0 +1,22 @@
+[
+  {
+    "group": "carbon",
+    "name": "carbon",
+    "className": "org.apache.carbondata.zeppelin.CarbonInterpreter",
+    "properties": {
+      "carbon.query.api.url": {
+        "envName": null,
+        "propertyName": "carbon.query.api.url",
+        "defaultValue": "",
+        "description": "API URL for request",
+        "type": "string"
+      }
+    },
+    "editor": {
+      "language": "sql",
+      "editOnDblClick": false,
+      "completionKey": "TAB",
+      "completionSupport": true
+    }
+  }
+]

@@ -597,13 +597,16 @@ public class CarbonWriterBuilder {
     }
     TableSchema schema = tableSchemaBuilder.build();
     schema.setTableName(tableName);
-    CarbonTable table =
-        CarbonTable.builder().tableName(schema.getTableName()).databaseName(dbName).tablePath(path)
-            .tableSchema(schema).isTransactionalTable(isTransactionalTable).build();
-    return table;
+    return CarbonTable.builder()
+        .tableName(schema.getTableName())
+        .databaseName(dbName)
+        .tablePath(path)
+        .tableSchema(schema)
+        .isTransactionalTable(isTransactionalTable)
+        .build();
   }
 
-  private void buildTableSchema(Field[] fields, TableSchemaBuilder tableSchemaBuilder,
+  public static void buildTableSchema(Field[] fields, TableSchemaBuilder tableSchemaBuilder,
       List<String> sortColumnsList, ColumnSchema[] sortColumnsSchemaList) {
     Set<String> uniqueFields = new HashSet<>();
     // a counter which will be used in case of complex array type. This valIndex will be assigned
@@ -651,8 +654,8 @@ public class CarbonWriterBuilder {
           } else if (field.getDataType().getName().equalsIgnoreCase("STRUCT")) {
             // Loop through the inner columns and for a StructData
             List<StructField> structFieldsArray =
-                new ArrayList<StructField>(field.getChildren().size());
-            for (StructField childFld : field.getChildren()) {
+                new ArrayList<>(field.getChildren().size());
+            for (Field childFld : field.getChildren()) {
               structFieldsArray
                   .add(new StructField(childFld.getFieldName(), childFld.getDataType()));
             }

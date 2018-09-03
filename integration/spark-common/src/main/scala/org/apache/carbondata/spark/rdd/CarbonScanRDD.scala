@@ -61,6 +61,7 @@ import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.InitInputMetrics
+import org.apache.carbondata.spark.format.{CsvReadSupport, VectorCsvReadSupport}
 import org.apache.carbondata.spark.util.Util
 import org.apache.carbondata.streaming.{CarbonStreamInputFormat, CarbonStreamRecordReader}
 
@@ -89,7 +90,10 @@ class CarbonScanRDD[T: ClassTag](
   }
   private var vectorReader = false
 
+  @transient private val isTaskLocality = CarbonProperties.isTaskLocality
+
   private val bucketedTable = tableInfo.getFactTable.getBucketingInfo
+  private val storageFormat = tableInfo.getFormat
 
   @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
@@ -136,10 +140,13 @@ class CarbonScanRDD[T: ClassTag](
       // 2. for stream splits, create partition for each split by default
       val columnarSplits = new ArrayList[InputSplit]()
       val streamSplits = new ArrayBuffer[InputSplit]()
+      val externalSplits = new ArrayBuffer[InputSplit]()
       splits.asScala.foreach { split =>
         val carbonInputSplit = split.asInstanceOf[CarbonInputSplit]
         if (FileFormat.ROW_V1 == carbonInputSplit.getFileFormat) {
           streamSplits += split
+        } else if (FileFormat.EXTERNAL == carbonInputSplit.getFileFormat) {
+          externalSplits += split
         } else {
           columnarSplits.add(split)
         }
@@ -149,31 +156,39 @@ class CarbonScanRDD[T: ClassTag](
       distributeEndTime = System.currentTimeMillis()
       // check and remove InExpression from filterExpression
       checkAndRemoveInExpressinFromFilterExpression(batchPartitions)
-      if (streamSplits.isEmpty) {
-        partitions = batchPartitions.toArray
-      } else {
-        val index = batchPartitions.length
-        val streamPartitions: mutable.Buffer[Partition] =
-          streamSplits.zipWithIndex.map { splitWithIndex =>
-            val multiBlockSplit =
-              new CarbonMultiBlockSplit(
-                Seq(splitWithIndex._1.asInstanceOf[CarbonInputSplit]).asJava,
-                splitWithIndex._1.getLocations,
-                FileFormat.ROW_V1)
-            new CarbonSparkPartition(id, splitWithIndex._2 + index, multiBlockSplit)
-          }
-        if (batchPartitions.isEmpty) {
-          partitions = streamPartitions.toArray
-        } else {
-          logInfo(
-            s"""
-               | Identified no.of Streaming Blocks: ${ streamPartitions.size },
-          """.stripMargin)
-          // should keep the order by index of partition
-          batchPartitions.appendAll(streamPartitions)
-          partitions = batchPartitions.toArray
+
+      def generateNonBatchPartitions(index: Int, splits : ArrayBuffer[InputSplit],
+          format: FileFormat): mutable.Buffer[Partition] = {
+        splits.zipWithIndex.map { splitWithIndex =>
+          val multiBlockSplit =
+            new CarbonMultiBlockSplit(
+              Seq(splitWithIndex._1.asInstanceOf[CarbonInputSplit]).asJava,
+              splitWithIndex._1.getLocations,
+              format)
+          new CarbonSparkPartition(id, splitWithIndex._2 + index, multiBlockSplit)
         }
       }
+
+      val allPartitions: mutable.Buffer[Partition] = mutable.Buffer()
+      val index = batchPartitions.length
+      val streamPartitions: mutable.Buffer[Partition] = generateNonBatchPartitions(
+        index, streamSplits, FileFormat.ROW_V1)
+      val externalPartitions: mutable.Buffer[Partition] = generateNonBatchPartitions(
+        index + streamPartitions.length, externalSplits, FileFormat.EXTERNAL)
+
+      if (batchPartitions.nonEmpty) {
+        LOGGER.info(s"Identified no.of batch blocks: ${batchPartitions.size}")
+        allPartitions.appendAll(batchPartitions)
+      }
+      if (streamPartitions.nonEmpty) {
+        LOGGER.info(s"Identified no.of stream blocks: ${streamPartitions.size}")
+        allPartitions.appendAll(streamPartitions)
+      }
+      if (externalPartitions.nonEmpty) {
+        LOGGER.info(s"Identified no.of external blocks: ${externalPartitions.size}")
+        allPartitions.appendAll(externalPartitions)
+      }
+      partitions = allPartitions.toArray
       partitions
     } finally {
       Profiler.invokeIfEnable {
@@ -361,7 +376,7 @@ class CarbonScanRDD[T: ClassTag](
     }
     logInfo(
       s"""
-         | Identified no.of.blocks: $noOfBlocks,
+         | Identified no.of.blocks(columnar): $noOfBlocks,
          | no.of.tasks: $noOfTasks,
          | no.of.nodes: $noOfNodes,
          | parallelism: $parallelism
@@ -429,6 +444,22 @@ class CarbonScanRDD[T: ClassTag](
             CarbonTimeStatisticsFactory.createExecutorRecorder(model.getQueryId))
           streamReader.setQueryModel(model)
           streamReader
+        case FileFormat.EXTERNAL =>
+          require(storageFormat.equals("csv"),
+            "Currently we only support csv as external file format")
+          attemptContext.getConfiguration.set(
+            CarbonCommonConstants.CARBON_EXTERNAL_FORMAT_CONF_KEY, storageFormat)
+          val externalRecordReader = format.createRecordReader(inputSplit, attemptContext)
+            .asInstanceOf[CsvRecordReader[Object]]
+          externalRecordReader.setVectorReader(vectorReader)
+          externalRecordReader.setInputMetricsStats(inputMetricsStats)
+          externalRecordReader.setQueryModel(model)
+          if (vectorReader) {
+            externalRecordReader.setReadSupport(new VectorCsvReadSupport[Object]())
+          } else {
+            externalRecordReader.setReadSupport(new CsvReadSupport[Object]())
+          }
+          externalRecordReader
         case _ =>
           // create record reader for CarbonData file format
           if (vectorReader) {
@@ -693,9 +724,16 @@ class CarbonScanRDD[T: ClassTag](
    * Get the preferred locations where to launch this task.
    */
   override def getPreferredLocations(split: Partition): Seq[String] = {
-    val theSplit = split.asInstanceOf[CarbonSparkPartition]
-    val firstOptionLocation = theSplit.split.value.getLocations.filter(_ != "localhost")
-    firstOptionLocation
+    if (isTaskLocality) {
+      split.asInstanceOf[CarbonSparkPartition]
+        .split
+        .value
+        .getLocations
+        .filter(_ != "localhost")
+    } else {
+      // when the computation and the storage are separated, not require the preferred locations
+      Seq.empty[String]
+    }
   }
 
   def createVectorizedCarbonRecordReader(queryModel: QueryModel,

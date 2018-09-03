@@ -104,7 +104,7 @@
     <module>integration/spark-common-test</module>
     <module>datamap/examples</module>
     <module>store/sdk</module>
-    <module>store/search</module>
+    <module>store/core</module>
     <module>assembly</module>
   </modules>
 
@@ -592,6 +592,16 @@
       </build>
     </profile>
     <profile>
+      <id>horizon</id>
+      <properties>
+        <hadoop.version>2.8.3</hadoop.version>
+      </properties>
+      <modules>
+        <module>store/horizon</module>
+        <module>store/sql</module>
+      </modules>
+    </profile>
+    <profile>
       <id>include-all</id>
     </profile>
     <profile>
@@ -644,6 +654,18 @@
       <modules>
         <module>datamap/mv/plan</module>
         <module>datamap/mv/core</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>zeppelin</id>
+      <modules>
+        <module>integration/zeppelin</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>sourcev2</id>
+      <modules>
+        <module>integration/spark2-sourcev2</module>
       </modules>
     </profile>
   </profiles>

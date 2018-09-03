@@ -18,7 +18,8 @@
 package org.apache.carbondata.core.statusmanager;
 
 /**
- * The data file format supported in carbondata project
+ * The data file format supported in carbondata project.
+ * The fileformat along with its property will be stored in tableinfo
  */
 public enum FileFormat {
 
@@ -26,7 +27,10 @@ public enum FileFormat {
   COLUMNAR_V3,
 
   // carbondata row file format, optimized for write
-  ROW_V1;
+  ROW_V1,
+
+  // external file format, such as parquet/csv
+  EXTERNAL;
 
   public static FileFormat getByOrdinal(int ordinal) {
     if (ordinal < 0 || ordinal >= FileFormat.values().length) {
@@ -38,6 +42,8 @@ public enum FileFormat {
         return COLUMNAR_V3;
       case 1:
         return ROW_V1;
+      case 2:
+        return EXTERNAL;
     }
 
     return COLUMNAR_V3;

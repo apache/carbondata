@@ -1182,6 +1182,15 @@ public class CarbonTable implements Serializable {
   }
 
   /**
+   * Return the format value defined in table properties
+   * @return String as per table properties, null if not defined
+   */
+  public String getFormat() {
+    return getTableInfo().getFactTable().getTableProperties()
+            .get("format");
+  }
+
+  /**
    * Method to get the list of cached columns of the table.
    * This method need to be used for Describe formatted like scenario where columns need to be
    * displayed in the column create order

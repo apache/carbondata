@@ -19,7 +19,7 @@ package org.apache.carbondata.spark.testsuite.detailquery
 
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonSession, Row, SaveMode}
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, Ignore}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
@@ -28,7 +28,6 @@ import org.apache.carbondata.spark.util.DataGenerator
 /**
  * Test Suite for search mode
  */
-
 class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
 
   val numRows = 500 * 1000
@@ -61,6 +60,7 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("SearchMode Query: row result") {
+    assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
     checkSearchAnswer("select * from main where city = 'city3'")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
@@ -68,36 +68,44 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("SearchMode Query: vector result") {
+    assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
     checkSearchAnswer("select * from main where city = 'city3'")
   }
 
   test("equal filter") {
+    assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
     checkSearchAnswer("select id from main where id = '100'")
     checkSearchAnswer("select id from main where planet = 'planet100'")
   }
 
   test("greater and less than filter") {
+    assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
     checkSearchAnswer("select id from main where m2 < 4")
   }
 
   test("IN filter") {
+    assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
     checkSearchAnswer("select id from main where id IN ('40', '50', '60')")
   }
 
   test("expression filter") {
+    assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
     checkSearchAnswer("select id from main where length(id) < 2")
   }
 
   test("filter with limit") {
+    assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
     checkSearchAnswer("select id from main where id = '3' limit 10")
     checkSearchAnswer("select id from main where length(id) < 2 limit 10")
   }
 
   test("aggregate query") {
+    assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
     checkSearchAnswer("select city, sum(m1) from main where m2 < 10 group by city")
   }
 
   test("aggregate query with datamap and fallback to SparkSQL") {
+    assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
     sql("create datamap preagg on table main using 'preaggregate' as select city, count(*) from main group by city ")
     checkSearchAnswer("select city, count(*) from main group by city")
     sql("drop datamap preagg on table main").show()
@@ -109,10 +117,11 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
     checkSearchAnswer("select id from main where id = '3' limit 10")
     sql("set carbon.search.enabled = false")
     assert(!sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
+    sql("set carbon.search.enabled = true")
   }
 
   test("test lucene datamap with search mode") {
-    sql("set carbon.search.enabled = true")
+    assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
     sql("DROP DATAMAP IF EXISTS dm ON TABLE main")
     sql("CREATE DATAMAP dm ON TABLE main USING 'lucene' DMProperties('INDEX_COLUMNS'='id') ")
     checkAnswer(sql("SELECT * FROM main WHERE TEXT_MATCH('id:100000')"),
@@ -122,6 +131,7 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test lucene datamap with search mode 2") {
+    assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
     sql("drop datamap if exists dm3 ON TABLE main")
     sql("CREATE DATAMAP dm3 ON TABLE main USING 'lucene' DMProperties('INDEX_COLUMNS'='city') ")
     checkAnswer(sql("SELECT * FROM main WHERE TEXT_MATCH('city:city6')"),
@@ -130,6 +140,7 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test lucene datamap with search mode, two column") {
+    assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
     sql("drop datamap if exists dm3 ON TABLE main")
     sql("CREATE DATAMAP dm3 ON TABLE main USING 'lucene' DMProperties('INDEX_COLUMNS'='city , id') ")
     checkAnswer(sql("SELECT * FROM main WHERE TEXT_MATCH('city:city6')"),
@@ -139,7 +150,7 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP DATAMAP if exists dm3 ON TABLE main")
   }
 
-  test("start search mode twice") {
+  ignore("start search mode twice") {
     sqlContext.sparkSession.asInstanceOf[CarbonSession].startSearchMode()
     assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
     checkSearchAnswer("select id from main where id = '3' limit 10")
@@ -150,6 +161,5 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
     sqlContext.sparkSession.asInstanceOf[CarbonSession].startSearchMode()
     assert(sqlContext.sparkSession.asInstanceOf[CarbonSession].isSearchModeEnabled)
     checkSearchAnswer("select id from main where id = '3' limit 10")
-    sqlContext.sparkSession.asInstanceOf[CarbonSession].stopSearchMode()
   }
 }

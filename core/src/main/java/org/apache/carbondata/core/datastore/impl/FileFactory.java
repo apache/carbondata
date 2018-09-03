@@ -233,6 +233,11 @@ public final class FileFactory {
       final FsPermission permission) throws IOException {
     return getCarbonFile(filePath).createNewFile(filePath, fileType, doAs, permission);
   }
+
+  public static boolean deleteFile(String filePath) throws IOException {
+    return deleteFile(filePath, getFileType(filePath));
+  }
+
   public static boolean deleteFile(String filePath, FileType fileType) throws IOException {
     return getCarbonFile(filePath).deleteFile(filePath, fileType);
   }

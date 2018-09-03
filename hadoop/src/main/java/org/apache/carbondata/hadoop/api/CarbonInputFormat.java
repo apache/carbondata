@@ -34,6 +34,7 @@ import org.apache.carbondata.core.datamap.DataMapUtil;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapWrapperSimpleInfo;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
@@ -55,6 +56,9 @@ import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
+import org.apache.carbondata.core.statusmanager.FileFormat;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
@@ -67,6 +71,7 @@ import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
+import org.apache.carbondata.hadoop.CsvRecordReader;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport;
 
@@ -74,6 +79,8 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.BlockLocation;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
@@ -183,9 +190,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * It sets unresolved filter expression.
    *
-   * @param configuration
-   * @para    DataMapJob dataMapJob = getDataMapJob(job.getConfiguration());
-m filterExpression
+   * @param configuration Hadoop conf
+   * @param filterExpression filter expression
    */
   public static void setFilterPredicates(Configuration configuration, Expression filterExpression) {
     if (filterExpression == null) {
@@ -241,6 +247,17 @@ m filterExpression
 
   public static String getColumnProjection(Configuration configuration) {
     return configuration.get(COLUMN_PROJECTION);
+  }
+
+  public static String[] getProjectionColumns(Configuration configuration) {
+    String projectionString = getColumnProjection(configuration);
+    String[] projectColumns;
+    if (projectionString != null) {
+      projectColumns = projectionString.split(",");
+    } else {
+      projectColumns = new String[]{};
+    }
+    return projectColumns;
   }
 
   public static void setFgDataMapPruning(Configuration configuration, boolean enable) {
@@ -374,7 +391,7 @@ m filterExpression
    */
   @Override public abstract List<InputSplit> getSplits(JobContext job) throws IOException;
 
-  protected Expression getFilterPredicates(Configuration configuration) {
+  public static Expression getFilterPredicates(Configuration configuration) {
     try {
       String filterExprString = configuration.get(FILTER_PREDICATE);
       if (filterExprString == null) {
@@ -385,6 +402,31 @@ m filterExpression
     } catch (IOException e) {
       throw new RuntimeException("Error while reading filter expression", e);
     }
+  }
+
+  protected List<CarbonInputSplit> getDataBlocksOfSegment4ExternalFormat(JobContext job,
+      CarbonTable carbonTable, FilterResolverIntf resolver, List<Segment> segmentIds)
+      throws IOException {
+
+    QueryStatisticsRecorder recorder = CarbonTimeStatisticsFactory.createDriverRecorder();
+    QueryStatistic statistic = new QueryStatistic();
+
+    // get tokens for all the required FileSystem for table path
+    TokenCache.obtainTokensForNamenodes(job.getCredentials(),
+        new Path[] { new Path(carbonTable.getTablePath()) }, job.getConfiguration());
+    List<ExtendedBlocklet> prunedFiles = getPrunedFiles4ExternalFormat(job, carbonTable,
+        resolver, segmentIds);
+    List<CarbonInputSplit> resultFilteredFiles = new ArrayList<>();
+
+    for (ExtendedBlocklet blocklet : prunedFiles) {
+      List<CarbonInputSplit> inputSplits = convertToInputSplit4ExternalFormat(job, blocklet);
+      resultFilteredFiles.addAll(inputSplits);
+    }
+
+    statistic
+        .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_DRIVER, System.currentTimeMillis());
+    recorder.recordStatisticsForDriver(statistic, job.getConfiguration().get("query.id"));
+    return resultFilteredFiles;
   }
 
   /**
@@ -538,6 +580,32 @@ m filterExpression
     return prunedBlocklets;
   }
 
+  public List<ExtendedBlocklet> getPrunedFiles4ExternalFormat(JobContext job,
+      CarbonTable carbonTable,
+      FilterResolverIntf resolver, List<Segment> segmentIds) throws IOException {
+    ExplainCollector.addPruningInfo(carbonTable.getTableName());
+    if (resolver != null) {
+      ExplainCollector.setFilterStatement(resolver.getFilterExpression().getStatement());
+    } else {
+      ExplainCollector.setFilterStatement("none");
+    }
+
+    // there is no default datamap for external format, so return all files
+    List<ExtendedBlocklet> prunedFiles = new ArrayList<>();
+    LoadMetadataDetails[] loadMetadatas = SegmentStatusManager.readTableStatusFile(
+        CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath()));
+    for (LoadMetadataDetails loadMetadata : loadMetadatas) {
+      for (String file : loadMetadata.getFactFilePath().split(",")) {
+        ExtendedBlocklet extendedBlocklet = new ExtendedBlocklet(file, "0");
+        extendedBlocklet.setSegmentId(loadMetadata.getLoadName());
+        prunedFiles.add(extendedBlocklet);
+      }
+    }
+
+    // todo: skip datamap prune now, will add it back later
+    return prunedFiles;
+  }
+
   /**
    * Prune the segments from the already pruned blocklets.
    * @param segments
@@ -578,13 +646,73 @@ m filterExpression
     return split;
   }
 
+  private List<CarbonInputSplit> convertToInputSplit4ExternalFormat(JobContext jobContext,
+      ExtendedBlocklet extendedBlocklet) throws IOException {
+    List<CarbonInputSplit> splits = new ArrayList<CarbonInputSplit>();
+    String factFilePath = extendedBlocklet.getFilePath();
+    Path path = new Path(factFilePath);
+    FileSystem fs = FileFactory.getFileSystem(path);
+    FileStatus fileStatus = fs.getFileStatus(path);
+    long length = fileStatus.getLen();
+    if (length != 0) {
+      BlockLocation[] blkLocations = fs.getFileBlockLocations(path, 0, length);
+      long blkSize = fileStatus.getBlockSize();
+      long minSplitSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(jobContext));
+      long maxSplitSize = getMaxSplitSize(jobContext);
+      long splitSize = computeSplitSize(blkSize, minSplitSize, maxSplitSize);
+      long bytesRemaining = fileStatus.getLen();
+      while (((double) bytesRemaining) / splitSize > 1.1) {
+        int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
+        splits.add(new CarbonInputSplit(extendedBlocklet.getSegmentId(), path,
+            length - bytesRemaining,
+            splitSize, blkLocations[blkIndex].getHosts(),
+            blkLocations[blkIndex].getCachedHosts(), FileFormat.EXTERNAL));
+        bytesRemaining -= splitSize;
+      }
+      if (bytesRemaining != 0) {
+        int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
+        splits.add(new CarbonInputSplit(extendedBlocklet.getSegmentId(), path,
+            length - bytesRemaining,
+            bytesRemaining, blkLocations[blkIndex].getHosts(),
+            blkLocations[blkIndex].getCachedHosts(), FileFormat.EXTERNAL));
+      }
+    } else {
+      splits.add(new CarbonInputSplit(extendedBlocklet.getSegmentId(), path, 0, length,
+          new String[0], FileFormat.EXTERNAL));
+    }
+    return splits;
+  }
+
   @Override public RecordReader<Void, T> createRecordReader(InputSplit inputSplit,
       TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
     Configuration configuration = taskAttemptContext.getConfiguration();
     QueryModel queryModel = createQueryModel(inputSplit, taskAttemptContext);
     CarbonReadSupport<T> readSupport = getReadSupportClass(configuration);
-    return new CarbonRecordReader<T>(queryModel, readSupport,
-        taskAttemptContext.getConfiguration());
+    if (inputSplit instanceof CarbonMultiBlockSplit
+        && ((CarbonMultiBlockSplit) inputSplit).getFileFormat() == FileFormat.EXTERNAL) {
+      return createRecordReaderForExternalFormat(queryModel, readSupport,
+          configuration.get(CarbonCommonConstants.CARBON_EXTERNAL_FORMAT_CONF_KEY));
+    } else if (inputSplit instanceof CarbonInputSplit
+        && ((CarbonInputSplit) inputSplit).getFileFormat() == FileFormat.EXTERNAL) {
+      return createRecordReaderForExternalFormat(queryModel, readSupport,
+          configuration.get(CarbonCommonConstants.CARBON_EXTERNAL_FORMAT_CONF_KEY));
+    } else {
+      return new CarbonRecordReader<T>(queryModel, readSupport,
+          taskAttemptContext.getConfiguration());
+    }
+  }
+
+  private RecordReader<Void, T> createRecordReaderForExternalFormat(QueryModel queryModel,
+      CarbonReadSupport readSupport, String format) {
+    try {
+      if ("csv".equals(format)) {
+        return new CsvRecordReader<T>(queryModel, readSupport);
+      } else {
+        throw new RuntimeException("Unsupported external file format " + format);
+      }
+    } catch (Throwable e) {
+      throw new RuntimeException("Failed to create recordReader for format " + format, e);
+    }
   }
 
   public QueryModel createQueryModel(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
@@ -593,13 +721,7 @@ m filterExpression
     CarbonTable carbonTable = getOrCreateCarbonTable(configuration);
 
     // set projection column in the query model
-    String projectionString = getColumnProjection(configuration);
-    String[] projectColumns;
-    if (projectionString != null) {
-      projectColumns = projectionString.split(",");
-    } else {
-      projectColumns = new String[]{};
-    }
+    String[] projectColumns = getProjectionColumns(configuration);
     QueryModel queryModel = new QueryModelBuilder(carbonTable)
         .projectColumns(projectColumns)
         .filterExpression(getFilterPredicates(configuration))

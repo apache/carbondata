@@ -972,6 +972,8 @@ public final class CarbonCommonConstants {
    */
   public static final String DICTIONARY_PATH = "dictionary_path";
   public static final String SORT_COLUMNS = "sort_columns";
+  // file format for the data files
+  public static final String FORMAT = "format";
   public static final String PARTITION_TYPE = "partition_type";
   public static final String NUM_PARTITIONS = "num_partitions";
   public static final String RANGE_INFO = "range_info";
@@ -994,6 +996,8 @@ public final class CarbonCommonConstants {
   // Flat folder support on table. when it is true all carbondata files store directly under table
   // path instead of sub folders.
   public static final String FLAT_FOLDER = "flat_folder";
+  // this will be used in hadoop conf to pass the format type to executor
+  public static final String CARBON_EXTERNAL_FORMAT_CONF_KEY = "carbon_external_format_type";
 
   /**
    * 16 mb size
@@ -1751,7 +1755,7 @@ public final class CarbonCommonConstants {
   public static final String CARBON_SEARCH_MODE_ENABLE_DEFAULT = "false";
 
   /**
-   * It's timeout threshold of carbon search query
+   * It's timeout threshold of carbon search query, in seconds
    */
   @CarbonProperty
   @InterfaceStability.Unstable
@@ -1760,7 +1764,7 @@ public final class CarbonCommonConstants {
   /**
    * Default value is 10 seconds
    */
-  public static final String CARBON_SEARCH_QUERY_TIMEOUT_DEFAULT = "10s";
+  public static final int CARBON_SEARCH_QUERY_TIMEOUT_DEFAULT = 10;
 
   /**
    * The size of thread pool used for reading files in Work for search mode. By default,
@@ -1889,6 +1893,14 @@ public final class CarbonCommonConstants {
   public static final String CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT = "true";
 
   public static final short LOCAL_DICT_ENCODED_BYTEARRAY_SIZE = 3;
+  /**
+   * config carbon scan task locality
+   * true: it will execute tasks as close to the data, the locality is important,
+   * false: it will execute tasks immediately, not paying attention to the locality
+   */
+  public static final String CARBON_TASK_LOCALITY = "carbon.task.locality";
+
+  public static final String CARBON_TASK_LOCALITY_DEFAULT = "true";
 
   private CarbonCommonConstants() {
   }
