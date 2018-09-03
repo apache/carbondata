@@ -40,4 +40,29 @@ public class Strings {
     }
     return builder.toString();
   }
+
+  /**
+   * Append KB/MB/GB/TB to the input size and return
+   * @param size data size
+   * @return data size with unit
+   */
+  public static String formatSize(float size) {
+    long KB = 1024L;
+    long MB = KB << 10;
+    long GB = MB << 10;
+    long TB = GB << 10;
+    if (size < 0) {
+      return "NA";
+    } else if (size >= 0 && size < KB) {
+      return String.format("%sB", size);
+    } else if (size >= KB && size < MB) {
+      return String.format("%.2fKB", size / KB);
+    } else if (size >= MB && size < GB) {
+      return String.format("%.2fMB", size / MB);
+    } else if (size >= GB && size < TB) {
+      return String.format("%.2fGB", size / GB);
+    } else {
+      return String.format("%.2fTB", size / TB);
+    }
+  }
 }
