@@ -18,9 +18,7 @@ package org.apache.carbondata.core.indexstore.blockletindex;
 
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
+import java.util.*;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -544,6 +542,34 @@ public class BlockDataMap extends CoarseGrainDataMap
         .getSegmentPropertiesWrapper(segmentPropertiesIndex).getMinMaxCacheColumns();
   }
 
+  /**
+   * for CACHE_LEVEL=BLOCK, each entry in memoryDMStore is for a block
+   * if data is not legacy store, we can get blocklet count from taskSummaryDMStore
+   */
+  protected short getBlockletNumOfEntry(int index) {
+    if (isLegacyStore) {
+      // dummy value
+      return 0;
+    } else {
+      return ByteBuffer.wrap(getBlockletRowCountForEachBlock()).getShort(index);
+    }
+  }
+
+  // get total blocklet number in this datamap
+  protected int getTotalBlocklets() {
+    if (isLegacyStore) {
+      // dummy value
+      return 0;
+    } else {
+      ByteBuffer byteBuffer = ByteBuffer.wrap(getBlockletRowCountForEachBlock());
+      int sum = 0;
+      while (byteBuffer.hasRemaining()) {
+        sum += byteBuffer.getShort();
+      }
+      return sum;
+    }
+  }
+
   private List<Blocklet> prune(FilterResolverIntf filterExp) {
     if (memoryDMStore.getRowCount() == 0) {
       return new ArrayList<>();
@@ -551,26 +577,27 @@ public class BlockDataMap extends CoarseGrainDataMap
     List<Blocklet> blocklets = new ArrayList<>();
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
     String filePath = getFilePath();
-    int numBlocklets = 0;
+    int numEntries = memoryDMStore.getRowCount();
+    int totalBlocklets = getTotalBlocklets();
+    int hitBlocklets = 0;
     if (filterExp == null) {
-      numBlocklets = memoryDMStore.getRowCount();
-      for (int i = 0; i < numBlocklets; i++) {
+      for (int i = 0; i < numEntries; i++) {
         DataMapRow safeRow = memoryDMStore.getDataMapRow(schema, i).convertToSafeRow();
         blocklets.add(createBlocklet(safeRow, getFileNameWithFilePath(safeRow, filePath),
             getBlockletId(safeRow), false));
       }
+      hitBlocklets = totalBlocklets;
     } else {
       // Remove B-tree jump logic as start and end key prepared is not
       // correct for old store scenarios
-      int startIndex = 0;
-      numBlocklets = memoryDMStore.getRowCount();
+      int entryIndex = 0;
       FilterExecuter filterExecuter = FilterUtil
           .getFilterExecuterTree(filterExp, getSegmentProperties(), null, getMinMaxCacheColumns());
       // flag to be used for deciding whether use min/max in executor pruning for BlockletDataMap
       boolean useMinMaxForPruning = useMinMaxForExecutorPruning(filterExp);
       // min and max for executor pruning
-      while (startIndex < numBlocklets) {
-        DataMapRow safeRow = memoryDMStore.getDataMapRow(schema, startIndex).convertToSafeRow();
+      while (entryIndex < numEntries) {
+        DataMapRow safeRow = memoryDMStore.getDataMapRow(schema, entryIndex).convertToSafeRow();
         String fileName = getFileNameWithFilePath(safeRow, filePath);
         short blockletId = getBlockletId(safeRow);
         boolean isValid =
@@ -578,11 +605,19 @@ public class BlockDataMap extends CoarseGrainDataMap
                 getMinMaxValue(safeRow, MIN_VALUES_INDEX), fileName, blockletId);
         if (isValid) {
           blocklets.add(createBlocklet(safeRow, fileName, blockletId, useMinMaxForPruning));
+          hitBlocklets += getBlockletNumOfEntry(entryIndex);
         }
-        startIndex++;
+        entryIndex++;
       }
     }
-    ExplainCollector.addTotalBlocklets(numBlocklets);
+
+    if (isLegacyStore) {
+      ExplainCollector.setShowPruningInfo(false);
+    } else {
+      ExplainCollector.setShowPruningInfo(true);
+      ExplainCollector.addTotalBlocklets(totalBlocklets);
+      ExplainCollector.addDefaultDataMapPruningHit(hitBlocklets);
+    }
     return blocklets;
   }
 

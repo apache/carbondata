@@ -45,6 +45,7 @@ import org.apache.carbondata.core.indexstore.BlockMetaInfo;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifierWrapper;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistributable;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -236,18 +237,14 @@ public class BlockletDataMapUtil {
 
   /**
    * Method to check if CACHE_LEVEL is set to BLOCK or BLOCKLET
-   *
-   * @param carbonTable
-   * @param cacheLevelBlocklet
-   * @return
    */
-  public static boolean isCacheLevelBlock(CarbonTable carbonTable, String cacheLevelBlocklet) {
+  public static boolean isCacheLevelBlock(CarbonTable carbonTable) {
     String cacheLevel = carbonTable.getTableInfo().getFactTable().getTableProperties()
         .get(CarbonCommonConstants.CACHE_LEVEL);
-    if (!cacheLevelBlocklet.equals(cacheLevel)) {
-      return true;
+    if (BlockletDataMapFactory.CACHE_LEVEL_BLOCKLET.equals(cacheLevel)) {
+      return false;
     }
-    return false;
+    return true;
   }
 
   private static boolean isSameColumnSchemaList(List<ColumnSchema> indexFileColumnList,

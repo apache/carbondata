@@ -48,7 +48,8 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
 
   private static final long serialVersionUID = -2170289352240810993L;
 
-  @Override public void init(DataMapModel dataMapModel) throws IOException, MemoryException {
+  @Override
+  public void init(DataMapModel dataMapModel) throws IOException, MemoryException {
     super.init(dataMapModel);
   }
 
@@ -60,6 +61,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
    * @throws IOException
    * @throws MemoryException
    */
+  @Override
   protected DataMapRowImpl loadMetadata(CarbonRowSchema[] taskSummarySchema,
       SegmentProperties segmentProperties, BlockletDataMapModel blockletDataMapInfo,
       List<DataFileFooter> indexInfo) throws IOException, MemoryException {
@@ -72,6 +74,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
     }
   }
 
+  @Override
   protected CarbonRowSchema[] getTaskSummarySchema() {
     if (isLegacyStore) {
       return super.getTaskSummarySchema();
@@ -86,6 +89,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
     }
   }
 
+  @Override
   protected CarbonRowSchema[] getFileFooterEntrySchema() {
     if (isLegacyStore) {
       return super.getFileFooterEntrySchema();
@@ -203,6 +207,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
     return summaryRow;
   }
 
+  @Override
   public ExtendedBlocklet getDetailedBlocklet(String blockletId) {
     if (isLegacyStore) {
       return super.getDetailedBlocklet(blockletId);
@@ -216,6 +221,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
         false);
   }
 
+  @Override
   protected short getBlockletId(DataMapRow dataMapRow) {
     if (isLegacyStore) {
       return super.getBlockletId(dataMapRow);
@@ -223,6 +229,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
     return dataMapRow.getShort(BLOCKLET_ID_INDEX);
   }
 
+  @Override
   protected ExtendedBlocklet createBlocklet(DataMapRow row, String fileName, short blockletId,
       boolean useMinMaxForPruning) {
     if (isLegacyStore) {
@@ -236,6 +243,25 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
     detailInfo.setUseMinMaxForPruning(useMinMaxForPruning);
     blocklet.setDetailInfo(detailInfo);
     return blocklet;
+  }
+
+  @Override
+  protected short getBlockletNumOfEntry(int index) {
+    if (isLegacyStore) {
+      return super.getBlockletNumOfEntry(index);
+    } else {
+      //in blocklet datamap, each entry contains info of one blocklet
+      return 1;
+    }
+  }
+
+  @Override
+  protected int getTotalBlocklets() {
+    if (isLegacyStore) {
+      return super.getTotalBlocklets();
+    } else {
+      return memoryDMStore.getRowCount();
+    }
   }
 
 }
