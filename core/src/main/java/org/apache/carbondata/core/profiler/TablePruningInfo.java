@@ -28,9 +28,9 @@ public class TablePruningInfo {
 
   private int totalBlocklets;
   private String filterStatement;
+  private boolean showPruningInfo;
 
-  private DataMapWrapperSimpleInfo defaultDataMap;
-  private int numBlockletsAfterDefaultPruning;
+  private int numBlockletsAfterDefaultPruning = 0;
 
   private DataMapWrapperSimpleInfo cgDataMap;
   private int numBlockletsAfterCGPruning;
@@ -46,10 +46,12 @@ public class TablePruningInfo {
     this.filterStatement = filterStatement;
   }
 
-  void setNumBlockletsAfterDefaultPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
-      int numBlocklets) {
-    this.defaultDataMap = dataMapWrapperSimpleInfo;
-    this.numBlockletsAfterDefaultPruning = numBlocklets;
+  void setShowPruningInfo(boolean showPruningInfo) {
+    this.showPruningInfo = showPruningInfo;
+  }
+
+  void addNumBlockletsAfterDefaultPruning(int numBlocklets) {
+    this.numBlockletsAfterDefaultPruning += numBlocklets;
   }
 
   void setNumBlockletsAfterCGPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
@@ -66,37 +68,38 @@ public class TablePruningInfo {
 
   @Override
   public String toString() {
-    StringBuilder builder = new StringBuilder();
-    builder
-        .append(" - total blocklets: ").append(totalBlocklets).append("\n")
-        .append(" - filter: ").append(filterStatement).append("\n");
-    if (defaultDataMap != null) {
+    if (showPruningInfo) {
+      StringBuilder builder = new StringBuilder();
+      builder
+          .append(" - total blocklets: ").append(totalBlocklets).append("\n")
+          .append(" - filter: ").append(filterStatement).append("\n");
       int skipBlocklets = totalBlocklets - numBlockletsAfterDefaultPruning;
       builder
           .append(" - pruned by Main DataMap").append("\n")
           .append("    - skipped blocklets: ").append(skipBlocklets).append("\n");
-    }
-    if (cgDataMap != null) {
-      int skipBlocklets = numBlockletsAfterDefaultPruning - numBlockletsAfterCGPruning;
-      builder
-          .append(" - pruned by CG DataMap").append("\n")
-          .append("    - name: ").append(cgDataMap.getDataMapWrapperName()).append("\n")
-          .append("    - provider: ").append(cgDataMap.getDataMapWrapperProvider()).append("\n")
-          .append("    - skipped blocklets: ").append(skipBlocklets).append("\n");
-    }
-    if (fgDataMap != null) {
-      int skipBlocklets;
-      if (numBlockletsAfterCGPruning != 0) {
-        skipBlocklets = numBlockletsAfterCGPruning - numBlockletsAfterFGPruning;
-      } else {
-        skipBlocklets = numBlockletsAfterDefaultPruning - numBlockletsAfterFGPruning;
+      if (cgDataMap != null) {
+        skipBlocklets = numBlockletsAfterDefaultPruning - numBlockletsAfterCGPruning;
+        builder
+            .append(" - pruned by CG DataMap").append("\n")
+            .append("    - name: ").append(cgDataMap.getDataMapWrapperName()).append("\n")
+            .append("    - provider: ").append(cgDataMap.getDataMapWrapperProvider()).append("\n")
+            .append("    - skipped blocklets: ").append(skipBlocklets).append("\n");
       }
-      builder
-          .append(" - pruned by FG DataMap").append("\n")
-          .append("    - name: ").append(fgDataMap.getDataMapWrapperName()).append("\n")
-          .append("    - provider: ").append(fgDataMap.getDataMapWrapperProvider()).append("\n")
-          .append("    - skipped blocklets: ").append(skipBlocklets).append("\n");
+      if (fgDataMap != null) {
+        if (numBlockletsAfterCGPruning != 0) {
+          skipBlocklets = numBlockletsAfterCGPruning - numBlockletsAfterFGPruning;
+        } else {
+          skipBlocklets = numBlockletsAfterDefaultPruning - numBlockletsAfterFGPruning;
+        }
+        builder
+            .append(" - pruned by FG DataMap").append("\n")
+            .append("    - name: ").append(fgDataMap.getDataMapWrapperName()).append("\n")
+            .append("    - provider: ").append(fgDataMap.getDataMapWrapperProvider()).append("\n")
+            .append("    - skipped blocklets: ").append(skipBlocklets).append("\n");
+      }
+      return builder.toString();
+    } else {
+      return "";
     }
-    return builder.toString();
   }
 }
