@@ -979,6 +979,8 @@ public final class CarbonCommonConstants {
   public static final String COLUMN_PROPERTIES = "columnproperties";
   // table block size in MB
   public static final String TABLE_BLOCKSIZE = "table_blocksize";
+  // table blocklet size in MB
+  public static final String TABLE_BLOCKLET_SIZE = "table_blocklet_size";
   // set in column level to disable inverted index
   public static final String NO_INVERTED_INDEX = "no_inverted_index";
   // table property name of major compaction size

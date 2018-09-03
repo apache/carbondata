@@ -502,30 +502,31 @@ object CommonUtil {
   }
 
   /**
-   * This method will validate the table block size specified by the user
+   * This method will validate the table block size and blocklet size specified by the user
    *
-   * @param tableProperties
+   * @param tableProperties table property specified by user
+   * @param propertyName property name
    */
-  def validateTableBlockSize(tableProperties: Map[String, String]): Unit = {
-    var tableBlockSize: Integer = 0
-    if (tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).isDefined) {
+  def validateSize(tableProperties: Map[String, String], propertyName: String): Unit = {
+    var size: Integer = 0
+    if (tableProperties.get(propertyName).isDefined) {
       val blockSizeStr: String =
-        parsePropertyValueStringInMB(tableProperties(CarbonCommonConstants.TABLE_BLOCKSIZE))
+        parsePropertyValueStringInMB(tableProperties(propertyName))
       try {
-        tableBlockSize = Integer.parseInt(blockSizeStr)
+        size = Integer.parseInt(blockSizeStr)
       } catch {
         case e: NumberFormatException =>
-          throw new MalformedCarbonCommandException("Invalid table_blocksize value found: " +
+          throw new MalformedCarbonCommandException(s"Invalid $propertyName value found: " +
                                                     s"$blockSizeStr, only int value from 1 MB to " +
                                                     s"2048 MB is supported.")
       }
-      if (tableBlockSize < CarbonCommonConstants.BLOCK_SIZE_MIN_VAL ||
-          tableBlockSize > CarbonCommonConstants.BLOCK_SIZE_MAX_VAL) {
-        throw new MalformedCarbonCommandException("Invalid table_blocksize value found: " +
+      if (size < CarbonCommonConstants.BLOCK_SIZE_MIN_VAL ||
+          size > CarbonCommonConstants.BLOCK_SIZE_MAX_VAL) {
+        throw new MalformedCarbonCommandException(s"Invalid $propertyName value found: " +
                                                   s"$blockSizeStr, only int value from 1 MB to " +
                                                   s"2048 MB is supported.")
       }
-      tableProperties.put(CarbonCommonConstants.TABLE_BLOCKSIZE, blockSizeStr)
+      tableProperties.put(propertyName, blockSizeStr)
     }
   }
 

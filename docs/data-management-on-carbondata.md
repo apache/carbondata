@@ -109,12 +109,20 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
  
    - **Table Block Size Configuration**
 
-     This command is for setting block size of this table, the default value is 1024 MB and supports a range of 1 MB to 2048 MB.
+     This property is for setting block size of this table, the default value is 1024 MB and supports a range of 1 MB to 2048 MB.
 
      ```
      TBLPROPERTIES ('TABLE_BLOCKSIZE'='512')
      ```
      **NOTE:** 512 or 512M both are accepted.
+
+   - **Table Blocklet Size Configuration**
+
+     This property is for setting blocklet size of this table, the default value is 64 MB.
+
+     ```
+     TBLPROPERTIES ('TABLE_BLOCKLET_SIZE'='32')
+     ```
 
    - **Table Compaction Configuration**
    

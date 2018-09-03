@@ -111,7 +111,7 @@ public class TestUtil {
    * @param blockSize blockSize in the file, -1 for default size
    * @param isTransactionalTable set to true if this is written for Transactional Table.
    */
-  static void writeFilesAndVerify(int rows, Schema schema, String path, String[] sortColumns,
+  public static void writeFilesAndVerify(int rows, Schema schema, String path, String[] sortColumns,
       boolean persistSchema, int blockletSize, int blockSize, boolean isTransactionalTable) {
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder()
