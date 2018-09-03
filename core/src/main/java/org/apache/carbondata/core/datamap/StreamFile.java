@@ -18,7 +18,6 @@
 package org.apache.carbondata.core.datamap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 
 @InterfaceAudience.Internal
