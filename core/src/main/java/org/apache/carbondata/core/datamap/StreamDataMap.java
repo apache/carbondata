@@ -25,9 +25,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.core.datamap.dev.DataMap;
+import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -46,19 +50,15 @@ import org.apache.carbondata.format.BlockIndex;
 public class StreamDataMap {
 
   private CarbonTable carbonTable;
-
-  private AbsoluteTableIdentifier identifier;
-
   private FilterExecuter filterExecuter;
 
   public StreamDataMap(CarbonTable carbonTable) {
     this.carbonTable = carbonTable;
-    this.identifier = carbonTable.getAbsoluteTableIdentifier();
   }
 
   public void init(FilterResolverIntf filterExp) {
     if (filterExp != null) {
-
+      // cache all columns
       List<CarbonColumn> minMaxCacheColumns = new ArrayList<>();
       for (CarbonDimension dimension : carbonTable.getDimensions()) {
         if (!dimension.isComplex()) {
@@ -66,17 +66,16 @@ public class StreamDataMap {
         }
       }
       minMaxCacheColumns.addAll(carbonTable.getMeasures());
-
+      // prepare cardinality of all dimensions
       List<ColumnSchema> listOfColumns =
           carbonTable.getTableInfo().getFactTable().getListOfColumns();
       int[] columnCardinality = new int[listOfColumns.size()];
       for (int index = 0; index < columnCardinality.length; index++) {
         columnCardinality[index] = Integer.MAX_VALUE;
       }
-
+      // initial filter executor
       SegmentProperties segmentProperties =
           new SegmentProperties(listOfColumns, columnCardinality);
-
       filterExecuter = FilterUtil.getFilterExecuterTree(
           filterExp, segmentProperties, null, minMaxCacheColumns);
     }
@@ -84,11 +83,13 @@ public class StreamDataMap {
 
   public List<StreamFile> prune(List<Segment> segments) throws IOException {
     if (filterExecuter == null) {
+      // if filter is null, list all steam files
       return listAllStreamFiles(segments, false);
     } else {
       List<StreamFile> streamFileList = new ArrayList<>();
       for (StreamFile streamFile : listAllStreamFiles(segments, true)) {
         if (isScanRequire(streamFile)) {
+          // if stream file is required to scan
           streamFileList.add(streamFile);
           streamFile.setMinMaxIndex(null);
         }
@@ -102,18 +103,9 @@ public class StreamDataMap {
     if (streamFile.getMinMaxIndex() == null) {
       return true;
     }
-
     byte[][] maxValue = streamFile.getMinMaxIndex().getMaxValues();
     byte[][] minValue = streamFile.getMinMaxIndex().getMinValues();
-    BitSet bitSet;
-    if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
-      String filePath = streamFile.getFilePath();
-      String uniqueBlockPath = filePath.substring(filePath.lastIndexOf("/Part") + 1);
-      bitSet = ((ImplicitColumnFilterExecutor) filterExecuter)
-          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath);
-    } else {
-      bitSet = filterExecuter.isScanRequired(maxValue, minValue);
-    }
+    BitSet bitSet = filterExecuter.isScanRequired(maxValue, minValue);
     if (!bitSet.isEmpty()) {
       return true;
     } else {
@@ -126,8 +118,8 @@ public class StreamDataMap {
       throws IOException {
     List<StreamFile> streamFileList = new ArrayList<>();
     for (Segment segment : segments) {
-      String segmentDir =
-          CarbonTablePath.getSegmentPath(identifier.getTablePath(), segment.getSegmentNo());
+      String segmentDir = CarbonTablePath.getSegmentPath(
+          carbonTable.getAbsoluteTableIdentifier().getTablePath(), segment.getSegmentNo());
       FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);
       if (FileFactory.isFileExist(segmentDir, fileType)) {
         SegmentIndexFileStore segmentIndexFileStore = new SegmentIndexFileStore();

@@ -96,6 +96,9 @@ public class CarbonMetadataUtil {
     return footer;
   }
 
+  /**
+   * convert external thrift BlockletMinMaxIndex to BlockletMinMaxIndex of carbon metadata
+   */
   public static org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex
       convertExternalMinMaxIndex(BlockletMinMaxIndex minMaxIndex) {
     if (minMaxIndex == null) {
@@ -106,6 +109,9 @@ public class CarbonMetadataUtil {
             minMaxIndex.getMin_values(), minMaxIndex.getMax_values());
   }
 
+  /**
+   * convert BlockletMinMaxIndex of carbon metadata to external thrift BlockletMinMaxIndex
+   */
   public static BlockletMinMaxIndex convertMinMaxIndex(
       org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex minMaxIndex) {
     if (minMaxIndex == null) {

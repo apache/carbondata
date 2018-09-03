@@ -206,8 +206,7 @@ class StreamHandoffRDD[K, V](
     val splits = inputFormat.getSplitsOfStreaming(
       job,
       segmentList,
-      carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
-      null
+      carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     )
 
     (0 until splits.size()).map { index =>

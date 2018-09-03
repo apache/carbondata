@@ -208,14 +208,11 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     if (dimensionStatsCollectors == null) {
       return new SimpleStatsResult[0];
     }
-
     SimpleStatsResult[] stats = new SimpleStatsResult[dimensionStatsCollectors.length];
-
     int dimCount = 0;
     for (; dimCount < dimensionStatsCollectors.length; dimCount++) {
       stats[dimCount] = dimensionStatsCollectors[dimCount].getPageStats();
     }
-
     return stats;
   }
 
@@ -223,13 +220,10 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     if (measureStatsCollectors == null) {
       return new SimpleStatsResult[0];
     }
-
     SimpleStatsResult[] stats = new SimpleStatsResult[measureStatsCollectors.length];
-
     for (int mrsCount = 0; mrsCount < measureStatsCollectors.length; mrsCount++) {
       stats[mrsCount] = measureStatsCollectors[mrsCount].getPageStats();
     }
-
     return stats;
   }
 

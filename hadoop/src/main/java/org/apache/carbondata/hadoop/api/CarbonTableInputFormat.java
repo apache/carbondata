@@ -156,12 +156,12 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         streamSegments = segments.getStreamSegments();
         streamSegments = getFilteredSegment(job, streamSegments, true, readCommittedScope);
         if (validSegments.size() == 0) {
-          return getSplitsOfStreaming(job, streamSegments, carbonTable, null);
+          return getSplitsOfStreaming(job, streamSegments, carbonTable);
         }
         List<Segment> filteredSegmentToAccess =
             getFilteredSegment(job, segments.getValidSegments(), true, readCommittedScope);
         if (filteredSegmentToAccess.size() == 0) {
-          return getSplitsOfStreaming(job, streamSegments, carbonTable, null);
+          return getSplitsOfStreaming(job, streamSegments, carbonTable);
         } else {
           setSegmentsToAccess(job.getConfiguration(), filteredSegmentToAccess);
         }
@@ -171,7 +171,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
                 getSegmentsToAccess(job, readCommittedScope));
         streamSegments = segments.getStreamSegments();
         if (filteredNormalSegments.size() == 0) {
-          return getSplitsOfStreaming(job, streamSegments, carbonTable, null);
+          return getSplitsOfStreaming(job, streamSegments, carbonTable);
         }
         setSegmentsToAccess(job.getConfiguration(),filteredNormalSegments);
       }
@@ -338,6 +338,11 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     return filteredSegmentToAccess;
   }
 
+  public List<InputSplit> getSplitsOfStreaming(JobContext job, List<Segment> streamSegments,
+      CarbonTable carbonTable) throws IOException {
+    return getSplitsOfStreaming(job, streamSegments, carbonTable, null);
+  }
+
   /**
    * use file list in .carbonindex file to get the split of streaming.
    */
@@ -348,7 +353,6 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       numStreamSegments = streamSegments.size();
       long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
       long maxSize = getMaxSplitSize(job);
-
       if (filterResolverIntf == null) {
         if (carbonTable != null) {
           Expression filter = getFilterPredicates(job.getConfiguration());
@@ -362,6 +366,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
           DataMapStoreManager.getInstance().getStreamDataMap(carbonTable);
       streamDataMap.init(filterResolverIntf);
       List<StreamFile> streamFiles = streamDataMap.prune(streamSegments);
+
       for (StreamFile streamFile : streamFiles) {
         if (FileFactory.isFileExist(streamFile.getFilePath())) {
           Path path = new Path(streamFile.getFilePath());
@@ -374,6 +379,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
             long blockSize = file.getBlockSize();
             long splitSize = computeSplitSize(blockSize, minSize, maxSize);
             long bytesRemaining = length;
+            // split the stream file to small splits
+            // there is 10% slop to avoid to generate very small split in the end
             while (((double) bytesRemaining) / splitSize > 1.1) {
               int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
               splits.add(
