@@ -24,6 +24,7 @@ import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.reader.CarbonFooterReaderV3
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -68,6 +69,13 @@ class TestCreateTableWithBlockletSize extends QueryTest with BeforeAndAfterAll {
       assertResult(2)(footer.blocklet_info_list3.size)
     }
     sql("drop table source")
+  }
+
+  test("test create table with invalid blocklet size") {
+    val ex = intercept[MalformedCarbonCommandException] {
+      sql("CREATE TABLE T1(name String) STORED AS CARBONDATA TBLPROPERTIES('TABLE_BLOCKLET_SIZE'='3X')")
+    }
+    assert(ex.getMessage.toLowerCase.contains("invalid table_blocklet_size"))
   }
 
   override def afterAll {
