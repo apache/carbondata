@@ -66,6 +66,11 @@ public class QueryModel {
   private FilterResolverIntf filterExpressionResolverTree;
 
   /**
+   * filter expression tree
+   */
+  private Expression filterExpression;
+
+  /**
    * table block information in which query will be executed
    */
   private List<TableBlockInfo> tableBlockInfos;
@@ -128,7 +133,7 @@ public class QueryModel {
     return new QueryModel(carbonTable);
   }
 
-  public static void processFilterExpression(CarbonTable carbonTable, Expression filterExpression,
+  public static void processFilterExpression(FilterProcessVO processVO, Expression filterExpression,
       final boolean[] isFilterDimensions, final boolean[] isFilterMeasures) {
     if (null != filterExpression) {
       if (null != filterExpression.getChildren() && filterExpression.getChildren().size() == 0) {
@@ -136,22 +141,22 @@ public class QueryModel {
           List<ColumnExpression> listOfCol =
               ((ConditionalExpression) filterExpression).getColumnList();
           for (ColumnExpression expression : listOfCol) {
-            setDimAndMsrColumnNode(carbonTable, expression, isFilterDimensions, isFilterMeasures);
+            setDimAndMsrColumnNode(processVO, expression, isFilterDimensions, isFilterMeasures);
           }
         }
       }
       for (Expression expression : filterExpression.getChildren()) {
         if (expression instanceof ColumnExpression) {
-          setDimAndMsrColumnNode(carbonTable, (ColumnExpression) expression, isFilterDimensions,
+          setDimAndMsrColumnNode(processVO, (ColumnExpression) expression, isFilterDimensions,
               isFilterMeasures);
         } else if (expression instanceof UnknownExpression) {
           UnknownExpression exp = ((UnknownExpression) expression);
           List<ColumnExpression> listOfColExpression = exp.getAllColumnList();
           for (ColumnExpression col : listOfColExpression) {
-            setDimAndMsrColumnNode(carbonTable, col, isFilterDimensions, isFilterMeasures);
+            setDimAndMsrColumnNode(processVO, col, isFilterDimensions, isFilterMeasures);
           }
         } else {
-          processFilterExpression(carbonTable, expression, isFilterDimensions, isFilterMeasures);
+          processFilterExpression(processVO, expression, isFilterDimensions, isFilterMeasures);
         }
       }
     }
@@ -167,18 +172,16 @@ public class QueryModel {
     return null;
   }
 
-  private static void setDimAndMsrColumnNode(CarbonTable carbonTable, ColumnExpression col,
+  private static void setDimAndMsrColumnNode(FilterProcessVO processVO, ColumnExpression col,
       boolean[] isFilterDimensions, boolean[] isFilterMeasures) {
     CarbonDimension dim;
     CarbonMeasure msr;
     String columnName;
     columnName = col.getColumnName();
+    col.reset();
     dim = CarbonUtil
-        .findDimension(carbonTable.getDimensionByTableName(carbonTable.getTableName()), columnName);
-    msr = getCarbonMetadataMeasure(columnName,
-        carbonTable.getMeasureByTableName(carbonTable.getTableName()));
-    col.setDimension(false);
-    col.setMeasure(false);
+        .findDimension(processVO.getCarbonDimensions(), columnName);
+    msr = getCarbonMetadataMeasure(columnName, processVO.getCarbonMeasures());
 
     if (null != dim) {
       // Dimension Column
@@ -198,8 +201,7 @@ public class QueryModel {
     } else {
       // check if this is an implicit dimension
       dim = CarbonUtil
-          .findDimension(carbonTable.getImplicitDimensionByTableName(carbonTable.getTableName()),
-              columnName);
+          .findDimension(processVO.getImplicitDimensions(), columnName);
       col.setCarbonColumn(dim);
       col.setDimension(dim);
       col.setDimension(true);
@@ -267,6 +269,14 @@ public class QueryModel {
 
   public void setFilterExpressionResolverTree(FilterResolverIntf filterExpressionResolverTree) {
     this.filterExpressionResolverTree = filterExpressionResolverTree;
+  }
+
+  public Expression getFilterExpression() {
+    return filterExpression;
+  }
+
+  public void setFilterExpression(Expression filterExpression) {
+    this.filterExpression = filterExpression;
   }
 
   /**
@@ -400,5 +410,33 @@ public class QueryModel {
 
   public void setFreeUnsafeMemory(boolean freeUnsafeMemory) {
     this.freeUnsafeMemory = freeUnsafeMemory;
+  }
+
+  public static class FilterProcessVO {
+
+    private List<CarbonDimension> carbonDimensions;
+
+    private List<CarbonMeasure> carbonMeasures;
+
+    private List<CarbonDimension> implicitDimensions;
+
+    public FilterProcessVO(List<CarbonDimension> carbonDimensions,
+        List<CarbonMeasure> carbonMeasures, List<CarbonDimension> implicitDimensions) {
+      this.carbonDimensions = carbonDimensions;
+      this.carbonMeasures = carbonMeasures;
+      this.implicitDimensions = implicitDimensions;
+    }
+
+    public List<CarbonDimension> getCarbonDimensions() {
+      return carbonDimensions;
+    }
+
+    public List<CarbonMeasure> getCarbonMeasures() {
+      return carbonMeasures;
+    }
+
+    public List<CarbonDimension> getImplicitDimensions() {
+      return implicitDimensions;
+    }
   }
 }

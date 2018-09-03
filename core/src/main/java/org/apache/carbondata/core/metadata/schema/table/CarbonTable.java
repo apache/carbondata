@@ -1017,7 +1017,10 @@ public class CarbonTable implements Serializable {
 
   public void processFilterExpression(Expression filterExpression,
       boolean[] isFilterDimensions, boolean[] isFilterMeasures) {
-    QueryModel.processFilterExpression(this, filterExpression, isFilterDimensions,
+    QueryModel.FilterProcessVO processVO =
+        new QueryModel.FilterProcessVO(getDimensionByTableName(getTableName()),
+            getMeasureByTableName(getTableName()), getImplicitDimensionByTableName(getTableName()));
+    QueryModel.processFilterExpression(processVO, filterExpression, isFilterDimensions,
         isFilterMeasures);
 
     if (null != filterExpression) {
@@ -1031,11 +1034,11 @@ public class CarbonTable implements Serializable {
   /**
    * Resolve the filter expression.
    */
-  public FilterResolverIntf resolveFilter(Expression filterExpression) {
+  public static FilterResolverIntf resolveFilter(Expression filterExpression,
+      AbsoluteTableIdentifier identifier) {
     try {
       FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
-      return filterExpressionProcessor.getFilterResolver(
-          filterExpression, getAbsoluteTableIdentifier());
+      return filterExpressionProcessor.getFilterResolver(filterExpression, identifier);
     } catch (Exception e) {
       throw new RuntimeException("Error while resolving filter expression", e);
     }

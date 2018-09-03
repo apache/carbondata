@@ -311,14 +311,19 @@ public class QueryModelBuilder {
     queryModel.setReadPageByPage(readPageByPage);
     queryModel.setProjection(projection);
 
-    // set the filter to the query model in order to filter blocklet before scan
-    boolean[] isFilterDimensions = new boolean[table.getDimensionOrdinalMax()];
-    boolean[] isFilterMeasures = new boolean[table.getAllMeasures().size()];
-    table.processFilterExpression(filterExpression, isFilterDimensions, isFilterMeasures);
-    queryModel.setIsFilterDimensions(isFilterDimensions);
-    queryModel.setIsFilterMeasures(isFilterMeasures);
-    FilterResolverIntf filterIntf = table.resolveFilter(filterExpression);
-    queryModel.setFilterExpressionResolverTree(filterIntf);
+    if (table.isTransactionalTable()) {
+      // set the filter to the query model in order to filter blocklet before scan
+      boolean[] isFilterDimensions = new boolean[table.getDimensionOrdinalMax()];
+      boolean[] isFilterMeasures = new boolean[table.getAllMeasures().size()];
+      table.processFilterExpression(filterExpression, isFilterDimensions, isFilterMeasures);
+      queryModel.setIsFilterDimensions(isFilterDimensions);
+      queryModel.setIsFilterMeasures(isFilterMeasures);
+      FilterResolverIntf filterIntf =
+          CarbonTable.resolveFilter(filterExpression, table.getAbsoluteTableIdentifier());
+      queryModel.setFilterExpressionResolverTree(filterIntf);
+    } else {
+      queryModel.setFilterExpression(filterExpression);
+    }
     return queryModel;
   }
 }

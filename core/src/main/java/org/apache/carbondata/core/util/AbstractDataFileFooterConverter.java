@@ -43,6 +43,7 @@ import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
+import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockIndex;
 
@@ -140,10 +141,6 @@ public abstract class AbstractDataFileFooterConverter {
 
   /**
    * Below method will be used to get the index info from index file
-   *
-   * @param filePath           file path of the index file
-   * @return list of index info
-   * @throws IOException problem while reading the index file
    */
   public List<DataFileFooter> getIndexInfo(String filePath, byte[] fileData,
       boolean isTransactionalTable) throws IOException {
@@ -165,13 +162,8 @@ public abstract class AbstractDataFileFooterConverter {
       for (int i = 0; i < table_columns.size(); i++) {
         columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(table_columns.get(i)));
       }
-      // In case of non transactional table just set columnuniqueid as columnName to support
-      // backward compatabiity. non transactional tables column uniqueid is always equal to
-      // columnname
       if (!isTransactionalTable) {
-        for (ColumnSchema columnSchema : columnSchemaList) {
-          columnSchema.setColumnUniqueId(columnSchema.getColumnName());
-        }
+        QueryUtil.updateColumnUniqueIdForNonTransactionTable(columnSchemaList);
       }
       // get the segment info
       SegmentInfo segmentInfo = getSegmentInfo(readIndexHeader.getSegment_info());

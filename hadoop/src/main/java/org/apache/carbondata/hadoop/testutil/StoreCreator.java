@@ -105,7 +105,7 @@ public class StoreCreator {
   private String storePath = null;
   private String csvPath;
   private boolean dictionary;
-  private List<String> sortCOls = new ArrayList<>();
+  private List<String> sortColumns = new ArrayList<>();
 
   public StoreCreator(String storePath, String csvPath) {
     this(storePath, csvPath, false);
@@ -116,11 +116,11 @@ public class StoreCreator {
     this.csvPath = csvPath;
     String dbName = "testdb";
     String tableName = "testtable";
-    sortCOls.add("date");
-    sortCOls.add("country");
-    sortCOls.add("name");
-    sortCOls.add("phonetype");
-    sortCOls.add("serialname");
+    sortColumns.add("date");
+    sortColumns.add("country");
+    sortColumns.add("name");
+    sortColumns.add("phonetype");
+    sortColumns.add("serialname");
     absoluteTableIdentifier = AbsoluteTableIdentifier.from(storePath + "/testdb/testtable",
         new CarbonTableIdentifier(dbName, tableName, UUID.randomUUID().toString()));
     this.dictionary = dictionary;
@@ -229,7 +229,7 @@ public class StoreCreator {
     id.setColumnReferenceId(id.getColumnUniqueId());
     id.setDimensionColumn(true);
     id.setSchemaOrdinal(schemaOrdinal++);
-    if (sortCOls.contains(id.getColumnName())) {
+    if (sortColumns.contains(id.getColumnName())) {
       id.setSortColumn(true);
     }
     columnSchemas.add(id);
@@ -242,7 +242,7 @@ public class StoreCreator {
     date.setDimensionColumn(true);
     date.setColumnReferenceId(id.getColumnUniqueId());
     date.setSchemaOrdinal(schemaOrdinal++);
-    if (sortCOls.contains(date.getColumnName())) {
+    if (sortColumns.contains(date.getColumnName())) {
       date.setSortColumn(true);
     }
     columnSchemas.add(date);
@@ -255,7 +255,7 @@ public class StoreCreator {
     country.setDimensionColumn(true);
     country.setSortColumn(true);
     country.setSchemaOrdinal(schemaOrdinal++);
-    if (sortCOls.contains(country.getColumnName())) {
+    if (sortColumns.contains(country.getColumnName())) {
       country.setSortColumn(true);
     }
     country.setColumnReferenceId(id.getColumnUniqueId());
@@ -268,7 +268,7 @@ public class StoreCreator {
     name.setColumnUniqueId(UUID.randomUUID().toString());
     name.setDimensionColumn(true);
     name.setSchemaOrdinal(schemaOrdinal++);
-    if (sortCOls.contains(name.getColumnName())) {
+    if (sortColumns.contains(name.getColumnName())) {
       name.setSortColumn(true);
     }
     name.setColumnReferenceId(id.getColumnUniqueId());
@@ -281,7 +281,7 @@ public class StoreCreator {
     phonetype.setColumnUniqueId(UUID.randomUUID().toString());
     phonetype.setDimensionColumn(true);
     phonetype.setSchemaOrdinal(schemaOrdinal++);
-    if (sortCOls.contains(phonetype.getColumnName())) {
+    if (sortColumns.contains(phonetype.getColumnName())) {
       phonetype.setSortColumn(true);
     }
     phonetype.setColumnReferenceId(id.getColumnUniqueId());
@@ -294,7 +294,7 @@ public class StoreCreator {
     serialname.setColumnUniqueId(UUID.randomUUID().toString());
     serialname.setDimensionColumn(true);
     serialname.setSchemaOrdinal(schemaOrdinal++);
-    if (sortCOls.contains(serialname.getColumnName())) {
+    if (sortColumns.contains(serialname.getColumnName())) {
       serialname.setSortColumn(true);
     }
     serialname.setColumnReferenceId(id.getColumnUniqueId());
@@ -399,8 +399,8 @@ public class StoreCreator {
     reader.close();
   }
 
-  public void setSortCOls(List<String> sortCOls) {
-    this.sortCOls = sortCOls;
+  public void setSortColumns(List<String> sortColumns) {
+    this.sortColumns = sortColumns;
   }
 
   /**
