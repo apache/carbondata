@@ -16,6 +16,8 @@
  */
 package org.apache.spark.sql.carbondata.execution.datasources
 
+import scala.collection.mutable.ArrayBuffer
+
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -68,9 +70,10 @@ class CarbonFileIndexReplaceRule extends Rule[LogicalPlan] {
       hadoopFsRelation: HadoopFsRelation): FileIndex = {
     if (fileIndex.isInstanceOf[InMemoryFileIndex] && fileIndex.rootPaths.length == 1) {
       val carbonFile = FileFactory.getCarbonFile(fileIndex.rootPaths.head.toUri.toString)
-      val carbonFiles = getDataFolders(carbonFile)
-      if (carbonFiles.nonEmpty && carbonFiles.length > 1) {
-        val paths = carbonFiles.map(p => new Path(p.getAbsolutePath))
+      val dataFolders = new ArrayBuffer[CarbonFile]()
+      getDataFolders(carbonFile, dataFolders)
+      if (dataFolders.nonEmpty && dataFolders.length > 1) {
+        val paths = dataFolders.map(p => new Path(p.getAbsolutePath))
         new InMemoryFileIndex(hadoopFsRelation.sparkSession,
           paths,
           hadoopFsRelation.options,
@@ -86,19 +89,19 @@ class CarbonFileIndexReplaceRule extends Rule[LogicalPlan] {
   /**
    * Get datafolders recursively
    */
-  private def getDataFolders(carbonFile: CarbonFile): Seq[CarbonFile] = {
-    val files = carbonFile.listFiles()
-    var folders: Seq[CarbonFile] = Seq()
+  private def getDataFolders(
+      tableFolder: CarbonFile,
+      dataFolders: ArrayBuffer[CarbonFile]): Unit = {
+    val files = tableFolder.listFiles()
     files.foreach { f =>
       if (f.isDirectory) {
         val files = f.listFiles()
         if (files.nonEmpty && !files(0).isDirectory) {
-          folders = Seq(f) ++ folders
+          dataFolders += f
         } else {
-          folders = getDataFolders(f) ++ folders
+          getDataFolders(f, dataFolders)
         }
       }
     }
-    folders
   }
 }
