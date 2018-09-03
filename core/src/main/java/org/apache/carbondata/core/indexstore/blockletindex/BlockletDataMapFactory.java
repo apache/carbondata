@@ -97,8 +97,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
    * @return
    */
   public static DataMap createDataMap(CarbonTable carbonTable) {
-    boolean cacheLevelBlock =
-        BlockletDataMapUtil.isCacheLevelBlock(carbonTable, CACHE_LEVEL_BLOCKLET);
+    boolean cacheLevelBlock = BlockletDataMapUtil.isCacheLevelBlock(carbonTable);
     if (cacheLevelBlock) {
       // case1: when CACHE_LEVEL = BLOCK
       return new BlockDataMap();
