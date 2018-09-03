@@ -538,7 +538,7 @@ public final class DataMapStoreManager {
       TableDataMap blockletMap = getDataMap(table, BlockletDataMapFactory.DATA_MAP_SCHEMA);
       return (BlockletDetailsFetcher) blockletMap.getDataMapFactory();
     } else {
-      return new FileLevelDataMapDetailsFetcher();
+      return new FileLevelDataMapDetailsFetcher(table);
     }
   }
 

@@ -258,8 +258,8 @@ public final class FilterUtil {
     if (dimension.hasEncoding(Encoding.IMPLICIT)) {
       return new ImplicitIncludeFilterExecutorImpl(dimColResolvedFilterInfo);
     } else {
-      CarbonDimension dimensionFromCurrentBlock =
-          segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
+      CarbonDimension dimensionFromCurrentBlock = segmentProperties.getDimensionFromCurrentBlock(
+          dimColResolvedFilterInfo.getDimension().getColumnId());
       if (null != dimensionFromCurrentBlock) {
         // update dimension and column index according to the dimension position in current block
         DimColumnResolvedFilterInfo dimColResolvedFilterInfoCopyObject =
@@ -356,8 +356,8 @@ public final class FilterUtil {
       columnFromCurrentBlock = segmentProperties
           .getMeasureFromCurrentBlock(columnResolvedFilterInfo.getMeasure().getColumnId());
     } else {
-      columnFromCurrentBlock =
-          segmentProperties.getDimensionFromCurrentBlock(columnResolvedFilterInfo.getDimension());
+      columnFromCurrentBlock = segmentProperties.getDimensionFromCurrentBlock(
+          columnResolvedFilterInfo.getDimension().getColumnId());
     }
     if (null != columnFromCurrentBlock) {
       // check for filter dimension in the cached column list
@@ -419,8 +419,8 @@ public final class FilterUtil {
       SegmentProperties segmentProperties) {
 
     if (null != msrColResolvedFilterInfo && msrColResolvedFilterInfo.getMeasure().isMeasure()) {
-      CarbonMeasure measuresFromCurrentBlock = segmentProperties
-          .getMeasureFromCurrentBlock(msrColResolvedFilterInfo.getMeasure().getColumnId());
+      CarbonMeasure measuresFromCurrentBlock = segmentProperties.getMeasureFromCurrentBlock(
+          msrColResolvedFilterInfo.getMeasure().getColumnId());
       if (null != measuresFromCurrentBlock) {
         // update dimension and column index according to the dimension position in current block
         MeasureColumnResolvedFilterInfo msrColResolvedFilterInfoCopyObject =
@@ -435,8 +435,8 @@ public final class FilterUtil {
             msrColResolvedFilterInfo, true);
       }
     }
-    CarbonDimension dimensionFromCurrentBlock =
-        segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
+    CarbonDimension dimensionFromCurrentBlock = segmentProperties.getDimensionFromCurrentBlock(
+            dimColResolvedFilterInfo.getDimension().getColumnId());
     if (null != dimensionFromCurrentBlock) {
       // update dimension and column index according to the dimension position in current block
       DimColumnResolvedFilterInfo dimColResolvedFilterInfoCopyObject =
@@ -1133,8 +1133,8 @@ public final class FilterUtil {
         }
         // in case of restructure scenarios it can happen that the filter dimension is not
         // present in the current block. In those cases no need to determine the key
-        CarbonDimension dimensionFromCurrentBlock = CarbonUtil
-            .getDimensionFromCurrentBlock(segmentProperties.getDimensions(), entry.getKey());
+        CarbonDimension dimensionFromCurrentBlock = CarbonUtil.getDimensionFromCurrentBlock(
+            segmentProperties.getDimensions(), entry.getKey().getColumnId());
         if (null == dimensionFromCurrentBlock) {
           continue;
         }
@@ -1196,8 +1196,8 @@ public final class FilterUtil {
         }
         // in case of restructure scenarios it can happen that the filter dimension is not
         // present in the current block. In those cases no need to determine the key
-        CarbonDimension dimensionFromCurrentBlock = CarbonUtil
-            .getDimensionFromCurrentBlock(segmentProperties.getDimensions(), entry.getKey());
+        CarbonDimension dimensionFromCurrentBlock = CarbonUtil.getDimensionFromCurrentBlock(
+            segmentProperties.getDimensions(), entry.getKey().getColumnId());
         if (null == dimensionFromCurrentBlock) {
           continue;
         }
@@ -1267,8 +1267,8 @@ public final class FilterUtil {
       // search the query dimension in current block dimensions. If the dimension is not found
       // that means the key cannot be included in start key formation.
       // Applicable for restructure scenarios
-      CarbonDimension dimensionFromCurrentBlock =
-          segmentProperties.getDimensionFromCurrentBlock(entry.getKey());
+      CarbonDimension dimensionFromCurrentBlock = segmentProperties.getDimensionFromCurrentBlock(
+          entry.getKey().getColumnId());
       if (null == dimensionFromCurrentBlock) {
         continue;
       }
@@ -1334,8 +1334,8 @@ public final class FilterUtil {
       // search the query dimension in current block dimensions. If the dimension is not found
       // that means the key cannot be included in start key formation.
       // Applicable for restructure scenarios
-      CarbonDimension dimensionFromCurrentBlock =
-          segmentProperties.getDimensionFromCurrentBlock(entry.getKey());
+      CarbonDimension dimensionFromCurrentBlock = segmentProperties.getDimensionFromCurrentBlock(
+          entry.getKey().getColumnId());
       if (null == dimensionFromCurrentBlock) {
         continue;
       }

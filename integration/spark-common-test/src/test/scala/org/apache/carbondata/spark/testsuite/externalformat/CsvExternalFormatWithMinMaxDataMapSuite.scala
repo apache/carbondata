@@ -17,18 +17,18 @@
 
 package org.apache.carbondata.spark.testsuite.externalformat
 
-
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class CsvExternalFormatWithIndexDataMapSuite extends QueryTest
+class CsvExternalFormatWithMinMaxDataMapSuite extends QueryTest
   with BeforeAndAfterEach with BeforeAndAfterAll {
+  private val minmaxDataMapFactoryName = "org.apache.carbondata.datamap.minmax.MinMaxDataMapFactory"
   val carbonTable = "fact_carbon_table"
   val csvCarbonTable = "fact_carbon_csv_table"
-  val indexOnCsvCarbonTablePrefix = "index_on_fact_csv_"
+  val indexOnCsvCarbonTablePrefix = "minmax_index_on_fact_csv_"
   val csvFile = s"$resourcesPath/datawithoutheader.csv"
 
   override protected def afterAll(): Unit = {
@@ -110,13 +110,13 @@ class CsvExternalFormatWithIndexDataMapSuite extends QueryTest
   }
   /**
    * This test case test the:
-   * 1. direct generate bloom datamap index
-   * 2. build bloom datamap on existing data
+   * 1. direct generate minmax datamap index
+   * 2. build minmax datamap on existing data
    * 3. multiple loads
    * 4. multiple datamaps
    * 5. query with multiple datamaps
    */
-  test("test building and rebuilding bloomfilter multiple datamaps on CSV external format table and querying on it") {
+  test("test building and rebuilding multiple minmax datamaps on CSV external format table and querying on it") {
     createNormalTableForComparison()
     createCsvExternalFormatTable()
 
@@ -129,7 +129,7 @@ class CsvExternalFormatWithIndexDataMapSuite extends QueryTest
       s"""
          | CREATE DATAMAP ${indexOnCsvCarbonTablePrefix}1
          | ON TABLE $csvCarbonTable
-         | USING 'bloomfilter'
+         | USING '$minmaxDataMapFactoryName'
          | DMPROPERTIES(
          | 'INDEX_COLUMNS'='empname,empno'
          | )
@@ -138,7 +138,7 @@ class CsvExternalFormatWithIndexDataMapSuite extends QueryTest
       s"""
          | CREATE DATAMAP ${indexOnCsvCarbonTablePrefix}2
          | ON TABLE $csvCarbonTable
-         | USING 'bloomfilter'
+         | USING '$minmaxDataMapFactoryName'
          | DMPROPERTIES(
          | 'INDEX_COLUMNS'='deptno, designation, doj, workgroupcategory, workgroupcategoryname'
          | )
@@ -147,7 +147,7 @@ class CsvExternalFormatWithIndexDataMapSuite extends QueryTest
       s"""
          | CREATE DATAMAP ${indexOnCsvCarbonTablePrefix}3
          | ON TABLE $csvCarbonTable
-         | USING 'bloomfilter'
+         | USING '$minmaxDataMapFactoryName'
          | DMPROPERTIES(
          | 'INDEX_COLUMNS'='projectcode'
          | )
@@ -167,18 +167,18 @@ class CsvExternalFormatWithIndexDataMapSuite extends QueryTest
     // this will skip 0 blocklets
     sql(s"explain SELECT empno,empname, deptname, doj FROM $csvCarbonTable WHERE empno = 15").show(false)
     checkExistence(sql(s"explain SELECT empno,empname, deptname, doj FROM $csvCarbonTable WHERE empno = 15"),
-      true, "bloomfilter", s"${indexOnCsvCarbonTablePrefix}1", "skipped blocklets: 0")
+      true, minmaxDataMapFactoryName, "skipped blocklets: 0")
     sql(s"explain SELECT empno,empname, deptname, doj FROM $csvCarbonTable WHERE empno = 15 AND empname='ayushi' AND designation='SSA' AND deptno=12 AND projectcode=928375").show(false)
     checkExistence(sql(s"explain SELECT empno,empname, deptname, doj FROM $csvCarbonTable WHERE empno = 15 AND empname='ayushi' AND designation='SSA' AND deptno=12 AND projectcode=928375"),
-      true, "bloomfilter", s"${indexOnCsvCarbonTablePrefix}1", s"${indexOnCsvCarbonTablePrefix}2", s"${indexOnCsvCarbonTablePrefix}3", "skipped blocklets: 0")
+      true, minmaxDataMapFactoryName)
 
     // this will skip all the blocklets
     sql(s"explain SELECT empno,empname, deptname, doj FROM $csvCarbonTable WHERE empno = 155").show(false)
     checkExistence(sql(s"explain SELECT empno,empname, deptname, doj FROM $csvCarbonTable WHERE empno = 155"),
-      true, "bloomfilter", s"${indexOnCsvCarbonTablePrefix}1", "skipped blocklets: 4")
+      true, minmaxDataMapFactoryName, "skipped blocklets: 4")
     sql(s"explain SELECT empno,empname, deptname, doj FROM $csvCarbonTable WHERE empno = 15 AND empname='fake_ayushi' AND designation='SSA' AND deptno=12 AND projectcode=928375").show(false)
     checkExistence(sql(s"explain SELECT empno,empname, deptname, doj FROM $csvCarbonTable WHERE empno = 15 AND empname='fake_ayushi' AND designation='SSA' AND deptno=12 AND projectcode=928375"),
-      true, "bloomfilter", s"${indexOnCsvCarbonTablePrefix}1", s"${indexOnCsvCarbonTablePrefix}2", s"${indexOnCsvCarbonTablePrefix}3", "skipped blocklets: 4")
+      true, minmaxDataMapFactoryName)
 
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, "false")
     checkQuery()

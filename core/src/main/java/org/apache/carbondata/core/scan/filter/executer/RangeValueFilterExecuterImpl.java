@@ -102,8 +102,8 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
    */
   private void initDimensionChunkIndexes() {
     // find the dimension in the current block dimensions list
-    CarbonDimension dimensionFromCurrentBlock =
-        segmentProperties.getDimensionFromCurrentBlock(dimColEvaluatorInfo.getDimension());
+    CarbonDimension dimensionFromCurrentBlock = segmentProperties.getDimensionFromCurrentBlock(
+        dimColEvaluatorInfo.getDimension().getColumnId());
     if (null != dimensionFromCurrentBlock) {
       dimColEvaluatorInfo.setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
       this.dimensionChunkIndex = segmentProperties.getDimensionOrdinalToChunkMapping()

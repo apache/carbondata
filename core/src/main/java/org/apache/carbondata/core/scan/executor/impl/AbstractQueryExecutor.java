@@ -616,8 +616,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     if (!queryFilterDimensions.isEmpty()) {
       Set<CarbonDimension> updatedFilterDimensions = new HashSet<>(queryFilterDimensions.size());
       for (CarbonDimension queryDimension : queryFilterDimensions) {
-        CarbonDimension dimensionFromCurrentBlock =
-            segmentProperties.getDimensionFromCurrentBlock(queryDimension);
+        CarbonDimension dimensionFromCurrentBlock = segmentProperties.getDimensionFromCurrentBlock(
+            queryDimension.getColumnId());
         if (null != dimensionFromCurrentBlock) {
           updatedFilterDimensions.add(dimensionFromCurrentBlock);
         }

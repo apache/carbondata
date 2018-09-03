@@ -85,8 +85,8 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
     } else if (dimColEvaluatorInfoList.size() > 0 && null != dimColEvaluatorInfoList.get(0)
         .getFilterValues() && dimColEvaluatorInfoList.get(0).getDimension()
         .hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-      CarbonDimension dimensionFromCurrentBlock = segmentProperties
-          .getDimensionFromCurrentBlock(this.dimColEvaluatorInfoList.get(0).getDimension());
+      CarbonDimension dimensionFromCurrentBlock = segmentProperties.getDimensionFromCurrentBlock(
+          this.dimColEvaluatorInfoList.get(0).getDimension().getColumnId());
       if (null != dimensionFromCurrentBlock) {
         return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(),
             dimensionFromCurrentBlock, segmentProperties, false);

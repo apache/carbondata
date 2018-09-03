@@ -19,14 +19,22 @@ package org.apache.carbondata.core.indexstore;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.core.datamap.DataMapUtil;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 public class FileLevelDataMapDetailsFetcher
     implements BlockletDetailsFetcher, SegmentPropertiesFetcher {
+  private CarbonTable carbonTable;
+
+  public FileLevelDataMapDetailsFetcher(CarbonTable carbonTable) {
+    this.carbonTable = carbonTable;
+  }
 
   @Override
   public List<ExtendedBlocklet> getExtendedBlocklets(List<Blocklet> blocklets, Segment segment)
@@ -75,6 +83,9 @@ public class FileLevelDataMapDetailsFetcher
 
   @Override
   public SegmentProperties getSegmentProperties(Segment segment) throws IOException {
-    return null;
+    List<ColumnSchema> columns = carbonTable.getTableInfo().getFactTable().getListOfColumns();
+    int[] columnCardinalities = new int[columns.size()];
+    Arrays.fill(columnCardinalities, Integer.MAX_VALUE);
+    return new SegmentProperties(columns, columnCardinalities);
   }
 }

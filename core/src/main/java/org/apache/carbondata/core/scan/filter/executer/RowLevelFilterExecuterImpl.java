@@ -161,8 +161,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   private void initDimensionChunkIndexes() {
     for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
       // find the dimension in the current block dimensions list
-      CarbonDimension dimensionFromCurrentBlock = segmentProperties
-          .getDimensionFromCurrentBlock(dimColEvaluatorInfoList.get(i).getDimension());
+      CarbonDimension dimensionFromCurrentBlock = segmentProperties.getDimensionFromCurrentBlock(
+          dimColEvaluatorInfoList.get(i).getDimension().getColumnId());
       if (null != dimensionFromCurrentBlock) {
         dimColEvaluatorInfoList.get(i).setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
         this.dimensionChunkIndex[i] =

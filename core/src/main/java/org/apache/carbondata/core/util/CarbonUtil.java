@@ -1180,16 +1180,12 @@ public final class CarbonUtil {
 
   /**
    * This method will search for a given dimension in the current block dimensions list
-   *
-   * @param blockDimensions
-   * @param dimensionToBeSearched
-   * @return
    */
-  public static CarbonDimension getDimensionFromCurrentBlock(
-      List<CarbonDimension> blockDimensions, CarbonDimension dimensionToBeSearched) {
+  public static CarbonDimension getDimensionFromCurrentBlock(List<CarbonDimension> blockDimensions,
+      String columnId) {
     CarbonDimension currentBlockDimension = null;
     for (CarbonDimension blockDimension : blockDimensions) {
-      if (dimensionToBeSearched.getColumnId().equals(blockDimension.getColumnId())) {
+      if (columnId.equals(blockDimension.getColumnId())) {
         currentBlockDimension = blockDimension;
         break;
       }
@@ -1199,10 +1195,6 @@ public final class CarbonUtil {
 
   /**
    * This method will search for a given measure in the current block measures list
-   *
-   * @param blockMeasures
-   * @param columnId
-   * @return
    */
   public static CarbonMeasure getMeasureFromCurrentBlock(List<CarbonMeasure> blockMeasures,
       String columnId) {

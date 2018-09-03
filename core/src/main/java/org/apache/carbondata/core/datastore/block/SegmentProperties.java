@@ -617,19 +617,13 @@ public class SegmentProperties {
 
   /**
    * This method will search a given dimension and return the dimension from current block
-   *
-   * @param queryDimension
-   * @return
    */
-  public CarbonDimension getDimensionFromCurrentBlock(CarbonDimension queryDimension) {
-    return CarbonUtil.getDimensionFromCurrentBlock(this.dimensions, queryDimension);
+  public CarbonDimension getDimensionFromCurrentBlock(String columnId) {
+    return CarbonUtil.getDimensionFromCurrentBlock(this.dimensions, columnId);
   }
 
   /**
    * This method will search for a given measure in the current block measures list
-   *
-   * @param columnId
-   * @return
    */
   public CarbonMeasure getMeasureFromCurrentBlock(String columnId) {
     return CarbonUtil.getMeasureFromCurrentBlock(this.measures, columnId);

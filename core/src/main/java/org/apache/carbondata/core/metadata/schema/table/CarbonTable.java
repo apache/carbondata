@@ -1231,7 +1231,7 @@ public class CarbonTable implements Serializable {
         // if found in dimension then add to dimension else add to measures
         if (null != dimension) {
           CarbonDimension dimensionFromCurrentBlock =
-              segmentProperties.getDimensionFromCurrentBlock(dimension);
+              segmentProperties.getDimensionFromCurrentBlock(dimension.getColumnId());
           if (null != dimensionFromCurrentBlock) {
             // first add normal dimensions and then complex dimensions
             if (dimensionFromCurrentBlock.isComplex()) {

@@ -184,7 +184,7 @@ class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Ar
 
     dictIndexColumns.foreach { col =>
       val dim = carbonTable.getDimensionByName(carbonTable.getTableName, col.getColName)
-      val currentBlockDimension = segmentProperties.getDimensionFromCurrentBlock(dim)
+      val currentBlockDimension = segmentProperties.getDimensionFromCurrentBlock(dim.getColumnId)
       if (null != currentBlockDimension) {
         columnCardinality.add(segmentProperties.getDimColumnsCardinality.apply(
           currentBlockDimension.getKeyOrdinal))
