@@ -65,8 +65,10 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
         if (encodedPage != null) {
           throw new IllegalStateException("already encoded");
         }
-        encodedPage = ColumnPage.newPage(input.getColumnSpec(), targetDataType,
-            input.getPageSize(), input.getColumnCompressorName());
+        encodedPage = ColumnPage.newPage(
+            new ColumnPageEncoderMeta(input.getColumnPageEncoderMeta().getColumnSpec(),
+                targetDataType, input.getColumnPageEncoderMeta().getCompressorName()),
+            input.getPageSize());
         Compressor compressor = CompressorFactory.getInstance().getCompressor(
             input.getColumnCompressorName());
         input.convertValue(converter);

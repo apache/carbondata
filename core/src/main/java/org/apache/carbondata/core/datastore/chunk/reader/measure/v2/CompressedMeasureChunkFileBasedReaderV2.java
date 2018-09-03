@@ -139,7 +139,8 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     byte[] encodedMeta = encoder_meta.get(0).array();
 
     ValueEncoderMeta meta = CarbonUtil.deserializeEncoderMetaV2(encodedMeta);
-    ColumnPageDecoder codec = encodingFactory.createDecoderLegacy(meta, "snappy");
+    ColumnPageDecoder codec = encodingFactory.createDecoderLegacy(meta,
+        CompressorFactory.SupportedCompressor.SNAPPY.getName());
     byte[] rawData = measureRawColumnChunk.getRawData().array();
     return codec.decode(rawData, copyPoint, measureColumnChunk.data_page_length);
   }

@@ -33,6 +33,7 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
@@ -267,7 +268,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
     if (header.isSetCompressionCodec()) {
       compressorName = header.getCompressionCodec().name();
     } else {
-      compressorName = "snappy";
+      compressorName = CompressorFactory.SupportedCompressor.SNAPPY.getName();
     }
     return header.getSync_marker();
   }

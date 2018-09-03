@@ -84,8 +84,10 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
         if (encodedPage != null) {
           throw new IllegalStateException("already encoded");
         }
-        encodedPage = ColumnPage.newPage(input.getColumnSpec(), targetDataType,
-            input.getPageSize(), input.getColumnCompressorName());
+        encodedPage = ColumnPage.newPage(
+            new ColumnPageEncoderMeta(input.getColumnPageEncoderMeta().getColumnSpec(),
+                targetDataType, input.getColumnPageEncoderMeta().getCompressorName()),
+            input.getPageSize());
         input.convertValue(converter);
         Compressor compressor = CompressorFactory.getInstance().getCompressor(
             input.getColumnCompressorName());

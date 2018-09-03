@@ -22,7 +22,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 
-import org.apache.carbondata.core.datastore.TableSpec;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -45,9 +45,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   // total number of entries in array
   private int arrayElementCount = 0;
 
-  SafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
-      String compressorName) {
-    super(columnSpec, dataType, pageSize, compressorName);
+  SafeFixLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
+    super(columnPageEncoderMeta, pageSize);
     this.fixedLengthdata = new byte[pageSize][];
   }
 
@@ -121,17 +120,20 @@ public class SafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putBytes(int rowId, byte[] bytes, int offset, int length) {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   @Override
   public void putDecimal(int rowId, BigDecimal decimal) {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   @Override
   public byte[] getDecimalPage() {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   /**
@@ -191,7 +193,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override public BigDecimal getDecimal(int rowId) {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   @Override
@@ -268,7 +271,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public byte[] getLVFlattenedBytePage() throws IOException {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   @Override
@@ -346,7 +350,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void setByteArrayPage(byte[][] byteArray) {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   @Override
@@ -367,33 +372,33 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void convertValue(ColumnPageValueConverter codec) {
-    if (dataType == DataTypes.BYTE) {
+    if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE) {
       for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, byteData[i]);
       }
-    } else if (dataType == DataTypes.SHORT) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.SHORT) {
       for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, shortData[i]);
       }
-    } else if (dataType == DataTypes.INT) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.INT) {
       for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, intData[i]);
       }
-    } else if (dataType == DataTypes.LONG) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.LONG) {
       for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, longData[i]);
       }
-    } else if (dataType == DataTypes.FLOAT) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.FLOAT) {
       for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, floatData[i]);
       }
-    } else if (dataType == DataTypes.DOUBLE) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.DOUBLE) {
       for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, doubleData[i]);
       }
     } else {
-      throw new UnsupportedOperationException("not support value conversion on " +
-          dataType + " page");
+      throw new UnsupportedOperationException("not support value conversion on "
+          + columnPageEncoderMeta.getStoreDataType() + " page");
     }
   }
 

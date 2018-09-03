@@ -26,6 +26,7 @@ import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.encoding.compress.DirectCompressCodec;
 import org.apache.carbondata.core.datastore.page.statistics.DummyStatsCollector;
 import org.apache.carbondata.core.localdictionary.exception.DictionaryThresholdReachedException;
@@ -115,7 +116,8 @@ public class PageLevelDictionary {
     TableSpec.ColumnSpec spec =
         TableSpec.ColumnSpec.newInstance(columnName, DataTypes.BYTE_ARRAY, columnType);
     ColumnPage dictionaryColumnPage = ColumnPage.newPage(
-        spec, DataTypes.BYTE_ARRAY, usedDictionaryValues.cardinality(), columnCompressor);
+        new ColumnPageEncoderMeta(spec, DataTypes.BYTE_ARRAY, columnCompressor),
+        usedDictionaryValues.cardinality());
     // TODO support data type specific stats collector for numeric data types
     dictionaryColumnPage.setStatsCollector(new DummyStatsCollector());
     int rowId = 0;

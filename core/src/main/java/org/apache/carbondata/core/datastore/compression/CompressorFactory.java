@@ -87,7 +87,7 @@ public class CompressorFactory {
   public Compressor getCompressor() {
     String compressorType = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.COMPRESSOR, CarbonCommonConstants.DEFAULT_COMPRESSOR);
-    if (!compressors.keySet().contains(compressorType)) {
+    if (!compressors.containsKey(compressorType)) {
       throw new UnsupportedOperationException(
           "Invalid compressor type provided! Currently we only support "
               + Arrays.toString(SupportedCompressor.values()));

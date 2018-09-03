@@ -45,8 +45,10 @@ public class RLECodecTest {
     TestData(byte[] inputByteData, byte[] expectedEncodedByteData) throws IOException, MemoryException {
       this.inputByteData = inputByteData;
       inputBytePage = ColumnPage.newPage(
-          TableSpec.ColumnSpec.newInstance("test", DataTypes.BYTE, ColumnType.MEASURE),
-          DataTypes.BYTE, inputByteData.length, "snappy");
+          new ColumnPageEncoderMeta(
+              TableSpec.ColumnSpec.newInstance("test", DataTypes.BYTE, ColumnType.MEASURE),
+              DataTypes.BYTE, "snappy"),
+          inputByteData.length);
       inputBytePage.setStatsCollector(PrimitivePageStatsCollector.newInstance(DataTypes.BYTE));
       for (int i = 0; i < inputByteData.length; i++) {
         inputBytePage.putData(i, inputByteData[i]);

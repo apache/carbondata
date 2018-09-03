@@ -298,7 +298,8 @@ public class RLECodec implements ColumnPageCodec {
         throws MemoryException, IOException {
       DataType dataType = columnSpec.getSchemaDataType();
       DataInputStream in = new DataInputStream(new ByteArrayInputStream(input, offset, length));
-      ColumnPage resultPage = ColumnPage.newPage(columnSpec, dataType, pageSize, compressorName);
+      ColumnPage resultPage = ColumnPage.newPage(
+          new ColumnPageEncoderMeta(columnSpec, dataType, compressorName), pageSize);
       if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
         decodeBytePage(in, resultPage);
       } else if (dataType == DataTypes.SHORT) {

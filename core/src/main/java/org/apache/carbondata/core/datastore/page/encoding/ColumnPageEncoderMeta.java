@@ -53,7 +53,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   }
 
   public ColumnPageEncoderMeta(TableSpec.ColumnSpec columnSpec, DataType storeDataType,
-      SimpleStatsResult stats, String compressorName) {
+      String compressorName) {
     if (columnSpec == null) {
       throw new IllegalArgumentException("columm spec must not be null");
     }
@@ -67,6 +67,11 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
     this.storeDataType = storeDataType;
     this.compressorName = compressorName;
     setType(DataType.convertType(storeDataType));
+  }
+
+  public ColumnPageEncoderMeta(TableSpec.ColumnSpec columnSpec, DataType storeDataType,
+      SimpleStatsResult stats, String compressorName) {
+    this(columnSpec, storeDataType, compressorName);
     if (stats != null) {
       setDecimal(stats.getDecimalCount());
       setMaxValue(stats.getMax());

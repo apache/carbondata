@@ -187,7 +187,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
         CarbonStreamOutputFormat.CARBON_ENCODER_ROW_BUFFER_SIZE_DEFAULT);
     output = new StreamBlockletWriter(maxCacheSize, maxRowNums, rowBufferSize,
         isNoDictionaryDimensionColumn.length, measureCount,
-        measureDataTypes);
+        measureDataTypes, compressorName);
 
     isFirstRow = false;
   }

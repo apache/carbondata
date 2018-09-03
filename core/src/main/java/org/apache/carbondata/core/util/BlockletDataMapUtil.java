@@ -355,7 +355,7 @@ public class BlockletDataMapUtil {
     }
     byte[] byteArray = stream.toByteArray();
     // Compress to reduce the size of schema
-    return CompressorFactory.getInstance().getCompressor("snappy").compressByte(byteArray);
+    return CompressorFactory.SupportedCompressor.SNAPPY.getCompressor().compressByte(byteArray);
   }
 
   /**
@@ -366,8 +366,8 @@ public class BlockletDataMapUtil {
    */
   public static List<ColumnSchema> readColumnSchema(byte[] schemaArray) throws IOException {
     // uncompress it.
-    schemaArray = CompressorFactory.getInstance().getCompressor("snappy")
-        .unCompressByte(schemaArray);
+    schemaArray = CompressorFactory.SupportedCompressor.SNAPPY.getCompressor().unCompressByte(
+        schemaArray);
     ByteArrayInputStream schemaStream = new ByteArrayInputStream(schemaArray);
     DataInput schemaInput = new DataInputStream(schemaStream);
     List<ColumnSchema> columnSchemas = new ArrayList<>();

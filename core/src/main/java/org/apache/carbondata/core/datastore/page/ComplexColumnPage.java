@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.datastore.TableSpec;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.statistics.DummyStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
 import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
@@ -83,16 +84,18 @@ public class ComplexColumnPage {
         if (isColumnPageBasedOnDataType(i)) {
           // no dictionary primitive types need adaptive encoding,
           // hence store as actual value instead of byte array
-          this.columnPages[i] = ColumnPage.newPage(spec, dataType, pageSize, columnCompressor);
+          this.columnPages[i] = ColumnPage.newPage(
+              new ColumnPageEncoderMeta(spec, dataType, columnCompressor), pageSize);
           this.columnPages[i].setStatsCollector(PrimitivePageStatsCollector.newInstance(dataType));
         } else {
-          this.columnPages[i] = ColumnPage.newPage(spec, DataTypes.BYTE_ARRAY,
-              pageSize, columnCompressor);
+          this.columnPages[i] = ColumnPage.newPage(
+              new ColumnPageEncoderMeta(spec, DataTypes.BYTE_ARRAY, columnCompressor), pageSize);
           this.columnPages[i].setStatsCollector(new DummyStatsCollector());
         }
       } else {
         this.columnPages[i] = ColumnPage.newLocalDictPage(
-            spec, DataTypes.BYTE_ARRAY, pageSize, localDictionaryGenerator, true, columnCompressor);
+            new ColumnPageEncoderMeta(spec, DataTypes.BYTE_ARRAY, columnCompressor), pageSize,
+            localDictionaryGenerator, true);
         this.columnPages[i].setStatsCollector(new DummyStatsCollector());
       }
     }

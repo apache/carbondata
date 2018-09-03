@@ -71,10 +71,8 @@ public class LocalDictColumnPage extends ColumnPage {
    * Create a new column page with input data type and page size.
    */
   protected LocalDictColumnPage(ColumnPage actualDataColumnPage, ColumnPage encodedColumnpage,
-      LocalDictionaryGenerator localDictionaryGenerator, boolean isComplexTypePrimitive,
-      String compressorName) {
-    super(actualDataColumnPage.getColumnSpec(), actualDataColumnPage.getDataType(),
-        actualDataColumnPage.getPageSize(), compressorName);
+      LocalDictionaryGenerator localDictionaryGenerator, boolean isComplexTypePrimitive) {
+    super(actualDataColumnPage.getColumnPageEncoderMeta(), actualDataColumnPage.getPageSize());
     // if threshold is not reached then create page level dictionary
     // for encoding with local dictionary
     if (!localDictionaryGenerator.isThresholdReached()) {
