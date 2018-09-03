@@ -790,4 +790,98 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     checkExistence(sql("select * from sdkOutputTable"), true, "32.0")
   }
 
+  test("test logical type time-millis") {
+    sql("drop table if exists sdkOutputTable")
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
+    val schema1 =
+      """{
+        |	"namespace": "com.apache.schema",
+        |	"type": "record",
+        |	"name": "StudentActivity",
+        |	"fields": [
+        |		{
+        |			"name": "id",
+        |						"type": {"type" : "int", "logicalType": "time-millis"}
+        |		},
+        |		{
+        |			"name": "course_details",
+        |			"type": {
+        |				"name": "course_details",
+        |				"type": "record",
+        |				"fields": [
+        |					{
+        |						"name": "course_struct_course_time",
+        |						"type": {"type" : "int", "logicalType": "time-millis"}
+        |					}
+        |				]
+        |			}
+        |		}
+        |	]
+        |}""".stripMargin
+
+    val json1 =
+      """{"id": 172800,"course_details": { "course_struct_course_time":172800}}""".stripMargin
+
+    val nn = new org.apache.avro.Schema.Parser().parse(schema1)
+    val record = testUtil.jsonToAvro(json1, schema1)
+
+
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+    writer.write(record)
+    writer.close()
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY
+         |'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(172800, Row(172800))))
+  }
+
+  test("test logical type time-micros") {
+    sql("drop table if exists sdkOutputTable")
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(writerPath))
+    val schema1 =
+      """{
+        |	"namespace": "com.apache.schema",
+        |	"type": "record",
+        |	"name": "StudentActivity",
+        |	"fields": [
+        |		{
+        |			"name": "id",
+        |						"type": {"type" : "long", "logicalType": "time-micros"}
+        |		},
+        |		{
+        |			"name": "course_details",
+        |			"type": {
+        |				"name": "course_details",
+        |				"type": "record",
+        |				"fields": [
+        |					{
+        |						"name": "course_struct_course_time",
+        |						"type": {"type" : "long", "logicalType": "time-micros"}
+        |					}
+        |				]
+        |			}
+        |		}
+        |	]
+        |}""".stripMargin
+
+    val json1 =
+      """{"id": 1728000,"course_details": { "course_struct_course_time":1728000}}""".stripMargin
+
+    val nn = new org.apache.avro.Schema.Parser().parse(schema1)
+    val record = testUtil.jsonToAvro(json1, schema1)
+
+
+    val writer = CarbonWriter.builder
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+    writer.write(record)
+    writer.close()
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY
+         |'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+    checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(1728000, Row(1728000))))
+  }
+
 }
