@@ -45,6 +45,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableSchemaBuilder;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonSessionInfo;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.ThriftWriter;
@@ -96,6 +97,11 @@ public class CarbonWriterBuilder {
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder sortBy(String[] sortColumns) {
+    if (sortColumns != null) {
+      for (int i = 0; i < sortColumns.length; i++) {
+        sortColumns[i] = sortColumns[i].toLowerCase();
+      }
+    }
     this.sortColumns = sortColumns;
     return this;
   }
@@ -233,6 +239,7 @@ public class CarbonWriterBuilder {
    * g. complex_delimiter_level_2 -- value to Split the nested complexTypeData
    * h. quotechar
    * i. escapechar
+   * j. sort_scope -- "local_sort", "no_sort", "batch_sort"
    *
    * Default values are as follows.
    *
@@ -245,17 +252,13 @@ public class CarbonWriterBuilder {
    * g. complex_delimiter_level_2 -- ":"
    * h. quotechar -- "\""
    * i. escapechar -- "\\"
+   * j. sort_scope -- "local_sort"
    *
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder withLoadOptions(Map<String, String> options) {
     Objects.requireNonNull(options, "Load options should not be null");
     //validate the options.
-    if (options.size() > 9) {
-      throw new IllegalArgumentException("Supports only nine options now. "
-          + "Refer method header or documentation");
-    }
-
     for (String option: options.keySet()) {
       if (!option.equalsIgnoreCase("bad_records_logger_enable") &&
           !option.equalsIgnoreCase("bad_records_action") &&
@@ -265,9 +268,19 @@ public class CarbonWriterBuilder {
           !option.equalsIgnoreCase("complex_delimiter_level_1") &&
           !option.equalsIgnoreCase("complex_delimiter_level_2") &&
           !option.equalsIgnoreCase("quotechar") &&
-          !option.equalsIgnoreCase("escapechar")) {
-        throw new IllegalArgumentException("Unsupported options. "
-            + "Refer method header or documentation");
+          !option.equalsIgnoreCase("escapechar") &&
+          !option.equalsIgnoreCase("sort_scope")) {
+        throw new IllegalArgumentException("Unsupported option:" + option
+            + ". Refer method header or documentation");
+      }
+    }
+    // validate sort scope
+    String sortScope = options.get("sort_scope");
+    if (sortScope != null) {
+      if ((!CarbonUtil.isValidSortOption(sortScope))) {
+        throw new IllegalArgumentException("Invalid Sort Scope Option: " + sortScope);
+      } else if (sortScope.equalsIgnoreCase("global_sort")) {
+        throw new IllegalArgumentException("global sort is not supported");
       }
     }
 
@@ -283,11 +296,11 @@ public class CarbonWriterBuilder {
    *
    * @param options key,value pair of create table properties.
    * supported keys values are
-   * a. blocksize -- [1-2048] values in MB. Default value is 1024
-   * b. blockletsize -- values in MB. Default value is 64 MB
-   * c. localDictionaryThreshold -- positive value, default is 10000
-   * d. enableLocalDictionary -- true / false. Default is false
-   * e. sortcolumns -- comma separated column. "c1,c2". Default all dimensions are sorted.
+   * a. table_blocksize -- [1-2048] values in MB. Default value is 1024
+   * b. table_blocklet_size -- values in MB. Default value is 64 MB
+   * c. local_dictionary_threshold -- positive value, default is 10000
+   * d. local_dictionary_enable -- true / false. Default is false
+   * e. sort_columns -- comma separated column. "c1,c2". Default all dimensions are sorted.
    *
    * @return updated CarbonWriterBuilder
    */
@@ -300,8 +313,8 @@ public class CarbonWriterBuilder {
     }
 
     Set<String> supportedOptions = new HashSet<>(Arrays
-        .asList("blocksize", "blockletsize", "localdictionarythreshold", "enablelocaldictionary",
-            "sortcolumns"));
+        .asList("table_blocksize", "table_blocklet_size", "local_dictionary_threshold",
+            "local_dictionary_enable", "sort_columns"));
 
     for (String key : options.keySet()) {
       if (!supportedOptions.contains(key.toLowerCase())) {
@@ -311,15 +324,15 @@ public class CarbonWriterBuilder {
     }
 
     for (Map.Entry<String, String> entry : options.entrySet()) {
-      if (entry.getKey().equalsIgnoreCase("equalsIgnoreCase")) {
+      if (entry.getKey().equalsIgnoreCase("table_blocksize")) {
         this.withBlockSize(Integer.parseInt(entry.getValue()));
-      } else if (entry.getKey().equalsIgnoreCase("blockletsize")) {
+      } else if (entry.getKey().equalsIgnoreCase("table_blocklet_size")) {
         this.withBlockletSize(Integer.parseInt(entry.getValue()));
-      } else if (entry.getKey().equalsIgnoreCase("localDictionaryThreshold")) {
+      } else if (entry.getKey().equalsIgnoreCase("local_dictionary_threshold")) {
         this.localDictionaryThreshold(Integer.parseInt(entry.getValue()));
-      } else if (entry.getKey().equalsIgnoreCase("enableLocalDictionary")) {
+      } else if (entry.getKey().equalsIgnoreCase("local_dictionary_enable")) {
         this.enableLocalDictionary((entry.getValue().equalsIgnoreCase("true")));
-      } else {
+      } else if (entry.getKey().equalsIgnoreCase("sort_columns")) {
         //sort columns
         String[] sortColumns = entry.getValue().split(",");
         this.sortBy(sortColumns);
@@ -534,14 +547,13 @@ public class CarbonWriterBuilder {
 
   public CarbonLoadModel buildLoadModel(Schema carbonSchema)
       throws IOException, InvalidLoadOptionException {
-    this.schema = carbonSchema;
+    this.schema = schemaFieldNameToLowerCase(carbonSchema);
     // build CarbonTable using schema
     CarbonTable table = buildCarbonTable();
     if (persistSchemaFile) {
       // we are still using the traditional carbon table folder structure
       persistSchemaFile(table, CarbonTablePath.getSchemaFilePath(path));
     }
-
     // build LoadModel
     return buildLoadModel(table, UUID, taskNo, options);
   }
@@ -721,5 +733,20 @@ public class CarbonWriterBuilder {
     CarbonLoadModel build = builder.build(options, UUID, taskNo);
     setCsvHeader(build);
     return build;
+  }
+
+  /* loop through all the parent column and change fields name lower case.
+  * this is to match with sort column case */
+  private Schema schemaFieldNameToLowerCase(Schema schema) {
+    if (schema == null) {
+      return null;
+    }
+    Field[] fields =  schema.getFields();
+    for (int i = 0; i < fields.length; i++) {
+      if (fields[i] != null) {
+        fields[i].updateNameToLowerCase();
+      }
+    }
+    return new Schema(fields);
   }
 }

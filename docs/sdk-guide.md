@@ -339,6 +339,7 @@ public CarbonWriterBuilder taskNo(long taskNo);
 *                g. complex_delimiter_level_2 -- value to Split the nested complexTypeData
 *                h. quotechar
 *                i. escapechar
+*                j. sort_scope -- "local_sort", "no_sort", "batch_sort"
 *
 *                Default values are as follows.
 *
@@ -351,6 +352,7 @@ public CarbonWriterBuilder taskNo(long taskNo);
 *                g. complex_delimiter_level_2 -- ":"
 *                h. quotechar -- "\""
 *                i. escapechar -- "\\"
+*                j. sort_scope -- "local_sort"
 *
 * @return updated CarbonWriterBuilder
 */
@@ -359,18 +361,18 @@ public CarbonWriterBuilder withLoadOptions(Map<String, String> options);
 
 ```
 /**
- * To support the table properties for sdk writer
- *
- * @param options key,value pair of create table properties.
- * supported keys values are
- * a. blocksize -- [1-2048] values in MB. Default value is 1024
- * b. blockletsize -- values in MB. Default value is 64 MB
- * c. localDictionaryThreshold -- positive value, default is 10000
- * d. enableLocalDictionary -- true / false. Default is false
- * e. sortcolumns -- comma separated column. "c1,c2". Default all dimensions are sorted.
- *
- * @return updated CarbonWriterBuilder
- */
+* To support the table properties for sdk writer
+*
+* @param options key,value pair of create table properties.
+* supported keys values are
+* a. table_blocksize -- [1-2048] values in MB. Default value is 1024
+* b. table_blocklet_size -- values in MB. Default value is 64 MB
+* c. local_dictionary_threshold -- positive value, default is 10000
+* d. local_dictionary_enable -- true / false. Default is false
+* e. sort_columns -- comma separated column. "c1,c2". Default all dimensions are sorted.
+*
+* @return updated CarbonWriterBuilder
+*/
 public CarbonWriterBuilder withTableProperties(Map<String, String> options);
 ```
 

@@ -126,7 +126,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       sortColumns: List[String]): Any = {
     val schema = new StringBuilder()
       .append("[ \n")
-      .append("   {\"name\":\"string\"},\n")
+      .append("   {\"NaMe\":\"string\"},\n")
       .append("   {\"age\":\"int\"},\n")
       .append("   {\"height\":\"double\"}\n")
       .append("]")
@@ -350,7 +350,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   test(" test csv fileheader for transactional table") {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestDataWithSameUUID(3, false, null, List("name"))
+    buildTestDataWithSameUUID(3, false, null, List("Name"))
     assert(new File(writerPath).exists())
 
     sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -379,7 +379,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   test("test count star with multiple loads files with same schema and UUID") {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestDataWithSameUUID(3, false, null, List("name"))
+    buildTestDataWithSameUUID(3, false, null, List("namE"))
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
@@ -2356,6 +2356,46 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select * from sdkOutputTable"), Seq(Row(Timestamp.valueOf("1970-01-02 16:00:00"), Row(Timestamp.valueOf("1970-01-02 16:00:00")))))
   }
 
+  test("test Sort Scope with SDK") {
+    cleanTestData()
+    // test with no_sort
+    val options = Map("sort_scope" -> "no_sort").asJava
+    val fields: Array[Field] = new Array[Field](4)
+    fields(0) = new Field("stringField", DataTypes.STRING)
+    fields(1) = new Field("intField", DataTypes.INT)
+    val writer: CarbonWriter = CarbonWriter.builder
+      .outputPath(writerPath)
+      .withLoadOptions(options)
+      .buildWriterForCSVInput(new Schema(fields))
+    writer.write(Array("carbon", "1"))
+    writer.write(Array("hydrogen", "10"))
+    writer.write(Array("boron", "4"))
+    writer.write(Array("zirconium", "5"))
+    writer.close()
+
+    // read no sort data
+    sql("DROP TABLE IF EXISTS sdkTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION '$writerPath' """
+        .stripMargin)
+    checkAnswer(sql("select * from sdkTable"),
+      Seq(Row("carbon", 1), Row("hydrogen", 10), Row("boron", 4), Row("zirconium", 5)))
+
+    // write local sort data
+    val writer1: CarbonWriter = CarbonWriter.builder
+      .outputPath(writerPath)
+      .buildWriterForCSVInput(new Schema(fields))
+    writer1.write(Array("carbon", "1"))
+    writer1.write(Array("hydrogen", "10"))
+    writer1.write(Array("boron", "4"))
+    writer1.write(Array("zirconium", "5"))
+    writer1.close()
+    // read both-no sort and local sort data
+    checkAnswer(sql("select count(*) from sdkTable"), Seq(Row(8)))
+    sql("DROP TABLE sdkTable")
+    cleanTestData()
+  }
+
   test("test LocalDictionary with True") {
     FileUtils.deleteDirectory(new File(writerPath))
     val builder = CarbonWriter.builder.isTransactionalTable(false)
@@ -2379,10 +2419,10 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
   test("test LocalDictionary with custom Threshold") {
     FileUtils.deleteDirectory(new File(writerPath))
     val tablePropertiesMap: util.Map[String, String] =
-      Map("blocksize" -> "12",
-        "sortcolumns" -> "name",
-        "localDictionaryThreshold" -> "200",
-        "enableLocalDictionary" -> "true").asJava
+      Map("table_blocksize" -> "12",
+        "sort_columns" -> "name",
+        "local_dictionary_threshold" -> "200",
+        "local_dictionary_enable" -> "true").asJava
     val builder = CarbonWriter.builder.isTransactionalTable(false)
       .withTableProperties(tablePropertiesMap)
       .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath)
