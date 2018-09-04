@@ -85,6 +85,7 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
          sql("select * from TCarbon")
      )
   }
+
   test("insert->carbon column is more then hive-fails") {
      sql("drop table if exists TCarbon")
      sql("create table TCarbon (imei string,deviceInformationId int,MAC string,deviceColor string,gamePointId double,contractNumber BigInt) STORED BY 'org.apache.carbondata.format'")
@@ -92,6 +93,7 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       sql("insert into TCarbon select imei,deviceInformationId,MAC,deviceColor,gamePointId from THive")
     }
   }
+
   test("insert->insert wrong data types-pass") {
      sql("drop table if exists TCarbon")
      sql("create table TCarbon (imei string,deviceInformationId int,MAC string) STORED BY 'org.apache.carbondata.format'")
@@ -370,6 +372,52 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     assert(exists_t2)
     assert(sql("select * from OverwriteTable_t1").count() == sql("select * from OverwriteTable_t2").count())
     checkAnswer(sql("select count(*) from OverwriteTable_t1"), sql("select count(*) from OverwriteTable_t2"))
+  }
+
+  test("two insert into: insert into carbon table from default table") {
+    sql("drop table if exists carbon_1")
+    sql("drop table if exists carbon_2")
+    sql("create table carbon_1(name String,age int)")
+    sql("create table carbon_2(name String,age int)")
+    sql("insert into carbon_1 values('Bob',27)")
+    sql("insert into carbon_1 values('David',33)")
+    sql("insert into carbon_1 values('Jack',37)")
+    sql("from carbon_1 insert into carbon_2 select * where age<30 insert into carbon_2 select * where age>35")
+    checkAnswer(sql("select * from carbon_1"),
+      Seq(Row("Bob", 27), Row("David", 33), Row("Jack", 37)))
+    checkAnswer(sql("select * from carbon_2"),
+      Seq(Row("Bob", 27), Row("Jack", 37)))
+  }
+
+  test("two insert into: insert into carbon table from csv table") {
+    sql("drop table if exists carbon_1")
+    sql("drop table if exists carbon_2")
+    sql("create table carbon_1(name String,age int) using csv")
+    sql("create table carbon_2(name String,age int) stored by 'carbondata'")
+    sql("insert into carbon_1 values('Bob',27)")
+    sql("insert into carbon_1 values('David',33)")
+    sql("insert into carbon_1 values('Jack',37)")
+    sql("from carbon_1 insert into carbon_2 select * where age<30 insert into carbon_2 select * where age>35")
+    checkAnswer(sql("select * from carbon_1"),
+      Seq(Row("Bob", 27), Row("David", 33), Row("Jack", 37)))
+    checkAnswer(sql("select * from carbon_2"),
+      Seq(Row("Bob", 27), Row("Jack", 37)))
+  }
+
+  test("two insert into: insert into carbon table from csv table and load data") {
+    sql("drop table if exists carbon_1")
+    sql("drop table if exists carbon_2")
+    sql(
+      s"""
+         | create table carbon_1(name String,age int)
+         | using csv
+         | options(path "$resourcesPath/emptylines.csv",header "true")""".stripMargin)
+    sql("create table carbon_2(name String,age int) stored by 'carbondata'")
+    sql("from carbon_1 insert into carbon_2 select * where age<23 insert into carbon_2 select * where age>24")
+    checkAnswer(sql("select * from carbon_1"),
+      Seq(Row("a", 25), Row("b", 22), Row("c", 23)))
+    checkAnswer(sql("select * from carbon_2"),
+      Seq(Row("a", 25), Row("b", 22)))
   }
 
   private def queryExecution(csvFileName1: String , csvFileName2: String) : Unit ={
