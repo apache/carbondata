@@ -40,7 +40,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.stats.QueryStatistic
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
@@ -48,7 +48,7 @@ import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConst
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.rdd.StreamHandoffRDD
-import org.apache.carbondata.streaming.{CarbonStreamException, CarbonStreamOutputFormat}
+import org.apache.carbondata.streaming.{CarbonStreamException, CarbonStreamOutputFormat, StreamSinkFactory}
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
 import org.apache.carbondata.streaming.segment.StreamSegment
 
@@ -102,55 +102,69 @@ class CarbonAppendableStreamSink(
     CarbonProperties.getInstance().isEnableAutoHandoff
   )
 
+  // Currently if can not acquire lock Or streaming table updated with 'streaming=false'
+  // then addBatch will failed and User should start StreamingQuery again
   override def addBatch(batchId: Long, data: DataFrame): Unit = {
-    if (batchId <= fileLog.getLatest().map(_._1).getOrElse(-1L)) {
-      CarbonAppendableStreamSink.LOGGER.info(s"Skipping already committed batch $batchId")
-    } else {
+    try {
+      if (batchId <= fileLog.getLatest().map(_._1).getOrElse(-1L)) {
+        CarbonAppendableStreamSink.LOGGER.info(s"Skipping already committed batch $batchId")
+      } else {
+        StreamSinkFactory.lock(carbonTable)
+        val statistic = new QueryStatistic()
 
-      val statistic = new QueryStatistic()
+        // fire pre event on every batch add
+        // in case of streaming options and optionsFinal can be same
+        val loadTablePreExecutionEvent = new LoadTablePreExecutionEvent(
+          carbonTable.getCarbonTableIdentifier,
+          carbonLoadModel)
+        OperationListenerBus.getInstance().fireEvent(loadTablePreExecutionEvent, operationContext)
+        checkOrHandOffSegment()
 
-      // fire pre event on every batch add
-      // in case of streaming options and optionsFinal can be same
-      val loadTablePreExecutionEvent = new LoadTablePreExecutionEvent(
-        carbonTable.getCarbonTableIdentifier,
-        carbonLoadModel)
-      OperationListenerBus.getInstance().fireEvent(loadTablePreExecutionEvent, operationContext)
-      checkOrHandOffSegment()
+        // committer will record how this spark job commit its output
+        val committer = FileCommitProtocol.instantiate(
+          className = sparkSession.sessionState.conf.streamingFileCommitProtocolClass,
+          jobId = batchId.toString,
+          outputPath = fileLogPath,
+          isAppend = false)
 
-      // committer will record how this spark job commit its output
-      val committer = FileCommitProtocol.instantiate(
-        className = sparkSession.sessionState.conf.streamingFileCommitProtocolClass,
-        jobId = batchId.toString,
-        outputPath = fileLogPath,
-        isAppend = false)
+        committer match {
+          case manifestCommitter: ManifestFileCommitProtocol =>
+            manifestCommitter.setupManifestOptions(fileLog, batchId)
+          case _ => // Do nothing
+        }
 
-      committer match {
-        case manifestCommitter: ManifestFileCommitProtocol =>
-          manifestCommitter.setupManifestOptions(fileLog, batchId)
-        case _ => // Do nothing
+        CarbonAppendableStreamSink.writeDataFileJob(
+          sparkSession,
+          carbonTable,
+          parameters,
+          batchId,
+          currentSegmentId,
+          data.queryExecution,
+          committer,
+          hadoopConf,
+          carbonLoadModel,
+          server)
+        // fire post event on every batch add
+        val loadTablePostExecutionEvent = new LoadTablePostExecutionEvent(
+          carbonTable.getCarbonTableIdentifier,
+          carbonLoadModel
+        )
+        OperationListenerBus.getInstance().fireEvent(loadTablePostExecutionEvent, operationContext)
+
+        statistic.addStatistics(s"add batch: $batchId", System.currentTimeMillis())
+        CarbonAppendableStreamSink.LOGGER.info(
+          s"${ statistic.getMessage }, taken time(ms): ${ statistic.getTimeTaken }")
       }
+    } catch {
+      case t: Throwable =>
+        throw new CarbonStreamException(
+          "Add Batch is Failed ,Either table is closed  for streaming  or can not Acquire lock or" +
+          " some other error",
+          t)
 
-      CarbonAppendableStreamSink.writeDataFileJob(
-        sparkSession,
-        carbonTable,
-        parameters,
-        batchId,
-        currentSegmentId,
-        data.queryExecution,
-        committer,
-        hadoopConf,
-        carbonLoadModel,
-        server)
-      // fire post event on every batch add
-      val loadTablePostExecutionEvent = new LoadTablePostExecutionEvent(
-        carbonTable.getCarbonTableIdentifier,
-        carbonLoadModel
-      )
-      OperationListenerBus.getInstance().fireEvent(loadTablePostExecutionEvent, operationContext)
-
-      statistic.addStatistics(s"add batch: $batchId", System.currentTimeMillis())
-      CarbonAppendableStreamSink.LOGGER.info(
-        s"${statistic.getMessage}, taken time(ms): ${statistic.getTimeTaken}")
+    }
+    finally {
+      StreamSinkFactory.unLock(carbonTable.getTableUniqueName)
     }
   }
 
