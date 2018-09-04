@@ -207,8 +207,8 @@ class NewCarbonDataLoadRDD[K, V](
         loader.initialize()
         val executor = new DataLoadExecutor()
         // in case of success, failure or cancelation clear memory and stop execution
-        context.addTaskCompletionListener { context => executor.close()
-          CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
+        context
+          .addTaskCompletionListener { new InsertTaskCompletionListener(executor, executionErrors) }
         executor.execute(model,
           loader.storeLocation,
           recordReaders)
@@ -347,7 +347,8 @@ class NewDataFrameLoaderRDD[K, V](
         loader.initialize()
         val executor = new DataLoadExecutor
         // in case of success, failure or cancelation clear memory and stop execution
-        context.addTaskCompletionListener (new InsertTaskCompletionListener(executor))
+        context
+          .addTaskCompletionListener(new InsertTaskCompletionListener(executor, executionErrors))
         executor.execute(model, loader.storeLocation, recordReaders.toArray)
       } catch {
         case e: NoRetryException =>
