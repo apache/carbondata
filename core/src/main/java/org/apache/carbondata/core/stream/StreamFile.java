@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datamap;
+package org.apache.carbondata.core.stream;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
@@ -41,10 +41,6 @@ public class StreamFile {
     return segmentNo;
   }
 
-  public void setSegmentNo(String segmentNo) {
-    this.segmentNo = segmentNo;
-  }
-
   public String getFilePath() {
     return filePath;
   }
@@ -55,10 +51,6 @@ public class StreamFile {
 
   public long getFileSize() {
     return fileSize;
-  }
-
-  public void setFileSize(long fileSize) {
-    this.fileSize = fileSize;
   }
 
   public BlockletMinMaxIndex getMinMaxIndex() {

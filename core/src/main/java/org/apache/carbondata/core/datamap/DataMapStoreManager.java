@@ -360,10 +360,6 @@ public final class DataMapStoreManager {
     return null;
   }
 
-  public StreamDataMap getStreamDataMap(CarbonTable table) {
-    return new StreamDataMap(table);
-  }
-
   /**
    * Return a new datamap instance and registered in the store manager.
    * The datamap is created using datamap name, datamap factory class and table identifier.

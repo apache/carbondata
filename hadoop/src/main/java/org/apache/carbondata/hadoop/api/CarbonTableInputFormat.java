@@ -29,8 +29,6 @@ import java.util.Map;
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datamap.StreamDataMap;
-import org.apache.carbondata.core.datamap.StreamFile;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
@@ -55,6 +53,8 @@ import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
+import org.apache.carbondata.core.stream.StreamFile;
+import org.apache.carbondata.core.stream.StreamPruner;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
@@ -362,39 +362,36 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
           }
         }
       }
-      StreamDataMap streamDataMap =
-          DataMapStoreManager.getInstance().getStreamDataMap(carbonTable);
-      streamDataMap.init(filterResolverIntf);
-      List<StreamFile> streamFiles = streamDataMap.prune(streamSegments);
+      StreamPruner streamPruner = new StreamPruner(carbonTable);
+      streamPruner.init(filterResolverIntf);
+      List<StreamFile> streamFiles = streamPruner.prune(streamSegments);
 
       for (StreamFile streamFile : streamFiles) {
-        if (FileFactory.isFileExist(streamFile.getFilePath())) {
-          Path path = new Path(streamFile.getFilePath());
-          long length = streamFile.getFileSize();
-          if (length != 0) {
-            BlockLocation[] blkLocations;
-            FileSystem fs = FileFactory.getFileSystem(path);
-            FileStatus file = fs.getFileStatus(path);
-            blkLocations = fs.getFileBlockLocations(path, 0, length);
-            long blockSize = file.getBlockSize();
-            long splitSize = computeSplitSize(blockSize, minSize, maxSize);
-            long bytesRemaining = length;
-            // split the stream file to small splits
-            // there is 10% slop to avoid to generate very small split in the end
-            while (((double) bytesRemaining) / splitSize > 1.1) {
-              int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
-              splits.add(
-                  makeSplit(streamFile.getSegmentNo(), path, length - bytesRemaining,
-                      splitSize, blkLocations[blkIndex].getHosts(),
-                      blkLocations[blkIndex].getCachedHosts(), FileFormat.ROW_V1));
-              bytesRemaining -= splitSize;
-            }
-            if (bytesRemaining != 0) {
-              int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
-              splits.add(makeSplit(streamFile.getSegmentNo(), path, length - bytesRemaining,
-                  bytesRemaining, blkLocations[blkIndex].getHosts(),
-                  blkLocations[blkIndex].getCachedHosts(), FileFormat.ROW_V1));
-            }
+        Path path = new Path(streamFile.getFilePath());
+        long length = streamFile.getFileSize();
+        if (length != 0) {
+          BlockLocation[] blkLocations;
+          FileSystem fs = FileFactory.getFileSystem(path);
+          FileStatus file = fs.getFileStatus(path);
+          blkLocations = fs.getFileBlockLocations(path, 0, length);
+          long blockSize = file.getBlockSize();
+          long splitSize = computeSplitSize(blockSize, minSize, maxSize);
+          long bytesRemaining = length;
+          // split the stream file to small splits
+          // there is 10% slop to avoid to generate very small split in the end
+          while (((double) bytesRemaining) / splitSize > 1.1) {
+            int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
+            splits.add(
+                makeSplit(streamFile.getSegmentNo(), path, length - bytesRemaining,
+                    splitSize, blkLocations[blkIndex].getHosts(),
+                    blkLocations[blkIndex].getCachedHosts(), FileFormat.ROW_V1));
+            bytesRemaining -= splitSize;
+          }
+          if (bytesRemaining != 0) {
+            int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
+            splits.add(makeSplit(streamFile.getSegmentNo(), path, length - bytesRemaining,
+                bytesRemaining, blkLocations[blkIndex].getHosts(),
+                blkLocations[blkIndex].getCachedHosts(), FileFormat.ROW_V1));
           }
         }
       }

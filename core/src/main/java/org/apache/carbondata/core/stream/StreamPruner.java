@@ -15,19 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datamap;
+package org.apache.carbondata.core.stream;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -41,12 +40,12 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockIndex;
 
 @InterfaceAudience.Internal
-public class StreamDataMap {
+public class StreamPruner {
 
   private CarbonTable carbonTable;
   private FilterExecuter filterExecuter;
 
-  public StreamDataMap(CarbonTable carbonTable) {
+  public StreamPruner(CarbonTable carbonTable) {
     this.carbonTable = carbonTable;
   }
 
@@ -114,32 +113,28 @@ public class StreamDataMap {
     for (Segment segment : segments) {
       String segmentDir = CarbonTablePath.getSegmentPath(
           carbonTable.getAbsoluteTableIdentifier().getTablePath(), segment.getSegmentNo());
-      FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);
-      if (FileFactory.isFileExist(segmentDir, fileType)) {
-        SegmentIndexFileStore segmentIndexFileStore = new SegmentIndexFileStore();
-        segmentIndexFileStore.readAllIIndexOfSegment(segmentDir);
-        Map<String, byte[]> carbonIndexMap = segmentIndexFileStore.getCarbonIndexMap();
+      String indexFile = CarbonTablePath.getCarbonStreamIndexFilePath(segmentDir);
+      FileFactory.FileType fileType = FileFactory.getFileType(indexFile);
+      if (FileFactory.isFileExist(indexFile, fileType)) {
         CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
-        for (byte[] fileData : carbonIndexMap.values()) {
-          indexReader.openThriftReader(fileData);
-          try {
-            while (indexReader.hasNext()) {
-              BlockIndex blockIndex = indexReader.readBlockIndexInfo();
-              String filePath = segmentDir + File.separator + blockIndex.getFile_name();
-              long length = blockIndex.getFile_size();
-              StreamFile streamFile = new StreamFile(segment.getSegmentNo(), filePath, length);
-              streamFileList.add(streamFile);
-              if (withMinMax) {
-                if (blockIndex.getBlock_index() != null
-                    && blockIndex.getBlock_index().getMin_max_index() != null) {
-                  streamFile.setMinMaxIndex(CarbonMetadataUtil.convertExternalMinMaxIndex(
-                      blockIndex.getBlock_index().getMin_max_index()));
-                }
+        indexReader.openThriftReader(indexFile);
+        try {
+          while (indexReader.hasNext()) {
+            BlockIndex blockIndex = indexReader.readBlockIndexInfo();
+            String filePath = segmentDir + File.separator + blockIndex.getFile_name();
+            long length = blockIndex.getFile_size();
+            StreamFile streamFile = new StreamFile(segment.getSegmentNo(), filePath, length);
+            streamFileList.add(streamFile);
+            if (withMinMax) {
+              if (blockIndex.getBlock_index() != null
+                  && blockIndex.getBlock_index().getMin_max_index() != null) {
+                streamFile.setMinMaxIndex(CarbonMetadataUtil
+                    .convertExternalMinMaxIndex(blockIndex.getBlock_index().getMin_max_index()));
               }
             }
-          } finally {
-            indexReader.closeThriftReader();
           }
+        } finally {
+          indexReader.closeThriftReader();
         }
       }
     }
