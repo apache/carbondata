@@ -42,9 +42,9 @@
 | counter_100 | Decimal       | NA          | Measure     |
 
 
-  - **Put the frequently-used column filter in the beginning**
+  - **Put the frequently-used column filter in the beginning of SORT_COLUMNS**
 
-  For example, MSISDN filter is used in most of the query then we must put the MSISDN in the first column.
+  For example, MSISDN filter is used in most of the query then we must put the MSISDN as the first column in SORT_COLUMNS property.
   The create table command can be modified as suggested below :
 
   ```
@@ -62,10 +62,10 @@
 
   Now the query with MSISDN in the filter will be more efficient.
 
-  - **Put the frequently-used columns in the order of low to high cardinality**
+  - **Put the frequently-used columns in the order of low to high cardinality in SORT_COLUMNS**
 
   If the table in the specified query has multiple columns which are frequently used to filter the results, it is suggested to put
-  the columns in the order of cardinality low to high. This ordering of frequently used columns improves the compression ratio and
+  the columns in the order of cardinality low to high in SORT_COLUMNS configuration. This ordering of frequently used columns improves the compression ratio and
   enhances the performance of queries with filter on these columns.
 
   For example, if MSISDN, HOST and Dime_1 are frequently-used columns, then the column order of table is suggested as
@@ -170,7 +170,7 @@
 | carbon.detail.batch.size | spark/carbonlib/carbon.properties | Data loading | The buffer size to store records, returned from the block scan. | In limit scenario this parameter is very important. For example your query limit is 1000. But if we set this value to 3000 that means we get 3000 records from scan but spark will only take 1000 rows. So the 2000 remaining are useless. In one Finance test case after we set it to 100, in the limit 1000 scenario the performance increase about 2 times in comparison to if we set this value to 12000. |
 | carbon.use.local.dir | spark/carbonlib/carbon.properties | Data loading | Whether use YARN local directories for multi-table load disk load balance | If this is set it to true CarbonData will use YARN local directories for multi-table load disk load balance, that will improve the data load performance. |
 | carbon.use.multiple.temp.dir | spark/carbonlib/carbon.properties | Data loading | Whether to use multiple YARN local directories during table data loading for disk load balance | After enabling 'carbon.use.local.dir', if this is set to true, CarbonData will use all YARN local directories during data load for disk load balance, that will improve the data load performance. Please enable this property when you encounter disk hotspot problem during data loading. |
-| carbon.sort.temp.compressor | spark/carbonlib/carbon.properties | Data loading | Specify the name of compressor to compress the intermediate sort temporary files during sort procedure in data loading. | The optional values are 'SNAPPY','GZIP','BZIP2','LZ4' and empty. By default, empty means that Carbondata will not compress the sort temp files. This parameter will be useful if you encounter disk bottleneck. |
+| carbon.sort.temp.compressor | spark/carbonlib/carbon.properties | Data loading | Specify the name of compressor to compress the intermediate sort temporary files during sort procedure in data loading. | The optional values are 'SNAPPY','GZIP','BZIP2','LZ4','ZSTD' and empty. By default, empty means that Carbondata will not compress the sort temp files. This parameter will be useful if you encounter disk bottleneck. |
 | carbon.load.skewedDataOptimization.enabled | spark/carbonlib/carbon.properties | Data loading | Whether to enable size based block allocation strategy for data loading. | When loading, carbondata will use file size based block allocation strategy for task distribution. It will make sure that all the executors process the same size of data -- It's useful if the size of your input data files varies widely, say 1MB~1GB. |
 | carbon.load.min.size.enabled | spark/carbonlib/carbon.properties | Data loading | Whether to enable node minumun input data size allocation strategy for data loading.| When loading, carbondata will use node minumun input data size allocation strategy for task distribution. It will make sure the node load the minimum amount of data -- It's useful if the size of your input data files very small, say 1MB~256MB,Avoid generating a large number of small files. |
 
