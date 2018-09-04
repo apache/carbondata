@@ -79,15 +79,9 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
   }
 
   private def makeCreateTableString(schema: StructType, options: CarbonOption): String = {
-    val property = Map(
-      "SORT_COLUMNS" -> options.sortColumns,
-      "SORT_SCOPE" -> options.sortScope,
-      "DICTIONARY_INCLUDE" -> options.dictionaryInclude,
-      "DICTIONARY_EXCLUDE" -> options.dictionaryExclude,
-      "LONG_STRING_COLUMNS" -> options.longStringColumns,
-      "TABLE_BLOCKSIZE" -> options.tableBlockSize,
+    val property = options.getTableProperties(Map(
       "STREAMING" -> Option(options.isStreaming.toString)
-    ).filter(_._2.isDefined)
+    ).filter(_._2.isDefined))
       .map(property => s"'${property._1}' = '${property._2.get}'").mkString(",")
 
     val partition: Seq[String] = if (options.partitionColumns.isDefined) {
