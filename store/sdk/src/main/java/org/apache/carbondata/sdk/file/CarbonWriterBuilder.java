@@ -45,6 +45,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableSchemaBuilder;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonSessionInfo;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.ThriftWriter;
@@ -96,7 +97,13 @@ public class CarbonWriterBuilder {
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder sortBy(String[] sortColumns) {
+    if (sortColumns != null) {
+      for (int i = 0; i < sortColumns.length; i++) {
+        sortColumns[i] = sortColumns[i].toLowerCase();
+      }
+    }
     this.sortColumns = sortColumns;
+
     return this;
   }
 
@@ -233,6 +240,7 @@ public class CarbonWriterBuilder {
    * g. complex_delimiter_level_2 -- value to Split the nested complexTypeData
    * h. quotechar
    * i. escapechar
+   * j. sort_scope -- "local_sort", "no_sort", "batch_sort"
    *
    * Default values are as follows.
    *
@@ -245,17 +253,13 @@ public class CarbonWriterBuilder {
    * g. complex_delimiter_level_2 -- ":"
    * h. quotechar -- "\""
    * i. escapechar -- "\\"
+   * j. sort_scope -- "local_sort"
    *
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder withLoadOptions(Map<String, String> options) {
     Objects.requireNonNull(options, "Load options should not be null");
     //validate the options.
-    if (options.size() > 9) {
-      throw new IllegalArgumentException("Supports only nine options now. "
-          + "Refer method header or documentation");
-    }
-
     for (String option: options.keySet()) {
       if (!option.equalsIgnoreCase("bad_records_logger_enable") &&
           !option.equalsIgnoreCase("bad_records_action") &&
@@ -265,9 +269,20 @@ public class CarbonWriterBuilder {
           !option.equalsIgnoreCase("complex_delimiter_level_1") &&
           !option.equalsIgnoreCase("complex_delimiter_level_2") &&
           !option.equalsIgnoreCase("quotechar") &&
-          !option.equalsIgnoreCase("escapechar")) {
-        throw new IllegalArgumentException("Unsupported options. "
-            + "Refer method header or documentation");
+          !option.equalsIgnoreCase("escapechar") &&
+          !option.equalsIgnoreCase("sort_scope")) {
+        throw new IllegalArgumentException("Unsupported option:" + option
+            + ". Refer method header or documentation");
+      }
+    }
+
+    // validate sort scope
+    String sortScope = options.get("sort_scope");
+    if (sortScope != null) {
+      if ((!CarbonUtil.isValidSortOption(sortScope))) {
+        throw new IllegalArgumentException("Invalid Sort Scope Option: " + sortScope);
+      } else if (sortScope.equalsIgnoreCase("global_sort")) {
+        throw new IllegalArgumentException("global sort is not supported");
       }
     }
 
@@ -311,7 +326,7 @@ public class CarbonWriterBuilder {
     }
 
     for (Map.Entry<String, String> entry : options.entrySet()) {
-      if (entry.getKey().equalsIgnoreCase("equalsIgnoreCase")) {
+      if (entry.getKey().equalsIgnoreCase("blocksize")) {
         this.withBlockSize(Integer.parseInt(entry.getValue()));
       } else if (entry.getKey().equalsIgnoreCase("blockletsize")) {
         this.withBlockletSize(Integer.parseInt(entry.getValue()));
@@ -319,7 +334,7 @@ public class CarbonWriterBuilder {
         this.localDictionaryThreshold(Integer.parseInt(entry.getValue()));
       } else if (entry.getKey().equalsIgnoreCase("enableLocalDictionary")) {
         this.enableLocalDictionary((entry.getValue().equalsIgnoreCase("true")));
-      } else {
+      } else if (entry.getKey().equalsIgnoreCase("sortcolumns")) {
         //sort columns
         String[] sortColumns = entry.getValue().split(",");
         this.sortBy(sortColumns);
@@ -534,7 +549,7 @@ public class CarbonWriterBuilder {
 
   public CarbonLoadModel buildLoadModel(Schema carbonSchema)
       throws IOException, InvalidLoadOptionException {
-    this.schema = carbonSchema;
+    this.schema = schemaFieldNameToLowerCase(carbonSchema);
     // build CarbonTable using schema
     CarbonTable table = buildCarbonTable();
     if (persistSchemaFile) {
@@ -721,5 +736,20 @@ public class CarbonWriterBuilder {
     CarbonLoadModel build = builder.build(options, UUID, taskNo);
     setCsvHeader(build);
     return build;
+  }
+
+  /* loop through all the parent column and change fields name lower case.
+  * this is to match with sort column case */
+  private Schema schemaFieldNameToLowerCase(Schema schema) {
+    if (schema == null) {
+      return null;
+    }
+    Field[] fields =  schema.getFields();
+    for (int i = 0; i < fields.length; i++) {
+      if (fields[i] != null) {
+        fields[i].updateNameToLowerCase();
+      }
+    }
+    return new Schema(fields);
   }
 }

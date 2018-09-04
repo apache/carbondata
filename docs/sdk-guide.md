@@ -331,6 +331,7 @@ public CarbonWriterBuilder taskNo(long taskNo);
 *                g. complex_delimiter_level_2 -- value to Split the nested complexTypeData
 *                h. quotechar
 *                i. escapechar
+*                j. sort_scope -- "local_sort", "no_sort", "batch_sort"
 *
 *                Default values are as follows.
 *
@@ -343,6 +344,7 @@ public CarbonWriterBuilder taskNo(long taskNo);
 *                g. complex_delimiter_level_2 -- ":"
 *                h. quotechar -- "\""
 *                i. escapechar -- "\\"
+*                j. sort_scope -- "local_sort"
 *
 * @return updated CarbonWriterBuilder
 */

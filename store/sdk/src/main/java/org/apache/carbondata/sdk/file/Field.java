@@ -213,4 +213,9 @@ public class Field {
   public void setColumnComment(String columnComment) {
     this.columnComment = columnComment;
   }
+
+  /*can use to change the case of the schema */
+  public void updateNameToLowerCase() {
+    this.name = name.toLowerCase();
+  }
 }
