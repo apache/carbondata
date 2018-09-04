@@ -22,8 +22,10 @@ import java.nio.ByteBuffer;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReader;
+import org.apache.carbondata.core.datastore.chunk.reader.measure.v3.CompressedMeasureChunkFileBasedReaderV3;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 /**
  * Contains raw measure data
@@ -100,6 +102,20 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
     }
     try {
       return chunkReader.decodeColumnPage(this, index);
+    } catch (IOException | MemoryException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public ColumnPage convertToColumnPageWithOutCache(int index, ColumnVectorInfo vectorInfo) {
+    assert index < pagesCount;
+    // in case of filter query filter columns blocklet pages will uncompressed
+    // so no need to decode again
+    if (null != columnPages && columnPages[index] != null) {
+      return columnPages[index];
+    }
+    try {
+      return ((CompressedMeasureChunkFileBasedReaderV3)chunkReader).decodeColumnPage(this, index, vectorInfo);
     } catch (IOException | MemoryException e) {
       throw new RuntimeException(e);
     }

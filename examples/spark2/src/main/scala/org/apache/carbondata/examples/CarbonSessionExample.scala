@@ -20,7 +20,7 @@ package org.apache.carbondata.examples
 import java.io.File
 
 import org.apache.log4j.PropertyConfigurator
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{SaveMode, SparkSession}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
@@ -36,8 +36,8 @@ object CarbonSessionExample {
     PropertyConfigurator.configure(
       s"$rootPath/examples/spark2/src/main/resources/log4j.properties")
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
+//    CarbonProperties.getInstance()
+//      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     val spark = ExampleUtils.createCarbonSession("CarbonSessionExample")
     spark.sparkContext.setLogLevel("INFO")
     exampleBody(spark)
@@ -52,6 +52,7 @@ object CarbonSessionExample {
     spark.sql("DROP TABLE IF EXISTS carbonsession_table")
     spark.sql("DROP TABLE IF EXISTS stored_as_carbondata_table")
 
+
     // Create table
     spark.sql(
       s"""
@@ -62,13 +63,12 @@ object CarbonSessionExample {
          | doubleField DOUBLE,
          | stringField STRING,
          | timestampField TIMESTAMP,
-         | decimalField DECIMAL(18,2),
          | dateField DATE,
          | charField CHAR(5),
          | floatField FLOAT
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('local_dictionary_enable'='true')
        """.stripMargin)
 
     val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
@@ -84,71 +84,88 @@ object CarbonSessionExample {
 
     spark.sql(
       s"""
-         | SELECT charField, stringField, intField
-         | FROM carbonsession_table
-         | WHERE stringfield = 'spark' AND decimalField > 40
-      """.stripMargin).show()
-
-    spark.sql(
-      s"""
-         | SELECT *
-         | FROM carbonsession_table WHERE length(stringField) = 5
-       """.stripMargin).show()
-
-    spark.sql(
-      s"""
-         | SELECT *
-         | FROM carbonsession_table WHERE date_format(dateField, "yyyy-MM-dd") = "2015-07-23"
-       """.stripMargin).show()
-
-    spark.sql("SELECT count(stringField) FROM carbonsession_table").show()
-
-    spark.sql(
-      s"""
-         | SELECT sum(intField), stringField
-         | FROM carbonsession_table
-         | GROUP BY stringField
-       """.stripMargin).show()
-
-    spark.sql(
-      s"""
-         | SELECT t1.*, t2.*
-         | FROM carbonsession_table t1, carbonsession_table t2
-         | WHERE t1.stringField = t2.stringField
-      """.stripMargin).show()
-
-    spark.sql(
-      s"""
-         | WITH t1 AS (
-         | SELECT * FROM carbonsession_table
-         | UNION ALL
-         | SELECT * FROM carbonsession_table
-         | )
-         | SELECT t1.*, t2.*
-         | FROM t1, carbonsession_table t2
-         | WHERE t1.stringField = t2.stringField
-      """.stripMargin).show()
-
-    spark.sql(
-      s"""
          | SELECT *
          | FROM carbonsession_table
-         | WHERE stringField = 'spark' and floatField > 2.8
-       """.stripMargin).show()
+      """.stripMargin).show()
 
-    spark.sql(
-      s"""
-         | CREATE TABLE stored_as_carbondata_table(
-         |    name STRING,
-         |    age INT
-         |    )
-         | STORED AS carbondata
-       """.stripMargin)
-    spark.sql("INSERT INTO stored_as_carbondata_table VALUES ('Bob',28) ")
-    spark.sql("SELECT * FROM stored_as_carbondata_table").show()
+//    import spark.implicits._
+//
+//    import scala.util.Random
+//    val r = new Random()
+//    val df = spark.sparkContext.parallelize(1 to 10 * 10 * 1000)
+//      .map(x => ("No." + r.nextInt(100000), "name" + x % 8, "city" + x % 50, x % 60))
+//      .toDF("ID", "name", "city", "age")
+//
+//    // Create table with pre-aggregate
+//    spark.sql("DROP TABLE IF EXISTS personTable")
+//    spark.sql("DROP TABLE IF EXISTS personTableWithoutAgg")
+//    df.write.format("carbondata")
+//      .option("tableName", "personTable")
+//      .option("compress", "true")
+//      .mode(SaveMode.Overwrite).save()
 
-    // Drop table
-    spark.sql("DROP TABLE IF EXISTS carbonsession_table")
-    spark.sql("DROP TABLE IF EXISTS stored_as_carbondata_table")
+//    spark.sql("select count(ID),count(name),count(city),count(age) from personTable").show()
+
+//    spark.sql(
+//      s"""
+//         | SELECT *
+//         | FROM carbonsession_table WHERE length(stringField) = 5
+//       """.stripMargin).show()
+//
+//    spark.sql(
+//      s"""
+//         | SELECT *
+//         | FROM carbonsession_table WHERE date_format(dateField, "yyyy-MM-dd") = "2015-07-23"
+//       """.stripMargin).show()
+//
+//    spark.sql("SELECT count(stringField) FROM carbonsession_table").show()
+//
+//    spark.sql(
+//      s"""
+//         | SELECT sum(intField), stringField
+//         | FROM carbonsession_table
+//         | GROUP BY stringField
+//       """.stripMargin).show()
+//
+//    spark.sql(
+//      s"""
+//         | SELECT t1.*, t2.*
+//         | FROM carbonsession_table t1, carbonsession_table t2
+//         | WHERE t1.stringField = t2.stringField
+//      """.stripMargin).show()
+//
+//    spark.sql(
+//      s"""
+//         | WITH t1 AS (
+//         | SELECT * FROM carbonsession_table
+//         | UNION ALL
+//         | SELECT * FROM carbonsession_table
+//         | )
+//         | SELECT t1.*, t2.*
+//         | FROM t1, carbonsession_table t2
+//         | WHERE t1.stringField = t2.stringField
+//      """.stripMargin).show()
+//
+//    spark.sql(
+//      s"""
+//         | SELECT *
+//         | FROM carbonsession_table
+//         | WHERE stringField = 'spark' and floatField > 2.8
+//       """.stripMargin).show()
+//
+//    spark.sql(
+//      s"""
+//         | CREATE TABLE stored_as_carbondata_table(
+//         |    name STRING,
+//         |    age INT
+//         |    )
+//         | STORED AS carbondata
+//       """.stripMargin)
+//    spark.sql("INSERT INTO stored_as_carbondata_table VALUES ('Bob',28) ")
+//    spark.sql("SELECT * FROM stored_as_carbondata_table").show()
+//
+//    // Drop table
+//    spark.sql("DROP TABLE IF EXISTS carbonsession_table")
+//    spark.sql("DROP TABLE IF EXISTS stored_as_carbondata_table")
   }
 }

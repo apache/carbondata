@@ -170,6 +170,10 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     anyNullsSet = true;
   }
 
+  @Override public void putNullDirect(int rowId) {
+    putNull(rowId);
+  }
+
   @Override public void putNulls(int rowId, int count) {
     for (int i = 0; i < count; ++i) {
       nullBytes.set(rowId + i);

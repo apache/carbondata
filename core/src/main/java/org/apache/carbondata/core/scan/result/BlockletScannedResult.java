@@ -341,6 +341,19 @@ public abstract class BlockletScannedResult {
   }
 
   /**
+   * Just increment the page counter and reset the remaining counters.
+   */
+  public void incrementPageCounter(ColumnVectorInfo[] vectorInfos) {
+    rowCounter = 0;
+    currentRow = -1;
+    pageCounter++;
+    fillDataChunks();
+    if (null != deletedRecordMap) {
+      currentDeleteDeltaVo = deletedRecordMap.get(blockletNumber + "_" + pageCounter);
+    }
+  }
+
+  /**
    * This case is used only in case of compaction, since it does not use filter flow.
    */
   public void fillDataChunks() {
@@ -360,6 +373,38 @@ public abstract class BlockletScannedResult {
       if (measureColumnPages[i][pageCounter] == null && msrRawColumnChunks[i] != null) {
         measureColumnPages[i][pageCounter] =
             msrRawColumnChunks[i].convertToColumnPageWithOutCache(pageCounter);
+      }
+    }
+    QueryStatistic pageUncompressTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.PAGE_UNCOMPRESS_TIME);
+    pageUncompressTime.addCountStatistic(QueryStatisticsConstants.PAGE_UNCOMPRESS_TIME,
+        pageUncompressTime.getCount() + (System.currentTimeMillis() - startTime));
+  }
+
+  public void fillDataChunks(ColumnVectorInfo[] dictionaryInfo, ColumnVectorInfo[] noDictionaryInfo,  ColumnVectorInfo[] msrVectorInfo, int[] measuresOrdinal) {
+    freeDataChunkMemory();
+    if (pageCounter >= pageFilteredRowCount.length) {
+      return;
+    }
+    long startTime = System.currentTimeMillis();
+//    for (int i = 0; i < dimensionColumnPages.length; i++) {
+//
+//      if (dimensionColumnPages[i][pageCounter] == null && dimRawColumnChunks[i] != null) {
+//        dimensionColumnPages[i][pageCounter] =
+//            dimRawColumnChunks[i].convertToDimColDataChunkWithOutCache(pageCounter, dimVectorInfo[i]);
+//      }
+//    }
+
+    for (int i = 0; i < this.dictionaryColumnChunkIndexes.length; i++) {
+      dimRawColumnChunks[dictionaryColumnChunkIndexes[i]].convertToDimColDataChunkWithOutCache(pageCounter, dictionaryInfo[i]).freeMemory();
+    }
+    for (int i = 0; i < this.noDictionaryColumnChunkIndexes.length; i++) {
+      dimRawColumnChunks[noDictionaryColumnChunkIndexes[i]].convertToDimColDataChunkWithOutCache(pageCounter, noDictionaryInfo[i]).freeMemory();
+    }
+
+    for (int i = 0; i < measuresOrdinal.length; i++) {
+      if (measureColumnPages[i][pageCounter] == null && msrRawColumnChunks[i] != null) {
+        msrRawColumnChunks[measuresOrdinal[i]].convertToColumnPageWithOutCache(pageCounter, msrVectorInfo[i]).freeMemory();
       }
     }
     QueryStatistic pageUncompressTime = queryStatisticsModel.getStatisticsTypeAndObjMap()

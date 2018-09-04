@@ -19,8 +19,12 @@ package org.apache.carbondata.core.datastore.chunk.store.impl;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionDataChunkStore;
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * Dimension chunk store for local dictionary encoded data.
@@ -47,6 +51,27 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
    */
   public void putArray(int[] invertedIndex, int[] invertedIndexReverse, byte[] data) {
     this.dimensionDataChunkStore.putArray(invertedIndex, invertedIndexReverse, data);
+  }
+
+  @Override public void putArray(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+      ColumnVectorInfo vectorInfo) {
+    int columnValueSize = dimensionDataChunkStore.getColumnValueSize();
+    int rowsNum = data.length/ columnValueSize;
+    CarbonColumnVector vector = vectorInfo.vector;
+    vector.setDictionary(dictionary);
+    dictionary.setDictionaryUsed();
+    for (int i = 0; i < rowsNum; i++) {
+      int surrogate =
+          CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
+      if (surrogate == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {
+        vector.putNull(i);
+        vector.getDictionaryVector().putNull(i);
+      } else {
+        vector.putNotNull(i);
+        vector.getDictionaryVector().putInt(i, surrogate);
+      }
+
+    }
   }
 
   @Override public byte[] getRow(int rowId) {

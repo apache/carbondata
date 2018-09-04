@@ -195,6 +195,10 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
+  @Override public void putNullDirect(int rowId) {
+    columnVector.putNull(rowId);
+  }
+
   @Override public void putNulls(int rowId, int count) {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {

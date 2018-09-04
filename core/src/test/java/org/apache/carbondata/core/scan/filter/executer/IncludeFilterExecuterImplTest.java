@@ -184,7 +184,7 @@ public class IncludeFilterExecuterImplTest extends TestCase {
     dim.setFilterKeys(filterKeys);
 
     dimensionColumnDataChunk = new FixedLengthDimensionColumnPage(dataChunk, null, null,
-        dataChunkSize, dimColumnSize);
+        dataChunkSize, dimColumnSize, null);
 
     // repeat query and compare 2 result between old code and new optimized code
     for (int j = 0; j < queryTimes; j++) {
@@ -304,7 +304,7 @@ public class IncludeFilterExecuterImplTest extends TestCase {
     dim.setFilterKeys(filterKeys);
 
     dimensionColumnDataChunk = new FixedLengthDimensionColumnPage(dataChunk, null, null,
-        dataChunk.length / dimColumnSize, dimColumnSize);
+        dataChunk.length / dimColumnSize, dimColumnSize, null);
 
     // initial to run
     BitSet bitOld = this.setFilterdIndexToBitSetWithColumnIndexOld(dimensionColumnDataChunk, dataChunkSize, filterKeys);

@@ -33,7 +33,7 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
    */
   public VariableLengthDimensionColumnPage(byte[] dataChunks, int[] invertedIndex,
       int[] invertedIndexReverse, int numberOfRows, DimensionStoreType dimStoreType,
-      CarbonDictionary dictionary) {
+      CarbonDictionary dictionary, ColumnVectorInfo vectorInfo) {
     boolean isExplicitSorted = isExplicitSorted(invertedIndex);
     long totalSize = 0;
     switch (dimStoreType) {
@@ -55,8 +55,13 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
     dataChunkStore = DimensionChunkStoreFactory.INSTANCE
         .getDimensionChunkStore(0, isExplicitSorted, numberOfRows, totalSize, dimStoreType,
             dictionary);
-    dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunks);
+    if (vectorInfo != null) {
+      dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunks, vectorInfo);
+    } else {
+      dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunks);
+    }
   }
+
 
   /**
    * Below method will be used to fill the data based on offset and row id

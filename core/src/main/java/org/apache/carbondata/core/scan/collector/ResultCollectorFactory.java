@@ -20,6 +20,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.scan.collector.impl.*;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * This class will provide the result collector instance based on the required type
@@ -31,6 +32,8 @@ public class ResultCollectorFactory {
    */
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(ResultCollectorFactory.class.getName());
+
+  private static boolean isDirectFill = Boolean.parseBoolean(CarbonProperties.getInstance().getProperty("carbon.directfill", "true"));
 
   /**
    * This method will create result collector based on the given type
@@ -64,8 +67,13 @@ public class ResultCollectorFactory {
         LOGGER.info("Restructure dictionary vector collector is used to scan and collect the data");
         scannerResultAggregator = new RestructureBasedVectorResultCollector(blockExecutionInfo);
       } else {
-        LOGGER.info("Vector based dictionary collector is used to scan and collect the data");
-        scannerResultAggregator = new DictionaryBasedVectorResultCollector(blockExecutionInfo);
+        if (isDirectFill) {
+          LOGGER.info("Direct Vector based dictionary collector is used to scan and collect the data");
+          scannerResultAggregator = new DirectDictionaryBasedVectorResultCollector(blockExecutionInfo);
+        } else {
+          LOGGER.info("Vector based dictionary collector is used to scan and collect the data");
+          scannerResultAggregator = new DictionaryBasedVectorResultCollector(blockExecutionInfo);
+        }
       }
     } else {
       if (blockExecutionInfo.isRestructuredBlock()) {

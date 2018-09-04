@@ -17,6 +17,10 @@
 
 package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 
@@ -33,6 +37,27 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
   public SafeFixedLengthDimensionDataChunkStore(boolean isInvertedIndex, int columnValueSize) {
     super(isInvertedIndex);
     this.columnValueSize = columnValueSize;
+  }
+
+  @Override public void putArray(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+      ColumnVectorInfo vectorInfo) {
+    int rowsNum = data.length/columnValueSize;
+    CarbonColumnVector vector = vectorInfo.vector;
+    if (vector.getBlockDataType() == DataTypes.DATE) {
+      for (int i = 0; i < rowsNum; i++) {
+        int surrogateInternal =
+            CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
+        if (surrogateInternal == 1) {
+          vector.putNull(i);
+        } else {
+          vector.putInt(i, surrogateInternal - DateDirectDictionaryGenerator.cutOffDate);
+        }
+      }
+    } else {
+      for (int i = 0; i < rowsNum; i++) {
+        vector.putInt(i, CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize));
+      }
+    }
   }
 
   /**

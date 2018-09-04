@@ -23,6 +23,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -88,6 +89,61 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
       // as same byte buffer is used to avoid creating many byte buffer for each row
       // we need to clear the byte buffer
       dataOffsets[i] = startOffset + getLengthSize();
+    }
+  }
+
+  @Override public void putArray(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+      ColumnVectorInfo vectorInfo) {
+    // start position will be used to store the current data position
+    int startOffset = 0;
+    // as first position will be start from 2 byte as data is stored first in the memory block
+    // we need to skip first two bytes this is because first two bytes will be length of the data
+    // which we have to skip
+    int lengthSize = getLengthSize();
+    int currentOffset = lengthSize;
+    // creating a byte buffer which will wrap the length of the row
+    CarbonColumnVector vector = vectorInfo.vector;
+    DataType dt = vector.getType();
+    ByteBuffer buffer = ByteBuffer.wrap(data);
+    if (dt == DataTypes.STRING) {
+      for (int i = 0; i < numberOfRows - 1; i++) {
+        buffer.position(startOffset);
+        startOffset += getLengthFromBuffer(buffer) + lengthSize;
+        int length = startOffset - (currentOffset);
+        if (ByteUtil.UnsafeComparer.INSTANCE
+            .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0, CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentOffset,
+                length)) {
+          vector.putNull(i);
+        } else {
+          vector.putBytes(i, currentOffset, length, data);
+        }
+        currentOffset = startOffset + lengthSize;
+      }
+      int length = (short) (data.length - currentOffset);
+      if (ByteUtil.UnsafeComparer.INSTANCE.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+          CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentOffset, length)) {
+        vector.putNull(numberOfRows - 1);
+      } else {
+        vector.putBytes(numberOfRows - 1, currentOffset, length, data);
+      }
+    } else if (dt == DataTypes.TIMESTAMP) {
+      for (int i = 0; i < numberOfRows - 1; i++) {
+        buffer.position(startOffset);
+        startOffset += getLengthFromBuffer(buffer) + lengthSize;
+        int length = startOffset - (currentOffset);
+        if (length == 0) {
+          vector.putNull(i);
+        } else {
+          vector.putLong(i, ByteUtil.toXorLong(data, currentOffset, length) * 1000L);
+        }
+        currentOffset = startOffset + lengthSize;
+      }
+      int length = (data.length - currentOffset);
+      if (length == 0) {
+        vector.putNull(numberOfRows - 1);
+      } else {
+        vector.putLong(numberOfRows - 1, ByteUtil.toXorLong(data, currentOffset, length) * 1000L);
+      }
     }
   }
 

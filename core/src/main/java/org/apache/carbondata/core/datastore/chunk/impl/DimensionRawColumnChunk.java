@@ -27,12 +27,14 @@ import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkReader;
 import org.apache.carbondata.core.datastore.compression.Compressor;
+import org.apache.carbondata.core.datastore.chunk.reader.dimension.v3.CompressedDimensionChunkFileBasedReaderV3;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonDictionaryImpl;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.format.Encoding;
@@ -116,6 +118,26 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
     }
     try {
       return chunkReader.decodeColumnPage(this, index);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Convert raw data with specified page number processed to DimensionColumnDataChunk
+   *
+   * @param index
+   * @return
+   */
+  public DimensionColumnPage convertToDimColDataChunkWithOutCache(int index, ColumnVectorInfo vectorInfo) {
+    assert index < pagesCount;
+    // in case of filter query filter column if filter column is decoded and stored.
+    // then return the same
+    if (dataChunks != null && null != dataChunks[index]) {
+      return dataChunks[index];
+    }
+    try {
+      return ((CompressedDimensionChunkFileBasedReaderV3)chunkReader).decodeColumnPage(this, index, vectorInfo);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

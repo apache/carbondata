@@ -633,6 +633,56 @@ public abstract class ColumnPage {
    */
   public abstract double getDouble(int rowId);
 
+
+
+
+
+  /**
+   * Get byte value at rowId
+   */
+  public abstract byte[] getByteData();
+
+  /**
+   * Get short value at rowId
+   */
+  public abstract short[] getShortData();
+
+  /**
+   * Get short int value at rowId
+   */
+  public abstract int[] getShortIntData();
+
+  /**
+   * Get boolean value at rowId
+   */
+  public byte[] getBooleanData() {
+    return getByteData();
+  }
+
+  /**
+   * Get int value at rowId
+   */
+  public abstract int[] getIntData();
+
+  /**
+   * Get long value at rowId
+   */
+  public abstract long[] getLongData();
+
+  /**
+   * Get float value at rowId
+   */
+  public abstract float[] getFloatData();
+
+  /**
+   * Get double value at rowId
+   */
+  public abstract double[] getDoubleData();
+
+
+
+
+
   /**
    * Get decimal value at rowId
    */

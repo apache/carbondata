@@ -428,6 +428,34 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
+  @Override public byte[] getByteData() {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override public short[] getShortData() {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override public int[] getShortIntData() {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override public int[] getIntData() {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override public long[] getLongData() {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override public float[] getFloatData() {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override public double[] getDoubleData() {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
   @Override
   public byte[] getDecimalPage() {
     // output LV encoded byte array
