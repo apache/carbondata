@@ -188,13 +188,24 @@ public class UnsafeSortDataRows {
   }
 
   private void addBatch(Object[][] rowBatch, int size) throws CarbonSortKeyAndGroupByException {
+    if (rowPage == null) {
+      return;
+    }
     for (int i = 0; i < size; i++) {
       if (rowPage.canAdd()) {
         bytesAdded += rowPage.addRow(rowBatch[i], rowBuffer.get());
       } else {
         try {
           handlePreviousPage();
-          rowPage = createUnsafeRowPage();
+          try {
+            rowPage = createUnsafeRowPage();
+          } catch (Exception ex) {
+            // row page has freed in handlePreviousPage(), so other iterator may try to access it.
+            rowPage = null;
+            LOGGER.error(
+                "exception occurred while trying to acquire a semaphore lock: " + ex.getMessage());
+            throw new CarbonSortKeyAndGroupByException(ex);
+          }
           bytesAdded += rowPage.addRow(rowBatch[i], rowBuffer.get());
         } catch (Exception e) {
           LOGGER.error(
@@ -210,6 +221,9 @@ public class UnsafeSortDataRows {
    * This method will be used to add new row
    */
   public void addRow(Object[] row) throws CarbonSortKeyAndGroupByException {
+    if (rowPage == null) {
+      return;
+    }
     // if record holder list size is equal to sort buffer size then it will
     // sort the list and then write current list data to file
     if (rowPage.canAdd()) {
@@ -217,7 +231,14 @@ public class UnsafeSortDataRows {
     } else {
       try {
         handlePreviousPage();
-        rowPage = createUnsafeRowPage();
+        try {
+          rowPage = createUnsafeRowPage();
+        } catch (Exception ex) {
+          rowPage = null;
+          LOGGER.error(
+              "exception occurred while trying to acquire a semaphore lock: " + ex.getMessage());
+          throw new CarbonSortKeyAndGroupByException(ex);
+        }
         rowPage.addRow(row, rowBuffer.get());
       } catch (Exception e) {
         LOGGER.error(

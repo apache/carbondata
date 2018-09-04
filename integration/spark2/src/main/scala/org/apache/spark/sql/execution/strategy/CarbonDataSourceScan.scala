@@ -30,11 +30,11 @@ import org.apache.spark.sql.execution.datasources.{HadoopFsRelation, LogicalRela
 class CarbonDataSourceScan(
     override val output: Seq[Attribute],
     val rdd: RDD[InternalRow],
-    @transient relation: HadoopFsRelation,
+    @transient override val relation: HadoopFsRelation,
     val partitioning: Partitioning,
     override val metadata: Map[String, String],
     identifier: Option[TableIdentifier],
-    @transient logicalRelation: LogicalRelation)
+    @transient private val logicalRelation: LogicalRelation)
   extends FileSourceScanExec(
     relation,
     output,

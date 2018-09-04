@@ -37,7 +37,6 @@ import org.apache.carbondata.core.datamap.dev.expr.DataMapWrapperSimpleInfo;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
@@ -467,8 +466,6 @@ m filterExpression
     List<ExtendedBlocklet> prunedBlocklets =
         dataMapExprWrapper.prune(segmentIds, partitionsToPrune);
 
-    ExplainCollector.recordDefaultDataMapPruning(
-        DataMapWrapperSimpleInfo.fromDataMapWrapper(dataMapExprWrapper), prunedBlocklets.size());
     if (prunedBlocklets.size() == 0) {
       return prunedBlocklets;
     }
@@ -523,8 +520,7 @@ m filterExpression
       List<ExtendedBlocklet> previousDataMapPrunedBlocklets,
       List<ExtendedBlocklet> otherDataMapPrunedBlocklets) {
     List<ExtendedBlocklet> prunedBlocklets = null;
-    if (BlockletDataMapUtil.isCacheLevelBlock(
-        carbonTable, BlockletDataMapFactory.CACHE_LEVEL_BLOCKLET)) {
+    if (BlockletDataMapUtil.isCacheLevelBlock(carbonTable)) {
       prunedBlocklets = new ArrayList<>();
       for (ExtendedBlocklet otherBlocklet : otherDataMapPrunedBlocklets) {
         if (previousDataMapPrunedBlocklets.contains(otherBlocklet)) {

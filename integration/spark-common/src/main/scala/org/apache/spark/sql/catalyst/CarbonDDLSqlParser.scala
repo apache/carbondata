@@ -421,8 +421,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           partitionColIntersecLongStrCols.mkString(",")
         } both in partition and long_string_columns which is not allowed.")
     }
-    // validate the tableBlockSize from table properties
-    CommonUtil.validateTableBlockSize(tableProperties)
+    // validate the block size and blocklet size in table properties
+    CommonUtil.validateSize(tableProperties, CarbonCommonConstants.TABLE_BLOCKSIZE)
+    CommonUtil.validateSize(tableProperties, CarbonCommonConstants.TABLE_BLOCKLET_SIZE)
     // validate table level properties for compaction
     CommonUtil.validateTableLevelCompactionProperties(tableProperties)
     // validate flat folder property.

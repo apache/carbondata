@@ -174,7 +174,7 @@ case class ColumnDistinctValues(values: Array[String], rowCount: Long) extends S
  * @param model a model package load info
  */
 class CarbonAllDictionaryCombineRDD(
-    @transient sparkSession: SparkSession,
+    @transient private val sparkSession: SparkSession,
     prev: RDD[(String, Iterable[String])],
     model: DictionaryLoadModel)
   extends CarbonRDD[(Int, ColumnDistinctValues)](sparkSession, prev) {
@@ -268,7 +268,7 @@ class StringArrayRow(var values: Array[String]) extends Row {
  * @param model a model package load info
  */
 class CarbonBlockDistinctValuesCombineRDD(
-    @transient ss: SparkSession,
+    @transient private val ss: SparkSession,
     prev: RDD[Row],
     model: DictionaryLoadModel)
   extends CarbonRDD[(Int, ColumnDistinctValues)](ss, prev) {
@@ -327,7 +327,7 @@ class CarbonBlockDistinctValuesCombineRDD(
  * @param model a model package load info
  */
 class CarbonGlobalDictionaryGenerateRDD(
-    @transient sparkSession: SparkSession,
+    @transient private val sparkSession: SparkSession,
     prev: RDD[(Int, ColumnDistinctValues)],
     model: DictionaryLoadModel)
   extends CarbonRDD[(Int, SegmentStatus)](sparkSession, prev) {
@@ -502,9 +502,10 @@ class CarbonColumnDictPatition(id: Int, dimension: CarbonDimension)
  * @param dimensions      carbon dimenisons having predefined dict
  * @param dictFolderPath  path of dictionary folder
  */
-class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
+class CarbonColumnDictGenerateRDD(
+    carbonLoadModel: CarbonLoadModel,
     dictionaryLoadModel: DictionaryLoadModel,
-    @transient ss: SparkSession,
+    @transient private val ss: SparkSession,
     table: CarbonTableIdentifier,
     dimensions: Array[CarbonDimension],
     dictFolderPath: String)

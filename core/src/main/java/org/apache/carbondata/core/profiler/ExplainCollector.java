@@ -94,11 +94,17 @@ public class ExplainCollector {
     }
   }
 
-  public static void recordDefaultDataMapPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
-      int numBlocklets) {
+  public static void setShowPruningInfo(boolean showPruningInfo) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
-      scan.setNumBlockletsAfterDefaultPruning(dataMapWrapperSimpleInfo, numBlocklets);
+      scan.setShowPruningInfo(showPruningInfo);
+    }
+  }
+
+  public static void addDefaultDataMapPruningHit(int numBlocklets) {
+    if (enabled()) {
+      TablePruningInfo scan = getCurrentTablePruningInfo();
+      scan.addNumBlockletsAfterDefaultPruning(numBlocklets);
     }
   }
 

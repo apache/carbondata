@@ -1309,7 +1309,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       sql("ALTER TABLE streaming.stream_table_handoff UNSET TBLPROPERTIES IF EXISTS ('streaming')")
       assert(false, "unsupport to unset streaming property")
     } catch {
-      case _ =>
+      case _: Throwable =>
         assert(true)
     }
     try {
@@ -1327,7 +1327,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         autoHandoff = false
       )
     } catch {
-      case _ =>
+      case _: Throwable =>
         assert(false, "should support set table to streaming")
     }
 

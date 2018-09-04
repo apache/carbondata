@@ -48,7 +48,7 @@ object TestUtil {
   def checkAnswer(df: DataFrame, expectedAnswer: java.util.List[Row]):Unit = {
     checkAnswer(df, expectedAnswer.asScala) match {
       case Some(errorMessage) => assert(false, errorMessage)
-      case None => null
+      case None =>
     }
   }
 
@@ -66,7 +66,7 @@ object TestUtil {
   def checkAnswer(df: DataFrame, expectedAnswer: DataFrame): Unit = {
     checkAnswer(df, expectedAnswer.collect()) match {
       case Some(errorMessage) => assert(false, errorMessage)
-      case None => null
+      case None =>
     }
   }
 

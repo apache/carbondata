@@ -80,6 +80,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
 
   private def makeCreateTableString(schema: StructType, options: CarbonOption): String = {
     val property = options.getTableProperties(Map(
+      "TABLE_BLOCKLET_SIZE" -> options.tableBlockletSize,
       "STREAMING" -> Option(options.isStreaming.toString)
     ).filter(_._2.isDefined))
       .map(property => s"'${property._1}' = '${property._2.get}'").mkString(",")

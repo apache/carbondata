@@ -382,7 +382,7 @@ object CastExpressionOptimization {
       numericTimeValue.toString.toDouble
       true
     } catch {
-      case _ => false
+      case _: Throwable => false
     }
   }
 

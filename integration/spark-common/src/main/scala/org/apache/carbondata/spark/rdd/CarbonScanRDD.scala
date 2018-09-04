@@ -70,12 +70,12 @@ import org.apache.carbondata.streaming.{CarbonStreamInputFormat, CarbonStreamRec
  * level filtering in driver side.
  */
 class CarbonScanRDD[T: ClassTag](
-    @transient spark: SparkSession,
+    @transient private val spark: SparkSession,
     val columnProjection: CarbonProjection,
     var filterExpression: Expression,
     identifier: AbsoluteTableIdentifier,
-    @transient serializedTableInfo: Array[Byte],
-    @transient tableInfo: TableInfo,
+    @transient private val serializedTableInfo: Array[Byte],
+    @transient private val tableInfo: TableInfo,
     inputMetricsStats: InitInputMetrics,
     @transient val partitionNames: Seq[PartitionSpec],
     val dataTypeConverterClz: Class[_ <: DataTypeConverter] = classOf[SparkDataTypeConverterImpl],

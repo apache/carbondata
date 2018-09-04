@@ -20,13 +20,21 @@ package org.apache.carbondata.sdk.file;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.DiskBasedDMSchemaStorageProvider;
+import org.apache.carbondata.core.reader.CarbonFooterReaderV3;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.format.FileFooter3;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -308,10 +316,44 @@ public class CSVCarbonWriterTest {
     } catch (Exception e) {
       e.printStackTrace();
       Assert.fail(e.getMessage());
-    }
-  finally {
+    } finally {
       FileUtils.deleteDirectory(new File(path));
     }
+  }
+
+  // validate number of blocklets in one block
+  @Test
+  public void testBlocklet() throws IOException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    TestUtil.writeFilesAndVerify(1000000, new Schema(fields), path, new String[]{"name"},
+        true, 3, 8, false);
+
+    // read footer and verify number of blocklets
+    CarbonFile folder = FileFactory.getCarbonFile(path);
+    List<CarbonFile> files = folder.listFiles(true);
+    List<CarbonFile> dataFiles = new LinkedList<>();
+    for (CarbonFile file : files) {
+      if (file.getName().endsWith(CarbonTablePath.CARBON_DATA_EXT)) {
+        dataFiles.add(file);
+      }
+    }
+    for (CarbonFile dataFile : dataFiles) {
+      FileReader fileReader = FileFactory.getFileHolder(FileFactory.getFileType(dataFile.getPath()));
+      ByteBuffer buffer = fileReader.readByteBuffer(FileFactory.getUpdatedFilePath(
+          dataFile.getPath()), dataFile.getSize() - 8, 8);
+      CarbonFooterReaderV3 footerReader =
+          new CarbonFooterReaderV3(dataFile.getAbsolutePath(), buffer.getLong());
+      FileFooter3 footer = footerReader.readFooterVersion3();
+      Assert.assertEquals(2, footer.blocklet_index_list.size());
+      Assert.assertEquals(2, footer.blocklet_info_list3.size());
+    }
+    FileUtils.deleteDirectory(new File(path));
   }
 
 }

@@ -160,7 +160,7 @@ class SparkPartitionLoader(model: CarbonLoadModel,
  * It loads the data to carbon using @AbstractDataLoadProcessorStep
  */
 class NewCarbonDataLoadRDD[K, V](
-    @transient ss: SparkSession,
+    @transient private val ss: SparkSession,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
     blocksGroupBy: Array[(String, Array[BlockDetails])])
@@ -307,7 +307,7 @@ class NewCarbonDataLoadRDD[K, V](
  *  @see org.apache.carbondata.processing.newflow.DataLoadExecutor
  */
 class NewDataFrameLoaderRDD[K, V](
-    @transient ss: SparkSession,
+    @transient private val ss: SparkSession,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
     prev: DataLoadCoalescedRDD[Row]) extends CarbonRDD[(K, V)](ss, prev) {
@@ -505,7 +505,7 @@ class LazyRddIterator(serializer: SerializerInstance,
  *  @see org.apache.carbondata.processing.newflow.DataLoadExecutor
  */
 class PartitionTableDataLoaderRDD[K, V](
-    @transient ss: SparkSession,
+    @transient private val ss: SparkSession,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
     prev: RDD[Row]) extends CarbonRDD[(K, V)](ss, prev) {

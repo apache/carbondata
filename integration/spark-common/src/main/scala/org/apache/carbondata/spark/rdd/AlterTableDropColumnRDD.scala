@@ -45,8 +45,9 @@ class DropColumnPartition(rddId: Int, idx: Int, schema: ColumnSchema) extends Pa
 /**
  * This class is aimed at generating dictionary file for the newly added columns
  */
-class AlterTableDropColumnRDD[K, V](@transient ss: SparkSession,
-    @transient newColumns: Seq[ColumnSchema],
+class AlterTableDropColumnRDD[K, V](
+    @transient private val ss: SparkSession,
+    @transient private val newColumns: Seq[ColumnSchema],
     carbonTableIdentifier: AbsoluteTableIdentifier)
   extends CarbonRDD[(Int, SegmentStatus)](ss, Nil) {
 
