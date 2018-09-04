@@ -96,14 +96,41 @@ public class CarbonMetadataUtil {
     return footer;
   }
 
-  public static BlockletIndex getBlockletIndex(
-      org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex info) {
+  /**
+   * convert external thrift BlockletMinMaxIndex to BlockletMinMaxIndex of carbon metadata
+   */
+  public static org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex
+      convertExternalMinMaxIndex(BlockletMinMaxIndex minMaxIndex) {
+    if (minMaxIndex == null) {
+      return null;
+    }
+
+    return new org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex(
+            minMaxIndex.getMin_values(), minMaxIndex.getMax_values());
+  }
+
+  /**
+   * convert BlockletMinMaxIndex of carbon metadata to external thrift BlockletMinMaxIndex
+   */
+  public static BlockletMinMaxIndex convertMinMaxIndex(
+      org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex minMaxIndex) {
+    if (minMaxIndex == null) {
+      return null;
+    }
+
     BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
 
-    for (int i = 0; i < info.getMinMaxIndex().getMaxValues().length; i++) {
-      blockletMinMaxIndex.addToMax_values(ByteBuffer.wrap(info.getMinMaxIndex().getMaxValues()[i]));
-      blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(info.getMinMaxIndex().getMinValues()[i]));
+    for (int i = 0; i < minMaxIndex.getMaxValues().length; i++) {
+      blockletMinMaxIndex.addToMax_values(ByteBuffer.wrap(minMaxIndex.getMaxValues()[i]));
+      blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(minMaxIndex.getMinValues()[i]));
     }
+
+    return blockletMinMaxIndex;
+  }
+
+  public static BlockletIndex getBlockletIndex(
+      org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex info) {
+    BlockletMinMaxIndex blockletMinMaxIndex = convertMinMaxIndex(info.getMinMaxIndex());
     BlockletBTreeIndex blockletBTreeIndex = new BlockletBTreeIndex();
     blockletBTreeIndex.setStart_key(info.getBtreeIndex().getStartKey());
     blockletBTreeIndex.setEnd_key(info.getBtreeIndex().getEndKey());

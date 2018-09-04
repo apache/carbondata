@@ -35,6 +35,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
+import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -52,6 +53,7 @@ import org.apache.carbondata.core.scan.filter.intf.RowImpl;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.format.BlockletHeader;
@@ -413,7 +415,19 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
   }
 
   private boolean isScanRequired(BlockletHeader header) {
-    // TODO require to implement min-max index
+    if (filter != null && header.getBlocklet_index() != null) {
+      BlockletMinMaxIndex minMaxIndex = CarbonMetadataUtil.convertExternalMinMaxIndex(
+          header.getBlocklet_index().getMin_max_index());
+      if (minMaxIndex != null) {
+        BitSet bitSet =
+            filter.isScanRequired(minMaxIndex.getMaxValues(), minMaxIndex.getMinValues());
+        if (bitSet.isEmpty()) {
+          return false;
+        } else {
+          return true;
+        }
+      }
+    }
     return true;
   }
 
