@@ -233,13 +233,8 @@ public class StreamSegment {
     }
   }
 
-  /**
-   * create a StreamBlockIndex from the SimpleStatsResult array
-   */
-  private static StreamFileIndex createStreamBlockIndex(String fileName,
-      SimpleStatsResult[] dimStats, SimpleStatsResult[] mrsStats, int blockletRowCount) {
-
-    DataType[] msrDataTypes = new DataType[mrsStats.length];
+  public static BlockletMinMaxIndex collectMinMaxIndex(SimpleStatsResult[] dimStats,
+      SimpleStatsResult[] mrsStats) {
     BlockletMinMaxIndex minMaxIndex = new BlockletMinMaxIndex();
     byte[][] maxIndexes = new byte[dimStats.length + mrsStats.length][];
     for (int index = 0; index < dimStats.length; index++) {
@@ -249,7 +244,6 @@ public class StreamSegment {
     for (int index = 0; index < mrsStats.length; index++) {
       maxIndexes[dimStats.length + index] =
           CarbonUtil.getValueAsBytes(mrsStats[index].getDataType(), mrsStats[index].getMax());
-      msrDataTypes[index] = mrsStats[index].getDataType();
     }
     minMaxIndex.setMaxValues(maxIndexes);
 
@@ -263,7 +257,14 @@ public class StreamSegment {
           CarbonUtil.getValueAsBytes(mrsStats[index].getDataType(), mrsStats[index].getMin());
     }
     minMaxIndex.setMinValues(minIndexes);
+    return minMaxIndex;
+  }
 
+  /**
+   * create a StreamBlockIndex from the SimpleStatsResult array
+   */
+  private static StreamFileIndex createStreamBlockIndex(String fileName,
+      BlockletMinMaxIndex minMaxIndex, DataType[] msrDataTypes, int blockletRowCount) {
     StreamFileIndex streamFileIndex =
         new StreamFileIndex(fileName, minMaxIndex, blockletRowCount);
     streamFileIndex.setMsrDataTypes(msrDataTypes);
@@ -290,8 +291,9 @@ public class StreamSegment {
         blockletRowCount++;
       }
       inputIterators.close();
-      return createStreamBlockIndex(writer.getFileName(), writer.getDimensionStats(),
-          writer.getMeasureStats(), blockletRowCount);
+
+      return createStreamBlockIndex(writer.getFileName(), writer.getBatchMinMaxIndex(),
+          writer.getMeasureDataTypes(), blockletRowCount);
     } catch (Throwable ex) {
       if (writer != null) {
         LOGGER.error(ex, "Failed to append batch data to stream segment: " +
@@ -442,7 +444,7 @@ public class StreamSegment {
    * 2.1 if blocklet index is null, use the BlockletMinMaxIndex index of stream
    * 2.2 if blocklet index is not null, combine these two index
    */
-  private static void mergeMinMax(StreamFileIndex blockletIndex, BlockletMinMaxIndex fileIndex)
+  private static void mergeBatchMinMax(StreamFileIndex blockletIndex, BlockletMinMaxIndex fileIndex)
       throws IOException {
     if (fileIndex == null) {
       // backward compatibility
@@ -516,6 +518,67 @@ public class StreamSegment {
   }
 
   /**
+   * merge blocklet min/max to generate batch min/max
+   */
+  public static BlockletMinMaxIndex mergeBlockletMinMax(BlockletMinMaxIndex to,
+      BlockletMinMaxIndex from, DataType[] msrDataTypes) {
+    if (to == null) {
+      return from;
+    }
+    if (from == null) {
+      return to;
+    }
+
+    SerializableComparator[] comparators = new SerializableComparator[msrDataTypes.length];
+    for (int index = 0; index < comparators.length; index++) {
+      comparators[index] = Comparator.getComparatorByDataTypeForMeasure(msrDataTypes[index]);
+    }
+
+    // min value
+    byte[][] minValues = to.getMinValues();
+    byte[][] mergedMinValues = from.getMinValues();
+    int dimCount1 = minValues.length - msrDataTypes.length;
+    for (int index = 0; index < minValues.length; index++) {
+      if (index < dimCount1) {
+        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(minValues[index], mergedMinValues[index])
+            > 0) {
+          minValues[index] = mergedMinValues[index];
+        }
+      } else {
+        Object object = DataTypeUtil.getMeasureObjectFromDataType(
+            minValues[index], msrDataTypes[index - dimCount1]);
+        Object mergedObject = DataTypeUtil.getMeasureObjectFromDataType(
+            mergedMinValues[index], msrDataTypes[index - dimCount1]);
+        if (comparators[index - dimCount1].compare(object, mergedObject) > 0) {
+          minValues[index] = mergedMinValues[index];
+        }
+      }
+    }
+
+    // max value
+    byte[][] maxValues = to.getMaxValues();
+    byte[][] mergedMaxValues = from.getMaxValues();
+    int dimCount2 = maxValues.length - msrDataTypes.length;
+    for (int index = 0; index < maxValues.length; index++) {
+      if (index < dimCount2) {
+        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(maxValues[index], mergedMaxValues[index])
+            < 0) {
+          maxValues[index] = mergedMaxValues[index];
+        }
+      } else {
+        Object object = DataTypeUtil.getMeasureObjectFromDataType(
+            maxValues[index], msrDataTypes[index - dimCount2]);
+        Object mergedObject = DataTypeUtil.getMeasureObjectFromDataType(
+            mergedMaxValues[index], msrDataTypes[index - dimCount2]);
+        if (comparators[index - dimCount2].compare(object, mergedObject) < 0) {
+          maxValues[index] = mergedMaxValues[index];
+        }
+      }
+    }
+    return to;
+  }
+
+  /**
    * merge new blocklet index and old file index to create new file index
    */
   private static void updateStreamFileIndex(Map<String, StreamFileIndex> indexMap,
@@ -532,7 +595,7 @@ public class StreamSegment {
       } else {
         // merge minMaxIndex into StreamBlockIndex
         blockletIndex.setRowCount(blockletIndex.getRowCount() + blockIndex.getNum_rows());
-        mergeMinMax(blockletIndex, fileIndex);
+        mergeBatchMinMax(blockletIndex, fileIndex);
       }
     }
   }

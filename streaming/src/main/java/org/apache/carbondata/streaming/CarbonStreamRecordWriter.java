@@ -29,11 +29,8 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsCollector;
-import org.apache.carbondata.core.datastore.page.statistics.KeyPageStatsCollector;
-import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
-import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -56,6 +53,7 @@ import org.apache.carbondata.processing.loading.parser.RowParser;
 import org.apache.carbondata.processing.loading.parser.impl.RowParserImpl;
 import org.apache.carbondata.processing.store.writer.AbstractFactDataWriter;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+import org.apache.carbondata.streaming.segment.StreamSegment;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.RecordWriter;
@@ -99,9 +97,9 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   private boolean isFirstRow = true;
   private boolean hasException = false;
 
-  // stats collector
-  private ColumnPageStatsCollector[] dimensionStatsCollectors;
-  private ColumnPageStatsCollector[] measureStatsCollectors;
+  // batch level stats collector
+  private BlockletMinMaxIndex batchMinMaxIndex;
+  private boolean isClosed = false;
 
   CarbonStreamRecordWriter(TaskAttemptContext job) throws IOException {
     initialize(job);
@@ -140,7 +138,6 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   }
 
   private void initializeAtFirstRow() throws IOException, InterruptedException {
-
     // initialize metadata
     isNoDictionaryDimensionColumn =
         CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields());
@@ -152,20 +149,19 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       measureDataTypes[i] =
           dataFields[dimensionWithComplexCount + i].getColumn().getDataType();
     }
-
     // initialize parser and converter
     rowParser = new RowParserImpl(dataFields, configuration);
     badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(configuration);
     converter = new RowConverterImpl(configuration.getDataFields(), configuration, badRecordLogger);
     configuration.setCardinalityFinder(converter);
     converter.initialize();
-
     // initialize encoder
     nullBitSet = new BitSet(dataFields.length);
     int rowBufferSize = hadoopConf.getInt(CarbonStreamOutputFormat.CARBON_ENCODER_ROW_BUFFER_SIZE,
         CarbonStreamOutputFormat.CARBON_ENCODER_ROW_BUFFER_SIZE_DEFAULT);
-    output = new StreamBlockletWriter(maxCacheSize, maxRowNums, rowBufferSize);
-
+    output = new StreamBlockletWriter(maxCacheSize, maxRowNums, rowBufferSize,
+        isNoDictionaryDimensionColumn.length, measureCount,
+        measureDataTypes);
     // initialize data writer
     String filePath = segmentDir + File.separator + fileName;
     FileFactory.FileType fileType = FileFactory.getFileType(filePath);
@@ -178,60 +174,13 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       outputStream = FileFactory.getDataOutputStream(filePath, fileType);
       writeFileHeader();
     }
-
-    initializeStatsCollector();
-
     isFirstRow = false;
-  }
-
-  private void initializeStatsCollector() {
-    // dimension stats collectors
-    // not require to collector stats for complex type
-    // so it only contains dictionary dimensions and no-dictionary dimensions
-    dimensionStatsCollectors = new ColumnPageStatsCollector[isNoDictionaryDimensionColumn.length];
-    // measure stats collectors
-    measureStatsCollectors = new ColumnPageStatsCollector[measureCount];
-
-    int dimCount = 0;
-    for (; dimCount < isNoDictionaryDimensionColumn.length; dimCount++) {
-      dimensionStatsCollectors[dimCount] =
-        KeyPageStatsCollector.newInstance(DataTypes.BYTE_ARRAY);
-    }
-
-    for (int msrCount = 0; msrCount < measureCount; msrCount++) {
-      measureStatsCollectors[msrCount] =
-          PrimitivePageStatsCollector.newInstance(measureDataTypes[msrCount]);
-    }
-  }
-
-  public SimpleStatsResult[] getDimensionStats() {
-    if (dimensionStatsCollectors == null) {
-      return new SimpleStatsResult[0];
-    }
-    SimpleStatsResult[] stats = new SimpleStatsResult[dimensionStatsCollectors.length];
-    int dimCount = 0;
-    for (; dimCount < dimensionStatsCollectors.length; dimCount++) {
-      stats[dimCount] = dimensionStatsCollectors[dimCount].getPageStats();
-    }
-    return stats;
-  }
-
-  public SimpleStatsResult[] getMeasureStats() {
-    if (measureStatsCollectors == null) {
-      return new SimpleStatsResult[0];
-    }
-    SimpleStatsResult[] stats = new SimpleStatsResult[measureStatsCollectors.length];
-    for (int mrsCount = 0; mrsCount < measureStatsCollectors.length; mrsCount++) {
-      stats[mrsCount] = measureStatsCollectors[mrsCount].getPageStats();
-    }
-    return stats;
   }
 
   @Override public void write(Void key, Object value) throws IOException, InterruptedException {
     if (isFirstRow) {
       initializeAtFirstRow();
     }
-
     // null bit set
     nullBitSet.clear();
     Object[] rowData = (Object[]) value;
@@ -256,7 +205,6 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       }
       int dimCount = 0;
       Object columnValue;
-
       // primitive type dimension
       for (; dimCount < isNoDictionaryDimensionColumn.length; dimCount++) {
         columnValue = currentRow.getObject(dimCount);
@@ -265,13 +213,13 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
             byte[] col = (byte[]) columnValue;
             output.writeShort(col.length);
             output.writeBytes(col);
-            dimensionStatsCollectors[dimCount].update(col);
+            output.dimStatsCollectors[dimCount].update(col);
           } else {
             output.writeInt((int) columnValue);
-            dimensionStatsCollectors[dimCount].update(ByteUtil.toBytes((int) columnValue));
+            output.dimStatsCollectors[dimCount].update(ByteUtil.toBytes((int) columnValue));
           }
         } else {
-          dimensionStatsCollectors[dimCount].updateNull(0);
+          output.dimStatsCollectors[dimCount].updateNull(0);
         }
       }
       // complex type dimension
@@ -291,25 +239,25 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
           dataType = measureDataTypes[msrCount];
           if (dataType == DataTypes.BOOLEAN) {
             output.writeBoolean((boolean) columnValue);
-            measureStatsCollectors[msrCount].update((byte) ((boolean) columnValue ? 1 : 0));
+            output.msrStatsCollectors[msrCount].update((byte) ((boolean) columnValue ? 1 : 0));
           } else if (dataType == DataTypes.SHORT) {
             output.writeShort((short) columnValue);
-            measureStatsCollectors[msrCount].update((short) columnValue);
+            output.msrStatsCollectors[msrCount].update((short) columnValue);
           } else if (dataType == DataTypes.INT) {
             output.writeInt((int) columnValue);
-            measureStatsCollectors[msrCount].update((int) columnValue);
+            output.msrStatsCollectors[msrCount].update((int) columnValue);
           } else if (dataType == DataTypes.LONG) {
             output.writeLong((long) columnValue);
-            measureStatsCollectors[msrCount].update((long) columnValue);
+            output.msrStatsCollectors[msrCount].update((long) columnValue);
           } else if (dataType == DataTypes.DOUBLE) {
             output.writeDouble((double) columnValue);
-            measureStatsCollectors[msrCount].update((double) columnValue);
+            output.msrStatsCollectors[msrCount].update((double) columnValue);
           } else if (DataTypes.isDecimal(dataType)) {
             BigDecimal val = (BigDecimal) columnValue;
             byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
             output.writeShort(bigDecimalInBytes.length);
             output.writeBytes(bigDecimalInBytes);
-            measureStatsCollectors[msrCount].update((BigDecimal) columnValue);
+            output.msrStatsCollectors[msrCount].update((BigDecimal) columnValue);
           } else {
             String msg =
                 "unsupported data type:" + dataFields[dimCount + msrCount].getColumn().getDataType()
@@ -318,7 +266,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
             throw new IOException(msg);
           }
         } else {
-          measureStatsCollectors[msrCount].updateNull(0);
+          output.msrStatsCollectors[msrCount].updateNull(0);
         }
       }
     }
@@ -359,12 +307,27 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     }
     output.apppendBlocklet(outputStream);
     outputStream.flush();
+    if (!isClosed) {
+      batchMinMaxIndex = StreamSegment.mergeBlockletMinMax(
+          batchMinMaxIndex, output.generateBlockletMinMax(), measureDataTypes);
+    }
     // reset data
     output.reset();
   }
 
-  @Override public void close(TaskAttemptContext context) throws IOException, InterruptedException {
+  public BlockletMinMaxIndex getBatchMinMaxIndex() {
+    return StreamSegment.mergeBlockletMinMax(
+        batchMinMaxIndex, output.generateBlockletMinMax(), measureDataTypes);
+  }
+
+  public DataType[] getMeasureDataTypes() {
+    return measureDataTypes;
+  }
+
+  @Override
+  public void close(TaskAttemptContext context) throws IOException, InterruptedException {
     try {
+      isClosed = true;
       // append remain buffer data
       if (!hasException && !isFirstRow) {
         appendBlockletToDataFile();
