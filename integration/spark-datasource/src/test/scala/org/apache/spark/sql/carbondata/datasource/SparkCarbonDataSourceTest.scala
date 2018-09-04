@@ -700,9 +700,26 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk"))
   }
 
+  test("test write sdk with different schema and read with spark") {
+    spark.sql("drop table if exists sdkout")
+    FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
+    buildTestDataOtherDataType(5, Array("age", "address"), warehouse1+"/sdk1")
+    spark.sql(s"create table sdkout using carbon options(path='$warehouse1/sdk1')")
+    assert(spark.sql("select * from sdkout").collect().length == 5)
+    buildTestDataOtherDataType(5, null, warehouse1+"/sdk1", 2)
+    spark.sql("refresh table sdkout")
+    intercept[Exception] {
+      spark.sql("select * from sdkout").show()
+    }
+    intercept[Exception] {
+      spark.sql("select * from sdkout where salary=100").show()
+    }
+    FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
+  }
+
   // prepare sdk writer output with other schema
-  def buildTestDataOtherDataType(rows: Int, sortColumns: Array[String], writerPath: String): Any = {
-    val fields: Array[Field] = new Array[Field](6)
+  def buildTestDataOtherDataType(rows: Int, sortColumns: Array[String], writerPath: String, colCount: Int = -1): Any = {
+    var fields: Array[Field] = new Array[Field](6)
     // same column name, but name as boolean type
     fields(0) = new Field("male", DataTypes.BOOLEAN)
     fields(1) = new Field("age", DataTypes.INT)
@@ -710,6 +727,16 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     fields(3) = new Field("name", DataTypes.STRING)
     fields(4) = new Field("address", DataTypes.STRING)
     fields(5) = new Field("salary", DataTypes.LONG)
+
+    if (colCount > 0) {
+      val fieldsToWrite: Array[Field] = new Array[Field](colCount)
+      var i = 0
+      while (i < colCount) {
+        fieldsToWrite(i) = fields(i)
+        i += 1
+      }
+      fields = fieldsToWrite
+    }
 
     try {
       val builder = CarbonWriter.builder()
@@ -721,7 +748,17 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
 
       var i = 0
       while (i < rows) {
-        writer.write(Array[String]("true", String.valueOf(i), String.valueOf(i.toDouble / 2), "name"+i, "address"+i, (i*100).toString))
+        val array = Array[String]("true",
+          String.valueOf(i),
+          String.valueOf(i.toDouble / 2),
+          "name" + i,
+          "address" + i,
+          (i * 100).toString)
+        if (colCount > 0) {
+          writer.write(array.slice(0, colCount))
+        } else {
+          writer.write(array)
+        }
         i += 1
       }
       writer.close()

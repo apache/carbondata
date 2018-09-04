@@ -231,7 +231,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           segmentProperties = new SegmentProperties(fileFooter.getColumnInTable(),
               fileFooter.getSegmentInfo().getColumnCardinality());
           createFilterExpression(queryModel, segmentProperties);
-          updateColumns(queryModel, fileFooter.getColumnInTable());
+          updateColumns(queryModel, fileFooter.getColumnInTable(), blockInfo.getFilePath());
           filePathToSegmentPropertiesMap.put(blockInfo.getFilePath(), segmentProperties);
         }
         readAndFillBlockletInfo(tableBlockInfos, blockInfo,
@@ -241,7 +241,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           segmentProperties = new SegmentProperties(blockInfo.getDetailInfo().getColumnSchemas(),
               blockInfo.getDetailInfo().getDimLens());
           createFilterExpression(queryModel, segmentProperties);
-          updateColumns(queryModel, blockInfo.getDetailInfo().getColumnSchemas());
+          updateColumns(queryModel, blockInfo.getDetailInfo().getColumnSchemas(),
+              blockInfo.getFilePath());
           filePathToSegmentPropertiesMap.put(blockInfo.getFilePath(), segmentProperties);
         }
         tableBlockInfos.add(blockInfo);
@@ -262,7 +263,19 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * c1 become measure as bydefault integers are measures. So this method updates the measures to
    * dimensions and vice versa as per the indexfile schema.
    */
-  private void updateColumns(QueryModel queryModel, List<ColumnSchema> columnsInTable) {
+  private void updateColumns(QueryModel queryModel, List<ColumnSchema> columnsInTable,
+      String filePath) throws IOException {
+    if (queryModel.getTable().isTransactionalTable()) {
+      return;
+    }
+    // First validate the schema of the carbondata file
+    boolean sameColumnSchemaList = BlockletDataMapUtil.isSameColumnSchemaList(columnsInTable,
+        queryModel.getTable().getTableInfo().getFactTable().getListOfColumns());
+    if (!sameColumnSchemaList) {
+      LOGGER.error("Schema of " + filePath + " doesn't match with the table's schema");
+      throw new IOException("All the files doesn't have same schema. "
+          + "Unsupported operation on nonTransactional table. Check logs.");
+    }
     List<ProjectionDimension> dimensions = queryModel.getProjectionDimensions();
     List<ProjectionMeasure> measures = queryModel.getProjectionMeasures();
     List<ProjectionDimension> updatedDims = new ArrayList<>();

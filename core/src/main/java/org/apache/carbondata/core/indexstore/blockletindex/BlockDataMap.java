@@ -640,11 +640,10 @@ public class BlockDataMap extends CoarseGrainDataMap
   }
 
   @Override
-  public List<Blocklet> prune(Expression expression, SegmentProperties segmentProperties,
+  public List<Blocklet> prune(Expression expression, SegmentProperties properties,
       List<PartitionSpec> partitions, AbsoluteTableIdentifier identifier) throws IOException {
     FilterResolverIntf filterResolverIntf = null;
     if (expression != null) {
-      SegmentProperties properties = getSegmentProperties();
       QueryModel.FilterProcessVO processVO =
           new QueryModel.FilterProcessVO(properties.getDimensions(), properties.getMeasures(),
               new ArrayList<CarbonDimension>());
@@ -654,7 +653,7 @@ public class BlockDataMap extends CoarseGrainDataMap
       rangeFilterOptimizer.optimizeFilter();
       filterResolverIntf = CarbonTable.resolveFilter(expression, identifier);
     }
-    return prune(filterResolverIntf, segmentProperties, partitions);
+    return prune(filterResolverIntf, properties, partitions);
   }
 
   @Override

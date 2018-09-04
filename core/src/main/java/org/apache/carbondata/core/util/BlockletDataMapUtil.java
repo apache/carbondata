@@ -248,7 +248,7 @@ public class BlockletDataMapUtil {
     return true;
   }
 
-  private static boolean isSameColumnSchemaList(List<ColumnSchema> indexFileColumnList,
+  public static boolean isSameColumnSchemaList(List<ColumnSchema> indexFileColumnList,
       List<ColumnSchema> tableColumnList) {
     if (indexFileColumnList.size() != tableColumnList.size()) {
       LOG.error("Index file's column size is " + indexFileColumnList.size()
