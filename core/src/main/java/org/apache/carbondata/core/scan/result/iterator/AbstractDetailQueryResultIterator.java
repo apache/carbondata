@@ -27,11 +27,9 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.DataRefNode;
-import org.apache.carbondata.core.datastore.DataRefNodeFinder;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataRefNode;
 import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 import org.apache.carbondata.core.reader.CarbonDeleteFilesDataReader;
@@ -115,9 +113,6 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
   private void intialiseInfos() {
     for (BlockExecutionInfo blockInfo : blockExecutionInfos) {
       Map<String, DeleteDeltaVo> deletedRowsMap = null;
-      DataRefNodeFinder finder = new BTreeDataRefNodeFinder(blockInfo.getEachColumnValueSize(),
-          blockInfo.getDataBlock().getSegmentProperties().getNumberOfSortColumns(),
-          blockInfo.getDataBlock().getSegmentProperties().getNumberOfNoDictSortColumns());
       // if delete delta file is present
       if (null != blockInfo.getDeleteDeltaFilePath() && 0 != blockInfo
           .getDeleteDeltaFilePath().length) {
@@ -128,30 +123,10 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
         blockInfo.setDeletedRecordsMap(deletedRowsMap);
       }
       DataRefNode dataRefNode = blockInfo.getDataBlock().getDataRefNode();
-      if (dataRefNode instanceof BlockletDataRefNode) {
-        BlockletDataRefNode node = (BlockletDataRefNode) dataRefNode;
-        blockInfo.setFirstDataBlock(node);
-        blockInfo.setNumberOfBlockToScan(node.numberOfNodes());
-      } else {
-        DataRefNode startDataBlock =
-            finder.findFirstDataBlock(dataRefNode, blockInfo.getStartKey());
-        while ((null != startDataBlock) && (startDataBlock.nodeIndex() < blockInfo
-            .getStartBlockletIndex())) {
-          startDataBlock = startDataBlock.getNextDataRefNode();
-        }
-        long numberOfBlockToScan = blockInfo.getNumberOfBlockletToScan();
-        //if number of block is less than 0 then take end block.
-        if (numberOfBlockToScan <= 0) {
-          DataRefNode endDataBlock = finder.findLastDataBlock(dataRefNode, blockInfo.getEndKey());
-          if (null != startDataBlock) {
-            numberOfBlockToScan = endDataBlock.nodeIndex() - startDataBlock.nodeIndex() + 1;
-          } else {
-            numberOfBlockToScan = endDataBlock.nodeIndex() + 1;
-          }
-        }
-        blockInfo.setFirstDataBlock(startDataBlock);
-        blockInfo.setNumberOfBlockToScan(numberOfBlockToScan);
-      }
+      assert (dataRefNode instanceof BlockletDataRefNode);
+      BlockletDataRefNode node = (BlockletDataRefNode) dataRefNode;
+      blockInfo.setFirstDataBlock(node);
+      blockInfo.setNumberOfBlockToScan(node.numberOfNodes());
     }
   }
 
