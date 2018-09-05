@@ -175,7 +175,9 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
     CarbonFile[] carbonIndexFiles = null;
     if (file.isDirectory()) {
       if (segmentId == null) {
-        carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(file);
+        List<CarbonFile> indexFiles = new ArrayList<>();
+        SegmentIndexFileStore.getCarbonIndexFilesRecursively(file, indexFiles);
+        carbonIndexFiles = indexFiles.toArray(new CarbonFile[0]);
       } else {
         String segmentPath = CarbonTablePath.getSegmentPath(carbonFilePath, segmentId);
         carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(segmentPath);

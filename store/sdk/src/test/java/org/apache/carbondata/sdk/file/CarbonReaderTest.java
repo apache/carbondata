@@ -1665,4 +1665,44 @@ public class CarbonReaderTest extends TestCase {
     Assert.assertEquals(i, 100);
   }
 
+  @Test
+  public void testReadWithFilterOfnonTransactionalwithsubfolders() throws IOException, InterruptedException {
+    String path1 = "./testWriteFiles/1/"+System.nanoTime();
+    String path2 = "./testWriteFiles/2/"+System.nanoTime();
+    String path3 = "./testWriteFiles/3/"+System.nanoTime();
+    FileUtils.deleteDirectory(new File("./testWriteFiles"));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path1, false, false);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path2, false, false);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path3, false, false);
+
+    EqualToExpression equalToExpression = new EqualToExpression(
+        new ColumnExpression("name", DataTypes.STRING),
+        new LiteralExpression("robot1", DataTypes.STRING));
+    CarbonReader reader = CarbonReader
+        .builder("./testWriteFiles", "_temp")
+        .isTransactionalTable(false)
+        .projection(new String[]{"name", "age"})
+        .filter(equalToExpression)
+        .build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      // Default sort column is applied for dimensions. So, need  to validate accordingly
+      assert ("robot1".equals(row[0]));
+      i++;
+    }
+    Assert.assertEquals(i, 60);
+
+    reader.close();
+
+    FileUtils.deleteDirectory(new File("./testWriteFiles"));
+  }
+
+
 }
