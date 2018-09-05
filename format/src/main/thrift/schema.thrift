@@ -70,31 +70,6 @@ enum PartitionType{
 }
 
 /**
- * Properties of table
- */
-enum TableProperty{
-  DICTIONARY_INCLUDE = 0;
-  DICTIONARY_EXCLUDE = 1;
-  NO_INVERTED_INDEX = 2;
-  SORT_COLUMNS = 3;
-  SORT_SCOPE = 4;
-  TABLE_BLOCKSIZE = 5;
-  MAJOR_COMPACTION_SIZE = 6;
-  AUTO_LOAD_MERGE = 7;
-  COMPACTION_LEVEL_THRESHOLD = 8;
-  COMPACTION_PRESERVE_SEGMENTS = 9;
-  ALLOWED_COMPACTION_DAYS = 10;
-  STREAMING = 11;
-  LOCAL_DICTIONARY_ENABLE = 12;
-  LOCAL_DICTIONARY_THRESHOLD = 13;
-  LOCAL_DICTIONARY_INCLUDE = 14;
-  LOCAL_DICTIONARY_EXCLUDE = 15;
-  COLUMN_META_CACHE = 16;
-  CACHE_LEVEL = 17;
-  LONG_STRING_COLUMNS = 18;
-}
-
-/**
  * Description of a Column for both dimension and measure
  */
 //TODO:where to put the CSV column name and carbon table column name mapping? should not keep in schema
