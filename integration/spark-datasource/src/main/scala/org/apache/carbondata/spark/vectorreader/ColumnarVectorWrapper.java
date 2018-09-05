@@ -24,17 +24,21 @@ import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 
 import org.apache.parquet.column.Encoding;
+import org.apache.spark.sql.CarbonVectorProxy;
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil;
-import org.apache.spark.sql.execution.vectorized.ColumnVector;
 import org.apache.spark.sql.types.Decimal;
 
 class ColumnarVectorWrapper implements CarbonColumnVector {
 
-  private ColumnVector columnVector;
+  private CarbonVectorProxy sparkColumnVectorProxy;
 
   private boolean[] filteredRows;
 
   private int counter;
+
+  private int ordinal;
+
+  private boolean isDictionary;
 
   private boolean filteredRowsExist;
 
@@ -42,30 +46,28 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   private CarbonColumnVector dictionaryVector;
 
-  ColumnarVectorWrapper(ColumnVector columnVector, boolean[] filteredRows) {
-    this.columnVector = columnVector;
+  ColumnarVectorWrapper(CarbonVectorProxy writableColumnVector,
+      boolean[] filteredRows, int ordinal) {
+    this.sparkColumnVectorProxy = writableColumnVector;
     this.filteredRows = filteredRows;
-    if (columnVector.getDictionaryIds() != null) {
-      this.dictionaryVector =
-          new ColumnarVectorWrapper(columnVector.getDictionaryIds(), filteredRows);
-    }
+    this.ordinal = ordinal;
   }
 
   @Override public void putBoolean(int rowId, boolean value) {
     if (!filteredRows[rowId]) {
-      columnVector.putBoolean(counter++, value);
+      sparkColumnVectorProxy.putBoolean(counter++, value, ordinal);
     }
   }
 
   @Override public void putFloat(int rowId, float value) {
     if (!filteredRows[rowId]) {
-      columnVector.putFloat(counter++, value);
+      sparkColumnVectorProxy.putFloat(counter++, value,ordinal);
     }
   }
 
   @Override public void putShort(int rowId, short value) {
     if (!filteredRows[rowId]) {
-      columnVector.putShort(counter++, value);
+      sparkColumnVectorProxy.putShort(counter++, value, ordinal);
     }
   }
 
@@ -73,18 +75,22 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
-          columnVector.putShort(counter++, value);
+          sparkColumnVectorProxy.putShort(counter++, value, ordinal);
         }
         rowId++;
       }
     } else {
-      columnVector.putShorts(rowId, count, value);
+      sparkColumnVectorProxy.putShorts(rowId, count, value, ordinal);
     }
   }
 
   @Override public void putInt(int rowId, int value) {
     if (!filteredRows[rowId]) {
-      columnVector.putInt(counter++, value);
+      if (isDictionary) {
+        sparkColumnVectorProxy.putDictionaryInt(counter++, value, ordinal);
+      } else {
+        sparkColumnVectorProxy.putInt(counter++, value, ordinal);
+      }
     }
   }
 
@@ -92,18 +98,18 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
-          columnVector.putInt(counter++, value);
+          sparkColumnVectorProxy.putInt(counter++, value, ordinal);
         }
         rowId++;
       }
     } else {
-      columnVector.putInts(rowId, count, value);
+      sparkColumnVectorProxy.putInts(rowId, count, value, ordinal);
     }
   }
 
   @Override public void putLong(int rowId, long value) {
     if (!filteredRows[rowId]) {
-      columnVector.putLong(counter++, value);
+      sparkColumnVectorProxy.putLong(counter++, value, ordinal);
     }
   }
 
@@ -111,19 +117,19 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
-          columnVector.putLong(counter++, value);
+          sparkColumnVectorProxy.putLong(counter++, value, ordinal);
         }
         rowId++;
       }
     } else {
-      columnVector.putLongs(rowId, count, value);
+      sparkColumnVectorProxy.putLongs(rowId, count, value, ordinal);
     }
   }
 
   @Override public void putDecimal(int rowId, BigDecimal value, int precision) {
     if (!filteredRows[rowId]) {
       Decimal toDecimal = Decimal.apply(value);
-      columnVector.putDecimal(counter++, toDecimal, precision);
+      sparkColumnVectorProxy.putDecimal(counter++, toDecimal, precision, ordinal);
     }
   }
 
@@ -131,7 +137,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     Decimal decimal = Decimal.apply(value);
     for (int i = 0; i < count; i++) {
       if (!filteredRows[rowId]) {
-        columnVector.putDecimal(counter++, decimal, precision);
+        sparkColumnVectorProxy.putDecimal(counter++, decimal, precision, ordinal);
       }
       rowId++;
     }
@@ -139,7 +145,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public void putDouble(int rowId, double value) {
     if (!filteredRows[rowId]) {
-      columnVector.putDouble(counter++, value);
+      sparkColumnVectorProxy.putDouble(counter++, value, ordinal);
     }
   }
 
@@ -147,25 +153,25 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
-          columnVector.putDouble(counter++, value);
+          sparkColumnVectorProxy.putDouble(counter++, value, ordinal);
         }
         rowId++;
       }
     } else {
-      columnVector.putDoubles(rowId, count, value);
+      sparkColumnVectorProxy.putDoubles(rowId, count, value, ordinal);
     }
   }
 
   @Override public void putBytes(int rowId, byte[] value) {
     if (!filteredRows[rowId]) {
-      columnVector.putByteArray(counter++, value);
+      sparkColumnVectorProxy.putByteArray(counter++, value, ordinal);
     }
   }
 
   @Override public void putBytes(int rowId, int count, byte[] value) {
     for (int i = 0; i < count; i++) {
       if (!filteredRows[rowId]) {
-        columnVector.putByteArray(counter++, value);
+        sparkColumnVectorProxy.putByteArray(counter++, value, ordinal);
       }
       rowId++;
     }
@@ -173,13 +179,13 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public void putBytes(int rowId, int offset, int length, byte[] value) {
     if (!filteredRows[rowId]) {
-      columnVector.putByteArray(counter++, value, offset, length);
+      sparkColumnVectorProxy.putByteArray(counter++, value, offset, length, ordinal);
     }
   }
 
   @Override public void putNull(int rowId) {
     if (!filteredRows[rowId]) {
-      columnVector.putNull(counter++);
+      sparkColumnVectorProxy.putNull(counter++, ordinal);
     }
   }
 
@@ -187,18 +193,18 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
-          columnVector.putNull(counter++);
+          sparkColumnVectorProxy.putNull(counter++, ordinal);
         }
         rowId++;
       }
     } else {
-      columnVector.putNulls(rowId, count);
+      sparkColumnVectorProxy.putNulls(rowId, count,ordinal);
     }
   }
 
   @Override public void putNotNull(int rowId) {
     if (!filteredRows[rowId]) {
-      columnVector.putNotNull(counter++);
+      sparkColumnVectorProxy.putNotNull(counter++,ordinal);
     }
   }
 
@@ -206,17 +212,17 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
-          columnVector.putNotNull(counter++);
+          sparkColumnVectorProxy.putNotNull(counter++, ordinal);
         }
         rowId++;
       }
     } else {
-      columnVector.putNotNulls(rowId, count);
+      sparkColumnVectorProxy.putNotNulls(rowId, count, ordinal);
     }
   }
 
   @Override public boolean isNull(int rowId) {
-    return columnVector.isNullAt(rowId);
+    return sparkColumnVectorProxy.isNullAt(rowId,ordinal);
   }
 
   @Override public void putObject(int rowId, Object obj) {
@@ -237,7 +243,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   }
 
   @Override public DataType getType() {
-    return CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(columnVector.dataType());
+    return CarbonSparkDataSourceUtil
+        .convertSparkToCarbonDataType(sparkColumnVectorProxy.dataType(ordinal));
   }
 
   @Override
@@ -250,20 +257,32 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     this.blockDataType = blockDataType;
   }
 
-  @Override public void setFilteredRowsExist(boolean filteredRowsExist) {
+  @Override
+  public void setFilteredRowsExist(boolean filteredRowsExist) {
     this.filteredRowsExist = filteredRowsExist;
   }
 
   @Override public void setDictionary(CarbonDictionary dictionary) {
     if (dictionary == null) {
-      columnVector.setDictionary(null);
+      sparkColumnVectorProxy.setDictionary(null, ordinal);
     } else {
-      columnVector.setDictionary(new CarbonDictionaryWrapper(Encoding.PLAIN, dictionary));
+      sparkColumnVectorProxy
+          .setDictionary(new CarbonDictionaryWrapper(Encoding.PLAIN, dictionary),ordinal);
     }
   }
 
+  private void  setDictionaryType(boolean type) {
+    this.isDictionary = type;
+  }
+
   @Override public boolean hasDictionary() {
-    return columnVector.hasDictionary();
+    return sparkColumnVectorProxy.hasDictionary(ordinal);
+  }
+
+  public void reserveDictionaryIds() {
+    sparkColumnVectorProxy.reserveDictionaryIds(sparkColumnVectorProxy.numRows(), ordinal);
+    dictionaryVector = new ColumnarVectorWrapper(sparkColumnVectorProxy, filteredRows, ordinal);
+    ((ColumnarVectorWrapper) dictionaryVector).isDictionary = true;
   }
 
   @Override public CarbonColumnVector getDictionaryVector() {

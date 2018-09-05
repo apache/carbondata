@@ -18,16 +18,28 @@
 package org.apache.carbondata.spark.rdd
 
 import org.apache.spark.TaskContext
+import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.util.TaskCompletionListener
 
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo
-import org.apache.carbondata.processing.loading.DataLoadExecutor
+import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses}
 import org.apache.carbondata.spark.util.CommonUtil
 
-class InsertTaskCompletionListener(dataLoadExecutor: DataLoadExecutor)
+class InsertTaskCompletionListener(dataLoadExecutor: DataLoadExecutor,
+    executorErrors: ExecutionErrors)
   extends TaskCompletionListener {
   override def onTaskCompletion(context: TaskContext): Unit = {
-    dataLoadExecutor.close()
-    CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+    try {
+      dataLoadExecutor.close()
+    }
+    catch {
+      case e: Exception =>
+        if (executorErrors.failureCauses != FailureCauses.BAD_RECORDS) {
+          throw e
+        }
+    }
+    finally {
+      CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+    }
   }
 }

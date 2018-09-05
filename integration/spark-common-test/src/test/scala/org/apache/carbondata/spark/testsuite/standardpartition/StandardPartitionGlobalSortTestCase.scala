@@ -21,6 +21,7 @@ import java.util.concurrent.{Callable, ExecutorService, Executors}
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.constants.LoggerAction
@@ -859,11 +860,22 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     sql("create table scalarissue_hive(a int,salary double) using parquet partitioned by (salary) ")
     sql("set hive.exec.dynamic.partition.mode=nonstrict")
     sql("insert into scalarissue_hive values(23,21.2)")
-    intercept[Exception] {
-      sql(s"select * from scalarissue_hive where salary = (select max(salary) from scalarissue_hive)").show()
-    }
-    intercept[Exception] {
-      sql(s"select * from scalarissue where salary = (select max(salary) from scalarissue)").show()
+    if (SparkUtil.isSparkVersionEqualTo("2.1") || SparkUtil.isSparkVersionEqualTo("2.2")) {
+      intercept[Exception] {
+        sql(s"select * from scalarissue_hive where salary = (select max(salary) from " +
+            s"scalarissue_hive)")
+          .show()
+      }
+      intercept[Exception] {
+        sql(s"select * from scalarissue where salary = (select max(salary) from scalarissue)")
+          .show()
+      }
+    } else {
+      checkAnswer(sql(s"select * from scalarissue_hive where salary = (select max(salary) from " +
+                      s"scalarissue_hive)"), Seq(Row(23, 21.2)))
+      checkAnswer(sql(s"select * from scalarissue where salary = (select max(salary) from " +
+                      s"scalarissue)"),
+        Seq(Row(23, 21.2)))
     }
   }
 

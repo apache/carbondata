@@ -43,7 +43,7 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
         .analyze
     val modularized = originalQuery.modularize 
     val correctAnswer = originalQuery match {
-      case logical.Project(proj,logical.LocalRelation(tbl,_)) =>
+      case logical.Project(proj,MatchLocalRelation(tbl,_)) =>
         ModularRelation(null,null,tbl,NoFlags,Seq.empty).select(proj:_*)(tbl:_*)()(Map.empty)()
     }
     comparePlans(modularized, correctAnswer)
@@ -58,7 +58,7 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
         
     val modularized = originalQuery.modularize
     val correctAnswer = originalQuery match {
-      case logical.Project(proj1,logical.Aggregate(grp,agg,logical.Project(proj2,logical.LocalRelation(tbl,_)))) =>
+      case logical.Project(proj1,logical.Aggregate(grp,agg,logical.Project(proj2,MatchLocalRelation(tbl,_)))) =>
         ModularRelation(null,null,tbl,NoFlags,Seq.empty).select(proj2:_*)(tbl:_*)()(Map.empty)().groupBy(agg:_*)(proj2:_*)(grp:_*).select(proj1:_*)(proj1:_*)()(Map.empty)() 
     }   
     comparePlans(modularized, correctAnswer)
@@ -73,7 +73,7 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
         
     val modularized = originalQuery.modularize
     val correctAnswer = originalQuery match {
-      case logical.Project(proj,logical.Filter(cond,logical.LocalRelation(tbl,_))) =>
+      case logical.Project(proj,logical.Filter(cond,MatchLocalRelation(tbl,_))) =>
         ModularRelation(null,null,tbl,NoFlags,Seq.empty).select(proj:_*)(tbl:_*)(cond)(Map.empty)()  
     }
     comparePlans(modularized, correctAnswer)
@@ -87,7 +87,7 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
       
     val modularized = originalQuery.modularize 
     val correctAnswer = originalQuery match {
-      case logical.Join(logical.Filter(cond1,logical.LocalRelation(tbl1,_)),logical.LocalRelation(tbl2,_),Inner,Some(cond2)) =>
+      case logical.Join(logical.Filter(cond1,MatchLocalRelation(tbl1,_)),MatchLocalRelation(tbl2,_),Inner,Some(cond2)) =>
         Seq(ModularRelation(null,null,tbl1,NoFlags,Seq.empty),ModularRelation(null,null,tbl2,NoFlags,Seq.empty)).select(tbl1++tbl2:_*)(tbl1++tbl2:_*)(Seq(cond1,cond2):_*)(Map.empty)(JoinEdge(0,1,Inner)) 
     } 
     comparePlans(modularized, correctAnswer)
@@ -101,7 +101,7 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
       
     val modularized = originalQuery.modularize 
     val correctAnswer = originalQuery match {
-      case logical.Join(logical.Filter(cond1,logical.LocalRelation(tbl1,_)),logical.LocalRelation(tbl2,_),LeftOuter,Some(cond2)) =>
+      case logical.Join(logical.Filter(cond1,MatchLocalRelation(tbl1,_)),MatchLocalRelation(tbl2,_),LeftOuter,Some(cond2)) =>
         Seq(ModularRelation(null,null,tbl1,NoFlags,Seq.empty),ModularRelation(null,null,tbl2,NoFlags,Seq.empty)).select(tbl1++tbl2:_*)(tbl1++tbl2:_*)(Seq(cond1,cond2):_*)(Map.empty)(JoinEdge(0,1,LeftOuter)) 
     } 
     comparePlans(modularized, correctAnswer)
@@ -115,7 +115,7 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
       
     val modularized = originalQuery.modularize 
     val correctAnswer = originalQuery match {
-      case logical.Join(logical.Filter(cond1,logical.LocalRelation(tbl1,_)),logical.LocalRelation(tbl2,_),RightOuter,Some(cond2)) =>
+      case logical.Join(logical.Filter(cond1,MatchLocalRelation(tbl1,_)),MatchLocalRelation(tbl2,_),RightOuter,Some(cond2)) =>
         Seq(ModularRelation(null,null,tbl1,NoFlags,Seq.empty),ModularRelation(null,null,tbl2,NoFlags,Seq.empty)).select(tbl1++tbl2:_*)(tbl1++tbl2:_*)(Seq(cond1,cond2):_*)(Map.empty)(JoinEdge(0,1,RightOuter))  
     } 
     comparePlans(modularized, correctAnswer)
@@ -129,7 +129,7 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
     
     val modularized = analysis.EliminateSubqueryAliases(originalQuery).modularize
     val correctAnswer = originalQuery match {
-      case logical.Join(logical.Filter(cond1,logical.LocalRelation(tbl1,_)),logical.LocalRelation(tbl2,_),Inner,Some(cond2)) =>
+      case logical.Join(logical.Filter(cond1,MatchLocalRelation(tbl1,_)),MatchLocalRelation(tbl2,_),Inner,Some(cond2)) =>
         Seq(ModularRelation(null,null,tbl1,NoFlags,Seq.empty),ModularRelation(null,null,tbl2,NoFlags,Seq.empty)).select(tbl1++tbl2:_*)(tbl1++tbl2:_*)(Seq(cond1,cond2):_*)(Map.empty)(JoinEdge(0,1,Inner))  
     } 
     comparePlans(modularized, correctAnswer)
@@ -147,7 +147,7 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
         
     val modularized = originalQuery.modularize
     val correctAnswer = originalQuery match {
-      case logical.Join(logical.Filter(cond1,logical.LocalRelation(tbl1,_)),logical.Join(logical.Filter(cond2,logical.LocalRelation(tbl2,_)),logical.LocalRelation(tbl3,_),Inner,Some(cond3)),Inner,Some(cond4)) =>
+      case logical.Join(logical.Filter(cond1,MatchLocalRelation(tbl1,_)),logical.Join(logical.Filter(cond2,MatchLocalRelation(tbl2,_)),MatchLocalRelation(tbl3,_),Inner,Some(cond3)),Inner,Some(cond4)) =>
         Seq(ModularRelation(null,null,tbl1,NoFlags,Seq.empty),ModularRelation(null,null,tbl2,NoFlags,Seq.empty),ModularRelation(null,null,tbl3,NoFlags,Seq.empty)).select(tbl1++tbl2++tbl3:_*)(tbl1++tbl2++tbl3:_*)(Seq(cond1,cond2,cond3,cond4):_*)(Map.empty)(JoinEdge(0,1,Inner),JoinEdge(1,2,Inner))  
     } 
     comparePlans(modularized, correctAnswer)
@@ -165,7 +165,7 @@ class LogicalToModularPlanSuite extends ModularPlanTest {
         
     val modularized = originalQuery.modularize
     val correctAnswer = originalQuery match {
-      case logical.Project(proj0, logical.Filter(cond1, logical.Project(proj1, logical.Aggregate(grp,agg,logical.Join(logical.Filter(cond2,logical.LocalRelation(tbl1,_)),logical.Filter(cond3,logical.LocalRelation(tbl2,_)),Inner,Some(cond4)))))) =>
+      case logical.Project(proj0, logical.Filter(cond1, logical.Project(proj1, logical.Aggregate(grp,agg,logical.Join(logical.Filter(cond2,MatchLocalRelation(tbl1,_)),logical.Filter(cond3,MatchLocalRelation(tbl2,_)),Inner,Some(cond4)))))) =>
         Seq(ModularRelation(null,null,tbl1,NoFlags,Seq.empty),ModularRelation(null,null,tbl2,NoFlags,Seq.empty)).select(tbl1++tbl2:_*)(tbl1++tbl2:_*)(Seq(cond2,cond3,cond4):_*)(Map.empty)(JoinEdge(0,1,Inner)).groupBy(agg:_*)(tbl1++tbl2:_*)(grp:_*).select(proj0:_*)(proj1:_*)(cond1)(Map.empty)()  
     }   
     comparePlans(modularized, correctAnswer)

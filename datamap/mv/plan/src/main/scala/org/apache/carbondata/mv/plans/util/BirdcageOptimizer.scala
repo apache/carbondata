@@ -17,12 +17,14 @@
 
 package org.apache.carbondata.mv.plans.util
 
+import org.apache.spark.sql.CarbonToSparkAdapater
 import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.optimizer._
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, _}
 import org.apache.spark.sql.catalyst.rules.{RuleExecutor, _}
 import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.util.SparkSQLUtil
 
 object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
 
@@ -74,8 +76,8 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
       "Operator Optimizations", fixedPoint, Seq(
         // Operator push down
         PushProjectionThroughUnion,
-        ReorderJoin(conf),
-        EliminateOuterJoin(conf),
+        SparkSQLUtil.getReorderJoinObj(conf),
+        SparkSQLUtil.getEliminateOuterJoinObj(conf),
         PushPredicateThroughJoin,
         PushDownPredicate,
         //      LimitPushDown(conf),
@@ -89,7 +91,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
         CombineLimits,
         CombineUnions,
         // Constant folding and strength reduction
-        NullPropagation(conf),
+        SparkSQLUtil.getNullPropagationObj(conf),
         FoldablePropagation,
         //      OptimizeIn(conf),
         ConstantFolding,
@@ -113,7 +115,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
                                             extendedOperatorOptimizationRules: _*) ::
     Batch(
       "Check Cartesian Products", Once,
-      CheckCartesianProducts(conf)) ::
+      SparkSQLUtil.getCheckCartesianProductsObj(conf)) ::
     //    Batch("Join Reorder", Once,
     //      CostBasedJoinReorder(conf)) ::
     //    Batch("Decimal Optimizations", fixedPoint,
@@ -126,8 +128,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
     //      ConvertToLocalRelation,
     //      PropagateEmptyRelation) ::
     Batch(
-      "OptimizeCodegen", Once,
-      OptimizeCodegen(conf)) ::
+      "OptimizeCodegen", Once, CarbonToSparkAdapater.getOptimizeCodegenRule(conf): _*) ::
     Batch(
       "RewriteSubquery", Once,
       RewritePredicateSubquery,

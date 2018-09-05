@@ -18,6 +18,7 @@
 package org.apache.carbondata.streaming;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
@@ -33,7 +34,10 @@ import org.apache.carbondata.core.scan.complextypes.ArrayQueryType;
 import org.apache.carbondata.core.scan.complextypes.PrimitiveQueryType;
 import org.apache.carbondata.core.scan.complextypes.StructQueryType;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
+import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.hadoop.InputMetricsStats;
+import org.apache.carbondata.streaming.CarbonStreamUtils;
 
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -47,10 +51,46 @@ public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
 
   public static final String READ_BUFFER_SIZE = "carbon.stream.read.buffer.size";
   public static final String READ_BUFFER_SIZE_DEFAULT = "65536";
+  public static final String STREAM_RECORD_READER_INSTANCE =
+      "org.apache.carbondata.stream.CarbonStreamRecordReader";
+  // return raw row for handoff
+  private boolean useRawRow = false;
 
-  @Override public RecordReader<Void, Object> createRecordReader(InputSplit split,
-      TaskAttemptContext context) throws IOException, InterruptedException {
-    return new CarbonStreamRecordReader();
+  public void setUseRawRow(boolean useRawRow) {
+    this.useRawRow = useRawRow;
+  }
+
+  public void setInputMetricsStats(InputMetricsStats inputMetricsStats) {
+    this.inputMetricsStats = inputMetricsStats;
+  }
+
+  public void setIsVectorReader(boolean vectorReader) {
+    isVectorReader = vectorReader;
+  }
+
+  public void setModel(QueryModel model) {
+    this.model = model;
+  }
+
+  // InputMetricsStats
+  private InputMetricsStats inputMetricsStats;
+  // vector reader
+  private boolean isVectorReader;
+  private QueryModel model;
+
+  @Override
+  public RecordReader<Void, Object> createRecordReader(InputSplit split, TaskAttemptContext context)
+      throws IOException, InterruptedException {
+    try {
+      Constructor cons = CarbonStreamUtils
+          .getConstructorWithReflection(STREAM_RECORD_READER_INSTANCE, boolean.class,
+              InputMetricsStats.class, QueryModel.class, boolean.class);
+      return (RecordReader) CarbonStreamUtils
+          .getInstanceWithReflection(cons, isVectorReader, inputMetricsStats, model, useRawRow);
+
+    } catch (Exception e) {
+      throw new IOException(e);
+    }
   }
 
   public static GenericQueryType[] getComplexDimensions(CarbonTable carbontable,
