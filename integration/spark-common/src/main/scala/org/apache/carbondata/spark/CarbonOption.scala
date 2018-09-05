@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.spark
 
-import org.apache.carbondata.format.TableProperty
-
 
 /**
  * Contains all options for Spark data source
