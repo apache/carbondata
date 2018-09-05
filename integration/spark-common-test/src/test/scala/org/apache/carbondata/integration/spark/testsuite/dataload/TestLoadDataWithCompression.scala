@@ -55,7 +55,11 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
   override protected def afterAll(): Unit = {
     executorService.shutdown()
     CarbonUtil.deleteFoldersAndFilesSilent(FileFactory.getCarbonFile(csvDataDir))
-    sql(s"DROP TABLE IF EXISTS $tableName")
+    try {
+      sql(s"DROP TABLE IF EXISTS $tableName")
+    } catch {
+      case _: Exception =>
+    }
   }
 
   override protected def afterEach(): Unit = {
@@ -66,7 +70,11 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.BLOCKLET_SIZE,
       CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
 
-    sql(s"DROP TABLE IF EXISTS $tableName")
+    try {
+      sql(s"DROP TABLE IF EXISTS $tableName")
+    } catch {
+      case _: Exception =>
+    }
   }
 
   private def createTable(streaming: Boolean = false): Unit = {
@@ -368,5 +376,10 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     checkAnswer(sql(s"SELECT COUNT(*) FROM $tableName"), Seq(Row(lineNum * 4)))
     checkAnswer(sql(s"SELECT stringDictField, stringSortField FROM $tableName WHERE stringDictField='stringDict1'"),
       Seq(Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1")))
+    try {
+      sql(s"DROP TABLE IF EXISTS $tableName")
+    } catch {
+      case _: Exception =>
+    }
   }
 }
