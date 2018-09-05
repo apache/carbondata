@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.spark
 
+import org.apache.carbondata.format.TableProperty
+
 
 /**
  * Contains all options for Spark data source
@@ -81,4 +83,11 @@ class CarbonOption(options: Map[String, String]) {
     options.getOrElse("overwrite", "false").toBoolean
 
   def toMap: Map[String, String] = options
+
+  def getTableProperties(properties : Map[String, Option[String]]) : Map[String, Option[String]] = {
+    return TableProperty.values().
+      filter(property => !properties.contains(property.name())).
+      map(property => (property.name(), options.get(property.name()))).
+      filter(_._2.isDefined).toMap ++ properties
+  }
 }
