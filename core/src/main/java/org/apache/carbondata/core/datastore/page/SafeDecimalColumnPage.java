@@ -19,8 +19,7 @@ package org.apache.carbondata.core.datastore.page;
 
 import java.math.BigDecimal;
 
-import org.apache.carbondata.core.datastore.TableSpec;
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.util.ByteUtil;
 
 /**
@@ -36,8 +35,8 @@ public class SafeDecimalColumnPage extends DecimalColumnPage {
   private byte[] shortIntData;
   private byte[][] byteArrayData;
 
-  SafeDecimalColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize) {
-    super(columnSpec, dataType, pageSize);
+  SafeDecimalColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
+    super(columnPageEncoderMeta, pageSize);
     byteArrayData = new byte[pageSize][];
   }
 
@@ -189,8 +188,8 @@ public class SafeDecimalColumnPage extends DecimalColumnPage {
         }
         break;
       default:
-        throw new UnsupportedOperationException(
-            "not support value conversion on " + dataType + " page");
+        throw new UnsupportedOperationException("not support value conversion on "
+            + columnPageEncoderMeta.getStoreDataType() + " page");
     }
   }
 

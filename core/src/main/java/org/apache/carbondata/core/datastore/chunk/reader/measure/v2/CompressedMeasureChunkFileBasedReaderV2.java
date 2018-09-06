@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReaderV2V3Format;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.memory.MemoryException;
@@ -46,6 +47,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
   public CompressedMeasureChunkFileBasedReaderV2(final BlockletInfo blockletInfo,
       final String filePath) {
     super(blockletInfo, filePath);
+    this.compressor = CompressorFactory.SupportedCompressor.SNAPPY.getCompressor();
   }
 
   @Override
@@ -126,7 +128,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     copyPoint += measureColumnChunkLength.get(blockIndex);
 
     ColumnPage page = decodeMeasure(measureRawColumnChunk, measureColumnChunk, copyPoint);
-    page.setNullBits(QueryUtil.getNullBitSet(measureColumnChunk.presence));
+    page.setNullBits(QueryUtil.getNullBitSet(measureColumnChunk.presence, this.compressor));
     return page;
   }
 
@@ -137,7 +139,8 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     byte[] encodedMeta = encoder_meta.get(0).array();
 
     ValueEncoderMeta meta = CarbonUtil.deserializeEncoderMetaV2(encodedMeta);
-    ColumnPageDecoder codec = encodingFactory.createDecoderLegacy(meta);
+    ColumnPageDecoder codec = encodingFactory.createDecoderLegacy(meta,
+        CompressorFactory.SupportedCompressor.SNAPPY.getName());
     byte[] rawData = measureRawColumnChunk.getRawData().array();
     return codec.decode(rawData, copyPoint, measureColumnChunk.data_page_length);
   }

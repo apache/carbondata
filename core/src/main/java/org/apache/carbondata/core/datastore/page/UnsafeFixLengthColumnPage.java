@@ -20,13 +20,12 @@ package org.apache.carbondata.core.datastore.page;
 import java.io.IOException;
 import java.math.BigDecimal;
 
-import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.Compressor;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
@@ -61,40 +60,41 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   private static final int floatBits = DataTypes.FLOAT.getSizeBits();
   private static final int doubleBits = DataTypes.DOUBLE.getSizeBits();
 
-  UnsafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize)
+  UnsafeFixLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize)
       throws MemoryException {
-    super(columnSpec, dataType, pageSize);
-    if (dataType == DataTypes.BOOLEAN ||
-        dataType == DataTypes.BYTE ||
-        dataType == DataTypes.SHORT ||
-        dataType == DataTypes.INT ||
-        dataType == DataTypes.LONG ||
-        dataType == DataTypes.FLOAT ||
-        dataType == DataTypes.DOUBLE) {
-      int size = pageSize << dataType.getSizeBits();
+    super(columnPageEncoderMeta, pageSize);
+    if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BOOLEAN ||
+        columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE ||
+        columnPageEncoderMeta.getStoreDataType() == DataTypes.SHORT ||
+        columnPageEncoderMeta.getStoreDataType() == DataTypes.INT ||
+        columnPageEncoderMeta.getStoreDataType() == DataTypes.LONG ||
+        columnPageEncoderMeta.getStoreDataType() == DataTypes.FLOAT ||
+        columnPageEncoderMeta.getStoreDataType() == DataTypes.DOUBLE) {
+      int size = pageSize << columnPageEncoderMeta.getStoreDataType().getSizeBits();
       memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
       baseAddress = memoryBlock.getBaseObject();
       baseOffset = memoryBlock.getBaseOffset();
       capacity = size;
-    } else if (dataType == DataTypes.SHORT_INT) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.SHORT_INT) {
       int size = pageSize * 3;
       memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
       baseAddress = memoryBlock.getBaseObject();
       baseOffset = memoryBlock.getBaseOffset();
       capacity = size;
-    } else if (DataTypes.isDecimal(dataType) || dataType == DataTypes.STRING) {
-      throw new UnsupportedOperationException("invalid data type: " + dataType);
+    } else if (DataTypes.isDecimal(columnPageEncoderMeta.getStoreDataType()) ||
+        columnPageEncoderMeta.getStoreDataType() == DataTypes.STRING) {
+      throw new UnsupportedOperationException(
+          "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
     }
     totalLength = 0;
   }
 
-  UnsafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
-      int eachRowSize)
-      throws MemoryException {
-    this(columnSpec, dataType, pageSize);
+  UnsafeFixLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize,
+      int eachRowSize) throws MemoryException {
+    this(columnPageEncoderMeta, pageSize);
     this.eachRowSize = eachRowSize;
     totalLength = 0;
-    if (dataType == DataTypes.BYTE_ARRAY) {
+    if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE_ARRAY) {
       memoryBlock =
           UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) pageSize * eachRowSize);
       baseAddress = memoryBlock.getBaseObject();
@@ -217,11 +217,13 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putBytes(int rowId, byte[] bytes, int offset, int length) {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   @Override public void putDecimal(int rowId, BigDecimal decimal) {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   @Override
@@ -272,7 +274,8 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public BigDecimal getDecimal(int rowId) {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   @Override
@@ -288,7 +291,8 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override public byte[] getDecimalPage() {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   @Override
@@ -375,7 +379,8 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public byte[] getLVFlattenedBytePage() {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   @Override public byte[] getComplexChildrenLVFlattenedBytePage() {
@@ -441,7 +446,8 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void setByteArrayPage(byte[][] byteArray) {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   public void freeMemory() {
@@ -455,68 +461,70 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override public void convertValue(ColumnPageValueConverter codec) {
     int endLoop = getEndLoop();
-    if (dataType == DataTypes.BYTE) {
+    if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE) {
       for (long i = 0; i < endLoop; i++) {
         long offset = i << byteBits;
         codec.encode((int) i, CarbonUnsafe.getUnsafe().getByte(baseAddress, baseOffset + offset));
       }
-    } else if (dataType == DataTypes.SHORT) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.SHORT) {
       for (long i = 0; i < endLoop; i++) {
         long offset = i << shortBits;
         codec.encode((int) i, CarbonUnsafe.getUnsafe().getShort(baseAddress, baseOffset + offset));
       }
-    } else if (dataType == DataTypes.INT) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.INT) {
       for (long i = 0; i < endLoop; i++) {
         long offset = i << intBits;
         codec.encode((int) i, CarbonUnsafe.getUnsafe().getInt(baseAddress, baseOffset + offset));
       }
-    } else if (dataType == DataTypes.LONG) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.LONG) {
       for (long i = 0; i < endLoop; i++) {
         long offset = i << longBits;
         codec.encode((int) i, CarbonUnsafe.getUnsafe().getLong(baseAddress, baseOffset + offset));
       }
-    } else if (dataType == DataTypes.FLOAT) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.FLOAT) {
       for (long i = 0; i < endLoop; i++) {
         long offset = i << floatBits;
         codec.encode((int) i, CarbonUnsafe.getUnsafe().getFloat(baseAddress, baseOffset + offset));
       }
-    } else if (dataType == DataTypes.DOUBLE) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.DOUBLE) {
       for (long i = 0; i < endLoop; i++) {
         long offset = i << doubleBits;
         codec.encode((int) i, CarbonUnsafe.getUnsafe().getDouble(baseAddress, baseOffset + offset));
       }
     } else {
-      throw new UnsupportedOperationException("invalid data type: " + dataType);
+      throw new UnsupportedOperationException(
+          "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
     }
   }
 
   private int getEndLoop() {
-    if (dataType == DataTypes.BYTE) {
+    if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE) {
       return totalLength / ByteUtil.SIZEOF_BYTE;
-    } else if (dataType == DataTypes.SHORT) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.SHORT) {
       return totalLength / ByteUtil.SIZEOF_SHORT;
-    } else if (dataType == DataTypes.SHORT_INT) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.SHORT_INT) {
       return totalLength / ByteUtil.SIZEOF_SHORT_INT;
-    } else if (dataType == DataTypes.INT) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.INT) {
       return totalLength / ByteUtil.SIZEOF_INT;
-    } else if (dataType == DataTypes.LONG) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.LONG) {
       return totalLength / ByteUtil.SIZEOF_LONG;
-    } else if (dataType == DataTypes.FLOAT) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.FLOAT) {
       return totalLength / DataTypes.FLOAT.getSizeInBytes();
-    } else if (dataType == DataTypes.DOUBLE) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.DOUBLE) {
       return totalLength / DataTypes.DOUBLE.getSizeInBytes();
-    } else if (dataType == DataTypes.BYTE_ARRAY) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE_ARRAY) {
       return totalLength / eachRowSize;
     } else {
-      throw new UnsupportedOperationException("invalid data type: " + dataType);
+      throw new UnsupportedOperationException(
+          "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
     }
   }
 
   @Override public byte[] compress(Compressor compressor) throws MemoryException, IOException {
-    if (UnsafeMemoryManager.isOffHeap()) {
+    if (UnsafeMemoryManager.isOffHeap() && compressor.supportUnsafe()) {
       // use raw compression and copy to byte[]
       int inputSize = totalLength;
-      int compressedMaxSize = compressor.maxCompressedLength(inputSize);
+      long compressedMaxSize = compressor.maxCompressedLength(inputSize);
       MemoryBlock compressed =
           UnsafeMemoryManager.allocateMemoryWithRetry(taskId, compressedMaxSize);
       long outSize = compressor.rawCompress(baseOffset, inputSize, compressed.getBaseOffset());

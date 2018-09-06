@@ -20,8 +20,6 @@ package org.apache.carbondata.core.datastore.page.encoding;
 import java.math.BigDecimal;
 
 import org.apache.carbondata.core.datastore.TableSpec;
-import org.apache.carbondata.core.datastore.compression.Compressor;
-import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.DecimalColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveDeltaFloatingCodec;
@@ -73,39 +71,36 @@ public class DefaultEncodingFactory extends EncodingFactory {
 
   private ColumnPageEncoder createEncoderForDimension(TableSpec.DimensionSpec columnSpec,
       ColumnPage inputPage) {
-    Compressor compressor = CompressorFactory.getInstance().getCompressor();
     switch (columnSpec.getColumnType()) {
       case GLOBAL_DICTIONARY:
       case DIRECT_DICTIONARY:
       case PLAIN_VALUE:
         return new DirectCompressCodec(inputPage.getDataType()).createEncoder(null);
       case COMPLEX:
-        return new ComplexDimensionIndexCodec(false, false, compressor).createEncoder(null);
+        return new ComplexDimensionIndexCodec(false, false).createEncoder(null);
       default:
-        throw new RuntimeException("unsupported dimension type: " +
-            columnSpec.getColumnType());
+        throw new RuntimeException("unsupported dimension type: " + columnSpec.getColumnType());
     }
   }
 
   private ColumnPageEncoder createEncoderForDimensionLegacy(TableSpec.DimensionSpec dimensionSpec) {
-    Compressor compressor = CompressorFactory.getInstance().getCompressor();
     switch (dimensionSpec.getColumnType()) {
       case GLOBAL_DICTIONARY:
         return new DictDimensionIndexCodec(
             dimensionSpec.isInSortColumns(),
-            dimensionSpec.isInSortColumns() && dimensionSpec.isDoInvertedIndex(),
-            compressor).createEncoder(null);
+            dimensionSpec.isInSortColumns() && dimensionSpec.isDoInvertedIndex())
+            .createEncoder(null);
       case DIRECT_DICTIONARY:
         return new DirectDictDimensionIndexCodec(
             dimensionSpec.isInSortColumns(),
-            dimensionSpec.isInSortColumns() && dimensionSpec.isDoInvertedIndex(),
-            compressor).createEncoder(null);
+            dimensionSpec.isInSortColumns() && dimensionSpec.isDoInvertedIndex())
+            .createEncoder(null);
       case PLAIN_VALUE:
         return new HighCardDictDimensionIndexCodec(
             dimensionSpec.isInSortColumns(),
             dimensionSpec.isInSortColumns() && dimensionSpec.isDoInvertedIndex(),
-            dimensionSpec.getSchemaDataType() == DataTypes.VARCHAR,
-            compressor).createEncoder(null);
+            dimensionSpec.getSchemaDataType() == DataTypes.VARCHAR)
+            .createEncoder(null);
       default:
         throw new RuntimeException("unsupported dimension type: " +
             dimensionSpec.getColumnType());

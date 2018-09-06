@@ -34,6 +34,7 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
@@ -85,12 +86,16 @@ public class TablePage {
 
   // used for complex column to deserilize the byte array in input CarbonRow
   private Map<Integer, GenericDataType> complexIndexMap = null;
+  // name of compressor that used to compress column data,
+  // currently all the columns share the same compressor.
+  private String columnCompressor;
 
   TablePage(CarbonFactDataHandlerModel model, int pageSize) throws MemoryException {
     this.model = model;
     this.pageSize = pageSize;
     int numDictDimension = model.getMDKeyGenerator().getDimCount();
     TableSpec tableSpec = model.getTableSpec();
+    this.columnCompressor = model.getColumnCompressor();
 
     dictDimensionPages = new ColumnPage[numDictDimension];
     noDictDimensionPages = new ColumnPage[model.getNoDictionaryCount()];
@@ -102,7 +107,8 @@ public class TablePage {
       ColumnPage page;
       if (ColumnType.GLOBAL_DICTIONARY == columnType
           || ColumnType.DIRECT_DICTIONARY == columnType) {
-        page = ColumnPage.newPage(spec, DataTypes.BYTE_ARRAY, pageSize);
+        page = ColumnPage.newPage(
+            new ColumnPageEncoderMeta(spec, DataTypes.BYTE_ARRAY, columnCompressor), pageSize);
         page.setStatsCollector(KeyPageStatsCollector.newInstance(DataTypes.BYTE_ARRAY));
         dictDimensionPages[tmpNumDictDimIdx++] = page;
       } else {
@@ -113,11 +119,13 @@ public class TablePage {
         if (DataTypes.VARCHAR == spec.getSchemaDataType()) {
           dataType = DataTypes.VARCHAR;
         }
+        ColumnPageEncoderMeta columnPageEncoderMeta =
+            new ColumnPageEncoderMeta(spec, dataType, columnCompressor);
         if (null != localDictionaryGenerator) {
-          page = ColumnPage
-              .newLocalDictPage(spec, dataType, pageSize, localDictionaryGenerator, false);
+          page = ColumnPage.newLocalDictPage(
+              columnPageEncoderMeta, pageSize, localDictionaryGenerator, false);
         } else {
-          page = ColumnPage.newPage(spec, dataType, pageSize);
+          page = ColumnPage.newPage(columnPageEncoderMeta, pageSize);
         }
         if (DataTypes.VARCHAR == dataType) {
           page.setStatsCollector(LVLongStringStatsCollector.newInstance());
@@ -136,15 +144,15 @@ public class TablePage {
     measurePages = new ColumnPage[model.getMeasureCount()];
     DataType[] dataTypes = model.getMeasureDataType();
     for (int i = 0; i < measurePages.length; i++) {
-      TableSpec.MeasureSpec spec = model.getTableSpec().getMeasureSpec(i);
+      ColumnPageEncoderMeta columnPageEncoderMeta = new ColumnPageEncoderMeta(
+          model.getTableSpec().getMeasureSpec(i), dataTypes[i], columnCompressor);
       ColumnPage page;
-      if (DataTypes.isDecimal(spec.getSchemaDataType())) {
-        page = ColumnPage.newDecimalPage(spec, dataTypes[i], pageSize);
+      if (DataTypes.isDecimal(columnPageEncoderMeta.getSchemaDataType())) {
+        page = ColumnPage.newDecimalPage(columnPageEncoderMeta, pageSize);
       } else {
-        page = ColumnPage.newPage(spec, dataTypes[i], pageSize);
+        page = ColumnPage.newPage(columnPageEncoderMeta, pageSize);
       }
-      page.setStatsCollector(
-          PrimitivePageStatsCollector.newInstance(dataTypes[i]));
+      page.setStatsCollector(PrimitivePageStatsCollector.newInstance(dataTypes[i]));
       measurePages[i] = page;
     }
 
@@ -239,8 +247,8 @@ public class TablePage {
       complexDataType.getComplexColumnInfo(complexColumnInfoList);
       complexDimensionPages[index] = new ComplexColumnPage(complexColumnInfoList);
       try {
-        complexDimensionPages[index]
-            .initialize(model.getColumnLocalDictGenMap(), pageSize);
+        complexDimensionPages[index].initialize(
+            model.getColumnLocalDictGenMap(), pageSize, columnCompressor);
       } catch (MemoryException e) {
         throw new RuntimeException(e);
       }

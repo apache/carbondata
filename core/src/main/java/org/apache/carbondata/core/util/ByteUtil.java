@@ -39,6 +39,8 @@ public final class ByteUtil {
 
   public static final int SIZEOF_LONG = 8;
 
+  public static final int SIZEOF_FLOAT = 4;
+
   public static final int SIZEOF_DOUBLE = 8;
 
   public static final String UTF8_CSN = StandardCharsets.UTF_8.name();

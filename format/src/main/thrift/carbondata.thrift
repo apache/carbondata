@@ -65,10 +65,11 @@ enum SortState{
 }
 
 /**
- * Compressions supported by CarbonData.
+ * Compressions for column page supported by CarbonData.
  */
 enum CompressionCodec{
     SNAPPY = 0;
+    ZSTD = 1;
 }
 
 /**
@@ -212,6 +213,7 @@ struct FileHeader{
 	4: optional i64 time_stamp; // Timestamp to compare column schema against master schema
 	5: optional bool is_splitable; // Whether file is splitable or not
 	6: optional binary sync_marker; // 16 bytes sync marker
+	7: optional CompressionCodec compressionCodec; // compressor used to compress blocklet data
 }
 
 /**

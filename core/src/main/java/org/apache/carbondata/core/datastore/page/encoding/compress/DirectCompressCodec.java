@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
@@ -55,69 +54,53 @@ public class DirectCompressCodec implements ColumnPageCodec {
 
   @Override
   public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
-    // TODO: make compressor configurable in create table
-    return new DirectCompressor(CarbonCommonConstants.DEFAULT_COMPRESSOR);
+    return new ColumnPageEncoder() {
+
+      @Override
+      protected byte[] encodeData(ColumnPage input) throws MemoryException, IOException {
+        Compressor compressor = CompressorFactory.getInstance().getCompressor(
+            input.getColumnCompressorName());
+        return input.compress(compressor);
+      }
+
+      @Override
+      protected List<Encoding> getEncodingList() {
+        List<Encoding> encodings = new ArrayList<>();
+        encodings.add(dataType == DataTypes.VARCHAR ?
+            Encoding.DIRECT_COMPRESS_VARCHAR :
+            Encoding.DIRECT_COMPRESS);
+        return encodings;
+      }
+
+      @Override
+      protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
+        return new ColumnPageEncoderMeta(inputPage.getColumnSpec(), inputPage.getDataType(),
+            inputPage.getStatistics(), inputPage.getColumnCompressorName());
+      }
+    };
   }
 
   @Override
-  public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
-    return new DirectDecompressor(meta);
-  }
+  public ColumnPageDecoder createDecoder(final ColumnPageEncoderMeta meta) {
+    return new ColumnPageDecoder() {
 
-  private class DirectCompressor extends ColumnPageEncoder {
-
-    private Compressor compressor;
-
-    DirectCompressor(String compressorName) {
-      this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
-    }
-
-    @Override
-    protected byte[] encodeData(ColumnPage input) throws MemoryException, IOException {
-      return input.compress(compressor);
-    }
-
-    @Override
-    protected List<Encoding> getEncodingList() {
-      List<Encoding> encodings = new ArrayList<>();
-      encodings.add(dataType == DataTypes.VARCHAR ?
-          Encoding.DIRECT_COMPRESS_VARCHAR :
-          Encoding.DIRECT_COMPRESS);
-      return encodings;
-    }
-
-    @Override
-    protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
-      return new ColumnPageEncoderMeta(inputPage.getColumnSpec(), inputPage.getDataType(),
-          inputPage.getStatistics(), compressor.getName());
-    }
-
-  }
-
-  private class DirectDecompressor implements ColumnPageDecoder {
-
-    private ColumnPageEncoderMeta meta;
-
-    DirectDecompressor(ColumnPageEncoderMeta meta) {
-      this.meta = meta;
-    }
-
-    @Override
-    public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
-      ColumnPage decodedPage;
-      if (DataTypes.isDecimal(dataType)) {
-        decodedPage = ColumnPage.decompressDecimalPage(meta, input, offset, length);
-      } else {
-        decodedPage = ColumnPage.decompress(meta, input, offset, length, false);
+      @Override
+      public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
+        ColumnPage decodedPage;
+        if (DataTypes.isDecimal(dataType)) {
+          decodedPage = ColumnPage.decompressDecimalPage(meta, input, offset, length);
+        } else {
+          decodedPage = ColumnPage.decompress(meta, input, offset, length, false);
+        }
+        return LazyColumnPage.newPage(decodedPage, converter);
       }
-      return LazyColumnPage.newPage(decodedPage, converter);
-    }
 
-    @Override public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
+      @Override public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
         throws MemoryException, IOException {
-      return LazyColumnPage
-          .newPage(ColumnPage.decompress(meta, input, offset, length, isLVEncoded), converter);
-    }
+        return LazyColumnPage.newPage(
+            ColumnPage.decompress(meta, input, offset, length, isLVEncoded), converter);
+      }
+    };
   }
 
   private ColumnPageValueConverter converter = new ColumnPageValueConverter() {

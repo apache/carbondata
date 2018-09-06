@@ -30,6 +30,7 @@ import org.apache.carbondata.core.datastore.chunk.reader.dimension.AbstractChunk
 import org.apache.carbondata.core.datastore.chunk.store.ColumnPageWrapper;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
@@ -200,6 +201,8 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     // get the data buffer
     ByteBuffer rawData = rawColumnPage.getRawData();
     DataChunk2 pageMetadata = dataChunk3.getData_chunk_list().get(pageNumber);
+    String compressorName = pageMetadata.getChunk_meta().getCompression_codec().name();
+    this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
     // calculating the start point of data
     // as buffer can contain multiple column data, start point will be datachunkoffset +
     // data chunk length + page offset
@@ -214,7 +217,8 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       throws IOException, MemoryException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
-    ColumnPageDecoder decoder = encodingFactory.createDecoder(encodings, encoderMetas);
+    ColumnPageDecoder decoder = encodingFactory.createDecoder(encodings, encoderMetas,
+        pageMetadata.getChunk_meta().getCompression_codec().name());
     return decoder
         .decode(pageData.array(), offset, pageMetadata.data_page_length, isLocalDictEncodedPage);
   }
@@ -242,7 +246,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     if (isEncodedWithMeta(pageMetadata)) {
       ColumnPage decodedPage = decodeDimensionByMeta(pageMetadata, pageData, offset,
           null != rawColumnPage.getLocalDictionary());
-      decodedPage.setNullBits(QueryUtil.getNullBitSet(pageMetadata.presence));
+      decodedPage.setNullBits(QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor));
       return new ColumnPageWrapper(decodedPage, rawColumnPage.getLocalDictionary(),
           isEncodedWithAdaptiveMeta(pageMetadata));
     } else {
@@ -273,7 +277,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     int[] rlePage;
     int[] invertedIndexes = new int[0];
     int[] invertedIndexesReverse = new int[0];
-    dataPage = COMPRESSOR.unCompressByte(pageData.array(), offset, pageMetadata.data_page_length);
+    dataPage = compressor.unCompressByte(pageData.array(), offset, pageMetadata.data_page_length);
     offset += pageMetadata.data_page_length;
     // if row id block is present then read the row id chunk and uncompress it
     if (hasEncoding(pageMetadata.encoders, Encoding.INVERTED_INDEX)) {

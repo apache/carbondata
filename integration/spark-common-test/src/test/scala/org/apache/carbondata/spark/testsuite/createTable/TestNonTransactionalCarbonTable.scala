@@ -2554,16 +2554,18 @@ object testUtil{
       data: Array[String]): Boolean = {
     val local_dictionary = rawColumnPage.getDataChunkV3.local_dictionary
     if (null != local_dictionary) {
+      val compressorName = rawColumnPage.getDataChunkV3.getData_chunk_list.get(0)
+        .getChunk_meta.getCompression_codec.name()
       val encodings = local_dictionary.getDictionary_meta.encoders
       val encoderMetas = local_dictionary.getDictionary_meta.getEncoder_meta
       val encodingFactory = DefaultEncodingFactory.getInstance
-      val decoder = encodingFactory.createDecoder(encodings, encoderMetas)
+      val decoder = encodingFactory.createDecoder(encodings, encoderMetas, compressorName)
       val dictionaryPage = decoder
         .decode(local_dictionary.getDictionary_data, 0, local_dictionary.getDictionary_data.length)
       val dictionaryMap = new
           util.HashMap[DictionaryByteArrayWrapper, Integer]
       val usedDictionaryValues = util.BitSet
-        .valueOf(CompressorFactory.getInstance.getCompressor
+        .valueOf(CompressorFactory.getInstance.getCompressor(compressorName)
           .unCompressByte(local_dictionary.getDictionary_values))
       var index = 0
       var i = usedDictionaryValues.nextSetBit(0)
