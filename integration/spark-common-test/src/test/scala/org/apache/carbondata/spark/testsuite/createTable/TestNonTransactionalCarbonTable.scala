@@ -2422,10 +2422,10 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
   test("test LocalDictionary with custom Threshold") {
     FileUtils.deleteDirectory(new File(writerPath))
     val tablePropertiesMap: util.Map[String, String] =
-      Map("blocksize" -> "12",
-        "sortcolumns" -> "name",
-        "localDictionaryThreshold" -> "200",
-        "enableLocalDictionary" -> "true").asJava
+      Map("table_blocksize" -> "12",
+        "sort_columns" -> "name",
+        "local_dictionary_threshold" -> "200",
+        "local_dictionary_enable" -> "true").asJava
     val builder = CarbonWriter.builder.isTransactionalTable(false)
       .withTableProperties(tablePropertiesMap)
       .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath)
