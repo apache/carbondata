@@ -551,7 +551,8 @@ public class BlockDataMap extends CoarseGrainDataMap
       // dummy value
       return 0;
     } else {
-      return ByteBuffer.wrap(getBlockletRowCountForEachBlock()).getShort(index);
+      return ByteBuffer.wrap(getBlockletRowCountForEachBlock()).getShort(
+          index * CarbonCommonConstants.SHORT_SIZE_IN_BYTE);
     }
   }
 
