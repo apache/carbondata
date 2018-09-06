@@ -7,7 +7,7 @@
     the License.  You may obtain a copy of the License at
 
       http://www.apache.org/licenses/LICENSE-2.0
-
+    
     Unless required by applicable law or agreed to in writing, software 
     distributed under the License is distributed on an "AS IS" BASIS, 
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,10 +16,11 @@
 -->
 
 # Quick Start
-This tutorial provides a quick introduction to using CarbonData.
+This tutorial provides a quick introduction to using CarbonData.To follow along with this guide, first download a packaged release of CarbonData from the [CarbonData website](https://dist.apache.org/repos/dist/release/carbondata/).Alternatively it can be created following [Building CarbonData](https://github.com/apache/carbondata/tree/master/build) steps.
 
 ##  Prerequisites
-* [Installation and building CarbonData](https://github.com/apache/carbondata/blob/master/build).
+* Spark 2.2.1 version is installed and running.CarbonData supports Spark versions upto 2.2.1.Please follow steps described in [Spark docs website](https://spark.apache.org/docs/latest) for installing and running Spark.
+
 * Create a sample.csv file using the following commands. The CSV file is required for loading data into CarbonData.
 
   ```
@@ -43,7 +44,7 @@ Start Spark shell by running the following command in the Spark directory:
 ```
 ./bin/spark-shell --jars <carbondata assembly jar path>
 ```
-**NOTE**: Assembly jar will be available after [building CarbonData](https://github.com/apache/carbondata/blob/master/build/README.md) and can be copied from `./assembly/target/scala-2.1x/carbondata_xxx.jar`
+**NOTE**: Path where packaged release of CarbonData was downloaded or assembly jar will be available after [building CarbonData](https://github.com/apache/carbondata/blob/master/build/README.md) and can be copied from `./assembly/target/scala-2.1x/carbondata_xxx.jar`
 
 In this shell, SparkSession is readily available as `spark` and Spark context is readily available as `sc`.
 
@@ -62,7 +63,7 @@ import org.apache.spark.sql.CarbonSession._
 val carbon = SparkSession.builder().config(sc.getConf)
              .getOrCreateCarbonSession("<hdfs store path>")
 ```
-**NOTE**: By default metastore location is pointed to `../carbon.metastore`, user can provide own metastore location to CarbonSession like `SparkSession.builder().config(sc.getConf)
+**NOTE**: By default metastore location points to `../carbon.metastore`, user can provide own metastore location to CarbonSession like `SparkSession.builder().config(sc.getConf)
 .getOrCreateCarbonSession("<hdfs store path>", "<local metastore path>")`
 
 #### Executing Queries
