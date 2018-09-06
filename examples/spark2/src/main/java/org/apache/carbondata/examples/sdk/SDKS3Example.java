@@ -19,10 +19,12 @@ package org.apache.carbondata.examples.sdk;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.sdk.file.*;
 
 import org.apache.hadoop.conf.Configuration;
@@ -39,6 +41,12 @@ public class SDKS3Example {
                 + "<s3-endpoint> [table-path-on-s3] [rows]");
             System.exit(0);
         }
+
+        String backupProperty = CarbonProperties.getInstance()
+            .getProperty(CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH,
+                CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH_DEFAULT);
+        CarbonProperties.getInstance()
+            .addProperty(CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH, "true");
 
         String path = "s3a://sdk/WriterOutput";
         if (args.length > 3) {
@@ -87,5 +95,9 @@ public class SDKS3Example {
         }
         System.out.println("\nFinished");
         reader.close();
+
+        CarbonProperties.getInstance()
+            .addProperty(CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH,
+                backupProperty);
     }
 }
