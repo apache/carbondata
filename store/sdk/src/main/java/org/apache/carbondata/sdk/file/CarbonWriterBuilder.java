@@ -298,11 +298,11 @@ public class CarbonWriterBuilder {
    *
    * @param options key,value pair of create table properties.
    * supported keys values are
-   * a. blocksize -- [1-2048] values in MB. Default value is 1024
-   * b. blockletsize -- values in MB. Default value is 64 MB
-   * c. localDictionaryThreshold -- positive value, default is 10000
-   * d. enableLocalDictionary -- true / false. Default is false
-   * e. sortcolumns -- comma separated column. "c1,c2". Default all dimensions are sorted.
+   * a. table_blocksize -- [1-2048] values in MB. Default value is 1024
+   * b. table_blocklet_size -- values in MB. Default value is 64 MB
+   * c. local_dictionary_threshold -- positive value, default is 10000
+   * d. local_dictionary_enable -- true / false. Default is false
+   * e. sort_columns -- comma separated column. "c1,c2". Default all dimensions are sorted.
    *
    * @return updated CarbonWriterBuilder
    */
@@ -315,8 +315,8 @@ public class CarbonWriterBuilder {
     }
 
     Set<String> supportedOptions = new HashSet<>(Arrays
-        .asList("blocksize", "blockletsize", "localdictionarythreshold", "enablelocaldictionary",
-            "sortcolumns"));
+        .asList("table_blocksize", "table_blocklet_size", "local_dictionary_threshold",
+            "local_dictionary_enable", "sort_columns"));
 
     for (String key : options.keySet()) {
       if (!supportedOptions.contains(key.toLowerCase())) {
@@ -326,15 +326,15 @@ public class CarbonWriterBuilder {
     }
 
     for (Map.Entry<String, String> entry : options.entrySet()) {
-      if (entry.getKey().equalsIgnoreCase("blocksize")) {
+      if (entry.getKey().equalsIgnoreCase("table_blocksize")) {
         this.withBlockSize(Integer.parseInt(entry.getValue()));
-      } else if (entry.getKey().equalsIgnoreCase("blockletsize")) {
+      } else if (entry.getKey().equalsIgnoreCase("table_blocklet_size")) {
         this.withBlockletSize(Integer.parseInt(entry.getValue()));
-      } else if (entry.getKey().equalsIgnoreCase("localDictionaryThreshold")) {
+      } else if (entry.getKey().equalsIgnoreCase("local_dictionary_threshold")) {
         this.localDictionaryThreshold(Integer.parseInt(entry.getValue()));
-      } else if (entry.getKey().equalsIgnoreCase("enableLocalDictionary")) {
+      } else if (entry.getKey().equalsIgnoreCase("local_dictionary_enable")) {
         this.enableLocalDictionary((entry.getValue().equalsIgnoreCase("true")));
-      } else if (entry.getKey().equalsIgnoreCase("sortcolumns")) {
+      } else if (entry.getKey().equalsIgnoreCase("sort_columns")) {
         //sort columns
         String[] sortColumns = entry.getValue().split(",");
         this.sortBy(sortColumns);
@@ -556,7 +556,6 @@ public class CarbonWriterBuilder {
       // we are still using the traditional carbon table folder structure
       persistSchemaFile(table, CarbonTablePath.getSchemaFilePath(path));
     }
-
     // build LoadModel
     return buildLoadModel(table, UUID, taskNo, options);
   }
