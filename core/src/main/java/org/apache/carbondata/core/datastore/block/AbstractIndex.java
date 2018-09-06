@@ -100,6 +100,10 @@ public abstract class AbstractIndex implements Cacheable {
     return this.memorySize;
   }
 
+  @Override public void invalidate() {
+
+  }
+
   /**
    * The method is used to set the access count
    */

@@ -155,10 +155,10 @@ public final class CarbonLRUCache {
   private void removeKey(String key) {
     Cacheable cacheable = lruCacheMap.get(key);
     if (null != cacheable) {
-      currentSize = currentSize - cacheable.getMemorySize();
-    }
-    Cacheable remove = lruCacheMap.remove(key);
-    if (null != remove) {
+      long memorySize = cacheable.getMemorySize();
+      cacheable.invalidate();
+      lruCacheMap.remove(key);
+      currentSize = currentSize - memorySize;
       LOGGER.info("Removed entry from InMemory lru cache :: " + key);
     }
   }

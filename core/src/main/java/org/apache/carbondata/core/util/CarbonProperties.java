@@ -1294,73 +1294,27 @@ public final class CarbonProperties {
   }
 
   private void validateSortMemorySizeInMB() {
-    int sortMemorySizeInMBDefault =
-        Integer.parseInt(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT);
-    int sortMemorySizeInMB = 0;
     try {
-      sortMemorySizeInMB = Integer.parseInt(
-          carbonProperties.getProperty(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB));
-    } catch (NumberFormatException e) {
-      LOGGER.warn(
-          "The specified value for property " + CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB
-              + "is Invalid." + " Taking the default value."
-              + CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT);
-      sortMemorySizeInMB = sortMemorySizeInMBDefault;
-    }
-    if (sortMemorySizeInMB < sortMemorySizeInMBDefault) {
-      LOGGER.warn(
-          "The specified value for property " + CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB
-              + "is less than default value." + ". Taking the default value."
-              + CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT);
-      sortMemorySizeInMB = sortMemorySizeInMBDefault;
-    }
-    String unsafeWorkingMemoryString =
-        carbonProperties.getProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB);
-    String unsafeSortStorageMemoryString =
-        carbonProperties.getProperty(CarbonCommonConstants.IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB);
-    int workingMemory = 512;
-    int sortStorageMemory;
-    if (null == unsafeWorkingMemoryString && null == unsafeSortStorageMemoryString) {
-      workingMemory = workingMemory > ((sortMemorySizeInMB * 20) / 100) ?
-          workingMemory :
-          ((sortMemorySizeInMB * 20) / 100);
-      sortStorageMemory = sortMemorySizeInMB - workingMemory;
-      carbonProperties
-          .setProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB, workingMemory + "");
+      int unsafeSortStorageMemoryString = Integer.parseInt(carbonProperties
+          .getProperty(CarbonCommonConstants.IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB));
       carbonProperties.setProperty(CarbonCommonConstants.IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB,
-          sortStorageMemory + "");
-    } else if (null != unsafeWorkingMemoryString && null == unsafeSortStorageMemoryString) {
-      carbonProperties.setProperty(CarbonCommonConstants.IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB,
-          sortMemorySizeInMB + "");
-    } else if (null == unsafeWorkingMemoryString && null != unsafeSortStorageMemoryString) {
-      carbonProperties
-          .setProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB, sortMemorySizeInMB + "");
+          unsafeSortStorageMemoryString + "");
+    } catch (NumberFormatException ne) {
+      LOGGER.warn("The specified value for property "
+          + CarbonCommonConstants.IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB + "is invalid.");
     }
   }
 
   private void validateWorkingMemory() {
-    int unsafeWorkingMemoryDefault =
-        Integer.parseInt(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT);
-    int unsafeWorkingMemory = 0;
     try {
-      unsafeWorkingMemory = Integer.parseInt(
+      int unsafeWorkingMemory = Integer.parseInt(
           carbonProperties.getProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB));
+      carbonProperties
+          .setProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB, unsafeWorkingMemory + "");
     } catch (NumberFormatException e) {
       LOGGER.warn("The specified value for property "
-          + CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT + "is invalid."
-          + " Taking the default value."
-          + CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT);
-      unsafeWorkingMemory = unsafeWorkingMemoryDefault;
+          + CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT + "is invalid.");
     }
-    if (unsafeWorkingMemory < unsafeWorkingMemoryDefault) {
-      LOGGER.warn("The specified value for property "
-          + CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT
-          + "is less than the default value." + ". Taking the default value."
-          + CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT);
-      unsafeWorkingMemory = unsafeWorkingMemoryDefault;
-    }
-    carbonProperties
-        .setProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB, unsafeWorkingMemory + "");
   }
 
   private void validateSortStorageMemory() {

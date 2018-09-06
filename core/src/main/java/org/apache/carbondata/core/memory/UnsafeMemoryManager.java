@@ -42,6 +42,7 @@ public class UnsafeMemoryManager {
   private static Map<Long,Set<MemoryBlock>> taskIdToMemoryBlockMap;
   static {
     long size = 0L;
+    String defaultWorkingMemorySize = null;
     try {
       // check if driver unsafe memory is configured and JVM process is in driver. In that case
       // initialize unsafe memory configured for driver
@@ -49,38 +50,41 @@ public class UnsafeMemoryManager {
           .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "false"));
       boolean initializedWithUnsafeDriverMemory = false;
       if (isDriver) {
-        String driverUnsafeMemorySize = CarbonProperties.getInstance()
+        defaultWorkingMemorySize = CarbonProperties.getInstance()
             .getProperty(CarbonCommonConstants.UNSAFE_DRIVER_WORKING_MEMORY_IN_MB);
-        if (null != driverUnsafeMemorySize) {
-          size = Long.parseLong(CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.UNSAFE_DRIVER_WORKING_MEMORY_IN_MB,
-                  CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT));
+        if (null != defaultWorkingMemorySize) {
+          size = Long.parseLong(defaultWorkingMemorySize);
           initializedWithUnsafeDriverMemory = true;
         }
       }
       if (!initializedWithUnsafeDriverMemory) {
-        size = Long.parseLong(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB,
-                CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT));
+        defaultWorkingMemorySize = CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB);
+        if (null != defaultWorkingMemorySize) {
+          size = Long.parseLong(defaultWorkingMemorySize);
+        }
       }
     } catch (Exception e) {
-      size = Long.parseLong(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT);
-      LOGGER.info("Wrong memory size given, "
-          + "so setting default value to " + size);
+      LOGGER.info("Invalid memory size value: " + defaultWorkingMemorySize);
     }
-    if (size < 512) {
-      size = 512;
-      LOGGER.info("It is not recommended to keep unsafe memory size less than 512MB, "
-          + "so setting default value to " + size);
-    }
-    long takenSize = size * 1024 * 1024;
+    long takenSize = size;
     MemoryAllocator allocator;
     if (offHeap) {
       allocator = MemoryAllocator.UNSAFE;
+      long defaultSize = Long.parseLong(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT);
+      if (takenSize < defaultSize) {
+        takenSize = defaultSize;
+      }
+      takenSize = takenSize * 1024 * 1024;
     } else {
       long maxMemory = Runtime.getRuntime().maxMemory() * 60 / 100;
-      if (takenSize > maxMemory) {
+      if (takenSize == 0L) {
         takenSize = maxMemory;
+      } else {
+        takenSize = takenSize * 1024 * 1024;
+        if (takenSize > maxMemory) {
+          takenSize = maxMemory;
+        }
       }
       allocator = MemoryAllocator.HEAP;
     }

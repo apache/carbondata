@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import org.apache.carbondata.core.cache.Cacheable;
+import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockDataMap;
 
 /**
@@ -55,6 +56,13 @@ public class BlockletDataMapIndexWrapper implements Cacheable, Serializable {
 
   @Override public long getMemorySize() {
     return wrapperSize;
+  }
+
+  @Override public void invalidate() {
+    for (DataMap dataMap : dataMaps) {
+      dataMap.clear();
+    }
+    dataMaps = null;
   }
 
   public List<BlockDataMap> getDataMaps() {

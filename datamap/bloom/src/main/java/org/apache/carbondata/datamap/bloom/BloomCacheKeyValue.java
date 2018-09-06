@@ -100,6 +100,10 @@ public class BloomCacheKeyValue {
       return size;
     }
 
+    @Override public void invalidate() {
+      bloomFilters = null;
+    }
+
     public List<CarbonBloomFilter> getBloomFilters() {
       return bloomFilters;
     }
