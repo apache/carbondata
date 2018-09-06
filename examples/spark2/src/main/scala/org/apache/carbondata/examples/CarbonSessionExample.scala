@@ -48,45 +48,45 @@ object CarbonSessionExample {
 
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
-
-    spark.sql("DROP TABLE IF EXISTS carbonsession_table")
-    spark.sql("DROP TABLE IF EXISTS stored_as_carbondata_table")
-
-
-    // Create table
-    spark.sql(
-      s"""
-         | CREATE TABLE carbonsession_table(
-         | shortField SHORT,
-         | intField INT,
-         | bigintField LONG,
-         | doubleField DOUBLE,
-         | stringField STRING,
-         | timestampField TIMESTAMP,
-         | dateField DATE,
-         | charField CHAR(5),
-         | floatField FLOAT
-         | )
-         | STORED BY 'carbondata'
-         | TBLPROPERTIES('local_dictionary_enable'='true')
-       """.stripMargin)
-
-    val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
-
-    // scalastyle:off
-    spark.sql(
-      s"""
-         | LOAD DATA LOCAL INPATH '$path'
-         | INTO TABLE carbonsession_table
-         | OPTIONS('HEADER'='true', 'COMPLEX_DELIMITER_LEVEL_1'='#')
-       """.stripMargin)
-    // scalastyle:on
-
-    spark.sql(
-      s"""
-         | SELECT *
-         | FROM carbonsession_table
-      """.stripMargin).show()
+//
+//    spark.sql("DROP TABLE IF EXISTS carbonsession_table")
+//    spark.sql("DROP TABLE IF EXISTS stored_as_carbondata_table")
+//
+//
+//    // Create table
+//    spark.sql(
+//      s"""
+//         | CREATE TABLE carbonsession_table(
+//         | shortField SHORT,
+//         | intField INT,
+//         | bigintField LONG,
+//         | doubleField DOUBLE,
+//         | stringField STRING,
+//         | timestampField TIMESTAMP,
+//         | dateField DATE,
+//         | charField CHAR(5),
+//         | floatField FLOAT
+//         | )
+//         | STORED BY 'carbondata'
+//         | TBLPROPERTIES('local_dictionary_enable'='true')
+//       """.stripMargin)
+//
+//    val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
+//
+//    // scalastyle:off
+//    spark.sql(
+//      s"""
+//         | LOAD DATA LOCAL INPATH '$path'
+//         | INTO TABLE carbonsession_table
+//         | OPTIONS('HEADER'='true', 'COMPLEX_DELIMITER_LEVEL_1'='#')
+//       """.stripMargin)
+//    // scalastyle:on
+//
+//    spark.sql(
+//      s"""
+//         | SELECT *
+//         | FROM carbonsession_table where stringField='spark'
+//      """.stripMargin).show()
 
 //    import spark.implicits._
 //
@@ -104,7 +104,9 @@ object CarbonSessionExample {
 //      .option("compress", "true")
 //      .mode(SaveMode.Overwrite).save()
 
-//    spark.sql("select count(ID),count(name),count(city),count(age) from personTable").show()
+    spark.sql("select count(*) from personTable where ID='No.10008'").show()
+
+    spark.sql("select count(ID),count(name),count(city),count(age) from personTable").show()
 
 //    spark.sql(
 //      s"""

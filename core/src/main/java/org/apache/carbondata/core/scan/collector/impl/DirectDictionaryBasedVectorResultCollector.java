@@ -49,8 +49,6 @@ public class DirectDictionaryBasedVectorResultCollector extends AbstractScannedR
 
   ColumnVectorInfo[] allColumnInfo;
 
-  private ColumnVectorInfo[] implictColumnInfo;
-
   public DirectDictionaryBasedVectorResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
     // initialize only if the current block is not a restructured block else the initialization
@@ -128,7 +126,6 @@ public class DirectDictionaryBasedVectorResultCollector extends AbstractScannedR
     dictionaryInfo = dictInfoList.toArray(new ColumnVectorInfo[dictInfoList.size()]);
     noDictionaryInfo = noDictInfoList.toArray(new ColumnVectorInfo[noDictInfoList.size()]);
     complexInfo = complexList.toArray(new ColumnVectorInfo[complexList.size()]);
-    implictColumnInfo = implictColumnList.toArray(new ColumnVectorInfo[implictColumnList.size()]);
     Arrays.sort(dictionaryInfo);
     Arrays.sort(complexInfo);
   }
@@ -142,18 +139,17 @@ public class DirectDictionaryBasedVectorResultCollector extends AbstractScannedR
   public void collectResultInColumnarBatch(BlockletScannedResult scannedResult,
       CarbonColumnarBatch columnarBatch) {
     int numberOfPages = scannedResult.numberOfpages();
-    int filteredRows = 0;
     while (scannedResult.getCurrentPageCounter() < numberOfPages) {
       int currentPageRowCount = scannedResult.getCurrentPageRowCount();
       if (currentPageRowCount == 0) {
-        scannedResult.incrementPageCounter();
+        scannedResult.incrementPageCounter(null);
         continue;
       }
       fillColumnVectorDetails(columnarBatch);
       fillResultToColumnarBatch(scannedResult);
       columnarBatch.setActualSize(currentPageRowCount);
       scannedResult.setRowCounter(currentPageRowCount);
-      scannedResult.incrementPageCounter();
+      scannedResult.incrementPageCounter(null);
       return;
     }
   }

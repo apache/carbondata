@@ -28,6 +28,7 @@ import java.util.Map;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -289,7 +290,7 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
       Constructor<ColumnarBatch> constructor =
           ColumnarBatch.class.getDeclaredConstructor(StructType.class, int.class, MemoryMode.class);
       constructor.setAccessible(true);
-      columnarBatch = constructor.newInstance(schema, 32000, memMode);
+      columnarBatch = constructor.newInstance(schema, CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT, memMode);
     } catch (Exception e) {
       e.printStackTrace();
     }
