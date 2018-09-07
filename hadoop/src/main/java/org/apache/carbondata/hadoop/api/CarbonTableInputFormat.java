@@ -227,8 +227,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     }
 
     // add all splits of streaming
-    List<InputSplit> splitsOfStreaming =
-        getSplitsOfStreaming(job, streamSegments, carbonTable, filterInterface);
+    List<InputSplit> splitsOfStreaming = getSplitsOfStreaming(job, streamSegments, carbonTable);
     if (!splitsOfStreaming.isEmpty()) {
       splits.addAll(splitsOfStreaming);
     }
@@ -356,7 +355,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
           Expression filter = getFilterPredicates(job.getConfiguration());
           if (filter != null) {
             carbonTable.processFilterExpression(filter, null, null);
-            filterResolverIntf = carbonTable.resolveFilter(filter);
+            filterResolverIntf =
+                CarbonTable.resolveFilter(filter, carbonTable.getAbsoluteTableIdentifier());
           }
         }
       }
