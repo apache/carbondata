@@ -46,7 +46,7 @@ For example:
 CREATE TABLE IF NOT EXISTS db1.table1(col1 string, col2 int) STORED AS carbondata LOCATION 's3a://mybucket/carbonstore'
 ``` 
 
-For more details on create table, Refer [data-management-on-carbondata](./data-management-on-carbondata.md#create-table)
+For more details on create table, Refer [DDL of CarbonData](ddl-of-carbondata.md#create-table)
 
 # Authentication
 
@@ -84,6 +84,7 @@ sparkSession.sparkContext.hadoopConfiguration.set("fs.s3a.access.key","456")
 
 1. Object Storage like S3 does not support file leasing mechanism(supported by HDFS) that is 
 required to take locks which ensure consistency between concurrent operations therefore, it is 
-recommended to set the configurable lock path property([carbon.lock.path](https://github.com/apache/carbondata/blob/master/docs/configuration-parameters.md#miscellaneous-configuration))
+recommended to set the configurable lock path property([carbon.lock.path](./configuration-parameters.md#system-configuration))
  to a HDFS directory.
 2. Concurrent data manipulation operations are not supported. Object stores follow eventual consistency semantics, i.e., any put request might take some time to reflect when trying to list. This behaviour causes the data read is always not consistent or not the latest.
+

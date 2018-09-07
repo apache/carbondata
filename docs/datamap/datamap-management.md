@@ -7,7 +7,7 @@
     the License.  You may obtain a copy of the License at
 
       http://www.apache.org/licenses/LICENSE-2.0
-
+    
     Unless required by applicable law or agreed to in writing, software
     distributed under the License is distributed on an "AS IS" BASIS,
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,6 +16,18 @@
 -->
 
 # CarbonData DataMap Management
+
+- [Overview](#overview)
+- [DataMap Management](#datamap-management)
+- [Automatic Refresh](#automatic-refresh)
+- [Manual Refresh](#manual-refresh)
+- [DataMap Catalog](#datamap-catalog)
+- [DataMap Related Commands](#datamap-related-commands)
+  - [Explain](#explain)
+  - [Show DataMap](#show-datamap)
+  - [Compaction on DataMap](#compaction-on-datamap)
+
+
 
 ## Overview
 
@@ -36,7 +48,7 @@ Currently, there are 5 DataMap implementations in CarbonData.
 | DataMap Provider | Description                              | DMPROPERTIES                             | Management       |
 | ---------------- | ---------------------------------------- | ---------------------------------------- | ---------------- |
 | preaggregate     | single table pre-aggregate table         | No DMPROPERTY is required                | Automatic        |
-| timeseries       | time dimension rollup table              | event_time, xx_granularity, please refer to [Timeseries DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/timeseries-datamap-guide.md) | Automatic        |
+| timeseries       | time dimension rollup table              | event_time, xx_granularity, please refer to [Timeseries DataMap](./timeseries-datamap-guide.md) | Automatic        |
 | mv               | multi-table pre-aggregate table          | No DMPROPERTY is required                | Manual           |
 | lucene           | lucene indexing for text column          | index_columns to specifying the index columns | Automatic |
 | bloomfilter      | bloom filter for high cardinality column, geospatial column | index_columns to specifying the index columns | Automatic |
@@ -49,7 +61,6 @@ There are two kinds of management semantic for DataMap.
 2. Manual Refresh: Create datamap with `WITH DEFERRED REBUILD` in the statement
 
 **CAUTION:**
-Manual refresh currently only works fine for MV, it has some bugs with other types of datamap in Carbondata 1.4.1, so we block this option for them in this version.
 If user create MV datamap without specifying `WITH DEFERRED REBUILD`, carbondata will give a warning and treat the datamap as deferred rebuild.
 
 ### Automatic Refresh

@@ -59,7 +59,7 @@ It will show all DataMaps created on main table.
     age int,
     city string,
     country string)
-  STORED BY 'carbondata'
+  STORED AS carbondata
   ```
   
   User can create Lucene datamap using the Create DataMap DDL:
@@ -149,7 +149,7 @@ select * from datamap_test where TEXT_MATCH('name:*n*')
 
 select * from datamap_test where TEXT_MATCH('name:*10 -name:*n*')
 ```
-**Note:** For lucene queries and syntax, refer to [lucene-syntax](www.lucenetutorial.com/lucene-query-syntax.html)
+**Note:** For lucene queries and syntax, refer to [lucene-syntax](http://www.lucenetutorial.com/lucene-query-syntax.html)
 
 ## Data Management with lucene datamap
 Once there is lucene datamap is created on the main table, following command on the main
