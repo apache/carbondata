@@ -445,8 +445,8 @@ public class AvroCarbonWriter extends CarbonWriter {
         if (logicalType instanceof LogicalTypes.Date) {
           return new Field(fieldName, DataTypes.DATE);
         } else {
-          LOGGER.warn("Unsupported logical type. Considering Data Type as INT for " + childSchema
-              .getName());
+          // Avro supports logical types time-millis as type INT,
+          // which will be mapped to carbon as INT data type
           return new Field(fieldName, DataTypes.INT);
         }
       case LONG:
@@ -454,8 +454,8 @@ public class AvroCarbonWriter extends CarbonWriter {
             || logicalType instanceof LogicalTypes.TimestampMicros) {
           return new Field(fieldName, DataTypes.TIMESTAMP);
         } else {
-          LOGGER.warn("Unsupported logical type. Considering Data Type as LONG for " + childSchema
-              .getName());
+          // Avro supports logical types time-micros as type LONG,
+          // which will be mapped to carbon as LONG data type
           return new Field(fieldName, DataTypes.LONG);
         }
       case DOUBLE:
@@ -545,8 +545,8 @@ public class AvroCarbonWriter extends CarbonWriter {
         if (logicalType instanceof LogicalTypes.Date) {
           return new StructField(fieldName, DataTypes.DATE);
         } else {
-          LOGGER.warn("Unsupported logical type. Considering Data Type as INT for " + childSchema
-              .getName());
+          // Avro supports logical types time-millis as type INT,
+          // which will be mapped to carbon as INT data type
           return new StructField(fieldName, DataTypes.INT);
         }
       case LONG:
@@ -554,8 +554,8 @@ public class AvroCarbonWriter extends CarbonWriter {
             || logicalType instanceof LogicalTypes.TimestampMicros) {
           return new StructField(fieldName, DataTypes.TIMESTAMP);
         } else {
-          LOGGER.warn("Unsupported logical type. Considering Data Type as LONG for " + childSchema
-              .getName());
+          // Avro supports logical types time-micros as type LONG,
+          // which will be mapped to carbon as LONG data type
           return new StructField(fieldName, DataTypes.LONG);
         }
       case DOUBLE:
@@ -641,8 +641,8 @@ public class AvroCarbonWriter extends CarbonWriter {
           if (logicalType instanceof LogicalTypes.Date) {
             return DataTypes.DATE;
           } else {
-            LOGGER.warn("Unsupported logical type. Considering Data Type as INT for " + childSchema
-                .getName());
+            // Avro supports logical types time-millis as type INT,
+            // which will be mapped to carbon as INT data type
             return DataTypes.INT;
           }
         } else {
@@ -654,8 +654,8 @@ public class AvroCarbonWriter extends CarbonWriter {
               || logicalType instanceof LogicalTypes.TimestampMicros) {
             return DataTypes.TIMESTAMP;
           } else {
-            LOGGER.warn("Unsupported logical type. Considering Data Type as LONG for " + childSchema
-                .getName());
+            // Avro supports logical types time-micros as type LONG,
+            // which will be mapped to carbon as LONG data type
             return DataTypes.LONG;
           }
         } else {
