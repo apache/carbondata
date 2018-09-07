@@ -44,19 +44,19 @@ public abstract class IndexStorageEncoder extends ColumnPageEncoder {
     out.write(compressedDataPage);
     if (pageIndexGenerator.getRowIdPageLengthInBytes() > 0) {
       out.writeInt(pageIndexGenerator.getRowIdPageLengthInBytes());
-      short[] rowIdPage = (short[]) pageIndexGenerator.getRowIdPage();
+      short[] rowIdPage = pageIndexGenerator.getRowIdPage();
       for (short rowId : rowIdPage) {
         out.writeShort(rowId);
       }
       if (pageIndexGenerator.getRowIdRlePageLengthInBytes() > 0) {
-        short[] rowIdRlePage = (short[]) pageIndexGenerator.getRowIdRlePage();
+        short[] rowIdRlePage = pageIndexGenerator.getRowIdRlePage();
         for (short rowIdRle : rowIdRlePage) {
           out.writeShort(rowIdRle);
         }
       }
     }
     if (pageIndexGenerator.getDataRlePageLengthInBytes() > 0) {
-      short[] dataRlePage = (short[]) pageIndexGenerator.getDataRlePage();
+      short[] dataRlePage = pageIndexGenerator.getDataRlePage();
       for (short dataRle : dataRlePage) {
         out.writeShort(dataRle);
       }
