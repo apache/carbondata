@@ -2365,7 +2365,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     fields(1) = new Field("intField", DataTypes.INT)
     val writer: CarbonWriter = CarbonWriter.builder
       .outputPath(writerPath)
-      .withLoadOptions(options)
+      .withTableProperties(options)
       .buildWriterForCSVInput(new Schema(fields))
     writer.write(Array("carbon", "1"))
     writer.write(Array("hydrogen", "10"))

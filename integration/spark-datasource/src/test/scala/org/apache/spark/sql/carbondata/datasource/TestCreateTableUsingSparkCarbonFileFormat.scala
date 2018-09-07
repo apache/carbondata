@@ -20,6 +20,7 @@ package org.apache.spark.sql.carbondata.datasource
 import java.io.File
 
 import org.apache.commons.io.FileUtils
+import org.apache.commons.lang.RandomStringUtils
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.apache.spark.sql.carbondata.datasource.TestUtil._
 import org.apache.spark.util.SparkUtil
@@ -317,6 +318,72 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     spark.sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
     assert(new File(filePath).exists())
+    cleanTestData()
+  }
+
+  test("Test with long string columns") {
+    FileUtils.deleteDirectory(new File(writerPath))
+    // here we specify the long string column as varchar
+    val schema = new StringBuilder()
+      .append("[ \n")
+      .append("   {\"name\":\"string\"},\n")
+      .append("   {\"address\":\"varchar\"},\n")
+      .append("   {\"age\":\"int\"}\n")
+      .append("]")
+      .toString()
+    val builder = CarbonWriter.builder()
+    val writer = builder.outputPath(writerPath)
+      .buildWriterForCSVInput(Schema.parseJson(schema))
+    for (i <- 0 until 3) {
+      // write a varchar with 75,000 length
+      writer.write(Array[String](s"name_$i", RandomStringUtils.randomAlphabetic(75000), i.toString))
+    }
+    writer.close()
+
+    //--------------- data source external table with schema ---------------------------
+    spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
+    if (spark.sparkContext.version.startsWith("2.1")) {
+      //data source file format
+      spark.sql(
+        s"""CREATE TABLE sdkOutputTable (name string, address string, age int)
+           |USING carbon OPTIONS (PATH '$writerPath', "long_String_columns" "address") """
+          .stripMargin)
+    } else if (spark.sparkContext.version.startsWith("2.2")) {
+      //data source file format
+      spark.sql(
+        s"""CREATE TABLE sdkOutputTable (name string, address string, age int) USING carbon
+           |OPTIONS("long_String_columns"="address") LOCATION
+           |'$writerPath' """.stripMargin)
+    } else {
+      // TODO. spark2.3 ?
+      assert(false)
+    }
+    assert(spark.sql("select * from sdkOutputTable where age = 0").count() == 1)
+    val op = spark.sql("select address from sdkOutputTable limit 1").collectAsList()
+    assert(op.get(0).getString(0).length == 75000)
+    spark.sql("DROP TABLE sdkOutputTable")
+
+    //--------------- data source external table without schema ---------------------------
+    spark.sql("DROP TABLE IF EXISTS sdkOutputTableWithoutSchema")
+    if (spark.sparkContext.version.startsWith("2.1")) {
+      //data source file format
+      spark
+        .sql(
+          s"""CREATE TABLE sdkOutputTableWithoutSchema USING carbon OPTIONS (PATH
+             |'$writerPath', "long_String_columns" "address") """.stripMargin)
+    } else if (spark.sparkContext.version.startsWith("2.2")) {
+      //data source file format
+      spark.sql(
+        s"""CREATE TABLE sdkOutputTableWithoutSchema USING carbon OPTIONS
+           |("long_String_columns"="address") LOCATION '$writerPath' """.stripMargin)
+    } else {
+      // TODO. spark2.3 ?
+      assert(false)
+    }
+    assert(spark.sql("select * from sdkOutputTableWithoutSchema where age = 0").count() == 1)
+    val op1 = spark.sql("select address from sdkOutputTableWithoutSchema limit 1").collectAsList()
+    assert(op1.get(0).getString(0).length == 75000)
+    spark.sql("DROP TABLE sdkOutputTableWithoutSchema")
     cleanTestData()
   }
 }

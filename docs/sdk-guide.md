@@ -339,8 +339,7 @@ public CarbonWriterBuilder taskNo(long taskNo);
 *                g. complex_delimiter_level_2 -- value to Split the nested complexTypeData
 *                h. quotechar
 *                i. escapechar
-*                j. sort_scope -- "local_sort", "no_sort", "batch_sort"
-*
+*                
 *                Default values are as follows.
 *
 *                a. bad_records_logger_enable -- "false"
@@ -352,7 +351,6 @@ public CarbonWriterBuilder taskNo(long taskNo);
 *                g. complex_delimiter_level_2 -- ":"
 *                h. quotechar -- "\""
 *                i. escapechar -- "\\"
-*                j. sort_scope -- "local_sort"
 *
 * @return updated CarbonWriterBuilder
 */
@@ -370,6 +368,9 @@ public CarbonWriterBuilder withLoadOptions(Map<String, String> options);
 * c. local_dictionary_threshold -- positive value, default is 10000
 * d. local_dictionary_enable -- true / false. Default is false
 * e. sort_columns -- comma separated column. "c1,c2". Default all dimensions are sorted.
+* j. sort_scope -- "local_sort", "no_sort", "batch_sort". default value is "local_sort"
+* k. long_string_columns -- comma separated string columns which are more than 32k length. 
+*                           default value is null.
 *
 * @return updated CarbonWriterBuilder
 */
