@@ -41,6 +41,7 @@ public class PrimitivePageIndexGenerator extends PageIndexGenerator<Object[]> {
     } else {
       this.rowIdRlePage = new short[0];
       this.invertedIndex = new short[0];
+      this.dataPage = dataPage;
     }
     if (applyRle) {
       rleEncodeOnData(dataWithRowId);

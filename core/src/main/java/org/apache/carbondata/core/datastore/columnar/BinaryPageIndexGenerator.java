@@ -35,8 +35,8 @@ public class BinaryPageIndexGenerator extends PageIndexGenerator<byte[][]> {
       Arrays.sort(dataWithRowId, new Comparator<ColumnDataVo<byte[]>>() {
         @Override public int compare(ColumnDataVo<byte[]> o1, ColumnDataVo<byte[]> o2) {
           return ByteUtil.UnsafeComparer.INSTANCE
-              .compareTo(o1.getData(), startOffset, o1.getData().length, o2.getData(), startOffset,
-                  o2.getData().length);
+              .compareTo(o1.getData(), startOffset, o1.getData().length - startOffset, o2.getData(),
+                  startOffset, o2.getData().length - startOffset);
         }
       });
       short[] rowIds = extractDataAndReturnRowId(dataWithRowId, dataPage);
@@ -44,6 +44,7 @@ public class BinaryPageIndexGenerator extends PageIndexGenerator<byte[][]> {
     } else {
       this.rowIdRlePage = new short[0];
       this.invertedIndex = new short[0];
+      this.dataPage = dataPage;
     }
     if (applyRle) {
       rleEncodeOnData(dataWithRowId);
