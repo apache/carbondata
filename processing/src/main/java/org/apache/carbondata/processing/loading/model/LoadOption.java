@@ -59,6 +59,7 @@ public class LoadOption {
     optionsFinal.put("fileheader", Maps.getOrDefault(options, "fileheader", ""));
     optionsFinal.put("commentchar", Maps.getOrDefault(options, "commentchar", "#"));
     optionsFinal.put("columndict", Maps.getOrDefault(options, "columndict", null));
+
     optionsFinal.put(
         "escapechar",
         CarbonLoaderUtil.getEscapeChar(Maps.getOrDefault(options,"escapechar", "\\")));

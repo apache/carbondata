@@ -62,7 +62,6 @@ public class CarbonLoadModel implements Serializable {
   /* Number of thread in which sdk writer is used */
   private short sdkUserCores;
 
-
   private String csvHeader;
   private String[] csvHeaderColumns;
   private String csvDelimiter;
@@ -922,5 +921,4 @@ public class CarbonLoadModel implements Serializable {
   public void setSdkUserCores(short sdkUserCores) {
     this.sdkUserCores = sdkUserCores;
   }
-
 }

@@ -103,7 +103,6 @@ public class CarbonWriterBuilder {
       }
     }
     this.sortColumns = sortColumns;
-
     return this;
   }
 
@@ -275,7 +274,6 @@ public class CarbonWriterBuilder {
             + ". Refer method header or documentation");
       }
     }
-
     // validate sort scope
     String sortScope = options.get("sort_scope");
     if (sortScope != null) {
