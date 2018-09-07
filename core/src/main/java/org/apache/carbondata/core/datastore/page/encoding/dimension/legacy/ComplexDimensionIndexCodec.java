@@ -50,7 +50,7 @@ public class ComplexDimensionIndexCodec extends IndexStorageCodec {
             new BlockIndexerStorageForShort(inputPage.getByteArrayPage(), false, false, false);
         byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
         byte[] compressed = compressor.compressByte(flattened);
-        super.indexStorage = indexStorage;
+        super.pageIndexGenerator = indexStorage;
         super.compressedDataPage = compressed;
       }
 

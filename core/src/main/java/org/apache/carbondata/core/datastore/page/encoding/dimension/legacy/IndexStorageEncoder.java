@@ -22,7 +22,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.columnar.IndexStorage;
+import org.apache.carbondata.core.datastore.columnar.PageIndexGenerator;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
@@ -31,7 +31,7 @@ import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.SortState;
 
 public abstract class IndexStorageEncoder extends ColumnPageEncoder {
-  IndexStorage indexStorage;
+  PageIndexGenerator pageIndexGenerator;
   byte[] compressedDataPage;
 
   abstract void encodeIndexStorage(ColumnPage inputPage);
@@ -42,21 +42,21 @@ public abstract class IndexStorageEncoder extends ColumnPageEncoder {
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     DataOutputStream out = new DataOutputStream(stream);
     out.write(compressedDataPage);
-    if (indexStorage.getRowIdPageLengthInBytes() > 0) {
-      out.writeInt(indexStorage.getRowIdPageLengthInBytes());
-      short[] rowIdPage = (short[])indexStorage.getRowIdPage();
+    if (pageIndexGenerator.getRowIdPageLengthInBytes() > 0) {
+      out.writeInt(pageIndexGenerator.getRowIdPageLengthInBytes());
+      short[] rowIdPage = (short[]) pageIndexGenerator.getRowIdPage();
       for (short rowId : rowIdPage) {
         out.writeShort(rowId);
       }
-      if (indexStorage.getRowIdRlePageLengthInBytes() > 0) {
-        short[] rowIdRlePage = (short[])indexStorage.getRowIdRlePage();
+      if (pageIndexGenerator.getRowIdRlePageLengthInBytes() > 0) {
+        short[] rowIdRlePage = (short[]) pageIndexGenerator.getRowIdRlePage();
         for (short rowIdRle : rowIdRlePage) {
           out.writeShort(rowIdRle);
         }
       }
     }
-    if (indexStorage.getDataRlePageLengthInBytes() > 0) {
-      short[] dataRlePage = (short[])indexStorage.getDataRlePage();
+    if (pageIndexGenerator.getDataRlePageLengthInBytes() > 0) {
+      short[] dataRlePage = (short[]) pageIndexGenerator.getDataRlePage();
       for (short dataRle : dataRlePage) {
         out.writeShort(dataRle);
       }
@@ -72,17 +72,17 @@ public abstract class IndexStorageEncoder extends ColumnPageEncoder {
   @Override
   protected void fillLegacyFields(DataChunk2 dataChunk)
       throws IOException {
-    SortState sort = (indexStorage.getRowIdPageLengthInBytes() > 0) ?
+    SortState sort = (pageIndexGenerator.getRowIdPageLengthInBytes() > 0) ?
         SortState.SORT_EXPLICIT : SortState.SORT_NATIVE;
     dataChunk.setSort_state(sort);
-    if (indexStorage.getRowIdPageLengthInBytes() > 0) {
+    if (pageIndexGenerator.getRowIdPageLengthInBytes() > 0) {
       int rowIdPageLength = CarbonCommonConstants.INT_SIZE_IN_BYTE +
-          indexStorage.getRowIdPageLengthInBytes() +
-          indexStorage.getRowIdRlePageLengthInBytes();
+          pageIndexGenerator.getRowIdPageLengthInBytes() +
+          pageIndexGenerator.getRowIdRlePageLengthInBytes();
       dataChunk.setRowid_page_length(rowIdPageLength);
     }
-    if (indexStorage.getDataRlePageLengthInBytes() > 0) {
-      dataChunk.setRle_page_length(indexStorage.getDataRlePageLengthInBytes());
+    if (pageIndexGenerator.getDataRlePageLengthInBytes() > 0) {
+      dataChunk.setRle_page_length(pageIndexGenerator.getDataRlePageLengthInBytes());
     }
     dataChunk.setData_page_length(compressedDataPage.length);
   }
