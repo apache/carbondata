@@ -48,6 +48,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.complextypes.ArrayQueryType;
 import org.apache.carbondata.core.scan.complextypes.MapQueryType;
 import org.apache.carbondata.core.scan.complextypes.PrimitiveQueryType;
@@ -728,6 +729,24 @@ public class QueryUtil {
           .valueOf(compressor.unCompressByte(present_bit_stream));
     } else {
       return new BitSet(1);
+    }
+  }
+
+  /**
+   * In case of non transactional table just set columnuniqueid as columnName to support
+   * backward compatabiity. non transactional tables column uniqueid is always equal to
+   * columnname
+   */
+  public static void updateColumnUniqueIdForNonTransactionTable(List<ColumnSchema> columnSchemas) {
+    for (ColumnSchema columnSchema : columnSchemas) {
+      // In case of complex types only add the name after removing parent names.
+      int index = columnSchema.getColumnName().lastIndexOf(".");
+      if (index >= 0) {
+        columnSchema.setColumnUniqueId(columnSchema.getColumnName()
+            .substring(index + 1, columnSchema.getColumnName().length()));
+      } else {
+        columnSchema.setColumnUniqueId(columnSchema.getColumnName());
+      }
     }
   }
 }

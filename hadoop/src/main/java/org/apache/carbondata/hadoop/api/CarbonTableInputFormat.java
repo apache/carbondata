@@ -198,11 +198,11 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     Expression filter = getFilterPredicates(job.getConfiguration());
     // this will be null in case of corrupt schema file.
     PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName());
-    carbonTable.processFilterExpression(filter, null, null);
 
     // prune partitions for filter query on partition table
     BitSet matchedPartitions = null;
     if (partitionInfo != null && partitionInfo.getPartitionType() != PartitionType.NATIVE_HIVE) {
+      carbonTable.processFilterExpression(filter, null, null);
       matchedPartitions = setMatchedPartitions(null, filter, partitionInfo, null);
       if (matchedPartitions != null) {
         if (matchedPartitions.cardinality() == 0) {
@@ -213,11 +213,9 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       }
     }
 
-    FilterResolverIntf filterInterface = carbonTable.resolveFilter(filter);
-
     // do block filtering and get split
     List<InputSplit> splits =
-        getSplits(job, filterInterface, filteredSegmentToAccess, matchedPartitions, partitionInfo,
+        getSplits(job, filter, filteredSegmentToAccess, matchedPartitions, partitionInfo,
             null, updateStatusManager);
     // pass the invalid segment to task side in order to remove index entry in task side
     if (invalidSegments.size() > 0) {
@@ -229,8 +227,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
     }
 
     // add all splits of streaming
-    List<InputSplit> splitsOfStreaming =
-        getSplitsOfStreaming(job, streamSegments, carbonTable, filterInterface);
+    List<InputSplit> splitsOfStreaming = getSplitsOfStreaming(job, streamSegments, carbonTable);
     if (!splitsOfStreaming.isEmpty()) {
       splits.addAll(splitsOfStreaming);
     }
@@ -358,7 +355,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
           Expression filter = getFilterPredicates(job.getConfiguration());
           if (filter != null) {
             carbonTable.processFilterExpression(filter, null, null);
-            filterResolverIntf = carbonTable.resolveFilter(filter);
+            filterResolverIntf =
+                CarbonTable.resolveFilter(filter, carbonTable.getAbsoluteTableIdentifier());
           }
         }
       }
@@ -442,9 +440,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       if (null == carbonTable) {
         throw new IOException("Missing/Corrupt schema file for table.");
       }
-
       carbonTable.processFilterExpression(filter, null, null);
-
       // prune partitions for filter query on partition table
       String partitionIds = job.getConfiguration().get(ALTER_PARTITION_ID);
       // matchedPartitions records partitionIndex, not partitionId
@@ -461,9 +457,8 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
         }
       }
 
-      FilterResolverIntf filterInterface = carbonTable.resolveFilter(filter);
       // do block filtering and get split
-      List<InputSplit> splits = getSplits(job, filterInterface, segmentList, matchedPartitions,
+      List<InputSplit> splits = getSplits(job, filter, segmentList, matchedPartitions,
           partitionInfo, oldPartitionIdList, new SegmentUpdateStatusManager(carbonTable));
       // pass the invalid segment to task side in order to remove index entry in task side
       if (invalidSegments.size() > 0) {
@@ -513,7 +508,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    * @return
    * @throws IOException
    */
-  private List<InputSplit> getSplits(JobContext job, FilterResolverIntf filterResolver,
+  private List<InputSplit> getSplits(JobContext job, Expression expression,
       List<Segment> validSegments, BitSet matchedPartitions, PartitionInfo partitionInfo,
       List<Integer> oldPartitionIdList, SegmentUpdateStatusManager updateStatusManager)
       throws IOException {
@@ -527,7 +522,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
 
     // for each segment fetch blocks matching filter in Driver BTree
     List<org.apache.carbondata.hadoop.CarbonInputSplit> dataBlocksOfSegment =
-        getDataBlocksOfSegment(job, carbonTable, filterResolver, matchedPartitions,
+        getDataBlocksOfSegment(job, carbonTable, expression, matchedPartitions,
             validSegments, partitionInfo, oldPartitionIdList);
     numBlocks = dataBlocksOfSegment.size();
     for (org.apache.carbondata.hadoop.CarbonInputSplit inputSplit : dataBlocksOfSegment) {
@@ -615,7 +610,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
               toBeCleanedSegments);
     }
     List<ExtendedBlocklet> blocklets =
-        blockletMap.prune(filteredSegment, null, partitions);
+        blockletMap.prune(filteredSegment, (FilterResolverIntf) null, partitions);
     for (ExtendedBlocklet blocklet : blocklets) {
       String blockName = blocklet.getPath();
       blockName = CarbonTablePath.getCarbonDataFileName(blockName);
