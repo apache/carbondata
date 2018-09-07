@@ -22,15 +22,14 @@ import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
 public class PrimitivePageIndexGenerator extends PageIndexGenerator<Object[]> {
 
   private Object[] dataPage;
 
-  public PrimitivePageIndexGenerator(Object[] dataPage, boolean isSortRequired,
-      DataType dataType, boolean applyRle) {
+  public PrimitivePageIndexGenerator(Object[] dataPage, boolean isSortRequired, DataType dataType,
+      boolean applyRle) {
     ColumnDataVo<Object>[] dataWithRowId = createColumnWithRowId(dataPage);
     if (isSortRequired) {
       SerializableComparator comparator =
@@ -43,7 +42,7 @@ public class PrimitivePageIndexGenerator extends PageIndexGenerator<Object[]> {
       this.rowIdRlePage = new short[0];
       this.invertedIndex = new short[0];
     }
-    if(applyRle) {
+    if (applyRle) {
       rleEncodeOnData(dataWithRowId);
     }
   }
@@ -54,8 +53,7 @@ public class PrimitivePageIndexGenerator extends PageIndexGenerator<Object[]> {
    * @return
    */
   private PrimitiveColumnDataVO[] createColumnWithRowId(Object[] dataPage) {
-    PrimitiveColumnDataVO[] columnWithIndexs =
-        new PrimitiveColumnDataVO[dataPage.length];
+    PrimitiveColumnDataVO[] columnWithIndexs = new PrimitiveColumnDataVO[dataPage.length];
     for (short i = 0; i < columnWithIndexs.length; i++) {
       columnWithIndexs[i] = new PrimitiveColumnDataVO(dataPage[i], i);
     }

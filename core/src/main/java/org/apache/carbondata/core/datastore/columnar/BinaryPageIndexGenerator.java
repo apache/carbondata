@@ -45,7 +45,7 @@ public class BinaryPageIndexGenerator extends PageIndexGenerator<byte[][]> {
       this.rowIdRlePage = new short[0];
       this.invertedIndex = new short[0];
     }
-    if(applyRle) {
+    if (applyRle) {
       rleEncodeOnData(dataWithRowId);
     }
   }

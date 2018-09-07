@@ -29,7 +29,6 @@ import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveDelta
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveFloatingCodec;
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveIntegralCodec;
 import org.apache.carbondata.core.datastore.page.encoding.compress.DirectCompressCodec;
-import org.apache.carbondata.core.datastore.page.encoding.dimension.legacy.ComplexDimensionIndexCodec;
 import org.apache.carbondata.core.datastore.page.encoding.dimension.legacy.DictDimensionIndexCodec;
 import org.apache.carbondata.core.datastore.page.encoding.dimension.legacy.DirectDictDimensionIndexCodec;
 import org.apache.carbondata.core.datastore.page.encoding.dimension.legacy.HighCardDictDimensionIndexCodec;
@@ -62,28 +61,8 @@ public class DefaultEncodingFactory extends EncodingFactory {
     if (columnSpec instanceof TableSpec.MeasureSpec) {
       return createEncoderForMeasure(inputPage);
     } else {
-      if (newWay) {
-        return createEncoderForDimension((TableSpec.DimensionSpec) columnSpec, inputPage);
-      } else {
-        assert columnSpec instanceof TableSpec.DimensionSpec;
-        return createEncoderForDimensionLegacy((TableSpec.DimensionSpec) columnSpec);
-      }
-    }
-  }
-
-  private ColumnPageEncoder createEncoderForDimension(TableSpec.DimensionSpec columnSpec,
-      ColumnPage inputPage) {
-    Compressor compressor = CompressorFactory.getInstance().getCompressor();
-    switch (columnSpec.getColumnType()) {
-      case GLOBAL_DICTIONARY:
-      case DIRECT_DICTIONARY:
-      case PLAIN_VALUE:
-        return new DirectCompressCodec(inputPage.getDataType()).createEncoder(null);
-      case COMPLEX:
-        return new ComplexDimensionIndexCodec(false, false, compressor).createEncoder(null);
-      default:
-        throw new RuntimeException("unsupported dimension type: " +
-            columnSpec.getColumnType());
+      assert columnSpec instanceof TableSpec.DimensionSpec;
+      return createEncoderForDimensionLegacy((TableSpec.DimensionSpec) columnSpec);
     }
   }
 

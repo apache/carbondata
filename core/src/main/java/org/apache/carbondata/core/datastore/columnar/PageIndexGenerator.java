@@ -121,6 +121,7 @@ public abstract class PageIndexGenerator<T> {
       alreadySorted = true;
     }
   }
+
   protected short[] convertToArray(List<Short> list) {
     short[] shortArray = new short[list.size()];
     for (int i = 0; i < shortArray.length; i++) {
