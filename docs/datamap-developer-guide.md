@@ -15,16 +15,5 @@ Currently, the provider string can be:
 
 When user issues `DROP DATAMAP dm ON TABLE main`, the corresponding DataMapProvider interface will be called.
 
-Details about [DataMap Management](./datamap-management.md#datamap-management) and supported [DSL](./datamap-management.md#overview) are documented [here](./datamap-management.md).
+Details about [DataMap Management](./datamap/datamap-management.md#datamap-management) and supported [DSL](./datamap/datamap-management.md#overview) are documented [here](./datamap/datamap-management.md).
 
-<script>
-$(function() {
-  // Show selected style on nav item
-  $('.b-nav__docs').addClass('selected');
-
-  // Display docs subnav items
-  if (!$('.b-nav__docs').parent().hasClass('nav__item__with__subs--expanded')) {
-    $('.b-nav__docs').parent().toggleClass('nav__item__with__subs--expanded');
-  }
-});
-</script>

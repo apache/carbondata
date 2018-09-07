@@ -7,7 +7,7 @@
     the License.  You may obtain a copy of the License at
 
       http://www.apache.org/licenses/LICENSE-2.0
-
+    
     Unless required by applicable law or agreed to in writing, software 
     distributed under the License is distributed on an "AS IS" BASIS, 
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,6 +16,24 @@
 -->
 
 # CarbonData Streaming Ingestion
+
+- [Streaming Table Management](#quick-example)
+  - [Create table with streaming property](#create-table-with-streaming-property)
+  - [Alter streaming property](#alter-streaming-property)
+  - [Acquire streaming lock](#acquire-streaming-lock)
+  - [Create streaming segment](#create-streaming-segment)
+  - [Change Stream segment status](#change-segment-status)
+  - [Handoff "streaming finish" segment to columnar segment](#handoff-streaming-finish-segment-to-columnar-segment)
+  - [Auto handoff streaming segment](#auto-handoff-streaming-segment)
+  - [Stream data parser](#stream-data-parser)
+  - [Close streaming table](#close-streaming-table)
+  - [Constraints](#constraint)
+- [StreamSQL](#streamsql)
+  - [Defining Streaming Table](#streaming-table)
+  - [Streaming Job Management](#streaming-job-management)
+    - [START STREAM](#start-stream)
+    - [STOP STREAM](#stop-stream)
+    - [SHOW STREAMS](#show-streams)
 
 ## Quick example
 Download and unzip spark-2.2.0-bin-hadoop2.7.tgz, and export $SPARK_HOME
@@ -68,7 +86,7 @@ Start spark-shell in new terminal, type :paste, then copy and run the following 
       | col1 INT,
       | col2 STRING
       | )
-      | STORED BY 'carbondata'
+      | STORED AS carbondata
       | TBLPROPERTIES('streaming'='true')""".stripMargin)
 
  val carbonTable = CarbonEnv.getCarbonTable(Some("default"), "carbon_table")(spark)
@@ -116,19 +134,19 @@ streaming table using following DDL.
   col1 INT,
   col2 STRING
  )
- STORED BY 'carbondata'
+ STORED AS carbondata
  TBLPROPERTIES('streaming'='true')
 ```
 
  property name | default | description
  ---|---|--- 
  streaming | false |Whether to enable streaming ingest feature for this table <br /> Value range: true, false 
- 
+
  "DESC FORMATTED" command will show streaming property.
  ```sql
  DESC FORMATTED streaming_table
  ```
- 
+
 ## Alter streaming property
 For an old table, use ALTER TABLE command to set the streaming property.
 ```sql
@@ -261,14 +279,145 @@ ALTER TABLE streaming_table COMPACT 'close_streaming'
 7. block drop the streaming table while the streaming ingestion is running.
 
 
-<script>
-$(function() {
-  // Show selected style on nav item
-  $('.b-nav__docs').addClass('selected');
 
-  // Display docs subnav items
-  if (!$('.b-nav__docs').parent().hasClass('nav__item__with__subs--expanded')) {
-    $('.b-nav__docs').parent().toggleClass('nav__item__with__subs--expanded');
-  }
-});
-</script>
+## StreamSQL
+
+
+
+### Streaming Table
+
+**Example**
+
+Following example shows how to start a streaming ingest job
+
+```
+    sql(
+      s"""
+         |CREATE TABLE source(
+         | id INT,
+         | name STRING,
+         | city STRING,
+         | salary FLOAT,
+         | tax DECIMAL(8,2),
+         | percent double,
+         | birthday DATE,
+         | register TIMESTAMP,
+         | updated TIMESTAMP
+         |)
+         |STORED BY carbondata
+         |TBLPROPERTIES (
+         | 'format'='csv',
+         | 'path'='$csvDataDir'
+         |)
+      """.stripMargin)
+
+    sql(
+      s"""
+         |CREATE TABLE sink(
+         | id INT,
+         | name STRING,
+         | city STRING,
+         | salary FLOAT,
+         | tax DECIMAL(8,2),
+         | percent double,
+         | birthday DATE,
+         | register TIMESTAMP,
+         | updated TIMESTAMP
+         |)
+         |STORED BY carbondata
+         |TBLPROPERTIES (
+         |  'streaming'='true'
+         |)
+      """.stripMargin)
+
+    sql(
+      """
+        |START STREAM job123 ON TABLE sink
+        |STMPROPERTIES(
+        |  'trigger'='ProcessingTime',
+        |  'interval'='1 seconds')
+        |AS
+        |  SELECT *
+        |  FROM source
+        |  WHERE id % 2 = 1
+      """.stripMargin)
+
+    sql("STOP STREAM job123")
+
+    sql("SHOW STREAMS [ON TABLE tableName]")
+```
+
+
+
+In above example, two table is created: source and sink. The `source` table's format is `csv` and `sink` table format is `carbon`. Then a streaming job is created to stream data from source table to sink table.
+
+These two tables are normal carbon table, they can be queried independently.
+
+
+
+### Streaming Job Management
+
+As above example shown:
+
+- `START STREAM jobName ON TABLE tableName` is used to start a streaming ingest job. 
+- `STOP STREAM jobName` is used to stop a streaming job by its name
+- `SHOW STREAMS [ON TABLE tableName]` is used to print streaming job information
+
+
+
+##### START STREAM
+
+When this is issued, carbon will start a structured streaming job to do the streaming ingestion. Before launching the job, system will validate:
+
+- The format of table specified in CTAS FROM clause must be one of: csv, json, text, parquet, kafka, socket.  These are formats supported by spark 2.2.0 structured streaming
+
+- User should pass the options of the streaming source table in its TBLPROPERTIES when creating it. StreamSQL will pass them transparently to spark when creating the streaming job. For example:
+
+  ```SQL
+  CREATE TABLE source(
+    name STRING,
+    age INT
+  )
+  STORED BY carbondata
+  TBLPROPERTIES(
+    'format'='socket',
+    'host'='localhost',
+    'port'='8888'
+  )
+  ```
+
+  will translate to
+
+  ```Scala
+  spark.readStream
+  	 .schema(tableSchema)
+  	 .format("socket")
+  	 .option("host", "localhost")
+  	 .option("port", "8888")
+  ```
+
+
+
+- The sink table should have a TBLPROPERTY `'streaming'` equal to `true`, indicating it is a streaming table.
+- In the given STMPROPERTIES, user must specify `'trigger'`, its value must be `ProcessingTime` (In future, other value will be supported). User should also specify interval value for the streaming job.
+- If the schema specifid in sink table is different from CTAS, the streaming job will fail
+
+
+
+##### STOP STREAM
+
+When this is issued, the streaming job will be stopped immediately. It will fail if the jobName specified is not exist.
+
+
+
+##### SHOW STREAMS
+
+`SHOW STREAMS ON TABLE tableName` command will print the streaming job information as following
+
+| Job name | status  | Source | Sink | start time          | time elapsed |
+| -------- | ------- | ------ | ---- | ------------------- | ------------ |
+| job123   | Started | device | fact | 2018-02-03 14:32:42 | 10d2h32m     |
+
+`SHOW STREAMS` command will show all stream jobs in the system.
+
+

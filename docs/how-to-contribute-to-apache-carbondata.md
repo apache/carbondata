@@ -190,10 +190,3 @@ $ git fetch --all
 $ git branch -d <my-branch>
 $ git push <GitHub_user> --delete <my-branch>
 ```
-
-
-<script>
-// Show selected style on nav item
-$(function() { $('.b-nav__contri').addClass('selected'); });
-</script>
-

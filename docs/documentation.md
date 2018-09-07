@@ -35,9 +35,9 @@ Apache CarbonData is a new big data file format for faster interactive query usi
 
 
 
-## Deployment
+## Integration
 
-CarbonData can be integrated with popular Execution engines like [Spark](./quick-start-guide.md#spark) and [Presto](./quick-start-guide.md#presto).Refer to the [Installation and Configuration](./quick-start-guide.md##deployment-modes) section to understand all modes of Integrating CarbonData.
+CarbonData can be integrated with popular Execution engines like [Spark](./quick-start-guide.md#spark) and [Presto](./quick-start-guide.md#presto).Refer to the [Installation and Configuration](./quick-start-guide.md#integration) section to understand all modes of Integrating CarbonData.
 
 
 
@@ -64,7 +64,3 @@ faster data format.Contributing to CarbonData doesn’t just mean writing code. 
 
 **Trainings:** Training records on design and code flows can be found [here](https://cwiki.apache.org/confluence/display/CARBONDATA/CarbonData+Training+Materials).
 
-<script>
-// Show selected style on nav item
-$(function() { $('.b-nav__intro').addClass('selected'); });
-</script>

@@ -149,15 +149,3 @@ This feature applies for preaggregate datamap only
 Running Compaction command (`ALTER TABLE COMPACT`) on main table will **not automatically** compact the pre-aggregate tables created on the main table. User need to run Compaction command separately on each pre-aggregate table to compact them.
 
 Compaction is an optional operation for pre-aggregate table. If compaction is performed on main table but not performed on pre-aggregate table, all queries still can benefit from pre-aggregate tables. To further improve the query performance, compaction on pre-aggregate tables can be triggered to merge the segments and files in the pre-aggregate tables.
-
-<script>
-$(function() {
-  // Show selected style on nav item
-  $('.b-nav__datamap').addClass('selected');
-  
-  if (!$('.b-nav__datamap').parent().hasClass('nav__item__with__subs--expanded')) {
-    // Display datamap subnav items
-    $('.b-nav__datamap').parent().toggleClass('nav__item__with__subs--expanded');
-  }
-});
-</script>

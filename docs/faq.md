@@ -26,18 +26,18 @@
 * [How to resolve Abstract Method Error?](#how-to-resolve-abstract-method-error)
 * [How Carbon will behave when execute insert operation in abnormal scenarios?](#how-carbon-will-behave-when-execute-insert-operation-in-abnormal-scenarios)
 * [Why aggregate query is not fetching data from aggregate table?](#why-aggregate-query-is-not-fetching-data-from-aggregate-table)
-* [Why all executors are showing success in Spark UI even after Dataload command failed at Driver side?](#Why-all-executors-are-showing-success-in-Spark-UI-even-after-Dataload-command-failed-at-driver-side)
-* [Why different time zone result for select query output when query SDK writer output?](#Why-different-time-zone-result-for-select-query-output-when-query-SDK-writer-output)
+* [Why all executors are showing success in Spark UI even after Dataload command failed at Driver side?](#why-all-executors-are-showing-success-in-spark-ui-even-after-dataload-command-failed-at-driver-side)
+* [Why different time zone result for select query output when query SDK writer output?](#why-different-time-zone-result-for-select-query-output-when-query-sdk-writer-output)
 
 # TroubleShooting
 
-- [Getting tablestatus.lock issues When loading data](#Getting-tablestatus.lock-issues-When-loading-data)
+- [Getting tablestatus.lock issues When loading data](#getting-tablestatuslock-issues-when-loading-data)
 - [Failed to load thrift libraries](#failed-to-load-thrift-libraries)
 - [Failed to launch the Spark Shell](#failed-to-launch-the-spark-shell)
 - [Failed to execute load query on cluster](#failed-to-execute-load-query-on-cluster)
 - [Failed to execute insert query on cluster](#failed-to-execute-insert-query-on-cluster)
 - [Failed to connect to hiveuser with thrift](#failed-to-connect-to-hiveuser-with-thrift)
-- [Failed to read the metastore db during table](#failed-to-read-the-metastore-db-during-table)
+- [Failed to read the metastore db during table creation](#failed-to-read-the-metastore-db-during-table-creation)
 - [Failed to load data on the cluster](#failed-to-load-data-on-the-cluster)
 - [Failed to insert data on the cluster](#failed-to-insert-data-on-the-cluster)
 - [Failed to execute Concurrent Operations(Load,Insert,Update) on table by multiple workers](#failed-to-execute-concurrent-operations-on-table-by-multiple-workers)
@@ -98,7 +98,7 @@ The property carbon.lock.type configuration specifies the type of lock to be acq
 In order to build CarbonData project it is necessary to specify the spark profile. The spark profile sets the Spark Version. You need to specify the ``spark version`` while using Maven to build project.
 
 ## How Carbon will behave when execute insert operation in abnormal scenarios?
-Carbon support insert operation, you can refer to the syntax mentioned in [DML Operations on CarbonData](dml-operation-on-carbondata.md).
+Carbon support insert operation, you can refer to the syntax mentioned in [DML Operations on CarbonData](./dml-of-carbondata.md).
 First, create a source table in spark-sql and load data into this created table.
 
 ```
@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS carbon_table(
 id String,
 city String,
 name String)
-STORED BY 'carbondata';
+STORED AS carbondata;
 ```
 
 ```
@@ -170,7 +170,7 @@ When SubQuery predicate is present in the query.
 Example:
 
 ```
-create table gdp21(cntry smallint, gdp double, y_year date) stored by 'carbondata';
+create table gdp21(cntry smallint, gdp double, y_year date) stored as carbondata;
 create datamap ag1 on table gdp21 using 'preaggregate' as select cntry, sum(gdp) from gdp21 group by cntry;
 select ctry from pop1 where ctry in (select cntry from gdp21 group by cntry);
 ```
@@ -181,7 +181,7 @@ When aggregate function along with 'in' filter.
 Example:
 
 ```
-create table gdp21(cntry smallint, gdp double, y_year date) stored by 'carbondata';
+create table gdp21(cntry smallint, gdp double, y_year date) stored as carbondata;
 create datamap ag1 on table gdp21 using 'preaggregate' as select cntry, sum(gdp) from gdp21 group by cntry;
 select cntry, sum(gdp) from gdp21 where cntry in (select ctry from pop1) group by cntry;
 ```
@@ -192,7 +192,7 @@ When aggregate function having 'join' with equal filter.
 Example:
 
 ```
-create table gdp21(cntry smallint, gdp double, y_year date) stored by 'carbondata';
+create table gdp21(cntry smallint, gdp double, y_year date) stored as carbondata;
 create datamap ag1 on table gdp21 using 'preaggregate' as select cntry, sum(gdp) from gdp21 group by cntry;
 select cntry,sum(gdp) from gdp21,pop1 where cntry=ctry group by cntry;
 ```
@@ -461,11 +461,4 @@ Note :  Refrain from using "mvn clean package" without specifying the profile.
 
   A single column that can be considered as dimension is mandatory for table creation.
 
-
-
-
-<script>
-// Show selected style on nav item
-$(function() { $('.b-nav__faq').addClass('selected'); });
-</script>
 

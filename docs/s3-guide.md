@@ -88,7 +88,3 @@ recommended to set the configurable lock path property([carbon.lock.path](./conf
  to a HDFS directory.
 2. Concurrent data manipulation operations are not supported. Object stores follow eventual consistency semantics, i.e., any put request might take some time to reflect when trying to list. This behaviour causes the data read is always not consistent or not the latest.
 
-<script>
-// Show selected style on nav item
-$(function() { $('.b-nav__s3').addClass('selected'); });
-</script>

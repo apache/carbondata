@@ -17,9 +17,9 @@
 
 # CarbonData Timeseries DataMap
 
-* [Timeseries DataMap Introduction](#timeseries-datamap-intoduction)
-* [Compaction](#compacting-pre-aggregate-tables)
-* [Data Management](#data-management-with-pre-aggregate-tables)
+* [Timeseries DataMap Introduction](#timeseries-datamap-introduction-alpha-feature)
+* [Compaction](#compacting-timeseries-datamp)
+* [Data Management](#data-management-on-timeseries-datamap)
 
 ## Timeseries DataMap Introduction (Alpha Feature)
 Timeseries DataMap is a pre-aggregate table implementation based on 'pre-aggregate' DataMap.
@@ -153,14 +153,3 @@ Same applies to timeseries datamap.
 Refer to Data Management section in [preaggregation datamap](./preaggregate-datamap-guide.md).
 Same applies to timeseries datamap.
 
-<script>
-$(function() {
-  // Show selected style on nav item
-  $('.b-nav__datamap').addClass('selected');
-  
-  if (!$('.b-nav__datamap').parent().hasClass('nav__item__with__subs--expanded')) {
-    // Display datamap subnav items
-    $('.b-nav__datamap').parent().toggleClass('nav__item__with__subs--expanded');
-  }
-});
-</script>

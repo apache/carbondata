@@ -21,7 +21,6 @@ CarbonData provides SDK to facilitate
 
 1. [Writing carbondata files from other application which does not use Spark](#sdk-writer)
 2. [Reading carbondata files from other application which does not use Spark](#sdk-reader)
-3. [DSL for Streaming so that user's need not write there application to control the streaming](carbondata-stream-sql.md)
 
 # SDK Writer
 
@@ -876,8 +875,3 @@ public String getProperty(String key, String defaultValue);
 ```
 Reference : [list of carbon properties](./configuration-parameters.md)
 
-
-<script>
-// Show selected style on nav item
-$(function() { $('.b-nav__api').addClass('selected'); });
-</script>

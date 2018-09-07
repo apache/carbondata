@@ -24,12 +24,11 @@ CarbonData has its own parser, in addition to Spark's SQL Parser, to parse and p
 - [Data Types](./supported-data-types-in-carbondata.md)
 - Data Definition Statements
   - [DDL:](./ddl-of-carbondata.md)[Create](./ddl-of-carbondata.md#create-table),[Drop](./ddl-of-carbondata.md#drop-table),[Partition](./ddl-of-carbondata.md#partition),[Bucketing](./ddl-of-carbondata.md#bucketing),[Alter](./ddl-of-carbondata.md#alter-table),[CTAS](./ddl-of-carbondata.md#create-table-as-select),[External Table](./ddl-of-carbondata.md#create-external-table)
-  - Indexes
-  - [DataMaps](./datamap-management.md)
-    - [Bloom](./bloomfilter-datamap-guide.md)
-    - [Lucene](./lucene-datamap-guide.md)
-    - [Pre-Aggregate](./preaggregate-datamap-guide.md)
-    - [Time Series](./timeseries-datamap-guide.md)
+  - [DataMaps](./datamap/datamap-management.md)
+    - [Bloom](./datamap/bloomfilter-datamap-guide.md)
+    - [Lucene](./datamap/lucene-datamap-guide.md)
+    - [Pre-Aggregate](./datamap/preaggregate-datamap-guide.md)
+    - [Time Series](./datamap/timeseries-datamap-guide.md)
   - Materialized Views (MV)
   - [Streaming](./streaming-guide.md)
 - Data Manipulation Statements
@@ -37,15 +36,4 @@ CarbonData has its own parser, in addition to Spark's SQL Parser, to parse and p
   - [Segment Management](./segment-management-on-carbondata.md)
 - [Configuration Properties](./configuration-parameters.md)
 
-<script>
-$(function() {
-  // Show selected style on nav item
-  $('.b-nav__docs').addClass('selected');
-
-  // Display docs subnav items
-  if (!$('.b-nav__docs').parent().hasClass('nav__item__with__subs--expanded')) {
-    $('.b-nav__docs').parent().toggleClass('nav__item__with__subs--expanded');
-  }
-});
-</script>
 

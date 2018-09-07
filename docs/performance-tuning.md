@@ -22,6 +22,7 @@
   * [Suggestions to create CarbonData Table](#suggestions-to-create-carbondata-table)
   * [Configuration for Optimizing Data Loading performance for Massive Data](#configuration-for-optimizing-data-loading-performance-for-massive-data)
   * [Optimizing Query Performance](#configurations-for-optimizing-carbondata-performance)
+  * [Compaction Configurations for Optimizing CarbonData Query Performance](#compaction-configurations-for-optimizing-carbondata-query-performance)
 
 ## Suggestions to Create CarbonData Table
 
@@ -56,7 +57,7 @@
     counter_1, Decimal
     ...
     
-    )STORED BY 'carbondata'
+    )STORED AS carbondata
     TBLPROPERTIES ('SORT_COLUMNS'='msisdn, Dime_1')
   ```
 
@@ -81,7 +82,7 @@
       counter_1, Decimal
       ...
       
-      )STORED BY 'carbondata'
+      )STORED AS carbondata
       TBLPROPERTIES ('SORT_COLUMNS'='Dime_1, HOST, MSISDN')
   ```
 
@@ -100,7 +101,7 @@
     counter_1 decimal,
     counter_2 double,
     ...
-    )STORED BY 'carbondata'
+    )STORED AS carbondata
     TBLPROPERTIES ('SORT_COLUMNS'='Dime_1, HOST, MSISDN')
 ```
   The result of performance analysis of test-case shows reduction in query execution time from 15 to 3 seconds, thereby improving performance by nearly 5 times.
@@ -121,12 +122,12 @@
     END_TIME bigint,
     ...
     counter_100 double
-    )STORED BY 'carbondata'
+    )STORED AS carbondata
     TBLPROPERTIES ('SORT_COLUMNS'='Dime_1, HOST, MSISDN')
   ```
 
   **NOTE:**
-  + BloomFilter can be created to enhance performance for queries with precise equal/in conditions. You can find more information about it in BloomFilter datamap [document](https://github.com/apache/carbondata/blob/master/docs/datamap/bloomfilter-datamap-guide.md).
+  + BloomFilter can be created to enhance performance for queries with precise equal/in conditions. You can find more information about it in BloomFilter datamap [document](./datamap/bloomfilter-datamap-guide.md).
 
 
 ## Configuration for Optimizing Data Loading performance for Massive Data
@@ -176,8 +177,70 @@
 
   Note: If your CarbonData instance is provided only for query, you may specify the property 'spark.speculation=true' which is in conf directory of spark.
 
+## Compaction Configurations for Optimizing CarbonData Query Performance
 
-<script>
-// Show selected style on nav item
-$(function() { $('.b-nav__perf').addClass('selected'); });
-</script>
+CarbonData provides many configurations to tune the compaction behavior so that query peformance is improved.
+
+
+
+Based on the number of cores available in the node, it is recommended to tune the configuration 	***carbon.number.of.cores.while.compacting*** appropriately.Configuring a higher value will improve the overall compaction performance.
+
+<p>&nbsp;</p>
+<table style="width: 777px;">
+<tbody>
+<tr style="height: 23px;">
+<td style="height: 23px; width: 95.375px;">No</td>
+<td style="height: 23px; width: 299.625px;">&nbsp;Data Loading frequency</td>
+<td style="height: 23px; width: 144px;">Data Size of each load</td>
+<td style="height: 23px; width: 204px;">Minor Compaction configuration</td>
+<td style="height: 23px; width: 197px;">&nbsp;Major compaction configuration</td>
+</tr>
+<tr style="height: 29.5px;">
+<td style="height: 29.5px; width: 95.375px;">1</td>
+<td style="height: 29.5px; width: 299.625px;">&nbsp;Batch(Once is several Hours)</td>
+<td style="height: 29.5px; width: 144px;">Big</td>
+<td style="height: 29.5px; width: 204px;">&nbsp;Not Suggested</td>
+<td style="height: 29.5px; width: 197px;">Configure Major Compaction size of 3-4 load size.Perform Major compaction once in a day</td>
+</tr>
+<tr style="height: 23px;">
+<td style="height: 23px; width: 95.375px;" rowspan="2">2</td>
+<td style="height: 23px; width: 299.625px;" rowspan="2">&nbsp;Batch(Once in few minutes)&nbsp;</td>
+<td style="height: 23px; width: 144px;">Big&nbsp;</td>
+<td style="height: 23px; width: 204px;">
+<p>&nbsp;Minor compaction (2,2).</p>
+<p>Enable Auto compaction, if high rate data loading speed is not required or the time between loads is sufficient to run the compaction</p>
+</td>
+<td style="height: 23px; width: 197px;">Major compaction size of 10 load size.Perform Major compaction once in a day</td>
+</tr>
+<tr style="height: 23px;">
+<td style="height: 23px; width: 144px;">Small</td>
+<td style="height: 23px; width: 204px;">
+<p>Minor compaction (6,6).</p>
+<p>Enable Auto compaction, if high rate data loading speed is not required or the time between loads is sufficient to run the compaction</p>
+</td>
+<td style="height: 23px; width: 197px;">Major compaction size of 10 load size.Perform Major compaction once in a day</td>
+</tr>
+<tr style="height: 23px;">
+<td style="height: 23px; width: 95.375px;">3</td>
+<td style="height: 23px; width: 299.625px;">&nbsp;History data loaded as single load,incremental loads matches&nbsp;(1) or (2)</td>
+<td style="height: 23px; width: 144px;">Big</td>
+<td style="height: 23px; width: 204px;">
+<p>&nbsp;Configure ALLOWED_COMPACTION_DAYS to exclude the History load.</p>
+<p>Configure Minor compaction configuration based&nbsp;condition (1) or (2)</p>
+</td>
+<td style="height: 23px; width: 197px;">&nbsp;Configure Major compaction size smaller than the history load size.</td>
+</tr>
+<tr style="height: 23px;">
+<td style="height: 23px; width: 95.375px;">4</td>
+<td style="height: 23px; width: 299.625px;">&nbsp;There can be error in recent data loaded.Need reload sometimes</td>
+<td style="height: 23px; width: 144px;">&nbsp;(1) or (2)</td>
+<td style="height: 23px; width: 204px;">
+<p>&nbsp;Configure COMPACTION_PRESERVE_SEGMENTS</p>
+<p>to exclude the recent few segments from compacting.</p>
+<p>Configure Minor compaction configuration based&nbsp;condition (1) or (2)</p>
+</td>
+<td style="height: 23px; width: 197px;">Same as (1) or (2)&nbsp;</td>
+</tr>
+</tbody>
+</table>
+

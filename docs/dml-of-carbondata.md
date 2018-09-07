@@ -40,7 +40,31 @@ CarbonData DML statements are documented here,which includes:
   OPTIONS(property_name=property_value, ...)
   ```
 
-  **Supported Properties:** [DELIMITER](#delimiter), [QUOTECHAR](#quotechar), [COMMENTCHAR](#commentchar), [HEADER](#header), [FILEHEADER](#fileheader), [MULTILINE](#multiline), [ESCAPECHAR](#escapechar), [SKIP_EMPTY_LINE](#skip_empty_line), [COMPLEX_DELIMITER_LEVEL_1](#complex_delimiter_level_1), [COMPLEX_DELIMITER_LEVEL_2](#complex_delimiter_level_2), [ALL_DICTIONARY_PATH](#all_dictionary_path), [COLUMNDICT](#columndict), [DATEFORMAT](#dateformat),[ TIMESTAMPFORMAT](#timestampformat), [SORT_COLUMN_BOUNDS](#sort-column-bounds), [SINGLE_PASS](#single_pass), [BAD_RECORDS_LOGGER_ENABLE](#bad-records-handling), [BAD_RECORD_PATH](#bad-records-handling), [BAD_RECORDS_ACTION](#bad-records-handling), [IS_EMPTY_DATA_BAD_RECORD](#bad-records-handling), [GLOBAL_SORT_PARTITIONS](#global_sort_partitions)
+  **Supported Properties:**
+
+| Property                                                | Description                                                  |
+| ------------------------------------------------------- | ------------------------------------------------------------ |
+| [DELIMITER](#delimiter)                                 | Character used to separate the data in the input csv file    |
+| [QUOTECHAR](#quotechar)                                 | Character used to quote the data in the input csv file       |
+| [COMMENTCHAR](#commentchar)                             | Character used to comment the rows in the input csv file.Those rows will be skipped from processing |
+| [HEADER](#header)                                       | Whether the input csv files have header row                  |
+| [FILEHEADER](#fileheader)                               | If header is not present in the input csv, what is the column names to be used for data read from input csv |
+| [MULTILINE](#multiline)                                 | Whether a row data can span across multiple lines.           |
+| [ESCAPECHAR](#escapechar)                               | Escape character used to excape the data in input csv file.For eg.,\ is a standard escape character |
+| [SKIP_EMPTY_LINE](#skip_empty_line)                     | Whether empty lines in input csv file should be skipped or loaded as null row |
+| [COMPLEX_DELIMITER_LEVEL_1](#complex_delimiter_level_1) | Starting delimiter for complex type data in input csv file   |
+| [COMPLEX_DELIMITER_LEVEL_2](#complex_delimiter_level_2) | Ending delimiter for complex type data in input csv file     |
+| [ALL_DICTIONARY_PATH](#all_dictionary_path)             | Path to read the dictionary data from all columns            |
+| [COLUMNDICT](#columndict)                               | Path to read the dictionary data from for particular column  |
+| [DATEFORMAT](#dateformat)                               | Format of date in the input csv file                         |
+| [TIMESTAMPFORMAT](#timestampformat)                     | Format of timestamp in the input csv file                    |
+| [SORT_COLUMN_BOUNDS](#sort-column-bounds)               | How to parititon the sort columns to make the evenly distributed |
+| [SINGLE_PASS](#single_pass)                             | When to enable single pass data loading                      |
+| [BAD_RECORDS_LOGGER_ENABLE](#bad-records-handling)      | Whether to enable bad records logging                        |
+| [BAD_RECORD_PATH](#bad-records-handling)                | Bad records logging path.Useful when bad record logging is enabled |
+| [BAD_RECORDS_ACTION](#bad-records-handling)             | Behavior of data loading when bad record is found            |
+| [IS_EMPTY_DATA_BAD_RECORD](#bad-records-handling)       | Whether empty data of a column to be considered as bad record or not |
+| [GLOBAL_SORT_PARTITIONS](#global_sort_partitions)       | Number of partition to use for shuffling of data during sorting |
 
   You can use the following options to load data:
 
@@ -443,14 +467,3 @@ CarbonData DML statements are documented here,which includes:
   CLEAN FILES FOR TABLE carbon_table
   ```
 
-<script>
-$(function() {
-  // Show selected style on nav item
-  $('.b-nav__docs').addClass('selected');
-
-  // Display docs subnav items
-  if (!$('.b-nav__docs').parent().hasClass('nav__item__with__subs--expanded')) {
-    $('.b-nav__docs').parent().toggleClass('nav__item__with__subs--expanded');
-  }
-});
-</script>

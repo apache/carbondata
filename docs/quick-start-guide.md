@@ -19,9 +19,9 @@
 This tutorial provides a quick introduction to using CarbonData.To follow along with this guide, first download a packaged release of CarbonData from the [CarbonData website](https://dist.apache.org/repos/dist/release/carbondata/).Alternatively it can be created following [Building CarbonData](https://github.com/apache/carbondata/tree/master/build) steps.
 
 ##  Prerequisites
-* Spark 2.2.1 version is installed and running.CarbonData supports Spark versions upto 2.2.1.Please follow steps described in [Spark docs website](https://spark.apache.org/docs/latest) for installing and running Spark.
+* CarbonData supports Spark versions upto 2.2.1.Please download Spark package from [Spark website](https://spark.apache.org/downloads.html)
 
-* Create a sample.csv file using the following commands. The CSV file is required for loading data into CarbonData.
+* Create a sample.csv file using the following commands. The CSV file is required for loading data into CarbonData
 
   ```
   cd carbondata
@@ -33,7 +33,7 @@ This tutorial provides a quick introduction to using CarbonData.To follow along 
   EOF
   ```
 
-## Deployment modes
+## Integration
 
 CarbonData can be integrated with Spark and Presto Execution Engines.The below documentation guides on Installing and Configuring with these execution engines.
 
@@ -45,16 +45,13 @@ CarbonData can be integrated with Spark and Presto Execution Engines.The below d
 
 [Installing and Configuring CarbonData on Spark on YARN Cluster](#installing-and-configuring-carbondata-on-spark-on-yarn-cluster)
 
+[Installing and Configuring CarbonData Thrift Server for Query Execution](#query-execution-using-carbondata-thrift-server)
+
 
 ### Presto
 [Installing and Configuring CarbonData on Presto](#installing-and-configuring-carbondata-on-presto)
 
 
-## Querying Data
-
-[Query Execution using CarbonData Thrift Server](#query-execution-using-carbondata-thrift-server)
-
-## 
 
 ## Installing and Configuring CarbonData to run locally with Spark Shell
 
@@ -95,12 +92,12 @@ val carbon = SparkSession.builder().config(sc.getConf)
 
 ```
 scala>carbon.sql("CREATE TABLE
-                        IF NOT EXISTS test_table(
-                                  id string,
-                                  name string,
-                                  city string,
-                                  age Int)
-                       STORED BY 'carbondata'")
+                    IF NOT EXISTS test_table(
+                    id string,
+                    name string,
+                    city string,
+                    age Int)
+                  STORED AS carbondata")
 ```
 
 ###### Loading Data to a Table
@@ -296,8 +293,12 @@ hdfs://<host_name>:port/user/hive/warehouse/carbon.store
 
 ## Installing and Configuring CarbonData on Presto
 
+**NOTE:** **CarbonData tables cannot be created nor loaded from Presto.User need to create CarbonData Table and load data into it
+either with [Spark](#installing-and-configuring-carbondata-to-run-locally-with-spark-shell) or [SDK](./sdk-guide.md).
+Once the table is created,it can be queried from Presto.**
 
-* ### Installing Presto
+
+### Installing Presto
 
  1. Download the 0.187 version of Presto using:
     `wget https://repo1.maven.org/maven2/com/facebook/presto/presto-server/0.187/presto-server-0.187.tar.gz`
@@ -429,9 +430,29 @@ select * from system.runtime.nodes;
 ```
 Now you can use the Presto CLI on the coordinator to query data sources in the catalog using the Presto workers.
 
+List the schemas(databases) available
+
+```
+show schemas;
+```
+
+Selected the schema where CarbonData table resides
+
+```
+use carbonschema;
+```
+
+List the available tables
+
+```
+show tables;
+```
+
+Query from the available tables
+
+```
+select * from carbon_table;
+```
+
 **Note :** Create Tables and data loads should be done before executing queries as we can not create carbon table from this interface.
 
-<script>
-// Show selected style on nav item
-$(function() { $('.b-nav__quickstart').addClass('selected'); });
-</script>

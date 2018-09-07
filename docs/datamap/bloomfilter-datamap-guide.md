@@ -73,7 +73,7 @@ For instance, main table called **datamap_test** which is defined as:
     age int,
     city string,
     country string)
-  STORED BY 'carbondata'
+  STORED AS carbondata
   TBLPROPERTIES('SORT_COLUMNS'='id')
   ```
 
@@ -146,14 +146,3 @@ You can refer to the corresponding section in `CarbonData Lucene DataMap`.
  there is still a chance that BloomFilter datamap can enhance the performance for concurrent query.
 + Note that BloomFilter datamap will decrease the data loading performance and may cause slightly storage expansion (for datamap index file).
 
-<script>
-$(function() {
-  // Show selected style on nav item
-  $('.b-nav__datamap').addClass('selected');
-  
-  if (!$('.b-nav__datamap').parent().hasClass('nav__item__with__subs--expanded')) {
-    // Display datamap subnav items
-    $('.b-nav__datamap').parent().toggleClass('nav__item__with__subs--expanded');
-  }
-});
-</script>

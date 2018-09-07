@@ -64,7 +64,7 @@ Start spark-shell in new terminal, type :paste, then copy and run the following 
       | country string,
       | quantity int,
       | price bigint)
-      | STORED BY 'carbondata'
+      | STORED AS carbondata
     """.stripMargin)
  
  // Create pre-aggregate table on the main table
@@ -162,7 +162,7 @@ It will show all DataMaps created on main table.
     country string,
     quantity int,
     price bigint)
-  STORED BY 'carbondata'
+  STORED AS carbondata
   ```
   
   User can create pre-aggregate tables using the Create DataMap DDL
@@ -270,15 +270,3 @@ release, user can do as following:
 3. Create the pre-aggregate table again by `CREATE DATAMAP` command
 Basically, user can manually trigger the operation by re-building the datamap.
 
-
-<script>
-$(function() {
-  // Show selected style on nav item
-  $('.b-nav__datamap').addClass('selected');
-  
-  if (!$('.b-nav__datamap').parent().hasClass('nav__item__with__subs--expanded')) {
-    // Display datamap subnav items
-    $('.b-nav__datamap').parent().toggleClass('nav__item__with__subs--expanded');
-  }
-});
-</script>

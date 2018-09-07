@@ -59,7 +59,7 @@ It will show all DataMaps created on main table.
     age int,
     city string,
     country string)
-  STORED BY 'carbondata'
+  STORED AS carbondata
   ```
   
   User can create Lucene datamap using the Create DataMap DDL:
@@ -149,7 +149,7 @@ select * from datamap_test where TEXT_MATCH('name:*n*')
 
 select * from datamap_test where TEXT_MATCH('name:*10 -name:*n*')
 ```
-**Note:** For lucene queries and syntax, refer to [lucene-syntax](www.lucenetutorial.com/lucene-query-syntax.html)
+**Note:** For lucene queries and syntax, refer to [lucene-syntax](http://www.lucenetutorial.com/lucene-query-syntax.html)
 
 ## Data Management with lucene datamap
 Once there is lucene datamap is created on the main table, following command on the main
@@ -173,15 +173,4 @@ release, user can do as following:
 3. Create the lucene datamap again by `CREATE DATAMAP` command.
 Basically, user can manually trigger the operation by re-building the datamap.
 
-<script>
-$(function() {
-  // Show selected style on nav item
-  $('.b-nav__datamap').addClass('selected');
-  
-  if (!$('.b-nav__datamap').parent().hasClass('nav__item__with__subs--expanded')) {
-    // Display datamap subnav items
-    $('.b-nav__datamap').parent().toggleClass('nav__item__with__subs--expanded');
-  }
-});
-</script>
 
