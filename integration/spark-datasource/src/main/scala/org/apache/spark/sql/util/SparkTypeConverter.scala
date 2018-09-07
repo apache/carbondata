@@ -83,6 +83,7 @@ private[spark] object SparkTypeConverter {
         case CarbonDataTypes.BOOLEAN => BooleanType
         case CarbonDataTypes.TIMESTAMP => TimestampType
         case CarbonDataTypes.DATE => DateType
+        case CarbonDataTypes.VARCHAR => StringType
       }
     }
   }

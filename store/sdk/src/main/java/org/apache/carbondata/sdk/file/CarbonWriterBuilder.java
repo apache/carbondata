@@ -239,7 +239,6 @@ public class CarbonWriterBuilder {
    * g. complex_delimiter_level_2 -- value to Split the nested complexTypeData
    * h. quotechar
    * i. escapechar
-   * j. sort_scope -- "local_sort", "no_sort", "batch_sort"
    *
    * Default values are as follows.
    *
@@ -252,7 +251,6 @@ public class CarbonWriterBuilder {
    * g. complex_delimiter_level_2 -- ":"
    * h. quotechar -- "\""
    * i. escapechar -- "\\"
-   * j. sort_scope -- "local_sort"
    *
    * @return updated CarbonWriterBuilder
    */
@@ -268,26 +266,17 @@ public class CarbonWriterBuilder {
           !option.equalsIgnoreCase("complex_delimiter_level_1") &&
           !option.equalsIgnoreCase("complex_delimiter_level_2") &&
           !option.equalsIgnoreCase("quotechar") &&
-          !option.equalsIgnoreCase("escapechar") &&
-          !option.equalsIgnoreCase("sort_scope")) {
+          !option.equalsIgnoreCase("escapechar")) {
         throw new IllegalArgumentException("Unsupported option:" + option
             + ". Refer method header or documentation");
       }
     }
-    // validate sort scope
-    String sortScope = options.get("sort_scope");
-    if (sortScope != null) {
-      if ((!CarbonUtil.isValidSortOption(sortScope))) {
-        throw new IllegalArgumentException("Invalid Sort Scope Option: " + sortScope);
-      } else if (sortScope.equalsIgnoreCase("global_sort")) {
-        throw new IllegalArgumentException("global sort is not supported");
-      }
-    }
 
-    // convert it to treeMap as keys need to be case insensitive
-    Map<String, String> optionsTreeMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    optionsTreeMap.putAll(options);
-    this.options = optionsTreeMap;
+    if (this.options == null) {
+      // convert it to treeMap as keys need to be case insensitive
+      this.options = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    }
+    this.options.putAll(options);
     return this;
   }
 
@@ -301,6 +290,9 @@ public class CarbonWriterBuilder {
    * c. local_dictionary_threshold -- positive value, default is 10000
    * d. local_dictionary_enable -- true / false. Default is false
    * e. sort_columns -- comma separated column. "c1,c2". Default all dimensions are sorted.
+   * j. sort_scope -- "local_sort", "no_sort", "batch_sort". default value is "local_sort"
+   * k. long_string_columns -- comma separated string columns which are more than 32k length.
+   *                           default value is null.
    *
    * @return updated CarbonWriterBuilder
    */
@@ -314,7 +306,7 @@ public class CarbonWriterBuilder {
 
     Set<String> supportedOptions = new HashSet<>(Arrays
         .asList("table_blocksize", "table_blocklet_size", "local_dictionary_threshold",
-            "local_dictionary_enable", "sort_columns"));
+            "local_dictionary_enable", "sort_columns", "sort_scope", "long_string_columns"));
 
     for (String key : options.keySet()) {
       if (!supportedOptions.contains(key.toLowerCase())) {
@@ -336,6 +328,10 @@ public class CarbonWriterBuilder {
         //sort columns
         String[] sortColumns = entry.getValue().split(",");
         this.sortBy(sortColumns);
+      } else if (entry.getKey().equalsIgnoreCase("sort_scope")) {
+        this.withSortScope(entry);
+      } else if (entry.getKey().equalsIgnoreCase("long_string_columns")) {
+        updateToLoadOptions(entry);
       }
     }
     return this;
@@ -547,7 +543,13 @@ public class CarbonWriterBuilder {
 
   public CarbonLoadModel buildLoadModel(Schema carbonSchema)
       throws IOException, InvalidLoadOptionException {
-    this.schema = schemaFieldNameToLowerCase(carbonSchema);
+    Set<String> longStringColumns = null;
+    if (options != null && options.get("long_string_columns") != null) {
+      longStringColumns =
+          new HashSet<>(Arrays.asList(options.get("long_string_columns").toLowerCase().split(",")));
+      validateLongStringColumns(carbonSchema, longStringColumns);
+    }
+    this.schema = updateSchemaFields(carbonSchema, longStringColumns);
     // build CarbonTable using schema
     CarbonTable table = buildCarbonTable();
     if (persistSchemaFile) {
@@ -556,6 +558,28 @@ public class CarbonWriterBuilder {
     }
     // build LoadModel
     return buildLoadModel(table, UUID, taskNo, options);
+  }
+
+  private void validateLongStringColumns(Schema carbonSchema, Set<String> longStringColumns) {
+    // long string columns must be string or varchar type
+    for (Field field :carbonSchema.getFields()) {
+      if (longStringColumns.contains(field.getFieldName().toLowerCase()) && (
+          (field.getDataType() != DataTypes.STRING) && field.getDataType() != DataTypes.VARCHAR)) {
+        throw new RuntimeException(
+            "long string column : " + field.getFieldName() + "is not supported for data type: "
+                + field.getDataType());
+      }
+    }
+    // long string columns must not be present in sort columns
+    if (sortColumns != null) {
+      for (String col : sortColumns) {
+        // already will be in lower case
+        if (longStringColumns.contains(col)) {
+          throw new RuntimeException(
+              "long string column : " + col + "must not be present in sort columns");
+        }
+      }
+    }
   }
 
   /**
@@ -735,9 +759,11 @@ public class CarbonWriterBuilder {
     return build;
   }
 
-  /* loop through all the parent column and change fields name lower case.
-  * this is to match with sort column case */
-  private Schema schemaFieldNameToLowerCase(Schema schema) {
+  /* loop through all the parent column and
+  a) change fields name to lower case.
+  this is to match with sort column case.
+  b) change string fields to varchar type */
+  private Schema updateSchemaFields(Schema schema, Set<String> longStringColumns) {
     if (schema == null) {
       return null;
     }
@@ -746,7 +772,36 @@ public class CarbonWriterBuilder {
       if (fields[i] != null) {
         fields[i].updateNameToLowerCase();
       }
+
+      if (longStringColumns != null) {
+        /* Also update the string type to varchar */
+        if (longStringColumns.contains(fields[i].getFieldName())) {
+          fields[i].updateDataTypeToVarchar();
+        }
+      }
     }
     return new Schema(fields);
+  }
+
+  private void updateToLoadOptions(Map.Entry<String, String> entry) {
+    if (this.options == null) {
+      // convert it to treeMap as keys need to be case insensitive
+      this.options = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    }
+    // update it to load options
+    this.options.put(entry.getKey(), entry.getValue());
+  }
+
+  private void withSortScope(Map.Entry<String, String> entry) {
+    String sortScope = entry.getValue();
+    if (sortScope != null) {
+      if ((!CarbonUtil.isValidSortOption(sortScope))) {
+        throw new IllegalArgumentException("Invalid Sort Scope Option: " + sortScope);
+      } else if (sortScope.equalsIgnoreCase("global_sort")) {
+        throw new IllegalArgumentException("global sort is not supported");
+      }
+    }
+    // update it to load options
+    updateToLoadOptions(entry);
   }
 }

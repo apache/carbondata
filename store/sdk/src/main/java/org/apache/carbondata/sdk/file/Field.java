@@ -214,6 +214,11 @@ public class Field {
     this.columnComment = columnComment;
   }
 
+  /* for SDK, change string type to varchar by default for parent columns */
+  public void updateDataTypeToVarchar() {
+    this.type = DataTypes.VARCHAR;
+  }
+
   /*can use to change the case of the schema */
   public void updateNameToLowerCase() {
     this.name = name.toLowerCase();

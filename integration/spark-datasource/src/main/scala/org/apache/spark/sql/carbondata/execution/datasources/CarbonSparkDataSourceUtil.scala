@@ -228,6 +228,12 @@ object CarbonSparkDataSourceUtil {
       case _ => null
     }
     builder.sortBy(sortCols)
+    val longStringColumns: String = options
+      .getOrElse(CarbonCommonConstants.LONG_STRING_COLUMNS, null)
+    if (longStringColumns != null) {
+      val loadOptions = Map(CarbonCommonConstants.LONG_STRING_COLUMNS -> longStringColumns).asJava
+      builder.withTableProperties(loadOptions)
+    }
     builder.uniqueIdentifier(System.currentTimeMillis())
     val model = builder.buildLoadModel(schema)
     val tableInfo = model.getCarbonDataLoadSchema.getCarbonTable.getTableInfo
