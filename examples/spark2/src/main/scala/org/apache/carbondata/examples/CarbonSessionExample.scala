@@ -39,7 +39,7 @@ object CarbonSessionExample {
 //    CarbonProperties.getInstance()
 //      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     val spark = ExampleUtils.createCarbonSession("CarbonSessionExample")
-    spark.sparkContext.setLogLevel("INFO")
+    spark.sparkContext.setLogLevel("ERROR")
     exampleBody(spark)
     spark.close()
   }
@@ -87,7 +87,7 @@ object CarbonSessionExample {
 //         | SELECT *
 //         | FROM carbonsession_table where stringField='spark'
 //      """.stripMargin).show()
-
+//
 //    import spark.implicits._
 //
 //    import scala.util.Random
@@ -99,14 +99,12 @@ object CarbonSessionExample {
 //    // Create table with pre-aggregate
 //    spark.sql("DROP TABLE IF EXISTS personTable")
 //    spark.sql("DROP TABLE IF EXISTS personTableWithoutAgg")
-//    df.write.format("carbondata")
-//      .option("tableName", "personTable")
-//      .option("compress", "true")
-//      .mode(SaveMode.Overwrite).save()
+//    df.write.format("carbon").saveAsTable("personTable")
 
-    spark.sql("select count(*) from personTable where ID='No.10008'").show()
+    spark.sql("explain codegen select count(*) from personTable where ID in('No.10008', 'yvh') and name='name1'").show(false)
+//    spark.sql("select * from personTable where ID='No.10008'").show(false)
 
-    spark.sql("select count(ID),count(name),count(city),count(age) from personTable").show()
+//    spark.sql("select count(ID),count(name),count(city),count(age) from personTable").show()
 
 //    spark.sql(
 //      s"""
