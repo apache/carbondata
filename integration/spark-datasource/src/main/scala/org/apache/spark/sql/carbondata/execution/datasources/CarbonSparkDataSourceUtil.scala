@@ -22,7 +22,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, DecimalType => CarbonDecimalType, StructField => CarbonStructField, StructType => CarbonStructType}
+import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, DecimalType => CarbonDecimalType, StructField => CarbonStructField}
 import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
 import org.apache.carbondata.core.scan.expression.conditional._
 import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
@@ -78,6 +78,10 @@ object CarbonSparkDataSourceUtil {
               convertSparkToCarbonDataType(field.dataType)))
         }
         CarbonDataTypes.createStructType(carbonFields)
+      case MapType(keyType, valueType, _) =>
+        val keyDataType: CarbonDataType = convertSparkToCarbonDataType(keyType)
+        val valueDataType: CarbonDataType = convertSparkToCarbonDataType(valueType)
+        CarbonDataTypes.createMapType(keyDataType, valueDataType)
       case NullType => CarbonDataTypes.NULL
       case decimal: DecimalType =>
         CarbonDataTypes.createDecimalType(decimal.precision, decimal.scale)
@@ -196,11 +200,7 @@ object CarbonSparkDataSourceUtil {
       dataSchema: StructType): CarbonLoadModel = {
     val schema = new Schema(dataSchema.fields.map { field =>
       val dataType = convertSparkToCarbonDataType(field.dataType)
-      dataType match {
-        case s: CarbonStructType =>
-          new Field(field.name, s, s.getFields)
-        case _ => new Field(field.name, dataType)
-      }
+      new Field(field.name, dataType)
     })
     val builder = new CarbonWriterBuilder
     builder.isTransactionalTable(false)

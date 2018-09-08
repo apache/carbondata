@@ -468,7 +468,7 @@ public class AvroCarbonWriter extends CarbonWriter {
       case MAP:
         // recursively get the sub fields
         ArrayList<StructField> mapSubFields = new ArrayList<>();
-        StructField mapField = prepareSubFields("val", childSchema);
+        StructField mapField = prepareSubFields(fieldName, childSchema);
         if (null != mapField) {
           // key value field will be wrapped inside a map struct field
           StructField keyValueField = mapField.getChildren().get(0);
@@ -575,7 +575,7 @@ public class AvroCarbonWriter extends CarbonWriter {
           keyValueFields.add(keyField);
           keyValueFields.add(valueField);
           StructField mapKeyValueField =
-              new StructField(fieldName, DataTypes.createStructType(keyValueFields));
+              new StructField(fieldName + ".val", DataTypes.createStructType(keyValueFields));
           // value dataType will be at position 1 in the fields
           MapType mapType =
               DataTypes.createMapType(DataTypes.STRING, mapKeyValueField.getDataType());
