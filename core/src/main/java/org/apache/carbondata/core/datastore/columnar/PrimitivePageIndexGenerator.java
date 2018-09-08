@@ -16,11 +16,8 @@
  */
 package org.apache.carbondata.core.datastore.columnar;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
@@ -42,9 +39,6 @@ public class PrimitivePageIndexGenerator extends PageIndexGenerator<Object[]> {
       this.rowIdRlePage = new short[0];
       this.invertedIndex = new short[0];
       this.dataPage = dataPage;
-    }
-    if (applyRle) {
-      rleEncodeOnData(dataWithRowId);
     }
   }
 
@@ -70,55 +64,6 @@ public class PrimitivePageIndexGenerator extends PageIndexGenerator<Object[]> {
     }
     this.dataPage = dataPage;
     return indexes;
-  }
-
-  private void rleEncodeOnData(ColumnDataVo<Object>[] dataWithRowId) {
-    Object prvKey = dataWithRowId[0].getData();
-    List<ColumnDataVo<Object>> list = new ArrayList<>(dataWithRowId.length / 2);
-    list.add(dataWithRowId[0]);
-    short counter = 1;
-    short start = 0;
-    List<Short> map = new ArrayList<Short>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    for (int i = 1; i < dataWithRowId.length; i++) {
-      if (prvKey.equals(dataWithRowId[i].getData())) {
-        prvKey = dataWithRowId[i].getData();
-        list.add(dataWithRowId[i]);
-        map.add(start);
-        map.add(counter);
-        start += counter;
-        counter = 1;
-        continue;
-      }
-      counter++;
-    }
-    map.add(start);
-    map.add(counter);
-    // if rle is index size is more than 70% then rle wont give any benefit
-    // so better to avoid rle index and write data as it is
-    boolean useRle = (((list.size() + map.size()) * 100) / dataWithRowId.length) < 70;
-    if (useRle) {
-      this.dataPage = convertToDataPage(list);
-      dataRlePage = convertToArray(map);
-    } else {
-      this.dataPage = convertToDataPage(dataWithRowId);
-      dataRlePage = new short[0];
-    }
-  }
-
-  private Object[] convertToDataPage(ColumnDataVo<Object>[] indexes) {
-    Object[] shortArray = new Object[indexes.length][];
-    for (int i = 0; i < shortArray.length; i++) {
-      shortArray[i] = indexes[i].getData();
-    }
-    return shortArray;
-  }
-
-  private Object[] convertToDataPage(List<ColumnDataVo<Object>> list) {
-    Object[] shortArray = new Object[list.size()];
-    for (int i = 0; i < shortArray.length; i++) {
-      shortArray[i] = list.get(i).getData();
-    }
-    return shortArray;
   }
 
   @Override public Object[] getDataPage() {

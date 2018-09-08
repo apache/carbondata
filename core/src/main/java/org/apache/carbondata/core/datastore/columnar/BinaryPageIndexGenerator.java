@@ -16,12 +16,9 @@
  */
 package org.apache.carbondata.core.datastore.columnar;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.List;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.ByteUtil;
 
 public class BinaryPageIndexGenerator extends PageIndexGenerator<byte[][]> {
@@ -45,9 +42,6 @@ public class BinaryPageIndexGenerator extends PageIndexGenerator<byte[][]> {
       this.rowIdRlePage = new short[0];
       this.invertedIndex = new short[0];
       this.dataPage = dataPage;
-    }
-    if (applyRle) {
-      rleEncodeOnData(dataWithRowId);
     }
   }
 
@@ -73,55 +67,6 @@ public class BinaryPageIndexGenerator extends PageIndexGenerator<byte[][]> {
     }
     this.dataPage = dataPage;
     return indexes;
-  }
-
-  private void rleEncodeOnData(ColumnDataVo<byte[]>[] dataWithRowId) {
-    byte[] prvKey = dataWithRowId[0].getData();
-    List<ColumnDataVo<byte[]>> list = new ArrayList<>(dataWithRowId.length / 2);
-    list.add(dataWithRowId[0]);
-    short counter = 1;
-    short start = 0;
-    List<Short> map = new ArrayList<Short>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    for (int i = 1; i < dataWithRowId.length; i++) {
-      if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(prvKey, dataWithRowId[i].getData()) != 0) {
-        prvKey = dataWithRowId[i].getData();
-        list.add(dataWithRowId[i]);
-        map.add(start);
-        map.add(counter);
-        start += counter;
-        counter = 1;
-        continue;
-      }
-      counter++;
-    }
-    map.add(start);
-    map.add(counter);
-    // if rle is index size is more than 70% then rle wont give any benefit
-    // so better to avoid rle index and write data as it is
-    boolean useRle = (((list.size() + map.size()) * 100) / dataWithRowId.length) < 70;
-    if (useRle) {
-      this.dataPage = convertToDataPage(list);
-      dataRlePage = convertToArray(map);
-    } else {
-      this.dataPage = convertToDataPage(dataWithRowId);
-      dataRlePage = new short[0];
-    }
-  }
-
-  private byte[][] convertToDataPage(ColumnDataVo<byte[]>[] indexes) {
-    byte[][] shortArray = new byte[indexes.length][];
-    for (int i = 0; i < shortArray.length; i++) {
-      shortArray[i] = indexes[i].getData();
-    }
-    return shortArray;
-  }
-
-  private byte[][] convertToDataPage(List<ColumnDataVo<byte[]>> list) {
-    byte[][] shortArray = new byte[list.size()][];
-    for (int i = 0; i < shortArray.length; i++) {
-      shortArray[i] = list.get(i).getData();
-    }
-    return shortArray;
   }
 
   /**
