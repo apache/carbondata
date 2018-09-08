@@ -32,6 +32,10 @@ public abstract class PageIndexGenerator<T> {
 
   private boolean alreadySorted;
 
+  public PageIndexGenerator() {
+    this.dataRlePage = new short[0];
+  }
+
   public abstract T getDataPage();
 
   public short[] getRowIdPage() {
