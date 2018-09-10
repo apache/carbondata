@@ -123,6 +123,8 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   // record segment number and hit blocks
   protected int numSegments = 0;
   protected int numStreamSegments = 0;
+  protected int numStreamFiles = 0;
+  protected int hitedStreamFiles = 0;
   protected int numBlocks = 0;
 
   public int getNumSegments() {
@@ -131,6 +133,14 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
   public int getNumStreamSegments() {
     return numStreamSegments;
+  }
+
+  public int getNumStreamFiles() {
+    return numStreamFiles;
+  }
+
+  public int getHitedStreamFiles() {
+    return hitedStreamFiles;
   }
 
   public int getNumBlocks() {
