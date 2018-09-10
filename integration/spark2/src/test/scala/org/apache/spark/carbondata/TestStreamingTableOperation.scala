@@ -654,7 +654,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     )
     val result = sql("select count(*) from streaming.stream_table_1s").collect()
     // 20 seconds can't ingest all data, exists data delay
-    assert(result(0).getLong(0) > 5)
+    assert(result(0).getLong(0) >= 5)
   }
 
   test("query on stream table with dictionary, sort_columns") {
