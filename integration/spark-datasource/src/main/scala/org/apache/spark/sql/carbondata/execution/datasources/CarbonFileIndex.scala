@@ -30,10 +30,12 @@ import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.types.{AtomicType, StructType}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, HDFSCarbonFile}
 import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope
 import org.apache.carbondata.core.scan.expression.{Expression => CarbonExpression}
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.hadoop.api.{CarbonFileInputFormat, CarbonInputFormat}
@@ -79,6 +81,10 @@ class CarbonFileIndex(
 
   private def prune(dataFilters: Seq[Expression],
       directories: Seq[PartitionDirectory]): Seq[PartitionDirectory] = {
+    // set the driver flag to true which will used for unsafe memory initialization and carbon LRU
+    // cache instance initialization as per teh driver memory
+    CarbonProperties.getInstance
+      .addNonSerializableProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
     val tablePath = parameters.get("path")
     if (tablePath.nonEmpty && dataFilters.nonEmpty) {
       val hadoopConf = sparkSession.sessionState.newHadoopConf()
