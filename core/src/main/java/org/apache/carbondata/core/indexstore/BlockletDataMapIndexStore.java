@@ -111,7 +111,8 @@ public class BlockletDataMapIndexStore
                   carbonDataFileBlockMetaInfoMapping);
           BlockDataMap blockletDataMap =
               loadAndGetDataMap(identifier, indexFileStore, blockMetaInfoMap,
-                  identifierWrapper.getCarbonTable(), identifierWrapper.isAddTableBlockToUnsafe(),
+                  identifierWrapper.getCarbonTable(),
+                  identifierWrapper.isAddTableBlockToUnsafeAndLRUCache(),
                   identifierWrapper.getConfiguration());
           dataMaps.add(blockletDataMap);
           blockletDataMapIndexWrapper =
@@ -131,7 +132,7 @@ public class BlockletDataMapIndexStore
               BlockDataMap blockletDataMap =
                   loadAndGetDataMap(blockIndexUniqueIdentifier, indexFileStore, blockMetaInfoMap,
                       identifierWrapper.getCarbonTable(),
-                      identifierWrapper.isAddTableBlockToUnsafe(),
+                      identifierWrapper.isAddTableBlockToUnsafeAndLRUCache(),
                       identifierWrapper.getConfiguration());
               dataMaps.add(blockletDataMap);
             }
@@ -140,8 +141,10 @@ public class BlockletDataMapIndexStore
               new BlockletDataMapIndexWrapper(identifier.getSegmentId(), dataMaps,
                   identifierWrapper.getConfiguration());
         }
-        lruCache.put(identifier.getUniqueTableSegmentIdentifier(), blockletDataMapIndexWrapper,
-            blockletDataMapIndexWrapper.getMemorySize());
+        if (identifierWrapper.isAddTableBlockToUnsafeAndLRUCache()) {
+          lruCache.put(identifier.getUniqueTableSegmentIdentifier(), blockletDataMapIndexWrapper,
+              blockletDataMapIndexWrapper.getMemorySize());
+        }
       } catch (Throwable e) {
         // clear all the memory used by datamaps loaded
         for (DataMap dataMap : dataMaps) {
@@ -227,7 +230,7 @@ public class BlockletDataMapIndexStore
         // maintained at segment level so it need to be called only once for clearing
         SegmentPropertiesAndSchemaHolder.getInstance()
             .invalidate(segmentId, dataMaps.get(0).getSegmentPropertiesIndex(),
-                tableSegmentUniqueIdentifierWrapper.isAddTableBlockToUnsafe());
+                tableSegmentUniqueIdentifierWrapper.isAddTableBlockToUnsafeAndLRUCache());
       }
     }
     lruCache.remove(tableSegmentUniqueIdentifierWrapper.getTableBlockIndexUniqueIdentifier()

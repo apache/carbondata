@@ -273,6 +273,53 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
     nonTransactionalCarbonTable.WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
+  def buildStructSchemaWithNestedArrayOfMapTypeAsValue(rows: Int): Unit = {
+    deleteDirectory(writerPath)
+    val mySchema =
+      """
+        |{
+        |  "name": "address",
+        |  "type": "record",
+        |  "fields": [
+        |    {
+        |      "name": "name",
+        |      "type": "string"
+        |    },
+        |    {
+        |      "name": "age",
+        |      "type": "int"
+        |    },
+        |    {
+        |      "name": "structRecord",
+        |      "type": {
+        |        "type": "record",
+        |        "name": "my_address",
+        |        "fields": [
+        |          {
+        |            "name": "street",
+        |            "type": "string"
+        |          },
+        |          {
+        |            "name": "houseDetails",
+        |            "type": {
+        |               "type": "array",
+        |               "items": {
+        |                   "name": "memberDetails",
+        |                   "type": "map",
+        |                   "values": "string"
+        |                }
+        |             }
+        |          }
+        |        ]
+        |      }
+        |    }
+        |  ]
+        |}
+      """.stripMargin
+    val json = """ {"name":"bob", "age":10, "structRecord": {"street":"street1", "houseDetails": [{"101": "Rahul", "102": "Pawan"}]}} """.stripMargin
+    nonTransactionalCarbonTable.WriteFilesWithAvroWriter(rows, mySchema, json)
+  }
+
   def buildArraySchemaWithMapTypeAsValue(rows: Int): Unit = {
     deleteDirectory(writerPath)
     val mySchema =
@@ -304,6 +351,44 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
         |}
       """.stripMargin
     val json = """ {"name":"bob", "age":10, "arrayRecord": [{"101": "Rahul", "102": "Pawan"}]} """.stripMargin
+    nonTransactionalCarbonTable.WriteFilesWithAvroWriter(rows, mySchema, json)
+  }
+
+  def buildArraySchemaWithNestedArrayOfMapTypeAsValue(rows: Int): Unit = {
+    deleteDirectory(writerPath)
+    val mySchema =
+      """
+        |{
+        |  "name": "address",
+        |  "type": "record",
+        |  "fields": [
+        |    {
+        |      "name": "name",
+        |      "type": "string"
+        |    },
+        |    {
+        |      "name": "age",
+        |      "type": "int"
+        |    },
+        |    {
+        |      "name": "arrayRecord",
+        |      "type": {
+        |        "type": "array",
+        |        "items": {
+        |           "name": "FloorNum",
+        |           "type": "array",
+        |           "items": {
+        |             "name": "houseDetails",
+        |             "type": "map",
+        |             "values": "string"
+        |           }
+        |        }
+        |      }
+        |    }
+        |  ]
+        |}
+      """.stripMargin
+    val json = """ {"name":"bob", "age":10, "arrayRecord": [[{"101": "Rahul", "102": "Pawan"}]]} """.stripMargin
     nonTransactionalCarbonTable.WriteFilesWithAvroWriter(rows, mySchema, json)
   }
 
@@ -397,6 +482,21 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
       Row("bob", 10, Row("street1", Map("101" -> "Rahul", "102" -> "Pawan")))))
   }
 
+  test("Read sdk writer Avro output Map Type with map type as child to struct<array> type") {
+    buildStructSchemaWithNestedArrayOfMapTypeAsValue(3)
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkMapOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED BY 'carbondata' LOCATION
+          |'$writerPath' """.stripMargin)
+    sql("desc formatted sdkMapOutputTable").show(1000, false)
+    sql("select * from sdkMapOutputTable").show(false)
+    checkAnswer(sql("select * from sdkMapOutputTable"), Seq(
+      Row("bob", 10, Row("street1", Seq(Map("101" -> "Rahul", "102" -> "Pawan")))),
+      Row("bob", 10, Row("street1", Seq(Map("101" -> "Rahul", "102" -> "Pawan")))),
+      Row("bob", 10, Row("street1", Seq(Map("101" -> "Rahul", "102" -> "Pawan"))))))
+  }
+
   test("Read sdk writer Avro output Map Type with map type as child to array type") {
     buildArraySchemaWithMapTypeAsValue(3)
     assert(new File(writerPath).exists())
@@ -408,6 +508,19 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
       Row("bob", 10, Seq(Map("101" -> "Rahul", "102" -> "Pawan"))),
       Row("bob", 10, Seq(Map("101" -> "Rahul", "102" -> "Pawan"))),
       Row("bob", 10, Seq(Map("101" -> "Rahul", "102" -> "Pawan")))))
+  }
+
+  test("Read sdk writer Avro output Map Type with map type as child to array<array> type") {
+    buildArraySchemaWithNestedArrayOfMapTypeAsValue(3)
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkMapOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkMapOutputTable STORED BY 'carbondata' LOCATION
+          |'$writerPath' """.stripMargin)
+    checkAnswer(sql("select * from sdkMapOutputTable"), Seq(
+      Row("bob", 10, Seq(Seq(Map("101" -> "Rahul", "102" -> "Pawan")))),
+      Row("bob", 10, Seq(Seq(Map("101" -> "Rahul", "102" -> "Pawan")))),
+      Row("bob", 10, Seq(Seq(Map("101" -> "Rahul", "102" -> "Pawan"))))))
   }
 
   override def afterAll(): Unit = {

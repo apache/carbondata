@@ -702,10 +702,7 @@ public class AvroCarbonWriter extends CarbonWriter {
         // recursively get the sub fields
         StructField mapField = prepareSubFields("val", childSchema);
         if (mapField != null) {
-          DataType ketType = ((StructType) mapField.getDataType()).getFields().get(0).getDataType();
-          DataType valueType =
-              ((StructType) mapField.getDataType()).getFields().get(1).getDataType();
-          return DataTypes.createMapType(ketType, valueType);
+          return mapField.getDataType();
         }
         return null;
       case RECORD:
