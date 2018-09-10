@@ -363,7 +363,9 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       StreamPruner streamPruner = new StreamPruner(carbonTable);
       streamPruner.init(filterResolverIntf);
       List<StreamFile> streamFiles = streamPruner.prune(streamSegments);
-
+      // record the hit information of the streaming files
+      this.hitedStreamFiles = streamFiles.size();
+      this.numStreamFiles = streamPruner.getTotalFileNums();
       for (StreamFile streamFile : streamFiles) {
         Path path = new Path(streamFile.getFilePath());
         long length = streamFile.getFileSize();

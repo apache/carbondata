@@ -165,14 +165,18 @@ class CarbonScanRDD[T: ClassTag](
         if (batchPartitions.isEmpty) {
           partitions = streamPartitions.toArray
         } else {
-          logInfo(
-            s"""
-               | Identified no.of Streaming Blocks: ${ streamPartitions.size },
-          """.stripMargin)
           // should keep the order by index of partition
           batchPartitions.appendAll(streamPartitions)
           partitions = batchPartitions.toArray
         }
+        logInfo(
+          s"""
+             | Identified no.of.streaming splits/tasks: ${ streamPartitions.size },
+             | no.of.streaming files: ${format.getHitedStreamFiles},
+             | no.of.total streaming files: ${format.getNumStreamFiles},
+             | no.of.total streaming segement: ${format.getNumStreamSegments}
+          """.stripMargin)
+
       }
       partitions
     } finally {

@@ -45,6 +45,8 @@ public class StreamPruner {
   private CarbonTable carbonTable;
   private FilterExecuter filterExecuter;
 
+  private int totalFileNums = 0;
+
   public StreamPruner(CarbonTable carbonTable) {
     this.carbonTable = carbonTable;
   }
@@ -138,6 +140,11 @@ public class StreamPruner {
         }
       }
     }
+    totalFileNums = streamFileList.size();
     return streamFileList;
+  }
+
+  public int getTotalFileNums() {
+    return totalFileNums;
   }
 }
