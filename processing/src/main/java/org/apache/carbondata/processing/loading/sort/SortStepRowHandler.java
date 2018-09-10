@@ -267,7 +267,7 @@ public class SortStepRowHandler implements Serializable {
 
     // read complex dims
     for (int i = 0; i < complexDimCnt; i++) {
-      short len = rowBuffer.getShort();
+      int len = rowBuffer.getInt();
       byte[] bytes = new byte[len];
       rowBuffer.get(bytes);
       noDictDims[noDictIndex++] = bytes;
@@ -587,7 +587,7 @@ public class SortStepRowHandler implements Serializable {
     // convert complex dims
     for (int idx = 0; idx < this.complexDimCnt; idx++) {
       byte[] bytes = (byte[]) row[this.complexDimIdx[idx]];
-      rowBuffer.putShort((short) bytes.length);
+      rowBuffer.putInt(bytes.length);
       rowBuffer.put(bytes);
     }
 

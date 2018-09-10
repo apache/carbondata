@@ -43,6 +43,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * Min Max DataMap Factory
@@ -113,7 +114,7 @@ public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
           MinMaxDataWriter.genDataMapStorePath(
               CarbonTablePath.getSegmentPath(
                   identifier.getTablePath(), segment.getSegmentNo()),
-              dataMapName)));
+              dataMapName), new Configuration(false)));
     } catch (MemoryException ex) {
       throw new IOException(ex);
     }

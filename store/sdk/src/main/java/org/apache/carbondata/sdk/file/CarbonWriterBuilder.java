@@ -663,8 +663,10 @@ public class CarbonWriterBuilder {
           if (field.getDataType() == DataTypes.DOUBLE || field.getDataType() == DataTypes.FLOAT
               || DataTypes.isDecimal(field.getDataType()) || field.getDataType().isComplexType()
               || field.getDataType() == DataTypes.VARCHAR) {
-            throw new RuntimeException(
-                " sort columns not supported for array, struct, double, float, decimal, varchar");
+            String errorMsg =
+                "sort columns not supported for array, struct, map, double, float, decimal,"
+                    + "varchar";
+            throw new RuntimeException(errorMsg);
           }
         }
         if (field.getChildren() != null && field.getChildren().size() > 0) {
