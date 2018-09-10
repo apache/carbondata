@@ -299,12 +299,6 @@ public class CarbonWriterBuilder {
    */
   public CarbonWriterBuilder withTableProperties(Map<String, String> options) {
     Objects.requireNonNull(options, "Table properties should not be null");
-    //validate the options.
-    if (options.size() > 5) {
-      throw new IllegalArgumentException("Supports only 5 options now. "
-          + "Refer method header or documentation");
-    }
-
     Set<String> supportedOptions = new HashSet<>(Arrays
         .asList("table_blocksize", "table_blocklet_size", "local_dictionary_threshold",
             "local_dictionary_enable", "sort_columns", "sort_scope", "long_string_columns"));

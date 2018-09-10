@@ -187,8 +187,9 @@ public class TablePage {
     if (noDictionaryCount > 0 || complexColumnCount > 0) {
       TableSpec tableSpec = model.getTableSpec();
       byte[][] noDictAndComplex = WriteStepRowUtil.getNoDictAndComplexDimension(row);
+      List<TableSpec.DimensionSpec> NoDictionaryDimSpec = tableSpec.getNoDictionaryDimensionSpec();
       for (int i = 0; i < noDictAndComplex.length; i++) {
-        if (tableSpec.getDimensionSpec(dictDimensionPages.length + i).getSchemaDataType()
+        if (NoDictionaryDimSpec.get(i).getSchemaDataType()
             == DataTypes.VARCHAR) {
           byte[] valueWithLength = addIntLengthToByteArray(noDictAndComplex[i]);
           noDictDimensionPages[i].putData(rowId, valueWithLength);
