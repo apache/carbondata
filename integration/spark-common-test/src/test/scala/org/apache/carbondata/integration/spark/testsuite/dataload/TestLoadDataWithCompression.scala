@@ -344,7 +344,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
       .csv(csvDir)
   }
 
-  test("test streaming ingestion with different compressor for each mini-batch") {
+  ignore("test streaming ingestion with different compressor for each mini-batch") {
     createTable(streaming = true)
     val carbonTable = CarbonEnv.getCarbonTable(Some("default"), tableName)(sqlContext.sparkSession)
     val lineNum = 10

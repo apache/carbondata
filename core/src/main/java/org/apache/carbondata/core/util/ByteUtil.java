@@ -195,6 +195,13 @@ public final class ByteUtil {
       return length1 - length2;
     }
 
+    /**
+     * Return negative value if {@code buffer1} less than {@code buffer2},
+     * return 0 if they are equal, otherwise return positive value.
+     * @param buffer1 value to compare
+     * @param buffer2 value to compare
+     * @return compare result
+     */
     public int compareTo(byte[] buffer1, byte[] buffer2) {
 
       // Short circuit equal case

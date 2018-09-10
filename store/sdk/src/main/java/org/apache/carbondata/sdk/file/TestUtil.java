@@ -25,7 +25,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -36,38 +36,34 @@ import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.io.DecoderFactory;
-import org.apache.avro.io.Encoder;
 import org.apache.avro.io.JsonDecoder;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Assert;
 
+@InterfaceAudience.Developer("Test")
 public class TestUtil {
 
-  public static Configuration configuration = new Configuration();
+  public static final Configuration configuration = new Configuration();
 
   public static GenericData.Record jsonToAvro(String json, String avroSchema) throws IOException {
     InputStream input = null;
     DataFileWriter writer = null;
-    Encoder encoder = null;
     ByteArrayOutputStream output = null;
     try {
       org.apache.avro.Schema schema = new org.apache.avro.Schema.Parser().parse(avroSchema);
-      GenericDatumReader reader = new GenericDatumReader (schema);
-      input = new ByteArrayInputStream(json.getBytes());
+      GenericDatumReader reader = new GenericDatumReader(schema);
+      input = new ByteArrayInputStream(json.getBytes(CarbonCommonConstants.DEFAULT_CHARSET));
       output = new ByteArrayOutputStream();
       DataInputStream din = new DataInputStream(input);
-      writer = new DataFileWriter (new GenericDatumWriter ());
+      writer = new DataFileWriter(new GenericDatumWriter());
       writer.create(schema, output);
       JsonDecoder decoder = DecoderFactory.get().jsonDecoder(schema, din);
-      GenericData.Record datum = null;
-      datum = (GenericData.Record) reader.read(null, decoder);
-      return datum;
+      return (GenericData.Record) reader.read(null, decoder);
     } finally {
-      try {
+      if (input != null) {
         input.close();
+      }
+      if (writer != null) {
         writer.close();
-      } catch (Exception e) {
-        e.printStackTrace();
       }
     }
   }
@@ -77,16 +73,20 @@ public class TestUtil {
   }
 
   static void writeFilesAndVerify(Schema schema, String path, String[] sortColumns) {
-    writeFilesAndVerify(100, schema, path, sortColumns, false, -1, -1, true);
+    writeFilesAndVerify(
+        100, schema, path, sortColumns, false, -1, -1, true);
   }
 
-  public static void writeFilesAndVerify(int rows, Schema schema, String path, boolean persistSchema) {
-    writeFilesAndVerify(rows, schema, path, null, persistSchema, -1, -1, true);
+  public static void writeFilesAndVerify(
+      int rows, Schema schema, String path, boolean persistSchema) {
+    writeFilesAndVerify(
+        rows, schema, path, null, persistSchema, -1, -1, true);
   }
 
   public static void writeFilesAndVerify(Schema schema, String path, boolean persistSchema,
       boolean isTransactionalTable) {
-    writeFilesAndVerify(100, schema, path, null, persistSchema, -1, -1, isTransactionalTable);
+    writeFilesAndVerify(
+        100, schema, path, null, persistSchema, -1, -1, isTransactionalTable);
   }
 
   /**
@@ -98,8 +98,8 @@ public class TestUtil {
    * @param persistSchema        whether persist schema
    * @param isTransactionalTable whether is transactional table
    */
-  public static void writeFilesAndVerify(int rows, Schema schema, String path, boolean persistSchema,
-    boolean isTransactionalTable) {
+  public static void writeFilesAndVerify(
+      int rows, Schema schema, String path, boolean persistSchema, boolean isTransactionalTable) {
     writeFilesAndVerify(rows, schema, path, null, persistSchema, -1, -1, isTransactionalTable);
   }
 
@@ -136,24 +136,26 @@ public class TestUtil {
       CarbonWriter writer = builder.buildWriterForCSVInput(schema, configuration);
 
       for (int i = 0; i < rows; i++) {
-        writer.write(new String[]{"robot" + (i % 10), String.valueOf(i), String.valueOf((double) i / 2)});
+        writer.write(new String[]{
+            "robot" + (i % 10), String.valueOf(i % 3000000), String.valueOf((double) i / 2)});
       }
       writer.close();
-    } catch (IOException e) {
+    } catch (Exception e) {
       e.printStackTrace();
-      Assert.fail(e.getMessage());
-    } catch (InvalidLoadOptionException l) {
-      l.printStackTrace();
-      Assert.fail(l.getMessage());
+      throw new RuntimeException(e);
     }
 
     File segmentFolder = null;
     if (isTransactionalTable) {
       segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-      Assert.assertTrue(segmentFolder.exists());
+      if (!segmentFolder.exists()) {
+        throw new RuntimeException("Test failed: file not exists");
+      }
     } else {
       segmentFolder = new File(path);
-      Assert.assertTrue(segmentFolder.exists());
+      if (!segmentFolder.exists()) {
+        throw new RuntimeException("Test failed: file not exists");
+      }
     }
 
     File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
@@ -161,8 +163,13 @@ public class TestUtil {
         return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
       }
     });
-    Assert.assertNotNull(dataFiles);
-    Assert.assertTrue(dataFiles.length > 0);
+    if (dataFiles == null) {
+      throw new RuntimeException("Test failed: dataFiles is null");
+    }
+
+    if (dataFiles.length == 0) {
+      throw new RuntimeException("Test failed: dataFiles is empty");
+    }
   }
 
   /**
@@ -177,8 +184,7 @@ public class TestUtil {
     try {
       if (FileFactory.isFileExist(fileName)) {
         File file = new File(fileName);
-        file.delete();
-        return true;
+        return file.delete();
       } else {
         return true;
       }
