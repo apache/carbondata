@@ -479,7 +479,7 @@ public class BlockletDataMapUtil {
   private static boolean filterColumnExistsInMinMaxColumnList(List<CarbonColumn> minMaxCacheColumns,
       CarbonColumn filterColumn) {
     for (CarbonColumn column : minMaxCacheColumns) {
-      if (filterColumn.getColumnId().equals(column.getColumnId())) {
+      if (filterColumn.getColumnId().equalsIgnoreCase(column.getColumnId())) {
         return true;
       }
     }

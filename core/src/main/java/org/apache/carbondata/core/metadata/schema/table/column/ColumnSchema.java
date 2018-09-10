@@ -315,7 +315,7 @@ public class ColumnSchema implements Serializable, Writable {
       if (other.columnName != null) {
         return false;
       }
-    } else if (!columnName.equals(other.columnName)) {
+    } else if (!columnName.equalsIgnoreCase(other.columnName)) {
       return false;
     }
     if (dataType == null) {
