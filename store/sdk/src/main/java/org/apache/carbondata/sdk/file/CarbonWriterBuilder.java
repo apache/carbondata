@@ -67,7 +67,7 @@ public class CarbonWriterBuilder {
   private int blockletSize;
   private int blockSize;
   private boolean isTransactionalTable;
-  private long UUID;
+  private long timestamp;
   private Map<String, String> options;
   private String taskNo;
   private int localDictionaryThreshold;
@@ -212,13 +212,13 @@ public class CarbonWriterBuilder {
 
   /**
    * to set the timestamp in the carbondata and carbonindex index files
-   * @param UUID is a timestamp to be used in the carbondata and carbonindex index files.
+   * @param timestamp is a timestamp to be used in the carbondata and carbonindex index files.
    * By default set to zero.
    * @return updated CarbonWriterBuilder
    */
-  public CarbonWriterBuilder uniqueIdentifier(long UUID) {
-    Objects.requireNonNull(UUID, "Unique Identifier should not be null");
-    this.UUID = UUID;
+  public CarbonWriterBuilder uniqueIdentifier(long timestamp) {
+    Objects.requireNonNull(timestamp, "Unique Identifier should not be null");
+    this.timestamp = timestamp;
     return this;
   }
 
@@ -538,6 +538,7 @@ public class CarbonWriterBuilder {
 
   public CarbonLoadModel buildLoadModel(Schema carbonSchema)
       throws IOException, InvalidLoadOptionException {
+    timestamp = System.nanoTime();
     Set<String> longStringColumns = null;
     if (options != null && options.get("long_string_columns") != null) {
       longStringColumns =
@@ -552,7 +553,7 @@ public class CarbonWriterBuilder {
       persistSchemaFile(table, CarbonTablePath.getSchemaFilePath(path));
     }
     // build LoadModel
-    return buildLoadModel(table, UUID, taskNo, options);
+    return buildLoadModel(table, timestamp, taskNo, options);
   }
 
   private void validateLongStringColumns(Schema carbonSchema, Set<String> longStringColumns) {
@@ -624,7 +625,7 @@ public class CarbonWriterBuilder {
       dbName = "_tempDB";
     } else {
       dbName = "";
-      tableName = "_tempTable_" + String.valueOf(UUID);
+      tableName = "_tempTable_" + String.valueOf(timestamp);
     }
     TableSchema schema = tableSchemaBuilder.build();
     schema.setTableName(tableName);
@@ -743,13 +744,13 @@ public class CarbonWriterBuilder {
   /**
    * Build a {@link CarbonLoadModel}
    */
-  private CarbonLoadModel buildLoadModel(CarbonTable table, long UUID, String taskNo,
+  private CarbonLoadModel buildLoadModel(CarbonTable table, long timestamp, String taskNo,
       Map<String, String> options) throws InvalidLoadOptionException, IOException {
     if (options == null) {
       options = new HashMap<>();
     }
     CarbonLoadModelBuilder builder = new CarbonLoadModelBuilder(table);
-    CarbonLoadModel build = builder.build(options, UUID, taskNo);
+    CarbonLoadModel build = builder.build(options, timestamp, taskNo);
     setCsvHeader(build);
     return build;
   }

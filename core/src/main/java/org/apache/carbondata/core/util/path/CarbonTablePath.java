@@ -34,7 +34,7 @@ public class CarbonTablePath {
   private static final String DICTIONARY_EXT = ".dict";
   private static final String DICTIONARY_META_EXT = ".dictmeta";
   private static final String SORT_INDEX_EXT = ".sortindex";
-  private static final String SCHEMA_FILE = "schema";
+  public static final String SCHEMA_FILE = "schema";
   private static final String FACT_DIR = "Fact";
   private static final String SEGMENT_PREFIX = "Segment_";
   private static final String PARTITION_PREFIX = "Part";
