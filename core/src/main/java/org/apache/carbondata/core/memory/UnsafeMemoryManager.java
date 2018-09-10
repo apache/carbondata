@@ -200,7 +200,8 @@ public class UnsafeMemoryManager {
     }
     if (baseBlock == null) {
       INSTANCE.printCurrentMemoryUsage();
-      throw new MemoryException("Not enough memory");
+      throw new MemoryException(
+          "Not enough memory. please increase carbon.unsafe.working.memory.in.mb");
     }
     return baseBlock;
   }
