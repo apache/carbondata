@@ -50,6 +50,8 @@ public class TableSchemaBuilder {
 
   private List<ColumnSchema> dimension = new LinkedList<>();
 
+  private List<ColumnSchema> varCharColumns = new LinkedList<>();
+
   private List<ColumnSchema> complex = new LinkedList<>();
 
   private List<ColumnSchema> measures = new LinkedList<>();
@@ -107,6 +109,7 @@ public class TableSchemaBuilder {
     schema.setSchemaEvolution(schemaEvol);
     List<ColumnSchema> allColumns = new LinkedList<>(sortColumns);
     allColumns.addAll(dimension);
+    allColumns.addAll(varCharColumns);
     allColumns.addAll(complex);
     allColumns.addAll(measures);
     schema.setListOfColumns(allColumns);
@@ -214,7 +217,11 @@ public class TableSchemaBuilder {
           || isComplexChild) {
         complex.add(newColumn);
       } else {
-        dimension.add(newColumn);
+        if (field.getDataType() == DataTypes.VARCHAR) {
+          varCharColumns.add(newColumn);
+        } else {
+          dimension.add(newColumn);
+        }
       }
     }
     if (newColumn.isDimensionColumn()) {

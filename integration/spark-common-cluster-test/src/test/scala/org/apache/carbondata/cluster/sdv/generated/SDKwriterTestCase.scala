@@ -756,6 +756,37 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     sql(s"CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION '$writerPath'")
     checkAnswer(sql("select count(*) from sdkTable"), Seq(Row(5)))
   }
+
+  test("Test sdk with longstring with empty sort column and some direct dictionary columns") {
+    // here we specify the longstring column as varchar
+    val schema = new StringBuilder()
+      .append("[ \n")
+      .append("   {\"address\":\"varchar\"},\n")
+      .append("   {\"date1\":\"date\"},\n")
+      .append("   {\"date2\":\"date\"},\n")
+      .append("   {\"age\":\"int\"}\n")
+      .append("]")
+      .toString()
+    val builder = CarbonWriter.builder()
+    val writer = builder
+      .outputPath(writerPath)
+      .sortBy(Array[String]())
+      .buildWriterForCSVInput(Schema.parseJson(schema))
+
+    for (i <- 0 until 5) {
+      writer
+        .write(Array[String](RandomStringUtils.randomAlphabetic(40000),
+          "1999-12-01",
+          "1998-12-01",
+          i.toString))
+    }
+    writer.close()
+
+    assert(FileFactory.getCarbonFile(writerPath).exists)
+    sql("DROP TABLE IF EXISTS sdkTable")
+    sql(s"CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION '$writerPath'")
+    checkAnswer(sql("select count(*) from sdkTable"), Seq(Row(5)))
+  }
 }
 
 object avroUtil{
