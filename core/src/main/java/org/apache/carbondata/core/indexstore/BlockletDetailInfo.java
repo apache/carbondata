@@ -51,7 +51,8 @@ public class BlockletDetailInfo implements Serializable, Writable {
 
   private short versionNumber;
 
-  private short blockletId;
+  // default blockletId should be -1,which means consider all the blocklets in block
+  private short blockletId = -1;
 
   private int[] dimLens;
 
