@@ -64,7 +64,7 @@ public abstract class BinaryLogicalExpression extends BinaryExpression {
       boolean found = false;
 
       for (ColumnExpression currentColExp : lst) {
-        if (currentColExp.getColumnName().equals(colExp.getColumnName())) {
+        if (currentColExp.getColumnName().equalsIgnoreCase(colExp.getColumnName())) {
           found = true;
           colExp.setColIndex(currentColExp.getColIndex());
           break;

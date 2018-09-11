@@ -385,6 +385,7 @@ class SparkCarbonFileFormat extends FileFormat
           new TaskAttemptContextImpl(broadcastedHadoopConf.value.value, attemptId)
         val model = format.createQueryModel(split, hadoopAttemptContext)
         model.setConverter(new SparkDataTypeConverterImpl)
+        model.setPreFetchData(false)
         val carbonReader = if (readVector) {
           val vectorizedReader = new VectorizedCarbonRecordReader(model,
             null,
