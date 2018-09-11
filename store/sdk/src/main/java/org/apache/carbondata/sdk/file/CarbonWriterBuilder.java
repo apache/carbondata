@@ -45,14 +45,13 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableSchemaBuilder;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.util.CarbonSessionInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.ThriftWriter;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModelBuilder;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.s3a.Constants;
 
 /**
@@ -73,10 +72,6 @@ public class CarbonWriterBuilder {
   private String taskNo;
   private int localDictionaryThreshold;
   private boolean isLocalDictionaryEnabled;
-
-  public CarbonWriterBuilder() {
-    ThreadLocalSessionInfo.setCarbonSessionInfo(new CarbonSessionInfo());
-  }
 
   /**
    * Sets the output path of the writer builder
@@ -398,13 +393,13 @@ public class CarbonWriterBuilder {
    * @throws IOException
    * @throws InvalidLoadOptionException
    */
-  public CarbonWriter buildWriterForCSVInput(Schema schema)
+  public CarbonWriter buildWriterForCSVInput(Schema schema, Configuration configuration)
       throws IOException, InvalidLoadOptionException {
     Objects.requireNonNull(schema, "schema should not be null");
     Objects.requireNonNull(path, "path should not be null");
     this.schema = schema;
     CarbonLoadModel loadModel = buildLoadModel(schema);
-    return new CSVCarbonWriter(loadModel);
+    return new CSVCarbonWriter(loadModel, configuration);
   }
 
   /**
@@ -416,8 +411,8 @@ public class CarbonWriterBuilder {
    * @throws IOException
    * @throws InvalidLoadOptionException
    */
-  public CarbonWriter buildThreadSafeWriterForCSVInput(Schema schema, short numOfThreads)
-      throws IOException, InvalidLoadOptionException {
+  public CarbonWriter buildThreadSafeWriterForCSVInput(Schema schema, short numOfThreads,
+      Configuration configuration) throws IOException, InvalidLoadOptionException {
     Objects.requireNonNull(schema, "schema should not be null");
     Objects.requireNonNull(numOfThreads, "numOfThreads should not be null");
     Objects.requireNonNull(path, "path should not be null");
@@ -427,7 +422,7 @@ public class CarbonWriterBuilder {
     }
     CarbonLoadModel loadModel = buildLoadModel(schema);
     loadModel.setSdkWriterCores(numOfThreads);
-    return new CSVCarbonWriter(loadModel);
+    return new CSVCarbonWriter(loadModel, configuration);
   }
 
   /**
@@ -439,8 +434,8 @@ public class CarbonWriterBuilder {
    * @throws IOException
    * @throws InvalidLoadOptionException
    */
-  public CarbonWriter buildWriterForAvroInput(org.apache.avro.Schema avroSchema)
-      throws IOException, InvalidLoadOptionException {
+  public CarbonWriter buildWriterForAvroInput(org.apache.avro.Schema avroSchema,
+      Configuration configuration) throws IOException, InvalidLoadOptionException {
     this.schema = AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema);
     Objects.requireNonNull(schema, "schema should not be null");
     Objects.requireNonNull(path, "path should not be null");
@@ -450,7 +445,7 @@ public class CarbonWriterBuilder {
     // removed from the load. LoadWithoutConverter flag is going to point to the Loader Builder
     // which will skip Conversion Step.
     loadModel.setLoadWithoutConverterStep(true);
-    return new AvroCarbonWriter(loadModel);
+    return new AvroCarbonWriter(loadModel, configuration);
   }
 
   /**
@@ -462,7 +457,7 @@ public class CarbonWriterBuilder {
    * @throws InvalidLoadOptionException
    */
   public CarbonWriter buildThreadSafeWriterForAvroInput(org.apache.avro.Schema avroSchema,
-      short numOfThreads)
+      short numOfThreads, Configuration configuration)
       throws IOException, InvalidLoadOptionException {
     this.schema = AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema);
     Objects.requireNonNull(schema, "schema should not be null");
@@ -478,7 +473,7 @@ public class CarbonWriterBuilder {
     // which will skip Conversion Step.
     loadModel.setLoadWithoutConverterStep(true);
     loadModel.setSdkWriterCores(numOfThreads);
-    return new AvroCarbonWriter(loadModel);
+    return new AvroCarbonWriter(loadModel, configuration);
   }
 
   /**
@@ -490,14 +485,14 @@ public class CarbonWriterBuilder {
    * @throws IOException
    * @throws InvalidLoadOptionException
    */
-  public JsonCarbonWriter buildWriterForJsonInput(Schema carbonSchema)
+  public JsonCarbonWriter buildWriterForJsonInput(Schema carbonSchema, Configuration configuration)
       throws IOException, InvalidLoadOptionException {
     Objects.requireNonNull(carbonSchema, "schema should not be null");
     Objects.requireNonNull(path, "path should not be null");
     this.schema = carbonSchema;
     CarbonLoadModel loadModel = buildLoadModel(carbonSchema);
     loadModel.setJsonFileLoad(true);
-    return new JsonCarbonWriter(loadModel);
+    return new JsonCarbonWriter(loadModel, configuration);
   }
 
   /**
@@ -510,11 +505,10 @@ public class CarbonWriterBuilder {
    * @throws IOException
    * @throws InvalidLoadOptionException
    */
-  public JsonCarbonWriter buildThreadSafeWriterForJsonInput(Schema carbonSchema, short numOfThreads)
-      throws IOException, InvalidLoadOptionException {
+  public JsonCarbonWriter buildThreadSafeWriterForJsonInput(Schema carbonSchema, short numOfThreads,
+      Configuration configuration) throws IOException, InvalidLoadOptionException {
     Objects.requireNonNull(carbonSchema, "schema should not be null");
     Objects.requireNonNull(path, "path should not be null");
-    Objects.requireNonNull(numOfThreads, "numOfThreads should not be null");
     if (numOfThreads <= 0) {
       throw new IllegalArgumentException(" numOfThreads must be greater than 0");
     }
@@ -522,7 +516,7 @@ public class CarbonWriterBuilder {
     CarbonLoadModel loadModel = buildLoadModel(schema);
     loadModel.setJsonFileLoad(true);
     loadModel.setSdkWriterCores(numOfThreads);
-    return new JsonCarbonWriter(loadModel);
+    return new JsonCarbonWriter(loadModel, configuration);
   }
 
   private void setCsvHeader(CarbonLoadModel model) {

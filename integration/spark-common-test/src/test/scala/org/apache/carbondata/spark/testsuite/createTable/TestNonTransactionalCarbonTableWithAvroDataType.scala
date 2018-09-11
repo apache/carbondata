@@ -93,7 +93,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -140,7 +140,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json1, mySchema)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -184,7 +184,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json, mySchema)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -215,7 +215,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -245,7 +245,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -275,7 +275,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -305,7 +305,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -335,7 +335,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -365,7 +365,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json1, schema1)
     val exception1 = intercept[UnsupportedOperationException] {
       val writer = CarbonWriter.builder
-        .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+        .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
       writer.write(record)
       writer.close()
     }
@@ -402,7 +402,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -438,7 +438,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -476,7 +476,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -509,7 +509,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -568,7 +568,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -663,7 +663,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -716,7 +716,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
 
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(avroRec)
     writer.close()
     sql(
@@ -786,7 +786,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     avroRec.put("struct_field_decimal", genericByteArray)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(avroRec)
     writer.close()
     sql(
@@ -858,7 +858,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     avroRec.put("dec_fields", genericByteArray)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(avroRec)
     writer.close()
     sql(
@@ -905,7 +905,8 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
 
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false)
+      .buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -952,7 +953,8 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
 
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false)
+      .buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -997,7 +999,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val avroRec = new GenericData. Record(nn)
     avroRec.put("id", bytes1)
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(avroRec)
     writer.close()
     sql(
@@ -1042,7 +1044,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val avroRec = new GenericData. Record(nn)
     avroRec.put("dec_field", bytes1)
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(avroRec)
     writer.close()
     sql(
@@ -1087,7 +1089,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val avroRec = new GenericData. Record(nn)
     avroRec.put("dec_field", bytes1)
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(avroRec)
     writer.close()
     sql(
@@ -1128,7 +1130,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val avroRec = new GenericData. Record(nn)
     avroRec.put("dec_field", bytes)
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(avroRec)
     writer.close()
     sql(
@@ -1170,7 +1172,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     avroRec.put("dec_field", bytes)
     val exception1 = intercept[Exception] {
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(avroRec)
     writer.close()
     }
@@ -1220,7 +1222,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -1256,7 +1258,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(record)
     writer.close()
     sql(
@@ -1306,7 +1308,7 @@ class TestNonTransactionalCarbonTableWithAvroDataType extends QueryTest with Bef
 
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn)
+      .outputPath(writerPath).isTransactionalTable(false).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
     writer.write(avroRec)
     writer.close()
     sql(s"create table sdkOutputTable(union_field struct<union_field0:decimal(10,2),union_field1:int>) " +

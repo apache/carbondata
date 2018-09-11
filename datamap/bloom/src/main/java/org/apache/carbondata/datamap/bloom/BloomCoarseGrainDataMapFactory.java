@@ -237,7 +237,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
       }
       for (String shard : shardPaths) {
         BloomCoarseGrainDataMap bloomDM = new BloomCoarseGrainDataMap();
-        bloomDM.init(new BloomDataMapModel(shard, cache));
+        bloomDM.init(new BloomDataMapModel(shard, cache, segment.getConfiguration()));
         bloomDM.initIndexColumnConverters(getCarbonTable(), dataMapMeta.getIndexedColumns());
         dataMaps.add(bloomDM);
       }
@@ -253,7 +253,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     List<CoarseGrainDataMap> coarseGrainDataMaps = new ArrayList<>();
     BloomCoarseGrainDataMap bloomCoarseGrainDataMap = new BloomCoarseGrainDataMap();
     String indexPath = ((BloomDataMapDistributable) distributable).getIndexPath();
-    bloomCoarseGrainDataMap.init(new BloomDataMapModel(indexPath, cache));
+    bloomCoarseGrainDataMap
+        .init(new BloomDataMapModel(indexPath, cache, FileFactory.getConfiguration()));
     bloomCoarseGrainDataMap.initIndexColumnConverters(getCarbonTable(),
         dataMapMeta.getIndexedColumns());
     coarseGrainDataMaps.add(bloomCoarseGrainDataMap);

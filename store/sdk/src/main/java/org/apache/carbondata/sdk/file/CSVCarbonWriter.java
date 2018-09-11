@@ -46,8 +46,7 @@ class CSVCarbonWriter extends CarbonWriter {
   private TaskAttemptContext context;
   private ObjectArrayWritable writable;
 
-  CSVCarbonWriter(CarbonLoadModel loadModel) throws IOException {
-    Configuration hadoopConf = new Configuration();
+  CSVCarbonWriter(CarbonLoadModel loadModel, Configuration hadoopConf) throws IOException {
     CarbonTableOutputFormat.setLoadModel(hadoopConf, loadModel);
     CarbonTableOutputFormat format = new CarbonTableOutputFormat();
     JobID jobId = new JobID(UUID.randomUUID().toString(), 0);

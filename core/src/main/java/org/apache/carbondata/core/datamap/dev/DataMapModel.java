@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.datamap.dev;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Information required to build datamap
  */
@@ -24,11 +26,19 @@ public class DataMapModel {
 
   private String filePath;
 
-  public DataMapModel(String filePath) {
+  private Configuration configuration;
+
+  public DataMapModel(String filePath, Configuration configuration) {
     this.filePath = filePath;
+    this.configuration = configuration;
   }
 
   public String getFilePath() {
     return filePath;
   }
+
+  public Configuration getConfiguration() {
+    return configuration;
+  }
+
 }

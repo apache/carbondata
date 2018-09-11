@@ -436,7 +436,7 @@ object CarbonDataRDDFactory {
         res.foreach { resultOfSeg =>
           resultSize = resultSize + resultOfSeg.size
           resultOfSeg.foreach { resultOfBlock =>
-            segmentDetails.add(new Segment(resultOfBlock._2._1.getLoadName, null))
+            segmentDetails.add(new Segment(resultOfBlock._2._1.getLoadName))
           }
         }
         val segmentFiles = updateSegmentFiles(carbonTable, segmentDetails, updateModel.get)

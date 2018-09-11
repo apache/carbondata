@@ -23,7 +23,6 @@ import java.util.Random;
 import java.util.UUID;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
@@ -47,15 +46,14 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
   private TaskAttemptContext context;
   private ObjectArrayWritable writable;
 
-  JsonCarbonWriter(CarbonLoadModel loadModel) throws IOException {
-    Configuration OutputHadoopConf = FileFactory.getConfiguration();
-    CarbonTableOutputFormat.setLoadModel(OutputHadoopConf, loadModel);
+  JsonCarbonWriter(CarbonLoadModel loadModel, Configuration configuration) throws IOException {
+    CarbonTableOutputFormat.setLoadModel(configuration, loadModel);
     CarbonTableOutputFormat outputFormat = new CarbonTableOutputFormat();
     JobID jobId = new JobID(UUID.randomUUID().toString(), 0);
     Random random = new Random();
     TaskID task = new TaskID(jobId, TaskType.MAP, random.nextInt());
     TaskAttemptID attemptID = new TaskAttemptID(task, random.nextInt());
-    TaskAttemptContextImpl context = new TaskAttemptContextImpl(OutputHadoopConf, attemptID);
+    TaskAttemptContextImpl context = new TaskAttemptContextImpl(configuration, attemptID);
     this.recordWriter = outputFormat.getRecordWriter(context);
     this.context = context;
     this.writable = new ObjectArrayWritable();

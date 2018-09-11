@@ -270,6 +270,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
           TableProcessingOperations.deleteLocalDataLoadFolderLocation(loadModel, false, false);
 
           throw new RuntimeException(e);
+        } finally {
+          ThreadLocalSessionInfo.unsetAll();
         }
       }
     });
@@ -444,6 +446,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
       } finally {
         executorService.shutdownNow();
         dataLoadExecutor.close();
+        ThreadLocalSessionInfo.unsetAll();
         // clean up the folders and files created locally for data load operation
         TableProcessingOperations.deleteLocalDataLoadFolderLocation(loadModel, false, false);
       }

@@ -117,7 +117,7 @@ class CarbonFileIndex(
       }
       CarbonInputFormat.setReadCommittedScope(
         hadoopConf,
-        new LatestFilesReadCommittedScope(indexFiles))
+        new LatestFilesReadCommittedScope(indexFiles, hadoopConf))
       filter match {
         case Some(c) => CarbonInputFormat.setFilterPredicates(hadoopConf, c)
         case None => None

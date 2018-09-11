@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
@@ -31,7 +32,17 @@ import org.apache.carbondata.core.reader.CarbonHeaderReader;
 import org.apache.carbondata.format.FileFooter3;
 import org.apache.carbondata.format.FileHeader;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
+
+  public DataFileFooterConverterV3(Configuration configuration) {
+    super(configuration);
+  }
+
+  public DataFileFooterConverterV3() {
+    super(FileFactory.getConfiguration());
+  }
 
   /**
    * Below method will be used to convert thrift file meta to wrapper file meta

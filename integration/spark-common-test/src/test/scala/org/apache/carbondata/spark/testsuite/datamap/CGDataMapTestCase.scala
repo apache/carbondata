@@ -22,12 +22,13 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, Segment}
-import org.apache.carbondata.core.datamap.dev.{DataMapModel, DataMapBuilder, DataMapWriter}
+import org.apache.carbondata.core.datamap.dev.{DataMapBuilder, DataMapModel, DataMapWriter}
 import org.apache.carbondata.core.datamap.dev.cgdatamap.{CoarseGrainDataMap, CoarseGrainDataMapFactory}
 import org.apache.carbondata.core.datastore.FileReader
 import org.apache.carbondata.core.datastore.block.SegmentProperties
@@ -71,7 +72,7 @@ class CGDataMapFactory(
     val files = file.listFiles()
     files.map {f =>
       val dataMap: CoarseGrainDataMap = new CGDataMap()
-      dataMap.init(new DataMapModel(f.getCanonicalPath))
+      dataMap.init(new DataMapModel(f.getCanonicalPath, new Configuration(false)))
       dataMap
     }.toList.asJava
   }
@@ -83,7 +84,8 @@ class CGDataMapFactory(
   override def getDataMaps(distributable: DataMapDistributable): java.util.List[CoarseGrainDataMap] = {
     val mapDistributable = distributable.asInstanceOf[BlockletDataMapDistributable]
     val dataMap: CoarseGrainDataMap = new CGDataMap()
-    dataMap.init(new DataMapModel(mapDistributable.getFilePath))
+    dataMap.init(new DataMapModel(mapDistributable.getFilePath, new
+        Configuration(false)))
     Seq(dataMap).asJava
   }
 

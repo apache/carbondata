@@ -1277,34 +1277,6 @@ public final class CarbonUtil {
   }
 
   /**
-   * Below method will be used to get all the block index info from index file
-   *
-   * @param taskId                  task id of the file
-   * @param tableBlockInfoList      list of table block
-   * @param identifier absolute table identifier
-   * @return list of block info
-   * @throws IOException if any problem while reading
-   */
-  public static List<DataFileFooter> readCarbonIndexFile(String taskId, String bucketNumber,
-      List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier identifier)
-      throws IOException {
-    // need to sort the  block info list based for task in ascending  order so
-    // it will be sinkup with block index read from file
-    Collections.sort(tableBlockInfoList);
-    // geting the index file path
-    //TODO need to pass proper partition number when partiton will be supported
-    String carbonIndexFilePath = CarbonTablePath
-        .getCarbonIndexFilePath(identifier.getTablePath(), taskId,
-            tableBlockInfoList.get(0).getSegmentId(),
-            bucketNumber, CarbonTablePath.DataFileUtil
-                .getTimeStampFromFileName(tableBlockInfoList.get(0).getFilePath()),
-            tableBlockInfoList.get(0).getVersion());
-    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
-    // read the index info and return
-    return fileFooterConverter.getIndexInfo(carbonIndexFilePath, tableBlockInfoList);
-  }
-
-  /**
    * initialize the value of dictionary chunk that can be kept in memory at a time
    *
    * @return
@@ -2243,17 +2215,17 @@ public final class CarbonUtil {
     }
   }
 
-  public static String getFilePathExternalFilePath(String path) {
+  public static String getFilePathExternalFilePath(String path, Configuration configuration) {
 
     // return the list of carbondata files in the given path.
-    CarbonFile segment = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
+    CarbonFile segment = FileFactory.getCarbonFile(path, configuration);
 
     CarbonFile[] dataFiles = segment.listFiles();
     for (CarbonFile dataFile : dataFiles) {
       if (dataFile.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
         return dataFile.getAbsolutePath();
       } else if (dataFile.isDirectory()) {
-        return getFilePathExternalFilePath(dataFile.getAbsolutePath());
+        return getFilePathExternalFilePath(dataFile.getAbsolutePath(), configuration);
       }
     }
     return null;
@@ -2265,12 +2237,14 @@ public final class CarbonUtil {
    * @return table info containing the schema
    */
   public static org.apache.carbondata.format.TableInfo inferSchema(String carbonDataFilePath,
-      String tableName, boolean isCarbonFileProvider) throws IOException {
+      String tableName, boolean isCarbonFileProvider, Configuration configuration)
+      throws IOException {
     String fistFilePath = null;
     if (isCarbonFileProvider) {
-      fistFilePath = getFilePathExternalFilePath(carbonDataFilePath + "/Fact/Part0/Segment_null");
+      fistFilePath = getFilePathExternalFilePath(carbonDataFilePath + "/Fact/Part0/Segment_null",
+          configuration);
     } else {
-      fistFilePath = getFilePathExternalFilePath(carbonDataFilePath);
+      fistFilePath = getFilePathExternalFilePath(carbonDataFilePath, configuration);
     }
     if (fistFilePath == null) {
       // Check if we can infer the schema from the hive metastore.
@@ -2645,7 +2619,7 @@ public final class CarbonUtil {
     HashMap<String, Long> dataAndIndexSize = new HashMap<String, Long>();
     Map<String, SegmentFileStore.FolderDetails> locationMap = fileStore.getLocationMap();
     if (locationMap != null) {
-      fileStore.readIndexFiles();
+      fileStore.readIndexFiles(FileFactory.getConfiguration());
       Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
       // get the size of carbonindex file
       carbonIndexSize = getCarbonIndexSize(fileStore, locationMap);
@@ -3192,8 +3166,7 @@ public final class CarbonUtil {
    * @param carbonTable
    * carbon Table
    */
-  public static ColumnarFormatVersion getFormatVersion(CarbonTable carbonTable)
-      throws IOException {
+  public static ColumnarFormatVersion getFormatVersion(CarbonTable carbonTable) throws IOException {
     String segmentPath = null;
     boolean supportFlatFolder = carbonTable.isSupportFlatFolder();
     CarbonIndexFileReader indexReader = new CarbonIndexFileReader();

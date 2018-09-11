@@ -22,8 +22,8 @@ import java.io.File
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.RandomStringUtils
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
-import org.apache.spark.sql.carbondata.datasource.TestUtil._
 import org.apache.spark.util.SparkUtil
+import org.apache.spark.sql.carbondata.datasource.TestUtil.{spark, _}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
@@ -70,9 +70,11 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
       val writer =
         if (persistSchema) {
           builder.persistSchemaFile(true)
-          builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema))
+          builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema), spark
+            .sparkContext.hadoopConfiguration)
         } else {
-          builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema))
+          builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema), spark
+            .sparkContext.hadoopConfiguration)
         }
 
       var i = 0
@@ -333,7 +335,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
       .toString()
     val builder = CarbonWriter.builder()
     val writer = builder.outputPath(writerPath)
-      .buildWriterForCSVInput(Schema.parseJson(schema))
+      .buildWriterForCSVInput(Schema.parseJson(schema), spark.sessionState.newHadoopConf())
     for (i <- 0 until 3) {
       // write a varchar with 75,000 length
       writer.write(Array[String](s"name_$i", RandomStringUtils.randomAlphabetic(75000), i.toString))
@@ -348,15 +350,12 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
         s"""CREATE TABLE sdkOutputTable (name string, address string, age int)
            |USING carbon OPTIONS (PATH '$writerPath', "long_String_columns" "address") """
           .stripMargin)
-    } else if (spark.sparkContext.version.startsWith("2.2")) {
+    } else {
       //data source file format
       spark.sql(
         s"""CREATE TABLE sdkOutputTable (name string, address string, age int) USING carbon
            |OPTIONS("long_String_columns"="address") LOCATION
            |'$writerPath' """.stripMargin)
-    } else {
-      // TODO. spark2.3 ?
-      assert(false)
     }
     assert(spark.sql("select * from sdkOutputTable where age = 0").count() == 1)
     val op = spark.sql("select address from sdkOutputTable limit 1").collectAsList()
@@ -371,14 +370,11 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
         .sql(
           s"""CREATE TABLE sdkOutputTableWithoutSchema USING carbon OPTIONS (PATH
              |'$writerPath', "long_String_columns" "address") """.stripMargin)
-    } else if (spark.sparkContext.version.startsWith("2.2")) {
+    } else {
       //data source file format
       spark.sql(
         s"""CREATE TABLE sdkOutputTableWithoutSchema USING carbon OPTIONS
            |("long_String_columns"="address") LOCATION '$writerPath' """.stripMargin)
-    } else {
-      // TODO. spark2.3 ?
-      assert(false)
     }
     assert(spark.sql("select * from sdkOutputTableWithoutSchema where age = 0").count() == 1)
     val op1 = spark.sql("select address from sdkOutputTableWithoutSchema limit 1").collectAsList()

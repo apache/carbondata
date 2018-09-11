@@ -27,6 +27,8 @@ import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * ReadCommitted interface that defines a read scope.
  */
@@ -48,4 +50,8 @@ import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
       throws IOException;
 
   void takeCarbonIndexFileSnapShot() throws IOException;
+
+  Configuration getConfiguration();
+
+  void setConfiguration(Configuration configuration);
 }

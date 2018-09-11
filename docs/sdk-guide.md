@@ -383,11 +383,12 @@ public CarbonWriterBuilder withTableProperties(Map<String, String> options);
 * this writer is not thread safe, use buildThreadSafeWriterForCSVInput in multi thread environment
 * Build a {@link CarbonWriter}, which accepts row in CSV format object
 * @param schema carbon Schema object {org.apache.carbondata.sdk.file.Schema}
+* @param configuration hadoop configuration object.
 * @return CSVCarbonWriter
 * @throws IOException
 * @throws InvalidLoadOptionException
 */
-public CarbonWriter buildWriterForCSVInput(org.apache.carbondata.sdk.file.Schema schema) throws IOException, InvalidLoadOptionException;
+public CarbonWriter buildWriterForCSVInput(org.apache.carbondata.sdk.file.Schema schema, Configuration configuration) throws IOException, InvalidLoadOptionException;
 ```
 
 ```
@@ -395,12 +396,13 @@ public CarbonWriter buildWriterForCSVInput(org.apache.carbondata.sdk.file.Schema
 * Can use this writer in multi-thread instance.
 * Build a {@link CarbonWriter}, which accepts row in CSV format
 * @param schema carbon Schema object {org.apache.carbondata.sdk.file.Schema}
-* @param numOfThreads number of threads() in which .write will be called.              
+* @param numOfThreads number of threads() in which .write will be called.    
+* @param configuration hadoop configuration object          
 * @return CSVCarbonWriter
 * @throws IOException
 * @throws InvalidLoadOptionException
 */
-public CarbonWriter buildThreadSafeWriterForCSVInput(Schema schema, short numOfThreads)
+public CarbonWriter buildThreadSafeWriterForCSVInput(Schema schema, short numOfThreads, Configuration configuration)
   throws IOException, InvalidLoadOptionException;
 ```
 
@@ -410,11 +412,12 @@ public CarbonWriter buildThreadSafeWriterForCSVInput(Schema schema, short numOfT
 * this writer is not thread safe, use buildThreadSafeWriterForAvroInput in multi thread environment
 * Build a {@link CarbonWriter}, which accepts Avro format object
 * @param avroSchema avro Schema object {org.apache.avro.Schema}
+* @param configuration hadoop configuration object
 * @return AvroCarbonWriter 
 * @throws IOException
 * @throws InvalidLoadOptionException
 */
-public CarbonWriter buildWriterForAvroInput(org.apache.avro.Schema schema) throws IOException, InvalidLoadOptionException;
+public CarbonWriter buildWriterForAvroInput(org.apache.avro.Schema schema, Configuration configuration) throws IOException, InvalidLoadOptionException;
 ```
 
 ```
@@ -423,11 +426,13 @@ public CarbonWriter buildWriterForAvroInput(org.apache.avro.Schema schema) throw
 * Build a {@link CarbonWriter}, which accepts Avro object
 * @param avroSchema avro Schema object {org.apache.avro.Schema}
 * @param numOfThreads number of threads() in which .write will be called.
+* @param configuration hadoop configuration object
 * @return AvroCarbonWriter
 * @throws IOException
 * @throws InvalidLoadOptionException
 */
-public CarbonWriter buildThreadSafeWriterForAvroInput(org.apache.avro.Schema avroSchema, short numOfThreads)
+public CarbonWriter buildThreadSafeWriterForAvroInput(org.apache.avro.Schema avroSchema, short 
+numOfThreads, Configuration configuration)
   throws IOException, InvalidLoadOptionException
 ```
 
@@ -437,11 +442,12 @@ public CarbonWriter buildThreadSafeWriterForAvroInput(org.apache.avro.Schema avr
 * this writer is not thread safe, use buildThreadSafeWriterForJsonInput in multi thread environment
 * Build a {@link CarbonWriter}, which accepts Json object
 * @param carbonSchema carbon Schema object
+* @param configuration hadoop configuration object
 * @return JsonCarbonWriter
 * @throws IOException
 * @throws InvalidLoadOptionException
 */
-public JsonCarbonWriter buildWriterForJsonInput(Schema carbonSchema);
+public JsonCarbonWriter buildWriterForJsonInput(Schema carbonSchema, Configuration configuration);
 ```
 
 ```
@@ -450,11 +456,12 @@ public JsonCarbonWriter buildWriterForJsonInput(Schema carbonSchema);
 * Build a {@link CarbonWriter}, which accepts Json object
 * @param carbonSchema carbon Schema object
 * @param numOfThreads number of threads() in which .write will be called.
+* @param configuration hadoop configuraiton object.
 * @return JsonCarbonWriter
 * @throws IOException
 * @throws InvalidLoadOptionException
 */
-public JsonCarbonWriter buildThreadSafeWriterForJsonInput(Schema carbonSchema, short numOfThreads)
+public JsonCarbonWriter buildThreadSafeWriterForJsonInput(Schema carbonSchema, short numOfThreads, Configuration configuration)
 ```
 
 ### Class org.apache.carbondata.sdk.file.CarbonWriter

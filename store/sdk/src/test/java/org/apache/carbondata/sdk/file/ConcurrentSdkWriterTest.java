@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -53,7 +54,7 @@ public class ConcurrentSdkWriterTest {
       CarbonWriterBuilder builder = CarbonWriter.builder()
           .outputPath(path);
       CarbonWriter writer =
-          builder.buildThreadSafeWriterForCSVInput(new Schema(fields), numOfThreads);
+          builder.buildThreadSafeWriterForCSVInput(new Schema(fields), numOfThreads, TestUtil.configuration);
       // write in multi-thread
       for (int i = 0; i < numOfThreads; i++) {
         executorService.submit(new WriteLogic(writer));
@@ -72,7 +73,7 @@ public class ConcurrentSdkWriterTest {
       reader = CarbonReader
           .builder(path, "_temp")
           .projection(new String[]{"name", "age"})
-          .build();
+          .build(new Configuration(false));
       int i = 0;
       while (reader.hasNext()) {
         Object[] row = (Object[]) reader.readNextRow();

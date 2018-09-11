@@ -179,7 +179,8 @@ public class CarbonReaderBuilder {
    * @throws IOException
    * @throws InterruptedException
    */
-  public <T> CarbonReader<T> build() throws IOException, InterruptedException {
+  public <T> CarbonReader<T> build(Configuration configuration)
+      throws IOException, InterruptedException {
     // DB name is not applicable for SDK reader as, table will be never registered.
     CarbonTable table;
     if (isTransactionalTable) {
@@ -193,7 +194,7 @@ public class CarbonReaderBuilder {
       }
     }
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
-    final Job job = new Job(new Configuration());
+    final Job job = new Job(configuration);
     format.setTableInfo(job.getConfiguration(), table.getTableInfo());
     format.setTablePath(job.getConfiguration(), table.getTablePath());
     format.setTableName(job.getConfiguration(), table.getTableName());

@@ -282,7 +282,12 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
   @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
       int bufferSize, Configuration hadoopConf) throws IOException {
     return getDataInputStream(path, fileType, bufferSize,
-        CarbonUtil.inferCompressorFromFileName(path));
+        CarbonUtil.inferCompressorFromFileName(path), hadoopConf);
+  }
+
+  @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, String compressor) throws IOException {
+    return getDataInputStream(path, fileType, bufferSize, FileFactory.getConfiguration());
   }
 
   /**
@@ -305,12 +310,12 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     return new DataInputStream(new BufferedInputStream(stream));
   }
 
-  @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
-      int bufferSize, String compressor) throws IOException {
+  private DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, String compressor, Configuration configuration) throws IOException {
     path = path.replace("\\", "/");
     Path pt = new Path(path);
     InputStream inputStream;
-    FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
+    FileSystem fs = pt.getFileSystem(configuration);
     if (bufferSize <= 0) {
       inputStream = fs.open(pt);
     } else {
@@ -509,7 +514,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     RemoteIterator<LocatedFileStatus> listStatus = null;
     if (null != fileStatus && fileStatus.isDirectory()) {
       Path path = fileStatus.getPath();
-      listStatus = path.getFileSystem(FileFactory.getConfiguration()).listFiles(path, recursive);
+      listStatus = fs.listFiles(path, recursive);
     } else {
       return new ArrayList<CarbonFile>();
     }
@@ -521,8 +526,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     if (null != fileStatus && fileStatus.isDirectory()) {
       List<FileStatus> listStatus = new ArrayList<>();
       Path path = fileStatus.getPath();
-      RemoteIterator<LocatedFileStatus> iter =
-          path.getFileSystem(FileFactory.getConfiguration()).listLocatedStatus(path);
+      RemoteIterator<LocatedFileStatus> iter = fs.listLocatedStatus(path);
       while (iter.hasNext()) {
         LocatedFileStatus fileStatus = iter.next();
         if (pathFilter.accept(fileStatus.getPath()) && fileStatus.getLen() > 0) {

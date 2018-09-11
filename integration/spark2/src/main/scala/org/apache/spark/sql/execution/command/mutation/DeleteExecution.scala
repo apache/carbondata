@@ -159,14 +159,13 @@ object DeleteExecution {
         resultOfBlock => {
           if (resultOfBlock._1 == SegmentStatus.SUCCESS) {
             blockUpdateDetailsList.add(resultOfBlock._2._1)
-            segmentDetails.add(new Segment(resultOfBlock._2._1.getSegmentName, null))
+            segmentDetails.add(new Segment(resultOfBlock._2._1.getSegmentName))
             // if this block is invalid then decrement block count in map.
             if (CarbonUpdateUtil.isBlockInvalid(resultOfBlock._2._1.getSegmentStatus)) {
               CarbonUpdateUtil.decrementDeletedBlockCount(resultOfBlock._2._1,
                 blockMappingVO.getSegmentNumberOfBlockMapping)
             }
-          }
-          else {
+          } else {
             // In case of failure , clean all related delete delta files
             CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
             LOGGER.audit(s"Delete data operation is failed for ${ database }.${ tableName }")

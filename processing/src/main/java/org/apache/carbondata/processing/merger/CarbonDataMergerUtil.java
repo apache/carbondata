@@ -1202,7 +1202,7 @@ public final class CarbonDataMergerUtil {
     segmentUpdateStatusManager.setUpdateStatusDetails(segmentUpdateDetails);
 
     CarbonFile[] deleteDeltaFiles =
-        segmentUpdateStatusManager.getDeleteDeltaFilesList(new Segment(seg, null), blockName);
+        segmentUpdateStatusManager.getDeleteDeltaFilesList(new Segment(seg), blockName);
 
     String destFileName =
         blockName + "-" + timestamp.toString() + CarbonCommonConstants.DELETE_DELTA_FILE_EXT;

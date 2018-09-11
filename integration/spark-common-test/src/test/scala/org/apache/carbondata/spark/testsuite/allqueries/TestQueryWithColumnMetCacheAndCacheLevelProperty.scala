@@ -21,6 +21,7 @@ import java.util
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.test.util.QueryTest
@@ -35,6 +36,7 @@ import org.apache.carbondata.core.indexstore.Blocklet
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope
 import org.apache.carbondata.core.scan.expression.conditional.NotEqualsExpression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.core.scan.expression.{ColumnExpression, LiteralExpression}
@@ -304,7 +306,8 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     val resolveFilter: FilterResolverIntf =
       CarbonTable.resolveFilter(andExpression, carbonTable.getAbsoluteTableIdentifier)
     val exprWrapper = DataMapChooser.getDefaultDataMap(carbonTable, resolveFilter)
-    val segment = new Segment("0")
+    val segment = new Segment("0", new TableStatusReadCommittedScope(carbonTable
+      .getAbsoluteTableIdentifier, new Configuration(false)))
     // get the pruned blocklets
     val prunedBlocklets = exprWrapper.prune(List(segment).asJava, null)
     prunedBlocklets.asScala.foreach { blocklet =>

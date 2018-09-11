@@ -132,7 +132,7 @@ public class CSVNonTransactionalCarbonWriterTest {
         builder = builder.withBlockSize(blockSize);
       }
 
-      CarbonWriter writer = builder.buildWriterForCSVInput(schema);
+      CarbonWriter writer = builder.buildWriterForCSVInput(schema, TestUtil.configuration);
 
       for (int i = 0; i < rows; i++) {
         writer.write(new String[]{"robot" + (i % 10), String.valueOf(i), String.valueOf((double) i / 2)});
@@ -183,7 +183,7 @@ public class CSVNonTransactionalCarbonWriterTest {
           .taskNo(System.nanoTime())
           .outputPath(path);
 
-      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields));
+      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
 
       for (int i = 0; i < 100; i++) {
         String[] row = new String[]{
