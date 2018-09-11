@@ -59,24 +59,6 @@ public class DataTypeUtilTest {
     assertTrue(result == result);
   }
 
-  @Test public void testGetDataBasedOnDataType() throws NumberFormatException {
-    String data = " ";
-    if (data.isEmpty()) {
-      assertEquals(getDataBasedOnDataType(data, DataTypes.INT), null);
-    }
-    assertEquals(getDataBasedOnDataType("1", DataTypes.INT), 1);
-    assertEquals(getDataBasedOnDataType(" ", DataTypes.INT), null);
-    assertEquals(getDataBasedOnDataType("0", DataTypes.DOUBLE), 0.0d);
-    assertEquals(getDataBasedOnDataType("0", DataTypes.LONG), 0L);
-    java.math.BigDecimal javaDecVal = new java.math.BigDecimal(1);
-    scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
-    assertEquals(getDataBasedOnDataType("1", DataTypes.createDefaultDecimalType()),
-        DataTypeUtil.getDataTypeConverter().convertFromBigDecimalToDecimal(scalaDecVal));
-    assertEquals(getDataBasedOnDataType("default", DataTypes.NULL),
-        DataTypeUtil.getDataTypeConverter().convertFromStringToUTF8String("default"));
-    assertEquals(getDataBasedOnDataType((String) null, DataTypes.NULL), null);
-  }
-
   @Test public void testGetMeasureValueBasedOnDataType() {
     ColumnSchema columnSchema = new ColumnSchema();
     CarbonMeasure carbonMeasure = new CarbonMeasure(columnSchema, 1);
