@@ -37,8 +37,8 @@ case class CarbonShowLoadsCommand(
     if (showHistory) {
       Seq(AttributeReference("SegmentSequenceId", StringType, nullable = false)(),
         AttributeReference("Status", StringType, nullable = false)(),
-        AttributeReference("Load Start Time", TimestampType, nullable = false)(),
-        AttributeReference("Load End Time", TimestampType, nullable = true)(),
+        AttributeReference("Load Start Time", StringType, nullable = false)(),
+        AttributeReference("Load End Time", StringType, nullable = true)(),
         AttributeReference("Merged To", StringType, nullable = false)(),
         AttributeReference("File Format", StringType, nullable = false)(),
         AttributeReference("Visibility", StringType, nullable = false)(),
@@ -47,8 +47,8 @@ case class CarbonShowLoadsCommand(
     } else {
       Seq(AttributeReference("SegmentSequenceId", StringType, nullable = false)(),
         AttributeReference("Status", StringType, nullable = false)(),
-        AttributeReference("Load Start Time", TimestampType, nullable = false)(),
-        AttributeReference("Load End Time", TimestampType, nullable = true)(),
+        AttributeReference("Load Start Time", StringType, nullable = false)(),
+        AttributeReference("Load End Time", StringType, nullable = true)(),
         AttributeReference("Merged To", StringType, nullable = false)(),
         AttributeReference("File Format", StringType, nullable = false)(),
         AttributeReference("Data Size", StringType, nullable = false)(),
@@ -64,7 +64,7 @@ case class CarbonShowLoadsCommand(
     }
     CarbonStore.showSegments(
       limit,
-      carbonTable.getMetadataPath,
+      carbonTable.getTablePath,
       showHistory
     )
   }

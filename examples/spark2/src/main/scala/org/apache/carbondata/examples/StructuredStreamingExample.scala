@@ -130,6 +130,7 @@ object StructuredStreamingExample {
       override def run(): Unit = {
         for (_ <- 0 to 1000) {
           spark.sql(s"select count(*) from $tableName").show(truncate = false)
+          spark.sql(s"show segments for table $tableName").show
           Thread.sleep(1000 * 3)
         }
       }

@@ -107,4 +107,14 @@ object CarbonSparkUtil {
     })
     fields.mkString(",")
   }
+
+  /**
+   * add escape prefix for delimiter
+   */
+  def delimiterConverter4Udf(delimiter: String): String = delimiter match {
+    case "|" | "*" | "." | ":" | "^" | "\\" | "$" | "+" | "?" | "(" | ")" | "{" | "}" | "[" | "]" =>
+      "\\\\" + delimiter
+    case _ =>
+      delimiter
+  }
 }

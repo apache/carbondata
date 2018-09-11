@@ -51,4 +51,9 @@ public interface ICarbonLock {
    */
   boolean releaseLockManually(String lockFile);
 
+  /**
+   * Return the path to the lock file
+   * @return lock file path
+   */
+  String getLockFilePath();
 }

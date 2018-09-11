@@ -419,7 +419,7 @@ public class StreamSegment {
    * @return the list of BlockIndex in the index file
    * @throws IOException
    */
-  private static List<BlockIndex> readIndexFile(String indexPath, FileFactory.FileType fileType)
+  public static List<BlockIndex> readIndexFile(String indexPath, FileFactory.FileType fileType)
       throws IOException {
     List<BlockIndex> blockIndexList = new ArrayList<>();
     CarbonFile index = FileFactory.getCarbonFile(indexPath, fileType);
