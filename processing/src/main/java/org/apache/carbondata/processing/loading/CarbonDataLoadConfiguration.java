@@ -121,6 +121,11 @@ public class CarbonDataLoadConfiguration {
 
   private String parentTablePath;
 
+  /**
+   * name of compressor to be used to compress column page
+   */
+  private String columnCompressor;
+
   public CarbonDataLoadConfiguration() {
   }
 
@@ -408,4 +413,11 @@ public class CarbonDataLoadConfiguration {
     return complexNonDictionaryColumnCount;
   }
 
+  public String getColumnCompressor() {
+    return columnCompressor;
+  }
+
+  public void setColumnCompressor(String columnCompressor) {
+    this.columnCompressor = columnCompressor;
+  }
 }

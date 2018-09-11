@@ -35,7 +35,6 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.compression.Compressor;
-import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -717,16 +716,13 @@ public class QueryUtil {
    * Below method will be used to convert the thrift presence meta to wrapper
    * presence meta
    *
-   * @param presentMetadataThrift
    * @return wrapper presence meta
    */
   public static BitSet getNullBitSet(
-      org.apache.carbondata.format.PresenceMeta presentMetadataThrift) {
-    Compressor compressor = CompressorFactory.getInstance().getCompressor();
+      org.apache.carbondata.format.PresenceMeta presentMetadataThrift, Compressor compressor) {
     final byte[] present_bit_stream = presentMetadataThrift.getPresent_bit_stream();
     if (null != present_bit_stream) {
-      return BitSet
-          .valueOf(compressor.unCompressByte(present_bit_stream));
+      return BitSet.valueOf(compressor.unCompressByte(present_bit_stream));
     } else {
       return new BitSet(1);
     }

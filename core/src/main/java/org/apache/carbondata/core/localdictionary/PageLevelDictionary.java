@@ -26,6 +26,7 @@ import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.encoding.compress.DirectCompressCodec;
 import org.apache.carbondata.core.datastore.page.statistics.DummyStatsCollector;
 import org.apache.carbondata.core.localdictionary.exception.DictionaryThresholdReachedException;
@@ -57,14 +58,17 @@ public class PageLevelDictionary {
   private DataType dataType;
 
   private boolean isComplexTypePrimitive;
+  // compressor to be used for the dictionary. The compressor is the same as column compressor.
+  private String columnCompressor;
 
   public PageLevelDictionary(LocalDictionaryGenerator localDictionaryGenerator, String columnName,
-      DataType dataType, boolean isComplexTypePrimitive) {
+      DataType dataType, boolean isComplexTypePrimitive, String columnCompressor) {
     this.localDictionaryGenerator = localDictionaryGenerator;
     this.usedDictionaryValues = new BitSet();
     this.columnName = columnName;
     this.dataType = dataType;
     this.isComplexTypePrimitive = isComplexTypePrimitive;
+    this.columnCompressor = columnCompressor;
   }
 
   /**
@@ -111,8 +115,9 @@ public class PageLevelDictionary {
     }
     TableSpec.ColumnSpec spec =
         TableSpec.ColumnSpec.newInstance(columnName, DataTypes.BYTE_ARRAY, columnType);
-    ColumnPage dictionaryColumnPage =
-        ColumnPage.newPage(spec, DataTypes.BYTE_ARRAY, usedDictionaryValues.cardinality());
+    ColumnPage dictionaryColumnPage = ColumnPage.newPage(
+        new ColumnPageEncoderMeta(spec, DataTypes.BYTE_ARRAY, columnCompressor),
+        usedDictionaryValues.cardinality());
     // TODO support data type specific stats collector for numeric data types
     dictionaryColumnPage.setStatsCollector(new DummyStatsCollector());
     int rowId = 0;
@@ -139,8 +144,9 @@ public class PageLevelDictionary {
     // get encoded dictionary values
     LocalDictionaryChunk localDictionaryChunk = encoder.encodeDictionary(dictionaryColumnPage);
     // set compressed dictionary values
-    localDictionaryChunk.setDictionary_values(CompressorFactory.getInstance().getCompressor()
-        .compressByte(usedDictionaryValues.toByteArray()));
+    localDictionaryChunk.setDictionary_values(
+        CompressorFactory.getInstance().getCompressor(columnCompressor).compressByte(
+            usedDictionaryValues.toByteArray()));
     // free the dictionary page memory
     dictionaryColumnPage.freeMemory();
     return localDictionaryChunk;

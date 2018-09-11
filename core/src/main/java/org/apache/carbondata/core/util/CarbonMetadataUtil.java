@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.blocklet.BlockletEncodedColumnPage;
 import org.apache.carbondata.core.datastore.blocklet.EncodedBlocklet;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.statistics.TablePageStatistics;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
@@ -37,7 +38,6 @@ import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.BlockletMinMaxIndex;
 import org.apache.carbondata.format.ChunkCompressionMeta;
 import org.apache.carbondata.format.ColumnSchema;
-import org.apache.carbondata.format.CompressionCodec;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 import org.apache.carbondata.format.FileFooter3;
@@ -251,9 +251,11 @@ public class CarbonMetadataUtil {
   /**
    * Right now it is set to default values. We may use this in future
    */
-  public static ChunkCompressionMeta getSnappyChunkCompressionMeta() {
+  public static ChunkCompressionMeta getChunkCompressorMeta(String compressorName) {
     ChunkCompressionMeta chunkCompressionMeta = new ChunkCompressionMeta();
-    chunkCompressionMeta.setCompression_codec(CompressionCodec.SNAPPY);
+
+    chunkCompressionMeta.setCompression_codec(
+        CompressorFactory.getInstance().getCompressionCodec(compressorName));
     chunkCompressionMeta.setTotal_compressed_size(0);
     chunkCompressionMeta.setTotal_uncompressed_size(0);
     return chunkCompressionMeta;

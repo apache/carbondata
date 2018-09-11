@@ -34,7 +34,7 @@ public class SnappyCompressor implements Compressor {
   // snappy estimate max compressed length as 32 + source_len + source_len/6
   public static final int MAX_BYTE_TO_COMPRESS = (int)((Integer.MAX_VALUE - 32) / 7.0 * 6);
 
-  private final SnappyNative snappyNative;
+  private final transient SnappyNative snappyNative;
 
   public SnappyCompressor() {
     Snappy snappy = new Snappy();
@@ -107,9 +107,9 @@ public class SnappyCompressor implements Compressor {
     }
   }
 
-  @Override public short[] unCompressShort(byte[] compInput, int offset, int lenght) {
+  @Override public short[] unCompressShort(byte[] compInput, int offset, int length) {
     try {
-      return Snappy.uncompressShortArray(compInput, offset, lenght);
+      return Snappy.uncompressShortArray(compInput, offset, length);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
       throw new RuntimeException(e);
@@ -196,12 +196,18 @@ public class SnappyCompressor implements Compressor {
     return snappyNative.rawCompress(inputAddress, inputSize, outputAddress);
   }
 
+  @Override
   public long rawUncompress(byte[] input, byte[] output) throws IOException {
     return snappyNative.rawUncompress(input, 0, input.length, output, 0);
   }
 
   @Override
-  public int maxCompressedLength(int inputSize) {
-    return snappyNative.maxCompressedLength(inputSize);
+  public long maxCompressedLength(long inputSize) {
+    return snappyNative.maxCompressedLength((int) inputSize);
+  }
+
+  @Override
+  public boolean supportUnsafe() {
+    return true;
   }
 }

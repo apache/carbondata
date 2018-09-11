@@ -229,6 +229,11 @@ public class CarbonLoadModel implements Serializable {
 
   private List<String> mergedSegmentIds;
 
+  /**
+   * compressor used to compress column page
+   */
+  private String columnCompressor;
+
   public boolean isAggLoadRequest() {
     return isAggLoadRequest;
   }
@@ -473,6 +478,7 @@ public class CarbonLoadModel implements Serializable {
     copy.loadMinSize = loadMinSize;
     copy.parentTablePath = parentTablePath;
     copy.sdkWriterCores = sdkWriterCores;
+    copy.columnCompressor = columnCompressor;
     return copy;
   }
 
@@ -529,6 +535,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.loadMinSize = loadMinSize;
     copyObj.parentTablePath = parentTablePath;
     copyObj.sdkWriterCores = sdkWriterCores;
+    copyObj.columnCompressor = columnCompressor;
     return copyObj;
   }
 
@@ -920,5 +927,13 @@ public class CarbonLoadModel implements Serializable {
 
   public void setSdkWriterCores(short sdkWriterCores) {
     this.sdkWriterCores = sdkWriterCores;
+  }
+
+  public String getColumnCompressor() {
+    return columnCompressor;
+  }
+
+  public void setColumnCompressor(String columnCompressor) {
+    this.columnCompressor = columnCompressor;
   }
 }
