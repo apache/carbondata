@@ -34,6 +34,7 @@ import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonDictionaryImpl;
+import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.format.Encoding;
 import org.apache.carbondata.format.LocalDictionaryChunk;
 
@@ -145,8 +146,9 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
     if (null != getDataChunkV3() && null != getDataChunkV3().local_dictionary
         && null == localDictionary) {
       try {
-        String compressorName =
-            getDataChunkV3().data_chunk_list.get(0).chunk_meta.getCompression_codec().name();
+        String compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
+            getDataChunkV3().data_chunk_list.get(0).chunk_meta);
+
         Compressor compressor = CompressorFactory.getInstance().getCompressor(compressorName);
         localDictionary = getDictionary(getDataChunkV3().local_dictionary, compressor);
       } catch (IOException | MemoryException e) {

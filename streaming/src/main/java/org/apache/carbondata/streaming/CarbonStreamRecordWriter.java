@@ -170,8 +170,8 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       // get the compressor from the fileheader. In legacy store,
       // the compressor name is not set and it use snappy compressor
       FileHeader header = new CarbonHeaderReader(filePath).readHeader();
-      if (header.isSetCompressionCodec()) {
-        compressorName = header.getCompressionCodec().name();
+      if (header.isSetCompressor_name()) {
+        compressorName = header.getCompressor_name();
       } else {
         compressorName = CompressorFactory.SupportedCompressor.SNAPPY.getName();
       }
@@ -315,8 +315,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     fileHeader.setIs_footer_present(false);
     fileHeader.setIs_splitable(true);
     fileHeader.setSync_marker(CarbonStreamOutputFormat.CARBON_SYNC_MARKER);
-    fileHeader.setCompressionCodec(
-        CompressorFactory.getInstance().getCompressionCodec(compressorName));
+    fileHeader.setCompressor_name(compressorName);
     outputStream.write(CarbonUtil.getByteArray(fileHeader));
   }
 

@@ -29,6 +29,7 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
+import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
@@ -193,7 +194,8 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     DataChunk3 dataChunk3 = rawColumnChunk.getDataChunkV3();
     // data chunk of page
     DataChunk2 pageMetadata = dataChunk3.getData_chunk_list().get(pageNumber);
-    String compressorName = pageMetadata.chunk_meta.compression_codec.name();
+    String compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
+        pageMetadata.getChunk_meta());
     this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
     // calculating the start point of data
     // as buffer can contain multiple column data, start point will be datachunkoffset +
@@ -213,8 +215,10 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
       throws MemoryException, IOException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
+    String compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
+        pageMetadata.getChunk_meta());
     ColumnPageDecoder codec = encodingFactory.createDecoder(encodings, encoderMetas,
-        pageMetadata.getChunk_meta().getCompression_codec().name());
+        compressorName);
     return codec.decode(pageData.array(), offset, pageMetadata.data_page_length);
   }
 

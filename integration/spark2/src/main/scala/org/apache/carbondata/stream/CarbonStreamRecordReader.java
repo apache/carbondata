@@ -19,7 +19,6 @@ package org.apache.carbondata.stream;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -65,7 +64,6 @@ import org.apache.carbondata.hadoop.InputMetricsStats;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.apache.carbondata.streaming.CarbonStreamInputFormat;
-import org.apache.carbondata.streaming.CarbonStreamUtils;
 import org.apache.carbondata.streaming.StreamBlockletReader;
 
 import org.apache.hadoop.conf.Configuration;
@@ -265,8 +263,8 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
     CarbonHeaderReader headerReader = new CarbonHeaderReader(filePath);
     FileHeader header = headerReader.readHeader();
     // legacy store does not have this member
-    if (header.isSetCompressionCodec()) {
-      compressorName = header.getCompressionCodec().name();
+    if (header.isSetCompressor_name()) {
+      compressorName = header.getCompressor_name();
     } else {
       compressorName = CompressorFactory.SupportedCompressor.SNAPPY.getName();
     }

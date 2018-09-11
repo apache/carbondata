@@ -23,7 +23,6 @@ import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.format.CompressionCodec;
 
 public class CompressorFactory {
   private static final CompressorFactory COMPRESSOR_FACTORY = new CompressorFactory();
@@ -31,22 +30,16 @@ public class CompressorFactory {
   private final Map<String, SupportedCompressor> compressors = new HashMap<>();
 
   public enum SupportedCompressor {
-    SNAPPY(CompressionCodec.SNAPPY, "snappy", SnappyCompressor.class),
-    ZSTD(CompressionCodec.ZSTD, "zstd", ZstdCompressor.class);
+    SNAPPY("snappy", SnappyCompressor.class),
+    ZSTD("zstd", ZstdCompressor.class);
 
-    private CompressionCodec codec;
     private String name;
     private Class<Compressor> compressorClass;
     private transient Compressor compressor;
 
-    SupportedCompressor(CompressionCodec codec, String name, Class compressorCls) {
-      this.codec = codec;
+    SupportedCompressor(String name, Class compressorCls) {
       this.name = name;
       this.compressorClass = compressorCls;
-    }
-
-    public CompressionCodec getCodec() {
-      return codec;
     }
 
     public String getName() {
@@ -98,15 +91,6 @@ public class CompressorFactory {
   public Compressor getCompressor(String name) {
     if (compressors.containsKey(name.toLowerCase())) {
       return compressors.get(name.toLowerCase()).getCompressor();
-    }
-    throw new UnsupportedOperationException(
-        name + " compressor is not supported, currently we only support "
-            + Arrays.toString(SupportedCompressor.values()));
-  }
-
-  public CompressionCodec getCompressionCodec(String name) {
-    if (compressors.containsKey(name.toLowerCase())) {
-      return compressors.get(name.toLowerCase()).getCodec();
     }
     throw new UnsupportedOperationException(
         name + " compressor is not supported, currently we only support "
