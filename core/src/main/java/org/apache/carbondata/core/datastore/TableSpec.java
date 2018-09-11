@@ -42,8 +42,8 @@ public class TableSpec {
   // dictionary + no dictionary + complex + measure
   // when sort_columns are empty, no columns are selected for sorting.
   // so, spec will not be in above order.
-  // Hence NoDictionaryDimensionSpec will be useful and it will be subset of dimensionSpec.
-  private List<DimensionSpec> NoDictionaryDimensionSpec;
+  // Hence noDictionaryDimensionSpec will be useful and it will be subset of dimensionSpec.
+  private List<DimensionSpec> noDictionaryDimensionSpec;
 
   // number of simple dimensions
   private int numSimpleDimensions;
@@ -65,7 +65,7 @@ public class TableSpec {
     }
     dimensionSpec = new DimensionSpec[dimensions.size()];
     measureSpec = new MeasureSpec[measures.size()];
-    NoDictionaryDimensionSpec = new ArrayList<>();
+    noDictionaryDimensionSpec = new ArrayList<>();
     addDimensions(dimensions);
     addMeasures(measures);
   }
@@ -77,12 +77,12 @@ public class TableSpec {
       if (dimension.isComplex()) {
         DimensionSpec spec = new DimensionSpec(ColumnType.COMPLEX, dimension);
         dimensionSpec[dimIndex++] = spec;
-        NoDictionaryDimensionSpec.add(spec);
+        noDictionaryDimensionSpec.add(spec);
       } else if (dimension.getDataType() == DataTypes.TIMESTAMP && !dimension
           .isDirectDictionaryEncoding()) {
         DimensionSpec spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension);
         dimensionSpec[dimIndex++] = spec;
-        NoDictionaryDimensionSpec.add(spec);
+        noDictionaryDimensionSpec.add(spec);
       } else if (dimension.isDirectDictionaryEncoding()) {
         DimensionSpec spec = new DimensionSpec(ColumnType.DIRECT_DICTIONARY, dimension);
         dimensionSpec[dimIndex++] = spec;
@@ -92,7 +92,7 @@ public class TableSpec {
       } else {
         DimensionSpec spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension);
         dimensionSpec[dimIndex++] = spec;
-        NoDictionaryDimensionSpec.add(spec);
+        noDictionaryDimensionSpec.add(spec);
       }
     }
   }
@@ -109,7 +109,7 @@ public class TableSpec {
   }
 
   public List<DimensionSpec> getNoDictionaryDimensionSpec() {
-    return NoDictionaryDimensionSpec;
+    return noDictionaryDimensionSpec;
   }
 
   public MeasureSpec getMeasureSpec(int measureIndex) {
