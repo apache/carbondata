@@ -27,7 +27,6 @@ import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.Encoding;
 
@@ -65,7 +64,8 @@ public class DecoderBasedFallbackEncoder implements Callable<FallbackEncodedColu
     int[] rlePage;
 
     // uncompress the encoded column page
-    byte[] bytes = CompressorFactory.getInstance().getCompressor()
+    byte[] bytes = CompressorFactory.getInstance().getCompressor(
+        encodedColumnPage.getActualPage().getColumnPageEncoderMeta().getCompressorName())
         .unCompressByte(encodedColumnPage.getEncodedData().array(), offset,
             encodedColumnPage.getPageMetadata().data_page_length);
 
@@ -94,12 +94,6 @@ public class DecoderBasedFallbackEncoder implements Callable<FallbackEncodedColu
     // disable encoding using local dictionary
     encodedColumnPage.getActualPage().disableLocalDictEncoding();
 
-    // get column spec for existing column page
-    TableSpec.ColumnSpec columnSpec = encodedColumnPage.getActualPage().getColumnSpec();
-
-    // get the dataType of column
-    DataType dataType = encodedColumnPage.getActualPage().getDataType();
-
     // create a new column page which will have actual data instead of encoded data
     ColumnPage actualDataColumnPage =
         ColumnPage.newPage(encodedColumnPage.getActualPage().getColumnPageEncoderMeta(),
@@ -121,6 +115,8 @@ public class DecoderBasedFallbackEncoder implements Callable<FallbackEncodedColu
           .putBytes(rowId++, localDictionaryGenerator.getDictionaryKeyBasedOnValue(keyArray));
     }
 
+    // get column spec for existing column page
+    TableSpec.ColumnSpec columnSpec = encodedColumnPage.getActualPage().getColumnSpec();
     FallbackEncodedColumnPage fallBackEncodedColumnPage =
         CarbonUtil.getFallBackEncodedColumnPage(actualDataColumnPage, pageIndex, columnSpec);
     // here freeing the memory of new column page created as fallback is done and

@@ -27,6 +27,7 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -177,7 +178,11 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     } else {
       // IF the file is not existed, use the create api
       outputStream = FileFactory.getDataOutputStream(filePath, fileType);
-      compressorName = CompressorFactory.getInstance().getCompressor().getName();
+      compressorName = carbonTable.getTableInfo().getFactTable().getTableProperties().get(
+          CarbonCommonConstants.COMPRESSOR);
+      if (null == compressorName) {
+        compressorName = CompressorFactory.getInstance().getCompressor().getName();
+      }
       writeFileHeader();
     }
 

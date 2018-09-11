@@ -24,7 +24,7 @@ import java.util.Calendar
 
 import scala.util.Random
 
-import org.apache.commons.lang3.RandomStringUtils
+import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
 import org.apache.spark.sql.{CarbonEnv, Row, SaveMode}
 import org.apache.spark.sql.test.util.QueryTest
@@ -32,6 +32,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
@@ -77,7 +78,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     }
   }
 
-  private def createTable(streaming: Boolean = false): Unit = {
+  private def createTable(streaming: Boolean = false, columnCompressor: String = ""): Unit = {
     sql(s"DROP TABLE IF EXISTS $tableName")
     sql(
       s"""
@@ -100,6 +101,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES(
+         |  ${if (StringUtils.isBlank(columnCompressor)) "" else s"'${CarbonCommonConstants.COMPRESSOR}'='$columnCompressor',"}
          |  ${if (streaming) "" else s"'LONG_STRING_COLUMNS'='longStringField',"}
          |  'SORT_COLUMNS'='stringSortField',
          |  'DICTIONARY_INCLUDE'='stringDictField',
@@ -295,6 +297,30 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
 
     checkAnswer(sql(s"SELECT COUNT(*) FROM $tableName"), Seq(Row(lineNum * 2)))
     checkAnswer(sql(s"SELECT stringDictField, stringSortField FROM $tableName WHERE stringDictField='stringDict1'"), Seq(Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1")))
+  }
+
+  test("test creating table with specified compressor") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+    // the system configuration for compressor is snappy
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "snappy")
+    // create table with zstd as compressor
+    createTable(columnCompressor = "zstd")
+    loadData()
+    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
+    val carbonTable = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
+    val tableColumnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR)
+    assert("zstd".equalsIgnoreCase(tableColumnCompressor))
+  }
+
+  test("test creating table with unsupported compressor") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+    // the system configuration for compressor is snappy
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "snappy")
+    // create table with unsupported compressor
+    val exception = intercept[InvalidConfigurationException] {
+      createTable (columnCompressor = "fakecompressor")
+    }
+    assert(exception.getMessage.contains("fakecompressor compressor is not supported"))
   }
 
   private def generateAllDataTypeFiles(lineNum: Int, csvDir: String,

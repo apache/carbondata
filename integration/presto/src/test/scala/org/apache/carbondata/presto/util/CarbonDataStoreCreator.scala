@@ -84,7 +84,11 @@ object CarbonDataStoreCreator {
       writeDictionary(dataFilePath, table, absoluteTableIdentifier)
       val schema: CarbonDataLoadSchema = new CarbonDataLoadSchema(table)
       val loadModel: CarbonLoadModel = new CarbonLoadModel()
-      loadModel.setColumnCompressor(CompressorFactory.getInstance().getCompressor().getName());
+      import scala.collection.JavaConverters._
+      val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
+        .getOrElse(CarbonCommonConstants.COMPRESSOR,
+          CompressorFactory.getInstance().getCompressor().getName())
+      loadModel.setColumnCompressor(columnCompressor)
       loadModel.setCarbonDataLoadSchema(schema)
       loadModel.setDatabaseName(
         absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName)

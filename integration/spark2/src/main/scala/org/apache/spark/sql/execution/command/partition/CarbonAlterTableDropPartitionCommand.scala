@@ -146,7 +146,10 @@ case class CarbonAlterTableDropPartitionCommand(
       carbonLoadModel.setTablePath(table.getTablePath)
       val loadStartTime = CarbonUpdateUtil.readCurrentTime
       carbonLoadModel.setFactTimeStamp(loadStartTime)
-      carbonLoadModel.setColumnCompressor(CompressorFactory.getInstance().getCompressor.getName)
+      val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
+        .getOrElse(CarbonCommonConstants.COMPRESSOR,
+          CompressorFactory.getInstance().getCompressor.getName)
+      carbonLoadModel.setColumnCompressor(columnCompressor)
       alterTableDropPartition(
         sparkSession.sqlContext,
         model.partitionId,

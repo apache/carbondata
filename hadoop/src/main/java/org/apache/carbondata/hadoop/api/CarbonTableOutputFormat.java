@@ -294,11 +294,16 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     }
     model = new CarbonLoadModel();
     CarbonProperties carbonProperty = CarbonProperties.getInstance();
-    model.setColumnCompressor(CompressorFactory.getInstance().getCompressor().getName());
     model.setDatabaseName(CarbonTableOutputFormat.getDatabaseName(conf));
     model.setTableName(CarbonTableOutputFormat.getTableName(conf));
     model.setCarbonTransactionalTable(true);
     CarbonTable carbonTable = getCarbonTable(conf);
+    String columnCompressor = carbonTable.getTableInfo().getFactTable().getTableProperties().get(
+        CarbonCommonConstants.COMPRESSOR);
+    if (null == columnCompressor) {
+      columnCompressor = CompressorFactory.getInstance().getCompressor().getName();
+    }
+    model.setColumnCompressor(columnCompressor);
     model.setCarbonDataLoadSchema(new CarbonDataLoadSchema(carbonTable));
     model.setTablePath(getTablePath(conf));
     setFileHeader(conf, model);

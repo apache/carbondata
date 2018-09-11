@@ -142,9 +142,12 @@ case class CarbonAlterTableSplitPartitionCommand(
         LockUsage.ALTER_PARTITION_LOCK)
       locks = AlterTableUtil.validateTableAndAcquireLock(dbName, tableName,
         locksToBeAcquired)(sparkSession)
-      val carbonLoadModel = new CarbonLoadModel()
-      carbonLoadModel.setColumnCompressor(CompressorFactory.getInstance().getCompressor.getName)
       val table = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
+      val carbonLoadModel = new CarbonLoadModel()
+      val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
+        .getOrElse(CarbonCommonConstants.COMPRESSOR,
+          CompressorFactory.getInstance().getCompressor.getName)
+      carbonLoadModel.setColumnCompressor(columnCompressor)
       val tablePath = table.getTablePath
       val dataLoadSchema = new CarbonDataLoadSchema(table)
       carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)

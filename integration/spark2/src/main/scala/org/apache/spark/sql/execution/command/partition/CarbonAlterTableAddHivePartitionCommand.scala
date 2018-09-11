@@ -124,7 +124,10 @@ case class CarbonAlterTableAddHivePartitionCommand(
             "Schema of index files located in location is not matching with current table schema")
         }
         val loadModel = new CarbonLoadModel
-        loadModel.setColumnCompressor(CompressorFactory.getInstance().getCompressor.getName)
+        val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
+          .getOrElse(CarbonCommonConstants.COMPRESSOR,
+            CompressorFactory.getInstance().getCompressor.getName)
+        loadModel.setColumnCompressor(columnCompressor)
         loadModel.setCarbonTransactionalTable(true)
         loadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(table))
         // Create new entry in tablestatus file

@@ -135,7 +135,12 @@ public class StoreCreator {
       AbsoluteTableIdentifier absoluteTableIdentifier) {
     CarbonDataLoadSchema schema = new CarbonDataLoadSchema(table);
     CarbonLoadModel loadModel = new CarbonLoadModel();
-    loadModel.setColumnCompressor(CompressorFactory.getInstance().getCompressor().getName());
+    String columnCompressor = table.getTableInfo().getFactTable().getTableProperties().get(
+        CarbonCommonConstants.COMPRESSOR);
+    if (columnCompressor == null) {
+      columnCompressor = CompressorFactory.getInstance().getCompressor().getName();
+    }
+    loadModel.setColumnCompressor(columnCompressor);
     loadModel.setCarbonDataLoadSchema(schema);
     loadModel.setDatabaseName(absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName());
     loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());

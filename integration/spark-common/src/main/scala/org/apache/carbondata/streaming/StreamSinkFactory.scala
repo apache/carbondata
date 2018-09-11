@@ -272,7 +272,10 @@ object StreamSinkFactory {
       getConf.get("spark.driver.host")
     carbonLoadModel.setDictionaryServerHost(sparkDriverHost)
     carbonLoadModel.setDictionaryServerPort(dictionaryServerPort.toInt)
-    carbonLoadModel.setColumnCompressor(CompressorFactory.getInstance().getCompressor.getName)
+    val columnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
+      .getOrElse(CarbonCommonConstants.COMPRESSOR,
+        CompressorFactory.getInstance().getCompressor.getName)
+    carbonLoadModel.setColumnCompressor(columnCompressor)
     carbonLoadModel
   }
 }

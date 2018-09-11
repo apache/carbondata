@@ -289,7 +289,10 @@ object CarbonDataRDDFactory {
     loadModel.readAndSetLoadMetadataDetails()
     val loadStartTime = CarbonUpdateUtil.readCurrentTime()
     loadModel.setFactTimeStamp(loadStartTime)
-    loadModel.setColumnCompressor(CompressorFactory.getInstance().getCompressor.getName)
+    val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
+      .getOrElse(CarbonCommonConstants.COMPRESSOR,
+        CompressorFactory.getInstance().getCompressor.getName)
+    loadModel.setColumnCompressor(columnCompressor)
     loadModel
   }
 
