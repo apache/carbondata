@@ -48,8 +48,7 @@ CarbonData is built using Apache Maven, to [build CarbonData](https://github.com
 * [Quick Start](https://github.com/apache/carbondata/blob/master/docs/quick-start-guide.md)
 * [CarbonData File Structure](https://github.com/apache/carbondata/blob/master/docs/file-structure-of-carbondata.md)
 * [Data Types](https://github.com/apache/carbondata/blob/master/docs/supported-data-types-in-carbondata.md)
-* [Data Management on CarbonData](https://github.com/apache/carbondata/blob/master/docs/data-management-on-carbondata.md)
-* [Cluster Installation and Deployment](https://github.com/apache/carbondata/blob/master/docs/installation-guide.md)
+* [Data Management on CarbonData](https://github.com/apache/carbondata/blob/master/docs/language-manual.md)
 * [Configuring Carbondata](https://github.com/apache/carbondata/blob/master/docs/configuration-parameters.md)
 * [Streaming Ingestion](https://github.com/apache/carbondata/blob/master/docs/streaming-guide.md)
 * [SDK Guide](https://github.com/apache/carbondata/blob/master/docs/sdk-guide.md)
@@ -60,9 +59,9 @@ CarbonData is built using Apache Maven, to [build CarbonData](https://github.com
 * [CarbonData Lucene DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/lucene-datamap-guide.md)
 * [CarbonData Pre-aggregate DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/preaggregate-datamap-guide.md)
 * [CarbonData Timeseries DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/timeseries-datamap-guide.md)
+* [Performance Tuning](https://github.com/apache/carbondata/blob/master/docs/performance-tuning.md)
 * [FAQ](https://github.com/apache/carbondata/blob/master/docs/faq.md)
-* [Trouble Shooting](https://github.com/apache/carbondata/blob/master/docs/troubleshooting.md)
-* [Useful Tips](https://github.com/apache/carbondata/blob/master/docs/useful-tips-on-carbondata.md)
+* [Use Cases](https://github.com/apache/carbondata/blob/master/docs/usecases.md)
 
 ## Other Technical Material
 * [Apache CarbonData meetup material](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=66850609)
@@ -70,7 +69,7 @@ CarbonData is built using Apache Maven, to [build CarbonData](https://github.com
 
 ## Fork and Contribute
 This is an active open source project for everyone, and we are always open to people who want to use this system or contribute to it. 
-This guide document introduce [how to contribute to CarbonData](https://github.com/apache/carbondata/blob/master/docs/How-to-contribute-to-Apache-CarbonData.md).
+This guide document introduce [how to contribute to CarbonData](https://github.com/apache/carbondata/blob/master/docs/how-to-contribute-to-apache-carbondata.md).
 
 ## Contact us
 To get involved in CarbonData:
