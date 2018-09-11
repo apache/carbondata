@@ -64,8 +64,8 @@ public abstract class EncodingFactory {
   /**
    * Return new decoder based on encoder metadata read from file
    */
-  public ColumnPageDecoder createDecoder(List<Encoding> encodings, List<ByteBuffer> encoderMetas)
-      throws IOException {
+  public ColumnPageDecoder createDecoder(List<Encoding> encodings, List<ByteBuffer> encoderMetas,
+      String compressor) throws IOException {
     assert (encodings.size() == 1);
     assert (encoderMetas.size() == 1);
     Encoding encoding = encodings.get(0);
@@ -111,21 +111,20 @@ public abstract class EncodingFactory {
     } else {
       // for backward compatibility
       ValueEncoderMeta metadata = CarbonUtil.deserializeEncoderMetaV3(encoderMeta);
-      return createDecoderLegacy(metadata);
+      return createDecoderLegacy(metadata, compressor);
     }
   }
 
   /**
    * Old way of creating decoder, based on algorithm
    */
-  public ColumnPageDecoder createDecoderLegacy(ValueEncoderMeta metadata) {
+  public ColumnPageDecoder createDecoderLegacy(ValueEncoderMeta metadata, String compressor) {
     if (null == metadata) {
       throw new RuntimeException("internal error");
     }
     SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
     TableSpec.ColumnSpec spec =
         TableSpec.ColumnSpec.newInstanceLegacy("legacy", stats.getDataType(), ColumnType.MEASURE);
-    String compressor = "snappy";
     DataType dataType = DataType.getDataType(metadata.getType());
     if (dataType == DataTypes.BYTE ||
         dataType == DataTypes.SHORT ||

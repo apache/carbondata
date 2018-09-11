@@ -79,6 +79,7 @@ public class DataType implements Serializable {
 
   public static char convertType(DataType dataType) {
     if (dataType == DataTypes.BYTE ||
+        dataType == DataTypes.BOOLEAN ||
         dataType == DataTypes.SHORT ||
         dataType == DataTypes.SHORT_INT ||
         dataType == DataTypes.INT ||

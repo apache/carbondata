@@ -19,11 +19,10 @@ package org.apache.carbondata.core.datastore.page;
 
 import java.math.BigDecimal;
 
-import org.apache.carbondata.core.datastore.TableSpec;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
 
@@ -32,36 +31,35 @@ import org.apache.carbondata.core.util.ByteUtil;
  */
 public class UnsafeDecimalColumnPage extends DecimalColumnPage {
 
-  UnsafeDecimalColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize)
+  UnsafeDecimalColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize)
       throws MemoryException {
-    super(columnSpec, dataType, pageSize);
-    capacity = (int) (pageSize * DEFAULT_ROW_SIZE * FACTOR);
-    initMemory();
+    this(columnPageEncoderMeta, pageSize, (int) (pageSize * DEFAULT_ROW_SIZE * FACTOR));
   }
 
-  UnsafeDecimalColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
-      int capacity) throws MemoryException {
-    super(columnSpec, dataType, pageSize);
+  UnsafeDecimalColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize, int capacity)
+      throws MemoryException {
+    super(columnPageEncoderMeta, pageSize);
     this.capacity = capacity;
     initMemory();
   }
 
   private void initMemory() throws MemoryException {
-    if (dataType == DataTypes.BYTE ||
-        dataType == DataTypes.SHORT ||
-        dataType == DataTypes.INT ||
-        dataType == DataTypes.LONG) {
-      int size = pageSize << dataType.getSizeBits();
+    if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE ||
+        columnPageEncoderMeta.getStoreDataType() == DataTypes.SHORT ||
+        columnPageEncoderMeta.getStoreDataType() == DataTypes.INT ||
+        columnPageEncoderMeta.getStoreDataType() == DataTypes.LONG) {
+      int size = pageSize << columnPageEncoderMeta.getStoreDataType().getSizeBits();
       memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
-    } else if (dataType == DataTypes.SHORT_INT) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.SHORT_INT) {
       int size = pageSize * 3;
       memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
-    } else if (DataTypes.isDecimal(dataType)) {
+    } else if (DataTypes.isDecimal(columnPageEncoderMeta.getStoreDataType())) {
       memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) (capacity));
-    } else if (dataType == DataTypes.BYTE_ARRAY) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE_ARRAY) {
       memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) (capacity));
     } else {
-      throw new UnsupportedOperationException("invalid data type: " + dataType);
+      throw new UnsupportedOperationException(
+          "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
     }
     baseAddress = memoryBlock.getBaseObject();
     baseOffset = memoryBlock.getBaseOffset();
@@ -255,8 +253,8 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
         }
         break;
       default:
-        throw new UnsupportedOperationException(
-            "not support value conversion on " + dataType + " page");
+        throw new UnsupportedOperationException("not support value conversion on "
+            + columnPageEncoderMeta.getStoreDataType() + " page");
     }
   }
 

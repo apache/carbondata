@@ -19,7 +19,6 @@ package org.apache.carbondata.stream;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -33,6 +32,7 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
@@ -64,7 +64,6 @@ import org.apache.carbondata.hadoop.InputMetricsStats;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.apache.carbondata.streaming.CarbonStreamInputFormat;
-import org.apache.carbondata.streaming.CarbonStreamUtils;
 import org.apache.carbondata.streaming.StreamBlockletReader;
 
 import org.apache.hadoop.conf.Configuration;
@@ -110,6 +109,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
   private CacheProvider cacheProvider;
   private Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache;
   private GenericQueryType[] queryTypes;
+  private String compressorName;
 
   // vectorized reader
   private StructType outputSchema;
@@ -262,6 +262,12 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
   private byte[] getSyncMarker(String filePath) throws IOException {
     CarbonHeaderReader headerReader = new CarbonHeaderReader(filePath);
     FileHeader header = headerReader.readHeader();
+    // legacy store does not have this member
+    if (header.isSetCompressor_name()) {
+      compressorName = header.getCompressor_name();
+    } else {
+      compressorName = CompressorFactory.SupportedCompressor.SNAPPY.getName();
+    }
     return header.getSync_marker();
   }
 
@@ -285,7 +291,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
     FSDataInputStream fileIn = fs.open(file, bufferSize);
     fileIn.seek(fileSplit.getStart());
     input = new StreamBlockletReader(syncMarker, fileIn, fileSplit.getLength(),
-        fileSplit.getStart() == 0);
+        fileSplit.getStart() == 0, compressorName);
 
     cacheProvider = CacheProvider.getInstance();
     cache = cacheProvider.createCache(CacheType.FORWARD_DICTIONARY);

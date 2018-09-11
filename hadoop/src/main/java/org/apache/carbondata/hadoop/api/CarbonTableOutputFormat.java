@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -299,6 +300,12 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     model.setTableName(CarbonTableOutputFormat.getTableName(conf));
     model.setCarbonTransactionalTable(true);
     CarbonTable carbonTable = getCarbonTable(conf);
+    String columnCompressor = carbonTable.getTableInfo().getFactTable().getTableProperties().get(
+        CarbonCommonConstants.COMPRESSOR);
+    if (null == columnCompressor) {
+      columnCompressor = CompressorFactory.getInstance().getCompressor().getName();
+    }
+    model.setColumnCompressor(columnCompressor);
     model.setCarbonDataLoadSchema(new CarbonDataLoadSchema(carbonTable));
     model.setTablePath(getTablePath(conf));
     setFileHeader(conf, model);

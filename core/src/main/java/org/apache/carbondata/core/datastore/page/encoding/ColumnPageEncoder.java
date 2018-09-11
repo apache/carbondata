@@ -84,7 +84,8 @@ public abstract class ColumnPageEncoder {
   }
 
   private void fillBasicFields(ColumnPage inputPage, DataChunk2 dataChunk) {
-    dataChunk.setChunk_meta(CarbonMetadataUtil.getSnappyChunkCompressionMeta());
+    dataChunk.setChunk_meta(
+        CarbonMetadataUtil.getChunkCompressorMeta(inputPage.getColumnCompressorName()));
     dataChunk.setNumberOfRowsInpage(inputPage.getPageSize());
     dataChunk.setRowMajor(false);
   }
@@ -92,7 +93,8 @@ public abstract class ColumnPageEncoder {
   private void fillNullBitSet(ColumnPage inputPage, DataChunk2 dataChunk) {
     PresenceMeta presenceMeta = new PresenceMeta();
     presenceMeta.setPresent_bit_streamIsSet(true);
-    Compressor compressor = CompressorFactory.getInstance().getCompressor();
+    Compressor compressor = CompressorFactory.getInstance().getCompressor(
+        inputPage.getColumnCompressorName());
     presenceMeta.setPresent_bit_stream(
         compressor.compressByte(inputPage.getNullBits().toByteArray()));
     dataChunk.setPresence(presenceMeta);

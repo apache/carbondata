@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.blocklet.BlockletEncodedColumnPage;
 import org.apache.carbondata.core.datastore.blocklet.EncodedBlocklet;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.statistics.TablePageStatistics;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
@@ -249,16 +250,35 @@ public class CarbonMetadataUtil {
   }
 
   /**
-   * Right now it is set to default values. We may use this in future
+   * set the compressor.
+   * before 1.5.0, we set a enum 'compression_codec';
+   * after 1.5.0, we use string 'compressor_name' instead
    */
-  public static ChunkCompressionMeta getSnappyChunkCompressionMeta() {
+  public static ChunkCompressionMeta getChunkCompressorMeta(String compressorName) {
     ChunkCompressionMeta chunkCompressionMeta = new ChunkCompressionMeta();
-    chunkCompressionMeta.setCompression_codec(CompressionCodec.SNAPPY);
+    // we will not use this field any longer and will use compressor_name instead,
+    // but in thrift definition, this field is required so we cannot set it to null, otherwise
+    // it will cause deserialization error in runtime (required field cannot be null).
+    chunkCompressionMeta.setCompression_codec(CompressionCodec.DEPRECATED);
+    chunkCompressionMeta.setCompressor_name(compressorName);
     chunkCompressionMeta.setTotal_compressed_size(0);
     chunkCompressionMeta.setTotal_uncompressed_size(0);
     return chunkCompressionMeta;
   }
 
+  /**
+   * get the compressor name from chunk meta
+   * before 1.5.0, we only support snappy and do not have compressor_name field;
+   * after 1.5.0, we directly get the compressor from the compressor_name field
+   */
+  public static String getCompressorNameFromChunkMeta(ChunkCompressionMeta chunkCompressionMeta) {
+    if (chunkCompressionMeta.isSetCompressor_name()) {
+      return chunkCompressionMeta.getCompressor_name();
+    } else {
+      // this is for legacy store before 1.5.0
+      return CompressorFactory.SupportedCompressor.SNAPPY.getName();
+    }
+  }
   /**
    * Below method will be used to get the index header
    *
