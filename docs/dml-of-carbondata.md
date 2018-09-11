@@ -46,7 +46,7 @@ CarbonData DML statements are documented here,which includes:
 | ------------------------------------------------------- | ------------------------------------------------------------ |
 | [DELIMITER](#delimiter)                                 | Character used to separate the data in the input csv file    |
 | [QUOTECHAR](#quotechar)                                 | Character used to quote the data in the input csv file       |
-| [COMMENTCHAR](#commentchar)                             | Character used to comment the rows in the input csv file.Those rows will be skipped from processing |
+| [COMMENTCHAR](#commentchar)                             | Character used to comment the rows in the input csv file. Those rows will be skipped from processing |
 | [HEADER](#header)                                       | Whether the input csv files have header row                  |
 | [FILEHEADER](#fileheader)                               | If header is not present in the input csv, what is the column names to be used for data read from input csv |
 | [MULTILINE](#multiline)                                 | Whether a row data can span across multiple lines.           |
@@ -56,8 +56,8 @@ CarbonData DML statements are documented here,which includes:
 | [COMPLEX_DELIMITER_LEVEL_2](#complex_delimiter_level_2) | Ending delimiter for complex type data in input csv file     |
 | [ALL_DICTIONARY_PATH](#all_dictionary_path)             | Path to read the dictionary data from all columns            |
 | [COLUMNDICT](#columndict)                               | Path to read the dictionary data from for particular column  |
-| [DATEFORMAT](#dateformat)                               | Format of date in the input csv file                         |
-| [TIMESTAMPFORMAT](#timestampformat)                     | Format of timestamp in the input csv file                    |
+| [DATEFORMAT](#dateformattimestampformat)                | Format of date in the input csv file                         |
+| [TIMESTAMPFORMAT](#dateformattimestampformat)           | Format of timestamp in the input csv file                    |
 | [SORT_COLUMN_BOUNDS](#sort-column-bounds)               | How to parititon the sort columns to make the evenly distributed |
 | [SINGLE_PASS](#single_pass)                             | When to enable single pass data loading                      |
 | [BAD_RECORDS_LOGGER_ENABLE](#bad-records-handling)      | Whether to enable bad records logging                        |
