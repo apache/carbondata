@@ -78,6 +78,9 @@ public class RowParserImpl implements RowParser {
 
   @Override
   public Object[] parseRow(Object[] row) {
+    if (row == null) {
+      return new String[numberOfColumns];
+    }
     // If number of columns are less in a row then create new array with same size of header.
     if (row.length < numberOfColumns) {
       String[] temp = new String[numberOfColumns];

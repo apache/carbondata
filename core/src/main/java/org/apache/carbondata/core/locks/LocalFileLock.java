@@ -36,11 +36,6 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
  */
 public class LocalFileLock extends AbstractCarbonLock {
   /**
-   * lockFilePath is the location of the lock file.
-   */
-  private String lockFilePath;
-
-  /**
    * lockFileDir is the directory of the lock file.
    */
   private String lockFileDir;

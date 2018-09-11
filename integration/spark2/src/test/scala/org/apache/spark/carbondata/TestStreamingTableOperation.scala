@@ -1770,28 +1770,18 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         |CREATE STREAM stream123 ON TABLE sink
         |STMPROPERTIES(
         |  'trigger'='ProcessingTime',
-        |  'interval'='1 seconds')
+        |  'interval'='5 seconds')
         |AS
         |  SELECT *
         |  FROM source
         |  WHERE id % 2 = 1
       """.stripMargin).show(false)
-    sql(
-      """
-        |CREATE STREAM IF NOT EXISTS stream123 ON TABLE sink
-        |STMPROPERTIES(
-        |  'trigger'='ProcessingTime',
-        |  'interval'='1 seconds')
-        |AS
-        |  SELECT *
-        |  FROM source
-        |  WHERE id % 2 = 1
-      """.stripMargin).show(false)
+
     Thread.sleep(200)
     sql("select * from sink").show
 
     generateCSVDataFile(spark, idStart = 30, rowNums = 10, csvDataDir, SaveMode.Append)
-    Thread.sleep(5000)
+    Thread.sleep(7000)
 
     // after 2 minibatch, there should be 10 row added (filter condition: id%2=1)
     checkAnswer(sql("select count(*) from sink"), Seq(Row(10)))
@@ -2098,6 +2088,9 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
   }
 
   test("StreamSQL: start stream on non-stream table") {
+    sql("DROP TABLE IF EXISTS source")
+    sql("DROP TABLE IF EXISTS sink")
+
     sql(
       s"""
          |CREATE TABLE notsource(
@@ -2143,7 +2136,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
           |  WHERE id % 2 = 1
         """.stripMargin).show(false)
     }
-    assert(ex.getMessage.contains("Must specify stream source table in the query"))
+    assert(ex.getMessage.contains("Must specify stream source table in the stream query"))
     sql("DROP TABLE sink")
   }
 

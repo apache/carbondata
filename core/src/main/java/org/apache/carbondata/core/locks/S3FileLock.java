@@ -34,10 +34,6 @@ public class S3FileLock extends AbstractCarbonLock {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(S3FileLock.class.getName());
-  /**
-   * lockFilePath is the location of the lock file.
-   */
-  private String lockFilePath;
 
   /**
    * lockFileDir is the directory of the lock file.
