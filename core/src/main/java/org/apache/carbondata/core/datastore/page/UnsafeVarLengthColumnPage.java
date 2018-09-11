@@ -23,6 +23,7 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 /**
  * This extension uses unsafe memory to store page data, for variable length data type (string)
@@ -35,7 +36,11 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
   UnsafeVarLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize)
       throws MemoryException {
     super(columnPageEncoderMeta, pageSize);
-    capacity = (int) (pageSize * DEFAULT_ROW_SIZE * FACTOR);
+    if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BINARY) {
+      capacity = (int) (pageSize * DEFAULT_BINARY_SIZE * FACTOR);
+    } else {
+      capacity = (int) (pageSize * DEFAULT_ROW_SIZE * FACTOR);
+    }
     memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) (capacity));
     baseAddress = memoryBlock.getBaseObject();
     baseOffset = memoryBlock.getBaseOffset();
