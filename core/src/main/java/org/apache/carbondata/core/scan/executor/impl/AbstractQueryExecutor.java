@@ -383,8 +383,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues());
       // update min and max values in case of old store for measures as min and max is written
       // opposite for measures in old store ( store <= 1.1 version)
+      byte[][] tempMaxValues = maxValues;
       maxValues = CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, false);
-      minValues = CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, true);
+      minValues = CarbonUtil.updateMinMaxValues(fileFooter, tempMaxValues, minValues, true);
       info.setDataBlockFromOldStore(true);
     }
     blockletInfo.getBlockletIndex().getMinMaxIndex().setMaxValues(maxValues);
