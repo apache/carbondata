@@ -132,6 +132,8 @@ class SparkPartitionLoader(model: CarbonLoadModel,
 
     val isCarbonUseMultiDir = CarbonProperties.getInstance().isUseMultiTempDir
 
+
+
     if (isCarbonUseLocalDir) {
       val yarnStoreLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
 
@@ -151,6 +153,10 @@ class SparkPartitionLoader(model: CarbonLoadModel,
       storeLocation = storeLocation :+ (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
     }
     LOGGER.info("Temp location for loading data: " + storeLocation.mkString(","))
+    println("------------------------------------------------------------------")
+    println("Temp location for loading Data " + storeLocation.mkString(","))
+    println("------------------------------------------------------------------")
+
   }
 
   private def tmpLocationSuffix = File.separator + "carbon" + System.nanoTime() + "_" + splitIndex
@@ -234,7 +240,12 @@ class NewCarbonDataLoadRDD[K, V](
           throw e
       } finally {
         // clean up the folders and files created locally for data load operation
+
+
         TableProcessingOperations.deleteLocalDataLoadFolderLocation(model, false, false)
+
+
+//        TableProcessingOperations.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.
         // So print the data load statistics only in case of non failure case
         if (SegmentStatus.LOAD_FAILURE != loadMetadataDetails.getSegmentStatus) {

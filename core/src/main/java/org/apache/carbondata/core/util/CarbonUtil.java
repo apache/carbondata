@@ -2779,7 +2779,15 @@ public final class CarbonUtil {
       String carbonDataDirectoryPath, long fileSizeInBytes)
       throws CarbonDataWriterException {
     long copyStartTime = System.currentTimeMillis();
+
+
     LOGGER.info("Copying " + localFilePath + " --> " + carbonDataDirectoryPath);
+    System.out.println("-------------------------------------------------------------------");
+    System.out.println(Thread.currentThread().getName()  +  "...Copying " + localFilePath + " --> " + carbonDataDirectoryPath);
+    System.out.println("-------------------------------------------------------------------");
+
+
+
     try {
       CarbonFile localCarbonFile =
           FileFactory.getCarbonFile(localFilePath, FileFactory.getFileType(localFilePath));

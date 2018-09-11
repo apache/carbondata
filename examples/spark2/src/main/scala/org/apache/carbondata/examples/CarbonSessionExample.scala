@@ -51,103 +51,168 @@ object CarbonSessionExample {
 
     spark.sql("DROP TABLE IF EXISTS carbonsession_table")
     spark.sql("DROP TABLE IF EXISTS stored_as_carbondata_table")
+    spark.sql("DROP TABLE IF EXISTS carbon_test")
+
+
+//     Create table
+//    spark.sql(
+//      s"""
+//         | CREATE TABLE carbonsession_table(
+//         | shortField SHORT,
+//         | intField INT,
+//         | bigintField LONG,
+//         | doubleField DOUBLE,
+//         | stringField STRING,
+//         | timestampField TIMESTAMP,
+//         | decimalField DECIMAL(18,2),
+//         | dateField DATE,
+//         | charField CHAR(5),
+//         | floatField FLOAT
+//         | )
+//         | STORED BY 'carbondata'
+//         | TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField', 'SORT_COLUMNS' = 'stringField')
+//       """.stripMargin)
 
     // Create table
     spark.sql(
       s"""
-         | CREATE TABLE carbonsession_table(
-         | shortField SHORT,
-         | intField INT,
-         | bigintField LONG,
-         | doubleField DOUBLE,
-         | stringField STRING,
-         | timestampField TIMESTAMP,
-         | decimalField DECIMAL(18,2),
-         | dateField DATE,
-         | charField CHAR(5),
-         | floatField FLOAT
+         | CREATE TABLE carbon_test(
+         | Id	INT,
+         | country STRING,
+         | description	STRING,
+         | designation	STRING,
+         | points INT,
+         | price INT,
+         | province STRING,
+         | region_1 STRING,
+         | region_2 STRING,
+         | variety STRING,
+         | winery STRING
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')
+         | TBLPROPERTIES('DICTIONARY_INCLUDE'='country, province, region_1, region_2' , 'TABLE_BLOCKSIZE'='10')
        """.stripMargin)
 
-    val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
+
+    val path = s"$rootPath/examples/spark2/src/main/resources/wine.csv"
+
+
 
     // scalastyle:off
     spark.sql(
       s"""
          | LOAD DATA LOCAL INPATH '$path'
-         | INTO TABLE carbonsession_table
-         | OPTIONS('HEADER'='true', 'COMPLEX_DELIMITER_LEVEL_1'='#')
+         | INTO TABLE carbon_test
+         | OPTIONS('HEADER'='true','IS_EMPTY_DATA_BAD_RECORD'='false','BAD_RECORDS_ACTION'='FORCE')
        """.stripMargin)
+
+
     // scalastyle:on
+//    spark.sql(
+//      s"""
+//         | SELECT *
+//         | FROM carbonsession_table
+//      """.stripMargin).show()
+
 
     spark.sql(
       s"""
-         | SELECT charField, stringField, intField
-         | FROM carbonsession_table
-         | WHERE stringfield = 'spark' AND decimalField > 40
+         | SELECT country,count(*)
+         | FROM carbon_test
+         | group by country
       """.stripMargin).show()
 
     spark.sql(
       s"""
-         | SELECT *
-         | FROM carbonsession_table WHERE length(stringField) = 5
-       """.stripMargin).show()
-
-    spark.sql(
-      s"""
-         | SELECT *
-         | FROM carbonsession_table WHERE date_format(dateField, "yyyy-MM-dd") = "2015-07-23"
-       """.stripMargin).show()
-
-    spark.sql("SELECT count(stringField) FROM carbonsession_table").show()
-
-    spark.sql(
-      s"""
-         | SELECT sum(intField), stringField
-         | FROM carbonsession_table
-         | GROUP BY stringField
-       """.stripMargin).show()
-
-    spark.sql(
-      s"""
-         | SELECT t1.*, t2.*
-         | FROM carbonsession_table t1, carbonsession_table t2
-         | WHERE t1.stringField = t2.stringField
+         | CREATE DATAMAP carbon_map
+         | ON TABLE carbon_test
+         | USING 'bloomfilter'
+         | DMPROPERTIES ('index_columns' = 'Id,designation', 'BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001')
       """.stripMargin).show()
 
-    spark.sql(
-      s"""
-         | WITH t1 AS (
-         | SELECT * FROM carbonsession_table
-         | UNION ALL
-         | SELECT * FROM carbonsession_table
-         | )
-         | SELECT t1.*, t2.*
-         | FROM t1, carbonsession_table t2
-         | WHERE t1.stringField = t2.stringField
-      """.stripMargin).show()
 
     spark.sql(
       s"""
-         | SELECT *
-         | FROM carbonsession_table
-         | WHERE stringField = 'spark' and floatField > 2.8
+         | EXPLAIN
+         | Select * from carbon_test where id = 26
        """.stripMargin).show()
 
-    spark.sql(
-      s"""
-         | CREATE TABLE stored_as_carbondata_table(
-         |    name STRING,
-         |    age INT
-         |    )
-         | STORED AS carbondata
-       """.stripMargin)
-    spark.sql("INSERT INTO stored_as_carbondata_table VALUES ('Bob',28) ")
-    spark.sql("SELECT * FROM stored_as_carbondata_table").show()
+
+
+
+//    spark.sql(
+//      s"""
+//         | SELECT charField, stringField, intField
+//         | FROM carbonsession_table
+//         | WHERE stringfield = 'spark' AND decimalField > 40
+//      """.stripMargin).show()
+//
+//    spark.sql(
+//      s"""
+//         | SELECT *
+//         | FROM carbonsession_table WHERE length(stringField) = 5
+//       """.stripMargin).show()
+//
+//    spark.sql(
+//      s"""
+//         | SELECT *
+//         | FROM carbonsession_table WHERE date_format(dateField, "yyyy-MM-dd") = "2015-07-23"
+//       """.stripMargin).show()
+//
+//    spark.sql("SELECT count(stringField) FROM carbonsession_table").show()
+//
+//    spark.sql(
+//      s"""
+//         | SELECT sum(intField), stringField
+//         | FROM carbonsession_table
+//         | GROUP BY stringField
+//       """.stripMargin).show()
+//
+//    spark.sql(
+//      s"""
+//         | SELECT t1.*, t2.*
+//         | FROM carbonsession_table t1, carbonsession_table t2
+//         | WHERE t1.stringField = t2.stringField
+//      """.stripMargin).show()
+//
+//    spark.sql(
+//      s"""
+//         | WITH t1 AS (
+//         | SELECT * FROM carbonsession_table
+//         | UNION ALL
+//         | SELECT * FROM carbonsession_table
+//         | )
+//         | SELECT t1.*, t2.*
+//         | FROM t1, carbonsession_table t2
+//         | WHERE t1.stringField = t2.stringField
+//      """.stripMargin).show()
+//
+//    spark.sql(
+//      s"""
+//         | SELECT *
+//         | FROM carbonsession_table
+//         | WHERE stringField = 'spark' and floatField > 2.8
+//       """.stripMargin).show()
+//
+//    spark.sql(
+//      s"""
+//         | CREATE TABLE stored_as_carbondata_table(
+//         |    name STRING,
+//         |    age INT
+//         |    )
+//         | STORED AS carbondata
+//       """.stripMargin)
+//    spark.sql("INSERT INTO stored_as_carbondata_table VALUES ('Bob',28) ")
+//    spark.sql("INSERT INTO stored_as_carbondata_table VALUES ('Shardul',24) ")
+//    spark.sql("INSERT INTO stored_as_carbondata_table VALUES ('Naman',55) ")
+//    spark.sql("INSERT INTO stored_as_carbondata_table VALUES ('Naman',55) ")
+//
+//
+//    spark.sql("SELECT * FROM stored_as_carbondata_table").show()
 
     // Drop table
+
+
     spark.sql("DROP TABLE IF EXISTS carbonsession_table")
     spark.sql("DROP TABLE IF EXISTS stored_as_carbondata_table")
   }

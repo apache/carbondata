@@ -100,7 +100,7 @@ public class TableProcessingOperations {
    * @param isAltPartitionFlow Alter_Partition keyword will be added to path to make path unique if
    *                           true
    */
-  public static void deleteLocalDataLoadFolderLocation(CarbonLoadModel loadModel,
+  synchronized public static void deleteLocalDataLoadFolderLocation(CarbonLoadModel loadModel,
       boolean isCompactionFlow, boolean isAltPartitionFlow) {
     String tableName = loadModel.getTableName();
     String databaseName = loadModel.getDatabaseName();
@@ -117,7 +117,7 @@ public class TableProcessingOperations {
    * @param tempLocationKey temporary location set in carbon properties
    * @param tableName
    */
-  public static void deleteLocalDataLoadFolderLocation(String tempLocationKey, String tableName) {
+   public static void deleteLocalDataLoadFolderLocation(String tempLocationKey, String tableName) {
 
     // form local store location
     final String localStoreLocations = CarbonProperties.getInstance().getProperty(tempLocationKey);
@@ -139,9 +139,16 @@ public class TableProcessingOperations {
               LOGGER.error(e, "Failed to delete local data load folder location: " + loc);
             }
           }
+
+          System.out.println("---------------------------------------------------------------------");
+          System.out.println("Deleted the local store location: " + localStoreLocations + " : Time taken: " + (
+                  System.currentTimeMillis() - startTime) + " Thread Id " + Thread.currentThread().getId());
+          System.out.println("---------------------------------------------------------------------");
+
           LOGGER.info(
               "Deleted the local store location: " + localStoreLocations + " : Time taken: " + (
-                  System.currentTimeMillis() - startTime));
+                  System.currentTimeMillis() - startTime) + " Thread Id " + Thread.currentThread().getId());
+
           return null;
         }
       });

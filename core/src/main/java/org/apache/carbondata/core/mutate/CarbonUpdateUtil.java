@@ -704,11 +704,11 @@ public class CarbonUpdateUtil {
   }
 
   /**
-   * This will return the current time in millis.
+   * This will return the current time in nanosecond.
    * @return
    */
   public static long readCurrentTime() {
-    return System.currentTimeMillis();
+    return System.nanoTime();
   }
 
   /**
@@ -720,7 +720,6 @@ public class CarbonUpdateUtil {
                                                 Map<String, Long> segmentBlockCount) {
 
     String segId = details.getSegmentName();
-
     segmentBlockCount.put(details.getSegmentName(), segmentBlockCount.get(segId) - 1);
 
   }

@@ -71,6 +71,11 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     buildTestData(3, false, null)
   }
 
+  def buildTestDataSingleFile_test(): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildTestData(30000, false, null)
+  }
+
   def buildTestDataMultipleFiles(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     buildTestData(1000000, false, null)
@@ -2468,6 +2473,70 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     }
     carbonWriter.close()
   }
+
+  class ThreadExample extends Thread{
+    override def run(): Unit ={
+
+
+//      for(a <- 1 to 100){
+        sql(
+          s"""
+             | LOAD DATA LOCAL INPATH '/home/root1/Desktop/nontransactional.csv'
+             | INTO TABLE sdkOutputTable
+             | OPTIONS('HEADER'='false')
+       """.stripMargin)
+
+//      }
+    }
+  }
+
+
+  test("test create External Table with Concurrent Load") {
+
+      buildTestDataSingleFile_test()
+      assert(new File(writerPath).exists())
+
+
+
+
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+
+
+
+    sql(
+      s"""CREATE EXTERNAL TABLE if not exists sdkOutputTable STORED BY
+         |'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+
+
+
+
+    sql(s"""select count(*) from sdkOutputTable """).show()
+
+    var t1 = new ThreadExample()
+    t1.setName("Thread1")
+    var t2 = new ThreadExample()
+    t2.setName("Thread2")
+
+    t1.start()
+//    Thread.sleep(6)
+    t2.start()
+    t1.join()
+    t2.join()
+
+
+    sql("""select count(*) from sdkOutputTable """).show()
+    sql("""select * from sdkOutputTable """).show()
+    sql("describe formatted sdkOutputTable").show()
+    sql("DROP TABLE if exists sdkOutputTable")
+
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
+
+  }
+
 }
 
 
@@ -2594,5 +2663,7 @@ object testUtil{
     }
     isLocalDictionaryGenerated
   }
+
+
 
 }
