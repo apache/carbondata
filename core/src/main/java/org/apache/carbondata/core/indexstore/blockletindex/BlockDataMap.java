@@ -566,6 +566,16 @@ public class BlockDataMap extends CoarseGrainDataMap
     }
   }
 
+  // get total block number in this datamap
+  protected int getTotalBlocks() {
+    if (isLegacyStore) {
+      // dummy value
+      return 0;
+    } else {
+      return memoryDMStore.getRowCount();
+    }
+  }
+
   // get total blocklet number in this datamap
   protected int getTotalBlocklets() {
     if (isLegacyStore) {
@@ -627,6 +637,7 @@ public class BlockDataMap extends CoarseGrainDataMap
     } else {
       ExplainCollector.setShowPruningInfo(true);
       ExplainCollector.addTotalBlocklets(totalBlocklets);
+      ExplainCollector.addTotalBlocks(getTotalBlocks());
       ExplainCollector.addDefaultDataMapPruningHit(hitBlocklets);
     }
     return blocklets;
