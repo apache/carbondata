@@ -266,7 +266,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
     if (header.isSetCompressor_name()) {
       compressorName = header.getCompressor_name();
     } else {
-      compressorName = CompressorFactory.SupportedCompressor.SNAPPY.getName();
+      compressorName = CompressorFactory.NativeSupportedCompressor.SNAPPY.getName();
     }
     return header.getSync_marker();
   }

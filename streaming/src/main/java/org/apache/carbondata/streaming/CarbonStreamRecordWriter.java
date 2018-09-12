@@ -176,7 +176,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       if (header.isSetCompressor_name()) {
         compressorName = header.getCompressor_name();
       } else {
-        compressorName = CompressorFactory.SupportedCompressor.SNAPPY.getName();
+        compressorName = CompressorFactory.NativeSupportedCompressor.SNAPPY.getName();
       }
     } else {
       // IF the file is not existed, use the create api
