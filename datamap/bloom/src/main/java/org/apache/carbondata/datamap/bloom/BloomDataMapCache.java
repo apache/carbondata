@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.datamap.bloom;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,9 +25,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CarbonLRUCache;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.util.CarbonUtil;
 
 import org.apache.hadoop.util.bloom.CarbonBloomFilter;
 
@@ -58,7 +55,9 @@ public class BloomDataMapCache
       throws IOException {
     BloomCacheKeyValue.CacheValue cacheValue = getIfPresent(key);
     if (cacheValue == null) {
-      cacheValue = loadBloomDataMapModel(key);
+      List<CarbonBloomFilter> bloomFilters =
+              BloomIndexFileStore.loadBloomFilterFromFile(key.getShardPath(), key.getIndexColumn());
+      cacheValue = new BloomCacheKeyValue.CacheValue(bloomFilters);
       lruCache.put(key.toString(), cacheValue, cacheValue.getMemorySize());
     }
     return cacheValue;
@@ -89,40 +88,6 @@ public class BloomDataMapCache
   public void put(BloomCacheKeyValue.CacheKey key, BloomCacheKeyValue.CacheValue value)
       throws IOException, MemoryException {
     // No impl required.
-  }
-
-  /**
-   * load datamap from bloomindex file
-   */
-  private BloomCacheKeyValue.CacheValue loadBloomDataMapModel(
-      BloomCacheKeyValue.CacheKey cacheKey) {
-    DataInputStream dataInStream = null;
-    List<CarbonBloomFilter> bloomFilters = new ArrayList<>();
-    try {
-      String indexFile = getIndexFileFromCacheKey(cacheKey);
-      dataInStream = FileFactory.getDataInputStream(indexFile, FileFactory.getFileType(indexFile));
-      while (dataInStream.available() > 0) {
-        CarbonBloomFilter bloomFilter = new CarbonBloomFilter();
-        bloomFilter.readFields(dataInStream);
-        bloomFilters.add(bloomFilter);
-      }
-      LOGGER.info(String.format("Read %d bloom indices from %s", bloomFilters.size(), indexFile));
-
-      return new BloomCacheKeyValue.CacheValue(bloomFilters);
-    } catch (IOException e) {
-      LOGGER.error(e, "Error occurs while reading bloom index");
-      throw new RuntimeException("Error occurs while reading bloom index", e);
-    } finally {
-      CarbonUtil.closeStreams(dataInStream);
-    }
-  }
-
-  /**
-   * get bloom index file name from cachekey
-   */
-  private String getIndexFileFromCacheKey(BloomCacheKeyValue.CacheKey cacheKey) {
-    return BloomCoarseGrainDataMap
-        .getBloomIndexFile(cacheKey.getShardPath(), cacheKey.getIndexColumn());
   }
 
   @Override
