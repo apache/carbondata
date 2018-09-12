@@ -316,6 +316,10 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   }
 
   public BlockletMinMaxIndex getBatchMinMaxIndex() {
+    if (output == null) {
+      return StreamSegment.mergeBlockletMinMax(
+          batchMinMaxIndex, null, measureDataTypes);
+    }
     return StreamSegment.mergeBlockletMinMax(
         batchMinMaxIndex, output.generateBlockletMinMax(), measureDataTypes);
   }
