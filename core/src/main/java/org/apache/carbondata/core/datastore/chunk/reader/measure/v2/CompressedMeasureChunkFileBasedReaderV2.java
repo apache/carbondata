@@ -47,7 +47,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
   public CompressedMeasureChunkFileBasedReaderV2(final BlockletInfo blockletInfo,
       final String filePath) {
     super(blockletInfo, filePath);
-    this.compressor = CompressorFactory.SupportedCompressor.SNAPPY.getCompressor();
+    this.compressor = CompressorFactory.NativeSupportedCompressor.SNAPPY.getCompressor();
   }
 
   @Override
@@ -140,7 +140,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
 
     ValueEncoderMeta meta = CarbonUtil.deserializeEncoderMetaV2(encodedMeta);
     ColumnPageDecoder codec = encodingFactory.createDecoderLegacy(meta,
-        CompressorFactory.SupportedCompressor.SNAPPY.getName());
+        CompressorFactory.NativeSupportedCompressor.SNAPPY.getName());
     byte[] rawData = measureRawColumnChunk.getRawData().array();
     return codec.decode(rawData, copyPoint, measureColumnChunk.data_page_length);
   }

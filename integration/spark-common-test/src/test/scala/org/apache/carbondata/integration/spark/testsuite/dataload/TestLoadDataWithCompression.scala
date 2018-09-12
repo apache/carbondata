@@ -18,6 +18,7 @@
 package org.apache.carbondata.integration.spark.testsuite.dataload
 
 import java.io.File
+import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.concurrent.{ExecutorService, Executors, Future}
 import java.util.Calendar
@@ -31,9 +32,9 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.compression.Compressor
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.exception.InvalidConfigurationException
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
@@ -41,6 +42,112 @@ case class Rcd(booleanField: Boolean, shortField: Short, intField: Int, bigintFi
     doubleField: Double, stringField: String, timestampField: String, decimalField: Double,
     dateField: String, charField: String, floatField: Float, stringDictField: String,
     stringSortField: String, stringLocalDictField: String, longStringField: String)
+
+/**
+ * This compressor actually will not compress or decompress anything.
+ * It is used for test case of specifying customized compressor.
+ */
+class CustomizeCompressor extends Compressor {
+  override def getName: String = "org.apache.carbondata.integration.spark.testsuite.dataload.CustomizeCompressor"
+
+  override def compressByte(unCompInput: Array[Byte]): Array[Byte] = unCompInput
+
+  override def compressByte(unCompInput: Array[Byte], byteSize: Int): Array[Byte] = unCompInput
+
+  override def unCompressByte(compInput: Array[Byte]): Array[Byte] = compInput
+
+  override def unCompressByte(compInput: Array[Byte], offset: Int, length: Int): Array[Byte] = compInput
+
+  override def compressShort(unCompInput: Array[Short]): Array[Byte] = {
+    val buffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_SHORT)
+    buffer.asShortBuffer().put(unCompInput)
+    compressByte(buffer.array())
+  }
+
+  override def unCompressShort(compInput: Array[Byte], offset: Int, length: Int): Array[Short] = {
+    val buffer = ByteBuffer.wrap(compInput).asShortBuffer()
+    val res = new Array[Short](compInput.length / ByteUtil.SIZEOF_SHORT)
+    buffer.get(res)
+    res
+  }
+
+  override def compressInt(unCompInput: Array[Int]): Array[Byte] = {
+    val buffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_INT)
+    buffer.asIntBuffer().put(unCompInput)
+    compressByte(buffer.array())
+  }
+
+  override def unCompressInt(compInput: Array[Byte], offset: Int, length: Int): Array[Int] = {
+    val buffer = ByteBuffer.wrap(compInput).asIntBuffer()
+    val res = new Array[Int](compInput.length / ByteUtil.SIZEOF_INT)
+    buffer.get(res)
+    res
+  }
+
+  override def compressLong(unCompInput: Array[Long]): Array[Byte] = {
+    val buffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_LONG)
+    buffer.asLongBuffer().put(unCompInput)
+    compressByte(buffer.array())
+  }
+
+  override def unCompressLong(compInput: Array[Byte], offset: Int, length: Int): Array[Long] = {
+    val buffer = ByteBuffer.wrap(compInput).asLongBuffer()
+    val res = new Array[Long](compInput.length / ByteUtil.SIZEOF_LONG)
+    buffer.get(res)
+    res
+  }
+
+  override def compressFloat(unCompInput: Array[Float]): Array[Byte] = {
+    val buffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_FLOAT)
+    buffer.asFloatBuffer().put(unCompInput)
+    compressByte(buffer.array())
+  }
+
+  override def unCompressFloat(compInput: Array[Byte], offset: Int, length: Int): Array[Float] = {
+    val buffer = ByteBuffer.wrap(compInput).asFloatBuffer()
+    val res = new Array[Float](compInput.length / ByteUtil.SIZEOF_FLOAT)
+    buffer.get(res)
+    res
+  }
+
+  override def compressDouble(unCompInput: Array[Double]): Array[Byte] = {
+    val buffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_DOUBLE)
+    buffer.asDoubleBuffer().put(unCompInput)
+    compressByte(buffer.array())
+  }
+
+  override def unCompressDouble(compInput: Array[Byte], offset: Int, length: Int): Array[Double] = {
+    val buffer = ByteBuffer.wrap(compInput).asDoubleBuffer()
+    val res = new Array[Double](compInput.length / ByteUtil.SIZEOF_DOUBLE)
+    buffer.get(res)
+    res
+  }
+
+  override def rawCompress(inputAddress: Long, inputSize: Int, outputAddress: Long): Long = {
+    throw new RuntimeException("Not implemented rawCompress for customized compressor yet")
+  }
+
+  override def rawUncompress(input: Array[Byte], output: Array[Byte]): Long = {
+    System.arraycopy(input, 0, output, 0, input.length)
+    input.length
+  }
+
+  override def maxCompressedLength(inputSize: Long): Long = {
+    inputSize
+  }
+
+  /**
+   * Whether this compressor support zero-copy during compression.
+   * Zero-copy means that the compressor support receiving memory address (pointer)
+   * and returning result in memory address (pointer).
+   * Currently not all java version of the compressors support this feature.
+   *
+   * @return true if it supports, otherwise return false
+   */
+  override def supportUnsafe(): Boolean = {
+    false
+  }
+}
 
 class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   private val tableName = "load_test_with_compressor"
@@ -161,7 +268,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     loadData()
 
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "zstd")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "ZSTD")
     loadData()
     checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(16)))
   }
@@ -206,14 +313,13 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     assert(sql(s"SHOW SEGMENTS FOR TABLE $tableName").count() == 1)
   }
 
-  test("test data loading with unsupported compressor and onheap") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "false")
+  test("test data loading with unsupported compressor") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "fake")
     createTable()
-    val exception = intercept[UnsupportedOperationException] {
+    val exception = intercept[RuntimeException] {
       loadData()
     }
-    assert(exception.getMessage.contains("Invalid compressor type provided"))
+    assert(exception.getMessage.contains("Failed to load compressor 'fake'"))
   }
 
   test("test compaction with unsupported compressor") {
@@ -222,10 +328,10 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     loadData()
 
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "fake")
-    val exception = intercept[UnsupportedOperationException] {
+    val exception = intercept[RuntimeException] {
       sql(s"ALTER TABLE $tableName COMPACT 'major'")
     }
-    assert(exception.getMessage.contains("Invalid compressor type provided"))
+    assert(exception.getMessage.contains("Failed to load compressor 'fake'"))
   }
 
   private def generateAllDataTypeDF(lineNum: Int) = {
@@ -309,7 +415,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
     val carbonTable = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
     val tableColumnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR)
-    assert("zstd".equalsIgnoreCase(tableColumnCompressor))
+    assertResult("zstd")(tableColumnCompressor)
   }
 
   test("test creating table with unsupported compressor") {
@@ -317,10 +423,60 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     // the system configuration for compressor is snappy
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "snappy")
     // create table with unsupported compressor
-    val exception = intercept[InvalidConfigurationException] {
+    val exception = intercept[RuntimeException] {
       createTable (columnCompressor = "fakecompressor")
     }
-    assert(exception.getMessage.contains("fakecompressor compressor is not supported"))
+    assert(exception.getMessage.contains("Failed to load compressor 'fakecompressor'"))
+  }
+
+  test("test load data with customize compressor") {
+    createTable()
+    // fist usage of this compressor will register it
+    var compressorName = "org.apache.carbondata.integration.spark.testsuite.dataload.CustomizeCompressor"
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, compressorName)
+    loadData()
+    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
+
+    // reuse the registerd compressor
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, compressorName)
+    loadData()
+    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8 * 2)))
+
+    // cannot register compressor whose class name is not the result of method 'getName'
+    compressorName = "org.apache.carbondata.core.datastore.compression.ZstdCompressor"
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, compressorName)
+    var exception = intercept[RuntimeException] {
+      loadData()
+    }
+    assertResult("For not carbondata native supported compressor, the result of method getName() should be the full class name. Expected 'org.apache.carbondata.core.datastore.compression.ZstdCompressor', found 'zstd'")(exception.getMessage)
+
+    // cannot register compressor with reflection error
+    compressorName = "some.unknow.fakecompressor"
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, compressorName)
+    exception = intercept[RuntimeException] {
+      loadData()
+    }
+    assert(exception.getMessage.contains("Failed to load compressor 'some.unknow.fakecompressor'"))
+  }
+
+  test("test create table with customize compressor") {
+    val compressorName = "org.apache.carbondata.integration.spark.testsuite.dataload.CustomizeCompressor"
+    // first usage of this customize compressor will register it
+    createTable(columnCompressor = compressorName)
+    loadData()
+    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
+    val carbonTable = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
+    val tableColumnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR)
+    assertResult(compressorName.toLowerCase())(tableColumnCompressor)
+
+    sql(s"DROP TABLE IF EXISTS $tableName")
+    // reuse the customize compressor again
+    createTable(columnCompressor = compressorName)
+    loadData()
+    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
+    val carbonTable2 = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
+    val tableColumnCompressor2 = carbonTable2.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR)
+    assertResult(compressorName.toLowerCase())(tableColumnCompressor2)
   }
 
   private def generateAllDataTypeFiles(lineNum: Int, csvDir: String,

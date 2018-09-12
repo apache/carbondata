@@ -49,7 +49,7 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
       final int[] eachColumnValueSize, final String filePath) {
     super(blockletInfo, eachColumnValueSize, filePath);
     // for v2 store, the compressor is snappy
-    this.compressor = CompressorFactory.SupportedCompressor.SNAPPY.getCompressor();
+    this.compressor = CompressorFactory.NativeSupportedCompressor.SNAPPY.getCompressor();
   }
 
   /**
