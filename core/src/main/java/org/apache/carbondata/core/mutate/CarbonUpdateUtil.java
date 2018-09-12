@@ -708,7 +708,7 @@ public class CarbonUpdateUtil {
    * @return
    */
   public static long readCurrentTime() {
-    return System.currentTimeMillis();
+    return System.nanoTime();
   }
 
   /**
