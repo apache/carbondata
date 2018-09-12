@@ -719,8 +719,18 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
          | FROM $bloomDMSampleTable
          | WHERE num1 = 1
            """.stripMargin).collect()
+
     assert(explainString(0).getString(0).contains(
-      "- name: datamap2\n    - provider: bloomfilter\n    - skipped blocklets: 1"))
+      """
+        |Table Scan on carbon_bloom
+        | - total: 3 blocks, 3 blocklets
+        | - filter: (num1 <> null and num1 = 1)
+        | - pruned by Main DataMap
+        |    - skipped: 1 blocks, 1 blocklets
+        | - pruned by CG DataMap
+        |    - name: datamap2
+        |    - provider: bloomfilter
+        |    - skipped: 1 blocks, 1 blocklets""".stripMargin))
 
     explainString = sql(
       s"""
@@ -728,8 +738,18 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
          | FROM $bloomDMSampleTable
          | WHERE dictString = 'S21'
            """.stripMargin).collect()
+
     assert(explainString(0).getString(0).contains(
-      "- name: datamap2\n    - provider: bloomfilter\n    - skipped blocklets: 0"))
+      """
+        |Table Scan on carbon_bloom
+        | - total: 3 blocks, 3 blocklets
+        | - filter: (dictstring <> null and dictstring = S21)
+        | - pruned by Main DataMap
+        |    - skipped: 1 blocks, 1 blocklets
+        | - pruned by CG DataMap
+        |    - name: datamap2
+        |    - provider: bloomfilter
+        |    - skipped: 0 blocks, 0 blocklets""".stripMargin))
 
   }
 

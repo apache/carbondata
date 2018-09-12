@@ -21,10 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
@@ -455,6 +452,18 @@ m filterExpression
   }
 
   /**
+   * for explain command
+   * get number of block by counting distinct file path of blocklets
+   */
+  private int getBlockCount(List<ExtendedBlocklet> blocklets) {
+    Set<String> filepaths = new HashSet<>();
+    for (ExtendedBlocklet blocklet: blocklets) {
+      filepaths.add(blocklet.getPath());
+    }
+    return filepaths.size();
+  }
+
+  /**
    * Prune the blocklets using the filter expression with available datamaps.
    * First pruned with default blocklet datamap, then pruned with CG and FG datamaps
    */
@@ -484,6 +493,8 @@ m filterExpression
       prunedBlocklets = defaultDataMap.prune(segmentIds, expression, partitionsToPrune);
     }
 
+    ExplainCollector.setDefaultDataMapPruningBlockHit(getBlockCount(prunedBlocklets));
+
     if (prunedBlocklets.size() == 0) {
       return prunedBlocklets;
     }
@@ -508,7 +519,7 @@ m filterExpression
       prunedBlocklets = intersectFilteredBlocklets(carbonTable, prunedBlocklets, cgPrunedBlocklets);
       ExplainCollector.recordCGDataMapPruning(
           DataMapWrapperSimpleInfo.fromDataMapWrapper(cgDataMapExprWrapper),
-          prunedBlocklets.size());
+          prunedBlocklets.size(), getBlockCount(prunedBlocklets));
     }
 
     if (prunedBlocklets.size() == 0) {
@@ -528,7 +539,7 @@ m filterExpression
             fgPrunedBlocklets);
         ExplainCollector.recordFGDataMapPruning(
             DataMapWrapperSimpleInfo.fromDataMapWrapper(fgDataMapExprWrapper),
-            prunedBlocklets.size());
+            prunedBlocklets.size(), getBlockCount(prunedBlocklets));
       }
     }
     return prunedBlocklets;

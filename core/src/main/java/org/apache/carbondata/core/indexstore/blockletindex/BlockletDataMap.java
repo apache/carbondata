@@ -47,6 +47,8 @@ import org.apache.carbondata.core.util.BlockletDataMapUtil;
 public class BlockletDataMap extends BlockDataMap implements Serializable {
 
   private static final long serialVersionUID = -2170289352240810993L;
+  // total block number in this datamap
+  private int blockNum = 0;
 
   @Override
   public void init(DataMapModel dataMapModel) throws IOException, MemoryException {
@@ -128,6 +130,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
         if (null == tempFilePath || !tempFilePath.equals(blockInfo.getFilePath())) {
           tempFilePath = blockInfo.getFilePath();
           relativeBlockletId = 0;
+          blockNum++;
         }
         summaryRow = loadToUnsafe(schema, taskSummarySchema, fileFooter, segmentProperties,
             getMinMaxCacheColumns(), blockInfo.getFilePath(), summaryRow,
@@ -252,6 +255,15 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
     } else {
       //in blocklet datamap, each entry contains info of one blocklet
       return 1;
+    }
+  }
+
+  @Override
+  protected int getTotalBlocks() {
+    if (isLegacyStore) {
+      return super.getTotalBlocklets();
+    } else {
+      return blockNum;
     }
   }
 
