@@ -108,19 +108,26 @@ public class ExplainCollector {
     }
   }
 
-  public static void recordCGDataMapPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
-      int numBlocklets) {
+  public static void setDefaultDataMapPruningBlockHit(int numBlocks) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
-      scan.setNumBlockletsAfterCGPruning(dataMapWrapperSimpleInfo, numBlocklets);
+      scan.setNumBlocksAfterDefaultPruning(numBlocks);
+    }
+  }
+
+  public static void recordCGDataMapPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
+      int numBlocklets, int numBlocks) {
+    if (enabled()) {
+      TablePruningInfo scan = getCurrentTablePruningInfo();
+      scan.setNumBlockletsAfterCGPruning(dataMapWrapperSimpleInfo, numBlocklets, numBlocks);
     }
   }
 
   public static void recordFGDataMapPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
-      int numBlocklets) {
+      int numBlocklets, int numBlocks) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
-      scan.setNumBlockletsAfterFGPruning(dataMapWrapperSimpleInfo, numBlocklets);
+      scan.setNumBlockletsAfterFGPruning(dataMapWrapperSimpleInfo, numBlocklets, numBlocks);
     }
   }
 
@@ -128,6 +135,13 @@ public class ExplainCollector {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
       scan.addTotalBlocklets(numBlocklets);
+    }
+  }
+
+  public static void addTotalBlocks(int numBlocks) {
+    if (enabled()) {
+      TablePruningInfo scan = getCurrentTablePruningInfo();
+      scan.addTotalBlocks(numBlocks);
     }
   }
 

@@ -621,14 +621,14 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       assertResult(
         """== CarbonData Profiler ==
           |Table Scan on main
-          | - total blocklets: 1
+          | - total: 1 blocks, 1 blocklets
           | - filter: TEXT_MATCH('name:bob')
           | - pruned by Main DataMap
-          |    - skipped blocklets: 0
+          |    - skipped: 0 blocks, 0 blocklets
           | - pruned by FG DataMap
           |    - name: dm
           |    - provider: lucene
-          |    - skipped blocklets: 1
+          |    - skipped: 1 blocks, 1 blocklets
           |""".stripMargin)(rows(0).getString(0))
     } finally {
       LuceneFineGrainDataMapSuite.deleteFile(file1)
