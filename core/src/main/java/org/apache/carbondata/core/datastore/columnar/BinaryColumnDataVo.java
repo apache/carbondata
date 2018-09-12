@@ -17,19 +17,28 @@
 
 package org.apache.carbondata.core.datastore.columnar;
 
-public interface IndexStorage<T> {
+public class BinaryColumnDataVo implements ColumnDataVo<byte[]> {
 
-  T getRowIdPage();
+  protected byte[] column;
 
-  int getRowIdPageLengthInBytes();
+  private Short index;
 
-  T getRowIdRlePage();
+  BinaryColumnDataVo(byte[] column, short index) {
+    this.column = column;
+    this.index = index;
+  }
 
-  int getRowIdRlePageLengthInBytes();
+  /**
+   * @return the column
+   */
+  public byte[] getData() {
+    return column;
+  }
 
-  byte[][] getDataPage();
-
-  T getDataRlePage();
-
-  int getDataRlePageLengthInBytes();
+  /**
+   * @return the index
+   */
+  public short getIndex() {
+    return index;
+  }
 }

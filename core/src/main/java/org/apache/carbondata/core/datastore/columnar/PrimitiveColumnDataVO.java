@@ -14,50 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.carbondata.core.datastore.columnar;
 
-import java.util.Arrays;
+public class PrimitiveColumnDataVO implements ColumnDataVo<Object> {
 
-import org.apache.carbondata.core.util.ByteUtil;
+  private Object column;
+  private short index;
 
-public class ColumnWithRowId<T> implements Comparable<ColumnWithRowId<T>> {
-  protected byte[] column;
-
-  private T index;
-
-  ColumnWithRowId(byte[] column, T index) {
+  PrimitiveColumnDataVO(Object column, short index) {
     this.column = column;
     this.index = index;
   }
 
   /**
-   * @return the column
-   */
-  public byte[] getColumn() {
-    return column;
-  }
-
-  /**
    * @return the index
    */
-  public T getIndex() {
+  public short getIndex() {
     return index;
   }
 
-  @Override public int compareTo(ColumnWithRowId o) {
-    return ByteUtil.UnsafeComparer.INSTANCE.compareTo(column, o.column);
-  }
-
-  @Override public boolean equals(Object obj) {
-    if (obj == null || getClass() != obj.getClass()) {
-      return false;
-    }
-    ColumnWithRowId o = (ColumnWithRowId)obj;
-    return Arrays.equals(column, o.column) && index == o.index;
-  }
-
-  @Override public int hashCode() {
-    return Arrays.hashCode(column) + index.hashCode();
+  /**
+   * @return the column
+   */
+  public Object getData() {
+    return column;
   }
 }

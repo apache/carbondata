@@ -21,9 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndexForShort;
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForShort;
-import org.apache.carbondata.core.datastore.columnar.IndexStorage;
+import org.apache.carbondata.core.datastore.columnar.BinaryPageIndexGenerator;
+import org.apache.carbondata.core.datastore.columnar.PageIndexGenerator;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
@@ -53,18 +52,13 @@ public class HighCardDictDimensionIndexCodec extends IndexStorageCodec {
 
       @Override
       protected void encodeIndexStorage(ColumnPage input) {
-        IndexStorage indexStorage;
+        PageIndexGenerator<byte[][]> indexStorage;
         byte[][] data = input.getByteArrayPage();
         boolean isDictionary = input.isLocalDictGeneratedPage();
-        if (isInvertedIndex) {
-          indexStorage = new BlockIndexerStorageForShort(data, isDictionary, !isDictionary, isSort);
-        } else {
-          indexStorage =
-              new BlockIndexerStorageForNoInvertedIndexForShort(data, isDictionary);
-        }
+        indexStorage = new BinaryPageIndexGenerator(data, isSort, (short)2, isDictionary);
         byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
         super.compressedDataPage = compressor.compressByte(flattened);
-        super.indexStorage = indexStorage;
+        super.pageIndexGenerator = indexStorage;
       }
 
       @Override
@@ -72,10 +66,10 @@ public class HighCardDictDimensionIndexCodec extends IndexStorageCodec {
         List<Encoding> encodings = new ArrayList<>();
         if (isVarcharType) {
           encodings.add(Encoding.DIRECT_COMPRESS_VARCHAR);
-        } else if (indexStorage.getRowIdPageLengthInBytes() > 0) {
+        } else if (pageIndexGenerator.getRowIdPageLengthInBytes() > 0) {
           encodings.add(Encoding.INVERTED_INDEX);
         }
-        if (indexStorage.getDataRlePageLengthInBytes() > 0) {
+        if (pageIndexGenerator.getDataRlePageLengthInBytes() > 0) {
           encodings.add(Encoding.RLE);
         }
         return encodings;

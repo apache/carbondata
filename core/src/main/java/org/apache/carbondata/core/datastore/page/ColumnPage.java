@@ -847,4 +847,46 @@ public abstract class ColumnPage {
   public int getActualRowCount() {
     throw new UnsupportedOperationException("Operation not supported");
   }
+
+  /**
+   * Convert the data of the page based on the data type for each row
+   * While preparing the inverted index for the page,
+   * we need the data based on data type for no dict measure column if adaptive encoding is applied
+   * This is similar to page.getByteArrayPage()
+   *
+   * @return
+   */
+  public Object[] getPageBasedOnDataType() {
+    Object[] data = new Object[getActualRowCount()];
+    if (dataType == DataTypes.BYTE || dataType == DataTypes.BOOLEAN) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getByte(i);
+      }
+    } else if (dataType == DataTypes.SHORT) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getShort(i);
+      }
+    } else if (dataType == DataTypes.SHORT_INT) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getShortInt(i);
+      }
+    } else if (dataType == DataTypes.INT) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getInt(i);
+      }
+    } else if (dataType == DataTypes.LONG) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getLong(i);
+      }
+    } else if (dataType == DataTypes.FLOAT) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getFloat(i);
+      }
+    } else if (dataType == DataTypes.DOUBLE) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getDouble(i);
+      }
+    }
+    return data;
+  }
 }
