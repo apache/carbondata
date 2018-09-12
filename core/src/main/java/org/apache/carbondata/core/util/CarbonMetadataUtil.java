@@ -337,7 +337,7 @@ public class CarbonMetadataUtil {
       return chunkCompressionMeta.getCompressor_name();
     } else {
       // this is for legacy store before 1.5.0
-      return CompressorFactory.SupportedCompressor.SNAPPY.getName();
+      return CompressorFactory.NativeSupportedCompressor.SNAPPY.getName();
     }
   }
   /**
