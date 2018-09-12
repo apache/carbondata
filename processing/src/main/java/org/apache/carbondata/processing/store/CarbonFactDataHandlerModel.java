@@ -179,6 +179,8 @@ public class CarbonFactDataHandlerModel {
 
   private List<Integer> varcharDimIdxInNoDict;
 
+  private String columnCompressor;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    */
@@ -284,6 +286,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.taskExtension = taskExtension;
     carbonFactDataHandlerModel.tableSpec = configuration.getTableSpec();
     carbonFactDataHandlerModel.sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
+    carbonFactDataHandlerModel.columnCompressor = configuration.getColumnCompressor();
 
     if (listener == null) {
       listener = new DataMapWriterListener();
@@ -364,6 +367,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     carbonFactDataHandlerModel.setPrimitiveDimLens(segmentProperties.getDimColumnsCardinality());
     carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
+    carbonFactDataHandlerModel.setColumnCompressor(loadModel.getColumnCompressor());
 
     carbonFactDataHandlerModel.tableSpec = new TableSpec(carbonTable);
     DataMapWriterListener listener = new DataMapWriterListener();
@@ -700,5 +704,12 @@ public class CarbonFactDataHandlerModel {
     return varcharDimIdxInNoDict;
   }
 
+  public String getColumnCompressor() {
+    return columnCompressor;
+  }
+
+  public void setColumnCompressor(String columnCompressor) {
+    this.columnCompressor = columnCompressor;
+  }
 }
 

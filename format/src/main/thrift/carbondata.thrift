@@ -65,10 +65,12 @@ enum SortState{
 }
 
 /**
- * Compressions supported by CarbonData.
+ * Compressions for column page supported by CarbonData.
  */
 enum CompressionCodec{
     SNAPPY = 0;
+    //** We will not use this CompressionCodec any longer since 1.5.0, but because it is required in some structure, we cannot get rid of it. So here I add another deprecated enum to alert the people who want to use it **//
+    DEPRECATED = 1;
 }
 
 /**
@@ -82,6 +84,8 @@ struct ChunkCompressionMeta{
     2: required i64 total_uncompressed_size;
     /** Total byte size of all compressed pages in this column chunk (including the headers) **/
     3: required i64 total_compressed_size;
+    /** compressor name for chunk, this is introduced in 1.5.0 to make compression for final store more extensible. We will first check compression_codec, if it is not set, we will use this compressor_name **/
+    4: optional string compressor_name;
 }
 
 /**
@@ -212,6 +216,7 @@ struct FileHeader{
 	4: optional i64 time_stamp; // Timestamp to compare column schema against master schema
 	5: optional bool is_splitable; // Whether file is splitable or not
 	6: optional binary sync_marker; // 16 bytes sync marker
+  7: optional string compressor_name;
 }
 
 /**

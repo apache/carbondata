@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReader;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.memory.MemoryException;
@@ -96,7 +97,8 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
     int blockIndex = measureRawColumnChunk.getColumnIndex();
     DataChunk dataChunk = measureColumnChunks.get(blockIndex);
     ValueEncoderMeta meta = dataChunk.getValueEncoderMeta().get(0);
-    ColumnPageDecoder codec = encodingFactory.createDecoderLegacy(meta);
+    ColumnPageDecoder codec = encodingFactory.createDecoderLegacy(meta,
+        CompressorFactory.SupportedCompressor.SNAPPY.getName());
     ColumnPage decodedPage = codec.decode(measureRawColumnChunk.getRawData().array(),
         (int) measureRawColumnChunk.getOffSet(), dataChunk.getDataPageLength());
     decodedPage.setNullBits(dataChunk.getNullValueIndexForColumn());

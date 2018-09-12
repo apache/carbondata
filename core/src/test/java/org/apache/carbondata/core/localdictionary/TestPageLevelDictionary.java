@@ -40,12 +40,14 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class TestPageLevelDictionary {
+  private String compressorName = CompressorFactory.getInstance().getCompressor(
+      CarbonCommonConstants.DEFAULT_COMPRESSOR).getName();
 
   @Test public void testPageLevelDictionaryGenerateDataIsGenertingProperDictionaryValues() {
     LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);
     String columnName = "column1";
     PageLevelDictionary pageLevelDictionary = new PageLevelDictionary(generator, columnName,
-        DataTypes.STRING, false);
+        DataTypes.STRING, false, compressorName);
     try {
       for (int i = 1; i <= 1000; i++) {
         Assert.assertTrue((i + 1) == pageLevelDictionary.getDictionaryValue(("" + i).getBytes()));
@@ -59,7 +61,8 @@ public class TestPageLevelDictionary {
   @Test public void testPageLevelDictionaryContainsOnlyUsedDictionaryValues() {
     LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);
     String columnName = "column1";
-    PageLevelDictionary pageLevelDictionary1 = new PageLevelDictionary(generator, columnName, DataTypes.STRING, false);
+    PageLevelDictionary pageLevelDictionary1 = new PageLevelDictionary(
+        generator, columnName, DataTypes.STRING, false, compressorName);
     byte[][] validateData = new byte[500][];
     try {
       for (int i = 1; i <= 500; i++) {
@@ -74,7 +77,8 @@ public class TestPageLevelDictionary {
     } catch (DictionaryThresholdReachedException e) {
       Assert.assertTrue(false);
     }
-    PageLevelDictionary pageLevelDictionary2 = new PageLevelDictionary(generator, columnName, DataTypes.STRING, false);
+    PageLevelDictionary pageLevelDictionary2 = new PageLevelDictionary(
+        generator, columnName, DataTypes.STRING, false, compressorName);
     try {
       for (int i = 1; i <= 500; i++) {
         byte[] data = ("vikas" + i).getBytes();
@@ -94,7 +98,8 @@ public class TestPageLevelDictionary {
       EncodingFactory encodingFactory = DefaultEncodingFactory.getInstance();
       List<ByteBuffer> encoderMetas =
           localDictionaryChunkForBlocklet.getDictionary_meta().getEncoder_meta();
-      ColumnPageDecoder decoder = encodingFactory.createDecoder(encodings, encoderMetas);
+      ColumnPageDecoder decoder = encodingFactory.createDecoder(
+          encodings, encoderMetas, compressorName);
       ColumnPage decode = decoder.decode(localDictionaryChunkForBlocklet.getDictionary_data(), 0,
           localDictionaryChunkForBlocklet.getDictionary_data().length);
       for (int i = 0; i < 500; i++) {
@@ -111,7 +116,8 @@ public class TestPageLevelDictionary {
   public void testPageLevelDictionaryContainsOnlyUsedDictionaryValuesWhenMultiplePagesUseSameDictionary() {
     LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);
     String columnName = "column1";
-    PageLevelDictionary pageLevelDictionary1 = new PageLevelDictionary(generator, columnName, DataTypes.STRING, false);
+    PageLevelDictionary pageLevelDictionary1 = new PageLevelDictionary(
+        generator, columnName, DataTypes.STRING, false, compressorName);
     byte[][] validateData = new byte[10][];
     int index = 0;
     try {
@@ -128,7 +134,8 @@ public class TestPageLevelDictionary {
     } catch (DictionaryThresholdReachedException e) {
       Assert.assertTrue(false);
     }
-    PageLevelDictionary pageLevelDictionary2 = new PageLevelDictionary(generator, columnName, DataTypes.STRING, false);
+    PageLevelDictionary pageLevelDictionary2 = new PageLevelDictionary(
+        generator, columnName, DataTypes.STRING, false, compressorName);
     try {
       for (int i = 1; i <= 5; i++) {
         byte[] data = ("vikas" + i).getBytes();
@@ -174,10 +181,11 @@ public class TestPageLevelDictionary {
       EncodingFactory encodingFactory = DefaultEncodingFactory.getInstance();
       List<ByteBuffer> encoderMetas =
           localDictionaryChunkForBlocklet.getDictionary_meta().getEncoder_meta();
-      ColumnPageDecoder decoder = encodingFactory.createDecoder(encodings, encoderMetas);
+      ColumnPageDecoder decoder = encodingFactory.createDecoder(
+          encodings, encoderMetas, compressorName);
       ColumnPage decode = decoder.decode(localDictionaryChunkForBlocklet.getDictionary_data(), 0,
           localDictionaryChunkForBlocklet.getDictionary_data().length);
-      BitSet bitSet = BitSet.valueOf(CompressorFactory.getInstance().getCompressor()
+      BitSet bitSet = BitSet.valueOf(CompressorFactory.getInstance().getCompressor(compressorName)
           .unCompressByte(localDictionaryChunkForBlocklet.getDictionary_values()));
       Assert.assertTrue(bitSet.cardinality()==validateData.length);
       for(int i =0; i<validateData.length;i++) {

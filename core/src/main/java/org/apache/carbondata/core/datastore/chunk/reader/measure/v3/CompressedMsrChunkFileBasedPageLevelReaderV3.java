@@ -22,10 +22,12 @@ import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
+import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
@@ -138,6 +140,9 @@ public class CompressedMsrChunkFileBasedPageLevelReaderV3
     DataChunk3 dataChunk3 = rawColumnPage.getDataChunkV3();
     // data chunk of page
     DataChunk2 pageMetadata = dataChunk3.getData_chunk_list().get(pageNumber);
+    String compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
+        pageMetadata.getChunk_meta());
+    this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
     // calculating the start point of data
     // as buffer can contain multiple column data, start point will be datachunkoffset +
     // data chunk length + page offset
@@ -147,7 +152,7 @@ public class CompressedMsrChunkFileBasedPageLevelReaderV3
         .readByteBuffer(filePath, offset, pageMetadata.data_page_length);
 
     ColumnPage decodedPage = decodeMeasure(pageMetadata, buffer, 0);
-    decodedPage.setNullBits(QueryUtil.getNullBitSet(pageMetadata.presence));
+    decodedPage.setNullBits(QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor));
     return decodedPage;
   }
 

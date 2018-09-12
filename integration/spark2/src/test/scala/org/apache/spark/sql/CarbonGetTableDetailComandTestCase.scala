@@ -42,10 +42,10 @@ class CarbonGetTableDetailCommandTestCase extends QueryTest with BeforeAndAfterA
 
     assertResult(2)(result.length)
     assertResult("table_info1")(result(0).getString(0))
-    // 2096 is the size of carbon table
-    assertResult(2147)(result(0).getLong(1))
+    // 2087 is the size of carbon table. Note that since 1.5.0, we add additional compressor name in metadata
+    assertResult(2187)(result(0).getLong(1))
     assertResult("table_info2")(result(1).getString(0))
-    assertResult(2147)(result(1).getLong(1))
+    assertResult(2187)(result(1).getLong(1))
   }
 
   override def afterAll: Unit = {

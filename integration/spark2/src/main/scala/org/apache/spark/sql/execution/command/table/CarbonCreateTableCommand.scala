@@ -19,6 +19,7 @@ package org.apache.spark.sql.execution.command.table
 
 import scala.collection.JavaConverters._
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, _}
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
@@ -26,6 +27,7 @@ import org.apache.spark.sql.execution.command.MetadataCommand
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -97,6 +99,18 @@ case class CarbonCreateTableCommand(
 
       if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
         throwMetadataException(dbName, tableName, "Table should have at least one column.")
+      }
+
+      // Add validatation for column compressor when create table
+      val columnCompressor = tableInfo.getFactTable.getTableProperties.get(
+        CarbonCommonConstants.COMPRESSOR)
+      try {
+        if (null != columnCompressor) {
+          CompressorFactory.getInstance().getCompressor(columnCompressor)
+        }
+      } catch {
+        case ex : UnsupportedOperationException =>
+          throw new InvalidConfigurationException(ex.getMessage)
       }
 
       val operationContext = new OperationContext

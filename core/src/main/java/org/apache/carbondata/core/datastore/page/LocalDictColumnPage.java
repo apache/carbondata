@@ -76,14 +76,13 @@ public class LocalDictColumnPage extends ColumnPage {
   protected LocalDictColumnPage(ColumnPage actualDataColumnPage, ColumnPage encodedColumnpage,
       LocalDictionaryGenerator localDictionaryGenerator, boolean isComplexTypePrimitive,
       boolean isDecoderBasedFallBackEnabled) {
-    super(actualDataColumnPage.getColumnSpec(), actualDataColumnPage.getDataType(),
-        actualDataColumnPage.getPageSize());
+    super(actualDataColumnPage.getColumnPageEncoderMeta(), actualDataColumnPage.getPageSize());
     // if threshold is not reached then create page level dictionary
     // for encoding with local dictionary
     if (!localDictionaryGenerator.isThresholdReached()) {
       pageLevelDictionary = new PageLevelDictionary(localDictionaryGenerator,
           actualDataColumnPage.getColumnSpec().getFieldName(), actualDataColumnPage.getDataType(),
-          isComplexTypePrimitive);
+          isComplexTypePrimitive, actualDataColumnPage.getColumnCompressorName());
       this.encodedDataColumnPage = encodedColumnpage;
       this.keyGenerator = KeyGeneratorFactory
           .getKeyGenerator(new int[] { CarbonCommonConstants.LOCAL_DICTIONARY_MAX + 1 });

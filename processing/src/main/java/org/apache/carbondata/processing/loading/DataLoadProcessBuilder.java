@@ -314,6 +314,7 @@ public final class DataLoadProcessBuilder {
     if (loadModel.getSdkWriterCores() > 0) {
       configuration.setWritingCoresCount(loadModel.getSdkWriterCores());
     }
+    configuration.setColumnCompressor(loadModel.getColumnCompressor());
     return configuration;
   }
 

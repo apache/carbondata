@@ -47,7 +47,7 @@ public class StreamBlockletWriter {
   private int rowSize;
   private int count = 0;
   private int rowIndex = -1;
-  private Compressor compressor = CompressorFactory.getInstance().getCompressor();
+  private Compressor compressor;
 
   private int dimCountWithoutComplex;
   private int measureCount;
@@ -60,7 +60,7 @@ public class StreamBlockletWriter {
   private BlockletMinMaxIndex blockletMinMaxIndex;
 
   StreamBlockletWriter(int maxSize, int maxRowNum, int rowSize, int dimCountWithoutComplex,
-      int measureCount, DataType[] measureDataTypes) {
+      int measureCount, DataType[] measureDataTypes, String compressorName) {
     buffer = new byte[maxSize];
     this.maxSize = maxSize;
     this.maxRowNum = maxRowNum;
@@ -68,6 +68,7 @@ public class StreamBlockletWriter {
     this.dimCountWithoutComplex = dimCountWithoutComplex;
     this.measureCount = measureCount;
     this.measureDataTypes = measureDataTypes;
+    this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
     initializeStatsCollector();
   }
 

@@ -29,6 +29,7 @@ import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -123,6 +124,10 @@ case class CarbonAlterTableAddHivePartitionCommand(
             "Schema of index files located in location is not matching with current table schema")
         }
         val loadModel = new CarbonLoadModel
+        val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
+          .getOrElse(CarbonCommonConstants.COMPRESSOR,
+            CompressorFactory.getInstance().getCompressor.getName)
+        loadModel.setColumnCompressor(columnCompressor)
         loadModel.setCarbonTransactionalTable(true)
         loadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(table))
         // Create new entry in tablestatus file

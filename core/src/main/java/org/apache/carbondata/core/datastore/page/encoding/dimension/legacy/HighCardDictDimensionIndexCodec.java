@@ -25,6 +25,7 @@ import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInv
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForShort;
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.datastore.compression.Compressor;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -37,8 +38,8 @@ public class HighCardDictDimensionIndexCodec extends IndexStorageCodec {
   private boolean isVarcharType;
 
   public HighCardDictDimensionIndexCodec(boolean isSort, boolean isInvertedIndex,
-      boolean isVarcharType, Compressor compressor) {
-    super(isSort, isInvertedIndex, compressor);
+      boolean isVarcharType) {
+    super(isSort, isInvertedIndex);
     this.isVarcharType = isVarcharType;
   }
 
@@ -63,6 +64,8 @@ public class HighCardDictDimensionIndexCodec extends IndexStorageCodec {
               new BlockIndexerStorageForNoInvertedIndexForShort(data, isDictionary);
         }
         byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
+        Compressor compressor = CompressorFactory.getInstance().getCompressor(
+            input.getColumnCompressorName());
         super.compressedDataPage = compressor.compressByte(flattened);
         super.indexStorage = indexStorage;
       }
