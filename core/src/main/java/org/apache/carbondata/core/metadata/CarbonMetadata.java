@@ -143,7 +143,7 @@ public final class CarbonMetadata {
     List<CarbonDimension> listOfCarbonDims =
         carbonTable.getDimensionByTableName(carbonTable.getTableName());
     for (CarbonDimension dimension : listOfCarbonDims) {
-      if (dimension.getColumnId().equals(columnIdentifier)) {
+      if (dimension.getColumnId().equalsIgnoreCase(columnIdentifier)) {
         return dimension;
       }
       if (dimension.getNumberOfChild() > 0) {
@@ -168,7 +168,8 @@ public final class CarbonMetadata {
   private CarbonDimension getCarbonChildDimsBasedOnColIdentifier(String columnIdentifier,
       CarbonDimension dimension) {
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
-      if (dimension.getListOfChildDimensions().get(i).getColumnId().equals(columnIdentifier)) {
+      if (dimension.getListOfChildDimensions().get(i).getColumnId()
+          .equalsIgnoreCase(columnIdentifier)) {
         return dimension.getListOfChildDimensions().get(i);
       } else if (dimension.getListOfChildDimensions().get(i).getNumberOfChild() > 0) {
         CarbonDimension childDim = getCarbonChildDimsBasedOnColIdentifier(columnIdentifier,

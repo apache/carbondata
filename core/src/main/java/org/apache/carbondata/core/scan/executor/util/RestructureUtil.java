@@ -165,14 +165,15 @@ public class RestructureUtil {
     // column ID but can have same column name
     if (tableColumn.getDataType().isComplexType() && !(tableColumn.getDataType().getId()
         == DataTypes.ARRAY_TYPE_ID)) {
-      if (tableColumn.getColumnId().equals(queryColumn.getColumnId())) {
+      if (tableColumn.getColumnId().equalsIgnoreCase(queryColumn.getColumnId())) {
         return true;
       } else {
         return isColumnMatchesStruct(tableColumn, queryColumn);
       }
     } else {
-      return (tableColumn.getColumnId().equals(queryColumn.getColumnId()) || (!isTransactionalTable
-          && tableColumn.getColName().equals(queryColumn.getColName())));
+      return (tableColumn.getColumnId().equalsIgnoreCase(queryColumn.getColumnId()) || (
+          !isTransactionalTable && tableColumn.getColName()
+              .equalsIgnoreCase(queryColumn.getColName())));
     }
   }
 

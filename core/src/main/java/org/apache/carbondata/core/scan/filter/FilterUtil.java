@@ -397,7 +397,7 @@ public final class FilterUtil {
     int columnIndexInMinMaxByteArray = -1;
     int columnCounter = 0;
     for (CarbonColumn cachedColumn : carbonDimensionsToBeCached) {
-      if (cachedColumn.getColumnId().equals(filterColumn.getColumnId())) {
+      if (cachedColumn.getColumnId().equalsIgnoreCase(filterColumn.getColumnId())) {
         columnIndexInMinMaxByteArray = columnCounter;
         break;
       }

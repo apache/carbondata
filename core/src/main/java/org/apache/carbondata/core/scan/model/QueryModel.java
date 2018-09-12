@@ -122,6 +122,8 @@ public class QueryModel {
   // whether to clear/free unsafe memory or not
   private boolean freeUnsafeMemory = true;
 
+  private boolean preFetchData = true;
+
   private QueryModel(CarbonTable carbonTable) {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
     invalidSegmentIds = new ArrayList<>();
@@ -394,6 +396,14 @@ public class QueryModel {
 
   public void setFG(boolean FG) {
     isFG = FG;
+  }
+
+  public boolean isPreFetchData() {
+    return preFetchData;
+  }
+
+  public void setPreFetchData(boolean preFetchData) {
+    this.preFetchData = preFetchData;
   }
 
   @Override
