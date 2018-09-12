@@ -161,10 +161,10 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
   test("test blocking update and delete operation on streaming table") {
     val exceptionMsgUpdate = intercept[MalformedCarbonCommandException] {
-      sql("""UPDATE source d SET (d.c2) = (d.c2 + 1) WHERE d.c1 = 'a'""").show()
+      sql("""UPDATE source d SET (d.c2) = (d.c2 + 1) WHERE d.c1 = 'a'""").collect()
     }
     val exceptionMsgDelete = intercept[MalformedCarbonCommandException] {
-      sql("""DELETE FROM source WHERE d.c1 = 'a'""").show()
+      sql("""DELETE FROM source WHERE d.c1 = 'a'""").collect()
     }
     assert(exceptionMsgUpdate.getMessage.equals("Data update is not allowed for streaming table"))
     assert(exceptionMsgDelete.getMessage.equals("Data delete is not allowed for streaming table"))
@@ -172,16 +172,16 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
   test("test blocking alter table operation on streaming table") {
     val addColException = intercept[MalformedCarbonCommandException] {
-      sql("""ALTER TABLE source ADD COLUMNS (c6 string)""").show()
+      sql("""ALTER TABLE source ADD COLUMNS (c6 string)""").collect()
     }
     val dropColException = intercept[MalformedCarbonCommandException] {
-      sql("""ALTER TABLE source DROP COLUMNS (c1)""").show()
+      sql("""ALTER TABLE source DROP COLUMNS (c1)""").collect()
     }
     val renameException = intercept[MalformedCarbonCommandException] {
-      sql("""ALTER TABLE source RENAME to t""").show()
+      sql("""ALTER TABLE source RENAME to t""").collect()
     }
     val changeDataTypeException = intercept[MalformedCarbonCommandException] {
-      sql("""ALTER TABLE source CHANGE c2 c2 bigint""").show()
+      sql("""ALTER TABLE source CHANGE c2 c2 bigint""").collect()
     }
     assertResult("Alter table add column is not allowed for streaming table")(addColException.getMessage)
     assertResult("Alter table drop column is not allowed for streaming table")(dropColException.getMessage)
@@ -419,7 +419,6 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         Row("name_12", 480000.0),
         Row("name_11", 440000.0),
         Row("name_13", 520000.0)))
-    //    sql("select * from agg_table2_p1").show()
     checkAnswer(sql("select * from agg_table2_p1"),
       Seq(
         Row("name_10", 200000.0),
