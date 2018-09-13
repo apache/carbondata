@@ -22,7 +22,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, DecimalType => CarbonDecimalType, StructField => CarbonStructField}
+import org.apache.carbondata.core.metadata.datatype.{ArrayType => CarbonArrayType, DataType => CarbonDataType, DataTypes => CarbonDataTypes, DecimalType => CarbonDecimalType, MapType => CarbonMapType, StructField => CarbonStructField, StructType => CarbonStructType}
 import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
 import org.apache.carbondata.core.scan.expression.conditional._
 import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
@@ -39,6 +39,20 @@ object CarbonSparkDataSourceUtil {
       DecimalType(dataType.asInstanceOf[CarbonDecimalType].getPrecision,
         dataType.asInstanceOf[CarbonDecimalType].getScale)
     } else {
+      if (CarbonDataTypes.isStructType(dataType)) {
+        val struct = dataType.asInstanceOf[CarbonStructType]
+        return StructType(struct.getFields.asScala.map(x =>
+          StructField(x.getFieldName, convertCarbonToSparkDataType(x.getDataType)))
+        )
+      } else if (CarbonDataTypes.isArrayType(dataType)) {
+        val array = dataType.asInstanceOf[CarbonArrayType]
+        return ArrayType(convertCarbonToSparkDataType(array.getElementType))
+      } else if (CarbonDataTypes.isMapType(dataType)) {
+        val map = dataType.asInstanceOf[CarbonMapType]
+        return MapType(
+          convertCarbonToSparkDataType(map.getKeyType),
+          convertCarbonToSparkDataType(map.getValueType))
+      }
       dataType match {
         case CarbonDataTypes.STRING => StringType
         case CarbonDataTypes.SHORT => ShortType

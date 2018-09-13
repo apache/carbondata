@@ -410,6 +410,8 @@ object StreamHandoffRDD {
         } else {
           newSegment.get.setSegmentStatus(SegmentStatus.SUCCESS)
           newSegment.get.setLoadEndTime(System.currentTimeMillis())
+          CarbonLoaderUtil.addDataIndexSizeIntoMetaEntry(newSegment.get, loadModel.getSegmentId,
+            loadModel.getCarbonDataLoadSchema.getCarbonTable)
         }
 
         // update streaming segment to compacted status

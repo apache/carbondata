@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
@@ -81,6 +82,16 @@ public class Util {
     } else {
       return null;
     }
+  }
+
+  public static StructType convertToSparkSchema(CarbonTable table) {
+    List<CarbonColumn> columns = table.getCreateOrderColumn(table.getTableName());
+    ColumnSchema[] schema = new ColumnSchema[columns.size()];
+    int i = 0;
+    for (CarbonColumn column : columns) {
+      schema[i++] = column.getColumnSchema();
+    }
+    return convertToSparkSchema(table, schema);
   }
 
   public static StructType convertToSparkSchema(CarbonTable table, ColumnSchema[] carbonColumns) {

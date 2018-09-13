@@ -37,21 +37,23 @@ import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.streaming.segment.StreamSegment
 
 object CarbonStore {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def showSegments(
       limit: Option[String],
-      tableFolderPath: String,
+      tablePath: String,
       showHistory: Boolean): Seq[Row] = {
+    val metaFolder = CarbonTablePath.getMetadataPath(tablePath)
     val loadMetadataDetailsArray = if (showHistory) {
-      SegmentStatusManager.readLoadMetadata(tableFolderPath) ++
-      SegmentStatusManager.readLoadHistoryMetadata(tableFolderPath)
+      SegmentStatusManager.readLoadMetadata(metaFolder) ++
+      SegmentStatusManager.readLoadHistoryMetadata(metaFolder)
     } else {
-      SegmentStatusManager.readLoadMetadata(tableFolderPath)
+      SegmentStatusManager.readLoadMetadata(metaFolder)
     }
 
     if (loadMetadataDetailsArray.nonEmpty) {
@@ -84,17 +86,30 @@ object CarbonStore {
 
           val startTime =
             if (load.getLoadStartTime == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
-              null
+              "NA"
             } else {
-              new java.sql.Timestamp(load.getLoadStartTime)
+              new java.sql.Timestamp(load.getLoadStartTime).toString
             }
 
           val endTime =
             if (load.getLoadEndTime == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
-              null
+              "NA"
             } else {
-              new java.sql.Timestamp(load.getLoadEndTime)
+              new java.sql.Timestamp(load.getLoadEndTime).toString
             }
+
+          val (dataSize, indexSize) = if (load.getFileFormat == FileFormat.ROW_V1) {
+            // for streaming segment, we should get the actual size from the index file
+            // since it is continuously inserting data
+            val segmentDir = CarbonTablePath.getSegmentPath(tablePath, load.getLoadName)
+            val indexPath = CarbonTablePath.getCarbonStreamIndexFilePath(segmentDir)
+            val indices = StreamSegment.readIndexFile(indexPath, FileFactory.getFileType(indexPath))
+            (indices.asScala.map(_.getFile_size).sum, FileFactory.getCarbonFile(indexPath).getSize)
+          } else {
+            // for batch segment, we can get the data size from table status file directly
+            (if (load.getDataSize == null) 0L else load.getDataSize.toLong,
+              if (load.getIndexSize == null) 0L else load.getIndexSize.toLong)
+          }
 
           if (showHistory) {
             Row(
@@ -104,9 +119,9 @@ object CarbonStore {
               endTime,
               mergedTo,
               load.getFileFormat.toString,
-              load.getVisibility(),
-              Strings.formatSize(if (load.getDataSize == null) 0 else load.getDataSize.toFloat),
-              Strings.formatSize(if (load.getIndexSize == null) 0 else load.getIndexSize.toFloat))
+              load.getVisibility,
+              Strings.formatSize(dataSize.toFloat),
+              Strings.formatSize(indexSize.toFloat))
           } else {
             Row(
               load.getLoadName,
@@ -115,8 +130,8 @@ object CarbonStore {
               endTime,
               mergedTo,
               load.getFileFormat.toString,
-              Strings.formatSize(if (load.getDataSize == null) 0 else load.getDataSize.toFloat),
-              Strings.formatSize(if (load.getIndexSize == null) 0 else load.getIndexSize.toFloat))
+              Strings.formatSize(dataSize.toFloat),
+              Strings.formatSize(indexSize.toFloat))
           }
         }.toSeq
     } else {

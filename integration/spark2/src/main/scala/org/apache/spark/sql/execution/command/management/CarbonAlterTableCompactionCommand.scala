@@ -330,10 +330,13 @@ case class CarbonAlterTableCompactionCommand(
   ): Unit = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    // 1. acquire lock of streaming.lock
+    // 1. delete the lock of streaming.lock, forcing the stream to be closed
     val streamingLock = CarbonLockFactory.getCarbonLockObj(
       carbonTable.getTableInfo.getOrCreateAbsoluteTableIdentifier,
       LockUsage.STREAMING_LOCK)
+    if (!FileFactory.getCarbonFile(streamingLock.getLockFilePath).delete()) {
+       LOGGER.warn("failed to delete lock file: " + streamingLock.getLockFilePath)
+    }
     try {
       if (streamingLock.lockWithRetries()) {
         // 2. convert segment status from "streaming" to "streaming finish"
