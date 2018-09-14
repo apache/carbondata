@@ -2134,6 +2134,7 @@ public final class CarbonUtil {
         wrapperColumnSchema.setSortColumn(true);
       }
     }
+    wrapperColumnSchema.setColumnProperties(properties);
     wrapperColumnSchema.setFunction(externalColumnSchema.getAggregate_function());
     List<org.apache.carbondata.format.ParentColumnTableRelation> parentColumnTableRelation =
         externalColumnSchema.getParentColumnTableRelations();

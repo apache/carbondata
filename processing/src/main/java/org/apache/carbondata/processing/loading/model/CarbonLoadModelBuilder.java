@@ -65,7 +65,7 @@ public class CarbonLoadModelBuilder {
    * @param taskNo
    * @return a new CarbonLoadModel instance
    */
-  public CarbonLoadModel build(Map<String, String>  options, long UUID, String taskNo)
+  public CarbonLoadModel build(Map<String, String>  options, long timestamp, String taskNo)
       throws InvalidLoadOptionException, IOException {
     Map<String, String> optionsFinal = LoadOption.fillOptionWithDefaultValue(options);
 
@@ -82,7 +82,7 @@ public class CarbonLoadModelBuilder {
         Maps.getOrDefault(options, "sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT));
     CarbonLoadModel model = new CarbonLoadModel();
     model.setCarbonTransactionalTable(table.isTransactionalTable());
-    model.setFactTimeStamp(UUID);
+    model.setFactTimeStamp(timestamp);
     model.setTaskNo(taskNo);
 
     // we have provided 'fileheader', so it hadoopConf can be null

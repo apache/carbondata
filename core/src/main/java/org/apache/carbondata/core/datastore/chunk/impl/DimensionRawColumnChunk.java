@@ -166,7 +166,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
    * @throws IOException
    * @throws MemoryException
    */
-  private CarbonDictionary getDictionary(LocalDictionaryChunk localDictionaryChunk,
+  public static CarbonDictionary getDictionary(LocalDictionaryChunk localDictionaryChunk,
       Compressor compressor) throws IOException, MemoryException {
     if (null != localDictionaryChunk) {
       List<Encoding> encodings = localDictionaryChunk.getDictionary_meta().getEncoders();
