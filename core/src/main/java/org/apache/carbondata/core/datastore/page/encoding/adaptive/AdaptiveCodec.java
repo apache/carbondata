@@ -145,6 +145,10 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
       for (int i = 0; i < dataPage.length; i++) {
         page.putDouble(i, (double) dataPage[i]);
       }
+    } else if (srcDataType == DataTypes.FLOAT) {
+      for (int i = 0; i < dataPage.length; i++) {
+        page.putFloat(i, (float) dataPage[i]);
+      }
     }
   }
 

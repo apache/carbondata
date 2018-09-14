@@ -51,10 +51,7 @@ object TestUtil {
     .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT, "40")
 
   def checkAnswer(df: DataFrame, expectedAnswer: java.util.List[Row]):Unit = {
-    checkAnswer(df, expectedAnswer.asScala) match {
-      case Some(errorMessage) => assert(false, errorMessage)
-      case None =>
-    }
+    checkAnswer(df, expectedAnswer.asScala)
   }
 
   def checkExistence(df: DataFrame, exists: Boolean, keywords: String*) {
@@ -69,10 +66,7 @@ object TestUtil {
   }
 
   def checkAnswer(df: DataFrame, expectedAnswer: DataFrame): Unit = {
-    checkAnswer(df, expectedAnswer.collect()) match {
-      case Some(errorMessage) => assert(false, errorMessage)
-      case None =>
-    }
+    checkAnswer(df, expectedAnswer.collect())
   }
 
   /**
@@ -83,7 +77,7 @@ object TestUtil {
    * @param df the [[DataFrame]] to be executed
    * @param expectedAnswer the expected result in a [[Seq]] of [[Row]]s.
    */
-  def checkAnswer(df: DataFrame, expectedAnswer: Seq[Row]): Option[String] = {
+  def checkAnswer(df: DataFrame, expectedAnswer: Seq[Row]): Unit = {
     val isSorted = df.logicalPlan.collect { case s: logical.Sort => s }.nonEmpty
     def prepareAnswer(answer: Seq[Row]): Seq[Row] = {
       // Converts data to types that we can do equality comparison using Scala collections.
@@ -136,10 +130,8 @@ object TestUtil {
             prepareAnswer(sparkAnswer).map(_.toString())).mkString("\n")
         }
       """.stripMargin
-      return Some(errorMessage)
+      assert(false, errorMessage)
     }
-
-    return None
   }
 
 }

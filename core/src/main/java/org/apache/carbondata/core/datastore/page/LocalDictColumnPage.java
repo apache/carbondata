@@ -232,6 +232,10 @@ public class LocalDictColumnPage extends ColumnPage {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
+  @Override public void putFloat(int rowId, float value) {
+    throw new UnsupportedOperationException("Operation not supported");
+  }
+
   @Override public void putDecimal(int rowId, BigDecimal decimal) {
     throw new UnsupportedOperationException("Operation not supported");
   }

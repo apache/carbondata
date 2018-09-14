@@ -74,6 +74,10 @@ public abstract class LVStringStatsCollector implements ColumnPageStatsCollector
 
   }
 
+  @Override public void update(float value) {
+
+  }
+
   @Override
   public void update(BigDecimal value) {
 

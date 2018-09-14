@@ -58,7 +58,12 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
       SimpleStatsResult stats, boolean isInvertedIndex) {
     super(srcDataType, targetDataType, stats, isInvertedIndex);
     this.factor = Math.pow(10, stats.getDecimalCount());
-    this.max = (long) (Math.pow(10, stats.getDecimalCount()) * (double) stats.getMax());
+    if (srcDataType == DataTypes.FLOAT) {
+      this.max =
+          (long) ((long) Math.pow(10, stats.getDecimalCount()) * ((float) stats.getMax()));
+    } else {
+      this.max = (long) ((long) Math.pow(10, stats.getDecimalCount()) * (double) stats.getMax());
+    }
   }
 
   @Override

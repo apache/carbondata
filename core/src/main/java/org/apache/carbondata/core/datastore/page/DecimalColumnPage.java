@@ -110,6 +110,11 @@ public abstract class DecimalColumnPage extends VarLengthColumnPageBase {
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
+  @Override public void putFloat(int rowId, float value) {
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
+  }
+
   @Override
   public void setFloatPage(float[] floatData) {
     throw new UnsupportedOperationException(

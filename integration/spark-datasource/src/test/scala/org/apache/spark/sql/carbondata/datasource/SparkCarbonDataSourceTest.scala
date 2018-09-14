@@ -19,17 +19,19 @@ package org.apache.spark.sql.carbondata.datasource
 
 import java.io.File
 import java.util
+import java.util.Arrays
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
-import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.carbondata.datasource.TestUtil._
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
 import org.apache.carbondata.hadoop.testutil.StoreCreator
 import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
 
@@ -877,9 +879,207 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
   }
 
+  test("test Float data type by giving schema explicitly and desc formatted") {
+    spark.sql("drop table if exists sdkout")
+    FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
+    buildTestDataOtherDataType(5, Array("age", "address"), warehouse1+"/sdk1")
+    spark.sql(s"create table sdkout(male boolean, age int, height double, name string, address " +
+              s"string," +
+              s"salary long, floatField float, bytefield byte) using carbon options " +
+              s"(path='$warehouse1/sdk1')")
+    assert(spark.sql("desc formatted sdkout").collect().take(7).reverse.head.get(1).equals("float"))
+    assert(spark.sql("desc formatted sdkout").collect().take(8).reverse.head.get(1).equals
+    ("tinyint"))
+  }
+
+  test("test select * on table with float data type") {
+    spark.sql("drop table if exists sdkout")
+    FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
+    buildTestDataOtherDataType(11, Array("age", "address"), warehouse1 + "/sdk1")
+    spark.sql(s"create table sdkout(male boolean, age int, height double, name string, address " +
+              s"string," +
+              s"salary long, floatField float, bytefield byte) using carbon options (path='$warehouse1/sdk1')")
+    checkAnswer(spark.sql("select * from par_table"), spark.sql("select * from sdkout"))
+    checkAnswer(spark.sql("select floatfield from par_table"), spark.sql("select floatfield from sdkout"))
+  }
+
+  test("test various filters on float data") {
+    spark.sql("drop table if exists sdkout")
+    FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
+    buildTestDataOtherDataType(11, Array("age", "address"), warehouse1 + "/sdk1")
+    spark.sql(s"create table sdkout(male boolean, age int, height double, name string, address " +
+              s"string," +
+              s"salary long, floatField float, bytefield byte) using carbon options (path='$warehouse1/sdk1')")
+    checkAnswer(spark.sql("select * from par_table where floatfield < 10"),
+      spark.sql("select * from sdkout where floatfield < 10"))
+    checkAnswer(spark.sql("select * from par_table where floatfield > 5.3"),
+      spark.sql("select * from sdkout where floatfield > 5.3"))
+    checkAnswer(spark.sql("select * from par_table where floatfield >= 4.1"),
+      spark.sql("select * from sdkout where floatfield >= 4.1"))
+    checkAnswer(spark.sql("select * from par_table where floatfield != 5.5"),
+      spark.sql("select * from sdkout where floatfield != 5.5"))
+    checkAnswer(spark.sql("select * from par_table where floatfield <= 5"),
+      spark.sql("select * from sdkout where floatfield <= 5"))
+    checkAnswer(spark.sql("select * from par_table where floatfield >= 5"),
+      spark.sql("select * from sdkout where floatfield >= 5"))
+    checkAnswer(spark.sql("select * from par_table where floatfield IN ('5.5','6.6')"),
+      spark.sql("select * from sdkout where floatfield IN ('5.5','6.6')"))
+    checkAnswer(spark.sql("select * from par_table where floatfield NOT IN ('5.5','6.6')"),
+      spark.sql("select * from sdkout where floatfield NOT IN ('5.5','6.6')"))
+    checkAnswer(spark.sql("select * from par_table where floatfield = cast('6.6' as float)"),
+      spark.sql("select * from sdkout where floatfield = cast('6.6' as float)"))
+  }
+
+  test("test select * on table with byte data type") {
+    spark.sql("drop table if exists sdkout")
+    FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
+    buildTestDataOtherDataType(11, Array("age", "address"), warehouse1 + "/sdk1")
+    spark.sql(s"create table sdkout(male boolean, age int, height double, name string, address " +
+              s"string," +
+              s"salary long, floatField float, bytefield byte) using carbon options " +
+              s"(path='$warehouse1/sdk1')")
+    checkAnswer(spark.sql("select * from par_table"), spark.sql("select * from sdkout"))
+    checkAnswer(spark.sql("select byteField from par_table"), spark.sql("select bytefield from sdkout"))
+  }
+
+  test("test various filters on byte data") {
+    spark.sql("drop table if exists sdkout")
+    FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
+    buildTestDataOtherDataType(11, Array("age", "address"), warehouse1 + "/sdk1")
+    spark.sql(s"create table sdkout(male boolean, age int, height double, name string, address " +
+              s"string," +
+              s"salary long, floatField float, bytefield byte) using carbon options " +
+              s"(path='$warehouse1/sdk1')")
+    checkAnswer(spark.sql("select * from par_table where bytefield < 10"),
+      spark.sql("select * from sdkout where bytefield < 10"))
+    checkAnswer(spark.sql("select * from par_table where bytefield > 5"),
+      spark.sql("select * from sdkout where bytefield > 5"))
+    checkAnswer(spark.sql("select * from par_table where bytefield >= 4"),
+      spark.sql("select * from sdkout where bytefield >= 4"))
+    checkAnswer(spark.sql("select * from par_table where bytefield != 5"),
+      spark.sql("select * from sdkout where bytefield != 5"))
+    checkAnswer(spark.sql("select * from par_table where bytefield <= 5"),
+      spark.sql("select * from sdkout where bytefield <= 5"))
+    checkAnswer(spark.sql("select * from par_table where bytefield >= 5"),
+      spark.sql("select * from sdkout where bytefield >= 5"))
+    checkAnswer(spark.sql("select * from par_table where bytefield IN ('5','6')"),
+      spark.sql("select * from sdkout where bytefield IN ('5','6')"))
+    checkAnswer(spark.sql("select * from par_table where bytefield NOT IN ('5','6')"),
+      spark.sql("select * from sdkout where bytefield NOT IN ('5','6')"))
+  }
+
+  test("test struct of float type and byte type") {
+    import scala.collection.JavaConverters._
+    val path = new File(warehouse1+"/sdk1").getAbsolutePath
+    FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
+    spark.sql("drop table if exists complextable")
+    val fields = List(new StructField
+    ("byteField", DataTypes.BYTE), new StructField("floatField", DataTypes.FLOAT))
+    val structType = Array(new Field("stringfield", DataTypes.STRING), new Field
+    ("structField", "struct", fields.asJava))
+
+
+    try {
+      val builder = CarbonWriter.builder()
+      val writer =
+        builder.outputPath(path)
+          .isTransactionalTable(false)
+          .uniqueIdentifier(System.nanoTime()).withBlockSize(2)
+          .buildWriterForCSVInput(new Schema(structType), spark.sparkContext
+            .hadoopConfiguration)
+
+      var i = 0
+      while (i < 11) {
+        val array = Array[String](s"name$i", s"$i" + "$" +s"$i.${i}12")
+        writer.write(array)
+        i += 1
+      }
+      writer.close()
+      spark.sql("create table complextable (stringfield string, structfield struct<bytefield: " +
+                "byte, floatfield: float>) " +
+                s"using carbon location '$path'")
+    } catch {
+      case ex: Exception => throw new RuntimeException(ex)
+      case _ => None
+    }
+    checkAnswer(spark.sql("select * from complextable limit 1"), Seq(Row("name0", Row(0
+      .asInstanceOf[Byte], 0.012.asInstanceOf[Float]))))
+    checkAnswer(spark.sql("select * from complextable where structfield.bytefield > 9"), Seq(Row
+    ("name10", Row(10.asInstanceOf[Byte], 10.1012.asInstanceOf[Float]))))
+    checkAnswer(spark.sql("select * from complextable where structfield.bytefield > 9"), Seq(Row
+    ("name10", Row(10.asInstanceOf[Byte], 10.1012.asInstanceOf[Float]))))
+    checkAnswer(spark.sql("select * from complextable where structfield.floatfield > 9.912"), Seq
+    (Row
+    ("name10", Row(10.asInstanceOf[Byte], 10.1012.asInstanceOf[Float]))))
+    checkAnswer(spark.sql("select * from complextable where structfield.floatfield > 9.912 and " +
+                          "structfield.bytefield < 11"), Seq(Row("name10", Row(10.asInstanceOf[Byte], 10.1012.asInstanceOf[Float]))))
+  }
+
+  test("test array of float type and byte type") {
+    import scala.collection.JavaConverters._
+    val path = new File(warehouse1+"/sdk1").getAbsolutePath
+    FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
+    spark.sql("drop table if exists complextable")
+    val structType =
+      Array(new Field("stringfield", DataTypes.STRING),
+        new Field("bytearray", "array", List(new StructField("byteField", DataTypes.BYTE))
+          .asJava),
+        new Field("floatarray", "array", List(new StructField("floatfield", DataTypes.FLOAT))
+          .asJava))
+
+    try {
+      val builder = CarbonWriter.builder()
+      val writer =
+        builder.outputPath(path)
+          .isTransactionalTable(false)
+          .uniqueIdentifier(System.nanoTime()).withBlockSize(2)
+          .buildWriterForCSVInput(new Schema(structType), spark.sparkContext
+            .hadoopConfiguration)
+
+      var i = 0
+      while (i < 10) {
+        val array = Array[String](s"name$i",s"$i" + "$" + s"${i*2}", s"${i/2}" + "$" + s"${i/3}")
+        writer.write(array)
+        i += 1
+      }
+      writer.close()
+      spark.sql(s"create table complextable (stringfield string, bytearray " +
+                s"array<byte>, floatarray array<float>) using carbon " +
+                s"location " +
+                s"'$path'")
+    } catch {
+      case ex: Exception => throw new RuntimeException(ex)
+      case _ => None
+    }
+    checkAnswer(spark.sql("select * from complextable limit 1"), Seq(Row("name0", mutable
+      .WrappedArray.make(Array[Byte](0, 0)), mutable.WrappedArray.make(Array[Float](0.0f, 0.0f)))))
+    checkAnswer(spark.sql("select * from complextable where bytearray[0] = 1"), Seq(Row("name1",
+      mutable.WrappedArray.make(Array[Byte](1, 2)), mutable.WrappedArray.make(Array[Float](0.0f,
+        0.0f)))))
+    checkAnswer(spark.sql("select * from complextable where bytearray[0] > 8"), Seq(Row("name9",
+      mutable.WrappedArray.make(Array[Byte](9, 18)), mutable.WrappedArray.make(Array[Float](4.0f,
+        3.0f)))))
+    checkAnswer(spark.sql("select * from complextable where floatarray[0] IN (4.0) and stringfield = 'name8'"), Seq(Row
+    ("name8",
+      mutable.WrappedArray.make(Array[Byte](8, 16)), mutable.WrappedArray.make(Array[Float](4.0f,
+      2.0f)))))
+  }
+
+  private def createParquetTable {
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(s"$warehouse1/../warehouse2"))
+    spark.sql(s"create table par_table(male boolean, age int, height double, name string, address " +
+              s"string," +
+              s"salary long, floatField float, bytefield byte) using parquet location " +
+              s"'$warehouse1/../warehouse2'")
+    (0 to 10).foreach {
+      i => spark.sql(s"insert into par_table select 'true','$i', ${i.toDouble / 2}, 'name$i', " +
+                     s"'address$i', ${i*100}, $i.$i, '$i'")
+    }
+  }
+
   // prepare sdk writer output with other schema
   def buildTestDataOtherDataType(rows: Int, sortColumns: Array[String], writerPath: String, colCount: Int = -1): Any = {
-    var fields: Array[Field] = new Array[Field](6)
+    var fields: Array[Field] = new Array[Field](8)
     // same column name, but name as boolean type
     fields(0) = new Field("male", DataTypes.BOOLEAN)
     fields(1) = new Field("age", DataTypes.INT)
@@ -887,6 +1087,8 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     fields(3) = new Field("name", DataTypes.STRING)
     fields(4) = new Field("address", DataTypes.STRING)
     fields(5) = new Field("salary", DataTypes.LONG)
+    fields(6) = new Field("floatField", DataTypes.FLOAT)
+    fields(7) = new Field("bytefield", DataTypes.BYTE)
 
     if (colCount > 0) {
       val fieldsToWrite: Array[Field] = new Array[Field](colCount)
@@ -913,7 +1115,8 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
           String.valueOf(i.toDouble / 2),
           "name" + i,
           "address" + i,
-          (i * 100).toString)
+          (i * 100).toString,
+          s"$i.$i", s"$i")
         if (colCount > 0) {
           writer.write(array.slice(0, colCount))
         } else {
@@ -927,8 +1130,10 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       case _ => None
     }
   }
+
   override protected def beforeAll(): Unit = {
     drop
+    createParquetTable
   }
 
   override def afterAll(): Unit = {
@@ -939,5 +1144,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     spark.sql("drop table if exists testformat")
     spark.sql("drop table if exists carbon_table")
     spark.sql("drop table if exists testparquet")
+    spark.sql("drop table if exists par_table")
+    spark.sql("drop table if exists sdkout")
   }
 }

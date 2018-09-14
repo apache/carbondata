@@ -113,6 +113,10 @@ public final class DataTypeUtil {
       return Integer.parseInt(msrValue);
     } else if (dataType == DataTypes.LONG) {
       return Long.valueOf(msrValue);
+    } else if (dataType == DataTypes.FLOAT) {
+      return Float.parseFloat(msrValue);
+    } else if (dataType == DataTypes.BYTE) {
+      return Byte.parseByte(msrValue);
     } else {
       Double parsedValue = Double.valueOf(msrValue);
       if (Double.isInfinite(parsedValue) || Double.isNaN(parsedValue)) {
@@ -135,6 +139,10 @@ public final class DataTypeUtil {
       return (int) bb.getLong();
     } else if (dataType == DataTypes.LONG) {
       return bb.getLong();
+    } else if (dataType == DataTypes.FLOAT) {
+      return bb.getFloat();
+    } else if (dataType == DataTypes.BYTE) {
+      return bb.get();
     } else if (DataTypes.isDecimal(dataType)) {
       return byteToBigDecimal(data);
     } else {
@@ -152,6 +160,10 @@ public final class DataTypeUtil {
       return (int) measurePage.getLong(index);
     } else if (dataType == DataTypes.LONG) {
       return measurePage.getLong(index);
+    } else if (dataType == DataTypes.FLOAT) {
+      return measurePage.getFloat(index);
+    } else if (dataType == DataTypes.BYTE) {
+      return measurePage.getByte(index);
     } else if (DataTypes.isDecimal(dataType)) {
       BigDecimal bigDecimalMsrValue = measurePage.getDecimal(index);
       if (null != bigDecimalMsrValue && carbonMeasure.getScale() > bigDecimalMsrValue.scale()) {
@@ -331,6 +343,10 @@ public final class DataTypeUtil {
       return ByteUtil.toXorBytes(Long.parseLong(dimensionValue));
     } else if (actualDataType == DataTypes.DOUBLE) {
       return ByteUtil.toXorBytes(Double.parseDouble(dimensionValue));
+    } else if (actualDataType == DataTypes.FLOAT) {
+      return ByteUtil.toXorBytes(Float.parseFloat(dimensionValue));
+    } else if (actualDataType == DataTypes.BYTE) {
+      return new byte[] { Byte.parseByte(dimensionValue) };
     } else if (DataTypes.isDecimal(actualDataType)) {
       return bigDecimalToByte(new BigDecimal(dimensionValue));
     } else if (actualDataType == DataTypes.TIMESTAMP) {
@@ -491,6 +507,8 @@ public final class DataTypeUtil {
     try {
       if (actualDataType == DataTypes.BOOLEAN) {
         return ByteUtil.toBoolean(dataInBytes);
+      } else if (actualDataType == DataTypes.BYTE) {
+        return dataInBytes[0];
       } else if (actualDataType == DataTypes.SHORT) {
         // for non string type no dictionary column empty byte array is empty value
         // so no need to parse
@@ -522,6 +540,11 @@ public final class DataTypeUtil {
           return null;
         }
         return ByteUtil.toXorDouble(dataInBytes, 0, dataInBytes.length);
+      } else if (actualDataType == DataTypes.FLOAT) {
+        if (isEmptyByteArray(dataInBytes)) {
+          return null;
+        }
+        return ByteUtil.toXorFloat(dataInBytes, 0, dataInBytes.length);
       } else if (DataTypes.isDecimal(actualDataType)) {
         if (isEmptyByteArray(dataInBytes)) {
           return null;

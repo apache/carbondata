@@ -320,6 +320,12 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
+  @Override
+  public void putFloat(int rowId, float value) {
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
+  }
+
   abstract void putBytesAtRow(int rowId, byte[] bytes);
 
   @Override

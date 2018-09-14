@@ -85,7 +85,7 @@ public class DataType implements Serializable {
         dataType == DataTypes.INT ||
         dataType == DataTypes.LONG) {
       return BIG_INT_MEASURE_CHAR;
-    } else if (dataType == DataTypes.DOUBLE) {
+    } else if (dataType == DataTypes.DOUBLE || dataType == DataTypes.FLOAT) {
       return DOUBLE_MEASURE_CHAR;
     } else if (DataTypes.isDecimal(dataType)) {
       return BIG_DECIMAL_MEASURE_CHAR;

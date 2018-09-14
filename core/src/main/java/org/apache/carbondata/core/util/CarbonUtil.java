@@ -2211,6 +2211,10 @@ public final class CarbonUtil {
         return DataTypes.createDefaultMapType();
       case VARCHAR:
         return DataTypes.VARCHAR;
+      case FLOAT:
+        return DataTypes.FLOAT;
+      case BYTE:
+        return DataTypes.BYTE;
       default:
         return DataTypes.STRING;
     }
@@ -2252,7 +2256,7 @@ public final class CarbonUtil {
       LOGGER.error("CarbonData file is not present in the table location");
       throw new IOException("CarbonData file is not present in the table location");
     }
-    CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(fistFilePath);
+    CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(fistFilePath, configuration);
     List<ColumnSchema> columnSchemaList = carbonHeaderReader.readSchema();
     // only columnSchema is the valid entry, reset all dummy entries.
     TableSchema tableSchema = getDummyTableSchema(tableName,columnSchemaList);
@@ -2390,6 +2394,11 @@ public final class CarbonUtil {
     } else if (dataType == DataTypes.DOUBLE) {
       b = ByteBuffer.allocate(8);
       b.putDouble((double) value);
+      b.flip();
+      return b.array();
+    } else if (dataType == DataTypes.FLOAT) {
+      b = ByteBuffer.allocate(8);
+      b.putFloat((float) value);
       b.flip();
       return b.array();
     } else if (DataTypes.isDecimal(dataType)) {

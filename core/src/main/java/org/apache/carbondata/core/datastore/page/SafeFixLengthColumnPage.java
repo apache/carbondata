@@ -101,6 +101,16 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   }
 
   /**
+   * Set float value at rowId
+   */
+  @Override
+  public void putFloat(int rowId, float value) {
+    ensureArraySize(rowId, DataTypes.FLOAT);
+    floatData[rowId] = value;
+    arrayElementCount++;
+  }
+
+  /**
    * Set string value at rowId
    */
   @Override

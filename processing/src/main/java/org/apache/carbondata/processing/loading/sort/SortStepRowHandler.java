@@ -388,6 +388,10 @@ public class SortStepRowHandler implements Serializable {
       tmpContent = rowBuffer.getLong();
     } else if (DataTypes.DOUBLE == tmpDataType) {
       tmpContent = rowBuffer.getDouble();
+    } else if (DataTypes.FLOAT == tmpDataType) {
+      tmpContent = rowBuffer.getFloat();
+    } else if (DataTypes.BYTE == tmpDataType) {
+      tmpContent = rowBuffer.get();
     } else if (DataTypes.isDecimal(tmpDataType)) {
       short len = rowBuffer.getShort();
       byte[] decimalBytes = new byte[len];
@@ -829,6 +833,10 @@ public class SortStepRowHandler implements Serializable {
       reUsableByteArrayDataOutputStream.writeLong((Long) tmpValue);
     } else if (DataTypes.DOUBLE == tmpDataType) {
       reUsableByteArrayDataOutputStream.writeDouble((Double) tmpValue);
+    }  else if (DataTypes.FLOAT == tmpDataType) {
+      reUsableByteArrayDataOutputStream.writeFloat((Float) tmpValue);
+    } else if (DataTypes.BYTE == tmpDataType) {
+      reUsableByteArrayDataOutputStream.write((byte) tmpValue);
     } else if (DataTypes.isDecimal(tmpDataType)) {
       byte[] decimalBytes = DataTypeUtil.bigDecimalToByte((BigDecimal) tmpValue);
       reUsableByteArrayDataOutputStream.writeShort((short) decimalBytes.length);

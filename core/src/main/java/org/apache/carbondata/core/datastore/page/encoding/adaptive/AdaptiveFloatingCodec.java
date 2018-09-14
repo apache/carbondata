@@ -44,12 +44,14 @@ import org.apache.carbondata.format.Encoding;
  */
 public class AdaptiveFloatingCodec extends AdaptiveCodec {
 
-  private Double factor;
+  private double factor;
+  private float floatFactor;
 
   public AdaptiveFloatingCodec(DataType srcDataType, DataType targetDataType,
       SimpleStatsResult stats, boolean isInvertedIndex) {
     super(srcDataType, targetDataType, stats, isInvertedIndex);
     this.factor = Math.pow(10, stats.getDecimalCount());
+    this.floatFactor = (float) factor;
   }
 
   @Override
@@ -147,15 +149,15 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
     @Override
     public void encode(int rowId, float value) {
       if (targetDataType == DataTypes.BYTE) {
-        encodedPage.putByte(rowId, (byte) (value * factor));
+        encodedPage.putByte(rowId, (byte) (value * floatFactor));
       } else if (targetDataType == DataTypes.SHORT) {
-        encodedPage.putShort(rowId, (short) (value * factor));
+        encodedPage.putShort(rowId, (short) (value * floatFactor));
       } else if (targetDataType == DataTypes.SHORT_INT) {
-        encodedPage.putShortInt(rowId, (int) (value * factor));
+        encodedPage.putShortInt(rowId, (int) (value * floatFactor));
       } else if (targetDataType == DataTypes.INT) {
-        encodedPage.putInt(rowId, (int) (value * factor));
+        encodedPage.putInt(rowId, (int) (value * floatFactor));
       } else if (targetDataType == DataTypes.LONG) {
-        encodedPage.putLong(rowId, (long) (value * factor));
+        encodedPage.putLong(rowId, (long) (value * floatFactor));
       } else {
         throw new RuntimeException("internal error: " + debugInfo());
       }

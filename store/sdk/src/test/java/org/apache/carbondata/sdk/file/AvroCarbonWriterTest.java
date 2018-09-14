@@ -21,13 +21,19 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.table.DiskBasedDMSchemaStorageProvider;
+import org.apache.carbondata.core.metadata.schema.table.TableInfo;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -486,6 +492,42 @@ public class AvroCarbonWriterTest {
       assert(e.getMessage().contains("Data load failed due to bad record"));
     }
     FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testWriteBasicForFloat() throws IOException {
+    FileUtils.deleteDirectory(new File(path));
+
+    // Avro schema
+    String avroSchema =
+        "{" + "   \"type\" : \"record\"," + "   \"name\" : \"Acme\"," + "   \"fields\" : ["
+            + "{ \"name\" : \"name\", \"type\" : \"string\" },"
+            + "{ \"name\" : \"age\", \"type\" : \"int\" }," + "{ \"name\" : \"salary\", \"type\" "
+            + ": \"float\" }]" + "}";
+
+    String json = "{\"name\":\"bob\", \"age\":10, \"salary\":10.100}";
+
+    // conversion to GenericData.Record
+    GenericData.Record record = TestUtil.jsonToAvro(json, avroSchema);
+    try {
+      CarbonWriter writer = CarbonWriter.builder().outputPath(path).isTransactionalTable(true)
+          .buildWriterForAvroInput(new Schema.Parser().parse(avroSchema), TestUtil.configuration);
+
+      for (int i = 0; i < 100; i++) {
+        writer.write(record);
+      }
+      writer.close();
+      TableInfo tableInfo = SchemaReader.inferSchema(AbsoluteTableIdentifier.from(path, "",
+          ""), true, TestUtil.configuration);
+      List<String> dataTypes = new ArrayList<>();
+      for(ColumnSchema columnSchema: tableInfo.getFactTable().getListOfColumns()) {
+        dataTypes.add(columnSchema.getDataType().toString());
+      }
+      assert(dataTypes.contains("FLOAT"));
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
   }
 
 }

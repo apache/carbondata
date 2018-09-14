@@ -132,6 +132,10 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       out.writeDouble((Double) getMaxValue());
       out.writeDouble((Double) getMinValue());
       out.writeDouble(0d); // unique value is obsoleted, maintain for compatibility
+    } else if (dataType == DataTypes.FLOAT) {
+      out.writeFloat((Float) getMaxValue());
+      out.writeFloat((Float) getMinValue());
+      out.writeFloat(0f); // unique value is obsoleted, maintain for compatibility
     } else if (DataTypes.isDecimal(dataType)) {
       byte[] maxAsBytes = getMaxAsBytes(columnSpec.getSchemaDataType());
       byte[] minAsBytes = getMinAsBytes(columnSpec.getSchemaDataType());
@@ -181,6 +185,10 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       this.setMaxValue(in.readDouble());
       this.setMinValue(in.readDouble());
       in.readDouble(); // for non exist value which is obsoleted, it is backward compatibility;
+    } else if (dataType == DataTypes.FLOAT) {
+      this.setMaxValue(in.readFloat());
+      this.setMinValue(in.readFloat());
+      in.readFloat(); // for non exist value which is obsoleted, it is backward compatibility;
     } else if (DataTypes.isDecimal(dataType)) {
       byte[] max = new byte[in.readShort()];
       in.readFully(max);

@@ -37,9 +37,9 @@ public final class ByteUtil {
 
   public static final int SIZEOF_INT = 4;
 
-  public static final int SIZEOF_LONG = 8;
-
   public static final int SIZEOF_FLOAT = 4;
+
+  public static final int SIZEOF_LONG = 8;
 
   public static final int SIZEOF_DOUBLE = 8;
 
@@ -707,6 +707,10 @@ public final class ByteUtil {
     return toXorBytes(Double.doubleToLongBits(val));
   }
 
+  public static byte[] toXorBytes(float val) {
+    return toXorBytes(Float.floatToIntBits(val));
+  }
+
   /**
    * The following methods convert byte array back to the real value.
    */
@@ -724,5 +728,9 @@ public final class ByteUtil {
 
   public static double toXorDouble(byte[] value, int offset, int length) {
     return Double.longBitsToDouble(toXorLong(value, offset, length));
+  }
+
+  public static float toXorFloat(byte[] value, int offset, int length) {
+    return Float.intBitsToFloat(toXorInt(value, offset, length));
   }
 }

@@ -144,6 +144,12 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
     }
   }
 
+  @Override public void putByte(int rowId, byte value) {
+    if (!filteredRows[rowId]) {
+      columnVector.putByte(counter++, value);
+    }
+  }
+
   @Override public void putBytes(int rowId, byte[] value) {
     if (!filteredRows[rowId]) {
       columnVector.putBytes(counter++, value);

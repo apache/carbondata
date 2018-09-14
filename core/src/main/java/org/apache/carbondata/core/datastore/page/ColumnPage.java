@@ -435,6 +435,9 @@ public abstract class ColumnPage {
         || dataType == DataTypes.VARCHAR) {
       putBytes(rowId, (byte[]) value);
       statsCollector.update((byte[]) value);
+    } else if (dataType == DataTypes.FLOAT) {
+      putFloat(rowId, (float) value);
+      statsCollector.update((float) value);
     } else {
       throw new RuntimeException("unsupported data type: " + dataType);
     }
@@ -501,6 +504,11 @@ public abstract class ColumnPage {
   public abstract void putDouble(int rowId, double value);
 
   /**
+   * Set float value at rowId
+   */
+  public abstract void putFloat(int rowId, float value);
+
+  /**
    * Set byte array value at rowId
    */
   public abstract void putBytes(int rowId, byte[] bytes);
@@ -545,6 +553,8 @@ public abstract class ColumnPage {
       putLong(rowId, 0L);
     } else if (dataType == DataTypes.DOUBLE) {
       putDouble(rowId, 0.0);
+    } else if (dataType == DataTypes.FLOAT) {
+      putFloat(rowId, 0.0f);
     } else if (DataTypes.isDecimal(dataType)) {
       putDecimal(rowId, BigDecimal.ZERO);
     } else {

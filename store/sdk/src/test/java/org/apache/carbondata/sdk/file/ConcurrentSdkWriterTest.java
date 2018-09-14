@@ -71,7 +71,7 @@ public class ConcurrentSdkWriterTest {
     CarbonReader reader;
     try {
       reader = CarbonReader
-          .builder(path, "_temp")
+          .builder(path, "_temp1121")
           .projection(new String[]{"name", "age"})
           .build(new Configuration(false));
       int i = 0;

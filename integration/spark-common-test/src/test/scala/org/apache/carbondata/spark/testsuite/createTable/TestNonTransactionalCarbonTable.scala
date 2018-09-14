@@ -1460,9 +1460,9 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'$writerPath' """.stripMargin)
 
     checkAnswer(sql("select * from sdkOutputTable"), Seq(
-      Row("bob", 10.24, Row("abc","bang")),
-      Row("bob", 10.24, Row("abc","bang")),
-      Row("bob", 10.24, Row("abc","bang"))))
+      Row("bob", 10.24f, Row("abc","bang")),
+      Row("bob", 10.24f, Row("abc","bang")),
+      Row("bob", 10.24f, Row("abc","bang"))))
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
