@@ -391,9 +391,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
         // When negative value of start is returned from getFirstIndexUsingBinarySearch the Start
         // will be pointing to the next consecutive position. So compare it again and point to the
         // previous value returned from getFirstIndexUsingBinarySearch.
-        if (ByteUtil.compare(filterValues[i],
-            dimensionColumnPage.getChunkData(dimensionColumnPage.getInvertedIndex(start)))
-            < 0) {
+        if (ByteUtil.compare(filterValues[i], dimensionColumnPage.getChunkData(start)) < 0) {
           start = start - 1;
         }
       }
