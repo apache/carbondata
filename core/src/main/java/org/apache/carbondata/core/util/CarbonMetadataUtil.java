@@ -19,12 +19,16 @@ package org.apache.carbondata.core.util;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.blocklet.BlockletEncodedColumnPage;
 import org.apache.carbondata.core.datastore.blocklet.EncodedBlocklet;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
+import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.datastore.page.statistics.TablePageStatistics;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -51,6 +55,9 @@ import org.apache.carbondata.format.SegmentInfo;
  * Util class to convert to thrift metdata classes
  */
 public class CarbonMetadataUtil {
+
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(CarbonMetadataUtil.class.getName());
 
   private CarbonMetadataUtil() {
   }
@@ -105,9 +112,16 @@ public class CarbonMetadataUtil {
     if (minMaxIndex == null) {
       return null;
     }
-
+    List<Boolean> isMinMaxSet = null;
+    if (minMaxIndex.isSetMin_max_presence()) {
+      isMinMaxSet = minMaxIndex.getMin_max_presence();
+    } else {
+      Boolean[] minMaxFlag = new Boolean[minMaxIndex.getMax_values().size()];
+      Arrays.fill(minMaxFlag, true);
+      isMinMaxSet = Arrays.asList(minMaxFlag);
+    }
     return new org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex(
-            minMaxIndex.getMin_values(), minMaxIndex.getMax_values());
+        minMaxIndex.getMin_values(), minMaxIndex.getMax_values(), isMinMaxSet);
   }
 
   /**
@@ -124,6 +138,7 @@ public class CarbonMetadataUtil {
     for (int i = 0; i < minMaxIndex.getMaxValues().length; i++) {
       blockletMinMaxIndex.addToMax_values(ByteBuffer.wrap(minMaxIndex.getMaxValues()[i]));
       blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(minMaxIndex.getMinValues()[i]));
+      blockletMinMaxIndex.addToMin_max_presence(minMaxIndex.getIsMinMaxSet()[i]);
     }
 
     return blockletMinMaxIndex;
@@ -177,20 +192,28 @@ public class CarbonMetadataUtil {
   public static BlockletIndex getBlockletIndex(EncodedBlocklet encodedBlocklet,
       List<CarbonMeasure> carbonMeasureList) {
     BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
-
+    // merge writeMinMax flag for all the dimensions
+    List<Boolean> writeMinMaxFlag =
+        mergeWriteMinMaxFlagForAllPages(blockletMinMaxIndex, encodedBlocklet);
     // Calculating min/max for every each column.
     TablePageStatistics stats =
         new TablePageStatistics(getEncodedColumnPages(encodedBlocklet, true, 0),
             getEncodedColumnPages(encodedBlocklet, false, 0));
     byte[][] minCol = stats.getDimensionMinValue().clone();
     byte[][] maxCol = stats.getDimensionMaxValue().clone();
-
     for (int pageIndex = 0; pageIndex < encodedBlocklet.getNumberOfPages(); pageIndex++) {
       stats = new TablePageStatistics(getEncodedColumnPages(encodedBlocklet, true, pageIndex),
           getEncodedColumnPages(encodedBlocklet, false, pageIndex));
       byte[][] columnMaxData = stats.getDimensionMaxValue();
       byte[][] columnMinData = stats.getDimensionMinValue();
       for (int i = 0; i < maxCol.length; i++) {
+        // if writeMonMaxFlag is set to false for the dimension at index i, then update the page
+        // and blocklet min/max with empty byte array
+        if (!writeMinMaxFlag.get(i)) {
+          maxCol[i] = new byte[0];
+          minCol[i] = new byte[0];
+          continue;
+        }
         if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(columnMaxData[i], maxCol[i]) > 0) {
           maxCol[i] = columnMaxData[i];
         }
@@ -250,6 +273,41 @@ public class CarbonMetadataUtil {
   }
 
   /**
+   * This method will combine the writeMinMax flag from all the pages. If any page for a given
+   * dimension has writeMinMax flag set to false then min max for that dimension will nto be
+   * written in any of the page and metadata
+   *
+   * @param blockletMinMaxIndex
+   * @param encodedBlocklet
+   */
+  private static List<Boolean> mergeWriteMinMaxFlagForAllPages(
+      BlockletMinMaxIndex blockletMinMaxIndex, EncodedBlocklet encodedBlocklet) {
+    Boolean[] mergedWriteMinMaxFlag =
+        new Boolean[encodedBlocklet.getNumberOfDimension() + encodedBlocklet.getNumberOfMeasure()];
+    // set writeMinMax flag to true for all the columns by default and then update if stats object
+    // has the this flag set to false
+    Arrays.fill(mergedWriteMinMaxFlag, true);
+    for (int i = 0; i < encodedBlocklet.getNumberOfDimension(); i++) {
+      for (int pageIndex = 0; pageIndex < encodedBlocklet.getNumberOfPages(); pageIndex++) {
+        EncodedColumnPage encodedColumnPage =
+            encodedBlocklet.getEncodedDimensionColumnPages().get(i).getEncodedColumnPageList()
+                .get(pageIndex);
+        SimpleStatsResult stats = encodedColumnPage.getStats();
+        if (!stats.writeMinMax()) {
+          mergedWriteMinMaxFlag[i] = stats.writeMinMax();
+          String columnName = encodedColumnPage.getActualPage().getColumnSpec().getFieldName();
+          LOGGER.info("Min Max writing of blocklet ignored for column with name " + columnName);
+          break;
+        }
+      }
+    }
+    List<Boolean> min_max_presence = Arrays.asList(mergedWriteMinMaxFlag);
+    blockletMinMaxIndex.setMin_max_presence(min_max_presence);
+    return min_max_presence;
+  }
+
+  /**
+   * Right now it is set to default values. We may use this in future
    * set the compressor.
    * before 1.5.0, we set a enum 'compression_codec';
    * after 1.5.0, we use string 'compressor_name' instead

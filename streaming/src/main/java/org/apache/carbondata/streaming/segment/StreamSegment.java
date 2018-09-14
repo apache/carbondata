@@ -20,6 +20,7 @@ package org.apache.carbondata.streaming.segment;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -257,6 +258,10 @@ public class StreamSegment {
           CarbonUtil.getValueAsBytes(mrsStats[index].getDataType(), mrsStats[index].getMin());
     }
     minMaxIndex.setMinValues(minIndexes);
+    // TODO: handle the min max writing for string type based on character limit for streaming
+    boolean[] isMinMaxSet = new boolean[dimStats.length + mrsStats.length];
+    Arrays.fill(isMinMaxSet, true);
+    minMaxIndex.setIsMinMaxSet(isMinMaxSet);
     return minMaxIndex;
   }
 

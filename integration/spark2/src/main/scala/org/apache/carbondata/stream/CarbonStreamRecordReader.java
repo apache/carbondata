@@ -421,8 +421,9 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
       BlockletMinMaxIndex minMaxIndex = CarbonMetadataUtil.convertExternalMinMaxIndex(
           header.getBlocklet_index().getMin_max_index());
       if (minMaxIndex != null) {
-        BitSet bitSet =
-            filter.isScanRequired(minMaxIndex.getMaxValues(), minMaxIndex.getMinValues());
+        BitSet bitSet = filter
+            .isScanRequired(minMaxIndex.getMaxValues(), minMaxIndex.getMinValues(),
+                minMaxIndex.getIsMinMaxSet());
         if (bitSet.isEmpty()) {
           return false;
         } else {

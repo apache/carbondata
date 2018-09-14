@@ -111,7 +111,8 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       for (int i = 0; i < dimensionRawColumnChunk.getPagesCount(); i++) {
         if (dimensionRawColumnChunk.getMaxValues() != null) {
           if (isScanRequired(dimensionRawColumnChunk.getMaxValues()[i],
-              dimensionRawColumnChunk.getMinValues()[i], dimColumnExecuterInfo.getFilterKeys())) {
+              dimensionRawColumnChunk.getMinValues()[i], dimColumnExecuterInfo.getFilterKeys(),
+              dimensionRawColumnChunk.getMinMaxFlagArray()[i])) {
             DimensionColumnPage dimensionColumnPage = dimensionRawColumnChunk.decodeColumnPage(i);
             if (!isDecoded) {
               filterValues =  FilterUtil
@@ -449,7 +450,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   }
 
   @Override
-  public BitSet isScanRequired(byte[][] blkMaxVal, byte[][] blkMinVal) {
+  public BitSet isScanRequired(byte[][] blkMaxVal, byte[][] blkMinVal, boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     byte[][] filterValues;
     int chunkIndex = 0;
@@ -458,7 +459,8 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     if (isDimensionPresentInCurrentBlock) {
       filterValues = dimColumnExecuterInfo.getFilterKeys();
       chunkIndex = dimColumnEvaluatorInfo.getColumnIndexInMinMaxByteArray();
-      isScanRequired = isScanRequired(blkMaxVal[chunkIndex], blkMinVal[chunkIndex], filterValues);
+      isScanRequired = isScanRequired(blkMaxVal[chunkIndex], blkMinVal[chunkIndex], filterValues,
+          isMinMaxSet[chunkIndex]);
     } else if (isMeasurePresentInCurrentBlock) {
       chunkIndex = msrColumnEvaluatorInfo.getColumnIndexInMinMaxByteArray();
       isScanRequired = isScanRequired(blkMaxVal[chunkIndex], blkMinVal[chunkIndex],
@@ -472,7 +474,12 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     return bitSet;
   }
 
-  private boolean isScanRequired(byte[] blkMaxVal, byte[] blkMinVal, byte[][] filterValues) {
+  private boolean isScanRequired(byte[] blkMaxVal, byte[] blkMinVal, byte[][] filterValues,
+      boolean isMinMaxSet) {
+    if (!isMinMaxSet) {
+      // scan complete data if min max is not written for a given column
+      return true;
+    }
     boolean isScanRequired = false;
     for (int k = 0; k < filterValues.length; k++) {
       // filter value should be in range of max and min value i.e

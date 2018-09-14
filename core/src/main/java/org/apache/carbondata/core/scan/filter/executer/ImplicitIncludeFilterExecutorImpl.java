@@ -59,8 +59,8 @@ public class ImplicitIncludeFilterExecutorImpl
     return false;
   }
 
-  @Override
-  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
+      boolean[] isMinMaxSet) {
     return null;
   }
 
@@ -71,7 +71,7 @@ public class ImplicitIncludeFilterExecutorImpl
 
   @Override
   public BitSet isFilterValuesPresentInBlockOrBlocklet(byte[][] maxValue, byte[][] minValue,
-      String uniqueBlockPath) {
+      String uniqueBlockPath, boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     boolean isScanRequired = false;
     String shortBlockId = CarbonTablePath.getShortBlockId(uniqueBlockPath);
@@ -104,7 +104,8 @@ public class ImplicitIncludeFilterExecutorImpl
   }
 
   @Override
-  public Boolean isFilterValuesPresentInAbstractIndex(byte[][] maxValue, byte[][] minValue) {
+  public Boolean isFilterValuesPresentInAbstractIndex(byte[][] maxValue, byte[][] minValue,
+      boolean[] isMinMaxSet) {
     return true;
   }
 }

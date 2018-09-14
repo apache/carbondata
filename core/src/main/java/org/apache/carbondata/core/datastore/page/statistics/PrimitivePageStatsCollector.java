@@ -349,4 +349,8 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     return dataType;
   }
 
+  @Override public boolean writeMinMax() {
+    return true;
+  }
+
 }

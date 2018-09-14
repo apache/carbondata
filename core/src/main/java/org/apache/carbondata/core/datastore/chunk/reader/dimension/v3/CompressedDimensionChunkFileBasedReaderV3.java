@@ -18,6 +18,7 @@ package org.apache.carbondata.core.datastore.chunk.reader.dimension.v3;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -120,6 +121,8 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     int numberOfPages = dataChunk.getPage_length().size();
     byte[][] maxValueOfEachPage = new byte[numberOfPages][];
     byte[][] minValueOfEachPage = new byte[numberOfPages][];
+    boolean[] minMaxFlag = new boolean[minValueOfEachPage.length];
+    Arrays.fill(minMaxFlag, true);
     int[] eachPageLength = new int[numberOfPages];
     for (int i = 0; i < minValueOfEachPage.length; i++) {
       maxValueOfEachPage[i] =
@@ -127,12 +130,19 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       minValueOfEachPage[i] =
           dataChunk.getData_chunk_list().get(i).getMin_max().getMin_values().get(0).array();
       eachPageLength[i] = dataChunk.getData_chunk_list().get(i).getNumberOfRowsInpage();
+      boolean isMinMaxFlagSet =
+          dataChunk.getData_chunk_list().get(i).getMin_max().isSetMin_max_presence();
+      if (isMinMaxFlagSet) {
+        minMaxFlag[i] =
+            dataChunk.getData_chunk_list().get(i).getMin_max().getMin_max_presence().get(0);
+      }
     }
     rawColumnChunk.setDataChunkV3(dataChunk);
     rawColumnChunk.setFileReader(fileReader);
     rawColumnChunk.setPagesCount(dataChunk.getPage_length().size());
     rawColumnChunk.setMaxValues(maxValueOfEachPage);
     rawColumnChunk.setMinValues(minValueOfEachPage);
+    rawColumnChunk.setMinMaxFlagArray(minMaxFlag);
     rawColumnChunk.setRowCount(eachPageLength);
     rawColumnChunk.setOffsets(ArrayUtils
         .toPrimitive(dataChunk.page_offset.toArray(new Integer[dataChunk.page_offset.size()])));

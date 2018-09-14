@@ -112,7 +112,8 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
     }
   }
 
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
+      boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     boolean isScanRequired = false;
     byte[] maxValue = null;
@@ -123,7 +124,8 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
             isScanRequired(maxValue, msrFilterRangeValues, msrColEvalutorInfoList.get(0).getType());
       } else {
         maxValue = blockMaxValue[dimensionChunkIndex[0]];
-        isScanRequired = isScanRequired(maxValue, filterRangeValues);
+        isScanRequired =
+            isScanRequired(maxValue, filterRangeValues, isMinMaxSet[dimensionChunkIndex[0]]);
       }
     } else {
       isScanRequired = isDefaultValuePresentInFilter;
@@ -135,7 +137,11 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
     return bitSet;
   }
 
-  private boolean isScanRequired(byte[] blockMaxValue, byte[][] filterValues) {
+  private boolean isScanRequired(byte[] blockMaxValue, byte[][] filterValues, boolean isMinMaxSet) {
+    if (!isMinMaxSet) {
+      // scan complete data if min max is not written for a given column
+      return true;
+    }
     boolean isScanRequired = false;
     for (int k = 0; k < filterValues.length; k++) {
       // filter value should be in range of max and min value i.e
@@ -193,7 +199,8 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
       boolean isExclude = false;
       for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
         if (rawColumnChunk.getMaxValues() != null) {
-          if (isScanRequired(rawColumnChunk.getMaxValues()[i], this.filterRangeValues)) {
+          if (isScanRequired(rawColumnChunk.getMaxValues()[i], this.filterRangeValues,
+              rawColumnChunk.getMinMaxFlagArray()[i])) {
             int compare = ByteUtil.UnsafeComparer.INSTANCE
                 .compareTo(filterRangeValues[0], rawColumnChunk.getMinValues()[i]);
             if (compare <= 0) {

@@ -41,6 +41,7 @@ import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_DATA_FILE_VERSION;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_DATE_FORMAT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT;
@@ -194,6 +195,9 @@ public final class CarbonProperties {
       case CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE:
         validateSortMemorySpillPercentage();
         break;
+      case CARBON_MINMAX_ALLOWED_BYTE_COUNT:
+        validateStringCharacterLimit();
+        break;
       // TODO : Validation for carbon.lock.type should be handled for addProperty flow
       default:
         // none
@@ -258,6 +262,7 @@ public final class CarbonProperties {
     validateSortStorageMemory();
     validateEnableQueryStatistics();
     validateSortMemorySpillPercentage();
+    validateStringCharacterLimit();
   }
 
   /**
@@ -1549,6 +1554,38 @@ public final class CarbonProperties {
       carbonProperties.setProperty(
           CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
           CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+    }
+  }
+
+  /**
+   * This method validates the allowed character limit for storing min/max for string type
+   */
+  private void validateStringCharacterLimit() {
+    int allowedCharactersLimit = 0;
+    try {
+      allowedCharactersLimit = Integer.parseInt(carbonProperties
+          .getProperty(CARBON_MINMAX_ALLOWED_BYTE_COUNT,
+              CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT));
+      if (allowedCharactersLimit < CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_MIN
+          || allowedCharactersLimit
+          > CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_MAX) {
+        LOGGER.info("The min max byte limit for string type value \"" + allowedCharactersLimit
+            + "\" is invalid. Using the default value \""
+            + CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT);
+        carbonProperties.setProperty(CARBON_MINMAX_ALLOWED_BYTE_COUNT,
+            CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT);
+      } else {
+        LOGGER.info(
+            "Considered value for min max byte limit for string is: " + allowedCharactersLimit);
+        carbonProperties
+            .setProperty(CARBON_MINMAX_ALLOWED_BYTE_COUNT, allowedCharactersLimit + "");
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.info("The min max byte limit for string type value \"" + allowedCharactersLimit
+          + "\" is invalid. Using the default value \""
+          + CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT);
+      carbonProperties.setProperty(CARBON_MINMAX_ALLOWED_BYTE_COUNT,
+          CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT);
     }
   }
 }

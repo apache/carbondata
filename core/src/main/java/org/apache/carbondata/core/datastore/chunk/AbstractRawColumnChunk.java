@@ -29,6 +29,8 @@ public abstract class AbstractRawColumnChunk {
 
   private byte[][] maxValues;
 
+  private boolean[] minMaxFlagArray;
+
   protected ByteBuffer rawData;
 
   private int[] offsets;
@@ -120,4 +122,11 @@ public abstract class AbstractRawColumnChunk {
     this.dataChunkV3 = dataChunkV3;
   }
 
+  public boolean[] getMinMaxFlagArray() {
+    return minMaxFlagArray;
+  }
+
+  public void setMinMaxFlagArray(boolean[] minMaxFlagArray) {
+    this.minMaxFlagArray = minMaxFlagArray;
+  }
 }

@@ -51,7 +51,8 @@ public class FalseFilterExecutor implements FilterExecuter {
   }
 
   @Override
-  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
+      boolean[] isMinMaxSet) {
     return new BitSet();
   }
 

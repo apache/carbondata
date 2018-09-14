@@ -125,4 +125,12 @@ public interface DataRefNode {
    * @return
    */
   BitSetGroup getIndexedData();
+
+  /**
+   * Return the array which contains the flag for each column whether the min max for that column
+   * is written in metadata or not
+   *
+   * @return min max flag for each column
+   */
+  boolean[] minMaxFlagArray();
 }

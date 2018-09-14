@@ -48,6 +48,7 @@ import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapDistri
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -484,5 +485,24 @@ public class BlockletDataMapUtil {
       }
     }
     return false;
+  }
+
+  /**
+   * Method to update the min max flag. For CACHE_LEVEL=BLOCK, for any column if min max is not
+   * written in any of the blocklet then for that column the flag will be false for the
+   * complete block
+   *
+   * @param minMaxIndex
+   * @param minMaxFlag
+   */
+  public static void updateMinMaxFlag(BlockletMinMaxIndex minMaxIndex, boolean[] minMaxFlag) {
+    boolean[] isMinMaxSet = minMaxIndex.getIsMinMaxSet();
+    if (null != isMinMaxSet) {
+      for (int i = 0; i < minMaxFlag.length; i++) {
+        if (!isMinMaxSet[i]) {
+          minMaxFlag[i] = isMinMaxSet[i];
+        }
+      }
+    }
   }
 }

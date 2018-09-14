@@ -172,10 +172,13 @@ public class CarbonMetadataUtilTest {
     List<ByteBuffer> maxList = new ArrayList<>();
     maxList.add(ByteBuffer.wrap(byteArr1));
 
+    List<Boolean> isMinMaxSet = new ArrayList<>();
+    isMinMaxSet.add(true);
+
     org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex
         blockletMinMaxIndex =
         new org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex(minList,
-            maxList);
+            maxList, isMinMaxSet);
     org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex
         blockletBTreeIndex =
         new org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex(startKey,

@@ -61,7 +61,7 @@ public class RestructureIncludeFilterExecutorImpl extends RestructureEvaluatorIm
     throw new FilterUnsupportedException("Unsupported RestructureIncludeFilterExecutorImpl on row");
   }
 
-  public BitSet isScanRequired(byte[][] blkMaxVal, byte[][] blkMinVal) {
+  public BitSet isScanRequired(byte[][] blkMaxVal, byte[][] blkMinVal, boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     bitSet.set(0, isDefaultValuePresentInFilterValues);
     return bitSet;

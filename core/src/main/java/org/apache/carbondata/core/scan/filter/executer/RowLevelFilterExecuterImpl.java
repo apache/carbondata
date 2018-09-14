@@ -597,7 +597,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   }
 
   @Override
-  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
+      boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     bitSet.set(0);
     return bitSet;

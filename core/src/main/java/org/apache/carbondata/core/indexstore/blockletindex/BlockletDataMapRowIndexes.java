@@ -40,12 +40,14 @@ public interface BlockletDataMapRowIndexes {
 
   int BLOCK_LENGTH = 8;
 
+  int BLOCK_MIN_MAX_FLAG = 9;
+
   // below variables are specific for blockletDataMap
-  int BLOCKLET_INFO_INDEX = 9;
+  int BLOCKLET_INFO_INDEX = 10;
 
-  int BLOCKLET_PAGE_COUNT_INDEX = 10;
+  int BLOCKLET_PAGE_COUNT_INDEX = 11;
 
-  int BLOCKLET_ID_INDEX = 11;
+  int BLOCKLET_ID_INDEX = 12;
 
   // Summary dataMap row indexes
   int TASK_MIN_VALUES_INDEX = 0;
@@ -56,5 +58,7 @@ public interface BlockletDataMapRowIndexes {
 
   int SUMMARY_SEGMENTID = 3;
 
-  int SUMMARY_INDEX_PATH = 4;
+  int TASK_MIN_MAX_FLAG = 4;
+
+  int SUMMARY_INDEX_PATH = 5;
 }

@@ -19,6 +19,7 @@ package org.apache.carbondata.core.util;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
@@ -285,10 +286,21 @@ public abstract class AbstractDataFileFooterConverter {
     byte[][] currentMaxValue = blockletIndexList.get(0).getMinMaxIndex().getMaxValues().clone();
     byte[][] minValue = null;
     byte[][] maxValue = null;
+    boolean[] blockletMinMaxFlag = null;
+    // flag at block level
+    boolean[] blockMinMaxFlag = blockletIndexList.get(0).getMinMaxIndex().getIsMinMaxSet();
     for (int i = 1; i < blockletIndexList.size(); i++) {
       minValue = blockletIndexList.get(i).getMinMaxIndex().getMinValues();
       maxValue = blockletIndexList.get(i).getMinMaxIndex().getMaxValues();
+      blockletMinMaxFlag = blockletIndexList.get(i).getMinMaxIndex().getIsMinMaxSet();
       for (int j = 0; j < maxValue.length; j++) {
+        // can be null for stores < 1.5.0 version
+        if (null != blockletMinMaxFlag && !blockletMinMaxFlag[i]) {
+          blockMinMaxFlag[i] = blockletMinMaxFlag[i];
+          currentMaxValue[j] = new byte[0];
+          currentMinValue[j] = new byte[0];
+          continue;
+        }
         if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(currentMinValue[j], minValue[j]) > 0) {
           currentMinValue[j] = minValue[j].clone();
         }
@@ -297,10 +309,14 @@ public abstract class AbstractDataFileFooterConverter {
         }
       }
     }
-
+    if (null == blockMinMaxFlag) {
+      blockMinMaxFlag = new boolean[currentMaxValue.length];
+      Arrays.fill(blockMinMaxFlag, true);
+    }
     BlockletMinMaxIndex minMax = new BlockletMinMaxIndex();
     minMax.setMaxValues(currentMaxValue);
     minMax.setMinValues(currentMinValue);
+    minMax.setIsMinMaxSet(blockMinMaxFlag);
     blockletIndex.setMinMaxIndex(minMax);
     return blockletIndex;
   }
@@ -418,9 +434,19 @@ public abstract class AbstractDataFileFooterConverter {
         blockletIndexThrift.getB_tree_index();
     org.apache.carbondata.format.BlockletMinMaxIndex minMaxIndex =
         blockletIndexThrift.getMin_max_index();
+    List<Boolean> isMinMaxSet = null;
+    // Below logic is added to handle backward compatibility
+    if (minMaxIndex.isSetMin_max_presence()) {
+      isMinMaxSet = minMaxIndex.getMin_max_presence();
+    } else {
+      Boolean[] minMaxFlag = new Boolean[minMaxIndex.getMax_values().size()];
+      Arrays.fill(minMaxFlag, true);
+      isMinMaxSet = Arrays.asList(minMaxFlag);
+    }
     return new BlockletIndex(
         new BlockletBTreeIndex(btreeIndex.getStart_key(), btreeIndex.getEnd_key()),
-        new BlockletMinMaxIndex(minMaxIndex.getMin_values(), minMaxIndex.getMax_values()));
+        new BlockletMinMaxIndex(minMaxIndex.getMin_values(), minMaxIndex.getMax_values(),
+            isMinMaxSet));
   }
 
   /**

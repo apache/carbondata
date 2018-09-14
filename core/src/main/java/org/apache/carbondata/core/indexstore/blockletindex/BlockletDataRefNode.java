@@ -134,6 +134,17 @@ public class BlockletDataRefNode implements DataRefNode {
   }
 
   @Override
+  public boolean[] minMaxFlagArray() {
+    BlockletIndex blockletIndex =
+        blockInfos.get(index).getDetailInfo().getBlockletInfo().getBlockletIndex();
+    boolean[] isMinMaxSet = null;
+    if (null != blockletIndex) {
+      isMinMaxSet = blockletIndex.getMinMaxIndex().getIsMinMaxSet();
+    }
+    return isMinMaxSet;
+  }
+
+  @Override
   public DimensionRawColumnChunk[] readDimensionChunks(FileReader fileReader, int[][] blockIndexes)
       throws IOException {
     DimensionColumnChunkReader dimensionChunksReader = getDimensionColumnChunkReader(fileReader);

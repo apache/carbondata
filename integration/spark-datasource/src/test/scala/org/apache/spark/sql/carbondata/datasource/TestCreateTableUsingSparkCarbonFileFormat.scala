@@ -19,23 +19,31 @@ package org.apache.spark.sql.carbondata.datasource
 
 import java.io.File
 import java.text.SimpleDateFormat
+import java.util
 import java.util.{Date, Random}
+
+import scala.collection.JavaConverters._
 
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.RandomStringUtils
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.apache.spark.util.SparkUtil
 import org.apache.spark.sql.carbondata.datasource.TestUtil.{spark, _}
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonV3DataFormatConstants}
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataFileFooterConverter}
 import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
+
+import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
 
 class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndAfterAll {
 
@@ -46,6 +54,9 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
   }
 
   override def afterAll(): Unit = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT,
+        CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT)
     spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
   }
 
@@ -328,8 +339,8 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     assert(new File(filePath).exists())
     cleanTestData()
   }
-  test("Read data having multi blocklet ") {
-    buildTestDataMuliBlockLet(700000)
+  test("Read data having multi blocklet and validate min max flag") {
+    buildTestDataMuliBlockLet(750000, 50000)
     assert(new File(writerPath).exists())
     spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
@@ -342,38 +353,87 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
         s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
            |'$writerPath' """.stripMargin)
     }
-    spark.sql("select count(*) from sdkOutputTable").show(false)
-    val result=checkAnswer(spark.sql("select count(*) from sdkOutputTable"),Seq(Row(700000)))
+    val result=checkAnswer(spark.sql("select count(*) from sdkOutputTable"),Seq(Row(800000)))
     if(result.isDefined){
       assert(false,result.get)
     }
+    checkAnswer(spark
+      .sql(
+        "select count(*) from sdkOutputTable where from_email='Email for testing min max for " +
+        "allowed chars'"),
+      Seq(Row(50000)))
+    //expected answer for min max flag. FInally there should be 2 blocklets with one blocklet
+    // having min max flag as false for email column and other as true
+    val blocklet1MinMaxFlag = Array(true, true, true, true, true, false, true, true, true)
+    val blocklet2MinMaxFlag = Array(true, true, true, true, true, true, true, true, true)
+    val expectedMinMaxFlag = Array(blocklet1MinMaxFlag, blocklet2MinMaxFlag)
+    validateMinMaxFlag(expectedMinMaxFlag, 2)
+
     spark.sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
     assert(new File(writerPath).exists())
+    clearDataMapCache
     cleanTestData()
   }
-  def buildTestDataMuliBlockLet(records :Int): Unit ={
+  def buildTestDataMuliBlockLet(recordsInBlocklet1 :Int, recordsInBlocklet2 :Int): Unit ={
     FileUtils.deleteDirectory(new File(writerPath))
     val fields=new Array[Field](8)
-    fields(0)=new Field("myid",DataTypes.INT);
-    fields(1)=new Field("event_id",DataTypes.STRING);
-    fields(2)=new Field("eve_time",DataTypes.DATE);
-    fields(3)=new Field("ingestion_time",DataTypes.TIMESTAMP);
-    fields(4)=new Field("alldate",DataTypes.createArrayType(DataTypes.DATE));
-    fields(5)=new Field("subject",DataTypes.STRING);
-    fields(6)=new Field("from_email",DataTypes.STRING);
-    fields(7)=new Field("sal",DataTypes.DOUBLE);
+    fields(0)=new Field("myid",DataTypes.INT)
+    fields(1)=new Field("event_id",DataTypes.STRING)
+    fields(2)=new Field("eve_time",DataTypes.DATE)
+    fields(3)=new Field("ingestion_time",DataTypes.TIMESTAMP)
+    fields(4)=new Field("alldate",DataTypes.createArrayType(DataTypes.DATE))
+    fields(5)=new Field("subject",DataTypes.STRING)
+    fields(6)=new Field("from_email",DataTypes.STRING)
+    fields(7)=new Field("sal",DataTypes.DOUBLE)
     import scala.collection.JavaConverters._
+    val emailDataBlocklet1 = "FromEmail"
+    val emailDataBlocklet2 = "Email for testing min max for allowed chars"
     try{
       val options=Map("bad_records_action"->"FORCE","complex_delimiter_level_1"->"$").asJava
       val writer=CarbonWriter.builder().outputPath(writerPath).withBlockletSize(16).sortBy(Array("myid","ingestion_time","event_id")).withLoadOptions(options).buildWriterForCSVInput(new Schema(fields),spark.sessionState.newHadoopConf())
       val timeF=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
       val date_F=new SimpleDateFormat("yyyy-MM-dd")
-      for(i<-1 to records){
+      for(i<- 1 to recordsInBlocklet1){
         val time=new Date(System.currentTimeMillis())
-        writer.write(Array(""+i,"event_"+i,""+date_F.format(time),""+timeF.format(time),""+date_F.format(time)+"$"+date_F.format(time),"Subject_0","FromEmail",""+new Random().nextDouble()))
+        writer.write(Array(""+i,"event_"+i,""+date_F.format(time),""+timeF.format(time),""+date_F.format(time)+"$"+date_F.format(time),"Subject_0",emailDataBlocklet1,""+new Random().nextDouble()))
+      }
+      for(i<- 1 to recordsInBlocklet2){
+        val time=new Date(System.currentTimeMillis())
+        writer.write(Array(""+i,"event_"+i,""+date_F.format(time),""+timeF.format(time),""+date_F.format(time)+"$"+date_F.format(time),"Subject_0",emailDataBlocklet2,""+new Random().nextDouble()))
       }
       writer.close()
+    }
+  }
+
+  /**
+   * read carbon index file and  validate the min max flag written in each blocklet
+   *
+   * @param expectedMinMaxFlag
+   * @param numBlocklets
+   */
+  private def validateMinMaxFlag(expectedMinMaxFlag: Array[Array[Boolean]],
+      numBlocklets: Int): Unit = {
+    val carbonFiles: Array[File] = new File(writerPath).listFiles()
+    val carbonIndexFile = carbonFiles.filter(file => file.getName.endsWith(".carbonindex"))(0)
+    val converter: DataFileFooterConverter = new DataFileFooterConverter(spark.sessionState
+      .newHadoopConf())
+    val carbonIndexFilePath = FileFactory.getUpdatedFilePath(carbonIndexFile.getCanonicalPath)
+    val indexMetadata: List[DataFileFooter] = converter
+      .getIndexInfo(carbonIndexFilePath, null, false).asScala.toList
+    assert(indexMetadata.size == numBlocklets)
+    indexMetadata.zipWithIndex.foreach { filefooter =>
+      val isMinMaxSet: Array[Boolean] = filefooter._1.getBlockletIndex.getMinMaxIndex.getIsMinMaxSet
+      assert(isMinMaxSet.sameElements(expectedMinMaxFlag(filefooter._2)))
+    }
+  }
+
+  private def clearDataMapCache(): Unit = {
+    if (!spark.sparkContext.version.startsWith("2.1")) {
+      val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+      DataMapStoreManager.getInstance()
+        .clearDataMaps(AbsoluteTableIdentifier.from(writerPath))
+      assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
     }
   }
 
@@ -434,6 +494,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     val op1 = spark.sql("select address from sdkOutputTableWithoutSchema limit 1").collectAsList()
     assert(op1.get(0).getString(0).length == 75000)
     spark.sql("DROP TABLE sdkOutputTableWithoutSchema")
+    clearDataMapCache
     cleanTestData()
   }
 }

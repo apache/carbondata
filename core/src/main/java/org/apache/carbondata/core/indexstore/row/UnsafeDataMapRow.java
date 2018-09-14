@@ -86,6 +86,15 @@ public class UnsafeDataMapRow extends DataMapRow {
     return length;
   }
 
+  @Override public void setBoolean(boolean value, int ordinal) {
+    throw new UnsupportedOperationException("Not supported to set on unsafe row");
+  }
+
+  @Override public boolean getBoolean(int ordinal) {
+    return getUnsafe()
+        .getBoolean(block.getBaseObject(), block.getBaseOffset() + pointer + getPosition(ordinal));
+  }
+
   private int getLengthInBytes(int ordinal, int position) {
     int length;
     switch (schemas[ordinal].getSchemaType()) {
@@ -187,6 +196,13 @@ public class UnsafeDataMapRow extends DataMapRow {
           if (dataType == DataTypes.BYTE) {
             row.setByte(
                 getUnsafe().getByte(
+                    block.getBaseObject(),
+                    block.getBaseOffset() + pointer + runningLength),
+                i);
+            runningLength += schema.getLength();
+          } else if (dataType == DataTypes.BOOLEAN) {
+            row.setBoolean(
+                getUnsafe().getBoolean(
                     block.getBaseObject(),
                     block.getBaseOffset() + pointer + runningLength),
                 i);

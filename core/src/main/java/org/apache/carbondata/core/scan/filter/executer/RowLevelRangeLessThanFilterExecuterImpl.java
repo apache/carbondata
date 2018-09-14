@@ -115,7 +115,8 @@ public class RowLevelRangeLessThanFilterExecuterImpl extends RowLevelFilterExecu
     }
   }
 
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
+      boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     byte[] minValue = null;
     boolean isScanRequired = false;
@@ -126,7 +127,8 @@ public class RowLevelRangeLessThanFilterExecuterImpl extends RowLevelFilterExecu
             isScanRequired(minValue, msrFilterRangeValues, msrColEvalutorInfoList.get(0).getType());
       } else {
         minValue = blockMinValue[dimensionChunkIndex[0]];
-        isScanRequired = isScanRequired(minValue, filterRangeValues);
+        isScanRequired =
+            isScanRequired(minValue, filterRangeValues, isMinMaxSet[dimensionChunkIndex[0]]);
       }
     } else {
       isScanRequired = isDefaultValuePresentInFilter;
@@ -138,7 +140,11 @@ public class RowLevelRangeLessThanFilterExecuterImpl extends RowLevelFilterExecu
   }
 
 
-  private boolean isScanRequired(byte[] blockMinValue, byte[][] filterValues) {
+  private boolean isScanRequired(byte[] blockMinValue, byte[][] filterValues, boolean isMinMaxSet) {
+    if (!isMinMaxSet) {
+      // scan complete data if min max is not written for a given column
+      return true;
+    }
     boolean isScanRequired = false;
     for (int k = 0; k < filterValues.length; k++) {
       // and filter-min should be positive
@@ -195,7 +201,8 @@ public class RowLevelRangeLessThanFilterExecuterImpl extends RowLevelFilterExecu
       boolean isExclude = false;
       for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
         if (rawColumnChunk.getMinValues() != null) {
-          if (isScanRequired(rawColumnChunk.getMinValues()[i], this.filterRangeValues)) {
+          if (isScanRequired(rawColumnChunk.getMinValues()[i], this.filterRangeValues,
+              rawColumnChunk.getMinMaxFlagArray()[i])) {
             BitSet bitSet;
             DimensionColumnPage dimensionColumnPage = rawColumnChunk.decodeColumnPage(i);
             if (null != rawColumnChunk.getLocalDictionary()) {
