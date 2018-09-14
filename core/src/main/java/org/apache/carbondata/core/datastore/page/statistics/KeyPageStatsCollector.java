@@ -107,6 +107,10 @@ public class KeyPageStatsCollector implements ColumnPageStatsCollector {
         return dataType;
       }
 
+      @Override public boolean writeMinMax() {
+        return true;
+      }
+
     };
   }
 }

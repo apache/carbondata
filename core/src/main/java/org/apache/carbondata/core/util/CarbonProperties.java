@@ -49,6 +49,7 @@ import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SEARCH_MODE_WORKER_WORKLOAD_LIMIT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_STRING_ALLOWED_CHARACTER_COUNT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_BLOCK;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_BLOCKLET;
@@ -258,6 +259,7 @@ public final class CarbonProperties {
     validateSortStorageMemory();
     validateEnableQueryStatistics();
     validateSortMemorySpillPercentage();
+    validateStringCharacterLimit();
   }
 
   /**
@@ -1549,6 +1551,36 @@ public final class CarbonProperties {
       carbonProperties.setProperty(
           CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
           CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT);
+    }
+  }
+
+  /**
+   * This method validates the allowed character limit for storing min/max for string type
+   */
+  private void validateStringCharacterLimit() {
+    int allowedCharactersLimit = 0;
+    try {
+      allowedCharactersLimit = Integer.parseInt(carbonProperties
+          .getProperty(CARBON_STRING_ALLOWED_CHARACTER_COUNT,
+              CarbonCommonConstants.CARBON_STRING_ALLOWED_CHARACTER_COUNT_DEFAULT));
+      if (allowedCharactersLimit < CarbonCommonConstants.CARBON_STRING_ALLOWED_CHARACTER_COUNT_MIN
+          || allowedCharactersLimit
+          > CarbonCommonConstants.CARBON_STRING_ALLOWED_CHARACTER_COUNT_MAX) {
+        LOGGER.info("The character limit for string type value \"" + allowedCharactersLimit
+            + "\" is invalid. Using the default value \""
+            + CarbonCommonConstants.CARBON_STRING_ALLOWED_CHARACTER_COUNT_DEFAULT);
+        carbonProperties.setProperty(CARBON_STRING_ALLOWED_CHARACTER_COUNT,
+            CarbonCommonConstants.CARBON_STRING_ALLOWED_CHARACTER_COUNT_DEFAULT);
+      } else {
+        carbonProperties
+            .setProperty(CARBON_STRING_ALLOWED_CHARACTER_COUNT, allowedCharactersLimit + "");
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.info("The character limit for string type value \"" + allowedCharactersLimit
+          + "\" is invalid. Using the default value \""
+          + CarbonCommonConstants.CARBON_STRING_ALLOWED_CHARACTER_COUNT_DEFAULT);
+      carbonProperties.setProperty(CARBON_STRING_ALLOWED_CHARACTER_COUNT,
+          CarbonCommonConstants.CARBON_STRING_ALLOWED_CHARACTER_COUNT_DEFAULT);
     }
   }
 }

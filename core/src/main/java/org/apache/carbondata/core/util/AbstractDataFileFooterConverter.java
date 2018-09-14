@@ -19,7 +19,9 @@ package org.apache.carbondata.core.util;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -418,9 +420,19 @@ public abstract class AbstractDataFileFooterConverter {
         blockletIndexThrift.getB_tree_index();
     org.apache.carbondata.format.BlockletMinMaxIndex minMaxIndex =
         blockletIndexThrift.getMin_max_index();
+    List<Boolean> isMInMaxSet = null;
+    // Below logic is added to handle backward compatibility
+    if (minMaxIndex.isSetMin_max_presence()) {
+      isMInMaxSet = minMaxIndex.getMin_max_presence();
+    } else {
+      Boolean[] minMaxFlag = new Boolean[minMaxIndex.getMax_values().size()];
+      Arrays.fill(minMaxFlag, true);
+      isMInMaxSet = Arrays.asList(minMaxFlag);
+    }
     return new BlockletIndex(
         new BlockletBTreeIndex(btreeIndex.getStart_key(), btreeIndex.getEnd_key()),
-        new BlockletMinMaxIndex(minMaxIndex.getMin_values(), minMaxIndex.getMax_values()));
+        new BlockletMinMaxIndex(minMaxIndex.getMin_values(), minMaxIndex.getMax_values(),
+            isMInMaxSet));
   }
 
   /**
