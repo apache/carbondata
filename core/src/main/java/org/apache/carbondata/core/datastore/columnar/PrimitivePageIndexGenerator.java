@@ -25,8 +25,7 @@ public class PrimitivePageIndexGenerator extends PageIndexGenerator<Object[]> {
 
   private Object[] dataPage;
 
-  public PrimitivePageIndexGenerator(Object[] dataPage, boolean isSortRequired, DataType dataType,
-      boolean applyRle) {
+  public PrimitivePageIndexGenerator(Object[] dataPage, boolean isSortRequired, DataType dataType) {
     ColumnDataVo<Object>[] dataWithRowId = createColumnWithRowId(dataPage);
     if (isSortRequired) {
       SerializableComparator comparator =
@@ -34,7 +33,6 @@ public class PrimitivePageIndexGenerator extends PageIndexGenerator<Object[]> {
       Arrays.sort(dataWithRowId, comparator);
       short[] rowIds = extractDataAndReturnRowId(dataWithRowId, dataPage);
       rleEncodeOnRowId(rowIds);
-
     } else {
       this.rowIdRlePage = new short[0];
       this.invertedIndex = new short[0];

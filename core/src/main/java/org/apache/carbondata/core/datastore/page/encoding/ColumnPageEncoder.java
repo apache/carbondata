@@ -103,7 +103,7 @@ public abstract class ColumnPageEncoder {
     dataChunk.setEncoder_meta(buildEncoderMeta(inputPage));
   }
 
-  private List<ByteBuffer> buildEncoderMeta(ColumnPage inputPage) throws IOException {
+  protected List<ByteBuffer> buildEncoderMeta(ColumnPage inputPage) throws IOException {
     ColumnPageEncoderMeta meta = getEncoderMeta(inputPage);
     List<ByteBuffer> metaDatas = new ArrayList<>();
     if (meta != null) {
@@ -119,7 +119,7 @@ public abstract class ColumnPageEncoder {
     dataChunk.setMin_max(buildMinMaxIndex(inputPage));
   }
 
-  private BlockletMinMaxIndex buildMinMaxIndex(ColumnPage inputPage) {
+  protected BlockletMinMaxIndex buildMinMaxIndex(ColumnPage inputPage) {
     BlockletMinMaxIndex index = new BlockletMinMaxIndex();
     byte[] bytes = CarbonUtil.getValueAsBytes(
         inputPage.getDataType(), inputPage.getStatistics().getMax());

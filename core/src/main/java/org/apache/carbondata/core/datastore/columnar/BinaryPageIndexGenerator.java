@@ -26,7 +26,7 @@ public class BinaryPageIndexGenerator extends PageIndexGenerator<byte[][]> {
   private byte[][] dataPage;
 
   public BinaryPageIndexGenerator(byte[][] dataPage, boolean isSortRequired,
-      final short startOffset, boolean applyRle) {
+      final short startOffset) {
     ColumnDataVo<byte[]>[] dataWithRowId = createColumnWithRowId(dataPage);
     if (isSortRequired) {
       Arrays.sort(dataWithRowId, new Comparator<ColumnDataVo<byte[]>>() {

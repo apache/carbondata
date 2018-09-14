@@ -29,6 +29,7 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
+import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.format.Encoding;
 
@@ -49,7 +50,7 @@ public class PrimitiveTypeColumnCodec extends IndexStorageCodec {
         PageIndexGenerator<Object[]> pageIndexGenerator;
         Object[] data = input.getPageBasedOnDataType();
         pageIndexGenerator =
-            new PrimitivePageIndexGenerator(data, isSort, input.getDataType(), true);
+            new PrimitivePageIndexGenerator(data, isSort, input.getDataType());
         ColumnPage adaptivePage;
         try {
           adaptivePage =
@@ -57,18 +58,20 @@ public class PrimitiveTypeColumnCodec extends IndexStorageCodec {
         } catch (MemoryException e) {
           throw new RuntimeException(e);
         }
+        adaptivePage
+            .setStatsCollector(PrimitivePageStatsCollector.newInstance(input.getDataType()));
         Object[] dataPage = pageIndexGenerator.getDataPage();
         for (int i = 0; i < dataPage.length; i++) {
           adaptivePage.putData(i, dataPage[i]);
         }
-        EncodedColumnPage encode;
         try {
-          encode = DefaultEncodingFactory.getInstance()
+          this.encodedColumnPage = DefaultEncodingFactory.getInstance()
               .createEncoder(input.getColumnSpec(), adaptivePage).encode(adaptivePage);
         } catch (IOException | MemoryException e) {
           throw new RuntimeException(e);
         }
-        super.compressedDataPage = encode.getEncodedData().array();
+        adaptivePage.freeMemory();
+        super.compressedDataPage = encodedColumnPage.getEncodedData().array();
         super.pageIndexGenerator = pageIndexGenerator;
       }
 
@@ -80,6 +83,7 @@ public class PrimitiveTypeColumnCodec extends IndexStorageCodec {
         if (pageIndexGenerator.getDataRlePageLengthInBytes() > 0) {
           encodings.add(Encoding.RLE);
         }
+        encodings.addAll(this.encodedColumnPage.getPageMetadata().getEncoders());
         return encodings;
       }
     };

@@ -47,7 +47,7 @@ public class DictDimensionIndexCodec extends IndexStorageCodec {
       void encodeIndexStorage(ColumnPage inputPage) {
         PageIndexGenerator<byte[][]> indexStorage;
         byte[][] data = inputPage.getByteArrayPage();
-        indexStorage = new BinaryPageIndexGenerator(data, isSort, (short)0, true);
+        indexStorage = new BinaryPageIndexGenerator(data, isSort, (short)0);
         byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
         super.compressedDataPage = compressor.compressByte(flattened);
         super.pageIndexGenerator = indexStorage;

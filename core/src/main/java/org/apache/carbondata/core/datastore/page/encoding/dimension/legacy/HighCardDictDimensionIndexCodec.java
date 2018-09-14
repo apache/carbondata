@@ -49,13 +49,11 @@ public class HighCardDictDimensionIndexCodec extends IndexStorageCodec {
   @Override
   public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
     return new IndexStorageEncoder() {
-
       @Override
       protected void encodeIndexStorage(ColumnPage input) {
         PageIndexGenerator<byte[][]> indexStorage;
         byte[][] data = input.getByteArrayPage();
-        boolean isDictionary = input.isLocalDictGeneratedPage();
-        indexStorage = new BinaryPageIndexGenerator(data, isSort, (short)2, isDictionary);
+        indexStorage = new BinaryPageIndexGenerator(data, isSort, (short)2);
         byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
         super.compressedDataPage = compressor.compressByte(flattened);
         super.pageIndexGenerator = indexStorage;
