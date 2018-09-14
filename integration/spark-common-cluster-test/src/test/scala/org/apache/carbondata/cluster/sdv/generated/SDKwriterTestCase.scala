@@ -33,6 +33,7 @@ import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter, GenericR
 import org.apache.avro.io.{DecoderFactory, Encoder}
 import org.apache.commons.lang.CharEncoding
 import org.apache.commons.lang3.RandomStringUtils
+import org.apache.hadoop.conf.Configuration
 import org.junit.Assert
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -771,7 +772,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     val writer = builder
       .outputPath(writerPath)
       .sortBy(Array[String]())
-      .buildWriterForCSVInput(Schema.parseJson(schema))
+      .buildWriterForCSVInput(Schema.parseJson(schema), new Configuration())
 
     for (i <- 0 until 5) {
       writer
