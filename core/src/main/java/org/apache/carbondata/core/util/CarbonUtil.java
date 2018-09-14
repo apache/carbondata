@@ -2110,7 +2110,7 @@ public final class CarbonUtil {
     wrapperColumnSchema.setColumnUniqueId(externalColumnSchema.getColumn_id());
     wrapperColumnSchema.setColumnReferenceId(externalColumnSchema.getColumnReferenceId());
     wrapperColumnSchema.setColumnName(externalColumnSchema.getColumn_name());
-    DataType dataType = thriftDataTyopeToWrapperDataType(externalColumnSchema.data_type);
+    DataType dataType = thriftDataTypeToWrapperDataType(externalColumnSchema.data_type);
     if (DataTypes.isDecimal(dataType)) {
       DecimalType decimalType = (DecimalType) dataType;
       decimalType.setPrecision(externalColumnSchema.getPrecision());
@@ -2181,7 +2181,7 @@ public final class CarbonUtil {
     }
   }
 
-  static DataType thriftDataTyopeToWrapperDataType(
+  static DataType thriftDataTypeToWrapperDataType(
       org.apache.carbondata.format.DataType dataTypeThrift) {
     switch (dataTypeThrift) {
       case BOOLEAN:
