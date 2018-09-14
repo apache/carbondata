@@ -498,7 +498,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     try {
       if (null != fileStatus && fileStatus.isDirectory()) {
         Path path = fileStatus.getPath();
-        listStatus = path.getFileSystem(FileFactory.getConfiguration()).listStatus(path);
+        listStatus = path.getFileSystem(hadoopConf).listStatus(path);
       } else {
         return new CarbonFile[0];
       }
