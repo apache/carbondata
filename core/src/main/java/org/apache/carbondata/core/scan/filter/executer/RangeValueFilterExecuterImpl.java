@@ -453,8 +453,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
         // Method will compare the tentative index value after binary search, this tentative
         // index needs to be compared by the filter member if its >= filter then from that
         // index the bitset will be considered for filtering process.
-        if ((ByteUtil.compare(filterValues[0], dimensionColumnPage
-            .getChunkData(dimensionColumnPage.getInvertedIndex(start)))) > 0) {
+        if ((ByteUtil.compare(filterValues[0], dimensionColumnPage.getChunkData(start))) > 0) {
           start = start + 1;
         }
       }
@@ -482,9 +481,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
         }
         // In case the start is less than 0, then positive value of start is pointing to the next
         // value of the searched key. So move to the previous one.
-        if ((ByteUtil.compare(filterValues[1],
-            dimensionColumnPage.getChunkData(dimensionColumnPage.getInvertedIndex(start)))
-            < 0)) {
+        if ((ByteUtil.compare(filterValues[1], dimensionColumnPage.getChunkData(start)) < 0)) {
           start = start - 1;
         }
       }

@@ -370,9 +370,7 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
         // Method will compare the tentative index value after binary search, this tentative
         // index needs to be compared by the filter member if its >= filter then from that
         // index the bitset will be considered for filtering process.
-        if (ByteUtil.compare(filterValues[i],
-            dimensionColumnPage.getChunkData(dimensionColumnPage.getInvertedIndex(start)))
-            > 0) {
+        if (ByteUtil.compare(filterValues[i], dimensionColumnPage.getChunkData(start)) > 0) {
           start = start + 1;
         }
       }
