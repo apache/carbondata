@@ -233,6 +233,9 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     // get the data buffer
     ByteBuffer rawData = rawColumnPage.getRawData();
     DataChunk2 pageMetadata = dataChunk3.getData_chunk_list().get(pageNumber);
+    String compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
+        pageMetadata.getChunk_meta());
+    this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
     // calculating the start point of data
     // as buffer can contain multiple column data, start point will be datachunkoffset +
     // data chunk length + page offset

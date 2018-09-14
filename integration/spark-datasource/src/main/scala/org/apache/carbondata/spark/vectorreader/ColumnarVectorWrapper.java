@@ -30,7 +30,9 @@ import org.apache.spark.sql.types.Decimal;
 
 class ColumnarVectorWrapper implements CarbonColumnVector {
 
-  private CarbonVectorProxy sparkColumnVectorProxy;
+  private CarbonVectorProxy.ColumnVectorProxy sparkColumnVectorProxy;
+
+  private CarbonVectorProxy carbonVectorProxy;
 
   private boolean[] filteredRows;
 
@@ -48,8 +50,9 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   ColumnarVectorWrapper(CarbonVectorProxy writableColumnVector,
       boolean[] filteredRows, int ordinal) {
-    this.sparkColumnVectorProxy = writableColumnVector;
+    this.sparkColumnVectorProxy = writableColumnVector.getColumnVector(ordinal);
     this.filteredRows = filteredRows;
+    this.carbonVectorProxy = writableColumnVector;
     this.ordinal = ordinal;
   }
 
@@ -196,7 +199,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   }
 
   @Override public void putNullDirect(int rowId) {
-    columnVector.putNull(rowId);
+    sparkColumnVectorProxy.putNull(rowId, ordinal);
   }
 
   @Override public void putNulls(int rowId, int count) {
@@ -281,8 +284,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   }
 
   public void reserveDictionaryIds() {
-    sparkColumnVectorProxy.reserveDictionaryIds(sparkColumnVectorProxy.numRows(), ordinal);
-    dictionaryVector = new ColumnarVectorWrapper(sparkColumnVectorProxy, filteredRows, ordinal);
+    sparkColumnVectorProxy.reserveDictionaryIds(carbonVectorProxy.numRows(), ordinal);
+    dictionaryVector = new ColumnarVectorWrapper(carbonVectorProxy, filteredRows, ordinal);
     ((ColumnarVectorWrapper) dictionaryVector).isDictionary = true;
   }
 

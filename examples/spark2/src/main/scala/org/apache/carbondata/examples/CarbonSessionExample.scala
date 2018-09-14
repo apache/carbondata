@@ -48,7 +48,7 @@ object CarbonSessionExample {
 
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
-//
+
 //    spark.sql("DROP TABLE IF EXISTS carbonsession_table")
 //    spark.sql("DROP TABLE IF EXISTS stored_as_carbondata_table")
 //
@@ -87,24 +87,24 @@ object CarbonSessionExample {
 //         | SELECT *
 //         | FROM carbonsession_table where stringField='spark'
 //      """.stripMargin).show()
-//
-//    import spark.implicits._
-//
-//    import scala.util.Random
-//    val r = new Random()
-//    val df = spark.sparkContext.parallelize(1 to 10 * 10 * 1000)
-//      .map(x => ("No." + r.nextInt(100000), "name" + x % 8, "city" + x % 50, x % 60))
-//      .toDF("ID", "name", "city", "age")
-//
-//    // Create table with pre-aggregate
-//    spark.sql("DROP TABLE IF EXISTS personTable")
-//    spark.sql("DROP TABLE IF EXISTS personTableWithoutAgg")
-//    df.write.format("carbon").saveAsTable("personTable")
 
-    spark.sql("explain codegen select count(*) from personTable where ID in('No.10008', 'yvh') and name='name1'").show(false)
-//    spark.sql("select * from personTable where ID='No.10008'").show(false)
+    import spark.implicits._
 
-//    spark.sql("select count(ID),count(name),count(city),count(age) from personTable").show()
+    import scala.util.Random
+    val r = new Random()
+    val df = spark.sparkContext.parallelize(1 to 10 * 10 * 1000)
+      .map(x => ("No." + r.nextInt(100000), "name" + x % 8, "city" + x % 50, x % 60))
+      .toDF("ID", "name", "city", "age")
+
+    // Create table with pre-aggregate
+    spark.sql("DROP TABLE IF EXISTS personTable")
+    spark.sql("DROP TABLE IF EXISTS personTableWithoutAgg")
+    df.write.format("carbon").saveAsTable("personTable")
+
+//    spark.sql("explain codegen select count(*) from personTable where ID in('No.10008', 'yvh') and name='name1'").show(false)
+    spark.sql("select * from personTable where ID='No.10008'").show(false)
+
+    spark.sql("select count(ID),count(name),count(city),count(age) from personTable").show()
 
 //    spark.sql(
 //      s"""

@@ -217,13 +217,16 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     DataChunk3 dataChunk3 = rawColumnChunk.getDataChunkV3();
     // data chunk of page
     DataChunk2 pageMetadata = dataChunk3.getData_chunk_list().get(pageNumber);
+    String compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
+        pageMetadata.getChunk_meta());
+    this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
     // calculating the start point of data
     // as buffer can contain multiple column data, start point will be datachunkoffset +
     // data chunk length + page offset
     int offset = (int) rawColumnChunk.getOffSet() +
         measureColumnChunkLength.get(rawColumnChunk.getColumnIndex()) +
         dataChunk3.getPage_offset().get(pageNumber);
-    BitSet nullBitSet = QueryUtil.getNullBitSet(pageMetadata.presence);
+    BitSet nullBitSet = QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor);
     ColumnPage decodedPage = decodeMeasure(pageMetadata, rawColumnChunk.getRawData(), offset, vectorInfo, nullBitSet);
     decodedPage.setNullBits(nullBitSet);
     return decodedPage;
@@ -247,7 +250,9 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
       throws MemoryException, IOException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
-    ColumnPageDecoder codec = encodingFactory.createDecoder(encodings, encoderMetas);
+    String compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
+        pageMetadata.getChunk_meta());
+    ColumnPageDecoder codec = encodingFactory.createDecoder(encodings, encoderMetas, compressorName);
     return codec.decode(pageData.array(), offset, pageMetadata.data_page_length, vectorInfo, nullBitSet);
   }
 

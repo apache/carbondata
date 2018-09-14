@@ -19,8 +19,6 @@ package org.apache.carbondata.spark.vectorreader;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -284,16 +282,8 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
         schema = schema.add(field);
       }
     }
-    vectorProxy = new CarbonVectorProxy(DEFAULT_MEMORY_MODE,schema,DEFAULT_BATCH_SIZE);
-//    columnarBatch = ColumnarBatch.allocate(schema, memMode);
-    try {
-      Constructor<ColumnarBatch> constructor =
-          ColumnarBatch.class.getDeclaredConstructor(StructType.class, int.class, MemoryMode.class);
-      constructor.setAccessible(true);
-      columnarBatch = constructor.newInstance(schema, CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT, memMode);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+    vectorProxy = new CarbonVectorProxy(DEFAULT_MEMORY_MODE, schema,
+        CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
 
     if (partitionColumns != null) {
       int partitionIdx = fields.length;
@@ -305,10 +295,10 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
     CarbonColumnVector[] vectors = new CarbonColumnVector[fields.length];
     boolean[] filteredRows = new boolean[vectorProxy.numRows()];
     for (int i = 0; i < fields.length; i++) {
-      vectors[i] = new ColumnarVectorWrapper(vectorProxy, filteredRows, i);
+      vectors[i] = new ColumnarVectorWrapperNew(vectorProxy, filteredRows, i);
       if (isNoDictStringField[i]) {
-        if (vectors[i] instanceof ColumnarVectorWrapper) {
-          ((ColumnarVectorWrapper) vectors[i]).reserveDictionaryIds();
+        if (vectors[i] instanceof ColumnarVectorWrapperNew) {
+          ((ColumnarVectorWrapperNew) vectors[i]).reserveDictionaryIds();
         }
       }
     }

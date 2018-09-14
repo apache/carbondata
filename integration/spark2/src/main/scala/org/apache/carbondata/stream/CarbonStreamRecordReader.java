@@ -705,7 +705,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
     private void putRowToColumnBatch(int rowId) {
         for (int i = 0; i < projection.length; i++) {
             Object value = outputValues[i];
-            vectorProxy.putRowToColumnBatch(rowId,value,i);
+            vectorProxy.getColumnVector(i).putRowToColumnBatch(rowId,value,i);
 
         }
     }

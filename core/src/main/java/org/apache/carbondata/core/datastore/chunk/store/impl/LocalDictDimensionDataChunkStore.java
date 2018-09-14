@@ -58,8 +58,10 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
     int columnValueSize = dimensionDataChunkStore.getColumnValueSize();
     int rowsNum = data.length/ columnValueSize;
     CarbonColumnVector vector = vectorInfo.vector;
-    vector.setDictionary(dictionary);
-    dictionary.setDictionaryUsed();
+    if (!dictionary.isDictionaryUsed()) {
+      vector.setDictionary(dictionary);
+      dictionary.setDictionaryUsed();
+    }
     for (int i = 0; i < rowsNum; i++) {
       int surrogate =
           CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);

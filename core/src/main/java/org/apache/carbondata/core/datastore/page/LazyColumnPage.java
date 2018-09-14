@@ -45,7 +45,7 @@ public class LazyColumnPage extends ColumnPage {
 
   private LazyColumnPage(ColumnPage columnPage, ColumnPageValueConverter converter,
       ColumnVectorInfo vectorInfo) {
-    super(columnPage.getColumnSpec(), columnPage.getDataType(), columnPage.getPageSize());
+    super(columnPage.getColumnPageEncoderMeta(), columnPage.getPageSize());
     this.columnPage = columnPage;
     this.converter = converter;
     converter.decode(columnPage, vectorInfo);
