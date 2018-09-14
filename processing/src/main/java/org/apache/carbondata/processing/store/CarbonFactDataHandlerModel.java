@@ -224,14 +224,16 @@ public class CarbonFactDataHandlerModel {
       simpleDimsLen[i] = dimLens[i];
     }
 
+    int noDictionayDimensionIndex = 0;
     // for dynamic page size in write step if varchar columns exist
     List<Integer> varcharDimIdxInNoDict = new ArrayList<>();
     for (DataField dataField : configuration.getDataFields()) {
       CarbonColumn column = dataField.getColumn();
-      if (!column.isComplex() && !dataField.hasDictionaryEncoding() &&
-              column.getDataType() == DataTypes.VARCHAR) {
-        // ordinal is set in CarbonTable.fillDimensionsAndMeasuresForTables()
-        varcharDimIdxInNoDict.add(column.getOrdinal() - simpleDimsCount);
+      if (!dataField.hasDictionaryEncoding()) {
+        if (!column.isComplex() && column.getDataType() == DataTypes.VARCHAR) {
+          varcharDimIdxInNoDict.add(noDictionayDimensionIndex);
+        }
+        noDictionayDimensionIndex++;
       }
     }
 
