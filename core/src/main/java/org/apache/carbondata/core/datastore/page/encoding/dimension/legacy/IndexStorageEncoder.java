@@ -21,7 +21,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -33,7 +32,6 @@ import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.format.BlockletMinMaxIndex;
 import org.apache.carbondata.format.DataChunk2;
-import org.apache.carbondata.format.Encoding;
 import org.apache.carbondata.format.SortState;
 
 public abstract class IndexStorageEncoder extends ColumnPageEncoder {
