@@ -18,18 +18,24 @@
 package org.apache.spark.sql.carbondata.datasource
 
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.{Date, Random}
 
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.RandomStringUtils
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.apache.spark.util.SparkUtil
 import org.apache.spark.sql.carbondata.datasource.TestUtil.{spark, _}
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonV3DataFormatConstants}
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
+import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
+import org.apache.hadoop.conf.Configuration
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
 
 class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndAfterAll {
 
@@ -321,6 +327,54 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     // drop table should not delete the files
     assert(new File(filePath).exists())
     cleanTestData()
+  }
+  test("Read data having multi blocklet ") {
+    buildTestDataMuliBlockLet(700000)
+    assert(new File(writerPath).exists())
+    spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
+
+    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+      //data source file format
+      spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$writerPath') """)
+    } else {
+      //data source file format
+      spark.sql(
+        s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
+           |'$writerPath' """.stripMargin)
+    }
+    spark.sql("select count(*) from sdkOutputTable").show(false)
+    val result=checkAnswer(spark.sql("select count(*) from sdkOutputTable"),Seq(Row(700000)))
+    if(result.isDefined){
+      assert(false,result.get)
+    }
+    spark.sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).exists())
+    cleanTestData()
+  }
+  def buildTestDataMuliBlockLet(records :Int): Unit ={
+    FileUtils.deleteDirectory(new File(writerPath))
+    val fields=new Array[Field](8)
+    fields(0)=new Field("myid",DataTypes.INT);
+    fields(1)=new Field("event_id",DataTypes.STRING);
+    fields(2)=new Field("eve_time",DataTypes.DATE);
+    fields(3)=new Field("ingestion_time",DataTypes.TIMESTAMP);
+    fields(4)=new Field("alldate",DataTypes.createArrayType(DataTypes.DATE));
+    fields(5)=new Field("subject",DataTypes.STRING);
+    fields(6)=new Field("from_email",DataTypes.STRING);
+    fields(7)=new Field("sal",DataTypes.DOUBLE);
+    import scala.collection.JavaConverters._
+    try{
+      val options=Map("bad_records_action"->"FORCE","complex_delimiter_level_1"->"$").asJava
+      val writer=CarbonWriter.builder().outputPath(writerPath).withBlockletSize(16).sortBy(Array("myid","ingestion_time","event_id")).withLoadOptions(options).buildWriterForCSVInput(new Schema(fields),spark.sessionState.newHadoopConf())
+      val timeF=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+      val date_F=new SimpleDateFormat("yyyy-MM-dd")
+      for(i<-1 to records){
+        val time=new Date(System.currentTimeMillis())
+        writer.write(Array(""+i,"event_"+i,""+date_F.format(time),""+timeF.format(time),""+date_F.format(time)+"$"+date_F.format(time),"Subject_0","FromEmail",""+new Random().nextDouble()))
+      }
+      writer.close()
+    }
   }
 
   test("Test with long string columns") {
