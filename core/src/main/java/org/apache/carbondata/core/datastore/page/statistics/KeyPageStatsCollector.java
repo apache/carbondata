@@ -66,6 +66,10 @@ public class KeyPageStatsCollector implements ColumnPageStatsCollector {
 
   }
 
+  @Override public void update(float value) {
+
+  }
+
   @Override
   public void update(BigDecimal value) {
 

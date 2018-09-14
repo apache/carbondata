@@ -353,10 +353,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
         s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
            |'$writerPath' """.stripMargin)
     }
-    val result=checkAnswer(spark.sql("select count(*) from sdkOutputTable"),Seq(Row(800000)))
-    if(result.isDefined){
-      assert(false,result.get)
-    }
+    checkAnswer(spark.sql("select count(*) from sdkOutputTable"),Seq(Row(800000)))
     checkAnswer(spark
       .sql(
         "select count(*) from sdkOutputTable where from_email='Email for testing min max for " +

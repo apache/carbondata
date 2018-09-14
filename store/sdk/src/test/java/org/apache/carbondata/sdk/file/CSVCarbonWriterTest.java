@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -29,8 +31,13 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.schema.table.DiskBasedDMSchemaStorageProvider;
+import org.apache.carbondata.core.metadata.datatype.StructField;
+import org.apache.carbondata.core.metadata.datatype.StructType;
+import org.apache.carbondata.core.metadata.schema.SchemaReader;
+import org.apache.carbondata.core.metadata.schema.table.TableInfo;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonFooterReaderV3;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -354,6 +361,180 @@ public class CSVCarbonWriterTest {
       Assert.assertEquals(2, footer.blocklet_info_list3.size());
     }
     FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testFloatDataType() throws IOException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[3];
+    fields[0] = new Field("stringField", DataTypes.STRING);
+    fields[1] = new Field("floatField", DataTypes.FLOAT);
+    fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+
+    try {
+      CarbonWriterBuilder builder = CarbonWriter.builder().isTransactionalTable(true).taskNo(5).outputPath(path);
+      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
+      for (int i = 0; i < 15; i++) {
+        String[] row = new String[] { "robot" + (i % 10), String.valueOf(i + "." + i),
+            String.valueOf(i + "." + i) };
+        writer.write(row);
+      }
+      writer.close();
+      TableInfo tableInfo = SchemaReader.inferSchema(AbsoluteTableIdentifier.from(path, "",
+          ""), true, TestUtil.configuration);
+      List<String> dataTypes = new ArrayList<>();
+      for(ColumnSchema columnSchema: tableInfo.getFactTable().getListOfColumns()) {
+          dataTypes.add(columnSchema.getDataType().toString());
+      }
+      assert(dataTypes.contains("STRING"));
+      assert(dataTypes.contains("DOUBLE"));
+      assert(dataTypes.contains("FLOAT"));
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
+  @Test
+  public void testByteDataType() throws IOException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("stringField", DataTypes.STRING);
+    fields[1] = new Field("byteField", DataTypes.BYTE);
+
+    try {
+      CarbonWriterBuilder builder = CarbonWriter.builder().isTransactionalTable(true).taskNo(5).outputPath(path);
+      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
+      for (int i = 0; i < 15; i++) {
+        String[] row = new String[] { "robot" + (i % 10),  "" + i };
+        writer.write(row);
+      }
+      writer.close();
+      TableInfo tableInfo = SchemaReader.inferSchema(AbsoluteTableIdentifier.from(path, "",
+          ""), true, TestUtil.configuration);
+      List<String> dataTypes = new ArrayList<>();
+      for(ColumnSchema columnSchema: tableInfo.getFactTable().getListOfColumns()) {
+        dataTypes.add(columnSchema.getDataType().toString());
+      }
+      assert(dataTypes.contains("STRING"));
+      assert(dataTypes.contains("BYTE"));
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
+  @Test
+  public void testReadingOfByteAndFloatWithCarbonReader() throws IOException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[3];
+    fields[0] = new Field("stringField", DataTypes.STRING);
+    fields[1] = new Field("byteField", DataTypes.BYTE);
+    fields[2] = new Field("floatField", DataTypes.FLOAT);
+
+    try {
+      CarbonWriterBuilder builder = CarbonWriter.builder().isTransactionalTable(true).taskNo(5).outputPath(path);
+      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
+      for (int i = 0; i < 15; i++) {
+        String[] row = new String[] { "robot" + (i % 10), "" + i, i + "." + i };
+        writer.write(row);
+      }
+      writer.close();
+      CarbonReader carbonReader =
+          new CarbonReaderBuilder(path, "table1").build(TestUtil.configuration);
+      for (int i = 0; i < 15; i++) {
+        Object[] actualRow = (Object[]) carbonReader.readNextRow();
+        String[] expectedRow = new String[] { "robot" + (i % 10), "" + i, i + "." + i };
+        for (int j = 0; j < 3; j++) {
+          actualRow[j].toString().equalsIgnoreCase(expectedRow[j]);
+        }
+      }
+      carbonReader.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
+  @Test
+  public void testWritingAndReadingStructOfFloat() throws IOException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    StructField[] fields = new StructField[3];
+    fields[0] = new StructField("stringField", DataTypes.STRING);
+    fields[1] = new StructField("byteField", DataTypes.BYTE);
+    fields[2] = new StructField("floatField", DataTypes.FLOAT);
+
+    Field structType = new Field("structField", "struct", Arrays.asList(fields));
+
+    try {
+      CarbonWriterBuilder builder = CarbonWriter.builder().isTransactionalTable(true).taskNo(5).outputPath(path);
+      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(new Field[] {structType}),
+          TestUtil.configuration);
+      for (int i = 0; i < 15; i++) {
+        String[] row = new String[] { "robot" + (i % 10)+"$" + i+ "$" + i + "." + i };
+        writer.write(row);
+      }
+      writer.close();
+      //TODO: CarbonReader has a bug which does not allow reading complex. Once it is fixed below validation can be enabled
+//      CarbonReader carbonReader =
+//          new CarbonReaderBuilder(path, "table121").projection(new String[]{"structfield"}).build(TestUtil.configuration);
+//      for (int i = 0; i < 15; i++) {
+//        Object[] actualRow = (Object[])(carbonReader.readNextRow());
+//        String[] expectedRow = new String[] { "robot" + (i % 10), "" + i, i + "." + i };
+//        for (int j = 0; j < 3; j++) {
+//          ((Object[])actualRow[0])[j].toString().equalsIgnoreCase(expectedRow[j]);
+//        }
+//      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
+  @Test
+  public void testWritingAndReadingArrayOfFloatAndByte() throws IOException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    StructField[] fields = new StructField[1];
+    fields[0] = new StructField("floatField", DataTypes.FLOAT);
+
+    Field structType1 = new Field("floatarray", "array", Arrays.asList(fields));
+    StructField[] fields2 = new StructField[1];
+    fields2[0] = new StructField("byteField", DataTypes.BYTE);
+    Field structType2 = new Field("bytearray", "array", Arrays.asList(fields2));
+
+    try {
+      CarbonWriterBuilder builder = CarbonWriter.builder().isTransactionalTable(true).taskNo(5).outputPath(path);
+      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(new Field[] {structType1, structType2}),
+          TestUtil.configuration);
+      for (int i = 0; i < 15; i++) {
+        String[] row = new String[] { "1.0$2.0$3.0", "1$2$3" };
+        writer.write(row);
+      }
+      writer.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
   }
 
 }

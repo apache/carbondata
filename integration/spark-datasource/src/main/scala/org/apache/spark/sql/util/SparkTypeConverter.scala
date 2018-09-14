@@ -80,6 +80,8 @@ private[spark] object SparkTypeConverter {
         case CarbonDataTypes.INT => IntegerType
         case CarbonDataTypes.LONG => LongType
         case CarbonDataTypes.DOUBLE => DoubleType
+        case CarbonDataTypes.FLOAT => FloatType
+        case CarbonDataTypes.BYTE => ByteType
         case CarbonDataTypes.BOOLEAN => BooleanType
         case CarbonDataTypes.TIMESTAMP => TimestampType
         case CarbonDataTypes.DATE => DateType

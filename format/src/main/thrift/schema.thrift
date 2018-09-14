@@ -37,6 +37,8 @@ enum DataType {
 	STRUCT = 21,
 	VARCHAR = 22,
 	MAP = 23,
+	FLOAT = 24,
+	BYTE = 25
 }
 
 /**

@@ -667,6 +667,27 @@ public final class FilterUtil {
     return columnFilterInfo;
   }
 
+  public static DataType getMeasureDataType(
+      MeasureColumnResolvedFilterInfo msrColumnEvaluatorInfo) {
+    if (msrColumnEvaluatorInfo.getType() == DataTypes.BOOLEAN) {
+      return DataTypes.BOOLEAN;
+    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.SHORT) {
+      return DataTypes.SHORT;
+    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.INT) {
+      return DataTypes.INT;
+    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.LONG) {
+      return DataTypes.LONG;
+    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.FLOAT) {
+      return DataTypes.FLOAT;
+    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.BYTE) {
+      return DataTypes.BYTE;
+    } else if (DataTypes.isDecimal(msrColumnEvaluatorInfo.getType())) {
+      return DataTypes.createDefaultDecimalType();
+    } else {
+      return DataTypes.DOUBLE;
+    }
+  }
+
   /**
    * Method will prepare the  dimfilterinfo instance by resolving the filter
    * expression value to its respective surrogates.

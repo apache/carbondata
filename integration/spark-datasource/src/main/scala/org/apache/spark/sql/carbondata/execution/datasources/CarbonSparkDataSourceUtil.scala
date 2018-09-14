@@ -58,7 +58,9 @@ object CarbonSparkDataSourceUtil {
         case CarbonDataTypes.SHORT => ShortType
         case CarbonDataTypes.INT => IntegerType
         case CarbonDataTypes.LONG => LongType
+        case CarbonDataTypes.BYTE => ByteType
         case CarbonDataTypes.DOUBLE => DoubleType
+        case CarbonDataTypes.FLOAT => FloatType
         case CarbonDataTypes.BOOLEAN => BooleanType
         case CarbonDataTypes.TIMESTAMP => TimestampType
         case CarbonDataTypes.DATE => DateType
@@ -78,6 +80,7 @@ object CarbonSparkDataSourceUtil {
       case LongType => CarbonDataTypes.LONG
       case DoubleType => CarbonDataTypes.DOUBLE
       case FloatType => CarbonDataTypes.FLOAT
+      case ByteType => CarbonDataTypes.BYTE
       case DateType => CarbonDataTypes.DATE
       case BooleanType => CarbonDataTypes.BOOLEAN
       case TimestampType => CarbonDataTypes.TIMESTAMP

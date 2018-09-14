@@ -303,8 +303,15 @@ public class DefaultEncodingFactory extends EncodingFactory {
   static ColumnPageCodec selectCodecByAlgorithmForFloating(SimpleStatsResult stats,
       boolean isComplexPrimitive, TableSpec.ColumnSpec columnSpec) {
     DataType srcDataType = stats.getDataType();
-    double maxValue = (double) stats.getMax();
-    double minValue = (double) stats.getMin();
+    double maxValue;
+    double minValue;
+    if (srcDataType == DataTypes.FLOAT) {
+      maxValue = (float) stats.getMax();
+      minValue = (float) stats.getMin();
+    } else {
+      maxValue = (double) stats.getMax();
+      minValue = (double) stats.getMin();
+    }
     int decimalCount = stats.getDecimalCount();
 
     // For Complex Type primitive we should always choose adaptive path

@@ -78,7 +78,7 @@ public class ConcurrentAvroSdkWriterTest {
     CarbonReader reader;
     try {
       reader =
-          CarbonReader.builder(path, "_temp").projection(new String[] { "name", "age" }).build(new Configuration(false));
+          CarbonReader.builder(path, "_temp2122").projection(new String[] { "name", "age" }).build(new Configuration(false));
       int i = 0;
       while (reader.hasNext()) {
         Object[] row = (Object[]) reader.readNextRow();

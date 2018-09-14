@@ -143,14 +143,12 @@ public class ColumnPageWrapper implements DimensionColumnPage {
         // if this row is null, return default null represent in byte array
         return CarbonCommonConstants.EMPTY_BYTE_ARRAY;
       }
-      if (srcDataType == DataTypes.DOUBLE || srcDataType == DataTypes.FLOAT) {
+      if (srcDataType == DataTypes.FLOAT) {
+        float floatData = columnPage.getFloat(rowId);
+        return ByteUtil.toXorBytes(floatData);
+      } else if (srcDataType == DataTypes.DOUBLE) {
         double doubleData = columnPage.getDouble(rowId);
-        if (srcDataType == DataTypes.FLOAT) {
-          float out = (float) doubleData;
-          return ByteUtil.toXorBytes(out);
-        } else {
-          return ByteUtil.toXorBytes(doubleData);
-        }
+        return ByteUtil.toXorBytes(doubleData);
       } else if (DataTypes.isDecimal(srcDataType)) {
         throw new RuntimeException("unsupported type: " + srcDataType);
       } else if ((srcDataType == DataTypes.BYTE) || (srcDataType == DataTypes.BOOLEAN) || (
@@ -160,7 +158,7 @@ public class ColumnPageWrapper implements DimensionColumnPage {
         long longData = columnPage.getLong(rowId);
         if ((srcDataType == DataTypes.BYTE)) {
           byte out = (byte) longData;
-          return ByteUtil.toXorBytes(out);
+          return new byte[] { out };
         } else if (srcDataType == DataTypes.BOOLEAN) {
           byte out = (byte) longData;
           return ByteUtil.toBytes(ByteUtil.toBoolean(out));
@@ -195,6 +193,8 @@ public class ColumnPageWrapper implements DimensionColumnPage {
         return columnPage.getBytes(rowId);
       } else if (srcDataType == DataTypes.DOUBLE) {
         return ByteUtil.toXorBytes(columnPage.getDouble(rowId));
+      } else if (srcDataType == DataTypes.FLOAT) {
+        return ByteUtil.toXorBytes(columnPage.getFloat(rowId));
       } else if (srcDataType == targetDataType) {
         return columnPage.getBytes(rowId);
       } else {

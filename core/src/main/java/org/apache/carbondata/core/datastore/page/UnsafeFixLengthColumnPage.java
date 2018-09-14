@@ -200,6 +200,20 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override
+  public void putFloat(int rowId, float value) {
+    try {
+      ensureMemory(ByteUtil.SIZEOF_FLOAT);
+    } catch (MemoryException e) {
+      throw new RuntimeException(e);
+    }
+
+    long offset = ((long) rowId) << floatBits;
+    CarbonUnsafe.getUnsafe().putFloat(baseAddress, baseOffset + offset, value);
+    totalLength += ByteUtil.SIZEOF_FLOAT;
+    updatePageSize(rowId);
+  }
+
+  @Override
   public void putBytes(int rowId, byte[] bytes) {
     try {
       ensureMemory(eachRowSize);

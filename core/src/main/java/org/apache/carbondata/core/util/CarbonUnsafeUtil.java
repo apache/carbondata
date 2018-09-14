@@ -84,7 +84,7 @@ public class CarbonUnsafeUtil {
     } else if (DataTypes.isDecimal(dataType) || dataType == DataTypes.DOUBLE) {
       data = CarbonUnsafe.getUnsafe().getDouble(baseObject, address + size);
     } else if (dataType == DataTypes.FLOAT) {
-      data = CarbonUnsafe.getUnsafe().getDouble(baseObject, address + size);
+      data = CarbonUnsafe.getUnsafe().getFloat(baseObject, address + size);
     } else if (dataType == DataTypes.BYTE_ARRAY) {
       CarbonUnsafe.getUnsafe()
           .copyMemory(baseObject, address + size, data, CarbonUnsafe.BYTE_ARRAY_OFFSET,

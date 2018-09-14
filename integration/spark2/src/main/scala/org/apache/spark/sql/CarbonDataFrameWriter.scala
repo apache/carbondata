@@ -68,7 +68,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       case IntegerType => CarbonType.INT.getName
       case ShortType => CarbonType.SHORT.getName
       case LongType => CarbonType.LONG.getName
-      case FloatType => CarbonType.DOUBLE.getName
+      case FloatType => CarbonType.FLOAT.getName
       case DoubleType => CarbonType.DOUBLE.getName
       case TimestampType => CarbonType.TIMESTAMP.getName
       case DateType => CarbonType.DATE.getName

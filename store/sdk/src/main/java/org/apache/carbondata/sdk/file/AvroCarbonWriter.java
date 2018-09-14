@@ -303,7 +303,7 @@ public class AvroCarbonWriter extends CarbonWriter {
       case FLOAT:
         // direct conversion will change precision. So parse from string.
         // also carbon internally needs float as double
-        out = Double.parseDouble(fieldValue.toString());
+        out = Float.parseFloat(fieldValue.toString());
         break;
       case NULL:
         out = null;
@@ -490,7 +490,7 @@ public class AvroCarbonWriter extends CarbonWriter {
       case STRING:
         return new Field(fieldName, DataTypes.STRING);
       case FLOAT:
-        return new Field(fieldName, DataTypes.DOUBLE);
+        return new Field(fieldName, DataTypes.FLOAT);
       case MAP:
         // recursively get the sub fields
         ArrayList<StructField> mapSubFields = new ArrayList<>();
@@ -592,7 +592,7 @@ public class AvroCarbonWriter extends CarbonWriter {
       case STRING:
         return new StructField(fieldName, DataTypes.STRING);
       case FLOAT:
-        return new StructField(fieldName, DataTypes.DOUBLE);
+        return new StructField(fieldName, DataTypes.FLOAT);
       case MAP:
         // recursively get the sub fields
         ArrayList<StructField> keyValueFields = new ArrayList<>();
@@ -697,7 +697,7 @@ public class AvroCarbonWriter extends CarbonWriter {
       case STRING:
         return DataTypes.STRING;
       case FLOAT:
-        return DataTypes.DOUBLE;
+        return DataTypes.FLOAT;
       case MAP:
         // recursively get the sub fields
         StructField mapField = prepareSubFields("val", childSchema);

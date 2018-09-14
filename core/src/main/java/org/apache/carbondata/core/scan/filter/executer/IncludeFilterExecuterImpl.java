@@ -26,7 +26,6 @@ import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
@@ -82,14 +81,12 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       this.msrColumnEvaluatorInfo = msrColumnEvaluatorInfo;
       msrColumnExecutorInfo = new MeasureColumnExecuterFilterInfo();
       comparator =
-          Comparator.getComparatorByDataTypeForMeasure(getMeasureDataType(msrColumnEvaluatorInfo));
+          Comparator.getComparatorByDataTypeForMeasure(
+              FilterUtil.getMeasureDataType(msrColumnEvaluatorInfo));
       FilterUtil
           .prepareKeysFromSurrogates(msrColumnEvaluatorInfo.getFilterValues(), segmentProperties,
               null, null, msrColumnEvaluatorInfo.getMeasure(), msrColumnExecutorInfo);
       isMeasurePresentInCurrentBlock = true;
-
-      DataType msrType = getMeasureDataType(msrColumnEvaluatorInfo);
-      comparator = Comparator.getComparatorByDataTypeForMeasure(msrType);
     }
 
   }
@@ -157,7 +154,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       MeasureRawColumnChunk measureRawColumnChunk =
           rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex];
       BitSetGroup bitSetGroup = new BitSetGroup(measureRawColumnChunk.getPagesCount());
-      DataType msrType = getMeasureDataType(msrColumnEvaluatorInfo);
+      DataType msrType = FilterUtil.getMeasureDataType(msrColumnEvaluatorInfo);
       for (int i = 0; i < measureRawColumnChunk.getPagesCount(); i++) {
         if (measureRawColumnChunk.getMaxValues() != null) {
           if (isScanRequired(measureRawColumnChunk.getMaxValues()[i],
@@ -208,22 +205,6 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       }
     }
     return false;
-  }
-
-  private DataType getMeasureDataType(MeasureColumnResolvedFilterInfo msrColumnEvaluatorInfo) {
-    if (msrColumnEvaluatorInfo.getType() == DataTypes.BOOLEAN) {
-      return DataTypes.BOOLEAN;
-    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.SHORT) {
-      return DataTypes.SHORT;
-    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.INT) {
-      return DataTypes.INT;
-    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.LONG) {
-      return DataTypes.LONG;
-    } else if (DataTypes.isDecimal(msrColumnEvaluatorInfo.getType())) {
-      return DataTypes.createDefaultDecimalType();
-    } else {
-      return DataTypes.DOUBLE;
-    }
   }
 
   private BitSet getFilteredIndexesForMeasures(ColumnPage columnPage,
