@@ -129,6 +129,7 @@ class SetCommandTestCase extends Spark2QueryTest with BeforeAndAfterAll{
     }
   }
   override def afterAll {
+    sqlContext.sparkSession.catalog.clearCache()
     sql("reset")
     sql("set carbon=true")
     checkAnswer(sql("set carbon"),

@@ -124,8 +124,6 @@ object TestSparkCarbonFileFormatWithSparkSession {
     CarbonProperties.getInstance()
       .addProperty("carbon.storelocation", storeLocation)
 
-    spark.sparkContext.setLogLevel("WARN")
-
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")

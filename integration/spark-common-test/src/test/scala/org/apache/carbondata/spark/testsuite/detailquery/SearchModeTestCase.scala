@@ -33,7 +33,6 @@ class SearchModeTestCase extends QueryTest with BeforeAndAfterAll {
 
   val numRows = 500 * 1000
   override def beforeAll = {
-    sqlContext.sparkContext.setLogLevel("INFO")
     sqlContext.sparkSession.asInstanceOf[CarbonSession].startSearchMode()
     sql("DROP TABLE IF EXISTS main")
 

@@ -40,6 +40,7 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbon_table_single_pass")
     sql("drop table if exists carbon_table_disable_bad_record_logger")
     sql("drop table if exists carbon_table_load")
+    sqlContext.sparkSession.catalog.clearCache()
     sql("RESET")
   }
 
@@ -155,6 +156,7 @@ class SetParameterTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("TC_007-test SET property IS__EMPTY_DATA_BAD_RECORD=FALSE") {
     sql("drop table if exists emptyColumnValues")
+    sqlContext.sparkSession.catalog.clearCache()
     sql("RESET")
     sql("SET carbon.options.bad.records.logger.enable=true")
     sql("SET carbon.options.is.empty.data.badrecord=false")
