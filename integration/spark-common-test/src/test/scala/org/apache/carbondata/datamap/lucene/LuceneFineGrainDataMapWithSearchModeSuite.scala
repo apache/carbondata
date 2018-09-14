@@ -56,7 +56,6 @@ class LuceneFineGrainDataMapWithSearchModeSuite extends QueryTest with BeforeAnd
 
   test("test lucene fine grain data map with search mode") {
 
-    sqlContext.sparkSession.sparkContext.setLogLevel("WARN")
     sql(
       s"""
          | CREATE DATAMAP dm ON TABLE datamap_test

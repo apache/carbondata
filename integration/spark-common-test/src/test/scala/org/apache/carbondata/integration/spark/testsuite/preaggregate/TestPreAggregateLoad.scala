@@ -227,6 +227,7 @@ class TestPreAggregateLoad extends SparkQueryTest with BeforeAndAfterAll with Be
     sql(
       s"""create datamap preagg_sum on table maintable using 'preaggregate' as select id, sum(age) from maintable group by id"""
         .stripMargin)
+    sqlContext.sparkSession.catalog.clearCache()
     sql("reset")
     checkAnswer(sql("select * from maintable_preagg_sum"), Row(1, 52))
   }
@@ -292,6 +293,7 @@ class TestPreAggregateLoad extends SparkQueryTest with BeforeAndAfterAll with Be
     sql(
       s"""create datamap preagg_sum on table maintable using 'preaggregate' as select id, sum(age) from maintable group by id,name"""
         .stripMargin)
+    sqlContext.sparkSession.catalog.clearCache()
     sql("reset")
     checkAnswer(sql("select * from maintable_preagg_sum"), Row(1, 52, "xyz"))
   }
@@ -630,7 +632,7 @@ test("check load and select for avg double datatype") {
        """.stripMargin)
     checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
       false, "segmaintable_preagg_sum")
-
+    sqlContext.sparkSession.catalog.clearCache()
     sql("reset")
     checkAnswer(sql("SELECT * FROM segmaintable_preagg_sum"), Seq(Row(1, 26)))
     checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
@@ -663,7 +665,7 @@ test("check load and select for avg double datatype") {
          | GROUP BY id
        """.stripMargin)
     sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
-
+    sqlContext.sparkSession.catalog.clearCache()
     sql("reset")
     checkAnswer(sql("SELECT * FROM segmaintable_preagg_sum"), Seq(Row(1, 26), Row(1, 26)))
     checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
@@ -709,7 +711,7 @@ test("check load and select for avg double datatype") {
       Seq(Row(1, 26)))
     checkPreAggTable(sql("SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
       false, "segmaintable_preagg_sum")
-
+    sqlContext.sparkSession.catalog.clearCache()
     // reset
     sql("reset")
     checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
@@ -721,6 +723,7 @@ test("check load and select for avg double datatype") {
   test("test whether all segments are loaded into pre-aggregate table: auto merge and input segment") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    sqlContext.sparkSession.catalog.clearCache()
     sql("reset")
     sql("DROP TABLE IF EXISTS segmaintable")
     sql(
@@ -762,7 +765,7 @@ test("check load and select for avg double datatype") {
        """.stripMargin)
 
     sql(s"INSERT INTO segmaintable VALUES(1, 'xyz', 'bengaluru', 26)")
-
+    sqlContext.sparkSession.catalog.clearCache()
     // reset
     sql("reset")
     checkAnswer(sql(s"SELECT id, SUM(age) FROM segmaintable GROUP BY id"),
@@ -777,6 +780,7 @@ test("check load and select for avg double datatype") {
   ignore("test whether all segments are loaded into pre-aggregate table: auto merge and no input segment") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    sqlContext.sparkSession.catalog.clearCache()
     sql("reset")
     sql("DROP TABLE IF EXISTS segmaintable")
     sql(
@@ -827,6 +831,7 @@ test("check load and select for avg double datatype") {
   test("test whether all segments are loaded into pre-aggregate table: create after auto merge and no input segment") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    sqlContext.sparkSession.catalog.clearCache()
     sql("reset")
     sql("DROP TABLE IF EXISTS segmaintable")
     sql(
@@ -871,6 +876,7 @@ test("check load and select for avg double datatype") {
   ignore("test whether all segments are loaded into pre-aggregate table: mixed, load, auto merge and input segment") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    sqlContext.sparkSession.catalog.clearCache()
     sql("reset")
     sql("DROP TABLE IF EXISTS main_table")
     sql(
@@ -894,7 +900,7 @@ test("check load and select for avg double datatype") {
       false, "main_table_preagg_sum")
     checkAnswer(sql(s"SELECT id, SUM(age) FROM main_table GROUP BY id"),
       Seq(Row(1, 26)))
-
+    sqlContext.sparkSession.catalog.clearCache()
     sql("reset")
     checkPreAggTable(sql("SELECT id, SUM(age) FROM main_table GROUP BY id"),
       true, "main_table_preagg_sum")
@@ -916,6 +922,7 @@ test("check load and select for avg double datatype") {
   ignore("test whether all segments are loaded into pre-aggregate table: auto merge and check pre-aggregate segment") {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    sqlContext.sparkSession.catalog.clearCache()
     sql("reset")
     sql("DROP TABLE IF EXISTS main_table")
     sql(
