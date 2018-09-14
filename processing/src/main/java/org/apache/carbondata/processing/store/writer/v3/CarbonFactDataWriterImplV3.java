@@ -45,6 +45,7 @@ import org.apache.carbondata.processing.store.writer.AbstractFactDataWriter;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.TABLE_BLOCKLET_SIZE;
 import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB;
 import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE;
+import static org.apache.carbondata.processing.loading.sort.SortScopeOptions.SortScope.NO_SORT;
 
 /**
  * Below class will be used to write the data in V3 format
@@ -68,6 +69,11 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
    */
   private long blockletSizeThreshold;
 
+  /**
+   * True if this file is sorted
+   */
+  private boolean isSorted;
+
   public CarbonFactDataWriterImplV3(CarbonFactDataHandlerModel model) {
     super(model);
     String blockletSize =
@@ -83,10 +89,11 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       LOGGER.info("Blocklet size configure for table is: " + blockletSizeThreshold);
     }
     blockletDataHolder = new BlockletDataHolder(fallbackExecutorService, model);
+    isSorted = model.getSortScope() != NO_SORT;
   }
 
-  @Override protected void writeBlockletInfoToFile()
-      throws CarbonDataWriterException {
+  @Override
+  protected void writeFooterToFile() throws CarbonDataWriterException {
     try {
       // get the current file position
       long currentPosition = currentOffsetInFile;
@@ -94,6 +101,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       FileFooter3 convertFileMeta = CarbonMetadataUtil
           .convertFileFooterVersion3(blockletMetadata, blockletIndex, localCardinality,
               thriftColumnSchemaList.size());
+      convertFileMeta.setIs_sort(isSorted);
       // fill the carbon index details
       fillBlockIndexInfoDetails(convertFileMeta.getNum_rows(), carbonDataFileName, currentPosition);
       // write the footer
@@ -377,9 +385,10 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
     }
   }
 
-  @Override public void writeFooterToFile() throws CarbonDataWriterException {
+  @Override
+  public void writeFooter() throws CarbonDataWriterException {
     if (this.blockletMetadata.size() > 0) {
-      writeBlockletInfoToFile();
+      writeFooterToFile();
     }
   }
 }

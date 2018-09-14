@@ -229,7 +229,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
       LOGGER.info("Writing data to file as max file size reached for file: "
           + activeFile + ". Data block size: " + currentFileSize);
       // write meta data to end of the existing file
-      writeBlockletInfoToFile();
+      writeFooterToFile();
       this.currentFileSize = 0;
       this.dataChunksOffsets = new ArrayList<>();
       this.dataChunksLength = new ArrayList<>();
@@ -324,7 +324,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
   /**
    * This method will write metadata at the end of file file format in thrift format
    */
-  protected abstract void writeBlockletInfoToFile() throws CarbonDataWriterException;
+  protected abstract void writeFooterToFile() throws CarbonDataWriterException;
 
   /**
    * Below method will be used to fill the vlock info details
