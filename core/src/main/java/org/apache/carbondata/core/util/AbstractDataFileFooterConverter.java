@@ -310,7 +310,7 @@ public abstract class AbstractDataFileFooterConverter {
     ColumnSchema wrapperColumnSchema = new ColumnSchema();
     wrapperColumnSchema.setColumnUniqueId(externalColumnSchema.getColumn_id());
     wrapperColumnSchema.setColumnName(externalColumnSchema.getColumn_name());
-    DataType dataType = CarbonUtil.thriftDataTyopeToWrapperDataType(externalColumnSchema.data_type);
+    DataType dataType = CarbonUtil.thriftDataTypeToWrapperDataType(externalColumnSchema.data_type);
     if (DataTypes.isDecimal(dataType)) {
       DecimalType decimalType = (DecimalType) dataType;
       decimalType.setPrecision(externalColumnSchema.getPrecision());
