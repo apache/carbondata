@@ -229,6 +229,24 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     spark.sql("drop table if exists parquet_table")
   }
 
+  test("test write with array type with value as nested array<array<map>> type") {
+    spark.sql("drop table if exists carbon_table")
+    spark.sql("drop table if exists parquet_table")
+    import spark.implicits._
+    val df = spark.sparkContext.parallelize(1 to 10)
+      .map(x => ("a" + x % 10, Array(Array(Map("b" -> "c"))), x))
+      .toDF("c1", "c2", "number")
+
+    df.write
+      .format("parquet").saveAsTable("parquet_table")
+    spark.sql("create table carbon_table(c1 string, c2 array<array<map<string,string>>>, number int) using carbon")
+    spark.sql("insert into carbon_table select * from parquet_table")
+    assert(spark.sql("select * from carbon_table").count() == 10)
+    TestUtil.checkAnswer(spark.sql("select * from carbon_table"), spark.sql("select * from parquet_table"))
+    spark.sql("drop table if exists carbon_table")
+    spark.sql("drop table if exists parquet_table")
+  }
+
   test("test write with struct type with value as nested map type") {
     spark.sql("drop table if exists carbon_table")
     spark.sql("drop table if exists parquet_table")
@@ -240,6 +258,24 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     df.write
       .format("parquet").saveAsTable("parquet_table")
     spark.sql("create table carbon_table(c1 string, c2 struct<a1:string, a2:map<string,string>>, number int) using carbon")
+    spark.sql("insert into carbon_table select * from parquet_table")
+    assert(spark.sql("select * from carbon_table").count() == 10)
+    TestUtil.checkAnswer(spark.sql("select * from carbon_table"), spark.sql("select * from parquet_table"))
+    spark.sql("drop table if exists carbon_table")
+    spark.sql("drop table if exists parquet_table")
+  }
+
+  test("test write with struct type with value as nested struct<array<map>> type") {
+    spark.sql("drop table if exists carbon_table")
+    spark.sql("drop table if exists parquet_table")
+    import spark.implicits._
+    val df = spark.sparkContext.parallelize(1 to 10)
+      .map(x => ("a" + x % 10, ("a", Array(Map("b" -> "c"))), x))
+      .toDF("c1", "c2", "number")
+
+    df.write
+      .format("parquet").saveAsTable("parquet_table")
+    spark.sql("create table carbon_table(c1 string, c2 struct<a1:string, a2:array<map<string,string>>>, number int) using carbon")
     spark.sql("insert into carbon_table select * from parquet_table")
     assert(spark.sql("select * from carbon_table").count() == 10)
     TestUtil.checkAnswer(spark.sql("select * from carbon_table"), spark.sql("select * from parquet_table"))
