@@ -374,7 +374,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       }
       consumerExecutorService.shutdownNow();
       processWriteTaskSubmitList(consumerExecutorServiceTaskList);
-      this.dataWriter.writeFooterToFile();
+      this.dataWriter.writeFooter();
       LOGGER.info("All blocklets have been finished writing");
       // close all the open stream for both the files
       this.dataWriter.closeWriter();

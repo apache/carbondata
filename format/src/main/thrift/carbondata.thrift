@@ -205,6 +205,7 @@ struct FileFooter3{
     3: required list<BlockletIndex> blocklet_index_list;	// Blocklet index of all blocklets in this file
     4: optional list<BlockletInfo3> blocklet_info_list3;	// Information about blocklets of all columns in this file for V3 format
     5: optional dictionary.ColumnDictionaryChunk dictionary; // Blocklet local dictionary
+    6: optional bool is_sort; // True if the data is sorted in this file, it is used for compaction to decide whether to use merge sort or not
 }
 
 /**
