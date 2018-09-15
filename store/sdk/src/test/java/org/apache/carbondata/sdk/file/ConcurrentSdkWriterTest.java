@@ -89,6 +89,57 @@ public class ConcurrentSdkWriterTest {
     FileUtils.deleteDirectory(new File(path));
   }
 
+  @Test
+  public void testWriteFilesWithDefaultConfiguration() throws IOException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+
+
+    ExecutorService executorService = Executors.newFixedThreadPool(numOfThreads);
+    try {
+      CarbonWriterBuilder builder = CarbonWriter.builder()
+          .outputPath(path);
+      CarbonWriter writer =
+          builder.buildThreadSafeWriterForCSVInput(new Schema(fields), numOfThreads);
+      // write in multi-thread
+      for (int i = 0; i < numOfThreads; i++) {
+        executorService.submit(new WriteLogic(writer));
+      }
+      executorService.shutdown();
+      executorService.awaitTermination(2, TimeUnit.HOURS);
+      writer.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+
+    // read the files and verify the count
+    CarbonReader reader;
+    try {
+      reader = CarbonReader
+          .builder(path, "_temp")
+          .projection(new String[]{"name", "age"})
+          .build(new Configuration(false));
+      int i = 0;
+      while (reader.hasNext()) {
+        Object[] row = (Object[]) reader.readNextRow();
+        i++;
+      }
+      Assert.assertEquals(i, numOfThreads * recordsPerItr);
+      reader.close();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
   class WriteLogic implements Runnable {
     CarbonWriter writer;
 

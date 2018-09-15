@@ -383,6 +383,8 @@ public class CarbonWriterBuilder {
    * use buildThreadSafeWriterForCSVInput in multi thread environment
    * Build a {@link CarbonWriter}, which accepts row in CSV format
    * @param schema carbon Schema object {org.apache.carbondata.sdk.file.Schema}
+   * @param configuration  configuration for support multiple use
+   *                       with different SK/AK to write concurrently to S3.
    * @return CSVCarbonWriter
    * @throws IOException
    * @throws InvalidLoadOptionException
@@ -397,10 +399,27 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   * This writer is not thread safe,
+   * use buildThreadSafeWriterForCSVInput in multi thread environment,
+   * use default configuration
    *
-   * Build a {@link CarbonWriter}, which accepts row in CSV format
    * @param schema carbon Schema object {org.apache.carbondata.sdk.file.Schema}
+   *    * @return CSVCarbonWriter
+   * @throws IOException
+   * @throws InvalidLoadOptionException
+   */
+  public CarbonWriter buildWriterForCSVInput(Schema schema)
+      throws IOException, InvalidLoadOptionException {
+    return buildWriterForCSVInput(schema, new Configuration(false));
+  }
+
+  /**
+   * Build a {@link CarbonWriter}, which accepts row in CSV format
+   *
+   * @param schema       carbon Schema object {org.apache.carbondata.sdk.file.Schema}
    * @param numOfThreads number of threads() in which .write will be called.
+   * @param configuration  configuration for support multiple use
+   *                       with different SK/AK to write concurrently to S3.
    * @return CSVCarbonWriter
    * @throws IOException
    * @throws InvalidLoadOptionException
@@ -420,10 +439,28 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   * Build a {@link CarbonWriter}, which accepts row in CSV format,
+   * with default configuration
+   *
+   * @param schema       carbon Schema object {org.apache.carbondata.sdk.file.Schema}
+   * @param numOfThreads number of threads() in which .write will be called.
+   * @return CSVCarbonWriter
+   * @throws IOException
+   * @throws InvalidLoadOptionException
+   */
+  public CarbonWriter buildThreadSafeWriterForCSVInput(Schema schema, short numOfThreads)
+      throws IOException, InvalidLoadOptionException {
+    return buildThreadSafeWriterForCSVInput(schema, numOfThreads, new Configuration(false));
+  }
+
+  /**
    * This writer is not thread safe,
    * use buildThreadSafeWriterForAvroInput in multi thread environment
    * Build a {@link CarbonWriter}, which accepts Avro object
+   *
    * @param avroSchema avro Schema object {org.apache.avro.Schema}
+   * @param configuration  configuration for support multiple use
+   *                       with different SK/AK to write concurrently to S3.
    * @return AvroCarbonWriter
    * @throws IOException
    * @throws InvalidLoadOptionException
@@ -443,9 +480,28 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   * This writer is not thread safe,
+   * use buildThreadSafeWriterForAvroInput in multi thread environment
    * Build a {@link CarbonWriter}, which accepts Avro object
+   * with default configuration
+   *
    * @param avroSchema avro Schema object {org.apache.avro.Schema}
+   * @return AvroCarbonWriter
+   * @throws IOException
+   * @throws InvalidLoadOptionException
+   */
+  public CarbonWriter buildWriterForAvroInput(org.apache.avro.Schema avroSchema)
+      throws IOException, InvalidLoadOptionException {
+    return buildWriterForAvroInput(avroSchema, new Configuration());
+  }
+
+  /**
+   * Build a {@link CarbonWriter}, which accepts Avro object
+   *
+   * @param avroSchema   avro Schema object {org.apache.avro.Schema}
    * @param numOfThreads number of threads() in which .write will be called.
+   * @param configuration  configuration for support multiple use
+   *                       with different SK/AK to write concurrently to S3.
    * @return AvroCarbonWriter
    * @throws IOException
    * @throws InvalidLoadOptionException
@@ -471,10 +527,28 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   * Build a {@link CarbonWriter}, which accepts Avro object
+   *
+   * @param avroSchema   avro Schema object {org.apache.avro.Schema}
+   * @param numOfThreads number of threads() in which .write will be called.
+   * @return AvroCarbonWriter
+   * @throws IOException
+   * @throws InvalidLoadOptionException
+   */
+  public CarbonWriter buildThreadSafeWriterForAvroInput(org.apache.avro.Schema avroSchema,
+      short numOfThreads)
+      throws IOException, InvalidLoadOptionException {
+    return buildThreadSafeWriterForAvroInput(avroSchema, numOfThreads, new Configuration(false));
+  }
+
+  /**
    * This writer is not thread safe,
    * use buildThreadSafeWriterForJsonInput in multi thread environment
    * Build a {@link CarbonWriter}, which accepts Json object
-   * @param carbonSchema carbon Schema object
+   *
+   * @param carbonSchema  carbon Schema object
+   * @param configuration configuration for support multiple use
+   *                      with different SK/AK to write concurrently to S3.
    * @return JsonCarbonWriter
    * @throws IOException
    * @throws InvalidLoadOptionException
@@ -490,11 +564,28 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   * This writer is not thread safe,
+   * use buildThreadSafeWriterForJsonInput in multi thread environment
+   * Build a {@link CarbonWriter}, which accepts Json object
+   *
+   * @param carbonSchema carbon Schema object
+   * @return JsonCarbonWriter
+   * @throws IOException
+   * @throws InvalidLoadOptionException
+   */
+  public JsonCarbonWriter buildWriterForJsonInput(Schema carbonSchema)
+      throws IOException, InvalidLoadOptionException {
+    return buildWriterForJsonInput(carbonSchema, new Configuration(false));
+  }
+
+  /**
    * Can use this writer in multi-thread instance.
    *
    * Build a {@link CarbonWriter}, which accepts Json object
    * @param carbonSchema carbon Schema object
    * @param numOfThreads number of threads() in which .write will be called.
+   * @param configuration  configuration for support multiple use
+   *                       with different SK/AK to write concurrently to S3.
    * @return JsonCarbonWriter
    * @throws IOException
    * @throws InvalidLoadOptionException

@@ -94,6 +94,62 @@ public class ConcurrentAvroSdkWriterTest {
     FileUtils.deleteDirectory(new File(path));
   }
 
+  @Test public void testWriteFilesWithDefaultConfiguration() throws IOException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    String mySchema =
+        "{" + "  \"name\": \"address\", " + "   \"type\": \"record\", " + "    \"fields\": [  "
+            + "  { \"name\": \"name\", \"type\": \"string\"}, "
+            + "  { \"name\": \"age\", \"type\": \"int\"}, " + "  { " + "    \"name\": \"address\", "
+            + "      \"type\": { " + "    \"type\" : \"record\", "
+            + "        \"name\" : \"my_address\", " + "        \"fields\" : [ "
+            + "    {\"name\": \"street\", \"type\": \"string\"}, "
+            + "    {\"name\": \"city\", \"type\": \"string\"} " + "  ]} " + "  } " + "] " + "}";
+
+    String json =
+        "{\"name\":\"bob\", \"age\":10, \"address\" : {\"street\":\"abc\", \"city\":\"bang\"}}";
+
+    // conversion to GenericData.Record
+    org.apache.avro.Schema avroSchema = new org.apache.avro.Schema.Parser().parse(mySchema);
+    GenericData.Record record = TestUtil.jsonToAvro(json, mySchema);
+
+    ExecutorService executorService = Executors.newFixedThreadPool(numOfThreads);
+    try {
+      CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
+      CarbonWriter writer = builder.buildThreadSafeWriterForAvroInput(avroSchema, numOfThreads);
+      // write in multi-thread
+      for (int i = 0; i < numOfThreads; i++) {
+        executorService.submit(new WriteLogic(writer, record));
+      }
+      executorService.shutdown();
+      executorService.awaitTermination(2, TimeUnit.HOURS);
+      writer.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+
+    // read the files and verify the count
+    CarbonReader reader;
+    try {
+      reader =
+          CarbonReader.builder(path, "_temp").projection(new String[] { "name", "age" }).build(new Configuration(false));
+      int i = 0;
+      while (reader.hasNext()) {
+        Object[] row = (Object[]) reader.readNextRow();
+        i++;
+      }
+      Assert.assertEquals(i, numOfThreads * recordsPerItr);
+      reader.close();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
   class WriteLogic implements Runnable {
     CarbonWriter writer;
     GenericData.Record record;

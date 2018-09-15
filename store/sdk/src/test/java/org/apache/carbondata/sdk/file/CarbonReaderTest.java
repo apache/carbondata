@@ -1707,5 +1707,49 @@ public class CarbonReaderTest extends TestCase {
     FileUtils.deleteDirectory(new File("./testWriteFiles"));
   }
 
+  @Test
+  public void testCompatibilityAndSubfolders() throws IOException, InterruptedException {
+    String path1 = "./testWriteFiles/1/"+System.nanoTime();
+    String path2 = "./testWriteFiles/2/"+System.nanoTime();
+    String path3 = "./testWriteFiles/2/test/"+System.nanoTime();
+    String path4 = "./testWriteFiles/a3//asdas/"+System.nanoTime();
+    String path5 = "./testWriteFiles/sdas"+System.nanoTime();
+    FileUtils.deleteDirectory(new File("./testWriteFiles"));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path1, false, false);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path2, false, false);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path3, false, false);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path4, false, false);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path5, false, false);
+
+    EqualToExpression equalToExpression = new EqualToExpression(
+        new ColumnExpression("name", DataTypes.STRING),
+        new LiteralExpression("robot1", DataTypes.STRING));
+    CarbonReader reader = CarbonReader
+        .builder("./testWriteFiles", "_temp")
+        .isTransactionalTable(false)
+        .projection(new String[]{"name", "age"})
+        .filter(equalToExpression)
+        .build();
+
+    int i = 0;
+    while (reader.hasNext()) {
+      Object[] row = (Object[]) reader.readNextRow();
+      // Default sort column is applied for dimensions. So, need  to validate accordingly
+      assert ("robot1".equals(row[0]));
+      i++;
+    }
+    Assert.assertEquals(i, 100);
+
+    reader.close();
+
+    FileUtils.deleteDirectory(new File("./testWriteFiles"));
+  }
+
+
 
 }

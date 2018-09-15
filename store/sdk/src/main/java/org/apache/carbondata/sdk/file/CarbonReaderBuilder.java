@@ -234,4 +234,16 @@ public class CarbonReaderBuilder {
     }
   }
 
+  /**
+   * Build CarbonReader with default configuration
+   *
+   * @param <T>
+   * @return CarbonReader
+   * @throws IOException
+   * @throws InterruptedException
+   */
+  public <T> CarbonReader<T> build()
+      throws IOException, InterruptedException {
+    return build(new Configuration(false));
+  }
 }
