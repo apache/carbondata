@@ -206,13 +206,14 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @param dataRefNode
    */
   private void addBlockBasedOnMinMaxValue(FilterExecuter filterExecuter,
-      List<DataRefNode> listOfDataBlocksToScan, DataRefNode dataRefNode) {
+      List<DataRefNode> listOfDataBlocksToScan, DataRefNode dataRefNode, boolean[] isMinMaxSet) {
     if (null == dataRefNode.getColumnsMinValue() || null == dataRefNode.getColumnsMaxValue()) {
       listOfDataBlocksToScan.add(dataRefNode);
       return;
     }
     BitSet bitSet = filterExecuter
-        .isScanRequired(dataRefNode.getColumnsMaxValue(), dataRefNode.getColumnsMinValue());
+        .isScanRequired(dataRefNode.getColumnsMaxValue(), dataRefNode.getColumnsMinValue(),
+            isMinMaxSet);
     if (!bitSet.isEmpty()) {
       listOfDataBlocksToScan.add(dataRefNode);
     }
@@ -472,13 +473,13 @@ public class FilterExpressionProcessor implements FilterProcessor {
   }
 
   public static boolean isScanRequired(FilterExecuter filterExecuter, byte[][] maxValue,
-      byte[][] minValue) {
+      byte[][] minValue, boolean[] isMinMaxSet) {
     if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
       return ((ImplicitColumnFilterExecutor) filterExecuter)
-          .isFilterValuesPresentInAbstractIndex(maxValue, minValue);
+          .isFilterValuesPresentInAbstractIndex(maxValue, minValue, isMinMaxSet);
     } else {
       // otherwise decide based on min/max value
-      BitSet bitSet = filterExecuter.isScanRequired(maxValue, minValue);
+      BitSet bitSet = filterExecuter.isScanRequired(maxValue, minValue, isMinMaxSet);
       return !bitSet.isEmpty();
     }
   }

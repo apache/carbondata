@@ -1835,11 +1835,11 @@ public final class CarbonCommonConstants {
    * property to be used for specifying the max character limit for string/varchar data type till
    * where storing min/max in data file will be considered
    */
-  public static final String CARBON_STRING_ALLOWED_CHARACTER_COUNT =
-      "carbon.string.allowed.character.count";
-  public static final String CARBON_STRING_ALLOWED_CHARACTER_COUNT_DEFAULT = "500";
-  public static final int CARBON_STRING_ALLOWED_CHARACTER_COUNT_MIN = 10;
-  public static final int CARBON_STRING_ALLOWED_CHARACTER_COUNT_MAX = 1000;
+  public static final String CARBON_MINMAX_ALLOWED_BYTE_COUNT =
+      "carbon.minmax.allowed.byte.count";
+  public static final String CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT = "200";
+  public static final int CARBON_MINMAX_ALLOWED_BYTE_COUNT_MIN = 10;
+  public static final int CARBON_MINMAX_ALLOWED_BYTE_COUNT_MAX = 1000;
 
   private CarbonCommonConstants() {
   }

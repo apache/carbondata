@@ -21,6 +21,7 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -39,6 +40,7 @@ import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
 
 /**
@@ -114,9 +116,13 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
     String tempFilePath = null;
     DataMapRowImpl summaryRow = null;
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
+    boolean[] summaryRowMinMaxFlag = new boolean[segmentProperties.getDimensions().size()];
+    Arrays.fill(summaryRowMinMaxFlag, true);
     // Relative blocklet ID is the id assigned to a blocklet within a part file
     int relativeBlockletId = 0;
     for (DataFileFooter fileFooter : indexInfo) {
+      // update the min max flag for summary row
+      updateMinMaxFlag(fileFooter, summaryRowMinMaxFlag);
       TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
       BlockMetaInfo blockMetaInfo =
           blockletDataMapInfo.getBlockMetaInfoMap().get(blockInfo.getFilePath());
@@ -140,6 +146,8 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
         relativeBlockletId += fileFooter.getBlockletList().size();
       }
     }
+    setMinMaxFlagForTaskSummary(summaryRow, taskSummarySchema, segmentProperties,
+        summaryRowMinMaxFlag);
     return summaryRow;
   }
 
@@ -192,6 +200,11 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
         setLocations(blockMetaInfo.getLocationInfo(), row, ordinal++);
         // Store block size
         row.setLong(blockMetaInfo.getSize(), ordinal++);
+        // add min max flag for all the dimension columns
+        addMinMaxFlagValues(row, schema[ordinal],
+            fileFooter.getBlockletIndex().getMinMaxIndex().getIsMinMaxSet(), ordinal,
+            segmentProperties.getDimensions().size());
+        ordinal++;
         // add blocklet info
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         DataOutput dataOutput = new DataOutputStream(stream);
@@ -230,6 +243,14 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
       return super.getBlockletId(dataMapRow);
     }
     return dataMapRow.getShort(BLOCKLET_ID_INDEX);
+  }
+
+  protected boolean useMinMaxForExecutorPruning(FilterResolverIntf filterResolverIntf) {
+    if (isLegacyStore) {
+      return super.useMinMaxForExecutorPruning(filterResolverIntf);
+    }
+    return BlockletDataMapUtil
+        .useMinMaxForBlockletPruning(filterResolverIntf, getMinMaxCacheColumns());
   }
 
   @Override

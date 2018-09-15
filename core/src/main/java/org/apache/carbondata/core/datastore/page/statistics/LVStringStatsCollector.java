@@ -30,9 +30,9 @@ public abstract class LVStringStatsCollector implements ColumnPageStatsCollector
   /**
    * allowed character limit for to be considered for storing min max
    */
-  protected static final int allowedMinMaxCharacterLimit = Integer.parseInt(
+  protected static final int allowedMinMaxByteLimit = Integer.parseInt(
       CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_STRING_ALLOWED_CHARACTER_COUNT));
+          .getProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT));
   /**
    * variables for storing min max value
    */
@@ -105,7 +105,7 @@ public abstract class LVStringStatsCollector implements ColumnPageStatsCollector
 
   private boolean isIgnoreMinMaxFlagSet(byte[] value) {
     if (!ignoreWritingMinMax) {
-      if (null != value && value.length > 2) {
+      if (null != value && value.length > allowedMinMaxByteLimit) {
         ignoreWritingMinMax = true;
       }
     }

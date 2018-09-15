@@ -122,11 +122,11 @@ public class BlockletFilterScanner extends BlockletFullScanner {
         bitSet = ((ImplicitColumnFilterExecutor) filterExecuter)
             .isFilterValuesPresentInBlockOrBlocklet(
                 dataBlock.getColumnsMaxValue(),
-                dataBlock.getColumnsMinValue(), blockletId);
+                dataBlock.getColumnsMinValue(), blockletId, dataBlock.isMinMaxSet());
       } else {
         bitSet = this.filterExecuter
             .isScanRequired(dataBlock.getColumnsMaxValue(),
-                dataBlock.getColumnsMinValue());
+                dataBlock.getColumnsMinValue(), dataBlock.isMinMaxSet());
       }
       return !bitSet.isEmpty();
     }

@@ -35,7 +35,7 @@ public class TestBlockletDataMap extends AbstractDictionaryCacheTest {
 
     new MockUp<ImplicitIncludeFilterExecutorImpl>() {
       @Mock BitSet isFilterValuesPresentInBlockOrBlocklet(byte[][] maxValue, byte[][] minValue,
-          String uniqueBlockPath) {
+          String uniqueBlockPath, boolean[] isMinMaxSet) {
         BitSet bitSet = new BitSet(1);
         bitSet.set(8);
         return bitSet;
@@ -45,13 +45,14 @@ public class TestBlockletDataMap extends AbstractDictionaryCacheTest {
     BlockDataMap blockletDataMap = new BlockletDataMap();
     Method method = BlockDataMap.class
         .getDeclaredMethod("addBlockBasedOnMinMaxValue", FilterExecuter.class, byte[][].class,
-            byte[][].class, String.class, int.class);
+            byte[][].class, boolean[].class, String.class, int.class);
     method.setAccessible(true);
 
     byte[][] minValue = { ByteUtil.toBytes("sfds") };
     byte[][] maxValue = { ByteUtil.toBytes("resa") };
+    boolean[] minMaxFlag = new boolean[] {true};
     Object result = method
-        .invoke(blockletDataMap, implicitIncludeFilterExecutor, minValue, maxValue,
+        .invoke(blockletDataMap, implicitIncludeFilterExecutor, minValue, maxValue, minMaxFlag,
             "/opt/store/default/carbon_table/Fact/Part0/Segment_0/part-0-0_batchno0-0-1514989110586.carbondata",
             0);
     assert ((boolean) result);

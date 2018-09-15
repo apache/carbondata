@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.blocklet.BlockletEncodedColumnPage;
 import org.apache.carbondata.core.datastore.blocklet.EncodedBlocklet;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -53,6 +55,9 @@ import org.apache.carbondata.format.SegmentInfo;
  * Util class to convert to thrift metdata classes
  */
 public class CarbonMetadataUtil {
+
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(CarbonMetadataUtil.class.getName());
 
   private CarbonMetadataUtil() {
   }
@@ -107,10 +112,16 @@ public class CarbonMetadataUtil {
     if (minMaxIndex == null) {
       return null;
     }
-
+    List<Boolean> isMinMaxSet = null;
+    if (minMaxIndex.isSetMin_max_presence()) {
+      isMinMaxSet = minMaxIndex.getMin_max_presence();
+    } else {
+      Boolean[] minMaxFlag = new Boolean[minMaxIndex.getMax_values().size()];
+      Arrays.fill(minMaxFlag, true);
+      isMinMaxSet = Arrays.asList(minMaxFlag);
+    }
     return new org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex(
-        minMaxIndex.getMin_values(), minMaxIndex.getMax_values(),
-        minMaxIndex.getMin_max_presence());
+        minMaxIndex.getMin_values(), minMaxIndex.getMax_values(), isMinMaxSet);
   }
 
   /**
@@ -286,6 +297,9 @@ public class CarbonMetadataUtil {
         SimpleStatsResult stats = encodedColumnPage.getStats();
         if (!stats.writeMinMax()) {
           mergedWriteMinMaxFlag[i] = stats.writeMinMax();
+          String columnName = encodedColumnPage.getActualPage().getColumnSpec().getFieldName();
+          LOGGER.info("Min Max writing ignored for column " + columnName + " from page 0 to "
+              + encodedBlocklet.getNumberOfPages());
           break;
         }
       }

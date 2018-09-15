@@ -41,6 +41,15 @@ public class DataMapRowImpl extends DataMapRow {
     return ((byte[]) data[ordinal]).length;
   }
 
+  @Override public void setBoolean(boolean value, int ordinal) {
+    assert (schemas[ordinal].getDataType() == DataTypes.BOOLEAN);
+    data[ordinal] = value;
+  }
+
+  @Override public boolean getBoolean(int ordinal) {
+    return (boolean) data[ordinal];
+  }
+
   @Override public DataMapRow getRow(int ordinal) {
     return (DataMapRow) data[ordinal];
   }

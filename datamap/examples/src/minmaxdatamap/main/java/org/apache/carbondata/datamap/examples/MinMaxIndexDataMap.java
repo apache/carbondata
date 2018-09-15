@@ -140,7 +140,7 @@ public class MinMaxIndexDataMap extends CoarseGrainDataMap {
 
           BitSet bitSet = filterExecuter.isScanRequired(
               readMinMaxDataMap[blkIdx][blkltIdx].getMaxValues(),
-              readMinMaxDataMap[blkIdx][blkltIdx].getMinValues());
+              readMinMaxDataMap[blkIdx][blkltIdx].getMinValues(), null);
           if (!bitSet.isEmpty()) {
             String blockFileName = indexFilePath[blkIdx].substring(
                 indexFilePath[blkIdx].lastIndexOf(File.separatorChar) + 1,

@@ -314,12 +314,17 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
    * @return
    */
   @Override
-  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
+      boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     byte[][] filterValues = this.filterRangesValues;
     int columnIndex = this.dimColEvaluatorInfo.getColumnIndexInMinMaxByteArray();
-    boolean isScanRequired = columnIndex >= blockMinValue.length ||
-        isScanRequired(blockMinValue[columnIndex], blockMaxValue[columnIndex], filterValues);
+    boolean isScanRequired = true;
+    if (isMinMaxSet[columnIndex]) {
+      isScanRequired =
+          columnIndex >= blockMinValue.length || isScanRequired(blockMinValue[columnIndex],
+              blockMaxValue[columnIndex], filterValues);
+    }
     if (isScanRequired) {
       bitSet.set(0);
     }
@@ -358,10 +363,12 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
     BitSetGroup bitSetGroup = new BitSetGroup(rawColumnChunk.getPagesCount());
     FilterExecuter filterExecuter = null;
     boolean isExclude = false;
+    boolean isMinMaxSetForFilterDimension =
+        blockChunkHolder.getDataBlock().isMinMaxSet()[chunkIndex];
     for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
       if (rawColumnChunk.getMaxValues() != null) {
-        if (isScanRequired(rawColumnChunk.getMinValues()[i], rawColumnChunk.getMaxValues()[i],
-            this.filterRangesValues)) {
+        if (!isMinMaxSetForFilterDimension || isScanRequired(rawColumnChunk.getMinValues()[i],
+            rawColumnChunk.getMaxValues()[i], this.filterRangesValues)) {
           if (isRangeFullyCoverBlock) {
             // Set all the bits in this case as filter Min Max values cover the whole block.
             BitSet bitSet = new BitSet(rawColumnChunk.getRowCount()[i]);

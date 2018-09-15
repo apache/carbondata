@@ -114,8 +114,8 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
     }
   }
 
-  @Override
-  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
+      boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     boolean isScanRequired = false;
     byte[] maxValue = null;
@@ -125,8 +125,12 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
         isScanRequired =
             isScanRequired(maxValue, msrFilterRangeValues, msrColEvalutorInfoList.get(0).getType());
       } else {
-        maxValue = blockMaxValue[dimensionChunkIndex[0]];
-        isScanRequired = isScanRequired(maxValue, filterRangeValues);
+        if (!isMinMaxSet[dimensionChunkIndex[0]]) {
+          isScanRequired = true;
+        } else {
+          maxValue = blockMaxValue[dimensionChunkIndex[0]];
+          isScanRequired = isScanRequired(maxValue, filterRangeValues);
+        }
       }
     } else {
       isScanRequired = isDefaultValuePresentInFilter;
@@ -194,9 +198,12 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
       BitSetGroup bitSetGroup = new BitSetGroup(rawColumnChunk.getPagesCount());
       FilterExecuter filterExecuter = null;
       boolean isExclude = false;
+      boolean isMinMaxSetForFilterDimension =
+          rawBlockletColumnChunks.getDataBlock().isMinMaxSet()[chunkIndex];
       for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
         if (rawColumnChunk.getMaxValues() != null) {
-          if (isScanRequired(rawColumnChunk.getMaxValues()[i], this.filterRangeValues)) {
+          if (!isMinMaxSetForFilterDimension || isScanRequired(rawColumnChunk.getMaxValues()[i],
+              this.filterRangeValues)) {
             int compare = ByteUtil.UnsafeComparer.INSTANCE
                 .compareTo(filterRangeValues[0], rawColumnChunk.getMinValues()[i]);
             if (compare < 0) {

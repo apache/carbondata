@@ -100,7 +100,8 @@ public class StreamPruner {
     }
     byte[][] maxValue = streamFile.getMinMaxIndex().getMaxValues();
     byte[][] minValue = streamFile.getMinMaxIndex().getMinValues();
-    BitSet bitSet = filterExecuter.isScanRequired(maxValue, minValue);
+    BitSet bitSet = filterExecuter
+        .isScanRequired(maxValue, minValue, streamFile.getMinMaxIndex().getIsMinMaxSet());
     if (!bitSet.isEmpty()) {
       return true;
     } else {

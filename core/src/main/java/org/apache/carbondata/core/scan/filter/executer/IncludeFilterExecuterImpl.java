@@ -108,10 +108,13 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       BitSetGroup bitSetGroup = new BitSetGroup(dimensionRawColumnChunk.getPagesCount());
       filterValues = dimColumnExecuterInfo.getFilterKeys();
       boolean isDecoded = false;
+      boolean isMinMaxSetForFilterDimension =
+          rawBlockletColumnChunks.getDataBlock().isMinMaxSet()[chunkIndex];
       for (int i = 0; i < dimensionRawColumnChunk.getPagesCount(); i++) {
         if (dimensionRawColumnChunk.getMaxValues() != null) {
-          if (isScanRequired(dimensionRawColumnChunk.getMaxValues()[i],
-              dimensionRawColumnChunk.getMinValues()[i], dimColumnExecuterInfo.getFilterKeys())) {
+          if (!isMinMaxSetForFilterDimension || isScanRequired(
+              dimensionRawColumnChunk.getMaxValues()[i], dimensionRawColumnChunk.getMinValues()[i],
+              dimColumnExecuterInfo.getFilterKeys())) {
             DimensionColumnPage dimensionColumnPage = dimensionRawColumnChunk.decodeColumnPage(i);
             if (!isDecoded) {
               filterValues =  FilterUtil
@@ -449,7 +452,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   }
 
   @Override
-  public BitSet isScanRequired(byte[][] blkMaxVal, byte[][] blkMinVal) {
+  public BitSet isScanRequired(byte[][] blkMaxVal, byte[][] blkMinVal, boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     byte[][] filterValues;
     int chunkIndex = 0;
@@ -458,7 +461,12 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     if (isDimensionPresentInCurrentBlock) {
       filterValues = dimColumnExecuterInfo.getFilterKeys();
       chunkIndex = dimColumnEvaluatorInfo.getColumnIndexInMinMaxByteArray();
-      isScanRequired = isScanRequired(blkMaxVal[chunkIndex], blkMinVal[chunkIndex], filterValues);
+      // scan all the data is minMax is not written for the column
+      if (!isMinMaxSet[chunkIndex]) {
+        isScanRequired = true;
+      } else {
+        isScanRequired = isScanRequired(blkMaxVal[chunkIndex], blkMinVal[chunkIndex], filterValues);
+      }
     } else if (isMeasurePresentInCurrentBlock) {
       chunkIndex = msrColumnEvaluatorInfo.getColumnIndexInMinMaxByteArray();
       isScanRequired = isScanRequired(blkMaxVal[chunkIndex], blkMinVal[chunkIndex],

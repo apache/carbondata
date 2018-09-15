@@ -52,9 +52,10 @@ public class OrFilterExecuterImpl implements FilterExecuter {
   }
 
   @Override
-  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
-    BitSet leftFilters = leftExecuter.isScanRequired(blockMaxValue, blockMinValue);
-    BitSet rightFilters = rightExecuter.isScanRequired(blockMaxValue, blockMinValue);
+  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
+      boolean[] isMinMaxSet) {
+    BitSet leftFilters = leftExecuter.isScanRequired(blockMaxValue, blockMinValue, isMinMaxSet);
+    BitSet rightFilters = rightExecuter.isScanRequired(blockMaxValue, blockMinValue, isMinMaxSet);
     leftFilters.or(rightFilters);
     return leftFilters;
   }

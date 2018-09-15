@@ -221,7 +221,7 @@ public class BlockletInfo implements Serializable, Writable {
       output.writeInt(measureChunksLength.get(i));
     }
     writeChunkInfoForOlderVersions(output);
-
+    blockletIndex.write(output);
   }
 
   /**
@@ -288,6 +288,8 @@ public class BlockletInfo implements Serializable, Writable {
       measureChunksLength.add(input.readInt());
     }
     readChunkInfoForOlderVersions(input);
+    blockletIndex = new BlockletIndex();
+    blockletIndex.readFields(input);
   }
 
   /**

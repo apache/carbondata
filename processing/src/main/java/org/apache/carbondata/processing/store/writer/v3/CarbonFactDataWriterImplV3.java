@@ -329,7 +329,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
           index.b_tree_index.getEnd_key());
       BlockletMinMaxIndex minMaxIndex =
           new BlockletMinMaxIndex(index.getMin_max_index().getMin_values(),
-              index.getMin_max_index().getMin_values(),
+              index.getMin_max_index().getMax_values(),
               index.getMin_max_index().getMin_max_presence());
       org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex bIndex =
           new org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex(bTreeIndex,

@@ -108,6 +108,11 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
               .putByte(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
                   row.getByte(index));
           runningLength += row.getSizeInBytes(index);
+        } else if (dataType == DataTypes.BOOLEAN) {
+          getUnsafe()
+              .putBoolean(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
+                  row.getBoolean(index));
+          runningLength += row.getSizeInBytes(index);
         } else if (dataType == DataTypes.SHORT) {
           getUnsafe()
               .putShort(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,

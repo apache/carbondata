@@ -17,16 +17,20 @@
 
 package org.apache.carbondata.core.metadata.blocklet.index;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.List;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.hadoop.io.Writable;
 
 /**
  * Below class holds the information of max and min value of all the columns in a blocklet
  */
-public class BlockletMinMaxIndex implements Serializable {
+public class BlockletMinMaxIndex implements Serializable, Writable {
 
   /**
    * serialization version
@@ -98,4 +102,18 @@ public class BlockletMinMaxIndex implements Serializable {
     this.isMinMaxSet = isMinMaxSet;
   }
 
+  @Override public void write(DataOutput out) throws IOException {
+    out.writeShort(isMinMaxSet.length);
+    for (int i = 0; i < isMinMaxSet.length; i++) {
+      out.writeBoolean(isMinMaxSet[i]);
+    }
+  }
+
+  @Override public void readFields(DataInput in) throws IOException {
+    int minMaxFlagLength = in.readShort();
+    isMinMaxSet = new boolean[minMaxFlagLength];
+    for (int i = 0; i < minMaxFlagLength; i++) {
+      isMinMaxSet[i] = in.readBoolean();
+    }
+  }
 }

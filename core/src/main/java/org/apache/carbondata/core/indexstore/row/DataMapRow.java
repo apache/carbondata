@@ -69,6 +69,10 @@ public abstract class DataMapRow implements Serializable {
 
   public abstract int getLengthInBytes(int ordinal);
 
+  public abstract void setBoolean(boolean value, int ordinal);
+
+  public abstract boolean getBoolean(int ordinal);
+
   public int getTotalSizeInBytes() {
     int len = 0;
     for (int i = 0; i < schemas.length; i++) {

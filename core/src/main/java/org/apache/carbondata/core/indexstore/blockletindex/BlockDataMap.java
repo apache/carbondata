@@ -210,6 +210,8 @@ public class BlockDataMap extends CoarseGrainDataMap
       List<DataFileFooter> indexInfo) throws IOException, MemoryException {
     DataMapRowImpl summaryRow = null;
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
+    boolean[] minMaxFlag = new boolean[segmentProperties.getDimensions().size()];
+    Arrays.fill(minMaxFlag, true);
     for (DataFileFooter fileFooter : indexInfo) {
       TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
       BlockMetaInfo blockMetaInfo =
@@ -233,10 +235,19 @@ public class BlockDataMap extends CoarseGrainDataMap
             CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, false);
         summaryRow = loadToUnsafeBlock(schema, taskSummarySchema, fileFooter, segmentProperties,
             getMinMaxCacheColumns(), blockInfo.getFilePath(), summaryRow,
-            blockMetaInfo, updatedMinValues, updatedMaxValues);
+            blockMetaInfo, updatedMinValues, updatedMaxValues, minMaxFlag);
       }
     }
+    setMinMaxFlagForTaskSummary(summaryRow, taskSummarySchema, segmentProperties, minMaxFlag);
     return summaryRow;
+  }
+
+  protected void setMinMaxFlagForTaskSummary(DataMapRow summaryRow,
+      CarbonRowSchema[] taskSummarySchema, SegmentProperties segmentProperties,
+      boolean[] minMaxFlag) {
+    // add min max flag for all the dimension columns
+    addMinMaxFlagValues(summaryRow, taskSummarySchema[TASK_MIN_MAX_FLAG], minMaxFlag,
+        TASK_MIN_MAX_FLAG, segmentProperties.getDimensions().size());
   }
 
   /**
@@ -260,6 +271,12 @@ public class BlockDataMap extends CoarseGrainDataMap
     short totalBlockletsInOneBlock = 0;
     boolean isLastFileFooterEntryNeedToBeAdded = false;
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
+    // flag for each block entry
+    boolean[] minMaxFlag = new boolean[segmentProperties.getDimensions().size()];
+    Arrays.fill(minMaxFlag, true);
+    // min max flag for task summary
+    boolean[] taskSummaryMinMaxFlag = new boolean[segmentProperties.getDimensions().size()];
+    Arrays.fill(taskSummaryMinMaxFlag, true);
     for (DataFileFooter fileFooter : indexInfo) {
       TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
       BlockMetaInfo blockMetaInfo =
@@ -273,6 +290,8 @@ public class BlockDataMap extends CoarseGrainDataMap
           // 1st time assign the min and max values from the current file footer
           blockMinValues = fileFooter.getBlockletIndex().getMinMaxIndex().getMinValues();
           blockMaxValues = fileFooter.getBlockletIndex().getMinMaxIndex().getMaxValues();
+          updateMinMaxFlag(fileFooter, minMaxFlag);
+          updateMinMaxFlag(fileFooter, taskSummaryMinMaxFlag);
           previousDataFileFooter = fileFooter;
           totalBlockletsInOneBlock++;
         } else if (blockInfo.getFilePath().equals(tempFilePath)) {
@@ -285,6 +304,8 @@ public class BlockDataMap extends CoarseGrainDataMap
           blockMaxValues =
               compareAndUpdateMinMax(currentFooterMinMaxIndex.getMaxValues(), blockMaxValues,
                   false);
+          updateMinMaxFlag(fileFooter, minMaxFlag);
+          updateMinMaxFlag(fileFooter, taskSummaryMinMaxFlag);
           totalBlockletsInOneBlock++;
         }
         // as one task contains entries for all the blocklets we need iterate and load only the
@@ -297,7 +318,9 @@ public class BlockDataMap extends CoarseGrainDataMap
               segmentProperties, getMinMaxCacheColumns(), previousBlockInfo.getFilePath(),
               summaryRow,
               blockletDataMapInfo.getBlockMetaInfoMap().get(previousBlockInfo.getFilePath()),
-              blockMinValues, blockMaxValues);
+              blockMinValues, blockMaxValues, minMaxFlag);
+          minMaxFlag = new boolean[segmentProperties.getDimensions().size()];
+          Arrays.fill(minMaxFlag, true);
           // flag to check whether last file footer entry is different from previous entry.
           // If yes then it need to be added at last
           isLastFileFooterEntryNeedToBeAdded =
@@ -307,6 +330,8 @@ public class BlockDataMap extends CoarseGrainDataMap
           tempFilePath = blockInfo.getFilePath();
           blockMinValues = fileFooter.getBlockletIndex().getMinMaxIndex().getMinValues();
           blockMaxValues = fileFooter.getBlockletIndex().getMinMaxIndex().getMaxValues();
+          updateMinMaxFlag(fileFooter, minMaxFlag);
+          updateMinMaxFlag(fileFooter, taskSummaryMinMaxFlag);
           previousDataFileFooter = fileFooter;
           blockletCountInEachBlock.add(totalBlockletsInOneBlock);
           // for next block count will start from 1 because a row is created whenever a new file
@@ -323,13 +348,20 @@ public class BlockDataMap extends CoarseGrainDataMap
               previousDataFileFooter.getBlockInfo().getTableBlockInfo().getFilePath(), summaryRow,
               blockletDataMapInfo.getBlockMetaInfoMap()
                   .get(previousDataFileFooter.getBlockInfo().getTableBlockInfo().getFilePath()),
-              blockMinValues, blockMaxValues);
+              blockMinValues, blockMaxValues, minMaxFlag);
       blockletCountInEachBlock.add(totalBlockletsInOneBlock);
     }
     byte[] blockletCount = convertRowCountFromShortToByteArray(blockletCountInEachBlock);
     // blocklet count index is the last index
     summaryRow.setByteArray(blockletCount, taskSummarySchema.length - 1);
+    setMinMaxFlagForTaskSummary(summaryRow, taskSummarySchema, segmentProperties,
+        taskSummaryMinMaxFlag);
     return summaryRow;
+  }
+
+  protected void updateMinMaxFlag(DataFileFooter fileFooter, boolean[] minMaxFlag) {
+    BlockletDataMapUtil
+        .updateMinMaxFlag(fileFooter.getBlockletIndex().getMinMaxIndex(), minMaxFlag);
   }
 
   private byte[] convertRowCountFromShortToByteArray(List<Short> blockletCountInEachBlock) {
@@ -358,7 +390,7 @@ public class BlockDataMap extends CoarseGrainDataMap
       CarbonRowSchema[] taskSummarySchema, DataFileFooter fileFooter,
       SegmentProperties segmentProperties, List<CarbonColumn> minMaxCacheColumns, String filePath,
       DataMapRowImpl summaryRow, BlockMetaInfo blockMetaInfo, byte[][] minValues,
-      byte[][] maxValues) {
+      byte[][] maxValues, boolean[] minMaxFlag) {
     // Add one row to maintain task level min max for segment pruning
     if (summaryRow == null) {
       summaryRow = new DataMapRowImpl(taskSummarySchema);
@@ -397,12 +429,28 @@ public class BlockDataMap extends CoarseGrainDataMap
     try {
       setLocations(blockMetaInfo.getLocationInfo(), row, ordinal++);
       // store block size
-      row.setLong(blockMetaInfo.getSize(), ordinal);
+      row.setLong(blockMetaInfo.getSize(), ordinal++);
+      // add min max flag for all the dimension columns
+      addMinMaxFlagValues(row, schema[ordinal], minMaxFlag, ordinal,
+          segmentProperties.getDimensions().size());
       memoryDMStore.addIndexRow(schema, row);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
     return summaryRow;
+  }
+
+  protected void addMinMaxFlagValues(DataMapRow row, CarbonRowSchema carbonRowSchema,
+      boolean[] minMaxFlag, int ordinal, int dimensionCount) {
+    CarbonRowSchema[] minMaxFlagSchema =
+        ((CarbonRowSchema.StructCarbonRowSchema) carbonRowSchema).getChildSchemas();
+    DataMapRow minMaxFlagRow = new DataMapRowImpl(minMaxFlagSchema);
+    int flagOrdinal = 0;
+    // min value adding
+    for (int i = 0; i < dimensionCount; i++) {
+      minMaxFlagRow.setBoolean(minMaxFlag[i], flagOrdinal++);
+    }
+    row.setRow(minMaxFlagRow, ordinal);
   }
 
   protected String getFileNameFromPath(String filePath) {
@@ -540,7 +588,8 @@ public class BlockDataMap extends CoarseGrainDataMap
         .getDataMapRow(getTaskSummarySchema(), taskSummaryDMStore.getRowCount() - 1);
     boolean isScanRequired = FilterExpressionProcessor
         .isScanRequired(filterExecuter, getMinMaxValue(unsafeRow, TASK_MAX_VALUES_INDEX),
-            getMinMaxValue(unsafeRow, TASK_MIN_VALUES_INDEX));
+            getMinMaxValue(unsafeRow, TASK_MIN_VALUES_INDEX),
+            getMinMaxFlag(unsafeRow, TASK_MIN_MAX_FLAG));
     if (isScanRequired) {
       return true;
     }
@@ -619,11 +668,12 @@ public class BlockDataMap extends CoarseGrainDataMap
       // min and max for executor pruning
       while (entryIndex < numEntries) {
         DataMapRow safeRow = memoryDMStore.getDataMapRow(schema, entryIndex).convertToSafeRow();
+        boolean[] minMaxFlag = getMinMaxFlag(safeRow, BLOCK_MIN_MAX_FLAG);
         String fileName = getFileNameWithFilePath(safeRow, filePath);
         short blockletId = getBlockletId(safeRow);
         boolean isValid =
             addBlockBasedOnMinMaxValue(filterExecuter, getMinMaxValue(safeRow, MAX_VALUES_INDEX),
-                getMinMaxValue(safeRow, MIN_VALUES_INDEX), fileName, blockletId);
+                getMinMaxValue(safeRow, MIN_VALUES_INDEX), minMaxFlag, fileName, blockletId);
         if (isValid) {
           blocklets.add(createBlocklet(safeRow, fileName, blockletId, useMinMaxForPruning));
           hitBlocklets += getBlockletNumOfEntry(entryIndex);
@@ -643,13 +693,8 @@ public class BlockDataMap extends CoarseGrainDataMap
     return blocklets;
   }
 
-  private boolean useMinMaxForExecutorPruning(FilterResolverIntf filterResolverIntf) {
-    boolean useMinMaxForPruning = false;
-    if (!isLegacyStore && this instanceof BlockletDataMap) {
-      useMinMaxForPruning = BlockletDataMapUtil
-          .useMinMaxForBlockletPruning(filterResolverIntf, getMinMaxCacheColumns());
-    }
-    return useMinMaxForPruning;
+  protected boolean useMinMaxForExecutorPruning(FilterResolverIntf filterResolverIntf) {
+    return false;
   }
 
   @Override
@@ -729,12 +774,13 @@ public class BlockDataMap extends CoarseGrainDataMap
    * @param filterExecuter
    * @param maxValue
    * @param minValue
+   * @param minMaxFlag
    * @param filePath
    * @param blockletId
    * @return
    */
   private boolean addBlockBasedOnMinMaxValue(FilterExecuter filterExecuter, byte[][] maxValue,
-      byte[][] minValue, String filePath, int blockletId) {
+      byte[][] minValue, boolean[] minMaxFlag, String filePath, int blockletId) {
     BitSet bitSet = null;
     if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
       String uniqueBlockPath = filePath.substring(filePath.lastIndexOf("/Part") + 1);
@@ -744,9 +790,9 @@ public class BlockDataMap extends CoarseGrainDataMap
         uniqueBlockPath = uniqueBlockPath + CarbonCommonConstants.FILE_SEPARATOR + blockletId;
       }
       bitSet = ((ImplicitColumnFilterExecutor) filterExecuter)
-          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath);
+          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath, minMaxFlag);
     } else {
-      bitSet = filterExecuter.isScanRequired(maxValue, minValue);
+      bitSet = filterExecuter.isScanRequired(maxValue, minValue, minMaxFlag);
     }
     if (!bitSet.isEmpty()) {
       return true;
@@ -834,6 +880,15 @@ public class BlockDataMap extends CoarseGrainDataMap
       minMax[i] = minMaxRow.getByteArray(i);
     }
     return minMax;
+  }
+
+  private boolean[] getMinMaxFlag(DataMapRow row, int index) {
+    DataMapRow minMaxFlagRow = row.getRow(index);
+    boolean[] minMaxFlag = new boolean[minMaxFlagRow.getColumnCount()];
+    for (int i = 0; i < minMaxFlag.length; i++) {
+      minMaxFlag[i] = minMaxFlagRow.getBoolean(i);
+    }
+    return minMaxFlag;
   }
 
   protected short getBlockletId(DataMapRow dataMapRow) {

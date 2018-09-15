@@ -115,7 +115,8 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     }
   }
 
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
+      boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     byte[] minValue = null;
     boolean isScanRequired = false;
@@ -125,8 +126,12 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
         isScanRequired =
             isScanRequired(minValue, msrFilterRangeValues, msrColEvalutorInfoList.get(0).getType());
       } else {
-        minValue = blockMinValue[dimensionChunkIndex[0]];
-        isScanRequired = isScanRequired(minValue, filterRangeValues);
+        if (!isMinMaxSet[dimensionChunkIndex[0]]) {
+          isScanRequired = true;
+        } else {
+          minValue = blockMinValue[dimensionChunkIndex[0]];
+          isScanRequired = isScanRequired(minValue, filterRangeValues);
+        }
       }
     } else {
       isScanRequired = isDefaultValuePresentInFilter;
@@ -193,9 +198,12 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       BitSetGroup bitSetGroup = new BitSetGroup(rawColumnChunk.getPagesCount());
       FilterExecuter filterExecuter = null;
       boolean isExclude = false;
+      boolean isMinMaxSetForFilterDimension =
+          rawBlockletColumnChunks.getDataBlock().isMinMaxSet()[chunkIndex];
       for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
         if (rawColumnChunk.getMinValues() != null) {
-          if (isScanRequired(rawColumnChunk.getMinValues()[i], this.filterRangeValues)) {
+          if (!isMinMaxSetForFilterDimension || isScanRequired(rawColumnChunk.getMinValues()[i],
+              this.filterRangeValues)) {
             BitSet bitSet;
             DimensionColumnPage dimensionColumnPage = rawColumnChunk.decodeColumnPage(i);
             if (null != rawColumnChunk.getLocalDictionary()) {
