@@ -356,7 +356,9 @@ class IndexDataMapRebuildRDD[K, V](
         // skip clear datamap and we will do this adter rebuild
         reader.setSkipClearDataMapAtClose(true)
 
-        // Note that blockletId in rowWithPosition does not work properly,
+        // Note that datamap rebuilding is based on query, the blockletId in rowWithPosition
+        // is set to relative number in carbondata file in query process.
+        // In order to get absolute blockletId in shard like the one filled in loading process,
         // here we use another way to generate it.
         var blockletId = 0
         var firstRow = true
