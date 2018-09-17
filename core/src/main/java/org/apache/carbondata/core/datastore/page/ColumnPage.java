@@ -22,6 +22,8 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.BitSet;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
@@ -41,15 +43,10 @@ import org.apache.carbondata.core.util.CarbonProperties;
 
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE;
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE_ARRAY;
-import static org.apache.carbondata.core.metadata.datatype.DataTypes.DOUBLE;
-import static org.apache.carbondata.core.metadata.datatype.DataTypes.FLOAT;
-import static org.apache.carbondata.core.metadata.datatype.DataTypes.INT;
-import static org.apache.carbondata.core.metadata.datatype.DataTypes.LONG;
-import static org.apache.carbondata.core.metadata.datatype.DataTypes.SHORT;
-import static org.apache.carbondata.core.metadata.datatype.DataTypes.SHORT_INT;
 
 public abstract class ColumnPage {
-
+  private static final LogService LOGGER = LogServiceFactory.getLogService(
+      ColumnPage.class.getName());
   // number of row in this page
   protected int pageSize;
 
@@ -220,20 +217,17 @@ public abstract class ColumnPage {
         throw new RuntimeException("Unsupported data dataType: " + dataType);
       }
     } else {
-      if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
-        instance = newBytePage(columnSpec, new byte[pageSize], compressorName);
-      } else if (dataType == DataTypes.SHORT) {
-        instance = newShortPage(columnSpec, new short[pageSize], compressorName);
-      } else if (dataType == DataTypes.SHORT_INT) {
-        instance = newShortIntPage(columnSpec, new byte[pageSize * 3], compressorName);
-      } else if (dataType == DataTypes.INT) {
-        instance = newIntPage(columnSpec, new int[pageSize], compressorName);
-      } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
-        instance = newLongPage(columnSpec, new long[pageSize], compressorName);
-      } else if (dataType == DataTypes.FLOAT) {
-        instance = newFloatPage(columnSpec, new float[pageSize], compressorName);
-      } else if (dataType == DataTypes.DOUBLE) {
-        instance = newDoublePage(columnSpec, new double[pageSize], compressorName);
+      if (dataType == DataTypes.BOOLEAN) {
+        instance = newPrimitivePage(columnSpec, BYTE, new byte[pageSize], compressorName);
+      } else if (dataType == DataTypes.BYTE ||
+          dataType == DataTypes.SHORT ||
+          dataType == DataTypes.SHORT_INT ||
+          dataType == DataTypes.INT ||
+          dataType == DataTypes.LONG ||
+          dataType == DataTypes.FLOAT ||
+          dataType == DataTypes.DOUBLE) {
+        instance = newPrimitivePage(columnSpec, dataType,
+            new byte[pageSize * dataType.getSizeInBytes()], compressorName);
       } else if (DataTypes.isDecimal(dataType)) {
         instance = newDecimalPage(columnSpec, new byte[pageSize][], compressorName);
       } else if (dataType == DataTypes.STRING
@@ -255,59 +249,12 @@ public abstract class ColumnPage {
     return columnPage;
   }
 
-  private static ColumnPage newBytePage(TableSpec.ColumnSpec columnSpec, byte[] byteData,
-      String compressorName) {
+  private static ColumnPage newPrimitivePage(TableSpec.ColumnSpec columnSpec, DataType storeType,
+      byte[] flattenBytes, String compressorName) {
     ColumnPage columnPage = createPage(
-        new ColumnPageEncoderMeta(columnSpec, BYTE, compressorName), byteData.length);
-    columnPage.setBytePage(byteData);
-    return columnPage;
-  }
-
-  private static ColumnPage newShortPage(TableSpec.ColumnSpec columnSpec, short[] shortData,
-      String compressorName) {
-    ColumnPage columnPage = createPage(
-        new ColumnPageEncoderMeta(columnSpec, SHORT, compressorName), shortData.length);
-    columnPage.setShortPage(shortData);
-    return columnPage;
-  }
-
-  private static ColumnPage newShortIntPage(TableSpec.ColumnSpec columnSpec, byte[] shortIntData,
-      String compressorName) {
-    ColumnPage columnPage = createPage(
-        new ColumnPageEncoderMeta(columnSpec, SHORT_INT, compressorName), shortIntData.length / 3);
-    columnPage.setShortIntPage(shortIntData);
-    return columnPage;
-  }
-
-  private static ColumnPage newIntPage(TableSpec.ColumnSpec columnSpec, int[] intData,
-      String compressorName) {
-    ColumnPage columnPage = createPage(
-        new ColumnPageEncoderMeta(columnSpec, INT, compressorName), intData.length);
-    columnPage.setIntPage(intData);
-    return columnPage;
-  }
-
-  private static ColumnPage newLongPage(TableSpec.ColumnSpec columnSpec, long[] longData,
-      String compressorName) {
-    ColumnPage columnPage = createPage(
-        new ColumnPageEncoderMeta(columnSpec, LONG, compressorName), longData.length);
-    columnPage.setLongPage(longData);
-    return columnPage;
-  }
-
-  private static ColumnPage newFloatPage(TableSpec.ColumnSpec columnSpec, float[] floatData,
-      String compressorName) {
-    ColumnPage columnPage = createPage(
-        new ColumnPageEncoderMeta(columnSpec, FLOAT, compressorName), floatData.length);
-    columnPage.setFloatPage(floatData);
-    return columnPage;
-  }
-
-  private static ColumnPage newDoublePage(TableSpec.ColumnSpec columnSpec, double[] doubleData,
-      String compressorName) {
-    ColumnPage columnPage = createPage(
-        new ColumnPageEncoderMeta(columnSpec, DOUBLE, compressorName), doubleData.length);
-    columnPage.setDoublePage(doubleData);
+        new ColumnPageEncoderMeta(columnSpec, storeType, compressorName),
+        flattenBytes.length / storeType.getSizeInBytes());
+    columnPage.setFlattenContentInBytes(flattenBytes);
     return columnPage;
   }
 
@@ -355,40 +302,9 @@ public abstract class ColumnPage {
     return fixLengthByteArrayPage;
   }
 
-  /**
-   * Set byte values to page
-   */
-  public abstract void setBytePage(byte[] byteData);
+  public abstract void setFlattenContentInBytes(byte[] flattenContentInBytes);
 
-  /**
-   * Set short values to page
-   */
-  public abstract void setShortPage(short[] shortData);
-
-  /**
-   * Set short int values to page
-   */
-  public abstract void setShortIntPage(byte[] shortIntData);
-
-  /**
-   * Set int values to page
-   */
-  public abstract void setIntPage(int[] intData);
-
-  /**
-   * Set long values to page
-   */
-  public abstract void setLongPage(long[] longData);
-
-  /**
-   * Set float values to page
-   */
-  public abstract void setFloatPage(float[] floatData);
-
-  /**
-   * Set double value to page
-   */
-  public abstract void setDoublePage(double[] doubleData);
+  public abstract byte[] getFlattenContentInBytes();
 
   /**
    * Set byte array to page
@@ -646,48 +562,6 @@ public abstract class ColumnPage {
   public abstract byte[] getBytes(int rowId);
 
   /**
-   * Get byte value page
-   */
-  public abstract byte[] getBytePage();
-
-  /**
-   * Get short value page
-   */
-  public abstract short[] getShortPage();
-
-  /**
-   * Get short int value page
-   */
-  public abstract byte[] getShortIntPage();
-
-  /**
-   * Get boolean value page
-   */
-  public byte[] getBooleanPage() {
-    return getBytePage();
-  }
-
-  /**
-   * Get int value page
-   */
-  public abstract int[] getIntPage();
-
-  /**
-   * Get long value page
-   */
-  public abstract long[] getLongPage();
-
-  /**
-   * Get float value page
-   */
-  public abstract float[] getFloatPage();
-
-  /**
-   * Get double value page
-   */
-  public abstract double[] getDoublePage();
-
-  /**
    * Get variable length page data
    */
   public abstract byte[][] getByteArrayPage();
@@ -730,22 +604,15 @@ public abstract class ColumnPage {
    */
   public byte[] compress(Compressor compressor) throws MemoryException, IOException {
     DataType dataType = columnPageEncoderMeta.getStoreDataType();
-    if (dataType == DataTypes.BOOLEAN) {
-      return compressor.compressByte(getBooleanPage());
-    } else if (dataType == DataTypes.BYTE) {
-      return compressor.compressByte(getBytePage());
-    } else if (dataType == DataTypes.SHORT) {
-      return compressor.compressShort(getShortPage());
-    } else if (dataType == DataTypes.SHORT_INT) {
-      return compressor.compressByte(getShortIntPage());
-    } else if (dataType == DataTypes.INT) {
-      return compressor.compressInt(getIntPage());
-    } else if (dataType == DataTypes.LONG) {
-      return compressor.compressLong(getLongPage());
-    } else if (dataType == DataTypes.FLOAT) {
-      return compressor.compressFloat(getFloatPage());
-    } else if (dataType == DataTypes.DOUBLE) {
-      return compressor.compressDouble(getDoublePage());
+    if (dataType == DataTypes.BOOLEAN ||
+        dataType == DataTypes.BYTE ||
+        dataType == DataTypes.SHORT ||
+        dataType == DataTypes.SHORT_INT ||
+        dataType == DataTypes.INT ||
+        dataType == DataTypes.LONG ||
+        dataType == DataTypes.FLOAT ||
+        dataType == DataTypes.DOUBLE) {
+      return compressor.compressByte(getFlattenContentInBytes());
     } else if (DataTypes.isDecimal(dataType)) {
       return compressor.compressByte(getDecimalPage());
     } else if (dataType == DataTypes.BYTE_ARRAY
@@ -775,30 +642,16 @@ public abstract class ColumnPage {
     byte[] decompressedData = compressor.unCompressByte(compressedData, offset, length);
     TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
     DataType storeDataType = meta.getStoreDataType();
-    if (storeDataType == DataTypes.BOOLEAN || storeDataType == DataTypes.BYTE) {
-      return newBytePage(columnSpec, decompressedData, meta.getCompressorName());
-    } else if (storeDataType == DataTypes.SHORT) {
-      short[] shortData  = new short[decompressedData.length / ByteUtil.SIZEOF_SHORT];
-      ByteBuffer.wrap(decompressedData).asShortBuffer().get(shortData);
-      return newShortPage(columnSpec, shortData, meta.getCompressorName());
-    } else if (storeDataType == DataTypes.SHORT_INT) {
-      return newShortIntPage(columnSpec, decompressedData, meta.getCompressorName());
-    } else if (storeDataType == DataTypes.INT) {
-      int[] intData  = new int[decompressedData.length / ByteUtil.SIZEOF_INT];
-      ByteBuffer.wrap(decompressedData).asIntBuffer().get(intData);
-      return newIntPage(columnSpec, intData, meta.getCompressorName());
-    } else if (storeDataType == DataTypes.LONG) {
-      long[] longData  = new long[decompressedData.length / ByteUtil.SIZEOF_LONG];
-      ByteBuffer.wrap(decompressedData).asLongBuffer().get(longData);
-      return newLongPage(columnSpec, longData, meta.getCompressorName());
-    } else if (storeDataType == DataTypes.FLOAT) {
-      float[] floatData  = new float[decompressedData.length / ByteUtil.SIZEOF_FLOAT];
-      ByteBuffer.wrap(decompressedData).asFloatBuffer().get(floatData);
-      return newFloatPage(columnSpec, floatData, meta.getCompressorName());
-    } else if (storeDataType == DataTypes.DOUBLE) {
-      double[] doubleData  = new double[decompressedData.length / ByteUtil.SIZEOF_DOUBLE];
-      ByteBuffer.wrap(decompressedData).asDoubleBuffer().get(doubleData);
-      return newDoublePage(columnSpec, doubleData, meta.getCompressorName());
+    if (storeDataType == DataTypes.BOOLEAN ||
+        storeDataType == DataTypes.BYTE ||
+        storeDataType == DataTypes.SHORT ||
+        storeDataType == DataTypes.SHORT_INT ||
+        storeDataType == DataTypes.INT ||
+        storeDataType == DataTypes.LONG ||
+        storeDataType == DataTypes.FLOAT ||
+        storeDataType == DataTypes.DOUBLE) {
+      return newPrimitivePage(columnSpec, storeDataType, decompressedData,
+          meta.getCompressorName());
     } else if (!isLVEncoded && storeDataType == DataTypes.BYTE_ARRAY && (
         columnSpec.getColumnType() == ColumnType.COMPLEX_PRIMITIVE
             || columnSpec.getColumnType() == ColumnType.PLAIN_VALUE)) {
@@ -840,29 +693,29 @@ public abstract class ColumnPage {
     DataType storeDataType = meta.getStoreDataType();
     if (storeDataType == DataTypes.BYTE) {
       decimalPage = createDecimalPage(meta, decompressedData.length);
-      decimalPage.setBytePage(decompressedData);
+      decimalPage.setFlattenContentInBytes(decompressedData);
       return decimalPage;
     } else if (storeDataType == DataTypes.SHORT) {
       short[] shortData  = new short[decompressedData.length / ByteUtil.SIZEOF_SHORT];
       ByteBuffer.wrap(decompressedData).asShortBuffer().get(shortData);
       decimalPage = createDecimalPage(meta, shortData.length);
-      decimalPage.setShortPage(shortData);
+      decimalPage.setFlattenContentInBytes(decompressedData);
       return decimalPage;
     } else if (storeDataType == DataTypes.SHORT_INT) {
       decimalPage = createDecimalPage(meta, decompressedData.length);
-      decimalPage.setShortIntPage(decompressedData);
+      decimalPage.setFlattenContentInBytes(decompressedData);
       return decimalPage;
     } else if (storeDataType == DataTypes.INT) {
       int[] intData  = new int[decompressedData.length / ByteUtil.SIZEOF_INT];
       ByteBuffer.wrap(decompressedData).asIntBuffer().get(intData);
       decimalPage = createDecimalPage(meta, intData.length);
-      decimalPage.setIntPage(intData);
+      decimalPage.setFlattenContentInBytes(decompressedData);
       return decimalPage;
     } else if (storeDataType == DataTypes.LONG) {
       long[] longData  = new long[decompressedData.length / ByteUtil.SIZEOF_LONG];
       ByteBuffer.wrap(decompressedData).asLongBuffer().get(longData);
       decimalPage = createDecimalPage(meta, longData.length);
-      decimalPage.setLongPage(longData);
+      decimalPage.setFlattenContentInBytes(decompressedData);
       return decimalPage;
     } else {
       return newDecimalPage(columnSpec, decompressedData, meta.getCompressorName());

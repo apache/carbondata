@@ -113,6 +113,16 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
   }
 
   @Override
+  public byte[] getFlattenContentInBytes() {
+    throw new UnsupportedOperationException("Not implemented yet");
+  }
+
+  @Override
+  public void setFlattenContentInBytes(byte[] flattenContentInBytes) {
+    throw new UnsupportedOperationException("Not implemented yet");
+  }
+
+  @Override
   void copyBytes(int rowId, byte[] dest, int destOffset, int length) {
     System.arraycopy(byteArrayData.get(rowId), 0, dest, destOffset, length);
   }

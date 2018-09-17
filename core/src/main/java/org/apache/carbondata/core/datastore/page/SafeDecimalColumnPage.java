@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datastore.page;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -27,47 +28,33 @@ import org.apache.carbondata.core.util.ByteUtil;
  */
 public class SafeDecimalColumnPage extends DecimalColumnPage {
 
-  // Only one of following fields will be used
-  private byte[] byteData;
-  private short[] shortData;
-  private int[] intData;
-  private long[] longData;
-  private byte[] shortIntData;
-  private byte[][] byteArrayData;
+  private ByteBuffer flattenBytesBuffer;
+  private byte[] flattenContentInBytes;
 
   SafeDecimalColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
     super(columnPageEncoderMeta, pageSize);
-    byteArrayData = new byte[pageSize][];
+    int rcdPerSizeInBytes = columnPageEncoderMeta.getStoreDataType().getSizeInBytes();
+    flattenContentInBytes = new byte[pageSize * rcdPerSizeInBytes];
+    this.flattenBytesBuffer = ByteBuffer.wrap(flattenContentInBytes);
   }
 
   @Override
-  public void setBytePage(byte[] byteData) {
-    this.byteData = byteData;
+  public void setFlattenContentInBytes(byte[] flattenContentInBytes) {
+    this.flattenContentInBytes = flattenContentInBytes;
+    this.flattenBytesBuffer = ByteBuffer.wrap(flattenContentInBytes);
   }
 
   @Override
-  public void setShortPage(short[] shortData) {
-    this.shortData = shortData;
-  }
-
-  @Override
-  public void setShortIntPage(byte[] shortIntData) {
-    this.shortIntData = shortIntData;
-  }
-
-  @Override
-  public void setIntPage(int[] intData) {
-    this.intData = intData;
-  }
-
-  @Override
-  public void setLongPage(long[] longData) {
-    this.longData = longData;
+  public byte[] getFlattenContentInBytes() {
+    return new byte[0];
   }
 
   @Override
   public void setByteArrayPage(byte[][] byteArray) {
-    byteArrayData = byteArray;
+    for (int i = 0; i < byteArray.length; i++) {
+      flattenBytesBuffer.putShort((short) byteArray.length);
+      flattenBytesBuffer.put(byteArray[i]);
+    }
   }
 
   /**
@@ -75,7 +62,7 @@ public class SafeDecimalColumnPage extends DecimalColumnPage {
    */
   @Override
   public void putByte(int rowId, byte value) {
-    byteData[rowId] = value;
+    flattenBytesBuffer.put(value);
   }
 
   /**
@@ -83,7 +70,7 @@ public class SafeDecimalColumnPage extends DecimalColumnPage {
    */
   @Override
   public void putShort(int rowId, short value) {
-    shortData[rowId] = value;
+    flattenBytesBuffer.putShort(value);
   }
 
   /**
@@ -91,7 +78,7 @@ public class SafeDecimalColumnPage extends DecimalColumnPage {
    */
   @Override
   public void putInt(int rowId, int value) {
-    intData[rowId] = value;
+    flattenBytesBuffer.putInt(value);
   }
 
   /**
@@ -99,27 +86,21 @@ public class SafeDecimalColumnPage extends DecimalColumnPage {
    */
   @Override
   public void putLong(int rowId, long value) {
-    longData[rowId] = value;
+    flattenBytesBuffer.putLong(value);
   }
 
   @Override
   void putBytesAtRow(int rowId, byte[] bytes) {
-    byteArrayData[rowId] = bytes;
+    flattenBytesBuffer.put(bytes);
   }
 
   @Override
   public void putDecimal(int rowId, BigDecimal decimal) {
     switch (decimalConverter.getDecimalConverterType()) {
       case DECIMAL_INT:
-        if (null == intData) {
-          intData = new int[pageSize];
-        }
         putInt(rowId, (int) decimalConverter.convert(decimal));
         break;
       case DECIMAL_LONG:
-        if (null == longData) {
-          longData = new long[pageSize];
-        }
         putLong(rowId, (long) decimalConverter.convert(decimal));
         break;
       default:
@@ -130,48 +111,59 @@ public class SafeDecimalColumnPage extends DecimalColumnPage {
   @Override
   public void putShortInt(int rowId, int value) {
     byte[] converted = ByteUtil.to3Bytes(value);
-    System.arraycopy(converted, 0, shortIntData, rowId * 3, 3);
+    flattenBytesBuffer.put(converted);
   }
 
   @Override
   public void putBytes(int rowId, byte[] bytes, int offset, int length) {
-    byteArrayData[rowId] = new byte[length];
-    System.arraycopy(bytes, offset, byteArrayData[rowId], 0, length);
+    flattenBytesBuffer.put(bytes, offset, length);
   }
 
   @Override
   public byte getByte(int rowId) {
-    return byteData[rowId];
+    return flattenBytesBuffer.get(rowId);
   }
 
   @Override
   public byte[] getBytes(int rowId) {
-    return byteArrayData[rowId];
+    for (int i = 0; i < rowId; i++) {
+      short length = flattenBytesBuffer.getShort();
+      flattenBytesBuffer.position(flattenBytesBuffer.position() + length);
+    }
+    short length = flattenBytesBuffer.getShort();
+    // todo: try to avoid this allocation
+    byte[] rtn = new byte[length];
+    flattenBytesBuffer.get(rtn);
+    return rtn;
   }
 
   @Override
   public short getShort(int rowId) {
-    return shortData[rowId];
+    return flattenBytesBuffer.getShort(rowId * ByteUtil.SIZEOF_SHORT);
   }
 
   @Override
   public int getShortInt(int rowId) {
-    return ByteUtil.valueOf3Bytes(shortIntData, rowId * 3);
+    return ByteUtil.valueOf3Bytes(flattenBytesBuffer.array(), rowId * ByteUtil.SIZEOF_SHORT_INT);
   }
 
   @Override
   public int getInt(int rowId) {
-    return intData[rowId];
+    return flattenBytesBuffer.getInt(rowId * ByteUtil.SIZEOF_INT);
   }
 
   @Override
   public long getLong(int rowId) {
-    return longData[rowId];
+    return flattenBytesBuffer.getLong(rowId * ByteUtil.SIZEOF_LONG);
   }
 
   @Override
   public void copyBytes(int rowId, byte[] dest, int destOffset, int length) {
-    System.arraycopy(byteArrayData[rowId], 0, dest, destOffset, length);
+    for (int i = 0; i < rowId; i++) {
+      short len = flattenBytesBuffer.getShort();
+      flattenBytesBuffer.position(flattenBytesBuffer.position() + len);
+    }
+    flattenBytesBuffer.get(dest, destOffset, length);
   }
 
   @Override
@@ -179,12 +171,12 @@ public class SafeDecimalColumnPage extends DecimalColumnPage {
     switch (decimalConverter.getDecimalConverterType()) {
       case DECIMAL_INT:
         for (int i = 0; i < pageSize; i++) {
-          codec.encode(i, intData[i]);
+          codec.encode(i, getInt(i));
         }
         break;
       case DECIMAL_LONG:
         for (int i = 0; i < pageSize; i++) {
-          codec.encode(i, longData[i]);
+          codec.encode(i, getLong(i));
         }
         break;
       default:
@@ -195,7 +187,8 @@ public class SafeDecimalColumnPage extends DecimalColumnPage {
 
   @Override
   public void freeMemory() {
-    byteArrayData = null;
+    flattenBytesBuffer.clear();
+    flattenContentInBytes = null;
     super.freeMemory();
   }
 }

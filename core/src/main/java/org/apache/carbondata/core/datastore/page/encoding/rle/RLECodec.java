@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -114,25 +115,23 @@ public class RLECodec implements ColumnPageCodec {
     protected byte[] encodeData(ColumnPage input) throws MemoryException, IOException {
       validateDataType(input.getDataType());
       this.dataType = input.getDataType();
+      ByteBuffer flattenBytesBuffer = ByteBuffer.wrap(input.getFlattenContentInBytes());
+      // todo: use rawbytes while doing rle
       if (dataType == DataTypes.BYTE) {
-        byte[] bytePage = input.getBytePage();
-        for (int i = 0; i < bytePage.length; i++) {
-          putValue(bytePage[i]);
+        for (int i = 0; i < flattenBytesBuffer.limit(); i++) {
+          putValue(flattenBytesBuffer.get(i));
         }
       } else if (dataType == DataTypes.SHORT) {
-        short[] shortPage = input.getShortPage();
-        for (int i = 0; i < shortPage.length; i++) {
-          putValue(shortPage[i]);
+        for (int i = 0; i < flattenBytesBuffer.limit() / dataType.getSizeInBytes(); i++) {
+          putValue(flattenBytesBuffer.getShort(i * dataType.getSizeInBytes()));
         }
       } else if (dataType == DataTypes.INT) {
-        int[] intPage = input.getIntPage();
-        for (int i = 0; i < intPage.length; i++) {
-          putValue(intPage[i]);
+        for (int i = 0; i < flattenBytesBuffer.limit() / dataType.getSizeInBytes(); i++) {
+          putValue(flattenBytesBuffer.getInt(i * dataType.getSizeInBytes()));
         }
       } else if (dataType == DataTypes.LONG) {
-        long[] longPage = input.getLongPage();
-        for (int i = 0; i < longPage.length; i++) {
-          putValue(longPage[i]);
+        for (int i = 0; i < flattenBytesBuffer.limit() / dataType.getSizeInBytes(); i++) {
+          putValue(flattenBytesBuffer.getLong(i * dataType.getSizeInBytes()));
         }
       } else {
         throw new UnsupportedOperationException(input.getDataType() +

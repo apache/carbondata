@@ -135,7 +135,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "snappy")
     createTable()
     loadData()
-    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
+    checkAnswer(sql(s"SELECT count(*) FROM (select * from $tableName) A"), Seq(Row(8)))
   }
 
   test("test data loading with zstd compressor and offheap") {
@@ -143,7 +143,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "zstd")
     createTable()
     loadData()
-    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
+    checkAnswer(sql(s"SELECT count(*) FROM (select * from $tableName) A"), Seq(Row(8)))
   }
 
   test("test data loading with zstd compressor and onheap") {
@@ -151,7 +151,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "zstd")
     createTable()
     loadData()
-    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
+    checkAnswer(sql(s"SELECT count(*) FROM (select * from $tableName) A"), Seq(Row(8)))
   }
 
   test("test current zstd compressor on legacy store with snappy") {
@@ -163,7 +163,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "zstd")
     loadData()
-    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(16)))
+    checkAnswer(sql(s"SELECT count(*) FROM (select * from $tableName) A"), Seq(Row(16)))
   }
 
   test("test current snappy compressor on legacy store with zstd") {
@@ -175,7 +175,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "snappy")
     loadData()
-    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(16)))
+    checkAnswer(sql(s"SELECT count(*) FROM (select * from $tableName) A"), Seq(Row(16)))
   }
 
   test("test compaction with different compressor for each load") {
@@ -197,12 +197,12 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     loadData()
 
     // there are 8 loads
-    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(4 * 8)))
+    checkAnswer(sql(s"SELECT count(*) FROM (select * from $tableName) A"), Seq(Row(4 * 8)))
     assert(sql(s"SHOW SEGMENTS FOR TABLE $tableName").count() == 8)
     sql(s"ALTER TABLE $tableName COMPACT 'major'")
     sql(s"CLEAN FILES FOR TABLE $tableName")
     // after compaction and clean, there should be on segment
-    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(4 * 8)))
+    checkAnswer(sql(s"SELECT count(*) FROM (select * from $tableName) A"), Seq(Row(4 * 8)))
     assert(sql(s"SHOW SEGMENTS FOR TABLE $tableName").count() == 1)
   }
 
@@ -277,7 +277,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
       CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, if (Random.nextBoolean()) "snappy" else "zstd")
     }
 
-    checkAnswer(sql(s"SELECT COUNT(*) FROM $tableName"), Seq(Row(lineNum * 2)))
+    checkAnswer(sql(s"SELECT count(*) FROM (select * from $tableName) A"), Seq(Row(lineNum * 2)))
     checkAnswer(sql(s"SELECT stringDictField, stringSortField FROM $tableName WHERE stringDictField='stringDict1'"), Seq(Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1")))
 
     def compactAsync(): Future[_] = {
@@ -306,7 +306,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     // create table with zstd as compressor
     createTable(columnCompressor = "zstd")
     loadData()
-    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
+    checkAnswer(sql(s"SELECT count(*) FROM (select * from $tableName) A"), Seq(Row(8)))
     val carbonTable = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
     val tableColumnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR)
     assert("zstd".equalsIgnoreCase(tableColumnCompressor))
@@ -393,13 +393,13 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     generateAllDataTypeFiles(lineNum, dataLocation, SaveMode.Append)
     Thread.sleep(40 * 1000)
     thread.interrupt()
-    checkAnswer(sql(s"SELECT COUNT(*) FROM $tableName"), Seq(Row(lineNum * 4)))
+    checkAnswer(sql(s"SELECT count(*) FROM (select * from $tableName) A"), Seq(Row(lineNum * 4)))
     checkAnswer(sql(s"SELECT stringDictField, stringSortField FROM $tableName WHERE stringDictField='stringDict1'"),
       Seq(Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1")))
 
     sql(s"alter table $tableName compact 'streaming'")
 
-    checkAnswer(sql(s"SELECT COUNT(*) FROM $tableName"), Seq(Row(lineNum * 4)))
+    checkAnswer(sql(s"SELECT count(*) FROM (select * from $tableName) A"), Seq(Row(lineNum * 4)))
     checkAnswer(sql(s"SELECT stringDictField, stringSortField FROM $tableName WHERE stringDictField='stringDict1'"),
       Seq(Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1")))
     try {

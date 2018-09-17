@@ -136,7 +136,7 @@ public class RLECodecTest {
         DataTypes.BYTE, expectedDecodedBytes.length, null, "snappy");
     ColumnPageDecoder decoder = codec.createDecoder(meta);
     ColumnPage page = decoder.decode(inputBytes, 0, inputBytes.length);
-    byte[] decoded = page.getBytePage();
+    byte[] decoded = page.getFlattenContentInBytes();
     assertEquals(expectedDecodedBytes.length, decoded.length);
     for (int i = 0; i < decoded.length; i++) {
       assertEquals(expectedDecodedBytes[i], decoded[i]);

@@ -122,37 +122,12 @@ public class LazyColumnPage extends ColumnPage {
   }
 
   @Override
-  public byte[] getBytePage() {
+  public void setFlattenContentInBytes(byte[] flattenContentInBytes) {
     throw new UnsupportedOperationException("internal error");
   }
 
   @Override
-  public short[] getShortPage() {
-    throw new UnsupportedOperationException("internal error");
-  }
-
-  @Override
-  public byte[] getShortIntPage() {
-    throw new UnsupportedOperationException("internal error");
-  }
-
-  @Override
-  public int[] getIntPage() {
-    throw new UnsupportedOperationException("internal error");
-  }
-
-  @Override
-  public long[] getLongPage() {
-    throw new UnsupportedOperationException("internal error");
-  }
-
-  @Override
-  public float[] getFloatPage() {
-    throw new UnsupportedOperationException("internal error");
-  }
-
-  @Override
-  public double[] getDoublePage() {
+  public byte[] getFlattenContentInBytes() {
     throw new UnsupportedOperationException("internal error");
   }
 
@@ -188,41 +163,6 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public void convertValue(ColumnPageValueConverter codec) {
-    throw new UnsupportedOperationException("internal error");
-  }
-
-  @Override
-  public void setBytePage(byte[] byteData) {
-    throw new UnsupportedOperationException("internal error");
-  }
-
-  @Override
-  public void setShortPage(short[] shortData) {
-    throw new UnsupportedOperationException("internal error");
-  }
-
-  @Override
-  public void setShortIntPage(byte[] shortIntData) {
-    throw new UnsupportedOperationException("internal error");
-  }
-
-  @Override
-  public void setIntPage(int[] intData) {
-    throw new UnsupportedOperationException("internal error");
-  }
-
-  @Override
-  public void setLongPage(long[] longData) {
-    throw new UnsupportedOperationException("internal error");
-  }
-
-  @Override
-  public void setFloatPage(float[] floatData) {
-    throw new UnsupportedOperationException("internal error");
-  }
-
-  @Override
-  public void setDoublePage(double[] doubleData) {
     throw new UnsupportedOperationException("internal error");
   }
 

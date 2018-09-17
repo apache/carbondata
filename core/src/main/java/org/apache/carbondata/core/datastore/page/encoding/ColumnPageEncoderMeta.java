@@ -284,4 +284,14 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   public DataType getSchemaDataType() {
     return columnSpec.getSchemaDataType();
   }
+
+  @Override
+  public String toString() {
+    final StringBuffer sb = new StringBuffer("ColumnPageEncoderMeta{");
+    sb.append("columnSpec=").append(columnSpec);
+    sb.append(", storeDataType=").append(storeDataType);
+    sb.append(", compressorName='").append(compressorName).append('\'');
+    sb.append('}');
+    return sb.toString();
+  }
 }

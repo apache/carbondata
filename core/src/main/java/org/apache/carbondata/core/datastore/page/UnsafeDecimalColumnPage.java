@@ -66,38 +66,10 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
   }
 
   @Override
-  public void setBytePage(byte[] byteData) {
+  public void setFlattenContentInBytes(byte[] flattenContentInBytes) {
     CarbonUnsafe.getUnsafe()
-        .copyMemory(byteData, CarbonUnsafe.BYTE_ARRAY_OFFSET, baseAddress, baseOffset,
-            byteData.length << byteBits);
-  }
-
-  @Override
-  public void setShortPage(short[] shortData) {
-    CarbonUnsafe.getUnsafe()
-        .copyMemory(shortData, CarbonUnsafe.SHORT_ARRAY_OFFSET, baseAddress, baseOffset,
-            shortData.length << shortBits);
-  }
-
-  @Override
-  public void setShortIntPage(byte[] shortIntData) {
-    CarbonUnsafe.getUnsafe()
-        .copyMemory(shortIntData, CarbonUnsafe.BYTE_ARRAY_OFFSET, baseAddress, baseOffset,
-            shortIntData.length);
-  }
-
-  @Override
-  public void setIntPage(int[] intData) {
-    CarbonUnsafe.getUnsafe()
-        .copyMemory(intData, CarbonUnsafe.INT_ARRAY_OFFSET, baseAddress, baseOffset,
-            intData.length << intBits);
-  }
-
-  @Override
-  public void setLongPage(long[] longData) {
-    CarbonUnsafe.getUnsafe()
-        .copyMemory(longData, CarbonUnsafe.LONG_ARRAY_OFFSET, baseAddress, baseOffset,
-            longData.length << longBits);
+        .copyMemory(flattenContentInBytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, baseAddress, baseOffset,
+            flattenContentInBytes.length << byteBits);
   }
 
   @Override
@@ -225,6 +197,13 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
   public long getLong(int rowId) {
     long offset = (long) rowId << longBits;
     return CarbonUnsafe.getUnsafe().getLong(baseAddress, baseOffset + offset);
+  }
+
+  @Override
+  public byte[] getFlattenContentInBytes() {
+    byte[] rtn = new byte[totalLength];
+    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset, rtn, 0, totalLength);
+    return rtn;
   }
 
   @Override

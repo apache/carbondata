@@ -20,6 +20,9 @@ package org.apache.carbondata.core.memory;
 import java.lang.reflect.Field;
 import java.nio.ByteOrder;
 
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+
 import sun.misc.Unsafe;
 
 
@@ -69,5 +72,25 @@ public final class CarbonUnsafe {
 
   public static Unsafe getUnsafe() {
     return unsafe;
+  }
+
+  public static int getOffsetByDataType(DataType dataType) {
+    if (DataTypes.BYTE == dataType) {
+      return BYTE_ARRAY_OFFSET;
+    } else if (DataTypes.SHORT == dataType) {
+      return SHORT_ARRAY_OFFSET;
+    } else if (DataTypes.SHORT_INT == dataType) {
+      return BYTE_ARRAY_OFFSET;
+    } else if (DataTypes.INT == dataType) {
+      return INT_ARRAY_OFFSET;
+    } else if (DataTypes.LONG == dataType) {
+      return LONG_ARRAY_OFFSET;
+    } else if (DataTypes.FLOAT == dataType) {
+      return FLOAT_ARRAY_OFFSET;
+    } else if (DataTypes.DOUBLE == dataType) {
+      return DOUBLE_ARRAY_OFFSET;
+    } else {
+      throw new UnsupportedOperationException("Invalid data type " + dataType);
+    }
   }
 }

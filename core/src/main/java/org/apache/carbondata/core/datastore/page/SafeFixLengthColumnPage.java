@@ -17,13 +17,11 @@
 
 package org.apache.carbondata.core.datastore.page;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
 
@@ -32,22 +30,19 @@ import org.apache.carbondata.core.util.ByteUtil;
  */
 public class SafeFixLengthColumnPage extends ColumnPage {
 
-  // Only one of following fields will be used
-  private byte[] byteData;
-  private short[] shortData;
-  private int[] intData;
-  private long[] longData;
-  private float[] floatData;
-  private double[] doubleData;
-  private byte[] shortIntData;
-  private byte[][] fixedLengthdata;
+  // a buffer to hold all the records in flatten bytes
+  private ByteBuffer flattenBytesBuffer;
+  private byte[] flattenContentInBytes;
 
+  private int rcdPerSizeInBytes;
   // total number of entries in array
   private int arrayElementCount = 0;
 
   SafeFixLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
     super(columnPageEncoderMeta, pageSize);
-    this.fixedLengthdata = new byte[pageSize][];
+    this.rcdPerSizeInBytes = columnPageEncoderMeta.getStoreDataType().getSizeInBytes();
+    this.flattenContentInBytes = new byte[pageSize * rcdPerSizeInBytes];
+    this.flattenBytesBuffer = ByteBuffer.wrap(flattenContentInBytes);
   }
 
   /**
@@ -55,8 +50,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putByte(int rowId, byte value) {
-    ensureArraySize(rowId, DataTypes.BYTE);
-    byteData[rowId] = value;
+    flattenBytesBuffer.put(value);
     arrayElementCount++;
   }
 
@@ -65,8 +59,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putShort(int rowId, short value) {
-    ensureArraySize(rowId, DataTypes.SHORT);
-    shortData[rowId] = value;
+    flattenBytesBuffer.putShort(value);
     arrayElementCount++;
   }
 
@@ -75,8 +68,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putInt(int rowId, int value) {
-    ensureArraySize(rowId, DataTypes.INT);
-    intData[rowId] = value;
+    flattenBytesBuffer.putInt(value);
     arrayElementCount++;
   }
 
@@ -85,8 +77,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putLong(int rowId, long value) {
-    ensureArraySize(rowId, DataTypes.LONG);
-    longData[rowId] = value;
+    flattenBytesBuffer.putLong(value);
     arrayElementCount++;
   }
 
@@ -95,8 +86,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putDouble(int rowId, double value) {
-    ensureArraySize(rowId, DataTypes.DOUBLE);
-    doubleData[rowId] = value;
+    flattenBytesBuffer.putDouble(value);
     arrayElementCount++;
   }
 
@@ -115,16 +105,16 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putBytes(int rowId, byte[] bytes) {
-    ensureArraySize(rowId, DataTypes.BYTE_ARRAY);
-    this.fixedLengthdata[rowId] = bytes;
+    // todo: to handle varchar
+    flattenBytesBuffer.putShort((short) bytes.length);
+    flattenBytesBuffer.put(bytes);
     arrayElementCount++;
   }
 
   @Override
   public void putShortInt(int rowId, int value) {
-    ensureArraySize(rowId, DataTypes.SHORT_INT);
     byte[] converted = ByteUtil.to3Bytes(value);
-    System.arraycopy(converted, 0, shortIntData, rowId * 3, 3);
+    flattenBytesBuffer.put(converted);
     arrayElementCount++;
   }
 
@@ -151,7 +141,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public byte getByte(int rowId) {
-    return byteData[rowId];
+    return flattenBytesBuffer.get(rowId);
   }
 
   /**
@@ -159,7 +149,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public short getShort(int rowId) {
-    return shortData[rowId];
+    return flattenBytesBuffer.getShort(rowId * rcdPerSizeInBytes);
   }
 
   /**
@@ -167,7 +157,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public int getShortInt(int rowId) {
-    return ByteUtil.valueOf3Bytes(shortIntData, rowId * 3);
+    return ByteUtil.valueOf3Bytes(flattenBytesBuffer.array(), rowId * rcdPerSizeInBytes);
   }
 
   /**
@@ -175,7 +165,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public int getInt(int rowId) {
-    return intData[rowId];
+    return flattenBytesBuffer.getInt(rowId * rcdPerSizeInBytes);
   }
 
   /**
@@ -183,7 +173,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public long getLong(int rowId) {
-    return longData[rowId];
+    return flattenBytesBuffer.getLong(rowId * rcdPerSizeInBytes);
   }
 
   /**
@@ -191,7 +181,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public float getFloat(int rowId) {
-    return floatData[rowId];
+    return flattenBytesBuffer.getFloat(rowId * rcdPerSizeInBytes);
   }
 
   /**
@@ -199,7 +189,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public double getDouble(int rowId) {
-    return doubleData[rowId];
+    return flattenBytesBuffer.getDouble(rowId * rcdPerSizeInBytes);
   }
 
   @Override public BigDecimal getDecimal(int rowId) {
@@ -209,63 +199,15 @@ public class SafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public byte[] getBytes(int rowId) {
-    return this.fixedLengthdata[rowId];
-  }
-
-  /**
-   * Get byte value page
-   */
-  @Override
-  public byte[] getBytePage() {
-    return byteData;
-  }
-
-  /**
-   * Get short value page
-   */
-  @Override
-  public short[] getShortPage() {
-    return shortData;
-  }
-
-  /**
-   * Get short value page
-   */
-  @Override
-  public byte[] getShortIntPage() {
-    return shortIntData;
-  }
-
-  /**
-   * Get int value page
-   */
-  @Override
-  public int[] getIntPage() {
-    return intData;
-  }
-
-  /**
-   * Get long value page
-   */
-  @Override
-  public long[] getLongPage() {
-    return longData;
-  }
-
-  /**
-   * Get float value page
-   */
-  @Override
-  public float[] getFloatPage() {
-    return floatData;
-  }
-
-  /**
-   * Get double value page
-   */
-  @Override
-  public double[] getDoublePage() {
-    return doubleData;
+    for (int i = 0; i < rowId; i++) {
+      short length = flattenBytesBuffer.getShort();
+      flattenBytesBuffer.position(flattenBytesBuffer.position() + length);
+    }
+    short length = flattenBytesBuffer.getShort();
+    // todo: try to avoid this allocation
+    byte[] rtn = new byte[length];
+    flattenBytesBuffer.get(rtn);
+    return rtn;
   }
 
   /**
@@ -274,7 +216,9 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   @Override public byte[][] getByteArrayPage() {
     byte[][] data = new byte[arrayElementCount][];
     for (int i = 0; i < arrayElementCount; i++) {
-      data[i] = fixedLengthdata[i];
+      short length = flattenBytesBuffer.getShort();
+      data[i] = new byte[length];
+      flattenBytesBuffer.get(data[i]);
     }
     return data;
   }
@@ -287,12 +231,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public byte[] getComplexChildrenLVFlattenedBytePage() throws IOException {
-    ByteArrayOutputStream stream = new ByteArrayOutputStream();
-    DataOutputStream out = new DataOutputStream(stream);
-    for (int i = 0; i < arrayElementCount; i++) {
-      out.write(fixedLengthdata[i]);
-    }
-    return stream.toByteArray();
+    return flattenBytesBuffer.array();
   }
 
   @Override
@@ -300,59 +239,17 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     throw new UnsupportedOperationException("internal error");
   }
 
-  /**
-   * Set byte values to page
-   */
   @Override
-  public void setBytePage(byte[] byteData) {
-    this.byteData = byteData;
+  public void setFlattenContentInBytes(byte[] flattenContentInBytes) {
+    this.flattenContentInBytes = flattenContentInBytes;
+    this.flattenBytesBuffer = ByteBuffer.wrap(flattenContentInBytes);
+    this.arrayElementCount =
+        flattenContentInBytes.length / columnPageEncoderMeta.getStoreDataType().getSizeInBytes();
   }
 
-  /**
-   * Set short values to page
-   */
   @Override
-  public void setShortPage(short[] shortData) {
-    this.shortData = shortData;
-  }
-
-  /**
-   * Set short values to page
-   */
-  @Override
-  public void setShortIntPage(byte[] shortIntData) {
-    this.shortIntData = shortIntData;
-  }
-
-  /**
-   * Set int values to page
-   */
-  @Override public void setIntPage(int[] intData) {
-    this.intData = intData;
-  }
-
-  /**
-   * Set long values to page
-   */
-  @Override
-  public void setLongPage(long[] longData) {
-    this.longData = longData;
-  }
-
-  /**
-   * Set float values to page
-   */
-  @Override
-  public void setFloatPage(float[] floatData) {
-    this.floatData = floatData;
-  }
-
-  /**
-   * Set double value to page
-   */
-  @Override
-  public void setDoublePage(double[] doubleData) {
-    this.doubleData = doubleData;
+  public byte[] getFlattenContentInBytes() {
+    return flattenContentInBytes;
   }
 
   /**
@@ -366,14 +263,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void freeMemory() {
-    byteData = null;
-    shortData = null;
-    intData = null;
-    longData = null;
-    floatData = null;
-    doubleData = null;
-    shortIntData = null;
-    fixedLengthdata = null;
+    flattenBytesBuffer.clear();
+    flattenContentInBytes = null;
   }
 
   /**
@@ -384,27 +275,27 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   public void convertValue(ColumnPageValueConverter codec) {
     if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE) {
       for (int i = 0; i < arrayElementCount; i++) {
-        codec.encode(i, byteData[i]);
+        codec.encode(i, getByte(i));
       }
     } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.SHORT) {
       for (int i = 0; i < arrayElementCount; i++) {
-        codec.encode(i, shortData[i]);
+        codec.encode(i, getShort(i));
       }
     } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.INT) {
       for (int i = 0; i < arrayElementCount; i++) {
-        codec.encode(i, intData[i]);
+        codec.encode(i, getInt(i));
       }
     } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.LONG) {
       for (int i = 0; i < arrayElementCount; i++) {
-        codec.encode(i, longData[i]);
+        codec.encode(i, getLong(i));
       }
     } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.FLOAT) {
       for (int i = 0; i < arrayElementCount; i++) {
-        codec.encode(i, floatData[i]);
+        codec.encode(i, getFloat(i));
       }
     } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.DOUBLE) {
       for (int i = 0; i < arrayElementCount; i++) {
-        codec.encode(i, doubleData[i]);
+        codec.encode(i, getDouble(i));
       }
     } else {
       throw new UnsupportedOperationException("not support value conversion on "
@@ -412,63 +303,6 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     }
   }
 
-  private void ensureArraySize(int requestSize, DataType dataType) {
-    if (dataType == DataTypes.BYTE) {
-      if (requestSize >= byteData.length) {
-        byte[] newArray = new byte[arrayElementCount * 2];
-        System.arraycopy(byteData, 0, newArray, 0, arrayElementCount);
-        byteData = newArray;
-      }
-    } else if (dataType == DataTypes.SHORT) {
-      if (requestSize >= shortData.length) {
-        short[] newArray = new short[arrayElementCount * 2];
-        System.arraycopy(shortData, 0, newArray, 0, arrayElementCount);
-        shortData = newArray;
-      }
-    } else if (dataType == DataTypes.SHORT_INT) {
-      if (requestSize >= shortIntData.length / 3) {
-        byte[] newArray = new byte[arrayElementCount * 6];
-        System.arraycopy(shortIntData, 0, newArray, 0, arrayElementCount * 3);
-        shortIntData = newArray;
-      }
-    } else if (dataType == DataTypes.INT) {
-      if (requestSize >= intData.length) {
-        int[] newArray = new int[arrayElementCount * 2];
-        System.arraycopy(intData, 0, newArray, 0, arrayElementCount);
-        intData = newArray;
-      }
-    } else if (dataType == DataTypes.LONG) {
-      if (requestSize >= longData.length) {
-        long[] newArray = new long[arrayElementCount * 2];
-        System.arraycopy(longData, 0, newArray, 0, arrayElementCount);
-        longData = newArray;
-      }
-    } else if (dataType == DataTypes.FLOAT) {
-      if (requestSize >= floatData.length) {
-        float[] newArray = new float[arrayElementCount * 2];
-        System.arraycopy(floatData, 0, newArray, 0, arrayElementCount);
-        floatData = newArray;
-      }
-    } else if (dataType == DataTypes.DOUBLE) {
-      if (requestSize >= doubleData.length) {
-        double[] newArray = new double[arrayElementCount * 2];
-        System.arraycopy(doubleData, 0, newArray, 0, arrayElementCount);
-        doubleData = newArray;
-      }
-    } else if (dataType == DataTypes.BYTE_ARRAY) {
-      if (requestSize >= fixedLengthdata.length) {
-        byte[][] newArray = new byte[arrayElementCount * 2][];
-        int index = 0;
-        for (byte[] data : fixedLengthdata) {
-          newArray[index++] = data;
-        }
-        fixedLengthdata = newArray;
-      }
-    } else {
-      throw new UnsupportedOperationException(
-          "not support value conversion on " + dataType + " page");
-    }
-  }
   public int getActualRowCount() {
     return arrayElementCount;
   }

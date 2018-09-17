@@ -111,6 +111,16 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
   }
 
   @Override
+  public byte[] getFlattenContentInBytes() {
+    throw new UnsupportedOperationException("not implemented yet");
+  }
+
+  @Override
+  public void setFlattenContentInBytes(byte[] flattenContentInBytes) {
+    throw new UnsupportedOperationException("not implemented yet");
+  }
+
+  @Override
   void copyBytes(int rowId, byte[] dest, int destOffset, int length) {
     CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset.getInt(rowId),
         dest, CarbonUnsafe.BYTE_ARRAY_OFFSET + destOffset, length);

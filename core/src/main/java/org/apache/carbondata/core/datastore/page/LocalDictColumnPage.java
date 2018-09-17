@@ -150,31 +150,8 @@ public class LocalDictColumnPage extends ColumnPage {
     return pageLevelDictionary;
   }
 
-  @Override public void setBytePage(byte[] byteData) {
-    throw new UnsupportedOperationException("Operation not supported");
-  }
-
-  @Override public void setShortPage(short[] shortData) {
-    throw new UnsupportedOperationException("Operation not supported");
-  }
-
-  @Override public void setShortIntPage(byte[] shortIntData) {
-    throw new UnsupportedOperationException("Operation not supported");
-  }
-
-  @Override public void setIntPage(int[] intData) {
-    throw new UnsupportedOperationException("Operation not supported");
-  }
-
-  @Override public void setLongPage(long[] longData) {
-    throw new UnsupportedOperationException("Operation not supported");
-  }
-
-  @Override public void setFloatPage(float[] floatData) {
-    throw new UnsupportedOperationException("Operation not supported");
-  }
-
-  @Override public void setDoublePage(double[] doubleData) {
+  @Override
+  public byte[] getFlattenContentInBytes() {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
@@ -284,31 +261,8 @@ public class LocalDictColumnPage extends ColumnPage {
     return actualDataColumnPage.getBytes(rowId);
   }
 
-  @Override public byte[] getBytePage() {
-    throw new UnsupportedOperationException("Operation not supported");
-  }
-
-  @Override public short[] getShortPage() {
-    throw new UnsupportedOperationException("Operation not supported");
-  }
-
-  @Override public byte[] getShortIntPage() {
-    throw new UnsupportedOperationException("Operation not supported");
-  }
-
-  @Override public int[] getIntPage() {
-    throw new UnsupportedOperationException("Operation not supported");
-  }
-
-  @Override public long[] getLongPage() {
-    throw new UnsupportedOperationException("Operation not supported");
-  }
-
-  @Override public float[] getFloatPage() {
-    throw new UnsupportedOperationException("Operation not supported");
-  }
-
-  @Override public double[] getDoublePage() {
+  @Override
+  public void setFlattenContentInBytes(byte[] flattenContentInBytes) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 

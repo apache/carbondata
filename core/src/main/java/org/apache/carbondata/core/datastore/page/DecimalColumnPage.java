@@ -45,48 +45,6 @@ public abstract class DecimalColumnPage extends VarLengthColumnPageBase {
   }
 
   @Override
-  public byte[] getBytePage() {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
-  }
-
-  @Override
-  public short[] getShortPage() {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
-  }
-
-  @Override
-  public byte[] getShortIntPage() {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
-  }
-
-  @Override
-  public int[] getIntPage() {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
-  }
-
-  @Override
-  public long[] getLongPage() {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
-  }
-
-  @Override
-  public float[] getFloatPage() {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
-  }
-
-  @Override
-  public double[] getDoublePage() {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
-  }
-
-  @Override
   public byte[][] getByteArrayPage() {
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
@@ -111,18 +69,6 @@ public abstract class DecimalColumnPage extends VarLengthColumnPageBase {
   }
 
   @Override public void putFloat(int rowId, float value) {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
-  }
-
-  @Override
-  public void setFloatPage(float[] floatData) {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
-  }
-
-  @Override
-  public void setDoublePage(double[] doubleData) {
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
