@@ -482,6 +482,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     } else {
       blockExecutionInfo.setPrefetchBlocklet(queryModel.isPreFetchData());
     }
+    blockExecutionInfo.setDirectVectorFill(queryModel.isDirectVectorFill());
+
     blockExecutionInfo
         .setTotalNumberOfMeasureToRead(segmentProperties.getMeasuresOrdinalToChunkMapping().size());
     blockExecutionInfo.setComplexDimensionInfoMap(QueryUtil

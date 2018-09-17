@@ -34,17 +34,21 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
    */
   private int columnValueSize;
 
-  public SafeFixedLengthDimensionDataChunkStore(boolean isInvertedIndex, int columnValueSize) {
+  private int numOfRows;
+
+  public SafeFixedLengthDimensionDataChunkStore(boolean isInvertedIndex, int columnValueSize,
+      int numOfRows) {
     super(isInvertedIndex);
     this.columnValueSize = columnValueSize;
+    this.numOfRows = numOfRows;
   }
 
-  @Override public void putArray(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+  @Override
+  public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
       ColumnVectorInfo vectorInfo) {
-    int rowsNum = data.length/columnValueSize;
     CarbonColumnVector vector = vectorInfo.vector;
     if (vector.getBlockDataType() == DataTypes.DATE) {
-      for (int i = 0; i < rowsNum; i++) {
+      for (int i = 0; i < numOfRows; i++) {
         int surrogateInternal =
             CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
         if (surrogateInternal == 1) {
@@ -54,8 +58,9 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
         }
       }
     } else {
-      for (int i = 0; i < rowsNum; i++) {
-        vector.putInt(i, CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize));
+      for (int i = 0; i < numOfRows; i++) {
+        vector.putInt(i, CarbonUtil.getSurrogateInternal(data,
+            i * columnValueSize, columnValueSize));
       }
     }
   }

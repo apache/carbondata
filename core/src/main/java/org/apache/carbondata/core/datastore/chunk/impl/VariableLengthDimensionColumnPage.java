@@ -54,9 +54,9 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
     }
     dataChunkStore = DimensionChunkStoreFactory.INSTANCE
         .getDimensionChunkStore(0, isExplicitSorted, numberOfRows, totalSize, dimStoreType,
-            dictionary);
+            dictionary, vectorInfo != null);
     if (vectorInfo != null) {
-      dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunks, vectorInfo);
+      dataChunkStore.fillVector(invertedIndex, invertedIndexReverse, dataChunks, vectorInfo);
     } else {
       dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunks);
     }

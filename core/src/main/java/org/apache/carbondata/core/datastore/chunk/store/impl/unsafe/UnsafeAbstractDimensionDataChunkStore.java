@@ -116,7 +116,7 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
     }
   }
 
-  @Override public void putArray(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+  @Override public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
       ColumnVectorInfo vectorInfo) {
 
   }

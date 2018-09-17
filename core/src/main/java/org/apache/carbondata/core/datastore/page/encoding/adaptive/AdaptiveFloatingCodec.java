@@ -238,10 +238,10 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
       throw new RuntimeException("internal error: " + debugInfo());
     }
 
-    @Override public void decode(ColumnPage columnPage, ColumnVectorInfo vectorInfo) {
+    @Override
+    public void decode(ColumnPage columnPage, ColumnVectorInfo vectorInfo) {
       CarbonColumnVector vector = vectorInfo.vector;
       BitSet nullBits = columnPage.getNullBits();
-      DataType dataType = vector.getType();
       DataType type = columnPage.getDataType();
       int pageSize = columnPage.getPageSize();
       if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {
@@ -272,7 +272,6 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
       for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i+1)) {
         vector.putNullDirect(i);
       }
-
     }
   };
 }

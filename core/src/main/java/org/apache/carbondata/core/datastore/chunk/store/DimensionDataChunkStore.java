@@ -35,7 +35,11 @@ public interface DimensionDataChunkStore {
    */
   void putArray(int[] invertedIndex, int[] invertedIndexReverse, byte[] data);
 
-  void putArray(int[] invertedIndex, int[] invertedIndexReverse, byte[] data, ColumnVectorInfo vectorInfo);
+  /**
+   * Fill the vector with decoded data.
+   */
+  void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+      ColumnVectorInfo vectorInfo);
 
   /**
    * Below method will be used to get the row

@@ -193,6 +193,34 @@ public class SafeDecimalColumnPage extends DecimalColumnPage {
     }
   }
 
+  @Override public byte[] getByteData() {
+    return byteData;
+  }
+
+  @Override public short[] getShortData() {
+    return shortData;
+  }
+
+  @Override public int[] getShortIntData() {
+    int[] ints = new int[pageSize];
+    for (int i = 0; i < ints.length; i++) {
+      ints[i] = ByteUtil.valueOf3Bytes(shortIntData, i * 3);
+    }
+    return ints;
+  }
+
+  @Override public int[] getIntData() {
+    return intData;
+  }
+
+  @Override public long[] getLongData() {
+    return longData;
+  }
+
+  @Override public byte[][] getByteArrayPage() {
+    return byteArrayData;
+  }
+
   @Override
   public void freeMemory() {
     byteArrayData = null;

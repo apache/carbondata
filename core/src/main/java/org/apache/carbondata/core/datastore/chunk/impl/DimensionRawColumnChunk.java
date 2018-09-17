@@ -129,15 +129,11 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
    * @param index
    * @return
    */
-  public DimensionColumnPage convertToDimColDataChunkWithOutCache(int index, ColumnVectorInfo vectorInfo) {
+  public void convertToDimColDataChunkAndFillVector(int index,
+      ColumnVectorInfo vectorInfo) {
     assert index < pagesCount;
-    // in case of filter query filter column if filter column is decoded and stored.
-    // then return the same
-    if (dataChunks != null && null != dataChunks[index]) {
-      return dataChunks[index];
-    }
     try {
-      return ((CompressedDimensionChunkFileBasedReaderV3)chunkReader).decodeColumnPage(this, index, vectorInfo);
+      chunkReader.decodeColumnPageAndFillVector(this, index, vectorInfo);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

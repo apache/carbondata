@@ -57,6 +57,9 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
 private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   val PUSHED_FILTERS = "PushedFilters"
 
+  val directScan =
+    CarbonProperties.getInstance().getProperty("carbon.isdirect.scan", "true").toBoolean
+
   /*
   Spark 2.3.1 plan there can be case of multiple projections like below
   Project [substring(name, 1, 2)#124, name#123, tupleId#117, cast(rand(-6778822102499951904)#125
@@ -213,11 +216,13 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       rdd: RDD[InternalRow],
       needDecode: ArrayBuffer[AttributeReference]):
   RDD[InternalRow] = {
+    val scanRdd = rdd.asInstanceOf[CarbonScanRDD[InternalRow]]
+    scanRdd.setDirectScanSupport(directScan)
     if (needDecode.nonEmpty) {
-      rdd.asInstanceOf[CarbonScanRDD[InternalRow]].setVectorReaderSupport(false)
+      scanRdd.setVectorReaderSupport(false)
       getDecoderRDD(relation, needDecode, rdd, output)
     } else {
-      rdd.asInstanceOf[CarbonScanRDD[InternalRow]]
+      scanRdd
         .setVectorReaderSupport(supportBatchedDataSource(relation.relation.sqlContext, output))
       rdd
     }
@@ -337,7 +342,11 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         metadata,
         needDecoder,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]])
-      filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan)
+      if (directScan && scan.isInstanceOf[CarbonDataSourceScan]) {
+        filterPredicates.reduceLeftOption(expressions.And).map(execution.FilterExec(_, scan)).getOrElse(scan)
+      } else {
+        filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan)
+      }
     } else {
 
       var newProjectList: Seq[Attribute] = Seq.empty
@@ -363,7 +372,11 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       // Don't request columns that are only referenced by pushed filters.
       val requestedColumns =
         (projectSet ++ filterSet -- handledSet).map(relation.attributeMap).toSeq ++ newProjectList
-      val updateRequestedColumns = updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
+      val updateRequestedColumns = if (!directScan) {
+        updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
+      }  else {
+        (projectSet ++ filterSet).map(relation.attributeMap)
+      }
       val scan = getDataSourceScan(relation,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]],
         partitions,
@@ -374,10 +387,19 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         metadata,
         needDecoder,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]])
-      execution.ProjectExec(
-        updateRequestedColumnsFunc(updatedProjects, table,
-          needDecoder).asInstanceOf[Seq[NamedExpression]],
-        filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan))
+      if (directScan && scan.isInstanceOf[CarbonDataSourceScan]) {
+        execution.ProjectExec(
+          updateRequestedColumnsFunc(updatedProjects, table,
+            needDecoder).asInstanceOf[Seq[NamedExpression]],
+          filterPredicates.reduceLeftOption(expressions.And).map(
+            execution.FilterExec(_, scan)).getOrElse(scan))
+      } else {
+        execution.ProjectExec(
+          updateRequestedColumnsFunc(updatedProjects, table,
+            needDecoder).asInstanceOf[Seq[NamedExpression]],
+          filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan))
+      }
+
     }
   }
 

@@ -19,8 +19,6 @@ package org.apache.carbondata.core.datastore.chunk.store.impl;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionDataChunkStore;
-import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
@@ -53,7 +51,7 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
     this.dimensionDataChunkStore.putArray(invertedIndex, invertedIndexReverse, data);
   }
 
-  @Override public void putArray(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+  @Override public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
       ColumnVectorInfo vectorInfo) {
     int columnValueSize = dimensionDataChunkStore.getColumnValueSize();
     int rowsNum = data.length/ columnValueSize;

@@ -208,24 +208,10 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
    */
   @Override public DimensionColumnPage decodeColumnPage(
       DimensionRawColumnChunk rawColumnPage, int pageNumber) throws IOException, MemoryException {
-    // data chunk of blocklet column
-    DataChunk3 dataChunk3 = rawColumnPage.getDataChunkV3();
-    // get the data buffer
-    ByteBuffer rawData = rawColumnPage.getRawData();
-    DataChunk2 pageMetadata = dataChunk3.getData_chunk_list().get(pageNumber);
-    String compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
-        pageMetadata.getChunk_meta());
-    this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
-    // calculating the start point of data
-    // as buffer can contain multiple column data, start point will be datachunkoffset +
-    // data chunk length + page offset
-    int offset = (int) rawColumnPage.getOffSet() + dimensionChunksLength
-        .get(rawColumnPage.getColumnIndex()) + dataChunk3.getPage_offset().get(pageNumber);
-    // first read the data and uncompressed it
-    return decodeDimension(rawColumnPage, rawData, pageMetadata, offset, null);
+    return decodeColumnPage(rawColumnPage, pageNumber, null);
   }
 
-  public DimensionColumnPage decodeColumnPage(
+  private DimensionColumnPage decodeColumnPage(
       DimensionRawColumnChunk rawColumnPage, int pageNumber,
       ColumnVectorInfo vectorInfo) throws IOException, MemoryException {
     // data chunk of blocklet column
@@ -243,6 +229,14 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
         .get(rawColumnPage.getColumnIndex()) + dataChunk3.getPage_offset().get(pageNumber);
     // first read the data and uncompressed it
     return decodeDimension(rawColumnPage, rawData, pageMetadata, offset, vectorInfo);
+  }
+
+  @Override
+  public void decodeColumnPageAndFillVector(DimensionRawColumnChunk dimensionRawColumnChunk,
+      int pageNumber, ColumnVectorInfo vectorInfo) throws IOException, MemoryException {
+    DimensionColumnPage columnPage =
+        decodeColumnPage(dimensionRawColumnChunk, pageNumber, vectorInfo);
+    columnPage.freeMemory();
   }
 
   private ColumnPage decodeDimensionByMeta(DataChunk2 pageMetadata,
@@ -304,8 +298,8 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
   }
 
   private DimensionColumnPage decodeDimensionLegacy(DimensionRawColumnChunk rawColumnPage,
-      ByteBuffer pageData, DataChunk2 pageMetadata, int offset, ColumnVectorInfo vectorInfo) throws IOException,
-      MemoryException {
+      ByteBuffer pageData, DataChunk2 pageMetadata, int offset, ColumnVectorInfo vectorInfo)
+      throws IOException, MemoryException {
     byte[] dataPage;
     int[] rlePage;
     int[] invertedIndexes = new int[0];

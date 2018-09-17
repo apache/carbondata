@@ -90,6 +90,8 @@ class CarbonScanRDD[T: ClassTag](
   }
   private var vectorReader = false
 
+  private var directScan = false
+
   private val bucketedTable = tableInfo.getFactTable.getBucketingInfo
 
   @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -228,9 +230,12 @@ class CarbonScanRDD[T: ClassTag](
       statistic.addStatistics(QueryStatisticsConstants.BLOCK_ALLOCATION, System.currentTimeMillis)
       statisticRecorder.recordStatisticsForDriver(statistic, queryId)
       statistic = new QueryStatistic()
-      val carbonDistribution = CarbonProperties.getInstance().getProperty(
+      var carbonDistribution = CarbonProperties.getInstance().getProperty(
         CarbonCommonConstants.CARBON_TASK_DISTRIBUTION,
         CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT)
+      if (directScan) {
+        carbonDistribution = CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_MERGE_FILES
+      }
       // If bucketing is enabled on table then partitions should be grouped based on buckets.
       if (bucketedTable != null) {
         var i = 0
@@ -437,6 +442,7 @@ class CarbonScanRDD[T: ClassTag](
         case _ =>
           // create record reader for CarbonData file format
           if (vectorReader) {
+            model.setDirectVectorFill(directScan)
             val carbonRecordReader = createVectorizedCarbonRecordReader(model,
               inputMetricsStats,
               "true")
@@ -748,4 +754,8 @@ class CarbonScanRDD[T: ClassTag](
     vectorReader = boolean
   }
 
+  // TODO find the better way set it.
+  def setDirectScanSupport(boolean: Boolean): Unit = {
+    directScan = boolean
+  }
 }

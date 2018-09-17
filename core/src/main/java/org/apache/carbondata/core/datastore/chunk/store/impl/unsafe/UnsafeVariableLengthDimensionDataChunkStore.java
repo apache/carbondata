@@ -58,7 +58,7 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
     this.value = new byte[20];
   }
 
-  @Override public void putArray(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+  @Override public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
       ColumnVectorInfo vectorInfo) {
 
   }

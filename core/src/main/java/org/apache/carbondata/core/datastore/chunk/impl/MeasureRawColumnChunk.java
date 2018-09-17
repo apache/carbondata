@@ -107,15 +107,10 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
     }
   }
 
-  public ColumnPage convertToColumnPageWithOutCache(int index, ColumnVectorInfo vectorInfo) {
+  public void convertToColumnPageAndFillVector(int index, ColumnVectorInfo vectorInfo) {
     assert index < pagesCount;
-    // in case of filter query filter columns blocklet pages will uncompressed
-    // so no need to decode again
-    if (null != columnPages && columnPages[index] != null) {
-      return columnPages[index];
-    }
     try {
-      return ((CompressedMeasureChunkFileBasedReaderV3)chunkReader).decodeColumnPage(this, index, vectorInfo);
+      chunkReader.decodeColumnPageAndFillVector(this, index, vectorInfo);
     } catch (IOException | MemoryException e) {
       throw new RuntimeException(e);
     }

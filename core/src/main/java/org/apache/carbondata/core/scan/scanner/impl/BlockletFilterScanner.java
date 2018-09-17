@@ -89,8 +89,6 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     }
   }
 
-  private static boolean isDirectFill = Boolean.parseBoolean(CarbonProperties.getInstance().getProperty("carbon.directfill", "true"));
-
   /**
    * Below method will be used to process the block
    *
@@ -100,7 +98,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
   @Override
   public BlockletScannedResult scanBlocklet(RawBlockletColumnChunks rawBlockletColumnChunks)
       throws IOException, FilterUnsupportedException {
-    if (isDirectFill) {
+    if (blockExecutionInfo.isDirectVectorFill()) {
       return executeFilterForPages(rawBlockletColumnChunks);
     } else {
       return executeFilter(rawBlockletColumnChunks);

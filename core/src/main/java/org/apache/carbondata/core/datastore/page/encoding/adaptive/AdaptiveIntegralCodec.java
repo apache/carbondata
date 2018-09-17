@@ -269,20 +269,6 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       CarbonColumnVector vector = vectorInfo.vector;
       BitSet nullBits = columnPage.getNullBits();
       DataType dataType = vector.getType();
-      //      if (dataType == DataTypes.BOOLEAN) {
-      //
-      //
-      //      } else if (dataType == DataTypes.SHORT) {
-      //
-      //      } else if (dataType == DataTypes.INT) {
-      //
-      //      } else if (dataType == DataTypes.LONG) {
-      //
-      //      } else if (DataTypes.isDecimal(dataType)) {
-      //
-      //      } else {
-      //
-      //      }
       DataType type = columnPage.getDataType();
       int pageSize = columnPage.getPageSize();
       if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {

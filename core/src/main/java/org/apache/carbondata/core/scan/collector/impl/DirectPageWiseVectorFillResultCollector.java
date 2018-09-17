@@ -31,9 +31,9 @@ import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.scan.result.vector.MeasureDataVectorProcessor;
 
 /**
- * It is not a collector it is just a scanned result holder.
+ * It delegates the vector to fill the data directly from decoded pages.
  */
-public class DirectDictionaryBasedVectorResultCollector extends AbstractScannedResultCollector {
+public class DirectPageWiseVectorFillResultCollector extends AbstractScannedResultCollector {
 
   protected ProjectionDimension[] queryDimensions;
 
@@ -49,7 +49,7 @@ public class DirectDictionaryBasedVectorResultCollector extends AbstractScannedR
 
   ColumnVectorInfo[] allColumnInfo;
 
-  public DirectDictionaryBasedVectorResultCollector(BlockExecutionInfo blockExecutionInfos) {
+  public DirectPageWiseVectorFillResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
     // initialize only if the current block is not a restructured block else the initialization
     // will be taken care by RestructureBasedVectorResultCollector
@@ -61,7 +61,7 @@ public class DirectDictionaryBasedVectorResultCollector extends AbstractScannedR
     }
   }
 
-  void prepareDimensionAndMeasureColumnVectors() {
+  private void prepareDimensionAndMeasureColumnVectors() {
     measureColumnInfo = new ColumnVectorInfo[queryMeasures.length];
     List<ColumnVectorInfo> dictInfoList = new ArrayList<>();
     List<ColumnVectorInfo> noDictInfoList = new ArrayList<>();
@@ -135,8 +135,7 @@ public class DirectDictionaryBasedVectorResultCollector extends AbstractScannedR
     throw new UnsupportedOperationException("collectResultInRow is not supported here");
   }
 
-  @Override
-  public void collectResultInColumnarBatch(BlockletScannedResult scannedResult,
+  @Override public void collectResultInColumnarBatch(BlockletScannedResult scannedResult,
       CarbonColumnarBatch columnarBatch) {
     int numberOfPages = scannedResult.numberOfpages();
     while (scannedResult.getCurrentPageCounter() < numberOfPages) {
@@ -155,17 +154,16 @@ public class DirectDictionaryBasedVectorResultCollector extends AbstractScannedR
   }
 
   private void fillResultToColumnarBatch(BlockletScannedResult scannedResult) {
-    scannedResult.fillDataChunks(dictionaryInfo, noDictionaryInfo, measureColumnInfo, measureInfo.getMeasureOrdinals());
+    scannedResult.fillDataChunks(dictionaryInfo, noDictionaryInfo, measureColumnInfo,
+        measureInfo.getMeasureOrdinals());
   }
 
-  private void fillColumnVectorDetails(CarbonColumnarBatch columnarBatch)
-  {
+  private void fillColumnVectorDetails(CarbonColumnarBatch columnarBatch) {
     for (int i = 0; i < allColumnInfo.length; i++) {
       allColumnInfo[i].vectorOffset = columnarBatch.getRowCounter();
       allColumnInfo[i].vector = columnarBatch.columnVectors[i];
       if (null != allColumnInfo[i].dimension) {
-        allColumnInfo[i].vector
-            .setBlockDataType(dimensionInfo.dataType[i]);
+        allColumnInfo[i].vector.setBlockDataType(dimensionInfo.dataType[i]);
       }
     }
   }

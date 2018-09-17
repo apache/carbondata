@@ -236,24 +236,10 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
       return (max - value) / factor;
     }
 
-    @Override public void decode(ColumnPage columnPage, ColumnVectorInfo vectorInfo) {
+    @Override
+    public void decode(ColumnPage columnPage, ColumnVectorInfo vectorInfo) {
       CarbonColumnVector vector = vectorInfo.vector;
       BitSet nullBits = columnPage.getNullBits();
-      DataType dataType = vector.getType();
-//      if (dataType == DataTypes.BOOLEAN) {
-//
-//
-//      } else if (dataType == DataTypes.SHORT) {
-//
-//      } else if (dataType == DataTypes.INT) {
-//
-//      } else if (dataType == DataTypes.LONG) {
-//
-//      } else if (DataTypes.isDecimal(dataType)) {
-//
-//      } else {
-//
-//      }
       DataType type = columnPage.getDataType();
       int pageSize = columnPage.getPageSize();
       if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {
@@ -284,7 +270,6 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
       for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i+1)) {
         vector.putNullDirect(i);
       }
-
     }
 
     @Override

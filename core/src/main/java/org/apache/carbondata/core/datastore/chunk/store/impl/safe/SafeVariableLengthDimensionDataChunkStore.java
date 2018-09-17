@@ -92,7 +92,8 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
     }
   }
 
-  @Override public void putArray(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+  @Override
+  public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
       ColumnVectorInfo vectorInfo) {
     // start position will be used to store the current data position
     int startOffset = 0;
@@ -111,7 +112,8 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
         startOffset += getLengthFromBuffer(buffer) + lengthSize;
         int length = startOffset - (currentOffset);
         if (ByteUtil.UnsafeComparer.INSTANCE
-            .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0, CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentOffset,
+            .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+                CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentOffset,
                 length)) {
           vector.putNull(i);
         } else {
@@ -144,6 +146,30 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
       } else {
         vector.putLong(numberOfRows - 1, ByteUtil.toXorLong(data, currentOffset, length) * 1000L);
       }
+    } else if (dt == DataTypes.BOOLEAN) {
+      for (int i = 0; i < numberOfRows - 1; i++) {
+        buffer.position(startOffset);
+        startOffset += getLengthFromBuffer(buffer) + lengthSize;
+        int length = startOffset - (currentOffset);
+        if (length == 0) {
+          vector.putNull(i);
+        } else {
+          vector.putBoolean(i, ByteUtil.toBoolean(data[currentOffset]));
+        }
+        currentOffset = startOffset + lengthSize;
+      }
+      int length = (data.length - currentOffset);
+      if (length == 0) {
+        vector.putNull(numberOfRows - 1);
+      } else {
+        vector.putBoolean(numberOfRows - 1, ByteUtil.toBoolean(data[currentOffset]));
+      }
+    } else if (dt == DataTypes.SHORT) {
+      // TODO
+    } else if (dt == DataTypes.INT) {
+      // TODO
+    } else if (dt == DataTypes.LONG) {
+      // TODO
     }
   }
 

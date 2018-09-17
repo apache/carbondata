@@ -382,29 +382,26 @@ public abstract class BlockletScannedResult {
         pageUncompressTime.getCount() + (System.currentTimeMillis() - startTime));
   }
 
-  public void fillDataChunks(ColumnVectorInfo[] dictionaryInfo, ColumnVectorInfo[] noDictionaryInfo,  ColumnVectorInfo[] msrVectorInfo, int[] measuresOrdinal) {
+  public void fillDataChunks(ColumnVectorInfo[] dictionaryInfo, ColumnVectorInfo[] noDictionaryInfo,
+      ColumnVectorInfo[] msrVectorInfo, int[] measuresOrdinal) {
     freeDataChunkMemory();
     if (pageCounter >= pageFilteredRowCount.length) {
       return;
     }
     long startTime = System.currentTimeMillis();
-//    for (int i = 0; i < dimensionColumnPages.length; i++) {
-//
-//      if (dimensionColumnPages[i][pageCounter] == null && dimRawColumnChunks[i] != null) {
-//        dimensionColumnPages[i][pageCounter] =
-//            dimRawColumnChunks[i].convertToDimColDataChunkWithOutCache(pageCounter, dimVectorInfo[i]);
-//      }
-//    }
 
     for (int i = 0; i < this.dictionaryColumnChunkIndexes.length; i++) {
-      dimRawColumnChunks[dictionaryColumnChunkIndexes[i]].convertToDimColDataChunkWithOutCache(pagesFiltered[pageCounter], dictionaryInfo[i]).freeMemory();
+      dimRawColumnChunks[dictionaryColumnChunkIndexes[i]]
+          .convertToDimColDataChunkAndFillVector(pagesFiltered[pageCounter], dictionaryInfo[i]);
     }
     for (int i = 0; i < this.noDictionaryColumnChunkIndexes.length; i++) {
-      dimRawColumnChunks[noDictionaryColumnChunkIndexes[i]].convertToDimColDataChunkWithOutCache(pagesFiltered[pageCounter], noDictionaryInfo[i]).freeMemory();
+      dimRawColumnChunks[noDictionaryColumnChunkIndexes[i]]
+          .convertToDimColDataChunkAndFillVector(pagesFiltered[pageCounter], noDictionaryInfo[i]);
     }
 
     for (int i = 0; i < measuresOrdinal.length; i++) {
-      msrRawColumnChunks[measuresOrdinal[i]].convertToColumnPageWithOutCache(pagesFiltered[pageCounter], msrVectorInfo[i]).freeMemory();
+      msrRawColumnChunks[measuresOrdinal[i]]
+          .convertToColumnPageAndFillVector(pagesFiltered[pageCounter], msrVectorInfo[i]);
     }
     QueryStatistic pageUncompressTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.PAGE_UNCOMPRESS_TIME);

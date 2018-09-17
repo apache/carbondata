@@ -93,18 +93,21 @@ object CarbonSessionExample {
     import scala.util.Random
     val r = new Random()
     val df = spark.sparkContext.parallelize(1 to 10 * 10 * 1000)
-      .map(x => ("No." + r.nextInt(100000), "name" + x % 8, "city" + x % 50, x % 60))
+      .map(x => ("No." + r.nextInt(100000), "name" + x % 8, "city" + x % 50, BigDecimal.apply(x % 60)))
       .toDF("ID", "name", "city", "age")
 
     // Create table with pre-aggregate
     spark.sql("DROP TABLE IF EXISTS personTable")
+    spark.sql("DROP TABLE IF EXISTS test_table")
     spark.sql("DROP TABLE IF EXISTS personTableWithoutAgg")
     df.write.format("carbon").saveAsTable("personTable")
 
-//    spark.sql("explain codegen select count(*) from personTable where ID in('No.10008', 'yvh') and name='name1'").show(false)
-    spark.sql("select * from personTable where ID='No.10008'").show(false)
+    spark.sql("create table test_table(ID string, name string, city string, age decimal) stored by 'carbondata'")
+    spark.sql("insert into test_table select * from personTable limit 1000000")
+    spark.sql("explain codegen select count(*) from personTable where ID in('No.10008', 'yvh') and name='name1'").show(false)
+    spark.sql("select age from test_table ").show(false)
 
-    spark.sql("select count(ID),count(name),count(city),count(age) from personTable").show()
+//    spark.sql("select count(ID),count(name),count(city),count(age) from test_table").show()
 
 //    spark.sql(
 //      s"""

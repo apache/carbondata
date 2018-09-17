@@ -282,8 +282,11 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
         schema = schema.add(field);
       }
     }
-    vectorProxy = new CarbonVectorProxy(DEFAULT_MEMORY_MODE, schema,
-        CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
+    short batchSize = DEFAULT_BATCH_SIZE;
+    if (queryModel.isDirectVectorFill()) {
+      batchSize = CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+    }
+    vectorProxy = new CarbonVectorProxy(DEFAULT_MEMORY_MODE, schema, batchSize);
 
     if (partitionColumns != null) {
       int partitionIdx = fields.length;
@@ -294,11 +297,22 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
     }
     CarbonColumnVector[] vectors = new CarbonColumnVector[fields.length];
     boolean[] filteredRows = new boolean[vectorProxy.numRows()];
-    for (int i = 0; i < fields.length; i++) {
-      vectors[i] = new ColumnarVectorWrapperNew(vectorProxy, filteredRows, i);
-      if (isNoDictStringField[i]) {
-        if (vectors[i] instanceof ColumnarVectorWrapperNew) {
-          ((ColumnarVectorWrapperNew) vectors[i]).reserveDictionaryIds();
+    if (queryModel.isDirectVectorFill()) {
+      for (int i = 0; i < fields.length; i++) {
+        vectors[i] = new ColumnarVectorWrapperNew(vectorProxy, filteredRows, i);
+        if (isNoDictStringField[i]) {
+          if (vectors[i] instanceof ColumnarVectorWrapperNew) {
+            ((ColumnarVectorWrapperNew) vectors[i]).reserveDictionaryIds();
+          }
+        }
+      }
+    } else {
+      for (int i = 0; i < fields.length; i++) {
+        vectors[i] = new ColumnarVectorWrapper(vectorProxy, filteredRows, i);
+        if (isNoDictStringField[i]) {
+          if (vectors[i] instanceof ColumnarVectorWrapper) {
+            ((ColumnarVectorWrapper) vectors[i]).reserveDictionaryIds();
+          }
         }
       }
     }

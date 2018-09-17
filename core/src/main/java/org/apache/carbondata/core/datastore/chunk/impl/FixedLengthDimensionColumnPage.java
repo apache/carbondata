@@ -46,11 +46,11 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
         dataChunk.length;
     dataChunkStore = DimensionChunkStoreFactory.INSTANCE
         .getDimensionChunkStore(columnValueSize, isExplicitSorted, numberOfRows, totalSize,
-            DimensionStoreType.FIXED_LENGTH, null);
+            DimensionStoreType.FIXED_LENGTH, null, vectorInfo != null);
     if (vectorInfo == null) {
       dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunk);
     } else {
-      dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunk, vectorInfo);
+      dataChunkStore.fillVector(invertedIndex, invertedIndexReverse, dataChunk, vectorInfo);
     }
   }
 

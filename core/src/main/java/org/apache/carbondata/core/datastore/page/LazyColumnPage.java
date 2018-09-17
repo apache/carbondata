@@ -19,10 +19,12 @@ package org.apache.carbondata.core.datastore.page;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.BitSet;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
+import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 /**
@@ -48,7 +50,11 @@ public class LazyColumnPage extends ColumnPage {
     super(columnPage.getColumnPageEncoderMeta(), columnPage.getPageSize());
     this.columnPage = columnPage;
     this.converter = converter;
-    converter.decode(columnPage, vectorInfo);
+    if (columnPage instanceof DecimalColumnPage) {
+      fillDecimalPage(vectorInfo);
+    } else {
+      converter.decode(columnPage, vectorInfo);
+    }
   }
 
   public static ColumnPage newPage(ColumnPage columnPage, ColumnPageValueConverter codec) {
@@ -63,6 +69,26 @@ public class LazyColumnPage extends ColumnPage {
   @Override
   public String toString() {
     return String.format("[converter: %s, data type: %s", converter, columnPage.getDataType());
+  }
+
+  private void fillDecimalPage(ColumnVectorInfo vectorInfo) {
+    DecimalConverterFactory.DecimalConverter decimalConverter =
+        ((DecimalColumnPage) columnPage).getDecimalConverter();
+    DataType type = columnPage.getDataType();
+    BitSet nullBits = columnPage.getNullBits();
+    if (type == DataTypes.BYTE) {
+      decimalConverter.fillVector(columnPage.getByteData(), pageSize, vectorInfo, nullBits);
+    } else if (type == DataTypes.SHORT) {
+      decimalConverter.fillVector(columnPage.getShortData(), pageSize, vectorInfo, nullBits);
+    } else if (type == DataTypes.SHORT_INT) {
+      decimalConverter.fillVector(columnPage.getShortIntData(), pageSize, vectorInfo, nullBits);
+    } else if (type == DataTypes.INT) {
+      decimalConverter.fillVector(columnPage.getIntData(), pageSize, vectorInfo, nullBits);
+    } else if (type == DataTypes.LONG) {
+      decimalConverter.fillVector(columnPage.getLongData(), pageSize, vectorInfo, nullBits);
+    } else {
+      decimalConverter.fillVector(columnPage.getByteArrayPage(), pageSize, vectorInfo, nullBits);
+    }
   }
 
   @Override
