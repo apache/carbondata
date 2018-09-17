@@ -19,11 +19,6 @@ package org.apache.carbondata.core.datastore.compression;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.LongBuffer;
-import java.nio.ShortBuffer;
 
 import org.apache.carbondata.core.util.ByteUtil;
 
@@ -72,28 +67,10 @@ public class ZstdCompressor implements Compressor {
   }
 
   @Override
-  public short[] unCompressShort(byte[] compInput, int offset, int length) {
-    byte[] unCompArray = unCompressByte(compInput, offset, length);
-    ShortBuffer unCompBuffer = ByteBuffer.wrap(unCompArray).asShortBuffer();
-    short[] shorts = new short[unCompArray.length / ByteUtil.SIZEOF_SHORT];
-    unCompBuffer.get(shorts);
-    return shorts;
-  }
-
-  @Override
   public byte[] compressInt(int[] unCompInput) {
     ByteBuffer unCompBuffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_INT);
     unCompBuffer.asIntBuffer().put(unCompInput);
     return compressByte(unCompBuffer.array());
-  }
-
-  @Override
-  public int[] unCompressInt(byte[] compInput, int offset, int length) {
-    byte[] unCompArray = unCompressByte(compInput, offset, length);
-    IntBuffer unCompBuffer = ByteBuffer.wrap(unCompArray).asIntBuffer();
-    int[] ints = new int[unCompArray.length / ByteUtil.SIZEOF_INT];
-    unCompBuffer.get(ints);
-    return ints;
   }
 
   @Override
@@ -104,15 +81,6 @@ public class ZstdCompressor implements Compressor {
   }
 
   @Override
-  public long[] unCompressLong(byte[] compInput, int offset, int length) {
-    byte[] unCompArray = unCompressByte(compInput, offset, length);
-    LongBuffer unCompBuffer = ByteBuffer.wrap(unCompArray).asLongBuffer();
-    long[] longs = new long[unCompArray.length / ByteUtil.SIZEOF_LONG];
-    unCompBuffer.get(longs);
-    return longs;
-  }
-
-  @Override
   public byte[] compressFloat(float[] unCompInput) {
     ByteBuffer unCompBuffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_FLOAT);
     unCompBuffer.asFloatBuffer().put(unCompInput);
@@ -120,28 +88,10 @@ public class ZstdCompressor implements Compressor {
   }
 
   @Override
-  public float[] unCompressFloat(byte[] compInput, int offset, int length) {
-    byte[] unCompArray = unCompressByte(compInput, offset, length);
-    FloatBuffer unCompBuffer = ByteBuffer.wrap(unCompArray).asFloatBuffer();
-    float[] floats = new float[unCompArray.length / ByteUtil.SIZEOF_FLOAT];
-    unCompBuffer.get(floats);
-    return floats;
-  }
-
-  @Override
   public byte[] compressDouble(double[] unCompInput) {
     ByteBuffer unCompBuffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_DOUBLE);
     unCompBuffer.asDoubleBuffer().put(unCompInput);
     return compressByte(unCompBuffer.array());
-  }
-
-  @Override
-  public double[] unCompressDouble(byte[] compInput, int offset, int length) {
-    byte[] unCompArray = unCompressByte(compInput, offset, length);
-    DoubleBuffer unCompBuffer = ByteBuffer.wrap(unCompArray).asDoubleBuffer();
-    double[] doubles = new double[unCompArray.length / ByteUtil.SIZEOF_DOUBLE];
-    unCompBuffer.get(doubles);
-    return doubles;
   }
 
   @Override
@@ -157,6 +107,11 @@ public class ZstdCompressor implements Compressor {
   @Override
   public long maxCompressedLength(long inputSize) {
     return Zstd.compressBound(inputSize);
+  }
+
+  @Override
+  public long uncompressedLength(byte[] compressedInput) throws IOException {
+    return Zstd.decompressedSize(compressedInput);
   }
 
   /**

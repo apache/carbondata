@@ -33,23 +33,13 @@ public interface Compressor {
 
   byte[] compressShort(short[] unCompInput);
 
-  short[] unCompressShort(byte[] compInput, int offset, int length);
-
   byte[] compressInt(int[] unCompInput);
-
-  int[] unCompressInt(byte[] compInput, int offset, int length);
 
   byte[] compressLong(long[] unCompInput);
 
-  long[] unCompressLong(byte[] compInput, int offset, int length);
-
   byte[] compressFloat(float[] unCompInput);
 
-  float[] unCompressFloat(byte[] compInput, int offset, int length);
-
   byte[] compressDouble(double[] unCompInput);
-
-  double[] unCompressDouble(byte[] compInput, int offset, int length);
 
   long rawCompress(long inputAddress, int inputSize, long outputAddress) throws IOException;
 
@@ -57,6 +47,7 @@ public interface Compressor {
 
   long maxCompressedLength(long inputSize);
 
+  long uncompressedLength(byte[] compressedInput) throws IOException;
   /**
    * Whether this compressor support zero-copy during compression.
    * Zero-copy means that the compressor support receiving memory address (pointer)

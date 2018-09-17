@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.page;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -35,6 +36,7 @@ import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGener
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE;
@@ -770,57 +772,55 @@ public abstract class ColumnPage {
       int offset, int length, boolean isLVEncoded)
       throws MemoryException {
     Compressor compressor = CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
+    byte[] decompressedData = compressor.unCompressByte(compressedData, offset, length);
     TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
     DataType storeDataType = meta.getStoreDataType();
     if (storeDataType == DataTypes.BOOLEAN || storeDataType == DataTypes.BYTE) {
-      byte[] byteData = compressor.unCompressByte(compressedData, offset, length);
-      return newBytePage(columnSpec, byteData, meta.getCompressorName());
+      return newBytePage(columnSpec, decompressedData, meta.getCompressorName());
     } else if (storeDataType == DataTypes.SHORT) {
-      short[] shortData = compressor.unCompressShort(compressedData, offset, length);
+      short[] shortData  = new short[decompressedData.length / ByteUtil.SIZEOF_SHORT];
+      ByteBuffer.wrap(decompressedData).asShortBuffer().get(shortData);
       return newShortPage(columnSpec, shortData, meta.getCompressorName());
     } else if (storeDataType == DataTypes.SHORT_INT) {
-      byte[] shortIntData = compressor.unCompressByte(compressedData, offset, length);
-      return newShortIntPage(columnSpec, shortIntData, meta.getCompressorName());
+      return newShortIntPage(columnSpec, decompressedData, meta.getCompressorName());
     } else if (storeDataType == DataTypes.INT) {
-      int[] intData = compressor.unCompressInt(compressedData, offset, length);
+      int[] intData  = new int[decompressedData.length / ByteUtil.SIZEOF_INT];
+      ByteBuffer.wrap(decompressedData).asIntBuffer().get(intData);
       return newIntPage(columnSpec, intData, meta.getCompressorName());
     } else if (storeDataType == DataTypes.LONG) {
-      long[] longData = compressor.unCompressLong(compressedData, offset, length);
+      long[] longData  = new long[decompressedData.length / ByteUtil.SIZEOF_LONG];
+      ByteBuffer.wrap(decompressedData).asLongBuffer().get(longData);
       return newLongPage(columnSpec, longData, meta.getCompressorName());
     } else if (storeDataType == DataTypes.FLOAT) {
-      float[] floatData = compressor.unCompressFloat(compressedData, offset, length);
+      float[] floatData  = new float[decompressedData.length / ByteUtil.SIZEOF_FLOAT];
+      ByteBuffer.wrap(decompressedData).asFloatBuffer().get(floatData);
       return newFloatPage(columnSpec, floatData, meta.getCompressorName());
     } else if (storeDataType == DataTypes.DOUBLE) {
-      double[] doubleData = compressor.unCompressDouble(compressedData, offset, length);
+      double[] doubleData  = new double[decompressedData.length / ByteUtil.SIZEOF_DOUBLE];
+      ByteBuffer.wrap(decompressedData).asDoubleBuffer().get(doubleData);
       return newDoublePage(columnSpec, doubleData, meta.getCompressorName());
     } else if (!isLVEncoded && storeDataType == DataTypes.BYTE_ARRAY && (
         columnSpec.getColumnType() == ColumnType.COMPLEX_PRIMITIVE
             || columnSpec.getColumnType() == ColumnType.PLAIN_VALUE)) {
-      byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);
-      return newComplexLVBytesPage(columnSpec, lvVarBytes,
+      return newComplexLVBytesPage(columnSpec, decompressedData,
           CarbonCommonConstants.SHORT_SIZE_IN_BYTE, meta.getCompressorName());
     } else if (isLVEncoded && storeDataType == DataTypes.BYTE_ARRAY &&
         columnSpec.getColumnType() == ColumnType.COMPLEX_PRIMITIVE) {
-      byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);
-      return newFixedByteArrayPage(columnSpec, lvVarBytes, 3, meta.getCompressorName());
+      return newFixedByteArrayPage(columnSpec, decompressedData, 3, meta.getCompressorName());
     } else if (storeDataType == DataTypes.BYTE_ARRAY
         && columnSpec.getColumnType() == ColumnType.COMPLEX_STRUCT) {
-      byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);
-      return newFixedByteArrayPage(columnSpec, lvVarBytes,
+      return newFixedByteArrayPage(columnSpec, decompressedData,
           CarbonCommonConstants.SHORT_SIZE_IN_BYTE, meta.getCompressorName());
     } else if (storeDataType == DataTypes.BYTE_ARRAY
         && columnSpec.getColumnType() == ColumnType.COMPLEX_ARRAY) {
-      byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);
-      return newFixedByteArrayPage(columnSpec, lvVarBytes,
+      return newFixedByteArrayPage(columnSpec, decompressedData,
           CarbonCommonConstants.LONG_SIZE_IN_BYTE, meta.getCompressorName());
     } else if (storeDataType == DataTypes.BYTE_ARRAY
         && columnSpec.getColumnType() == ColumnType.PLAIN_LONG_VALUE) {
-      byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);
-      return newLVBytesPage(columnSpec, lvVarBytes,
+      return newLVBytesPage(columnSpec, decompressedData,
           CarbonCommonConstants.INT_SIZE_IN_BYTE, meta.getCompressorName());
     } else if (storeDataType == DataTypes.BYTE_ARRAY) {
-      byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);
-      return newLVBytesPage(columnSpec, lvVarBytes,
+      return newLVBytesPage(columnSpec, decompressedData,
           CarbonCommonConstants.INT_SIZE_IN_BYTE, meta.getCompressorName());
     } else {
       throw new UnsupportedOperationException(
@@ -836,35 +836,36 @@ public abstract class ColumnPage {
     Compressor compressor = CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
     TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
     ColumnPage decimalPage = null;
+    byte[] decompressedData = compressor.unCompressByte(compressedData, offset, length);
     DataType storeDataType = meta.getStoreDataType();
     if (storeDataType == DataTypes.BYTE) {
-      byte[] byteData = compressor.unCompressByte(compressedData, offset, length);
-      decimalPage = createDecimalPage(meta, byteData.length);
-      decimalPage.setBytePage(byteData);
+      decimalPage = createDecimalPage(meta, decompressedData.length);
+      decimalPage.setBytePage(decompressedData);
       return decimalPage;
     } else if (storeDataType == DataTypes.SHORT) {
-      short[] shortData = compressor.unCompressShort(compressedData, offset, length);
+      short[] shortData  = new short[decompressedData.length / ByteUtil.SIZEOF_SHORT];
+      ByteBuffer.wrap(decompressedData).asShortBuffer().get(shortData);
       decimalPage = createDecimalPage(meta, shortData.length);
       decimalPage.setShortPage(shortData);
       return decimalPage;
     } else if (storeDataType == DataTypes.SHORT_INT) {
-      byte[] shortIntData = compressor.unCompressByte(compressedData, offset, length);
-      decimalPage = createDecimalPage(meta, shortIntData.length);
-      decimalPage.setShortIntPage(shortIntData);
+      decimalPage = createDecimalPage(meta, decompressedData.length);
+      decimalPage.setShortIntPage(decompressedData);
       return decimalPage;
-    }  else if (storeDataType == DataTypes.INT) {
-      int[] intData = compressor.unCompressInt(compressedData, offset, length);
+    } else if (storeDataType == DataTypes.INT) {
+      int[] intData  = new int[decompressedData.length / ByteUtil.SIZEOF_INT];
+      ByteBuffer.wrap(decompressedData).asIntBuffer().get(intData);
       decimalPage = createDecimalPage(meta, intData.length);
       decimalPage.setIntPage(intData);
       return decimalPage;
     } else if (storeDataType == DataTypes.LONG) {
-      long[] longData = compressor.unCompressLong(compressedData, offset, length);
+      long[] longData  = new long[decompressedData.length / ByteUtil.SIZEOF_LONG];
+      ByteBuffer.wrap(decompressedData).asLongBuffer().get(longData);
       decimalPage = createDecimalPage(meta, longData.length);
       decimalPage.setLongPage(longData);
       return decimalPage;
     } else {
-      byte[] lvEncodedBytes = compressor.unCompressByte(compressedData, offset, length);
-      return newDecimalPage(columnSpec, lvEncodedBytes, meta.getCompressorName());
+      return newDecimalPage(columnSpec, decompressedData, meta.getCompressorName());
     }
   }
 
