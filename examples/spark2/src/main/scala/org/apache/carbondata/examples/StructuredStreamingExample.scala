@@ -176,7 +176,7 @@ object StructuredStreamingExample {
     thread
   }
 
-  def writeSocket(serverSocket: ServerSocket): Thread = {
+  def writeSocket(serverSocket: ServerSocket, recordFormat: String = "csv"): Thread = {
     val thread = new Thread() {
       override def run(): Unit = {
         // wait for client to connection request and accept
@@ -187,9 +187,15 @@ object StructuredStreamingExample {
           // write 5 records per iteration
           for (_ <- 0 to 1000) {
             index = index + 1
-            socketWriter.println(index.toString + ",name_" + index
-                                 + ",city_" + index + "," + (index * 10000.00).toString +
-                                 ",school_" + index + ":school_" + index + index + "$" + index)
+            recordFormat match {
+              case "csv" =>
+                socketWriter.println(index.toString + ",name_" + index
+                                     + ",city_" + index + "," + (index * 10000.00).toString +
+                                     ",school_" + index + ":school_" + index + index + "$" + index)
+              case "json" =>
+                socketWriter.println(
+                  s"""{"id":$index,"name":"name_$index","city":"city_$index","salary":${index * 10000.00},"file":{"school":["school_1","school_2"],"age":$index}}""")
+            }
           }
           socketWriter.flush()
           Thread.sleep(1000)

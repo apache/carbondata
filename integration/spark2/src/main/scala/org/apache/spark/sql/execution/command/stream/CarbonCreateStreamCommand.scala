@@ -80,11 +80,11 @@ case class CarbonCreateStreamCommand(
     val updatedQuery = if (format.equals("kafka")) {
       shouldHaveProperty(tblProperty, "kafka.bootstrap.servers", sourceTable)
       shouldHaveProperty(tblProperty, "subscribe", sourceTable)
-      createPlan(sparkSession, inputQuery, sourceTable, "kafka", tblProperty)
+      createPlan(sparkSession, inputQuery, sourceTable, "kafka", tblProperty.asScala)
     } else if (format.equals("socket")) {
       shouldHaveProperty(tblProperty, "host", sourceTable)
       shouldHaveProperty(tblProperty, "port", sourceTable)
-      createPlan(sparkSession, inputQuery, sourceTable, "socket", tblProperty)
+      createPlan(sparkSession, inputQuery, sourceTable, "socket", tblProperty.asScala)
     } else {
       // Replace the logical relation with a streaming relation created
       // from the stream source table
@@ -138,7 +138,7 @@ case class CarbonCreateStreamCommand(
       inputQuery: DataFrame,
       sourceTable: CarbonTable,
       sourceName: String,
-      tblProperty: util.Map[String, String]): LogicalPlan = {
+      tblProperty: mutable.Map[String, String]): LogicalPlan = {
     // We follow 3 steps to generate new plan
     // 1. replace the logical relation in stream query with streaming relation
     // 2. collect the new ExprId generated
@@ -151,32 +151,42 @@ case class CarbonCreateStreamCommand(
         s"case when size(_values) > $i then _values[$i] else null end AS $columnName"
     }
 
-    val delimiter = tblProperty.asScala.getOrElse("delimiter", ",")
     val aliasMap = new util.HashMap[String, ExprId]()
     val updatedQuery = inputQuery.logicalPlan transform {
       case r: LogicalRelation
         if r.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
            r.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable.isStreamingSource =>
         // for kafka stream source, get the 'value' column and split it by using UDF
-        val kafkaPlan = sparkSession.readStream
+        val plan = sparkSession.readStream
           .format(sourceName)
           .options(tblProperty)
           .load()
           .selectExpr("CAST(value as string) as _value")
-          .selectExpr(
-            s"split(_value, '${CarbonSparkUtil.delimiterConverter4Udf(delimiter)}') as _values")
-          .selectExpr(exprList: _*)
-          .logicalPlan
+        val recordFormat = tblProperty.getOrElse("record_format", "csv")
+        val newPlan = recordFormat match {
+            case "csv" =>
+              val delimiter = tblProperty.getOrElse("delimiter", ",")
+              plan.selectExpr(
+                s"split(_value, '${CarbonSparkUtil.delimiterConverter4Udf(delimiter)}') as _values")
+                .selectExpr(exprList: _*)
+                .logicalPlan
+            case "json" =>
+              import org.apache.spark.sql.functions._
+              plan
+                .select(from_json(col("_value"), Util.convertToSparkSchema(sourceTable)) as "_data")
+                .select("_data.*")
+                .logicalPlan
+          }
 
         // collect the newly generated ExprId
-        kafkaPlan collect {
+        newPlan collect {
           case p@Project(projectList, child) =>
             projectList.map { expr =>
               aliasMap.put(expr.name, expr.exprId)
             }
             p
         }
-        kafkaPlan
+        newPlan
       case plan: LogicalPlan => plan
     }
 
