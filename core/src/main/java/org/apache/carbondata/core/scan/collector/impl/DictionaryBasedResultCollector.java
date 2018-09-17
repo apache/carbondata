@@ -231,6 +231,9 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
         childColumnByteBuffer
             .put(queryDimensions[i].getDimension(), buffer);
         mergedComplexDimensionDataMap.put(complexParentOrdinal, childColumnByteBuffer);
+      } else if (!queryDimensions[i].getDimension().isComplex()) {
+        // If Dimension is not a Complex Column, then increment index for noDictionaryComplexColumn
+        noDictionaryComplexColumnIndex++;
       }
     }
   }

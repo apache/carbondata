@@ -213,7 +213,7 @@ public class BlockletEncodedColumnPage {
           new DecoderBasedFallbackEncoder(encodedColumnPage, pageIndex, localDictionaryGenerator)));
     } else {
       fallbackFutureQueue.add(fallbackExecutorService.submit(
-          new ActualDataBasedFallbackEncoder(encodedColumnPage, encodedColumnPageList.size())));
+          new ActualDataBasedFallbackEncoder(encodedColumnPage, pageIndex)));
     }
   }
 }

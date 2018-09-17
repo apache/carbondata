@@ -1015,6 +1015,9 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "create table table1 (id int, name string, structField struct<intval:int, stringval:string>) stored by 'carbondata'")
     sql("insert into table1 values(null,'aaa','23$bb')")
     checkAnswer(sql("select * from table1"),Seq(Row(null,"aaa", Row(23,"bb"))))
+    checkAnswer(sql("select id,name,structField.intval,structField.stringval from table1"),Seq(Row(null,"aaa",23,"bb")))
+    checkAnswer(sql("select id,name,structField.intval,structField.stringval,name from table1"),Seq(Row(null,"aaa",23,"bb","aaa")))
+    checkAnswer(sql("select id,name,structField.intval,name,structField.stringval from table1"),Seq(Row(null,"aaa",23,"aaa","bb")))
   }
 
 }
