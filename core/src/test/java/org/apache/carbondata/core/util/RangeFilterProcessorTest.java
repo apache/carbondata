@@ -320,7 +320,7 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
-    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax);
+    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     Assert.assertFalse(result);
   }
 
@@ -336,7 +336,7 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
-    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax);
+    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     Assert.assertFalse(result);
   }
 
@@ -352,7 +352,7 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
-    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax);
+    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     Assert.assertTrue(result);
   }
 
@@ -370,7 +370,7 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
 
-    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax);
+    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     rangeCovered = Deencapsulation.getField(range, "isRangeFullyCoverBlock");
     Assert.assertTrue(result);
     Assert.assertTrue(rangeCovered);
@@ -390,7 +390,7 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
 
-    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax);
+    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     startBlockMinIsDefaultStart = Deencapsulation.getField(range, "startBlockMinIsDefaultStart");
     Assert.assertTrue(result);
     Assert.assertTrue(startBlockMinIsDefaultStart);
@@ -410,7 +410,7 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
 
-    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax);
+    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     endBlockMaxisDefaultEnd = Deencapsulation.getField(range, "endBlockMaxisDefaultEnd");
     Assert.assertTrue(result);
     Assert.assertTrue(endBlockMaxisDefaultEnd);

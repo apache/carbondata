@@ -117,14 +117,14 @@ public abstract class LVStringStatsCollector implements ColumnPageStatsCollector
     return new SimpleStatsResult() {
 
       @Override public Object getMin() {
-        if (null == min) {
+        if (null == min || ignoreWritingMinMax) {
           min = new byte[0];
         }
         return min;
       }
 
       @Override public Object getMax() {
-        if (null == max) {
+        if (null == max || ignoreWritingMinMax) {
           max = new byte[0];
         }
         return max;

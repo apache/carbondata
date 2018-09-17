@@ -123,12 +123,9 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
         isScanRequired =
             isScanRequired(maxValue, msrFilterRangeValues, msrColEvalutorInfoList.get(0).getType());
       } else {
-        if (!isMinMaxSet[dimensionChunkIndex[0]]) {
-          isScanRequired = true;
-        } else {
-          maxValue = blockMaxValue[dimensionChunkIndex[0]];
-          isScanRequired = isScanRequired(maxValue, filterRangeValues);
-        }
+        maxValue = blockMaxValue[dimensionChunkIndex[0]];
+        isScanRequired =
+            isScanRequired(maxValue, filterRangeValues, isMinMaxSet[dimensionChunkIndex[0]]);
       }
     } else {
       isScanRequired = isDefaultValuePresentInFilter;
@@ -140,7 +137,11 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
     return bitSet;
   }
 
-  private boolean isScanRequired(byte[] blockMaxValue, byte[][] filterValues) {
+  private boolean isScanRequired(byte[] blockMaxValue, byte[][] filterValues, boolean isMinMaxSet) {
+    if (!isMinMaxSet) {
+      // scan complete data if min max is not written for a given column
+      return true;
+    }
     boolean isScanRequired = false;
     for (int k = 0; k < filterValues.length; k++) {
       // filter value should be in range of max and min value i.e
@@ -196,12 +197,10 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
       BitSetGroup bitSetGroup = new BitSetGroup(rawColumnChunk.getPagesCount());
       FilterExecuter filterExecuter = null;
       boolean isExclude = false;
-      boolean isMinMaxSetForFilterDimension =
-          rawBlockletColumnChunks.getDataBlock().isMinMaxSet()[chunkIndex];
       for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
         if (rawColumnChunk.getMaxValues() != null) {
-          if (!isMinMaxSetForFilterDimension || isScanRequired(rawColumnChunk.getMaxValues()[i],
-              this.filterRangeValues)) {
+          if (isScanRequired(rawColumnChunk.getMaxValues()[i], this.filterRangeValues,
+              rawColumnChunk.getMinMaxFlagArray()[i])) {
             int compare = ByteUtil.UnsafeComparer.INSTANCE
                 .compareTo(filterRangeValues[0], rawColumnChunk.getMinValues()[i]);
             if (compare <= 0) {

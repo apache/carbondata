@@ -41,6 +41,8 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
 
+import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
 
 class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndAfterAll {
@@ -338,8 +340,6 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     cleanTestData()
   }
   test("Read data having multi blocklet and validate min max flag") {
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT, "40")
     buildTestDataMuliBlockLet(750000, 50000)
     assert(new File(writerPath).exists())
     spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -372,10 +372,8 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     spark.sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
     assert(new File(writerPath).exists())
+    clearDataMapCache
     cleanTestData()
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT,
-        CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT)
   }
   def buildTestDataMuliBlockLet(recordsInBlocklet1 :Int, recordsInBlocklet2 :Int): Unit ={
     FileUtils.deleteDirectory(new File(writerPath))
@@ -418,7 +416,8 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
       numBlocklets: Int): Unit = {
     val carbonFiles: Array[File] = new File(writerPath).listFiles()
     val carbonIndexFile = carbonFiles.filter(file => file.getName.endsWith(".carbonindex"))(0)
-    val converter: DataFileFooterConverter = new DataFileFooterConverter(new Configuration(false))
+    val converter: DataFileFooterConverter = new DataFileFooterConverter(spark.sessionState
+      .newHadoopConf())
     val carbonIndexFilePath = FileFactory.getUpdatedFilePath(carbonIndexFile.getCanonicalPath)
     val indexMetadata: List[DataFileFooter] = converter
       .getIndexInfo(carbonIndexFilePath, null, false).asScala.toList
@@ -426,6 +425,15 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     indexMetadata.zipWithIndex.foreach { filefooter =>
       val isMinMaxSet: Array[Boolean] = filefooter._1.getBlockletIndex.getMinMaxIndex.getIsMinMaxSet
       assert(isMinMaxSet.sameElements(expectedMinMaxFlag(filefooter._2)))
+    }
+  }
+
+  private def clearDataMapCache(): Unit = {
+    if (!spark.sparkContext.version.startsWith("2.1")) {
+      val mapSize = DataMapStoreManager.getInstance().getAllDataMaps.size()
+      DataMapStoreManager.getInstance()
+        .clearDataMaps(AbsoluteTableIdentifier.from(writerPath))
+      assert(mapSize > DataMapStoreManager.getInstance().getAllDataMaps.size())
     }
   }
 
@@ -486,6 +494,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     val op1 = spark.sql("select address from sdkOutputTableWithoutSchema limit 1").collectAsList()
     assert(op1.get(0).getString(0).length == 75000)
     spark.sql("DROP TABLE sdkOutputTableWithoutSchema")
+    clearDataMapCache
     cleanTestData()
   }
 }

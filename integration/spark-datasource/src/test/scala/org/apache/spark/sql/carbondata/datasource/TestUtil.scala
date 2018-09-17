@@ -25,6 +25,9 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical
 import org.apache.spark.sql.catalyst.util.sideBySide
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
 object TestUtil {
 
   val rootPath = new File(this.getClass.getResource("/").getPath
@@ -44,6 +47,8 @@ object TestUtil {
   if (!spark.sparkContext.version.startsWith("2.1")) {
     spark.experimental.extraOptimizations = Seq(new CarbonFileIndexReplaceRule)
   }
+  CarbonProperties.getInstance()
+    .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT, "40")
 
   def checkAnswer(df: DataFrame, expectedAnswer: java.util.List[Row]):Unit = {
     checkAnswer(df, expectedAnswer.asScala) match {

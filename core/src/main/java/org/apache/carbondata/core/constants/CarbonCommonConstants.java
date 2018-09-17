@@ -1832,7 +1832,7 @@ public final class CarbonCommonConstants {
   public static final short LOCAL_DICT_ENCODED_BYTEARRAY_SIZE = 3;
 
   /**
-   * property to be used for specifying the max character limit for string/varchar data type till
+   * property to be used for specifying the max byte limit for string/varchar data type till
    * where storing min/max in data file will be considered
    */
   public static final String CARBON_MINMAX_ALLOWED_BYTE_COUNT =

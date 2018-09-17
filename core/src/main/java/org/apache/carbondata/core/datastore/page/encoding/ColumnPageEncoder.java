@@ -131,6 +131,7 @@ public abstract class ColumnPageEncoder {
         CarbonUtil.getValueAsBytes(inputPage.getDataType(), inputPage.getStatistics().getMin()));
     index.addToMax_values(max);
     index.addToMin_values(min);
+    index.addToMin_max_presence(inputPage.getStatistics().writeMinMax());
     return index;
   }
 

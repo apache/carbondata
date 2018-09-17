@@ -17,7 +17,6 @@
 package org.apache.carbondata.core.indexstore.blockletindex;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
@@ -135,16 +134,12 @@ public class BlockletDataRefNode implements DataRefNode {
   }
 
   @Override
-  public boolean[] isMinMaxSet() {
+  public boolean[] minMaxFlagArray() {
     BlockletIndex blockletIndex =
         blockInfos.get(index).getDetailInfo().getBlockletInfo().getBlockletIndex();
     boolean[] isMinMaxSet = null;
     if (null != blockletIndex) {
       isMinMaxSet = blockletIndex.getMinMaxIndex().getIsMinMaxSet();
-      if (null == isMinMaxSet) {
-        isMinMaxSet = new boolean[blockletIndex.getMinMaxIndex().getMaxValues().length];
-        Arrays.fill(isMinMaxSet, true);
-      }
     }
     return isMinMaxSet;
   }

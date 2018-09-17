@@ -17,17 +17,12 @@
 
 package org.apache.carbondata.core.metadata.blocklet.index;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.io.Serializable;
-
-import org.apache.hadoop.io.Writable;
 
 /**
  * Persist Index of all blocklets in one file
  */
-public class BlockletIndex implements Serializable, Writable {
+public class BlockletIndex implements Serializable {
 
   /**
    * serialization version
@@ -80,12 +75,4 @@ public class BlockletIndex implements Serializable, Writable {
     this.minMaxIndex = minMaxIndex;
   }
 
-  @Override public void write(DataOutput out) throws IOException {
-    minMaxIndex.write(out);
-  }
-
-  @Override public void readFields(DataInput in) throws IOException {
-    minMaxIndex = new BlockletMinMaxIndex();
-    minMaxIndex.readFields(in);
-  }
 }

@@ -210,8 +210,6 @@ public class CarbonMetadataUtil {
         // if writeMonMaxFlag is set to false for the dimension at index i, then update the page
         // and blocklet min/max with empty byte array
         if (!writeMinMaxFlag.get(i)) {
-          columnMaxData[i] = new byte[0];
-          columnMinData[i] = new byte[0];
           maxCol[i] = new byte[0];
           minCol[i] = new byte[0];
           continue;
@@ -298,8 +296,7 @@ public class CarbonMetadataUtil {
         if (!stats.writeMinMax()) {
           mergedWriteMinMaxFlag[i] = stats.writeMinMax();
           String columnName = encodedColumnPage.getActualPage().getColumnSpec().getFieldName();
-          LOGGER.info("Min Max writing ignored for column " + columnName + " from page 0 to "
-              + encodedBlocklet.getNumberOfPages());
+          LOGGER.info("Min Max writing of blocklet ignored for column with name " + columnName);
           break;
         }
       }
