@@ -52,7 +52,6 @@ object StructuredStreamingExample {
              | CREATE TABLE ${ streamTableName }(
              | id INT,
              | name STRING,
-             | city STRING,
              | salary FLOAT,
              | file struct<school:array<string>, age:int>
              | )
@@ -66,7 +65,6 @@ object StructuredStreamingExample {
              | CREATE TABLE ${ streamTableName }(
              | id INT,
              | name STRING,
-             | city STRING,
              | salary FLOAT
              | )
              | STORED BY 'carbondata'
@@ -190,11 +188,11 @@ object StructuredStreamingExample {
             recordFormat match {
               case "csv" =>
                 socketWriter.println(index.toString + ",name_" + index
-                                     + ",city_" + index + "," + (index * 10000.00).toString +
+                                     + "," + (index * 10000.00).toString +
                                      ",school_" + index + ":school_" + index + index + "$" + index)
               case "json" =>
                 socketWriter.println(
-                  s"""{"id":$index,"name":"name_$index","city":"city_$index","salary":${index * 10000.00},"file":{"school":["school_1","school_2"],"age":$index}}""")
+                  s"""{"id":$index,"name":"s","salary":4.3,"file":{"school":["a","b"],"age":6}}""")
             }
           }
           socketWriter.flush()
