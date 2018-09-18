@@ -39,6 +39,7 @@ import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
 import org.apache.carbondata.core.datastore.page.key.TablePageKey;
+import org.apache.carbondata.core.datastore.page.statistics.DummyStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.KeyPageStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.LVLongStringStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.LVShortStringStatsCollector;
@@ -152,7 +153,11 @@ public class TablePage {
       } else {
         page = ColumnPage.newPage(columnPageEncoderMeta, pageSize);
       }
-      page.setStatsCollector(PrimitivePageStatsCollector.newInstance(dataTypes[i]));
+      if (dataTypes[i] != DataTypes.BINARY) {
+        page.setStatsCollector(PrimitivePageStatsCollector.newInstance(dataTypes[i]));
+      } else {
+        page.setStatsCollector(new DummyStatsCollector());
+      }
       measurePages[i] = page;
     }
 

@@ -18,6 +18,8 @@
 package org.apache.carbondata.core.datastore.page;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
@@ -42,6 +44,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   static final int longBits = DataTypes.LONG.getSizeBits();
   // default size for each row, grows as needed
   static final int DEFAULT_ROW_SIZE = 8;
+  static final int DEFAULT_BINARY_SIZE = 512;
 
   static final double FACTOR = 1.25;
 
@@ -147,6 +150,12 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
       int lvLength, String compressorName) throws MemoryException {
     return getLVBytesColumnPage(columnSpec, lvEncodedBytes, DataTypes.BYTE_ARRAY,
         lvLength, compressorName);
+  }
+
+  static ColumnPage newBinaryColumnPage(TableSpec.ColumnSpec columnSpec, byte[] lvEncodedBytes,
+      int offset, int length)
+      throws MemoryException {
+    return getBinaryColumnPage(columnSpec, lvEncodedBytes, DataTypes.BINARY, offset, length);
   }
 
   /**
@@ -280,6 +289,53 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
       length = rowOffset.getInt(i + 1) - rowOffset.getInt(i);
       page.putBytes(i, lvEncodedBytes, lvEncodedOffset + lvLength, length);
       lvEncodedOffset += lvLength + length;
+    }
+    return page;
+  }
+
+  private static ColumnPage getBinaryColumnPage(TableSpec.ColumnSpec columnSpec,
+      byte[] lvEncodedBytes, DataType dataType, int start, int len) throws MemoryException {
+    // extract length and data, set them to rowOffset and unsafe memory correspondingly
+    int rowId = 0;
+
+    ColumnPage rowOffset = ColumnPage.newPage(
+        new ColumnPageEncoderMeta(columnSpec, dataType, null),
+        CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
+
+    List<Integer> rowLength = new ArrayList<>();
+    int length;
+    int offset;
+    int lvEncodedOffset = start;
+    int counter = 0;
+    // extract Length field in input and calculate total length
+    for (offset = 0; lvEncodedOffset < len; offset += length) {
+      length = ByteUtil.toInt(lvEncodedBytes, lvEncodedOffset);
+      rowOffset.putInt(counter, offset);
+      rowLength.add(length);
+      lvEncodedOffset += 4 + length;
+      rowId++;
+      counter++;
+    }
+    rowOffset.putInt(counter, offset);
+    int numRows = rowId;
+    VarLengthColumnPageBase page;
+    if (unsafe) {
+      page = new UnsafeVarLengthColumnPage(new ColumnPageEncoderMeta(columnSpec, dataType, null),
+          numRows);
+    } else {
+      page = new SafeVarLengthColumnPage(new ColumnPageEncoderMeta(columnSpec, dataType, null),
+          numRows);
+    }
+    // set total length and rowOffset in page
+    page.totalLength = offset;
+    page.rowOffset = rowOffset;
+
+    // set data in page
+    lvEncodedOffset = start;
+    for (int i = 0; i < numRows; i++) {
+      length = rowLength.get(i);
+      page.putBytes(i, lvEncodedBytes, lvEncodedOffset + 4, length);
+      lvEncodedOffset += 4 + length;
     }
     return page;
   }

@@ -2394,7 +2394,7 @@ public final class CarbonUtil {
       return b.array();
     } else if (DataTypes.isDecimal(dataType)) {
       return DataTypeUtil.bigDecimalToByte((BigDecimal) value);
-    } else if (dataType == DataTypes.BYTE_ARRAY) {
+    } else if (dataType == DataTypes.BYTE_ARRAY || dataType == DataTypes.BINARY) {
       return (byte[]) value;
     } else if (dataType == DataTypes.STRING
         || dataType == DataTypes.DATE

@@ -99,6 +99,8 @@ public class DataType implements Serializable {
       return DATE_CHAR;
     } else if (dataType == DataTypes.BYTE_ARRAY) {
       return BYTE_ARRAY_CHAR;
+    } else if (dataType == DataTypes.BINARY) {
+      return BYTE_ARRAY_CHAR;
     } else {
       throw new RuntimeException("Unexpected type: " + dataType);
     }

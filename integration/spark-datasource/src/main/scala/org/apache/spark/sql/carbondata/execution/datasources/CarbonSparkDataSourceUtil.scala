@@ -61,6 +61,7 @@ object CarbonSparkDataSourceUtil {
         case CarbonDataTypes.DOUBLE => DoubleType
         case CarbonDataTypes.BOOLEAN => BooleanType
         case CarbonDataTypes.TIMESTAMP => TimestampType
+        case CarbonDataTypes.BINARY => BinaryType
         case CarbonDataTypes.DATE => DateType
         case CarbonDataTypes.VARCHAR => StringType
       }
@@ -81,6 +82,7 @@ object CarbonSparkDataSourceUtil {
       case DateType => CarbonDataTypes.DATE
       case BooleanType => CarbonDataTypes.BOOLEAN
       case TimestampType => CarbonDataTypes.TIMESTAMP
+      case BinaryType => CarbonDataTypes.BINARY
       case ArrayType(elementType, _) =>
         CarbonDataTypes.createArrayType(convertSparkToCarbonDataType(elementType))
       case StructType(fields) =>
