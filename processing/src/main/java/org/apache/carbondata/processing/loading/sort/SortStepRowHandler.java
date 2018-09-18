@@ -623,10 +623,11 @@ public class SortStepRowHandler implements Serializable {
    * @param baseObject base object of the memory block
    * @param address base address of the row
    * @param outputStream output stream
+   * @param unsafeTotalLength
    * @throws IOException if error occurs while writing to stream
    */
-  public void writeIntermediateSortTempRowFromUnsafeMemoryToStream(Object baseObject,
-      long address, DataOutputStream outputStream, long unsafeRemainingLength)
+  public void writeIntermediateSortTempRowFromUnsafeMemoryToStream(Object baseObject, long address,
+      DataOutputStream outputStream, long unsafeRemainingLength, long unsafeTotalLength)
       throws IOException, MemoryException {
     int size = 0;
 
@@ -652,7 +653,7 @@ public class SortStepRowHandler implements Serializable {
           writeDataToStream(data, outputStream, idx);
         }
       } else {
-        validateUnsafeMemoryBlockSizeLimit(unsafeRemainingLength, length);
+        validateUnsafeMemoryBlockSizeLimit(unsafeRemainingLength, length, unsafeTotalLength);
         byte[] bytes = new byte[length];
         CarbonUnsafe.getUnsafe()
             .copyMemory(baseObject, address + size, bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
@@ -665,7 +666,7 @@ public class SortStepRowHandler implements Serializable {
     // packed no-sort & measure
     int len = CarbonUnsafe.getUnsafe().getInt(baseObject, address + size);
     size += 4;
-    validateUnsafeMemoryBlockSizeLimit(unsafeRemainingLength, len);
+    validateUnsafeMemoryBlockSizeLimit(unsafeRemainingLength, len, unsafeTotalLength);
     byte[] noSortDimsAndMeasures = new byte[len];
     CarbonUnsafe.getUnsafe().copyMemory(baseObject, address + size,
         noSortDimsAndMeasures, CarbonUnsafe.BYTE_ARRAY_OFFSET, len);
@@ -685,15 +686,16 @@ public class SortStepRowHandler implements Serializable {
    * @param row raw row
    * @param baseObject base object of the memory block
    * @param address base address for the row
+   * @param unsafeTotalLength
    * @return number of bytes written to memory
    */
   public int writeRawRowAsIntermediateSortTempRowToUnsafeMemory(Object[] row, Object baseObject,
       long address, ReUsableByteArrayDataOutputStream reUsableByteArrayDataOutputStream,
-      long unsafeRemainingLength) throws MemoryException, IOException {
+      long unsafeRemainingLength, long unsafeTotalLength) throws MemoryException, IOException {
     int size = 0;
     // write dict & sort
     for (int idx = 0; idx < this.dictSortDimCnt; idx++) {
-      validateUnsafeMemoryBlockSizeLimit(unsafeRemainingLength, 4);
+      validateUnsafeMemoryBlockSizeLimit(unsafeRemainingLength, 4, unsafeTotalLength);
       CarbonUnsafe.getUnsafe()
           .putInt(baseObject, address + size, (int) row[this.dictSortDimIdx[idx]]);
       size += 4;
@@ -719,7 +721,8 @@ public class SortStepRowHandler implements Serializable {
         }
       } else {
         byte[] bytes = (byte[]) row[this.noDictSortDimIdx[idx]];
-        validateUnsafeMemoryBlockSizeLimit(unsafeRemainingLength, 2 + bytes.length);
+        validateUnsafeMemoryBlockSizeLimit(unsafeRemainingLength, 2 + bytes.length,
+            unsafeTotalLength);
         CarbonUnsafe.getUnsafe().putShort(baseObject, address + size, (short) bytes.length);
         size += 2;
         CarbonUnsafe.getUnsafe()
@@ -734,7 +737,7 @@ public class SortStepRowHandler implements Serializable {
     packNoSortFieldsToBytes(row, reUsableByteArrayDataOutputStream);
     int packSize = reUsableByteArrayDataOutputStream.getSize();
 
-    validateUnsafeMemoryBlockSizeLimit(unsafeRemainingLength, 4 + packSize);
+    validateUnsafeMemoryBlockSizeLimit(unsafeRemainingLength, 4 + packSize, unsafeTotalLength);
     // write no-sort
     CarbonUnsafe.getUnsafe().putInt(baseObject, address + size, packSize);
     size += 4;
@@ -744,11 +747,13 @@ public class SortStepRowHandler implements Serializable {
     return size;
   }
 
-  private void validateUnsafeMemoryBlockSizeLimit(long unsafeRemainingLength, int requestedSize)
-      throws MemoryException {
-    if (unsafeRemainingLength <= requestedSize) {
+  private void validateUnsafeMemoryBlockSizeLimit(long unsafeRemainingLength, int requestedSize,
+      long unsafeTotalLength) throws MemoryException {
+    if (unsafeTotalLength <= requestedSize) {
       throw new MemoryException(
           "not enough unsafe memory for sort: increase the 'offheap.sort.chunk.size.inmb' ");
+    } else if (unsafeRemainingLength <= requestedSize) {
+      throw new MemoryException("cannot handle this row. create new page");
     }
   }
 

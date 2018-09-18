@@ -86,7 +86,7 @@ public class UnsafeCarbonRowPage {
       throws MemoryException, IOException {
     return sortStepRowHandler
         .writeRawRowAsIntermediateSortTempRowToUnsafeMemory(row, dataBlock.getBaseObject(), address,
-            reUsableByteArrayDataOutputStream, dataBlock.size() - lastSize);
+            reUsableByteArrayDataOutputStream, dataBlock.size() - lastSize, dataBlock.size());
   }
 
   /**
@@ -112,7 +112,7 @@ public class UnsafeCarbonRowPage {
    */
   public void writeRow(long address, DataOutputStream stream) throws IOException, MemoryException {
     sortStepRowHandler.writeIntermediateSortTempRowFromUnsafeMemoryToStream(
-        dataBlock.getBaseObject(), address, stream, dataBlock.size() - lastSize);
+        dataBlock.getBaseObject(), address, stream, dataBlock.size() - lastSize, dataBlock.size());
   }
 
   public void freeMemory() {
@@ -161,5 +161,9 @@ public class UnsafeCarbonRowPage {
 
   public void setReadConvertedNoSortField() {
     this.convertNoSortFields = true;
+  }
+
+  public void makeCanAddFail() {
+    this.lastSize = (int) sizeToBeUsed;
   }
 }
