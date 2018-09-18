@@ -122,7 +122,8 @@ public abstract class ColumnPage {
         throw new RuntimeException(e);
       }
     } else {
-      return new SafeFixLengthColumnPage(columnPageEncoderMeta, pageSize);
+      return new SafeFixLengthColumnPage(columnPageEncoderMeta, pageSize,
+          columnPageEncoderMeta.getStoreDataType().getSizeInBytes());
     }
   }
 
@@ -135,7 +136,7 @@ public abstract class ColumnPage {
         throw new RuntimeException(e);
       }
     } else {
-      return new SafeFixLengthColumnPage(columnPageEncoderMeta, pageSize);
+      return new SafeFixLengthColumnPage(columnPageEncoderMeta, pageSize, eachValueSize);
     }
   }
 
@@ -174,7 +175,7 @@ public abstract class ColumnPage {
       encodedPage = new SafeFixLengthColumnPage(
           new ColumnPageEncoderMeta(columnPageEncoderMeta.getColumnSpec(), DataTypes.BYTE_ARRAY,
               columnPageEncoderMeta.getCompressorName()),
-          pageSize);
+          pageSize, DataTypes.BYTE_ARRAY.getSizeInBytes());
     }
     return new LocalDictColumnPage(actualPage, encodedPage, localDictionaryGenerator,
         isComplexTypePrimitive, isDecoderBasedFallBackEnabled);
@@ -218,7 +219,7 @@ public abstract class ColumnPage {
       }
     } else {
       if (dataType == DataTypes.BOOLEAN) {
-        instance = newPrimitivePage(columnSpec, BYTE, new byte[pageSize], compressorName);
+        instance = newFixedPrimitivePage(columnSpec, BYTE, new byte[pageSize], compressorName);
       } else if (dataType == DataTypes.BYTE ||
           dataType == DataTypes.SHORT ||
           dataType == DataTypes.SHORT_INT ||
@@ -226,7 +227,7 @@ public abstract class ColumnPage {
           dataType == DataTypes.LONG ||
           dataType == DataTypes.FLOAT ||
           dataType == DataTypes.DOUBLE) {
-        instance = newPrimitivePage(columnSpec, dataType,
+        instance = newFixedPrimitivePage(columnSpec, dataType,
             new byte[pageSize * dataType.getSizeInBytes()], compressorName);
       } else if (DataTypes.isDecimal(dataType)) {
         instance = newDecimalPage(columnSpec, new byte[pageSize][], compressorName);
@@ -249,13 +250,23 @@ public abstract class ColumnPage {
     return columnPage;
   }
 
-  private static ColumnPage newPrimitivePage(TableSpec.ColumnSpec columnSpec, DataType storeType,
-      byte[] flattenBytes, String compressorName) {
+  private static ColumnPage newFixedPrimitivePage(TableSpec.ColumnSpec columnSpec,
+      DataType storeType, byte[] flattenBytes, String compressorName) {
     ColumnPage columnPage = createPage(
         new ColumnPageEncoderMeta(columnSpec, storeType, compressorName),
         flattenBytes.length / storeType.getSizeInBytes());
     columnPage.setFlattenContentInBytes(flattenBytes);
     return columnPage;
+  }
+
+  private static ColumnPage newFixedByteArrayPage(TableSpec.ColumnSpec columnSpec,
+      byte[] lvEncodedByteArray, int eachValueSize, String compressorName) throws MemoryException {
+    int pageSize = lvEncodedByteArray.length / eachValueSize;
+    ColumnPage fixLengthByteArrayPage = createFixLengthByteArrayPage(
+        new ColumnPageEncoderMeta(columnSpec, columnSpec.getSchemaDataType(), compressorName),
+        pageSize, eachValueSize);
+    fixLengthByteArrayPage.setFlattenContentInBytes(lvEncodedByteArray);
+    return fixLengthByteArrayPage;
   }
 
   private static ColumnPage newDecimalPage(TableSpec.ColumnSpec columnSpec, byte[][] byteArray,
@@ -285,22 +296,6 @@ public abstract class ColumnPage {
         columnSpec, lvEncodedByteArray, lvLength, compressorName);
   }
 
-  private static ColumnPage newFixedByteArrayPage(TableSpec.ColumnSpec columnSpec,
-      byte[] lvEncodedByteArray, int eachValueSize, String compressorName) throws MemoryException {
-    int pageSize = lvEncodedByteArray.length / eachValueSize;
-    ColumnPage fixLengthByteArrayPage = createFixLengthByteArrayPage(
-        new ColumnPageEncoderMeta(columnSpec, columnSpec.getSchemaDataType(), compressorName),
-        pageSize, eachValueSize);
-    byte[] data = null;
-    int offset = 0;
-    for (int i = 0; i < pageSize; i++) {
-      data = new byte[eachValueSize];
-      System.arraycopy(lvEncodedByteArray, offset, data, 0, eachValueSize);
-      fixLengthByteArrayPage.putBytes(i, data);
-      offset += eachValueSize;
-    }
-    return fixLengthByteArrayPage;
-  }
 
   public abstract void setFlattenContentInBytes(byte[] flattenContentInBytes);
 
@@ -650,7 +645,7 @@ public abstract class ColumnPage {
         storeDataType == DataTypes.LONG ||
         storeDataType == DataTypes.FLOAT ||
         storeDataType == DataTypes.DOUBLE) {
-      return newPrimitivePage(columnSpec, storeDataType, decompressedData,
+      return newFixedPrimitivePage(columnSpec, storeDataType, decompressedData,
           meta.getCompressorName());
     } else if (!isLVEncoded && storeDataType == DataTypes.BYTE_ARRAY && (
         columnSpec.getColumnType() == ColumnType.COMPLEX_PRIMITIVE

@@ -34,14 +34,15 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   private ByteBuffer flattenBytesBuffer;
   private byte[] flattenContentInBytes;
 
-  private int rcdPerSizeInBytes;
+  private int eachRowSize;
   // total number of entries in array
   private int arrayElementCount = 0;
 
-  SafeFixLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
+  SafeFixLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize,
+      int eachRowSize) {
     super(columnPageEncoderMeta, pageSize);
-    this.rcdPerSizeInBytes = columnPageEncoderMeta.getStoreDataType().getSizeInBytes();
-    this.flattenContentInBytes = new byte[pageSize * rcdPerSizeInBytes];
+    this.eachRowSize = eachRowSize;
+    this.flattenContentInBytes = new byte[pageSize * this.eachRowSize];
     this.flattenBytesBuffer = ByteBuffer.wrap(flattenContentInBytes);
   }
 
@@ -149,7 +150,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public short getShort(int rowId) {
-    return flattenBytesBuffer.getShort(rowId * rcdPerSizeInBytes);
+    return flattenBytesBuffer.getShort(rowId * eachRowSize);
   }
 
   /**
@@ -157,7 +158,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public int getShortInt(int rowId) {
-    return ByteUtil.valueOf3Bytes(flattenBytesBuffer.array(), rowId * rcdPerSizeInBytes);
+    return ByteUtil.valueOf3Bytes(flattenBytesBuffer.array(), rowId * eachRowSize);
   }
 
   /**
@@ -165,7 +166,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public int getInt(int rowId) {
-    return flattenBytesBuffer.getInt(rowId * rcdPerSizeInBytes);
+    return flattenBytesBuffer.getInt(rowId * eachRowSize);
   }
 
   /**
@@ -173,7 +174,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public long getLong(int rowId) {
-    return flattenBytesBuffer.getLong(rowId * rcdPerSizeInBytes);
+    return flattenBytesBuffer.getLong(rowId * eachRowSize);
   }
 
   /**
@@ -181,7 +182,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public float getFloat(int rowId) {
-    return flattenBytesBuffer.getFloat(rowId * rcdPerSizeInBytes);
+    return flattenBytesBuffer.getFloat(rowId * eachRowSize);
   }
 
   /**
@@ -189,7 +190,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public double getDouble(int rowId) {
-    return flattenBytesBuffer.getDouble(rowId * rcdPerSizeInBytes);
+    return flattenBytesBuffer.getDouble(rowId * eachRowSize);
   }
 
   @Override public BigDecimal getDecimal(int rowId) {
@@ -243,8 +244,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   public void setFlattenContentInBytes(byte[] flattenContentInBytes) {
     this.flattenContentInBytes = flattenContentInBytes;
     this.flattenBytesBuffer = ByteBuffer.wrap(flattenContentInBytes);
-    this.arrayElementCount =
-        flattenContentInBytes.length / columnPageEncoderMeta.getStoreDataType().getSizeInBytes();
+    this.arrayElementCount = flattenContentInBytes.length / eachRowSize;
   }
 
   @Override
