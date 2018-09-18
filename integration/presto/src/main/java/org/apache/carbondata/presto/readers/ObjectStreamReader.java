@@ -22,7 +22,6 @@ import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl
 
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
-import com.facebook.presto.spi.block.BlockBuilderStatus;
 import com.facebook.presto.spi.type.IntegerType;
 import com.facebook.presto.spi.type.Type;
 
@@ -40,7 +39,7 @@ public class ObjectStreamReader extends CarbonColumnVectorImpl implements Presto
   public ObjectStreamReader(int batchSize, DataType dataType) {
     super(batchSize, dataType);
     this.batchSize = batchSize;
-    this.builder = type.createBlockBuilder(new BlockBuilderStatus(), batchSize);
+    this.builder = type.createBlockBuilder(null, batchSize);
   }
 
   @Override public Block buildBlock() {
@@ -60,7 +59,7 @@ public class ObjectStreamReader extends CarbonColumnVectorImpl implements Presto
   }
 
   @Override public void reset() {
-    builder = type.createBlockBuilder(new BlockBuilderStatus(), batchSize);
+    builder = type.createBlockBuilder(null, batchSize);
   }
 
 }
