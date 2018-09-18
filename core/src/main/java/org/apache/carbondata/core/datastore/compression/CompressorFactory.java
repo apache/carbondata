@@ -31,7 +31,8 @@ public class CompressorFactory {
 
   public enum SupportedCompressor {
     SNAPPY("snappy", SnappyCompressor.class),
-    ZSTD("zstd", ZstdCompressor.class);
+    ZSTD("zstd", ZstdCompressor.class),
+    LZ4("lz4", Lz4Compressor.class);
 
     private String name;
     private Class<Compressor> compressorClass;
