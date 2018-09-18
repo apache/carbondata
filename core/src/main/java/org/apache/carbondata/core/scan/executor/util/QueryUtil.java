@@ -58,7 +58,10 @@ import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
+import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -742,6 +745,39 @@ public class QueryUtil {
             .substring(index + 1, columnSchema.getColumnName().length()));
       } else {
         columnSchema.setColumnUniqueId(columnSchema.getColumnName());
+      }
+    }
+  }
+
+  /**
+   * Put the data to vector
+   *
+   * @param vector
+   * @param value
+   * @param vectorRow
+   * @param length
+   */
+  public static void putDataToVector(CarbonColumnVector vector, byte[] value, int vectorRow,
+      int length) {
+    DataType dt = vector.getType();
+    if ((!(dt == DataTypes.STRING) && length == 0) || ByteUtil.UnsafeComparer.INSTANCE
+        .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+            CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, value, 0, length)) {
+      vector.putNull(vectorRow);
+    } else {
+      if (dt == DataTypes.STRING) {
+        vector.putBytes(vectorRow, 0, length, value);
+      } else if (dt == DataTypes.BOOLEAN) {
+        vector.putBoolean(vectorRow, ByteUtil.toBoolean(value[0]));
+      } else if (dt == DataTypes.SHORT) {
+        vector.putShort(vectorRow, ByteUtil.toXorShort(value, 0, length));
+      } else if (dt == DataTypes.INT) {
+        vector.putInt(vectorRow, ByteUtil.toXorInt(value, 0, length));
+      } else if (dt == DataTypes.LONG) {
+        vector.putLong(vectorRow, DataTypeUtil
+            .getDataBasedOnRestructuredDataType(value, vector.getBlockDataType(), 0, length));
+      } else if (dt == DataTypes.TIMESTAMP) {
+        vector.putLong(vectorRow, ByteUtil.toXorLong(value, 0, length) * 1000L);
       }
     }
   }

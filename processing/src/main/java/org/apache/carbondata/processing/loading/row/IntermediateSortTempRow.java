@@ -23,7 +23,7 @@ package org.apache.carbondata.processing.loading.row;
  */
 public class IntermediateSortTempRow {
   private int[] dictSortDims;
-  private byte[][] noDictSortDims;
+  private Object[] noDictSortDims;
   /**
    * this will be used for intermediate merger when
    * no sort field and measure field will not be
@@ -35,14 +35,14 @@ public class IntermediateSortTempRow {
    */
   private Object[] measures;
 
-  public IntermediateSortTempRow(int[] dictSortDims, byte[][] noDictSortDims,
+  public IntermediateSortTempRow(int[] dictSortDims, Object[] noDictSortDims,
       byte[] noSortDimsAndMeasures) {
     this.dictSortDims = dictSortDims;
     this.noDictSortDims = noDictSortDims;
     this.noSortDimsAndMeasures = noSortDimsAndMeasures;
   }
 
-  public IntermediateSortTempRow(int[] dictSortDims, byte[][] noDictSortDims,
+  public IntermediateSortTempRow(int[] dictSortDims, Object[] noDictSortDims,
       Object[] measures) {
     this.dictSortDims = dictSortDims;
     this.noDictSortDims = noDictSortDims;
@@ -57,7 +57,7 @@ public class IntermediateSortTempRow {
     return measures;
   }
 
-  public byte[][] getNoDictSortDims() {
+  public Object[] getNoDictSortDims() {
     return noDictSortDims;
   }
 

@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveDeltaIntegralCodec;
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveIntegralCodec;
 import org.apache.carbondata.core.datastore.page.encoding.compress.DirectCompressCodec;
@@ -38,25 +39,25 @@ public class TestEncodingFactory extends TestCase {
     // for Byte
     primitivePageStatsCollector.update((long) Byte.MAX_VALUE);
     ColumnPageCodec columnPageCodec =
-        DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(primitivePageStatsCollector, false);
+        DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(primitivePageStatsCollector, false, null);
     assert (columnPageCodec instanceof AdaptiveIntegralCodec);
     assert (DataTypes.BYTE == ((AdaptiveIntegralCodec) columnPageCodec).getTargetDataType());
     // for Short
     primitivePageStatsCollector.update((long) Short.MAX_VALUE);
     columnPageCodec =
-        DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(primitivePageStatsCollector, false);
+        DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(primitivePageStatsCollector, false, null);
     assert (columnPageCodec instanceof AdaptiveIntegralCodec);
     assert (DataTypes.SHORT == ((AdaptiveIntegralCodec) columnPageCodec).getTargetDataType());
     // for int
     primitivePageStatsCollector.update((long) Integer.MAX_VALUE);
     columnPageCodec =
-        DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(primitivePageStatsCollector, false);
+        DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(primitivePageStatsCollector, false, null);
     assert (columnPageCodec instanceof AdaptiveIntegralCodec);
     assert (DataTypes.INT == ((AdaptiveIntegralCodec) columnPageCodec).getTargetDataType());
     // for long
     primitivePageStatsCollector.update(Long.MAX_VALUE);
     columnPageCodec =
-        DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(primitivePageStatsCollector, false);
+        DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(primitivePageStatsCollector, false, null);
     assert (columnPageCodec instanceof DirectCompressCodec);
     assert ("DirectCompressCodec".equals(columnPageCodec.getName()));
   }
@@ -67,25 +68,25 @@ public class TestEncodingFactory extends TestCase {
     // for Byte
     primitivePageStatsCollector.update((long) 200);
     ColumnPageCodec columnPageCodec =
-        DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(primitivePageStatsCollector, false);
+        DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(primitivePageStatsCollector, false, null);
     assert (columnPageCodec instanceof AdaptiveDeltaIntegralCodec);
     assert (DataTypes.BYTE == ((AdaptiveDeltaIntegralCodec) columnPageCodec).getTargetDataType());
     // for Short
     primitivePageStatsCollector.update((long) 634767);
     columnPageCodec =
-        DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(primitivePageStatsCollector, false);
+        DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(primitivePageStatsCollector, false, null);
     assert (columnPageCodec instanceof AdaptiveIntegralCodec);
     assert (DataTypes.SHORT_INT == ((AdaptiveIntegralCodec) columnPageCodec).getTargetDataType());
     // for int
     primitivePageStatsCollector.update((long) (Integer.MAX_VALUE + 200));
     columnPageCodec =
-        DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(primitivePageStatsCollector, false);
+        DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(primitivePageStatsCollector, false, null);
     assert (columnPageCodec instanceof AdaptiveIntegralCodec);
     assert (DataTypes.INT == ((AdaptiveIntegralCodec) columnPageCodec).getTargetDataType());
     // for int
     primitivePageStatsCollector.update(Long.MAX_VALUE);
     columnPageCodec =
-        DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(primitivePageStatsCollector, false);
+        DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(primitivePageStatsCollector, false, null);
     assert (columnPageCodec instanceof DirectCompressCodec);
     assert ("DirectCompressCodec".equals(columnPageCodec.getName()));
   }

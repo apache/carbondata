@@ -19,6 +19,7 @@ package org.apache.carbondata.processing.loading.sort.unsafe.holder;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
 import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.loading.sort.unsafe.merger.UnsafeInMemoryIntermediateDataMerger;
@@ -43,6 +44,8 @@ public class UnsafeFinalMergePageHolder implements SortTempChunkHolder {
 
   private IntermediateSortTempRow currentRow;
 
+  private DataType[] noDictDataType;
+
   public UnsafeFinalMergePageHolder(UnsafeInMemoryIntermediateDataMerger merger,
       boolean[] noDictSortColumnMapping) {
     this.actualSize = merger.getEntryCount();
@@ -52,8 +55,10 @@ public class UnsafeFinalMergePageHolder implements SortTempChunkHolder {
     for (UnsafeCarbonRowPage rowPage: rowPages) {
       rowPage.setReadConvertedNoSortField();
     }
+    this.noDictDataType = rowPages[0].getTableFieldStat().getNoDictDataType();
     LOGGER.info("Processing unsafe inmemory rows page with size : " + actualSize);
-    this.comparator = new IntermediateSortTempRowComparator(noDictSortColumnMapping);
+    this.comparator =
+        new IntermediateSortTempRowComparator(noDictSortColumnMapping, noDictDataType);
   }
 
   public boolean hasNext() {

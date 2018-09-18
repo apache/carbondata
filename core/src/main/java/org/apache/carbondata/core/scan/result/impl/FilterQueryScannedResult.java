@@ -110,12 +110,9 @@ public class FilterQueryScannedResult extends BlockletScannedResult {
    * Fill the column data to vector
    */
   public void fillColumnarNoDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
-    int column = 0;
-    for (int chunkIndex : this.noDictionaryColumnChunkIndexes) {
-      column = dimensionColumnPages[chunkIndex][pageCounter].fillVector(
-          pageFilteredRowId[pageCounter],
-          vectorInfo,
-          column);
+    for (int index = 0; index < this.noDictionaryColumnChunkIndexes.length; index++) {
+      dimensionColumnPages[noDictionaryColumnChunkIndexes[index]][pageCounter]
+          .fillVector(pageFilteredRowId[pageCounter], vectorInfo, index);
     }
   }
 

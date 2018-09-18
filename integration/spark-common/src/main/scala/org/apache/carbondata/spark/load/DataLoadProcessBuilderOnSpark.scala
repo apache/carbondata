@@ -86,7 +86,9 @@ object DataLoadProcessBuilderOnSpark {
     val sortParameters = SortParameters.createSortParameters(configuration)
     val rowComparator: Comparator[Array[AnyRef]] =
       if (sortParameters.getNoDictionaryCount > 0) {
-        new NewRowComparator(sortParameters.getNoDictionaryDimnesionColumn)
+        new NewRowComparator(sortParameters.getNoDictionaryDimnesionColumn,
+          sortParameters.getNoDictionarySortColumn,
+          sortParameters.getNoDictDataType)
       } else {
         new NewRowComparatorForNormalDims(sortParameters.getDimColCount)
       }

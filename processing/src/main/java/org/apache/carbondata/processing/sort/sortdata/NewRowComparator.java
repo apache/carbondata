@@ -20,7 +20,10 @@ package org.apache.carbondata.processing.sort.sortdata;
 import java.io.Serializable;
 import java.util.Comparator;
 
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
+import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
 public class NewRowComparator implements Comparator<Object[]>, Serializable {
   private static final long serialVersionUID = -1739874611112709436L;
@@ -28,13 +31,20 @@ public class NewRowComparator implements Comparator<Object[]>, Serializable {
   /**
    * mapping of dictionary dimensions and no dictionary of sort_column.
    */
-  private boolean[] noDictionarySortColumnMaping;
+  private boolean[] noDicDimColMapping;
+
+  private DataType[] noDicDataTypes;
+
+  private boolean[] noDicSortColumnMapping;
 
   /**
-   * @param noDictionarySortColumnMaping
+   * @param noDicDimColMapping
    */
-  public NewRowComparator(boolean[] noDictionarySortColumnMaping) {
-    this.noDictionarySortColumnMaping = noDictionarySortColumnMaping;
+  public NewRowComparator(boolean[] noDicDimColMapping, boolean[] noDicSortColumnMapping,
+      DataType[] noDicDataTypes) {
+    this.noDicDimColMapping = noDicDimColMapping;
+    this.noDicSortColumnMapping = noDicSortColumnMapping;
+    this.noDicDataTypes = noDicDataTypes;
   }
 
   /**
@@ -43,15 +53,31 @@ public class NewRowComparator implements Comparator<Object[]>, Serializable {
   public int compare(Object[] rowA, Object[] rowB) {
     int diff = 0;
     int index = 0;
+    int dataTypeIdx = 0;
+    int noDicSortIdx = 0;
 
-    for (boolean isNoDictionary : noDictionarySortColumnMaping) {
-      if (isNoDictionary) {
-        byte[] byteArr1 = (byte[]) rowA[index];
-        byte[] byteArr2 = (byte[]) rowB[index];
+    for (int i = 0; i < noDicDimColMapping.length; i++) {
+      if (noDicDimColMapping[i]) {
+        if (noDicSortColumnMapping[noDicSortIdx++]) {
+          if (DataTypeUtil.isPrimitiveColumn(noDicDataTypes[dataTypeIdx])) {
+            // use data types based comparator for the no dictionary measure columns
+            SerializableComparator comparator =
+                org.apache.carbondata.core.util.comparator.Comparator
+                    .getComparator(noDicDataTypes[dataTypeIdx]);
+            int difference = comparator.compare(rowA[index], rowB[index]);
+            if (difference != 0) {
+              return difference;
+            }
+            dataTypeIdx++;
+          } else {
+            byte[] byteArr1 = (byte[]) rowA[index];
+            byte[] byteArr2 = (byte[]) rowB[index];
 
-        int difference = UnsafeComparer.INSTANCE.compareTo(byteArr1, byteArr2);
-        if (difference != 0) {
-          return difference;
+            int difference = UnsafeComparer.INSTANCE.compareTo(byteArr1, byteArr2);
+            if (difference != 0) {
+              return difference;
+            }
+          }
         }
       } else {
         int dimFieldA = (int) rowA[index];

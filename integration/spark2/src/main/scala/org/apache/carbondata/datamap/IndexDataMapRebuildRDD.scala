@@ -52,7 +52,7 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSch
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{CarbonUtil, TaskMetricsMap}
+import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil, TaskMetricsMap}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.datamap.bloom.DataConvertUtil
 import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMapPreExecutionEvent, OperationContext, OperationListenerBus}
@@ -264,8 +264,17 @@ class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Ar
       rtn(i) = if (indexCol2IdxInDictArray.contains(col.getColName)) {
         surrogatKeys(indexCol2IdxInDictArray(col.getColName)).toInt.asInstanceOf[Integer]
       } else if (indexCol2IdxInNoDictArray.contains(col.getColName)) {
-        data(0).asInstanceOf[ByteArrayWrapper].getNoDictionaryKeyByIndex(
+        val bytes = data(0).asInstanceOf[ByteArrayWrapper].getNoDictionaryKeyByIndex(
           indexCol2IdxInNoDictArray(col.getColName))
+        // no dictionary primitive columns are expected to be in original data while loading,
+        // so convert it to original data
+        if (DataTypeUtil.isPrimitiveColumn(col.getDataType)) {
+          val dataFromBytes = DataTypeUtil
+            .getDataBasedOnDataTypeForNoDictionaryColumn(bytes, col.getDataType)
+          dataFromBytes
+        } else {
+          bytes
+        }
       } else {
         // measures start from 1
         val value = data(1 + indexCol2IdxInMeasureArray(col.getColName))

@@ -25,6 +25,7 @@ import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.store.CarbonDataFileAttributes;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar;
@@ -36,6 +37,8 @@ public class RowResultProcessor {
 
   private CarbonFactHandler dataHandler;
   private SegmentProperties segmentProperties;
+
+  private CarbonColumn[] noDicAndComplexColumns;
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(RowResultProcessor.class.getName());
@@ -59,6 +62,7 @@ public class RowResultProcessor {
     //Note: set compaction flow just to convert decimal type
     carbonFactDataHandlerModel.setCompactionFlow(true);
     carbonFactDataHandlerModel.setSegmentId(loadModel.getSegmentId());
+    noDicAndComplexColumns = carbonFactDataHandlerModel.getNoDictAndComplexColumns();
     dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
   }
 
@@ -97,7 +101,8 @@ public class RowResultProcessor {
   }
 
   private void addRow(Object[] carbonTuple) throws CarbonDataWriterException {
-    CarbonRow row = WriteStepRowUtil.fromMergerRow(carbonTuple, segmentProperties);
+    CarbonRow row = WriteStepRowUtil.fromMergerRow(carbonTuple, segmentProperties,
+        noDicAndComplexColumns);
     try {
       this.dataHandler.addDataToStore(row);
     } catch (CarbonDataWriterException e) {

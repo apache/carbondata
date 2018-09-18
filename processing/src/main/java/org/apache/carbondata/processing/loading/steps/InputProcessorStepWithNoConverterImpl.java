@@ -266,8 +266,13 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       Object[] newData = new Object[data.length];
       for (int i = 0; i < data.length; i++) {
         if (i < noDictionaryMapping.length && noDictionaryMapping[i]) {
-          newData[i] = DataTypeUtil
-              .getBytesDataDataTypeForNoDictionaryColumn(data[orderOfData[i]], dataTypes[i]);
+          if (DataTypeUtil.isPrimitiveColumn(dataTypes[i])) {
+            // keep the no dictionary measure column as original data
+            newData[i] = data[orderOfData[i]];
+          } else {
+            newData[i] = DataTypeUtil
+                .getBytesDataDataTypeForNoDictionaryColumn(data[orderOfData[i]], dataTypes[i]);
+          }
         } else {
           // if this is a complex column then recursively comver the data into Byte Array.
           if (dataTypes[i].isComplexType()) {
