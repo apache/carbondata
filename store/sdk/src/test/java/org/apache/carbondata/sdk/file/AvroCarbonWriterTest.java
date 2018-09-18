@@ -75,7 +75,7 @@ public class AvroCarbonWriterTest {
             "   \"fields\" : ["
             + "{ \"name\" : \"name\", \"type\" : \"string\" },"
             + "{ \"name\" : \"age\", \"type\" : \"int\" }]" +
-            "}";
+        "}";
 
     String json = "{\"name\":\"bob\", \"age\":10}";
 
