@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -43,7 +45,7 @@ public class CarbonReaderExample {
         try {
             FileUtils.deleteDirectory(new File(path));
 
-            Field[] fields = new Field[9];
+            Field[] fields = new Field[11];
             fields[0] = new Field("stringField", DataTypes.STRING);
             fields[1] = new Field("shortField", DataTypes.SHORT);
             fields[2] = new Field("intField", DataTypes.INT);
@@ -53,22 +55,28 @@ public class CarbonReaderExample {
             fields[6] = new Field("dateField", DataTypes.DATE);
             fields[7] = new Field("timeField", DataTypes.TIMESTAMP);
             fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
-
+            fields[9] = new Field("varcharField", DataTypes.VARCHAR);
+            fields[10] = new Field("arrayField", DataTypes.createArrayType(DataTypes.STRING));
+            Map<String, String> map = new HashMap<>();
+            map.put("complex_delimiter_level_1", "#");
             CarbonWriter writer = CarbonWriter.builder()
                 .outputPath(path)
+                .withLoadOptions(map)
                 .buildWriterForCSVInput(new Schema(fields), new Configuration(false));
 
             for (int i = 0; i < 10; i++) {
                 String[] row2 = new String[]{
                     "robot" + (i % 10),
-                    String.valueOf(i),
+                    String.valueOf(i%10000),
                     String.valueOf(i),
                     String.valueOf(Long.MAX_VALUE - i),
                     String.valueOf((double) i / 2),
                     String.valueOf(true),
                     "2019-03-02",
                     "2019-02-12 03:03:34",
-                    "12.345"
+                    "12.345",
+                    "varchar",
+                    "Hello#World#From#Carbon"
                 };
                 writer.write(row2);
             }
@@ -106,13 +114,20 @@ public class CarbonReaderExample {
             int i = 0;
             while (reader.hasNext()) {
                 Object[] row = (Object[]) reader.readNextRow();
-                System.out.println(String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t",
+                System.out.println(String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t",
                     i, row[0], row[1], row[2], row[3], row[4], row[5],
-                    new Date((day * ((int) row[6]))), new Timestamp((long) row[7] / 1000), row[8]
+                    new Date((day * ((int) row[6]))), new Timestamp((long) row[7] / 1000),
+                    row[8], row[9]
                 ));
+                Object[] arr = (Object[]) row[10];
+                for (int j = 0; j < arr.length; j++) {
+                    System.out.print(arr[j] + " ");
+                }
+                System.out.println();
                 i++;
             }
             System.out.println("\nFinished");
+            reader.close();
 
             // Read data
             CarbonReader reader2 = CarbonReader
@@ -122,15 +137,20 @@ public class CarbonReaderExample {
             System.out.println("\nData:");
             i = 0;
             while (reader2.hasNext()) {
-              Object[] row = (Object[]) reader2.readNextRow();
-              System.out.println(String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t",
-                  i, row[0], new Date((day * ((int) row[1]))), new Timestamp((long) row[2] / 1000),
-                  row[3], row[4], row[5], row[6], row[7], row[8]
-              ));
-              i++;
+                Object[] row = (Object[]) reader2.readNextRow();
+                System.out.print(String.format("%s\t%s\t%s\t%s\t%s\t",
+                    i, row[0], new Date((day * ((int) row[1]))), new Timestamp((long) row[2] / 1000),
+                    row[3]));
+                Object[] arr = (Object[]) row[4];
+                for (int j = 0; j < arr.length; j++) {
+                    System.out.print(arr[j] + " ");
+                }
+                System.out.println(String.format("\t%s\t%s\t%s\t%s\t%s\t%s\t",
+                    row[5], row[6], row[7], row[8], row[9], row[10]));
+                i++;
             }
             System.out.println("\nFinished");
-            reader.close();
+            reader2.close();
             FileUtils.deleteDirectory(new File(path));
         } catch (Throwable e) {
             e.printStackTrace();
