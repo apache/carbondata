@@ -415,33 +415,6 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamap_test_table")
   }
 
-  test("test lucene fine grain data map with ALTER ADD and DROP Table COLUMN on Lucene DataMap") {
-    sql("DROP TABLE IF EXISTS datamap_test_table")
-    sql(
-      """
-        | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'carbondata'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
-      """.stripMargin)
-    sql(
-      s"""
-         | CREATE DATAMAP dm2 ON TABLE datamap_test_table
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name , city')
-      """.stripMargin)
-    val exception_add_column: Exception = intercept[MalformedCarbonCommandException] {
-      sql("alter table dm2 add columns(city1 string)")
-    }
-    assert(exception_add_column.getMessage
-      .contains("Unsupported alter operation on hive table"))
-    val exception_drop_column: Exception = intercept[MalformedCarbonCommandException] {
-      sql("alter table dm2 drop columns(name)")
-    }
-    assert(exception_drop_column.getMessage
-      .contains("Unsupported alter operation on hive table"))
-    sql("drop datamap if exists dm2 on table datamap_test_table")
-  }
-
   test("test Clean Files and check Lucene DataMap") {
     sql("DROP TABLE IF EXISTS datamap_test_table")
     sql(
