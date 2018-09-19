@@ -33,8 +33,10 @@ import org.apache.spark.sql.catalyst.parser.AstBuilder
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.catalyst.plans.physical.Partitioning
 import org.apache.spark.sql.execution.{RowDataSourceScanExec, SparkPlan}
+import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.execution.datasources.{DataSource, LogicalRelation}
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
+import org.apache.spark.sql.types.StructField
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
@@ -299,6 +301,19 @@ object CarbonReflectionUtils {
     } else {
       throw new UnsupportedOperationException("Spark version not supported")
     }
+  }
+
+  /**
+   * method to invoke alter table add columns for hive table from carbon session
+   * @param table
+   * @param colsToAdd
+   * @return
+   */
+  def invokeAlterTableAddColumn(table: TableIdentifier,
+      colsToAdd: Seq[StructField]): Object = {
+    val caseClassName = "org.apache.spark.sql.execution.command.AlterTableAddColumnsCommand"
+    CarbonReflectionUtils.createObject(caseClassName, table, colsToAdd)
+      ._1.asInstanceOf[RunnableCommand]
   }
 
   def createObject(className: String, conArgs: Object*): (Any, Class[_]) = {
