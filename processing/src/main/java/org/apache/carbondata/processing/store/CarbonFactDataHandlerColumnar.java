@@ -240,6 +240,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * @return false if any varchar column page cannot add one more value(2MB)
    */
   private boolean isVarcharColumnFull(CarbonRow row) {
+    //TODO: test and remove this as now  UnsafeSortDataRows can exceed 2MB
     if (model.getVarcharDimIdxInNoDict().size() > 0) {
       Object[] nonDictArray = WriteStepRowUtil.getNoDictAndComplexDimension(row);
       for (int i = 0; i < model.getVarcharDimIdxInNoDict().size(); i++) {

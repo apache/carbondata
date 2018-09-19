@@ -758,6 +758,36 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     checkAnswer(sql("select count(*) from sdkTable"), Seq(Row(5)))
   }
 
+  test("Test sdk with longstring with more than 2MB length") {
+    // here we specify the longstring column as varchar
+    val schema = new StringBuilder()
+      .append("[ \n")
+      .append("   {\"name\":\"string\"},\n")
+      .append("   {\"address\":\"varchar\"},\n")
+      .append("   {\"age\":\"int\"}\n")
+      .append("]")
+      .toString()
+    val builder = CarbonWriter.builder()
+    val writer = builder.outputPath(writerPath)
+      .buildWriterForCSVInput(Schema.parseJson(schema), sqlContext.sparkContext.hadoopConfiguration)
+    val varCharLen = 4000000
+    for (i <- 0 until 3) {
+      writer
+        .write(Array[String](s"name_$i",
+          RandomStringUtils.randomAlphabetic(varCharLen),
+          i.toString))
+    }
+    writer.close()
+
+    assert(FileFactory.getCarbonFile(writerPath).exists)
+    sql("DROP TABLE IF EXISTS sdkTable")
+    sql(s"CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION '$writerPath'")
+    checkAnswer(sql("select count(*) from sdkTable"), Seq(Row(3)))
+
+    val op = sql("select address from sdkTable limit 1").collectAsList()
+    assert(op.get(0).getString(0).length == varCharLen)
+  }
+
   test("Test sdk with longstring with empty sort column and some direct dictionary columns") {
     // here we specify the longstring column as varchar
     val schema = new StringBuilder()
