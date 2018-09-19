@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.ColumnPageFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPageValueConverter;
 import org.apache.carbondata.core.datastore.page.LazyColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
@@ -88,17 +89,19 @@ public class DirectCompressCodec implements ColumnPageCodec {
       public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
         ColumnPage decodedPage;
         if (DataTypes.isDecimal(dataType)) {
-          decodedPage = ColumnPage.decompressDecimalPage(meta, input, offset, length);
+          decodedPage = ColumnPageFactory.getInstance().decompressDecimalPage(
+              meta, input, offset, length);
         } else {
-          decodedPage = ColumnPage.decompress(meta, input, offset, length, false);
+          decodedPage = ColumnPageFactory.getInstance().decompress(
+              meta, input, offset, length, false);
         }
         return LazyColumnPage.newPage(decodedPage, converter);
       }
 
       @Override public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
         throws MemoryException, IOException {
-        return LazyColumnPage.newPage(
-            ColumnPage.decompress(meta, input, offset, length, isLVEncoded), converter);
+        return LazyColumnPage.newPage(ColumnPageFactory.getInstance().decompress(
+            meta, input, offset, length, isLVEncoded), converter);
       }
     };
   }

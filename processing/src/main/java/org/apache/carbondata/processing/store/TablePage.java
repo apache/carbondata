@@ -33,6 +33,7 @@ import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.ColumnPageFactory;
 import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
@@ -112,7 +113,7 @@ public class TablePage {
       ColumnPage page;
       if (ColumnType.GLOBAL_DICTIONARY == columnType
           || ColumnType.DIRECT_DICTIONARY == columnType) {
-        page = ColumnPage.newPage(
+        page = ColumnPageFactory.getInstance().newPage(
             new ColumnPageEncoderMeta(spec, DataTypes.BYTE_ARRAY, columnCompressor), pageSize);
         page.setStatsCollector(KeyPageStatsCollector.newInstance(DataTypes.BYTE_ARRAY));
         dictDimensionPages[tmpNumDictDimIdx++] = page;
@@ -127,7 +128,7 @@ public class TablePage {
         ColumnPageEncoderMeta columnPageEncoderMeta =
             new ColumnPageEncoderMeta(spec, dataType, columnCompressor);
         if (null != localDictionaryGenerator) {
-          page = ColumnPage.newLocalDictPage(
+          page = ColumnPageFactory.getInstance().newLocalDictPage(
               columnPageEncoderMeta, pageSize, localDictionaryGenerator, false);
         } else {
           if (DataTypeUtil.isPrimitiveColumn(spec.getSchemaDataType())) {
@@ -139,13 +140,9 @@ public class TablePage {
                   new ColumnPageEncoderMeta(spec, spec.getSchemaDataType(), columnCompressor);
             }
             // create the column page according to the data type for no dictionary numeric columns
-            if (DataTypes.isDecimal(spec.getSchemaDataType())) {
-              page = ColumnPage.newDecimalPage(columnPageEncoderMeta, pageSize);
-            } else {
-              page = ColumnPage.newPage(columnPageEncoderMeta, pageSize);
-            }
+            page = ColumnPageFactory.getInstance().newPage(columnPageEncoderMeta, pageSize);
           } else {
-            page = ColumnPage.newPage(columnPageEncoderMeta, pageSize);
+            page = ColumnPageFactory.getInstance().newPage(columnPageEncoderMeta, pageSize);
           }
         }
         // set the stats collector according to the data type of the columns
@@ -175,12 +172,7 @@ public class TablePage {
     for (int i = 0; i < measurePages.length; i++) {
       ColumnPageEncoderMeta columnPageEncoderMeta = new ColumnPageEncoderMeta(
           model.getTableSpec().getMeasureSpec(i), dataTypes[i], columnCompressor);
-      ColumnPage page;
-      if (DataTypes.isDecimal(columnPageEncoderMeta.getSchemaDataType())) {
-        page = ColumnPage.newDecimalPage(columnPageEncoderMeta, pageSize);
-      } else {
-        page = ColumnPage.newPage(columnPageEncoderMeta, pageSize);
-      }
+      ColumnPage page = ColumnPageFactory.getInstance().newPage(columnPageEncoderMeta, pageSize);
       page.setStatsCollector(PrimitivePageStatsCollector.newInstance(dataTypes[i]));
       measurePages[i] = page;
     }

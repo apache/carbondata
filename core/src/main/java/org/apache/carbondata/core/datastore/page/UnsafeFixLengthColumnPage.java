@@ -65,46 +65,26 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   private static final int floatBits = DataTypes.FLOAT.getSizeBits();
   private static final int doubleBits = DataTypes.DOUBLE.getSizeBits();
 
-  UnsafeFixLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize)
-      throws MemoryException {
+  UnsafeFixLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize,
+      int eachRowSize) throws MemoryException {
     super(columnPageEncoderMeta, pageSize);
+    this.eachRowSize = eachRowSize;
     if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BOOLEAN ||
         columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE ||
         columnPageEncoderMeta.getStoreDataType() == DataTypes.SHORT ||
         columnPageEncoderMeta.getStoreDataType() == DataTypes.INT ||
         columnPageEncoderMeta.getStoreDataType() == DataTypes.LONG ||
         columnPageEncoderMeta.getStoreDataType() == DataTypes.FLOAT ||
-        columnPageEncoderMeta.getStoreDataType() == DataTypes.DOUBLE) {
-      int size = pageSize << columnPageEncoderMeta.getStoreDataType().getSizeBits();
+        columnPageEncoderMeta.getStoreDataType() == DataTypes.DOUBLE ||
+        columnPageEncoderMeta.getStoreDataType() == DataTypes.SHORT_INT ||
+        columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE_ARRAY) {
+      int size = pageSize * eachRowSize;
       memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
       baseAddress = memoryBlock.getBaseObject();
       baseOffset = memoryBlock.getBaseOffset();
       capacity = size;
-    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.SHORT_INT) {
-      int size = pageSize * 3;
-      memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
-      baseAddress = memoryBlock.getBaseObject();
-      baseOffset = memoryBlock.getBaseOffset();
-      capacity = size;
-    } else if (DataTypes.isDecimal(columnPageEncoderMeta.getStoreDataType()) ||
-        columnPageEncoderMeta.getStoreDataType() == DataTypes.STRING) {
-      throw new UnsupportedOperationException(
-          "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
     }
     totalLength = 0;
-  }
-
-  UnsafeFixLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize,
-      int eachRowSize) throws MemoryException {
-    this(columnPageEncoderMeta, pageSize);
-    this.eachRowSize = eachRowSize;
-    totalLength = 0;
-    if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE_ARRAY) {
-      memoryBlock =
-          UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) pageSize * eachRowSize);
-      baseAddress = memoryBlock.getBaseObject();
-      baseOffset = memoryBlock.getBaseOffset();
-    }
   }
 
   private void checkDataFileSize() {

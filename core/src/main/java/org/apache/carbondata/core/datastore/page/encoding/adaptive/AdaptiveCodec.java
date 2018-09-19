@@ -26,6 +26,7 @@ import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorage;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoDictionary;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.ColumnPageFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPageValueConverter;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
@@ -221,7 +222,8 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
       ColumnPageEncoderMeta columnPageEncoderMeta =
           new ColumnPageEncoderMeta(input.getColumnSpec(), input.getDataType(),
               input.getColumnPageEncoderMeta().getCompressorName());
-      ColumnPage columnPage = ColumnPage.newPage(columnPageEncoderMeta, input.getPageSize());
+      ColumnPage columnPage = ColumnPageFactory.getInstance().newPage(
+          columnPageEncoderMeta, input.getPageSize());
       putDataToPage(columnPage, dataPage);
       return columnPage;
     } else {
@@ -231,7 +233,7 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
 
   public byte[] encodeAndCompressPage(ColumnPage input, ColumnPageValueConverter converter,
       Compressor compressor) throws MemoryException, IOException {
-    encodedPage = ColumnPage.newPage(
+    encodedPage = ColumnPageFactory.getInstance().newPage(
         new ColumnPageEncoderMeta(input.getColumnPageEncoderMeta().getColumnSpec(), targetDataType,
             input.getColumnPageEncoderMeta().getCompressorName()), input.getPageSize());
     if (isInvertedIndex) {

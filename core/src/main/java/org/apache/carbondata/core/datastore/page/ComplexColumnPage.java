@@ -84,16 +84,16 @@ public class ComplexColumnPage {
         if (isColumnPageBasedOnDataType(i)) {
           // no dictionary primitive types need adaptive encoding,
           // hence store as actual value instead of byte array
-          this.columnPages[i] = ColumnPage.newPage(
+          this.columnPages[i] = ColumnPageFactory.getInstance().newPage(
               new ColumnPageEncoderMeta(spec, dataType, columnCompressor), pageSize);
           this.columnPages[i].setStatsCollector(PrimitivePageStatsCollector.newInstance(dataType));
         } else {
-          this.columnPages[i] = ColumnPage.newPage(
+          this.columnPages[i] = ColumnPageFactory.getInstance().newPage(
               new ColumnPageEncoderMeta(spec, DataTypes.BYTE_ARRAY, columnCompressor), pageSize);
           this.columnPages[i].setStatsCollector(new DummyStatsCollector());
         }
       } else {
-        this.columnPages[i] = ColumnPage.newLocalDictPage(
+        this.columnPages[i] = ColumnPageFactory.getInstance().newLocalDictPage(
             new ColumnPageEncoderMeta(spec, DataTypes.BYTE_ARRAY, columnCompressor), pageSize,
             localDictionaryGenerator, true);
         this.columnPages[i].setStatsCollector(new DummyStatsCollector());

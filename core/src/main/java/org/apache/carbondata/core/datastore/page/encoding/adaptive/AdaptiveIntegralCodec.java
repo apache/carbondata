@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.ColumnPageFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPageValueConverter;
 import org.apache.carbondata.core.datastore.page.LazyColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
@@ -104,9 +105,9 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           throws MemoryException, IOException {
         ColumnPage page = null;
         if (DataTypes.isDecimal(meta.getSchemaDataType())) {
-          page = ColumnPage.decompressDecimalPage(meta, input, offset, length);
+          page = ColumnPageFactory.getInstance().decompressDecimalPage(meta, input, offset, length);
         } else {
-          page = ColumnPage.decompress(meta, input, offset, length, false);
+          page = ColumnPageFactory.getInstance().decompress(meta, input, offset, length, false);
         }
         return LazyColumnPage.newPage(page, converter);
       }

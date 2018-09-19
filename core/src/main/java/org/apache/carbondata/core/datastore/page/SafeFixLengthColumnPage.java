@@ -96,8 +96,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void putFloat(int rowId, float value) {
-    ensureArraySize(rowId, DataTypes.FLOAT);
-    floatData[rowId] = value;
+    flattenBytesBuffer.putFloat(value);
     arrayElementCount++;
   }
 

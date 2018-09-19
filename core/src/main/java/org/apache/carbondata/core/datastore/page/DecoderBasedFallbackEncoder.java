@@ -95,9 +95,9 @@ public class DecoderBasedFallbackEncoder implements Callable<FallbackEncodedColu
     encodedColumnPage.getActualPage().disableLocalDictEncoding();
 
     // create a new column page which will have actual data instead of encoded data
-    ColumnPage actualDataColumnPage =
-        ColumnPage.newPage(encodedColumnPage.getActualPage().getColumnPageEncoderMeta(),
-            encodedColumnPage.getActualPage().getPageSize());
+    ColumnPage actualDataColumnPage = ColumnPageFactory.getInstance().newPage(
+        encodedColumnPage.getActualPage().getColumnPageEncoderMeta(),
+        encodedColumnPage.getActualPage().getPageSize());
 
     // uncompressed data from encoded column page is dictionary data, get the dictionary data using
     // keygenerator

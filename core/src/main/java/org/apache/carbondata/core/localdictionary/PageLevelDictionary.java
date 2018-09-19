@@ -25,6 +25,7 @@ import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.ColumnPageFactory;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.encoding.compress.DirectCompressCodec;
@@ -115,7 +116,7 @@ public class PageLevelDictionary {
     }
     TableSpec.ColumnSpec spec =
         TableSpec.ColumnSpec.newInstance(columnName, DataTypes.BYTE_ARRAY, columnType);
-    ColumnPage dictionaryColumnPage = ColumnPage.newPage(
+    ColumnPage dictionaryColumnPage = ColumnPageFactory.getInstance().newPage(
         new ColumnPageEncoderMeta(spec, DataTypes.BYTE_ARRAY, columnCompressor),
         usedDictionaryValues.cardinality());
     // TODO support data type specific stats collector for numeric data types

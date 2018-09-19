@@ -18,11 +18,9 @@
 package org.apache.carbondata.core.datastore.compression;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.util.ByteUtil;
 
 import com.github.luben.zstd.Zstd;
 

@@ -70,7 +70,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     TableSpec.ColumnSpec spec = TableSpec.ColumnSpec.newInstance(
         columnPageEncoderMeta.getColumnSpec().getFieldName(), DataTypes.INT, ColumnType.MEASURE);
     try {
-      rowOffset = ColumnPage.newPage(
+      rowOffset = ColumnPageFactory.getInstance().newPage(
           new ColumnPageEncoderMeta(spec, DataTypes.INT, columnPageEncoderMeta.getCompressorName()),
           pageSize);
     } catch (MemoryException e) {
@@ -120,7 +120,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
       byte[] lvEncodedBytes, int size, String compressorName) throws MemoryException {
     TableSpec.ColumnSpec spec = TableSpec.ColumnSpec
         .newInstance(columnSpec.getFieldName(), DataTypes.INT, ColumnType.MEASURE);
-    ColumnPage rowOffset = ColumnPage.newPage(
+    ColumnPage rowOffset = ColumnPageFactory.getInstance().newPage(
         new ColumnPageEncoderMeta(spec, DataTypes.INT, compressorName),
         CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
     int offset;
@@ -161,7 +161,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     int rowId = 0;
     TableSpec.ColumnSpec spec = TableSpec.ColumnSpec
         .newInstance(columnSpec.getFieldName(), DataTypes.INT, ColumnType.MEASURE);
-    ColumnPage rowOffset = ColumnPage.newPage(
+    ColumnPage rowOffset = ColumnPageFactory.getInstance().newPage(
         new ColumnPageEncoderMeta(spec, DataTypes.INT, compressorName),
         CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
     int length;
@@ -188,7 +188,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     int rowId = 0;
     TableSpec.ColumnSpec spec = TableSpec.ColumnSpec
         .newInstance(columnSpec.getFieldName(), DataTypes.INT, ColumnType.MEASURE);
-    ColumnPage rowOffset = ColumnPage.newPage(
+    ColumnPage rowOffset = ColumnPageFactory.getInstance().newPage(
         new ColumnPageEncoderMeta(spec, DataTypes.INT, compressorName),
         CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
     int length;
