@@ -318,7 +318,7 @@ public class RLECodec implements ColumnPageCodec {
 
     @Override
     public ColumnPage decode(byte[] input, int offset, int length, ColumnVectorInfo vectorInfo,
-        BitSet nullBits) throws MemoryException, IOException {
+        BitSet nullBits, boolean isLVEncoded) throws MemoryException, IOException {
       return decode(input, offset, length);
     }
 

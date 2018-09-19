@@ -333,7 +333,8 @@ public class RowLevelRangeLessThanFilterExecuterImpl extends RowLevelFilterExecu
       BitSet bitSet = new BitSet(rawColumnChunk.getPagesCount());
       for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
         if (rawColumnChunk.getMinValues() != null) {
-          if (isScanRequired(rawColumnChunk.getMinValues()[i], this.filterRangeValues)) {
+          if (isScanRequired(rawColumnChunk.getMinValues()[i], this.filterRangeValues,
+              rawColumnChunk.getMinMaxFlagArray()[i])) {
             bitSet.set(i);
           }
         } else {

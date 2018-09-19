@@ -238,7 +238,8 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
         encodingFactory.createDecoder(encodings, encoderMetas, compressorName, vectorInfo != null);
     if (vectorInfo != null) {
       return codec
-          .decode(pageData.array(), offset, pageMetadata.data_page_length, vectorInfo, nullBitSet);
+          .decode(pageData.array(), offset, pageMetadata.data_page_length, vectorInfo, nullBitSet,
+              false);
     } else {
       return codec.decode(pageData.array(), offset, pageMetadata.data_page_length);
     }

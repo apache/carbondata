@@ -130,8 +130,8 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
 
       @Override
       public ColumnPage decode(byte[] input, int offset, int length, ColumnVectorInfo vectorInfo,
-          BitSet nullBits) throws MemoryException, IOException {
-        ColumnPage page = ColumnPage.decompress(meta, input, offset, length, false);
+          BitSet nullBits, boolean isLVEncoded) throws MemoryException, IOException {
+        ColumnPage page = ColumnPage.decompress(meta, input, offset, length, isLVEncoded);
         page.setNullBits(nullBits);
         return LazyColumnPage.newPage(page, converter, vectorInfo);
       }

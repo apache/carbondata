@@ -198,7 +198,8 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       for (int i = 0; i < dimensionRawColumnChunk.getPagesCount(); i++) {
         if (dimensionRawColumnChunk.getMaxValues() != null) {
           if (isScanRequired(dimensionRawColumnChunk.getMaxValues()[i],
-              dimensionRawColumnChunk.getMinValues()[i], dimColumnExecuterInfo.getFilterKeys())) {
+              dimensionRawColumnChunk.getMinValues()[i], dimColumnExecuterInfo.getFilterKeys(),
+              dimensionRawColumnChunk.getMinMaxFlagArray()[i])) {
             bitSet.set(i);
           }
         } else {

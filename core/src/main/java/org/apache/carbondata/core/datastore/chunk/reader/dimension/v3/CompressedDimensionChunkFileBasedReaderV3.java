@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.chunk.reader.dimension.v3;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -240,16 +241,22 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
   }
 
   private ColumnPage decodeDimensionByMeta(DataChunk2 pageMetadata,
-      ByteBuffer pageData, int offset, boolean isLocalDictEncodedPage)
+      ByteBuffer pageData, int offset, boolean isLocalDictEncodedPage, ColumnVectorInfo vectorInfo, BitSet nullBitSet)
       throws IOException, MemoryException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
     String compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
         pageMetadata.getChunk_meta());
     ColumnPageDecoder decoder = encodingFactory.createDecoder(encodings, encoderMetas,
-        compressorName);
-    return decoder
-        .decode(pageData.array(), offset, pageMetadata.data_page_length, isLocalDictEncodedPage);
+        compressorName, vectorInfo != null);
+    if (vectorInfo != null) {
+      return decoder
+          .decode(pageData.array(), offset, pageMetadata.data_page_length, vectorInfo, nullBitSet,
+              isLocalDictEncodedPage);
+    } else {
+      return decoder
+          .decode(pageData.array(), offset, pageMetadata.data_page_length, isLocalDictEncodedPage);
+    }
   }
 
   protected DimensionColumnPage decodeDimension(DimensionRawColumnChunk rawColumnPage,
@@ -257,9 +264,10 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       throws IOException, MemoryException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     if (CarbonUtil.isEncodedWithMeta(encodings)) {
+      BitSet nullBitSet = QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor);
       ColumnPage decodedPage = decodeDimensionByMeta(pageMetadata, pageData, offset,
-          null != rawColumnPage.getLocalDictionary());
-      decodedPage.setNullBits(QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor));
+          null != rawColumnPage.getLocalDictionary(), vectorInfo, nullBitSet);
+      decodedPage.setNullBits(nullBitSet);
       int[] invertedIndexes = new int[0];
       int[] invertedIndexesReverse = new int[0];
       // in case of no dictionary measure data types, if it is included in sort columns

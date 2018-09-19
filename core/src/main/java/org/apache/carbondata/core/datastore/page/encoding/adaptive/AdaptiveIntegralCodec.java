@@ -116,12 +116,12 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
 
       @Override
       public ColumnPage decode(byte[] input, int offset, int length, ColumnVectorInfo vectorInfo,
-          BitSet nullBits) throws MemoryException, IOException {
+          BitSet nullBits, boolean isLVEncoded) throws MemoryException, IOException {
         ColumnPage page = null;
         if (DataTypes.isDecimal(meta.getSchemaDataType())) {
           page = ColumnPage.decompressDecimalPage(meta, input, offset, length);
         } else {
-          page = ColumnPage.decompress(meta, input, offset, length, false);
+          page = ColumnPage.decompress(meta, input, offset, length, isLVEncoded);
         }
         page.setNullBits(nullBits);
         return LazyColumnPage.newPage(page, converter, vectorInfo);

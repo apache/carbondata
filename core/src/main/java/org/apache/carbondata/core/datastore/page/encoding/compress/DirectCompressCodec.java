@@ -103,12 +103,12 @@ public class DirectCompressCodec implements ColumnPageCodec {
 
     @Override
     public ColumnPage decode(byte[] input, int offset, int length, ColumnVectorInfo vectorInfo,
-        BitSet nullBits) throws MemoryException, IOException {
+        BitSet nullBits, boolean isLVEncoded) throws MemoryException, IOException {
       ColumnPage decodedPage;
       if (DataTypes.isDecimal(dataType)) {
         decodedPage = ColumnPage.decompressDecimalPage(meta, input, offset, length);
       } else {
-        decodedPage = ColumnPage.decompress(meta, input, offset, length, false);
+        decodedPage = ColumnPage.decompress(meta, input, offset, length, isLVEncoded);
       }
       decodedPage.setNullBits(nullBits);
       return LazyColumnPage.newPage(decodedPage, converter, vectorInfo);

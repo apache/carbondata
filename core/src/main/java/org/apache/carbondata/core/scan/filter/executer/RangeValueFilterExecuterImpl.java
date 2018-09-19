@@ -173,7 +173,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
     for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
       if (rawColumnChunk.getMaxValues() != null) {
         if (isScanRequired(rawColumnChunk.getMinValues()[i], rawColumnChunk.getMaxValues()[i],
-            this.filterRangesValues)) {
+            this.filterRangesValues, rawColumnChunk.getMinMaxFlagArray()[i])) {
           bitSet.set(i);
         }
       } else {

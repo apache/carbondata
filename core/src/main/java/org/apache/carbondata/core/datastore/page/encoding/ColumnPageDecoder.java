@@ -31,7 +31,8 @@ public interface ColumnPageDecoder {
    */
   ColumnPage decode(byte[] input, int offset, int length) throws MemoryException, IOException;
 
-  ColumnPage decode(byte[] input, int offset, int length, ColumnVectorInfo vectorInfo, BitSet nullBits) throws MemoryException, IOException;
+  ColumnPage decode(byte[] input, int offset, int length, ColumnVectorInfo vectorInfo,
+      BitSet nullBits, boolean isLVEncoded) throws MemoryException, IOException;
 
   ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
       throws MemoryException, IOException;
