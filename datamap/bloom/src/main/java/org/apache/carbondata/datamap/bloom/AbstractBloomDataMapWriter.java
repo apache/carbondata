@@ -36,6 +36,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.hadoop.util.bloom.CarbonBloomFilter;
 import org.apache.hadoop.util.bloom.Key;
@@ -52,6 +53,7 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
   private List<String> currentDMFiles;
   private List<DataOutputStream> currentDataOutStreams;
   protected List<CarbonBloomFilter> indexBloomFilters;
+  private boolean[] isNoDictionaryPrimitive;
 
   AbstractBloomDataMapWriter(String tablePath, String dataMapName, List<CarbonColumn> indexColumns,
       Segment segment, String shardName, SegmentProperties segmentProperties,
@@ -64,6 +66,11 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
     currentDMFiles = new ArrayList<>(indexColumns.size());
     currentDataOutStreams = new ArrayList<>(indexColumns.size());
     indexBloomFilters = new ArrayList<>(indexColumns.size());
+    // to get the null value of the no dictionary primitive column
+    isNoDictionaryPrimitive = new boolean[indexColumns.size()];
+    for (int i = 0; i < indexColumns.size(); i++) {
+      isNoDictionaryPrimitive[i] = checkNoDictionaryPrimitiveDataType(i);
+    }
     initDataMapFile();
     resetBloomFilters();
   }
@@ -119,10 +126,26 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
     for (int rowId = 0; rowId < pageSize; rowId++) {
       // for each indexed column, add the data to index
       for (int i = 0; i < indexColumns.size(); i++) {
-        Object data = pages[i].getData(rowId);
-        addValue2BloomIndex(i, data);
+        // in primitive no dictionary page, null is written as 0.
+        // check the null bitsets from the page and consider it as null value
+        if (isNoDictionaryPrimitive[i] && pages[i].getNullBits().get(rowId)) {
+          addValue2BloomIndex(i, null);
+        } else {
+          Object data = pages[i].getData(rowId);
+          addValue2BloomIndex(i, data);
+        }
       }
     }
+  }
+
+  private boolean checkNoDictionaryPrimitiveDataType(int index) {
+    if (indexColumns.get(index).isDimension() && !(
+        indexColumns.get(index).hasEncoding(Encoding.DICTIONARY) || indexColumns.get(index)
+            .hasEncoding(Encoding.DIRECT_DICTIONARY)) && DataTypeUtil
+        .isPrimitiveColumn(indexColumns.get(index).getDataType())) {
+      return true;
+    }
+    return false;
   }
 
   protected void addValue2BloomIndex(int indexColIdx, Object value) {

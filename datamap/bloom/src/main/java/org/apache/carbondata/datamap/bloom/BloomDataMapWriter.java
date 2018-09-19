@@ -79,7 +79,8 @@ public class BloomDataMapWriter extends AbstractBloomDataMapWriter {
       return DataConvertUtil.getRawBytesForVarchar((byte[]) value);
     } else if (DataTypeUtil.isPrimitiveColumn(indexColumns.get(indexColIdx).getDataType())) {
       // get bytes for the original value of the no dictionary column
-      return CarbonUtil.getValueAsBytes(indexColumns.get(indexColIdx).getDataType(), value);
+      return DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(value,
+          indexColumns.get(indexColIdx).getDataType());
     } else {
       return DataConvertUtil.getRawBytes((byte[]) value);
     }

@@ -271,10 +271,6 @@ class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Ar
         if (DataTypeUtil.isPrimitiveColumn(col.getDataType)) {
           var dataFromBytes = DataTypeUtil
             .getDataBasedOnDataTypeForNoDictionaryColumn(bytes, col.getDataType)
-          if (dataFromBytes == null) {
-            dataFromBytes = DataConvertUtil
-              .getNullValueForMeasure(col.getDataType, col.getColumnSchema.getScale)
-          }
           // for timestamp the above method will give the original data, so it should be
           // converted again to the format to be loaded (without micros)
           if (null != dataFromBytes && col.getDataType == DataTypes.TIMESTAMP) {
