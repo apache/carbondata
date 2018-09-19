@@ -59,7 +59,7 @@ public class Util {
     return false;
   }
 
-  private static org.apache.spark.sql.types.DataType convertCarbonToSparkDataType(
+  public static org.apache.spark.sql.types.DataType convertCarbonToSparkDataType(
       DataType carbonDataType) {
     if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.STRING) {
       return DataTypes.StringType;

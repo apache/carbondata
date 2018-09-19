@@ -18,12 +18,14 @@
 
 package org.apache.carbondata.cluster.sdv.generated
 
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util._
-import org.apache.spark.sql.test.TestQueryExecutor
+import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.constants.LoggerAction
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
@@ -998,6 +1000,20 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""CREATE TABLE uniqdata59 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,INTEGER_COLUMN1,CUST_ID')""").collect
     sql(s"""ALTER TABLE uniqdata59 ADD COLUMNS (a1 int,a2 int,a3 decimal,a4 Bigint,a5 String,a6 timestamp,a7 Bigint,a8 decimal(10,2),a9 timestamp,a10 String,a11 string,a12 string,a13 string,a14 string,a15 string,a16 string,a17 string,a18 string,a19 string,a20 string,a21 string,a22 string,a23 string,a24 string,a25 string,a26 string,a27 string,a28 string,a29 string,a30 string,a31 string,a32 string,a33 string,a34 string,a35 string,a36 string,a37 string,a38 string,a39 string,a40 string,a41 string,a42 string,a43 string,a44 string,a45 string,a46 string,a47 string,a48 string,a49 string,a50 string,a51 string,a52 string,a53 string,a54 string,a55 string,a56 string,a57 string,a58 string,a59 string,a60 string,a61 string,a62 string,a63 string,a64 string,a65 string,a66 string,a67 string,a68 string,a69 string,a70 string,a71 string,a72 string,a73 string,a74 string,a75 string,a76 string,a77 string,a78 string,a79 string,a80 string,a81 string,a82 string,a83 string,a84 string,a85 string,a86 string,a87 string,a88 string) TBLPROPERTIES('DICTIONARY_INCLUDE'='a1')""").collect
      sql(s"""drop table  if exists uniqdata59""").collect
+  }
+
+  test("Alter table add column for hive table for spark version above 2.1") {
+    sql("drop table if exists alter_hive")
+    sql("create table alter_hive(name string)")
+    if(SPARK_VERSION.startsWith("2.1")) {
+      val exception = intercept[MalformedCarbonCommandException] {
+        sql("alter table alter_hive add columns(add string)")
+      }
+      assert(exception.getMessage.contains("Unsupported alter operation on hive table"))
+    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+      sql("alter table alter_hive add columns(add string)")
+      sql("insert into alter_hive select 'abc','banglore'")
+    }
   }
 
   val prop = CarbonProperties.getInstance()

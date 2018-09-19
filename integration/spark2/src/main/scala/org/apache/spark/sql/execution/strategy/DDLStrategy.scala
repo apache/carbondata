@@ -32,12 +32,14 @@ import org.apache.spark.sql.CarbonExpressions.{CarbonDescribeTable => DescribeTa
 import org.apache.spark.sql.execution.datasources.{RefreshResource, RefreshTable}
 import org.apache.spark.sql.hive.{CarbonRelation, CreateCarbonSourceTableAsSelectCommand}
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
-import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
+import org.apache.spark.sql.types.StructField
+import org.apache.spark.util.{CarbonReflectionUtils, FileUtils, SparkUtil}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil, ThreadLocalSessionInfo}
+import org.apache.carbondata.spark.util.Util
 
   /**
    * Carbon strategies for ddl commands
@@ -152,6 +154,21 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           } else {
             ExecutedCommandExec(addColumn) :: Nil
           }
+          // TODO: remove this else if check once the 2.1 version is unsupported by carbon
+        } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+          val structField = (alterTableAddColumnsModel.dimCols ++ alterTableAddColumnsModel.msrCols)
+            .map {
+              a =>
+                StructField(a.column,
+                  Util.convertCarbonToSparkDataType(DataTypeUtil.valueOf(a.dataType.get)))
+            }
+          val identifier = TableIdentifier(
+            alterTableAddColumnsModel.tableName,
+            alterTableAddColumnsModel.databaseName)
+          ExecutedCommandExec(CarbonReflectionUtils
+            .invokeAlterTableAddColumn(identifier, structField).asInstanceOf[RunnableCommand]) ::
+          Nil
+          // TODO: remove this else check once the 2.1 version is unsupported by carbon
         } else {
           throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
         }
