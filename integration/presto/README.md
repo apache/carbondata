@@ -18,7 +18,7 @@
 Please follow the below steps to query carbondata in presto
 
 ### Config presto server
-* Download presto server (0.187 is suggested and supported) : https://repo1.maven.org/maven2/com/facebook/presto/presto-server/
+* Download presto server (0.210 is suggested and supported) : https://repo1.maven.org/maven2/com/facebook/presto/presto-server/
 * Finish presto configuration following https://prestodb.io/docs/current/installation/deployment.html.
   A configuration example:
   ```
@@ -27,10 +27,14 @@ Please follow the below steps to query carbondata in presto
   node-scheduler.include-coordinator=true
   http-server.http.port=8086
   query.max-memory=5GB
-  query.max-memory-per-node=1GB
+  query.max-total-memory-per-node=5GB
+  query.max-memory-per-node=3GB
+  memory.heap-headroom-per-node=1GB
   discovery-server.enabled=true
   discovery.uri=http://localhost:8086
-  reorder-joins=true
+  task.max-worker-threads=4
+  optimizer.dictionary-aggregation=true
+  optimizer.optimize-hash-generation = false
  
   
   jvm.config:
@@ -131,7 +135,7 @@ Load data statement in Spark can be used to create carbondata tables. And then y
 carbondata files.
 
 ### Query carbondata in CLI of presto
-* Download presto cli client following: https://prestodb.io/docs/current/installation/cli.html
+* Download presto cli client of version 0.210 : https://repo1.maven.org/maven2/com/facebook/presto/presto-cli
 
 * Start CLI:
   
