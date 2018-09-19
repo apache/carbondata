@@ -20,6 +20,7 @@ package org.apache.carbondata.core.datastore.row;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -68,6 +69,12 @@ public class WriteStepRowUtil {
         noDictKeys[i] = DataTypeUtil
             .getDataBasedOnDataTypeForNoDictionaryColumn(noDictionaryKeys[i],
                 noDicAndComplexColumns[i].getDataType());
+        // for timestamp the above method will give the original data, so it should be
+        // converted again to the format to be loaded (without micros)
+        if (null != noDictKeys[i]
+            && noDicAndComplexColumns[i].getDataType() == DataTypes.TIMESTAMP) {
+          noDictKeys[i] = (long) noDictKeys[i] / 1000L;
+        }
       } else {
         noDictKeys[i] = noDictionaryKeys[i];
       }

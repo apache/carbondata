@@ -121,7 +121,8 @@ public class DefaultEncodingFactory extends EncodingFactory {
     } else if (dataType == DataTypes.BYTE ||
         dataType == DataTypes.SHORT ||
         dataType == DataTypes.INT ||
-        dataType == DataTypes.LONG) {
+        dataType == DataTypes.LONG ||
+        dataType == DataTypes.TIMESTAMP) {
       return selectCodecByAlgorithmForIntegral(stats, false, columnSpec).createEncoder(null);
     } else if (DataTypes.isDecimal(dataType)) {
       return createEncoderForDecimalDataTypeMeasure(columnPage, columnSpec);

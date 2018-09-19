@@ -231,7 +231,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       if (CompactionType.STREAMING == compactionType) {
         while (resultIterator.hasNext()) {
           // the input iterator of streaming segment is already using raw row
-          addRowForSorting(resultIterator.next());
+          addRowForSorting(prepareStreamingRowObjectForSorting(resultIterator.next()));
           isRecordFound = true;
         }
       } else {
@@ -248,6 +248,43 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       LOGGER.error(e);
       throw new Exception("Problem loading data during compaction: " + e.getMessage());
     }
+  }
+
+  /**
+   * This method will prepare the data from raw object that will take part in sorting
+   *
+   * @param row
+   * @return
+   */
+  private Object[] prepareStreamingRowObjectForSorting(Object[] row) {
+    List<CarbonDimension> dimensions = segmentProperties.getDimensions();
+    Object[] preparedRow = new Object[dimensions.size() + measureCount];
+    for (int i = 0; i < dimensions.size(); i++) {
+      CarbonDimension dims = dimensions.get(i);
+      if (dims.hasEncoding(Encoding.DICTIONARY)) {
+        // dictionary
+        preparedRow[i] = row[i];
+      } else {
+        // no dictionary dims
+        if (DataTypeUtil.isPrimitiveColumn(dims.getDataType()) && !dims.isComplex()) {
+          // no dictionary measure columns are expected as original data
+          preparedRow[i] = DataTypeUtil
+              .getDataBasedOnDataTypeForNoDictionaryColumn((byte[]) row[i], dims.getDataType());
+          // for timestamp the above method will give the original data, so it should be
+          // converted again to the format to be loaded (without micros)
+          if (null != preparedRow[i] && dims.getDataType() == DataTypes.TIMESTAMP) {
+            preparedRow[i] = (long) preparedRow[i] / 1000L;
+          }
+        } else {
+          preparedRow[i] = row[i];
+        }
+      }
+    }
+    // fill all the measures
+    for (int i = 0; i < measureCount; i++) {
+      preparedRow[dimensionColumnCount + i] = row[dimensionColumnCount + i];
+    }
+    return preparedRow;
   }
 
   /**
@@ -283,6 +320,11 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
           preparedRow[i] = DataTypeUtil
               .getDataBasedOnDataTypeForNoDictionaryColumn(noDictionaryKeyByIndex,
                   dims.getDataType());
+          // for timestamp the above method will give the original data, so it should be
+          // converted again to the format to be loaded (without micros)
+          if (null != preparedRow[i] && dims.getDataType() == DataTypes.TIMESTAMP) {
+            preparedRow[i] = (long) preparedRow[i] / 1000L;
+          }
         } else {
           preparedRow[i] = noDictionaryKeyByIndex;
         }

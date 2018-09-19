@@ -69,11 +69,21 @@ public class RowConverterImpl implements RowConverter {
 
   private Map<Object, Integer>[] localCaches;
 
+  private boolean isConvertToBinary;
+
   public RowConverterImpl(DataField[] fields, CarbonDataLoadConfiguration configuration,
       BadRecordsLogger badRecordLogger) {
     this.fields = fields;
     this.configuration = configuration;
     this.badRecordLogger = badRecordLogger;
+  }
+
+  public RowConverterImpl(DataField[] fields, CarbonDataLoadConfiguration configuration,
+      BadRecordsLogger badRecordLogger, boolean isConvertToBinary) {
+    this.fields = fields;
+    this.configuration = configuration;
+    this.badRecordLogger = badRecordLogger;
+    this.isConvertToBinary = isConvertToBinary;
   }
 
   @Override
@@ -95,7 +105,7 @@ public class RowConverterImpl implements RowConverter {
       FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
           .createFieldEncoder(fields[i], configuration.getTableIdentifier(), i, nullFormat, client,
               configuration.getUseOnePass(), localCaches[i], isEmptyBadRecord,
-              configuration.getParentTablePath());
+              configuration.getParentTablePath(), isConvertToBinary);
       fieldConverterList.add(fieldConverter);
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
@@ -199,7 +209,8 @@ public class RowConverterImpl implements RowConverter {
   @Override
   public RowConverter createCopyForNewThread() {
     RowConverterImpl converter =
-        new RowConverterImpl(this.fields, this.configuration, this.badRecordLogger);
+        new RowConverterImpl(this.fields, this.configuration, this.badRecordLogger,
+            this.isConvertToBinary);
     List<FieldConverter> fieldConverterList = new ArrayList<>();
     DictionaryClient client = createDictionaryClient();
     dictClients.add(client);
@@ -215,7 +226,7 @@ public class RowConverterImpl implements RowConverter {
         fieldConverter = FieldEncoderFactory.getInstance()
             .createFieldEncoder(fields[i], configuration.getTableIdentifier(), i, nullFormat,
                 client, configuration.getUseOnePass(), localCaches[i], isEmptyBadRecord,
-                configuration.getParentTablePath());
+                configuration.getParentTablePath(), isConvertToBinary);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }

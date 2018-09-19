@@ -1944,12 +1944,21 @@ public final class FilterUtil {
    * @param dimensionColumnPage
    * @param bitSet
    */
-  public static void removeNullValues(DimensionColumnPage dimensionColumnPage,
-      BitSet bitSet, byte[] defaultValue) {
+  public static void removeNullValues(DimensionColumnPage dimensionColumnPage, BitSet bitSet,
+      byte[] defaultValue) {
     if (!bitSet.isEmpty()) {
-      for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
-        if (dimensionColumnPage.compareTo(i, defaultValue) == 0) {
-          bitSet.flip(i);
+      if (null != dimensionColumnPage.getNullBits() && !dimensionColumnPage.getNullBits().isEmpty()
+          && !dimensionColumnPage.isExplicitSorted() && !dimensionColumnPage.isAdaptiveEncoded()) {
+        for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
+          if (dimensionColumnPage.getNullBits().get(i)) {
+            bitSet.flip(i);
+          }
+        }
+      } else {
+        for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
+          if (dimensionColumnPage.compareTo(i, defaultValue) == 0) {
+            bitSet.flip(i);
+          }
         }
       }
     }

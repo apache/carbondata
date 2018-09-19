@@ -20,6 +20,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
@@ -71,6 +72,9 @@ public class MeasureFieldConverterImpl implements FieldConverter {
             dataField.getColumn().getDataType());
         logHolder.getColumnMessageMap().put(dataField.getColumn().getColName(), message);
       }
+      if (dataField.getColumn().isDimension()) {
+        logHolder.setReason(message);
+      }
       return null;
     } else if (literalValue.length() == 0) {
       if (isEmptyBadRecord) {
@@ -87,21 +91,42 @@ public class MeasureFieldConverterImpl implements FieldConverter {
       return null;
     } else {
       try {
-        if (dataField.isUseActualData()) {
-          output = DataTypeUtil
-              .getMeasureValueBasedOnDataType(literalValue, dataField.getColumn().getDataType(),
-                  dataField.getColumn().getColumnSchema().getScale(),
-                  dataField.getColumn().getColumnSchema().getPrecision(), true);
+        // in case of no dictionary dimension
+        if (dataField.getColumn().isDimension()) {
+          String dateFormat = null;
+          if (dataField.getColumn().getDataType() == DataTypes.DATE) {
+            dateFormat = dataField.getDateFormat();
+          } else if (dataField.getColumn().getDataType() == DataTypes.TIMESTAMP) {
+            dateFormat = dataField.getTimestampFormat();
+          }
+          if (dataField.isUseActualData()) {
+            output = DataTypeUtil.getNoDictionaryValueBasedOnDataType(literalValue,
+                dataField.getColumn().getDataType(),
+                dataField.getColumn().getColumnSchema().getScale(),
+                dataField.getColumn().getColumnSchema().getPrecision(), true, dateFormat);
+          } else {
+            output = DataTypeUtil.getNoDictionaryValueBasedOnDataType(literalValue,
+                dataField.getColumn().getDataType(),
+                dataField.getColumn().getColumnSchema().getScale(),
+                dataField.getColumn().getColumnSchema().getPrecision(), false, dateFormat);
+          }
         } else {
-          output = DataTypeUtil
-              .getMeasureValueBasedOnDataType(literalValue, dataField.getColumn().getDataType(),
-                  dataField.getColumn().getColumnSchema().getScale(),
-                  dataField.getColumn().getColumnSchema().getPrecision());
+          if (dataField.isUseActualData()) {
+            output = DataTypeUtil
+                .getMeasureValueBasedOnDataType(literalValue, dataField.getColumn().getDataType(),
+                    dataField.getColumn().getColumnSchema().getScale(),
+                    dataField.getColumn().getColumnSchema().getPrecision(), true);
+          } else {
+            output = DataTypeUtil
+                .getMeasureValueBasedOnDataType(literalValue, dataField.getColumn().getDataType(),
+                    dataField.getColumn().getColumnSchema().getScale(),
+                    dataField.getColumn().getColumnSchema().getPrecision());
+          }
         }
         return output;
       } catch (NumberFormatException e) {
         if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("Can not convert value to Numeric type value. Value considered as null.");
+          LOGGER.debug("Cannot convert value to Numeric type value. Value considered as null.");
         }
         logHolder.setReason(CarbonDataProcessorUtil
             .prepareFailureReason(dataField.getColumn().getColName(),
