@@ -31,16 +31,6 @@ public interface Compressor {
 
   byte[] unCompressByte(byte[] compInput, int offset, int length);
 
-  byte[] compressShort(short[] unCompInput);
-
-  byte[] compressInt(int[] unCompInput);
-
-  byte[] compressLong(long[] unCompInput);
-
-  byte[] compressFloat(float[] unCompInput);
-
-  byte[] compressDouble(double[] unCompInput);
-
   long rawCompress(long inputAddress, int inputSize, long outputAddress) throws IOException;
 
   long rawUncompress(byte[] input, byte[] output) throws IOException;

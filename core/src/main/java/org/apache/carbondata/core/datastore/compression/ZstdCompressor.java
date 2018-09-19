@@ -64,41 +64,6 @@ public class ZstdCompressor implements Compressor {
   }
 
   @Override
-  public byte[] compressShort(short[] unCompInput) {
-    ByteBuffer unCompBuffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_SHORT);
-    unCompBuffer.asShortBuffer().put(unCompInput);
-    return compressByte(unCompBuffer.array());
-  }
-
-  @Override
-  public byte[] compressInt(int[] unCompInput) {
-    ByteBuffer unCompBuffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_INT);
-    unCompBuffer.asIntBuffer().put(unCompInput);
-    return compressByte(unCompBuffer.array());
-  }
-
-  @Override
-  public byte[] compressLong(long[] unCompInput) {
-    ByteBuffer unCompBuffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_LONG);
-    unCompBuffer.asLongBuffer().put(unCompInput);
-    return compressByte(unCompBuffer.array());
-  }
-
-  @Override
-  public byte[] compressFloat(float[] unCompInput) {
-    ByteBuffer unCompBuffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_FLOAT);
-    unCompBuffer.asFloatBuffer().put(unCompInput);
-    return compressByte(unCompBuffer.array());
-  }
-
-  @Override
-  public byte[] compressDouble(double[] unCompInput) {
-    ByteBuffer unCompBuffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_DOUBLE);
-    unCompBuffer.asDoubleBuffer().put(unCompInput);
-    return compressByte(unCompBuffer.array());
-  }
-
-  @Override
   public long rawCompress(long inputAddress, int inputSize, long outputAddress) throws IOException {
     throw new RuntimeException("Not implemented rawCompress for zstd yet");
   }

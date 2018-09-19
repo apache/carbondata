@@ -99,51 +99,6 @@ public class SnappyCompressor implements Compressor {
     return data;
   }
 
-  @Override public byte[] compressShort(short[] unCompInput) {
-    try {
-      return Snappy.compress(unCompInput);
-    } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override public byte[] compressInt(int[] unCompInput) {
-    try {
-      return Snappy.compress(unCompInput);
-    } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override public byte[] compressLong(long[] unCompInput) {
-    try {
-      return Snappy.compress(unCompInput);
-    } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override public byte[] compressFloat(float[] unCompInput) {
-    try {
-      return Snappy.compress(unCompInput);
-    } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Override public byte[] compressDouble(double[] unCompInput) {
-    try {
-      return Snappy.compress(unCompInput);
-    } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
-      throw new RuntimeException(e);
-    }
-  }
-
   @Override
   public long rawCompress(long inputAddress, int inputSize, long outputAddress) throws IOException {
     return snappyNative.rawCompress(inputAddress, inputSize, outputAddress);
