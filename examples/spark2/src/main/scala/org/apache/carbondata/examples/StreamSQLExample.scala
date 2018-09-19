@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.examples
 
-import java.io.File
 import java.net.ServerSocket
 
 import org.apache.carbondata.examples.util.ExampleUtils
@@ -26,13 +25,9 @@ import org.apache.carbondata.examples.util.ExampleUtils
 object StreamSQLExample {
   def main(args: Array[String]) {
 
-    // setup paths
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
-
     val spark = ExampleUtils.createCarbonSession("StructuredStreamingExample", 4)
-
     val requireCreateTable = true
+    val recordFormat = "json" // can be "json" or "csv"
 
     if (requireCreateTable) {
       // drop table if exists previously
@@ -45,7 +40,6 @@ object StreamSQLExample {
            | CREATE TABLE sink(
            | id INT,
            | name STRING,
-           | city STRING,
            | salary FLOAT,
            | file struct<school:array<string>, age:int>
            | )
@@ -56,11 +50,10 @@ object StreamSQLExample {
     }
 
     spark.sql(
-      """
+      s"""
         | CREATE TABLE source (
         | id INT,
         | name STRING,
-        | city STRING,
         | salary FLOAT,
         | file struct<school:array<string>, age:int>
         | )
@@ -69,7 +62,9 @@ object StreamSQLExample {
         | 'streaming'='source',
         | 'format'='socket',
         | 'host'='localhost',
-        | 'port'='7071')
+        | 'port'='7071',
+        | 'record_format'='$recordFormat'
+        | )
       """.stripMargin)
 
     val serverSocket = new ServerSocket(7071)
@@ -86,7 +81,7 @@ object StreamSQLExample {
 
     // start writing data into the socket
     import StructuredStreamingExample.{showTableCount, writeSocket}
-    val thread1 = writeSocket(serverSocket)
+    val thread1 = writeSocket(serverSocket, recordFormat)
     val thread2 = showTableCount(spark, "sink")
 
     System.out.println("type enter to interrupt streaming")
