@@ -131,8 +131,13 @@ public class TablePage {
               columnPageEncoderMeta, pageSize, localDictionaryGenerator, false);
         } else {
           if (DataTypeUtil.isPrimitiveColumn(spec.getSchemaDataType())) {
-            columnPageEncoderMeta =
-                new ColumnPageEncoderMeta(spec, spec.getSchemaDataType(), columnCompressor);
+            if (spec.getSchemaDataType() == DataTypes.TIMESTAMP) {
+              columnPageEncoderMeta =
+                  new ColumnPageEncoderMeta(spec, DataTypes.LONG, columnCompressor);
+            } else {
+              columnPageEncoderMeta =
+                  new ColumnPageEncoderMeta(spec, spec.getSchemaDataType(), columnCompressor);
+            }
             // create the column page according to the data type for no dictionary numeric columns
             if (DataTypes.isDecimal(spec.getSchemaDataType())) {
               page = ColumnPage.newDecimalPage(columnPageEncoderMeta, pageSize);
@@ -147,7 +152,12 @@ public class TablePage {
         if (DataTypes.VARCHAR == dataType) {
           page.setStatsCollector(LVLongStringStatsCollector.newInstance());
         } else if (DataTypeUtil.isPrimitiveColumn(spec.getSchemaDataType())) {
-          page.setStatsCollector(PrimitivePageStatsCollector.newInstance(spec.getSchemaDataType()));
+          if (spec.getSchemaDataType() == DataTypes.TIMESTAMP) {
+            page.setStatsCollector(PrimitivePageStatsCollector.newInstance(DataTypes.LONG));
+          } else {
+            page.setStatsCollector(
+                PrimitivePageStatsCollector.newInstance(spec.getSchemaDataType()));
+          }
         } else {
           page.setStatsCollector(LVShortStringStatsCollector.newInstance());
         }

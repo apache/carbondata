@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.core.datastore.chunk;
 
+import java.util.BitSet;
+
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 /**
@@ -101,5 +103,15 @@ public interface DimensionColumnPage {
    * below method will be used to free the allocated memory
    */
   void freeMemory();
+
+  /**
+   * to check whether the page is adaptive encoded
+   */
+  boolean isAdaptiveEncoded();
+
+  /**
+   * to get the null bit sets in case of adaptive encoded page
+   */
+  BitSet getNullBits();
 
 }

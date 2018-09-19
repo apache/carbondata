@@ -58,16 +58,24 @@ public class FieldEncoderFactory {
   /**
    * Creates the FieldConverter for all dimensions, for measures return null.
    *
-   * @param dataField             column schema
-   * @param absoluteTableIdentifier table identifier
-   * @param index                 index of column in the row.
+   * @param dataField                 column schema
+   * @param absoluteTableIdentifier   table identifier
+   * @param index                     index of column in the row
+   * @param nullFormat                null format of the field
+   * @param client
+   * @param useOnePass
+   * @param localCache
    * @param isEmptyBadRecord
+   * @param parentTablePath
+   * @param isConvertToBinary     whether the no dictionary field to be converted to binary or not
    * @return
+   * @throws IOException
    */
   public FieldConverter createFieldEncoder(DataField dataField,
       AbsoluteTableIdentifier absoluteTableIdentifier, int index, String nullFormat,
       DictionaryClient client, Boolean useOnePass, Map<Object, Integer> localCache,
-      boolean isEmptyBadRecord, String parentTablePath) throws IOException {
+      boolean isEmptyBadRecord, String parentTablePath, boolean isConvertToBinary)
+      throws IOException {
     // Converters are only needed for dimensions and measures it return null.
     if (dataField.getColumn().isDimension()) {
       if (dataField.getColumn().hasEncoding(Encoding.DIRECT_DICTIONARY) &&
@@ -112,9 +120,11 @@ public class FieldEncoderFactory {
             createComplexDataType(dataField, absoluteTableIdentifier,
                 client, useOnePass, localCache, index, nullFormat, isEmptyBadRecord), index);
       } else {
-        // if the no dictionary column is a numeric column then treat is as measure col
+        // if the no dictionary column is a numeric column and no need to convert to binary
+        // then treat it is as measure col
         // so that the adaptive encoding can be applied on it easily
-        if (DataTypeUtil.isPrimitiveColumn(dataField.getColumn().getDataType())) {
+        if (DataTypeUtil.isPrimitiveColumn(dataField.getColumn().getDataType())
+            && !isConvertToBinary) {
           return new MeasureFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);
         }
         return new NonDictionaryFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);

@@ -140,7 +140,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         dataField.setTimestampFormat(tsFormat);
         FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
             .createFieldEncoder(dataField, absoluteTableIdentifier, i, nullFormat, null, false,
-                localCaches[i], false, parentTablePath);
+                localCaches[i], false, parentTablePath, false);
         this.name2Converters.put(indexedColumn.get(i).getColName(), fieldConverter);
       }
     } catch (IOException e) {

@@ -783,4 +783,36 @@ public class QueryUtil {
       }
     }
   }
+
+  /**
+   * Put the data to vector
+   *
+   * @param vector
+   * @param value
+   * @param vectorRow
+   */
+  public static void putDataToVector(CarbonColumnVector vector, Object value, int vectorRow) {
+    DataType dt = vector.getType();
+    if (value.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY) || value
+        .equals(CarbonCommonConstants.EMPTY_BYTE_ARRAY)) {
+      vector.putNull(vectorRow);
+    } else {
+      if (dt == DataTypes.STRING) {
+        vector.putBytes(vectorRow, (byte[]) value);
+      } else if (dt == DataTypes.BOOLEAN) {
+        vector.putBoolean(vectorRow, (boolean) value);
+      } else if (dt == DataTypes.BYTE) {
+        vector.putByte(vectorRow, (byte) value);
+      } else if (dt == DataTypes.SHORT) {
+        vector.putShort(vectorRow, (short) value);
+      } else if (dt == DataTypes.INT) {
+        vector.putInt(vectorRow, (int) value);
+      } else if (dt == DataTypes.LONG) {
+        vector.putLong(vectorRow,
+            DataTypeUtil.getDataBasedOnRestructuredDataType(value, vector.getBlockDataType()));
+      } else if (dt == DataTypes.TIMESTAMP) {
+        vector.putLong(vectorRow, (long) value * 1000L);
+      }
+    }
+  }
 }
