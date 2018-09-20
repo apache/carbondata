@@ -332,6 +332,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         }
         attr
       }
+      val supportBatch =
+        supportBatchedDataSource(relation.relation.sqlContext, updateProject) && needDecoder.isEmpty
       val scan = getDataSourceScan(relation,
         updateProject,
         partitions,
@@ -341,9 +343,11 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         handledFilters,
         metadata,
         needDecoder,
-        updateRequestedColumns.asInstanceOf[Seq[Attribute]])
+        updateRequestedColumns.asInstanceOf[Seq[Attribute]],
+        supportBatch)
       if (directScan && scan.isInstanceOf[CarbonDataSourceScan]) {
-        filterPredicates.reduceLeftOption(expressions.And).map(execution.FilterExec(_, scan)).getOrElse(scan)
+        filterPredicates.reduceLeftOption(expressions.And).map(execution.FilterExec(_, scan))
+          .getOrElse(scan)
       } else {
         filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan)
       }
@@ -372,10 +376,18 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       // Don't request columns that are only referenced by pushed filters.
       val requestedColumns =
         (projectSet ++ filterSet -- handledSet).map(relation.attributeMap).toSeq ++ newProjectList
-      val updateRequestedColumns = if (!directScan) {
+      var updateRequestedColumns = if (!directScan) {
         updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
       }  else {
         (projectSet ++ filterSet).map(relation.attributeMap)
+      }
+      val supportBatch =
+        supportBatchedDataSource(relation.relation.sqlContext,
+          updateRequestedColumns.asInstanceOf[Seq[Attribute]]) &&
+        needDecoder.isEmpty
+      if (directScan && !supportBatch) {
+        // revert for row scan
+        updateRequestedColumns = updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
       }
       val scan = getDataSourceScan(relation,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]],
@@ -386,7 +398,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         handledFilters,
         metadata,
         needDecoder,
-        updateRequestedColumns.asInstanceOf[Seq[Attribute]])
+        updateRequestedColumns.asInstanceOf[Seq[Attribute]], supportBatch)
       if (directScan && scan.isInstanceOf[CarbonDataSourceScan]) {
         execution.ProjectExec(
           updateRequestedColumnsFunc(updatedProjects, table,
@@ -413,7 +425,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       pushedFilters: Seq[Filter], handledFilters: Seq[Filter],
       metadata: Map[String, String],
       needDecoder: ArrayBuffer[AttributeReference],
-      updateRequestedColumns: Seq[Attribute]): DataSourceScanExec = {
+      updateRequestedColumns: Seq[Attribute],
+      supportBatchScan: Boolean): DataSourceScanExec = {
     val table = relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
     if (supportBatchedDataSource(relation.relation.sqlContext, updateRequestedColumns) &&
         needDecoder.isEmpty) {

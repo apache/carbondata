@@ -101,75 +101,327 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
     // we need to skip first two bytes this is because first two bytes will be length of the data
     // which we have to skip
     int lengthSize = getLengthSize();
-    int currentOffset = lengthSize;
     // creating a byte buffer which will wrap the length of the row
     CarbonColumnVector vector = vectorInfo.vector;
     DataType dt = vector.getType();
     ByteBuffer buffer = ByteBuffer.wrap(data);
     if (dt == DataTypes.STRING) {
-      for (int i = 0; i < numberOfRows - 1; i++) {
-        buffer.position(startOffset);
-        startOffset += getLengthFromBuffer(buffer) + lengthSize;
-        int length = startOffset - (currentOffset);
-        if (ByteUtil.UnsafeComparer.INSTANCE
-            .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
-                CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentOffset,
-                length)) {
-          vector.putNull(i);
-        } else {
-          vector.putBytes(i, currentOffset, length, data);
-        }
-        currentOffset = startOffset + lengthSize;
-      }
-      int length = (short) (data.length - currentOffset);
-      if (ByteUtil.UnsafeComparer.INSTANCE.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
-          CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentOffset, length)) {
-        vector.putNull(numberOfRows - 1);
+      if (isExplictSorted) {
+        fillStringDataWithInvertedIndex(data, startOffset, lengthSize, vector, buffer);
       } else {
-        vector.putBytes(numberOfRows - 1, currentOffset, length, data);
+        fillStringData(data, startOffset, lengthSize, vector, buffer);
       }
     } else if (dt == DataTypes.TIMESTAMP) {
-      for (int i = 0; i < numberOfRows - 1; i++) {
-        buffer.position(startOffset);
-        startOffset += getLengthFromBuffer(buffer) + lengthSize;
-        int length = startOffset - (currentOffset);
-        if (length == 0) {
-          vector.putNull(i);
-        } else {
-          vector.putLong(i, ByteUtil.toXorLong(data, currentOffset, length) * 1000L);
-        }
-        currentOffset = startOffset + lengthSize;
-      }
-      int length = (data.length - currentOffset);
-      if (length == 0) {
-        vector.putNull(numberOfRows - 1);
+      if (isExplictSorted) {
+        fillTimeStampDataWithInvertedIndex(data, startOffset, lengthSize, vector, buffer);
       } else {
-        vector.putLong(numberOfRows - 1, ByteUtil.toXorLong(data, currentOffset, length) * 1000L);
+        fillTimeStampData(data, startOffset, lengthSize, vector, buffer);
       }
     } else if (dt == DataTypes.BOOLEAN) {
-      for (int i = 0; i < numberOfRows - 1; i++) {
-        buffer.position(startOffset);
-        startOffset += getLengthFromBuffer(buffer) + lengthSize;
-        int length = startOffset - (currentOffset);
-        if (length == 0) {
-          vector.putNull(i);
-        } else {
-          vector.putBoolean(i, ByteUtil.toBoolean(data[currentOffset]));
-        }
-        currentOffset = startOffset + lengthSize;
-      }
-      int length = (data.length - currentOffset);
-      if (length == 0) {
-        vector.putNull(numberOfRows - 1);
+      if (isExplictSorted) {
+        fillBooleanDataWithInvertedIndex(data, startOffset, lengthSize, vector, buffer);
       } else {
-        vector.putBoolean(numberOfRows - 1, ByteUtil.toBoolean(data[currentOffset]));
+        fillBooleanData(data, startOffset, lengthSize, vector, buffer);
       }
     } else if (dt == DataTypes.SHORT) {
-      // TODO
+      if (isExplictSorted) {
+        fillShortDataWithInvertedIndex(data, startOffset, lengthSize, vector, buffer);
+      } else {
+        fillShortData(data, startOffset, lengthSize, vector, buffer);
+      }
     } else if (dt == DataTypes.INT) {
-      // TODO
+      if (isExplictSorted) {
+        fillIntDataWithInvertedIndex(data, startOffset, lengthSize, vector, buffer);
+      } else {
+        fillIntData(data, startOffset, lengthSize, vector, buffer);
+      }
     } else if (dt == DataTypes.LONG) {
-      // TODO
+      if (isExplictSorted) {
+        fillLongDataWithInvertedIndex(data, startOffset, lengthSize, vector, buffer);
+      } else {
+        fillLongData(data, startOffset, lengthSize, vector, buffer);
+      }
+    }
+  }
+
+  private void fillBooleanData(byte[] data, int startOffset, int lengthSize,
+      CarbonColumnVector vector, ByteBuffer buffer) {
+    int currentOffset = lengthSize;
+    for (int i = 0; i < numberOfRows - 1; i++) {
+      buffer.position(startOffset);
+      startOffset += getLengthFromBuffer(buffer) + lengthSize;
+      int length = startOffset - (currentOffset);
+      if (length == 0) {
+        vector.putNull(i);
+      } else {
+        vector.putBoolean(i, ByteUtil.toBoolean(data[currentOffset]));
+      }
+      currentOffset = startOffset + lengthSize;
+    }
+    int length = (data.length - currentOffset);
+    if (length == 0) {
+      vector.putNull(numberOfRows - 1);
+    } else {
+      vector.putBoolean(numberOfRows - 1, ByteUtil.toBoolean(data[currentOffset]));
+    }
+  }
+
+  private void fillBooleanDataWithInvertedIndex(byte[] data, int startOffset, int lengthSize,
+      CarbonColumnVector vector, ByteBuffer buffer) {
+    int currentOffset = lengthSize;
+    for (int i = 0; i < numberOfRows - 1; i++) {
+      buffer.position(startOffset);
+      startOffset += getLengthFromBuffer(buffer) + lengthSize;
+      int length = startOffset - (currentOffset);
+      if (length == 0) {
+        vector.putNull(invertedIndexReverse[i]);
+      } else {
+        vector.putBoolean(invertedIndexReverse[i], ByteUtil.toBoolean(data[currentOffset]));
+      }
+      currentOffset = startOffset + lengthSize;
+    }
+    int length = (data.length - currentOffset);
+    if (length == 0) {
+      vector.putNull(invertedIndexReverse[numberOfRows - 1]);
+    } else {
+      vector.putBoolean(invertedIndexReverse[numberOfRows - 1],
+          ByteUtil.toBoolean(data[currentOffset]));
+    }
+  }
+
+  private void fillShortData(byte[] data, int startOffset, int lengthSize,
+      CarbonColumnVector vector, ByteBuffer buffer) {
+    int currentOffset = lengthSize;
+    for (int i = 0; i < numberOfRows - 1; i++) {
+      buffer.position(startOffset);
+      startOffset += getLengthFromBuffer(buffer) + lengthSize;
+      int length = startOffset - (currentOffset);
+      if (length == 0) {
+        vector.putNull(i);
+      } else {
+        vector.putShort(i, ByteUtil.toXorShort(data, currentOffset, length));
+      }
+      currentOffset = startOffset + lengthSize;
+    }
+    int length = (data.length - currentOffset);
+    if (length == 0) {
+      vector.putNull(numberOfRows - 1);
+    } else {
+      vector.putShort(numberOfRows - 1, ByteUtil.toXorShort(data, currentOffset, length));
+    }
+  }
+
+  private void fillShortDataWithInvertedIndex(byte[] data, int startOffset, int lengthSize,
+      CarbonColumnVector vector, ByteBuffer buffer) {
+    int currentOffset = lengthSize;
+    for (int i = 0; i < numberOfRows - 1; i++) {
+      buffer.position(startOffset);
+      startOffset += getLengthFromBuffer(buffer) + lengthSize;
+      int length = startOffset - (currentOffset);
+      if (length == 0) {
+        vector.putNull(invertedIndexReverse[i]);
+      } else {
+        vector.putShort(invertedIndexReverse[i], ByteUtil.toXorShort(data, currentOffset, length));
+      }
+      currentOffset = startOffset + lengthSize;
+    }
+    int length = (data.length - currentOffset);
+    if (length == 0) {
+      vector.putNull(invertedIndexReverse[numberOfRows - 1]);
+    } else {
+      vector.putShort(invertedIndexReverse[numberOfRows - 1],
+          ByteUtil.toXorShort(data, currentOffset, length));
+    }
+  }
+
+  private void fillIntData(byte[] data, int startOffset, int lengthSize, CarbonColumnVector vector,
+      ByteBuffer buffer) {
+    int currentOffset = lengthSize;
+    for (int i = 0; i < numberOfRows - 1; i++) {
+      buffer.position(startOffset);
+      startOffset += getLengthFromBuffer(buffer) + lengthSize;
+      int length = startOffset - (currentOffset);
+      if (length == 0) {
+        vector.putNull(i);
+      } else {
+        vector.putInt(i, ByteUtil.toXorInt(data, currentOffset, length));
+      }
+      currentOffset = startOffset + lengthSize;
+    }
+    int length = (data.length - currentOffset);
+    if (length == 0) {
+      vector.putNull(numberOfRows - 1);
+    } else {
+      vector.putInt(numberOfRows - 1, ByteUtil.toXorInt(data, currentOffset, length));
+    }
+  }
+
+  private void fillIntDataWithInvertedIndex(byte[] data, int startOffset, int lengthSize,
+      CarbonColumnVector vector, ByteBuffer buffer) {
+    int currentOffset = lengthSize;
+    for (int i = 0; i < numberOfRows - 1; i++) {
+      buffer.position(startOffset);
+      startOffset += getLengthFromBuffer(buffer) + lengthSize;
+      int length = startOffset - (currentOffset);
+      if (length == 0) {
+        vector.putNull(invertedIndexReverse[i]);
+      } else {
+        vector.putInt(invertedIndexReverse[i], ByteUtil.toXorInt(data, currentOffset, length));
+      }
+      currentOffset = startOffset + lengthSize;
+    }
+    int length = (data.length - currentOffset);
+    if (length == 0) {
+      vector.putNull(invertedIndexReverse[numberOfRows - 1]);
+    } else {
+      vector.putInt(invertedIndexReverse[numberOfRows - 1],
+          ByteUtil.toXorInt(data, currentOffset, length));
+    }
+  }
+
+  private void fillLongData(byte[] data, int startOffset, int lengthSize, CarbonColumnVector vector,
+      ByteBuffer buffer) {
+    int currentOffset = lengthSize;
+    for (int i = 0; i < numberOfRows - 1; i++) {
+      buffer.position(startOffset);
+      startOffset += getLengthFromBuffer(buffer) + lengthSize;
+      int length = startOffset - (currentOffset);
+      if (length == 0) {
+        vector.putNull(i);
+      } else {
+        vector.putLong(i, DataTypeUtil
+            .getDataBasedOnRestructuredDataType(data, vector.getBlockDataType(), currentOffset,
+                length));
+      }
+      currentOffset = startOffset + lengthSize;
+    }
+    int length = (data.length - currentOffset);
+    if (length == 0) {
+      vector.putNull(numberOfRows - 1);
+    } else {
+      vector.putLong(numberOfRows - 1, DataTypeUtil
+          .getDataBasedOnRestructuredDataType(data, vector.getBlockDataType(), currentOffset,
+              length));
+    }
+  }
+
+  private void fillLongDataWithInvertedIndex(byte[] data, int startOffset, int lengthSize,
+      CarbonColumnVector vector, ByteBuffer buffer) {
+    int currentOffset = lengthSize;
+    for (int i = 0; i < numberOfRows - 1; i++) {
+      buffer.position(startOffset);
+      startOffset += getLengthFromBuffer(buffer) + lengthSize;
+      int length = startOffset - (currentOffset);
+      if (length == 0) {
+        vector.putNull(invertedIndexReverse[i]);
+      } else {
+        vector.putLong(invertedIndexReverse[i], DataTypeUtil
+            .getDataBasedOnRestructuredDataType(data, vector.getBlockDataType(), currentOffset,
+                length));
+      }
+      currentOffset = startOffset + lengthSize;
+    }
+    int length = (data.length - currentOffset);
+    if (length == 0) {
+      vector.putNull(invertedIndexReverse[numberOfRows - 1]);
+    } else {
+      vector.putLong(invertedIndexReverse[numberOfRows - 1], DataTypeUtil
+          .getDataBasedOnRestructuredDataType(data, vector.getBlockDataType(), currentOffset,
+              length));
+    }
+  }
+
+  private void fillTimeStampData(byte[] data, int startOffset, int lengthSize,
+      CarbonColumnVector vector, ByteBuffer buffer) {
+    int currentOffset = lengthSize;
+    for (int i = 0; i < numberOfRows - 1; i++) {
+      buffer.position(startOffset);
+      startOffset += getLengthFromBuffer(buffer) + lengthSize;
+      int length = startOffset - (currentOffset);
+      if (length == 0) {
+        vector.putNull(i);
+      } else {
+        vector.putLong(i, ByteUtil.toXorLong(data, currentOffset, length) * 1000L);
+      }
+      currentOffset = startOffset + lengthSize;
+    }
+    int length = (data.length - currentOffset);
+    if (length == 0) {
+      vector.putNull(numberOfRows - 1);
+    } else {
+      vector.putLong(numberOfRows - 1, ByteUtil.toXorLong(data, currentOffset, length) * 1000L);
+    }
+  }
+
+  private void fillTimeStampDataWithInvertedIndex(byte[] data, int startOffset, int lengthSize,
+      CarbonColumnVector vector, ByteBuffer buffer) {
+    int currentOffset = lengthSize;
+    for (int i = 0; i < numberOfRows - 1; i++) {
+      buffer.position(startOffset);
+      startOffset += getLengthFromBuffer(buffer) + lengthSize;
+      int length = startOffset - (currentOffset);
+      if (length == 0) {
+        vector.putNull(invertedIndexReverse[i]);
+      } else {
+        vector.putLong(invertedIndexReverse[i],
+            ByteUtil.toXorLong(data, currentOffset, length) * 1000L);
+      }
+      currentOffset = startOffset + lengthSize;
+    }
+    int length = (data.length - currentOffset);
+    if (length == 0) {
+      vector.putNull(invertedIndexReverse[numberOfRows - 1]);
+    } else {
+      vector.putLong(invertedIndexReverse[numberOfRows - 1],
+          ByteUtil.toXorLong(data, currentOffset, length) * 1000L);
+    }
+  }
+
+  private void fillStringData(byte[] data, int startOffset, int lengthSize,
+      CarbonColumnVector vector, ByteBuffer buffer) {
+    int currentOffset = lengthSize;
+    for (int i = 0; i < numberOfRows - 1; i++) {
+      buffer.position(startOffset);
+      startOffset += getLengthFromBuffer(buffer) + lengthSize;
+      int length = startOffset - (currentOffset);
+      if (ByteUtil.UnsafeComparer.INSTANCE.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+          CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentOffset, length)) {
+        vector.putNull(i);
+      } else {
+        vector.putBytes(i, currentOffset, length, data);
+      }
+      currentOffset = startOffset + lengthSize;
+    }
+    int length = (short) (data.length - currentOffset);
+    if (ByteUtil.UnsafeComparer.INSTANCE.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+        CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentOffset, length)) {
+      vector.putNull(numberOfRows - 1);
+    } else {
+      vector.putBytes(numberOfRows - 1, currentOffset, length, data);
+    }
+  }
+
+  private void fillStringDataWithInvertedIndex(byte[] data, int startOffset, int lengthSize,
+      CarbonColumnVector vector, ByteBuffer buffer) {
+    int currentOffset = lengthSize;
+    for (int i = 0; i < numberOfRows - 1; i++) {
+      buffer.position(startOffset);
+      startOffset += getLengthFromBuffer(buffer) + lengthSize;
+      int length = startOffset - (currentOffset);
+      if (ByteUtil.UnsafeComparer.INSTANCE.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+          CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentOffset, length)) {
+        vector.putNull(invertedIndexReverse[i]);
+      } else {
+        vector.putBytes(invertedIndexReverse[i], currentOffset, length, data);
+      }
+      currentOffset = startOffset + lengthSize;
+    }
+    int length = (short) (data.length - currentOffset);
+    if (ByteUtil.UnsafeComparer.INSTANCE.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+        CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentOffset, length)) {
+      vector.putNull(invertedIndexReverse[numberOfRows - 1]);
+    } else {
+      vector.putBytes(invertedIndexReverse[numberOfRows - 1], currentOffset, length, data);
     }
   }
 
