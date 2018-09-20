@@ -68,7 +68,6 @@ public class NewRowComparator implements Comparator<Object[]>, Serializable {
             if (difference != 0) {
               return difference;
             }
-            dataTypeIdx++;
           } else {
             byte[] byteArr1 = (byte[]) rowA[index];
             byte[] byteArr2 = (byte[]) rowB[index];
@@ -79,6 +78,7 @@ public class NewRowComparator implements Comparator<Object[]>, Serializable {
             }
           }
         }
+        dataTypeIdx++;
       } else {
         int dimFieldA = (int) rowA[index];
         int dimFieldB = (int) rowB[index];
