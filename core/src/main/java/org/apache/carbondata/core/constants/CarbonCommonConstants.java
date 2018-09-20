@@ -507,6 +507,10 @@ public final class CarbonCommonConstants {
    */
   public static final String FILE_SEPARATOR = "/";
   /**
+   * ARRAY separator
+   */
+  public static final String ARRAY_SEPARATOR = "\001";
+  /**
    * MAX_QUERY_EXECUTION_TIME
    */
   @CarbonProperty

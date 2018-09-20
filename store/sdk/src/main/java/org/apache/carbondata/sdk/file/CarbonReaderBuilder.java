@@ -102,6 +102,22 @@ public class CarbonReaderBuilder {
   }
 
   /**
+   * configure hadoop configuration with key value
+   *
+   * @param key   key word
+   * @param value value
+   * @return this object
+   */
+  public CarbonReaderBuilder withHadoopConf(String key, String value) {
+    if (this.hadoopConf == null) {
+      this.hadoopConf = new Configuration();
+
+    }
+    this.hadoopConf.set(key, value);
+    return this;
+  }
+
+  /**
    * Build CarbonReader
    *
    * @param <T>

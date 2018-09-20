@@ -12,6 +12,7 @@
 .settings
 .cache
 target/
+store/CSDK/cmake-build-debug/*
 .project
 .classpath
 metastore_db/
