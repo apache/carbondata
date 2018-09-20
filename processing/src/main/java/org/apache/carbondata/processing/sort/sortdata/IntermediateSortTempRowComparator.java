@@ -66,7 +66,6 @@ public class IntermediateSortTempRowComparator implements Comparator<Intermediat
           if (difference != 0) {
             return difference;
           }
-          noDicTypeIdx++;
         } else {
           byte[] byteArr1 = (byte[]) rowA.getNoDictSortDims()[nonDictIndex];
           byte[] byteArr2 = (byte[]) rowB.getNoDictSortDims()[nonDictIndex];
@@ -77,6 +76,7 @@ public class IntermediateSortTempRowComparator implements Comparator<Intermediat
           }
         }
         nonDictIndex++;
+        noDicTypeIdx++;
       } else {
         int dimFieldA = rowA.getDictSortDims()[dictIndex];
         int dimFieldB = rowB.getDictSortDims()[dictIndex];

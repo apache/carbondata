@@ -57,7 +57,6 @@ public class RawRowComparator implements Comparator<CarbonRow> {
           if (difference != 0) {
             return difference;
           }
-          noDicIdx++;
         } else {
           byte[] colA = (byte[]) o1.getObject(colIdx);
           byte[] colB = (byte[]) o2.getObject(colIdx);
@@ -66,6 +65,7 @@ public class RawRowComparator implements Comparator<CarbonRow> {
             return diff;
           }
         }
+        noDicIdx++;
       } else {
         int colA = (int) o1.getObject(colIdx);
         int colB = (int) o2.getObject(colIdx);

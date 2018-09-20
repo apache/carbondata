@@ -580,7 +580,10 @@ class CarbonFileMetastore extends CarbonMetaStore {
             tableModifiedTimeStore.get(CarbonCommonConstants.DATABASE_DEFAULT_NAME))) {
         metadata.carbonTables = metadata.carbonTables.filterNot(
           table => table.getTableName.equalsIgnoreCase(tableIdentifier.table) &&
-        table.getDatabaseName.equalsIgnoreCase(tableIdentifier.database.getOrElse("default")))
+                   table.getDatabaseName
+                     .equalsIgnoreCase(tableIdentifier.database
+                       .getOrElse(SparkSession.getActiveSession.get.sessionState.catalog
+                         .getCurrentDatabase)))
         updateSchemasUpdatedTime(lastModifiedTime)
         isRefreshed = true
       }
