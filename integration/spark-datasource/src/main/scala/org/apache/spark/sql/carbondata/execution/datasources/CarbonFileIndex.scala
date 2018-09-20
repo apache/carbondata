@@ -51,6 +51,10 @@ class CarbonFileIndex(
     fileIndex: FileIndex)
   extends FileIndex with AbstractCarbonFileIndex {
 
+  // When this flag is set it just returns empty files during pruning. It is needed for carbon
+  // session partition flow as we handle directly through datamap pruining.
+  private var actAsDummy = false
+
   override def rootPaths: Seq[Path] = fileIndex.rootPaths
 
   override def inputFiles: Array[String] = fileIndex.inputFiles
@@ -70,6 +74,9 @@ class CarbonFileIndex(
    */
   override def listFiles(partitionFilters: Seq[Expression],
       dataFilters: Seq[Expression]): Seq[PartitionDirectory] = {
+    if (actAsDummy) {
+      return Seq.empty
+    }
     val method = fileIndex.getClass.getMethods.find(_.getName == "listFiles").get
     val directories =
       method.invoke(
@@ -143,10 +150,17 @@ class CarbonFileIndex(
   }
 
   override def listFiles(filters: Seq[Expression]): Seq[PartitionDirectory] = {
+    if (actAsDummy) {
+      return Seq.empty
+    }
     val method = fileIndex.getClass.getMethods.find(_.getName == "listFiles").get
     val directories =
       method.invoke(fileIndex, filters).asInstanceOf[Seq[PartitionDirectory]]
     prune(filters, directories)
+  }
+
+  def setDummy(actDummy: Boolean): Unit = {
+    actAsDummy = actDummy
   }
 }
 
