@@ -2230,7 +2230,11 @@ public final class CarbonUtil {
       if (dataFile.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
         return dataFile.getAbsolutePath();
       } else if (dataFile.isDirectory()) {
-        return getFilePathExternalFilePath(dataFile.getAbsolutePath(), configuration);
+        if (getFilePathExternalFilePath(dataFile.getAbsolutePath(), configuration) == null) {
+          continue;
+        } else {
+          return getFilePathExternalFilePath(dataFile.getAbsolutePath(), configuration);
+        }
       }
     }
     return null;
