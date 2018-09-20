@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonTaskInfo;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
@@ -88,6 +89,35 @@ public class CarbonReader<T> {
   public T readNextRow() throws IOException, InterruptedException {
     validateReader();
     return currentReader.getCurrentValue();
+  }
+
+  /**
+   * Read and return next string row object
+   * limitation: only single dimension Array is supported
+   * TODO: support didfferent data type
+   */
+  public Object[] readNextStringRow() throws IOException, InterruptedException {
+    validateReader();
+    T t = currentReader.getCurrentValue();
+    Object[] objects = (Object[]) t;
+    String[] strings = new String[objects.length];
+    for (int i = 0; i < objects.length; i++) {
+      if (objects[i] instanceof Object[]) {
+        Object[] arrayString = (Object[]) objects[i];
+        StringBuffer stringBuffer = new StringBuffer();
+        stringBuffer.append(String.valueOf(arrayString[0]));
+        if (arrayString.length > 1) {
+          for (int j = 1; j < arrayString.length; j++) {
+            stringBuffer.append(CarbonCommonConstants.ARRAY_SEPARATOR)
+                .append(String.valueOf(arrayString[j]));
+          }
+        }
+        strings[i] = stringBuffer.toString();
+      } else {
+        strings[i] = String.valueOf(objects[i]);
+      }
+    }
+    return strings;
   }
 
   /**
