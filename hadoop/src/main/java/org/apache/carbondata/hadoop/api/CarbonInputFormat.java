@@ -775,9 +775,20 @@ m filterExpression
   public String[] projectAllColumns(CarbonTable carbonTable) {
     List<ColumnSchema> colList = carbonTable.getTableInfo().getFactTable().getListOfColumns();
     List<String> projectColumn = new ArrayList<>();
+    // childCount will recursively count the number of children for any parent
+    // complex type and add just the parent column name while skipping the child columns.
+    int childDimCount = 0;
     for (ColumnSchema cols : colList) {
       if (cols.getSchemaOrdinal() != -1) {
-        projectColumn.add(cols.getColumnName());
+        if (childDimCount == 0) {
+          projectColumn.add(cols.getColumnName());
+        }
+        if (childDimCount > 0) {
+          childDimCount--;
+        }
+        if (cols.getDataType().isComplexType()) {
+          childDimCount += cols.getNumberOfChild();
+        }
       }
     }
     String[] projectionColumns = new String[projectColumn.size()];
