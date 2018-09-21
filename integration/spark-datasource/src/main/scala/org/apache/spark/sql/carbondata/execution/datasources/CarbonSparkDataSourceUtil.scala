@@ -21,6 +21,8 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql._
 import org.apache.spark.sql.types._
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.{ArrayType => CarbonArrayType, DataType => CarbonDataType, DataTypes => CarbonDataTypes, DecimalType => CarbonDecimalType, MapType => CarbonMapType, StructField => CarbonStructField, StructType => CarbonStructType}
 import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
@@ -30,6 +32,7 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.sdk.file.{CarbonWriterBuilder, Field, Schema}
 
 object CarbonSparkDataSourceUtil {
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   /**
    * Convert from carbon datatype to sparks datatype
@@ -250,6 +253,7 @@ object CarbonSparkDataSourceUtil {
     if (longStringColumns != null) {
       val loadOptions = Map(CarbonCommonConstants.LONG_STRING_COLUMNS -> longStringColumns).asJava
       builder.withTableProperties(loadOptions)
+      validateTableOptions(options, schema)
     }
     builder.uniqueIdentifier(System.currentTimeMillis())
     val model = builder.buildLoadModel(schema)
@@ -268,5 +272,100 @@ object CarbonSparkDataSourceUtil {
       }
     }
     model
+  }
+
+  def validateTableOptions(options: Map[String, String], schema: Schema): Unit = {
+
+    if (options.contains(CarbonCommonConstants.DICTIONARY_EXCLUDE)) {
+      LOGGER.warn("DICTIONARY_EXCLUDE option is deprecated, " +
+                  "by default string column does not use global dictionary.")
+    }
+
+    val longStringColumns: Set[String] = if (
+      options.getOrElse(CarbonCommonConstants.LONG_STRING_COLUMNS, "").trim.isEmpty) {
+      Set.empty
+    } else {
+      options.getOrElse(CarbonCommonConstants.LONG_STRING_COLUMNS, "").toLowerCase.split(",")
+        .map(_.trim).toSet
+    }
+    val dictionaryInclude: Set[String] = if (
+      options.getOrElse(CarbonCommonConstants.DICTIONARY_INCLUDE, "").trim.isEmpty) {
+      Set.empty
+    } else {
+      options.getOrElse(CarbonCommonConstants.DICTIONARY_INCLUDE, "").toLowerCase.split(",")
+        .map(_.trim).toSet
+    }
+    val dictionaryExclude: Set[String] = if (
+      options.getOrElse(CarbonCommonConstants.DICTIONARY_EXCLUDE, "").trim.isEmpty) {
+      Set.empty
+    } else {
+      options.getOrElse(CarbonCommonConstants.DICTIONARY_EXCLUDE, "").toLowerCase.split(",")
+        .map(_.trim).toSet
+    }
+    val noInvertedIndex: Set[String] = if (
+      options.getOrElse(CarbonCommonConstants.NO_INVERTED_INDEX, "").toLowerCase.trim.isEmpty) {
+      Set.empty
+    } else {
+      options.getOrElse(CarbonCommonConstants.NO_INVERTED_INDEX, "").split(",").map(_.trim).toSet
+    }
+
+    // Check for Illegal Arguments in long_string_columns, dictionary_include,
+    // dictionary_exclude, no_inverted_index
+    if (longStringColumns.contains("")) {
+      throw new MalformedCarbonCommandException(
+        CarbonCommonConstants.LONG_STRING_COLUMNS +
+        " contains illegal argument. Please check CREATE TABLE command.")
+    }
+    if (dictionaryInclude.contains("")) {
+      throw new MalformedCarbonCommandException(
+        CarbonCommonConstants.DICTIONARY_INCLUDE +
+        " contains illegal argument. Please check CREATE TABLE command.")
+    }
+    if (dictionaryExclude.contains("")) {
+      throw new MalformedCarbonCommandException(
+        CarbonCommonConstants.DICTIONARY_EXCLUDE +
+        " contains illegal argument. Please check CREATE TABLE command.")
+    }
+    if (noInvertedIndex.contains("")) {
+      throw new MalformedCarbonCommandException(
+        CarbonCommonConstants.DICTIONARY_EXCLUDE +
+        " contains illegal argument. Please check CREATE TABLE command.")
+    }
+
+    // Check for long_string_columns vs dictionary_include
+    if (longStringColumns.intersect(dictionaryInclude).nonEmpty) {
+      val errMsg = CarbonCommonConstants.DICTIONARY_INCLUDE + " is not supported for " +
+                   CarbonCommonConstants.LONG_STRING_COLUMNS + ": (" +
+                   longStringColumns.intersect(dictionaryInclude).mkString(",") +
+                   "). Please check CREATE TABLE command again."
+      throw new MalformedCarbonCommandException(errMsg)
+    }
+    // Check for long_string_columns vs dictionary_exclude
+    if (longStringColumns.intersect(dictionaryExclude).nonEmpty) {
+      val errMsg = CarbonCommonConstants.DICTIONARY_EXCLUDE + " is not supported for " +
+                   CarbonCommonConstants.LONG_STRING_COLUMNS + ": (" +
+                   longStringColumns.intersect(dictionaryExclude).mkString(",") +
+                   "). Please check CREATE TABLE command again."
+      throw new MalformedCarbonCommandException(errMsg)
+    }
+    // Check for dictionary_include vs dictionary_exclude
+    if (dictionaryInclude.intersect(dictionaryExclude).nonEmpty) {
+      val errMsg = "Column(s): (" + dictionaryInclude.intersect(dictionaryExclude).mkString(",") +
+                   ") cannot be present in both " + CarbonCommonConstants.DICTIONARY_INCLUDE +
+                   " and " +
+                   CarbonCommonConstants.DICTIONARY_EXCLUDE +
+                   ". Please check CREATE TABLE command again."
+      throw new MalformedCarbonCommandException(errMsg)
+    }
+    // Check for long_string_columns vs no_inverted_index
+    if (longStringColumns.intersect(noInvertedIndex).nonEmpty) {
+      val errMsg = "Column(s): (" + longStringColumns.intersect(noInvertedIndex).mkString(",") +
+                   ") cannot be present in both " + CarbonCommonConstants.LONG_STRING_COLUMNS +
+                   " and " +
+                   CarbonCommonConstants.NO_INVERTED_INDEX +
+                   ". Please check CREATE TABLE command again."
+      throw new MalformedCarbonCommandException(errMsg)
+    }
+
   }
 }

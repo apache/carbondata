@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
@@ -534,9 +535,14 @@ public class CarbonWriterBuilder {
       throws IOException, InvalidLoadOptionException {
     timestamp = System.nanoTime();
     Set<String> longStringColumns = null;
-    if (options != null && options.get("long_string_columns") != null) {
-      longStringColumns =
-          new HashSet<>(Arrays.asList(options.get("long_string_columns").toLowerCase().split(",")));
+    if (options != null && options.get("long_string_columns") != null && !options
+        .get("long_string_columns").trim().equals("")) {
+      List<String> longStringColumnsArray =
+          Arrays.asList(options.get("long_string_columns").toLowerCase().split(","));
+      for (int i = 0; i < longStringColumnsArray.size(); ++i) {
+        longStringColumnsArray.set(i, longStringColumnsArray.get(i).trim());
+      }
+      longStringColumns = new HashSet<>(longStringColumnsArray);
       validateLongStringColumns(carbonSchema, longStringColumns);
     }
     this.schema = updateSchemaFields(carbonSchema, longStringColumns);
@@ -551,22 +557,42 @@ public class CarbonWriterBuilder {
   }
 
   private void validateLongStringColumns(Schema carbonSchema, Set<String> longStringColumns) {
-    // long string columns must be string or varchar type
-    for (Field field :carbonSchema.getFields()) {
-      if (longStringColumns.contains(field.getFieldName().toLowerCase()) && (
-          (field.getDataType() != DataTypes.STRING) && field.getDataType() != DataTypes.VARCHAR)) {
-        throw new RuntimeException(
-            "long string column : " + field.getFieldName() + "is not supported for data type: "
-                + field.getDataType());
+    HashMap<String, Field> fieldsMap = new HashMap<>();
+    for (Field field : carbonSchema.getFields()) {
+      fieldsMap.put(field.getFieldName().toLowerCase(), field);
+    }
+
+    // long_string_columns must only contain columns in the table schema
+    for (String longStringColumn : longStringColumns) {
+      if (!fieldsMap.containsKey(longStringColumn.toLowerCase())) {
+        String errMsg = CarbonCommonConstants.LONG_STRING_COLUMNS + ": (" + longStringColumn
+            + ") is either not present in table or is a partition column, both of which are "
+            + "invalid. Please check CREATE TABLE command.";
+        throw new RuntimeException(errMsg);
       }
     }
+
+    // long_string_columns must be string or varchar type only
+    for (String longStringColumn : longStringColumns) {
+      if (fieldsMap.containsKey(longStringColumn)
+          && fieldsMap.get(longStringColumn.toLowerCase()).getDataType() != DataTypes.STRING
+          && fieldsMap.get(longStringColumn.toLowerCase()).getDataType() != DataTypes.VARCHAR) {
+        String errMsg =
+            CarbonCommonConstants.LONG_STRING_COLUMNS + ": (" + fieldsMap.get(longStringColumn)
+                .getFieldName() + ") is not supported for data type: " + fieldsMap
+                .get(longStringColumn).getDataType() + ". Please check CREATE TABLE command.";
+        throw new RuntimeException(errMsg);
+      }
+    }
+
     // long string columns must not be present in sort columns
     if (sortColumns != null) {
       for (String col : sortColumns) {
         // already will be in lower case
         if (longStringColumns.contains(col)) {
-          throw new RuntimeException(
-              "long string column : " + col + "must not be present in sort columns");
+          String errMsg = CarbonCommonConstants.LONG_STRING_COLUMNS + ": (" + col
+              + ") must not be present in SORT_COLUMNS";
+          throw new RuntimeException(errMsg);
         }
       }
     }
