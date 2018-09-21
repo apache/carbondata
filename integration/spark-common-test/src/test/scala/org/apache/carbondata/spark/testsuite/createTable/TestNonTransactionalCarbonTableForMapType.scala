@@ -20,14 +20,19 @@ package org.apache.carbondata.spark.testsuite.createTable
 import java.io.File
 
 import org.apache.commons.io.FileUtils
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.sdk.file.CarbonReader
 
 /**
  * test cases for SDK complex map data type support
  */
 class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAndAfterAll {
+
+  private val conf: Configuration = new Configuration(false)
 
   private val nonTransactionalCarbonTable = new TestNonTransactionalCarbonTable
   private val writerPath = nonTransactionalCarbonTable.writerPath
@@ -399,6 +404,43 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
 
   override def beforeAll(): Unit = {
     dropSchema
+  }
+
+  test("SDK Reader Without Projection Columns"){
+    deleteDirectory(writerPath)
+    val mySchema =
+      """
+        |{
+        |  "name": "address",
+        |  "type": "record",
+        |  "fields": [
+        |    {
+        |      "name": "name",
+        |      "type": "string"
+        |    },
+        |    {
+        |      "name": "age",
+        |      "type": "int"
+        |    },
+        |    {
+        |      "name": "arrayRecord",
+        |      "type": {
+        |        "type": "array",
+        |        "items": {
+        |           "name": "houseDetails",
+        |           "type": "map",
+        |           "values": "string"
+        |        }
+        |      }
+        |    }
+        |  ]
+        |}
+      """.stripMargin
+    val json = """ {"name":"bob", "age":10, "arrayRecord": [{"101": "Rahul", "102": "Pawan"}]} """.stripMargin
+    nonTransactionalCarbonTable.WriteFilesWithAvroWriter(2, mySchema, json)
+
+    val reader = CarbonReader.builder(writerPath, "_temp").isTransactionalTable(false).build(conf)
+    println("Done test")
   }
 
   test("Read sdk writer Avro output Map Type") {

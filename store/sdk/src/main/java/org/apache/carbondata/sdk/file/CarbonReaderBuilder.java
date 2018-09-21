@@ -205,6 +205,13 @@ public class CarbonReaderBuilder {
 
     if (projectionColumns != null) {
       // set the user projection
+      int len = projectionColumns.length;
+      for (int i = 0; i < len; i++) {
+        if (projectionColumns[i].contains("\\.")) {
+          throw new UnsupportedOperationException(
+              "Complex child columns projection NOT supported through CarbonReader");
+        }
+      }
       format.setColumnProjection(job.getConfiguration(), projectionColumns);
     }
 
