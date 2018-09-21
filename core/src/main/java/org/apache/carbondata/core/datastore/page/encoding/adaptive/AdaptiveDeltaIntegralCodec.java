@@ -79,12 +79,13 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
   public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
     return new ColumnPageEncoder() {
       byte[] result = null;
-      final Compressor compressor = CompressorFactory.getInstance().getCompressor();
       @Override
       protected byte[] encodeData(ColumnPage input) throws MemoryException, IOException {
         if (encodedPage != null) {
           throw new IllegalStateException("already encoded");
         }
+        Compressor compressor =
+            CompressorFactory.getInstance().getCompressor(input.getColumnCompressorName());
         result = encodeAndCompressPage(input, converter, compressor);
         byte[] bytes = writeInvertedIndexIfRequired(result);
         encodedPage.freeMemory();
