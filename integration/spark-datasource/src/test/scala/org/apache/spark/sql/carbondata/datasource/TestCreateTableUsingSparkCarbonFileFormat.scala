@@ -68,9 +68,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
   //getCanonicalPath gives path with \, but the code expects /.
   writerPath = writerPath.replace("\\", "/");
 
-  val filePath = writerPath + "/Fact/Part0/Segment_null/"
-
-  def buildTestData(persistSchema:Boolean) = {
+  def buildTestData(): Any = {
 
     FileUtils.deleteDirectory(new File(writerPath))
 
@@ -83,17 +81,9 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
       .toString()
 
     try {
-      val builder = CarbonWriter.builder().isTransactionalTable(true)
+      val builder = CarbonWriter.builder()
       val writer =
-        if (persistSchema) {
-          builder.persistSchemaFile(true)
-          builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema), spark
-            .sparkContext.hadoopConfiguration)
-        } else {
-          builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema), spark
-            .sparkContext.hadoopConfiguration)
-        }
-
+        builder.outputPath(writerPath).withCsvInput(Schema.parseJson(schema)).build()
       var i = 0
       while (i < 100) {
         writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
@@ -126,19 +116,19 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
 
   //TO DO, need to remove segment dependency and tableIdentifier Dependency
   test("read carbondata files (sdk Writer Output) using the SparkCarbonFileFormat ") {
-    buildTestData(false)
-    assert(new File(filePath).exists())
+    buildTestData()
+    assert(new File(writerPath).exists())
     spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     //data source file format
     if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       //data source file format
-      spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$filePath') """)
+      spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$writerPath') """)
     } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
       //data source file format
       spark.sql(
         s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
-           |'$filePath' """.stripMargin)
+           |'$writerPath' """.stripMargin)
     } else{
       // TO DO
     }
@@ -169,55 +159,55 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
 
     spark.sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
-    assert(new File(filePath).exists())
+    assert(new File(writerPath).exists())
     cleanTestData()
   }
 
   test("Running SQL directly and read carbondata files (sdk Writer Output) using the SparkCarbonFileFormat ") {
-    buildTestData(false)
-    assert(new File(filePath).exists())
+    buildTestData()
+    assert(new File(writerPath).exists())
     spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     //data source file format
     if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       //data source file format
-      spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$filePath') """)
+      spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$writerPath') """)
     } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
       //data source file format
       spark.sql(
         s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
-           |'$filePath' """.stripMargin)
+           |'$writerPath' """.stripMargin)
     } else {
       // TO DO
     }
 
-    val directSQL = spark.sql(s"""select * FROM  carbon.`$filePath`""".stripMargin)
+    val directSQL = spark.sql(s"""select * FROM  carbon.`$writerPath`""".stripMargin)
     directSQL.show(false)
     TestUtil.checkAnswer(spark.sql("select * from sdkOutputTable"), directSQL)
 
     spark.sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
-    assert(new File(filePath).exists())
+    assert(new File(writerPath).exists())
     cleanTestData()
   }
 
   // TODO: Make the sparkCarbonFileFormat to work without index file
   test("Read sdk writer output file without Carbondata file should fail") {
-    buildTestData(false)
+    buildTestData()
     deleteIndexFile(writerPath, CarbonCommonConstants.FACT_FILE_EXT)
-    assert(new File(filePath).exists())
+    assert(new File(writerPath).exists())
     spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     val exception = intercept[Exception] {
       //    data source file format
       if (SparkUtil.isSparkVersionEqualTo("2.1")) {
         //data source file format
-        spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$filePath') """)
+        spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$writerPath') """)
       } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
         //data source file format
         spark.sql(
           s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
-             |'$filePath' """.stripMargin)
+             |'$writerPath' """.stripMargin)
       } else{
         // TO DO
       }
@@ -226,28 +216,28 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
       .contains("CarbonData file is not present in the table location"))
 
     // drop table should not delete the files
-    assert(new File(filePath).exists())
+    assert(new File(writerPath).exists())
     cleanTestData()
   }
 
 
   test("Read sdk writer output file without any file should fail") {
-    buildTestData(false)
+    buildTestData()
     deleteIndexFile(writerPath, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
     deleteIndexFile(writerPath, CarbonCommonConstants.FACT_FILE_EXT)
-    assert(new File(filePath).exists())
+    assert(new File(writerPath).exists())
     spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     val exception = intercept[Exception] {
       //data source file format
       if (SparkUtil.isSparkVersionEqualTo("2.1")) {
         //data source file format
-        spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$filePath') """)
+        spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$writerPath') """)
       } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
         //data source file format
         spark.sql(
           s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
-             |'$filePath' """.stripMargin)
+             |'$writerPath' """.stripMargin)
       } else{
         // TO DO
       }
@@ -258,13 +248,13 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
       .contains("CarbonData file is not present in the table location"))
 
     // drop table should not delete the files
-    assert(new File(filePath).exists())
+    assert(new File(writerPath).exists())
     cleanTestData()
   }
 
   test("Read sdk writer output file withSchema") {
-    buildTestData(true)
-    assert(new File(filePath).exists())
+    buildTestData()
+    assert(new File(writerPath).exists())
     spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     //data source file format
@@ -272,12 +262,12 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
 
     if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       //data source file format
-      spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$filePath') """)
+      spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$writerPath') """)
     } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
       //data source file format
       spark.sql(
         s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
-           |'$filePath' """.stripMargin)
+           |'$writerPath' """.stripMargin)
     } else{
       // TO DO
     }
@@ -309,24 +299,24 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     spark.sql("DROP TABLE sdkOutputTable")
 
     // drop table should not delete the files
-    assert(new File(filePath).exists())
+    assert(new File(writerPath).exists())
     cleanTestData()
   }
 
   test("Read sdk writer output file without index file should not fail") {
-    buildTestData(false)
+    buildTestData()
     deleteIndexFile(writerPath, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
-    assert(new File(filePath).exists())
+    assert(new File(writerPath).exists())
     spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       //data source file format
-      spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$filePath') """)
+      spark.sql(s"""CREATE TABLE sdkOutputTable USING carbon OPTIONS (PATH '$writerPath') """)
     } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
       //data source file format
       spark.sql(
         s"""CREATE TABLE sdkOutputTable USING carbon LOCATION
-           |'$filePath' """.stripMargin)
+           |'$writerPath' """.stripMargin)
     } else{
       // TO DO
     }
@@ -336,7 +326,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
 
     spark.sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
-    assert(new File(filePath).exists())
+    assert(new File(writerPath).exists())
     cleanTestData()
   }
   test("Read data having multi blocklet and validate min max flag") {
@@ -388,7 +378,9 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     val emailDataBlocklet2 = "Email for testing min max for allowed chars"
     try{
       val options=Map("bad_records_action"->"FORCE","complex_delimiter_level_1"->"$").asJava
-      val writer=CarbonWriter.builder().outputPath(writerPath).withBlockletSize(16).sortBy(Array("myid","ingestion_time","event_id")).withLoadOptions(options).buildWriterForCSVInput(new Schema(fields),spark.sessionState.newHadoopConf())
+      val writer = CarbonWriter.builder().outputPath(writerPath).withBlockletSize(16)
+        .sortBy(Array("myid", "ingestion_time", "event_id")).withLoadOptions(options)
+        .withCsvInput(new Schema(fields)).build()
       val timeF=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
       val date_F=new SimpleDateFormat("yyyy-MM-dd")
       for(i<- 1 to recordsInBlocklet1){
@@ -445,8 +437,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
       .append("]")
       .toString()
     val builder = CarbonWriter.builder()
-    val writer = builder.outputPath(writerPath)
-      .buildWriterForCSVInput(Schema.parseJson(schema), spark.sessionState.newHadoopConf())
+    val writer = builder.outputPath(writerPath).withCsvInput(Schema.parseJson(schema)).build()
     for (i <- 0 until 3) {
       // write a varchar with 75,000 length
       writer.write(Array[String](s"name_$i", RandomStringUtils.randomAlphabetic(75000), i.toString))

@@ -983,10 +983,8 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       val builder = CarbonWriter.builder()
       val writer =
         builder.outputPath(path)
-          .isTransactionalTable(false)
           .uniqueIdentifier(System.nanoTime()).withBlockSize(2)
-          .buildWriterForCSVInput(new Schema(structType), spark.sparkContext
-            .hadoopConfiguration)
+          .withCsvInput(new Schema(structType)).build()
 
       var i = 0
       while (i < 11) {
@@ -1032,9 +1030,8 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       val builder = CarbonWriter.builder()
       val writer =
         builder.outputPath(path)
-          .isTransactionalTable(false)
           .uniqueIdentifier(System.nanoTime()).withBlockSize(2).sortBy(Array("bytefield"))
-          .buildWriterForCSVInput(new Schema(fields), spark.sparkContext.hadoopConfiguration)
+          .withCsvInput(new Schema(fields)).build()
 
       var i = 0
       while (i < 11) {
@@ -1087,10 +1084,8 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       val builder = CarbonWriter.builder()
       val writer =
         builder.outputPath(path)
-          .isTransactionalTable(false)
           .uniqueIdentifier(System.nanoTime()).withBlockSize(2)
-          .buildWriterForCSVInput(new Schema(structType), spark.sparkContext
-            .hadoopConfiguration)
+          .withCsvInput(new Schema(structType)).build()
 
       var i = 0
       while (i < 10) {
@@ -1160,9 +1155,8 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       val builder = CarbonWriter.builder()
       val writer =
         builder.outputPath(writerPath)
-          .isTransactionalTable(false)
           .uniqueIdentifier(System.nanoTime()).withBlockSize(2).sortBy(sortColumns)
-          .buildWriterForCSVInput(new Schema(fields), spark.sparkContext.hadoopConfiguration)
+          .withCsvInput(new Schema(fields)).build()
 
       var i = 0
       while (i < rows) {
@@ -1201,9 +1195,8 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       val builder = CarbonWriter.builder()
       val writer =
         builder.outputPath(path)
-          .isTransactionalTable(false)
           .uniqueIdentifier(System.nanoTime()).withBlockSize(2)
-          .buildWriterForCSVInput(new Schema(fields), spark.sparkContext.hadoopConfiguration)
+          .withCsvInput(new Schema(fields)).build()
 
       var i = 0
       while (i < 33000) {

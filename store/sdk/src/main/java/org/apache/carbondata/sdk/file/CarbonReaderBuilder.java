@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
@@ -34,7 +33,6 @@ import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.s3a.Constants;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobID;
@@ -51,7 +49,7 @@ public class CarbonReaderBuilder {
   private String[] projectionColumns;
   private Expression filterExpression;
   private String tableName;
-  private boolean isTransactionalTable;
+  private Configuration hadoopConf;
 
   /**
    * Construct a CarbonReaderBuilder with table path and table name
@@ -79,21 +77,6 @@ public class CarbonReaderBuilder {
   }
 
   /**
-   * Configure the transactional status of table
-   * If set to false, then reads the carbondata and carbonindex files from a flat folder structure.
-   * If set to true, then reads the carbondata and carbonindex files from segment folder structure.
-   * Default value is false
-   *
-   * @param isTransactionalTable whether is transactional table or not
-   * @return CarbonReaderBuilder object
-   */
-  public CarbonReaderBuilder isTransactionalTable(boolean isTransactionalTable) {
-    Objects.requireNonNull(isTransactionalTable);
-    this.isTransactionalTable = isTransactionalTable;
-    return this;
-  }
-
-  /**
    * Configure the filter expression for carbon reader
    *
    * @param filterExpression filter expression
@@ -106,69 +89,16 @@ public class CarbonReaderBuilder {
   }
 
   /**
-   * Set the access key for S3
+   * To support hadoop configuration
    *
-   * @param key   the string of access key for different S3 type,like: fs.s3a.access.key
-   * @param value the value of access key
-   * @return CarbonWriterBuilder object
+   * @param conf hadoop configuration support, can set s3a AK,SK,end point and other conf with this
+   * @return updated CarbonReaderBuilder
    */
-  public CarbonReaderBuilder setAccessKey(String key, String value) {
-    FileFactory.getConfiguration().set(key, value);
+  public CarbonReaderBuilder withHadoopConf(Configuration conf) {
+    if (conf != null) {
+      this.hadoopConf = conf;
+    }
     return this;
-  }
-
-  /**
-   * Set the access key for S3.
-   *
-   * @param value the value of access key
-   * @return CarbonWriterBuilder object
-   */
-  public CarbonReaderBuilder setAccessKey(String value) {
-    return setAccessKey(Constants.ACCESS_KEY, value);
-  }
-
-  /**
-   * Set the secret key for S3
-   *
-   * @param key   the string of secret key for different S3 type,like: fs.s3a.secret.key
-   * @param value the value of secret key
-   * @return CarbonWriterBuilder object
-   */
-  public CarbonReaderBuilder setSecretKey(String key, String value) {
-    FileFactory.getConfiguration().set(key, value);
-    return this;
-  }
-
-  /**
-   * Set the secret key for S3
-   *
-   * @param value the value of secret key
-   * @return CarbonWriterBuilder object
-   */
-  public CarbonReaderBuilder setSecretKey(String value) {
-    return setSecretKey(Constants.SECRET_KEY, value);
-  }
-
-  /**
-   * Set the endpoint for S3
-   *
-   * @param key   the string of endpoint for different S3 type,like: fs.s3a.endpoint
-   * @param value the value of endpoint
-   * @return CarbonWriterBuilder object
-   */
-  public CarbonReaderBuilder setEndPoint(String key, String value) {
-    FileFactory.getConfiguration().set(key, value);
-    return this;
-  }
-
-  /**
-   * Set the endpoint for S3
-   *
-   * @param value the value of endpoint
-   * @return CarbonWriterBuilder object
-   */
-  public CarbonReaderBuilder setEndPoint(String value) {
-    return setEndPoint(Constants.ENDPOINT, value);
   }
 
   /**
@@ -179,22 +109,19 @@ public class CarbonReaderBuilder {
    * @throws IOException
    * @throws InterruptedException
    */
-  public <T> CarbonReader<T> build(Configuration configuration)
+  public <T> CarbonReader<T> build()
       throws IOException, InterruptedException {
-    // DB name is not applicable for SDK reader as, table will be never registered.
+    if (hadoopConf == null) {
+      hadoopConf = FileFactory.getConfiguration();
+    }
     CarbonTable table;
-    if (isTransactionalTable) {
-      table = CarbonTable
-          .buildFromTablePath(tableName, "default", tablePath, UUID.randomUUID().toString());
+    if (filterExpression != null) {
+      table = CarbonTable.buildTable(tablePath, tableName, hadoopConf);
     } else {
-      if (filterExpression != null) {
-        table = CarbonTable.buildTable(tablePath, tableName, configuration);
-      } else {
-        table = CarbonTable.buildDummyTable(tablePath);
-      }
+      table = CarbonTable.buildDummyTable(tablePath);
     }
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
-    final Job job = new Job(configuration);
+    final Job job = new Job(hadoopConf);
     format.setTableInfo(job.getConfiguration(), table.getTableInfo());
     format.setTablePath(job.getConfiguration(), table.getTablePath());
     format.setTableName(job.getConfiguration(), table.getTableName());

@@ -33,26 +33,19 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
-import org.apache.carbondata.core.metadata.converter.SchemaConverter;
-import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.MapType;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableSchemaBuilder;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.core.writer.ThriftWriter;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModelBuilder;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.s3a.Constants;
 
 /**
  * Builder for {@link CarbonWriter}
@@ -63,15 +56,20 @@ public class CarbonWriterBuilder {
   private Schema schema;
   private String path;
   private String[] sortColumns;
-  private boolean persistSchemaFile;
   private int blockletSize;
   private int blockSize;
-  private boolean isTransactionalTable;
   private long timestamp;
   private Map<String, String> options;
   private String taskNo;
   private int localDictionaryThreshold;
   private boolean isLocalDictionaryEnabled;
+  private short numOfThreads;
+  private Configuration hadoopConf;
+  private enum WRITER_TYPE {
+    CSV, AVRO, JSON
+  }
+
+  private WRITER_TYPE writerType;
 
   /**
    * Sets the output path of the writer builder
@@ -111,102 +109,6 @@ public class CarbonWriterBuilder {
    */
   public CarbonWriterBuilder taskNo(long taskNo) {
     this.taskNo = String.valueOf(taskNo);
-    return this;
-  }
-
-
-
-  /**
-   * If set, create a schema file in metadata folder.
-   * @param persist is a boolean value, If set to true, creates a schema file in metadata folder.
-   * By default set to false. will not create metadata folder
-   * @return updated CarbonWriterBuilder
-   */
-  public CarbonWriterBuilder persistSchemaFile(boolean persist) {
-    this.persistSchemaFile = persist;
-    return this;
-  }
-
-  /**
-   * If set false, writes the carbondata and carbonindex files in a flat folder structure
-   * @param isTransactionalTable is a boolelan value
-   * If set to false, then writes the carbondata and carbonindex files
-   * in a flat folder structure.
-   * If set to true, then writes the carbondata and carbonindex files
-   * in segment folder structure.
-   * By default set to false.
-   * @return updated CarbonWriterBuilder
-   */
-  public CarbonWriterBuilder isTransactionalTable(boolean isTransactionalTable) {
-    Objects.requireNonNull(isTransactionalTable, "Transactional Table should not be null");
-    this.isTransactionalTable = isTransactionalTable;
-    return this;
-  }
-
-  /**
-   * Set the access key for S3
-   *
-   * @param key   the string of access key for different S3 type,like: fs.s3a.access.key
-   * @param value the value of access key
-   * @return CarbonWriterBuilder
-   */
-  public CarbonWriterBuilder setAccessKey(String key, String value) {
-    FileFactory.getConfiguration().set(key, value);
-    return this;
-  }
-
-  /**
-   * Set the access key for S3.
-   *
-   * @param value the value of access key
-   * @return CarbonWriterBuilder
-   */
-  public CarbonWriterBuilder setAccessKey(String value) {
-    return setAccessKey(Constants.ACCESS_KEY, value);
-  }
-
-  /**
-   * Set the secret key for S3
-   *
-   * @param key   the string of secret key for different S3 type,like: fs.s3a.secret.key
-   * @param value the value of secret key
-   * @return CarbonWriterBuilder
-   */
-  public CarbonWriterBuilder setSecretKey(String key, String value) {
-    FileFactory.getConfiguration().set(key, value);
-    return this;
-  }
-
-  /**
-   * Set the secret key for S3
-   *
-   * @param value the value of secret key
-   * @return CarbonWriterBuilder
-   */
-  public CarbonWriterBuilder setSecretKey(String value) {
-    return setSecretKey(Constants.SECRET_KEY, value);
-  }
-
-  /**
-   * Set the endpoint for S3
-   *
-   * @param key   the string of endpoint for different S3 type,like: fs.s3a.endpoint
-   * @param value the value of endpoint
-   * @return CarbonWriterBuilder
-   */
-  public CarbonWriterBuilder setEndPoint(String key, String value) {
-    FileFactory.getConfiguration().set(key, value);
-    return this;
-  }
-
-  /**
-   * Set the endpoint for S3
-   *
-   * @param value the value of endpoint
-   * @return CarbonWriterBuilder
-   */
-  public CarbonWriterBuilder setEndPoint(String value) {
-    FileFactory.getConfiguration().set(Constants.ENDPOINT, value);
     return this;
   }
 
@@ -286,6 +188,7 @@ public class CarbonWriterBuilder {
    * c. local_dictionary_threshold -- positive value, default is 10000
    * d. local_dictionary_enable -- true / false. Default is false
    * e. sort_columns -- comma separated column. "c1,c2". Default all dimensions are sorted.
+   *                    If empty string "" is passed. No columns are sorted
    * j. sort_scope -- "local_sort", "no_sort", "batch_sort". default value is "local_sort"
    * k. long_string_columns -- comma separated string columns which are more than 32k length.
    *                           default value is null.
@@ -316,13 +219,48 @@ public class CarbonWriterBuilder {
         this.enableLocalDictionary((entry.getValue().equalsIgnoreCase("true")));
       } else if (entry.getKey().equalsIgnoreCase("sort_columns")) {
         //sort columns
-        String[] sortColumns = entry.getValue().split(",");
+        String[] sortColumns;
+        if (entry.getValue().trim().isEmpty()) {
+          sortColumns = new String[0];
+        } else {
+          sortColumns = entry.getValue().split(",");
+        }
         this.sortBy(sortColumns);
       } else if (entry.getKey().equalsIgnoreCase("sort_scope")) {
         this.withSortScope(entry);
       } else if (entry.getKey().equalsIgnoreCase("long_string_columns")) {
         updateToLoadOptions(entry);
       }
+    }
+    return this;
+  }
+
+  /**
+   * To make sdk writer thread safe.
+   *
+   * @param numOfThreads should number of threads in which writer is called in multi-thread scenario
+   *                     default sdk writer is not thread safe.
+   *                     can use one writer instance in one thread only.
+   * @return updated CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder withThreadSafe(short numOfThreads) {
+    if (numOfThreads < 1) {
+      throw new IllegalArgumentException("number of threads cannot be lesser than 1. "
+          + "suggest to keep two times the number of cores available");
+    }
+    this.numOfThreads = numOfThreads;
+    return this;
+  }
+
+  /**
+   * To support hadoop configuration
+   *
+   * @param conf hadoop configuration support, can set s3a AK,SK,end point and other conf with this
+   * @return updated CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder withHadoopConf(Configuration conf) {
+    if (conf != null) {
+      this.hadoopConf = conf;
     }
     return this;
   }
@@ -379,138 +317,79 @@ public class CarbonWriterBuilder {
   }
 
   /**
-   * This writer is not thread safe,
-   * use buildThreadSafeWriterForCSVInput in multi thread environment
-   * Build a {@link CarbonWriter}, which accepts row in CSV format
-   * @param schema carbon Schema object {org.apache.carbondata.sdk.file.Schema}
-   * @return CSVCarbonWriter
-   * @throws IOException
-   * @throws InvalidLoadOptionException
-   */
-  public CarbonWriter buildWriterForCSVInput(Schema schema, Configuration configuration)
-      throws IOException, InvalidLoadOptionException {
-    Objects.requireNonNull(schema, "schema should not be null");
-    Objects.requireNonNull(path, "path should not be null");
-    this.schema = schema;
-    CarbonLoadModel loadModel = buildLoadModel(schema);
-    return new CSVCarbonWriter(loadModel, configuration);
-  }
-
-  /**
+   * to build a {@link CarbonWriter}, which accepts row in CSV format
    *
-   * Build a {@link CarbonWriter}, which accepts row in CSV format
    * @param schema carbon Schema object {org.apache.carbondata.sdk.file.Schema}
-   * @param numOfThreads number of threads() in which .write will be called.
-   * @return CSVCarbonWriter
-   * @throws IOException
-   * @throws InvalidLoadOptionException
+   * @return CarbonWriterBuilder
    */
-  public CarbonWriter buildThreadSafeWriterForCSVInput(Schema schema, short numOfThreads,
-      Configuration configuration) throws IOException, InvalidLoadOptionException {
+  public CarbonWriterBuilder withCsvInput(Schema schema) {
     Objects.requireNonNull(schema, "schema should not be null");
-    Objects.requireNonNull(numOfThreads, "numOfThreads should not be null");
-    Objects.requireNonNull(path, "path should not be null");
     this.schema = schema;
-    if (numOfThreads <= 0) {
-      throw new IllegalArgumentException(" numOfThreads must be greater than 0");
-    }
-    CarbonLoadModel loadModel = buildLoadModel(schema);
-    loadModel.setSdkWriterCores(numOfThreads);
-    return new CSVCarbonWriter(loadModel, configuration);
+    this.writerType = WRITER_TYPE.CSV;
+    return this;
   }
 
   /**
-   * This writer is not thread safe,
-   * use buildThreadSafeWriterForAvroInput in multi thread environment
-   * Build a {@link CarbonWriter}, which accepts Avro object
-   * @param avroSchema avro Schema object {org.apache.avro.Schema}
-   * @return AvroCarbonWriter
-   * @throws IOException
-   * @throws InvalidLoadOptionException
-   */
-  public CarbonWriter buildWriterForAvroInput(org.apache.avro.Schema avroSchema,
-      Configuration configuration) throws IOException, InvalidLoadOptionException {
-    this.schema = AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema);
-    Objects.requireNonNull(schema, "schema should not be null");
-    Objects.requireNonNull(path, "path should not be null");
-    CarbonLoadModel loadModel = buildLoadModel(schema);
-    // AVRO records are pushed to Carbon as Object not as Strings. This was done in order to
-    // handle multi level complex type support. As there are no conversion converter step is
-    // removed from the load. LoadWithoutConverter flag is going to point to the Loader Builder
-    // which will skip Conversion Step.
-    loadModel.setLoadWithoutConverterStep(true);
-    return new AvroCarbonWriter(loadModel, configuration);
-  }
-
-  /**
-   * Build a {@link CarbonWriter}, which accepts Avro object
-   * @param avroSchema avro Schema object {org.apache.avro.Schema}
-   * @param numOfThreads number of threads() in which .write will be called.
-   * @return AvroCarbonWriter
-   * @throws IOException
-   * @throws InvalidLoadOptionException
-   */
-  public CarbonWriter buildThreadSafeWriterForAvroInput(org.apache.avro.Schema avroSchema,
-      short numOfThreads, Configuration configuration)
-      throws IOException, InvalidLoadOptionException {
-    this.schema = AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema);
-    Objects.requireNonNull(schema, "schema should not be null");
-    Objects.requireNonNull(path, "path should not be null");
-    Objects.requireNonNull(numOfThreads, "numOfThreads should not be null");
-    if (numOfThreads <= 0) {
-      throw new IllegalArgumentException(" numOfThreads must be greater than 0");
-    }
-    CarbonLoadModel loadModel = buildLoadModel(schema);
-    // AVRO records are pushed to Carbon as Object not as Strings. This was done in order to
-    // handle multi level complex type support. As there are no conversion converter step is
-    // removed from the load. LoadWithoutConverter flag is going to point to the Loader Builder
-    // which will skip Conversion Step.
-    loadModel.setLoadWithoutConverterStep(true);
-    loadModel.setSdkWriterCores(numOfThreads);
-    return new AvroCarbonWriter(loadModel, configuration);
-  }
-
-  /**
-   * This writer is not thread safe,
-   * use buildThreadSafeWriterForJsonInput in multi thread environment
-   * Build a {@link CarbonWriter}, which accepts Json object
-   * @param carbonSchema carbon Schema object
-   * @return JsonCarbonWriter
-   * @throws IOException
-   * @throws InvalidLoadOptionException
-   */
-  public JsonCarbonWriter buildWriterForJsonInput(Schema carbonSchema, Configuration configuration)
-      throws IOException, InvalidLoadOptionException {
-    Objects.requireNonNull(carbonSchema, "schema should not be null");
-    Objects.requireNonNull(path, "path should not be null");
-    this.schema = carbonSchema;
-    CarbonLoadModel loadModel = buildLoadModel(carbonSchema);
-    loadModel.setJsonFileLoad(true);
-    return new JsonCarbonWriter(loadModel, configuration);
-  }
-
-  /**
-   * Can use this writer in multi-thread instance.
+   * to build a {@link CarbonWriter}, which accepts Avro object
    *
-   * Build a {@link CarbonWriter}, which accepts Json object
+   * @param avroSchema avro Schema object {org.apache.avro.Schema}
+   * @return CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder withAvroInput(org.apache.avro.Schema avroSchema) {
+    Objects.requireNonNull(avroSchema, "Avro schema should not be null");
+    this.schema = AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema);
+    this.writerType = WRITER_TYPE.AVRO;
+    return this;
+  }
+
+  /**
+   * to build a {@link CarbonWriter}, which accepts Json object
+   *
    * @param carbonSchema carbon Schema object
-   * @param numOfThreads number of threads() in which .write will be called.
-   * @return JsonCarbonWriter
+   * @return CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder withJsonInput(Schema carbonSchema) {
+    Objects.requireNonNull(carbonSchema, "schema should not be null");
+    this.schema = carbonSchema;
+    this.writerType = WRITER_TYPE.JSON;
+    return this;
+  }
+
+  /**
+   * Build a {@link CarbonWriter}
+   * This writer is not thread safe,
+   * use withThreadSafe() configuration in multi thread environment
+   *
+   * @return CarbonWriter {AvroCarbonWriter/CSVCarbonWriter/JsonCarbonWriter based on Input Type }
    * @throws IOException
    * @throws InvalidLoadOptionException
    */
-  public JsonCarbonWriter buildThreadSafeWriterForJsonInput(Schema carbonSchema, short numOfThreads,
-      Configuration configuration) throws IOException, InvalidLoadOptionException {
-    Objects.requireNonNull(carbonSchema, "schema should not be null");
+  public CarbonWriter build() throws IOException, InvalidLoadOptionException {
     Objects.requireNonNull(path, "path should not be null");
-    if (numOfThreads <= 0) {
-      throw new IllegalArgumentException(" numOfThreads must be greater than 0");
+    if (this.writerType == null) {
+      throw new IOException(
+          "Writer type is not set, use withCsvInput() or withAvroInput() or withJsonInput()  "
+              + "API based on input");
     }
-    this.schema = carbonSchema;
     CarbonLoadModel loadModel = buildLoadModel(schema);
-    loadModel.setJsonFileLoad(true);
     loadModel.setSdkWriterCores(numOfThreads);
-    return new JsonCarbonWriter(loadModel, configuration);
+    if (hadoopConf == null) {
+      hadoopConf = FileFactory.getConfiguration();
+    }
+    if (this.writerType == WRITER_TYPE.AVRO) {
+      // AVRO records are pushed to Carbon as Object not as Strings. This was done in order to
+      // handle multi level complex type support. As there are no conversion converter step is
+      // removed from the load. LoadWithoutConverter flag is going to point to the Loader Builder
+      // which will skip Conversion Step.
+      loadModel.setLoadWithoutConverterStep(true);
+      return new AvroCarbonWriter(loadModel, hadoopConf);
+    } else if (this.writerType == WRITER_TYPE.JSON) {
+      loadModel.setJsonFileLoad(true);
+      return new JsonCarbonWriter(loadModel, hadoopConf);
+    } else {
+      // CSV
+      return new CSVCarbonWriter(loadModel, hadoopConf);
+    }
   }
 
   private void setCsvHeader(CarbonLoadModel model) {
@@ -542,10 +421,6 @@ public class CarbonWriterBuilder {
     this.schema = updateSchemaFields(carbonSchema, longStringColumns);
     // build CarbonTable using schema
     CarbonTable table = buildCarbonTable();
-    if (persistSchemaFile) {
-      // we are still using the traditional carbon table folder structure
-      persistSchemaFile(table, CarbonTablePath.getSchemaFilePath(path));
-    }
     // build LoadModel
     return buildLoadModel(table, timestamp, taskNo, options);
   }
@@ -614,18 +489,13 @@ public class CarbonWriterBuilder {
     tableSchemaBuilder.setSortColumns(Arrays.asList(sortColumnsSchemaList));
     String tableName;
     String dbName;
-    if (isTransactionalTable) {
-      tableName = "_tempTable";
-      dbName = "_tempDB";
-    } else {
-      dbName = "";
-      tableName = "_tempTable_" + String.valueOf(timestamp);
-    }
+    dbName = "";
+    tableName = "_tempTable_" + String.valueOf(timestamp);
     TableSchema schema = tableSchemaBuilder.build();
     schema.setTableName(tableName);
     CarbonTable table =
         CarbonTable.builder().tableName(schema.getTableName()).databaseName(dbName).tablePath(path)
-            .tableSchema(schema).isTransactionalTable(isTransactionalTable).build();
+            .tableSchema(schema).isTransactionalTable(false).build();
     return table;
   }
 
@@ -705,36 +575,6 @@ public class CarbonWriterBuilder {
         }
       }
     }
-  }
-
-  /**
-   * Save the schema of the {@param table} to {@param persistFilePath}
-   * @param table table object containing schema
-   * @param persistFilePath absolute file path with file name
-   */
-  private void persistSchemaFile(CarbonTable table, String persistFilePath) throws IOException {
-    TableInfo tableInfo = table.getTableInfo();
-    String schemaMetadataPath = CarbonTablePath.getFolderContainingFile(persistFilePath);
-    CarbonMetadata.getInstance().loadTableMetadata(tableInfo);
-    SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
-    org.apache.carbondata.format.TableInfo thriftTableInfo =
-        schemaConverter.fromWrapperToExternalTableInfo(
-            tableInfo,
-            tableInfo.getDatabaseName(),
-            tableInfo.getFactTable().getTableName());
-    org.apache.carbondata.format.SchemaEvolutionEntry schemaEvolutionEntry =
-        new org.apache.carbondata.format.SchemaEvolutionEntry(
-            tableInfo.getLastUpdatedTime());
-    thriftTableInfo.getFact_table().getSchema_evolution().getSchema_evolution_history()
-        .add(schemaEvolutionEntry);
-    FileFactory.FileType fileType = FileFactory.getFileType(schemaMetadataPath);
-    if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
-      FileFactory.mkdirs(schemaMetadataPath, fileType);
-    }
-    ThriftWriter thriftWriter = new ThriftWriter(persistFilePath, false);
-    thriftWriter.open();
-    thriftWriter.write(thriftTableInfo);
-    thriftWriter.close();
   }
 
   /**

@@ -20,7 +20,6 @@ package org.apache.carbondata.sdk.file;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,15 +30,12 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
-import org.apache.carbondata.core.metadata.schema.table.DiskBasedDMSchemaStorageProvider;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.CharEncoding;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -88,8 +84,8 @@ public class AvroCarbonWriterTest {
     // conversion to GenericData.Record
     GenericData.Record record = TestUtil.jsonToAvro(json, avroSchema);
     try {
-      CarbonWriter writer = CarbonWriter.builder().outputPath(path).isTransactionalTable(true)
-          .buildWriterForAvroInput(new Schema.Parser().parse(avroSchema), TestUtil.configuration);
+      CarbonWriter writer = CarbonWriter.builder().outputPath(path)
+          .withAvroInput(new Schema.Parser().parse(avroSchema)).build();
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -100,10 +96,7 @@ public class AvroCarbonWriterTest {
       Assert.fail(e.getMessage());
     }
 
-    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-    Assert.assertTrue(segmentFolder.exists());
-
-    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+    File[] dataFiles = new File(path).listFiles(new FileFilter() {
       @Override public boolean accept(File pathname) {
         return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
       }
@@ -156,8 +149,8 @@ public class AvroCarbonWriterTest {
     try {
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)
-          .isTransactionalTable(true)
-          .buildWriterForAvroInput(new Schema.Parser().parse(avroSchema), TestUtil.configuration);
+          
+          .withAvroInput(new Schema.Parser().parse(avroSchema)).build();
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -168,10 +161,7 @@ public class AvroCarbonWriterTest {
       Assert.fail(e.getMessage());
     }
 
-    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-    Assert.assertTrue(segmentFolder.exists());
-
-    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+    File[] dataFiles = new File(path).listFiles(new FileFilter() {
       @Override public boolean accept(File pathname) {
         return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
       }
@@ -246,11 +236,7 @@ public class AvroCarbonWriterTest {
     GenericData.Record record = TestUtil.jsonToAvro(json, mySchema);
 
     try {
-      CarbonWriter writer = CarbonWriter.builder()
-          .outputPath(path)
-          .isTransactionalTable(true)
-          .buildWriterForAvroInput(nn, TestUtil.configuration);
-
+      CarbonWriter writer = CarbonWriter.builder().outputPath(path).withAvroInput(nn).build();
       for (int i = 0; i < 100; i++) {
         writer.write(record);
       }
@@ -260,10 +246,7 @@ public class AvroCarbonWriterTest {
       Assert.fail(e.getMessage());
     }
 
-    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-    Assert.assertTrue(segmentFolder.exists());
-
-    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+    File[] dataFiles = new File(path).listFiles(new FileFilter() {
       @Override public boolean accept(File pathname) {
         return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
       }
@@ -307,11 +290,7 @@ public class AvroCarbonWriterTest {
     GenericData.Record record = TestUtil.jsonToAvro(json, mySchema);
 
     try {
-      CarbonWriter writer = CarbonWriter.builder()
-          .outputPath(path)
-          .isTransactionalTable(true)
-          .buildWriterForAvroInput(nn, TestUtil.configuration);
-
+      CarbonWriter writer = CarbonWriter.builder().outputPath(path).withAvroInput(nn).build();
       for (int i = 0; i < 100; i++) {
         writer.write(record);
       }
@@ -321,10 +300,7 @@ public class AvroCarbonWriterTest {
       Assert.fail(e.getMessage());
     }
 
-    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-    Assert.assertTrue(segmentFolder.exists());
-
-    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+    File[] dataFiles = new File(path).listFiles(new FileFilter() {
       @Override public boolean accept(File pathname) {
         return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
       }
@@ -337,17 +313,14 @@ public class AvroCarbonWriterTest {
 
 
   private void WriteAvroComplexData(String mySchema, String json, String[] sortColumns)
-      throws UnsupportedEncodingException, IOException, InvalidLoadOptionException {
+      throws IOException, InvalidLoadOptionException {
 
     // conversion to GenericData.Record
     Schema nn = new Schema.Parser().parse(mySchema);
     GenericData.Record record = TestUtil.jsonToAvro(json, mySchema);
     try {
-      CarbonWriter writer = CarbonWriter.builder()
-          .outputPath(path)
-          .isTransactionalTable(true).sortBy(sortColumns)
-          .buildWriterForAvroInput(nn, TestUtil.configuration);
-
+      CarbonWriter writer =
+          CarbonWriter.builder().outputPath(path).sortBy(sortColumns).withAvroInput(nn).build();
       for (int i = 0; i < 100; i++) {
         writer.write(record);
       }
@@ -396,10 +369,7 @@ public class AvroCarbonWriterTest {
 
     WriteAvroComplexData(mySchema, json, null);
 
-    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-    Assert.assertTrue(segmentFolder.exists());
-
-    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+    File[] dataFiles = new File(path).listFiles(new FileFilter() {
       @Override public boolean accept(File pathname) {
         return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
       }
@@ -460,11 +430,11 @@ public class AvroCarbonWriterTest {
     Field[] field = new Field[2];
     field[0] = new Field("name", DataTypes.STRING);
     field[1] = new Field("name", DataTypes.STRING);
-    CarbonWriterBuilder writer = CarbonWriter.builder().isTransactionalTable(false)
+    CarbonWriterBuilder writer = CarbonWriter.builder()
         .uniqueIdentifier(System.currentTimeMillis()).outputPath(path);
 
     try {
-      writer.buildWriterForCSVInput(new org.apache.carbondata.sdk.file.Schema(field), TestUtil.configuration);
+      writer.withCsvInput(new org.apache.carbondata.sdk.file.Schema(field)).build();
       Assert.fail();
     } catch (Exception e) {
       assert(e.getMessage().contains("Duplicate column name found in table schema"));
@@ -477,14 +447,14 @@ public class AvroCarbonWriterTest {
     Field[] field = new Field[2];
     field[0] = new Field("name", DataTypes.STRING);
     field[1] = new Field("date", DataTypes.DATE);
-    CarbonWriterBuilder writer = CarbonWriter.builder().isTransactionalTable(false)
+    CarbonWriterBuilder writer = CarbonWriter.builder()
         .uniqueIdentifier(System.currentTimeMillis()).outputPath(path);
 
     try {
       Map<String, String> loadOptions = new HashMap<String, String>();
       loadOptions.put("bad_records_action", "fail");
       CarbonWriter carbonWriter =
-          writer.isTransactionalTable(false).withLoadOptions(loadOptions).buildWriterForCSVInput(new org.apache.carbondata.sdk.file.Schema(field), TestUtil.configuration);
+          writer.withLoadOptions(loadOptions).withCsvInput(new org.apache.carbondata.sdk.file.Schema(field)).build();
       carbonWriter.write(new String[] { "k", "20-02-2233" });
       carbonWriter.close();
       Assert.fail();
@@ -510,15 +480,15 @@ public class AvroCarbonWriterTest {
     // conversion to GenericData.Record
     GenericData.Record record = TestUtil.jsonToAvro(json, avroSchema);
     try {
-      CarbonWriter writer = CarbonWriter.builder().outputPath(path).isTransactionalTable(true)
-          .buildWriterForAvroInput(new Schema.Parser().parse(avroSchema), TestUtil.configuration);
+      CarbonWriter writer = CarbonWriter.builder().outputPath(path)
+          .withAvroInput(new Schema.Parser().parse(avroSchema)).build();
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
       }
       writer.close();
       TableInfo tableInfo = SchemaReader.inferSchema(AbsoluteTableIdentifier.from(path, "",
-          ""), true, TestUtil.configuration);
+          ""), false);
       List<String> dataTypes = new ArrayList<>();
       for(ColumnSchema columnSchema: tableInfo.getFactTable().getListOfColumns()) {
         dataTypes.add(columnSchema.getDataType().toString());

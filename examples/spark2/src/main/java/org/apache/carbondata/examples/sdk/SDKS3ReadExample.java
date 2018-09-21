@@ -62,7 +62,8 @@ public class SDKS3ReadExample {
             .builder(path, "_temp")
             .projection(new String[]{"name", "age"})
             .filter(equalToExpression)
-            .build(configuration);
+            .withHadoopConf(configuration)
+            .build();
 
         System.out.println("\nData:");
         int i = 0;
@@ -78,7 +79,8 @@ public class SDKS3ReadExample {
         CarbonReader reader2 = CarbonReader
             .builder(path, "_temp")
             .projection(new String[]{"name", "age"})
-            .build(configuration);
+            .withHadoopConf(configuration)
+            .build();
 
         System.out.println("\nData:");
         i = 0;

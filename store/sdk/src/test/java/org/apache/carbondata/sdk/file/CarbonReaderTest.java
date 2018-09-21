@@ -29,25 +29,19 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.schema.table.DiskBasedDMSchemaStorageProvider;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.*;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import junit.framework.TestCase;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.CharEncoding;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.*;
 
 public class CarbonReaderTest extends TestCase {
 
-  private Configuration conf = new Configuration(false);
-  
   @Before
   public void cleanFile() {
     assert (TestUtil.cleanMdtFile());
@@ -73,10 +67,10 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
 
-    CarbonReader reader = CarbonReader.builder(path, "_temp").isTransactionalTable(true)
-        .projection(new String[]{"name", "age"}).build(conf);
+    CarbonReader reader = CarbonReader.builder(path, "_temp")
+        .projection(new String[]{"name", "age"}).build();
 
     // expected output after sorting
     String[] name = new String[200];
@@ -101,9 +95,8 @@ public class CarbonReaderTest extends TestCase {
     // Read again
     CarbonReader reader2 = CarbonReader
         .builder(path, "_temp")
-        .isTransactionalTable(true)
         .projection(new String[]{"name", "age"})
-        .build(conf);
+        .build();
 
     i = 0;
     while (reader2.hasNext()) {
@@ -115,84 +108,6 @@ public class CarbonReaderTest extends TestCase {
     }
     Assert.assertEquals(i, 200);
     reader2.close();
-
-    FileUtils.deleteDirectory(new File(path));
-  }
-
-  @Test
-  public void testReadWithFilterOfTransactional() throws IOException, InterruptedException {
-    String path = "./testWriteFiles";
-    FileUtils.deleteDirectory(new File(path));
-
-    Field[] fields = new Field[2];
-    fields[0] = new Field("name", DataTypes.STRING);
-    fields[1] = new Field("age", DataTypes.INT);
-
-    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, true);
-
-    EqualToExpression equalToExpression = new EqualToExpression(
-        new ColumnExpression("name", DataTypes.STRING),
-        new LiteralExpression("robot1", DataTypes.STRING));
-    CarbonReader reader = CarbonReader
-        .builder(path, "_temp")
-        .isTransactionalTable(true)
-        .projection(new String[]{"name", "age"})
-        .filter(equalToExpression)
-        .build(conf);
-
-    int i = 0;
-    while (reader.hasNext()) {
-      Object[] row = (Object[]) reader.readNextRow();
-      // Default sort column is applied for dimensions. So, need  to validate accordingly
-      assert ("robot1".equals(row[0]));
-      i++;
-    }
-    Assert.assertEquals(i, 20);
-
-    reader.close();
-
-    FileUtils.deleteDirectory(new File(path));
-  }
-
-  @Test
-  public void testReadWithFilterOfTransactionalAnd() throws IOException, InterruptedException {
-    String path = "./testWriteFiles";
-    FileUtils.deleteDirectory(new File(path));
-
-    Field[] fields = new Field[3];
-    fields[0] = new Field("name", DataTypes.STRING);
-    fields[1] = new Field("age", DataTypes.INT);
-    fields[2] = new Field("doubleField", DataTypes.DOUBLE);
-
-    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, true);
-
-    ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
-    EqualToExpression equalToExpression = new EqualToExpression(columnExpression,
-        new LiteralExpression("3.5", DataTypes.DOUBLE));
-
-    ColumnExpression columnExpression2 = new ColumnExpression("name", DataTypes.STRING);
-    EqualToExpression equalToExpression2 = new EqualToExpression(columnExpression2,
-        new LiteralExpression("robot7", DataTypes.STRING));
-
-    AndExpression andExpression = new AndExpression(equalToExpression, equalToExpression2);
-    CarbonReader reader = CarbonReader
-        .builder(path, "_temp")
-        .isTransactionalTable(true)
-        .projection(new String[]{"name", "age", "doubleField"})
-        .filter(andExpression)
-        .build(conf);
-
-    int i = 0;
-    while (reader.hasNext()) {
-      Object[] row = (Object[]) reader.readNextRow();
-      assert (((String) row[0]).contains("robot7"));
-      assert (7 == (int) (row[1]));
-      assert (3.5 == (double) (row[2]));
-      i++;
-    }
-    Assert.assertEquals(i, 1);
-
-    reader.close();
 
     FileUtils.deleteDirectory(new File(path));
   }
@@ -225,10 +140,9 @@ public class CarbonReaderTest extends TestCase {
 
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .isTransactionalTable(false)
         .projection(new String[]{"name", "age"})
         .filter(equalToExpression)
-        .build(conf);
+        .build();
 
     int i = 0;
     while (reader.hasNext()) {
@@ -261,10 +175,9 @@ public class CarbonReaderTest extends TestCase {
         new LiteralExpression("1", DataTypes.INT));
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .isTransactionalTable(false)
         .projection(new String[]{"name", "age"})
         .filter(equalToExpression)
-        .build(conf);
+        .build();
 
     int i = 0;
     while (reader.hasNext()) {
@@ -304,10 +217,9 @@ public class CarbonReaderTest extends TestCase {
     AndExpression andExpression = new AndExpression(equalToExpression, equalToExpression2);
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .isTransactionalTable(false)
         .projection(new String[]{"name", "age", "doubleField"})
         .filter(andExpression)
-        .build(conf);
+        .build();
 
     int i = 0;
     while (reader.hasNext()) {
@@ -347,10 +259,9 @@ public class CarbonReaderTest extends TestCase {
     OrExpression orExpression = new OrExpression(equalToExpression, equalToExpression2);
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .isTransactionalTable(false)
         .projection(new String[]{"name", "age", "doubleField"})
         .filter(orExpression)
-        .build(conf);
+        .build();
 
     int i = 0;
     while (reader.hasNext()) {
@@ -390,10 +301,9 @@ public class CarbonReaderTest extends TestCase {
     AndExpression andExpression = new AndExpression(greaterThanExpression, equalToExpression2);
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .isTransactionalTable(false)
         .projection(new String[]{"name", "age", "doubleField"})
         .filter(andExpression)
-        .build(conf);
+        .build();
 
     int i = 0;
     while (reader.hasNext()) {
@@ -433,10 +343,9 @@ public class CarbonReaderTest extends TestCase {
     AndExpression andExpression = new AndExpression(lessThanExpression, equalToExpression2);
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .isTransactionalTable(false)
         .projection(new String[]{"name", "age", "doubleField"})
         .filter(andExpression)
-        .build(conf);
+        .build();
 
     int i = 0;
     while (reader.hasNext()) {
@@ -476,10 +385,9 @@ public class CarbonReaderTest extends TestCase {
     AndExpression andExpression = new AndExpression(lessThanExpression, notEqualsExpression);
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .isTransactionalTable(false)
         .projection(new String[]{"name", "age", "doubleField"})
         .filter(andExpression)
-        .build(conf);
+        .build();
 
     int i = 0;
     while (reader.hasNext()) {
@@ -519,10 +427,9 @@ public class CarbonReaderTest extends TestCase {
     AndExpression andExpression = new AndExpression(lessThanExpression, inExpression);
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .isTransactionalTable(false)
         .projection(new String[]{"name", "age", "doubleField"})
         .filter(andExpression)
-        .build(conf);
+        .build();
 
     int i = 0;
     while (reader.hasNext()) {
@@ -562,10 +469,9 @@ public class CarbonReaderTest extends TestCase {
     AndExpression andExpression = new AndExpression(lessThanExpression, notInExpression);
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .isTransactionalTable(false)
         .projection(new String[]{"name", "age", "doubleField"})
         .filter(andExpression)
-        .build(conf);
+        .build();
 
     int i = 0;
     while (reader.hasNext()) {
@@ -593,11 +499,10 @@ public class CarbonReaderTest extends TestCase {
          new Field("c2", "int") };
     Schema schema = new Schema(fields);
     CarbonWriterBuilder builder = CarbonWriter.builder();
-
     CarbonWriter carbonWriter = null;
     try {
-      carbonWriter = builder.outputPath(path1).isTransactionalTable(false).uniqueIdentifier(12345)
-  .buildWriterForCSVInput(schema, TestUtil.configuration);
+      carbonWriter = builder.outputPath(path1).uniqueIdentifier(12345)
+  .withCsvInput(schema).build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
     }
@@ -608,11 +513,10 @@ public class CarbonReaderTest extends TestCase {
          new Field("p2", "int") };
     Schema schema1 = new Schema(fields1);
     CarbonWriterBuilder builder1 = CarbonWriter.builder();
-
     CarbonWriter carbonWriter1 = null;
     try {
-      carbonWriter1 = builder1.outputPath(path2).isTransactionalTable(false).uniqueIdentifier(12345)
-   .buildWriterForCSVInput(schema1, TestUtil.configuration);
+      carbonWriter1 = builder1.outputPath(path2).uniqueIdentifier(12345)
+   .withCsvInput(schema1).build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
     }
@@ -623,14 +527,14 @@ public class CarbonReaderTest extends TestCase {
        CarbonReader reader =
        CarbonReader.builder(path1, "_temp").
        projection(new String[] { "c1", "c3" })
-       .isTransactionalTable(false).build(conf);
+       .build();
     } catch (Exception e){
        System.out.println("Success");
     }
     CarbonReader reader1 =
          CarbonReader.builder(path2, "_temp1")
      .projection(new String[] { "p1", "p2" })
-     .isTransactionalTable(false).build(conf);
+     .build();
 
     while (reader1.hasNext()) {
        Object[] row1 = (Object[]) reader1.readNextRow();
@@ -652,13 +556,12 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path);
 
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
         .projection(new String[]{"name", "name", "age", "name"})
-        .isTransactionalTable(true)
-        .build(conf);
+        .build();
 
     // expected output after sorting
     String[] name = new String[100];
@@ -685,8 +588,11 @@ public class CarbonReaderTest extends TestCase {
     FileUtils.deleteDirectory(new File(path));
   }
 
-  @Test
-  public void testReadFilesParallel() throws IOException, InterruptedException {
+  // Below test case was working with transactional table as schema file was present.
+  // now we don't support transactional table from SDK. only flat folder is supported.
+  // and currently flat folder will never check for schema files.
+  @Ignore
+  public void readFilesParallel() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
 
@@ -694,19 +600,17 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path);
 
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
         .projection(new String[]{"name", "age"})
-        .isTransactionalTable(true)
-        .build(conf);
+        .build();
     // Reader 2
     CarbonReader reader2 = CarbonReader
         .builder(path, "_temp")
         .projection(new String[]{"name", "age"})
-        .isTransactionalTable(true)
-        .build(conf);
+        .build();
 
     while (reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
@@ -731,10 +635,10 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path);
 
-    CarbonReader reader = CarbonReader.builder(path, "_temp").isTransactionalTable(true)
-        .projection(new String[]{"name", "age"}).build(conf);
+    CarbonReader reader = CarbonReader.builder(path, "_temp")
+        .projection(new String[]{"name", "age"}).build();
 
     reader.close();
     String msg = "CarbonReader not initialise, please create it first.";
@@ -771,13 +675,12 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path);
 
     CarbonReader reader = CarbonReader
         .builder(path)
         .projection(new String[]{"name", "age"})
-        .isTransactionalTable(true)
-        .build(conf);
+        .build();
 
     // expected output after sorting
     String[] name = new String[100];
@@ -810,11 +713,9 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(new Schema(fields), path, true,false);
+    TestUtil.writeFilesAndVerify(new Schema(fields), path);
 
-    CarbonReader reader = CarbonReader
-        .builder(path)
-        .build(conf);
+    CarbonReader reader = CarbonReader.builder(path).build();
 
     // expected output after sorting
     String[] name = new String[100];
@@ -847,9 +748,9 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path);
 
-    File[] dataFiles = new File(path + "/Fact/Part0/Segment_null/").listFiles(new FilenameFilter() {
+    File[] dataFiles = new File(path).listFiles(new FilenameFilter() {
       @Override public boolean accept(File dir, String name) {
         return name.endsWith("carbondata");
       }
@@ -858,51 +759,6 @@ public class CarbonReaderTest extends TestCase {
     Assert.assertTrue(dataFiles.length > 0);
     Schema schema = CarbonSchemaReader.readSchemaInDataFile(dataFiles[0].getAbsolutePath());
     Assert.assertTrue(schema.getFields().length == 2);
-    Assert.assertEquals("name", (schema.getFields())[0].getFieldName());
-    Assert.assertEquals("age", (schema.getFields())[1].getFieldName());
-    Assert.assertEquals(DataTypes.STRING, (schema.getFields())[0].getDataType());
-    Assert.assertEquals(DataTypes.INT, (schema.getFields())[1].getDataType());
-
-    FileUtils.deleteDirectory(new File(path));
-  }
-
-  @Test
-  public void testReadSchemaFromSchemaFile() throws IOException {
-    String path = "./testWriteFiles";
-    FileUtils.deleteDirectory(new File(path));
-
-    Field[] fields = new Field[2];
-    fields[0] = new Field("name", DataTypes.STRING);
-    fields[1] = new Field("age", DataTypes.INT);
-
-    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
-
-    File[] dataFiles = new File(path + "/Metadata").listFiles(new FilenameFilter() {
-      @Override public boolean accept(File dir, String name) {
-        return name.endsWith("schema");
-      }
-    });
-    Assert.assertTrue(dataFiles != null);
-    Assert.assertTrue(dataFiles.length > 0);
-
-    Schema schema = CarbonSchemaReader.readSchemaInSchemaFile(dataFiles[0].getAbsolutePath());
-
-    // sort the schema
-    Arrays.sort(schema.getFields(), new Comparator<Field>() {
-      @Override
-      public int compare(Field o1, Field o2) {
-        return Integer.compare(o1.getSchemaOrdinal(), o2.getSchemaOrdinal());
-      }
-    });
-
-    // Transform the schema
-    String[] strings = new String[schema.getFields().length];
-    for (int i = 0; i < schema.getFields().length; i++) {
-      strings[i] = (schema.getFields())[i].getFieldName();
-    }
-
-    Assert.assertEquals(2, schema.getFields().length);
-
     Assert.assertEquals("name", (schema.getFields())[0].getFieldName());
     Assert.assertEquals("age", (schema.getFields())[1].getFieldName());
     Assert.assertEquals(DataTypes.STRING, (schema.getFields())[0].getDataType());
@@ -921,11 +777,11 @@ public class CarbonReaderTest extends TestCase {
     fields[1] = new Field("age", DataTypes.INT);
 
     // Write to a Non Transactional Table
-    TestUtil.writeFilesAndVerify(new Schema(fields), path, true, false);
+    TestUtil.writeFilesAndVerify(new Schema(fields), path);
 
     CarbonReader reader = CarbonReader.builder(path, "_temp")
         .projection(new String[]{"name", "age"})
-        .build(conf);
+        .build();
 
     // expected output after sorting
     String[] name = new String[100];
@@ -997,12 +853,9 @@ public class CarbonReaderTest extends TestCase {
     fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
 
     try {
-      CarbonWriterBuilder builder = CarbonWriter.builder()
-          .isTransactionalTable(true)
-          .persistSchemaFile(true)
-          .outputPath(path);
+      CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
 
-      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
 
       for (int i = 0; i < 100; i++) {
         String[] row = new String[]{
@@ -1036,10 +889,10 @@ public class CarbonReaderTest extends TestCase {
       Assert.fail(e.getMessage());
     }
     LOGGER.audit("Bad record location:" + storeLocation);
-    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-    Assert.assertTrue(segmentFolder.exists());
+    File folder = new File(path);
+    Assert.assertTrue(folder.exists());
 
-    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+    File[] dataFiles = folder.listFiles(new FileFilter() {
       @Override
       public boolean accept(File pathname) {
         return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
@@ -1049,7 +902,7 @@ public class CarbonReaderTest extends TestCase {
     Assert.assertTrue(dataFiles.length > 0);
 
     CarbonReader reader = CarbonReader.builder(path, "_temp")
-        .isTransactionalTable(true)
+        
         .projection(new String[]{
             "stringField"
             , "shortField"
@@ -1060,123 +913,7 @@ public class CarbonReaderTest extends TestCase {
             , "dateField"
             , "timeField"
             , "decimalField"})
-        .build(conf);
-
-    int i = 0;
-    while (reader.hasNext()) {
-      Object[] row = (Object[]) reader.readNextRow();
-      int id = (int) row[2];
-      Assert.assertEquals("robot" + (id % 10), row[0]);
-      Assert.assertEquals(Short.parseShort(String.valueOf(id)), row[1]);
-      Assert.assertEquals(Long.MAX_VALUE - id, row[3]);
-      Assert.assertEquals((double) id / 2, row[4]);
-      Assert.assertEquals(true, (boolean) row[5]);
-      long day = 24L * 3600 * 1000;
-      Assert.assertEquals("2019-03-02", new Date((day * ((int) row[6]))).toString());
-      Assert.assertEquals("2019-02-12 03:03:34.0", new Timestamp((long) row[7] / 1000).toString());
-      i++;
-    }
-    Assert.assertEquals(i, 100);
-
-    reader.close();
-    FileUtils.deleteDirectory(new File(path));
-    carbonProperties.addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        timestampFormat);
-    carbonProperties.addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-        badRecordAction);
-    carbonProperties.addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-        badRecordLoc);
-  }
-
-  @Test
-  public void testReadSchemaFileAndSort() throws IOException, InterruptedException {
-    String timestampFormat = carbonProperties.getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-    String badRecordAction = carbonProperties.getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT);
-    String badRecordLoc = carbonProperties.getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-        CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL);
-    String rootPath = new File(this.getClass().getResource("/").getPath()
-        + "../../").getCanonicalPath();
-    String storeLocation = rootPath + "/target/";
-    carbonProperties
-        .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, storeLocation)
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd hh:mm:ss")
-        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "REDIRECT");
-    String path = "./testWriteFiles";
-    FileUtils.deleteDirectory(new File(path));
-
-    Field[] fields = new Field[9];
-    fields[0] = new Field("stringField", DataTypes.STRING);
-    fields[1] = new Field("shortField", DataTypes.SHORT);
-    fields[2] = new Field("intField", DataTypes.INT);
-    fields[3] = new Field("longField", DataTypes.LONG);
-    fields[4] = new Field("doubleField", DataTypes.DOUBLE);
-    fields[5] = new Field("boolField", DataTypes.BOOLEAN);
-    fields[6] = new Field("dateField", DataTypes.DATE);
-    fields[7] = new Field("timeField", DataTypes.TIMESTAMP);
-    fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
-
-    try {
-      CarbonWriterBuilder builder = CarbonWriter.builder()
-          .isTransactionalTable(true)
-          .persistSchemaFile(true)
-          .outputPath(path);
-
-      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
-
-      for (int i = 0; i < 100; i++) {
-        String[] row2 = new String[]{
-            "robot" + (i % 10),
-            String.valueOf(i),
-            String.valueOf(i),
-            String.valueOf(Long.MAX_VALUE - i),
-            String.valueOf((double) i / 2),
-            String.valueOf(true),
-            "2019-03-02",
-            "2019-02-12 03:03:34",
-            "12.345"
-        };
-        writer.write(row2);
-      }
-      writer.close();
-    } catch (Exception e) {
-      e.printStackTrace();
-      Assert.fail(e.getMessage());
-    }
-
-    File[] dataFiles = new File(path + "/Metadata").listFiles(new FilenameFilter() {
-      @Override public boolean accept(File dir, String name) {
-        return name.endsWith("schema");
-      }
-    });
-    Schema schema = CarbonSchemaReader.readSchemaInSchemaFile(dataFiles[0].getAbsolutePath());
-
-    // sort the schema
-    Arrays.sort(schema.getFields(), new Comparator<Field>() {
-      @Override
-      public int compare(Field o1, Field o2) {
-        return Integer.compare(o1.getSchemaOrdinal(), o2.getSchemaOrdinal());
-      }
-    });
-
-    // Transform the schema
-    String[] strings = new String[schema.getFields().length];
-    for (int i = 0; i < schema.getFields().length; i++) {
-      strings[i] = (schema.getFields())[i].getFieldName();
-    }
-
-    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-    Assert.assertTrue(segmentFolder.exists());
-
-    Assert.assertNotNull(dataFiles);
-    Assert.assertTrue(dataFiles.length > 0);
-
-    CarbonReader reader = CarbonReader
-        .builder(path, "_temp")
-        .isTransactionalTable(true)
-        .projection(strings)
-        .build(conf);
+        .build();
 
     int i = 0;
     while (reader.hasNext()) {
@@ -1234,12 +971,9 @@ public class CarbonReaderTest extends TestCase {
     fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
 
     try {
-      CarbonWriterBuilder builder = CarbonWriter.builder()
-          .isTransactionalTable(true)
-          .persistSchemaFile(true)
-          .outputPath(path);
+      CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
 
-      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
 
       for (int i = 0; i < 100; i++) {
         String[] row2 = new String[]{
@@ -1261,7 +995,7 @@ public class CarbonReaderTest extends TestCase {
       Assert.fail(e.getMessage());
     }
 
-    File[] dataFiles2 = new File(path + "/Fact/Part0/Segment_null/").listFiles(new FilenameFilter() {
+    File[] dataFiles2 = new File(path).listFiles(new FilenameFilter() {
       @Override public boolean accept(File dir, String name) {
         return name.endsWith("carbondata");
       }
@@ -1283,14 +1017,13 @@ public class CarbonReaderTest extends TestCase {
       strings[i] = (schema.getFields())[i].getFieldName();
     }
 
-    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-    Assert.assertTrue(segmentFolder.exists());
+    File folder = new File(path);
+    Assert.assertTrue(folder.exists());
 
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
         .projection(strings)
-        .isTransactionalTable(true)
-        .build(conf);
+        .build();
 
     int i = 0;
     while (reader.hasNext()) {
@@ -1348,12 +1081,9 @@ public class CarbonReaderTest extends TestCase {
     fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
 
     try {
-      CarbonWriterBuilder builder = CarbonWriter.builder()
-          .isTransactionalTable(true)
-          .persistSchemaFile(true)
-          .outputPath(path);
+      CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
 
-      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
 
       for (int i = 0; i < 100; i++) {
         String[] row2 = new String[]{
@@ -1375,7 +1105,7 @@ public class CarbonReaderTest extends TestCase {
       Assert.fail(e.getMessage());
     }
 
-    File[] dataFiles2 = new File(path + "/Fact/Part0/Segment_null/").listFiles(new FilenameFilter() {
+    File[] dataFiles2 = new File(path).listFiles(new FilenameFilter() {
       @Override public boolean accept(File dir, String name) {
         return name.endsWith("carbonindex");
       }
@@ -1389,14 +1119,13 @@ public class CarbonReaderTest extends TestCase {
       strings[i] = (schema.getFields())[i].getFieldName();
     }
 
-    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-    Assert.assertTrue(segmentFolder.exists());
+    File folder = new File(path);
+    Assert.assertTrue(folder.exists());
 
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .isTransactionalTable(true)
         .projection(strings)
-        .build(conf);
+        .build();
 
     int i = 0;
     while (reader.hasNext()) {
@@ -1433,12 +1162,9 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path);
 
-    CarbonReader reader = CarbonReader
-        .builder(path, "_temp")
-        .isTransactionalTable(true)
-        .build(conf);
+    CarbonReader reader = CarbonReader.builder(path, "_temp").build();
 
     // expected output after sorting
     String[] name = new String[100];
@@ -1471,12 +1197,9 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path);
 
-    CarbonReader reader = CarbonReader
-        .builder(path, "_temp")
-        .isTransactionalTable(true)
-        .build(conf);
+    CarbonReader reader = CarbonReader.builder(path, "_temp").build();
 
     // expected output after sorting
     String[] name = new String[100];
@@ -1506,22 +1229,20 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
+    TestUtil.writeFilesAndVerify(100, new Schema(fields), path);
 
     try {
       CarbonReader reader = CarbonReader
           .builder(path, "_temp")
           .projection(new String[]{})
-          .isTransactionalTable(true)
-          .build(conf);
+          .build();
       assert (false);
     } catch (RuntimeException e) {
       assert (e.getMessage().equalsIgnoreCase("Projection can't be empty"));
     }
   }
 
-  private void WriteAvroComplexData(String mySchema, String json, String[] sortColumns, String path,
-      boolean isTransactionalTable)
+  private void WriteAvroComplexData(String mySchema, String json, String path)
       throws IOException, InvalidLoadOptionException {
 
     // conversion to GenericData.Record
@@ -1531,8 +1252,7 @@ public class CarbonReaderTest extends TestCase {
     try {
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)
-          .isTransactionalTable(isTransactionalTable)
-          .buildWriterForAvroInput(nn, TestUtil.configuration);
+          .withAvroInput(nn).build();
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -1582,15 +1302,15 @@ public class CarbonReaderTest extends TestCase {
         + "   \"doorNum\" : [1,2,3,4]}";
 
     try {
-      WriteAvroComplexData(mySchema, json, null, path, true);
+      WriteAvroComplexData(mySchema, json, path);
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
     }
 
-    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-    Assert.assertTrue(segmentFolder.exists());
+    File folder = new File(path);
+    Assert.assertTrue(folder.exists());
 
-    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+    File[] dataFiles = folder.listFiles(new FileFilter() {
       @Override
       public boolean accept(File pathname) {
         return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
@@ -1600,7 +1320,7 @@ public class CarbonReaderTest extends TestCase {
     Assert.assertEquals(1, dataFiles.length);
 
 
-    File[] dataFiles2 = new File(path + "/Fact/Part0/Segment_null/").listFiles(new FilenameFilter() {
+    File[] dataFiles2 = new File(path).listFiles(new FilenameFilter() {
       @Override
       public boolean accept(File dir, String name) {
         return name.endsWith("carbonindex");
@@ -1647,7 +1367,7 @@ public class CarbonReaderTest extends TestCase {
         "{\"name\":\"bob\", \"age\":10, \"mapRecord\": {\"street\": \"k-lane\", \"city\": \"bangalore\"}}";
 
     try {
-      WriteAvroComplexData(mySchema, json, null, path, false);
+      WriteAvroComplexData(mySchema, json, path);
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
     }
@@ -1657,10 +1377,7 @@ public class CarbonReaderTest extends TestCase {
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("mapRecord", DataTypes.createMapType(DataTypes.STRING, DataTypes.STRING));
 
-    CarbonReader reader = CarbonReader
-        .builder(path, "_temp")
-        .isTransactionalTable(false)
-        .build(conf);
+    CarbonReader reader = CarbonReader.builder(path, "_temp").build();
 
     // expected output
     String name = "bob";
@@ -1700,10 +1417,9 @@ public class CarbonReaderTest extends TestCase {
         new LiteralExpression("robot1", DataTypes.STRING));
     CarbonReader reader = CarbonReader
         .builder("./testWriteFiles", "_temp")
-        .isTransactionalTable(false)
         .projection(new String[]{"name", "age"})
         .filter(equalToExpression)
-        .build(conf);
+        .build();
 
     int i = 0;
     while (reader.hasNext()) {

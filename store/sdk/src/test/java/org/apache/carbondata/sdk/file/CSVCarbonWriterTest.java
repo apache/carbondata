@@ -34,7 +34,6 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.StructField;
-import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -123,11 +122,8 @@ public class CSVCarbonWriterTest {
     fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
 
     try {
-      CarbonWriterBuilder builder = CarbonWriter.builder()
-          .isTransactionalTable(true)
-          .outputPath(path);
-
-      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
+      CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
 
       for (int i = 0; i < 100; i++) {
         String[] row = new String[]{
@@ -148,10 +144,7 @@ public class CSVCarbonWriterTest {
       Assert.fail(e.getMessage());
     }
 
-    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-    Assert.assertTrue(segmentFolder.exists());
-
-    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+    File[] dataFiles = new File(path).listFiles(new FileFilter() {
       @Override public boolean accept(File pathname) {
         return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
       }
@@ -171,7 +164,7 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, false, 1, 100, false);
+    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, 1, 100);
 
     // TODO: implement reader to verify the number of blocklet in the file
 
@@ -187,10 +180,8 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, false, 2, 2, true);
-
-    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, 2, 2);
+    File[] dataFiles = new File(path).listFiles(new FileFilter() {
       @Override public boolean accept(File pathname) {
         return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
       }
@@ -222,23 +213,6 @@ public class CSVCarbonWriterTest {
     // TODO: test write data with partition
   }
 
-  @Test
-  public void testSchemaPersistence() throws IOException {
-    String path = "./testWriteFiles";
-    FileUtils.deleteDirectory(new File(path));
-
-    Field[] fields = new Field[2];
-    fields[0] = new Field("name", DataTypes.STRING);
-    fields[1] = new Field("age", DataTypes.INT);
-
-    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
-
-    String schemaFile = CarbonTablePath.getSchemaFilePath(path);
-    Assert.assertTrue(new File(schemaFile).exists());
-
-    FileUtils.deleteDirectory(new File(path));
-  }
-
   @Test(expected = IOException.class)
   public void testWhenWriterthrowsError() throws IOException{
     CarbonWriter carbonWriter = null;
@@ -249,8 +223,8 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     try {
-      carbonWriter = CarbonWriter.builder().isTransactionalTable(false).
-          outputPath(path).buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
+      carbonWriter = CarbonWriter.builder().
+          outputPath(path).withCsvInput(new Schema(fields)).build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
       Assert.assertTrue(false);
@@ -269,8 +243,8 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     try {
-      carbonWriter = CarbonWriter.builder().isTransactionalTable(false).
-          outputPath(path).buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
+      carbonWriter = CarbonWriter.builder().
+          outputPath(path).withCsvInput(new Schema(fields)).build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
       Assert.assertTrue(false);
@@ -293,10 +267,10 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder()
-          .isTransactionalTable(true).taskNo(5)
+          .taskNo(5)
           .outputPath(path);
 
-      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
 
       for (int i = 0; i < 2; i++) {
         String[] row = new String[]{
@@ -307,10 +281,7 @@ public class CSVCarbonWriterTest {
       }
       writer.close();
 
-      File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-      Assert.assertTrue(segmentFolder.exists());
-
-      File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+      File[] dataFiles = new File(path).listFiles(new FileFilter() {
         @Override public boolean accept(File pathname) {
           return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
         }
@@ -338,8 +309,7 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(1000000, new Schema(fields), path, new String[]{"name"},
-        true, 3, 8, false);
+    TestUtil.writeFilesAndVerify(1000000, new Schema(fields), path, new String[]{"name"}, 3, 8);
 
     // read footer and verify number of blocklets
     CarbonFile folder = FileFactory.getCarbonFile(path);
@@ -374,8 +344,8 @@ public class CSVCarbonWriterTest {
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
 
     try {
-      CarbonWriterBuilder builder = CarbonWriter.builder().isTransactionalTable(true).taskNo(5).outputPath(path);
-      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
+      CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
       for (int i = 0; i < 15; i++) {
         String[] row = new String[] { "robot" + (i % 10), String.valueOf(i + "." + i),
             String.valueOf(i + "." + i) };
@@ -383,7 +353,7 @@ public class CSVCarbonWriterTest {
       }
       writer.close();
       TableInfo tableInfo = SchemaReader.inferSchema(AbsoluteTableIdentifier.from(path, "",
-          ""), true, TestUtil.configuration);
+          ""), false);
       List<String> dataTypes = new ArrayList<>();
       for(ColumnSchema columnSchema: tableInfo.getFactTable().getListOfColumns()) {
           dataTypes.add(columnSchema.getDataType().toString());
@@ -409,15 +379,15 @@ public class CSVCarbonWriterTest {
     fields[1] = new Field("byteField", DataTypes.BYTE);
 
     try {
-      CarbonWriterBuilder builder = CarbonWriter.builder().isTransactionalTable(true).taskNo(5).outputPath(path);
-      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
+      CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
       for (int i = 0; i < 15; i++) {
         String[] row = new String[] { "robot" + (i % 10),  "" + i };
         writer.write(row);
       }
       writer.close();
       TableInfo tableInfo = SchemaReader.inferSchema(AbsoluteTableIdentifier.from(path, "",
-          ""), true, TestUtil.configuration);
+          ""), false);
       List<String> dataTypes = new ArrayList<>();
       for(ColumnSchema columnSchema: tableInfo.getFactTable().getListOfColumns()) {
         dataTypes.add(columnSchema.getDataType().toString());
@@ -443,15 +413,15 @@ public class CSVCarbonWriterTest {
     fields[2] = new Field("floatField", DataTypes.FLOAT);
 
     try {
-      CarbonWriterBuilder builder = CarbonWriter.builder().isTransactionalTable(true).taskNo(5).outputPath(path);
-      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), TestUtil.configuration);
+      CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
       for (int i = 0; i < 15; i++) {
         String[] row = new String[] { "robot" + (i % 10), "" + i, i + "." + i };
         writer.write(row);
       }
       writer.close();
       CarbonReader carbonReader =
-          new CarbonReaderBuilder(path, "table1").build(TestUtil.configuration);
+          new CarbonReaderBuilder(path, "table1").build();
       for (int i = 0; i < 15; i++) {
         Object[] actualRow = (Object[]) carbonReader.readNextRow();
         String[] expectedRow = new String[] { "robot" + (i % 10), "" + i, i + "." + i };
@@ -483,9 +453,8 @@ public class CSVCarbonWriterTest {
     Field structType = new Field("structField", "struct", Arrays.asList(fields));
 
     try {
-      CarbonWriterBuilder builder = CarbonWriter.builder().isTransactionalTable(true).taskNo(5).outputPath(path);
-      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(new Field[] {structType}),
-          TestUtil.configuration);
+      CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
+      CarbonWriter writer = builder.withCsvInput(new Schema(new Field[] {structType})).build();
       for (int i = 0; i < 15; i++) {
         String[] row = new String[] { "robot" + (i % 10)+"$" + i+ "$" + i + "." + i };
         writer.write(row);
@@ -523,9 +492,8 @@ public class CSVCarbonWriterTest {
     Field structType2 = new Field("bytearray", "array", Arrays.asList(fields2));
 
     try {
-      CarbonWriterBuilder builder = CarbonWriter.builder().isTransactionalTable(true).taskNo(5).outputPath(path);
-      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(new Field[] {structType1, structType2}),
-          TestUtil.configuration);
+      CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
+      CarbonWriter writer = builder.withCsvInput(new Schema(new Field[] {structType1, structType2})).build();
       for (int i = 0; i < 15; i++) {
         String[] row = new String[] { "1.0$2.0$3.0", "1$2$3" };
         writer.write(row);

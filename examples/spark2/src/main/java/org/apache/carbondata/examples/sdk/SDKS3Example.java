@@ -26,6 +26,7 @@ import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.sdk.file.*;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.s3a.Constants;
 
 /**
  * Example for testing CarbonWriter on S3
@@ -49,16 +50,16 @@ public class SDKS3Example {
             num = Integer.parseInt(args[4]);
         }
 
+        Configuration conf = new Configuration(false);
+        conf.set(Constants.ACCESS_KEY, args[0]);
+        conf.set(Constants.SECRET_KEY, args[1]);
+        conf.set(Constants.ENDPOINT, args[2]);
+
         Field[] fields = new Field[2];
         fields[0] = new Field("name", DataTypes.STRING);
         fields[1] = new Field("age", DataTypes.INT);
-        CarbonWriterBuilder builder = CarbonWriter.builder()
-                .setAccessKey(args[0])
-                .setSecretKey(args[1])
-                .setEndPoint(args[2])
-                .outputPath(path);
-
-        CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields), new Configuration(false));
+        CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path).withHadoopConf(conf);
+        CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
 
         for (int i = 0; i < num; i++) {
             writer.write(new String[]{"robot" + (i % 10), String.valueOf(i)});
@@ -74,10 +75,8 @@ public class SDKS3Example {
             .builder(path, "_temp")
             .projection(new String[]{"name", "age"})
             .filter(equalToExpression)
-            .setAccessKey(args[0])
-            .setSecretKey(args[1])
-            .setEndPoint(args[2])
-            .build(new Configuration(false));
+            .withHadoopConf(conf)
+            .build();
 
         System.out.println("\nData:");
         int i = 0;
