@@ -23,8 +23,10 @@ import java.nio.ByteBuffer;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
+import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
@@ -146,6 +148,11 @@ public class CompressedDimChunkFileBasedPageLevelReaderV3
     DataChunk3 dataChunk3 = dimensionRawColumnChunk.getDataChunkV3();
 
     pageMetadata = dataChunk3.getData_chunk_list().get(pageNumber);
+
+    if (compressor == null) {
+      this.compressor = CompressorFactory.getInstance().getCompressor(
+          CarbonMetadataUtil.getCompressorNameFromChunkMeta(pageMetadata.getChunk_meta()));
+    }
     // calculating the start point of data
     // as buffer can contain multiple column data, start point will be datachunkoffset +
     // data chunk length + page offset
