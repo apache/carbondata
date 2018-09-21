@@ -458,6 +458,8 @@ public class CSVCarbonWriterTest {
         for (int j = 0; j < 3; j++) {
           actualRow[j].toString().equalsIgnoreCase(expectedRow[j]);
         }
+        assert(actualRow[1] instanceof Byte);
+        assert(actualRow[2] instanceof Float);
       }
       carbonReader.close();
     } catch (Exception e) {

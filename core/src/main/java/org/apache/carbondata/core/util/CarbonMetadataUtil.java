@@ -464,7 +464,7 @@ public class CarbonMetadataUtil {
   private static int compareMeasureData(byte[] first, byte[] second, DataType dataType) {
     ByteBuffer firstBuffer = null;
     ByteBuffer secondBuffer = null;
-    if (dataType == DataTypes.BOOLEAN) {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       return first[0] - second[0];
     } else if (dataType == DataTypes.DOUBLE) {
       firstBuffer = ByteBuffer.allocate(8);
@@ -474,6 +474,20 @@ public class CarbonMetadataUtil {
       firstBuffer.flip();
       secondBuffer.flip();
       double compare = firstBuffer.getDouble() - secondBuffer.getDouble();
+      if (compare > 0) {
+        compare = 1;
+      } else if (compare < 0) {
+        compare = -1;
+      }
+      return (int) compare;
+    } else if (dataType == DataTypes.FLOAT) {
+      firstBuffer = ByteBuffer.allocate(8);
+      firstBuffer.put(first);
+      secondBuffer = ByteBuffer.allocate(8);
+      secondBuffer.put(second);
+      firstBuffer.flip();
+      secondBuffer.flip();
+      double compare = firstBuffer.getFloat() - secondBuffer.getFloat();
       if (compare > 0) {
         compare = 1;
       } else if (compare < 0) {

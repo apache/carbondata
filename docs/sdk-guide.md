@@ -191,6 +191,8 @@ Each of SQL data types are mapped into data types of SDK. Following are the mapp
 | BIGINT | DataTypes.LONG |
 | DOUBLE | DataTypes.DOUBLE |
 | VARCHAR | DataTypes.STRING |
+| FLOAT | DataTypes.FLOAT |
+| BYTE | DataTypes.BYTE |
 | DATE | DataTypes.DATE |
 | TIMESTAMP | DataTypes.TIMESTAMP |
 | STRING | DataTypes.STRING |
