@@ -57,8 +57,8 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
     val dataMapSchemaList: util.List[DataMapSchema] = new util.ArrayList[DataMapSchema]()
     tableIdentifier match {
       case Some(table) =>
-        Checker.validateTableExists(table.database, table.table, sparkSession)
         val carbonTable = CarbonEnv.getCarbonTable(table)(sparkSession)
+        Checker.validateTableExists(table.database, table.table, sparkSession)
         if (carbonTable.hasDataMapSchema) {
           dataMapSchemaList.addAll(carbonTable.getTableInfo.getDataMapSchemaList)
         }
