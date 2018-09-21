@@ -84,9 +84,6 @@ public class BlockletFullScanner implements BlockletScanner {
     String blockletId = blockExecutionInfo.getBlockIdString() + CarbonCommonConstants.FILE_SEPARATOR
         + rawBlockletColumnChunks.getDataBlock().blockletIndex();
     scannedResult.setBlockletId(blockletId);
-    if (!blockExecutionInfo.isPrefetchBlocklet()) {
-      readBlocklet(rawBlockletColumnChunks);
-    }
     DimensionRawColumnChunk[] dimensionRawColumnChunks =
         rawBlockletColumnChunks.getDimensionRawColumnChunks();
     DimensionColumnPage[][] dimensionColumnDataChunks =
