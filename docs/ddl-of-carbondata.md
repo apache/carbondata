@@ -32,6 +32,7 @@ CarbonData DDL statements are documented here,which includes:
   * [Caching Level](#caching-at-block-or-blocklet-level)
   * [Hive/Parquet folder Structure](#support-flat-folder-same-as-hiveparquet)
   * [Extra Long String columns](#string-longer-than-32000-characters)
+  * [Compression for Table](#compression-for-table)
 * [CREATE TABLE AS SELECT](#create-table-as-select)
 * [CREATE EXTERNAL TABLE](#create-external-table)
   * [External Table on Transactional table location](#create-external-table-on-managed-table-data-location)
@@ -417,6 +418,31 @@ CarbonData DDL statements are documented here,which includes:
      You can refer to SDKwriterTestCase for example.
 
      **NOTE:** The LONG_STRING_COLUMNS can only be string/char/varchar columns and cannot be dictionary_include/sort_columns/complex columns.
+
+   - ##### Compression for table
+
+     Data compression is also supported by CarbonData.
+     By default, Snappy is used to compress the data. CarbonData also support ZSTD compressor.
+     User can specify the compressor in the table property:
+
+     ```
+     TBLPROPERTIES('carbon.column.compressor'='snappy')
+     ```
+     or
+     ```
+     TBLPROPERTIES('carbon.column.compressor'='zstd')
+     ```
+     If the compressor is configured, all the data loading and compaction will use that compressor.
+     If the compressor is not configured, the data loading and compaction will use the compressor from current system property.
+     In this scenario, the compressor for each load may differ if the system property is changed each time. This is helpful if you want to change the compressor for a table.
+     The corresponding system property is configured in carbon.properties file as below:
+     ```
+     carbon.column.compressor=snappy
+     ```
+     or
+     ```
+     carbon.column.compressor=zstd
+     ```
 
 ## CREATE TABLE AS SELECT
   This function allows user to create a Carbon table from any of the Parquet/Hive/Carbon table. This is beneficial when the user wants to create Carbon table from any other Parquet/Hive table and use the Carbon query engine to query and achieve better query results for cases where Carbon is faster than other file formats. Also this feature can be used for backing up the data.
