@@ -29,7 +29,6 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericData;
@@ -68,25 +67,19 @@ public class TestUtil {
     }
   }
 
-  static void writeFilesAndVerify(Schema schema, String path) {
-    writeFilesAndVerify(schema, path, null);
-  }
-
   static void writeFilesAndVerify(Schema schema, String path, String[] sortColumns) {
     writeFilesAndVerify(
-        100, schema, path, sortColumns, false, -1, -1, true);
+        100, schema, path, sortColumns, -1, -1);
   }
 
-  public static void writeFilesAndVerify(
-      int rows, Schema schema, String path, boolean persistSchema) {
+  public static void writeFilesAndVerify(int rows, Schema schema, String path) {
     writeFilesAndVerify(
-        rows, schema, path, null, persistSchema, -1, -1, true);
+        rows, schema, path, null, -1, -1);
   }
 
-  public static void writeFilesAndVerify(Schema schema, String path, boolean persistSchema,
-      boolean isTransactionalTable) {
+  public static void writeFilesAndVerify(Schema schema, String path) {
     writeFilesAndVerify(
-        100, schema, path, null, persistSchema, -1, -1, isTransactionalTable);
+        100, schema, path, null, -1, -1);
   }
 
   /**
@@ -100,7 +93,7 @@ public class TestUtil {
    */
   public static void writeFilesAndVerify(
       int rows, Schema schema, String path, boolean persistSchema, boolean isTransactionalTable) {
-    writeFilesAndVerify(rows, schema, path, null, persistSchema, -1, -1, isTransactionalTable);
+    writeFilesAndVerify(rows, schema, path, null, -1, -1);
   }
 
   /**
@@ -109,22 +102,16 @@ public class TestUtil {
    * @param schema schema of the file
    * @param path local write path
    * @param sortColumns sort columns
-   * @param persistSchema true if want to persist schema file
    * @param blockletSize blockletSize in the file, -1 for default size
    * @param blockSize blockSize in the file, -1 for default size
-   * @param isTransactionalTable set to true if this is written for Transactional Table.
    */
   public static void writeFilesAndVerify(int rows, Schema schema, String path, String[] sortColumns,
-      boolean persistSchema, int blockletSize, int blockSize, boolean isTransactionalTable) {
+      int blockletSize, int blockSize) {
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder()
-          .isTransactionalTable(isTransactionalTable)
           .outputPath(path);
       if (sortColumns != null) {
         builder = builder.sortBy(sortColumns);
-      }
-      if (persistSchema) {
-        builder = builder.persistSchemaFile(true);
       }
       if (blockletSize != -1) {
         builder = builder.withBlockletSize(blockletSize);
@@ -133,7 +120,7 @@ public class TestUtil {
         builder = builder.withBlockSize(blockSize);
       }
 
-      CarbonWriter writer = builder.buildWriterForCSVInput(schema, configuration);
+      CarbonWriter writer = builder.withCsvInput(schema).build();
 
       for (int i = 0; i < rows; i++) {
         writer.write(new String[]{
@@ -145,20 +132,7 @@ public class TestUtil {
       throw new RuntimeException(e);
     }
 
-    File segmentFolder = null;
-    if (isTransactionalTable) {
-      segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-      if (!segmentFolder.exists()) {
-        throw new RuntimeException("Test failed: file not exists");
-      }
-    } else {
-      segmentFolder = new File(path);
-      if (!segmentFolder.exists()) {
-        throw new RuntimeException("Test failed: file not exists");
-      }
-    }
-
-    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+    File[] dataFiles = new File(path).listFiles(new FileFilter() {
       @Override public boolean accept(File pathname) {
         return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
       }

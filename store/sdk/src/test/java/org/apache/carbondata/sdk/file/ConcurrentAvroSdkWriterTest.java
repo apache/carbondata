@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.commons.io.FileUtils;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -59,9 +58,9 @@ public class ConcurrentAvroSdkWriterTest {
 
     ExecutorService executorService = Executors.newFixedThreadPool(numOfThreads);
     try {
-      CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
-      CarbonWriter writer = builder.buildThreadSafeWriterForAvroInput(avroSchema, numOfThreads,
-          TestUtil.configuration);
+      CarbonWriterBuilder builder =
+          CarbonWriter.builder().outputPath(path).withThreadSafe(numOfThreads);
+      CarbonWriter writer = builder.withAvroInput(avroSchema).build();
       // write in multi-thread
       for (int i = 0; i < numOfThreads; i++) {
         executorService.submit(new WriteLogic(writer, record));
@@ -78,7 +77,7 @@ public class ConcurrentAvroSdkWriterTest {
     CarbonReader reader;
     try {
       reader =
-          CarbonReader.builder(path, "_temp2122").projection(new String[] { "name", "age" }).build(new Configuration(false));
+          CarbonReader.builder(path, "_temp2122").projection(new String[] { "name", "age" }).build();
       int i = 0;
       while (reader.hasNext()) {
         Object[] row = (Object[]) reader.readNextRow();

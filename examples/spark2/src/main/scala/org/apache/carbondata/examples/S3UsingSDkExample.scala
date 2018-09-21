@@ -48,18 +48,10 @@ object S3UsingSDKExample {
     try {
       val builder = CarbonWriter.builder()
       val writer =
-        if (persistSchema) {
-          builder.persistSchemaFile(true)
-          builder.outputPath(writerPath).isTransactionalTable(true)
-            .uniqueIdentifier(
-              System.currentTimeMillis)
-            .buildWriterForCSVInput(new Schema(fields), new Configuration(false))
-        } else {
-          builder.outputPath(writerPath).isTransactionalTable(true)
-            .uniqueIdentifier(
-              System.currentTimeMillis).withBlockSize(2)
-            .buildWriterForCSVInput(new Schema(fields), new Configuration(false))
-        }
+        builder.outputPath(writerPath)
+          .uniqueIdentifier(System.currentTimeMillis)
+          .withBlockSize(2)
+          .withCsvInput(new Schema(fields)).build()
       var i = 0
       var row = num
       while (i < row) {
@@ -119,7 +111,7 @@ object S3UsingSDKExample {
 
     spark.sql("DROP TABLE IF EXISTS s3_sdk_table")
     spark.sql(s"CREATE EXTERNAL TABLE s3_sdk_table STORED BY 'carbondata'" +
-      s" LOCATION '$path/Fact/Part0/Segment_null'")
+      s" LOCATION '$path'")
     spark.sql("SELECT * FROM s3_sdk_table LIMIT 10").show()
     spark.stop()
   }

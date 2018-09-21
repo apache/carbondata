@@ -70,31 +70,25 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
   }
 
   def buildTestDataSingleFile(): Any = {
-    buildTestData(3, false, null)
+    buildTestData(3, null)
   }
 
   def buildTestDataWithBadRecordForce(writerPath: String): Any = {
     var options = Map("bAd_RECords_action" -> "FORCE").asJava
-    buildTestData(3, false, options)
+    buildTestData(3, options)
   }
 
   def buildTestDataWithBadRecordFail(writerPath: String): Any = {
     var options = Map("bAd_RECords_action" -> "FAIL").asJava
-    buildTestData(15001, false, options)
+    buildTestData(15001, options)
   }
 
-  def buildTestData(rows: Int,
-      persistSchema: Boolean,
-      options: util.Map[String, String]): Any = {
-    buildTestData(rows, persistSchema, options, List("name"), writerPath)
+  def buildTestData(rows: Int, options: util.Map[String, String]): Any = {
+    buildTestData(rows, options, List("name"), writerPath)
   }
 
   // prepare sdk writer output
-  def buildTestData(rows: Int,
-      persistSchema: Boolean,
-      options: util.Map[String, String],
-      sortColumns: List[String],
-      writerPath: String): Any = {
+  def buildTestData(rows: Int, options: util.Map[String, String], sortColumns: List[String], writerPath: String): Any = {
     val schema = new StringBuilder()
       .append("[ \n")
       .append("   {\"name\":\"string\"},\n")
@@ -106,31 +100,18 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     try {
       val builder = CarbonWriter.builder()
       val writer =
-        if (persistSchema) {
-          builder.persistSchemaFile(true)
-          builder
+        if (options != null) {
+          builder.outputPath(writerPath)
             .sortBy(sortColumns.toArray)
-            .outputPath(writerPath)
-            .isTransactionalTable(false)
-            .uniqueIdentifier(System.currentTimeMillis)
-            .buildWriterForCSVInput(Schema.parseJson(schema), sqlContext.sparkContext.hadoopConfiguration)
+            .uniqueIdentifier(
+              System.currentTimeMillis).withBlockSize(2).withLoadOptions(options)
+            .withCsvInput(Schema.parseJson(schema)).build()
         } else {
-          if (options != null) {
-            builder.outputPath(writerPath)
-              .isTransactionalTable(false)
-              .sortBy(sortColumns.toArray)
-              .uniqueIdentifier(
-                System.currentTimeMillis).withBlockSize(2).withLoadOptions(options)
-              .buildWriterForCSVInput(Schema.parseJson(schema), sqlContext.sparkContext.hadoopConfiguration)
-          } else {
-            builder.outputPath(writerPath)
-              .isTransactionalTable(false)
-              .sortBy(sortColumns.toArray)
-              .uniqueIdentifier(
-                System.currentTimeMillis).withBlockSize(2)
-              .buildWriterForCSVInput(Schema.parseJson(schema), sqlContext.sparkContext
-                .hadoopConfiguration)
-          }
+          builder.outputPath(writerPath)
+            .sortBy(sortColumns.toArray)
+            .uniqueIdentifier(
+              System.currentTimeMillis).withBlockSize(2)
+            .withCsvInput(Schema.parseJson(schema)).build()
         }
       var i = 0
       while (i < rows) {
@@ -156,12 +137,12 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
 
   def buildTestDataWithBadRecordIgnore(writerPath: String): Any = {
     var options = Map("bAd_RECords_action" -> "IGNORE").asJava
-    buildTestData(3, false, options)
+    buildTestData(3, options)
   }
 
   def buildTestDataWithBadRecordRedirect(writerPath: String): Any = {
     var options = Map("bAd_RECords_action" -> "REDIRECT").asJava
-    buildTestData(3, false, options)
+    buildTestData(3, options)
   }
 
   def deleteFile(path: String, extension: String): Unit = {
@@ -545,8 +526,8 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
 
     try {
       val writer = CarbonWriter.builder
-        .outputPath(writerPath).isTransactionalTable(false)
-        .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput(nn, sqlContext.sparkContext.hadoopConfiguration)
+        .outputPath(writerPath)
+        .uniqueIdentifier(System.currentTimeMillis()).withAvroInput(nn).build()
       var i = 0
       while (i < rows) {
         writer.write(record)
@@ -744,8 +725,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
       .append("]")
       .toString()
     val builder = CarbonWriter.builder()
-    val writer = builder.outputPath(writerPath)
-      .buildWriterForCSVInput(Schema.parseJson(schema), sqlContext.sparkContext.hadoopConfiguration)
+    val writer = builder.outputPath(writerPath).withCsvInput(Schema.parseJson(schema)).build()
 
     for (i <- 0 until 5) {
       writer.write(Array[String](s"name_$i", RandomStringUtils.randomAlphabetic(33000), i.toString))
@@ -768,8 +748,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
       .append("]")
       .toString()
     val builder = CarbonWriter.builder()
-    val writer = builder.outputPath(writerPath)
-      .buildWriterForCSVInput(Schema.parseJson(schema), sqlContext.sparkContext.hadoopConfiguration)
+    val writer = builder.outputPath(writerPath).withCsvInput(Schema.parseJson(schema)).build()
     val varCharLen = 4000000
     for (i <- 0 until 3) {
       writer
@@ -802,7 +781,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     val writer = builder
       .outputPath(writerPath)
       .sortBy(Array[String]())
-      .buildWriterForCSVInput(Schema.parseJson(schema), new Configuration())
+      .withCsvInput(Schema.parseJson(schema)).build()
 
     for (i <- 0 until 5) {
       writer

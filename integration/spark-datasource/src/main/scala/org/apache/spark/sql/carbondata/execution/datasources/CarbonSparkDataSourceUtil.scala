@@ -220,7 +220,6 @@ object CarbonSparkDataSourceUtil {
       new Field(field.name, dataType)
     })
     val builder = new CarbonWriterBuilder
-    builder.isTransactionalTable(false)
     builder.outputPath(options.getOrElse("path", ""))
     val blockSize = options.get(CarbonCommonConstants.TABLE_BLOCKSIZE).map(_.toInt)
     if (blockSize.isDefined) {

@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.hadoop.conf.Configuration;
 
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.sdk.file.CarbonReader;
@@ -62,7 +61,7 @@ public class CarbonReaderExample {
             CarbonWriter writer = CarbonWriter.builder()
                 .outputPath(path)
                 .withLoadOptions(map)
-                .buildWriterForCSVInput(new Schema(fields), new Configuration(false));
+                .withCsvInput(new Schema(fields)).build();
 
             for (int i = 0; i < 10; i++) {
                 String[] row2 = new String[]{
@@ -107,7 +106,7 @@ public class CarbonReaderExample {
             CarbonReader reader = CarbonReader
                 .builder(path, "_temp")
                 .projection(strings)
-                .build(new Configuration(false));
+                .build();
 
             System.out.println("\nData:");
             long day = 24L * 3600 * 1000;
@@ -132,7 +131,7 @@ public class CarbonReaderExample {
             // Read data
             CarbonReader reader2 = CarbonReader
                 .builder(path, "_temp")
-                .build(new Configuration(false));
+                .build();
 
             System.out.println("\nData:");
             i = 0;

@@ -95,11 +95,10 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
     try {
       var options: util.Map[String, String] = Map("bAd_RECords_action" -> "FAIL", "quotechar" -> "\"").asJava
       val writer = CarbonWriter.builder
-        .outputPath(writerPath).isTransactionalTable(false)
+        .outputPath(writerPath)
         .uniqueIdentifier(System.currentTimeMillis())
         .withLoadOptions(options)
-        .buildWriterForJsonInput(carbonSchema,
-          sqlContext.sparkContext.hadoopConfiguration)
+        .withJsonInput(carbonSchema).build()
       writer.write(jsonRow)
       writer.close()
     }
