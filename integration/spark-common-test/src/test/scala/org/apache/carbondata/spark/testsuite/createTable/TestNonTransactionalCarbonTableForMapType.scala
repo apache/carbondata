@@ -440,8 +440,19 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
     nonTransactionalCarbonTable.WriteFilesWithAvroWriter(2, mySchema, json)
 
     val reader = CarbonReader.builder(writerPath, "_temp").isTransactionalTable(false).build(conf)
+    reader.close()
+    val exception1 = intercept[Exception] {
+      val reader1 = CarbonReader.builder(writerPath, "_temp")
+        .projection(Array[String] { "arrayRecord.houseDetails" }).isTransactionalTable(false)
+        .build(conf)
+      reader1.close()
+    }
+    assert(exception1.getMessage
+      .contains(
+        "Complex child columns projection NOT supported through CarbonReader"))
     println("Done test")
   }
+
 
   test("Read sdk writer Avro output Map Type") {
     buildMapSchema(3)
