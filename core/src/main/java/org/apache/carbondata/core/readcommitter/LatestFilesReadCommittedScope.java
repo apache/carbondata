@@ -178,7 +178,7 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
 
   @Override public void takeCarbonIndexFileSnapShot() throws IOException {
     // Read the current file Path get the list of indexes from the path.
-    CarbonFile file = FileFactory.getCarbonFile(carbonFilePath);
+    CarbonFile file = FileFactory.getCarbonFile(carbonFilePath, configuration);
 
     CarbonFile[] carbonIndexFiles = null;
     if (file.isDirectory()) {
