@@ -1187,6 +1187,43 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     }
   }
 
+  test("test byte and float for multiple pages") {
+    val path = new File(warehouse1+"/sdk1").getAbsolutePath
+    FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
+    spark.sql("drop table if exists multi_page")
+    var fields: Array[Field] = new Array[Field](8)
+    // same column name, but name as boolean type
+    fields(0) = new Field("a", DataTypes.STRING)
+    fields(1) = new Field("b", DataTypes.FLOAT)
+    fields(2) = new Field("c", DataTypes.BYTE)
+
+    try {
+      val builder = CarbonWriter.builder()
+      val writer =
+        builder.outputPath(path)
+          .isTransactionalTable(false)
+          .uniqueIdentifier(System.nanoTime()).withBlockSize(2)
+          .buildWriterForCSVInput(new Schema(fields), spark.sparkContext.hadoopConfiguration)
+
+      var i = 0
+      while (i < 33000) {
+        val array = Array[String](
+          String.valueOf(i),
+          s"$i.3200", "32")
+        writer.write(array)
+        i += 1
+      }
+      writer.close()
+      spark.sql(s"create table multi_page (a string, b float, c byte) using carbon location " +
+                s"'$path'")
+      assert(spark.sql("select * from multi_page").count() == 33000)
+    } catch {
+      case ex: Exception => throw new RuntimeException(ex)
+    } finally {
+      FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
+    }
+  }
+
   override protected def beforeAll(): Unit = {
     drop
     createParquetTable
