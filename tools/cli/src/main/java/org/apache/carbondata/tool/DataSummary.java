@@ -20,15 +20,12 @@ package org.apache.carbondata.tool;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -40,7 +37,6 @@ import org.apache.carbondata.core.reader.CarbonHeaderReader;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.FileFooter3;
 import org.apache.carbondata.format.FileHeader;
@@ -48,135 +44,89 @@ import org.apache.carbondata.format.TableInfo;
 
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.DEFAULT_CHARSET;
 
+import org.apache.commons.cli.CommandLine;
+
 /**
  * Data Summary command implementation for {@link CarbonCli}
  */
-class DataSummary {
+class DataSummary implements Command {
   private String dataFolder;
   private PrintStream out;
 
-  private long numBlock;
-  private long numShard;
-  private long numBlocklet;
-  private long numPage;
-  private long numRow;
-  private long totalDataSize;
-
   // file path mapping to file object
-  private LinkedHashMap<String, DataFile> dataFiles = new LinkedHashMap<>();
-  private CarbonFile tableStatusFile;
-  private CarbonFile schemaFile;
+  private LinkedHashMap<String, DataFile> dataFiles;
 
-  DataSummary(String dataFolder, PrintStream out) throws IOException {
+  DataSummary(String dataFolder, PrintStream out) {
     this.dataFolder = dataFolder;
     this.out = out;
-    collectDataFiles();
   }
 
-  private boolean isColumnarFile(String fileName) {
-    // if the timestamp in file name is "0", it is a streaming file
-    return fileName.endsWith(CarbonTablePath.CARBON_DATA_EXT) &&
-        !CarbonTablePath.DataFileUtil.getTimeStampFromFileName(fileName).equals("0");
-  }
-
-  private boolean isStreamFile(String fileName) {
-    // if the timestamp in file name is "0", it is a streaming file
-    return fileName.endsWith(CarbonTablePath.CARBON_DATA_EXT) &&
-        CarbonTablePath.DataFileUtil.getTimeStampFromFileName(fileName).equals("0");
-  }
-
-  private void collectDataFiles() throws IOException {
-    Set<String> shards = new HashSet<>();
-    CarbonFile folder = FileFactory.getCarbonFile(dataFolder);
-    List<CarbonFile> files = folder.listFiles(true);
-    List<DataFile> unsortedFiles = new ArrayList<>();
-    for (CarbonFile file : files) {
-      if (isColumnarFile(file.getName())) {
-        DataFile dataFile = new DataFile(file);
-        unsortedFiles.add(dataFile);
-        collectNum(dataFile.getFooter());
-        shards.add(dataFile.getShardName());
-        totalDataSize += file.getSize();
-      } else if (file.getName().endsWith(CarbonTablePath.TABLE_STATUS_FILE)) {
-        tableStatusFile = file;
-      } else if (file.getName().startsWith(CarbonTablePath.SCHEMA_FILE)) {
-        schemaFile = file;
-      } else if (isStreamFile(file.getName())) {
-        out.println("WARN: input path contains streaming file, this tool does not support it yet, "
-            + "skipping it...");
+  @Override
+  public void run(CommandLine line) throws IOException, MemoryException {
+    FileCollector collector = new FileCollector(out);
+    collector.collectFiles(dataFolder);
+    collector.printBasicStats();
+    if (collector.getNumDataFiles() == 0) {
+      return;
+    }
+    dataFiles = collector.getDataFiles();
+    boolean printAll = false;
+    if (line.hasOption("a")) {
+      printAll = true;
+    }
+    if (line.hasOption("s") || printAll) {
+      if (dataFiles.size() > 0) {
+        printSchema(dataFiles.entrySet().iterator().next().getValue());
       }
     }
-    unsortedFiles.sort((o1, o2) -> {
-      if (o1.getShardName().equalsIgnoreCase(o2.getShardName())) {
-        return Integer.parseInt(o1.getPartNo()) - Integer.parseInt(o2.getPartNo());
-      } else {
-        return o1.getShardName().compareTo(o2.getShardName());
+    if (line.hasOption("m") || printAll) {
+      printSegments(collector.getTableStatusFile());
+    }
+    if (line.hasOption("t") || printAll) {
+      printTableProperties(collector.getSchemaFile());
+    }
+    if (line.hasOption("b") || printAll) {
+      printBlockletDetail();
+    }
+    if (line.hasOption("c")) {
+      String columName = line.getOptionValue("c");
+      printColumnStats(columName);
+    }
+  }
+
+  private void printSchema(DataFile dataFile) throws IOException {
+    CarbonFile file = FileFactory.getCarbonFile(dataFile.getFilePath());
+    out.println();
+    out.println("## Schema");
+    out.println(String.format("schema in %s", file.getName()));
+    CarbonHeaderReader reader = new CarbonHeaderReader(file.getPath());
+    FileHeader header = reader.readHeader();
+    out.println("version: V" + header.version);
+    out.println("timestamp: " + new java.sql.Timestamp(header.time_stamp));
+    List<ColumnSchema> columns = reader.readSchema();
+    TablePrinter printer = new TablePrinter(
+        new String[]{"Column Name", "Data Type", "Column Type",
+            "SortColumn", "Encoding", "Ordinal", "Id"});
+    for (ColumnSchema column : columns) {
+      String shortColumnId = "NA";
+      if (column.getColumnUniqueId() != null && column.getColumnUniqueId().length() > 4) {
+        shortColumnId = "*" +
+            column.getColumnUniqueId().substring(column.getColumnUniqueId().length() - 4);
       }
-    });
-    for (DataFile collectedFile : unsortedFiles) {
-      this.dataFiles.put(collectedFile.getFilePath(), collectedFile);
+      printer.addRow(new String[]{
+          column.getColumnName(),
+          column.getDataType().getName(),
+          column.isDimensionColumn() ? "dimension" : "measure",
+          String.valueOf(column.isSortColumn()),
+          column.getEncodingList().toString(),
+          Integer.toString(column.getSchemaOrdinal()),
+          shortColumnId
+      });
     }
-    numShard = shards.size();
+    printer.printFormatted(out);
   }
 
-  private void collectNum(FileFooter3 footer) {
-    numBlock++;
-    numBlocklet += footer.blocklet_index_list.size();
-    numRow += footer.num_rows;
-    for (BlockletInfo3 blockletInfo3 : footer.blocklet_info_list3) {
-      numPage += blockletInfo3.number_number_of_pages;
-    }
-  }
-
-  void printBasic() {
-    out.println("## Summary");
-    out.println(
-        String.format("total: %,d blocks, %,d shards, %,d blocklets, %,d pages, %,d rows, %s",
-            numBlock, numShard, numBlocklet, numPage, numRow, Strings.formatSize(totalDataSize)));
-    out.println(
-        String.format("avg: %s/block, %s/blocklet, %,d rows/block, %,d rows/blocklet",
-            Strings.formatSize(totalDataSize / numBlock),
-            Strings.formatSize(totalDataSize / numBlocklet),
-            numRow / numBlock,
-            numRow / numBlocklet));
-  }
-
-  void printSchema() throws IOException {
-    if (dataFiles.size() > 0) {
-      String firstFile = dataFiles.keySet().iterator().next();
-      CarbonFile file = FileFactory.getCarbonFile(firstFile);
-      out.println();
-      out.println("## Schema");
-      out.println(String.format("schema in %s", file.getName()));
-      CarbonHeaderReader reader = new CarbonHeaderReader(file.getPath());
-      FileHeader header = reader.readHeader();
-      out.println("version: V" + header.version);
-      out.println("timestamp: " + new java.sql.Timestamp(header.time_stamp));
-      List<ColumnSchema> columns = reader.readSchema();
-      TablePrinter printer = new TablePrinter(
-          new String[]{"Column Name", "Data Type", "Column Type",
-              "SortColumn", "Encoding", "Ordinal", "Id"});
-      for (ColumnSchema column : columns) {
-        String shortColumnId = "NA";
-        if (column.getColumnUniqueId() != null && column.getColumnUniqueId().length() > 4) {
-          shortColumnId = "*" +
-              column.getColumnUniqueId().substring(column.getColumnUniqueId().length() - 4);
-        }
-        printer.addRow(new String[]{
-            column.getColumnName(),
-            column.getDataType().getName(),
-            column.isDimensionColumn() ? "dimension" : "measure",
-            String.valueOf(column.isSortColumn()),
-            column.getEncodingList().toString(),
-            Integer.toString(column.getSchemaOrdinal()),
-            shortColumnId
-        });
-      }
-      printer.printFormatted(out);
-    }
-  }
-
-  void printSegments() throws IOException {
+  private void printSegments(CarbonFile tableStatusFile) throws IOException {
     out.println();
     out.println("## Segment");
     if (tableStatusFile != null) {
@@ -215,7 +165,7 @@ class DataSummary {
     }
   }
 
-  void printTableProperties() throws IOException {
+  private void printTableProperties(CarbonFile schemaFile) throws IOException {
     out.println();
     out.println("## Table Properties");
     if (schemaFile != null) {
@@ -235,7 +185,7 @@ class DataSummary {
     }
   }
 
-  void printBlockletDetail() {
+  private void printBlockletDetail() {
     out.println();
     out.println("## Block Detail");
 
@@ -262,17 +212,12 @@ class DataSummary {
 
   private int getColumnIndex(String columnName) {
     if (dataFiles.size() > 0) {
-      List<ColumnSchema> columns = dataFiles.entrySet().iterator().next().getValue().getSchema();
-      for (int i = 0; i < columns.size(); i++) {
-        if (columns.get(i).getColumnName().equalsIgnoreCase(columnName)) {
-          return i;
-        }
-      }
+      return dataFiles.entrySet().iterator().next().getValue().getColumnIndex(columnName);
     }
     throw new RuntimeException("schema for column " + columnName + " not found");
   }
 
-  void printColumnStats(String columnName) throws IOException, MemoryException {
+  private void printColumnStats(String columnName) throws IOException, MemoryException {
     out.println();
     out.println("## Column Statistics for '" + columnName + "'");
     for (DataFile dataFile : dataFiles.values()) {
@@ -354,7 +299,4 @@ class DataSummary {
     }
   }
 
-  public boolean isEmpty() {
-    return dataFiles.size() == 0;
-  }
 }

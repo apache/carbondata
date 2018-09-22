@@ -47,11 +47,16 @@ public class CarbonCli {
         .withDescription("the path which contains carbondata files, nested folder is supported")
         .withLongOpt("path")
         .create("p");
+    Option file = OptionBuilder.withArgName("file")
+        .hasArg()
+        .withDescription("the carbondata file path")
+        .withLongOpt("file")
+        .create("f");
 
     Option command = OptionBuilder
         .withArgName("command name")
         .hasArg()
-        .withDescription("command to execute, supported commands are: summary")
+        .withDescription("command to execute, supported commands are: summary, benchmark")
         .isRequired(true)
         .create("cmd");
 
@@ -70,6 +75,7 @@ public class CarbonCli {
     Options options = new Options();
     options.addOption(help);
     options.addOption(path);
+    options.addOption(file);
     options.addOption(command);
     options.addOption(all);
     options.addOption(schema);
@@ -87,27 +93,43 @@ public class CarbonCli {
   static void run(String[] args, PrintStream out) {
     Options options = buildOptions();
     CommandLineParser parser = new PosixParser();
+
+    CommandLine line;
     try {
-      CommandLine line = parser.parse(options, args);
-      if (line.hasOption("h")) {
-        printHelp(options);
-        return;
-      }
-
-      String cmd = line.getOptionValue("cmd");
-      if (cmd.equalsIgnoreCase("summary")) {
-        runSummaryCommand(line, options, out);
-      } else {
-        out.println("command " + cmd + " is not supported");
-        printHelp(options);
-        return;
-      }
-
-      out.flush();
+      line = parser.parse(options, args);
     } catch (ParseException exp) {
       out.println("Parsing failed. Reason: " + exp.getMessage());
+      return;
+    }
+
+    if (line.hasOption("h")) {
+      printHelp(options);
+      return;
+    }
+
+    String path = "";
+    if (line.hasOption("p")) {
+      path = line.getOptionValue("path");
+    }
+    out.println("Input Folder: " + path);
+
+    String cmd = line.getOptionValue("cmd");
+    Command command;
+    if (cmd.equalsIgnoreCase("summary")) {
+      command = new DataSummary(path, out);
+    } else if (cmd.equalsIgnoreCase("benchmark")) {
+      command = new ScanBenchmark(path, out);
+    } else {
+      out.println("command " + cmd + " is not supported");
+      printHelp(options);
+      return;
+    }
+
+    try {
+      command.run(line);
+      out.flush();
     } catch (IOException | MemoryException e) {
-      out.println(out);
+      e.printStackTrace();
     }
   }
 
@@ -116,42 +138,4 @@ public class CarbonCli {
     formatter.printHelp("CarbonCli", options);
   }
 
-  private static void runSummaryCommand(CommandLine line, Options options, PrintStream out)
-      throws IOException, MemoryException {
-    String path = "";
-    if (line.hasOption("p")) {
-      path = line.getOptionValue("path");
-    } else {
-      System.err.println("path is required");
-      printHelp(options);
-      return;
-    }
-    DataSummary summary = new DataSummary(path, out);
-    if (summary.isEmpty()) {
-      System.out.println("no data file found");
-      return;
-    }
-    out.println("Input Folder: " + path);
-    summary.printBasic();
-    boolean printAll = false;
-    if (line.hasOption("a")) {
-      printAll = true;
-    }
-    if (line.hasOption("s") || printAll) {
-      summary.printSchema();
-    }
-    if (line.hasOption("m") || printAll) {
-      summary.printSegments();
-    }
-    if (line.hasOption("t") || printAll) {
-      summary.printTableProperties();
-    }
-    if (line.hasOption("b") || printAll) {
-      summary.printBlockletDetail();
-    }
-    if (line.hasOption("c")) {
-      String columName = line.getOptionValue("c");
-      summary.printColumnStats(columName);
-    }
-  }
 }
