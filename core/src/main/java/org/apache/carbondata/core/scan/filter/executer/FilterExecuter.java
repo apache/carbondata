@@ -18,7 +18,6 @@ package org.apache.carbondata.core.scan.filter.executer;
 
 import java.io.IOException;
 import java.util.BitSet;
-import java.util.List;
 
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
@@ -36,8 +35,11 @@ public interface FilterExecuter {
   BitSetGroup applyFilter(RawBlockletColumnChunks rawBlockletColumnChunks,
       boolean useBitsetPipeLine) throws FilterUnsupportedException, IOException;
 
-
-  BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks) throws FilterUnsupportedException, IOException;
+  /**
+   * Prune pages as per the filter
+   */
+  BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
+      throws FilterUnsupportedException, IOException;
 
   /**
    * apply range filter on a row

@@ -38,8 +38,6 @@ class ColumnarVectorWrapperNew implements CarbonColumnVector {
 
   private boolean isDictionary;
 
-  private boolean filteredRowsExist;
-
   private DataType blockDataType;
 
   private CarbonColumnVector dictionaryVector;
@@ -157,7 +155,6 @@ class ColumnarVectorWrapperNew implements CarbonColumnVector {
   }
 
   @Override public void reset() {
-    filteredRowsExist = false;
     if (null != dictionaryVector) {
       dictionaryVector.reset();
     }
@@ -174,10 +171,6 @@ class ColumnarVectorWrapperNew implements CarbonColumnVector {
 
   @Override public void setBlockDataType(DataType blockDataType) {
     this.blockDataType = blockDataType;
-  }
-
-  @Override public void setFilteredRowsExist(boolean filteredRowsExist) {
-    this.filteredRowsExist = filteredRowsExist;
   }
 
   @Override public void setDictionary(CarbonDictionary dictionary) {
@@ -205,5 +198,13 @@ class ColumnarVectorWrapperNew implements CarbonColumnVector {
 
   @Override public CarbonColumnVector getDictionaryVector() {
     return dictionaryVector;
+  }
+
+  @Override public void putByte(int rowId, byte value) {
+    sparkColumnVectorProxy.putByte(rowId, value, ordinal);
+  }
+
+  @Override public void setFilteredRowsExist(boolean filteredRowsExist) {
+
   }
 }

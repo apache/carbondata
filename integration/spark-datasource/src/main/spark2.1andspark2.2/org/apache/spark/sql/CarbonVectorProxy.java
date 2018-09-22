@@ -144,8 +144,6 @@ public class CarbonVectorProxy {
 
         private ColumnVector vector;
 
-//        private ColumnarBatch columnarBatch;
-
         public ColumnVectorProxy(ColumnarBatch columnarBatch, int ordinal) {
             this.vector = columnarBatch.column(ordinal);
         }

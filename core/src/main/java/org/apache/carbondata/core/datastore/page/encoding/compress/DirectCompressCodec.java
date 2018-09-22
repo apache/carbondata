@@ -18,7 +18,6 @@
 package org.apache.carbondata.core.datastore.page.encoding.compress;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
@@ -28,7 +27,6 @@ import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ColumnPageValueConverter;
-import org.apache.carbondata.core.datastore.page.DecimalColumnPage;
 import org.apache.carbondata.core.datastore.page.LazyColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
@@ -37,7 +35,6 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.format.Encoding;
@@ -101,23 +98,23 @@ public class DirectCompressCodec implements ColumnPageCodec {
         return LazyColumnPage.newPage(decodedPage, converter);
       }
 
-    @Override
-    public ColumnPage decode(byte[] input, int offset, int length, ColumnVectorInfo vectorInfo,
-        BitSet nullBits, boolean isLVEncoded) throws MemoryException, IOException {
-      ColumnPage decodedPage;
-      if (DataTypes.isDecimal(dataType)) {
-        decodedPage = ColumnPage.decompressDecimalPage(meta, input, offset, length);
-      } else {
-        decodedPage = ColumnPage.decompress(meta, input, offset, length, isLVEncoded);
+      @Override
+      public ColumnPage decode(byte[] input, int offset, int length, ColumnVectorInfo vectorInfo,
+          BitSet nullBits, boolean isLVEncoded) throws MemoryException, IOException {
+        ColumnPage decodedPage;
+        if (DataTypes.isDecimal(dataType)) {
+          decodedPage = ColumnPage.decompressDecimalPage(meta, input, offset, length);
+        } else {
+          decodedPage = ColumnPage.decompress(meta, input, offset, length, isLVEncoded);
+        }
+        decodedPage.setNullBits(nullBits);
+        return LazyColumnPage.newPage(decodedPage, converter, vectorInfo);
       }
-      decodedPage.setNullBits(nullBits);
-      return LazyColumnPage.newPage(decodedPage, converter, vectorInfo);
-    }
 
-    @Override public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
-        throws MemoryException, IOException {
-        return LazyColumnPage.newPage(
-            ColumnPage.decompress(meta, input, offset, length, isLVEncoded), converter);
+      @Override public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
+          throws MemoryException, IOException {
+        return LazyColumnPage
+            .newPage(ColumnPage.decompress(meta, input, offset, length, isLVEncoded), converter);
       }
     };
   }
@@ -217,6 +214,10 @@ public class DirectCompressCodec implements ColumnPageCodec {
         } else if (dataType == DataTypes.LONG) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, byteData[i]);
+          }
+        } else if (dataType == DataTypes.BOOLEAN) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putByte(i, byteData[i]);
           }
         } else {
           for (int i = 0; i < pageSize; i++) {

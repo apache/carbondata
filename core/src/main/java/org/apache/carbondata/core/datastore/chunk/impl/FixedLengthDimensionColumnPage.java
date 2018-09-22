@@ -39,7 +39,8 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
    * @param columnValueSize      size of each column value
    */
   public FixedLengthDimensionColumnPage(byte[] dataChunk, int[] invertedIndex,
-      int[] invertedIndexReverse, int numberOfRows, int columnValueSize, ColumnVectorInfo vectorInfo) {
+      int[] invertedIndexReverse, int numberOfRows, int columnValueSize,
+      ColumnVectorInfo vectorInfo) {
     boolean isExplicitSorted = isExplicitSorted(invertedIndex);
     long totalSize = isExplicitSorted ?
         dataChunk.length + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE) :

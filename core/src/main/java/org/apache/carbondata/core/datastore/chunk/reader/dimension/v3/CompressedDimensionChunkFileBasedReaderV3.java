@@ -40,8 +40,8 @@ import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
-import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
@@ -240,8 +240,8 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     columnPage.freeMemory();
   }
 
-  private ColumnPage decodeDimensionByMeta(DataChunk2 pageMetadata,
-      ByteBuffer pageData, int offset, boolean isLocalDictEncodedPage, ColumnVectorInfo vectorInfo, BitSet nullBitSet)
+  private ColumnPage decodeDimensionByMeta(DataChunk2 pageMetadata, ByteBuffer pageData, int offset,
+      boolean isLocalDictEncodedPage, ColumnVectorInfo vectorInfo, BitSet nullBitSet)
       throws IOException, MemoryException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();

@@ -66,14 +66,12 @@ public class DirectPageWiseVectorFillResultCollector extends AbstractScannedResu
     List<ColumnVectorInfo> dictInfoList = new ArrayList<>();
     List<ColumnVectorInfo> noDictInfoList = new ArrayList<>();
     List<ColumnVectorInfo> complexList = new ArrayList<>();
-    List<ColumnVectorInfo> implictColumnList = new ArrayList<>();
     for (int i = 0; i < queryDimensions.length; i++) {
       if (!dimensionInfo.getDimensionExists()[i]) {
         continue;
       }
       if (queryDimensions[i].getDimension().hasEncoding(Encoding.IMPLICIT)) {
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
-        implictColumnList.add(columnVectorInfo);
         columnVectorInfo.dimension = queryDimensions[i];
         columnVectorInfo.ordinal = queryDimensions[i].getDimension().getOrdinal();
         allColumnInfo[queryDimensions[i].getOrdinal()] = columnVectorInfo;

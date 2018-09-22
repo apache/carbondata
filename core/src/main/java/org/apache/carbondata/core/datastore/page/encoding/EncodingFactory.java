@@ -127,7 +127,7 @@ public abstract class EncodingFactory {
     } else {
       // for backward compatibility
       ValueEncoderMeta metadata = CarbonUtil.deserializeEncoderMetaV3(encoderMeta);
-      return createDecoderLegacy(metadata, compressor);
+      return createDecoderLegacy(metadata, compressor, fullVectorFill);
     }
   }
 
@@ -135,7 +135,7 @@ public abstract class EncodingFactory {
    * Old way of creating decoder, based on algorithm
    */
   public ColumnPageDecoder createDecoderLegacy(ValueEncoderMeta metadata, String compressor) {
-    return createDecoderLegacy(metadata, compressor);
+    return createDecoderLegacy(metadata, compressor, false);
   }
 
   /**

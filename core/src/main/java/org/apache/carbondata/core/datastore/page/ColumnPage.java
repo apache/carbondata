@@ -39,12 +39,6 @@ import org.apache.carbondata.core.util.CarbonProperties;
 
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE;
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE_ARRAY;
-import static org.apache.carbondata.core.metadata.datatype.DataTypes.DOUBLE;
-import static org.apache.carbondata.core.metadata.datatype.DataTypes.FLOAT;
-import static org.apache.carbondata.core.metadata.datatype.DataTypes.INT;
-import static org.apache.carbondata.core.metadata.datatype.DataTypes.LONG;
-import static org.apache.carbondata.core.metadata.datatype.DataTypes.SHORT;
-import static org.apache.carbondata.core.metadata.datatype.DataTypes.SHORT_INT;
 
 public abstract class ColumnPage {
 
@@ -876,8 +870,7 @@ public abstract class ColumnPage {
   public static ColumnPage decompressDecimalPage(ColumnPageEncoderMeta meta, byte[] compressedData,
       int offset, int length) throws MemoryException {
     Compressor compressor = CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
-    TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
-    ColumnPage decimalPage = null;
+    ColumnPage decimalPage;
     DataType storeDataType = meta.getStoreDataType();
     if (storeDataType == DataTypes.BYTE) {
       byte[] byteData = compressor.unCompressByte(compressedData, offset, length);

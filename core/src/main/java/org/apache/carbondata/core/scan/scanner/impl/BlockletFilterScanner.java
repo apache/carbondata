@@ -321,7 +321,8 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     return scannedResult;
   }
 
-  private BlockletScannedResult executeFilterForPages(RawBlockletColumnChunks rawBlockletColumnChunks)
+  private BlockletScannedResult executeFilterForPages(
+      RawBlockletColumnChunks rawBlockletColumnChunks)
       throws FilterUnsupportedException, IOException {
     long startTime = System.currentTimeMillis();
     QueryStatistic totalBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
@@ -455,7 +456,6 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     scannedResult.setMsrRawColumnChunks(measureRawColumnChunks);
     scannedResult.setPageFilteredRowCount(numberOfRows);
     scannedResult.setPagesFiltered(pageFilteredPages);
-//    scannedResult.fillDataChunks();
     // adding statistics for carbon scan time
     QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);

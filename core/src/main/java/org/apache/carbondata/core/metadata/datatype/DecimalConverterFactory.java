@@ -222,7 +222,8 @@ public final class DecimalConverterFactory {
     }
 
     @Override public void fillVector(Object valuesToBeConverted, int size, ColumnVectorInfo info,
-        BitSet nullBitset) { CarbonColumnVector vector = info.vector;
+        BitSet nullBitset) {
+      CarbonColumnVector vector = info.vector;
       int precision = info.measure.getMeasure().getPrecision();
       if (valuesToBeConverted instanceof byte[][]) {
         byte[][] data = (byte[][]) valuesToBeConverted;
@@ -259,7 +260,8 @@ public final class DecimalConverterFactory {
     }
 
     @Override public void fillVector(Object valuesToBeConverted, int size, ColumnVectorInfo info,
-        BitSet nullBitset) { CarbonColumnVector vector = info.vector;
+        BitSet nullBitset) {
+      CarbonColumnVector vector = info.vector;
       int precision = info.measure.getMeasure().getPrecision();
       if (valuesToBeConverted instanceof byte[][]) {
         byte[][] data = (byte[][]) valuesToBeConverted;

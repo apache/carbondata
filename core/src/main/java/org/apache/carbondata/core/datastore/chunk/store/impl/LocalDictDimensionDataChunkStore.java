@@ -51,18 +51,18 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
     this.dimensionDataChunkStore.putArray(invertedIndex, invertedIndexReverse, data);
   }
 
-  @Override public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+  @Override
+  public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
       ColumnVectorInfo vectorInfo) {
     int columnValueSize = dimensionDataChunkStore.getColumnValueSize();
-    int rowsNum = data.length/ columnValueSize;
+    int rowsNum = data.length / columnValueSize;
     CarbonColumnVector vector = vectorInfo.vector;
     if (!dictionary.isDictionaryUsed()) {
       vector.setDictionary(dictionary);
       dictionary.setDictionaryUsed();
     }
     for (int i = 0; i < rowsNum; i++) {
-      int surrogate =
-          CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
+      int surrogate = CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
       if (surrogate == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {
         vector.putNull(i);
         vector.getDictionaryVector().putNull(i);

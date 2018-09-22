@@ -35,9 +35,9 @@ import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.Encoding;
 
 /**
@@ -269,7 +269,7 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
         throw new RuntimeException("internal error: " + this.toString());
       }
 
-      for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i+1)) {
+      for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
         vector.putNullDirect(i);
       }
     }

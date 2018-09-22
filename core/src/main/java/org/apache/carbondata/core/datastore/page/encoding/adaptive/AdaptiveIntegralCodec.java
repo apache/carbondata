@@ -35,9 +35,9 @@ import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.Encoding;
 
 /**
@@ -265,7 +265,8 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       throw new RuntimeException("internal error: " + debugInfo());
     }
 
-    @Override public void decode(ColumnPage columnPage, ColumnVectorInfo vectorInfo) {
+    @Override
+    public void decode(ColumnPage columnPage, ColumnVectorInfo vectorInfo) {
       CarbonColumnVector vector = vectorInfo.vector;
       BitSet nullBits = columnPage.getNullBits();
       DataType dataType = vector.getType();
@@ -277,17 +278,21 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           for (int i = 0; i < pageSize; i++) {
             vector.putShort(i, (short) byteData[i]);
           }
-        } else if (dataType == DataTypes.INT){
+        } else if (dataType == DataTypes.INT) {
           for (int i = 0; i < pageSize; i++) {
-            vector.putInt(i, (int)  byteData[i]);
+            vector.putInt(i, (int) byteData[i]);
           }
-        } else if (dataType == DataTypes.LONG){
+        } else if (dataType == DataTypes.LONG) {
           for (int i = 0; i < pageSize; i++) {
-            vector.putLong(i,  byteData[i]);
+            vector.putLong(i, byteData[i]);
+          }
+        } else if (dataType == DataTypes.BOOLEAN) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putByte(i, byteData[i]);
           }
         } else {
           for (int i = 0; i < pageSize; i++) {
-            vector.putDouble(i,  byteData[i]);
+            vector.putDouble(i, byteData[i]);
           }
         }
       } else if (type == DataTypes.SHORT) {
@@ -296,11 +301,11 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           for (int i = 0; i < pageSize; i++) {
             vector.putShort(i, (short) shortData[i]);
           }
-        } else if (dataType == DataTypes.INT){
+        } else if (dataType == DataTypes.INT) {
           for (int i = 0; i < pageSize; i++) {
             vector.putInt(i, (int) shortData[i]);
           }
-        } else if (dataType == DataTypes.LONG){
+        } else if (dataType == DataTypes.LONG) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, shortData[i]);
           }
@@ -316,11 +321,11 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           for (int i = 0; i < pageSize; i++) {
             vector.putShort(i, (short) shortIntData[i]);
           }
-        } else if (dataType == DataTypes.INT){
+        } else if (dataType == DataTypes.INT) {
           for (int i = 0; i < pageSize; i++) {
             vector.putInt(i, (int) shortIntData[i]);
           }
-        } else if (dataType == DataTypes.LONG){
+        } else if (dataType == DataTypes.LONG) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, shortIntData[i]);
           }
@@ -335,11 +340,11 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           for (int i = 0; i < pageSize; i++) {
             vector.putShort(i, (short) intData[i]);
           }
-        } else if (dataType == DataTypes.INT){
+        } else if (dataType == DataTypes.INT) {
           for (int i = 0; i < pageSize; i++) {
             vector.putInt(i, intData[i]);
           }
-        } else if (dataType == DataTypes.LONG){
+        } else if (dataType == DataTypes.LONG) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, intData[i]);
           }
@@ -355,7 +360,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
         }
       }
 
-      for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i+1)) {
+      for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
         vector.putNullDirect(i);
       }
 

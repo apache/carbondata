@@ -95,6 +95,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
   @Override
   public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
       ColumnVectorInfo vectorInfo) {
+    this.invertedIndexReverse = invertedIndex;
     // start position will be used to store the current data position
     int startOffset = 0;
     // as first position will be start from 2 byte as data is stored first in the memory block

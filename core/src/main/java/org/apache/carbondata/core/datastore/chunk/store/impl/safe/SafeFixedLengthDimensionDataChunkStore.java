@@ -47,20 +47,40 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
   public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
       ColumnVectorInfo vectorInfo) {
     CarbonColumnVector vector = vectorInfo.vector;
-    if (vector.getBlockDataType() == DataTypes.DATE) {
-      for (int i = 0; i < numOfRows; i++) {
-        int surrogateInternal =
-            CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
-        if (surrogateInternal == 1) {
-          vector.putNull(i);
-        } else {
-          vector.putInt(i, surrogateInternal - DateDirectDictionaryGenerator.cutOffDate);
+    if (isExplictSorted) {
+      if (vector.getBlockDataType() == DataTypes.DATE) {
+        for (int i = 0; i < numOfRows; i++) {
+          int surrogateInternal =
+              CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
+          if (surrogateInternal == 1) {
+            vector.putNull(i);
+          } else {
+            vector.putInt(i, surrogateInternal - DateDirectDictionaryGenerator.cutOffDate);
+          }
+        }
+      } else {
+        for (int i = 0; i < numOfRows; i++) {
+          vector.putInt(i,
+              CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize));
         }
       }
     } else {
-      for (int i = 0; i < numOfRows; i++) {
-        vector.putInt(i, CarbonUtil.getSurrogateInternal(data,
-            i * columnValueSize, columnValueSize));
+      if (vector.getBlockDataType() == DataTypes.DATE) {
+        for (int i = 0; i < numOfRows; i++) {
+          int surrogateInternal =
+              CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
+          if (surrogateInternal == 1) {
+            vector.putNull(invertedIndex[i]);
+          } else {
+            vector.putInt(invertedIndex[i],
+                surrogateInternal - DateDirectDictionaryGenerator.cutOffDate);
+          }
+        }
+      } else {
+        for (int i = 0; i < numOfRows; i++) {
+          vector.putInt(invertedIndex[i],
+              CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize));
+        }
       }
     }
   }
