@@ -45,10 +45,10 @@ public class CarbonCliTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"age"},
-        true, 3, 8, true);
-    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"age"},
-        true, 3, 8, true);
+//    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"name"},
+//        true, 3, 8, true);
+//    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"name"},
+//        true, 3, 8, true);
   }
 
   @Test
@@ -69,7 +69,7 @@ public class CarbonCliTest {
   }
 
   @Test
-  public void testOutputIndividual() {
+  public void testSummaryOutputIndividual() {
     String[] args = {"-cmd", "summary", "-p", path};
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     PrintStream stream = new PrintStream(out);
@@ -142,9 +142,8 @@ public class CarbonCliTest {
   }
 
   @Test
-  public void testOutputAll() {
+  public void testSummaryOutputAll() {
     String[] args = {"-cmd", "summary", "-p", path, "-a", "-c", "age"};
-
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     PrintStream stream = new PrintStream(out);
     CarbonCli.run(args, stream);
@@ -189,6 +188,24 @@ public class CarbonCliTest {
         + "1    1      1.81KB     2.26MB     false      0            0.0B      79.60KB      46.4  61.9   \n"
         + "2    0      1.37KB     2.28MB     false      0            0.0B      106.11KB     61.9  80.5   \n"
         + "2    1      1.19KB     2.22MB     false      0            0.0B      119.55KB     80.5  100.0  "));
+  }
+
+  @Test
+  public void testBenchmark() {
+    String path = "/Users/jacky/code/spark-2.2.1-bin-hadoop2.7/carbonstore/tpchcarbon_base/lineitem";
+    String[] args = {"-cmd", "summary", "-p", path, "-a", "-c", "l_orderkey"};
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    PrintStream stream = new PrintStream(out);
+    CarbonCli.run(args, stream);
+    String output = new String(out.toByteArray());
+    System.out.println(output);
+
+    args = new String[]{"-cmd", "benchmark", "-p", path, "-c", "l_orderkey"};
+    out = new ByteArrayOutputStream();
+    stream = new PrintStream(out);
+    CarbonCli.run(args, stream);
+    output = new String(out.toByteArray());
+    System.out.println(output);
   }
 
   @After

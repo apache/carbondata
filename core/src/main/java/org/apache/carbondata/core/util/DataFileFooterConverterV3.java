@@ -59,12 +59,16 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
    */
   @Override public DataFileFooter readDataFileFooter(TableBlockInfo tableBlockInfo)
       throws IOException {
-    DataFileFooter dataFileFooter = new DataFileFooter();
     CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(tableBlockInfo.getFilePath());
     FileHeader fileHeader = carbonHeaderReader.readHeader();
     CarbonFooterReaderV3 reader =
         new CarbonFooterReaderV3(tableBlockInfo.getFilePath(), tableBlockInfo.getBlockOffset());
     FileFooter3 footer = reader.readFooterVersion3();
+    return convertDataFileFooter(fileHeader, footer);
+  }
+
+  public DataFileFooter convertDataFileFooter(FileHeader fileHeader, FileFooter3 footer) {
+    DataFileFooter dataFileFooter = new DataFileFooter();
     dataFileFooter.setVersionId(ColumnarFormatVersion.valueOf((short) fileHeader.getVersion()));
     dataFileFooter.setNumberOfRows(footer.getNum_rows());
     dataFileFooter.setSegmentInfo(getSegmentInfo(footer.getSegment_info()));
