@@ -55,6 +55,8 @@ import static org.apache.carbondata.core.constants.CarbonCommonConstants.FILE_SE
  * Contains information extracted from a .carbondata file
  */
 class DataFile {
+  private CarbonFile dataFile;
+
   // file full path
   private String filePath;
 
@@ -80,33 +82,37 @@ class DataFile {
 
   private FileHeader header;
   private FileFooter3 footer;
+  private long footerOffset;
   private List<ColumnSchema> schema;
   private List<Blocklet> blocklets;
 
-  DataFile(CarbonFile file) throws IOException {
-    this.fileSizeInBytes = file.getSize();
+  DataFile(CarbonFile dataFile) {
+    this.dataFile = dataFile;
+    this.filePath = dataFile.getPath();
+    this.fileSizeInBytes = dataFile.getSize();
+  }
 
+  void collectAllMeta() throws IOException {
     FileHeader header = null;
     FileFooter3 footer = null;
     try {
-      header = readHeader(file);
+      header = readHeader();
     } catch (IOException e) {
-      throw new IOException("failed to read header in " + file.getPath(), e);
+      throw new IOException("failed to read header in " + dataFile.getPath(), e);
     }
     if (header.isSetSync_marker()) {
       // if sync_marker is set, it is a streaming format file
       throw new UnsupportedOperationException("streaming file is not supported");
     }
     try {
-      footer = readFooter(file);
+      footer = readFooter();
     } catch (IOException e) {
-      throw new IOException("failed to read footer in " + file.getPath(), e);
+      throw new IOException("failed to read footer in " + dataFile.getPath(), e);
     }
 
-    this.filePath = file.getPath();
     this.header = header;
     this.footer = footer;
-    String filePath = file.getPath();
+    String filePath = dataFile.getPath();
     // folder path that contains this file
     String fileName = filePath.substring(filePath.lastIndexOf(FILE_SEPARATOR));
     this.shardName = CarbonTablePath.getShardName(fileName);
@@ -130,6 +136,7 @@ class DataFile {
       for (int i = 0; i < schema.size(); i++) {
         columnDataSize.add(blockletInfo3.column_data_chunks_offsets.get(i) - previousChunkOffset);
         columnMetaSize.add(blockletInfo3.column_data_chunks_length.get(i).longValue());
+        previousChunkOffset = blockletInfo3.column_data_chunks_offsets.get(i);
       }
       // last column chunk data size
       columnDataSize.add(fileSizeInBytes - footerSizeInBytes - previousChunkOffset);
@@ -146,17 +153,17 @@ class DataFile {
     assert (blockletSizeInBytes.size() == getNumBlocklets());
   }
 
-  private FileHeader readHeader(CarbonFile dataFile) throws IOException {
+  FileHeader readHeader() throws IOException {
     CarbonHeaderReader reader = new CarbonHeaderReader(dataFile.getPath());
     this.schema = reader.readSchema();
     return reader.readHeader();
   }
 
-  private FileFooter3 readFooter(CarbonFile dataFile) throws IOException {
+  FileFooter3 readFooter() throws IOException {
     this.fileReader = FileFactory.getFileHolder(FileFactory.getFileType(dataFile.getPath()));
     ByteBuffer buffer = fileReader.readByteBuffer(FileFactory.getUpdatedFilePath(
         dataFile.getPath()), dataFile.getSize() - 8, 8);
-    long footerOffset = buffer.getLong();
+    this.footerOffset = buffer.getLong();
     this.footerSizeInBytes = this.fileSizeInBytes - footerOffset;
     CarbonFooterReaderV3 footerReader =
         new CarbonFooterReaderV3(dataFile.getAbsolutePath(), footerOffset);
@@ -185,6 +192,53 @@ class DataFile {
 
   List<ColumnSchema> getSchema() {
     return schema;
+  }
+
+  FileReader getFileReader() {
+    return fileReader;
+  }
+
+  long getFooterOffset() {
+    return footerOffset;
+  }
+
+  int getNumBlocklet() {
+    return blockletSizeInBytes.size();
+  }
+
+  long getFileSizeInBytes() {
+    return fileSizeInBytes;
+  }
+
+  int getColumnIndex(String columnName) {
+    List<ColumnSchema> columns = getSchema();
+    for (int i = 0; i < columns.size(); i++) {
+      if (columns.get(i).getColumnName().equalsIgnoreCase(columnName)) {
+        return i;
+      }
+    }
+    throw new IllegalArgumentException(columnName + " not found");
+  }
+
+  ColumnSchema getColumn(String columnName) {
+    List<ColumnSchema> columns = getSchema();
+    for (int i = 0; i < columns.size(); i++) {
+      if (columns.get(i).getColumnName().equalsIgnoreCase(columnName)) {
+        return columns.get(i);
+      }
+    }
+    throw new IllegalArgumentException(columnName + " not found");
+  }
+
+  int numDimensions() {
+    int numDimensions = 0;
+    List<ColumnSchema> columns = getSchema();
+    for (ColumnSchema column : columns) {
+      if (column.isDimensionColumn()) {
+        numDimensions++;
+      }
+    }
+    return numDimensions;
   }
 
   private int getNumBlocklets() {
@@ -396,28 +450,34 @@ class DataFile {
         if (column.isSortColumn()) {
           minValue = ByteUtil.toXorInt(min, 0, min.length);
           dataValue = ByteUtil.toXorInt(data, 0, data.length) - minValue;
-          factorValue = ByteUtil.toXorInt(max, 0, max.length) - ByteUtil.toXorInt(min, 0, min.length);
+          factorValue =
+              ByteUtil.toXorInt(max, 0, max.length) - ByteUtil.toXorInt(min, 0, min.length);
         } else {
           minValue = ByteUtil.toLong(min, 0, min.length);
           dataValue = ByteUtil.toLong(data, 0, data.length) - minValue;
-          factorValue = ByteUtil.toLong(max, 0, max.length) - ByteUtil.toLong(min, 0, min.length);
+          factorValue =
+              ByteUtil.toLong(max, 0, max.length) - ByteUtil.toLong(min, 0, min.length);
         }
       } else if (column.getDataType() == DataTypes.LONG) {
         minValue = ByteUtil.toLong(min, 0, min.length);
         dataValue = ByteUtil.toLong(data, 0, data.length) - minValue;
-        factorValue = ByteUtil.toLong(max, 0, max.length) - ByteUtil.toLong(min, 0, min.length);
+        factorValue =
+            ByteUtil.toLong(max, 0, max.length) - ByteUtil.toLong(min, 0, min.length);
       } else if (column.getDataType() == DataTypes.DATE) {
         minValue = ByteUtil.toInt(min, 0, min.length);
         dataValue = ByteUtil.toInt(data, 0, data.length) - minValue;
-        factorValue = ByteUtil.toInt(max, 0, max.length) - ByteUtil.toInt(min, 0, min.length);
+        factorValue =
+            ByteUtil.toInt(max, 0, max.length) - ByteUtil.toInt(min, 0, min.length);
       } else if (column.getDataType() == DataTypes.TIMESTAMP) {
         minValue = ByteUtil.toLong(min, 0, min.length);
         dataValue = ByteUtil.toLong(data, 0, data.length) - minValue;
-        factorValue = ByteUtil.toLong(max, 0, max.length) - ByteUtil.toLong(min, 0, min.length);
+        factorValue =
+            ByteUtil.toLong(max, 0, max.length) - ByteUtil.toLong(min, 0, min.length);
       } else if (column.getDataType() == DataTypes.DOUBLE) {
         minValue = ByteUtil.toDouble(min, 0, min.length);
         dataValue = ByteUtil.toDouble(data, 0, data.length) - minValue;
-        factorValue = ByteUtil.toDouble(max, 0, max.length) - ByteUtil.toDouble(min, 0, min.length);
+        factorValue =
+            ByteUtil.toDouble(max, 0, max.length) - ByteUtil.toDouble(min, 0, min.length);
       } else {
         throw new UnsupportedOperationException("data type: " + column.getDataType());
       }

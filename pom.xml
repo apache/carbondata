@@ -106,6 +106,7 @@
     <module>store/sdk</module>
     <module>store/search</module>
     <module>assembly</module>
+    <module>tools/cli</module>
   </modules>
 
   <properties>
@@ -716,12 +717,6 @@
       <modules>
         <module>datamap/mv/plan</module>
         <module>datamap/mv/core</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>tools</id>
-      <modules>
-        <module>tools/cli</module>
       </modules>
     </profile>
   </profiles>
