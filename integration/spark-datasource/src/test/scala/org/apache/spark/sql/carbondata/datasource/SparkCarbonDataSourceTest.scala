@@ -1015,6 +1015,62 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
                           "structfield.bytefield < 11"), Seq(Row("name10", Row(10.asInstanceOf[Byte], 10.1012.asInstanceOf[Float]))))
   }
 
+  test("test bytefield as sort column") {
+    import scala.collection.JavaConverters._
+    val path = new File(warehouse1+"/sdk1").getAbsolutePath
+    FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
+    var fields: Array[Field] = new Array[Field](8)
+    // same column name, but name as boolean type
+    fields(0) = new Field("age", DataTypes.INT)
+    fields(1) = new Field("height", DataTypes.DOUBLE)
+    fields(2) = new Field("name", DataTypes.STRING)
+    fields(3) = new Field("address", DataTypes.STRING)
+    fields(4) = new Field("salary", DataTypes.LONG)
+    fields(5) = new Field("bytefield", DataTypes.BYTE)
+
+    try {
+      val builder = CarbonWriter.builder()
+      val writer =
+        builder.outputPath(path)
+          .isTransactionalTable(false)
+          .uniqueIdentifier(System.nanoTime()).withBlockSize(2).sortBy(Array("bytefield"))
+          .buildWriterForCSVInput(new Schema(fields), spark.sparkContext.hadoopConfiguration)
+
+      var i = 0
+      while (i < 11) {
+        val array = Array[String](
+          String.valueOf(i),
+          String.valueOf(i.toDouble / 2),
+          "name" + i,
+          "address" + i,
+          (i * 100).toString,
+          s"${10 - i}")
+        writer.write(array)
+        i += 1
+      }
+      writer.close()
+      spark.sql("drop table if exists sorted_par")
+      spark.sql("drop table if exists sort_table")
+      spark.sql(s"create table sort_table (age int, height double, name string, address string," +
+                s" salary long, bytefield byte) using carbon location '$path'")
+      FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(s"$warehouse1/../warehouse2"))
+      spark.sql(s"create table sorted_par(age int, height double, name string, address " +
+                s"string," +
+                s"salary long, bytefield byte) using parquet location " +
+                s"'$warehouse1/../warehouse2'")
+      (0 to 10).foreach {
+        i =>
+          spark.sql(s"insert into sorted_par select '$i', ${ i.toDouble / 2 }, 'name$i', " +
+                    s"'address$i', ${ i * 100 }, '${ 10 - i }'")
+      }
+      checkAnswer(spark.sql("select * from sorted_par order by bytefield"),
+        spark.sql("select * from sort_table"))
+    } catch {
+      case ex: Exception => throw new RuntimeException(ex)
+      case _ => None
+    }
+  }
+
   test("test array of float type and byte type") {
     import scala.collection.JavaConverters._
     val path = new File(warehouse1+"/sdk1").getAbsolutePath
