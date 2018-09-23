@@ -769,6 +769,8 @@ public class QueryUtil {
         vector.putBytes(vectorRow, 0, length, value);
       } else if (dt == DataTypes.BOOLEAN) {
         vector.putBoolean(vectorRow, ByteUtil.toBoolean(value[0]));
+      } else if (dt == DataTypes.BYTE) {
+        vector.putByte(vectorRow,value[0]);
       } else if (dt == DataTypes.SHORT) {
         vector.putShort(vectorRow, ByteUtil.toXorShort(value, 0, length));
       } else if (dt == DataTypes.INT) {
