@@ -217,7 +217,6 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       needDecode: ArrayBuffer[AttributeReference]):
   RDD[InternalRow] = {
     val scanRdd = rdd.asInstanceOf[CarbonScanRDD[InternalRow]]
-    scanRdd.setDirectScanSupport(directScan)
     if (needDecode.nonEmpty) {
       scanRdd.setVectorReaderSupport(false)
       getDecoderRDD(relation, needDecode, rdd, output)
@@ -305,7 +304,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           }
         }
     }
-
+    val hasDictionaryFilterCols = hasFilterOnDictionaryColumn(filterSet, table)
     if (projects.map(_.toAttribute) == projects &&
         projectSet.size == projects.size &&
         filterSet.subsetOf(projectSet)) {
@@ -342,7 +341,10 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         metadata,
         needDecoder,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]])
-      if (directScan && scan.isInstanceOf[CarbonDataSourceScan]) {
+      if (directScan && scan.isInstanceOf[CarbonDataSourceScan] && !hasDictionaryFilterCols) {
+        if (scan.inputRDDs().head.isInstanceOf[CarbonScanRDD[InternalRow]]) {
+          scan.inputRDDs().head.asInstanceOf[CarbonScanRDD[InternalRow]].setDirectScanSupport(true)
+        }
         filterPredicates.reduceLeftOption(expressions.And).map(execution.FilterExec(_, scan))
           .getOrElse(scan)
       } else {
@@ -376,7 +378,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       // Don't request columns that are only referenced by pushed filters.
       val requestedColumns =
         (projectSet ++ filterSet -- handledSet).map(relation.attributeMap).toSeq ++ newProjectList
-      var updateRequestedColumns = if (directScan && !implictsExisted) {
+
+      var updateRequestedColumns = if (directScan && !implictsExisted && !hasDictionaryFilterCols) {
         updateRequestedColumnsFunc(
           (projectSet ++ filterSet).map(relation.attributeMap).toSeq,
           table,
@@ -388,7 +391,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         supportBatchedDataSource(relation.relation.sqlContext,
           updateRequestedColumns.asInstanceOf[Seq[Attribute]]) &&
         needDecoder.isEmpty
-      if (directScan && !supportBatch && !implictsExisted) {
+      if (directScan && !supportBatch && !implictsExisted && !hasDictionaryFilterCols) {
         // revert for row scan
         updateRequestedColumns = updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
       }
@@ -402,7 +405,11 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         metadata,
         needDecoder,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]])
-      if (directScan && scan.isInstanceOf[CarbonDataSourceScan] && !implictsExisted) {
+      if (directScan && scan.isInstanceOf[CarbonDataSourceScan]
+          && !implictsExisted && !hasDictionaryFilterCols) {
+        if (scan.inputRDDs().head.isInstanceOf[CarbonScanRDD[InternalRow]]) {
+          scan.inputRDDs().head.asInstanceOf[CarbonScanRDD[InternalRow]].setDirectScanSupport(true)
+        }
         execution.ProjectExec(
           updateRequestedColumnsFunc(updatedProjects, table,
             needDecoder).asInstanceOf[Seq[NamedExpression]],
@@ -492,6 +499,12 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         }
       case others => others
     }
+  }
+
+  private def hasFilterOnDictionaryColumn(filterColumns: AttributeSet,
+      relation: CarbonDatasourceHadoopRelation): Boolean = {
+    val map = relation.carbonRelation.metaData.dictionaryMap
+    filterColumns.exists(c => map.get(c.name).getOrElse(false))
   }
 
   private def getPartitioning(carbonTable: CarbonTable,

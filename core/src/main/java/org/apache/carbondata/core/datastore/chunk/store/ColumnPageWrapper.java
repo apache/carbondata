@@ -60,13 +60,6 @@ public class ColumnPageWrapper implements DimensionColumnPage {
     this.isExplicitSorted = isExplicitSorted;
   }
 
-  public ColumnPageWrapper(ColumnPage columnPage, CarbonDictionary localDictionary,
-      int[] invertedIndex, int[] invertedReverseIndex, boolean isAdaptivePrimitivePage,
-      boolean isExplicitSorted, ColumnVectorInfo vectorInfo) {
-    this(columnPage, localDictionary, invertedIndex, invertedReverseIndex, isAdaptivePrimitivePage,
-        isExplicitSorted);
-  }
-
   @Override
   public int fillRawData(int rowId, int offset, byte[] data) {
     throw new UnsupportedOperationException("internal error");

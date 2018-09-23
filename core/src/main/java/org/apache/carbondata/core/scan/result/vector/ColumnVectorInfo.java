@@ -32,6 +32,8 @@ public class ColumnVectorInfo implements Comparable<ColumnVectorInfo> {
   public DirectDictionaryGenerator directDictionaryGenerator;
   public MeasureDataVectorProcessor.MeasureVectorFiller measureVectorFiller;
   public GenericQueryType genericQueryType;
+  public boolean isExplictSorted;
+  public int[] invertedIndex;
 
   @Override public int compareTo(ColumnVectorInfo o) {
     return ordinal - o.ordinal;

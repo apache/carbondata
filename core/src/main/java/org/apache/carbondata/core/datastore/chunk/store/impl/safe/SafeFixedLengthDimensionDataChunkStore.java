@@ -47,7 +47,7 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
   public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
       ColumnVectorInfo vectorInfo) {
     CarbonColumnVector vector = vectorInfo.vector;
-    if (isExplictSorted) {
+    if (!isExplictSorted) {
       if (vector.getBlockDataType() == DataTypes.DATE) {
         for (int i = 0; i < numOfRows; i++) {
           int surrogateInternal =
@@ -56,6 +56,18 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
             vector.putNull(i);
           } else {
             vector.putInt(i, surrogateInternal - DateDirectDictionaryGenerator.cutOffDate);
+          }
+        }
+      } else if (vector.getBlockDataType() == DataTypes.TIMESTAMP) {
+        for (int i = 0; i < numOfRows; i++) {
+          int surrogateInternal =
+              CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
+          if (surrogateInternal == 1) {
+            vector.putNull(i);
+          } else {
+            Object valueFromSurrogate =
+                vectorInfo.directDictionaryGenerator.getValueFromSurrogate(surrogateInternal);
+            vector.putLong(i, (long)valueFromSurrogate);
           }
         }
       } else {
@@ -74,6 +86,18 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
           } else {
             vector.putInt(invertedIndex[i],
                 surrogateInternal - DateDirectDictionaryGenerator.cutOffDate);
+          }
+        }
+      } else if (vector.getBlockDataType() == DataTypes.TIMESTAMP) {
+        for (int i = 0; i < numOfRows; i++) {
+          int surrogateInternal =
+              CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
+          if (surrogateInternal == 1) {
+            vector.putNull(invertedIndex[i]);
+          } else {
+            Object valueFromSurrogate =
+                vectorInfo.directDictionaryGenerator.getValueFromSurrogate(surrogateInternal);
+            vector.putLong(invertedIndex[i], (long)valueFromSurrogate);
           }
         }
       } else {

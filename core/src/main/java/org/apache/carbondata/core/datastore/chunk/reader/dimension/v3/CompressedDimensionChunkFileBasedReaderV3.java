@@ -264,26 +264,33 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       throws IOException, MemoryException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     if (CarbonUtil.isEncodedWithMeta(encodings)) {
-      BitSet nullBitSet = QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor);
-      ColumnPage decodedPage = decodeDimensionByMeta(pageMetadata, pageData, offset,
-          null != rawColumnPage.getLocalDictionary(), vectorInfo, nullBitSet);
-      decodedPage.setNullBits(nullBitSet);
       int[] invertedIndexes = new int[0];
       int[] invertedIndexesReverse = new int[0];
       // in case of no dictionary measure data types, if it is included in sort columns
       // then inverted index to be uncompressed
+      boolean isExplicitSorted =
+          CarbonUtil.hasEncoding(pageMetadata.encoders, Encoding.INVERTED_INDEX);
+      int dataOffset = offset;
       if (encodings.contains(Encoding.INVERTED_INDEX)) {
         offset += pageMetadata.data_page_length;
-        if (CarbonUtil.hasEncoding(pageMetadata.encoders, Encoding.INVERTED_INDEX)) {
+        if (isExplicitSorted) {
           invertedIndexes = CarbonUtil
               .getUnCompressColumnIndex(pageMetadata.rowid_page_length, pageData, offset);
-          // get the reverse index
-          invertedIndexesReverse = CarbonUtil.getInvertedReverseIndex(invertedIndexes);
+          if (vectorInfo == null) {
+            // get the reverse index
+            invertedIndexesReverse = CarbonUtil.getInvertedReverseIndex(invertedIndexes);
+          } else {
+            vectorInfo.isExplictSorted = true;
+            vectorInfo.invertedIndex = invertedIndexes;
+          }
         }
       }
+      BitSet nullBitSet = QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor);
+      ColumnPage decodedPage = decodeDimensionByMeta(pageMetadata, pageData, dataOffset,
+          null != rawColumnPage.getLocalDictionary(), vectorInfo, nullBitSet);
+      decodedPage.setNullBits(nullBitSet);
       return new ColumnPageWrapper(decodedPage, rawColumnPage.getLocalDictionary(), invertedIndexes,
-          invertedIndexesReverse, isEncodedWithAdaptiveMeta(pageMetadata),
-          CarbonUtil.hasEncoding(pageMetadata.encoders, Encoding.INVERTED_INDEX));
+          invertedIndexesReverse, isEncodedWithAdaptiveMeta(pageMetadata), isExplicitSorted);
     } else {
       // following code is for backward compatibility
       return decodeDimensionLegacy(rawColumnPage, pageData, pageMetadata, offset, vectorInfo);
@@ -319,8 +326,10 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       invertedIndexes = CarbonUtil
           .getUnCompressColumnIndex(pageMetadata.rowid_page_length, pageData, offset);
       offset += pageMetadata.rowid_page_length;
-      // get the reverse index
-      invertedIndexesReverse = CarbonUtil.getInvertedReverseIndex(invertedIndexes);
+      if (vectorInfo == null) {
+        // get the reverse index
+        invertedIndexesReverse = CarbonUtil.getInvertedReverseIndex(invertedIndexes);
+      }
     }
     // if rle is applied then read the rle block chunk and then uncompress
     //then actual data based on rle block
