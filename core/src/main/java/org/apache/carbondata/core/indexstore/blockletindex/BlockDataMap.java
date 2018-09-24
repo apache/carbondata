@@ -238,6 +238,10 @@ public class BlockDataMap extends CoarseGrainDataMap
             blockMetaInfo, updatedMinValues, updatedMaxValues, minMaxFlag);
       }
     }
+    List<Short> blockletCountList = new ArrayList<>();
+    blockletCountList.add((short) 0);
+    byte[] blockletCount = convertRowCountFromShortToByteArray(blockletCountList);
+    summaryRow.setByteArray(blockletCount, taskSummarySchema.length - 1);
     setMinMaxFlagForTaskSummary(summaryRow, taskSummarySchema, segmentProperties, minMaxFlag);
     return summaryRow;
   }
@@ -627,17 +631,12 @@ public class BlockDataMap extends CoarseGrainDataMap
 
   // get total blocklet number in this datamap
   protected int getTotalBlocklets() {
-    if (isLegacyStore) {
-      // dummy value
-      return 0;
-    } else {
-      ByteBuffer byteBuffer = ByteBuffer.wrap(getBlockletRowCountForEachBlock());
-      int sum = 0;
-      while (byteBuffer.hasRemaining()) {
-        sum += byteBuffer.getShort();
-      }
-      return sum;
+    ByteBuffer byteBuffer = ByteBuffer.wrap(getBlockletRowCountForEachBlock());
+    int sum = 0;
+    while (byteBuffer.hasRemaining()) {
+      sum += byteBuffer.getShort();
     }
+    return sum;
   }
 
   private List<Blocklet> prune(FilterResolverIntf filterExp) {
@@ -1000,7 +999,7 @@ public class BlockDataMap extends CoarseGrainDataMap
         SegmentPropertiesAndSchemaHolder.getInstance()
             .getSegmentPropertiesWrapper(segmentPropertiesIndex);
     try {
-      return segmentPropertiesWrapper.getTaskSummarySchema(!isLegacyStore, isFilePathStored);
+      return segmentPropertiesWrapper.getTaskSummarySchema(true, isFilePathStored);
     } catch (MemoryException e) {
       throw new RuntimeException(e);
     }
