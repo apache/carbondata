@@ -77,6 +77,9 @@ public final class Comparator {
 
 class ByteArraySerializableComparator implements SerializableComparator {
   @Override public int compare(Object key1, Object key2) {
+    if (key1 instanceof Byte) {
+      return ((Byte) key1).compareTo((Byte) key2);
+    }
     return ByteUtil.compare((byte[]) key1, (byte[]) key2);
   }
 }
