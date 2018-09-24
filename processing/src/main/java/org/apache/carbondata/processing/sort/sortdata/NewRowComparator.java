@@ -28,21 +28,12 @@ import org.apache.carbondata.core.util.comparator.SerializableComparator;
 public class NewRowComparator implements Comparator<Object[]>, Serializable {
   private static final long serialVersionUID = -1739874611112709436L;
 
-  /**
-   * mapping of dictionary dimensions and no dictionary of sort_column.
-   */
-  private boolean[] noDicDimColMapping;
-
   private DataType[] noDicDataTypes;
 
   private boolean[] noDicSortColumnMapping;
 
-  /**
-   * @param noDicDimColMapping
-   */
-  public NewRowComparator(boolean[] noDicDimColMapping, boolean[] noDicSortColumnMapping,
+  public NewRowComparator(boolean[] noDicSortColumnMapping,
       DataType[] noDicDataTypes) {
-    this.noDicDimColMapping = noDicDimColMapping;
     this.noDicSortColumnMapping = noDicSortColumnMapping;
     this.noDicDataTypes = noDicDataTypes;
   }
@@ -55,27 +46,23 @@ public class NewRowComparator implements Comparator<Object[]>, Serializable {
     int index = 0;
     int dataTypeIdx = 0;
     int noDicSortIdx = 0;
+    for (int i = 0; i < noDicSortColumnMapping.length; i++) {
+      if (noDicSortColumnMapping[noDicSortIdx++]) {
+        if (DataTypeUtil.isPrimitiveColumn(noDicDataTypes[dataTypeIdx])) {
+          // use data types based comparator for the no dictionary measure columns
+          SerializableComparator comparator = org.apache.carbondata.core.util.comparator.Comparator
+              .getComparator(noDicDataTypes[dataTypeIdx]);
+          int difference = comparator.compare(rowA[index], rowB[index]);
+          if (difference != 0) {
+            return difference;
+          }
+        } else {
+          byte[] byteArr1 = (byte[]) rowA[index];
+          byte[] byteArr2 = (byte[]) rowB[index];
 
-    for (int i = 0; i < noDicDimColMapping.length; i++) {
-      if (noDicDimColMapping[i]) {
-        if (noDicSortColumnMapping[noDicSortIdx++]) {
-          if (DataTypeUtil.isPrimitiveColumn(noDicDataTypes[dataTypeIdx])) {
-            // use data types based comparator for the no dictionary measure columns
-            SerializableComparator comparator =
-                org.apache.carbondata.core.util.comparator.Comparator
-                    .getComparator(noDicDataTypes[dataTypeIdx]);
-            int difference = comparator.compare(rowA[index], rowB[index]);
-            if (difference != 0) {
-              return difference;
-            }
-          } else {
-            byte[] byteArr1 = (byte[]) rowA[index];
-            byte[] byteArr2 = (byte[]) rowB[index];
-
-            int difference = UnsafeComparer.INSTANCE.compareTo(byteArr1, byteArr2);
-            if (difference != 0) {
-              return difference;
-            }
+          int difference = UnsafeComparer.INSTANCE.compareTo(byteArr1, byteArr2);
+          if (difference != 0) {
+            return difference;
           }
         }
         dataTypeIdx++;
@@ -88,7 +75,6 @@ public class NewRowComparator implements Comparator<Object[]>, Serializable {
           return diff;
         }
       }
-
       index++;
     }
     return diff;
