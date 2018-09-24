@@ -220,11 +220,14 @@ public class CarbonReaderTest extends TestCase {
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
 
     ColumnExpression columnExpression = new ColumnExpression("name", DataTypes.STRING);
-    EqualToExpression equalToExpression =
-        new EqualToExpression(columnExpression, new LiteralExpression("robot1", DataTypes.STRING));
+    EqualToExpression equalToExpression = new EqualToExpression(columnExpression,
+        new LiteralExpression("robot1", DataTypes.STRING));
 
-    CarbonReader reader = CarbonReader.builder(path, "_temp").isTransactionalTable(false)
-        .projection(new String[] { "name", "age" }).filter(equalToExpression)
+    CarbonReader reader = CarbonReader
+        .builder(path, "_temp")
+        .isTransactionalTable(false)
+        .projection(new String[]{"name", "age"})
+        .filter(equalToExpression)
         .build(conf);
 
     int i = 0;

@@ -750,7 +750,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     FileFactory.getCarbonFile(path2, FileFactory.getFileType(path2))
     FileFactory.mkdirs(path2, FileFactory.getFileType(path2))
 
-
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     // with schema
@@ -807,10 +806,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     cleanTestData()
   }
-
-
-
-
 
   test("Read sdk writer output multiple files ") {
     buildTestDataMultipleFiles()
