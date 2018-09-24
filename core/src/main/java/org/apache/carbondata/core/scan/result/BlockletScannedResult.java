@@ -768,6 +768,10 @@ public abstract class BlockletScannedResult {
     return rowsFiltered;
   }
 
+  public DeleteDeltaVo getCurrentDeleteDeltaVo() {
+    return currentDeleteDeltaVo;
+  }
+
   /**
    * Below method will be used to check row got deleted
    *

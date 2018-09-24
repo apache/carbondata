@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 
 import java.nio.ByteBuffer;
+import java.util.BitSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -108,9 +109,18 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
     ByteBuffer buffer = ByteBuffer.wrap(data);
     if (dt == DataTypes.STRING) {
       if (isExplictSorted) {
-        fillStringDataWithInvertedIndex(data, startOffset, lengthSize, vector, buffer);
+        if (vectorInfo.deletedRows != null && !vectorInfo.deletedRows.isEmpty()) {
+          fillStringDataWithInvertedIndexWithDelta(data, startOffset, lengthSize, vector, buffer, vectorInfo.deletedRows);
+        } else {
+          fillStringDataWithInvertedIndex(data, startOffset, lengthSize, vector, buffer);
+        }
       } else {
-        fillStringData(data, startOffset, lengthSize, vector, buffer);
+        if (vectorInfo.deletedRows != null && !vectorInfo.deletedRows.isEmpty()) {
+          fillStringDataWithDelta(data, startOffset, lengthSize, vector, buffer,
+              vectorInfo.deletedRows);
+        } else {
+          fillStringData(data, startOffset, lengthSize, vector, buffer);
+        }
       }
     } else if (dt == DataTypes.TIMESTAMP) {
       if (isExplictSorted) {
@@ -164,6 +174,68 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
       vector.putNull(numberOfRows - 1);
     } else {
       vector.putBoolean(numberOfRows - 1, ByteUtil.toBoolean(data[currentOffset]));
+    }
+  }
+
+  private void fillBooleanDataWithDelta(byte[] data, int startOffset, int lengthSize,
+      CarbonColumnVector vector, ByteBuffer buffer, BitSet deletedRows) {
+    int currentOffset = lengthSize;
+    int k = 0;
+    for (int i = 0; i < numberOfRows - 1; i++) {
+      buffer.position(startOffset);
+      startOffset += getLengthFromBuffer(buffer) + lengthSize;
+      int length = startOffset - (currentOffset);
+      if (!deletedRows.get(i)) {
+        if (length == 0) {
+          vector.putNull(k);
+        } else {
+          vector.putBoolean(k, ByteUtil.toBoolean(data[currentOffset]));
+        }
+        k++;
+      }
+      currentOffset = startOffset + lengthSize;
+    }
+    int length = (data.length - currentOffset);
+    if (!deletedRows.get(numberOfRows - 1)) {
+      if (length == 0) {
+        vector.putNull(k);
+      } else {
+        vector.putBoolean(k, ByteUtil.toBoolean(data[currentOffset]));
+      }
+    }
+  }
+
+  private void fillBooleanDataWithInvertedIndexDelta(byte[] data, int startOffset, int lengthSize,
+      CarbonColumnVector vector, ByteBuffer buffer, BitSet deletedRows) {
+    int currentOffset = lengthSize;
+    int k = 0;
+    Object[] finalData = new Object[numberOfRows];
+    for (int i = 0; i < numberOfRows - 1; i++) {
+      buffer.position(startOffset);
+      startOffset += getLengthFromBuffer(buffer) + lengthSize;
+      int length = startOffset - (currentOffset);
+      if (length == 0) {
+        finalData[invertedIndexReverse[i]] = null;
+      } else {
+        finalData[invertedIndexReverse[i]] = ByteUtil.toBoolean(data[currentOffset]);
+      }
+      currentOffset = startOffset + lengthSize;
+    }
+    int length = (data.length - currentOffset);
+    if (length == 0) {
+      finalData[invertedIndexReverse[numberOfRows - 1]] = null;
+    } else {
+      finalData[invertedIndexReverse[numberOfRows - 1]] = ByteUtil.toBoolean(data[currentOffset]);
+    }
+    for (int i = 0; i < finalData.length; i++) {
+      if (!deletedRows.get(i)) {
+        if (finalData[i] == null) {
+          vector.putNull(k);
+        } else {
+          vector.putBoolean(k, (Boolean) finalData[i]);
+        }
+        k++;
+      }
     }
   }
 
@@ -399,6 +471,77 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
       vector.putNull(numberOfRows - 1);
     } else {
       vector.putBytes(numberOfRows - 1, currentOffset, length, data);
+    }
+  }
+
+  private void fillStringDataWithDelta(byte[] data, int startOffset, int lengthSize,
+      CarbonColumnVector vector, ByteBuffer buffer, BitSet deleteDelta) {
+    int currentOffset = lengthSize;
+    int k = 0;
+    for (int i = 0; i < numberOfRows - 1; i++) {
+      buffer.position(startOffset);
+      startOffset += getLengthFromBuffer(buffer) + lengthSize;
+      int length = startOffset - (currentOffset);
+      if (!deleteDelta.get(i)) {
+        if (ByteUtil.UnsafeComparer.INSTANCE
+            .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+                CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentOffset,
+                length)) {
+          vector.putNull(k);
+        } else {
+          vector.putBytes(k, currentOffset, length, data);
+        }
+        k++;
+      }
+      currentOffset = startOffset + lengthSize;
+    }
+    int length = (short) (data.length - currentOffset);
+    if (!deleteDelta.get(numberOfRows - 1)) {
+      if (ByteUtil.UnsafeComparer.INSTANCE.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+          CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentOffset, length)) {
+        vector.putNull(k);
+      } else {
+        vector.putBytes(k, currentOffset, length, data);
+      }
+    }
+  }
+
+  private void fillStringDataWithInvertedIndexWithDelta(byte[] data, int startOffset, int lengthSize,
+      CarbonColumnVector vector, ByteBuffer buffer, BitSet deleteDelta) {
+    int currentOffset = lengthSize;
+    Object[] finalData = new Object[numberOfRows];
+    for (int i = 0; i < numberOfRows - 1; i++) {
+      buffer.position(startOffset);
+      startOffset += getLengthFromBuffer(buffer) + lengthSize;
+      int length = startOffset - (currentOffset);
+      if (ByteUtil.UnsafeComparer.INSTANCE.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+          CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentOffset, length)) {
+        finalData[invertedIndexReverse[i]] = null;
+      } else {
+        finalData[invertedIndexReverse[i]] = new byte[length];
+        System.arraycopy(data, currentOffset, finalData[i], 0, length);
+      }
+      currentOffset = startOffset + lengthSize;
+    }
+    int length = (short) (data.length - currentOffset);
+    if (ByteUtil.UnsafeComparer.INSTANCE.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+        CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentOffset, length)) {
+      finalData[invertedIndexReverse[numberOfRows - 1]] = null;
+    } else {
+      finalData[invertedIndexReverse[numberOfRows - 1]] = new byte[length];
+      System.arraycopy(data, currentOffset, finalData[invertedIndexReverse[numberOfRows - 1]], 0, length);
+    }
+    int k = 0;
+    for (int i = 0; i < finalData.length; i++) {
+      if (!deleteDelta.get(i)) {
+        if (finalData[i] == null) {
+          vector.putNull(k);
+        } else {
+          byte[] val = (byte[]) finalData[i];
+          vector.putBytes(k, val);
+        }
+        k ++;
+      }
     }
   }
 

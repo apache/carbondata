@@ -202,187 +202,195 @@ public class DirectCompressCodec implements ColumnPageCodec {
       DataType type = columnPage.getDataType();
       int pageSize = columnPage.getPageSize();
       if (vectorInfo.isExplictSorted) {
-        int[] invertedIndex = vectorInfo.invertedIndex;
-        if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {
-          byte[] byteData = columnPage.getByteData();
-          if (dataType == DataTypes.SHORT) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putShort(invertedIndex[i], (short) byteData[i]);
-            }
-          } else if (dataType == DataTypes.INT) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putInt(invertedIndex[i], (int) byteData[i]);
-            }
-          } else if (dataType == DataTypes.LONG) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putLong(invertedIndex[i], byteData[i]);
-            }
-          } else if (dataType == DataTypes.BOOLEAN) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putByte(invertedIndex[i], byteData[i]);
-            }
-          } else {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putDouble(invertedIndex[i], byteData[i]);
-            }
-          }
-        } else if (type == DataTypes.SHORT) {
-          short[] shortData = columnPage.getShortData();
-          if (dataType == DataTypes.SHORT) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putShort(invertedIndex[i], shortData[i]);
-            }
-          } else if (dataType == DataTypes.INT) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putInt(invertedIndex[i], (int) shortData[i]);
-            }
-          } else if (dataType == DataTypes.LONG) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putLong(invertedIndex[i], shortData[i]);
-            }
-          } else {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putDouble(invertedIndex[i], shortData[i]);
-            }
-          }
+        fillVectorWithInvertedIndex(columnPage, vectorInfo, vector, dataType, type, pageSize);
+      } else {
+        fillVector(columnPage, vector, dataType, type, pageSize);
+      }
+      for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
+        vector.putNullDirect(i);
+      }
+    }
 
-        } else if (type == DataTypes.SHORT_INT) {
-          int[] shortIntData = columnPage.getShortIntData();
-          if (dataType == DataTypes.SHORT) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putShort(invertedIndex[i], (short) shortIntData[i]);
-            }
-          } else if (dataType == DataTypes.INT) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putInt(invertedIndex[i], shortIntData[i]);
-            }
-          } else if (dataType == DataTypes.LONG) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putLong(invertedIndex[i], shortIntData[i]);
-            }
-          } else {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putDouble(invertedIndex[i], shortIntData[i]);
-            }
+    private void fillVector(ColumnPage columnPage, CarbonColumnVector vector, DataType dataType,
+        DataType type, int pageSize) {
+      if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {
+        byte[] byteData = columnPage.getByteData();
+        if (dataType == DataTypes.SHORT) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putShort(i, (short) byteData[i]);
           }
-        } else if (type == DataTypes.INT) {
-          int[] intData = columnPage.getIntData();
-          if (dataType == DataTypes.SHORT) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putShort(invertedIndex[i], (short) intData[i]);
-            }
-          } else if (dataType == DataTypes.INT) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putInt(invertedIndex[i], intData[i]);
-            }
-          } else if (dataType == DataTypes.LONG) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putLong(invertedIndex[i], intData[i]);
-            }
-          } else {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putDouble(invertedIndex[i], intData[i]);
-            }
+        } else if (dataType == DataTypes.INT) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putInt(i, (int) byteData[i]);
+          }
+        } else if (dataType == DataTypes.LONG) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putLong(i, byteData[i]);
+          }
+        } else if (dataType == DataTypes.BOOLEAN) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putByte(i, byteData[i]);
           }
         } else {
-          double[] doubleData = columnPage.getDoubleData();
           for (int i = 0; i < pageSize; i++) {
-            vector.putDouble(invertedIndex[i], doubleData[i]);
+            vector.putDouble(i, byteData[i]);
+          }
+        }
+      } else if (type == DataTypes.SHORT) {
+        short[] shortData = columnPage.getShortData();
+        if (dataType == DataTypes.SHORT) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putShort(i, (short) shortData[i]);
+          }
+        } else if (dataType == DataTypes.INT) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putInt(i, (int) shortData[i]);
+          }
+        } else if (dataType == DataTypes.LONG) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putLong(i, shortData[i]);
+          }
+        } else {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, shortData[i]);
+          }
+        }
+
+      } else if (type == DataTypes.SHORT_INT) {
+        int[] shortIntData = columnPage.getShortIntData();
+        if (dataType == DataTypes.SHORT) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putShort(i, (short) shortIntData[i]);
+          }
+        } else if (dataType == DataTypes.INT) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putInt(i, (int) shortIntData[i]);
+          }
+        } else if (dataType == DataTypes.LONG) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putLong(i, shortIntData[i]);
+          }
+        } else {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, shortIntData[i]);
+          }
+        }
+      } else if (type == DataTypes.INT) {
+        int[] intData = columnPage.getIntData();
+        if (dataType == DataTypes.SHORT) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putShort(i, (short) intData[i]);
+          }
+        } else if (dataType == DataTypes.INT) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putInt(i, intData[i]);
+          }
+        } else if (dataType == DataTypes.LONG) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putLong(i, intData[i]);
+          }
+        } else {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, intData[i]);
           }
         }
       } else {
-        if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {
-          byte[] byteData = columnPage.getByteData();
-          if (dataType == DataTypes.SHORT) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putShort(i, (short) byteData[i]);
-            }
-          } else if (dataType == DataTypes.INT) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putInt(i, (int) byteData[i]);
-            }
-          } else if (dataType == DataTypes.LONG) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putLong(i, byteData[i]);
-            }
-          } else if (dataType == DataTypes.BOOLEAN) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putByte(i, byteData[i]);
-            }
-          } else {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putDouble(i, byteData[i]);
-            }
-          }
-        } else if (type == DataTypes.SHORT) {
-          short[] shortData = columnPage.getShortData();
-          if (dataType == DataTypes.SHORT) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putShort(i, (short) shortData[i]);
-            }
-          } else if (dataType == DataTypes.INT) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putInt(i, (int) shortData[i]);
-            }
-          } else if (dataType == DataTypes.LONG) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putLong(i, shortData[i]);
-            }
-          } else {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putDouble(i, shortData[i]);
-            }
-          }
-
-        } else if (type == DataTypes.SHORT_INT) {
-          int[] shortIntData = columnPage.getShortIntData();
-          if (dataType == DataTypes.SHORT) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putShort(i, (short) shortIntData[i]);
-            }
-          } else if (dataType == DataTypes.INT) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putInt(i, (int) shortIntData[i]);
-            }
-          } else if (dataType == DataTypes.LONG) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putLong(i, shortIntData[i]);
-            }
-          } else {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putDouble(i, shortIntData[i]);
-            }
-          }
-        } else if (type == DataTypes.INT) {
-          int[] intData = columnPage.getIntData();
-          if (dataType == DataTypes.SHORT) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putShort(i, (short) intData[i]);
-            }
-          } else if (dataType == DataTypes.INT) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putInt(i, intData[i]);
-            }
-          } else if (dataType == DataTypes.LONG) {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putLong(i, intData[i]);
-            }
-          } else {
-            for (int i = 0; i < pageSize; i++) {
-              vector.putDouble(i, intData[i]);
-            }
-          }
-        } else {
-          double[] doubleData = columnPage.getDoubleData();
-          for (int i = 0; i < pageSize; i++) {
-            vector.putDouble(i, doubleData[i]);
-          }
+        double[] doubleData = columnPage.getDoubleData();
+        for (int i = 0; i < pageSize; i++) {
+          vector.putDouble(i, doubleData[i]);
         }
       }
+    }
 
+    private void fillVectorWithInvertedIndex(ColumnPage columnPage, ColumnVectorInfo vectorInfo,
+        CarbonColumnVector vector, DataType dataType, DataType type, int pageSize) {
+      int[] invertedIndex = vectorInfo.invertedIndex;
+      if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {
+        byte[] byteData = columnPage.getByteData();
+        if (dataType == DataTypes.SHORT) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putShort(invertedIndex[i], (short) byteData[i]);
+          }
+        } else if (dataType == DataTypes.INT) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putInt(invertedIndex[i], (int) byteData[i]);
+          }
+        } else if (dataType == DataTypes.LONG) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putLong(invertedIndex[i], byteData[i]);
+          }
+        } else if (dataType == DataTypes.BOOLEAN) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putByte(invertedIndex[i], byteData[i]);
+          }
+        } else {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(invertedIndex[i], byteData[i]);
+          }
+        }
+      } else if (type == DataTypes.SHORT) {
+        short[] shortData = columnPage.getShortData();
+        if (dataType == DataTypes.SHORT) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putShort(invertedIndex[i], shortData[i]);
+          }
+        } else if (dataType == DataTypes.INT) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putInt(invertedIndex[i], (int) shortData[i]);
+          }
+        } else if (dataType == DataTypes.LONG) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putLong(invertedIndex[i], shortData[i]);
+          }
+        } else {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(invertedIndex[i], shortData[i]);
+          }
+        }
 
-      for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
-        vector.putNullDirect(i);
+      } else if (type == DataTypes.SHORT_INT) {
+        int[] shortIntData = columnPage.getShortIntData();
+        if (dataType == DataTypes.SHORT) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putShort(invertedIndex[i], (short) shortIntData[i]);
+          }
+        } else if (dataType == DataTypes.INT) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putInt(invertedIndex[i], shortIntData[i]);
+          }
+        } else if (dataType == DataTypes.LONG) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putLong(invertedIndex[i], shortIntData[i]);
+          }
+        } else {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(invertedIndex[i], shortIntData[i]);
+          }
+        }
+      } else if (type == DataTypes.INT) {
+        int[] intData = columnPage.getIntData();
+        if (dataType == DataTypes.SHORT) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putShort(invertedIndex[i], (short) intData[i]);
+          }
+        } else if (dataType == DataTypes.INT) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putInt(invertedIndex[i], intData[i]);
+          }
+        } else if (dataType == DataTypes.LONG) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putLong(invertedIndex[i], intData[i]);
+          }
+        } else {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(invertedIndex[i], intData[i]);
+          }
+        }
+      } else {
+        double[] doubleData = columnPage.getDoubleData();
+        for (int i = 0; i < pageSize; i++) {
+          vector.putDouble(invertedIndex[i], doubleData[i]);
+        }
       }
     }
   };

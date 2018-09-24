@@ -18,10 +18,12 @@ package org.apache.carbondata.core.scan.collector.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
@@ -142,10 +144,17 @@ public class DirectPageWiseVectorFillResultCollector extends AbstractScannedResu
         scannedResult.incrementPageCounter(null);
         continue;
       }
-      fillColumnVectorDetails(columnarBatch);
+      DeleteDeltaVo deltaVo = scannedResult.getCurrentDeleteDeltaVo();
+      BitSet bitSet = null;
+      int deletedRows = 0;
+      if (deltaVo != null) {
+        bitSet = deltaVo.getBitSet();
+        deletedRows = bitSet.cardinality();
+      }
+      fillColumnVectorDetails(columnarBatch, bitSet);
       fillResultToColumnarBatch(scannedResult);
-      columnarBatch.setActualSize(currentPageRowCount);
-      scannedResult.setRowCounter(currentPageRowCount);
+      columnarBatch.setActualSize(currentPageRowCount - deletedRows);
+      scannedResult.setRowCounter(currentPageRowCount - deletedRows);
       scannedResult.incrementPageCounter(null);
       return;
     }
@@ -154,12 +163,15 @@ public class DirectPageWiseVectorFillResultCollector extends AbstractScannedResu
   private void fillResultToColumnarBatch(BlockletScannedResult scannedResult) {
     scannedResult.fillDataChunks(dictionaryInfo, noDictionaryInfo, measureColumnInfo,
         measureInfo.getMeasureOrdinals());
+
   }
 
-  private void fillColumnVectorDetails(CarbonColumnarBatch columnarBatch) {
+  private void fillColumnVectorDetails(CarbonColumnarBatch columnarBatch,
+      BitSet deltaBitSet) {
     for (int i = 0; i < allColumnInfo.length; i++) {
       allColumnInfo[i].vectorOffset = columnarBatch.getRowCounter();
       allColumnInfo[i].vector = columnarBatch.columnVectors[i];
+      allColumnInfo[i].deletedRows = deltaBitSet;
       if (null != allColumnInfo[i].dimension) {
         allColumnInfo[i].vector.setBlockDataType(dimensionInfo.dataType[i]);
       }

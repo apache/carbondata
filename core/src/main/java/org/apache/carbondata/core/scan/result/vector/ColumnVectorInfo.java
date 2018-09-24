@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.core.scan.result.vector;
 
+import java.util.BitSet;
+
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
@@ -34,6 +36,7 @@ public class ColumnVectorInfo implements Comparable<ColumnVectorInfo> {
   public GenericQueryType genericQueryType;
   public boolean isExplictSorted;
   public int[] invertedIndex;
+  public BitSet deletedRows;
 
   @Override public int compareTo(ColumnVectorInfo o) {
     return ordinal - o.ordinal;
