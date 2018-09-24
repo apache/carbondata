@@ -272,13 +272,25 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       DataType dataType = vector.getType();
       DataType type = columnPage.getDataType();
       int pageSize = columnPage.getPageSize();
+      BitSet deletedRows = vectorInfo.deletedRows;
       if (vectorInfo.isExplictSorted) {
-        fillVectorWithInvertedIndex(columnPage, vectorInfo, vector, dataType, type, pageSize);
+        if (deletedRows != null && !deletedRows.isEmpty()) {
+          fillVectorWithInvertedIndexWithDelta(columnPage, vectorInfo, vector, dataType, type,
+              pageSize, deletedRows, nullBits);
+        } else {
+          fillVectorWithInvertedIndex(columnPage, vectorInfo, vector, dataType, type, pageSize);
+        }
       } else {
-        fillVector(columnPage, vector, dataType, type, pageSize);
+        if (deletedRows != null && !deletedRows.isEmpty()) {
+          fillVectorWithDelta(columnPage, vector, dataType, type, pageSize, deletedRows, nullBits);
+        } else {
+          fillVector(columnPage, vector, dataType, type, pageSize);
+        }
       }
-      for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
-        vector.putNullDirect(i);
+      if (deletedRows == null || deletedRows.isEmpty()) {
+        for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
+          vector.putNullDirect(i);
+        }
       }
 
     }
@@ -298,6 +310,10 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
         } else if (dataType == DataTypes.LONG) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, byteData[i]);
+          }
+        } else if (dataType == DataTypes.TIMESTAMP) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putLong(i, byteData[i] * 1000);
           }
         } else if (dataType == DataTypes.BOOLEAN) {
           for (int i = 0; i < pageSize; i++) {
@@ -322,6 +338,10 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, shortData[i]);
           }
+        } else if (dataType == DataTypes.TIMESTAMP) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putLong(i, shortData[i] * 1000);
+          }
         } else {
           for (int i = 0; i < pageSize; i++) {
             vector.putDouble(i, shortData[i]);
@@ -342,6 +362,10 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, shortIntData[i]);
           }
+        } else if (dataType == DataTypes.TIMESTAMP) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putLong(i, shortIntData[i] * 1000);
+          }
         } else {
           for (int i = 0; i < pageSize; i++) {
             vector.putDouble(i, shortIntData[i]);
@@ -360,6 +384,10 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
         } else if (dataType == DataTypes.LONG) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, intData[i]);
+          }
+        } else if (dataType == DataTypes.TIMESTAMP) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putLong(i, intData[i] * 1000);
           }
         } else {
           for (int i = 0; i < pageSize; i++) {
@@ -391,6 +419,10 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(invertedIndex[i], byteData[i]);
           }
+        }  else if (dataType == DataTypes.TIMESTAMP) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putLong(invertedIndex[i], byteData[i] * 1000);
+          }
         } else if (dataType == DataTypes.BOOLEAN) {
           for (int i = 0; i < pageSize; i++) {
             vector.putByte(invertedIndex[i], byteData[i]);
@@ -414,6 +446,10 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(invertedIndex[i], shortData[i]);
           }
+        } else if (dataType == DataTypes.TIMESTAMP) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putLong(invertedIndex[i], shortData[i] * 1000);
+          }
         } else {
           for (int i = 0; i < pageSize; i++) {
             vector.putDouble(invertedIndex[i], shortData[i]);
@@ -434,6 +470,10 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(invertedIndex[i], shortIntData[i]);
           }
+        } else if (dataType == DataTypes.TIMESTAMP) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putLong(invertedIndex[i], shortIntData[i] * 1000);
+          }
         } else {
           for (int i = 0; i < pageSize; i++) {
             vector.putDouble(invertedIndex[i], shortIntData[i]);
@@ -453,6 +493,10 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(invertedIndex[i], intData[i]);
           }
+        } else if (dataType == DataTypes.TIMESTAMP) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putLong(invertedIndex[i], intData[i] * 1000);
+          }
         } else {
           for (int i = 0; i < pageSize; i++) {
             vector.putDouble(invertedIndex[i], intData[i]);
@@ -465,6 +509,580 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
         }
       }
     }
+
+    private void fillVectorWithDelta(ColumnPage columnPage, CarbonColumnVector vector,
+        DataType dataType,
+        DataType type, int pageSize,
+        BitSet deletedRows,
+        BitSet nullBitset) {
+      int k = 0;
+      if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {
+        byte[] byteData = columnPage.getByteData();
+        if (dataType == DataTypes.SHORT) {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putShort(k++, (short) (byteData[i]));
+              }
+            }
+          }
+        } else if (dataType == DataTypes.INT) {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putInt(k++, (int) (byteData[i]));
+              }
+            }
+          }
+        } else if (dataType == DataTypes.LONG) {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putLong(k++, (byteData[i]));
+              }
+            }
+          }
+        } else if (dataType == DataTypes.TIMESTAMP) {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putLong(k++, (byteData[i] * 1000));
+              }
+            }
+          }
+        } else if (dataType == DataTypes.BOOLEAN) {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putByte(k++, (byte) (byteData[i]));
+              }
+            }
+          }
+        } else {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putDouble(k++, (byteData[i]));
+              }
+            }
+          }
+        }
+      } else if (type == DataTypes.SHORT) {
+        short[] shortData = columnPage.getShortData();
+        if (dataType == DataTypes.SHORT) {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putShort(k++, (shortData[i]));
+              }
+            }
+          }
+        } else if (dataType == DataTypes.INT) {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putInt(k++, (int) (shortData[i]));
+              }
+            }
+          }
+        } else if (dataType == DataTypes.LONG) {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putLong(k++, (shortData[i]));
+              }
+            }
+          }
+        } else if (dataType == DataTypes.TIMESTAMP) {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putLong(k++, (shortData[i] * 1000));
+              }
+            }
+          }
+        } else {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putDouble(k++, (shortData[i]));
+              }
+            }
+          }
+        }
+
+      } else if (type == DataTypes.SHORT_INT) {
+        int[] shortIntData = columnPage.getShortIntData();
+        if (dataType == DataTypes.SHORT) {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putShort(k++, (short) (shortIntData[i]));
+              }
+            }
+          }
+        } else if (dataType == DataTypes.INT) {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putInt(k++, (int) (shortIntData[i]));
+              }
+            }
+          }
+        } else if (dataType == DataTypes.LONG) {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putLong(k++, (shortIntData[i]));
+              }
+            }
+          }
+        } else if (dataType == DataTypes.TIMESTAMP) {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putLong(k++, (shortIntData[i] * 1000));
+              }
+            }
+          }
+        } else {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putDouble(k++, (shortIntData[i]));
+              }
+            }
+          }
+        }
+      } else if (type == DataTypes.INT) {
+        int[] intData = columnPage.getIntData();
+        if (dataType == DataTypes.SHORT) {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putShort(k++, (short) (intData[i]));
+              }
+            }
+          }
+        } else if (dataType == DataTypes.INT) {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putInt(k++, (int) (intData[i]));
+              }
+            }
+          }
+        } else if (dataType == DataTypes.LONG) {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putLong(k++, (intData[i]));
+              }
+            }
+          }
+        } else if (dataType == DataTypes.TIMESTAMP) {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putLong(k++, (intData[i] * 1000));
+              }
+            }
+          }
+        } else {
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putDouble(k++, (intData[i]));
+              }
+            }
+          }
+        }
+      } else {
+        double[] doubleData = columnPage.getDoubleData();
+        for (int i = 0; i < pageSize; i++) {
+          if (!deletedRows.get(i)) {
+            if (nullBitset.get(i)) {
+              vector.putNull(k++);
+            } else {
+              vector.putDouble(k++, doubleData[i]);
+            }
+          }
+        }
+      }
+    }
+
+    private void fillVectorWithInvertedIndexWithDelta(ColumnPage columnPage,
+        ColumnVectorInfo vectorInfo, CarbonColumnVector vector, DataType dataType, DataType type,
+        int pageSize, BitSet deletedRows, BitSet nullBitset) {
+      int[] invertedIndex = vectorInfo.invertedIndex;
+      int k = 0;
+      if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {
+        byte[] byteData = columnPage.getByteData();
+        if (dataType == DataTypes.SHORT) {
+          short[] finalData = new short[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (short) (byteData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putShort(k++, finalData[i]);
+              }
+            }
+          }
+        } else if (dataType == DataTypes.INT) {
+          int[] finalData = new int[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (int) (byteData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putInt(k++, finalData[i]);
+              }
+            }
+          }
+        } else if (dataType == DataTypes.LONG) {
+          long[] finalData = new long[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (byteData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putLong(k++, finalData[i]);
+              }
+            }
+          }
+        } else if (dataType == DataTypes.TIMESTAMP) {
+          long[] finalData = new long[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (byteData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putLong(k++, finalData[i] * 1000);
+              }
+            }
+          }
+        } else if (dataType == DataTypes.BOOLEAN) {
+          byte[] finalData = new byte[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (byte) (byteData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putByte(k++, finalData[i]);
+              }
+            }
+          }
+        } else {
+          double[] finalData = new double[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (byteData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putDouble(k++, finalData[i]);
+              }
+            }
+          }
+        }
+      } else if (type == DataTypes.SHORT) {
+        short[] shortData = columnPage.getShortData();
+        if (dataType == DataTypes.SHORT) {
+          short[] finalData = new short[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (short) (shortData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putShort(k++, finalData[i]);
+              }
+            }
+          }
+        } else if (dataType == DataTypes.INT) {
+          int[] finalData = new int[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (int) (shortData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putInt(k++, finalData[i]);
+              }
+            }
+          }
+        } else if (dataType == DataTypes.LONG) {
+          long[] finalData = new long[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (shortData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putLong(k++, finalData[i]);
+              }
+            }
+          }
+        } else if (dataType == DataTypes.TIMESTAMP) {
+          long[] finalData = new long[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (shortData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putLong(k++, finalData[i] * 1000);
+              }
+            }
+          }
+        } else {
+          double[] finalData = new double[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (shortData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putDouble(k++, finalData[i]);
+              }
+            }
+          }
+        }
+
+      } else if (type == DataTypes.SHORT_INT) {
+        int[] shortIntData = columnPage.getShortIntData();
+        if (dataType == DataTypes.SHORT) {
+          short[] finalData = new short[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (short) (shortIntData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putShort(k++, finalData[i]);
+              }
+            }
+          }
+        } else if (dataType == DataTypes.INT) {
+          int[] finalData = new int[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (int) (shortIntData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putInt(k++, finalData[i]);
+              }
+            }
+          }
+        } else if (dataType == DataTypes.LONG) {
+          long[] finalData = new long[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (shortIntData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putLong(k++, finalData[i]);
+              }
+            }
+          }
+        } else if (dataType == DataTypes.TIMESTAMP) {
+          long[] finalData = new long[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (shortIntData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putLong(k++, finalData[i] * 1000);
+              }
+            }
+          }
+        } else {
+          double[] finalData = new double[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (shortIntData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putDouble(k++, finalData[i]);
+              }
+            }
+          }
+        }
+      } else if (type == DataTypes.INT) {
+        int[] intData = columnPage.getIntData();
+        if (dataType == DataTypes.SHORT) {
+          short[] finalData = new short[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (short) (intData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putShort(k++, finalData[i]);
+              }
+            }
+          }
+        } else if (dataType == DataTypes.INT) {
+          int[] finalData = new int[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (int) (intData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putInt(k++, finalData[i]);
+              }
+            }
+          }
+        } else if (dataType == DataTypes.LONG) {
+          long[] finalData = new long[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (intData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putLong(k++, finalData[i]);
+              }
+            }
+          }
+        } else if (dataType == DataTypes.TIMESTAMP) {
+          long[] finalData = new long[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (intData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putLong(k++, finalData[i] * 1000);
+              }
+            }
+          }
+        } else {
+          double[] finalData = new double[pageSize];
+          for (int i = 0; i < pageSize; i++) {
+            finalData[invertedIndex[i]] = (intData[i]);
+          }
+          for (int i = 0; i < finalData.length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBitset.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putDouble(k++, finalData[i]);
+              }
+            }
+          }
+        }
+      } else {
+        double[] doubleData = columnPage.getDoubleData();
+        double[] finalData = new double[pageSize];
+        for (int i = 0; i < pageSize; i++) {
+          finalData[invertedIndex[i]] = doubleData[i];
+        }
+        for (int i = 0; i < pageSize; i++) {
+          if (!deletedRows.get(i)) {
+            if (nullBitset.get(i)) {
+              vector.putNull(k++);
+            } else {
+              vector.putDouble(k++, finalData[i]);
+            }
+          }
+        }
+      }
+    }
+
   };
 
 }

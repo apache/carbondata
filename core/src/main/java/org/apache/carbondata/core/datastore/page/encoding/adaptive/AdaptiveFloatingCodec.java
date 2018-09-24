@@ -244,34 +244,87 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
       BitSet nullBits = columnPage.getNullBits();
       DataType type = columnPage.getDataType();
       int pageSize = columnPage.getPageSize();
-      if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {
-        byte[] byteData = columnPage.getByteData();
-        for (int i = 0; i < pageSize; i++) {
-          vector.putDouble(i, (byteData[i] / factor));
-        }
-      } else if (type == DataTypes.SHORT) {
-        short[] shortData = columnPage.getShortData();
-        for (int i = 0; i < pageSize; i++) {
-          vector.putDouble(i, (shortData[i] / factor));
-        }
+      BitSet deletedRows = vectorInfo.deletedRows;
+      if (deletedRows != null && !deletedRows.isEmpty()) {
+        int k = 0;
+        if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {
+          byte[] byteData = columnPage.getByteData();
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBits.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putDouble(k++, (byteData[i] / factor));
+              }
+            }
+          }
+        } else if (type == DataTypes.SHORT) {
+          short[] shortData = columnPage.getShortData();
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBits.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putDouble(k++, (shortData[i] / factor));
+              }
+            }
+          }
 
-      } else if (type == DataTypes.SHORT_INT) {
-        int[] shortIntData = columnPage.getShortIntData();
-        for (int i = 0; i < pageSize; i++) {
-          vector.putDouble(i, (shortIntData[i] / factor));
-        }
-      } else if (type == DataTypes.INT) {
-        int[] intData = columnPage.getIntData();
-        for (int i = 0; i < pageSize; i++) {
-          vector.putDouble(i, (intData[i] / factor));
+        } else if (type == DataTypes.SHORT_INT) {
+          int[] shortIntData = columnPage.getShortIntData();
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBits.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putDouble(k++, (shortIntData[i] / factor));
+              }
+            }
+          }
+        } else if (type == DataTypes.INT) {
+          int[] intData = columnPage.getIntData();
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBits.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putDouble(k++, (intData[i] / factor));
+              }
+            }
+          }
+        } else {
+          throw new RuntimeException("internal error: " + this.toString());
         }
       } else {
-        throw new RuntimeException("internal error: " + this.toString());
+        if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {
+          byte[] byteData = columnPage.getByteData();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, (byteData[i] / factor));
+          }
+        } else if (type == DataTypes.SHORT) {
+          short[] shortData = columnPage.getShortData();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, (shortData[i] / factor));
+          }
+
+        } else if (type == DataTypes.SHORT_INT) {
+          int[] shortIntData = columnPage.getShortIntData();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, (shortIntData[i] / factor));
+          }
+        } else if (type == DataTypes.INT) {
+          int[] intData = columnPage.getIntData();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, (intData[i] / factor));
+          }
+        } else {
+          throw new RuntimeException("internal error: " + this.toString());
+        }
+        for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
+          vector.putNullDirect(i);
+        }
       }
 
-      for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
-        vector.putNullDirect(i);
-      }
     }
   };
 }

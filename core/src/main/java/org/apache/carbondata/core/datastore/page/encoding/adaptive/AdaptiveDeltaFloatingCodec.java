@@ -242,33 +242,86 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
       BitSet nullBits = columnPage.getNullBits();
       DataType type = columnPage.getDataType();
       int pageSize = columnPage.getPageSize();
-      if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {
-        byte[] byteData = columnPage.getByteData();
-        for (int i = 0; i < pageSize; i++) {
-          vector.putDouble(i, (max - byteData[i]) / factor);
-        }
-      } else if (type == DataTypes.SHORT) {
-        short[] shortData = columnPage.getShortData();
-        for (int i = 0; i < pageSize; i++) {
-          vector.putDouble(i, (max - shortData[i]) / factor);
-        }
+      BitSet deletedRows = vectorInfo.deletedRows;
+      if (deletedRows != null && !deletedRows.isEmpty()) {
+        int k = 0;
+        if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {
+          byte[] byteData = columnPage.getByteData();
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBits.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putDouble(k++, (max - byteData[i]) / factor);
+              }
+            }
+          }
+        } else if (type == DataTypes.SHORT) {
+          short[] shortData = columnPage.getShortData();
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBits.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putDouble(k++, (max - shortData[i]) / factor);
+              }
+            }
+          }
 
-      } else if (type == DataTypes.SHORT_INT) {
-        int[] shortIntData = columnPage.getShortIntData();
-        for (int i = 0; i < pageSize; i++) {
-          vector.putDouble(i, (max - shortIntData[i]) / factor);
-        }
-      } else if (type == DataTypes.INT) {
-        int[] intData = columnPage.getIntData();
-        for (int i = 0; i < pageSize; i++) {
-          vector.putDouble(i, (max - intData[i]) / factor);
+        } else if (type == DataTypes.SHORT_INT) {
+          int[] shortIntData = columnPage.getShortIntData();
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBits.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putDouble(k++, (max - shortIntData[i]) / factor);
+              }
+            }
+          }
+        } else if (type == DataTypes.INT) {
+          int[] intData = columnPage.getIntData();
+          for (int i = 0; i < pageSize; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBits.get(i)) {
+                vector.putNull(k++);
+              } else {
+                vector.putDouble(k++, (max - intData[i]) / factor);
+              }
+            }
+          }
+        } else {
+          throw new RuntimeException("internal error: " + this.toString());
         }
       } else {
-        throw new RuntimeException("internal error: " + this.toString());
-      }
+        if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {
+          byte[] byteData = columnPage.getByteData();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, (max - byteData[i]) / factor);
+          }
+        } else if (type == DataTypes.SHORT) {
+          short[] shortData = columnPage.getShortData();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, (max - shortData[i]) / factor);
+          }
 
-      for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
-        vector.putNullDirect(i);
+        } else if (type == DataTypes.SHORT_INT) {
+          int[] shortIntData = columnPage.getShortIntData();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, (max - shortIntData[i]) / factor);
+          }
+        } else if (type == DataTypes.INT) {
+          int[] intData = columnPage.getIntData();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, (max - intData[i]) / factor);
+          }
+        } else {
+          throw new RuntimeException("internal error: " + this.toString());
+        }
+
+        for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
+          vector.putNullDirect(i);
+        }
       }
     }
 
