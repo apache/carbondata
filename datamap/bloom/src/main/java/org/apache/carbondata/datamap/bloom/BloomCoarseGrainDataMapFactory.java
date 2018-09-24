@@ -263,7 +263,10 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
           // for merge shard, shard pruning delay to be done before pruning blocklet
           BloomCoarseGrainDataMap bloomDM = new BloomCoarseGrainDataMap();
           bloomDM.init(new BloomDataMapModel(shard, cache, segment.getConfiguration()));
-          bloomDM.initIndexColumnConverters(getCarbonTable(), dataMapMeta.getIndexedColumns());
+          String dataMapStorePath = CarbonTablePath.getDataMapStorePath(
+              getCarbonTable().getTablePath(), segment.getSegmentNo(), dataMapName);
+          bloomDM.initIndexColumnConverters(getCarbonTable(), dataMapStorePath,
+              dataMapMeta.getIndexedColumns());
           bloomDM.setFilteredShard(filteredShards);
           dataMaps.add(bloomDM);
         }
@@ -282,7 +285,10 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
     Set<String> filteredShards = ((BloomDataMapDistributable) distributable).getFilteredShards();
     BloomCoarseGrainDataMap bloomDM = new BloomCoarseGrainDataMap();
     bloomDM.init(new BloomDataMapModel(indexPath, cache, FileFactory.getConfiguration()));
-    bloomDM.initIndexColumnConverters(getCarbonTable(), dataMapMeta.getIndexedColumns());
+    String dmStorePath = CarbonTablePath.getDataMapStorePath(
+        getCarbonTable().getTablePath(), distributable.getSegment().getSegmentNo(), dataMapName);
+    bloomDM.initIndexColumnConverters(getCarbonTable(), dmStorePath,
+        dataMapMeta.getIndexedColumns());
     bloomDM.setFilteredShard(filteredShards);
     dataMaps.add(bloomDM);
     return dataMaps;

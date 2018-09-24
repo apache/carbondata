@@ -53,11 +53,12 @@ class CarbonMergeBloomIndexFilesRDD(
     logInfo("Merging bloom index files of " +
       s"segment ${split.segmentId} for ${carbonTable.getTableName}")
 
-    bloomDatamapNames.zipWithIndex.map( dm => {
+    bloomDatamapNames.zipWithIndex.foreach{ dm =>
       val dmSegmentPath = CarbonTablePath.getDataMapStorePath(
         tablePath, split.segmentId, dm._1)
       BloomIndexFileStore.mergeBloomIndexFile(dmSegmentPath, bloomIndexColumns(dm._2).asJava)
-    })
+      BloomIndexFileStore.writeBloomIndexVersionFile(dmSegmentPath)
+    }
 
     val iter = new Iterator[String] {
       var havePair = false

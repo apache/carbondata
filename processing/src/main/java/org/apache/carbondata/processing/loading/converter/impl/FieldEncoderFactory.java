@@ -40,6 +40,8 @@ import org.apache.carbondata.processing.datatypes.StructDataType;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.converter.FieldConverter;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class FieldEncoderFactory {
 
   private static FieldEncoderFactory instance;
@@ -74,7 +76,7 @@ public class FieldEncoderFactory {
   public FieldConverter createFieldEncoder(DataField dataField,
       AbsoluteTableIdentifier absoluteTableIdentifier, int index, String nullFormat,
       DictionaryClient client, Boolean useOnePass, Map<Object, Integer> localCache,
-      boolean isEmptyBadRecord, String parentTablePath, boolean isConvertToBinary)
+      boolean isEmptyBadRecord, String parentTablePath, boolean isConvertToBinary, String version)
       throws IOException {
     // Converters are only needed for dimensions and measures it return null.
     if (dataField.getColumn().isDimension()) {
@@ -124,7 +126,8 @@ public class FieldEncoderFactory {
         // then treat it is as measure col
         // so that the adaptive encoding can be applied on it easily
         if (DataTypeUtil.isPrimitiveColumn(dataField.getColumn().getDataType())
-            && !isConvertToBinary) {
+            && !isConvertToBinary
+            && (StringUtils.isEmpty(version) || version.compareTo("1.5.0") >= 0)) {
           return new MeasureFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);
         }
         return new NonDictionaryFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);

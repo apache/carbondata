@@ -65,6 +65,7 @@ class MergeBloomIndexEventListener extends OperationEventListener with Logging {
           new CarbonMergeBloomIndexFilesRDD(sparkSession, carbonTable,
             segmentIds, bloomDMnames, bloomIndexColumns).collect()
         }
+      case event: Event => throw new RuntimeException(s"Unsupported event $event")
     }
   }
 

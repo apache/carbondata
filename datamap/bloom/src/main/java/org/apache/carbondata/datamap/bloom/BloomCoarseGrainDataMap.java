@@ -40,6 +40,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
@@ -87,6 +89,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
   private Path indexPath;
   private Set<String> filteredShard;
   private boolean needShardPrune;
+  private String indexVersion;
   /**
    * This is used to convert literal filter value to internal carbon value
    */
@@ -113,11 +116,13 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
   /**
    * init field converters for index columns
    */
-  public void initIndexColumnConverters(CarbonTable carbonTable, List<CarbonColumn> indexedColumn) {
+  public void initIndexColumnConverters(CarbonTable carbonTable, String dmStorePath,
+      List<CarbonColumn> indexedColumn) {
     this.name2Col = new HashMap<>(indexedColumn.size());
     for (CarbonColumn col : indexedColumn) {
       this.name2Col.put(col.getColName(), col);
     }
+    this.indexVersion = retrieveIndexFileVersion(dmStorePath);
     String parentTablePath = getAncestorTablePath(carbonTable);
 
     try {
@@ -140,7 +145,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         dataField.setTimestampFormat(tsFormat);
         FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
             .createFieldEncoder(dataField, absoluteTableIdentifier, i, nullFormat, null, false,
-                localCaches[i], false, parentTablePath, false);
+                localCaches[i], false, parentTablePath, false, indexVersion);
         this.name2Converters.put(indexedColumn.get(i).getColName(), fieldConverter);
       }
     } catch (IOException e) {
@@ -149,6 +154,23 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     }
     this.badRecordLogHolder = new BadRecordLogHolder();
     this.badRecordLogHolder.setLogged(false);
+  }
+
+  private String retrieveIndexFileVersion(String dmStorePath) {
+    CarbonFile dmStore = FileFactory.getCarbonFile(dmStorePath);
+    CarbonFile[] indexVersionFile = dmStore.listFiles(new CarbonFileFilter() {
+      @Override
+      public boolean accept(CarbonFile file) {
+        return file.getName().startsWith(BloomIndexFileStore.BLOOM_INDEX_VERSION_PREFIX);
+      }
+    });
+    if (null == indexVersionFile || indexVersionFile.length == 0) {
+      // we does not have this file, which means this is version is 1.4.1 afterwards
+      return "1.4.1";
+    } else {
+      return indexVersionFile[0].getName().substring(
+          BloomIndexFileStore.BLOOM_INDEX_VERSION_PREFIX.length());
+    }
   }
 
   /**
@@ -344,9 +366,11 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       // for dictionary/date columns, convert the surrogate key to bytes
       internalFilterValue = CarbonUtil.getValueAsBytes(DataTypes.INT, convertedValue);
     } else {
-      // for non dictionary dimensions, numeric columns will be of original data,
-      // so convert the data to bytes
-      if (DataTypeUtil.isPrimitiveColumn(carbonColumn.getDataType())) {
+      // for non dictionary dimensions, before 1.5.0, numeric fields are stored as bytes just like
+      // string column; since 1.5.0, they will be encoded as original primitive objects, so here we
+      // need to convert them to bytes
+      if (indexVersion.compareTo("1.5.0") >= 0 &&
+          DataTypeUtil.isPrimitiveColumn(carbonColumn.getDataType())) {
         if (convertedValue == null) {
           convertedValue = DataConvertUtil.getNullValueForMeasure(carbonColumn.getDataType(),
               carbonColumn.getColumnSchema().getScale());
