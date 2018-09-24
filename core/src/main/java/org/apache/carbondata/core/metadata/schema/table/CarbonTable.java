@@ -261,7 +261,11 @@ public class CarbonTable implements Serializable {
     CarbonFile[] carbonFiles = tablePath.listFiles();
     for (CarbonFile carbonFile : carbonFiles) {
       if (carbonFile.isDirectory()) {
-        return getFirstIndexFile(carbonFile);
+        if (getFirstIndexFile(carbonFile) == null) {
+          continue;
+        } else {
+          return getFirstIndexFile(carbonFile);
+        }
       } else if (carbonFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
         return carbonFile;
       }

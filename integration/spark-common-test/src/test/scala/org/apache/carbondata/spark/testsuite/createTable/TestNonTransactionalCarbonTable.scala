@@ -740,6 +740,17 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
   test("test create External Table With Schema, should ignore the schema provided") {
     buildTestDataSingleFile()
     assert(new File(writerPath).exists())
+
+    val path1 = writerPath + "/0testdir"
+    val path2 = writerPath + "/testdir"
+
+    FileFactory.getCarbonFile(path1, FileFactory.getFileType(path1))
+    FileFactory.mkdirs(path1, FileFactory.getFileType(path1))
+
+    FileFactory.getCarbonFile(path2, FileFactory.getFileType(path2))
+    FileFactory.mkdirs(path2, FileFactory.getFileType(path2))
+
+
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
     // with schema
@@ -796,6 +807,10 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     cleanTestData()
   }
+
+
+
+
 
   test("Read sdk writer output multiple files ") {
     buildTestDataMultipleFiles()

@@ -27,6 +27,7 @@ import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.DiskBasedDMSchemaStorageProvider;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
@@ -201,6 +202,17 @@ public class CarbonReaderTest extends TestCase {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
 
+    String path1 = path + "/0testdir";
+    String path2 = path + "/testdir";
+
+    FileUtils.deleteDirectory(new File(path));
+
+    FileFactory.getCarbonFile(path1, FileFactory.getFileType(path1));
+    FileFactory.mkdirs(path1, FileFactory.getFileType(path1));
+
+    FileFactory.getCarbonFile(path2, FileFactory.getFileType(path2));
+    FileFactory.mkdirs(path2, FileFactory.getFileType(path2));
+
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
@@ -208,14 +220,11 @@ public class CarbonReaderTest extends TestCase {
     TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
 
     ColumnExpression columnExpression = new ColumnExpression("name", DataTypes.STRING);
-    EqualToExpression equalToExpression = new EqualToExpression(columnExpression,
-        new LiteralExpression("robot1", DataTypes.STRING));
+    EqualToExpression equalToExpression =
+        new EqualToExpression(columnExpression, new LiteralExpression("robot1", DataTypes.STRING));
 
-    CarbonReader reader = CarbonReader
-        .builder(path, "_temp")
-        .isTransactionalTable(false)
-        .projection(new String[]{"name", "age"})
-        .filter(equalToExpression)
+    CarbonReader reader = CarbonReader.builder(path, "_temp").isTransactionalTable(false)
+        .projection(new String[] { "name", "age" }).filter(equalToExpression)
         .build(conf);
 
     int i = 0;
