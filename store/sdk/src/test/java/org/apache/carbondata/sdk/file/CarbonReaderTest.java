@@ -27,6 +27,7 @@ import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.DiskBasedDMSchemaStorageProvider;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
@@ -200,6 +201,17 @@ public class CarbonReaderTest extends TestCase {
   public void testReadWithFilterOfNonTransactionalSimple() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
     FileUtils.deleteDirectory(new File(path));
+
+    String path1 = path + "/0testdir";
+    String path2 = path + "/testdir";
+
+    FileUtils.deleteDirectory(new File(path));
+
+    FileFactory.getCarbonFile(path1, FileFactory.getFileType(path1));
+    FileFactory.mkdirs(path1, FileFactory.getFileType(path1));
+
+    FileFactory.getCarbonFile(path2, FileFactory.getFileType(path2));
+    FileFactory.mkdirs(path2, FileFactory.getFileType(path2));
 
     Field[] fields = new Field[2];
     fields[0] = new Field("name", DataTypes.STRING);
