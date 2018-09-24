@@ -54,20 +54,24 @@ class ScanBenchmark implements Command {
   ScanBenchmark(String dataFolder, PrintStream out) {
     this.dataFolder = dataFolder;
     this.out = out;
-    this.file = new DataFile(FileFactory.getCarbonFile(dataFolder));
   }
 
   @Override
   public void run(CommandLine line) throws IOException, MemoryException {
-    FileCollector collector = new FileCollector(out);
-    collector.collectFiles(dataFolder);
-    if (collector.getNumDataFiles() == 0) {
-      return;
+    if (line.hasOption("f")) {
+      String filePath = line.getOptionValue("f");
+      file = new DataFile(FileFactory.getCarbonFile(filePath));
+    } else {
+      FileCollector collector = new FileCollector(out);
+      collector.collectFiles(dataFolder);
+      if (collector.getNumDataFiles() == 0) {
+        return;
+      }
+      Map<String, DataFile> dataFiles = collector.getDataFiles();
+      file = dataFiles.entrySet().iterator().next().getValue();
     }
 
     out.println("\n## Benchmark");
-    Map<String, DataFile> dataFiles = collector.getDataFiles();
-    file = dataFiles.entrySet().iterator().next().getValue();
     AtomicReference<FileHeader> fileHeaderRef = new AtomicReference<>();
     AtomicReference<FileFooter3> fileFoorterRef = new AtomicReference<>();
     AtomicReference<DataFileFooter> convertedFooterRef = new AtomicReference<>();
@@ -105,22 +109,17 @@ class ScanBenchmark implements Command {
 
         if (dimensionColumnChunkReader != null) {
           benchmarkOperation(String.format("Blocklet#%d: DecompressPage", blockletId), () -> {
-            for (int pageId = 0; pageId < convertedFooter.getBlockletList().size(); pageId++) {
-              decompressDimensionPages(columnChunk.get(),
-                  convertedFooter.getBlockletList().get(blockletId).getNumberOfPages());
-            }
+            decompressDimensionPages(columnChunk.get(),
+                convertedFooter.getBlockletList().get(blockletId).getNumberOfPages());
           });
         } else {
           benchmarkOperation("            DecompressPages", () -> {
-            for (int pageId = 0; pageId < convertedFooter.getBlockletList().size(); pageId++) {
-              decompressMeasurePages(columnChunk.get(),
-                  convertedFooter.getBlockletList().get(blockletId).getNumberOfPages());
-            }
+            decompressMeasurePages(columnChunk.get(),
+                convertedFooter.getBlockletList().get(blockletId).getNumberOfPages());
           });
         }
       }
     }
-
 
   }
 

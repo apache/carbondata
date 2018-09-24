@@ -47,6 +47,11 @@ public class CarbonCli {
         .withDescription("the path which contains carbondata files, nested folder is supported")
         .withLongOpt("path")
         .create("p");
+    Option file = OptionBuilder.withArgName("file")
+        .hasArg()
+        .withDescription("the carbondata file path")
+        .withLongOpt("file")
+        .create("f");
 
     Option command = OptionBuilder
         .withArgName("command name")
@@ -70,6 +75,7 @@ public class CarbonCli {
     Options options = new Options();
     options.addOption(help);
     options.addOption(path);
+    options.addOption(file);
     options.addOption(command);
     options.addOption(all);
     options.addOption(schema);
@@ -101,13 +107,9 @@ public class CarbonCli {
       return;
     }
 
-    String path;
+    String path = "";
     if (line.hasOption("p")) {
       path = line.getOptionValue("path");
-    } else {
-      System.err.println("path is required");
-      printHelp(options);
-      return;
     }
     out.println("Input Folder: " + path);
 

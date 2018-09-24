@@ -192,7 +192,8 @@ public class CarbonCliTest {
 
   @Test
   public void testBenchmark() {
-    String path = "/Users/jacky/code/spark-2.2.1-bin-hadoop2.7/carbonstore/tpchcarbon_base/lineitem";
+//    String path = "/Users/jacky/code/spark-2.2.1-bin-hadoop2.7/carbonstore/tpchcarbon_base/lineitem";
+    String path = "/Users/jacky/code/spark-2.2.1-bin-hadoop2.7/carbonstore/default/lineitem_32_256/";
     String[] args = {"-cmd", "summary", "-p", path, "-a", "-c", "l_orderkey"};
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     PrintStream stream = new PrintStream(out);
@@ -200,7 +201,7 @@ public class CarbonCliTest {
     String output = new String(out.toByteArray());
     System.out.println(output);
 
-    args = new String[]{"-cmd", "benchmark", "-p", path, "-c", "l_orderkey"};
+    args = new String[]{"-cmd", "benchmark", "-f", "/Users/jacky/code/spark-2.2.1-bin-hadoop2.7/carbonstore/default/lineitem_32_256/Fact/Part0/Segment_0/part-0-0_batchno0-0-0-1537635146902.carbondata", "-c", "l_orderkey"};
     out = new ByteArrayOutputStream();
     stream = new PrintStream(out);
     CarbonCli.run(args, stream);
