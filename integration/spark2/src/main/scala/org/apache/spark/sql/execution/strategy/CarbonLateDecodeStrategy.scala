@@ -34,7 +34,7 @@ import org.apache.spark.sql.optimizer.{CarbonDecoderRelation, CarbonFilters}
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
-import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
+import org.apache.spark.sql.carbondata.execution.datasources.{CarbonFileIndex, CarbonSparkDataSourceUtil}
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -704,11 +704,16 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     val sparkSession = relation.relation.sqlContext.sparkSession
     relation.catalogTable match {
       case Some(catalogTable) =>
-        HadoopFsRelation(
+        val fileIndex = new CarbonFileIndex(sparkSession,
+          catalogTable.schema,
+          catalogTable.storage.properties,
           new CatalogFileIndex(
-            sparkSession,
-            catalogTable,
-            sizeInBytes = relation.relation.sizeInBytes),
+          sparkSession,
+          catalogTable,
+          sizeInBytes = relation.relation.sizeInBytes))
+        fileIndex.setDummy(true)
+        HadoopFsRelation(
+          fileIndex,
           catalogTable.partitionSchema,
           catalogTable.schema,
           catalogTable.bucketSpec,
