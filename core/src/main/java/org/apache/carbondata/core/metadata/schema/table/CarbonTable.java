@@ -261,6 +261,8 @@ public class CarbonTable implements Serializable {
     CarbonFile[] carbonFiles = tablePath.listFiles();
     for (CarbonFile carbonFile : carbonFiles) {
       if (carbonFile.isDirectory()) {
+        // if the list has directories that doesn't contain index files,
+        // continue checking other files/directories in the list.
         if (getFirstIndexFile(carbonFile) == null) {
           continue;
         } else {

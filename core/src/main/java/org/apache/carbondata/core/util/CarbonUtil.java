@@ -2230,6 +2230,8 @@ public final class CarbonUtil {
       if (dataFile.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
         return dataFile.getAbsolutePath();
       } else if (dataFile.isDirectory()) {
+        // if the list has directories that doesn't contain data files,
+        // continue checking other files/directories in the list.
         if (getFilePathExternalFilePath(dataFile.getAbsolutePath(), configuration) == null) {
           continue;
         } else {
@@ -2237,6 +2239,7 @@ public final class CarbonUtil {
         }
       }
     }
+    //returning null only if the path doesn't have data files.
     return null;
   }
 
