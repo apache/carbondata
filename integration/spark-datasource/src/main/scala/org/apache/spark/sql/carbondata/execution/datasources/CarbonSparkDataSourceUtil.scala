@@ -340,14 +340,6 @@ object CarbonSparkDataSourceUtil {
                    "). Please check CREATE TABLE command again."
       throw new MalformedCarbonCommandException(errMsg)
     }
-    // Check for long_string_columns vs dictionary_exclude
-    if (longStringColumns.intersect(dictionaryExclude).nonEmpty) {
-      val errMsg = CarbonCommonConstants.DICTIONARY_EXCLUDE + " is not supported for " +
-                   CarbonCommonConstants.LONG_STRING_COLUMNS + ": (" +
-                   longStringColumns.intersect(dictionaryExclude).mkString(",") +
-                   "). Please check CREATE TABLE command again."
-      throw new MalformedCarbonCommandException(errMsg)
-    }
     // Check for dictionary_include vs dictionary_exclude
     if (dictionaryInclude.intersect(dictionaryExclude).nonEmpty) {
       val errMsg = "Column(s): (" + dictionaryInclude.intersect(dictionaryExclude).mkString(",") +
