@@ -63,6 +63,8 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV;
 import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Mapping class for Carbon actual table
  */
@@ -236,9 +238,10 @@ public class CarbonTable implements Serializable {
 
   public static CarbonTable buildTable(
       String tablePath,
-      String tableName) throws IOException {
+      String tableName,
+      Configuration configuration) throws IOException {
     TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, "null", "null");
-    CarbonFile carbonFile = getFirstIndexFile(FileFactory.getCarbonFile(tablePath));
+    CarbonFile carbonFile = getFirstIndexFile(FileFactory.getCarbonFile(tablePath, configuration));
     if (carbonFile == null) {
       throw new RuntimeException("Carbon index file not exists.");
     }

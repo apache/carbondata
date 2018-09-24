@@ -188,7 +188,7 @@ public class CarbonReaderBuilder {
           .buildFromTablePath(tableName, "default", tablePath, UUID.randomUUID().toString());
     } else {
       if (filterExpression != null) {
-        table = CarbonTable.buildTable(tablePath, tableName);
+        table = CarbonTable.buildTable(tablePath, tableName, configuration);
       } else {
         table = CarbonTable.buildDummyTable(tablePath);
       }
