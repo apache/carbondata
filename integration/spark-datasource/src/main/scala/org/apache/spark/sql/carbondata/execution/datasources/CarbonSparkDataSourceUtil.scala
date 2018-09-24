@@ -276,11 +276,6 @@ object CarbonSparkDataSourceUtil {
 
   def validateTableOptions(options: Map[String, String], schema: Schema): Unit = {
 
-    if (options.contains(CarbonCommonConstants.DICTIONARY_EXCLUDE)) {
-      LOGGER.warn("DICTIONARY_EXCLUDE option is deprecated, " +
-                  "by default string column does not use global dictionary.")
-    }
-
     val longStringColumns: Set[String] = if (
       options.getOrElse(CarbonCommonConstants.LONG_STRING_COLUMNS, "").trim.isEmpty) {
       Set.empty
@@ -337,6 +332,14 @@ object CarbonSparkDataSourceUtil {
       val errMsg = CarbonCommonConstants.DICTIONARY_INCLUDE + " is not supported for " +
                    CarbonCommonConstants.LONG_STRING_COLUMNS + ": (" +
                    longStringColumns.intersect(dictionaryInclude).mkString(",") +
+                   "). Please check CREATE TABLE command again."
+      throw new MalformedCarbonCommandException(errMsg)
+    }
+    // Check for long_string_columns vs dictionary_exclude
+    if (longStringColumns.intersect(dictionaryExclude).nonEmpty) {
+      val errMsg = CarbonCommonConstants.DICTIONARY_EXCLUDE + " is not supported for " +
+                   CarbonCommonConstants.LONG_STRING_COLUMNS + ": (" +
+                   longStringColumns.intersect(dictionaryExclude).mkString(",") +
                    "). Please check CREATE TABLE command again."
       throw new MalformedCarbonCommandException(errMsg)
     }
