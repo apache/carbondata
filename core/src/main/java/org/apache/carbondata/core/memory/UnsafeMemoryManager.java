@@ -107,9 +107,10 @@ public class UnsafeMemoryManager {
         .info("Working Memory manager is created with size " + totalMemory + " with " + allocator);
   }
 
-  private synchronized MemoryBlock allocateMemory(long taskId, long memoryRequested) {
+  private synchronized MemoryBlock allocateMemory(MemoryAllocator memoryAllocator, long taskId,
+      long memoryRequested) {
     if (memoryUsed + memoryRequested <= totalMemory) {
-      MemoryBlock allocate = allocator.allocate(memoryRequested);
+      MemoryBlock allocate = memoryAllocator.allocate(memoryRequested);
       memoryUsed += allocate.size();
       Set<MemoryBlock> listOfMemoryBlock = taskIdToMemoryBlockMap.get(taskId);
       if (null == listOfMemoryBlock) {
@@ -128,11 +129,16 @@ public class UnsafeMemoryManager {
   }
 
   public synchronized void freeMemory(long taskId, MemoryBlock memoryBlock) {
+    freeMemory(allocator, taskId, memoryBlock);
+  }
+
+  public synchronized void freeMemory(MemoryAllocator memoryAllocator, long taskId,
+      MemoryBlock memoryBlock) {
     if (taskIdToMemoryBlockMap.containsKey(taskId)) {
       taskIdToMemoryBlockMap.get(taskId).remove(memoryBlock);
     }
     if (!memoryBlock.isFreedStatus()) {
-      allocator.free(memoryBlock);
+      memoryAllocator.free(memoryBlock);
       memoryUsed -= memoryBlock.size();
       memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
       if (LOGGER.isDebugEnabled()) {
@@ -182,10 +188,15 @@ public class UnsafeMemoryManager {
    */
   public static MemoryBlock allocateMemoryWithRetry(long taskId, long size)
       throws MemoryException {
+    return allocateMemoryWithRetry(INSTANCE.allocator, taskId, size);
+  }
+
+  public static MemoryBlock allocateMemoryWithRetry(MemoryAllocator memoryAllocator, long taskId,
+      long size) throws MemoryException {
     MemoryBlock baseBlock = null;
     int tries = 0;
     while (tries < 300) {
-      baseBlock = INSTANCE.allocateMemory(taskId, size);
+      baseBlock = INSTANCE.allocateMemory(memoryAllocator, taskId, size);
       if (baseBlock == null) {
         try {
           LOGGER.info("Memory is not available, retry after 500 millis");

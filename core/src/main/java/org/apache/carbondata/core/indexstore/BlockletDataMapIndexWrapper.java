@@ -70,7 +70,6 @@ public class BlockletDataMapIndexWrapper implements Cacheable, Serializable {
     for (DataMap dataMap : dataMaps) {
       dataMap.clear();
     }
-    dataMaps = null;
   }
 
   public List<BlockDataMap> getDataMaps() {
