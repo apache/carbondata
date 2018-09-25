@@ -38,7 +38,6 @@ import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.DataFileFooterConverterV3;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.FileFooter3;
@@ -165,7 +164,8 @@ class ScanBenchmark implements Command {
   private MeasureColumnChunkReader measureColumnChunkReader;
 
   private AbstractRawColumnChunk readBlockletColumnChunkIO(
-      DataFileFooter footer, int blockletId, int columnIndex, boolean dimension) throws IOException {
+      DataFileFooter footer, int blockletId, int columnIndex, boolean dimension)
+      throws IOException {
     BlockletInfo blockletInfo = footer.getBlockletList().get(blockletId);
     if (dimension) {
       dimensionColumnChunkReader = CarbonDataReaderFactory.getInstance()
