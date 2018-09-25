@@ -45,10 +45,8 @@ public class CarbonCliTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"name"},
-        true, 3, 8, true);
-    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"name"},
-        true, 3, 8, true);
+    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"name"}, 3, 8);
+    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"name"}, 3, 8);
   }
 
   @Test
@@ -102,10 +100,7 @@ public class CarbonCliTest {
     Assert.assertTrue(
         output.contains(
             "## Table Properties\n"
-          + "Property Name              Property Value  \n"
-          + "'table_blocksize'          '8'             \n"
-          + "'table_blocklet_size'      '3'             \n"
-          + "'local_dictionary_enable'  'false'    "));
+          + "schema file not found"));
 
     String[] args4 = {"-cmd", "summary", "-p", path, "-b"};
     out = new ByteArrayOutputStream();
@@ -163,10 +158,7 @@ public class CarbonCliTest {
     Assert.assertTrue(
         output.contains(
             "## Table Properties\n"
-          + "Property Name              Property Value  \n"
-          + "'table_blocksize'          '8'             \n"
-          + "'table_blocklet_size'      '3'             \n"
-          + "'local_dictionary_enable'  'false'    "));
+          + "schema file not found"));
 
     Assert.assertTrue(
         output.contains(
