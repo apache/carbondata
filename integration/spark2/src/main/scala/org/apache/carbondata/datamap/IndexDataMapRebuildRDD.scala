@@ -269,8 +269,17 @@ class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Ar
         // no dictionary primitive columns are expected to be in original data while loading,
         // so convert it to original data
         if (DataTypeUtil.isPrimitiveColumn(col.getDataType)) {
-          val dataFromBytes = DataTypeUtil
+          var dataFromBytes = DataTypeUtil
             .getDataBasedOnDataTypeForNoDictionaryColumn(bytes, col.getDataType)
+          if (dataFromBytes == null) {
+            dataFromBytes = DataConvertUtil
+              .getNullValueForMeasure(col.getDataType, col.getColumnSchema.getScale)
+          }
+          // for timestamp the above method will give the original data, so it should be
+          // converted again to the format to be loaded (without micros)
+          if (null != dataFromBytes && col.getDataType == DataTypes.TIMESTAMP) {
+            dataFromBytes = (dataFromBytes.asInstanceOf[Long] / 1000L).asInstanceOf[Object];
+          }
           dataFromBytes
         } else {
           bytes

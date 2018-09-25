@@ -44,7 +44,7 @@ public class CarbonUnsafeUtil {
       CarbonUnsafe.getUnsafe().putShort(baseObject, address + size, (short) data);
     } else if (dataType == DataTypes.INT) {
       CarbonUnsafe.getUnsafe().putInt(baseObject, address + size, (int) data);
-    } else if (dataType == DataTypes.LONG) {
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       CarbonUnsafe.getUnsafe().putLong(baseObject, address + size, (long) data);
     } else if (DataTypes.isDecimal(dataType) || dataType == DataTypes.DOUBLE) {
       CarbonUnsafe.getUnsafe().putDouble(baseObject, address + size, (double) data);
@@ -79,7 +79,7 @@ public class CarbonUnsafeUtil {
       data = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
     } else if (dataType == DataTypes.INT) {
       data = CarbonUnsafe.getUnsafe().getInt(baseObject, address + size);
-    } else if (dataType == DataTypes.LONG) {
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       data = CarbonUnsafe.getUnsafe().getLong(baseObject, address + size);
     } else if (DataTypes.isDecimal(dataType) || dataType == DataTypes.DOUBLE) {
       data = CarbonUnsafe.getUnsafe().getDouble(baseObject, address + size);

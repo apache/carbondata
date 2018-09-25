@@ -300,7 +300,7 @@ public class SortStepRowHandler implements Serializable {
       data = inputStream.readShort();
     } else if (dataType == DataTypes.INT) {
       data = inputStream.readInt();
-    } else if (dataType == DataTypes.LONG) {
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       data = inputStream.readLong();
     } else if (dataType == DataTypes.DOUBLE) {
       data = inputStream.readDouble();
@@ -384,7 +384,7 @@ public class SortStepRowHandler implements Serializable {
       tmpContent = rowBuffer.getShort();
     } else if (DataTypes.INT == tmpDataType) {
       tmpContent = rowBuffer.getInt();
-    } else if (DataTypes.LONG == tmpDataType) {
+    } else if (DataTypes.LONG == tmpDataType || DataTypes.TIMESTAMP == tmpDataType) {
       tmpContent = rowBuffer.getLong();
     } else if (DataTypes.DOUBLE == tmpDataType) {
       tmpContent = rowBuffer.getDouble();
@@ -501,7 +501,7 @@ public class SortStepRowHandler implements Serializable {
         outputStream.writeShort((short) data);
       } else if (dataType == DataTypes.INT) {
         outputStream.writeInt((int) data);
-      } else if (dataType == DataTypes.LONG) {
+      } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
         outputStream.writeLong((long) data);
       } else if (dataType == DataTypes.DOUBLE) {
         outputStream.writeDouble((double) data);
@@ -715,6 +715,9 @@ public class SortStepRowHandler implements Serializable {
           size += 2;
         } else {
           int sizeInBytes = this.noDictSortDataTypes[idx].getSizeInBytes();
+          if (this.noDictSortDataTypes[idx] == DataTypes.TIMESTAMP) {
+            sizeInBytes = DataTypes.LONG.getSizeInBytes();
+          }
           CarbonUnsafe.getUnsafe().putShort(baseObject, address + size, (short) sizeInBytes);
           size += 2;
           // put data to unsafe according to the data types
@@ -829,7 +832,7 @@ public class SortStepRowHandler implements Serializable {
       reUsableByteArrayDataOutputStream.writeShort((Short) tmpValue);
     } else if (DataTypes.INT == tmpDataType) {
       reUsableByteArrayDataOutputStream.writeInt((Integer) tmpValue);
-    } else if (DataTypes.LONG == tmpDataType) {
+    } else if (DataTypes.LONG == tmpDataType || DataTypes.TIMESTAMP == tmpDataType) {
       reUsableByteArrayDataOutputStream.writeLong((Long) tmpValue);
     } else if (DataTypes.DOUBLE == tmpDataType) {
       reUsableByteArrayDataOutputStream.writeDouble((Double) tmpValue);

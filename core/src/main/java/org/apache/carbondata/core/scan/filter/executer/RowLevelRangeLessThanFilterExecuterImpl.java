@@ -178,16 +178,14 @@ public class RowLevelRangeLessThanFilterExecuterImpl extends RowLevelFilterExecu
           .compareTo(filterValues[k], CarbonCommonConstants.EMPTY_BYTE_ARRAY) == 0) {
         return true;
       }
-      // filter value should be in range of max and min value i.e
-      // max>filtervalue>min
-      // so filter-max should be negative
+      // so filter-min should be positive
       Object data =
           DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(filterValues[k], dataType);
       SerializableComparator comparator = Comparator.getComparator(dataType);
       int minCompare = comparator.compare(data, minValue);
       // if any filter value is in range than this block needs to be
-      // scanned less than equal to max range.
-      if (minCompare >= 0) {
+      // scanned less than min range.
+      if (minCompare > 0) {
         isScanRequired = true;
         break;
       }

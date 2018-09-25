@@ -78,7 +78,6 @@ public final class DataTypeUtil {
    *
    * @param msrValue
    * @param dataType
-   * @param carbonMeasure
    * @return
    */
   public static Object getMeasureValueBasedOnDataType(String msrValue, DataType dataType,
@@ -91,7 +90,6 @@ public final class DataTypeUtil {
    *
    * @param msrValue
    * @param dataType
-   * @param carbonMeasure
    * @return
    */
   public static Object getMeasureValueBasedOnDataType(String msrValue, DataType dataType,
@@ -119,6 +117,60 @@ public final class DataTypeUtil {
       return Byte.parseByte(msrValue);
     } else {
       Double parsedValue = Double.valueOf(msrValue);
+      if (Double.isInfinite(parsedValue) || Double.isNaN(parsedValue)) {
+        return null;
+      }
+      return parsedValue;
+    }
+  }
+
+  /**
+   * This method will convert a given value to its specific type
+   *
+   * @param dimValue
+   * @param dataType
+   * @return
+   */
+  public static Object getNoDictionaryValueBasedOnDataType(String dimValue, DataType dataType,
+      int scale, int precision, boolean useConverter, String timeStampFormat) {
+    if (dataType == DataTypes.BOOLEAN) {
+      return BooleanConvert.parseBoolean(dimValue);
+    } else if (DataTypes.isDecimal(dataType)) {
+      BigDecimal bigDecimal =
+          new BigDecimal(dimValue).setScale(scale, RoundingMode.HALF_UP);
+      BigDecimal decimal = normalizeDecimalValue(bigDecimal, precision);
+      if (useConverter) {
+        return converter.convertFromBigDecimalToDecimal(decimal);
+      } else {
+        return decimal;
+      }
+    } else if (dataType == DataTypes.SHORT) {
+      return Short.parseShort(dimValue);
+    } else if (dataType == DataTypes.INT) {
+      return Integer.parseInt(dimValue);
+    } else if (dataType == DataTypes.LONG) {
+      return Long.valueOf(dimValue);
+    } else if (dataType == DataTypes.FLOAT) {
+      return Float.parseFloat(dimValue);
+    } else if (dataType == DataTypes.BYTE) {
+      return Byte.parseByte(dimValue);
+    } else if (dataType == DataTypes.TIMESTAMP) {
+      Date dateToStr = null;
+      DateFormat dateFormatter = null;
+      try {
+        if (null != timeStampFormat && !timeStampFormat.trim().isEmpty()) {
+          dateFormatter = new SimpleDateFormat(timeStampFormat);
+          dateFormatter.setLenient(false);
+        } else {
+          dateFormatter = timeStampformatter.get();
+        }
+        dateToStr = dateFormatter.parse(dimValue);
+        return dateToStr.getTime();
+      } catch (ParseException e) {
+        throw new NumberFormatException(e.getMessage());
+      }
+    } else {
+      Double parsedValue = Double.valueOf(dimValue);
       if (Double.isInfinite(parsedValue) || Double.isNaN(parsedValue)) {
         return null;
       }
@@ -1032,6 +1084,24 @@ public final class DataTypeUtil {
   }
 
   /**
+   * Method to type case the data based on modified data type. This method will used for
+   * retrieving the data after change in data type restructure operation
+   *
+   * @param data
+   * @param restructureDataType
+   * @return
+   */
+  public static long getDataBasedOnRestructuredDataType(Object data, DataType restructureDataType) {
+    long value = 0L;
+    if (restructureDataType == DataTypes.INT) {
+      value = (int) data;
+    } else if (restructureDataType == DataTypes.LONG) {
+      value = (long) data;
+    }
+    return value;
+  }
+
+  /**
    * Check if the column is a no dictionary primitive column
    *
    * @param dataType
@@ -1039,9 +1109,9 @@ public final class DataTypeUtil {
    */
   public static boolean isPrimitiveColumn(DataType dataType) {
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE || dataType == DataTypes.SHORT
-        || dataType == DataTypes.INT || dataType == DataTypes.LONG || DataTypes.isDecimal(dataType)
-        || dataType == DataTypes.FLOAT || dataType == DataTypes.DOUBLE
-        || dataType == DataTypes.BYTE_ARRAY) {
+        || dataType == DataTypes.INT || dataType == DataTypes.LONG
+        || dataType == DataTypes.TIMESTAMP || DataTypes.isDecimal(dataType)
+        || dataType == DataTypes.FLOAT || dataType == DataTypes.DOUBLE) {
       return true;
     }
     return false;

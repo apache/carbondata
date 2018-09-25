@@ -61,7 +61,7 @@ public class DataConvertUtil {
       return (short) 0;
     } else if (dataType == DataTypes.INT) {
       return 0;
-    } else if (dataType == DataTypes.LONG) {
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       return 0L;
     } else if (dataType == DataTypes.DOUBLE) {
       return 0.0;

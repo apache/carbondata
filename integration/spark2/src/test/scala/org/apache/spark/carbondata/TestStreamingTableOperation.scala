@@ -1003,7 +1003,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select * from stream_table_filter where updated is null"),
       Seq(Row(null, "", "", null, null, null, null, null, null)))
-    assert(1 == partitionNums("select * from stream_table_filter where updated is null"))
+    assert(3 == partitionNums("select * from stream_table_filter where updated is null"))
 
     checkAnswer(
       sql("select * from stream_table_filter where id is null and updated is not null"),
