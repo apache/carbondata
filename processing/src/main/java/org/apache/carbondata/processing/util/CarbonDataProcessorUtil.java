@@ -439,7 +439,7 @@ public final class CarbonDataProcessorUtil {
     List<CarbonDimension> dimensions = carbonTable.getDimensionByTableName(tableName);
     List<DataType> type = new ArrayList<>();
     for (int i = 0; i < dimensions.size(); i++) {
-      if (!dimensions.get(i).hasEncoding(Encoding.DICTIONARY)) {
+      if (dimensions.get(i).isSortColumn() && !dimensions.get(i).hasEncoding(Encoding.DICTIONARY)) {
         type.add(dimensions.get(i).getDataType());
       }
     }
@@ -458,8 +458,8 @@ public final class CarbonDataProcessorUtil {
     List<CarbonDimension> dimensions = carbonTable.getDimensionByTableName(tableName);
     List<Boolean> noDicSortColMap = new ArrayList<>();
     for (int i = 0; i < dimensions.size(); i++) {
-      if (!dimensions.get(i).hasEncoding(Encoding.DICTIONARY)) {
-        if (dimensions.get(i).isSortColumn()) {
+      if (dimensions.get(i).isSortColumn()) {
+        if (!dimensions.get(i).hasEncoding(Encoding.DICTIONARY)) {
           noDicSortColMap.add(true);
         } else {
           noDicSortColMap.add(false);
