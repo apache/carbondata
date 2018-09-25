@@ -139,7 +139,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
       length = dataOffsets[rowId + 1] - (currentDataOffset + getLengthSize());
     } else {
       // for last record
-      length = (short) (this.data.length - currentDataOffset);
+      length = this.data.length - currentDataOffset;
     }
     DataType dt = vector.getType();
 
