@@ -143,14 +143,16 @@ public class SecureDictionaryServer extends AbstractDictionaryServer implements 
         TransportServerBootstrap bootstrap =
             new SaslServerBootstrap(transportConf, securityManager);
         String host = findLocalIpAddress(LOGGER);
-        context.createServer(host, port, Lists.<TransportServerBootstrap>newArrayList(bootstrap));
+        //iteratively listening to newports
+        context
+            .createServer(host, newPort, Lists.<TransportServerBootstrap>newArrayList(bootstrap));
         LOGGER.audit("Dictionary Server started, Time spent " + (System.currentTimeMillis() - start)
             + " Listening on port " + newPort);
         this.port = newPort;
         this.host = host;
         break;
       } catch (Exception e) {
-        LOGGER.error(e, "Dictionary Server Failed to bind to port:");
+        LOGGER.error(e, "Dictionary Server Failed to bind to port: " + newPort);
         if (i == 9) {
           throw new RuntimeException("Dictionary Server Could not bind to any port");
         }
