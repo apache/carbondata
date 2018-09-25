@@ -193,7 +193,7 @@ public class CarbonCliTest {
 
   @Test
   public void testBenchmark() {
-    String[] args = {"-cmd", "benchmark", "-p", path, "-a", "-c", "age"};
+    String[] args = {"-cmd", "benchmark", "-p", path, "-a", "-c", "name"};
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     PrintStream stream = new PrintStream(out);
     CarbonCli.run(args, stream);

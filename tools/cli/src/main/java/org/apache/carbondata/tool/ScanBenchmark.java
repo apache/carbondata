@@ -22,6 +22,7 @@ import java.io.PrintStream;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.core.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
@@ -96,26 +97,33 @@ class ScanBenchmark implements Command {
     });
 
     if (line.hasOption("c")) {
-      String columName = line.getOptionValue("c");
-      out.println("\nScan column '" + columName + "'");
+      String columnName = line.getOptionValue("c");
+      out.println("\nScan column '" + columnName + "'");
 
-      DataFileFooter convertedFooter = convertedFooterRef.get();
+      DataFileFooter footer = convertedFooterRef.get();
       AtomicReference<AbstractRawColumnChunk> columnChunk = new AtomicReference<>();
-      for (int i = 0; i < convertedFooter.getBlockletList().size(); i++) {
+      int columnIndex = file.getColumnIndex(columnName);
+      boolean dimension = file.getColumn(columnName).isDimensionColumn();
+      for (int i = 0; i < footer.getBlockletList().size(); i++) {
         int blockletId = i;
-        benchmarkOperation(String.format("Blocklet#%d: ColumnChunkIO", blockletId), () -> {
-          columnChunk.set(readBlockletColumnChunkIO(convertedFooter, blockletId, columName));
+        out.println(String.format("Blocklet#%d: total size %s, %,d pages, %,d rows",
+            blockletId,
+            Strings.formatSize(file.getColumnDataSizeInBytes(blockletId, columnIndex)),
+            footer.getBlockletList().get(blockletId).getNumberOfPages(),
+            footer.getBlockletList().get(blockletId).getNumberOfRows()));
+        benchmarkOperation("\tColumnChunk IO", () -> {
+          columnChunk.set(readBlockletColumnChunkIO(footer, blockletId, columnIndex, dimension));
         });
 
         if (dimensionColumnChunkReader != null) {
-          benchmarkOperation(String.format("Blocklet#%d: DecompressPage", blockletId), () -> {
+          benchmarkOperation("\tDecompress Pages", () -> {
             decompressDimensionPages(columnChunk.get(),
-                convertedFooter.getBlockletList().get(blockletId).getNumberOfPages());
+                footer.getBlockletList().get(blockletId).getNumberOfPages());
           });
         } else {
-          benchmarkOperation("            DecompressPages", () -> {
+          benchmarkOperation("\tDecompress Pages", () -> {
             decompressMeasurePages(columnChunk.get(),
-                convertedFooter.getBlockletList().get(blockletId).getNumberOfPages());
+                footer.getBlockletList().get(blockletId).getNumberOfPages());
           });
         }
       }
@@ -157,11 +165,9 @@ class ScanBenchmark implements Command {
   private MeasureColumnChunkReader measureColumnChunkReader;
 
   private AbstractRawColumnChunk readBlockletColumnChunkIO(
-      DataFileFooter footer, int blockletId, String columnName) throws IOException {
+      DataFileFooter footer, int blockletId, int columnIndex, boolean dimension) throws IOException {
     BlockletInfo blockletInfo = footer.getBlockletList().get(blockletId);
-    int columnIndex = file.getColumnIndex(columnName);
-    ColumnSchema column = file.getColumn(columnName);
-    if (column.isDimensionColumn()) {
+    if (dimension) {
       dimensionColumnChunkReader = CarbonDataReaderFactory.getInstance()
           .getDimensionColumnChunkReader(ColumnarFormatVersion.V3, blockletInfo,
               footer.getSegmentInfo().getColumnCardinality(), file.getFilePath(), false);
