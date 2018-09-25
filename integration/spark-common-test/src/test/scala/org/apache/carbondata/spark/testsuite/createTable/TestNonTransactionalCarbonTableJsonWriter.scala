@@ -111,6 +111,26 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
     }
   }
 
+  private def writeCarbonFileFromJsonRowInputWithDefaultConfiguration(jsonRow: String,
+      carbonSchema: Schema) = {
+    try {
+      var options: util.Map[String, String] = Map("bAd_RECords_action" -> "FAIL", "quotechar" -> "\"").asJava
+      val writer = CarbonWriter.builder
+        .outputPath(writerPath).isTransactionalTable(false)
+        .uniqueIdentifier(System.currentTimeMillis())
+        .withLoadOptions(options)
+        .buildWriterForJsonInput(carbonSchema)
+      writer.write(jsonRow)
+      writer.close()
+    }
+    catch {
+      case e: Exception => {
+        e.printStackTrace()
+        Assert.fail(e.getMessage)
+      }
+    }
+  }
+
   // test all primitive type
   test("Read sdk writer Json output of all primitive type") {
     FileUtils.deleteDirectory(new File(writerPath))
@@ -131,6 +151,49 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
 
     val jsonRow = readFromFile(dataPath)
     writeCarbonFileFromJsonRowInput(jsonRow, new Schema(fields))
+    assert(new File(writerPath).exists())
+
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+    checkAnswer(sql("select * from sdkOutputTable"),
+      Seq(Row("ajantha\"bhat\"",
+        26,
+        26,
+        1234567,
+        23.3333,
+        false,
+        java.sql.Date.valueOf("2019-03-02"),
+        Timestamp.valueOf("2019-02-12 03:03:34"),
+        55.35)))
+
+    sql("DROP TABLE sdkOutputTable")
+    // drop table should not delete the files
+    assert(new File(writerPath).listFiles().length > 0)
+    FileUtils.deleteDirectory(new File(writerPath))
+  }
+
+  // test all primitive type
+  test("Read sdk writer Json output of all primitive type with default configuration") {
+    FileUtils.deleteDirectory(new File(writerPath))
+
+    var dataPath: String = null
+    dataPath = resourcesPath + "/jsonFiles/data/allPrimitiveType.json"
+
+    val fields = new Array[Field](9)
+    fields(0) = new Field("stringField", DataTypes.STRING)
+    fields(1) = new Field("intField", DataTypes.INT)
+    fields(2) = new Field("shortField", DataTypes.SHORT)
+    fields(3) = new Field("longField", DataTypes.LONG)
+    fields(4) = new Field("doubleField", DataTypes.DOUBLE)
+    fields(5) = new Field("boolField", DataTypes.BOOLEAN)
+    fields(6) = new Field("dateField", DataTypes.DATE)
+    fields(7) = new Field("timeField", DataTypes.TIMESTAMP)
+    fields(8) = new Field("decimalField", DataTypes.createDecimalType(8, 2))
+
+    val jsonRow = readFromFile(dataPath)
+    writeCarbonFileFromJsonRowInputWithDefaultConfiguration(jsonRow, new Schema(fields))
     assert(new File(writerPath).exists())
 
     sql("DROP TABLE IF EXISTS sdkOutputTable")

@@ -115,6 +115,51 @@ public class AvroCarbonWriterTest {
   }
 
   @Test
+  public void testWriteBasicWithDefaultConfiguration() throws IOException {
+    FileUtils.deleteDirectory(new File(path));
+
+    // Avro schema
+    String avroSchema =
+        "{" +
+            "   \"type\" : \"record\"," +
+            "   \"name\" : \"Acme\"," +
+            "   \"fields\" : ["
+            + "{ \"name\" : \"name\", \"type\" : \"string\" },"
+            + "{ \"name\" : \"age\", \"type\" : \"int\" }]" +
+            "}";
+
+    String json = "{\"name\":\"bob\", \"age\":10}";
+
+    // conversion to GenericData.Record
+    GenericData.Record record = TestUtil.jsonToAvro(json, avroSchema);
+    try {
+      CarbonWriter writer = CarbonWriter.builder().outputPath(path).isTransactionalTable(true)
+          .buildWriterForAvroInput(new Schema.Parser().parse(avroSchema));
+
+      for (int i = 0; i < 100; i++) {
+        writer.write(record);
+      }
+      writer.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    }
+
+    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
+    Assert.assertTrue(segmentFolder.exists());
+
+    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+      @Override public boolean accept(File pathname) {
+        return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
+      }
+    });
+    Assert.assertNotNull(dataFiles);
+    Assert.assertEquals(1, dataFiles.length);
+
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
   public void testWriteAllPrimitive() throws IOException {
     FileUtils.deleteDirectory(new File(path));
 
