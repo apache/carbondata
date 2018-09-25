@@ -25,6 +25,10 @@
     * BIGINT
     * DOUBLE
     * DECIMAL
+    * FLOAT
+    * BYTE
+    
+    **NOTE**: Float and Bytes are only supported for SDK and FileFormat.
 
   * Date/Time Types
     * TIMESTAMP

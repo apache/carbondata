@@ -127,7 +127,7 @@ CarbonData DDL statements are documented here,which includes:
      This property is for users to specify which columns belong to the MDK(Multi-Dimensions-Key) index.
      * If users don't specify "SORT_COLUMN" property, by default MDK index be built by using all dimension columns except complex data type column. 
      * If this property is specified but with empty argument, then the table will be loaded without sort.
-	 * This supports only string, date, timestamp, short, int, long, and boolean data types.
+	 * This supports only string, date, timestamp, short, int, long, byte and boolean data types.
      Suggested use cases : Only build MDK index for required columns,it might help to improve the data loading performance.
 
      ```

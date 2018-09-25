@@ -145,6 +145,8 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
         return dataChunk.getLong(index);
       } else if (dataType == DataTypes.FLOAT) {
         return dataChunk.getFloat(index);
+      } else if (dataType == DataTypes.BYTE) {
+        return dataChunk.getByte(index);
       } else if (DataTypes.isDecimal(dataType)) {
         BigDecimal bigDecimalMsrValue = dataChunk.getDecimal(index);
         if (null != bigDecimalMsrValue && carbonMeasure.getScale() > bigDecimalMsrValue.scale()) {
