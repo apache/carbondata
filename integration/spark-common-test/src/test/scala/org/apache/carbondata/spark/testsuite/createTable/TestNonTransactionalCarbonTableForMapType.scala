@@ -439,12 +439,12 @@ class TestNonTransactionalCarbonTableForMapType extends QueryTest with BeforeAnd
     val json = """ {"name":"bob", "age":10, "arrayRecord": [{"101": "Rahul", "102": "Pawan"}]} """.stripMargin
     nonTransactionalCarbonTable.WriteFilesWithAvroWriter(2, mySchema, json)
 
-    val reader = CarbonReader.builder(writerPath, "_temp").isTransactionalTable(false).build(conf)
+    val reader = CarbonReader.builder(writerPath, "_temp").build()
     reader.close()
     val exception1 = intercept[Exception] {
       val reader1 = CarbonReader.builder(writerPath, "_temp")
-        .projection(Array[String] { "arrayRecord.houseDetails" }).isTransactionalTable(false)
-        .build(conf)
+        .projection(Array[String] { "arrayRecord.houseDetails" })
+        .build()
       reader1.close()
     }
     assert(exception1.getMessage
