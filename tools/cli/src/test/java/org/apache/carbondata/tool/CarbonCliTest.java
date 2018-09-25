@@ -45,10 +45,10 @@ public class CarbonCliTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-//    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"name"},
-//        true, 3, 8, true);
-//    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"name"},
-//        true, 3, 8, true);
+    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"name"},
+        true, 3, 8, true);
+    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"name"},
+        true, 3, 8, true);
   }
 
   @Test
@@ -79,20 +79,19 @@ public class CarbonCliTest {
         output.contains(
             "Input Folder: ./CarbonCliTest\n"
           + "## Summary\n"
-          + "total: 6 blocks, 2 shards, 12 blocklets, 314 pages, 10,000,000 rows, 30.72MB\n"
-          + "avg: 5.12MB/block, 2.56MB/blocklet, 1,666,666 rows/block, 833,333 rows/blocklet"));
+          + "total: 6 blocks, 2 shards, 14 blocklets, 314 pages, 10,000,000 rows, 32.26MB\n"
+          + "avg: 5.38MB/block, 2.30MB/blocklet, 1,666,666 rows/block, 714,285 rows/blocklet"));
 
     String[] args2 = {"-cmd", "summary", "-p", path, "-s"};
     out = new ByteArrayOutputStream();
     stream = new PrintStream(out);
     CarbonCli.run(args2, stream);
     output = new String(out.toByteArray());
-
     Assert.assertTrue(
         output.contains(
             "Column Name  Data Type  Column Type  SortColumn  Encoding          Ordinal  Id  \n"
-          + "age          INT        dimension    true        [INVERTED_INDEX]  1        NA  \n"
-          + "name         STRING     dimension    false       [INVERTED_INDEX]  0        NA  \n"));
+          + "name         STRING     dimension    true        [INVERTED_INDEX]  0        NA  \n"
+          + "age          INT        measure      false       []                1        NA  "));
 
     String[] args3 = {"-cmd", "summary", "-p", path, "-t"};
     out = new ByteArrayOutputStream();
@@ -113,32 +112,32 @@ public class CarbonCliTest {
     stream = new PrintStream(out);
     CarbonCli.run(args4, stream);
     output = new String(out.toByteArray());
-
     Assert.assertTrue(
         output.contains(
-            "BLK  BLKLT  NumPages  NumRows  Size    \n"
-          + "0    0      29        928,000  2.60MB  \n"
-          + "0    1      29        928,000  2.60MB  \n"
-          + "1    0      29        928,000  2.60MB  \n"
-          + "1    1      29        928,000  2.60MB  \n"
-          + "2    0      22        704,000  2.54MB  \n"
-          + "2    1      19        584,000  2.43MB  "));
+            "BLK  BLKLT  NumPages  NumRows  Size      \n"
+          + "0    0      25        800,000  2.58MB    \n"
+          + "0    1      25        800,000  2.58MB    \n"
+          + "1    0      25        800,000  2.58MB    \n"
+          + "1    1      25        800,000  2.58MB    \n"
+          + "2    0      25        800,000  2.58MB    \n"
+          + "2    1      25        800,000  2.58MB    \n"
+          + "2    2      7         200,000  660.74KB  "));
 
     String[] args5 = {"-cmd", "summary", "-p", path, "-c", "name"};
     out = new ByteArrayOutputStream();
     stream = new PrintStream(out);
     CarbonCli.run(args5, stream);
     output = new String(out.toByteArray());
-
     Assert.assertTrue(
         output.contains(
             "BLK  BLKLT  Meta Size  Data Size  LocalDict  DictEntries  DictSize  AvgPageSize  Min%    Max%    \n"
-          + "0    0      1.82KB     5.19MB     false      0            0.0B      11.96KB      robot0  robot9  \n"
-          + "0    1      1.82KB     2.60MB     false      0            0.0B      11.96KB      robot0  robot9  \n"
-          + "1    0      1.82KB     5.19MB     false      0            0.0B      11.96KB      robot0  robot9  \n"
-          + "1    1      1.82KB     2.60MB     false      0            0.0B      11.96KB      robot0  robot9  \n"
-          + "2    0      1.38KB     4.97MB     false      0            0.0B      11.92KB      robot0  robot9  \n"
-          + "2    1      1.19KB     2.43MB     false      0            0.0B      11.42KB      robot0  robot9  \n"));
+          + "0    0      1.72KB     295.89KB   false      0            0.0B      11.77KB      robot0  robot1  \n"
+          + "0    1      1.72KB     295.89KB   false      0            0.0B      11.77KB      robot1  robot3  \n"
+          + "1    0      1.72KB     295.89KB   false      0            0.0B      11.77KB      robot3  robot4  \n"
+          + "1    1      1.72KB     295.89KB   false      0            0.0B      11.77KB      robot4  robot6  \n"
+          + "2    0      1.72KB     295.89KB   false      0            0.0B      11.77KB      robot6  robot7  \n"
+          + "2    1      1.72KB     295.89KB   false      0            0.0B      11.77KB      robot8  robot9  \n"
+          + "2    2      492.0B     74.03KB    false      0            0.0B      10.51KB      robot9  robot9  "));
   }
 
   @Test
@@ -152,14 +151,14 @@ public class CarbonCliTest {
         output.contains(
             "Input Folder: ./CarbonCliTest\n"
           + "## Summary\n"
-          + "total: 6 blocks, 2 shards, 12 blocklets, 314 pages, 10,000,000 rows, 30.72MB\n"
-          + "avg: 5.12MB/block, 2.56MB/blocklet, 1,666,666 rows/block, 833,333 rows/blocklet"));
+          + "total: 6 blocks, 2 shards, 14 blocklets, 314 pages, 10,000,000 rows, 32.26MB\n"
+          + "avg: 5.38MB/block, 2.30MB/blocklet, 1,666,666 rows/block, 714,285 rows/blocklet\n"));
 
     Assert.assertTrue(
         output.contains(
             "Column Name  Data Type  Column Type  SortColumn  Encoding          Ordinal  Id  \n"
-          + "age          INT        dimension    true        [INVERTED_INDEX]  1        NA  \n"
-          + "name         STRING     dimension    false       [INVERTED_INDEX]  0        NA  \n"));
+          + "name         STRING     dimension    true        [INVERTED_INDEX]  0        NA  \n"
+          + "age          INT        measure      false       []                1        NA  \n"));
 
     Assert.assertTrue(
         output.contains(
@@ -171,41 +170,34 @@ public class CarbonCliTest {
 
     Assert.assertTrue(
         output.contains(
-            "BLK  BLKLT  NumPages  NumRows  Size    \n"
-          + "0    0      29        928,000  2.60MB  \n"
-          + "0    1      29        928,000  2.60MB  \n"
-          + "1    0      29        928,000  2.60MB  \n"
-          + "1    1      29        928,000  2.60MB  \n"
-          + "2    0      22        704,000  2.54MB  \n"
-          + "2    1      19        584,000  2.43MB  "));
+            "BLK  BLKLT  NumPages  NumRows  Size      \n"
+          + "0    0      25        800,000  2.58MB    \n"
+          + "0    1      25        800,000  2.58MB    \n"
+          + "1    0      25        800,000  2.58MB    \n"
+          + "1    1      25        800,000  2.58MB    \n"
+          + "2    0      25        800,000  2.58MB    \n"
+          + "2    1      25        800,000  2.58MB    \n"
+          + "2    2      7         200,000  660.74KB  "));
 
     Assert.assertTrue(
         output.contains(
           "BLK  BLKLT  Meta Size  Data Size  LocalDict  DictEntries  DictSize  AvgPageSize  Min%  Max%   \n"
-        + "0    0      1.81KB     2.26MB     false      0            0.0B      79.61KB      0.0   15.5   \n"
-        + "0    1      1.81KB     2.26MB     false      0            0.0B      79.60KB      15.5  30.9   \n"
-        + "1    0      1.81KB     2.26MB     false      0            0.0B      79.62KB      30.9  46.4   \n"
-        + "1    1      1.81KB     2.26MB     false      0            0.0B      79.60KB      46.4  61.9   \n"
-        + "2    0      1.37KB     2.28MB     false      0            0.0B      106.11KB     61.9  80.5   \n"
-        + "2    1      1.19KB     2.22MB     false      0            0.0B      119.55KB     80.5  100.0  "));
+        + "0    0      2.90KB     4.87MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
+        + "0    1      2.90KB     2.29MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
+        + "1    0      2.90KB     4.87MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
+        + "1    1      2.90KB     2.29MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
+        + "2    0      2.90KB     5.52MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
+        + "2    1      2.90KB     2.94MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
+        + "2    2      830.0B     586.81KB   false      0            0.0B      83.71KB      0.0   100.0 "));
   }
 
   @Test
   public void testBenchmark() {
-//    String path = "/Users/jacky/code/spark-2.2.1-bin-hadoop2.7/carbonstore/tpchcarbon_base/lineitem";
-    String path = "/Users/jacky/code/spark-2.2.1-bin-hadoop2.7/carbonstore/default/lineitem_32_256/";
-    String[] args = {"-cmd", "summary", "-p", path, "-a", "-c", "l_orderkey"};
+    String[] args = {"-cmd", "benchmark", "-p", path, "-a", "-c", "age"};
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     PrintStream stream = new PrintStream(out);
     CarbonCli.run(args, stream);
     String output = new String(out.toByteArray());
-    System.out.println(output);
-
-    args = new String[]{"-cmd", "benchmark", "-f", "/Users/jacky/code/spark-2.2.1-bin-hadoop2.7/carbonstore/default/lineitem_32_256/Fact/Part0/Segment_0/part-0-0_batchno0-0-0-1537635146902.carbondata", "-c", "l_orderkey"};
-    out = new ByteArrayOutputStream();
-    stream = new PrintStream(out);
-    CarbonCli.run(args, stream);
-    output = new String(out.toByteArray());
     System.out.println(output);
   }
 
