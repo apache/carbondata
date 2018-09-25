@@ -943,12 +943,10 @@ public class BlockDataMap extends CoarseGrainDataMap
   @Override public void clear() {
     if (memoryDMStore != null) {
       memoryDMStore.freeMemory();
-      memoryDMStore = null;
     }
     // clear task min/max unsafe memory
     if (null != taskSummaryDMStore) {
       taskSummaryDMStore.freeMemory();
-      taskSummaryDMStore = null;
     }
   }
 

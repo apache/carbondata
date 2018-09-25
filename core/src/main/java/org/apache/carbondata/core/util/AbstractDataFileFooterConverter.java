@@ -295,8 +295,8 @@ public abstract class AbstractDataFileFooterConverter {
       blockletMinMaxFlag = blockletIndexList.get(i).getMinMaxIndex().getIsMinMaxSet();
       for (int j = 0; j < maxValue.length; j++) {
         // can be null for stores < 1.5.0 version
-        if (null != blockletMinMaxFlag && !blockletMinMaxFlag[i]) {
-          blockMinMaxFlag[i] = blockletMinMaxFlag[i];
+        if (null != blockletMinMaxFlag && !blockletMinMaxFlag[j]) {
+          blockMinMaxFlag[j] = blockletMinMaxFlag[j];
           currentMaxValue[j] = new byte[0];
           currentMinValue[j] = new byte[0];
           continue;

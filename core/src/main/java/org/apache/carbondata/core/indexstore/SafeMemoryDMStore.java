@@ -62,7 +62,6 @@ public class SafeMemoryDMStore extends AbstractMemoryDMStore {
     if (!isMemoryFreed) {
       if (null != dataMapRows) {
         dataMapRows.clear();
-        dataMapRows = null;
       }
       isMemoryFreed = true;
     }
