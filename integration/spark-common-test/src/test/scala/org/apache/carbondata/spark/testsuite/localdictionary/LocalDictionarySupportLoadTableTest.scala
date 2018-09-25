@@ -136,6 +136,20 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     assert(checkForLocalDictionary(getDimRawChunk(2)))
   }
 
+  test("test local dictionary data validation") {
+    sql("drop table if exists local_query_enable")
+    sql("drop table if exists local_query_disable")
+    sql(
+      "CREATE TABLE local_query_enable(name string) STORED BY 'carbondata' tblproperties" +
+      "('local_dictionary_enable'='false','local_dictionary_include'='name')")
+    sql("load data inpath '" + file1 + "' into table local_query_enable OPTIONS('header'='false')")
+    sql(
+      "CREATE TABLE local_query_disable(name string) STORED BY 'carbondata' tblproperties" +
+      "('local_dictionary_enable'='true','local_dictionary_include'='name')")
+    sql("load data inpath '" + file1 + "' into table local_query_disable OPTIONS('header'='false')")
+    checkAnswer(sql("select name from local_query_enable"), sql("select name from local_query_disable"))
+  }
+
   test("test to validate local dictionary values"){
     sql("drop table if exists local2")
     sql("CREATE TABLE local2(name string) STORED BY 'carbondata' tblproperties('local_dictionary_enable'='true')")
