@@ -18,7 +18,10 @@ package org.apache.spark.sql;
 
 import java.math.BigInteger;
 
+import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+
 import org.apache.parquet.column.Dictionary;
+import org.apache.parquet.column.Encoding;
 import org.apache.spark.memory.MemoryMode;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.execution.vectorized.ColumnarBatch;
@@ -82,9 +85,10 @@ public class CarbonVectorProxy {
         return columnarBatch.capacity();
     }
 
-    public void setDictionary(Object dictionary, int ordinal) {
-        if (dictionary instanceof Dictionary) {
-            columnarBatch.column(ordinal).setDictionary((Dictionary) dictionary);
+    public void setDictionary(CarbonDictionary dictionary, int ordinal) {
+        if (null != dictionary) {
+            columnarBatch.column(ordinal)
+                .setDictionary(new CarbonDictionaryWrapper(Encoding.PLAIN, dictionary));
         } else {
             columnarBatch.column(ordinal).setDictionary(null);
         }

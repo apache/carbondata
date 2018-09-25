@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.spark.vectorreader;
+package org.apache.spark.sql;
 
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 

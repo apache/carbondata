@@ -269,16 +269,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   }
 
   @Override public void setDictionary(CarbonDictionary dictionary) {
-    if (dictionary == null) {
-      sparkColumnVectorProxy.setDictionary(null, ordinal);
-    } else {
-      sparkColumnVectorProxy
-          .setDictionary(new CarbonDictionaryWrapper(Encoding.PLAIN, dictionary),ordinal);
-    }
-  }
-
-  private void  setDictionaryType(boolean type) {
-    this.isDictionary = type;
+      sparkColumnVectorProxy.setDictionary(dictionary, ordinal);
   }
 
   @Override public boolean hasDictionary() {
