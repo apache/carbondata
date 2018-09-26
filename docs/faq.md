@@ -28,7 +28,7 @@
 * [Why aggregate query is not fetching data from aggregate table?](#why-aggregate-query-is-not-fetching-data-from-aggregate-table)
 * [Why all executors are showing success in Spark UI even after Dataload command failed at Driver side?](#why-all-executors-are-showing-success-in-spark-ui-even-after-dataload-command-failed-at-driver-side)
 * [Why different time zone result for select query output when query SDK writer output?](#why-different-time-zone-result-for-select-query-output-when-query-sdk-writer-output)
-* [How to check LRU cache memory footprint?](#how-to-check-LRU-cache-memory-footprint)
+* [How to check LRU cache memory footprint?](#how-to-check-lru-cache-memory-footprint)
 
 # TroubleShooting
 
