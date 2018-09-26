@@ -144,7 +144,8 @@ public class SecureDictionaryServer extends AbstractDictionaryServer implements 
             new SaslServerBootstrap(transportConf, securityManager);
         String host = findLocalIpAddress(LOGGER);
         //iteratively listening to newports
-        context.createServer(host, newPort, Lists.<TransportServerBootstrap>newArrayList(bootstrap));
+        context
+            .createServer(host, newPort, Lists.<TransportServerBootstrap>newArrayList(bootstrap));
         LOGGER.audit("Dictionary Server started, Time spent " + (System.currentTimeMillis() - start)
             + " Listening on port " + newPort);
         this.port = newPort;
