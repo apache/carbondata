@@ -109,6 +109,7 @@ public class NonSecureDictionaryServer extends AbstractDictionaryServer
         });
         bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
         String hostToBind = findLocalIpAddress(LOGGER);
+        //iteratively listening to newports
         InetSocketAddress address = hostToBind == null ?
             new InetSocketAddress(newPort) :
             new InetSocketAddress(hostToBind, newPort);
@@ -119,7 +120,7 @@ public class NonSecureDictionaryServer extends AbstractDictionaryServer
         this.host = hostToBind;
         break;
       } catch (Exception e) {
-        LOGGER.error(e, "Dictionary Server Failed to bind to port:");
+        LOGGER.error(e, "Dictionary Server Failed to bind to port:" + newPort);
         if (i == 9) {
           throw new RuntimeException("Dictionary Server Could not bind to any port");
         }
