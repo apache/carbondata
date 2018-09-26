@@ -252,7 +252,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
         }
       }
     }
-    throw new IOException("Blocklet with blockid " + blocklet.getBlockletId() + " not found ");
+    throw new IOException("Blocklet not found: " + blocklet.toString());
   }
 
 
