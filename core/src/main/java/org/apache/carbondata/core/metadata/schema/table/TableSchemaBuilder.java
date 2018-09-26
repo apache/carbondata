@@ -224,7 +224,7 @@ public class TableSchemaBuilder {
         }
       }
     }
-    if (newColumn.isDimensionColumn()) {
+    if (newColumn.isDimensionColumn() && newColumn.isSortColumn()) {
       newColumn.setUseInvertedIndex(true);
     }
     if (field.getDataType().isComplexType()) {
