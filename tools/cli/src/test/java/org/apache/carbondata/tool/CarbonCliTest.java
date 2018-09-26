@@ -45,10 +45,8 @@ public class CarbonCliTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"age"},
-        true, 3, 8, true);
-    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"age"},
-        true, 3, 8, true);
+    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"age"}, 3, 8);
+    TestUtil.writeFilesAndVerify(5000000, new Schema(fields), path, new String[]{"age"}, 3, 8);
   }
 
   @Test
