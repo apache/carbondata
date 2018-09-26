@@ -534,6 +534,13 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     }
   }
 
+  @Override
+  public long getPageLengthInBytes() {
+    // For unsafe column page, we are always tracking the total length
+    // so return it directly instead of calculate it again (super class implementation)
+    return totalLength;
+  }
+
   @Override public byte[] compress(Compressor compressor) throws MemoryException, IOException {
     if (UnsafeMemoryManager.isOffHeap() && compressor.supportUnsafe()) {
       // use raw compression and copy to byte[]

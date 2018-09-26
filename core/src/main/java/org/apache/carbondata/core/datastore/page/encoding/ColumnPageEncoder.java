@@ -109,9 +109,10 @@ public abstract class ColumnPageEncoder {
     return dataChunk;
   }
 
-  private void fillBasicFields(ColumnPage inputPage, DataChunk2 dataChunk) {
-    dataChunk.setChunk_meta(
-        CarbonMetadataUtil.getChunkCompressorMeta(inputPage.getColumnCompressorName()));
+  private void fillBasicFields(ColumnPage inputPage, DataChunk2 dataChunk)
+      throws IOException {
+    dataChunk.setChunk_meta(CarbonMetadataUtil.getChunkCompressorMeta(inputPage,
+        dataChunk.getData_page_length()));
     dataChunk.setNumberOfRowsInpage(inputPage.getPageSize());
     dataChunk.setRowMajor(false);
   }

@@ -518,4 +518,9 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
       rowOffset = null;
     }
   }
+
+  @Override
+  public long getPageLengthInBytes() throws IOException {
+    return totalLength;
+  }
 }
