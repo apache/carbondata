@@ -35,6 +35,7 @@ import org.apache.spark._
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.carbondata.execution.datasources.tasklisteners.CarbonLoadTaskCompletionListener
 import org.apache.spark.sql.execution.SQLExecution
 import org.apache.spark.sql.profiler.{GetPartition, Profiler, QueryTaskEnd}
 import org.apache.spark.sql.util.SparkSQLUtil.sessionState
@@ -470,38 +471,27 @@ class CarbonScanRDD[T: ClassTag](
       val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder(model.getQueryId())
       model.setStatisticsRecorder(recorder)
 
-      // TODO: rewrite this logic to call free memory in FailureListener on failures. On success,
-      // TODO: no memory leak should be there, resources should be freed on success completion.
-      val onCompleteCallbacksField = context.getClass.getDeclaredField("onCompleteCallbacks")
-      onCompleteCallbacksField.setAccessible(true)
-      val listeners = onCompleteCallbacksField.get(context)
-        .asInstanceOf[ArrayBuffer[TaskCompletionListener]]
-
-      val isAdded = listeners.exists(p => p.isInstanceOf[InsertTaskCompletionListener])
-      model.setFreeUnsafeMemory(!isAdded)
-      // add task completion before calling initialize as initialize method will internally call
-      // for usage of unsafe method for processing of one blocklet and if there is any exception
-      // while doing that the unsafe memory occupied for that task will not get cleared
-      context.addTaskCompletionListener { new QueryTaskCompletionListener(!isAdded,
-        reader,
-        inputMetricsStats,
-        executionId,
-        taskId,
-        queryStartTime,
-        model.getStatisticsRecorder,
-        split,
-        queryId)
-      }
-      // initialize the reader
-      reader.initialize(inputSplit, attemptContext)
-
       new Iterator[Any] {
         private var havePair = false
         private var finished = false
+        private var first = true
 
         override def hasNext: Boolean = {
           if (context.isInterrupted) {
             throw new TaskKilledException
+          }
+          if (first) {
+            first = false
+            addTaskCompletionListener(
+              split,
+              context,
+              queryStartTime,
+              executionId,
+              taskId,
+              model,
+              reader)
+            // initialize the reader
+            reader.initialize(inputSplit, attemptContext)
           }
           if (!finished && !havePair) {
             finished = !reader.nextKeyValue
@@ -532,6 +522,42 @@ class CarbonScanRDD[T: ClassTag](
     }
 
     iterator.asInstanceOf[Iterator[T]]
+  }
+
+  private def addTaskCompletionListener(split: Partition,
+      context: TaskContext,
+      queryStartTime: Long,
+      executionId: String,
+      taskId: Int,
+      model: QueryModel,
+      reader: RecordReader[Void, Object]) = {
+    // TODO: rewrite this logic to call free memory in FailureListener on failures and
+    // On success,
+    // TODO: no memory leak should be there, resources should be freed on
+    // success completion.
+    val onCompleteCallbacksField =
+    context.getClass.getDeclaredField("onCompleteCallbacks")
+    onCompleteCallbacksField.setAccessible(true)
+    val listeners = onCompleteCallbacksField.get(context)
+      .asInstanceOf[ArrayBuffer[TaskCompletionListener]]
+
+    val isAdded = listeners.exists(p => p.isInstanceOf[CarbonLoadTaskCompletionListener])
+    model.setFreeUnsafeMemory(!isAdded)
+    // add task completion before calling initialize as initialize method will internally
+    // call for usage of unsafe method for processing of one blocklet and if there is any
+    // exceptionwhile doing that the unsafe memory occupied for that task will not
+    // get cleared
+    context.addTaskCompletionListener {
+      new QueryTaskCompletionListener(!isAdded,
+        reader,
+        inputMetricsStats,
+        executionId,
+        taskId,
+        queryStartTime,
+        model.getStatisticsRecorder,
+        split,
+        queryId)
+    }
   }
 
   private def close() {

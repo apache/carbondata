@@ -18,6 +18,7 @@
 package org.apache.spark.sql.carbondata.execution.datasources
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
@@ -29,6 +30,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.memory.MemoryMode
 import org.apache.spark.sql._
 import org.apache.spark.sql.carbondata.execution.datasources.readsupport.SparkUnsafeRowReadSuport
+import org.apache.spark.sql.carbondata.execution.datasources.tasklisteners.{CarbonLoadTaskCompletionListener, CarbonLoadTaskCompletionListenerImpl, CarbonQueryTaskCompletionListener, CarbonQueryTaskCompletionListenerImpl}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.JoinedRow
 import org.apache.spark.sql.catalyst.expressions.codegen.GenerateUnsafeProjection
@@ -37,7 +39,7 @@ import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.sources.{DataSourceRegister, Filter}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.SparkTypeConverter
-import org.apache.spark.util.SerializableConfiguration
+import org.apache.spark.util.{SerializableConfiguration, TaskCompletionListener}
 
 import org.apache.carbondata.common.annotations.{InterfaceAudience, InterfaceStability}
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -173,6 +175,10 @@ class SparkCarbonFileFormat extends FileFormat
 
     private val recordWriter: RecordWriter[NullWritable, ObjectArrayWritable] =
       new CarbonTableOutputFormat().getRecordWriter(context)
+
+    Option(TaskContext.get()).foreach {c =>
+      c.addTaskCompletionListener(CarbonLoadTaskCompletionListenerImpl(recordWriter, context))
+    }
 
     /**
      * Write sparks internal row to carbondata record writer
@@ -388,6 +394,15 @@ class SparkCarbonFileFormat extends FileFormat
         val model = format.createQueryModel(split, hadoopAttemptContext)
         model.setConverter(new SparkDataTypeConverterImpl)
         model.setPreFetchData(false)
+        var isAdded = false
+        Option(TaskContext.get()).foreach { context =>
+          val onCompleteCallbacksField = context.getClass.getDeclaredField("onCompleteCallbacks")
+          onCompleteCallbacksField.setAccessible(true)
+          val listeners = onCompleteCallbacksField.get(context)
+            .asInstanceOf[ArrayBuffer[TaskCompletionListener]]
+          isAdded = listeners.exists(p => p.isInstanceOf[CarbonLoadTaskCompletionListener])
+          model.setFreeUnsafeMemory(!isAdded)
+        }
         val carbonReader = if (readVector) {
           val vectorizedReader = new VectorizedCarbonRecordReader(model,
             null,
@@ -404,7 +419,11 @@ class SparkCarbonFileFormat extends FileFormat
         }
 
         val iter = new RecordReaderIterator(carbonReader)
-        Option(TaskContext.get()).foreach(_.addTaskCompletionListener(_ => iter.close()))
+        Option(TaskContext.get()).foreach{context =>
+          context.addTaskCompletionListener(
+          CarbonQueryTaskCompletionListenerImpl(
+            iter.asInstanceOf[RecordReaderIterator[InternalRow]], !isAdded))
+        }
 
         if (carbonReader.isInstanceOf[VectorizedCarbonRecordReader] && readVector) {
           iter.asInstanceOf[Iterator[InternalRow]]

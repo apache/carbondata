@@ -21,8 +21,8 @@ import scala.collection.JavaConverters._
 
 import org.apache.hadoop.mapreduce.RecordReader
 import org.apache.spark.{Partition, TaskContext}
+import org.apache.spark.sql.carbondata.execution.datasources.tasklisteners.CarbonQueryTaskCompletionListener
 import org.apache.spark.sql.profiler.{Profiler, QueryTaskEnd}
-import org.apache.spark.util.TaskCompletionListener
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.memory.UnsafeMemoryManager
@@ -34,7 +34,7 @@ class QueryTaskCompletionListener(freeMemory: Boolean,
     var reader: RecordReader[Void, Object],
     inputMetricsStats: InitInputMetrics, executionId: String, taskId: Int, queryStartTime: Long,
     queryStatisticsRecorder: QueryStatisticsRecorder, split: Partition, queryId: String)
-  extends TaskCompletionListener {
+  extends CarbonQueryTaskCompletionListener {
   override def onTaskCompletion(context: TaskContext): Unit = {
     if (reader != null) {
       try {
