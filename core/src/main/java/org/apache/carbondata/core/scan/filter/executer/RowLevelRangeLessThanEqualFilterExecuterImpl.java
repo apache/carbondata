@@ -383,13 +383,16 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     BitSet bitSet = null;
     if (dimensionColumnPage.isExplicitSorted()) {
       bitSet = setFilterdIndexToBitSetWithColumnIndex(dimensionColumnPage, numerOfRows,
-          defaultValue);
+          dimensionColumnPage.isAdaptiveEncoded() ? null : defaultValue);
     } else {
-      bitSet = setFilterdIndexToBitSet(dimensionColumnPage, numerOfRows, defaultValue);
+      bitSet = setFilterdIndexToBitSet(dimensionColumnPage, numerOfRows,
+          dimensionColumnPage.isAdaptiveEncoded() ? null : defaultValue);
+    }
+    if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() == DataTypes.STRING) {
+      defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
     }
     if (dimensionColumnPage.isNoDicitionaryColumn()) {
-      FilterUtil.removeNullValues(dimensionColumnPage, bitSet,
-          CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
+      FilterUtil.removeNullValues(dimensionColumnPage, bitSet, defaultValue);
     }
     return bitSet;
   }
