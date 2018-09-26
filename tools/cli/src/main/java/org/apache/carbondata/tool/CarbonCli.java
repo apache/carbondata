@@ -65,6 +65,7 @@ public class CarbonCli {
     Option segment = new Option("m", "showSegment", false, "print segment information");
     Option tblProperties = new Option("t", "tblProperties", false, "print table properties");
     Option detail = new Option("b", "blocklet", false, "print blocklet size detail");
+    Option columnMeta = new Option("k", "columnChunkMeta", false, "print column chunk meta");
     Option columnName = OptionBuilder
         .withArgName("column name")
         .hasArg()
@@ -82,6 +83,7 @@ public class CarbonCli {
     options.addOption(segment);
     options.addOption(tblProperties);
     options.addOption(detail);
+    options.addOption(columnMeta);
     options.addOption(columnName);
     return options;
   }
