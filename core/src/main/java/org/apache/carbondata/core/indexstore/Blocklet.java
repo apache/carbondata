@@ -65,17 +65,20 @@ public class Blocklet implements Writable,Serializable {
     return filePath;
   }
 
-  @Override public void write(DataOutput out) throws IOException {
+  @Override
+  public void write(DataOutput out) throws IOException {
     out.writeUTF(filePath);
     out.writeUTF(blockletId);
   }
 
-  @Override public void readFields(DataInput in) throws IOException {
+  @Override
+  public void readFields(DataInput in) throws IOException {
     filePath = in.readUTF();
     blockletId = in.readUTF();
   }
 
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
@@ -92,7 +95,17 @@ public class Blocklet implements Writable,Serializable {
         blocklet.blockletId == null;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public String toString() {
+    final StringBuffer sb = new StringBuffer("Blocklet{");
+    sb.append("filePath='").append(filePath).append('\'');
+    sb.append(", blockletId='").append(blockletId).append('\'');
+    sb.append('}');
+    return sb.toString();
+  }
+
+  @Override
+  public int hashCode() {
     int result = filePath != null ? filePath.hashCode() : 0;
     result = 31 * result;
     if (compareBlockletIdForObjectMatching) {
