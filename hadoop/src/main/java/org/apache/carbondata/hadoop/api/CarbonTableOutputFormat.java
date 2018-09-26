@@ -424,6 +424,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
 
     private Future future;
 
+    private boolean isClosed;
+
     public CarbonRecordWriter(CarbonOutputIteratorWrapper iteratorWrapper,
         DataLoadExecutor dataLoadExecutor, CarbonLoadModel loadModel, Future future,
         ExecutorService executorService) {
@@ -442,22 +444,25 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     }
 
     @Override public void close(TaskAttemptContext taskAttemptContext) throws InterruptedException {
-      if (iteratorWrapper != null) {
-        iteratorWrapper.closeWriter(false);
+      if (!isClosed) {
+        isClosed = true;
+        if (iteratorWrapper != null) {
+          iteratorWrapper.closeWriter(false);
+        }
+        try {
+          future.get();
+        } catch (ExecutionException e) {
+          LOG.error("Error while loading data", e);
+          throw new InterruptedException(e.getMessage());
+        } finally {
+          executorService.shutdownNow();
+          dataLoadExecutor.close();
+          ThreadLocalSessionInfo.unsetAll();
+          // clean up the folders and files created locally for data load operation
+          TableProcessingOperations.deleteLocalDataLoadFolderLocation(loadModel, false, false);
+        }
+        LOG.info("Closed writer task " + taskAttemptContext.getTaskAttemptID());
       }
-      try {
-        future.get();
-      } catch (ExecutionException e) {
-        LOG.error("Error while loading data", e);
-        throw new InterruptedException(e.getMessage());
-      } finally {
-        executorService.shutdownNow();
-        dataLoadExecutor.close();
-        ThreadLocalSessionInfo.unsetAll();
-        // clean up the folders and files created locally for data load operation
-        TableProcessingOperations.deleteLocalDataLoadFolderLocation(loadModel, false, false);
-      }
-      LOG.info("Closed writer task " + taskAttemptContext.getTaskAttemptID());
     }
 
     public CarbonLoadModel getLoadModel() {
