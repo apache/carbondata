@@ -181,22 +181,31 @@ public class TestSdkJson {
 ```
 
 ## Datatypes Mapping
-Each of SQL data types are mapped into data types of SDK. Following are the mapping:
+Each of SQL data types and Avro Data Types are mapped into data types of SDK. Following are the mapping:
 
-| SQL DataTypes | Mapped SDK DataTypes |
-|---------------|----------------------|
-| BOOLEAN | DataTypes.BOOLEAN |
-| SMALLINT | DataTypes.SHORT |
-| INTEGER | DataTypes.INT |
-| BIGINT | DataTypes.LONG |
-| DOUBLE | DataTypes.DOUBLE |
-| VARCHAR | DataTypes.STRING |
-| FLOAT | DataTypes.FLOAT |
-| BYTE | DataTypes.BYTE |
-| DATE | DataTypes.DATE |
-| TIMESTAMP | DataTypes.TIMESTAMP |
-| STRING | DataTypes.STRING |
-| DECIMAL | DataTypes.createDecimalType(precision, scale) |
+| SQL DataTypes | Avro DataTypes | Mapped SDK DataTypes |
+|---------------|----------------|----------------------|
+| BOOLEAN | BOOLEAN | DataTypes.BOOLEAN |
+| SMALLINT |  -  | DataTypes.SHORT |
+| INTEGER | INTEGER | DataTypes.INT |
+| BIGINT | LONG | DataTypes.LONG |
+| DOUBLE | DOUBLE | DataTypes.DOUBLE |
+| VARCHAR |  -  | DataTypes.STRING |
+| FLOAT | FLOAT | DataTypes.FLOAT |
+| BYTE |  -  | DataTypes.BYTE |
+| DATE | DATE | DataTypes.DATE |
+| TIMESTAMP |  -  | DataTypes.TIMESTAMP |
+| STRING | STRING | DataTypes.STRING |
+| DECIMAL | DECIMAL | DataTypes.createDecimalType(precision, scale) |
+| ARRAY | ARRAY | DataTypes.createArrayType(elementType) |
+| STRUCT | RECORD | DataTypes.createStructType(fields) |
+|  -  | ENUM | DataTypes.STRING |
+|  -  | UNION | DataTypes.createStructType(types) |
+|  -  | MAP | DataTypes.createMapType(keyType, valueType) |
+|  -  | TimeMillis | DataTypes.INT |
+|  -  | TimeMicros | DataTypes.LONG |
+|  -  | TimestampMillis | DataTypes.TIMESTAMP |
+|  -  | TimestampMicros | DataTypes.TIMESTAMP |
 
 **NOTE:**
  1. Carbon Supports below logical types of AVRO.
@@ -209,12 +218,22 @@ Each of SQL data types are mapped into data types of SDK. Following are the mapp
  c. Timestamp (microsecond precision)
     The timestamp-micros logical type represents an instant on the global timeline, independent of a particular time zone or calendar, with a precision of one microsecond.
     A timestamp-micros logical type annotates an Avro long, where the long stores the number of microseconds from the unix epoch, 1 January 1970 00:00:00.000000 UTC.
+ d. Decimal
+    The decimal logical type represents an arbitrary-precision signed decimal number of the form unscaled × 10-scale.
+    A decimal logical type annotates Avro bytes or fixed types. The byte array must contain the two's-complement representation of the unscaled integer value in big-endian byte order. The scale is fixed, and is specified using an attribute.
+ e. Time (millisecond precision)
+    The time-millis logical type represents a time of day, with no reference to a particular calendar, time zone or date, with a precision of one millisecond.
+    A time-millis logical type annotates an Avro int, where the int stores the number of milliseconds after midnight, 00:00:00.000.
+ f. Time (microsecond precision)
+    The time-micros logical type represents a time of day, with no reference to a particular calendar, time zone or date, with a precision of one microsecond.
+    A time-micros logical type annotates an Avro long, where the long stores the number of microseconds after midnight, 00:00:00.000000.
+
     
     Currently the values of logical types are not validated by carbon. 
     Expect that avro record passed by the user is already validated by avro record generator tools.    
  2. If the string data is more than 32K in length, use withTableProperties() with "long_string_columns" property
-    or directly use DataTypes.VARCHAR if it is carbon schema.      
-
+    or directly use DataTypes.VARCHAR if it is carbon schema.
+ 3. Avro Bytes, Fixed and Duration data types are not yet supported.
 ## Run SQL on files directly
 Instead of creating table and query it, you can also query that file directly with SQL.
 
