@@ -77,7 +77,7 @@ public class CarbonCliTest {
         output.contains(
             "Input Folder: ./CarbonCliTest\n"
           + "## Summary\n"
-          + "total: 6 blocks, 2 shards, 14 blocklets, 314 pages, 10,000,000 rows, 32.26MB\n"
+          + "total: 6 blocks, 2 shards, 14 blocklets, 314 pages, 10,000,000 rows, 32.27MB\n"
           + "avg: 5.38MB/block, 2.30MB/blocklet, 1,666,666 rows/block, 714,285 rows/blocklet"));
 
     String[] args2 = {"-cmd", "summary", "-p", path, "-s"};
@@ -116,7 +116,7 @@ public class CarbonCliTest {
           + "1    1      25        800,000  2.58MB    \n"
           + "2    0      25        800,000  2.58MB    \n"
           + "2    1      25        800,000  2.58MB    \n"
-          + "2    2      7         200,000  660.74KB  "));
+          + "2    2      7         200,000  660.79KB  "));
 
     String[] args5 = {"-cmd", "summary", "-p", path, "-c", "name"};
     out = new ByteArrayOutputStream();
@@ -126,61 +126,13 @@ public class CarbonCliTest {
     Assert.assertTrue(
         output.contains(
             "BLK  BLKLT  Meta Size  Data Size  LocalDict  DictEntries  DictSize  AvgPageSize  Min%    Max%    \n"
-          + "0    0      1.72KB     295.89KB   false      0            0.0B      11.77KB      robot0  robot1  \n"
-          + "0    1      1.72KB     295.89KB   false      0            0.0B      11.77KB      robot1  robot3  \n"
-          + "1    0      1.72KB     295.89KB   false      0            0.0B      11.77KB      robot3  robot4  \n"
-          + "1    1      1.72KB     295.89KB   false      0            0.0B      11.77KB      robot4  robot6  \n"
-          + "2    0      1.72KB     295.89KB   false      0            0.0B      11.77KB      robot6  robot7  \n"
-          + "2    1      1.72KB     295.89KB   false      0            0.0B      11.77KB      robot8  robot9  \n"
-          + "2    2      492.0B     74.03KB    false      0            0.0B      10.51KB      robot9  robot9  "));
-  }
-
-  @Test
-  public void testSummaryOutputAll() {
-    String[] args = {"-cmd", "summary", "-p", path, "-a", "-c", "age"};
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    PrintStream stream = new PrintStream(out);
-    CarbonCli.run(args, stream);
-    String output = new String(out.toByteArray());
-    Assert.assertTrue(
-        output.contains(
-            "Input Folder: ./CarbonCliTest\n"
-          + "## Summary\n"
-          + "total: 6 blocks, 2 shards, 14 blocklets, 314 pages, 10,000,000 rows, 32.26MB\n"
-          + "avg: 5.38MB/block, 2.30MB/blocklet, 1,666,666 rows/block, 714,285 rows/blocklet\n"));
-
-    Assert.assertTrue(
-        output.contains(
-            "Column Name  Data Type  Column Type  SortColumn  Encoding          Ordinal  Id  \n"
-          + "name         STRING     dimension    true        [INVERTED_INDEX]  0        NA  \n"
-          + "age          INT        measure      false       []                1        NA  \n"));
-
-    Assert.assertTrue(
-        output.contains(
-            "## Table Properties\n"
-          + "schema file not found"));
-
-    Assert.assertTrue(
-        output.contains(
-            "BLK  BLKLT  NumPages  NumRows  Size      \n"
-          + "0    0      25        800,000  2.58MB    \n"
-          + "0    1      25        800,000  2.58MB    \n"
-          + "1    0      25        800,000  2.58MB    \n"
-          + "1    1      25        800,000  2.58MB    \n"
-          + "2    0      25        800,000  2.58MB    \n"
-          + "2    1      25        800,000  2.58MB    \n"
-          + "2    2      7         200,000  660.74KB  "));
-
-    Assert.assertTrue(
-        output.contains(
-          "BLK  BLKLT  Meta Size  Data Size  LocalDict  DictEntries  DictSize  AvgPageSize  Min%  Max%   \n"
-        + "0    0      2.90KB     4.87MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
-        + "0    1      2.90KB     2.29MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
-        + "1    0      2.90KB     4.87MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
-        + "1    1      2.90KB     2.29MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
-        + "2    0      2.90KB     5.52MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
-        + "2    1      2.90KB     2.94MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
-        + "2    2      830.0B     586.81KB   false      0            0.0B      83.71KB      0.0   100.0 "));
+          + "0    0      1.81KB     295.98KB   false      0            0.0B      11.77KB      robot0  robot1  \n"
+          + "0    1      1.81KB     295.99KB   false      0            0.0B      11.77KB      robot1  robot3  \n"
+          + "1    0      1.81KB     295.98KB   false      0            0.0B      11.77KB      robot3  robot4  \n"
+          + "1    1      1.81KB     295.99KB   false      0            0.0B      11.77KB      robot4  robot6  \n"
+          + "2    0      1.81KB     295.98KB   false      0            0.0B      11.77KB      robot6  robot7  \n"
+          + "2    1      1.81KB     295.98KB   false      0            0.0B      11.77KB      robot8  robot9  \n"
+          + "2    2      519.0B     74.06KB    false      0            0.0B      10.51KB      robot9  robot9  "));
   }
 
   @Test

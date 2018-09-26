@@ -101,6 +101,8 @@ public abstract class ColumnPageEncoder {
     DataChunk2 dataChunk = new DataChunk2();
     dataChunk.setData_page_length(encodedBytes.length);
     fillBasicFields(inputPage, dataChunk);
+    dataChunk.getChunk_meta().setTotal_compressed_size(encodedBytes.length);
+    dataChunk.getChunk_meta().setTotal_uncompressed_size(inputPage.getPageLengthInBytes());
     fillNullBitSet(inputPage, dataChunk);
     fillEncoding(inputPage, dataChunk);
     fillMinMaxIndex(inputPage, dataChunk);

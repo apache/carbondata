@@ -724,6 +724,45 @@ public abstract class ColumnPage {
   }
 
   /**
+   * Return total page data length in bytes
+   */
+  public long getPageLengthInBytes() throws IOException {
+    DataType dataType = columnPageEncoderMeta.getStoreDataType();
+    if (dataType == DataTypes.BOOLEAN) {
+      return getBooleanPage().length;
+    } else if (dataType == DataTypes.BYTE) {
+      return getBytePage().length;
+    } else if (dataType == DataTypes.SHORT) {
+      return getShortPage().length * SHORT.getSizeInBytes();
+    } else if (dataType == DataTypes.SHORT_INT) {
+      return getShortIntPage().length;
+    } else if (dataType == DataTypes.INT) {
+      return getIntPage().length * INT.getSizeInBytes();
+    } else if (dataType == DataTypes.LONG) {
+      return getLongPage().length * LONG.getSizeInBytes();
+    } else if (dataType == DataTypes.FLOAT) {
+      return getFloatPage().length * FLOAT.getSizeInBytes();
+    } else if (dataType == DataTypes.DOUBLE) {
+      return getDoublePage().length * DOUBLE.getSizeInBytes();
+    } else if (DataTypes.isDecimal(dataType)) {
+      return getDecimalPage().length;
+    } else if (dataType == DataTypes.BYTE_ARRAY
+        && columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.COMPLEX_PRIMITIVE) {
+      return getComplexChildrenLVFlattenedBytePage().length;
+    } else if (dataType == DataTypes.BYTE_ARRAY
+        && (columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.COMPLEX_STRUCT
+        || columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.COMPLEX_ARRAY
+        || columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.PLAIN_LONG_VALUE
+        || columnPageEncoderMeta.getColumnSpec().getColumnType() == ColumnType.PLAIN_VALUE)) {
+      return getComplexParentFlattenedBytePage().length;
+    } else if (dataType == DataTypes.BYTE_ARRAY) {
+      return getLVFlattenedBytePage().length;
+    } else {
+      throw new UnsupportedOperationException("unsupport compress column page: " + dataType);
+    }
+  }
+
+  /**
    * Compress page data using specified compressor
    */
   public byte[] compress(Compressor compressor) throws MemoryException, IOException {

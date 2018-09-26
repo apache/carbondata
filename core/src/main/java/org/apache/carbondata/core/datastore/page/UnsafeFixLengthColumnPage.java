@@ -534,6 +534,11 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     }
   }
 
+  @Override
+  public long getPageLengthInBytes() {
+    return totalLength;
+  }
+
   @Override public byte[] compress(Compressor compressor) throws MemoryException, IOException {
     if (UnsafeMemoryManager.isOffHeap() && compressor.supportUnsafe()) {
       // use raw compression and copy to byte[]
