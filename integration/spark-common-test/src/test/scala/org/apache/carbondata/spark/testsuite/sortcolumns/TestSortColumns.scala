@@ -343,6 +343,12 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA local inpath '$resourcesPath/numeric_column_invalid_values.csv' INTO TABLE test_sort_col OPTIONS('FILEHEADER'='id,name,age')")
     // compare hive and carbon data
     checkAnswer(sql("select * from test_sort_col_hive"), sql("select * from test_sort_col"))
+    checkAnswer(sql("select * from test_sort_col_hive where age < 25"), sql("select * from test_sort_col where age < 25"))
+    checkAnswer(sql("select * from test_sort_col_hive where age <= 25"), sql("select * from test_sort_col where age <= 25"))
+    checkAnswer(sql("select * from test_sort_col_hive where age > 25"), sql("select * from test_sort_col where age > 25"))
+    checkAnswer(sql("select * from test_sort_col_hive where age >= 25"), sql("select * from test_sort_col where age >= 25"))
+    checkAnswer(sql("select * from test_sort_col_hive where age is null"), sql("select * from test_sort_col where age is null"))
+    checkAnswer(sql("select * from test_sort_col_hive where age is not null"), sql("select * from test_sort_col where age is not null"))
   }
 
   test("describe formatted for sort_columns") {
