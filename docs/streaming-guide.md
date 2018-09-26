@@ -304,8 +304,9 @@ Following example shows how to start a streaming ingest job
          | register TIMESTAMP,
          | updated TIMESTAMP
          |)
-         |STORED BY carbondata
+         |STORED AS carbondata
          |TBLPROPERTIES (
+         | 'streaming'='source',
          | 'format'='csv',
          | 'path'='$csvDataDir'
          |)
@@ -324,7 +325,7 @@ Following example shows how to start a streaming ingest job
          | register TIMESTAMP,
          | updated TIMESTAMP
          |)
-         |STORED BY carbondata
+         |STORED AS carbondata
          |TBLPROPERTIES (
          |  'streaming'='true'
          |)
@@ -378,11 +379,14 @@ When this is issued, carbon will start a structured streaming job to do the stre
     name STRING,
     age INT
   )
-  STORED BY carbondata
+  STORED AS carbondata
   TBLPROPERTIES(
-    'format'='socket',
-    'host'='localhost',
-    'port'='8888'
+   'streaming'='source',
+   'format'='socket',
+   'host'='localhost',
+   'port'='8888',
+   'record_format'='csv', // can be csv or json, default is csv
+   'delimiter'='|'
   )
   ```
 
@@ -394,6 +398,7 @@ When this is issued, carbon will start a structured streaming job to do the stre
   	 .format("socket")
   	 .option("host", "localhost")
   	 .option("port", "8888")
+  	 .option("delimiter", "|")
   ```
 
 
@@ -402,6 +407,22 @@ When this is issued, carbon will start a structured streaming job to do the stre
 - In the given STMPROPERTIES, user must specify `'trigger'`, its value must be `ProcessingTime` (In future, other value will be supported). User should also specify interval value for the streaming job.
 - If the schema specifid in sink table is different from CTAS, the streaming job will fail
 
+For Kafka data source, create the source table by:
+  ```SQL
+  CREATE TABLE source(
+    name STRING,
+    age INT
+  )
+  STORED AS carbondata
+  TBLPROPERTIES(
+   'streaming'='source',
+   'format'='kafka',
+   'kafka.bootstrap.servers'='kafkaserver:9092',
+   'subscribe'='test'
+   'record_format'='csv', // can be csv or json, default is csv
+   'delimiter'='|'
+  )
+  ```
 
 
 ##### STOP STREAM
