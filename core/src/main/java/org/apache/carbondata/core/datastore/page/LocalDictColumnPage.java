@@ -344,4 +344,13 @@ public class LocalDictColumnPage extends ColumnPage {
   @Override public void convertValue(ColumnPageValueConverter codec) {
     throw new UnsupportedOperationException("Operation not supported");
   }
+
+  @Override
+  public long getPageLengthInBytes() throws IOException {
+    if (null != pageLevelDictionary) {
+      return encodedDataColumnPage.getPageLengthInBytes();
+    } else {
+      return actualDataColumnPage.getPageLengthInBytes();
+    }
+  }
 }
