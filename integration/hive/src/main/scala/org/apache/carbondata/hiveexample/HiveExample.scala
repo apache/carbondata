@@ -22,7 +22,7 @@ import java.sql.{DriverManager, ResultSet, Statement}
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.hive.server.HiveEmbeddedServer2
+
 
 // scalastyle:off println
 object HiveExample {
@@ -42,6 +42,8 @@ object HiveExample {
 
 
     import org.apache.spark.sql.CarbonSession._
+
+    import org.apache.carbondata.server.HiveEmbeddedServer2
 
     val carbonSession = SparkSession
       .builder()
@@ -77,9 +79,8 @@ object HiveExample {
         classNotFoundException.printStackTrace()
     }
 
-    val hiveEmbeddedServer2 = new HiveEmbeddedServer2()
-    hiveEmbeddedServer2.start()
-    val port = hiveEmbeddedServer2.getFreePort
+
+    val port = HiveEmbeddedServer2.start()
     val connection = DriverManager.getConnection(s"jdbc:hive2://localhost:$port/default", "", "")
     val statement: Statement = connection.createStatement
 
@@ -191,7 +192,7 @@ object HiveExample {
       }
       outOfOrderColFetched = outOfOrderColFetched + 1
     }
-    hiveEmbeddedServer2.stop()
+    HiveEmbeddedServer2.stop()
     System.exit(0)
   }
 
