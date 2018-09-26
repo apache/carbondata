@@ -321,6 +321,8 @@ class DataFile {
     // they are set after calculation in DataSummary
     double minPercentage, maxPercentage;
 
+    DataChunk3 dataChunk;
+
     /**
      * Constructor
      * @param blockletInfo blocklet info which this column chunk belongs to
@@ -338,7 +340,7 @@ class DataFile {
       ByteBuffer buffer = fileReader.readByteBuffer(
           filePath, blockletInfo.column_data_chunks_offsets.get(columnIndex),
           blockletInfo.column_data_chunks_length.get(columnIndex));
-      DataChunk3 dataChunk = CarbonUtil.readDataChunk3(new ByteArrayInputStream(buffer.array()));
+      dataChunk = CarbonUtil.readDataChunk3(new ByteArrayInputStream(buffer.array()));
       this.localDict = dataChunk.isSetLocal_dictionary();
       if (this.localDict) {
         String compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
@@ -374,6 +376,10 @@ class DataFile {
 
     DataType getDataType() {
       return column.getDataType();
+    }
+
+    public DataChunk3 getDataChunk3() {
+      return dataChunk;
     }
 
     byte[] min(byte[] minValue) {
