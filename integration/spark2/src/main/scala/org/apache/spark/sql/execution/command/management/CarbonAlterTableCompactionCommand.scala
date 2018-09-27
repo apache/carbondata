@@ -334,8 +334,12 @@ case class CarbonAlterTableCompactionCommand(
     val streamingLock = CarbonLockFactory.getCarbonLockObj(
       carbonTable.getTableInfo.getOrCreateAbsoluteTableIdentifier,
       LockUsage.STREAMING_LOCK)
-    if (!FileFactory.getCarbonFile(streamingLock.getLockFilePath).delete()) {
-       LOGGER.warn("failed to delete lock file: " + streamingLock.getLockFilePath)
+    val lockFile =
+      FileFactory.getCarbonFile(streamingLock.getLockFilePath, FileFactory.getConfiguration)
+    if (lockFile.exists()) {
+      if (!lockFile.delete()) {
+        LOGGER.warn("failed to delete lock file: " + streamingLock.getLockFilePath)
+      }
     }
     try {
       if (streamingLock.lockWithRetries()) {
