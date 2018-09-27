@@ -283,6 +283,7 @@
                 <configuration>
                   <sources>
                     <source>src/main/spark2.1</source>
+                    <source>src/main/commonTo2.1And2.2</source>
                   </sources>
                 </configuration>
               </execution>
@@ -328,6 +329,7 @@
                   <sources>
                     <source>src/main/spark2.2</source>
                     <source>src/main/commonTo2.2And2.3</source>
+                    <source>src/main/commonTo2.1And2.2</source>
                   </sources>
                 </configuration>
               </execution>
@@ -339,7 +341,7 @@
     <profile>
       <id>spark-2.3</id>
       <properties>
-        <spark.version>2.3.1</spark.version>
+        <spark.version>2.3.2</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
         <scala.version>2.11.8</scala.version>
       </properties>
@@ -352,6 +354,7 @@
               <excludes>
                 <exclude>src/main/spark2.1</exclude>
                 <exclude>src/main/spark2.2</exclude>
+                <exclude>src/main/commonTo2.1And2.2</exclude>
               </excludes>
             </configuration>
           </plugin>

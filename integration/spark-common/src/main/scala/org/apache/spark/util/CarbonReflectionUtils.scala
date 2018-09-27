@@ -296,7 +296,7 @@ object CarbonReflectionUtils {
           classOf[LogicalPlan],
           classOf[Seq[Attribute]],
           classOf[SparkPlan])
-      method.invoke(dataSourceObj, mode, query, query.output, physicalPlan)
+      method.invoke(dataSourceObj, mode, query, query.output.map(_.name), physicalPlan)
         .asInstanceOf[BaseRelation]
     } else {
       throw new UnsupportedOperationException("Spark version not supported")
