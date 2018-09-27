@@ -424,7 +424,8 @@ public class TablePage {
                   "Encoder result ---> Source data type: " + noDictDimensionPages[noDictIndex]
                       .getDataType().getName() + " Destination data type: " + targetDataType
                       .getName() + " for the column: " + noDictDimensionPages[noDictIndex]
-                      .getColumnSpec().getFieldName());
+                      .getColumnSpec().getFieldName() + " having encoding type: "
+                      + columnPageEncoder.getEncodingType());
             }
           }
           noDictIndex++;

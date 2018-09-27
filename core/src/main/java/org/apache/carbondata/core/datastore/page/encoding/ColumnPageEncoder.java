@@ -78,6 +78,14 @@ public abstract class ColumnPageEncoder {
     }
   }
 
+  public Encoding getEncodingType() {
+    List<Encoding> currEncodingList = getEncodingList();
+    if (CarbonUtil.isEncodedWithMeta(currEncodingList)) {
+      return currEncodingList.get(0);
+    }
+    return null;
+  }
+
   /**
    * Return a encoded column page by encoding the input page
    * The encoded binary data and metadata are wrapped in encoding column page
