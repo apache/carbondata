@@ -1506,6 +1506,9 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
   }
 
   test("auto hand off, close and reopen streaming table") {
+    sql("alter table streaming.stream_table_reopen compact 'close_streaming'")
+    sql("ALTER TABLE streaming.stream_table_reopen SET TBLPROPERTIES('streaming'='true')")
+
     executeStreamingIngest(
       tableName = "stream_table_reopen",
       batchNums = 2,
