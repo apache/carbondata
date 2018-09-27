@@ -608,13 +608,12 @@
     <profile>
       <id>spark-2.3</id>
       <properties>
-        <spark.version>2.3.1</spark.version>
+        <spark.version>2.3.2</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
         <scala.version>2.11.8</scala.version>
       </properties>
       <modules>
         <module>integration/spark2</module>
-        <module>integration/hive</module>
         <module>integration/presto</module>
         <module>streaming</module>
         <module>examples/spark2</module>
