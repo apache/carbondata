@@ -1117,11 +1117,11 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
   }
 
   private def createParquetTable {
-    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(s"$warehouse1/../warehouse2"))
+    val path = FileFactory.getUpdatedFilePath(s"$warehouse1/../warehouse2")
+    FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(s"$path"))
     spark.sql(s"create table par_table(male boolean, age int, height double, name string, address " +
               s"string," +
-              s"salary long, floatField float, bytefield byte) using parquet location " +
-              s"'$warehouse1/../warehouse2'")
+              s"salary long, floatField float, bytefield byte) using parquet location '$path'")
     (0 to 10).foreach {
       i => spark.sql(s"insert into par_table select 'true','$i', ${i.toDouble / 2}, 'name$i', " +
                      s"'address$i', ${i*100}, $i.$i, '$i'")
@@ -1179,6 +1179,63 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       case ex: Exception => throw new RuntimeException(ex)
       case _ => None
     }
+  }
+
+  def buildStructSchemaWithNestedArrayOfMapTypeAsValue(writerPath: String, rows: Int): Unit = {
+    FileFactory.deleteAllFilesOfDir(new File(writerPath))
+    val mySchema =
+      """
+        |{
+        |  "name": "address",
+        |  "type": "record",
+        |  "fields": [
+        |    {
+        |      "name": "name",
+        |      "type": "string"
+        |    },
+        |    {
+        |      "name": "age",
+        |      "type": "int"
+        |    },
+        |    {
+        |      "name": "structRecord",
+        |      "type": {
+        |        "type": "record",
+        |        "name": "my_address",
+        |        "fields": [
+        |          {
+        |            "name": "street",
+        |            "type": "string"
+        |          },
+        |          {
+        |            "name": "houseDetails",
+        |            "type": {
+        |               "type": "array",
+        |               "items": {
+        |                   "name": "memberDetails",
+        |                   "type": "map",
+        |                   "values": "string"
+        |                }
+        |             }
+        |          }
+        |        ]
+        |      }
+        |    }
+        |  ]
+        |}
+      """.stripMargin
+    val json = """ {"name":"bob", "age":10, "structRecord": {"street":"street1", "houseDetails": [{"101": "Rahul", "102": "Pawan"}]}} """.stripMargin
+    TestUtil.WriteFilesWithAvroWriter(writerPath, rows, mySchema, json)
+  }
+
+  test("test external table with struct type with value as nested struct<array<map>> type") {
+    val writerPath: String = FileFactory.getUpdatedFilePath(warehouse1 + "/sdk1")
+    val rowCount = 3
+    buildStructSchemaWithNestedArrayOfMapTypeAsValue(writerPath, rowCount)
+    spark.sql("drop table if exists carbon_external")
+    spark.sql(s"create table carbon_external using carbon location '$writerPath'")
+    assert(spark.sql("select * from carbon_external").count() == rowCount)
+    spark.sql("drop table if exists carbon_external")
   }
 
   test("test byte and float for multiple pages") {

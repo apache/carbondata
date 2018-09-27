@@ -625,7 +625,8 @@ public class AvroCarbonWriter extends CarbonWriter {
       case ARRAY:
         // recursively get the sub fields
         // array will have only one sub field.
-        DataType subType = getMappingDataTypeForCollectionRecord(childSchema.getElementType());
+        DataType subType =
+            getMappingDataTypeForCollectionRecord(fieldName, childSchema.getElementType());
         if (subType != null) {
           return (new StructField(fieldName, DataTypes.createArrayType(subType)));
         } else {
@@ -661,7 +662,8 @@ public class AvroCarbonWriter extends CarbonWriter {
     }
   }
 
-  private static DataType getMappingDataTypeForCollectionRecord(Schema childSchema) {
+  private static DataType getMappingDataTypeForCollectionRecord(String fieldName,
+      Schema childSchema) {
     LogicalType logicalType = childSchema.getLogicalType();
     switch (childSchema.getType()) {
       case BOOLEAN:
@@ -700,7 +702,7 @@ public class AvroCarbonWriter extends CarbonWriter {
         return DataTypes.FLOAT;
       case MAP:
         // recursively get the sub fields
-        StructField mapField = prepareSubFields("val", childSchema);
+        StructField mapField = prepareSubFields(fieldName, childSchema);
         if (mapField != null) {
           return mapField.getDataType();
         }
@@ -717,7 +719,8 @@ public class AvroCarbonWriter extends CarbonWriter {
         return DataTypes.createStructType(structSubFields);
       case ARRAY:
         // array will have only one sub field.
-        DataType subType = getMappingDataTypeForCollectionRecord(childSchema.getElementType());
+        DataType subType =
+            getMappingDataTypeForCollectionRecord(fieldName, childSchema.getElementType());
         if (subType != null) {
           return DataTypes.createArrayType(subType);
         } else {
