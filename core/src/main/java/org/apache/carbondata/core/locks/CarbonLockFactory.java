@@ -71,7 +71,8 @@ public class CarbonLockFactory {
       lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_S3;
       return new S3FileLock(absoluteLockPath,
           lockFile);
-    } else if (absoluteLockPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
+    } else if (absoluteLockPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) || absoluteLockPath
+        .startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
       lockTypeConfigured = CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS;
       return new HdfsFileLock(absoluteLockPath, lockFile);
     } else {
