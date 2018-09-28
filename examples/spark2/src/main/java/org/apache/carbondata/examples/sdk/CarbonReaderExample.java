@@ -122,10 +122,11 @@ public class CarbonReaderExample {
                 for (int j = 0; j < arr.length; j++) {
                     System.out.print(arr[j] + " ");
                 }
+                assert (arr[0].equals("Hello"));
+                assert (arr[3].equals("Carbon"));
                 System.out.println();
                 i++;
             }
-            System.out.println("\nFinished");
             reader.close();
 
             // Read data
@@ -148,7 +149,6 @@ public class CarbonReaderExample {
                     row[5], row[6], row[7], row[8], row[9], row[10]));
                 i++;
             }
-            System.out.println("\nFinished");
             reader2.close();
             FileUtils.deleteDirectory(new File(path));
         } catch (Throwable e) {
