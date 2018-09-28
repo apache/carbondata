@@ -157,7 +157,7 @@ ALTER TABLE streaming_table SET TBLPROPERTIES('streaming'='true')
 At the begin of streaming ingestion, the system will try to acquire the table level lock of streaming.lock file. If the system isn't able to acquire the lock of this table, it will throw an InterruptedException.
 
 ## Create streaming segment
-The input data of streaming will be ingested into a segment of the CarbonData table, the status of this segment is streaming. CarbonData call it a streaming segment. The "tablestatus" file will record the segment status and data size. The user can use “SHOW SEGMENTS FOR TABLE tableName” to check segment status. 
+The input data of streaming will be ingested into a segment of the CarbonData table, the status of this segment is streaming. CarbonData call it a streaming segment. The "tablestatus" file will record the segment status and data size. The user can use "SHOW SEGMENTS FOR TABLE tableName" to check segment status. 
 
 After the streaming segment reaches the max size, CarbonData will change the segment status to "streaming finish" from "streaming", and create new "streaming" segment to continue to ingest streaming data.
 

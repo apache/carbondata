@@ -15,19 +15,20 @@
     limitations under the License.
 -->
 
-# Carbon as Spark's datasource guide
+# Carbon as Spark's Datasource
 
-Carbon fileformat can be integrated to Spark using datasource to read and write data without using CarbonSession.
+The Carbon fileformat is now integrated as Spark datasource for read and write operation without using CarbonSession. This is useful for the users who wants same Spark datasource. 
 
+**Note:** You can only apply the features of Spark datasource similar to Parquet. The carbon session features are not supported.
 
 # Create Table with DDL
 
-Carbon table can be created with spark's datasource DDL syntax as follows.
+Now you can create Carbon table using Spark's datasource DDL syntax.
 
 ```
  CREATE [TEMPORARY] TABLE [IF NOT EXISTS] [db_name.]table_name
      [(col_name1 col_type1 [COMMENT col_comment1], ...)]
-     USING carbon
+     USING CARBON
      [OPTIONS (key1=val1, key2=val2, ...)]
      [PARTITIONED BY (col_name1, col_name2, ...)]
      [CLUSTERED BY (col_name3, col_name4, ...) INTO num_buckets BUCKETS]
@@ -44,10 +45,10 @@ Carbon table can be created with spark's datasource DDL syntax as follows.
 | table_blocksize | 1024 | Size of blocks to write onto hdfs |
 | table_blocklet_size | 64 | Size of blocklet to write |
 | local_dictionary_threshold | 10000 | Cardinality upto which the local dictionary can be generated  |
-| local_dictionary_enable | false | Enable local dictionary generation  |
-| sort_columns | all dimensions are sorted | comma separated string columns which to include in sort and its order of sort |
-| sort_scope | local_sort | Sort scope of the load.Options include no sort, local sort ,batch sort and global sort |
-| long_string_columns | null | comma separated string columns which are more than 32k length |
+| local_dictionary_enable | false | Enable local dictionary generation |
+| sort_columns | all dimensions are sorted | Comma separated string columns which to include in sort and its order of sort |
+| sort_scope | local_sort | Sort scope of the load.Options include no sort, local sort, batch sort, and global sort |
+| long_string_columns | null | Comma separated string columns which are more than 32k length |
 
 ## Example 
 
@@ -55,11 +56,9 @@ Carbon table can be created with spark's datasource DDL syntax as follows.
  CREATE TABLE CARBON_TABLE (NAME  STRING) USING CARBON OPTIONS(‘table_block_size’=’256’)
 ```
 
-Note: User can only apply the features of what spark datasource like parquet supports. It cannot support the features of carbon session like IUD, compaction etc. 
-
 # Using DataFrame
 
-Carbon format can be used in dataframe also using the following way.
+Carbon format can be used in dataframe also. Following are the ways to use carbon format in dataframe.
 
 Write carbon using dataframe 
 ```

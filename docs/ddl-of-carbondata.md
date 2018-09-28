@@ -104,17 +104,18 @@ CarbonData DDL statements are documented here,which includes:
 
  Following are the guidelines for TBLPROPERTIES, CarbonData's additional table options can be set via carbon.properties.
 
-   - ##### Dictionary Encoding Configuration
+   - **Dictionary Encoding Configuration**
 
      Dictionary encoding is turned off for all columns by default from 1.3 onwards, you can use this command for including or excluding columns to do dictionary encoding.
      Suggested use cases : do dictionary encoding for low cardinality columns, it might help to improve data compression ratio and performance.
 
      ```
      TBLPROPERTIES ('DICTIONARY_INCLUDE'='column1, column2')
-	```
-	 NOTE: Dictionary Include/Exclude for complex child columns is not supported.
+	 ```
+	 
+	 **NOTE**: Dictionary Include/Exclude for complex child columns is not supported.
 	
-   - ##### Inverted Index Configuration
+   - **Inverted Index Configuration**
 
      By default inverted index is enabled, it might help to improve compression ratio and query speed, especially for low cardinality columns which are in reward position.
      Suggested use cases : For high cardinality columns, you can disable the inverted index for improving the data loading performance.
@@ -123,7 +124,7 @@ CarbonData DDL statements are documented here,which includes:
      TBLPROPERTIES ('NO_INVERTED_INDEX'='column1, column3')
      ```
 
-   - ##### Sort Columns Configuration
+   - **Sort Columns Configuration**
 
      This property is for users to specify which columns belong to the MDK(Multi-Dimensions-Key) index.
      * If users don't specify "SORT_COLUMN" property, by default MDK index be built by using all dimension columns except complex data type column. 
@@ -136,9 +137,9 @@ CarbonData DDL statements are documented here,which includes:
      OR
      TBLPROPERTIES ('SORT_COLUMNS'='')
      ```
-     NOTE: Sort_Columns for Complex datatype columns is not supported.
+     **NOTE**: Sort_Columns for Complex datatype columns is not supported.
 
-   - ##### Sort Scope Configuration
+   - **Sort Scope Configuration**
    
      This property is for users to specify the scope of the sort during data load, following are the types of sort scope.
      
@@ -150,7 +151,7 @@ CarbonData DDL statements are documented here,which includes:
 	
 	### Example:
 
-   ```
+    ```
     CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
       productNumber INT,
       productName STRING,
@@ -163,7 +164,7 @@ CarbonData DDL statements are documented here,which includes:
     STORED AS carbondata
     TBLPROPERTIES ('SORT_COLUMNS'='productName,storeCity',
                    'SORT_SCOPE'='NO_SORT')
-   ```
+    ```
 
    **NOTE:** CarbonData also supports "using carbondata". Find example code at [SparkSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/SparkSessionExample.scala) in the CarbonData repo.
 
@@ -197,7 +198,7 @@ CarbonData DDL statements are documented here,which includes:
      
    - ##### Streaming
 
-     CarbonData supports streaming ingestion for real-time data. You can create the ‘streaming’ table using the following table properties.
+     CarbonData supports streaming ingestion for real-time data. You can create the 'streaming' table using the following table properties.
 
      ```
      TBLPROPERTIES ('streaming'='true')
@@ -294,19 +295,19 @@ CarbonData DDL statements are documented here,which includes:
       * If you want no column min/max values to be cached in the driver.
 
       ```
-      COLUMN_META_CACHE=’’
+      COLUMN_META_CACHE=''
       ```
 
       * If you want only col1 min/max values to be cached in the driver.
 
       ```
-      COLUMN_META_CACHE=’col1’
+      COLUMN_META_CACHE='col1'
       ```
 
       * If you want min/max values to be cached in driver for all the specified columns.
 
       ```
-      COLUMN_META_CACHE=’col1,col2,col3,…’
+      COLUMN_META_CACHE='col1,col2,col3,…'
       ```
 
       Columns to be cached can be specified either while creating table or after creation of the table.
@@ -315,13 +316,13 @@ CarbonData DDL statements are documented here,which includes:
       Syntax:
 
       ```
-      CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED BY ‘carbondata’ TBLPROPERTIES (‘COLUMN_META_CACHE’=’col1,col2,…’)
+      CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED BY 'carbondata' TBLPROPERTIES ('COLUMN_META_CACHE'='col1,col2,…')
       ```
 
       Example:
 
       ```
-      CREATE TABLE employee (name String, city String, id int) STORED BY ‘carbondata’ TBLPROPERTIES (‘COLUMN_META_CACHE’=’name’)
+      CREATE TABLE employee (name String, city String, id int) STORED BY 'carbondata' TBLPROPERTIES ('COLUMN_META_CACHE'='name')
       ```
 
       After creation of table or on already created tables use the alter table command to configure the columns to be cached.
@@ -329,13 +330,13 @@ CarbonData DDL statements are documented here,which includes:
       Syntax:
 
       ```
-      ALTER TABLE [dbName].tableName SET TBLPROPERTIES (‘COLUMN_META_CACHE’=’col1,col2,…’)
+      ALTER TABLE [dbName].tableName SET TBLPROPERTIES ('COLUMN_META_CACHE'='col1,col2,…')
       ```
 
       Example:
 
       ```
-      ALTER TABLE employee SET TBLPROPERTIES (‘COLUMN_META_CACHE’=’city’)
+      ALTER TABLE employee SET TBLPROPERTIES ('COLUMN_META_CACHE'='city')
       ```
 
    - ##### Caching at Block or Blocklet Level
@@ -347,13 +348,13 @@ CarbonData DDL statements are documented here,which includes:
       *Configuration for caching in driver at Block level (default value).*
 
       ```
-      CACHE_LEVEL= ‘BLOCK’
+      CACHE_LEVEL= 'BLOCK'
       ```
 
       *Configuration for caching in driver at Blocklet level.*
 
       ```
-      CACHE_LEVEL= ‘BLOCKLET’
+      CACHE_LEVEL= 'BLOCKLET'
       ```
 
       Cache level can be specified either while creating table or after creation of the table.
@@ -362,13 +363,13 @@ CarbonData DDL statements are documented here,which includes:
       Syntax:
 
       ```
-      CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED BY ‘carbondata’ TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+      CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED BY 'carbondata' TBLPROPERTIES ('CACHE_LEVEL'='Blocklet')
       ```
 
       Example:
 
       ```
-      CREATE TABLE employee (name String, city String, id int) STORED BY ‘carbondata’ TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+      CREATE TABLE employee (name String, city String, id int) STORED BY 'carbondata' TBLPROPERTIES ('CACHE_LEVEL'='Blocklet')
       ```
 
       After creation of table or on already created tables use the alter table command to configure the cache level.
@@ -376,13 +377,13 @@ CarbonData DDL statements are documented here,which includes:
       Syntax:
 
       ```
-      ALTER TABLE [dbName].tableName SET TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+      ALTER TABLE [dbName].tableName SET TBLPROPERTIES ('CACHE_LEVEL'='Blocklet')
       ```
 
       Example:
 
       ```
-      ALTER TABLE employee SET TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+      ALTER TABLE employee SET TBLPROPERTIES ('CACHE_LEVEL'='Blocklet')
       ```
 
    - ##### Support Flat folder same as Hive/Parquet
@@ -395,7 +396,7 @@ CarbonData DDL statements are documented here,which includes:
        ```
        Example:
        ```
-       CREATE TABLE employee (name String, city String, id int) STORED BY ‘carbondata’ TBLPROPERTIES ('flat_folder'='true')
+       CREATE TABLE employee (name String, city String, id int) STORED BY 'carbondata' TBLPROPERTIES ('flat_folder'='true')
        ```
 
    - ##### String longer than 32000 characters
@@ -489,7 +490,7 @@ CarbonData DDL statements are documented here,which includes:
   This function allows user to create external table by specifying location.
   ```
   CREATE EXTERNAL TABLE [IF NOT EXISTS] [db_name.]table_name 
-  STORED AS carbondata LOCATION ‘$FilesPath’
+  STORED AS carbondata LOCATION '$FilesPath'
   ```
 
 ### Create external table on managed table data location.
@@ -600,7 +601,7 @@ CarbonData DDL statements are documented here,which includes:
      ```
      ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING) TBLPROPERTIES('DEFAULT.VALUE.a1'='10')
      ```
-      NOTE: Add Complex datatype columns is not supported.
+      **NOTE:** Add Complex datatype columns is not supported.
 
 Users can specify which columns to include and exclude for local dictionary generation after adding new columns. These will be appended with the already existing local dictionary include and exclude columns of main table respectively.
   ```
@@ -610,25 +611,29 @@ Users can specify which columns to include and exclude for local dictionary gene
    - ##### DROP COLUMNS
    
      This command is used to delete the existing column(s) in a table.
-     ```
+     
+	 ```
      ALTER TABLE [db_name.]table_name DROP COLUMNS (col_name, ...)
      ```
 
      Examples:
-     ```
+     
+	 ```
      ALTER TABLE carbon DROP COLUMNS (b1)
      OR
      ALTER TABLE test_db.carbon DROP COLUMNS (b1)
      
      ALTER TABLE carbon DROP COLUMNS (c1,d1)
      ```
-     NOTE: Drop Complex child column is not supported.
+	 
+     **NOTE:** Drop Complex child column is not supported.
 
    - ##### CHANGE DATA TYPE
    
      This command is used to change the data type from INT to BIGINT or decimal precision from lower to higher.
      Change of decimal data type from lower precision to higher precision will only be supported for cases where there is no data loss.
-     ```
+     
+	 ```
      ALTER TABLE [db_name.]table_name CHANGE col_name col_name changed_column_type
      ```
 
@@ -638,26 +643,32 @@ Users can specify which columns to include and exclude for local dictionary gene
      - **NOTE:** The allowed range is 38,38 (precision, scale) and is a valid upper case scenario which is not resulting in data loss.
 
      Example1:Changing data type of column a1 from INT to BIGINT.
-     ```
+     
+	 ```
      ALTER TABLE test_db.carbon CHANGE a1 a1 BIGINT
      ```
      
      Example2:Changing decimal precision of column a1 from 10 to 18.
-     ```
+     
+	 ```
      ALTER TABLE test_db.carbon CHANGE a1 a1 DECIMAL(18,2)
      ```
+	 
 - ##### MERGE INDEX
 
      This command is used to merge all the CarbonData index files (.carbonindex) inside a segment to a single CarbonData index merge file (.carbonindexmerge). This enhances the first query performance.
-     ```
+     
+	 ```
       ALTER TABLE [db_name.]table_name COMPACT 'SEGMENT_INDEX'
      ```
 
       Examples:
-      ```
+      
+	  ```
       ALTER TABLE test_db.carbon COMPACT 'SEGMENT_INDEX'
       ```
-      **NOTE:**
+      
+	  **NOTE:**
 
       * Merge index is not supported on streaming table.
 
@@ -775,7 +786,7 @@ Users can specify which columns to include and exclude for local dictionary gene
   PARTITIONED BY (productCategory STRING, productBatch STRING)
   STORED AS carbondata
   ```
-   NOTE: Hive partition is not supported on complex datatype columns.
+   **NOTE:** Hive partition is not supported on complex datatype columns.
 		
 
 #### Show Partitions
