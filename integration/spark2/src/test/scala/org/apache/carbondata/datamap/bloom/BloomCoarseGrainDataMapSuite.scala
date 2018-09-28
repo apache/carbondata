@@ -22,7 +22,7 @@ import java.util.UUID
 
 import scala.util.Random
 
-import org.apache.spark.sql.{CarbonSession, DataFrame}
+import org.apache.spark.sql.{CarbonSession, DataFrame, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
@@ -921,6 +921,66 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
       CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, originTimestampFormat)
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.CARBON_DATE_FORMAT, originDateFormat)
+  }
+
+  test("test bloom datamap on multiple columns") {
+    sql("drop table if exists store")
+        sql(
+          s"""
+             |CREATE TABLE IF NOT EXISTS store(
+             | market_code STRING,
+             | device_code STRING,
+             | country_code STRING,
+             | category_id INTEGER,
+             | product_id string,
+             | date date,
+             | est_free_app_download LONG,
+             | est_paid_app_download LONG,
+             | est_revenue LONG
+             | )
+             | STORED BY 'carbondata'
+             | TBLPROPERTIES(
+             | 'SORT_COLUMNS'='market_code, device_code, country_code, category_id, date,product_id',
+             | 'NO_INVERTED_INDEX'='est_free_app_download, est_paid_app_download,est_revenue',
+             | 'DICTIONARY_INCLUDE' = 'market_code, device_code, country_code,category_id, product_id',
+             | 'SORT_SCOPE'='GLOBAL_SORT',
+             | 'CACHE_LEVEL'='BLOCKLET',  'TABLE_BLOCKSIZE'='256',
+             | 'GLOBAL_SORT_PARTITIONS'='2'
+             | )""".stripMargin)
+
+    sql(s"""insert into store values('a', 'ios-phone', 'EE', 100021, 590416158, '2016-09-01', 100, 200, 300)""")
+    sql(s"""insert into store values('b', 'ios-phone', 'EE', 100021, 590437560, '2016-09-03', 100, 200, 300)""")
+    sql(s"""insert into store values('a', 'ios-phone', 'EF', 100022, 590416159, '2016-09-04', 100, 200, 300)""")
+
+    sql(
+      s"""
+         |CREATE DATAMAP IF NOT EXISTS bloomfilter_all_dimensions ON TABLE store
+         | USING 'bloomfilter'
+         | DMPROPERTIES (
+         | 'INDEX_COLUMNS'='market_code, device_code, country_code, category_id, date,product_id',
+         | 'BLOOM_SIZE'='640000',
+         | 'BLOOM_FPP'='0.000001',
+         | 'BLOOM_COMPRESS'='true'
+         | )
+       """.stripMargin).show()
+
+    checkAnswer(sql(
+      s"""SELECT market_code, device_code, country_code,
+         |category_id, sum(est_free_app_download) FROM store WHERE date
+         |BETWEEN '2016-09-01' AND '2016-09-03' AND device_code='ios-phone'
+         |AND country_code='EE' AND category_id=100021 AND product_id IN (590416158, 590437560)
+         |GROUP BY date, market_code, device_code, country_code, category_id""".stripMargin),
+      Seq(Row("a", "ios-phone", "EE", 100021, 100), Row("b", "ios-phone", "EE", 100021, 100)))
+
+    assert(sql(
+      s"""SELECT market_code, device_code, country_code,
+         |category_id, sum(est_free_app_download) FROM store WHERE (device_code='ios-phone'
+         |AND country_code='EF') or (category_id=100021 AND product_id IN (590416158, 590437560))
+         |GROUP BY date, market_code, device_code, country_code, category_id""".stripMargin).collect().length == 3)
+
+    checkAnswer(sql("select device_code from store where product_id=590416158"), Seq(Row("ios-phone")))
+
+    sql("drop table if exists store")
   }
 
   override protected def afterAll(): Unit = {
