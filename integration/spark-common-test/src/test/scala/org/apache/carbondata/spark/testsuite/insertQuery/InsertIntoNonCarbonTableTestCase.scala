@@ -18,9 +18,12 @@
  */
 package org.apache.carbondata.spark.testsuite.insertQuery
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{Row, SaveMode}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 
 class InsertIntoNonCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
@@ -64,6 +67,8 @@ class InsertIntoNonCarbonTableTestCase extends QueryTest with BeforeAndAfterAll 
       "Latest_webTypeDataVerNumber,Latest_operatorsVersion,Latest_phonePADPartitionedVersions," +
       "Latest_operatorId,gamePointDescription,gamePointId,contractNumber', " +
       "'bad_records_logger_enable'='false','bad_records_action'='FORCE')")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION, "true")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
   }
 
   test("insert into hive") {
@@ -102,7 +107,79 @@ class InsertIntoNonCarbonTableTestCase extends QueryTest with BeforeAndAfterAll 
     sql("drop table thive_cond")
   }
 
+  test("jvm crash when insert data from datasource table to session table") {
+    val spark = sqlContext.sparkSession
+    import spark.implicits._
+
+    import scala.util.Random
+    val r = new Random()
+    val df = spark.sparkContext.parallelize(1 to 10)
+      .map(x => (r.nextInt(100000), "name" + x % 8, "city" + x % 50, BigDecimal.apply(x % 60)))
+      .toDF("ID", "name", "city", "age")
+    spark.sql("DROP TABLE IF EXISTS personTable")
+    spark.sql("DROP TABLE IF EXISTS test_table")
+
+    df.write.format("carbon").saveAsTable("personTable")
+    spark.sql("create table test_table(ID int, name string, city string, age decimal) stored by 'carbondata' tblproperties('sort_columns'='ID')")
+    spark.sql("insert into test_table select * from personTable")
+    spark.sql("insert into test_table select * from personTable limit 2")
+
+    assert(spark.sql("select * from test_table").count() == 12)
+    spark.sql("DROP TABLE IF EXISTS personTable")
+    spark.sql("DROP TABLE IF EXISTS test_table")
+  }
+
+  test("jvm crash when insert data from datasource table to datasource table") {
+    val spark = sqlContext.sparkSession
+    import spark.implicits._
+
+    import scala.util.Random
+    val r = new Random()
+    val df = spark.sparkContext.parallelize(1 to 10)
+      .map(x => (r.nextInt(100000), "name" + x % 8, "city" + x % 50, BigDecimal.apply(x % 60)))
+      .toDF("ID", "name", "city", "age")
+    spark.sql("DROP TABLE IF EXISTS personTable")
+    spark.sql("DROP TABLE IF EXISTS test_table")
+
+    df.write.format("carbon").saveAsTable("personTable")
+    spark.sql("create table test_table(ID int, name string, city string, age decimal) using carbon")
+    spark.sql("insert into test_table select * from personTable")
+    spark.sql("insert into test_table select * from personTable limit 2")
+
+    assert(spark.sql("select * from test_table").count() == 12)
+    spark.sql("DROP TABLE IF EXISTS personTable")
+    spark.sql("DROP TABLE IF EXISTS test_table")
+  }
+
+  test("jvm crash when insert data from session table to datasource table") {
+    val spark = sqlContext.sparkSession
+    import spark.implicits._
+
+    import scala.util.Random
+    val r = new Random()
+    val df = spark.sparkContext.parallelize(1 to 10)
+      .map(x => (r.nextInt(100000), "name" + x % 8, "city" + x % 50, BigDecimal.apply(x % 60)))
+      .toDF("ID", "name", "city", "age")
+    spark.sql("DROP TABLE IF EXISTS personTable")
+    spark.sql("DROP TABLE IF EXISTS test_table")
+
+    df.write
+      .format("carbondata")
+      .option("tableName", "personTable")
+      .mode(SaveMode.Overwrite)
+      .save()
+    spark.sql("create table test_table(ID int, name string, city string, age decimal) using carbon")
+    spark.sql("insert into test_table select * from personTable")
+    spark.sql("insert into test_table select * from personTable limit 2")
+
+    assert(spark.sql("select * from test_table").count() == 12)
+    spark.sql("DROP TABLE IF EXISTS personTable")
+    spark.sql("DROP TABLE IF EXISTS test_table")
+  }
+
   override def afterAll {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION, CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION_DEFAULTVALUE)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT)
     sql("DROP TABLE IF EXISTS TCarbonSource")
   }
 }

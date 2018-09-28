@@ -18,8 +18,8 @@
 package org.apache.carbondata.spark.rdd
 
 import org.apache.spark.TaskContext
+import org.apache.spark.sql.carbondata.execution.datasources.tasklisteners.CarbonLoadTaskCompletionListener
 import org.apache.spark.sql.execution.command.ExecutionErrors
-import org.apache.spark.util.TaskCompletionListener
 
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses}
@@ -27,7 +27,7 @@ import org.apache.carbondata.spark.util.CommonUtil
 
 class InsertTaskCompletionListener(dataLoadExecutor: DataLoadExecutor,
     executorErrors: ExecutionErrors)
-  extends TaskCompletionListener {
+  extends CarbonLoadTaskCompletionListener {
   override def onTaskCompletion(context: TaskContext): Unit = {
     try {
       dataLoadExecutor.close()
