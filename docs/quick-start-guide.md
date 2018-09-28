@@ -16,7 +16,7 @@
 -->
 
 # Quick Start
-This tutorial provides a quick introduction to using CarbonData.To follow along with this guide, first download a packaged release of CarbonData from the [CarbonData website](https://dist.apache.org/repos/dist/release/carbondata/).Alternatively it can be created following [Building CarbonData](https://github.com/apache/carbondata/tree/master/build) steps.
+This tutorial provides a quick introduction to using CarbonData. To follow along with this guide, first download a packaged release of CarbonData from the [CarbonData website](https://dist.apache.org/repos/dist/release/carbondata/).Alternatively it can be created following [Building CarbonData](https://github.com/apache/carbondata/tree/master/build) steps.
 
 ##  Prerequisites
 * CarbonData supports Spark versions upto 2.2.1.Please download Spark package from [Spark website](https://spark.apache.org/downloads.html)
@@ -35,7 +35,7 @@ This tutorial provides a quick introduction to using CarbonData.To follow along 
 
 ## Integration
 
-CarbonData can be integrated with Spark and Presto Execution Engines.The below documentation guides on Installing and Configuring with these execution engines.
+CarbonData can be integrated with Spark and Presto Execution Engines. The below documentation guides on Installing and Configuring with these execution engines.
 
 ### Spark
 
@@ -293,7 +293,7 @@ hdfs://<host_name>:port/user/hive/warehouse/carbon.store
 
 ## Installing and Configuring CarbonData on Presto
 
-**NOTE:** **CarbonData tables cannot be created nor loaded from Presto.User need to create CarbonData Table and load data into it
+**NOTE:** **CarbonData tables cannot be created nor loaded from Presto. User need to create CarbonData Table and load data into it
 either with [Spark](#installing-and-configuring-carbondata-to-run-locally-with-spark-shell) or [SDK](./sdk-guide.md).
 Once the table is created,it can be queried from Presto.**
 

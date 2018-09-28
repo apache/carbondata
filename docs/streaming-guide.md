@@ -157,7 +157,7 @@ ALTER TABLE streaming_table SET TBLPROPERTIES('streaming'='true')
 At the begin of streaming ingestion, the system will try to acquire the table level lock of streaming.lock file. If the system isn't able to acquire the lock of this table, it will throw an InterruptedException.
 
 ## Create streaming segment
-The input data of streaming will be ingested into a segment of the CarbonData table, the status of this segment is streaming. CarbonData call it a streaming segment. The "tablestatus" file will record the segment status and data size. The user can use “SHOW SEGMENTS FOR TABLE tableName” to check segment status. 
+The streaming data will be ingested into a separate segment of carbondata table, this segment is termed as streaming segment. The status of this segment will be recorded as "streaming" in "tablestatus" file along with its data size. You can use "SHOW SEGMENTS FOR TABLE tableName" to check segment status. 
 
 After the streaming segment reaches the max size, CarbonData will change the segment status to "streaming finish" from "streaming", and create new "streaming" segment to continue to ingest streaming data.
 
@@ -352,7 +352,7 @@ Following example shows how to start a streaming ingest job
 
 In above example, two table is created: source and sink. The `source` table's format is `csv` and `sink` table format is `carbon`. Then a streaming job is created to stream data from source table to sink table.
 
-These two tables are normal carbon table, they can be queried independently.
+These two tables are normal carbon tables, they can be queried independently.
 
 
 
@@ -405,7 +405,7 @@ When this is issued, carbon will start a structured streaming job to do the stre
 
 - The sink table should have a TBLPROPERTY `'streaming'` equal to `true`, indicating it is a streaming table.
 - In the given STMPROPERTIES, user must specify `'trigger'`, its value must be `ProcessingTime` (In future, other value will be supported). User should also specify interval value for the streaming job.
-- If the schema specifid in sink table is different from CTAS, the streaming job will fail
+- If the schema specified in sink table is different from CTAS, the streaming job will fail
 
 For Kafka data source, create the source table by:
   ```SQL

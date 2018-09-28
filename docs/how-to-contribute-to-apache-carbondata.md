@@ -48,7 +48,7 @@ alternatively, on the developer mailing list(dev@carbondata.apache.org).
 
 If there’s an existing JIRA issue for your intended contribution, please comment about your
 intended work. Once the work is understood, a committer will assign the issue to you.
-(If you don’t have a JIRA role yet, you’ll be added to the “contributor” role.) If an issue is
+(If you don’t have a JIRA role yet, you’ll be added to the "contributor" role.) If an issue is
 currently assigned, please check with the current assignee before reassigning.
 
 For moderate or large contributions, you should not start coding or writing a design doc unless
@@ -171,7 +171,7 @@ Our GitHub mirror automatically provides pre-commit testing coverage using Jenki
 Please make sure those tests pass,the contribution cannot be merged otherwise.
 
 #### LGTM
-Once the reviewer is happy with the change, they’ll respond with an LGTM (“looks good to me!”).
+Once the reviewer is happy with the change, they’ll respond with an LGTM ("looks good to me!").
 At this point, the committer will take over, possibly make some additional touch ups,
 and merge your changes into the codebase.
 

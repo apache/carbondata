@@ -73,6 +73,7 @@ CarbonData DDL statements are documented here,which includes:
   [TBLPROPERTIES (property_name=property_value, ...)]
   [LOCATION 'path']
   ```
+  
   **NOTE:** CarbonData also supports "STORED AS carbondata" and "USING carbondata". Find example code at [CarbonSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/CarbonSessionExample.scala) in the CarbonData repo.
 ### Usage Guidelines
 
@@ -93,10 +94,10 @@ CarbonData DDL statements are documented here,which includes:
 | [streaming](#streaming)                                      | Whether the table is a streaming table                       |
 | [LOCAL_DICTIONARY_ENABLE](#local-dictionary-configuration)   | Enable local dictionary generation                           |
 | [LOCAL_DICTIONARY_THRESHOLD](#local-dictionary-configuration) | Cardinality upto which the local dictionary can be generated |
-| [LOCAL_DICTIONARY_INCLUDE](#local-dictionary-configuration)  | Columns for which local dictionary needs to be generated.Useful when local dictionary need not be generated for all string/varchar/char columns |
-| [LOCAL_DICTIONARY_EXCLUDE](#local-dictionary-configuration)  | Columns for which local dictionary generation should be skipped.Useful when local dictionary need not be generated for few string/varchar/char columns |
+| [LOCAL_DICTIONARY_INCLUDE](#local-dictionary-configuration)  | Columns for which local dictionary needs to be generated. Useful when local dictionary need not be generated for all string/varchar/char columns |
+| [LOCAL_DICTIONARY_EXCLUDE](#local-dictionary-configuration)  | Columns for which local dictionary generation should be skipped. Useful when local dictionary need not be generated for few string/varchar/char columns |
 | [COLUMN_META_CACHE](#caching-minmax-value-for-required-columns) | Columns whose metadata can be cached in Driver for efficient pruning and improved query performance |
-| [CACHE_LEVEL](#caching-at-block-or-blocklet-level)           | Column metadata caching level.Whether to cache column metadata of block or blocklet |
+| [CACHE_LEVEL](#caching-at-block-or-blocklet-level)           | Column metadata caching level. Whether to cache column metadata of block or blocklet |
 | [flat_folder](#support-flat-folder-same-as-hiveparquet)      | Whether to write all the carbondata files in a single folder.Not writing segments folder during incremental load |
 | [LONG_STRING_COLUMNS](#string-longer-than-32000-characters)  | Columns which are greater than 32K characters                |
 | [BUCKETNUMBER](#bucketing)                                   | Number of buckets to be created                              |
@@ -111,9 +112,10 @@ CarbonData DDL statements are documented here,which includes:
 
      ```
      TBLPROPERTIES ('DICTIONARY_INCLUDE'='column1, column2')
-	```
-	 NOTE: Dictionary Include/Exclude for complex child columns is not supported.
-	
+     ```
+     
+     **NOTE**: Dictionary Include/Exclude for complex child columns is not supported.
+     
    - ##### Inverted Index Configuration
 
      By default inverted index is enabled, it might help to improve compression ratio and query speed, especially for low cardinality columns which are in reward position.
@@ -128,7 +130,7 @@ CarbonData DDL statements are documented here,which includes:
      This property is for users to specify which columns belong to the MDK(Multi-Dimensions-Key) index.
      * If users don't specify "SORT_COLUMN" property, by default MDK index be built by using all dimension columns except complex data type column. 
      * If this property is specified but with empty argument, then the table will be loaded without sort.
-	 * This supports only string, date, timestamp, short, int, long, byte and boolean data types.
+     * This supports only string, date, timestamp, short, int, long, byte and boolean data types.
      Suggested use cases : Only build MDK index for required columns,it might help to improve the data loading performance.
 
      ```
@@ -136,7 +138,8 @@ CarbonData DDL statements are documented here,which includes:
      OR
      TBLPROPERTIES ('SORT_COLUMNS'='')
      ```
-     NOTE: Sort_Columns for Complex datatype columns is not supported.
+     
+     **NOTE**: Sort_Columns for Complex datatype columns is not supported.
 
    - ##### Sort Scope Configuration
    
@@ -147,10 +150,10 @@ CarbonData DDL statements are documented here,which includes:
      * BATCH_SORT: It increases the load performance but decreases the query performance if identified blocks > parallelism.
      * GLOBAL_SORT: It increases the query performance, especially high concurrent point query.
        And if you care about loading resources isolation strictly, because the system uses the spark GroupBy to sort data, the resource can be controlled by spark. 
-	
-	### Example:
 
-   ```
+    ### Example:
+
+    ```
     CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
       productNumber INT,
       productName STRING,
@@ -163,7 +166,7 @@ CarbonData DDL statements are documented here,which includes:
     STORED AS carbondata
     TBLPROPERTIES ('SORT_COLUMNS'='productName,storeCity',
                    'SORT_SCOPE'='NO_SORT')
-   ```
+    ```
 
    **NOTE:** CarbonData also supports "using carbondata". Find example code at [SparkSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/SparkSessionExample.scala) in the CarbonData repo.
 
@@ -174,6 +177,7 @@ CarbonData DDL statements are documented here,which includes:
      ```
      TBLPROPERTIES ('TABLE_BLOCKSIZE'='512')
      ```
+ 
      **NOTE:** 512 or 512M both are accepted.
 
    - ##### Table Compaction Configuration
@@ -197,7 +201,7 @@ CarbonData DDL statements are documented here,which includes:
      
    - ##### Streaming
 
-     CarbonData supports streaming ingestion for real-time data. You can create the ‘streaming’ table using the following table properties.
+     CarbonData supports streaming ingestion for real-time data. You can create the 'streaming' table using the following table properties.
 
      ```
      TBLPROPERTIES ('streaming'='true')
@@ -247,8 +251,8 @@ CarbonData DDL statements are documented here,which includes:
 | ---------- | ------------- | ----------- |
 | LOCAL_DICTIONARY_ENABLE | false | Whether to enable local dictionary generation. **NOTE:** If this property is defined, it will override the value configured at system level by '***carbon.local.dictionary.enable***'.Local dictionary will be generated for all string/varchar/char columns unless LOCAL_DICTIONARY_INCLUDE, LOCAL_DICTIONARY_EXCLUDE is configured. |
 | LOCAL_DICTIONARY_THRESHOLD | 10000 | The maximum cardinality of a column upto which carbondata can try to generate local dictionary (maximum - 100000). **NOTE:** When LOCAL_DICTIONARY_THRESHOLD is defined for Complex columns, the count of distinct records of all child columns are summed up. |
-| LOCAL_DICTIONARY_INCLUDE | string/varchar/char columns| Columns for which Local Dictionary has to be generated.**NOTE:** Those string/varchar/char columns which are added into DICTIONARY_INCLUDE option will not be considered for local dictionary generation.This property needs to be configured only when local dictionary needs to be generated for few columns, skipping others.This property takes effect only when **LOCAL_DICTIONARY_ENABLE** is true or **carbon.local.dictionary.enable** is true |
-| LOCAL_DICTIONARY_EXCLUDE | none | Columns for which Local Dictionary need not be generated.This property needs to be configured only when local dictionary needs to be skipped for few columns, generating for others.This property takes effect only when **LOCAL_DICTIONARY_ENABLE** is true or **carbon.local.dictionary.enable** is true |
+| LOCAL_DICTIONARY_INCLUDE | string/varchar/char columns| Columns for which Local Dictionary has to be generated.**NOTE:** Those string/varchar/char columns which are added into DICTIONARY_INCLUDE option will not be considered for local dictionary generation. This property needs to be configured only when local dictionary needs to be generated for few columns, skipping others. This property takes effect only when **LOCAL_DICTIONARY_ENABLE** is true or **carbon.local.dictionary.enable** is true |
+| LOCAL_DICTIONARY_EXCLUDE | none | Columns for which Local Dictionary need not be generated. This property needs to be configured only when local dictionary needs to be skipped for few columns, generating for others. This property takes effect only when **LOCAL_DICTIONARY_ENABLE** is true or **carbon.local.dictionary.enable** is true |
 
    **Fallback behavior:** 
 
@@ -294,19 +298,19 @@ CarbonData DDL statements are documented here,which includes:
       * If you want no column min/max values to be cached in the driver.
 
       ```
-      COLUMN_META_CACHE=’’
+      COLUMN_META_CACHE=''
       ```
 
       * If you want only col1 min/max values to be cached in the driver.
 
       ```
-      COLUMN_META_CACHE=’col1’
+      COLUMN_META_CACHE='col1'
       ```
 
       * If you want min/max values to be cached in driver for all the specified columns.
 
       ```
-      COLUMN_META_CACHE=’col1,col2,col3,…’
+      COLUMN_META_CACHE='col1,col2,col3,…'
       ```
 
       Columns to be cached can be specified either while creating table or after creation of the table.
@@ -315,13 +319,13 @@ CarbonData DDL statements are documented here,which includes:
       Syntax:
 
       ```
-      CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED BY ‘carbondata’ TBLPROPERTIES (‘COLUMN_META_CACHE’=’col1,col2,…’)
+      CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED BY 'carbondata' TBLPROPERTIES ('COLUMN_META_CACHE'='col1,col2,…')
       ```
 
       Example:
 
       ```
-      CREATE TABLE employee (name String, city String, id int) STORED BY ‘carbondata’ TBLPROPERTIES (‘COLUMN_META_CACHE’=’name’)
+      CREATE TABLE employee (name String, city String, id int) STORED BY 'carbondata' TBLPROPERTIES ('COLUMN_META_CACHE'='name')
       ```
 
       After creation of table or on already created tables use the alter table command to configure the columns to be cached.
@@ -329,13 +333,13 @@ CarbonData DDL statements are documented here,which includes:
       Syntax:
 
       ```
-      ALTER TABLE [dbName].tableName SET TBLPROPERTIES (‘COLUMN_META_CACHE’=’col1,col2,…’)
+      ALTER TABLE [dbName].tableName SET TBLPROPERTIES ('COLUMN_META_CACHE'='col1,col2,…')
       ```
 
       Example:
 
       ```
-      ALTER TABLE employee SET TBLPROPERTIES (‘COLUMN_META_CACHE’=’city’)
+      ALTER TABLE employee SET TBLPROPERTIES ('COLUMN_META_CACHE'='city')
       ```
 
    - ##### Caching at Block or Blocklet Level
@@ -347,13 +351,13 @@ CarbonData DDL statements are documented here,which includes:
       *Configuration for caching in driver at Block level (default value).*
 
       ```
-      CACHE_LEVEL= ‘BLOCK’
+      CACHE_LEVEL= 'BLOCK'
       ```
 
       *Configuration for caching in driver at Blocklet level.*
 
       ```
-      CACHE_LEVEL= ‘BLOCKLET’
+      CACHE_LEVEL= 'BLOCKLET'
       ```
 
       Cache level can be specified either while creating table or after creation of the table.
@@ -362,13 +366,13 @@ CarbonData DDL statements are documented here,which includes:
       Syntax:
 
       ```
-      CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED BY ‘carbondata’ TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+      CREATE TABLE [dbName].tableName (col1 String, col2 String, col3 int,…) STORED BY 'carbondata' TBLPROPERTIES ('CACHE_LEVEL'='Blocklet')
       ```
 
       Example:
 
       ```
-      CREATE TABLE employee (name String, city String, id int) STORED BY ‘carbondata’ TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+      CREATE TABLE employee (name String, city String, id int) STORED BY 'carbondata' TBLPROPERTIES ('CACHE_LEVEL'='Blocklet')
       ```
 
       After creation of table or on already created tables use the alter table command to configure the cache level.
@@ -376,26 +380,27 @@ CarbonData DDL statements are documented here,which includes:
       Syntax:
 
       ```
-      ALTER TABLE [dbName].tableName SET TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+      ALTER TABLE [dbName].tableName SET TBLPROPERTIES ('CACHE_LEVEL'='Blocklet')
       ```
 
       Example:
 
       ```
-      ALTER TABLE employee SET TBLPROPERTIES (‘CACHE_LEVEL’=’Blocklet’)
+      ALTER TABLE employee SET TBLPROPERTIES ('CACHE_LEVEL'='Blocklet')
       ```
 
    - ##### Support Flat folder same as Hive/Parquet
 
-       This feature allows all carbondata and index files to keep directy under tablepath. Currently all carbondata/carbonindex files written under tablepath/Fact/Part0/Segment_NUM folder and it is not same as hive/parquet folder structure. This feature makes all files written will be directly under tablepath, it does not maintain any segment folder structure.This is useful for interoperability between the execution engines and plugin with other execution engines like hive or presto becomes easier.
+       This feature allows all carbondata and index files to keep directy under tablepath. Currently all carbondata/carbonindex files written under tablepath/Fact/Part0/Segment_NUM folder and it is not same as hive/parquet folder structure. This feature makes all files written will be directly under tablepath, it does not maintain any segment folder structure. This is useful for interoperability between the execution engines and plugin with other execution engines like hive or presto becomes easier.
 
        Following table property enables this feature and default value is false.
        ```
         'flat_folder'='true'
        ```
+   
        Example:
        ```
-       CREATE TABLE employee (name String, city String, id int) STORED BY ‘carbondata’ TBLPROPERTIES ('flat_folder'='true')
+       CREATE TABLE employee (name String, city String, id int) STORED BY 'carbondata' TBLPROPERTIES ('flat_folder'='true')
        ```
 
    - ##### String longer than 32000 characters
@@ -489,7 +494,7 @@ CarbonData DDL statements are documented here,which includes:
   This function allows user to create external table by specifying location.
   ```
   CREATE EXTERNAL TABLE [IF NOT EXISTS] [db_name.]table_name 
-  STORED AS carbondata LOCATION ‘$FilesPath’
+  STORED AS carbondata LOCATION '$FilesPath'
   ```
 
 ### Create external table on managed table data location.
@@ -542,7 +547,7 @@ CarbonData DDL statements are documented here,which includes:
 
 ### Example
   ```
-  CREATE DATABASE carbon LOCATION “hdfs://name_cluster/dir1/carbonstore”;
+  CREATE DATABASE carbon LOCATION "hdfs://name_cluster/dir1/carbonstore";
   ```
 
 ## TABLE MANAGEMENT  
@@ -600,21 +605,23 @@ CarbonData DDL statements are documented here,which includes:
      ```
      ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING) TBLPROPERTIES('DEFAULT.VALUE.a1'='10')
      ```
-      NOTE: Add Complex datatype columns is not supported.
+      **NOTE:** Add Complex datatype columns is not supported.
 
 Users can specify which columns to include and exclude for local dictionary generation after adding new columns. These will be appended with the already existing local dictionary include and exclude columns of main table respectively.
-  ```
+     ```
      ALTER TABLE carbon ADD COLUMNS (a1 STRING, b1 STRING) TBLPROPERTIES('LOCAL_DICTIONARY_INCLUDE'='a1','LOCAL_DICTIONARY_EXCLUDE'='b1')
-  ```
+     ```
 
    - ##### DROP COLUMNS
    
      This command is used to delete the existing column(s) in a table.
+     
      ```
      ALTER TABLE [db_name.]table_name DROP COLUMNS (col_name, ...)
      ```
 
      Examples:
+     
      ```
      ALTER TABLE carbon DROP COLUMNS (b1)
      OR
@@ -622,12 +629,14 @@ Users can specify which columns to include and exclude for local dictionary gene
      
      ALTER TABLE carbon DROP COLUMNS (c1,d1)
      ```
-     NOTE: Drop Complex child column is not supported.
+ 
+     **NOTE:** Drop Complex child column is not supported.
 
    - ##### CHANGE DATA TYPE
    
      This command is used to change the data type from INT to BIGINT or decimal precision from lower to higher.
      Change of decimal data type from lower precision to higher precision will only be supported for cases where there is no data loss.
+     
      ```
      ALTER TABLE [db_name.]table_name CHANGE col_name col_name changed_column_type
      ```
@@ -638,25 +647,31 @@ Users can specify which columns to include and exclude for local dictionary gene
      - **NOTE:** The allowed range is 38,38 (precision, scale) and is a valid upper case scenario which is not resulting in data loss.
 
      Example1:Changing data type of column a1 from INT to BIGINT.
+     
      ```
      ALTER TABLE test_db.carbon CHANGE a1 a1 BIGINT
      ```
      
      Example2:Changing decimal precision of column a1 from 10 to 18.
+     
      ```
      ALTER TABLE test_db.carbon CHANGE a1 a1 DECIMAL(18,2)
      ```
+ 
 - ##### MERGE INDEX
 
      This command is used to merge all the CarbonData index files (.carbonindex) inside a segment to a single CarbonData index merge file (.carbonindexmerge). This enhances the first query performance.
+     
      ```
       ALTER TABLE [db_name.]table_name COMPACT 'SEGMENT_INDEX'
      ```
 
       Examples:
-      ```
+      
+     ```
       ALTER TABLE test_db.carbon COMPACT 'SEGMENT_INDEX'
       ```
+      
       **NOTE:**
 
       * Merge index is not supported on streaming table.
@@ -726,10 +741,11 @@ Users can specify which columns to include and exclude for local dictionary gene
   ```
   CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
                                 productNumber Int COMMENT 'unique serial number for product')
-  COMMENT “This is table comment”
+  COMMENT "This is table comment"
    STORED AS carbondata
    TBLPROPERTIES ('DICTIONARY_INCLUDE'='productNumber')
   ```
+  
   You can also SET and UNSET table comment using ALTER command.
 
   Example to SET table comment:
@@ -775,8 +791,8 @@ Users can specify which columns to include and exclude for local dictionary gene
   PARTITIONED BY (productCategory STRING, productBatch STRING)
   STORED AS carbondata
   ```
-   NOTE: Hive partition is not supported on complex datatype columns.
-		
+   **NOTE:** Hive partition is not supported on complex datatype columns.
+
 
 #### Show Partitions
 
@@ -832,6 +848,7 @@ Users can specify which columns to include and exclude for local dictionary gene
   [TBLPROPERTIES ('PARTITION_TYPE'='HASH',
                   'NUM_PARTITIONS'='N' ...)]
   ```
+  
   **NOTE:** N is the number of hash partitions
 
 
