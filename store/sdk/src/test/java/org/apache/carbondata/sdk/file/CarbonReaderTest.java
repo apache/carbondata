@@ -1435,5 +1435,99 @@ public class CarbonReaderTest extends TestCase {
     FileUtils.deleteDirectory(new File("./testWriteFiles"));
   }
 
+  @Test
+  public void testReadSchemaFromDataFileArrayString() {
+    String path = "./testWriteFiles";
+    try {
+      FileUtils.deleteDirectory(new File(path));
 
+      Field[] fields = new Field[11];
+      fields[0] = new Field("stringField", DataTypes.STRING);
+      fields[1] = new Field("shortField", DataTypes.SHORT);
+      fields[2] = new Field("intField", DataTypes.INT);
+      fields[3] = new Field("longField", DataTypes.LONG);
+      fields[4] = new Field("doubleField", DataTypes.DOUBLE);
+      fields[5] = new Field("boolField", DataTypes.BOOLEAN);
+      fields[6] = new Field("dateField", DataTypes.DATE);
+      fields[7] = new Field("timeField", DataTypes.TIMESTAMP);
+      fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
+      fields[9] = new Field("varcharField", DataTypes.VARCHAR);
+      fields[10] = new Field("arrayField", DataTypes.createArrayType(DataTypes.STRING));
+      Map<String, String> map = new HashMap<>();
+      map.put("complex_delimiter_level_1", "#");
+      CarbonWriter writer = CarbonWriter.builder()
+          .outputPath(path)
+          .withLoadOptions(map)
+          .withCsvInput(new Schema(fields)).build();
+
+      for (int i = 0; i < 10; i++) {
+        String[] row2 = new String[]{
+            "robot" + (i % 10),
+            String.valueOf(i % 10000),
+            String.valueOf(i),
+            String.valueOf(Long.MAX_VALUE - i),
+            String.valueOf((double) i / 2),
+            String.valueOf(true),
+            "2019-03-02",
+            "2019-02-12 03:03:34",
+            "12.345",
+            "varchar",
+            "Hello#World#From#Carbon"
+        };
+        writer.write(row2);
+      }
+      writer.close();
+
+      File[] dataFiles = new File(path).listFiles(new FilenameFilter() {
+        @Override
+        public boolean accept(File dir, String name) {
+          if (name == null) {
+            return false;
+          }
+          return name.endsWith("carbondata");
+        }
+      });
+      if (dataFiles == null || dataFiles.length < 1) {
+        throw new RuntimeException("Carbon index file not exists.");
+      }
+      Schema schema = CarbonSchemaReader
+          .readSchemaInDataFile(dataFiles[0].getAbsolutePath())
+          .asOriginOrder();
+      // Transform the schema
+      String[] strings = new String[schema.getFields().length];
+      for (int i = 0; i < schema.getFields().length; i++) {
+        strings[i] = (schema.getFields())[i].getFieldName();
+      }
+
+      // Read data
+      CarbonReader reader = CarbonReader
+          .builder(path, "_temp")
+          .projection(strings)
+          .build();
+
+      System.out.println("\nData:");
+      long day = 24L * 3600 * 1000;
+      int i = 0;
+      while (reader.hasNext()) {
+        Object[] row = (Object[]) reader.readNextRow();
+        System.out.println(String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t",
+            i, row[0], row[1], row[2], row[3], row[4], row[5],
+            new Date((day * ((int) row[6]))), new Timestamp((long) row[7] / 1000),
+            row[8], row[9]
+        ));
+        Object[] arr = (Object[]) row[10];
+        for (int j = 0; j < arr.length; j++) {
+          System.out.print(arr[j] + " ");
+        }
+        System.out.println();
+        i++;
+      }
+      System.out.println("\nFinished");
+      reader.close();
+      FileUtils.deleteDirectory(new File(path));
+    } catch (Throwable e) {
+      e.printStackTrace();
+      System.out.println(e.getMessage());
+    }
+  }
 }

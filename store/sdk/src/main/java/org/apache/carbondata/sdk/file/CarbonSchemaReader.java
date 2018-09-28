@@ -65,7 +65,15 @@ public class CarbonSchemaReader {
    */
   public static Schema readSchemaInDataFile(String dataFilePath) throws IOException {
     CarbonHeaderReader reader = new CarbonHeaderReader(dataFilePath);
-    return new Schema(reader.readSchema());
+    List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
+    List<ColumnSchema> schemaList = reader.readSchema();
+    for (int i = 0; i < schemaList.size(); i++) {
+      ColumnSchema columnSchema = schemaList.get(i);
+      if (!(columnSchema.getColumnName().contains("."))) {
+        columnSchemaList.add(columnSchema);
+      }
+    }
+    return new Schema(columnSchemaList);
   }
 
   /**
@@ -97,7 +105,9 @@ public class CarbonSchemaReader {
       List<org.apache.carbondata.format.ColumnSchema> table_columns =
           readIndexHeader.getTable_columns();
       for (org.apache.carbondata.format.ColumnSchema columnSchema : table_columns) {
-        columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(columnSchema));
+        if (!(columnSchema.column_name.contains("."))) {
+          columnSchemaList.add(thriftColumnSchemaToWrapperColumnSchema(columnSchema));
+        }
       }
       return new Schema(columnSchemaList);
     } finally {
