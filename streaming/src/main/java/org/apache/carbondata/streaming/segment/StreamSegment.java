@@ -458,6 +458,13 @@ public class StreamSegment {
       return;
     }
 
+    BlockletMinMaxIndex minMaxIndex = blockletIndex.getMinMaxIndex();
+    // if min/max of new blocklet is null, use min/max of old file
+    if (minMaxIndex == null) {
+      blockletIndex.setMinMaxIndex(fileIndex);
+      return;
+    }
+
     DataType[] msrDataTypes = blockletIndex.getMsrDataTypes();
     SerializableComparator[] comparators = new SerializableComparator[msrDataTypes.length];
     for (int index = 0; index < comparators.length; index++) {
@@ -465,11 +472,11 @@ public class StreamSegment {
     }
 
     // min value
-    byte[][] minValues = blockletIndex.getMinMaxIndex().getMinValues();
+    byte[][] minValues = minMaxIndex.getMinValues();
     byte[][] mergedMinValues = fileIndex.getMinValues();
     if (minValues == null || minValues.length == 0) {
       // use file index
-      blockletIndex.getMinMaxIndex().setMinValues(mergedMinValues);
+      minMaxIndex.setMinValues(mergedMinValues);
     } else if (mergedMinValues != null && mergedMinValues.length != 0) {
       if (minValues.length != mergedMinValues.length) {
         throw new IOException("the lengths of the min values should be same.");
@@ -494,10 +501,10 @@ public class StreamSegment {
     }
 
     // max value
-    byte[][] maxValues = blockletIndex.getMinMaxIndex().getMaxValues();
+    byte[][] maxValues = minMaxIndex.getMaxValues();
     byte[][] mergedMaxValues = fileIndex.getMaxValues();
     if (maxValues == null || maxValues.length == 0) {
-      blockletIndex.getMinMaxIndex().setMaxValues(mergedMaxValues);
+      minMaxIndex.setMaxValues(mergedMaxValues);
     } else if (mergedMaxValues != null && mergedMaxValues.length != 0) {
       if (maxValues.length != mergedMaxValues.length) {
         throw new IOException("the lengths of the max values should be same.");
