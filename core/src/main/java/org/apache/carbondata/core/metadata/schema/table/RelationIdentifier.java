@@ -32,6 +32,8 @@ public class RelationIdentifier implements Serializable, Writable {
 
   private String tableId;
 
+  private String tablePath = "";
+
   public RelationIdentifier(String databaseName, String tableName, String tableId) {
     this.databaseName = databaseName;
     this.tableName = tableName;
@@ -50,16 +52,26 @@ public class RelationIdentifier implements Serializable, Writable {
     return tableId;
   }
 
+  public String getTablePath() {
+    return tablePath;
+  }
+
+  public void setTablePath(String tablePath) {
+    this.tablePath = tablePath;
+  }
+
   @Override public void write(DataOutput out) throws IOException {
     out.writeUTF(databaseName);
     out.writeUTF(tableName);
     out.writeUTF(tableId);
+    out.writeUTF(tablePath);
   }
 
   @Override public void readFields(DataInput in) throws IOException {
     this.databaseName = in.readUTF();
     this.tableName = in.readUTF();
     this.tableId = in.readUTF();
+    this.tablePath = in.readUTF();
   }
 
   @Override public boolean equals(Object o) {
