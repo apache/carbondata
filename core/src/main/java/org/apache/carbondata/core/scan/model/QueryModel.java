@@ -37,6 +37,7 @@ import org.apache.carbondata.core.scan.expression.UnknownExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ConditionalExpression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeConverter;
 
@@ -120,7 +121,7 @@ public class QueryModel {
   private boolean isFG;
 
   // whether to clear/free unsafe memory or not
-  private boolean freeUnsafeMemory = true;
+  private boolean freeUnsafeMemory;
 
   private boolean preFetchData = true;
 
@@ -129,6 +130,10 @@ public class QueryModel {
     invalidSegmentIds = new ArrayList<>();
     this.table = carbonTable;
     this.queryId = String.valueOf(System.nanoTime());
+    this.freeUnsafeMemory = CarbonProperties.getInstance().getProperty(
+        CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION,
+        CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION_DEFAULTVALUE)
+        .equalsIgnoreCase("true");
   }
 
   public static QueryModel newInstance(CarbonTable carbonTable) {
