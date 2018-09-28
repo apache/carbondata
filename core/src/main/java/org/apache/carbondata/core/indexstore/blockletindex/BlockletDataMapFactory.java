@@ -49,6 +49,7 @@ import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -362,6 +363,16 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   public DataMapMeta getMeta() {
     // TODO: pass SORT_COLUMNS into this class
     return null;
+  }
+
+  /**
+   * actually DataMapChooser won't call this method since getMeta() return null
+   * here return true by default for better code reading
+   * since default datamap can handle all expression
+   */
+  @Override
+  public boolean isSupport(Expression expression) {
+    return true;
   }
 
   @Override

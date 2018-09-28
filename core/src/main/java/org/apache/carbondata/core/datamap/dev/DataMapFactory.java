@@ -34,6 +34,7 @@ import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.events.Event;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.INDEX_COLUMNS;
 
@@ -120,6 +121,11 @@ public abstract class DataMapFactory<T extends DataMap> {
    * Return metadata of this datamap
    */
   public abstract DataMapMeta getMeta();
+
+  /**
+   * return TRUE if datamap can handle the expression
+   */
+  public abstract boolean isSupport(Expression expression);
 
   /**
    *  Type of datamap whether it is FG or CG

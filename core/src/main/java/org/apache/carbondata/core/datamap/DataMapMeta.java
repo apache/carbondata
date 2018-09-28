@@ -63,7 +63,7 @@ public class DataMapMeta {
   public List<String> getIndexedColumnNames() {
     return (List<String>) CollectionUtils.collect(indexedColumns, new Transformer() {
       @Override public Object transform(Object input) {
-        return ((CarbonColumn) input).getColName();
+        return ((CarbonColumn) input).getColName().toLowerCase();
       }
     });
   }

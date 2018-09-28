@@ -110,4 +110,8 @@ public class DataMapExprWrapperImpl implements DataMapExprWrapper {
   public DataMapExprWrapper getRightDataMapWrapprt() {
     return null;
   }
+
+  public TableDataMap getDataMap() {
+    return dataMap;
+  }
 }
