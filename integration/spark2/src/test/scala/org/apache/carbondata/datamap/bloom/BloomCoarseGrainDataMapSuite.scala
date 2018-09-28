@@ -754,17 +754,10 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
   }
 
   test("test bloom datamap on all basic data types") {
-    val originTimestampFormat = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-    val originDateFormat = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
-
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
+      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
+      CarbonCommonConstants.CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
 
     val columnNames = "booleanField,shortField,intField,bigintField,doubleField,stringField," +
       "timestampField,decimalField,dateField,charField,floatField"
@@ -809,17 +802,17 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     sql(
       s"""
          | INSERT INTO TABLE $bloomDMSampleTable
-         | VALUES(true,1,10,100,48.4,'spark','2015/4/23 12:01:01',1.23,'2015/4/23','aaa',2.5),
-         | (true,1,11,100,44.4,'flink','2015/5/23 12:01:03',23.23,'2015/5/23','ccc',2.15),
-         | (true,3,14,160,43.4,'hive','2015/7/26 12:01:06',3454.32,'2015/7/26','ff',5.5),
+         | VALUES(true,1,10,100,48.4,'spark','2015-4-23 12:01:01',1.23,'2015-4-23','aaa',2.5),
+         | (true,1,11,100,44.4,'flink','2015-5-23 12:01:03',23.23,'2015-5-23','ccc',2.15),
+         | (true,3,14,160,43.4,'hive','2015-7-26 12:01:06',3454.32,'2015-7-26','ff',5.5),
          | (NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
        """.stripMargin)
     sql(
       s"""
          | INSERT INTO TABLE $normalTable
-         | VALUES(true,1,10,100,48.4,'spark','2015/4/23 12:01:01',1.23,'2015/4/23','aaa',2.5),
-         | (true,1,11,100,44.4,'flink','2015/5/23 12:01:03',23.23,'2015/5/23','ccc',2.15),
-         | (true,3,14,160,43.4,'hive','2015/7/26 12:01:06',3454.32,'2015/7/26','ff',5.5),
+         | VALUES(true,1,10,100,48.4,'spark','2015-4-23 12:01:01',1.23,'2015-4-23','aaa',2.5),
+         | (true,1,11,100,44.4,'flink','2015-5-23 12:01:03',23.23,'2015-5-23','ccc',2.15),
+         | (true,3,14,160,43.4,'hive','2015-7-26 12:01:06',3454.32,'2015-7-26','ff',5.5),
          | (NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
        """.stripMargin)
 
@@ -836,17 +829,17 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     sql(
       s"""
          | INSERT INTO TABLE $bloomDMSampleTable
-         | VALUES(true,1,10,100,48.4,'spark','2015/4/23 12:01:01',1.23,'2015/4/23','aaa',2.5),
-         | (true,1,11,100,44.4,'flink','2015/5/23 12:01:03',23.23,'2015/5/23','ccc',2.15),
-         | (true,3,14,160,43.4,'hive','2015/7/26 12:01:06',3454.32,'2015/7/26','ff',5.5),
+         | VALUES(true,1,10,100,48.4,'spark','2015-4-23 12:01:01',1.23,'2015-4-23','aaa',2.5),
+         | (true,1,11,100,44.4,'flink','2015-5-23 12:01:03',23.23,'2015-5-23','ccc',2.15),
+         | (true,3,14,160,43.4,'hive','2015-7-26 12:01:06',3454.32,'2015-7-26','ff',5.5),
          | (NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
        """.stripMargin)
     sql(
       s"""
          | INSERT INTO TABLE $normalTable
-         | VALUES(true,1,10,100,48.4,'spark','2015/4/23 12:01:01',1.23,'2015/4/23','aaa',2.5),
-         | (true,1,11,100,44.4,'flink','2015/5/23 12:01:03',23.23,'2015/5/23','ccc',2.15),
-         | (true,3,14,160,43.4,'hive','2015/7/26 12:01:06',3454.32,'2015/7/26','ff',5.5),
+         | VALUES(true,1,10,100,48.4,'spark','2015-4-23 12:01:01',1.23,'2015-4-23','aaa',2.5),
+         | (true,1,11,100,44.4,'flink','2015-5-23 12:01:03',23.23,'2015-5-23','ccc',2.15),
+         | (true,3,14,160,43.4,'hive','2015-7-26 12:01:06',3454.32,'2015-7-26','ff',5.5),
          | (NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
        """.stripMargin)
 
@@ -864,12 +857,12 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE stringField = 'spark'"),
       sql(s"SELECT * FROM $normalTable WHERE stringField = 'spark'"))
     checkAnswer(
-      sql(s"SELECT * FROM $bloomDMSampleTable WHERE timestampField = '2015/7/26 12:01:06'"),
-      sql(s"SELECT * FROM $normalTable WHERE timestampField = '2015/7/26 12:01:06'"))
+      sql(s"SELECT * FROM $bloomDMSampleTable WHERE timestampField = '2015-7-26 12:01:06'"),
+      sql(s"SELECT * FROM $normalTable WHERE timestampField = '2015-7-26 12:01:06'"))
     checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE decimalField = 23.23"),
       sql(s"SELECT * FROM $normalTable WHERE decimalField = 23.23"))
-    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE dateField = '2015/4/23'"),
-      sql(s"SELECT * FROM $normalTable WHERE dateField = '2015/4/23'"))
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE dateField = '2015-4-23'"),
+      sql(s"SELECT * FROM $normalTable WHERE dateField = '2015-4-23'"))
     checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE charField = 'ccc'"),
       sql(s"SELECT * FROM $normalTable WHERE charField = 'ccc'"))
     checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE floatField = 2.5"),
@@ -917,10 +910,6 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE floatField = 0"),
       sql(s"SELECT * FROM $normalTable WHERE floatField = 0"))
 
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, originTimestampFormat)
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT, originDateFormat)
   }
 
   test("test bloom datamap on multiple columns") {
