@@ -122,10 +122,19 @@ public class ColumnPageWrapper implements DimensionColumnPage {
   }
 
   @Override public byte[] getChunkData(int rowId) {
-    return getChunkData(rowId, false);
+    byte[] nullBitSet = getNullBitSet(rowId, columnPage.getColumnSpec().getColumnType());
+    if (nullBitSet != null) {
+      // if this row is null, return default null represent in byte array
+      return nullBitSet;
+    } else {
+      if (isExplicitSorted()) {
+        rowId = getInvertedReverseIndex(rowId);
+      }
+      return getChunkDataInBytes(rowId);
+    }
   }
 
-  private byte[] getChunkData(int rowId, boolean isRowIdChanged) {
+  private byte[] getChunkDataInBytes(int rowId) {
     ColumnType columnType = columnPage.getColumnSpec().getColumnType();
     DataType srcDataType = columnPage.getColumnSpec().getSchemaDataType();
     DataType targetDataType = columnPage.getDataType();
@@ -134,15 +143,6 @@ public class ColumnPageWrapper implements DimensionColumnPage {
           .getDictionaryValue(CarbonUtil.getSurrogateInternal(columnPage.getBytes(rowId), 0, 3));
     } else if ((columnType == ColumnType.COMPLEX_PRIMITIVE && isAdaptiveEncoded()) || (
         columnType == ColumnType.PLAIN_VALUE && DataTypeUtil.isPrimitiveColumn(srcDataType))) {
-      if (!isRowIdChanged && columnPage.getNullBits().get(rowId)
-          && columnType == ColumnType.COMPLEX_PRIMITIVE) {
-        // if this row is null, return default null represent in byte array
-        return CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
-      }
-      if (!isRowIdChanged && columnPage.getNullBits().get(rowId)) {
-        // if this row is null, return default null represent in byte array
-        return CarbonCommonConstants.EMPTY_BYTE_ARRAY;
-      }
       if (srcDataType == DataTypes.FLOAT) {
         float floatData = columnPage.getFloat(rowId);
         return ByteUtil.toXorBytes(floatData);
@@ -182,9 +182,6 @@ public class ColumnPageWrapper implements DimensionColumnPage {
         throw new RuntimeException("unsupported type: " + targetDataType);
       }
     } else if ((columnType == ColumnType.COMPLEX_PRIMITIVE && !isAdaptiveEncoded())) {
-      if (!isRowIdChanged && columnPage.getNullBits().get(rowId)) {
-        return CarbonCommonConstants.EMPTY_BYTE_ARRAY;
-      }
       if ((srcDataType == DataTypes.BYTE) || (srcDataType == DataTypes.BOOLEAN)) {
         byte[] out = new byte[1];
         out[0] = (columnPage.getByte(rowId));
@@ -203,6 +200,18 @@ public class ColumnPageWrapper implements DimensionColumnPage {
     } else {
       return columnPage.getBytes(rowId);
     }
+  }
+
+  private byte[] getNullBitSet(int rowId, ColumnType columnType) {
+    if (columnPage.getNullBits().get(rowId) && columnType == ColumnType.COMPLEX_PRIMITIVE) {
+      // if this row is null, return default null represent in byte array
+      return CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
+    }
+    if (columnPage.getNullBits().get(rowId)) {
+      // if this row is null, return default null represent in byte array
+      return CarbonCommonConstants.EMPTY_BYTE_ARRAY;
+    }
+    return null;
   }
 
   private Object getActualData(int rowId, boolean isRowIdChanged) {
@@ -302,8 +311,19 @@ public class ColumnPageWrapper implements DimensionColumnPage {
 
   @Override
   public int compareTo(int rowId, byte[] compareValue) {
-    byte[] chunkData = this.getChunkData((int) rowId);
-    return ByteUtil.UnsafeComparer.INSTANCE.compareTo(chunkData, compareValue);
+    // rowId is the inverted index, but the null bitset is based on actual data
+    int nullBitSetRowId = rowId;
+    if (isExplicitSorted()) {
+      nullBitSetRowId = getInvertedReverseIndex(rowId);
+    }
+    byte[] nullBitSet = getNullBitSet(nullBitSetRowId, columnPage.getColumnSpec().getColumnType());
+    if (nullBitSet != null) {
+      // if this row is null, return default null represent in byte array
+      return ByteUtil.UnsafeComparer.INSTANCE.compareTo(nullBitSet, compareValue);
+    } else {
+      byte[] chunkData = this.getChunkDataInBytes(rowId);
+      return ByteUtil.UnsafeComparer.INSTANCE.compareTo(chunkData, compareValue);
+    }
   }
 
   @Override
