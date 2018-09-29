@@ -2371,6 +2371,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
             .load()
 
           // Write data from socket stream to carbondata file
+          // repartition to simulate an empty partition when readSocketDF has only one row
           qry = readSocketDF.repartition(2).writeStream
             .format("carbondata")
             .trigger(ProcessingTime(s"$intervalSecond seconds"))
