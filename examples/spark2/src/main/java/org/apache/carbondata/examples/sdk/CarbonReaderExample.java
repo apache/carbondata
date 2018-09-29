@@ -108,7 +108,7 @@ public class CarbonReaderExample {
                 .projection(strings)
                 .build();
 
-            System.out.println("\nData:");
+            System.out.println("\nFirst:");
             long day = 24L * 3600 * 1000;
             int i = 0;
             while (reader.hasNext()) {
@@ -125,7 +125,6 @@ public class CarbonReaderExample {
                 System.out.println();
                 i++;
             }
-            System.out.println("\nFinished");
             reader.close();
 
             // Read data
@@ -133,7 +132,7 @@ public class CarbonReaderExample {
                 .builder(path, "_temp")
                 .build();
 
-            System.out.println("\nData:");
+            System.out.println("\nSecond:");
             i = 0;
             while (reader2.hasNext()) {
                 Object[] row = (Object[]) reader2.readNextRow();
@@ -148,7 +147,6 @@ public class CarbonReaderExample {
                     row[5], row[6], row[7], row[8], row[9], row[10]));
                 i++;
             }
-            System.out.println("\nFinished");
             reader2.close();
             FileUtils.deleteDirectory(new File(path));
         } catch (Throwable e) {
