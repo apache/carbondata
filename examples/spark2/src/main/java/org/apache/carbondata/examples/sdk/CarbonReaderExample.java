@@ -108,7 +108,7 @@ public class CarbonReaderExample {
                 .projection(strings)
                 .build();
 
-            System.out.println("\nFirst:");
+            System.out.println("\nData:");
             long day = 24L * 3600 * 1000;
             int i = 0;
             while (reader.hasNext()) {
@@ -122,6 +122,8 @@ public class CarbonReaderExample {
                 for (int j = 0; j < arr.length; j++) {
                     System.out.print(arr[j] + " ");
                 }
+                assert (arr[0].equals("Hello"));
+                assert (arr[3].equals("Carbon"));
                 System.out.println();
                 i++;
             }
@@ -132,7 +134,7 @@ public class CarbonReaderExample {
                 .builder(path, "_temp")
                 .build();
 
-            System.out.println("\nSecond:");
+            System.out.println("\nData:");
             i = 0;
             while (reader2.hasNext()) {
                 Object[] row = (Object[]) reader2.readNextRow();
