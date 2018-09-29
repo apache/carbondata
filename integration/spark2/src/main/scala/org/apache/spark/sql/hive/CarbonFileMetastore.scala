@@ -23,6 +23,7 @@ import java.net.URI
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
+import org.apache.hadoop.hive.ql.metadata.HiveException
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
 import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias}
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -208,7 +209,10 @@ class CarbonFileMetastore extends CarbonMetaStore {
     try {
       lookupRelation(tableIdentifier)(sparkSession)
     } catch {
-      case _: Exception =>
+      case ex: Exception =>
+        if (ex.getCause.isInstanceOf[HiveException]) {
+          throw ex
+        }
         return false
     }
     true
