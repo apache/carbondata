@@ -1505,29 +1505,21 @@ public class CarbonReaderTest extends TestCase {
           .projection(strings)
           .build();
 
-      System.out.println("\nData:");
-      long day = 24L * 3600 * 1000;
       int i = 0;
       while (reader.hasNext()) {
         Object[] row = (Object[]) reader.readNextRow();
-        System.out.println(String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t",
-            i, row[0], row[1], row[2], row[3], row[4], row[5],
-            new Date((day * ((int) row[6]))), new Timestamp((long) row[7] / 1000),
-            row[8], row[9]
-        ));
+        assert (row[0].equals("robot" + i));
+        assert (row[2].equals(i));
+        assert (row[6].equals(17957));
         Object[] arr = (Object[]) row[10];
-        for (int j = 0; j < arr.length; j++) {
-          System.out.print(arr[j] + " ");
-        }
-        System.out.println();
+        assert (arr[0].equals("Hello"));
+        assert (arr[3].equals("Carbon"));
         i++;
       }
-      System.out.println("\nFinished");
       reader.close();
       FileUtils.deleteDirectory(new File(path));
     } catch (Throwable e) {
       e.printStackTrace();
-      System.out.println(e.getMessage());
     }
   }
 }
