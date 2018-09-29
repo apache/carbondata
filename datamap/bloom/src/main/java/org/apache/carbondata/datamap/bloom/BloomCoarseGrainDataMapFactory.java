@@ -235,13 +235,13 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
       } else if (carbonFile.getName().equals(BloomIndexFileStore.MERGE_INPROGRESS_FILE)) {
         mergeShardInprogress = true;
       } else if (carbonFile.isDirectory()) {
-        shardPaths.add(carbonFile.getAbsolutePath());
+        shardPaths.add(FileFactory.getPath(carbonFile.getAbsolutePath()).toString());
       }
     }
     if (mergeShardFile != null && !mergeShardInprogress) {
       // should only get one shard path if mergeShard is generated successfully
       shardPaths.clear();
-      shardPaths.add(mergeShardFile.getAbsolutePath());
+      shardPaths.add(FileFactory.getPath(mergeShardFile.getAbsolutePath()).toString());
     }
     return shardPaths;
   }
@@ -349,6 +349,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
             FileFactory.getFileType(datamapPath));
         CarbonUtil.deleteFoldersAndFilesSilent(file);
       }
+      clear(segment);
     } catch (InterruptedException ex) {
       throw new IOException("Failed to delete datamap for segment_" + segment.getSegmentNo());
     }
