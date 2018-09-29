@@ -93,6 +93,8 @@ public class CarbonReader<T> {
 
   /**
    * Read and return next string row object
+   * limitation: only single dimension Array is supported
+   * TODO: support didfferent data type
    */
   public Object[] readNextStringRow() throws IOException, InterruptedException {
     validateReader();
