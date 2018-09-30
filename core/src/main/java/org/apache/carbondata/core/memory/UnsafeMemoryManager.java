@@ -68,9 +68,9 @@ public class UnsafeMemoryManager {
       LOGGER.info("Invalid memory size value: " + defaultWorkingMemorySize);
     }
     long takenSize = size;
-    MemoryAllocator allocator;
+    MemoryType memoryType;
     if (offHeap) {
-      allocator = MemoryAllocator.UNSAFE;
+      memoryType = MemoryType.OFFHEAP;
       long defaultSize = Long.parseLong(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT);
       if (takenSize < defaultSize) {
         takenSize = defaultSize;
@@ -86,9 +86,9 @@ public class UnsafeMemoryManager {
           takenSize = maxMemory;
         }
       }
-      allocator = MemoryAllocator.HEAP;
+      memoryType = MemoryType.ONHEAP;
     }
-    INSTANCE = new UnsafeMemoryManager(takenSize, allocator);
+    INSTANCE = new UnsafeMemoryManager(takenSize, memoryType);
     taskIdToMemoryBlockMap = new HashMap<>();
   }
 
@@ -98,19 +98,19 @@ public class UnsafeMemoryManager {
 
   private long memoryUsed;
 
-  private MemoryAllocator allocator;
+  private MemoryType memoryType;
 
-  private UnsafeMemoryManager(long totalMemory, MemoryAllocator allocator) {
+  private UnsafeMemoryManager(long totalMemory, MemoryType memoryType) {
     this.totalMemory = totalMemory;
-    this.allocator = allocator;
+    this.memoryType = memoryType;
     LOGGER
-        .info("Working Memory manager is created with size " + totalMemory + " with " + allocator);
+        .info("Working Memory manager is created with size " + totalMemory + " with " + memoryType);
   }
 
-  private synchronized MemoryBlock allocateMemory(MemoryAllocator memoryAllocator, long taskId,
+  private synchronized MemoryBlock allocateMemory(MemoryType memoryType, long taskId,
       long memoryRequested) {
     if (memoryUsed + memoryRequested <= totalMemory) {
-      MemoryBlock allocate = memoryAllocator.allocate(memoryRequested);
+      MemoryBlock allocate = getMemoryAllocator(memoryType).allocate(memoryRequested);
       memoryUsed += allocate.size();
       Set<MemoryBlock> listOfMemoryBlock = taskIdToMemoryBlockMap.get(taskId);
       if (null == listOfMemoryBlock) {
@@ -129,16 +129,11 @@ public class UnsafeMemoryManager {
   }
 
   public synchronized void freeMemory(long taskId, MemoryBlock memoryBlock) {
-    freeMemory(allocator, taskId, memoryBlock);
-  }
-
-  public synchronized void freeMemory(MemoryAllocator memoryAllocator, long taskId,
-      MemoryBlock memoryBlock) {
     if (taskIdToMemoryBlockMap.containsKey(taskId)) {
       taskIdToMemoryBlockMap.get(taskId).remove(memoryBlock);
     }
     if (!memoryBlock.isFreedStatus()) {
-      memoryAllocator.free(memoryBlock);
+      getMemoryAllocator(memoryBlock.getMemoryType()).free(memoryBlock);
       memoryUsed -= memoryBlock.size();
       memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
       if (LOGGER.isDebugEnabled()) {
@@ -160,7 +155,7 @@ public class UnsafeMemoryManager {
         memoryBlock = iterator.next();
         if (!memoryBlock.isFreedStatus()) {
           occuppiedMemory += memoryBlock.size();
-          allocator.free(memoryBlock);
+          getMemoryAllocator(memoryBlock.getMemoryType()).free(memoryBlock);
         }
       }
     }
@@ -188,15 +183,15 @@ public class UnsafeMemoryManager {
    */
   public static MemoryBlock allocateMemoryWithRetry(long taskId, long size)
       throws MemoryException {
-    return allocateMemoryWithRetry(INSTANCE.allocator, taskId, size);
+    return allocateMemoryWithRetry(INSTANCE.memoryType, taskId, size);
   }
 
-  public static MemoryBlock allocateMemoryWithRetry(MemoryAllocator memoryAllocator, long taskId,
+  public static MemoryBlock allocateMemoryWithRetry(MemoryType memoryType, long taskId,
       long size) throws MemoryException {
     MemoryBlock baseBlock = null;
     int tries = 0;
     while (tries < 300) {
-      baseBlock = INSTANCE.allocateMemory(memoryAllocator, taskId, size);
+      baseBlock = INSTANCE.allocateMemory(memoryType, taskId, size);
       if (baseBlock == null) {
         try {
           LOGGER.info("Memory is not available, retry after 500 millis");
@@ -215,6 +210,15 @@ public class UnsafeMemoryManager {
           "Not enough memory. please increase carbon.unsafe.working.memory.in.mb");
     }
     return baseBlock;
+  }
+
+  private MemoryAllocator getMemoryAllocator(MemoryType memoryType) {
+    switch (memoryType) {
+      case ONHEAP:
+        return MemoryAllocator.HEAP;
+      default:
+        return MemoryAllocator.UNSAFE;
+    }
   }
 
   public static boolean isOffHeap() {
