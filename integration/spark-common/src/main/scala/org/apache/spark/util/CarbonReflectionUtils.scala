@@ -294,8 +294,10 @@ object CarbonReflectionUtils {
         .getMethod("writeAndRead",
           classOf[SaveMode],
           classOf[LogicalPlan],
-          classOf[Seq[Attribute]],
+          classOf[Seq[String]],
           classOf[SparkPlan])
+      // since spark 2.3.2 version (SPARK-PR#22346),
+      // change 'query.output' to 'query.output.map(_.name)'
       method.invoke(dataSourceObj, mode, query, query.output.map(_.name), physicalPlan)
         .asInstanceOf[BaseRelation]
     } else {

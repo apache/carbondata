@@ -43,11 +43,14 @@ class CarbonDataSourceScan(
     Seq.empty,
     identifier) {
 
+  // added lazy since spark 2.3.2 version (SPARK-PR#21815)
   override lazy val supportsBatch: Boolean = true
 
+  // added lazy since spark 2.3.2 version (SPARK-PR#21815)
   override lazy val (outputPartitioning, outputOrdering): (Partitioning, Seq[SortOrder]) =
     (partitioning, Nil)
 
+  // added lazy since spark 2.3.2 version (SPARK-PR#21815)
   override lazy val metadata: Map[String, String] = md
 
   override def inputRDDs(): Seq[RDD[InternalRow]] = rdd :: Nil
