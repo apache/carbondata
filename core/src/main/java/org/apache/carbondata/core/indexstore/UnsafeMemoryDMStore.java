@@ -19,9 +19,9 @@ package org.apache.carbondata.core.indexstore;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.UnsafeDataMapRow;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
-import org.apache.carbondata.core.memory.MemoryAllocator;
 import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.memory.MemoryType;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -51,7 +51,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
   public UnsafeMemoryDMStore() throws MemoryException {
     this.allocatedSize = capacity;
     this.memoryBlock =
-        UnsafeMemoryManager.allocateMemoryWithRetry(MemoryAllocator.HEAP, taskId, allocatedSize);
+        UnsafeMemoryManager.allocateMemoryWithRetry(MemoryType.ONHEAP, taskId, allocatedSize);
     this.pointers = new int[1000];
   }
 
@@ -74,10 +74,10 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
 
   private void increaseMemory(int requiredMemory) throws MemoryException {
     MemoryBlock newMemoryBlock = UnsafeMemoryManager
-        .allocateMemoryWithRetry(MemoryAllocator.HEAP, taskId, allocatedSize + requiredMemory);
+        .allocateMemoryWithRetry(MemoryType.ONHEAP, taskId, allocatedSize + requiredMemory);
     getUnsafe().copyMemory(this.memoryBlock.getBaseObject(), this.memoryBlock.getBaseOffset(),
         newMemoryBlock.getBaseObject(), newMemoryBlock.getBaseOffset(), runningLength);
-    UnsafeMemoryManager.INSTANCE.freeMemory(MemoryAllocator.HEAP, taskId, this.memoryBlock);
+    UnsafeMemoryManager.INSTANCE.freeMemory(taskId, this.memoryBlock);
     allocatedSize = allocatedSize + requiredMemory;
     this.memoryBlock = newMemoryBlock;
   }
@@ -190,10 +190,10 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
   public void finishWriting() throws MemoryException {
     if (runningLength < allocatedSize) {
       MemoryBlock allocate =
-          UnsafeMemoryManager.allocateMemoryWithRetry(MemoryAllocator.HEAP, taskId, runningLength);
+          UnsafeMemoryManager.allocateMemoryWithRetry(MemoryType.ONHEAP, taskId, runningLength);
       getUnsafe().copyMemory(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset(),
           allocate.getBaseObject(), allocate.getBaseOffset(), runningLength);
-      UnsafeMemoryManager.INSTANCE.freeMemory(MemoryAllocator.HEAP, taskId, memoryBlock);
+      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
       memoryBlock = allocate;
     }
     // Compact pointers.
@@ -206,7 +206,7 @@ public class UnsafeMemoryDMStore extends AbstractMemoryDMStore {
 
   public void freeMemory() {
     if (!isMemoryFreed) {
-      UnsafeMemoryManager.INSTANCE.freeMemory(MemoryAllocator.HEAP, taskId, memoryBlock);
+      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
       isMemoryFreed = true;
     }
   }

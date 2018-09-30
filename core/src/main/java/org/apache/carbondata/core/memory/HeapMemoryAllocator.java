@@ -71,7 +71,8 @@ public class HeapMemoryAllocator implements MemoryAllocator {
             final long[] array = arrayReference.get();
             if (array != null) {
               assert (array.length * 8L >= size);
-              MemoryBlock memory = new MemoryBlock(array, CarbonUnsafe.LONG_ARRAY_OFFSET, size);
+              MemoryBlock memory =
+                  new MemoryBlock(array, CarbonUnsafe.LONG_ARRAY_OFFSET, size, MemoryType.ONHEAP);
               // reuse this MemoryBlock
               memory.setFreedStatus(false);
               return memory;
@@ -82,7 +83,7 @@ public class HeapMemoryAllocator implements MemoryAllocator {
       }
     }
     long[] array = new long[numWords];
-    return new MemoryBlock(array, CarbonUnsafe.LONG_ARRAY_OFFSET, size);
+    return new MemoryBlock(array, CarbonUnsafe.LONG_ARRAY_OFFSET, size, MemoryType.ONHEAP);
   }
 
   @Override public void free(MemoryBlock memory) {

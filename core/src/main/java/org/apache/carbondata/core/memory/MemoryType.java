@@ -17,25 +17,7 @@
 
 package org.apache.carbondata.core.memory;
 
-/**
- * Code ported from Apache Spark {org.apache.spark.unsafe.memory} package
- * A simple {@link MemoryAllocator} that uses {@code Unsafe} to allocate off-heap memory.
- */
-public class UnsafeMemoryAllocator implements MemoryAllocator {
+public enum MemoryType {
 
-  @Override
-  public MemoryBlock allocate(long size) throws OutOfMemoryError {
-    long address = CarbonUnsafe.getUnsafe().allocateMemory(size);
-    // initializing memory with zero
-    CarbonUnsafe.getUnsafe().setMemory(null, address, size, (byte) 0);
-    return new MemoryBlock(null, address, size, MemoryType.OFFHEAP);
-  }
-
-  @Override
-  public void free(MemoryBlock memory) {
-    assert (memory.obj == null) :
-      "baseObject not null; are you trying to use the off-heap allocator to free on-heap memory?";
-    CarbonUnsafe.getUnsafe().freeMemory(memory.offset);
-    memory.setFreedStatus(true);
-  }
+  OFFHEAP, ONHEAP;
 }
