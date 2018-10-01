@@ -455,7 +455,7 @@ object CommonUtil {
       try {
         val levels: Array[String] = regularedStr.split(",")
         val thresholds = regularedStr.split(",").map(levelThresholdStr => levelThresholdStr.toInt)
-        if (!thresholds.forall(t => t < 100 && t > 0)) {
+        if (!thresholds.forall(t => t < 100 && t >= 0)) {
           throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
             s"$regularedStr, only int values separated by comma and between 0 " +
             s"and 100 are supported.")
