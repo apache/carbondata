@@ -38,6 +38,8 @@ import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.BlockletInfo3;
+import org.apache.carbondata.format.DataChunk2;
+import org.apache.carbondata.format.DataChunk3;
 import org.apache.carbondata.format.FileFooter3;
 import org.apache.carbondata.format.FileHeader;
 import org.apache.carbondata.format.TableInfo;
@@ -91,6 +93,9 @@ class DataSummary implements Command {
     if (line.hasOption("c")) {
       String columName = line.getOptionValue("c");
       printColumnStats(columName);
+      if (line.hasOption("k")) {
+        printColumnChunkMeta(columName);
+      }
     }
   }
 
@@ -217,13 +222,13 @@ class DataSummary implements Command {
     throw new RuntimeException("schema for column " + columnName + " not found");
   }
 
+  // true if blockled stats are collected
+  private boolean collected = false;
+
   private void printColumnStats(String columnName) throws IOException, MemoryException {
     out.println();
     out.println("## Column Statistics for '" + columnName + "'");
-    for (DataFile dataFile : dataFiles.values()) {
-      dataFile.initAllBlockletStats(columnName);
-    }
-    collectAllBlockletStats(dataFiles.values());
+    collectStats(columnName);
 
     int columnIndex = getColumnIndex(columnName);
     String[] header = new String[]{"BLK", "BLKLT", "Meta Size", "Data Size",
@@ -258,6 +263,38 @@ class DataSummary implements Command {
       }
     }
     printer.printFormatted(out);
+  }
+
+  private void collectStats(String columnName) throws IOException, MemoryException {
+    if (!collected) {
+      for (DataFile dataFile : dataFiles.values()) {
+        dataFile.initAllBlockletStats(columnName);
+      }
+      collectAllBlockletStats(dataFiles.values());
+      collected = true;
+    }
+  }
+
+  private void printColumnChunkMeta(String columnName) throws IOException, MemoryException {
+    out.println();
+    DataFile file = dataFiles.entrySet().iterator().next().getValue();
+    out.println("## Page Meta for column '" + columnName + "' in file " + file.getFilePath());
+    collectStats(columnName);
+    for (int i = 0; i < file.getAllBlocklets().size(); i++) {
+      DataFile.Blocklet blocklet = file.getAllBlocklets().get(i);
+      DataChunk3 dataChunk3 = blocklet.getColumnChunk().getDataChunk3();
+      List<DataChunk2> dataChunk2List = dataChunk3.getData_chunk_list();
+      out.println(String.format("Blocklet %d:", i));
+
+      // There will be many pages, for debugging purpose,
+      // just print 3 page for each blocklet is enough
+      for (int j = 0; j < dataChunk2List.size() && j < 3; j++) {
+        out.println(String.format("Page %d (offset %d, length %d): %s",
+            j, dataChunk3.page_offset.get(j), dataChunk3.page_length.get(j),
+            dataChunk2List.get(j).toString()));
+      }
+      out.println("\n");
+    }
   }
 
   private void collectAllBlockletStats(Collection<DataFile> dataFiles) {
