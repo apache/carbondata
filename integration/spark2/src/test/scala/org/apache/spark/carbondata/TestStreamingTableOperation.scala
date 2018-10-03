@@ -37,6 +37,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.common.exceptions.NoSuchStreamException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.TIMESERIES
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus}
@@ -124,6 +125,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     createTable(tableName = "agg_table_block", streaming = false, withBatchLoad = false)
 
     createTable(tableName = "agg_table", streaming = true, withBatchLoad = false)
+
+    createTable(tableName = "stream_table_empty", streaming = true, withBatchLoad = false)
 
     var csvDataDir = integrationPath + "/spark2/target/csvdatanew"
     generateCSVDataFile(spark, idStart = 10, rowNums = 5, csvDataDir)
@@ -213,6 +216,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists streaming.stream_table_reopen")
     sql("drop table if exists streaming.stream_table_drop")
     sql("drop table if exists streaming.agg_table_block")
+    sql("drop table if exists streaming.stream_table_empty")
   }
 
   // normal table not support streaming ingest
@@ -226,7 +230,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       .asInstanceOf[CarbonRelation].metaData.carbonTable
     var server: ServerSocket = null
     try {
-      server = getServerSocket
+      server = getServerSocket()
       val thread1 = createWriteSocketThread(server, 2, 10, 1)
       thread1.start()
       // use thread pool to catch the exception of sink thread
@@ -2253,6 +2257,46 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS dim")
   }
 
+  // test empty batch
+  test("test empty batch") {
+    executeStreamingIngest(
+      tableName = "stream_table_empty",
+      batchNums = 1,
+      rowNumsEachBatch = 10,
+      intervalOfSource = 1,
+      intervalOfIngest = 3,
+      continueSeconds = 10,
+      generateBadRecords = false,
+      badRecordAction = "force",
+      autoHandoff = false
+    )
+    var result = sql("select count(*) from streaming.stream_table_empty").collect()
+    assert(result(0).getLong(0) == 10)
+
+    // clean checkpointDir and logDir
+    val carbonTable = CarbonEnv.getCarbonTable(Option("streaming"), "stream_table_empty")(spark)
+    FileFactory
+      .deleteAllFilesOfDir(new File(CarbonTablePath.getStreamingLogDir(carbonTable.getTablePath)))
+    FileFactory
+      .deleteAllFilesOfDir(new File(CarbonTablePath
+        .getStreamingCheckpointDir(carbonTable.getTablePath)))
+
+    // some batches don't have data
+    executeStreamingIngest(
+      tableName = "stream_table_empty",
+      batchNums = 1,
+      rowNumsEachBatch = 1,
+      intervalOfSource = 1,
+      intervalOfIngest = 1,
+      continueSeconds = 10,
+      generateBadRecords = false,
+      badRecordAction = "force",
+      autoHandoff = false
+    )
+    result = sql("select count(*) from streaming.stream_table_empty").collect()
+    assert(result(0).getLong(0) == 11)
+  }
+
   def createWriteSocketThread(
       serverSocket: ServerSocket,
       writeNums: Int,
@@ -2330,7 +2374,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
             .load()
 
           // Write data from socket stream to carbondata file
-          qry = readSocketDF.writeStream
+          // repartition to simulate an empty partition when readSocketDF has only one row
+          qry = readSocketDF.repartition(2).writeStream
             .format("carbondata")
             .trigger(ProcessingTime(s"$intervalSecond seconds"))
             .option("checkpointLocation", CarbonTablePath.getStreamingCheckpointDir(carbonTable.getTablePath))
