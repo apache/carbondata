@@ -131,11 +131,8 @@ public class CarbonReaderBuilder {
       hadoopConf = FileFactory.getConfiguration();
     }
     CarbonTable table;
-    if (filterExpression != null) {
-      table = CarbonTable.buildTable(tablePath, tableName, hadoopConf);
-    } else {
-      table = CarbonTable.buildDummyTable(tablePath);
-    }
+    // now always infer schema. TODO:Refactor in next version.
+    table = CarbonTable.buildTable(tablePath, tableName, hadoopConf);
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
     final Job job = new Job(hadoopConf);
     format.setTableInfo(job.getConfiguration(), table.getTableInfo());

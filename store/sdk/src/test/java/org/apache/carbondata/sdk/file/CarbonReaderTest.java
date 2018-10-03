@@ -90,8 +90,6 @@ public class CarbonReaderTest extends TestCase {
     }
     Assert.assertEquals(i, 200);
 
-    reader.close();
-
     // Read again
     CarbonReader reader2 = CarbonReader
         .builder(path, "_temp")
@@ -108,6 +106,7 @@ public class CarbonReaderTest extends TestCase {
     }
     Assert.assertEquals(i, 200);
     reader2.close();
+    reader.close();
 
     FileUtils.deleteDirectory(new File(path));
   }
