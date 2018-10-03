@@ -26,7 +26,9 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapWrapperSimpleInfo;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * An information collector used for EXPLAIN command, to print out
@@ -52,7 +54,12 @@ public class ExplainCollector {
   }
 
   public static void setup() {
-    INSTANCE = new ExplainCollector();
+    boolean isQueryStatisticsEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+            CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT));
+    if (isQueryStatisticsEnabled) {
+      INSTANCE = new ExplainCollector();
+    }
   }
 
   public static void remove() {

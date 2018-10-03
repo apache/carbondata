@@ -361,6 +361,8 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
     //n should be about 5000000 of reset if size is default 1024
     val n = 150000
     CompactionSupportGlobalSortBigFileTest.createFile(file2, n * 4, n)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     sql("DROP TABLE IF EXISTS normal_test")
     sql(
       """
@@ -558,6 +560,9 @@ class CGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamap_store_test")
     sql("DROP TABLE IF EXISTS datamap_store_test1")
     sql("DROP TABLE IF EXISTS datamap_store_test2")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
   }
 
 }

@@ -41,6 +41,8 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
   val file2 = resourcesPath + "/datamap_input.csv"
 
   override protected def beforeAll(): Unit = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     new File(CarbonProperties.getInstance().getSystemFolderLocation).delete()
     LuceneFineGrainDataMapSuite.createFile(file2)
     sql("create database if not exists lucene")
@@ -921,6 +923,9 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
         originDistributedDatamapStatus)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
   }
 }
 
