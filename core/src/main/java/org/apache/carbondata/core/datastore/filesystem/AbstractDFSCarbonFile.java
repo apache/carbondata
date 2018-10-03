@@ -327,8 +327,11 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
       CompressionCodec codec = new CompressionCodecFactory(hadoopConf).getCodecByName(codecName);
       inputStream = codec.createInputStream(inputStream);
     }
-
-    return new DataInputStream(new BufferedInputStream(inputStream));
+    if (bufferSize <= 0 && inputStream instanceof FSDataInputStream) {
+      return (DataInputStream) inputStream;
+    } else {
+      return new DataInputStream(new BufferedInputStream(inputStream));
+    }
   }
 
   /**
