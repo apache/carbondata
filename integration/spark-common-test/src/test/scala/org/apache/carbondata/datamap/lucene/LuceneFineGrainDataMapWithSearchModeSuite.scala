@@ -42,6 +42,8 @@ class LuceneFineGrainDataMapWithSearchModeSuite extends QueryTest with BeforeAnd
     sqlContext.sparkSession.asInstanceOf[CarbonSession].startSearchMode()
     CarbonProperties
       .getInstance().addProperty(CarbonCommonConstants.CARBON_SEARCH_QUERY_TIMEOUT, "100s")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     LuceneFineGrainDataMapSuite.createFile(file2, n)
     sql("create database if not exists lucene")
     sql("use lucene")
@@ -296,6 +298,9 @@ class LuceneFineGrainDataMapWithSearchModeSuite extends QueryTest with BeforeAnd
   }
 
   override protected def afterAll(): Unit = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
     LuceneFineGrainDataMapSuite.deleteFile(file2)
     sql("DROP TABLE IF EXISTS datamap_test")
     sql("DROP TABLE IF EXISTS datamap_test5")

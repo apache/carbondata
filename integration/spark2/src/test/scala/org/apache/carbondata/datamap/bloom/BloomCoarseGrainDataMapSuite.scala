@@ -41,6 +41,8 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
 
   override protected def beforeAll(): Unit = {
     new File(CarbonProperties.getInstance().getSystemFolderLocation).delete()
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     createFile(bigFile, line = 50000)
     createFile(smallFile)
     sql(s"DROP TABLE IF EXISTS $normalTable")
@@ -992,6 +994,9 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     deleteFile(smallFile)
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
   }
 
   private def createFile(fileName: String, line: Int = 10000, start: Int = 0) = {

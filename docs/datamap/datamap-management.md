@@ -122,7 +122,7 @@ There is a DataMapCatalog interface to retrieve schema of all datamap, it can be
 
 How can user know whether datamap is used in the query?
 
-User can use EXPLAIN command to know, it will print out something like
+User can set enable.query.statistics = true and use EXPLAIN command to know, it will print out something like
 
 ```text
 == CarbonData Profiler ==

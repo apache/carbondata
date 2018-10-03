@@ -52,7 +52,11 @@ case class CarbonExplainCommand(
     try {
       ExplainCollector.setup()
       queryExecution.toRdd.partitions
-      Seq(Row("== CarbonData Profiler ==\n" + ExplainCollector.getFormatedOutput))
+      if (ExplainCollector.enabled()) {
+        Seq(Row("== CarbonData Profiler ==\n" + ExplainCollector.getFormatedOutput))
+      } else {
+        Seq.empty
+      }
     } finally {
       ExplainCollector.remove()
     }
