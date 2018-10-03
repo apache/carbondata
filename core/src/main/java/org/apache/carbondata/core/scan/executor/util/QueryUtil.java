@@ -393,12 +393,6 @@ public class QueryUtil {
 
   public static AbsoluteTableIdentifier getTableIdentifierForColumn(
       CarbonDimension carbonDimension) {
-    RelationIdentifier parentRelationIdentifier =
-        carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0)
-            .getRelationIdentifier();
-    String parentTablePath = CarbonMetadata.getInstance()
-        .getCarbonTable(parentRelationIdentifier.getDatabaseName(),
-            parentRelationIdentifier.getTableName()).getTablePath();
     RelationIdentifier relation = carbonDimension.getColumnSchema()
         .getParentColumnTableRelations()
         .get(0)
@@ -406,8 +400,8 @@ public class QueryUtil {
     String parentTableName = relation.getTableName();
     String parentDatabaseName = relation.getDatabaseName();
     String parentTableId = relation.getTableId();
-    return AbsoluteTableIdentifier.from(parentTablePath, parentDatabaseName, parentTableName,
-        parentTableId);
+    return AbsoluteTableIdentifier.from(relation.getTablePath(), parentDatabaseName,
+        parentTableName, parentTableId);
   }
 
   /**
