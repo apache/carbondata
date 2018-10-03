@@ -46,14 +46,14 @@ public class UnsafeCarbonRowPage {
 
   private MemoryManagerType managerType;
 
-  private long taskId;
+  private String taskId;
 
   private TableFieldStat tableFieldStat;
   private SortStepRowHandler sortStepRowHandler;
   private boolean convertNoSortFields;
 
   public UnsafeCarbonRowPage(TableFieldStat tableFieldStat, MemoryBlock memoryBlock,
-      boolean saveToDisk, long taskId) {
+      boolean saveToDisk, String taskId) {
     this.tableFieldStat = tableFieldStat;
     this.sortStepRowHandler = new SortStepRowHandler(tableFieldStat);
     this.saveToDisk = saveToDisk;

@@ -39,7 +39,7 @@ public class UnsafeMemoryManager {
   private static boolean offHeap = Boolean.parseBoolean(CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
           CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT));
-  private static Map<Long,Set<MemoryBlock>> taskIdToMemoryBlockMap;
+  private static Map<String,Set<MemoryBlock>> taskIdToMemoryBlockMap;
   static {
     long size = 0L;
     String defaultWorkingMemorySize = null;
@@ -107,7 +107,7 @@ public class UnsafeMemoryManager {
         .info("Working Memory manager is created with size " + totalMemory + " with " + memoryType);
   }
 
-  private synchronized MemoryBlock allocateMemory(MemoryType memoryType, long taskId,
+  private synchronized MemoryBlock allocateMemory(MemoryType memoryType, String taskId,
       long memoryRequested) {
     if (memoryUsed + memoryRequested <= totalMemory) {
       MemoryBlock allocate = getMemoryAllocator(memoryType).allocate(memoryRequested);
@@ -128,7 +128,7 @@ public class UnsafeMemoryManager {
     return null;
   }
 
-  public synchronized void freeMemory(long taskId, MemoryBlock memoryBlock) {
+  public synchronized void freeMemory(String taskId, MemoryBlock memoryBlock) {
     if (taskIdToMemoryBlockMap.containsKey(taskId)) {
       taskIdToMemoryBlockMap.get(taskId).remove(memoryBlock);
     }
@@ -144,7 +144,7 @@ public class UnsafeMemoryManager {
     }
   }
 
-  public synchronized void freeMemoryAll(long taskId) {
+  public synchronized void freeMemoryAll(String taskId) {
     Set<MemoryBlock> memoryBlockSet = null;
     memoryBlockSet = taskIdToMemoryBlockMap.remove(taskId);
     long occuppiedMemory = 0;
@@ -181,12 +181,12 @@ public class UnsafeMemoryManager {
   /**
    * It tries to allocate memory of `size` bytes, keep retry until it allocates successfully.
    */
-  public static MemoryBlock allocateMemoryWithRetry(long taskId, long size)
+  public static MemoryBlock allocateMemoryWithRetry(String taskId, long size)
       throws MemoryException {
     return allocateMemoryWithRetry(INSTANCE.memoryType, taskId, size);
   }
 
-  public static MemoryBlock allocateMemoryWithRetry(MemoryType memoryType, long taskId,
+  public static MemoryBlock allocateMemoryWithRetry(MemoryType memoryType, String taskId,
       long size) throws MemoryException {
     MemoryBlock baseBlock = null;
     int tries = 0;

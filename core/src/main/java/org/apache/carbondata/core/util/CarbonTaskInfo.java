@@ -28,13 +28,13 @@ public class CarbonTaskInfo implements Serializable {
    */
   private static final long serialVersionUID = 1L;
 
-  public long taskId;
+  public String taskId;
 
-  public long getTaskId() {
+  public String getTaskId() {
     return taskId;
   }
 
-  public void setTaskId(long taskId) {
+  public void setTaskId(String taskId) {
     this.taskId = taskId;
   }
 }

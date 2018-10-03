@@ -93,7 +93,7 @@ public class UnsafeSortDataRows {
    */
   private Semaphore semaphore;
 
-  private final long taskId;
+  private final String taskId;
 
   public UnsafeSortDataRows(SortParameters parameters,
       UnsafeIntermediateMerger unsafeInMemoryIntermediateFileMerger, int inMemoryChunkSize) {

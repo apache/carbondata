@@ -31,7 +31,7 @@ public abstract class AbstractMemoryDMStore implements Serializable {
 
   protected boolean isMemoryFreed;
 
-  protected final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
+  protected final String taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
 
   public abstract void addIndexRow(CarbonRowSchema[] schema, DataMapRow indexRow)
       throws MemoryException;

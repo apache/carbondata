@@ -51,7 +51,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   // size of the allocated memory, in bytes
   private int capacity;
 
-  private final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
+  private final String taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
 
   private static final int byteBits = DataTypes.BYTE.getSizeBits();
   private static final int shortBits = DataTypes.SHORT.getSizeBits();

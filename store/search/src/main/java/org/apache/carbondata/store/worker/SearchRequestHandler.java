@@ -18,11 +18,7 @@
 package org.apache.carbondata.store.worker;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogService;
@@ -48,6 +44,7 @@ import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonTaskInfo;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
@@ -110,7 +107,7 @@ public class SearchRequestHandler {
   private List<CarbonRow> handleRequest(SearchRequest request)
       throws IOException, InterruptedException {
     CarbonTaskInfo carbonTaskInfo = new CarbonTaskInfo();
-    carbonTaskInfo.setTaskId(System.nanoTime());
+    carbonTaskInfo.setTaskId(CarbonUtil.generateUUID());
     ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo);
     TableInfo tableInfo = request.tableInfo();
     CarbonTable table = CarbonTable.buildFromTableInfo(tableInfo);
