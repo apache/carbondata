@@ -53,7 +53,7 @@ Now you can create Carbon table using Spark's datasource DDL syntax.
 ## Example 
 
 ```
- CREATE TABLE CARBON_TABLE (NAME  STRING) USING CARBON OPTIONS(‘table_block_size’=’256’)
+ CREATE TABLE CARBON_TABLE (NAME  STRING) USING CARBON OPTIONS('table_block_size'='256')
 ```
 
 # Using DataFrame
