@@ -639,7 +639,7 @@ object CommonUtil {
    * Method to clear the memory for a task
    * if present
    */
-  def clearUnsafeMemory(taskId: Long) {
+  def clearUnsafeMemory(taskId: String) {
     UnsafeMemoryManager.
       INSTANCE.freeMemoryAll(taskId)
     UnsafeSortMemoryManager.

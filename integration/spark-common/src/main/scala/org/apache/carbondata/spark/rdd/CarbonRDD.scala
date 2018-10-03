@@ -71,7 +71,7 @@ abstract class CarbonRDD[T: ClassTag](
     ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
     TaskMetricsMap.threadLocal.set(Thread.currentThread().getId)
     val carbonTaskInfo = new CarbonTaskInfo
-    carbonTaskInfo.setTaskId(System.nanoTime)
+    carbonTaskInfo.setTaskId(CarbonUtil.generateUUID())
     ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo)
     carbonSessionInfo.getSessionParams.getAddedProps.asScala.
       map(f => CarbonProperties.getInstance().addProperty(f._1, f._2))

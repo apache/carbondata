@@ -49,7 +49,7 @@ public class UnsafeSortMemoryManager {
   /**
    * map to keep taskid to memory blocks
    */
-  private static Map<Long, Set<MemoryBlock>> taskIdToMemoryBlockMap;
+  private static Map<String, Set<MemoryBlock>> taskIdToMemoryBlockMap;
 
   /**
    * singleton instance
@@ -142,7 +142,7 @@ public class UnsafeSortMemoryManager {
     }
   }
 
-  public synchronized void freeMemory(long taskId, MemoryBlock memoryBlock) {
+  public synchronized void freeMemory(String taskId, MemoryBlock memoryBlock) {
     if (taskIdToMemoryBlockMap.containsKey(taskId)) {
       taskIdToMemoryBlockMap.get(taskId).remove(memoryBlock);
     }
@@ -164,7 +164,7 @@ public class UnsafeSortMemoryManager {
    * when in case of task failure we need to clear all the memory occupied
    * @param taskId
    */
-  public synchronized void freeMemoryAll(long taskId) {
+  public synchronized void freeMemoryAll(String taskId) {
     Set<MemoryBlock> memoryBlockSet = null;
     memoryBlockSet = taskIdToMemoryBlockMap.remove(taskId);
     long occuppiedMemory = 0;
@@ -196,7 +196,7 @@ public class UnsafeSortMemoryManager {
    * @param memoryRequested
    * @return memory block
    */
-  public synchronized MemoryBlock allocateMemoryLazy(long taskId, long memoryRequested) {
+  public synchronized MemoryBlock allocateMemoryLazy(String taskId, long memoryRequested) {
     MemoryBlock allocate = allocator.allocate(memoryRequested);
     Set<MemoryBlock> listOfMemoryBlock = taskIdToMemoryBlockMap.get(taskId);
     if (null == listOfMemoryBlock) {
@@ -210,7 +210,8 @@ public class UnsafeSortMemoryManager {
   /**
    * It tries to allocate memory of `size` bytes, keep retry until it allocates successfully.
    */
-  public static MemoryBlock allocateMemoryWithRetry(long taskId, long size) throws MemoryException {
+  public static MemoryBlock allocateMemoryWithRetry(String taskId, long size)
+          throws MemoryException {
     MemoryBlock baseBlock = null;
     int tries = 0;
     while (tries < 100) {
@@ -232,7 +233,7 @@ public class UnsafeSortMemoryManager {
     return baseBlock;
   }
 
-  private synchronized MemoryBlock allocateMemory(long taskId, long memoryRequested) {
+  private synchronized MemoryBlock allocateMemory(String taskId, long memoryRequested) {
     if (memoryUsed + memoryRequested <= totalMemory) {
       MemoryBlock allocate = allocator.allocate(memoryRequested);
       memoryUsed += allocate.size();

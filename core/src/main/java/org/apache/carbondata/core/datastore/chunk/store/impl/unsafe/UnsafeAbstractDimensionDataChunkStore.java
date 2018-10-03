@@ -62,7 +62,7 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
    */
   protected boolean isMemoryOccupied;
 
-  private final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
+  private final String taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
 
   /**
    * Constructor

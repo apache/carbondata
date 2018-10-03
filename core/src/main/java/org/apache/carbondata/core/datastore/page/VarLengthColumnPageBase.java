@@ -45,7 +45,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   static final double FACTOR = 1.25;
 
-  final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
+  final String taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
 
   // memory allocated by Unsafe
   MemoryBlock memoryBlock;

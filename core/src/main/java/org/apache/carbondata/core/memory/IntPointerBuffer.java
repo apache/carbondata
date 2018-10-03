@@ -36,9 +36,9 @@ public class IntPointerBuffer {
 
   private MemoryBlock pointerMemoryBlock;
 
-  private long taskId;
+  private String taskId;
 
-  public IntPointerBuffer(long taskId) {
+  public IntPointerBuffer(String taskId) {
     // TODO can be configurable, it is initial size and it can grow automatically.
     this.length = 100000;
     pointerBlock = new int[length];
