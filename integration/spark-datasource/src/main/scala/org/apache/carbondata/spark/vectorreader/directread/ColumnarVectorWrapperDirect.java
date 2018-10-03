@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.vectorreader;
+package org.apache.carbondata.spark.vectorreader.directread;
 
 import java.math.BigDecimal;
 
@@ -23,27 +23,25 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 
-import org.apache.parquet.column.Encoding;
 import org.apache.spark.sql.CarbonVectorProxy;
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil;
 import org.apache.spark.sql.types.Decimal;
 
-class ColumnarVectorWrapperNew implements CarbonColumnVector {
+class ColumnarVectorWrapperDirect implements CarbonColumnVector {
 
-  private CarbonVectorProxy.ColumnVectorProxy sparkColumnVectorProxy;
+  protected CarbonVectorProxy.ColumnVectorProxy sparkColumnVectorProxy;
 
-  private CarbonVectorProxy carbonVectorProxy;
+  protected CarbonVectorProxy carbonVectorProxy;
 
-  private int ordinal;
+  protected int ordinal;
 
-  private boolean isDictionary;
+  protected boolean isDictionary;
 
   private DataType blockDataType;
 
   private CarbonColumnVector dictionaryVector;
 
-  ColumnarVectorWrapperNew(CarbonVectorProxy writableColumnVector, boolean[] filteredRows,
-      int ordinal) {
+  ColumnarVectorWrapperDirect(CarbonVectorProxy writableColumnVector, int ordinal) {
     this.sparkColumnVectorProxy = writableColumnVector.getColumnVector(ordinal);
     this.carbonVectorProxy = writableColumnVector;
     this.ordinal = ordinal;
@@ -125,10 +123,6 @@ class ColumnarVectorWrapperNew implements CarbonColumnVector {
     sparkColumnVectorProxy.putNull(rowId, ordinal);
   }
 
-  @Override public void putNullDirect(int rowId) {
-    sparkColumnVectorProxy.putNull(rowId, ordinal);
-  }
-
   @Override public void putNulls(int rowId, int count) {
     sparkColumnVectorProxy.putNulls(rowId, count, ordinal);
   }
@@ -183,8 +177,8 @@ class ColumnarVectorWrapperNew implements CarbonColumnVector {
 
   public void reserveDictionaryIds() {
     sparkColumnVectorProxy.reserveDictionaryIds(carbonVectorProxy.numRows(), ordinal);
-    dictionaryVector = new ColumnarVectorWrapperNew(carbonVectorProxy, null, ordinal);
-    ((ColumnarVectorWrapperNew) dictionaryVector).isDictionary = true;
+    dictionaryVector = new ColumnarVectorWrapperDirect(carbonVectorProxy, ordinal);
+    ((ColumnarVectorWrapperDirect) dictionaryVector).isDictionary = true;
   }
 
   @Override public CarbonColumnVector getDictionaryVector() {

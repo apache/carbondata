@@ -198,10 +198,6 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putNullDirect(int rowId) {
-    sparkColumnVectorProxy.putNull(rowId, ordinal);
-  }
-
   @Override public void putNulls(int rowId, int count) {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {

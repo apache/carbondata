@@ -170,10 +170,6 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     anyNullsSet = true;
   }
 
-  @Override public void putNullDirect(int rowId) {
-    putNull(rowId);
-  }
-
   @Override public void putNulls(int rowId, int count) {
     for (int i = 0; i < count; ++i) {
       nullBytes.set(rowId + i);
@@ -228,6 +224,31 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       return bytes[rowId];
     } else {
       return data[rowId];
+    }
+  }
+
+  public Object getDataArray() {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
+      return  byteArr;
+    } else if (dataType == DataTypes.SHORT) {
+      return shorts;
+    } else if (dataType == DataTypes.INT) {
+      return ints;
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
+      return longs;
+    } else if (dataType == DataTypes.FLOAT) {
+      return floats;
+    } else if (dataType == DataTypes.DOUBLE) {
+      return doubles;
+    } else if (dataType instanceof DecimalType) {
+      return decimals;
+    } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
+      if (null != carbonDictionary) {
+        return ints;
+      }
+      return bytes;
+    } else {
+      return data;
     }
   }
 

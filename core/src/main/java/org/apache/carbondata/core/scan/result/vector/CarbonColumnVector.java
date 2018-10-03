@@ -57,8 +57,6 @@ public interface CarbonColumnVector {
 
   void putNull(int rowId);
 
-  void putNullDirect(int rowId);
-
   void putNulls(int rowId, int count);
 
   void putNotNull(int rowId);

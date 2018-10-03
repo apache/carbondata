@@ -47,6 +47,7 @@ import org.apache.carbondata.hadoop.AbstractRecordReader;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.hadoop.InputMetricsStats;
+import org.apache.carbondata.spark.vectorreader.directread.ColumnarVectorWrapperDirect;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -296,17 +297,18 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
       }
     }
     CarbonColumnVector[] vectors = new CarbonColumnVector[fields.length];
-    boolean[] filteredRows = new boolean[vectorProxy.numRows()];
+    boolean[] filteredRows = null;
     if (queryModel.isDirectVectorFill()) {
       for (int i = 0; i < fields.length; i++) {
-        vectors[i] = new ColumnarVectorWrapperNew(vectorProxy, filteredRows, i);
+        vectors[i] = new ColumnarVectorWrapperDirect(vectorProxy, i);
         if (isNoDictStringField[i]) {
-          if (vectors[i] instanceof ColumnarVectorWrapperNew) {
-            ((ColumnarVectorWrapperNew) vectors[i]).reserveDictionaryIds();
+          if (vectors[i] instanceof ColumnarVectorWrapperDirect) {
+            ((ColumnarVectorWrapperDirect) vectors[i]).reserveDictionaryIds();
           }
         }
       }
     } else {
+      filteredRows = new boolean[vectorProxy.numRows()];
       for (int i = 0; i < fields.length; i++) {
         vectors[i] = new ColumnarVectorWrapper(vectorProxy, filteredRows, i);
         if (isNoDictStringField[i]) {

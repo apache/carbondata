@@ -321,7 +321,7 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
           throw new RuntimeException("internal error: " + this.toString());
         }
         for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
-          vector.putNullDirect(i);
+          vector.putNull(i);
         }
       }
 
