@@ -24,7 +24,9 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Row}
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.TIMESERIES
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.util.SparkQueryTest
 
 class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterAll {
@@ -32,6 +34,8 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
   val timeSeries = TIMESERIES.toString
 
   override def beforeAll: Unit = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     sql("drop table if exists mainTable")
     sql("drop table if exists mainTableavg")
     sql("drop table if exists agg0")
@@ -454,6 +458,9 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
     sql("DROP TABLE IF EXISTS mainTableavg")
     sql("DROP TABLE IF EXISTS filtertable")
     sql("DROP TABLE IF EXISTS grouptable")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
   }
 
 }

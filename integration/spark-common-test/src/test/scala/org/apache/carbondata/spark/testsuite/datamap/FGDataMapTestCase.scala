@@ -45,7 +45,7 @@ import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf
-import org.apache.carbondata.core.util.ByteUtil
+import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.Event
 import org.apache.carbondata.spark.testsuite.datacompaction.CompactionSupportGlobalSortBigFileTest
@@ -437,6 +437,8 @@ class FGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
     //n should be about 5000000 of reset if size is default 1024
     val n = 150000
     CompactionSupportGlobalSortBigFileTest.createFile(file2, n * 4, n)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     sql("DROP TABLE IF EXISTS normal_test")
     sql(
       """
@@ -569,5 +571,8 @@ class FGDataMapTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS normal_test")
     sql("DROP TABLE IF EXISTS datamap_test")
     sql("DROP TABLE IF EXISTS datamap_testFG")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
   }
 }
