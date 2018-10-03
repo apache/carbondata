@@ -104,7 +104,7 @@ CarbonData DDL statements are documented here,which includes:
 
  Following are the guidelines for TBLPROPERTIES, CarbonData's additional table options can be set via carbon.properties.
 
-   - **Dictionary Encoding Configuration**
+   - ##### Dictionary Encoding Configuration
 
      Dictionary encoding is turned off for all columns by default from 1.3 onwards, you can use this command for including or excluding columns to do dictionary encoding.
      Suggested use cases : do dictionary encoding for low cardinality columns, it might help to improve data compression ratio and performance.
@@ -115,7 +115,7 @@ CarbonData DDL statements are documented here,which includes:
 	 
 	 **NOTE**: Dictionary Include/Exclude for complex child columns is not supported.
 	
-   - **Inverted Index Configuration**
+   - ##### Inverted Index Configuration
 
      By default inverted index is enabled, it might help to improve compression ratio and query speed, especially for low cardinality columns which are in reward position.
      Suggested use cases : For high cardinality columns, you can disable the inverted index for improving the data loading performance.
@@ -124,7 +124,7 @@ CarbonData DDL statements are documented here,which includes:
      TBLPROPERTIES ('NO_INVERTED_INDEX'='column1, column3')
      ```
 
-   - **Sort Columns Configuration**
+   - ##### Sort Columns Configuration
 
      This property is for users to specify which columns belong to the MDK(Multi-Dimensions-Key) index.
      * If users don't specify "SORT_COLUMN" property, by default MDK index be built by using all dimension columns except complex data type column. 
@@ -139,7 +139,7 @@ CarbonData DDL statements are documented here,which includes:
      ```
      **NOTE**: Sort_Columns for Complex datatype columns is not supported.
 
-   - **Sort Scope Configuration**
+   - ##### Sort Scope Configuration
    
      This property is for users to specify the scope of the sort during data load, following are the types of sort scope.
      

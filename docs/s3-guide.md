@@ -15,7 +15,7 @@
     limitations under the License.
 -->
 
-# S3 Guide (Alpha Feature 1.4.1)
+# S3 Guide
 
 Object storage is the recommended storage format in cloud as it can support storing large data 
 files. S3 APIs are widely used for accessing object stores. This can be 

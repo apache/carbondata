@@ -15,9 +15,9 @@
     limitations under the License.
 -->
 
-# Carbon as Spark's Datasource
+# CarbonData as Spark's Datasource
 
-The Carbon fileformat is now integrated as Spark datasource for read and write operation without using CarbonSession. This is useful for the users who wants same Spark datasource. 
+The CarbonData fileformat is now integrated as Spark datasource for read and write operation without using CarbonSession. This is useful for users who wants to use carbondata as spark's data source. 
 
 **Note:** You can only apply the features of Spark datasource similar to Parquet. The carbon session features are not supported.
 
@@ -42,13 +42,13 @@ Now you can create Carbon table using Spark's datasource DDL syntax.
 
 | Property | Default Value | Description |
 |-----------|--------------|------------|
-| table_blocksize | 1024 | Size of blocks to write onto hdfs |
+| table_blocksize | 1024 | Size of blocks to write onto hdfs. For  more details, see [Table Block Size Configuration](./ddl-of-carbondata.md#table-block-size-configuration) |
 | table_blocklet_size | 64 | Size of blocklet to write |
 | local_dictionary_threshold | 10000 | Cardinality upto which the local dictionary can be generated  |
 | local_dictionary_enable | false | Enable local dictionary generation |
-| sort_columns | all dimensions are sorted | Comma separated string columns which to include in sort and its order of sort |
+| sort_columns | all dimensions are sorted | Columns to include in sort and its order of sort. |
 | sort_scope | local_sort | Sort scope of the load.Options include no sort, local sort, batch sort, and global sort |
-| long_string_columns | null | Comma separated string columns which are more than 32k length |
+| long_string_columns | null | Comma separated string/char/varchar columns which are more than 32k length |
 
 ## Example 
 
