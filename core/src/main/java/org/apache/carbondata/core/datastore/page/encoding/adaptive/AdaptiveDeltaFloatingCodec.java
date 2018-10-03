@@ -38,6 +38,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.Encoding;
 
@@ -243,52 +244,26 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
       DataType type = columnPage.getDataType();
       int pageSize = columnPage.getPageSize();
       BitSet deletedRows = vectorInfo.deletedRows;
-      if (deletedRows != null && !deletedRows.isEmpty()) {
-        int k = 0;
+      DataType dataType = vector.getType();
+      vector = ColumnarVectorWrapperDirectFactory
+          .getDirectVectorWrapperFactory(vector, null, nullBits, deletedRows);
+      if (dataType == DataTypes.FLOAT) {
+        float floatFactor = factor.floatValue();
         if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {
           byte[] byteData = columnPage.getByteData();
           for (int i = 0; i < pageSize; i++) {
-            if (!deletedRows.get(i)) {
-              if (nullBits.get(i)) {
-                vector.putNull(k++);
-              } else {
-                vector.putDouble(k++, (max - byteData[i]) / factor);
-              }
-            }
+            vector.putFloat(i, (max - byteData[i]) / floatFactor);
           }
         } else if (type == DataTypes.SHORT) {
           short[] shortData = columnPage.getShortData();
           for (int i = 0; i < pageSize; i++) {
-            if (!deletedRows.get(i)) {
-              if (nullBits.get(i)) {
-                vector.putNull(k++);
-              } else {
-                vector.putDouble(k++, (max - shortData[i]) / factor);
-              }
-            }
+            vector.putFloat(i, (max - shortData[i]) / floatFactor);
           }
 
         } else if (type == DataTypes.SHORT_INT) {
           int[] shortIntData = columnPage.getShortIntData();
           for (int i = 0; i < pageSize; i++) {
-            if (!deletedRows.get(i)) {
-              if (nullBits.get(i)) {
-                vector.putNull(k++);
-              } else {
-                vector.putDouble(k++, (max - shortIntData[i]) / factor);
-              }
-            }
-          }
-        } else if (type == DataTypes.INT) {
-          int[] intData = columnPage.getIntData();
-          for (int i = 0; i < pageSize; i++) {
-            if (!deletedRows.get(i)) {
-              if (nullBits.get(i)) {
-                vector.putNull(k++);
-              } else {
-                vector.putDouble(k++, (max - intData[i]) / factor);
-              }
-            }
+            vector.putFloat(i, (max - shortIntData[i]) / floatFactor);
           }
         } else {
           throw new RuntimeException("internal error: " + this.toString());
@@ -318,7 +293,9 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
         } else {
           throw new RuntimeException("internal error: " + this.toString());
         }
+      }
 
+      if (deletedRows == null || deletedRows.isEmpty()) {
         for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
           vector.putNull(i);
         }

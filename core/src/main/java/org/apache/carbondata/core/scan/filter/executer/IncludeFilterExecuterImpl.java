@@ -110,20 +110,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       boolean isDecoded = false;
       for (int i = 0; i < dimensionRawColumnChunk.getPagesCount(); i++) {
         if (dimensionRawColumnChunk.getMaxValues() != null) {
-          boolean scanRequired;
-          // for no dictionary measure column comparison can be done
-          // on the original data as like measure column
-          if (DataTypeUtil.isPrimitiveColumn(dimColumnEvaluatorInfo.getDimension().getDataType())
-              && !dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)) {
-            scanRequired = isScanRequired(dimensionRawColumnChunk.getMaxValues()[i],
-                dimensionRawColumnChunk.getMinValues()[i], dimColumnExecuterInfo.getFilterKeys(),
-                dimColumnEvaluatorInfo.getDimension().getDataType());
-          } else {
-            scanRequired = isScanRequired(dimensionRawColumnChunk.getMaxValues()[i],
-              dimensionRawColumnChunk.getMinValues()[i], dimColumnExecuterInfo.getFilterKeys(),
-              dimensionRawColumnChunk.getMinMaxFlagArray()[i]);
-          }
-          if (scanRequired) {
+          if (isScanRequired(dimensionRawColumnChunk, i)) {
             DimensionColumnPage dimensionColumnPage = dimensionRawColumnChunk.decodeColumnPage(i);
             if (!isDecoded) {
               filterValues =  FilterUtil
@@ -180,6 +167,23 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     return null;
   }
 
+  private boolean isScanRequired(DimensionRawColumnChunk dimensionRawColumnChunk, int i) {
+    boolean scanRequired;
+    // for no dictionary measure column comparison can be done
+    // on the original data as like measure column
+    if (DataTypeUtil.isPrimitiveColumn(dimColumnEvaluatorInfo.getDimension().getDataType())
+        && !dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+      scanRequired = isScanRequired(dimensionRawColumnChunk.getMaxValues()[i],
+          dimensionRawColumnChunk.getMinValues()[i], dimColumnExecuterInfo.getFilterKeys(),
+          dimColumnEvaluatorInfo.getDimension().getDataType());
+    } else {
+      scanRequired = isScanRequired(dimensionRawColumnChunk.getMaxValues()[i],
+        dimensionRawColumnChunk.getMinValues()[i], dimColumnExecuterInfo.getFilterKeys(),
+        dimensionRawColumnChunk.getMinMaxFlagArray()[i]);
+    }
+    return scanRequired;
+  }
+
   @Override public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
       throws FilterUnsupportedException, IOException {
     if (isDimensionPresentInCurrentBlock) {
@@ -196,9 +200,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       BitSet bitSet = new BitSet(dimensionRawColumnChunk.getPagesCount());
       for (int i = 0; i < dimensionRawColumnChunk.getPagesCount(); i++) {
         if (dimensionRawColumnChunk.getMaxValues() != null) {
-          if (isScanRequired(dimensionRawColumnChunk.getMaxValues()[i],
-              dimensionRawColumnChunk.getMinValues()[i], dimColumnExecuterInfo.getFilterKeys(),
-              dimensionRawColumnChunk.getMinMaxFlagArray()[i])) {
+          if (isScanRequired(dimensionRawColumnChunk, i)) {
             bitSet.set(i);
           }
         } else {

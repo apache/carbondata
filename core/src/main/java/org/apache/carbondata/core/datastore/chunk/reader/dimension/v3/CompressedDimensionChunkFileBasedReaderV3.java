@@ -280,7 +280,6 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
             // get the reverse index
             invertedIndexesReverse = CarbonUtil.getInvertedReverseIndex(invertedIndexes);
           } else {
-            vectorInfo.isExplictSorted = true;
             vectorInfo.invertedIndex = invertedIndexes;
           }
         }

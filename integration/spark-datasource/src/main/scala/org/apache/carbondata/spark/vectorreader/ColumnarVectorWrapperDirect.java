@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.vectorreader.directread;
+package org.apache.carbondata.spark.vectorreader;
 
 import java.math.BigDecimal;
 

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.vectorreader.directread;
+package org.apache.carbondata.core.scan.result.vector.impl.directread;
 
 public interface ConvertableVector {
 

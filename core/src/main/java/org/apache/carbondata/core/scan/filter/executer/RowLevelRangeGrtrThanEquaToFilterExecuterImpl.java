@@ -234,19 +234,7 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
       boolean isExclude = false;
       for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
         if (rawColumnChunk.getMaxValues() != null) {
-          boolean scanRequired;
-          DataType dataType = dimColEvaluatorInfoList.get(0).getDimension().getDataType();
-          // for no dictionary measure column comparison can be done
-          // on the original data as like measure column
-          if (DataTypeUtil.isPrimitiveColumn(dataType) && !dimColEvaluatorInfoList.get(0)
-              .getDimension().hasEncoding(Encoding.DICTIONARY)) {
-            scanRequired =
-                isScanRequired(rawColumnChunk.getMaxValues()[i], this.filterRangeValues, dataType);
-          } else {
-            scanRequired = isScanRequired(rawColumnChunk.getMaxValues()[i], this.filterRangeValues,
-              rawColumnChunk.getMinMaxFlagArray()[i]);
-          }
-          if (scanRequired) {
+          if (isScanRequired(rawColumnChunk, i)) {
             int compare = ByteUtil.UnsafeComparer.INSTANCE
                 .compareTo(filterRangeValues[0], rawColumnChunk.getMinValues()[i]);
             if (compare <= 0) {
@@ -331,6 +319,22 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
     }
   }
 
+  private boolean isScanRequired(DimensionRawColumnChunk rawColumnChunk, int i) {
+    boolean scanRequired;
+    DataType dataType = dimColEvaluatorInfoList.get(0).getDimension().getDataType();
+    // for no dictionary measure column comparison can be done
+    // on the original data as like measure column
+    if (DataTypeUtil.isPrimitiveColumn(dataType) && !dimColEvaluatorInfoList.get(0)
+        .getDimension().hasEncoding(Encoding.DICTIONARY)) {
+      scanRequired =
+          isScanRequired(rawColumnChunk.getMaxValues()[i], this.filterRangeValues, dataType);
+    } else {
+      scanRequired = isScanRequired(rawColumnChunk.getMaxValues()[i], this.filterRangeValues,
+        rawColumnChunk.getMinMaxFlagArray()[i]);
+    }
+    return scanRequired;
+  }
+
   @Override
   public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
       throws FilterUnsupportedException, IOException {
@@ -355,8 +359,7 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
       BitSet bitSet = new BitSet(rawColumnChunk.getPagesCount());
       for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
         if (rawColumnChunk.getMaxValues() != null) {
-          if (isScanRequired(rawColumnChunk.getMaxValues()[i], this.filterRangeValues,
-              rawColumnChunk.getMinMaxFlagArray()[i])) {
+          if (isScanRequired(rawColumnChunk, i)) {
             bitSet.set(i);
           }
         } else {

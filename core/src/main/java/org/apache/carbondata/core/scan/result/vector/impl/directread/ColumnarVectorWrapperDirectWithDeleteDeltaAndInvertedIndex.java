@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.vectorreader.directread;
+package org.apache.carbondata.core.scan.result.vector.impl.directread;
 
 import java.math.BigDecimal;
 import java.util.BitSet;
@@ -23,31 +23,31 @@ import java.util.BitSet;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalType;
+import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
-import org.apache.carbondata.spark.vectorreader.ColumnarVectorWrapperDirect;
 
-import org.apache.spark.sql.types.Decimal;
-
-class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex extends ColumnarVectorWrapperDirect
-    implements ConvertableVector {
+class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
+    extends AbstractCarbonColumnarVector implements ConvertableVector {
 
   private BitSet deletedRows;
-
-  private int counter;
 
   private int[] invertedIndex;
 
   private CarbonColumnVectorImpl carbonColumnVector;
 
+  private CarbonColumnVector columnVector;
+
   private int precision;
 
+  private BitSet nullBits;
+
   public ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex(
-      ColumnarVectorWrapperDirect vectorWrapper, BitSet deletedRows, int[] invertedIndex) {
-    super(vectorWrapper.carbonVectorProxy, vectorWrapper.ordinal);
+      CarbonColumnVector vectorWrapper, BitSet deletedRows, int[] invertedIndex, BitSet nullBits) {
     this.deletedRows = deletedRows;
     this.invertedIndex = invertedIndex;
-    carbonColumnVector =
-        new CarbonColumnVectorImpl(vectorWrapper.carbonVectorProxy.numRows(), getType());
+    carbonColumnVector = new CarbonColumnVectorImpl(invertedIndex.length, vectorWrapper.getType());
+    this.columnVector = vectorWrapper;
+    this.nullBits = nullBits;
   }
 
   @Override public void putBoolean(int rowId, boolean value) {
@@ -91,37 +91,44 @@ class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex extends Columna
     carbonColumnVector.putByte(invertedIndex[rowId], value);
   }
 
+  @Override public void putNull(int rowId) {
+    nullBits.set(rowId);
+  }
+
   @Override public void convert() {
-    DataType dataType = getType();
+    DataType dataType = columnVector.getType();
     int length = invertedIndex.length;
     int counter = 0;
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       byte[] dataArray = (byte[]) carbonColumnVector.getDataArray();
       for (int i = 0; i < length; i++) {
         if (!deletedRows.get(i)) {
-          sparkColumnVectorProxy.putByte(counter++, dataArray[i], ordinal);
+          if (nullBits.get(i)) {
+            columnVector.putNull(counter++);
+          } else {
+            columnVector.putByte(counter++, dataArray[i]);
+          }
         }
       }
-
     } else if (dataType == DataTypes.SHORT) {
       short[] dataArray = (short[]) carbonColumnVector.getDataArray();
       for (int i = 0; i < length; i++) {
         if (!deletedRows.get(i)) {
-          sparkColumnVectorProxy.putShort(counter++, dataArray[i], ordinal);
+          if (nullBits.get(i)) {
+            columnVector.putNull(counter++);
+          } else {
+            columnVector.putShort(counter++, dataArray[i]);
+          }
         }
       }
     } else if (dataType == DataTypes.INT) {
       int[] dataArray = (int[]) carbonColumnVector.getDataArray();
-      if (isDictionary) {
-        for (int i = 0; i < length; i++) {
-          if (!deletedRows.get(i)) {
-            sparkColumnVectorProxy.putDictionaryInt(counter++, dataArray[i], ordinal);
-          }
-        }
-      } else {
-        for (int i = 0; i < length; i++) {
-          if (!deletedRows.get(i)) {
-            sparkColumnVectorProxy.putInt(counter++, dataArray[i], ordinal);
+      for (int i = 0; i < length; i++) {
+        if (!deletedRows.get(i)) {
+          if (nullBits.get(i)) {
+            columnVector.putNull(counter++);
+          } else {
+            columnVector.putInt(counter++, dataArray[i]);
           }
         }
       }
@@ -129,36 +136,55 @@ class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex extends Columna
       long[] dataArray = (long[]) carbonColumnVector.getDataArray();
       for (int i = 0; i < length; i++) {
         if (!deletedRows.get(i)) {
-          sparkColumnVectorProxy.putLong(counter++, dataArray[i], ordinal);
+          if (nullBits.get(i)) {
+            columnVector.putNull(counter++);
+          } else {
+            columnVector.putLong(counter++, dataArray[i]);
+          }
         }
       }
     } else if (dataType == DataTypes.FLOAT) {
       float[] dataArray = (float[]) carbonColumnVector.getDataArray();
       for (int i = 0; i < length; i++) {
         if (!deletedRows.get(i)) {
-          sparkColumnVectorProxy.putFloat(counter++, dataArray[i], ordinal);
+          if (nullBits.get(i)) {
+            columnVector.putNull(counter++);
+          } else {
+            columnVector.putFloat(counter++, dataArray[i]);
+          }
         }
       }
     } else if (dataType == DataTypes.DOUBLE) {
       double[] dataArray = (double[]) carbonColumnVector.getDataArray();
       for (int i = 0; i < length; i++) {
         if (!deletedRows.get(i)) {
-          sparkColumnVectorProxy.putDouble(counter++, dataArray[i], ordinal);
+          if (nullBits.get(i)) {
+            columnVector.putNull(counter++);
+          } else {
+            columnVector.putDouble(counter++, dataArray[i]);
+          }
         }
       }
     } else if (dataType instanceof DecimalType) {
       BigDecimal[] dataArray = (BigDecimal[]) carbonColumnVector.getDataArray();
       for (int i = 0; i < length; i++) {
         if (!deletedRows.get(i)) {
-          Decimal toDecimal = Decimal.apply(dataArray[i]);
-          sparkColumnVectorProxy.putDecimal(counter++, toDecimal, precision, ordinal);
+          if (nullBits.get(i)) {
+            columnVector.putNull(counter++);
+          } else {
+            columnVector.putDecimal(counter++, dataArray[i], precision);
+          }
         }
       }
     } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
       byte[][] dataArray = (byte[][]) carbonColumnVector.getDataArray();
       for (int i = 0; i < length; i++) {
         if (!deletedRows.get(i)) {
-          sparkColumnVectorProxy.putByteArray(counter++, dataArray[i], ordinal);
+          if (nullBits.get(i)) {
+            columnVector.putNull(counter++);
+          } else {
+            columnVector.putBytes(counter++, dataArray[i]);
+          }
         }
       }
     }

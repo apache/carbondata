@@ -25,6 +25,8 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertableVector;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -109,19 +111,12 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
     BitSet deletedRows = vectorInfo.deletedRows;
     AbstractNonDictionaryVectorFiller vectorFiller =
         NonDictionaryVectorFillerFactory.getVectorFiller(dt, lengthSize, numberOfRows);
-    if (isExplictSorted) {
-      if (deletedRows != null && !deletedRows.isEmpty()) {
-        vectorFiller.fillVectorWithInvertedIndexAndDeleteDelta(data, vector, buffer,
-            deletedRows, invertedIndex);
-      } else {
-        vectorFiller.fillVectorWithInvertedIndex(data, vector, buffer, invertedIndex);
-      }
-    } else {
-      if (deletedRows != null && !deletedRows.isEmpty()) {
-        vectorFiller.fillVectorWithDeleteDelta(data, vector, buffer, deletedRows);
-      } else {
-        vectorFiller.fillVector(data, vector, buffer);
-      }
+    BitSet nullBits = new BitSet(numberOfRows);
+    vector = ColumnarVectorWrapperDirectFactory
+        .getDirectVectorWrapperFactory(vector, invertedIndex, nullBits, deletedRows);
+    vectorFiller.fillVector(data, vector, buffer);
+    if (vector instanceof ConvertableVector) {
+      ((ConvertableVector) vector).convert();
     }
   }
 

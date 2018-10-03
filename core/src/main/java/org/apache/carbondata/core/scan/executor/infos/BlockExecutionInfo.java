@@ -632,7 +632,7 @@ public class BlockExecutionInfo {
   }
 
   public boolean isDirectVectorFill() {
-    return isDirectVectorFill;
+    return isDirectVectorFill && !isRestructuredBlock;
   }
 
   public void setDirectVectorFill(boolean directVectorFill) {

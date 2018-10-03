@@ -349,8 +349,9 @@ public abstract class BlockletScannedResult {
     rowCounter = 0;
     currentRow = -1;
     pageCounter++;
-    if (null != deletedRecordMap) {
-      currentDeleteDeltaVo = deletedRecordMap.get(blockletNumber + "_" + pageCounter);
+    if (null != deletedRecordMap && pageCounter < pagesFiltered.length) {
+      currentDeleteDeltaVo =
+          deletedRecordMap.get(blockletNumber + "_" + pagesFiltered[pageCounter]);
     }
   }
 
@@ -561,7 +562,13 @@ public abstract class BlockletScannedResult {
     // if deleted recors map is present for this block
     // then get the first page deleted vo
     if (null != deletedRecordMap) {
-      currentDeleteDeltaVo = deletedRecordMap.get(blockletNumber + '_' + pageCounter);
+      String key;
+      if (pagesFiltered != null) {
+        key = blockletNumber + '_' + pagesFiltered[pageCounter];
+      } else {
+        key = blockletNumber + '_' + pageCounter;
+      }
+      currentDeleteDeltaVo = deletedRecordMap.get(key);
     }
   }
 

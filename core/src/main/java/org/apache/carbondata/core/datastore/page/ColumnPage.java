@@ -39,6 +39,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE;
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE_ARRAY;
+import static org.apache.carbondata.core.metadata.datatype.DataTypes.LONG;
 
 public abstract class ColumnPage {
 
@@ -221,7 +222,9 @@ public abstract class ColumnPage {
       } else if (dataType == DataTypes.INT) {
         instance = newIntPage(columnPageEncoderMeta, new int[pageSize]);
       } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
-        instance = newLongPage(columnPageEncoderMeta, new long[pageSize]);
+        instance = newLongPage(
+            new ColumnPageEncoderMeta(columnPageEncoderMeta.getColumnSpec(), LONG,
+                columnPageEncoderMeta.getCompressorName()), new long[pageSize]);
       } else if (dataType == DataTypes.FLOAT) {
         instance = newFloatPage(columnPageEncoderMeta, new float[pageSize]);
       } else if (dataType == DataTypes.DOUBLE) {
@@ -884,7 +887,7 @@ public abstract class ColumnPage {
       return decimalPage;
     } else if (storeDataType == DataTypes.SHORT_INT) {
       byte[] shortIntData = compressor.unCompressByte(compressedData, offset, length);
-      decimalPage = createDecimalPage(meta, shortIntData.length);
+      decimalPage = createDecimalPage(meta, shortIntData.length / 3);
       decimalPage.setShortIntPage(shortIntData);
       return decimalPage;
     }  else if (storeDataType == DataTypes.INT) {

@@ -20,9 +20,12 @@ package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertableVector;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 
@@ -50,56 +53,18 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
       ColumnVectorInfo vectorInfo) {
     CarbonColumnVector vector = vectorInfo.vector;
     BitSet deletedRows = vectorInfo.deletedRows;
-    if (!isExplictSorted) {
-      if (deletedRows != null && !deletedRows.isEmpty()) {
-        fillVectorWithDelta(data, vectorInfo, vector, deletedRows);
-      } else {
-        fillVector(data, vectorInfo, vector);
-      }
-    } else {
-      if (deletedRows != null && !deletedRows.isEmpty()) {
-        fillVectorWithInvertedIndexWithDelta(invertedIndex, data, vectorInfo, vector, deletedRows);
-      } else {
-        fillVectorWithInvertedIndex(invertedIndex, data, vectorInfo, vector);
-      }
-    }
-  }
-
-  private void fillVectorWithInvertedIndex(int[] invertedIndex, byte[] data,
-      ColumnVectorInfo vectorInfo, CarbonColumnVector vector) {
-    if (vector.getBlockDataType() == DataTypes.DATE) {
-      for (int i = 0; i < numOfRows; i++) {
-        int surrogateInternal =
-            CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
-        if (surrogateInternal == 1) {
-          vector.putNull(invertedIndex[i]);
-        } else {
-          vector.putInt(invertedIndex[i],
-              surrogateInternal - DateDirectDictionaryGenerator.cutOffDate);
-        }
-      }
-    } else if (vector.getBlockDataType() == DataTypes.TIMESTAMP) {
-      for (int i = 0; i < numOfRows; i++) {
-        int surrogateInternal =
-            CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
-        if (surrogateInternal == 1) {
-          vector.putNull(invertedIndex[i]);
-        } else {
-          Object valueFromSurrogate =
-              vectorInfo.directDictionaryGenerator.getValueFromSurrogate(surrogateInternal);
-          vector.putLong(invertedIndex[i], (long)valueFromSurrogate);
-        }
-      }
-    } else {
-      for (int i = 0; i < numOfRows; i++) {
-        vector.putInt(invertedIndex[i],
-            CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize));
-      }
+    BitSet nullBits = new BitSet(numOfRows);
+    vector = ColumnarVectorWrapperDirectFactory
+        .getDirectVectorWrapperFactory(vector, invertedIndex, nullBits, deletedRows);
+    fillVector(data, vectorInfo, vector);
+    if (vector instanceof ConvertableVector) {
+      ((ConvertableVector) vector).convert();
     }
   }
 
   private void fillVector(byte[] data, ColumnVectorInfo vectorInfo, CarbonColumnVector vector) {
-    if (vector.getBlockDataType() == DataTypes.DATE) {
+    DataType dataType = vectorInfo.vector.getBlockDataType();
+    if (dataType == DataTypes.DATE) {
       for (int i = 0; i < numOfRows; i++) {
         int surrogateInternal =
             CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
@@ -109,7 +74,7 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
           vector.putInt(i, surrogateInternal - DateDirectDictionaryGenerator.cutOffDate);
         }
       }
-    } else if (vector.getBlockDataType() == DataTypes.TIMESTAMP) {
+    } else if (dataType == DataTypes.TIMESTAMP) {
       for (int i = 0; i < numOfRows; i++) {
         int surrogateInternal =
             CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
@@ -125,110 +90,6 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
       for (int i = 0; i < numOfRows; i++) {
         vector.putInt(i,
             CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize));
-      }
-    }
-  }
-
-  private void fillVectorWithDelta(byte[] data, ColumnVectorInfo vectorInfo,
-      CarbonColumnVector vector, BitSet deletedRows) {
-    int k = 0;
-    if (vector.getBlockDataType() == DataTypes.DATE) {
-      for (int i = 0; i < numOfRows; i++) {
-        if (!deletedRows.get(i)) {
-          int surrogateInternal =
-              CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
-          if (surrogateInternal == 1) {
-            vector.putNull(k++);
-          } else {
-            vector.putInt(k++, surrogateInternal - DateDirectDictionaryGenerator.cutOffDate);
-          }
-        }
-      }
-    } else if (vector.getBlockDataType() == DataTypes.TIMESTAMP) {
-      for (int i = 0; i < numOfRows; i++) {
-        if (!deletedRows.get(i)) {
-          int surrogateInternal =
-              CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
-          if (surrogateInternal == 1) {
-            vector.putNull(k++);
-          } else {
-            Object valueFromSurrogate =
-                vectorInfo.directDictionaryGenerator.getValueFromSurrogate(surrogateInternal);
-            vector.putLong(k++, (long) valueFromSurrogate);
-          }
-        }
-      }
-    } else {
-      for (int i = 0; i < numOfRows; i++) {
-        if (!deletedRows.get(i)) {
-          vector.putInt(k++,
-              CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize));
-        }
-      }
-    }
-  }
-
-  private void fillVectorWithInvertedIndexWithDelta(int[] invertedIndex, byte[] data,
-      ColumnVectorInfo vectorInfo, CarbonColumnVector vector, BitSet deletedRows) {
-    int k = 0;
-    if (vector.getBlockDataType() == DataTypes.DATE) {
-      int[] finalData = new int[numOfRows];
-      for (int i = 0; i < numOfRows; i++) {
-        int surrogateInternal =
-            CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
-
-        if (surrogateInternal == 1) {
-          finalData[invertedIndex[i]] = surrogateInternal;
-        } else {
-          finalData[invertedIndex[i]] =
-              surrogateInternal - DateDirectDictionaryGenerator.cutOffDate;
-        }
-      }
-      for (int i = 0; i < finalData.length; i++) {
-        if (!deletedRows.get(i)) {
-          if (finalData[i] == 1) {
-            vector.putNull(k++);
-          } else {
-            vector.putInt(k++, finalData[i]);
-          }
-        }
-      }
-    } else if (vector.getBlockDataType() == DataTypes.TIMESTAMP) {
-      long[] finalData = new long[numOfRows];
-      for (int i = 0; i < numOfRows; i++) {
-        int surrogateInternal =
-            CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
-        if (surrogateInternal == 1) {
-          finalData[invertedIndex[i]] = surrogateInternal;
-        } else {
-          Object valueFromSurrogate =
-              vectorInfo.directDictionaryGenerator.getValueFromSurrogate(surrogateInternal);
-          finalData[invertedIndex[i]] = (long) valueFromSurrogate;
-        }
-      }
-      for (int i = 0; i < finalData.length; i++) {
-        if (!deletedRows.get(i)) {
-          if (finalData[i] == 1) {
-            vector.putNull(k++);
-          } else {
-            vector.putLong(k++, finalData[i]);
-          }
-        }
-      }
-    } else {
-      int[] finalData = new int[numOfRows];
-      for (int i = 0; i < numOfRows; i++) {
-        finalData[invertedIndex[i]] =
-            CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
-      }
-      for (int i = 0; i < finalData.length; i++) {
-        if (!deletedRows.get(i)) {
-          if (finalData[i] == 1) {
-            vector.putNull(k++);
-          } else {
-            vector.putInt(k++, finalData[i]);
-          }
-        }
       }
     }
   }
