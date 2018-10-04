@@ -839,12 +839,16 @@ class TableNewProcessor(cm: TableModel) {
       x => tablePropertiesMap.put(x._1, x._2)
     }
     // Add table comment to table properties
-    tablePropertiesMap.put("comment", cm.tableComment.getOrElse(""))
+    if (cm.tableComment.nonEmpty) {
+      tablePropertiesMap.put("comment", cm.tableComment.get)
+    }
     val badRecordsPath = getBadRecordsPath(tablePropertiesMap,
       cm.tableName,
       tableSchema.getTableId,
       cm.databaseNameOp.getOrElse("default"))
-    tablePropertiesMap.put("bad_records_path", badRecordsPath)
+    if (badRecordsPath.nonEmpty) {
+      tablePropertiesMap.put("bad_records_path", badRecordsPath.get)
+    }
     tableSchema.setTableProperties(tablePropertiesMap)
     if (cm.bucketFields.isDefined) {
       val bucketCols = cm.bucketFields.get.bucketColumns.map { b =>
@@ -896,14 +900,13 @@ class TableNewProcessor(cm: TableModel) {
   private def getBadRecordsPath(tablePropertiesMap: util.HashMap[String, String],
       tableName: String,
       tableId: String,
-      databaseName: String): String = {
-    val badRecordsPath = tablePropertiesMap.asScala
-      .getOrElse("bad_records_path", CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL)
-    if (badRecordsPath == null || badRecordsPath.isEmpty) {
-      CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL
+      databaseName: String): Option[String] = {
+    val badRecordsPath = tablePropertiesMap.asScala.get("bad_records_path")
+    if (badRecordsPath.nonEmpty) {
+      Some(badRecordsPath + CarbonCommonConstants.FILE_SEPARATOR + databaseName +
+      CarbonCommonConstants.FILE_SEPARATOR + s"${tableName}_$tableId")
     } else {
-      badRecordsPath + CarbonCommonConstants.FILE_SEPARATOR + databaseName +
-      CarbonCommonConstants.FILE_SEPARATOR + s"${tableName}_$tableId"
+      None
     }
   }
 
