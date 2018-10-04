@@ -271,4 +271,88 @@ class TableLevelCompactionOptionTest extends QueryTest
     assert(!segmentSequenceIds.contains("0.1"))
     assert(!segmentSequenceIds.contains("3.1"))
   }
+
+  test("AUTO MERGE TRUE:Verify 2nd Level compaction equals to 1"){
+    sql("DROP TABLE IF EXISTS tablecompaction_table")
+    sql(
+      """
+        |create table tablecompaction_table(
+        |name string,age int) stored by 'carbondata'
+        |tblproperties('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='2,1')
+      """.stripMargin)
+
+    for(i <-0 until 4){
+      sql("insert into tablecompaction_table select 'a',12")
+    }
+    var segments = sql("SHOW SEGMENTS FOR TABLE tablecompaction_table")
+    var segmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
+    assert(segmentSequenceIds.size==6)
+    assert(segmentSequenceIds.contains("0.1"))
+    assert(segmentSequenceIds.contains("2.1"))
+  }
+
+  test("AUTO MERGE FALSE:Verify 2nd Level compaction equals to 1"){
+    sql("DROP TABLE IF EXISTS tablecompaction_table")
+    sql(
+      """
+        |create table tablecompaction_table(
+        |name string,age int) stored by 'carbondata'
+        |tblproperties('COMPACTION_LEVEL_THRESHOLD'='2,1')
+      """.stripMargin)
+
+    for(i <-0 until 4){
+      sql("insert into tablecompaction_table select 'a',12")
+    }
+    sql("alter table tablecompaction_table compact 'minor' ")
+    var segments = sql("SHOW SEGMENTS FOR TABLE tablecompaction_table")
+    var segmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
+    assert(segmentSequenceIds.size==6)
+    assert(segmentSequenceIds.contains("0.1"))
+    assert(segmentSequenceIds.contains("2.1"))
+  }
+
+  // 2nd Level compaction value = 0 is supported by system level(like 6,0)
+  // same need to support for table level also
+  test("Verify 2nd Level compaction equals to 0"){
+    sql("DROP TABLE IF EXISTS tablecompaction_table")
+    sql(
+      """
+        |create table tablecompaction_table(
+        |name string,age int) stored by 'carbondata'
+        |tblproperties('AUTO_LOAD_MERGE'='true','COMPACTION_LEVEL_THRESHOLD'='2,0')
+      """.stripMargin)
+
+    for(i <-0 until 4){
+      sql("insert into tablecompaction_table select 'a',12")
+    }
+    var segments = sql("SHOW SEGMENTS FOR TABLE tablecompaction_table")
+    var segmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
+    assert(segmentSequenceIds.size==6)
+    assert(segmentSequenceIds.contains("0.1"))
+    assert(segmentSequenceIds.contains("2.1"))
+  }
+
+  test("System Level:Verify 2nd Level compaction equals to 1"){
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD, "2,1")
+    sql("DROP TABLE IF EXISTS tablecompaction_table")
+    sql(
+      """
+        |create table tablecompaction_table(
+        |name string,age int) stored by 'carbondata'
+      """.stripMargin)
+
+    for(i <-0 until 4){
+      sql("insert into tablecompaction_table select 'a',12")
+    }
+    sql("alter table tablecompaction_table compact 'minor' ")
+    var segments = sql("SHOW SEGMENTS FOR TABLE tablecompaction_table")
+    var segmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
+    assert(segmentSequenceIds.size==6)
+    assert(segmentSequenceIds.contains("0.1"))
+    assert(segmentSequenceIds.contains("2.1"))
+  }
+
 }

@@ -744,6 +744,13 @@ public final class CarbonDataMergerUtil {
     if (size >= 2) {
       level1Size = noOfSegmentLevelsCount[0];
       level2Size = noOfSegmentLevelsCount[1];
+      /*
+      Ex. if segs => 0.1,2,3 and threshold =2,1
+      during 2nd time compaction,mergeCounter becomes 1 and we checks if mergeCounter==level2Size
+      then return mergedSegments which will return 0.1 and since only 1 segment(0.1) is identified ,
+      no segment would go for compaction .So change 2nd level threshold  to 0 if it is 1.
+       */
+      level2Size = level2Size == 1 ? 0 : level2Size;
     } else if (size == 1) {
       level1Size = noOfSegmentLevelsCount[0];
     }
