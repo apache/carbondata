@@ -26,6 +26,7 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonTaskInfo;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -58,7 +59,7 @@ public class CarbonReader<T> {
     this.index = 0;
     this.currentReader = readers.get(0);
     CarbonTaskInfo carbonTaskInfo = new CarbonTaskInfo();
-    carbonTaskInfo.setTaskId(System.nanoTime());
+    carbonTaskInfo.setTaskId(CarbonUtil.generateUUID());
     ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo);
   }
 

@@ -3358,4 +3358,14 @@ public final class CarbonUtil {
     }
     return columnIndexTemp;
   }
+
+  /**
+   * Below method is to generateUUID (Random Based)
+   * later it will be extened for TimeBased,NameBased
+   *
+   * @return UUID as String
+   */
+  public static String generateUUID() {
+    return UUID.randomUUID().toString();
+  }
 }

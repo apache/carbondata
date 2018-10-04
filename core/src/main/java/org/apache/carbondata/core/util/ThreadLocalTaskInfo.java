@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.util;
 
+
 /**
  * Class to keep all the thread local variable for task
  */
@@ -30,7 +31,7 @@ public class ThreadLocalTaskInfo {
   public static CarbonTaskInfo getCarbonTaskInfo() {
     if (null == threadLocal.get()) {
       CarbonTaskInfo carbonTaskInfo = new CarbonTaskInfo();
-      carbonTaskInfo.setTaskId(System.nanoTime());
+      carbonTaskInfo.setTaskId(CarbonUtil.generateUUID());
       ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo);
     }
     return threadLocal.get();
