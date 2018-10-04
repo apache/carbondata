@@ -216,8 +216,6 @@ public class UnsafeMemoryManager {
     switch (memoryType) {
       case ONHEAP:
         return MemoryAllocator.HEAP;
-      case OFFHEAP:
-        return MemoryAllocator.UNSAFE;
       default:
         return MemoryAllocator.UNSAFE;
     }
