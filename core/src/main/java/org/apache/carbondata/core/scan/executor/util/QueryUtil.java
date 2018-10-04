@@ -760,7 +760,7 @@ public class QueryUtil {
       vector.putNull(vectorRow);
     } else {
       if (dt == DataTypes.STRING) {
-        vector.putBytes(vectorRow, 0, length, value);
+        vector.putByteArray(vectorRow, 0, length, value);
       } else if (dt == DataTypes.BOOLEAN) {
         vector.putBoolean(vectorRow, ByteUtil.toBoolean(value[0]));
       } else if (dt == DataTypes.BYTE) {
@@ -792,7 +792,7 @@ public class QueryUtil {
       vector.putNull(vectorRow);
     } else {
       if (dt == DataTypes.STRING) {
-        vector.putBytes(vectorRow, (byte[]) value);
+        vector.putByteArray(vectorRow, (byte[]) value);
       } else if (dt == DataTypes.BOOLEAN) {
         vector.putBoolean(vectorRow, (boolean) value);
       } else if (dt == DataTypes.BYTE) {

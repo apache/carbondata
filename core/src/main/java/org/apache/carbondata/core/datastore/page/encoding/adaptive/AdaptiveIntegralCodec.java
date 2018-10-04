@@ -310,9 +310,8 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
             vector.putLong(i, byteData[i] * 1000);
           }
         } else if (dataType == DataTypes.BOOLEAN) {
-          for (int i = 0; i < pageSize; i++) {
-            vector.putByte(i, byteData[i]);
-          }
+          vector.putBytes(0, pageSize, byteData, 0);
+
         } else {
           for (int i = 0; i < pageSize; i++) {
             vector.putDouble(i, byteData[i]);
@@ -321,9 +320,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       } else if (type == DataTypes.SHORT) {
         short[] shortData = columnPage.getShortData();
         if (dataType == DataTypes.SHORT) {
-          for (int i = 0; i < pageSize; i++) {
-            vector.putShort(i, shortData[i]);
-          }
+          vector.putShorts(0, pageSize, shortData, 0);
         } else if (dataType == DataTypes.INT) {
           for (int i = 0; i < pageSize; i++) {
             vector.putInt(i, (int) shortData[i]);
@@ -345,9 +342,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       } else if (type == DataTypes.SHORT_INT) {
         int[] shortIntData = columnPage.getShortIntData();
         if (dataType == DataTypes.INT) {
-          for (int i = 0; i < pageSize; i++) {
-            vector.putInt(i, (int) shortIntData[i]);
-          }
+          vector.putInts(0, pageSize, shortIntData, 0);
         } else if (dataType == DataTypes.LONG) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, shortIntData[i]);
@@ -364,9 +359,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       } else if (type == DataTypes.INT) {
         int[] intData = columnPage.getIntData();
         if (dataType == DataTypes.INT) {
-          for (int i = 0; i < pageSize; i++) {
-            vector.putInt(i, intData[i]);
-          }
+          vector.putInts(0, pageSize, intData, 0);
         } else if (dataType == DataTypes.LONG) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, intData[i]);
@@ -383,9 +376,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       } else if (type == DataTypes.LONG) {
         long[] longData = columnPage.getLongData();
         if (dataType == DataTypes.LONG) {
-          for (int i = 0; i < pageSize; i++) {
-            vector.putLong(i, longData[i]);
-          }
+          vector.putLongs(0, pageSize, longData, 0);
         } else if (dataType == DataTypes.TIMESTAMP) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, longData[i] * 1000);
@@ -393,9 +384,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
         }
       } else {
         double[] doubleData = columnPage.getDoubleData();
-        for (int i = 0; i < pageSize; i++) {
-          vector.putDouble(i, doubleData[i]);
-        }
+        vector.putDoubles(0, pageSize, doubleData, 0);
       }
     }
   };

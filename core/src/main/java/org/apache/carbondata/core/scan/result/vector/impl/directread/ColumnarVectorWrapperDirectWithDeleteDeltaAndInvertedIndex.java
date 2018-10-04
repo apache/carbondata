@@ -79,12 +79,12 @@ class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
     carbonColumnVector.putDouble(invertedIndex[rowId], value);
   }
 
-  @Override public void putBytes(int rowId, byte[] value) {
-    carbonColumnVector.putBytes(invertedIndex[rowId], value);
+  @Override public void putByteArray(int rowId, byte[] value) {
+    carbonColumnVector.putByteArray(invertedIndex[rowId], value);
   }
 
-  @Override public void putBytes(int rowId, int offset, int length, byte[] value) {
-    carbonColumnVector.putBytes(invertedIndex[rowId], offset, length, value);
+  @Override public void putByteArray(int rowId, int offset, int length, byte[] value) {
+    carbonColumnVector.putByteArray(invertedIndex[rowId], offset, length, value);
   }
 
   @Override public void putByte(int rowId, byte value) {
@@ -93,6 +93,42 @@ class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
 
   @Override public void putNull(int rowId) {
     nullBits.set(rowId);
+  }
+
+  @Override public void putFloats(int rowId, int count, float[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      carbonColumnVector.putFloat(invertedIndex[rowId++], src[i]);
+    }
+  }
+
+  @Override public void putShorts(int rowId, int count, short[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      carbonColumnVector.putShort(invertedIndex[rowId++], src[i]);
+    }
+  }
+
+  @Override public void putInts(int rowId, int count, int[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      carbonColumnVector.putInt(invertedIndex[rowId++], src[i]);
+    }
+  }
+
+  @Override public void putLongs(int rowId, int count, long[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      carbonColumnVector.putLong(invertedIndex[rowId++], src[i]);
+    }
+  }
+
+  @Override public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      carbonColumnVector.putDouble(invertedIndex[rowId++], src[i]);
+    }
+  }
+
+  @Override public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      carbonColumnVector.putByte(invertedIndex[rowId++], src[i]);
+    }
   }
 
   @Override public void convert() {
@@ -183,7 +219,7 @@ class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
           if (nullBits.get(i)) {
             columnVector.putNull(counter++);
           } else {
-            columnVector.putBytes(counter++, dataArray[i]);
+            columnVector.putByteArray(counter++, dataArray[i]);
           }
         }
       }

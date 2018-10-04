@@ -171,7 +171,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putBytes(int rowId, byte[] value) {
+  @Override public void putByteArray(int rowId, byte[] value) {
     if (!filteredRows[rowId]) {
       sparkColumnVectorProxy.putByteArray(counter++, value, ordinal);
     }
@@ -186,7 +186,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putBytes(int rowId, int offset, int length, byte[] value) {
+  @Override public void putByteArray(int rowId, int offset, int length, byte[] value) {
     if (!filteredRows[rowId]) {
       sparkColumnVectorProxy.putByteArray(counter++, value, offset, length, ordinal);
     }
@@ -287,5 +287,59 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public CarbonColumnVector getDictionaryVector() {
     return dictionaryVector;
+  }
+
+  @Override public void putFloats(int rowId, int count, float[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!filteredRows[rowId]) {
+        sparkColumnVectorProxy.putFloat(counter++, src[i], ordinal);
+      }
+      rowId++;
+    }
+  }
+
+  @Override public void putShorts(int rowId, int count, short[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!filteredRows[rowId]) {
+        sparkColumnVectorProxy.putShort(counter++, src[i], ordinal);
+      }
+      rowId++;
+    }
+  }
+
+  @Override public void putInts(int rowId, int count, int[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!filteredRows[rowId]) {
+        sparkColumnVectorProxy.putInt(counter++, src[i], ordinal);
+      }
+      rowId++;
+    }
+  }
+
+  @Override public void putLongs(int rowId, int count, long[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!filteredRows[rowId]) {
+        sparkColumnVectorProxy.putLong(counter++, src[i], ordinal);
+      }
+      rowId++;
+    }
+  }
+
+  @Override public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!filteredRows[rowId]) {
+        sparkColumnVectorProxy.putDouble(counter++, src[i], ordinal);
+      }
+      rowId++;
+    }
+  }
+
+  @Override public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!filteredRows[rowId]) {
+        sparkColumnVectorProxy.putByte(counter++, src[i], ordinal);
+      }
+      rowId++;
+    }
   }
 }

@@ -109,22 +109,22 @@ class ColumnarVectorWrapperDirectWithDeleteDelta extends AbstractCarbonColumnarV
     }
   }
 
-  @Override public void putBytes(int rowId, byte[] value) {
+  @Override public void putByteArray(int rowId, byte[] value) {
     if (!deletedRows.get(rowId)) {
       if (nullBits.get(rowId)) {
         columnVector.putNull(counter++);
       } else {
-        columnVector.putBytes(counter++, value);
+        columnVector.putByteArray(counter++, value);
       }
     }
   }
 
-  @Override public void putBytes(int rowId, int offset, int length, byte[] value) {
+  @Override public void putByteArray(int rowId, int offset, int length, byte[] value) {
     if (!deletedRows.get(rowId)) {
       if (nullBits.get(rowId)) {
         columnVector.putNull(counter++);
       } else {
-        columnVector.putBytes(counter++, offset, length, value);
+        columnVector.putByteArray(counter++, offset, length, value);
       }
     }
   }
@@ -142,6 +142,54 @@ class ColumnarVectorWrapperDirectWithDeleteDelta extends AbstractCarbonColumnarV
   @Override public void putNull(int rowId) {
     if (!deletedRows.get(rowId)) {
       columnVector.putNull(counter++);
+    }
+  }
+
+  @Override public void putFloats(int rowId, int count, float[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!deletedRows.get(rowId++)) {
+        columnVector.putFloat(counter++, src[i]);
+      }
+    }
+  }
+
+  @Override public void putShorts(int rowId, int count, short[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!deletedRows.get(rowId++)) {
+        columnVector.putShort(counter++, src[i]);
+      }
+    }
+  }
+
+  @Override public void putInts(int rowId, int count, int[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!deletedRows.get(rowId++)) {
+        columnVector.putInt(counter++, src[i]);
+      }
+    }
+  }
+
+  @Override public void putLongs(int rowId, int count, long[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!deletedRows.get(rowId++)) {
+        columnVector.putLong(counter++, src[i]);
+      }
+    }
+  }
+
+  @Override public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!deletedRows.get(rowId++)) {
+        columnVector.putDouble(counter++, src[i]);
+      }
+    }
+  }
+
+  @Override public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!deletedRows.get(rowId++)) {
+        columnVector.putByte(counter++, src[i]);
+      }
     }
   }
 }

@@ -80,24 +80,25 @@ class StringVectorFiller extends AbstractNonDictionaryVectorFiller {
     // start position will be used to store the current data position
     int startOffset = 0;
     int currentOffset = lengthSize;
+    ByteUtil.UnsafeComparer comparer = ByteUtil.UnsafeComparer.INSTANCE;
     for (int i = 0; i < numberOfRows - 1; i++) {
       buffer.position(startOffset);
       startOffset += getLengthFromBuffer(buffer) + lengthSize;
       int length = startOffset - (currentOffset);
-      if (ByteUtil.UnsafeComparer.INSTANCE.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+      if (comparer.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
           CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentOffset, length)) {
         vector.putNull(i);
       } else {
-        vector.putBytes(i, currentOffset, length, data);
+        vector.putByteArray(i, currentOffset, length, data);
       }
       currentOffset = startOffset + lengthSize;
     }
     int length = (data.length - currentOffset);
-    if (ByteUtil.UnsafeComparer.INSTANCE.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+    if (comparer.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
         CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentOffset, length)) {
       vector.putNull(numberOfRows - 1);
     } else {
-      vector.putBytes(numberOfRows - 1, currentOffset, length, data);
+      vector.putByteArray(numberOfRows - 1, currentOffset, length, data);
     }
   }
 }

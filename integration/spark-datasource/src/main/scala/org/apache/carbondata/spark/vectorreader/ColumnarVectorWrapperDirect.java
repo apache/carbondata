@@ -104,18 +104,19 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector {
     sparkColumnVectorProxy.putDoubles(rowId, count, value, ordinal);
   }
 
-  @Override public void putBytes(int rowId, byte[] value) {
+  @Override public void putByteArray(int rowId, byte[] value) {
     sparkColumnVectorProxy.putByteArray(rowId, value, ordinal);
   }
 
-  @Override public void putBytes(int rowId, int count, byte[] value) {
+  @Override
+  public void putBytes(int rowId, int count, byte[] value) {
     for (int i = 0; i < count; i++) {
       sparkColumnVectorProxy.putByteArray(rowId, value, ordinal);
       rowId++;
     }
   }
 
-  @Override public void putBytes(int rowId, int offset, int length, byte[] value) {
+  @Override public void putByteArray(int rowId, int offset, int length, byte[] value) {
     sparkColumnVectorProxy.putByteArray(rowId, value, offset, length, ordinal);
   }
 
@@ -191,5 +192,29 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector {
 
   @Override public void setFilteredRowsExist(boolean filteredRowsExist) {
 
+  }
+
+  @Override public void putFloats(int rowId, int count, float[] src, int srcIndex) {
+    sparkColumnVectorProxy.putFloats(rowId, count, src, srcIndex);
+  }
+
+  @Override public void putShorts(int rowId, int count, short[] src, int srcIndex) {
+    sparkColumnVectorProxy.putShorts(rowId, count, src, srcIndex);
+  }
+
+  @Override public void putInts(int rowId, int count, int[] src, int srcIndex) {
+    sparkColumnVectorProxy.putInts(rowId, count, src, srcIndex);
+  }
+
+  @Override public void putLongs(int rowId, int count, long[] src, int srcIndex) {
+    sparkColumnVectorProxy.putLongs(rowId, count, src, srcIndex);
+  }
+
+  @Override public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
+    sparkColumnVectorProxy.putDoubles(rowId, count, src, srcIndex);
+  }
+
+  @Override public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
+    sparkColumnVectorProxy.putBytes(rowId, count, src, srcIndex);
   }
 }

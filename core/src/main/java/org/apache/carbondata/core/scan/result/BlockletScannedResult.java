@@ -305,7 +305,7 @@ public abstract class BlockletScannedResult {
               j :
               pageFilteredRowId[pageCounter][j]);
         }
-        vector.putBytes(vectorOffset++,
+        vector.putByteArray(vectorOffset++,
             data.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       }
     }

@@ -202,6 +202,10 @@ public class CarbonVectorProxy {
             vector.putByte(rowId, value);
         }
 
+        public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
+            vector.putBytes(rowId, count, src, srcIndex);
+        }
+
         public void putShort(int rowId, short value, int ordinal) {
             vector.putShort(rowId, value);
         }
@@ -212,6 +216,10 @@ public class CarbonVectorProxy {
 
         public void putFloat(int rowId, float value, int ordinal) {
             vector.putFloat(rowId, value);
+        }
+
+        public void putFloats(int rowId, int count, float[] src, int srcIndex)  {
+            vector.putFloats(rowId, count, src, srcIndex);
         }
 
         public void putLong(int rowId, long value, int ordinal) {
@@ -230,12 +238,24 @@ public class CarbonVectorProxy {
             vector.putInts(rowId, count, value);
         }
 
+        public void putInts(int rowId, int count, int[] src, int srcIndex) {
+            vector.putInts(rowId, count, src, srcIndex);
+        }
+
         public void putShorts(int rowId, int count, short value, int ordinal) {
             vector.putShorts(rowId, count, value);
         }
 
+        public void putShorts(int rowId, int count, short[] src, int srcIndex) {
+            vector.putShorts(rowId, count, src, srcIndex);
+        }
+
         public void putLongs(int rowId, int count, long value, int ordinal) {
             vector.putLongs(rowId, count, value);
+        }
+
+        public void putLongs(int rowId, int count, long[] src, int srcIndex) {
+            vector.putLongs(rowId, count, src, srcIndex);
         }
 
         public void putDecimal(int rowId, Decimal value, int precision, int ordinal) {
@@ -245,6 +265,10 @@ public class CarbonVectorProxy {
 
         public void putDoubles(int rowId, int count, double value, int ordinal) {
             vector.putDoubles(rowId, count, value);
+        }
+
+        public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
+            vector.putDoubles(rowId, count, src, srcIndex);
         }
 
         public void putByteArray(int rowId, byte[] value, int offset, int length, int ordinal) {

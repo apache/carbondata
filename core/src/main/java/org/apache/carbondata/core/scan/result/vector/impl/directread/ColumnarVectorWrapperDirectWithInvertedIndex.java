@@ -61,12 +61,12 @@ class ColumnarVectorWrapperDirectWithInvertedIndex extends AbstractCarbonColumna
     columnVector.putDouble(invertedIndex[rowId], value);
   }
 
-  @Override public void putBytes(int rowId, byte[] value) {
-    columnVector.putBytes(invertedIndex[rowId], value);
+  @Override public void putByteArray(int rowId, byte[] value) {
+    columnVector.putByteArray(invertedIndex[rowId], value);
   }
 
-  @Override public void putBytes(int rowId, int offset, int length, byte[] value) {
-    columnVector.putBytes(invertedIndex[rowId], offset, length, value);
+  @Override public void putByteArray(int rowId, int offset, int length, byte[] value) {
+    columnVector.putByteArray(invertedIndex[rowId], offset, length, value);
   }
 
 
@@ -76,5 +76,41 @@ class ColumnarVectorWrapperDirectWithInvertedIndex extends AbstractCarbonColumna
 
   @Override public void putNull(int rowId) {
     columnVector.putNull(invertedIndex[rowId]);
+  }
+
+  @Override public void putFloats(int rowId, int count, float[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      columnVector.putFloat(invertedIndex[rowId++], src[i]);
+    }
+  }
+
+  @Override public void putShorts(int rowId, int count, short[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      columnVector.putShort(invertedIndex[rowId++], src[i]);
+    }
+  }
+
+  @Override public void putInts(int rowId, int count, int[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      columnVector.putInt(invertedIndex[rowId++], src[i]);
+    }
+  }
+
+  @Override public void putLongs(int rowId, int count, long[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      columnVector.putLong(invertedIndex[rowId++], src[i]);
+    }
+  }
+
+  @Override public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      columnVector.putDouble(invertedIndex[rowId++], src[i]);
+    }
+  }
+
+  @Override public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      columnVector.putByte(invertedIndex[rowId++], src[i]);
+    }
   }
 }
