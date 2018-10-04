@@ -1947,11 +1947,12 @@ public final class FilterUtil {
   public static void removeNullValues(DimensionColumnPage dimensionColumnPage, BitSet bitSet,
       byte[] defaultValue) {
     if (!bitSet.isEmpty()) {
-      if (null != dimensionColumnPage.getNullBits() && !dimensionColumnPage.getNullBits().isEmpty()
-          && !dimensionColumnPage.isExplicitSorted() && !dimensionColumnPage.isAdaptiveEncoded()) {
-        for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
-          if (dimensionColumnPage.getNullBits().get(i)) {
-            bitSet.flip(i);
+      if (null != dimensionColumnPage.getNullBits()) {
+        if (!dimensionColumnPage.getNullBits().isEmpty()) {
+          for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
+            if (dimensionColumnPage.getNullBits().get(i)) {
+              bitSet.flip(i);
+            }
           }
         }
       } else {

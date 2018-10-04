@@ -632,7 +632,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
       } else {
         if (dimColEvaluatorInfo.getDimension().getDataType() == DataTypes.STRING) {
           defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
-        } else {
+        } else if (!dimensionColumnPage.isAdaptiveEncoded()) {
           defaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
         }
       }
