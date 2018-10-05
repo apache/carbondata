@@ -73,6 +73,7 @@ CarbonData DDL statements are documented here,which includes:
   [TBLPROPERTIES (property_name=property_value, ...)]
   [LOCATION 'path']
   ```
+  
   **NOTE:** CarbonData also supports "STORED AS carbondata" and "USING carbondata". Find example code at [CarbonSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/CarbonSessionExample.scala) in the CarbonData repo.
 ### Usage Guidelines
 
@@ -93,10 +94,10 @@ CarbonData DDL statements are documented here,which includes:
 | [streaming](#streaming)                                      | Whether the table is a streaming table                       |
 | [LOCAL_DICTIONARY_ENABLE](#local-dictionary-configuration)   | Enable local dictionary generation                           |
 | [LOCAL_DICTIONARY_THRESHOLD](#local-dictionary-configuration) | Cardinality upto which the local dictionary can be generated |
-| [LOCAL_DICTIONARY_INCLUDE](#local-dictionary-configuration)  | Columns for which local dictionary needs to be generated.Useful when local dictionary need not be generated for all string/varchar/char columns |
-| [LOCAL_DICTIONARY_EXCLUDE](#local-dictionary-configuration)  | Columns for which local dictionary generation should be skipped.Useful when local dictionary need not be generated for few string/varchar/char columns |
+| [LOCAL_DICTIONARY_INCLUDE](#local-dictionary-configuration)  | Columns for which local dictionary needs to be generated. Useful when local dictionary need not be generated for all string/varchar/char columns |
+| [LOCAL_DICTIONARY_EXCLUDE](#local-dictionary-configuration)  | Columns for which local dictionary generation should be skipped. Useful when local dictionary need not be generated for few string/varchar/char columns |
 | [COLUMN_META_CACHE](#caching-minmax-value-for-required-columns) | Columns whose metadata can be cached in Driver for efficient pruning and improved query performance |
-| [CACHE_LEVEL](#caching-at-block-or-blocklet-level)           | Column metadata caching level.Whether to cache column metadata of block or blocklet |
+| [CACHE_LEVEL](#caching-at-block-or-blocklet-level)           | Column metadata caching level. Whether to cache column metadata of block or blocklet |
 | [flat_folder](#support-flat-folder-same-as-hiveparquet)      | Whether to write all the carbondata files in a single folder.Not writing segments folder during incremental load |
 | [LONG_STRING_COLUMNS](#string-longer-than-32000-characters)  | Columns which are greater than 32K characters                |
 | [BUCKETNUMBER](#bucketing)                                   | Number of buckets to be created                              |
@@ -137,6 +138,7 @@ CarbonData DDL statements are documented here,which includes:
      OR
      TBLPROPERTIES ('SORT_COLUMNS'='')
      ```
+	 
      **NOTE**: Sort_Columns for Complex datatype columns is not supported.
 
    - ##### Sort Scope Configuration
@@ -175,6 +177,7 @@ CarbonData DDL statements are documented here,which includes:
      ```
      TBLPROPERTIES ('TABLE_BLOCKSIZE'='512')
      ```
+	 
      **NOTE:** 512 or 512M both are accepted.
 
    - ##### Table Compaction Configuration
@@ -248,8 +251,8 @@ CarbonData DDL statements are documented here,which includes:
 | ---------- | ------------- | ----------- |
 | LOCAL_DICTIONARY_ENABLE | false | Whether to enable local dictionary generation. **NOTE:** If this property is defined, it will override the value configured at system level by '***carbon.local.dictionary.enable***'.Local dictionary will be generated for all string/varchar/char columns unless LOCAL_DICTIONARY_INCLUDE, LOCAL_DICTIONARY_EXCLUDE is configured. |
 | LOCAL_DICTIONARY_THRESHOLD | 10000 | The maximum cardinality of a column upto which carbondata can try to generate local dictionary (maximum - 100000). **NOTE:** When LOCAL_DICTIONARY_THRESHOLD is defined for Complex columns, the count of distinct records of all child columns are summed up. |
-| LOCAL_DICTIONARY_INCLUDE | string/varchar/char columns| Columns for which Local Dictionary has to be generated.**NOTE:** Those string/varchar/char columns which are added into DICTIONARY_INCLUDE option will not be considered for local dictionary generation.This property needs to be configured only when local dictionary needs to be generated for few columns, skipping others.This property takes effect only when **LOCAL_DICTIONARY_ENABLE** is true or **carbon.local.dictionary.enable** is true |
-| LOCAL_DICTIONARY_EXCLUDE | none | Columns for which Local Dictionary need not be generated.This property needs to be configured only when local dictionary needs to be skipped for few columns, generating for others.This property takes effect only when **LOCAL_DICTIONARY_ENABLE** is true or **carbon.local.dictionary.enable** is true |
+| LOCAL_DICTIONARY_INCLUDE | string/varchar/char columns| Columns for which Local Dictionary has to be generated.**NOTE:** Those string/varchar/char columns which are added into DICTIONARY_INCLUDE option will not be considered for local dictionary generation. This property needs to be configured only when local dictionary needs to be generated for few columns, skipping others. This property takes effect only when **LOCAL_DICTIONARY_ENABLE** is true or **carbon.local.dictionary.enable** is true |
+| LOCAL_DICTIONARY_EXCLUDE | none | Columns for which Local Dictionary need not be generated. This property needs to be configured only when local dictionary needs to be skipped for few columns, generating for others. This property takes effect only when **LOCAL_DICTIONARY_ENABLE** is true or **carbon.local.dictionary.enable** is true |
 
    **Fallback behavior:** 
 
@@ -388,12 +391,13 @@ CarbonData DDL statements are documented here,which includes:
 
    - ##### Support Flat folder same as Hive/Parquet
 
-       This feature allows all carbondata and index files to keep directy under tablepath. Currently all carbondata/carbonindex files written under tablepath/Fact/Part0/Segment_NUM folder and it is not same as hive/parquet folder structure. This feature makes all files written will be directly under tablepath, it does not maintain any segment folder structure.This is useful for interoperability between the execution engines and plugin with other execution engines like hive or presto becomes easier.
+       This feature allows all carbondata and index files to keep directy under tablepath. Currently all carbondata/carbonindex files written under tablepath/Fact/Part0/Segment_NUM folder and it is not same as hive/parquet folder structure. This feature makes all files written will be directly under tablepath, it does not maintain any segment folder structure. This is useful for interoperability between the execution engines and plugin with other execution engines like hive or presto becomes easier.
 
        Following table property enables this feature and default value is false.
        ```
         'flat_folder'='true'
        ```
+	   
        Example:
        ```
        CREATE TABLE employee (name String, city String, id int) STORED BY 'carbondata' TBLPROPERTIES ('flat_folder'='true')
@@ -543,7 +547,7 @@ CarbonData DDL statements are documented here,which includes:
 
 ### Example
   ```
-  CREATE DATABASE carbon LOCATION “hdfs://name_cluster/dir1/carbonstore”;
+  CREATE DATABASE carbon LOCATION "hdfs://name_cluster/dir1/carbonstore";
   ```
 
 ## TABLE MANAGEMENT  
@@ -604,9 +608,9 @@ CarbonData DDL statements are documented here,which includes:
       **NOTE:** Add Complex datatype columns is not supported.
 
 Users can specify which columns to include and exclude for local dictionary generation after adding new columns. These will be appended with the already existing local dictionary include and exclude columns of main table respectively.
-  ```
+     ```
      ALTER TABLE carbon ADD COLUMNS (a1 STRING, b1 STRING) TBLPROPERTIES('LOCAL_DICTIONARY_INCLUDE'='a1','LOCAL_DICTIONARY_EXCLUDE'='b1')
-  ```
+     ```
 
    - ##### DROP COLUMNS
    
@@ -737,10 +741,11 @@ Users can specify which columns to include and exclude for local dictionary gene
   ```
   CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
                                 productNumber Int COMMENT 'unique serial number for product')
-  COMMENT “This is table comment”
+  COMMENT "This is table comment"
    STORED AS carbondata
    TBLPROPERTIES ('DICTIONARY_INCLUDE'='productNumber')
   ```
+  
   You can also SET and UNSET table comment using ALTER command.
 
   Example to SET table comment:
@@ -843,6 +848,7 @@ Users can specify which columns to include and exclude for local dictionary gene
   [TBLPROPERTIES ('PARTITION_TYPE'='HASH',
                   'NUM_PARTITIONS'='N' ...)]
   ```
+  
   **NOTE:** N is the number of hash partitions
 
 

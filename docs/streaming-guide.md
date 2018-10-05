@@ -352,7 +352,7 @@ Following example shows how to start a streaming ingest job
 
 In above example, two table is created: source and sink. The `source` table's format is `csv` and `sink` table format is `carbon`. Then a streaming job is created to stream data from source table to sink table.
 
-These two tables are normal carbon table, they can be queried independently.
+These two tables are normal carbon tables, they can be queried independently.
 
 
 
@@ -405,7 +405,7 @@ When this is issued, carbon will start a structured streaming job to do the stre
 
 - The sink table should have a TBLPROPERTY `'streaming'` equal to `true`, indicating it is a streaming table.
 - In the given STMPROPERTIES, user must specify `'trigger'`, its value must be `ProcessingTime` (In future, other value will be supported). User should also specify interval value for the streaming job.
-- If the schema specifid in sink table is different from CTAS, the streaming job will fail
+- If the schema specified in sink table is different from CTAS, the streaming job will fail
 
 For Kafka data source, create the source table by:
   ```SQL

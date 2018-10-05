@@ -47,7 +47,7 @@ It will show all DataMaps created on main table.
 
 ## Lucene DataMap Introduction
   Lucene is a high performance, full featured text search engine. Lucene is integrated to carbon as
-  an index datamap and managed along with main tables by CarbonData.User can create lucene datamap 
+  an index datamap and managed along with main tables by CarbonData. User can create lucene datamap 
   to improve query performance on string columns which has content of more length. So, user can 
   search tokenized word or pattern of it using lucene query on text content.
   
@@ -95,7 +95,7 @@ As a technique for query acceleration, Lucene indexes cannot be queried directly
 Queries are to be made on main table. when a query with TEXT_MATCH('name:c10') or 
 TEXT_MATCH_WITH_LIMIT('name:n10',10)[the second parameter represents the number of result to be 
 returned, if user does not specify this value, all results will be returned without any limit] is 
-fired, two jobs are fired.The first job writes the temporary files in folder created at table level 
+fired, two jobs are fired. The first job writes the temporary files in folder created at table level 
 which contains lucene's seach results and these files will be read in second job to give faster 
 results. These temporary files will be cleared once the query finishes.
 

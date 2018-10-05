@@ -15,7 +15,7 @@
     limitations under the License.
 -->
 
-# CarbonData BloomFilter DataMap (Alpha Feature)
+# CarbonData BloomFilter DataMap
 
 * [DataMap Management](#datamap-management)
 * [BloomFilter Datamap Introduction](#bloomfilter-datamap-introduction)
@@ -46,7 +46,7 @@ Showing all DataMaps on this table
   ```
 
 Disable Datamap
-> The datamap by default is enabled. To support tuning on query, we can disable a specific datamap during query to observe whether we can gain performance enhancement from it. This will only take effect current session.
+> The datamap by default is enabled. To support tuning on query, we can disable a specific datamap during query to observe whether we can gain performance enhancement from it. This is effective only for current session.
 
   ```
   // disable the datamap
@@ -82,7 +82,7 @@ and we always query on `id` and `name` with precise value.
 since `id` is in the sort_columns and it is orderd,
 query on it will be fast because CarbonData can skip all the irrelative blocklets.
 But queries on `name` may be bad since the blocklet minmax may not help,
-because in each blocklet the range of the value of `name` may be the same -- all from A*~z*.
+because in each blocklet the range of the value of `name` may be the same -- all from A* to z*.
 In this case, user can create a BloomFilter datamap on column `name`.
 Moreover, user can also create a BloomFilter datamap on the sort_columns.
 This is useful if user has too many segments and the range of the value of sort_columns are almost the same.

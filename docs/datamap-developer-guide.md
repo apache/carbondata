@@ -6,7 +6,7 @@ Currently, there are two 2 types of DataMap supported:
 1. IndexDataMap: DataMap that leverages index to accelerate filter query
 2. MVDataMap: DataMap that leverages Materialized View to accelerate olap style query, like SPJG query (select, predicate, join, groupby)
 
-### DataMap provider
+### DataMap Provider
 When user issues `CREATE DATAMAP dm ON TABLE main USING 'provider'`, the corresponding DataMapProvider implementation will be created and initialized. 
 Currently, the provider string can be:
 1. preaggregate: A type of MVDataMap that do pre-aggregate of single table
@@ -15,5 +15,5 @@ Currently, the provider string can be:
 
 When user issues `DROP DATAMAP dm ON TABLE main`, the corresponding DataMapProvider interface will be called.
 
-Details about [DataMap Management](./datamap/datamap-management.md#datamap-management) and supported [DSL](./datamap/datamap-management.md#overview) are documented [here](./datamap/datamap-management.md).
+Click for more details about [DataMap Management](./datamap/datamap-management.md#datamap-management) and supported [DSL](./datamap/datamap-management.md#overview).
 
