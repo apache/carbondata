@@ -112,10 +112,10 @@ CarbonData DDL statements are documented here,which includes:
 
      ```
      TBLPROPERTIES ('DICTIONARY_INCLUDE'='column1, column2')
-	 ```
-	 
-	 **NOTE**: Dictionary Include/Exclude for complex child columns is not supported.
-	
+     ```
+     
+     **NOTE**: Dictionary Include/Exclude for complex child columns is not supported.
+     
    - ##### Inverted Index Configuration
 
      By default inverted index is enabled, it might help to improve compression ratio and query speed, especially for low cardinality columns which are in reward position.
@@ -130,7 +130,7 @@ CarbonData DDL statements are documented here,which includes:
      This property is for users to specify which columns belong to the MDK(Multi-Dimensions-Key) index.
      * If users don't specify "SORT_COLUMN" property, by default MDK index be built by using all dimension columns except complex data type column. 
      * If this property is specified but with empty argument, then the table will be loaded without sort.
-	 * This supports only string, date, timestamp, short, int, long, byte and boolean data types.
+     * This supports only string, date, timestamp, short, int, long, byte and boolean data types.
      Suggested use cases : Only build MDK index for required columns,it might help to improve the data loading performance.
 
      ```
@@ -138,7 +138,7 @@ CarbonData DDL statements are documented here,which includes:
      OR
      TBLPROPERTIES ('SORT_COLUMNS'='')
      ```
-	 
+     
      **NOTE**: Sort_Columns for Complex datatype columns is not supported.
 
    - ##### Sort Scope Configuration
@@ -150,8 +150,8 @@ CarbonData DDL statements are documented here,which includes:
      * BATCH_SORT: It increases the load performance but decreases the query performance if identified blocks > parallelism.
      * GLOBAL_SORT: It increases the query performance, especially high concurrent point query.
        And if you care about loading resources isolation strictly, because the system uses the spark GroupBy to sort data, the resource can be controlled by spark. 
-	
-	### Example:
+
+    ### Example:
 
     ```
     CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
@@ -177,7 +177,7 @@ CarbonData DDL statements are documented here,which includes:
      ```
      TBLPROPERTIES ('TABLE_BLOCKSIZE'='512')
      ```
-	 
+ 
      **NOTE:** 512 or 512M both are accepted.
 
    - ##### Table Compaction Configuration
@@ -397,7 +397,7 @@ CarbonData DDL statements are documented here,which includes:
        ```
         'flat_folder'='true'
        ```
-	   
+   
        Example:
        ```
        CREATE TABLE employee (name String, city String, id int) STORED BY 'carbondata' TBLPROPERTIES ('flat_folder'='true')
@@ -616,20 +616,20 @@ Users can specify which columns to include and exclude for local dictionary gene
    
      This command is used to delete the existing column(s) in a table.
      
-	 ```
+     ```
      ALTER TABLE [db_name.]table_name DROP COLUMNS (col_name, ...)
      ```
 
      Examples:
      
-	 ```
+     ```
      ALTER TABLE carbon DROP COLUMNS (b1)
      OR
      ALTER TABLE test_db.carbon DROP COLUMNS (b1)
      
      ALTER TABLE carbon DROP COLUMNS (c1,d1)
      ```
-	 
+ 
      **NOTE:** Drop Complex child column is not supported.
 
    - ##### CHANGE DATA TYPE
@@ -637,7 +637,7 @@ Users can specify which columns to include and exclude for local dictionary gene
      This command is used to change the data type from INT to BIGINT or decimal precision from lower to higher.
      Change of decimal data type from lower precision to higher precision will only be supported for cases where there is no data loss.
      
-	 ```
+     ```
      ALTER TABLE [db_name.]table_name CHANGE col_name col_name changed_column_type
      ```
 
@@ -648,31 +648,31 @@ Users can specify which columns to include and exclude for local dictionary gene
 
      Example1:Changing data type of column a1 from INT to BIGINT.
      
-	 ```
+     ```
      ALTER TABLE test_db.carbon CHANGE a1 a1 BIGINT
      ```
      
      Example2:Changing decimal precision of column a1 from 10 to 18.
      
-	 ```
+     ```
      ALTER TABLE test_db.carbon CHANGE a1 a1 DECIMAL(18,2)
      ```
-	 
+ 
 - ##### MERGE INDEX
 
      This command is used to merge all the CarbonData index files (.carbonindex) inside a segment to a single CarbonData index merge file (.carbonindexmerge). This enhances the first query performance.
      
-	 ```
+     ```
       ALTER TABLE [db_name.]table_name COMPACT 'SEGMENT_INDEX'
      ```
 
       Examples:
       
-	  ```
+     ```
       ALTER TABLE test_db.carbon COMPACT 'SEGMENT_INDEX'
       ```
       
-	  **NOTE:**
+      **NOTE:**
 
       * Merge index is not supported on streaming table.
 
@@ -792,7 +792,7 @@ Users can specify which columns to include and exclude for local dictionary gene
   STORED AS carbondata
   ```
    **NOTE:** Hive partition is not supported on complex datatype columns.
-		
+
 
 #### Show Partitions
 
