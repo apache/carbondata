@@ -44,7 +44,7 @@ class StandardPartitionBadRecordLoggerTest extends QueryTest with BeforeAndAfter
   test("test partition redirect") {
     sql(
       s"""CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (country String) STORED BY 'carbondata' TBLPROPERTIES('BAD_RECORDS_PATH'='$warehouse')""")
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) partitioned by (country String) STORED BY 'carbondata' TBLPROPERTIES('BAD_RECORD_PATH'='$warehouse')""")
 
     val csvFilePath = s"$resourcesPath/badrecords/datasample.csv"
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales OPTIONS"

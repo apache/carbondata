@@ -374,7 +374,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     String badRecordsPath = conf.get(BAD_RECORD_PATH);
     if (StringUtils.isEmpty(badRecordsPath)) {
       badRecordsPath =
-          carbonTable.getTableInfo().getFactTable().getTableProperties().get("bad_records_path");
+          carbonTable.getTableInfo().getFactTable().getTableProperties().get("bad_record_path");
       if (StringUtils.isEmpty(badRecordsPath)) {
         badRecordsPath = carbonProperty
             .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH, carbonProperty
