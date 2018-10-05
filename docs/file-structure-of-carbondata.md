@@ -48,7 +48,7 @@ The CarbonData files are stored in the location specified by the ***carbon.store
 
 ![File Directory Structure](../docs/images/2-1_1.png?raw=true)
 
-1. ModifiedTime.mdt records the timestamp of the metadata with the modification time attribute of the file. When the drop table and create table are used, the modification time of the file is updated.This is common to all databases and hence is kept in parallel to databases
+1. ModifiedTime.mdt records the timestamp of the metadata with the modification time attribute of the file. When the drop table and create table are used, the modification time of the file is updated. This is common to all databases and hence is kept in parallel to databases
 2. The **default** is the database name and contains the user tables.default is used when user doesn't specify any database name;else user configured database name will be the directory name. user_table is the table name.
 3. Metadata directory stores schema files, tablestatus and dictionary files (including .dict, .dictmeta and .sortindex). There are three types of metadata data information files.
 4. data and index files are stored under directory named **Fact**. The Fact directory has a Part0 partition directory, where 0 is the partition number.

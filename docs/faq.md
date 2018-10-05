@@ -57,12 +57,12 @@ By default **carbon.badRecords.location** specifies the following location ``/op
 ## How to enable Bad Record Logging?
 While loading data we can specify the approach to handle Bad Records. In order to analyse the cause of the Bad Records the parameter ``BAD_RECORDS_LOGGER_ENABLE`` must be set to value ``TRUE``. There are multiple approaches to handle Bad Records which can be specified  by the parameter ``BAD_RECORDS_ACTION``.
 
-- To pad the incorrect values of the csv rows with NULL value and load the data in CarbonData, set the following in the query :
+- To pass the incorrect values of the csv rows with NULL value and load the data in CarbonData, set the following in the query :
 ```
 'BAD_RECORDS_ACTION'='FORCE'
 ```
 
-- To write the Bad Records without padding incorrect values with NULL in the raw csv (set in the parameter **carbon.badRecords.location**), set the following in the query :
+- To write the Bad Records without passing incorrect values with NULL in the raw csv (set in the parameter **carbon.badRecords.location**), set the following in the query :
 ```
 'BAD_RECORDS_ACTION'='REDIRECT'
 ```
@@ -199,7 +199,7 @@ select cntry,sum(gdp) from gdp21,pop1 where cntry=ctry group by cntry;
 ```
 
 ## Why all executors are showing success in Spark UI even after Dataload command failed at Driver side?
-Spark executor shows task as failed after the maximum number of retry attempts, but loading the data having bad records and BAD_RECORDS_ACTION (carbon.bad.records.action) is set as “FAIL” will attempt only once but will send the signal to driver as failed instead of throwing the exception to retry, as there is no point to retry if bad record found and BAD_RECORDS_ACTION is set to fail. Hence the Spark executor displays this one attempt as successful but the command has actually failed to execute. Task attempts or executor logs can be checked to observe the failure reason.
+Spark executor shows task as failed after the maximum number of retry attempts, but loading the data having bad records and BAD_RECORDS_ACTION (carbon.bad.records.action) is set as "FAIL" will attempt only once but will send the signal to driver as failed instead of throwing the exception to retry, as there is no point to retry if bad record found and BAD_RECORDS_ACTION is set to fail. Hence the Spark executor displays this one attempt as successful but the command has actually failed to execute. Task attempts or executor logs can be checked to observe the failure reason.
 
 ## Why different time zone result for select query output when query SDK writer output? 
 SDK writer is an independent entity, hence SDK writer can generate carbondata files from a non-cluster machine that has different time zones. But at cluster when those files are read, it always takes cluster time-zone. Hence, the value of timestamp and date datatype fields are not original value.

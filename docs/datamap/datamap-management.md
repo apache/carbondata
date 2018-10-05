@@ -66,9 +66,9 @@ If user create MV datamap without specifying `WITH DEFERRED REBUILD`, carbondata
 ### Automatic Refresh
 
 When user creates a datamap on the main table without using `WITH DEFERRED REBUILD` syntax, the datamap will be managed by system automatically.
-For every data load to the main table, system will immediately triger a load to the datamap automatically. These two data loading (to main table and datamap) is executed in a transactional manner, meaning that it will be either both success or neither success. 
+For every data load to the main table, system will immediately trigger a load to the datamap automatically. These two data loading (to main table and datamap) is executed in a transactional manner, meaning that it will be either both success or neither success. 
 
-The data loading to datamap is incremental based on Segment concept, avoiding a expesive total rebuild.
+The data loading to datamap is incremental based on Segment concept, avoiding a expensive total rebuild.
 
 If user perform following command on the main table, system will return failure. (reject the operation)
 
@@ -87,7 +87,7 @@ We do recommend you to use this management for index datamap.
 
 ### Manual Refresh
 
-When user creates a datamap specifying maunal refresh semantic, the datamap is created with status *disabled* and query will NOT use this datamap until user can issue REBUILD DATAMAP command to build the datamap. For every REBUILD DATAMAP command, system will trigger a full rebuild of the datamap. After rebuild is done, system will change datamap status to *enabled*, so that it can be used in query rewrite.
+When user creates a datamap specifying manual refresh semantic, the datamap is created with status *disabled* and query will NOT use this datamap until user can issue REBUILD DATAMAP command to build the datamap. For every REBUILD DATAMAP command, system will trigger a full rebuild of the datamap. After rebuild is done, system will change datamap status to *enabled*, so that it can be used in query rewrite.
 
 For every new data loading, data update, delete, the related datamap will be made *disabled*,
 which means that the following queries will not benefit from the datamap before it becomes *enabled* again.
