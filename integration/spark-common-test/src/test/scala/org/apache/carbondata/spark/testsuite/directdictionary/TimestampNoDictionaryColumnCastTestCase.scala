@@ -38,16 +38,24 @@ class TimestampNoDictionaryColumnCastTestCase extends QueryTest with BeforeAndAf
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
         CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
 
-      sql("drop table if exists timestamp_nodictionary")
+    sql("drop table if exists timestamp_nodictionary")
+    sql("drop table if exists timestamp_nodictionary_hive")
     sql("drop table if exists datetype")
-      sql(
-        """
+    sql("drop table if exists datetype_hive")
+    sql(
+      """
          CREATE TABLE IF NOT EXISTS timestamp_nodictionary
         (timestamptype timestamp) STORED BY 'carbondata'"""
-      )
-      val csvFilePath = s"$resourcesPath/timestampdatafile.csv"
-      sql(s"LOAD DATA LOCAL INPATH '$csvFilePath' into table timestamp_nodictionary")
-//
+    )
+    val csvFilePath = s"$resourcesPath/timestampdatafile.csv"
+    sql(s"LOAD DATA LOCAL INPATH '$csvFilePath' into table timestamp_nodictionary")
+    sql(
+      """
+         CREATE TABLE IF NOT EXISTS timestamp_nodictionary_hive
+        (timestamptype timestamp) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','"""
+    )
+    sql(s"LOAD DATA LOCAL INPATH '$csvFilePath' into table timestamp_nodictionary_hive")
+    //
     sql(
       """
          CREATE TABLE IF NOT EXISTS datetype
@@ -55,26 +63,34 @@ class TimestampNoDictionaryColumnCastTestCase extends QueryTest with BeforeAndAf
     )
     val csvFilePath1 = s"$resourcesPath/datedatafile.csv"
     sql(s"LOAD DATA LOCAL INPATH '$csvFilePath1' into table datetype")
+    sql(
+      """
+         CREATE TABLE IF NOT EXISTS datetype_hive
+        (datetype1 date) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','"""
+    )
+    sql(s"LOAD DATA LOCAL INPATH '$csvFilePath1' into table datetype_hive")
   }
 
   test("select count(*) from timestamp_nodictionary where timestamptype BETWEEN '2018-09-11' AND '2018-09-16'") {
+    sql("select * from timestamp_nodictionary where timestamptype BETWEEN '2018-09-11 00:00:00' AND '2018-09-16 00:00:00'").show()
+    sql("select * from timestamp_nodictionary_hive where timestamptype BETWEEN '2018-09-11 00:00:00' AND '2018-09-16 00:00:00'").show()
     checkAnswer(
       sql("select count(*) from timestamp_nodictionary where timestamptype BETWEEN '2018-09-11' AND '2018-09-16'"),
-      Seq(Row(6)
-      )
+      sql("select count(*) from timestamp_nodictionary_hive where timestamptype BETWEEN '2018-09-11' AND '2018-09-16'")
     )
   }
-//
+  //
   test("select count(*) from datetype where datetype1 BETWEEN '2018-09-11' AND '2018-09-16'") {
     checkAnswer(
       sql("select count(*) from datetype where datetype1 BETWEEN '2018-09-11' AND '2018-09-16'"),
-      Seq(Row(6)
-      )
+      sql("select count(*) from datetype_hive where datetype1 BETWEEN '2018-09-11' AND '2018-09-16'")
     )
   }
 
   override def afterAll {
     sql("drop table timestamp_nodictionary")
     sql("drop table if exists datetype")
+    sql("drop table if exists timestamp_nodictionary_hive")
+    sql("drop table if exists datetype_hive")
   }
 }

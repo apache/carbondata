@@ -29,9 +29,9 @@ import org.apache.spark.sql.FalseExpr
 import org.apache.spark.sql.sources
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
-import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.sources.Filter
 import org.apache.spark.unsafe.types.UTF8String
+import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
@@ -41,7 +41,7 @@ object CastExpressionOptimization {
   def typeCastStringToLong(v: Any, dataType: DataType): Any = {
     if (dataType == TimestampType || dataType == DateType) {
       val value = if (dataType == TimestampType) {
-        DateTimeUtils.stringToTimestamp(UTF8String.fromString(v.toString))
+        CarbonReflectionUtils.stringToTimestampUsingReflection(UTF8String.fromString(v.toString))
       } else {
         None
       }
