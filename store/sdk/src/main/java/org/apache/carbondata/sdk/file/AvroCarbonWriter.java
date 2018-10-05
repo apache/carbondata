@@ -520,7 +520,7 @@ public class AvroCarbonWriter extends CarbonWriter {
         // recursively get the sub fields
         ArrayList<StructField> arraySubField = new ArrayList<>();
         // array will have only one sub field.
-        StructField structField = prepareSubFields("val", childSchema.getElementType());
+        StructField structField = prepareSubFields(fieldName, childSchema.getElementType());
         if (structField != null) {
           arraySubField.add(structField);
           return new Field(fieldName, "array", arraySubField);
