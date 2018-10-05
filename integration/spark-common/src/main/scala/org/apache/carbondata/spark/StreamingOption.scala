@@ -56,7 +56,7 @@ class StreamingOption(val userInputMap: Map[String, String]) {
 
   lazy val badRecordsPath: String =
     userInputMap
-      .getOrElse("bad_records_path", CarbonProperties.getInstance()
+      .getOrElse("bad_record_path", CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
           CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL))
 

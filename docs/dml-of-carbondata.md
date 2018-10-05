@@ -240,14 +240,6 @@ CarbonData DML statements are documented here,which includes:
   * Since Bad Records Path can be specified in create, load and carbon properties. 
     Therefore, value specified in load will have the highest priority, and value specified in carbon properties will have the least priority.
 
-   **Bad Records Path:**
-         This property is used to specify the location where bad records would be written.
-        
-
-   ```
-   TBLPROPERTIES('BAD_RECORDS_PATH'='/opt/badrecords'')
-   ```
-
   Example:
 
   ```

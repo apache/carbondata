@@ -1880,7 +1880,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         |  'interval'='1 seconds',
         |  'BAD_RECORDS_LOGGER_ENABLE' = 'FALSE',
         |  'BAD_RECORDS_ACTION' = 'FORCE',
-        |  'BAD_RECORDS_PATH'='$warehouse')
+        |  'BAD_RECORD_PATH'='$warehouse')
         |AS
         |  SELECT *
         |  FROM source
@@ -1894,7 +1894,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         |  'interval'='1 seconds',
         |  'BAD_RECORDS_LOGGER_ENABLE' = 'FALSE',
         |  'BAD_RECORDS_ACTION' = 'FORCE',
-        |  'BAD_RECORDS_PATH'='$warehouse')
+        |  'BAD_RECORD_PATH'='$warehouse')
         |AS
         |  SELECT *
         |  FROM source
@@ -2554,7 +2554,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES(${if (streaming) "'streaming'='true', " else "" }
-         | 'sort_columns'='name', 'dictionary_include'='city,register', 'BAD_RECORDS_PATH'='$badRecordFilePath')
+         | 'sort_columns'='name', 'dictionary_include'='city,register', 'BAD_RECORD_PATH'='$badRecordFilePath')
          | """.stripMargin)
 
     if (withBatchLoad) {
@@ -2583,7 +2583,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES(${if (streaming) "'streaming'='true', " else "" }
-         | 'sort_columns'='name', 'dictionary_include'='id,name,salary,tax,percent,updated', 'BAD_RECORDS_PATH'='$badRecordFilePath')
+         | 'sort_columns'='name', 'dictionary_include'='id,name,salary,tax,percent,updated', 'BAD_RECORD_PATH'='$badRecordFilePath')
          | """.stripMargin)
 
     if (withBatchLoad) {

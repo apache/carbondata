@@ -844,7 +844,7 @@ class TableNewProcessor(cm: TableModel) {
       cm.tableName,
       tableSchema.getTableId,
       cm.databaseNameOp.getOrElse("default"))
-    tablePropertiesMap.put("bad_records_path", badRecordsPath)
+    tablePropertiesMap.put("bad_record_path", badRecordsPath)
     tableSchema.setTableProperties(tablePropertiesMap)
     if (cm.bucketFields.isDefined) {
       val bucketCols = cm.bucketFields.get.bucketColumns.map { b =>
@@ -898,7 +898,7 @@ class TableNewProcessor(cm: TableModel) {
       tableId: String,
       databaseName: String): String = {
     val badRecordsPath = tablePropertiesMap.asScala
-      .getOrElse("bad_records_path", CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL)
+      .getOrElse("bad_record_path", CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL)
     if (badRecordsPath == null || badRecordsPath.isEmpty) {
       CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL
     } else {

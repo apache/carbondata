@@ -19,6 +19,7 @@ package org.apache.spark.sql.execution.command.table
 
 import scala.collection.JavaConverters._
 
+import org.apache.commons.lang.StringUtils
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
@@ -217,6 +218,12 @@ private[sql] case class CarbonDescribeFormattedCommand(
     results ++= Seq(("SORT_COLUMNS", relation.metaData.carbonTable.getSortColumns(
       relation.carbonTable.getTableName).asScala
       .map(column => column).mkString(","), ""))
+
+    val bad_record_path = relation.carbonTable.getTableInfo.getFactTable
+      .getTableProperties.get("bad_record_path")
+    if (!StringUtils.isEmpty(bad_record_path)) {
+      results ++= Seq(("BAD_RECORD_PATH", bad_record_path, ""))
+    }
     // add columns configured in column meta cache
     if (null != tblProps.get(CarbonCommonConstants.COLUMN_META_CACHE)) {
       results ++=
