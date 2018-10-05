@@ -130,7 +130,7 @@ public class CarbonBadRecordUtil {
   public static String getBadRecordsPath(Map<String, String> loadOptions, CarbonTable table) {
     String badRecordsFromLoad = loadOptions.get("bad_record_path");
     String badRecordsFromCreate =
-        table.getTableInfo().getFactTable().getTableProperties().get("bad_records_path");
+        table.getTableInfo().getFactTable().getTableProperties().get("bad_record_path");
     String badRecordsPath;
     if (StringUtils.isNotEmpty(badRecordsFromLoad)) {
       badRecordsPath =

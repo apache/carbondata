@@ -33,6 +33,7 @@ CarbonData DDL statements are documented here,which includes:
   * [Hive/Parquet folder Structure](#support-flat-folder-same-as-hiveparquet)
   * [Extra Long String columns](#string-longer-than-32000-characters)
   * [Compression for Table](#compression-for-table)
+  * [Bad Records Path](#bad-records-path)
 * [CREATE TABLE AS SELECT](#create-table-as-select)
 * [CREATE EXTERNAL TABLE](#create-external-table)
   * [External Table on Transactional table location](#create-external-table-on-managed-table-data-location)
@@ -453,6 +454,16 @@ CarbonData DDL statements are documented here,which includes:
      or
      ```
      carbon.column.compressor=zstd
+     ```
+     
+   - ##### Bad Records Path
+     This property is used to specify the location where bad records would be written.
+     As the table path remains the same after rename therefore the user can use this property to
+     specify bad records path for the table at the time of creation, so that the same path can 
+     be later viewed in table description for reference.
+     
+     ```
+       TBLPROPERTIES('BAD_RECORD_PATH'='/opt/badrecords'')
      ```
 
 ## CREATE TABLE AS SELECT
