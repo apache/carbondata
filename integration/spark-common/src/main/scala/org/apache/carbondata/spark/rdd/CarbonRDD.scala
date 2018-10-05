@@ -47,8 +47,10 @@ abstract class CarbonRDD[T: ClassTag](
     info
   }
 
+  @transient val hadoopConf = SparkSQLUtil.sessionState(ss).newHadoopConf()
+
   val config: Broadcast[SerializableConfiguration] = sparkContext
-    .broadcast(new SerializableConfiguration(SparkSQLUtil.sessionState(ss).newHadoopConf()))
+    .broadcast(new SerializableConfiguration(hadoopConf))
 
   /** Construct an RDD with just a one-to-one dependency on one parent */
   def this(@transient sparkSession: SparkSession, @transient oneParent: RDD[_]) =
@@ -57,7 +59,7 @@ abstract class CarbonRDD[T: ClassTag](
   protected def internalGetPartitions: Array[Partition]
 
   override def getPartitions: Array[Partition] = {
-    ThreadLocalSessionInfo.setConfigurationToCurrentThread(config.value.value)
+    ThreadLocalSessionInfo.setConfigurationToCurrentThread(hadoopConf)
     internalGetPartitions
   }
 
@@ -66,8 +68,7 @@ abstract class CarbonRDD[T: ClassTag](
 
   final def compute(split: Partition, context: TaskContext): Iterator[T] = {
     TaskContext.get.addTaskCompletionListener(_ => ThreadLocalSessionInfo.unsetAll())
-    carbonSessionInfo.getNonSerializableExtraInfo.put("carbonConf", config
-      .value.value)
+    carbonSessionInfo.getNonSerializableExtraInfo.put("carbonConf", getConf)
     ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
     TaskMetricsMap.threadLocal.set(Thread.currentThread().getId)
     val carbonTaskInfo = new CarbonTaskInfo
