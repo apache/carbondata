@@ -142,10 +142,11 @@ public class CarbonCliTest {
     PrintStream stream = new PrintStream(out);
     CarbonCli.run(args, stream);
     String output = new String(out.toByteArray());
+    System.out.println(output);
     Assert.assertTrue(
         output.contains(
             "Blocklet 0:\n"
-           + "Page 0 (offset 0, length 12049): DataChunk2(chunk_meta:ChunkCompressionMeta(compression_codec:DEPRECATED, total_uncompressed_size:0, total_compressed_size:0, compressor_name:snappy), rowMajor:false, data_page_length:12039, rowid_page_length:10, presence:PresenceMeta(represents_presence:false, present_bit_stream:00), sort_state:SORT_EXPLICIT, encoders:[INVERTED_INDEX], encoder_meta:[], min_max:BlockletMinMaxIndex(min_values:[72 6F 62 6F 74 30], max_values:[72 6F 62 6F 74 30], min_max_presence:[true]), numberOfRowsInpage:32000)"));
+           + "Page 0 (offset 0, length 12049): DataChunk2(chunk_meta:ChunkCompressionMeta(compression_codec:DEPRECATED, total_uncompressed_size:256000, total_compressed_size:12049, compressor_name:snappy), rowMajor:false, data_page_length:12039, rowid_page_length:10, presence:PresenceMeta(represents_presence:false, present_bit_stream:00), sort_state:SORT_EXPLICIT, encoders:[INVERTED_INDEX], encoder_meta:[], min_max:BlockletMinMaxIndex(min_values:[72 6F 62 6F 74 30], max_values:[72 6F 62 6F 74 30], min_max_presence:[true]), numberOfRowsInpage:32000)"));
   }
 
   @Test
