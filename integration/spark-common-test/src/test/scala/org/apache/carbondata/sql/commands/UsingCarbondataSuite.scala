@@ -70,7 +70,7 @@ class UsingCarbondataSuite extends QueryTest with BeforeAndAfterEach {
       .filter(row => row.getString(0).contains(CarbonCommonConstants.TABLE_DATA_SIZE) ||
         row.getString(0).contains(CarbonCommonConstants.TABLE_INDEX_SIZE))
     assert(res3.length == 2)
-    res3.foreach(row => assert(row.getString(1).trim.toLong > 0))
+    res3.foreach(row => assert(!row.getString(1).trim.equals("0.0B")))
   }
 
   test("CARBONDATA-2396 Support Create Table As Select with 'using carbondata'") {

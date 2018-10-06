@@ -50,11 +50,17 @@ class TestDescribeTable extends QueryTest with BeforeAndAfterAll {
 
   test("test describe formatted table desc1") {
 
-    val resultCol = Seq("", "", "##Detailed Column property", "##Detailed Table Information", "ADAPTIVE", "CARBON Store Path", "Comment", "Database Name", "Last Update Time",
-    "SORT_COLUMNS", "SORT_SCOPE", "CACHE_LEVEL", "Streaming", "Table Block Size", "Local Dictionary Enabled","Table Data Size", "Table Index Size", "Table Name", "dec2col1", "dec2col2", "dec2col3", "dec2col4")
-    val resultRow: Seq[Row] = resultCol map(propName => Row(f"$propName%-36s"))
+    val resultCol = Seq("dec2col1", "dec2col2", "dec2col3", "dec2col4", "",
+        "### PROPERTY", "", "## Table Basic Information", "Database Name", "Table Name",
+        "Table Path", "Comment", "Table Data Size", "Table Index Size", "Last Update Time", "",
+        "## Detailed Table Properties Information", "Table Block Size", "SORT_SCOPE",
+        "SORT_COLUMNS", "DICTIONARY_INCLUDE", "NO_INVERTED_INDEX", "Streaming", "CACHE_LEVEL",
+        "COLUMN_META_CACHE", "AUTO_LOAD_MERGE", "COMPACTION_LEVEL_THRESHOLD",
+        "COMPACTION_PRESERVE_SEGMENTS", "ALLOWED_COMPACTION_DAYS", "MAJOR_COMPACTION_SIZE",
+        "FLAT_FOLDER", "LONG_STRING_COLUMNS", "Local Dictionary Enabled", "External Table")
+    val resultRow: Seq[Row] = resultCol map(propName => Row(f"$propName%-40s"))
     checkAnswer(sql("desc formatted DESC1").select("col_name"), resultRow)
-    assert(sql("desc formatted desc1").count() == 22)
+    assert(sql("desc formatted desc1").count() == 34)
   }
 
   test("test describe formatted for partition table") {

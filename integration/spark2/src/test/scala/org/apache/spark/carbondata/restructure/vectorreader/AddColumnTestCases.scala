@@ -641,7 +641,9 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       """)
 
     sql("alter table NO_INVERTED_CARBON add columns(col1 string,col2 string) tblproperties('NO_INVERTED_INDEX'='col2')")
-    checkExistenceCount(sql("desc formatted NO_INVERTED_CARBON"),2,"NOINVERTEDINDEX")
+    checkAnswer(sql("desc formatted NO_INVERTED_CARBON")
+        .selectExpr("trim(data_type)").where("trim(col_name) = 'NO_INVERTED_INDEX'"),
+        Seq(Row("city,col2")))
   }
 
   test("test if adding column in pre-aggregate table throws exception") {

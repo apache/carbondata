@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.spark.testsuite.alterTable
 
-import org.apache.spark.sql.CarbonEnv
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -110,19 +110,23 @@ class TestAlterTableWithColumnMetCacheAndCacheLevelProperty extends QueryTest wi
 
   test("validate unsetting of column_meta_cache when column_meta_cache is already set - alter_column_meta_cache_11") {
     sql("Alter table alter_column_meta_cache SET TBLPROPERTIES('column_meta_cache'='c2,c3')")
-    var descResult = sql("describe formatted alter_column_meta_cache")
-    checkExistence(descResult, true, "COLUMN_META_CACHE")
+    checkAnswer(sql("describe formatted alter_column_meta_cache")
+      .selectExpr("trim(data_type)").where("trim(col_name) = 'COLUMN_META_CACHE'"),
+      Seq(Row("c2,c3")))
     sql("Alter table alter_column_meta_cache UNSET TBLPROPERTIES('column_meta_cache')")
-    descResult = sql("describe formatted alter_column_meta_cache")
-    checkExistence(descResult, false, "COLUMN_META_CACHE")
+    checkAnswer(sql("describe formatted alter_column_meta_cache")
+      .selectExpr("trim(data_type)").where("trim(col_name) = 'COLUMN_META_CACHE'"),
+      Seq(Row("")))
   }
 
   test("validate unsetting of column_meta_cache when column_meta_cache is not already set - alter_column_meta_cache_12") {
-    var descResult = sql("describe formatted alter_column_meta_cache")
-    checkExistence(descResult, false, "COLUMN_META_CACHE")
+    checkAnswer(sql("describe formatted alter_column_meta_cache")
+      .selectExpr("trim(data_type)").where("trim(col_name) = 'COLUMN_META_CACHE'"),
+      Seq(Row("")))
     sql("Alter table alter_column_meta_cache UNSET TBLPROPERTIES('column_meta_cache')")
-    descResult = sql("describe formatted alter_column_meta_cache")
-    checkExistence(descResult, false, "COLUMN_META_CACHE")
+    checkAnswer(sql("describe formatted alter_column_meta_cache")
+      .selectExpr("trim(data_type)").where("trim(col_name) = 'COLUMN_META_CACHE'"),
+      Seq(Row("")))
   }
 
   test("validate cache_level with only empty spaces - ALTER_CACHE_LEVEL_01") {

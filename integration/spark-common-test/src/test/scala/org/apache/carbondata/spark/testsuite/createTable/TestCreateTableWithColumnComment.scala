@@ -42,7 +42,7 @@ class TestCreateTableWithColumnComment extends QueryTest with BeforeAndAfterAll 
     sql(
       "create table defaultComment(id int, name string) " +
       "stored by 'carbondata'")
-    checkExistence(sql("describe formatted defaultComment"), true, "null")
+    checkExistence(sql("describe formatted defaultComment"), false, "null")
   }
 
   override def afterAll {
