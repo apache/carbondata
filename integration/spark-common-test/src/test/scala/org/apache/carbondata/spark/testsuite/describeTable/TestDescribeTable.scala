@@ -57,7 +57,7 @@ class TestDescribeTable extends QueryTest with BeforeAndAfterAll {
         "SORT_COLUMNS", "DICTIONARY_INCLUDE", "NO_INVERTED_INDEX", "Streaming", "CACHE_LEVEL",
         "COLUMN_META_CACHE", "AUTO_LOAD_MERGE", "COMPACTION_LEVEL_THRESHOLD",
         "COMPACTION_PRESERVE_SEGMENTS", "ALLOWED_COMPACTION_DAYS", "MAJOR_COMPACTION_SIZE",
-        "FLAT_FOLDER", "LONG_STRING_COLUMNS", "Local Dictionary Enabled", "ExternalTable")
+        "FLAT_FOLDER", "LONG_STRING_COLUMNS", "Local Dictionary Enabled", "External Table")
     val resultRow: Seq[Row] = resultCol map(propName => Row(f"$propName%-40s"))
     checkAnswer(sql("desc formatted DESC1").select("col_name"), resultRow)
     assert(sql("desc formatted desc1").count() == 34)
