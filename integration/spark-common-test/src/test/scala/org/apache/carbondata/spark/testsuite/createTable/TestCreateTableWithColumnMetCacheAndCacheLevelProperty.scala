@@ -19,7 +19,7 @@ package org.apache.carbondata.spark.testsuite.createTable
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.CarbonEnv
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -115,8 +115,9 @@ class TestCreateTableWithColumnMetCacheAndCacheLevelProperty extends QueryTest w
   test("validate describe formatted command to display column_meta_cache when column_meta_cache is not set - COLUMN_META_CACHE_11") {
     sql("drop table if exists column_meta_cache")
     sql("create table column_meta_cache(c1 String, c2 String, c3 int, c4 double) stored by 'carbondata'")
-    val descResult = sql("describe formatted column_meta_cache")
-    checkExistence(descResult, false, "COLUMN_META_CACHE")
+    checkAnswer(sql("describe formatted column_meta_cache")
+      .selectExpr("trim(data_type)").where("trim(col_name) = 'COLUMN_META_CACHE'"),
+      Seq(Row("")))
   }
 
   test("validate column_meta_cache after column drop - COLUMN_META_CACHE_12") {

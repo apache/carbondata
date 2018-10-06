@@ -68,15 +68,15 @@ class TestCreateTableWithCompactionOptions extends QueryTest with BeforeAndAfter
       .collect().map(r => (r.getString(0).trim, r.getString(1).trim)).toMap
 
     assert(tableOptions.contains("MAJOR_COMPACTION_SIZE"))
-    assert(tableOptions.getOrElse("MAJOR_COMPACTION_SIZE","").equals("10240"))
+    assert(tableOptions.getOrElse("MAJOR_COMPACTION_SIZE", "").equals("10240 MB"))
     assert(tableOptions.contains("AUTO_LOAD_MERGE"))
-    assert(tableOptions.getOrElse("AUTO_LOAD_MERGE","").equals("true"))
+    assert(tableOptions.getOrElse("AUTO_LOAD_MERGE", "").equals("true"))
     assert(tableOptions.contains("COMPACTION_LEVEL_THRESHOLD"))
-    assert(tableOptions.getOrElse("COMPACTION_LEVEL_THRESHOLD","").equals("5,6"))
+    assert(tableOptions.getOrElse("COMPACTION_LEVEL_THRESHOLD", "").equals("5,6"))
     assert(tableOptions.contains("COMPACTION_PRESERVE_SEGMENTS"))
-    assert(tableOptions.getOrElse("COMPACTION_PRESERVE_SEGMENTS","").equals("10"))
+    assert(tableOptions.getOrElse("COMPACTION_PRESERVE_SEGMENTS", "").equals("10"))
     assert(tableOptions.contains("ALLOWED_COMPACTION_DAYS"))
-    assert(tableOptions.getOrElse("ALLOWED_COMPACTION_DAYS","").equals("5"))
+    assert(tableOptions.getOrElse("ALLOWED_COMPACTION_DAYS", "").equals("5"))
   }
 
   test("test create table with invalid major compaction size") {
@@ -188,11 +188,16 @@ class TestCreateTableWithCompactionOptions extends QueryTest with BeforeAndAfter
     val tableOptions = sql(s"DESCRIBE FORMATTED $tableWithoutCompactionOptions")
       .collect().map(r => (r.getString(0).trim, r.getString(1).trim)).toMap
 
-    assert(!tableOptions.contains("MAJOR_COMPACTION_SIZE"))
-    assert(!tableOptions.contains("AUTO_LOAD_MERGE"))
-    assert(!tableOptions.contains("COMPACTION_LEVEL_THRESHOLD"))
-    assert(!tableOptions.contains("COMPACTION_PRESERVE_SEGMENTS"))
-    assert(!tableOptions.contains("ALLOWED_COMPACTION_DAYS"))
+    assert(tableOptions.contains("MAJOR_COMPACTION_SIZE"))
+    assert(tableOptions.getOrElse("MAJOR_COMPACTION_SIZE", "").equals("1024 MB"))
+    assert(tableOptions.contains("AUTO_LOAD_MERGE"))
+    assert(tableOptions.getOrElse("AUTO_LOAD_MERGE", "").equals("false"))
+    assert(tableOptions.contains("COMPACTION_LEVEL_THRESHOLD"))
+    assert(tableOptions.getOrElse("COMPACTION_LEVEL_THRESHOLD", "").equals("4,3"))
+    assert(tableOptions.contains("COMPACTION_PRESERVE_SEGMENTS"))
+    assert(tableOptions.getOrElse("COMPACTION_PRESERVE_SEGMENTS", "").equals("0"))
+    assert(tableOptions.contains("ALLOWED_COMPACTION_DAYS"))
+    assert(tableOptions.getOrElse("ALLOWED_COMPACTION_DAYS", "").equals("0"))
   }
 
 }

@@ -403,9 +403,9 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
-    checkExistence(sql("describe formatted sdkOutputTable"), true, "SORT_COLUMNS                        age")
-    checkExistence(sql("describe formatted sdkOutputTable"), false, "SORT_COLUMNS                        name,age")
-    checkExistence(sql("describe formatted sdkOutputTable"), false, "SORT_COLUMNS                        age,name")
+    checkExistence(sql("describe formatted sdkOutputTable"), true, "SORT_COLUMNS                            age")
+    checkExistence(sql("describe formatted sdkOutputTable"), false, "SORT_COLUMNS                            name,age")
+    checkExistence(sql("describe formatted sdkOutputTable"), false, "SORT_COLUMNS                            age,name")
     buildTestDataSingleFile()
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -415,7 +415,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
-    checkExistence(sql("describe formatted sdkOutputTable"), true, "SORT_COLUMNS                        name")
+    checkExistence(sql("describe formatted sdkOutputTable"), true, "SORT_COLUMNS                            name")
 
     buildTestDataWithSortColumns(List())
     assert(new File(writerPath).exists())
@@ -427,7 +427,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
-    checkExistence(sql("describe formatted sdkOutputTable"),false,"SORT_COLUMNS                        name")
+    checkExistence(sql("describe formatted sdkOutputTable"),false,"SORT_COLUMNS                            name")
     sql("select * from sdkOutputTable").show()
 
     sql("DROP TABLE sdkOutputTable")
@@ -879,7 +879,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     // test the default sort column behavior in Nontransactional table
     checkExistence(sql("describe formatted sdkOutputTable"), true,
-      "SORT_COLUMNS                        name")
+      "SORT_COLUMNS                            name")
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files

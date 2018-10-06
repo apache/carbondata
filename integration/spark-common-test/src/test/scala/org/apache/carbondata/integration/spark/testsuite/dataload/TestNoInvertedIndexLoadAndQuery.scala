@@ -279,7 +279,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
         """
            describe formatted indexFormat
         """),
-      true,"NOINVERTEDINDEX")
+      true,"NO_INVERTED_INDEX")
   }
 
   test("filter query on dictionary and no inverted index column where all values are null"){
