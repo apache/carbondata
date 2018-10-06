@@ -186,7 +186,8 @@ private[sql] case class CarbonDescribeFormattedCommand(
             }
           }
           results ++=
-            Seq(("Local Dictionary Exclude", getDictColumnString(builder.toString().split(",")), ""))
+            Seq(("Local Dictionary Exclude",
+                getDictColumnString(builder.toString().split(",")), ""))
         }
       }
     } else {
