@@ -74,7 +74,7 @@ CarbonData DDL statements are documented here,which includes:
   [TBLPROPERTIES (property_name=property_value, ...)]
   [LOCATION 'path']
   ```
-  
+
   **NOTE:** CarbonData also supports "STORED AS carbondata" and "USING carbondata". Find example code at [CarbonSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/CarbonSessionExample.scala) in the CarbonData repo.
 ### Usage Guidelines
 
@@ -87,19 +87,20 @@ CarbonData DDL statements are documented here,which includes:
 | [SORT_COLUMNS](#sort-columns-configuration)                  | Columns to include in sort and its order of sort             |
 | [SORT_SCOPE](#sort-scope-configuration)                      | Sort scope of the load.Options include no sort, local sort ,batch sort and global sort |
 | [TABLE_BLOCKSIZE](#table-block-size-configuration)           | Size of blocks to write onto hdfs                            |
+| [TABLE_BLOCKLET_SIZE](#table-blocklet-size-configuration)    | Size of blocklet to write in the file                        |
 | [MAJOR_COMPACTION_SIZE](#table-compaction-configuration)     | Size upto which the segments can be combined into one        |
 | [AUTO_LOAD_MERGE](#table-compaction-configuration)           | Whether to auto compact the segments                         |
 | [COMPACTION_LEVEL_THRESHOLD](#table-compaction-configuration) | Number of segments to compact into one segment               |
 | [COMPACTION_PRESERVE_SEGMENTS](#table-compaction-configuration) | Number of latest segments that needs to be excluded from compaction |
 | [ALLOWED_COMPACTION_DAYS](#table-compaction-configuration)   | Segments generated within the configured time limit in days will be compacted, skipping others |
-| [streaming](#streaming)                                      | Whether the table is a streaming table                       |
+| [STREAMING](#streaming)                                      | Whether the table is a streaming table                       |
 | [LOCAL_DICTIONARY_ENABLE](#local-dictionary-configuration)   | Enable local dictionary generation                           |
 | [LOCAL_DICTIONARY_THRESHOLD](#local-dictionary-configuration) | Cardinality upto which the local dictionary can be generated |
 | [LOCAL_DICTIONARY_INCLUDE](#local-dictionary-configuration)  | Columns for which local dictionary needs to be generated. Useful when local dictionary need not be generated for all string/varchar/char columns |
 | [LOCAL_DICTIONARY_EXCLUDE](#local-dictionary-configuration)  | Columns for which local dictionary generation should be skipped. Useful when local dictionary need not be generated for few string/varchar/char columns |
 | [COLUMN_META_CACHE](#caching-minmax-value-for-required-columns) | Columns whose metadata can be cached in Driver for efficient pruning and improved query performance |
 | [CACHE_LEVEL](#caching-at-block-or-blocklet-level)           | Column metadata caching level. Whether to cache column metadata of block or blocklet |
-| [flat_folder](#support-flat-folder-same-as-hiveparquet)      | Whether to write all the carbondata files in a single folder.Not writing segments folder during incremental load |
+| [FLAT_FOLDER](#support-flat-folder-same-as-hiveparquet)      | Whether to write all the carbondata files in a single folder.Not writing segments folder during incremental load |
 | [LONG_STRING_COLUMNS](#string-longer-than-32000-characters)  | Columns which are greater than 32K characters                |
 | [BUCKETNUMBER](#bucketing)                                   | Number of buckets to be created                              |
 | [BUCKETCOLUMNS](#bucketing)                                  | Columns which are to be placed in buckets                    |
@@ -114,9 +115,9 @@ CarbonData DDL statements are documented here,which includes:
      ```
      TBLPROPERTIES ('DICTIONARY_INCLUDE'='column1, column2')
      ```
-     
+
      **NOTE**: Dictionary Include/Exclude for complex child columns is not supported.
-     
+
    - ##### Inverted Index Configuration
 
      By default inverted index is enabled, it might help to improve compression ratio and query speed, especially for low cardinality columns which are in reward position.
@@ -139,7 +140,7 @@ CarbonData DDL statements are documented here,which includes:
      OR
      TBLPROPERTIES ('SORT_COLUMNS'='')
      ```
-     
+
      **NOTE**: Sort_Columns for Complex datatype columns is not supported.
 
    - ##### Sort Scope Configuration
@@ -173,13 +174,23 @@ CarbonData DDL statements are documented here,which includes:
 
    - ##### Table Block Size Configuration
 
-     This command is for setting block size of this table, the default value is 1024 MB and supports a range of 1 MB to 2048 MB.
+     This property is for setting block size of this table, the default value is 1024 MB and supports a range of 1 MB to 2048 MB.
 
      ```
      TBLPROPERTIES ('TABLE_BLOCKSIZE'='512')
      ```
- 
+
      **NOTE:** 512 or 512M both are accepted.
+
+   - ##### Table Blocklet Size Configuration
+
+     This property is for setting blocklet size in the carbondata file, the default value is 64 MB.
+     Blocklet is the minimum IO read unit, in case of point queries reduce blocklet size might improve the query performance.
+
+     Example usage:
+     ```
+     TBLPROPERTIES ('TABLE_BLOCKLET_SIZE'='8')
+     ```
 
    - ##### Table Compaction Configuration
    
@@ -398,7 +409,7 @@ CarbonData DDL statements are documented here,which includes:
        ```
         'flat_folder'='true'
        ```
-   
+
        Example:
        ```
        CREATE TABLE employee (name String, city String, id int) STORED BY 'carbondata' TBLPROPERTIES ('flat_folder'='true')
@@ -455,13 +466,13 @@ CarbonData DDL statements are documented here,which includes:
      ```
      carbon.column.compressor=zstd
      ```
-     
+
    - ##### Bad Records Path
      This property is used to specify the location where bad records would be written.
      As the table path remains the same after rename therefore the user can use this property to
-     specify bad records path for the table at the time of creation, so that the same path can 
+     specify bad records path for the table at the time of creation, so that the same path can
      be later viewed in table description for reference.
-     
+
      ```
        TBLPROPERTIES('BAD_RECORD_PATH'='/opt/badrecords'')
      ```
@@ -626,13 +637,13 @@ Users can specify which columns to include and exclude for local dictionary gene
    - ##### DROP COLUMNS
    
      This command is used to delete the existing column(s) in a table.
-     
+
      ```
      ALTER TABLE [db_name.]table_name DROP COLUMNS (col_name, ...)
      ```
 
      Examples:
-     
+
      ```
      ALTER TABLE carbon DROP COLUMNS (b1)
      OR
@@ -640,14 +651,14 @@ Users can specify which columns to include and exclude for local dictionary gene
      
      ALTER TABLE carbon DROP COLUMNS (c1,d1)
      ```
- 
+
      **NOTE:** Drop Complex child column is not supported.
 
    - ##### CHANGE DATA TYPE
    
      This command is used to change the data type from INT to BIGINT or decimal precision from lower to higher.
      Change of decimal data type from lower precision to higher precision will only be supported for cases where there is no data loss.
-     
+
      ```
      ALTER TABLE [db_name.]table_name CHANGE col_name col_name changed_column_type
      ```
@@ -658,31 +669,31 @@ Users can specify which columns to include and exclude for local dictionary gene
      - **NOTE:** The allowed range is 38,38 (precision, scale) and is a valid upper case scenario which is not resulting in data loss.
 
      Example1:Changing data type of column a1 from INT to BIGINT.
-     
+
      ```
      ALTER TABLE test_db.carbon CHANGE a1 a1 BIGINT
      ```
      
      Example2:Changing decimal precision of column a1 from 10 to 18.
-     
+
      ```
      ALTER TABLE test_db.carbon CHANGE a1 a1 DECIMAL(18,2)
      ```
- 
+
 - ##### MERGE INDEX
 
      This command is used to merge all the CarbonData index files (.carbonindex) inside a segment to a single CarbonData index merge file (.carbonindexmerge). This enhances the first query performance.
-     
+
      ```
       ALTER TABLE [db_name.]table_name COMPACT 'SEGMENT_INDEX'
      ```
 
       Examples:
-      
+
      ```
       ALTER TABLE test_db.carbon COMPACT 'SEGMENT_INDEX'
       ```
-      
+
       **NOTE:**
 
       * Merge index is not supported on streaming table.
@@ -756,7 +767,7 @@ Users can specify which columns to include and exclude for local dictionary gene
    STORED AS carbondata
    TBLPROPERTIES ('DICTIONARY_INCLUDE'='productNumber')
   ```
-  
+
   You can also SET and UNSET table comment using ALTER command.
 
   Example to SET table comment:
@@ -859,7 +870,7 @@ Users can specify which columns to include and exclude for local dictionary gene
   [TBLPROPERTIES ('PARTITION_TYPE'='HASH',
                   'NUM_PARTITIONS'='N' ...)]
   ```
-  
+
   **NOTE:** N is the number of hash partitions
 
 
