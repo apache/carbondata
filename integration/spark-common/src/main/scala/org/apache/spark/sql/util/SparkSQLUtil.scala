@@ -19,11 +19,14 @@ package org.apache.spark.sql.util
 
 import java.lang.reflect.Method
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.spark.SparkContext
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Statistics}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.internal.{SessionState, SQLConf}
-import org.apache.spark.util.{CarbonReflectionUtils, SparkUtil}
+import org.apache.spark.util.{CarbonReflectionUtils, SerializableConfiguration, SparkUtil}
 
 object SparkSQLUtil {
   def sessionState(sparkSession: SparkSession): SessionState = sparkSession.sessionState
@@ -98,5 +101,21 @@ object SparkSQLUtil {
     } else {
       throw new UnsupportedOperationException("Spark version not supported")
     }
+  }
+
+  /**
+   * Method to broadcast a variable using spark SerializableConfiguration class
+   *
+   * @param sparkContext
+   * @param hadoopConf
+   * @return
+   */
+  def broadCastHadoopConf(sparkContext: SparkContext,
+      hadoopConf: Configuration): Broadcast[SerializableConfiguration] = {
+    sparkContext.broadcast(getSerializableConfigurableInstance(hadoopConf))
+  }
+
+  def getSerializableConfigurableInstance(hadoopConf: Configuration): SerializableConfiguration = {
+    new SerializableConfiguration(hadoopConf)
   }
 }
