@@ -24,28 +24,30 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 
 @InterfaceAudience.Internal
 class BloomDataMapDistributable extends DataMapDistributable {
-  /**
-   * parent folder of the bloomindex file
-   */
+
+  // parent folder of the bloomindex file
   private String indexPath;
 
-  /**
-   * List of index shards which are already got filtered through CG index operation.
-   * This is used for merge shard which cannot prune shard in `toDistributable` function.
-   * Other case will be set to Null
-   */
+  // shards needed to scan
   private Set<String> filteredShards;
 
-  BloomDataMapDistributable(String indexPath, Set<String> filteredShards) {
+  private boolean useMergeShard;
+
+  BloomDataMapDistributable(String indexPath, Set<String> filteredShards, boolean useMergeShard) {
     this.indexPath = indexPath;
     this.filteredShards = filteredShards;
+    this.useMergeShard = useMergeShard;
+  }
+
+  public Set<String> getFilteredShards() {
+    return filteredShards;
   }
 
   public String getIndexPath() {
     return indexPath;
   }
 
-  public Set<String> getFilteredShards() {
-    return filteredShards;
+  public boolean getUseMergeShard() {
+    return useMergeShard;
   }
 }

@@ -92,7 +92,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   private double bloomFilterFpp;
   private boolean bloomCompress;
   private Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> cache;
-  // segmentId -> list of index file
+  // segmentId -> list of shard path
   private Map<String, Set<String>> segmentMap = new ConcurrentHashMap<>();
 
   public BloomCoarseGrainDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema)
@@ -218,56 +218,46 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
         this.bloomFilterSize, this.bloomFilterFpp, bloomCompress);
   }
 
-  /**
-   * returns all shard directories of bloom index files for query
-   * if bloom index files are merged we should get only one shard path
-   */
-  private Set<String> getAllShardPaths(String tablePath, String segmentId) {
-    String dataMapStorePath = CarbonTablePath.getDataMapStorePath(
-        tablePath, segmentId, dataMapName);
-    CarbonFile[] carbonFiles = FileFactory.getCarbonFile(dataMapStorePath).listFiles();
-    Set<String> shardPaths = new HashSet<>();
+
+  private boolean isAllShardsMerged(String dmSegmentPath) {
+    boolean mergeShardExist = false;
     boolean mergeShardInprogress = false;
-    CarbonFile mergeShardFile = null;
+    CarbonFile[] carbonFiles = FileFactory.getCarbonFile(dmSegmentPath).listFiles();
     for (CarbonFile carbonFile : carbonFiles) {
-      if (carbonFile.getName().equals(BloomIndexFileStore.MERGE_BLOOM_INDEX_SHARD_NAME)) {
-        mergeShardFile = carbonFile;
-      } else if (carbonFile.getName().equals(BloomIndexFileStore.MERGE_INPROGRESS_FILE)) {
+      String fileName = carbonFile.getName();
+      if (fileName.equals(BloomIndexFileStore.MERGE_BLOOM_INDEX_SHARD_NAME)) {
+        mergeShardExist = true;
+      } else if (fileName.equals(BloomIndexFileStore.MERGE_INPROGRESS_FILE)) {
         mergeShardInprogress = true;
-      } else if (carbonFile.isDirectory()) {
-        shardPaths.add(FileFactory.getPath(carbonFile.getAbsolutePath()).toString());
       }
     }
-    if (mergeShardFile != null && !mergeShardInprogress) {
-      // should only get one shard path if mergeShard is generated successfully
-      shardPaths.clear();
-      shardPaths.add(FileFactory.getPath(mergeShardFile.getAbsolutePath()).toString());
-    }
-    return shardPaths;
+    return mergeShardExist && !mergeShardInprogress;
   }
 
   @Override
   public List<CoarseGrainDataMap> getDataMaps(Segment segment) throws IOException {
     List<CoarseGrainDataMap> dataMaps = new ArrayList<>();
     try {
-      Set<String> shardPaths = segmentMap.get(segment.getSegmentNo());
-      if (shardPaths == null) {
-        shardPaths = getAllShardPaths(getCarbonTable().getTablePath(), segment.getSegmentNo());
-        segmentMap.put(segment.getSegmentNo(), shardPaths);
+      String dmSegmentPath = CarbonTablePath.getDataMapStorePath(
+          getCarbonTable().getTablePath(), segment.getSegmentNo(), dataMapName);
+      boolean useMergeShard = isAllShardsMerged(dmSegmentPath);
+
+      // make use of filtered shard info from default datamap to build bloom datamap
+      BloomCoarseGrainDataMap bloomDM = new BloomCoarseGrainDataMap();
+      bloomDM.init(new BloomDataMapModel(dmSegmentPath, cache, FileFactory.getConfiguration()));
+      bloomDM.initIndexColumnConverters(getCarbonTable(), dataMapMeta.getIndexedColumns());
+      bloomDM.setFilteredShard(segment.getFilteredIndexShardNames(), useMergeShard);
+      dataMaps.add(bloomDM);
+
+      // save shard info for clearing cache
+      Set<String> shardPaths = new HashSet<>();
+      if (useMergeShard) {
+        shardPaths.add(dmSegmentPath + File.separator +
+            BloomIndexFileStore.MERGE_BLOOM_INDEX_SHARD_NAME);
+      } else {
+        shardPaths.addAll(segment.getFilteredIndexShardNames());
       }
-      Set<String> filteredShards = segment.getFilteredIndexShardNames();
-      for (String shard : shardPaths) {
-        if (shard.endsWith(BloomIndexFileStore.MERGE_BLOOM_INDEX_SHARD_NAME) ||
-            filteredShards.contains(new File(shard).getName())) {
-          // Filter out the tasks which are filtered through Main datamap.
-          // for merge shard, shard pruning delay to be done before pruning blocklet
-          BloomCoarseGrainDataMap bloomDM = new BloomCoarseGrainDataMap();
-          bloomDM.init(new BloomDataMapModel(shard, cache, segment.getConfiguration()));
-          bloomDM.initIndexColumnConverters(getCarbonTable(), dataMapMeta.getIndexedColumns());
-          bloomDM.setFilteredShard(filteredShards);
-          dataMaps.add(bloomDM);
-        }
-      }
+      segmentMap.put(segment.getSegmentNo(), shardPaths);
     } catch (Exception e) {
       throw new IOException("Error occurs while init Bloom DataMap", e);
     }
@@ -278,12 +268,12 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   public List<CoarseGrainDataMap> getDataMaps(DataMapDistributable distributable)
       throws IOException {
     List<CoarseGrainDataMap> dataMaps = new ArrayList<>();
-    String indexPath = ((BloomDataMapDistributable) distributable).getIndexPath();
-    Set<String> filteredShards = ((BloomDataMapDistributable) distributable).getFilteredShards();
+    BloomDataMapDistributable bloomDist = (BloomDataMapDistributable) distributable;
     BloomCoarseGrainDataMap bloomDM = new BloomCoarseGrainDataMap();
-    bloomDM.init(new BloomDataMapModel(indexPath, cache, FileFactory.getConfiguration()));
+    bloomDM.init(new BloomDataMapModel(
+        bloomDist.getIndexPath(), cache, FileFactory.getConfiguration()));
     bloomDM.initIndexColumnConverters(getCarbonTable(), dataMapMeta.getIndexedColumns());
-    bloomDM.setFilteredShard(filteredShards);
+    bloomDM.setFilteredShard(bloomDist.getFilteredShards(), bloomDist.getUseMergeShard());
     dataMaps.add(bloomDM);
     return dataMaps;
   }
@@ -292,22 +282,25 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
   @Override
   public List<DataMapDistributable> toDistributable(Segment segment) {
     List<DataMapDistributable> dataMapDistributableList = new ArrayList<>();
-    Set<String> shardPaths = segmentMap.get(segment.getSegmentNo());
-    if (shardPaths == null) {
-      shardPaths = getAllShardPaths(getCarbonTable().getTablePath(), segment.getSegmentNo());
-      segmentMap.put(segment.getSegmentNo(), shardPaths);
-    }
+
+    String dmSegmentPath = CarbonTablePath.getDataMapStorePath(
+        getCarbonTable().getTablePath(), segment.getSegmentNo(), dataMapName);
     Set<String> filteredShards = segment.getFilteredIndexShardNames();
-    for (String shardPath : shardPaths) {
-      // Filter out the tasks which are filtered through Main datamap.
-      // for merge shard, shard pruning delay to be done before pruning blocklet
-      if (shardPath.endsWith(BloomIndexFileStore.MERGE_BLOOM_INDEX_SHARD_NAME) ||
-          filteredShards.contains(new File(shardPath).getName())) {
-        DataMapDistributable bloomDataMapDistributable =
-            new BloomDataMapDistributable(shardPath, filteredShards);
-        dataMapDistributableList.add(bloomDataMapDistributable);
-      }
+    boolean useMergeShard = isAllShardsMerged(dmSegmentPath);
+
+    DataMapDistributable bloomDataMapDistributable =
+        new BloomDataMapDistributable(dmSegmentPath, filteredShards, useMergeShard);
+    dataMapDistributableList.add(bloomDataMapDistributable);
+
+    // save shard info for clearing cache
+    Set<String> shardPaths = new HashSet<>();
+    if (useMergeShard) {
+      shardPaths.add(dmSegmentPath + File.separator +
+          BloomIndexFileStore.MERGE_BLOOM_INDEX_SHARD_NAME);
+    } else {
+      shardPaths.addAll(segment.getFilteredIndexShardNames());
     }
+    segmentMap.put(segment.getSegmentNo(), shardPaths);
     return dataMapDistributableList;
   }
 

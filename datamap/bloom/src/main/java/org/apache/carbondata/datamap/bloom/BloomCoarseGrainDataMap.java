@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.datamap.bloom;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
@@ -32,7 +33,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.indexstore.Blocklet;
@@ -60,7 +60,6 @@ import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.loading.converter.FieldConverter;
 import org.apache.carbondata.processing.loading.converter.impl.FieldEncoderFactory;
 
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.bloom.CarbonBloomFilter;
 import org.apache.hadoop.util.bloom.Key;
 
@@ -75,10 +74,9 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       LogServiceFactory.getLogService(BloomCoarseGrainDataMap.class.getName());
   private Map<String, CarbonColumn> name2Col;
   private Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> cache;
-  private String shardName;
-  private Path indexPath;
+  private String dmSegmentPath;
   private Set<String> filteredShard;
-  private boolean needShardPrune;
+  private boolean useMergeShard;
   /**
    * This is used to convert literal filter value to internal carbon value
    */
@@ -87,19 +85,21 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
 
   @Override
   public void init(DataMapModel dataMapModel) throws IOException {
-    this.indexPath = FileFactory.getPath(dataMapModel.getFilePath());
-    this.shardName = indexPath.getName();
+    this.dmSegmentPath = dataMapModel.getFilePath();
     if (dataMapModel instanceof BloomDataMapModel) {
       BloomDataMapModel model = (BloomDataMapModel) dataMapModel;
       this.cache = model.getCache();
     }
   }
 
-  public void setFilteredShard(Set<String> filteredShard) {
+  /**
+   * set shard info for pruning
+   * @param filteredShard shards needed to be checked when pruning
+   * @param useMergeShard whether read bloom index from merged shard
+   */
+  public void setFilteredShard(Set<String> filteredShard, boolean useMergeShard) {
     this.filteredShard = filteredShard;
-    // do shard prune when pruning only if bloom index files are merged
-    this.needShardPrune = filteredShard != null &&
-            shardName.equals(BloomIndexFileStore.MERGE_BLOOM_INDEX_SHARD_NAME);
+    this.useMergeShard = useMergeShard;
   }
 
   /**
@@ -178,15 +178,9 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     for (BloomQueryModel bloomQueryModel : bloomQueryModels) {
       Set<Blocklet> tempHitBlockletsResult = new HashSet<>();
       LOGGER.debug("prune blocklet for query: " + bloomQueryModel);
-      BloomCacheKeyValue.CacheKey cacheKey = new BloomCacheKeyValue.CacheKey(
-          this.indexPath.toString(), bloomQueryModel.columnName);
-      BloomCacheKeyValue.CacheValue cacheValue = cache.get(cacheKey);
-      List<CarbonBloomFilter> bloomIndexList = cacheValue.getBloomFilters();
-      for (CarbonBloomFilter bloomFilter : bloomIndexList) {
-        if (needShardPrune && !filteredShard.contains(bloomFilter.getShardName())) {
-          // skip shard which has been pruned in Main datamap
-          continue;
-        }
+      // load all bloom filters of filtered shards
+      List<CarbonBloomFilter> bloomFilterList = getBloomFilters(bloomQueryModel.columnName);
+      for (CarbonBloomFilter bloomFilter : bloomFilterList) {
         boolean scanRequired = false;
         for (byte[] value: bloomQueryModel.filterValues) {
           scanRequired = bloomFilter.membershipTest(new Key(value));
@@ -216,6 +210,32 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       }
     }
     return new ArrayList<>(hitBlocklets);
+  }
+
+
+  private List<CarbonBloomFilter> getBloomFilters(String indexColumn) throws IOException {
+    List<CarbonBloomFilter> bloomFilters = new ArrayList<>();
+    if (useMergeShard) {
+      // for merge shard, bloom filters of all shards are loaded together and then get target ones
+      BloomCacheKeyValue.CacheKey cacheKey = new BloomCacheKeyValue.CacheKey(
+          this.dmSegmentPath + File.separator + BloomIndexFileStore.MERGE_BLOOM_INDEX_SHARD_NAME,
+          indexColumn);
+      BloomCacheKeyValue.CacheValue cacheValue = cache.get(cacheKey);
+      for (CarbonBloomFilter bloomFilter : cacheValue.getBloomFilters()) {
+        if (filteredShard.contains(bloomFilter.getShardName())) {
+          bloomFilters.add(bloomFilter);
+        }
+      }
+    } else {
+      // only load bloom filters of target shards
+      for (String shard: filteredShard) {
+        BloomCacheKeyValue.CacheKey cacheKey = new BloomCacheKeyValue.CacheKey(
+            this.dmSegmentPath + File.separator + shard, indexColumn);
+        BloomCacheKeyValue.CacheValue cacheValue = cache.get(cacheKey);
+        bloomFilters.addAll(cacheValue.getBloomFilters());
+      }
+    }
+    return bloomFilters;
   }
 
   private List<BloomQueryModel> createQueryModel(Expression expression)
