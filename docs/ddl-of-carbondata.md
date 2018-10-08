@@ -87,19 +87,20 @@ CarbonData DDL statements are documented here,which includes:
 | [SORT_COLUMNS](#sort-columns-configuration)                  | Columns to include in sort and its order of sort             |
 | [SORT_SCOPE](#sort-scope-configuration)                      | Sort scope of the load.Options include no sort, local sort ,batch sort and global sort |
 | [TABLE_BLOCKSIZE](#table-block-size-configuration)           | Size of blocks to write onto hdfs                            |
+| [TABLE_BLOCKLET_SIZE](#table-blocklet-size-configuration)    | Size of each blocklet to write in each carbondata file       |
 | [MAJOR_COMPACTION_SIZE](#table-compaction-configuration)     | Size upto which the segments can be combined into one        |
 | [AUTO_LOAD_MERGE](#table-compaction-configuration)           | Whether to auto compact the segments                         |
 | [COMPACTION_LEVEL_THRESHOLD](#table-compaction-configuration) | Number of segments to compact into one segment               |
 | [COMPACTION_PRESERVE_SEGMENTS](#table-compaction-configuration) | Number of latest segments that needs to be excluded from compaction |
 | [ALLOWED_COMPACTION_DAYS](#table-compaction-configuration)   | Segments generated within the configured time limit in days will be compacted, skipping others |
-| [streaming](#streaming)                                      | Whether the table is a streaming table                       |
+| [STREAMING](#streaming)                                      | Whether the table is a streaming table                       |
 | [LOCAL_DICTIONARY_ENABLE](#local-dictionary-configuration)   | Enable local dictionary generation                           |
 | [LOCAL_DICTIONARY_THRESHOLD](#local-dictionary-configuration) | Cardinality upto which the local dictionary can be generated |
 | [LOCAL_DICTIONARY_INCLUDE](#local-dictionary-configuration)  | Columns for which local dictionary needs to be generated. Useful when local dictionary need not be generated for all string/varchar/char columns |
 | [LOCAL_DICTIONARY_EXCLUDE](#local-dictionary-configuration)  | Columns for which local dictionary generation should be skipped. Useful when local dictionary need not be generated for few string/varchar/char columns |
 | [COLUMN_META_CACHE](#caching-minmax-value-for-required-columns) | Columns whose metadata can be cached in Driver for efficient pruning and improved query performance |
 | [CACHE_LEVEL](#caching-at-block-or-blocklet-level)           | Column metadata caching level. Whether to cache column metadata of block or blocklet |
-| [flat_folder](#support-flat-folder-same-as-hiveparquet)      | Whether to write all the carbondata files in a single folder.Not writing segments folder during incremental load |
+| [FLAT FOLDER](#support-flat-folder-same-as-hiveparquet)      | Whether to write all the carbondata files in a single folder.Not writing segments folder during incremental load |
 | [LONG_STRING_COLUMNS](#string-longer-than-32000-characters)  | Columns which are greater than 32K characters                |
 | [BUCKETNUMBER](#bucketing)                                   | Number of buckets to be created                              |
 | [BUCKETCOLUMNS](#bucketing)                                  | Columns which are to be placed in buckets                    |
@@ -173,13 +174,22 @@ CarbonData DDL statements are documented here,which includes:
 
    - ##### Table Block Size Configuration
 
-     This command is for setting block size of this table, the default value is 1024 MB and supports a range of 1 MB to 2048 MB.
+     This property is for setting block size of this table, the default value is 1024 MB and supports a range of 1 MB to 2048 MB.
 
      ```
      TBLPROPERTIES ('TABLE_BLOCKSIZE'='512')
      ```
  
      **NOTE:** 512 or 512M both are accepted.
+     
+   - ##### Table Blocklet Size Configuration
+   
+        This property is for setting block size of this table, the default value is 64 MB and supports a range of 1 MB to 2048 MB.
+   
+        ```
+        TBLPROPERTIES ('TABLE_BLOCKLET_SIZE'='64')
+        ```
+        **NOTE:** 64 or 64M both are accepted.
 
    - ##### Table Compaction Configuration
    
