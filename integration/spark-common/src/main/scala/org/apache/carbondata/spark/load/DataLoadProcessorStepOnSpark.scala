@@ -42,7 +42,7 @@ import org.apache.carbondata.processing.loading.steps.DataWriterProcessorStepImp
 import org.apache.carbondata.processing.sort.sortdata.SortParameters
 import org.apache.carbondata.processing.store.{CarbonFactHandler, CarbonFactHandlerFactory}
 import org.apache.carbondata.processing.util.{CarbonBadRecordUtil, CarbonDataProcessorUtil}
-import org.apache.carbondata.spark.rdd.{NewRddIterator, SerializableConfiguration, StringArrayRow}
+import org.apache.carbondata.spark.rdd.{NewRddIterator, StringArrayRow}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, Util}
 
 object DataLoadProcessorStepOnSpark {
@@ -230,8 +230,8 @@ object DataLoadProcessorStepOnSpark {
       index: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
       rowCounter: Accumulator[Int],
-      conf: Broadcast[SerializableConfiguration]) {
-    ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf.value.value)
+      conf: Configuration) {
+    ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf)
     var model: CarbonLoadModel = null
     var tableName: String = null
     var rowConverter: RowConverterImpl = null
