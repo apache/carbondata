@@ -727,6 +727,31 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    */
   public static Schema readSchemaInIndexFile(String indexFilePath);
 ```
+```
+  /**
+   * read schema from path,
+   * path can be folder path,carbonindex file path, and carbondata file path
+   * and will not check all files schema
+   *
+   * @param path file/folder path
+   * @return schema
+   * @throws IOException
+   */
+  public static Schema readSchema(String path);
+```
+```
+  /**
+   * read schema from path,
+   * path can be folder path,carbonindex file path, and carbondata file path
+   * and user can decide whether check all files schema
+   *
+   * @param path             file/folder path
+   * @param validateSchema whether check all files schema
+   * @return schema
+   * @throws IOException
+   */
+  public static Schema readSchema(String path, boolean validateSchema);
+```
 
 ```
   /**

@@ -151,4 +151,24 @@ public class Schema {
     });
     return this;
   }
+
+  @Override
+  public int hashCode() {
+    return super.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof Schema) {
+      Schema schema = (Schema) obj;
+      for (int i = 0; i < this.fields.length; i++) {
+        if (!(schema.fields)[i].equals((this.fields)[i])) {
+          return false;
+        }
+      }
+    } else {
+      return false;
+    }
+    return true;
+  }
 }
