@@ -20,6 +20,7 @@ package org.apache.spark.sql.execution.command.management
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -75,6 +76,9 @@ case class RefreshCarbonTableCommand(
       if (FileFactory.isFileExist(schemaFilePath, FileFactory.getFileType(schemaFilePath))) {
         // read TableInfo
         val tableInfo = SchemaReader.getTableInfo(identifier)
+        // refresh the column schema in case of store before V3
+        refreshColumnSchema(tableInfo)
+
         // 2.2 register the table with the hive check if the table being registered has
         // aggregate table then do the below steps
         // 2.2.1 validate that all the aggregate tables are copied at the store location.
@@ -116,6 +120,33 @@ case class RefreshCarbonTableCommand(
     // update the schema modified time
     metaStore.updateAndTouchSchemasUpdatedTime()
     Seq.empty
+  }
+
+  /**
+   * Refresh the sort_column flag in column schema in case of old store. Before V3, sort_column
+   * option is not set but by default all dimension columns should be treated
+   * as sort columns if SORT_COLUMNS property is not defined in tblproperties
+   *
+   * @param tableInfo
+   */
+  def refreshColumnSchema(tableInfo: TableInfo): Unit = {
+    val tableProps: mutable.Map[String, String] = tableInfo.getFactTable.getTableProperties.asScala
+    val sortColumns = tableProps.get(CarbonCommonConstants.SORT_COLUMNS)
+    sortColumns match {
+      case Some(sortColumn) =>
+      // don't do anything
+      case None =>
+        // iterate over all the columns and make all the dimensions as sort columns true
+        // check for the complex data types parent and child columns to
+        // avoid adding them in SORT_COLUMNS
+        tableInfo.getFactTable.getListOfColumns.asScala collect
+        ({
+          case columnSchema if columnSchema.isDimensionColumn &&
+                               !columnSchema.getDataType.isComplexType &&
+                               columnSchema.getSchemaOrdinal != -1 =>
+            columnSchema.setSortColumn(true)
+        })
+    }
   }
 
   /**
