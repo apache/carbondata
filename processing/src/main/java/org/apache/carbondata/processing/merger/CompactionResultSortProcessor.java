@@ -415,12 +415,12 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     isVarcharDimMapping = new boolean[dimensions.size()];
     int i = 0;
     for (CarbonDimension dimension : dimensions) {
+      if (dimension.isSortColumn()) {
+        sortColumnMapping[i] = true;
+      }
       if (CarbonUtil.hasEncoding(dimension.getEncoder(), Encoding.DICTIONARY)) {
         i++;
         continue;
-      }
-      if (dimension.isSortColumn()) {
-        sortColumnMapping[i] = true;
       }
       noDictionaryColMapping[i] = true;
       if (dimension.getColumnSchema().getDataType() == DataTypes.VARCHAR) {
