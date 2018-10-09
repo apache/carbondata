@@ -29,14 +29,14 @@ CarbonSchemaReader::CarbonSchemaReader(JNIEnv *env) {
     this->jniEnv = env;
 }
 
-jobject CarbonSchemaReader::readSchemaInDataFile(char *path) {
+jobject CarbonSchemaReader::readSchema(char *path) {
     if (path == NULL) {
         throw std::runtime_error("path parameter can't be NULL.");
     }
-    jmethodID methodID = jniEnv->GetStaticMethodID(carbonSchemaReaderClass, "readSchemaInDataFile",
-        "(Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/Schema;");
+    jmethodID methodID = jniEnv->GetStaticMethodID(carbonSchemaReaderClass, "readSchema",
+                                                   "(Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/Schema;");
     if (methodID == NULL) {
-        throw std::runtime_error("Can't find the method in java: readSchemaInDataFile");
+        throw std::runtime_error("Can't find the method in java: readSchema");
     }
     jstring jPath = jniEnv->NewStringUTF(path);
     jvalue args[1];
@@ -48,18 +48,19 @@ jobject CarbonSchemaReader::readSchemaInDataFile(char *path) {
     return result;
 }
 
-jobject CarbonSchemaReader::readSchemaInIndexFile(char *path) {
+jobject CarbonSchemaReader::readSchema(char *path, bool validateSchema) {
     if (path == NULL) {
         throw std::runtime_error("path parameter can't be NULL.");
     }
-    jmethodID methodID = jniEnv->GetStaticMethodID(carbonSchemaReaderClass, "readSchemaInIndexFile",
-        "(Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/Schema;");
+    jmethodID methodID = jniEnv->GetStaticMethodID(carbonSchemaReaderClass, "readSchema",
+                                                   "(Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/Schema;");
     if (methodID == NULL) {
-        throw std::runtime_error("Can't find the method in java: readSchemaInDataFile");
+        throw std::runtime_error("Can't find the method in java: readSchema");
     }
     jstring jPath = jniEnv->NewStringUTF(path);
-    jvalue args[1];
+    jvalue args[2];
     args[0].l = jPath;
+    args[1].z = validateSchema;
     jobject result = jniEnv->CallStaticObjectMethodA(carbonSchemaReaderClass, methodID, args);
     if (jniEnv->ExceptionCheck()) {
         throw jniEnv->ExceptionOccurred();
