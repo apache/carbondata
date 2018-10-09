@@ -22,17 +22,20 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.TestCase;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.commons.io.FileUtils;
-import org.junit.*;
+
+import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class CarbonSchemaReaderTest extends TestCase {
-
   String path = "./testWriteFiles";
 
   @Before
@@ -101,18 +104,32 @@ public class CarbonSchemaReaderTest extends TestCase {
       String dataFilePath = carbonFiles[0].getAbsolutePath();
 
       Schema schema = CarbonSchemaReader
-          .readSchemaInDataFile(dataFilePath)
+          .readSchema(dataFilePath)
           .asOriginOrder();
 
       assertEquals(schema.getFieldsLength(), 12);
       checkSchema(schema);
-
     } catch (Throwable e) {
+      Assert.fail();
+      e.printStackTrace();
+    }
+  }
+
+  @Test
+  public void testReadSchemaWithoutSchemaFilesSchema() {
+    try {
+      Schema schema = CarbonSchemaReader
+          .readSchema(path)
+          .asOriginOrder();
+      checkSchema(schema);
+    } catch (Throwable e) {
+      Assert.fail();
       e.printStackTrace();
     }
   }
 
   public boolean checkSchema(Schema schema) {
+    assertEquals(schema.getFields().length, 12);
     assert (schema.getFieldName(0).equalsIgnoreCase("stringField"));
     assert (schema.getFieldName(1).equalsIgnoreCase("shortField"));
     assert (schema.getFieldName(2).equalsIgnoreCase("intField"));
@@ -159,16 +176,62 @@ public class CarbonSchemaReaderTest extends TestCase {
       if (carbonFiles == null || carbonFiles.length < 1) {
         throw new RuntimeException("Carbon index file not exists.");
       }
-      String dataFilePath = carbonFiles[0].getAbsolutePath();
+      String indexFilePath = carbonFiles[0].getAbsolutePath();
 
       Schema schema = CarbonSchemaReader
-          .readSchemaInDataFile(dataFilePath)
+          .readSchema(indexFilePath)
           .asOriginOrder();
 
       assertEquals(schema.getFieldsLength(), 12);
       checkSchema(schema);
-
     } catch (Throwable e) {
+      Assert.fail();
+      e.printStackTrace();
+    }
+  }
+
+  @Test
+  public void testReadSchemaAndCheckFilesSchema() {
+    try {
+      Schema schema = CarbonSchemaReader
+          .readSchema(path, false)
+          .asOriginOrder();
+      checkSchema(schema);
+    } catch (Throwable e) {
+      Assert.fail();
+      e.printStackTrace();
+    }
+  }
+
+  @Test
+  public void testReadSchemaWithDifferentSchema() {
+    try {
+      int num = 10;
+      Field[] fields = new Field[2];
+      fields[0] = new Field("name", DataTypes.STRING);
+      fields[1] = new Field("age", DataTypes.INT);
+      CarbonWriter writer = CarbonWriter
+          .builder()
+          .outputPath(path)
+          .withCsvInput(new Schema(fields))
+          .writtenBy("testReadSchemaWithDifferentSchema")
+          .build();
+
+      for (int i = 0; i < num; i++) {
+        writer.write(new String[]{"robot" + (i % 10), String.valueOf(i)});
+      }
+      writer.close();
+      try {
+        CarbonSchemaReader
+            .readSchema(path, true)
+            .asOriginOrder();
+        Assert.fail();
+      } catch (Exception e) {
+        Assert.assertTrue(e.getMessage()
+            .equalsIgnoreCase("Schema is different between different files."));
+      }
+    } catch (Throwable e) {
+      Assert.fail();
       e.printStackTrace();
     }
   }
@@ -177,5 +240,4 @@ public class CarbonSchemaReaderTest extends TestCase {
   public void tearDown() throws IOException {
     FileUtils.deleteDirectory(new File(path));
   }
-
 }

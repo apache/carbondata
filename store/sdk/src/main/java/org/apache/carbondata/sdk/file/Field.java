@@ -291,4 +291,25 @@ public class Field {
       return new StructField(fieldName, dataType);
     }
   }
+
+  @Override
+  public int hashCode() {
+    return super.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof Field) {
+      Field field = (Field) obj;
+      if ((!this.getDataType().equals(field.getDataType()))
+          || (!this.getFieldName().equals(field.getFieldName()))
+          || (!(this.getSchemaOrdinal() == (field.getSchemaOrdinal())))
+          ) {
+        return false;
+      }
+    } else {
+      return false;
+    }
+    return true;
+  }
 }

@@ -96,7 +96,7 @@ public class CarbonReaderExample {
                 throw new RuntimeException("Carbon index file not exists.");
             }
             Schema schema = CarbonSchemaReader
-                .readSchemaInIndexFile(dataFiles[0].getAbsolutePath())
+                .readSchema(dataFiles[0].getAbsolutePath())
                 .asOriginOrder();
             // Transform the schema
             String[] strings = new String[schema.getFields().length];

@@ -777,7 +777,7 @@ public class CarbonReaderTest extends TestCase {
     });
     Assert.assertTrue(dataFiles != null);
     Assert.assertTrue(dataFiles.length > 0);
-    Schema schema = CarbonSchemaReader.readSchemaInDataFile(dataFiles[0].getAbsolutePath());
+    Schema schema = CarbonSchemaReader.readSchema(dataFiles[0].getAbsolutePath());
     Assert.assertTrue(schema.getFields().length == 2);
     Assert.assertEquals("name", (schema.getFields())[0].getFieldName());
     Assert.assertEquals("age", (schema.getFields())[1].getFieldName());
@@ -1021,7 +1021,7 @@ public class CarbonReaderTest extends TestCase {
       }
     });
 
-    Schema schema = CarbonSchemaReader.readSchemaInDataFile(dataFiles2[0].getAbsolutePath());
+    Schema schema = CarbonSchemaReader.readSchema(dataFiles2[0].getAbsolutePath());
 
     // sort the schema
     Arrays.sort(schema.getFields(), new Comparator<Field>() {
@@ -1140,7 +1140,7 @@ public class CarbonReaderTest extends TestCase {
       }
     });
 
-    Schema schema = CarbonSchemaReader.readSchemaInIndexFile(dataFiles2[0].getAbsolutePath()).asOriginOrder();
+    Schema schema = CarbonSchemaReader.readSchema(dataFiles2[0].getAbsolutePath()).asOriginOrder();
     // Transform the schema
     String[] strings = new String[schema.getFields().length];
     for (int i = 0; i < schema.getFields().length; i++) {
@@ -1355,7 +1355,7 @@ public class CarbonReaderTest extends TestCase {
       }
     });
 
-    Schema schema = CarbonSchemaReader.readSchemaInIndexFile(dataFiles2[0].getAbsolutePath()).asOriginOrder();
+    Schema schema = CarbonSchemaReader.readSchema(dataFiles2[0].getAbsolutePath()).asOriginOrder();
 
     for (int i = 0; i < schema.getFields().length; i++) {
       System.out.println((schema.getFields())[i].getFieldName() + "\t" + schema.getFields()[i].getSchemaOrdinal());
@@ -1518,10 +1518,10 @@ public class CarbonReaderTest extends TestCase {
         }
       });
       if (dataFiles == null || dataFiles.length < 1) {
-        throw new RuntimeException("Carbon index file not exists.");
+        throw new RuntimeException("Carbon data file not exists.");
       }
       Schema schema = CarbonSchemaReader
-          .readSchemaInDataFile(dataFiles[0].getAbsolutePath())
+          .readSchema(dataFiles[0].getAbsolutePath())
           .asOriginOrder();
       // Transform the schema
       String[] strings = new String[schema.getFields().length];
@@ -1613,7 +1613,7 @@ public class CarbonReaderTest extends TestCase {
         throw new RuntimeException("Carbon index file not exists.");
       }
       Schema schema = CarbonSchemaReader
-          .readSchemaInIndexFile(dataFiles[0].getAbsolutePath())
+          .readSchema(dataFiles[0].getAbsolutePath())
           .asOriginOrder();
       // Transform the schema
       int count = 0;

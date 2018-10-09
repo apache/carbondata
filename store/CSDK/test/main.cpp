@@ -126,17 +126,21 @@ void printResult(JNIEnv *env, CarbonReader reader) {
 }
 
 /**
- * test read Schema from Index File
+ * test read Schema from path
  *
  * @param env jni env
  * @return whether it is success
  */
-bool readSchemaInIndexFile(JNIEnv *env, char *indexFilePath) {
+bool readSchema(JNIEnv *env, char *Path, bool validateSchema) {
     printf("\nread Schema from Index File:\n");
     CarbonSchemaReader carbonSchemaReader(env);
     jobject schema;
     try {
-        schema = carbonSchemaReader.readSchemaInIndexFile(indexFilePath);
+        if (validateSchema) {
+            schema = carbonSchemaReader.readSchema(Path, validateSchema);
+        } else {
+            schema = carbonSchemaReader.readSchema(Path);
+        }
         Schema carbonSchema(env, schema);
         int length = carbonSchema.getFieldsLength();
         printf("schema length is:%d\n", length);
@@ -148,38 +152,8 @@ bool readSchemaInIndexFile(JNIEnv *env, char *indexFilePath) {
                 printf("Array Element Type Name is:%s\n", carbonSchema.getArrayElementTypeName(i));
             }
         }
-
     } catch (jthrowable e) {
         env->ExceptionDescribe();
-    }
-    return true;
-}
-
-/**
- * test read Schema from Data File
- *
- * @param env jni env
- * @return whether it is success
- */
-bool readSchemaInDataFile(JNIEnv *env, char *dataFilePath) {
-    printf("\nread Schema from Data File:\n");
-    CarbonSchemaReader carbonSchemaReader(env);
-    jobject schema;
-    try {
-        schema = carbonSchemaReader.readSchemaInDataFile(dataFilePath);
-    } catch (jthrowable e) {
-        env->ExceptionDescribe();
-    }
-    Schema carbonSchema(env, schema);
-    int length = carbonSchema.getFieldsLength();
-    printf("schema length is:%d\n", length);
-    for (int i = 0; i < length; i++) {
-        printf("%d\t", i);
-        printf("%s\t", carbonSchema.getFieldName(i));
-        printf("%s\n", carbonSchema.getFieldDataTypeName(i));
-        if (strcmp(carbonSchema.getFieldDataTypeName(i), "ARRAY") == 0) {
-            printf("Array Element Type Name is:%s\n", carbonSchema.getArrayElementTypeName(i));
-        }
     }
     return true;
 }
@@ -647,12 +621,8 @@ int main(int argc, char *argv[]) {
         testReadNextBatchRow(env, S3Path, 100000, 100000, argv, 4, true);
     } else {
         tryCatchException(env);
-        char *indexFilePath = argv[1];
-        char *dataFilePath = argv[2];
         testCarbonProperties(env);
         testWriteData(env, "./data", 1, argv);
-        readSchemaInIndexFile(env, indexFilePath);
-        readSchemaInDataFile(env, dataFilePath);
         testWriteData(env, "./data", 1, argv);
         readFromLocalWithoutProjection(env, smallFilePath);
         readFromLocalWithProjection(env, smallFilePath);
@@ -662,6 +632,8 @@ int main(int argc, char *argv[]) {
         testReadNextRow(env, path, printNum, argv, 0, false);
         testReadNextBatchRow(env, path, batch, printNum, argv, 0, true);
         testReadNextBatchRow(env, path, batch, printNum, argv, 0, false);
+        readSchema(env, path, false);
+        readSchema(env, path, true);
     }
     (jvm)->DestroyJavaVM();
 

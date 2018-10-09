@@ -219,23 +219,28 @@ release the memory and destroy JVM.
 ```
 ```
     /**
-     * read Schema from Data File
+     * read schema from path,
+     * path can be folder path, carbonindex file path, and carbondata file path
+     * and will not check all files schema
      *
-     * @param path Data File path
-     * @return carbon schema object
+     * @param path file/folder path
+     * @return schema
      */
-    jobject readSchemaInDataFile(char *path);
+    jobject readSchema(char *path);
 ```
 ```
     /**
-     * read Schema from index File
+     *  read schema from path,
+     *  path can be folder path, carbonindex file path, and carbondata file path
+     *  and user can decide whether check all files schema
      *
-     * @param path index File path
-     * @return carbon schema object
+     * @param path carbon data path
+     * @param validateSchema whether check all files schema
+     * @return schema
      */
-    jobject readSchemaInIndexFile(char *path);
-
+    jobject readSchema(char *path, bool validateSchema);
 ```
+
 ###Schema
 ``` 
  /**
