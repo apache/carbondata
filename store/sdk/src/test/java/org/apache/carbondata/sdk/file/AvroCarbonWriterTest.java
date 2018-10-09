@@ -61,7 +61,8 @@ public class AvroCarbonWriterTest {
   }
 
   @After
-  public void verifyDMFile() {
+  public void verifyDMFile() throws IOException {
+    FileUtils.deleteDirectory(new File(path));
     assert (!TestUtil.verifyMdtFile());
   }
 
