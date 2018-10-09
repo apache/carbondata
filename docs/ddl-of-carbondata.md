@@ -249,7 +249,8 @@ CarbonData DDL statements are documented here,which includes:
       * TIMESTAMP
       * DATE
       * BOOLEAN
-   
+      * FLOAT
+      * BYTE
    * In case of multi-level complex dataType columns, primitive string/varchar/char columns are considered for local dictionary generation.
 
    System Level Properties for Local Dictionary: 
