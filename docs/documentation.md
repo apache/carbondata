@@ -31,7 +31,7 @@ Apache CarbonData is a new big data file format for faster interactive query usi
 
 **CarbonData SQL Language Reference:** CarbonData extends the Spark SQL language and adds several [DDL](./ddl-of-carbondata.md) and [DML](./dml-of-carbondata.md) statements to support operations on it.Refer to the [Reference Manual](./language-manual.md) to understand the supported features and functions.
 
-**Programming Guides:** You can read our guides about [APIs supported](./sdk-guide.md) to learn how to integrate CarbonData with your applications.
+**Programming Guides:** You can read our guides about [Java APIs supported](./sdk-guide.md) or [C++ APIs supported](./csdk-guide.md) to learn how to integrate CarbonData with your applications.
 
 
 

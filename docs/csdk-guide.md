@@ -30,106 +30,13 @@ code and without CarbonSession.
 In the carbon jars package, there exist a carbondata-sdk.jar, 
 including SDK reader for CSDK.
 ## Quick example
-```
-// 1. init JVM
-JavaVM *jvm;
-JNIEnv *initJVM() {
-    JNIEnv *env;
-    JavaVMInitArgs vm_args;
-    int parNum = 3;
-    int res;
-    JavaVMOption options[parNum];
 
-    options[0].optionString = "-Djava.compiler=NONE";
-    options[1].optionString = "-Djava.class.path=../../sdk/target/carbondata-sdk.jar";
-    options[2].optionString = "-verbose:jni";
-    vm_args.version = JNI_VERSION_1_8;
-    vm_args.nOptions = parNum;
-    vm_args.options = options;
-    vm_args.ignoreUnrecognized = JNI_FALSE;
+Please find example code at  [main.cpp](https://github.com/apache/carbondata/blob/master/store/CSDK/test/main.cpp) of CSDK module  
 
-    res = JNI_CreateJavaVM(&jvm, (void **) &env, &vm_args);
-    if (res < 0) {
-        fprintf(stderr, "\nCan't create Java VM\n");
-        exit(1);
-    }
-
-    return env;
-}
-
-// 2. create carbon reader and read data 
-// 2.1 read data from local disk
-/**
- * test read data from local disk, without projection
- *
- * @param env  jni env
- * @return
- */
-bool readFromLocalWithoutProjection(JNIEnv *env) {
-
-    CarbonReader carbonReaderClass;
-    carbonReaderClass.builder(env, "../resources/carbondata", "test");
-    carbonReaderClass.build();
-
-    while (carbonReaderClass.hasNext()) {
-        jobjectArray row = carbonReaderClass.readNextRow();
-        jsize length = env->GetArrayLength(row);
-        int j = 0;
-        for (j = 0; j < length; j++) {
-            jobject element = env->GetObjectArrayElement(row, j);
-            char *str = (char *) env->GetStringUTFChars((jstring) element, JNI_FALSE);
-            printf("%s\t", str);
-        }
-        printf("\n");
-    }
-    carbonReaderClass.close();
-}
-
-// 2.2 read data from S3
-
-/**
- * read data from S3
- * parameter is ak sk endpoint
- *
- * @param env jni env
- * @param argv argument vector
- * @return
- */
-bool readFromS3(JNIEnv *env, char *argv[]) {
-    CarbonReader reader;
-
-    char *args[3];
-    // "your access key"
-    args[0] = argv[1];
-    // "your secret key"
-    args[1] = argv[2];
-    // "your endPoint"
-    args[2] = argv[3];
-
-    reader.builder(env, "s3a://sdk/WriterOutput", "test");
-    reader.withHadoopConf(3, args);
-    reader.build();
-    printf("\nRead data from S3:\n");
-    while (reader.hasNext()) {
-        jobjectArray row = reader.readNextRow();
-        jsize length = env->GetArrayLength(row);
-
-        int j = 0;
-        for (j = 0; j < length; j++) {
-            jobject element = env->GetObjectArrayElement(row, j);
-            char *str = (char *) env->GetStringUTFChars((jstring) element, JNI_FALSE);
-            printf("%s\t", str);
-        }
-        printf("\n");
-    }
-
-    reader.close();
-}
-
-// 3. destory JVM
-    (jvm)->DestroyJavaVM();
-```
-Find example code at main.cpp of CSDK module
+When users use C++ to read carbon files, users should init JVM first. Then users create 
+carbon reader and read data.There are some example code of read data from local disk  
+and read data from S3 at main.cpp of CSDK module.  Finally, Finally, users need to 
+release the memory and destroy JVM.
 
 ## API List
 ```
@@ -181,11 +88,10 @@ Find example code at main.cpp of CSDK module
     jboolean hasNext();
 
     /**
-     * read next row from data
-     *
-     * @return object array of one row
+     * read next carbonRow from data
+     * @return carbonRow object of one row
      */
-    jobjectArray readNextRow();
+     jobject readNextRow();
 
     /**
      * close the carbon reader
