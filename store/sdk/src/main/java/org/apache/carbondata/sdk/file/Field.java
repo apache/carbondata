@@ -240,6 +240,15 @@ public class Field {
     }
   }
 
+  @Override
+  public String toString() {
+    return "Field{" +
+        "name='" + name + '\'' +
+        ", type=" + type +
+        ", schemaOrdinal=" + schemaOrdinal +
+        '}';
+  }
+
   /**
    * prepare sub fields for complex types
    *
