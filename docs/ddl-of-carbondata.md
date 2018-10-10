@@ -185,7 +185,7 @@ CarbonData DDL statements are documented here,which includes:
    - ##### Table Blocklet Size Configuration
 
      This property is for setting blocklet size in the carbondata file, the default value is 64 MB.
-     Blocklet is the minimum IO read unit, so the smaller the value, the better it is for filtering queries.
+     Blocklet is the minimum IO read unit, in case of point queries reduce blocklet size might improve the query performance.
 
      Example usage:
      ```
