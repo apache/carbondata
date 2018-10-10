@@ -34,6 +34,7 @@ import org.apache.carbondata.core.scan.filter.executer.ImplicitColumnFilterExecu
 import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 import org.apache.carbondata.core.scan.result.impl.FilterQueryScannedResult;
+import org.apache.carbondata.core.scan.scanner.LazyBlockletLoad;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
@@ -343,8 +344,8 @@ public class BlockletFilterScanner extends BlockletFullScanner {
 
       QueryStatistic scannedPages = queryStatisticsModel.getStatisticsTypeAndObjMap()
           .get(QueryStatisticsConstants.PAGE_SCANNED);
-      scannedPages.addCountStatistic(QueryStatisticsConstants.PAGE_SCANNED,
-          scannedPages.getCount());
+      scannedPages
+          .addCountStatistic(QueryStatisticsConstants.PAGE_SCANNED, scannedPages.getCount());
       return createEmptyResult();
     }
 
@@ -377,48 +378,18 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     for (int i = 0; i < numberOfRows.length; i++) {
       numberOfRows[i] = rawBlockletColumnChunks.getDataBlock().getPageRowCount(i);
     }
-    long dimensionReadTime = System.currentTimeMillis();
-    dimensionReadTime = System.currentTimeMillis() - dimensionReadTime;
-
-    FileReader fileReader = rawBlockletColumnChunks.getFileReader();
-
 
     DimensionRawColumnChunk[] dimensionRawColumnChunks =
         new DimensionRawColumnChunk[blockExecutionInfo.getTotalNumberDimensionToRead()];
+    MeasureRawColumnChunk[] measureRawColumnChunks =
+        new MeasureRawColumnChunk[blockExecutionInfo.getTotalNumberOfMeasureToRead()];
     int numDimensionChunks = dimensionRawColumnChunks.length;
+    int numMeasureChunks = measureRawColumnChunks.length;
     // read dimension chunk blocks from file which is not present
     for (int chunkIndex = 0; chunkIndex < numDimensionChunks; chunkIndex++) {
       dimensionRawColumnChunks[chunkIndex] =
           rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex];
     }
-    int[][] allSelectedDimensionColumnIndexRange =
-        blockExecutionInfo.getAllSelectedDimensionColumnIndexRange();
-    DimensionRawColumnChunk[] projectionListDimensionChunk = rawBlockletColumnChunks.getDataBlock()
-        .readDimensionChunks(fileReader, allSelectedDimensionColumnIndexRange);
-    for (int[] columnIndexRange : allSelectedDimensionColumnIndexRange) {
-      System.arraycopy(projectionListDimensionChunk, columnIndexRange[0],
-          dimensionRawColumnChunks, columnIndexRange[0],
-          columnIndexRange[1] + 1 - columnIndexRange[0]);
-    }
-
-    /*
-     * in case projection if the projected dimension are not loaded in the dimensionColumnDataChunk
-     * then loading them
-     */
-    int[] projectionListDimensionIndexes = blockExecutionInfo.getProjectionListDimensionIndexes();
-    for (int projectionListDimensionIndex : projectionListDimensionIndexes) {
-      if (null == dimensionRawColumnChunks[projectionListDimensionIndex]) {
-        dimensionRawColumnChunks[projectionListDimensionIndex] =
-            rawBlockletColumnChunks.getDataBlock().readDimensionChunk(
-                fileReader, projectionListDimensionIndex);
-      }
-    }
-
-    DimensionColumnPage[][] dimensionColumnPages =
-        new DimensionColumnPage[numDimensionChunks][pages.cardinality()];
-    MeasureRawColumnChunk[] measureRawColumnChunks =
-        new MeasureRawColumnChunk[blockExecutionInfo.getTotalNumberOfMeasureToRead()];
-    int numMeasureChunks = measureRawColumnChunks.length;
 
     // read the measure chunk blocks which is not present
     for (int chunkIndex = 0; chunkIndex < numMeasureChunks; chunkIndex++) {
@@ -428,25 +399,11 @@ public class BlockletFilterScanner extends BlockletFullScanner {
       }
     }
 
-    int[][] allSelectedMeasureColumnIndexRange =
-        blockExecutionInfo.getAllSelectedMeasureIndexRange();
-    MeasureRawColumnChunk[] projectionListMeasureChunk = rawBlockletColumnChunks.getDataBlock()
-        .readMeasureChunks(fileReader, allSelectedMeasureColumnIndexRange);
-    for (int[] columnIndexRange : allSelectedMeasureColumnIndexRange) {
-      System.arraycopy(projectionListMeasureChunk, columnIndexRange[0], measureRawColumnChunks,
-          columnIndexRange[0], columnIndexRange[1] + 1 - columnIndexRange[0]);
-    }
-    /*
-     * in case projection if the projected measure are not loaded in the ColumnPage
-     * then loading them
-     */
-    int[] projectionListMeasureIndexes = blockExecutionInfo.getProjectionListMeasureIndexes();
-    for (int projectionListMeasureIndex : projectionListMeasureIndexes) {
-      if (null == measureRawColumnChunks[projectionListMeasureIndex]) {
-        measureRawColumnChunks[projectionListMeasureIndex] = rawBlockletColumnChunks.getDataBlock()
-            .readMeasureChunk(fileReader, projectionListMeasureIndex);
-      }
-    }
+    LazyBlockletLoad lazyBlocklet =
+        new LazyBlockletLoad(rawBlockletColumnChunks, blockExecutionInfo, dimensionRawColumnChunks,
+            measureRawColumnChunks, queryStatisticsModel);
+    DimensionColumnPage[][] dimensionColumnPages =
+        new DimensionColumnPage[numDimensionChunks][pages.cardinality()];
     ColumnPage[][] measureColumnPages = new ColumnPage[numMeasureChunks][pages.cardinality()];
     scannedResult.setDimensionColumnPages(dimensionColumnPages);
     scannedResult.setMeasureColumnPages(measureColumnPages);
@@ -454,18 +411,16 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     scannedResult.setMsrRawColumnChunks(measureRawColumnChunks);
     scannedResult.setPageFilteredRowCount(numberOfRows);
     scannedResult.setPagesFiltered(pageFilteredPages);
+    scannedResult.setLazyBlockletLoad(lazyBlocklet);
     scannedResult.setBlockletId(
-        blockExecutionInfo.getBlockIdString() + CarbonCommonConstants.FILE_SEPARATOR +
-            rawBlockletColumnChunks.getDataBlock().blockletIndex());
+        blockExecutionInfo.getBlockIdString() + CarbonCommonConstants.FILE_SEPARATOR
+            + rawBlockletColumnChunks.getDataBlock().blockletIndex());
     // adding statistics for carbon scan time
     QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);
     scanTime.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKlET_TIME,
-        scanTime.getCount() + (System.currentTimeMillis() - startTime - dimensionReadTime));
-    QueryStatistic readTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
-        .get(QueryStatisticsConstants.READ_BLOCKlET_TIME);
-    readTime.addCountStatistic(QueryStatisticsConstants.READ_BLOCKlET_TIME,
-        readTime.getCount() + dimensionReadTime);
+        scanTime.getCount() + (System.currentTimeMillis() - startTime));
+
     return scannedResult;
   }
 }

@@ -40,6 +40,8 @@ import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.scanner.LazyBlockletLoad;
+import org.apache.carbondata.core.scan.scanner.LazyPageLoad;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
@@ -141,6 +143,8 @@ public abstract class BlockletScannedResult {
 
   protected QueryStatisticsModel queryStatisticsModel;
 
+  protected LazyBlockletLoad lazyBlockletLoad;
+
   public BlockletScannedResult(BlockExecutionInfo blockExecutionInfo,
       QueryStatisticsModel queryStatisticsModel) {
     this.fixedLengthKeySize = blockExecutionInfo.getFixedLengthKeySize();
@@ -179,6 +183,14 @@ public abstract class BlockletScannedResult {
 
   public void setMsrRawColumnChunks(MeasureRawColumnChunk[] msrRawColumnChunks) {
     this.msrRawColumnChunks = msrRawColumnChunks;
+  }
+
+  public LazyBlockletLoad getLazyBlockletLoad() {
+    return lazyBlockletLoad;
+  }
+
+  public void setLazyBlockletLoad(LazyBlockletLoad lazyBlockletLoad) {
+    this.lazyBlockletLoad = lazyBlockletLoad;
   }
 
   /**
@@ -389,25 +401,24 @@ public abstract class BlockletScannedResult {
     if (pageCounter >= pageFilteredRowCount.length) {
       return;
     }
-    long startTime = System.currentTimeMillis();
 
     for (int i = 0; i < this.dictionaryColumnChunkIndexes.length; i++) {
-      dimRawColumnChunks[dictionaryColumnChunkIndexes[i]]
-          .convertToDimColDataChunkAndFillVector(pagesFiltered[pageCounter], dictionaryInfo[i]);
+      dictionaryInfo[i].vector.setLazyPage(
+          new LazyPageLoad(lazyBlockletLoad, dictionaryColumnChunkIndexes[i], false,
+              pagesFiltered[pageCounter], dictionaryInfo[i]));
     }
     for (int i = 0; i < this.noDictionaryColumnChunkIndexes.length; i++) {
-      dimRawColumnChunks[noDictionaryColumnChunkIndexes[i]]
-          .convertToDimColDataChunkAndFillVector(pagesFiltered[pageCounter], noDictionaryInfo[i]);
+      noDictionaryInfo[i].vector.setLazyPage(
+          new LazyPageLoad(lazyBlockletLoad, noDictionaryColumnChunkIndexes[i], false,
+              pagesFiltered[pageCounter], noDictionaryInfo[i]));
     }
 
     for (int i = 0; i < measuresOrdinal.length; i++) {
-      msrRawColumnChunks[measuresOrdinal[i]]
-          .convertToColumnPageAndFillVector(pagesFiltered[pageCounter], msrVectorInfo[i]);
+      msrVectorInfo[i].vector.setLazyPage(
+          new LazyPageLoad(lazyBlockletLoad, measuresOrdinal[i], true, pagesFiltered[pageCounter],
+              msrVectorInfo[i]));
     }
-    QueryStatistic pageUncompressTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
-        .get(QueryStatisticsConstants.PAGE_UNCOMPRESS_TIME);
-    pageUncompressTime.addCountStatistic(QueryStatisticsConstants.PAGE_UNCOMPRESS_TIME,
-        pageUncompressTime.getCount() + (System.currentTimeMillis() - startTime));
+
   }
 
   // free the memory for the last page chunk

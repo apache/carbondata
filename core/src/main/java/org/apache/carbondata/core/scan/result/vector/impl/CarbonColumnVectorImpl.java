@@ -25,6 +25,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+import org.apache.carbondata.core.scan.scanner.LazyPageLoad;
 
 public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
@@ -347,5 +348,9 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     for (int i = srcIndex; i < count; i++) {
       byteArr[rowId ++] = src[i];
     }
+  }
+
+  @Override public void setLazyPage(LazyPageLoad lazyPage) {
+    lazyPage.loadPage();
   }
 }

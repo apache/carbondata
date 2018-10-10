@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+import org.apache.carbondata.core.scan.scanner.LazyPageLoad;
 
 public abstract class AbstractCarbonColumnarVector
     implements CarbonColumnVector, ConvertableVector {
@@ -107,6 +108,10 @@ public abstract class AbstractCarbonColumnarVector
   }
 
   @Override public void convert() {
+
+  }
+
+  @Override public void setLazyPage(LazyPageLoad lazyPage) {
 
   }
 }

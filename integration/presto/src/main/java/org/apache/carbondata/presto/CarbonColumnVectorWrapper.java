@@ -23,6 +23,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
+import org.apache.carbondata.core.scan.scanner.LazyPageLoad;
 
 public class CarbonColumnVectorWrapper implements CarbonColumnVector {
 
@@ -298,6 +299,10 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
       }
       rowId++;
     }
+  }
+
+  @Override public void setLazyPage(LazyPageLoad lazyPage) {
+    lazyPage.loadPage();
   }
 
 }

@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+import org.apache.carbondata.core.scan.scanner.LazyPageLoad;
 
 import org.apache.spark.sql.CarbonVectorProxy;
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil;
@@ -216,5 +217,9 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector {
 
   @Override public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
     sparkColumnVectorProxy.putBytes(rowId, count, src, srcIndex);
+  }
+
+  @Override public void setLazyPage(LazyPageLoad lazyPage) {
+    lazyPage.loadPage();
   }
 }
