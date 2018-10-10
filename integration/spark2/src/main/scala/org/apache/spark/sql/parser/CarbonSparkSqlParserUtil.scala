@@ -123,6 +123,13 @@ object CarbonSparkSqlParserUtil {
     if (partitionFields.nonEmpty && options.isStreaming) {
       operationNotAllowed("Streaming is not allowed on partitioned table", partitionColumns)
     }
+
+    if (external && fields.isEmpty && tableProperties.nonEmpty) {
+      // as fields are always zero for external table, cannot validate table properties.
+      operationNotAllowed(
+        "table properties are not supported for external table", tablePropertyList)
+    }
+
     // validate tblProperties
     val bucketFields = parser.getBucketFields(tableProperties, fields, options)
     var isTransactionalTable: Boolean = true
@@ -132,7 +139,7 @@ object CarbonSparkSqlParserUtil {
         // user provided schema for this external table, this is not allow currently
         // see CARBONDATA-2866
         operationNotAllowed(
-          "Schema may not be specified for external table", columns)
+          "Schema must not be specified for external table", columns)
       }
       if (partitionByStructFields.nonEmpty) {
         operationNotAllowed(
