@@ -1084,24 +1084,6 @@ public final class DataTypeUtil {
   }
 
   /**
-   * Method to type case the data based on modified data type. This method will used for
-   * retrieving the data after change in data type restructure operation
-   *
-   * @param data
-   * @param restructureDataType
-   * @return
-   */
-  public static long getDataBasedOnRestructuredDataType(Object data, DataType restructureDataType) {
-    long value = 0L;
-    if (restructureDataType == DataTypes.INT) {
-      value = (int) data;
-    } else if (restructureDataType == DataTypes.LONG) {
-      value = (long) data;
-    }
-    return value;
-  }
-
-  /**
    * Check if the column is a no dictionary primitive column
    *
    * @param dataType
