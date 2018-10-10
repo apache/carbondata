@@ -18,21 +18,24 @@
 package org.apache.carbondata.tool;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 class ShardPrinter {
   private Map<String, TablePrinter> shardPrinter = new HashMap<>();
   private String[] header;
+  private ArrayList<String> outPuts;
 
-  ShardPrinter(String[] header) {
+  ShardPrinter(String[] header, ArrayList<String> outPuts) {
     this.header = header;
+    this.outPuts = outPuts;
   }
 
   void addRow(String shardName, String[] row) {
     TablePrinter printer = shardPrinter.get(shardName);
     if (printer == null) {
-      printer = new TablePrinter(header);
+      printer = new TablePrinter(header, outPuts);
       shardPrinter.put(shardName, printer);
     }
     printer.addRow(row);
@@ -41,9 +44,9 @@ class ShardPrinter {
   void printFormatted(PrintStream out) {
     int shardId = 1;
     for (Map.Entry<String, TablePrinter> entry : shardPrinter.entrySet()) {
-      out.println(String.format("Shard #%d (%s)", shardId++, entry.getKey()));
-      entry.getValue().printFormatted(out);
-      out.println();
+      outPuts.add(String.format("Shard #%d (%s)", shardId++, entry.getKey()));
+      entry.getValue().printFormatted();
+      outPuts.add("");
     }
   }
 }

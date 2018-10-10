@@ -17,26 +17,28 @@
 
 package org.apache.carbondata.tool;
 
-import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 class TablePrinter {
   private List<String[]> table = new LinkedList<>();
+  private ArrayList<String> outPuts;
 
   /**
    * create a new Table Printer
    * @param header table header
    */
-  TablePrinter(String[] header) {
+  TablePrinter(String[] header, ArrayList<String> outPuts) {
     this.table.add(header);
+    this.outPuts = outPuts;
   }
 
   void addRow(String[] row) {
     table.add(row);
   }
 
-  void printFormatted(PrintStream out) {
+  void printFormatted() {
     // calculate the max length of each output field in the table
     int padding = 2;
     int[] maxLength = new int[table.get(0).length];
@@ -47,13 +49,14 @@ class TablePrinter {
     }
 
     for (String[] row : table) {
+      StringBuilder outString = new StringBuilder();
       for (int i = 0; i < row.length; i++) {
-        out.print(row[i]);
+        outString.append(row[i]);
         for (int num = 0; num < maxLength[i] + padding - row[i].length(); num++) {
-          out.print(" ");
+          outString.append(" ");
         }
       }
-      out.println();
+      outPuts.add(outString.toString());
     }
   }
 }

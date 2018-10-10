@@ -19,6 +19,7 @@ package org.apache.carbondata.tool;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
@@ -39,6 +40,10 @@ import org.apache.commons.cli.PosixParser;
 @InterfaceAudience.User
 @InterfaceStability.Unstable
 public class CarbonCli {
+
+  private static ArrayList<String> outPuts;
+
+  private static boolean isPrintInConsole = true;
 
   private static Options buildOptions() {
     Option help = new Option("h", "help", false,"print this message");
@@ -64,7 +69,6 @@ public class CarbonCli {
     Option schema = new Option("s", "schema",false, "print the schema");
     Option segment = new Option("m", "showSegment", false, "print segment information");
     Option tblProperties = new Option("t", "tblProperties", false, "print table properties");
-    Option detail = new Option("b", "blocklet", false, "print blocklet size detail");
     Option columnMeta = new Option("k", "columnChunkMeta", false, "print column chunk meta");
     Option columnName = OptionBuilder
         .withArgName("column name")
@@ -73,6 +77,15 @@ public class CarbonCli {
         .withLongOpt("column")
         .create("c");
 
+    Option blockletDetail = OptionBuilder.withArgName("limitSize").hasOptionalArg()
+        .withDescription("print blocklet size detail").withLongOpt("limitSize")
+        .create("b");
+
+    Option blockLevelDetail = OptionBuilder.withArgName("blockDetail").hasArg()
+        .withDescription("print block details").withLongOpt("blockDetail")
+        .create("B");
+
+    Option version = new Option("v", "version", false, "print version details of carbondata file");
     Options options = new Options();
     options.addOption(help);
     options.addOption(path);
@@ -82,9 +95,11 @@ public class CarbonCli {
     options.addOption(schema);
     options.addOption(segment);
     options.addOption(tblProperties);
-    options.addOption(detail);
+    options.addOption(blockletDetail);
     options.addOption(columnMeta);
     options.addOption(columnName);
+    options.addOption(version);
+    options.addOption(blockLevelDetail);
     return options;
   }
 
@@ -92,7 +107,24 @@ public class CarbonCli {
     run(args, System.out);
   }
 
-  static void run(String[] args, PrintStream out) {
+  public static void run(String[] args, ArrayList<String> e) {
+    // this boolean to check whether to print in console or not
+    isPrintInConsole = false;
+    outPuts = e;
+    Options options = buildOptions();
+    CommandLineParser parser = new PosixParser();
+
+    CommandLine line;
+    try {
+      line = parser.parse(options, args);
+    } catch (ParseException exp) {
+      throw new RuntimeException("Parsing failed. Reason: " + exp.getMessage());
+    }
+
+    runCli(System.out, options, line);
+  }
+
+  public static void run(String[] args, PrintStream out) {
     Options options = buildOptions();
     CommandLineParser parser = new PosixParser();
 
@@ -104,6 +136,13 @@ public class CarbonCli {
       return;
     }
 
+    runCli(out, options, line);
+  }
+
+  private static void  runCli(PrintStream out, Options options, CommandLine line) {
+    if (outPuts == null) {
+      outPuts = new ArrayList<>();
+    }
     if (line.hasOption("h")) {
       printHelp(options);
       return;
@@ -113,22 +152,28 @@ public class CarbonCli {
     if (line.hasOption("p")) {
       path = line.getOptionValue("path");
     }
-    out.println("Input Folder: " + path);
+    outPuts.add("Input Folder: " + path);
 
     String cmd = line.getOptionValue("cmd");
     Command command;
     if (cmd.equalsIgnoreCase("summary")) {
-      command = new DataSummary(path, out);
+      command = new DataSummary(path, out, outPuts);
     } else if (cmd.equalsIgnoreCase("benchmark")) {
-      command = new ScanBenchmark(path, out);
+      command = new ScanBenchmark(path, out, outPuts);
     } else {
       out.println("command " + cmd + " is not supported");
+      outPuts.add("command " + cmd + " is not supported");
       printHelp(options);
       return;
     }
 
     try {
       command.run(line);
+      if (isPrintInConsole) {
+        for (String output : outPuts) {
+          out.println(output);
+        }
+      }
       out.flush();
     } catch (IOException | MemoryException e) {
       e.printStackTrace();

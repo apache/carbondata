@@ -26,6 +26,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
+import org.apache.carbondata.core.constants.CarbonVersionConstants;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
@@ -315,6 +316,8 @@ public final class DataLoadProcessBuilder {
       configuration.setWritingCoresCount(loadModel.getSdkWriterCores());
     }
     configuration.setColumnCompressor(loadModel.getColumnCompressor());
+    configuration.setAppName(loadModel.getAppName());
+    configuration.setVersion(CarbonVersionConstants.CARBONDATA_VERSION);
     return configuration;
   }
 

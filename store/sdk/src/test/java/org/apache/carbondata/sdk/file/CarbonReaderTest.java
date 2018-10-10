@@ -17,28 +17,44 @@
 
 package org.apache.carbondata.sdk.file;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FilenameFilter;
+import java.io.IOException;
 import java.sql.Date;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.apache.avro.generic.GenericData;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonVersionConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
-import org.apache.carbondata.core.scan.expression.conditional.*;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.core.scan.expression.conditional.GreaterThanExpression;
+import org.apache.carbondata.core.scan.expression.conditional.InExpression;
+import org.apache.carbondata.core.scan.expression.conditional.LessThanExpression;
+import org.apache.carbondata.core.scan.expression.conditional.NotEqualsExpression;
+import org.apache.carbondata.core.scan.expression.conditional.NotInExpression;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 import junit.framework.TestCase;
+import org.apache.avro.generic.GenericData;
 import org.apache.commons.io.FileUtils;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class CarbonReaderTest extends TestCase {
 
@@ -765,7 +781,6 @@ public class CarbonReaderTest extends TestCase {
 
     FileUtils.deleteDirectory(new File(path));
   }
-
   @Test
   public void testWriteAndReadFilesNonTransactional() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
@@ -1080,7 +1095,8 @@ public class CarbonReaderTest extends TestCase {
     fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
 
     try {
-      CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
+      CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path)
+          .writtenBy("SDK_1.0.0");
 
       CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
 
@@ -1104,6 +1120,14 @@ public class CarbonReaderTest extends TestCase {
       Assert.fail(e.getMessage());
     }
 
+    File[] dataFiles1 = new File(path).listFiles(new FilenameFilter() {
+      @Override public boolean accept(File dir, String name) {
+        return name.endsWith("carbondata");
+      }
+    });
+    String versionDetails = CarbonSchemaReader.getVersionDetails(dataFiles1[0].getAbsolutePath());
+    assertTrue(versionDetails.contains("SDK_1.0.0 in version: "));
+
     File[] dataFiles2 = new File(path).listFiles(new FilenameFilter() {
       @Override public boolean accept(File dir, String name) {
         return name.endsWith("carbonindex");
@@ -1111,7 +1135,6 @@ public class CarbonReaderTest extends TestCase {
     });
 
     Schema schema = CarbonSchemaReader.readSchemaInIndexFile(dataFiles2[0].getAbsolutePath()).asOriginOrder();
-
     // Transform the schema
     String[] strings = new String[schema.getFields().length];
     for (int i = 0; i < schema.getFields().length; i++) {
