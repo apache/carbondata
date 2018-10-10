@@ -21,7 +21,7 @@ package org.apache.carbondata.cluster.sdv.generated
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, InputStream}
 import java.util
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterEach
 import scala.collection.JavaConverters._
@@ -194,7 +194,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE IF EXISTS sdkTable")
 
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable(name string,age int) STORED BY
+      s"""CREATE EXTERNAL TABLE sdkTable STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
     checkAnswer(sql("select * from sdkTable"), Seq(Row("abc0", 0, 0.0),
@@ -228,7 +228,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE IF EXISTS sdkTable")
 
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable(name string,age int) STORED BY
+      s"""CREATE EXTERNAL TABLE sdkTable STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
@@ -266,11 +266,11 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE IF EXISTS sdkTable1")
     sql("DROP TABLE IF EXISTS sdkTable2")
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable1(name string,age int) STORED BY
+      s"""CREATE EXTERNAL TABLE sdkTable1 STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable2(name string,age int) STORED BY
+      s"""CREATE EXTERNAL TABLE sdkTable2 STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
@@ -278,14 +278,13 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     checkAnswer(sql("select count(*) from sdkTable1"), Seq(Row(6)))
   }
 
-  test("test create External Table with Schema with partition, external table should " +
-       "ignore schema and partition") {
+  test("test create External Table without Schema") {
     buildTestDataSingleFile()
     assert(FileFactory.getCarbonFile(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkTable")
 
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable(name string) PARTITIONED BY (age int) STORED BY
+      s"""CREATE EXTERNAL TABLE sdkTable STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
@@ -301,7 +300,7 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
     sql("DROP TABLE IF EXISTS table1")
 
     sql(
-      s"""CREATE EXTERNAL TABLE sdkTable(name string) PARTITIONED BY (age int) STORED BY
+      s"""CREATE EXTERNAL TABLE sdkTable STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
@@ -323,17 +322,18 @@ class SDKwriterTestCase extends QueryTest with BeforeAndAfterEach {
       Seq(Row(0)))
   }
 
-  test("test create External Table with Table properties should ignore tblproperties") {
+  test("test create External Table with Table properties should fail") {
     buildTestDataSingleFile()
     assert(FileFactory.getCarbonFile(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkTable")
 
-    sql(
-      s"""CREATE EXTERNAL TABLE sdkTable(name string,age int) STORED BY
-         |'carbondata' LOCATION
-         |'$writerPath' TBLPROPERTIES('sort_scope'='batch_sort') """.stripMargin)
-
-    checkExistence(sql("Describe formatted sdkTable "), false, "batch_sort")
+    val ex = intercept[AnalysisException] {
+      sql(
+        s"""CREATE EXTERNAL TABLE sdkTable STORED BY
+           |'carbondata' LOCATION
+           |'$writerPath' TBLPROPERTIES('sort_scope'='batch_sort') """.stripMargin)
+    }
+    assert(ex.message.contains("table properties are not supported for external table"))
   }
 
   test("Read sdk writer output file and test without carbondata and carbonindex files should fail")
