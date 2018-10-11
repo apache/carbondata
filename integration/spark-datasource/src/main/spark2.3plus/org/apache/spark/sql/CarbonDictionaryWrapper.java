@@ -28,10 +28,7 @@ public class CarbonDictionaryWrapper implements Dictionary {
   private byte[][] binaries;
 
   CarbonDictionaryWrapper(CarbonDictionary dictionary) {
-    binaries = new byte[dictionary.getDictionarySize()][];
-    for (int i = 0; i < binaries.length; i++) {
-      binaries[i] = dictionary.getDictionaryValue(i);
-    }
+    binaries = dictionary.getAllDictionaryValues();
   }
 
   @Override public int decodeToInt(int id) {

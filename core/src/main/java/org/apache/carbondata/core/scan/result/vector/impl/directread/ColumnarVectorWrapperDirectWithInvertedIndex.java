@@ -75,7 +75,7 @@ class ColumnarVectorWrapperDirectWithInvertedIndex extends AbstractCarbonColumna
   }
 
   @Override public void putNull(int rowId) {
-    columnVector.putNull(invertedIndex[rowId]);
+    columnVector.putNull(rowId);
   }
 
   @Override public void putFloats(int rowId, int count, float[] src, int srcIndex) {

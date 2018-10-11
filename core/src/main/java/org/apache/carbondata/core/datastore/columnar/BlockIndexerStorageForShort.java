@@ -43,8 +43,7 @@ public class BlockIndexerStorageForShort extends BlockIndexerStorage<byte[][]> {
       Arrays.sort(dataWithRowId);
     }
     short[] rowIds = extractDataAndReturnRowId(dataWithRowId, dataPage);
-    Map<String, short[]> rowIdAndRleRowIdPages =
-        rleEncodeOnRowId(rowIds, getRowIdPage(), getRowIdRlePage());
+    Map<String, short[]> rowIdAndRleRowIdPages = rleEncodeOnRowId(rowIds);
     rowIdPage = rowIdAndRleRowIdPages.get("rowIdPage");
     rowIdRlePage = rowIdAndRleRowIdPages.get("rowRlePage");
     if (rleOnData) {
@@ -150,7 +149,7 @@ public class BlockIndexerStorageForShort extends BlockIndexerStorage<byte[][]> {
     map.add(counter);
     // if rle is index size is more than 70% then rle wont give any benefit
     // so better to avoid rle index and write data as it is
-    boolean useRle = (((list.size() + map.size()) * 100) / dataWithRowId.length) < 70;
+    boolean useRle = (((list.size() + map.size()) * 100) / dataWithRowId.length) < 170;
     if (useRle) {
       this.dataPage = convertToDataPage(list);
       dataRlePage = convertToArray(map);
