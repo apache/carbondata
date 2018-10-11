@@ -220,6 +220,6 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector {
   }
 
   @Override public void setLazyPage(LazyPageLoad lazyPage) {
-    lazyPage.loadPage();
+    sparkColumnVectorProxy.setLazyPage(lazyPage);
   }
 }

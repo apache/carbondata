@@ -19,14 +19,21 @@ package org.apache.spark.sql;
 import java.math.BigInteger;
 
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+import org.apache.carbondata.core.scan.scanner.LazyPageLoad;
 
 import org.apache.spark.memory.MemoryMode;
 import org.apache.spark.sql.catalyst.InternalRow;
-import org.apache.spark.sql.execution.vectorized.Dictionary;
 import org.apache.spark.sql.execution.vectorized.WritableColumnVector;
-import org.apache.spark.sql.types.*;
+import org.apache.spark.sql.types.CalendarIntervalType;
+import org.apache.spark.sql.types.DataType;
+import org.apache.spark.sql.types.Decimal;
+import org.apache.spark.sql.types.DecimalType;
+import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnVector;
+import org.apache.spark.sql.vectorized.ColumnarArray;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
+import org.apache.spark.sql.vectorized.ColumnarMap;
 import org.apache.spark.unsafe.types.CalendarInterval;
 import org.apache.spark.unsafe.types.UTF8String;
 
@@ -54,23 +61,23 @@ public class CarbonVectorProxy {
     public CarbonVectorProxy(MemoryMode memMode, int rowNum, StructField[] structFileds) {
         WritableColumnVector[] columnVectors =
             ColumnVectorFactory.getColumnVector(memMode, new StructType(structFileds), rowNum);
-        columnarBatch = new ColumnarBatch(columnVectors);
-        columnarBatch.setNumRows(rowNum);
-        columnVectorProxies = new ColumnVectorProxy[columnarBatch.numCols()];
+        columnVectorProxies = new ColumnVectorProxy[columnVectors.length];
         for (int i = 0; i < columnVectorProxies.length; i++) {
-            columnVectorProxies[i] = new ColumnVectorProxy(columnarBatch, i);
+            columnVectorProxies[i] = new ColumnVectorProxy(columnVectors[i]);
         }
+        columnarBatch = new ColumnarBatch(columnVectorProxies);
+        columnarBatch.setNumRows(rowNum);
     }
 
     public CarbonVectorProxy(MemoryMode memMode, StructType outputSchema, int rowNum) {
         WritableColumnVector[] columnVectors = ColumnVectorFactory
                 .getColumnVector(memMode, outputSchema, rowNum);
-        columnarBatch = new ColumnarBatch(columnVectors);
-        columnarBatch.setNumRows(rowNum);
-        columnVectorProxies = new ColumnVectorProxy[columnarBatch.numCols()];
+        columnVectorProxies = new ColumnVectorProxy[columnVectors.length];
         for (int i = 0; i < columnVectorProxies.length; i++) {
-            columnVectorProxies[i] = new ColumnVectorProxy(columnarBatch, i);
+            columnVectorProxies[i] = new ColumnVectorProxy(columnVectors[i]);
         }
+        columnarBatch = new ColumnarBatch(columnVectorProxies);
+        columnarBatch.setNumRows(rowNum);
     }
 
     /**
@@ -88,7 +95,7 @@ public class CarbonVectorProxy {
      * @return
      */
     public WritableColumnVector column(int ordinal) {
-        return (WritableColumnVector) columnarBatch.column(ordinal);
+        return ((ColumnVectorProxy) columnarBatch.column(ordinal)).getVector();
     }
 
     public ColumnVectorProxy getColumnVector(int ordinal) {
@@ -99,12 +106,12 @@ public class CarbonVectorProxy {
      */
     public void reset() {
         for (int i = 0; i < columnarBatch.numCols(); i++) {
-            ((WritableColumnVector)columnarBatch.column(i)).reset();
+            ((ColumnVectorProxy) columnarBatch.column(i)).reset();
         }
     }
 
     public void resetDictionaryIds(int ordinal) {
-        ((WritableColumnVector)columnarBatch.column(ordinal)).getDictionaryIds().reset();
+        (((ColumnVectorProxy) columnarBatch.column(ordinal)).getVector()).getDictionaryIds().reset();
     }
 
     /**
@@ -142,12 +149,17 @@ public class CarbonVectorProxy {
         return columnarBatch.column(ordinal).dataType();
     }
 
-    public static class ColumnVectorProxy {
+    public static class ColumnVectorProxy extends ColumnVector {
 
         private WritableColumnVector vector;
 
-        public ColumnVectorProxy(ColumnarBatch columnarBatch, int ordinal) {
-            vector = (WritableColumnVector) columnarBatch.column(ordinal);
+        private LazyPageLoad pageLoad;
+
+        private boolean isLoaded;
+
+        public ColumnVectorProxy(ColumnVector columnVector) {
+            super(columnVector.dataType());
+            vector = (WritableColumnVector) columnVector;
         }
 
         public void putRowToColumnBatch(int rowId, Object value, int offset) {
@@ -321,5 +333,111 @@ public class CarbonVectorProxy {
             return vector.reserveDictionaryIds(capacity);
         }
 
+        @Override public boolean isNullAt(int i) {
+            checkPageLoaded();
+            return vector.isNullAt(i);
+        }
+
+        @Override public boolean getBoolean(int i) {
+            checkPageLoaded();
+            return vector.getBoolean(i);
+        }
+
+        @Override public byte getByte(int i) {
+            checkPageLoaded();
+            return vector.getByte(i);
+        }
+
+        @Override public short getShort(int i) {
+            checkPageLoaded();
+            return vector.getShort(i);
+        }
+
+        @Override public int getInt(int i) {
+            checkPageLoaded();
+            return vector.getInt(i);
+        }
+
+        @Override public long getLong(int i) {
+            checkPageLoaded();
+            return vector.getLong(i);
+        }
+
+        @Override public float getFloat(int i) {
+            checkPageLoaded();
+            return vector.getFloat(i);
+        }
+
+        @Override public double getDouble(int i) {
+            checkPageLoaded();
+            return vector.getDouble(i);
+        }
+
+        @Override public void close() {
+            vector.close();
+        }
+
+        @Override public boolean hasNull() {
+            checkPageLoaded();
+            return vector.hasNull();
+        }
+
+        @Override public int numNulls() {
+            checkPageLoaded();
+            return vector.numNulls();
+        }
+
+        @Override public ColumnarArray getArray(int i) {
+            checkPageLoaded();
+            return vector.getArray(i);
+        }
+
+        @Override public ColumnarMap getMap(int i) {
+            checkPageLoaded();
+            return vector.getMap(i);
+        }
+
+        @Override public Decimal getDecimal(int i, int i1, int i2) {
+            checkPageLoaded();
+            return vector.getDecimal(i, i1, i2);
+        }
+
+        @Override public UTF8String getUTF8String(int i) {
+            checkPageLoaded();
+            return vector.getUTF8String(i);
+        }
+
+        @Override public byte[] getBinary(int i) {
+            checkPageLoaded();
+            return vector.getBinary(i);
+        }
+
+        @Override protected ColumnVector getChild(int i) {
+            checkPageLoaded();
+            return vector.getChild(i);
+        }
+
+        private void checkPageLoaded() {
+          if (!isLoaded) {
+              if (pageLoad != null) {
+                  pageLoad.loadPage();
+              }
+              isLoaded = true;
+          }
+        }
+
+        public void reset() {
+            isLoaded = false;
+            pageLoad = null;
+            vector.reset();
+        }
+
+        public void setLazyPage(LazyPageLoad lazyPage) {
+            this.pageLoad = lazyPage;
+        }
+
+        public WritableColumnVector getVector() {
+            return vector;
+        }
     }
 }

@@ -19,6 +19,7 @@ package org.apache.spark.sql;
 import java.math.BigInteger;
 
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+import org.apache.carbondata.core.scan.scanner.LazyPageLoad;
 
 import org.apache.parquet.column.Dictionary;
 import org.apache.parquet.column.Encoding;
@@ -317,6 +318,10 @@ public class CarbonVectorProxy {
 
         public Object reserveDictionaryIds(int capacity , int ordinal) {
             return vector.reserveDictionaryIds(capacity);
+        }
+
+        public void setLazyPage(LazyPageLoad lazyPage) {
+            lazyPage.loadPage();
         }
 
     }
