@@ -169,7 +169,7 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   }
 
   @Override public float getProgress() throws IOException, InterruptedException {
-    // TODO : Implement it based on total number of rows it is going to retrive.
+    // TODO : Implement it based on total number of rows it is going to retrieve.
     return 0;
   }
 

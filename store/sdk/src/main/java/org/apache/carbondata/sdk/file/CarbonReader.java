@@ -18,9 +18,8 @@
 package org.apache.carbondata.sdk.file;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
@@ -140,8 +139,8 @@ public class CarbonReader<T> {
    * @return CarbonReaderBuilder object
    */
   public static CarbonReaderBuilder builder(String tablePath) {
-    String time = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date());
-    String tableName = "UnknownTable" + time;
+    UUID uuid = UUID.randomUUID();
+    String tableName = "UnknownTable" + uuid;
     return builder(tablePath, tableName);
   }
 
