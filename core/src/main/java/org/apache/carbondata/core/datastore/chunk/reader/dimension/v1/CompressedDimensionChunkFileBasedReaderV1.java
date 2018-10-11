@@ -156,12 +156,12 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
       columnDataChunk =
           new VariableLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
               numberOfRows, DimensionChunkStoreFactory.DimensionStoreType.VARIABLE_SHORT_LENGTH,
-              null);
+              null, null);
     } else {
       // to store fixed length column chunk values
       columnDataChunk =
           new FixedLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
-              numberOfRows, eachColumnValueSize[blockIndex]);
+              numberOfRows, eachColumnValueSize[blockIndex], null);
     }
     return columnDataChunk;
   }

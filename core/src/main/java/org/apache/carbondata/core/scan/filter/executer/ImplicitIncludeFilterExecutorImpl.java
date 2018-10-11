@@ -53,6 +53,13 @@ public class ImplicitIncludeFilterExecutorImpl
     return bitSetGroup;
   }
 
+  @Override public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
+      throws FilterUnsupportedException, IOException {
+    BitSet bitSet = new BitSet(rawBlockletColumnChunks.getDataBlock().numberOfPages());
+    bitSet.set(0, rawBlockletColumnChunks.getDataBlock().numberOfPages());
+    return bitSet;
+  }
+
   @Override
   public boolean applyFilter(RowIntf value, int dimOrdinalMax)
       throws FilterUnsupportedException, IOException {

@@ -34,7 +34,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
  */
 public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator {
 
-  private static final int cutOffDate = Integer.MAX_VALUE >> 1;
+  public static final int cutOffDate = Integer.MAX_VALUE >> 1;
   private static final long SECONDS_PER_DAY = 60 * 60 * 24L;
   public static final long MILLIS_PER_DAY = SECONDS_PER_DAY * 1000L;
 

@@ -23,6 +23,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
+import org.apache.carbondata.core.scan.scanner.LazyPageLoad;
 
 public class CarbonColumnVectorWrapper implements CarbonColumnVector {
 
@@ -150,24 +151,24 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putBytes(int rowId, byte[] value) {
+  @Override public void putByteArray(int rowId, byte[] value) {
     if (!filteredRows[rowId]) {
-      columnVector.putBytes(counter++, value);
+      columnVector.putByteArray(counter++, value);
     }
   }
 
   @Override public void putBytes(int rowId, int count, byte[] value) {
     for (int i = 0; i < count; i++) {
       if (!filteredRows[rowId]) {
-        columnVector.putBytes(counter++, value);
+        columnVector.putByteArray(counter++, value);
       }
       rowId++;
     }
   }
 
-  @Override public void putBytes(int rowId, int offset, int length, byte[] value) {
+  @Override public void putByteArray(int rowId, int offset, int length, byte[] value) {
     if (!filteredRows[rowId]) {
-      columnVector.putBytes(counter++, offset, length, value);
+      columnVector.putByteArray(counter++, offset, length, value);
     }
   }
 
@@ -244,6 +245,64 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
 
   @Override public CarbonColumnVector getDictionaryVector() {
     return this.columnVector;
+  }
+
+  @Override public void putFloats(int rowId, int count, float[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!filteredRows[rowId]) {
+        columnVector.putFloat(counter++, src[i]);
+      }
+      rowId++;
+    }
+  }
+
+  @Override public void putShorts(int rowId, int count, short[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!filteredRows[rowId]) {
+        columnVector.putShort(counter++, src[i]);
+      }
+      rowId++;
+    }
+  }
+
+  @Override public void putInts(int rowId, int count, int[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!filteredRows[rowId]) {
+        columnVector.putInt(counter++, src[i]);
+      }
+      rowId++;
+    }
+  }
+
+  @Override public void putLongs(int rowId, int count, long[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!filteredRows[rowId]) {
+        columnVector.putLong(counter++, src[i]);
+      }
+      rowId++;
+    }
+  }
+
+  @Override public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!filteredRows[rowId]) {
+        columnVector.putDouble(counter++, src[i]);
+      }
+      rowId++;
+    }
+  }
+
+  @Override public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!filteredRows[rowId]) {
+        columnVector.putByte(counter++, src[i]);
+      }
+      rowId++;
+    }
+  }
+
+  @Override public void setLazyPage(LazyPageLoad lazyPage) {
+    lazyPage.loadPage();
   }
 
 }

@@ -18,7 +18,17 @@ package org.apache.carbondata.core.scan.collector;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.scan.collector.impl.*;
+import org.apache.carbondata.core.scan.collector.impl.AbstractScannedResultCollector;
+import org.apache.carbondata.core.scan.collector.impl.DictionaryBasedResultCollector;
+import org.apache.carbondata.core.scan.collector.impl.DictionaryBasedVectorResultCollector;
+import org.apache.carbondata.core.scan.collector.impl.DirectPageWiseVectorFillResultCollector;
+import org.apache.carbondata.core.scan.collector.impl.RawBasedResultCollector;
+import org.apache.carbondata.core.scan.collector.impl.RestructureBasedDictionaryResultCollector;
+import org.apache.carbondata.core.scan.collector.impl.RestructureBasedRawResultCollector;
+import org.apache.carbondata.core.scan.collector.impl.RestructureBasedVectorResultCollector;
+import org.apache.carbondata.core.scan.collector.impl.RowIdBasedResultCollector;
+import org.apache.carbondata.core.scan.collector.impl.RowIdRawBasedResultCollector;
+import org.apache.carbondata.core.scan.collector.impl.RowIdRestructureBasedRawResultCollector;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 
 /**
@@ -64,8 +74,13 @@ public class ResultCollectorFactory {
         LOGGER.info("Restructure dictionary vector collector is used to scan and collect the data");
         scannerResultAggregator = new RestructureBasedVectorResultCollector(blockExecutionInfo);
       } else {
-        LOGGER.info("Vector based dictionary collector is used to scan and collect the data");
-        scannerResultAggregator = new DictionaryBasedVectorResultCollector(blockExecutionInfo);
+        if (blockExecutionInfo.isDirectVectorFill()) {
+          LOGGER.info("Direct pagewise vector fill collector is used to scan and collect the data");
+          scannerResultAggregator = new DirectPageWiseVectorFillResultCollector(blockExecutionInfo);
+        } else {
+          LOGGER.info("Vector based dictionary collector is used to scan and collect the data");
+          scannerResultAggregator = new DictionaryBasedVectorResultCollector(blockExecutionInfo);
+        }
       }
     } else {
       if (blockExecutionInfo.isRestructuredBlock()) {

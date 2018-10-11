@@ -33,6 +33,7 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonDictionaryImpl;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.format.Encoding;
@@ -116,6 +117,22 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
     }
     try {
       return chunkReader.decodeColumnPage(this, index);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Convert raw data with specified page number processed to DimensionColumnDataChunk
+   *
+   * @param index
+   * @return
+   */
+  public void convertToDimColDataChunkAndFillVector(int index,
+      ColumnVectorInfo vectorInfo) {
+    assert index < pagesCount;
+    try {
+      chunkReader.decodeColumnPageAndFillVector(this, index, vectorInfo);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

@@ -50,6 +50,20 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
     return leftFilters;
   }
 
+  @Override public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
+      throws FilterUnsupportedException, IOException {
+    BitSet leftFilters = leftExecuter.prunePages(rawBlockletColumnChunks);
+    if (leftFilters.isEmpty()) {
+      return leftFilters;
+    }
+    BitSet rightFilter = rightExecuter.prunePages(rawBlockletColumnChunks);
+    if (rightFilter.isEmpty()) {
+      return rightFilter;
+    }
+    leftFilters.and(rightFilter);
+    return leftFilters;
+  }
+
   @Override public boolean applyFilter(RowIntf value, int dimOrdinalMax)
       throws FilterUnsupportedException, IOException {
     return leftExecuter.applyFilter(value, dimOrdinalMax) &&

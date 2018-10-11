@@ -36,6 +36,12 @@ public interface FilterExecuter {
       boolean useBitsetPipeLine) throws FilterUnsupportedException, IOException;
 
   /**
+   * Prune pages as per the filter
+   */
+  BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
+      throws FilterUnsupportedException, IOException;
+
+  /**
    * apply range filter on a row
    * @return true: if the value satisfy the filter; or else false.
    */

@@ -43,7 +43,6 @@ object ExampleUtils {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
-      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
       .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "")
 
     val masterUrl = if (workThreadNum <= 1) {

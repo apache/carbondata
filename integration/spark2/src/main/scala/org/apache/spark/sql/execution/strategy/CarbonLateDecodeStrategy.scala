@@ -57,6 +57,9 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
 private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   val PUSHED_FILTERS = "PushedFilters"
 
+  val directScan =
+    CarbonProperties.getInstance().getProperty("carbon.isdirect.scan", "true").toBoolean
+
   /*
   Spark 2.3.1 plan there can be case of multiple projections like below
   Project [substring(name, 1, 2)#124, name#123, tupleId#117, cast(rand(-6778822102499951904)#125
@@ -213,11 +216,12 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       rdd: RDD[InternalRow],
       needDecode: ArrayBuffer[AttributeReference]):
   RDD[InternalRow] = {
+    val scanRdd = rdd.asInstanceOf[CarbonScanRDD[InternalRow]]
     if (needDecode.nonEmpty) {
-      rdd.asInstanceOf[CarbonScanRDD[InternalRow]].setVectorReaderSupport(false)
+      scanRdd.setVectorReaderSupport(false)
       getDecoderRDD(relation, needDecode, rdd, output)
     } else {
-      rdd.asInstanceOf[CarbonScanRDD[InternalRow]]
+      scanRdd
         .setVectorReaderSupport(supportBatchedDataSource(relation.relation.sqlContext, output))
       rdd
     }
@@ -300,7 +304,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           }
         }
     }
-
+    val hasDictionaryFilterCols = hasFilterOnDictionaryColumn(filterSet, table)
     if (projects.map(_.toAttribute) == projects &&
         projectSet.size == projects.size &&
         filterSet.subsetOf(projectSet)) {
@@ -337,19 +341,30 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         metadata,
         needDecoder,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]])
-      filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan)
+      if (directScan && scan.isInstanceOf[CarbonDataSourceScan] && !hasDictionaryFilterCols) {
+        if (scan.inputRDDs().head.isInstanceOf[CarbonScanRDD[InternalRow]]) {
+          scan.inputRDDs().head.asInstanceOf[CarbonScanRDD[InternalRow]].setDirectScanSupport(true)
+        }
+        filterPredicates.reduceLeftOption(expressions.And).map(execution.FilterExec(_, scan))
+          .getOrElse(scan)
+      } else {
+        filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan)
+      }
     } else {
 
       var newProjectList: Seq[Attribute] = Seq.empty
+      var implictsExisted = false
       val updatedProjects = projects.map {
           case a@Alias(s: ScalaUDF, name)
             if name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
                 name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID) =>
             val reference = AttributeReference(name, StringType, true)().withExprId(a.exprId)
             newProjectList :+= reference
+            implictsExisted = true
             reference
           case a@Alias(s: ScalaUDF, name)
             if name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_SEGMENTID) =>
+            implictsExisted = true
             val reference =
               AttributeReference(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID,
                 StringType, true)().withExprId(a.exprId)
@@ -363,7 +378,23 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       // Don't request columns that are only referenced by pushed filters.
       val requestedColumns =
         (projectSet ++ filterSet -- handledSet).map(relation.attributeMap).toSeq ++ newProjectList
-      val updateRequestedColumns = updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
+
+      var updateRequestedColumns = if (directScan && !implictsExisted && !hasDictionaryFilterCols) {
+        updateRequestedColumnsFunc(
+          (projectSet ++ filterSet).map(relation.attributeMap).toSeq,
+          table,
+          needDecoder)
+      } else {
+        updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
+      }
+      val supportBatch =
+        supportBatchedDataSource(relation.relation.sqlContext,
+          updateRequestedColumns.asInstanceOf[Seq[Attribute]]) &&
+        needDecoder.isEmpty
+      if (directScan && !supportBatch && !implictsExisted && !hasDictionaryFilterCols) {
+        // revert for row scan
+        updateRequestedColumns = updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
+      }
       val scan = getDataSourceScan(relation,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]],
         partitions,
@@ -374,10 +405,23 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         metadata,
         needDecoder,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]])
-      execution.ProjectExec(
-        updateRequestedColumnsFunc(updatedProjects, table,
-          needDecoder).asInstanceOf[Seq[NamedExpression]],
-        filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan))
+      if (directScan && scan.isInstanceOf[CarbonDataSourceScan]
+          && !implictsExisted && !hasDictionaryFilterCols) {
+        if (scan.inputRDDs().head.isInstanceOf[CarbonScanRDD[InternalRow]]) {
+          scan.inputRDDs().head.asInstanceOf[CarbonScanRDD[InternalRow]].setDirectScanSupport(true)
+        }
+        execution.ProjectExec(
+          updateRequestedColumnsFunc(updatedProjects, table,
+            needDecoder).asInstanceOf[Seq[NamedExpression]],
+          filterPredicates.reduceLeftOption(expressions.And).map(
+            execution.FilterExec(_, scan)).getOrElse(scan))
+      } else {
+        execution.ProjectExec(
+          updateRequestedColumnsFunc(updatedProjects, table,
+            needDecoder).asInstanceOf[Seq[NamedExpression]],
+          filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan))
+      }
+
     }
   }
 
@@ -455,6 +499,12 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         }
       case others => others
     }
+  }
+
+  private def hasFilterOnDictionaryColumn(filterColumns: AttributeSet,
+      relation: CarbonDatasourceHadoopRelation): Boolean = {
+    val map = relation.carbonRelation.metaData.dictionaryMap
+    filterColumns.exists(c => map.get(c.name).getOrElse(false))
   }
 
   private def getPartitioning(carbonTable: CarbonTable,

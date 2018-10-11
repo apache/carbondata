@@ -124,8 +124,9 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   /**
    * Create a new column page for decimal page
    */
-  static ColumnPage newDecimalColumnPage(TableSpec.ColumnSpec columnSpec, byte[] lvEncodedBytes,
-      String compressorName) throws MemoryException {
+  static ColumnPage newDecimalColumnPage(ColumnPageEncoderMeta meta,
+      byte[] lvEncodedBytes) throws MemoryException {
+    TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
     DecimalConverterFactory.DecimalConverter decimalConverter =
         DecimalConverterFactory.INSTANCE.getDecimalConverter(columnSpec.getPrecision(),
             columnSpec.getScale());
@@ -133,10 +134,10 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     if (size < 0) {
       return getLVBytesColumnPage(columnSpec, lvEncodedBytes,
           DataTypes.createDecimalType(columnSpec.getPrecision(), columnSpec.getScale()),
-          CarbonCommonConstants.INT_SIZE_IN_BYTE, compressorName);
+          CarbonCommonConstants.INT_SIZE_IN_BYTE, meta.getCompressorName());
     } else {
       // Here the size is always fixed.
-      return getDecimalColumnPage(columnSpec, lvEncodedBytes, size, compressorName);
+      return getDecimalColumnPage(meta, lvEncodedBytes, size);
     }
   }
 
@@ -158,8 +159,10 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
         lvLength, compressorName);
   }
 
-  private static ColumnPage getDecimalColumnPage(TableSpec.ColumnSpec columnSpec,
-      byte[] lvEncodedBytes, int size, String compressorName) throws MemoryException {
+  private static ColumnPage getDecimalColumnPage(ColumnPageEncoderMeta meta,
+      byte[] lvEncodedBytes, int size) throws MemoryException {
+    TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
+    String compressorName = meta.getCompressorName();
     TableSpec.ColumnSpec spec = TableSpec.ColumnSpec
         .newInstance(columnSpec.getFieldName(), DataTypes.INT, ColumnType.MEASURE);
     ColumnPage rowOffset = ColumnPage.newPage(
@@ -176,7 +179,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     rowOffset.putInt(counter, offset);
 
     VarLengthColumnPageBase page;
-    if (unsafe) {
+    if (unsafe && !meta.isFillCompleteVector()) {
       page = new UnsafeDecimalColumnPage(
           new ColumnPageEncoderMeta(columnSpec, columnSpec.getSchemaDataType(), compressorName),
           rowId);
@@ -424,6 +427,41 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   @Override
   public double[] getDoublePage() {
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
+  }
+
+  @Override public byte[] getByteData() {
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
+  }
+
+  @Override public short[] getShortData() {
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
+  }
+
+  @Override public int[] getShortIntData() {
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
+  }
+
+  @Override public int[] getIntData() {
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
+  }
+
+  @Override public long[] getLongData() {
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
+  }
+
+  @Override public float[] getFloatData() {
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
+  }
+
+  @Override public double[] getDoubleData() {
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }

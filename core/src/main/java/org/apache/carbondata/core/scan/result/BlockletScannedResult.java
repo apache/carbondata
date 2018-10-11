@@ -40,6 +40,8 @@ import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.scanner.LazyBlockletLoad;
+import org.apache.carbondata.core.scan.scanner.LazyPageLoad;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
@@ -70,6 +72,8 @@ public abstract class BlockletScannedResult {
    * total number of filtered rows for each page
    */
   private int[] pageFilteredRowCount;
+
+  private int[] pagesFiltered;
 
   /**
    * to keep track of number of rows process
@@ -139,6 +143,8 @@ public abstract class BlockletScannedResult {
 
   protected QueryStatisticsModel queryStatisticsModel;
 
+  protected LazyBlockletLoad lazyBlockletLoad;
+
   public BlockletScannedResult(BlockExecutionInfo blockExecutionInfo,
       QueryStatisticsModel queryStatisticsModel) {
     this.fixedLengthKeySize = blockExecutionInfo.getFixedLengthKeySize();
@@ -177,6 +183,14 @@ public abstract class BlockletScannedResult {
 
   public void setMsrRawColumnChunks(MeasureRawColumnChunk[] msrRawColumnChunks) {
     this.msrRawColumnChunks = msrRawColumnChunks;
+  }
+
+  public LazyBlockletLoad getLazyBlockletLoad() {
+    return lazyBlockletLoad;
+  }
+
+  public void setLazyBlockletLoad(LazyBlockletLoad lazyBlockletLoad) {
+    this.lazyBlockletLoad = lazyBlockletLoad;
   }
 
   /**
@@ -303,7 +317,7 @@ public abstract class BlockletScannedResult {
               j :
               pageFilteredRowId[pageCounter][j]);
         }
-        vector.putBytes(vectorOffset++,
+        vector.putByteArray(vectorOffset++,
             data.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       }
     }
@@ -341,6 +355,19 @@ public abstract class BlockletScannedResult {
   }
 
   /**
+   * Just increment the page counter and reset the remaining counters.
+   */
+  public void incrementPageCounter(ColumnVectorInfo[] vectorInfos) {
+    rowCounter = 0;
+    currentRow = -1;
+    pageCounter++;
+    if (null != deletedRecordMap && pageCounter < pagesFiltered.length) {
+      currentDeleteDeltaVo =
+          deletedRecordMap.get(blockletNumber + "_" + pagesFiltered[pageCounter]);
+    }
+  }
+
+  /**
    * This case is used only in case of compaction, since it does not use filter flow.
    */
   public void fillDataChunks() {
@@ -368,6 +395,32 @@ public abstract class BlockletScannedResult {
         pageUncompressTime.getCount() + (System.currentTimeMillis() - startTime));
   }
 
+  public void fillDataChunks(ColumnVectorInfo[] dictionaryInfo, ColumnVectorInfo[] noDictionaryInfo,
+      ColumnVectorInfo[] msrVectorInfo, int[] measuresOrdinal) {
+    freeDataChunkMemory();
+    if (pageCounter >= pageFilteredRowCount.length) {
+      return;
+    }
+
+    for (int i = 0; i < this.dictionaryColumnChunkIndexes.length; i++) {
+      dictionaryInfo[i].vector.setLazyPage(
+          new LazyPageLoad(lazyBlockletLoad, dictionaryColumnChunkIndexes[i], false,
+              pagesFiltered[pageCounter], dictionaryInfo[i]));
+    }
+    for (int i = 0; i < this.noDictionaryColumnChunkIndexes.length; i++) {
+      noDictionaryInfo[i].vector.setLazyPage(
+          new LazyPageLoad(lazyBlockletLoad, noDictionaryColumnChunkIndexes[i], false,
+              pagesFiltered[pageCounter], noDictionaryInfo[i]));
+    }
+
+    for (int i = 0; i < measuresOrdinal.length; i++) {
+      msrVectorInfo[i].vector.setLazyPage(
+          new LazyPageLoad(lazyBlockletLoad, measuresOrdinal[i], true, pagesFiltered[pageCounter],
+              msrVectorInfo[i]));
+    }
+
+  }
+
   // free the memory for the last page chunk
   private void freeDataChunkMemory() {
     for (int i = 0; i < dimensionColumnPages.length; i++) {
@@ -387,6 +440,14 @@ public abstract class BlockletScannedResult {
 
   public int numberOfpages() {
     return pageFilteredRowCount.length;
+  }
+
+  public int[] getPagesFiltered() {
+    return pagesFiltered;
+  }
+
+  public void setPagesFiltered(int[] pagesFiltered) {
+    this.pagesFiltered = pagesFiltered;
   }
 
   /**
@@ -512,7 +573,13 @@ public abstract class BlockletScannedResult {
     // if deleted recors map is present for this block
     // then get the first page deleted vo
     if (null != deletedRecordMap) {
-      currentDeleteDeltaVo = deletedRecordMap.get(blockletNumber + '_' + pageCounter);
+      String key;
+      if (pagesFiltered != null) {
+        key = blockletNumber + '_' + pagesFiltered[pageCounter];
+      } else {
+        key = blockletNumber + '_' + pageCounter;
+      }
+      currentDeleteDeltaVo = deletedRecordMap.get(key);
     }
   }
 
@@ -615,6 +682,12 @@ public abstract class BlockletScannedResult {
    */
   public void setPageFilteredRowCount(int[] pageFilteredRowCount) {
     this.pageFilteredRowCount = pageFilteredRowCount;
+    if (pagesFiltered == null) {
+      pagesFiltered = new int[pageFilteredRowCount.length];
+      for (int i = 0; i < pagesFiltered.length; i++) {
+        pagesFiltered[i] = i;
+      }
+    }
   }
 
   /**
@@ -711,6 +784,10 @@ public abstract class BlockletScannedResult {
       }
     }
     return rowsFiltered;
+  }
+
+  public DeleteDeltaVo getCurrentDeleteDeltaVo() {
+    return currentDeleteDeltaVo;
   }
 
   /**
