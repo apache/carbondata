@@ -889,6 +889,8 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll = {
+    sql("DROP TABLE IF EXISTS carbondb.carbontable")
+    sql("DROP DATABASE IF EXISTS carbondb")
     dropTable
     CarbonProperties.getInstance()
     .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
