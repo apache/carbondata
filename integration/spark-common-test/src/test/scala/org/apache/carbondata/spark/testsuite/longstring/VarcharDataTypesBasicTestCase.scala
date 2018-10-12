@@ -405,6 +405,28 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     checkQuery()
   }
 
+  test("write from dataframe with long_string datatype whose order of fields is not the same as that in table") {
+    sql(
+      s"""
+         | CREATE TABLE if not exists $longStringTable(
+         | id INT, name STRING, description STRING, address STRING, note STRING
+         | ) STORED BY 'carbondata'
+         | TBLPROPERTIES('LONG_STRING_COLUMNS'='description, note', 'dictionary_include'='name', 'sort_columns'='id')
+         |""".
+        stripMargin)
+
+    prepareDF()
+    // the order of fields in dataframe is different from that in create table
+    longStringDF.select("note", "address", "description", "name", "id")
+      .write
+      .format("carbondata")
+      .option("tableName", longStringTable)
+      .mode(SaveMode.Append)
+      .save()
+
+    checkQuery()
+  }
+
   test("desc table shows long_string_columns property") {
     sql(
       s"""

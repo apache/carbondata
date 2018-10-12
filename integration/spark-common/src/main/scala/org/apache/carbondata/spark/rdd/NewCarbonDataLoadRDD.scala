@@ -29,7 +29,7 @@ import scala.util.control.NonFatal
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.{TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-import org.apache.spark.{Partition, SerializableWritable, SparkContext, SparkEnv, TaskContext}
+import org.apache.spark.{Partition, SparkEnv, TaskContext}
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionWrap, RDD}
 import org.apache.spark.serializer.SerializerInstance
 import org.apache.spark.sql.{Row, SparkSession}
@@ -40,11 +40,10 @@ import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalSessionInfo, ThreadLocalTaskInfo}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalTaskInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses, TableProcessingOperations}
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator}
@@ -457,10 +456,18 @@ class LazyRddIterator(serializer: SerializerInstance,
   private val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
   private val serializationNullFormat =
     carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
+  // the order of fields in dataframe and createTable may be different, here we need to know whether
+  // each fields in dataframe is Varchar or not.
   import scala.collection.JavaConverters._
-  private val isVarcharTypeMapping =
-    carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getCreateOrderColumn(
-      carbonLoadModel.getTableName).asScala.map(_.getDataType == DataTypes.VARCHAR)
+  private val isVarcharTypeMapping = {
+    val col2VarcharType = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+      .getCreateOrderColumn(carbonLoadModel.getTableName).asScala
+      .map(c => c.getColName -> (c.getDataType == DataTypes.VARCHAR)).toMap
+    carbonLoadModel.getCsvHeaderColumns.map(c => {
+      val r = col2VarcharType.get(c.toLowerCase)
+      r.isDefined && r.get
+    })
+  }
 
   private var rddIter: Iterator[Row] = null
   private var uninitialized = true
