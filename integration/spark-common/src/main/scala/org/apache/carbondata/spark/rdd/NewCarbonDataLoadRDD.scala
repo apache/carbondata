@@ -418,10 +418,18 @@ class LazyRddIterator(serializer: SerializerInstance,
   private val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
   private val serializationNullFormat =
     carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
+  // the order of fields in dataframe and createTable may be different, here we need to know whether
+  // each fields in dataframe is Varchar or not.
   import scala.collection.JavaConverters._
-  private val isVarcharTypeMapping =
-    carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getCreateOrderColumn(
-      carbonLoadModel.getTableName).asScala.map(_.getDataType == DataTypes.VARCHAR)
+  private val isVarcharTypeMapping = {
+    val col2VarcharType = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+      .getCreateOrderColumn(carbonLoadModel.getTableName).asScala
+      .map(c => c.getColName -> (c.getDataType == DataTypes.VARCHAR)).toMap
+    carbonLoadModel.getCsvHeaderColumns.map(c => {
+      val r = col2VarcharType.get(c.toLowerCase)
+      r.isDefined && r.get
+    })
+  }
 
   private var rddIter: Iterator[Row] = null
   private var uninitialized = true
