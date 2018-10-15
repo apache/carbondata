@@ -229,6 +229,10 @@ object CarbonSparkDataSourceUtil {
     if (blockletSize.isDefined) {
       builder.withBlockletSize(blockletSize.get)
     }
+    val pageSizeInMb = options.get("table_page_size_inmb").map(_.toInt)
+    if (pageSizeInMb.isDefined) {
+      builder.withPageSizeInMb(pageSizeInMb.get)
+    }
     builder.enableLocalDictionary(options.getOrElse(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
       CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT).toBoolean)
     builder.localDictionaryThreshold(

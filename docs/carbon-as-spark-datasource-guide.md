@@ -44,6 +44,7 @@ Now you can create Carbon table using Spark's datasource DDL syntax.
 |-----------|--------------|------------|
 | table_blocksize | 1024 | Size of blocks to write onto hdfs. For  more details, see [Table Block Size Configuration](./ddl-of-carbondata.md#table-block-size-configuration). |
 | table_blocklet_size | 64 | Size of blocklet to write. |
+| table_page_size_inmb | 0 | Size of each page in carbon table, if page size crosses this value before 32000 rows, page will be cut to that may rows. Helps in keep page size to fit cache size |
 | local_dictionary_threshold | 10000 | Cardinality upto which the local dictionary can be generated. For  more details, see [Local Dictionary Configuration](./ddl-of-carbondata.md#local-dictionary-configuration). |
 | local_dictionary_enable | false | Enable local dictionary generation. For  more details, see [Local Dictionary Configuration](./ddl-of-carbondata.md#local-dictionary-configuration). |
 | sort_columns | all dimensions are sorted | Columns to include in sort and its order of sort. For  more details, see [Sort Columns Configuration](./ddl-of-carbondata.md#sort-columns-configuration). |

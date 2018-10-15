@@ -63,6 +63,11 @@ public class EncodedBlocklet {
   private int numberOfPages;
 
   /**
+   * row count in each page
+   */
+  private List<Short> rowCountInPage;
+
+  /**
    * is decoder based fallback is enabled or not
    */
   private boolean isDecoderBasedFallBackEnabled;
@@ -77,6 +82,7 @@ public class EncodedBlocklet {
     this.executorService = executorService;
     this.isDecoderBasedFallBackEnabled = isDecoderBasedFallBackEnabled;
     this.localDictionaryGeneratorMap = localDictionaryGeneratorMap;
+    this.rowCountInPage = new ArrayList<>();
   }
 
   /**
@@ -90,10 +96,14 @@ public class EncodedBlocklet {
     if (null == pageMetadataList) {
       pageMetadataList = new ArrayList<>();
     }
+    if (null == rowCountInPage) {
+      rowCountInPage = new ArrayList<>();
+    }
     // update details
     blockletSize += encodedTablePage.getPageSize();
     pageMetadataList.add(encodedTablePage.getPageKey());
     this.numberOfPages++;
+    rowCountInPage.add((short)encodedTablePage.getPageSize());
   }
 
   /**
@@ -187,11 +197,20 @@ public class EncodedBlocklet {
     return this.numberOfPages;
   }
 
+  public List<Short> getRowCountInPage() {
+    return rowCountInPage;
+  }
+
+  public void setRowCountInPage(List<Short> rowCountInPage) {
+    this.rowCountInPage = rowCountInPage;
+  }
+
   public void clear() {
     this.numberOfPages = 0;
     this.encodedDimensionColumnPages = null;
     this.blockletSize = 0;
     this.encodedMeasureColumnPages = null;
     this.pageMetadataList = null;
+    this.rowCountInPage = null;
   }
 }
