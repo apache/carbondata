@@ -17,9 +17,14 @@
 
 package org.apache.carbondata.processing.store;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -36,6 +41,7 @@ import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.compression.SnappyCompressor;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.datastore.row.ComplexColumnInfo;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
@@ -47,7 +53,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
 
@@ -88,7 +93,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private ExecutorService consumerExecutorService;
   private List<Future<Void>> consumerExecutorServiceTaskList;
   private List<CarbonRow> dataRows;
-  private int[] varcharColumnSizeInByte;
+  private int[] noDictColumnPageSize;
   /**
    * semaphore which will used for managing node holder objects
    */
@@ -120,6 +125,13 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private ColumnarFormatVersion version;
 
+  /*
+  * cannot use the indexMap of model directly,
+  * modifying map in model directly will create problem if accessed later,
+  * Hence take a copy and work on it.
+  * */
+  private Map<Integer, GenericDataType> complexIndexMapCopy = null;
+
   /**
    * CarbonFactDataHandler constructor
    */
@@ -136,6 +148,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Columns considered as NoInverted Index are " + noInvertedIdxCol.toString());
+    }
+    this.complexIndexMapCopy = new HashMap<>();
+    for (Map.Entry<Integer, GenericDataType> entry: model.getComplexIndexMap().entrySet()) {
+      this.complexIndexMapCopy.put(entry.getKey(), entry.getValue().deepCopy());
     }
   }
 
@@ -196,11 +212,12 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * @throws CarbonDataWriterException
    */
   public void addDataToStore(CarbonRow row) throws CarbonDataWriterException {
+    setFlatCarbonRowForComplex(row);
     dataRows.add(row);
     this.entryCount++;
     // if entry count reaches to leaf node size then we are ready to write
     // this to leaf node file and update the intermediate files
-    if (this.entryCount == this.pageSize || isVarcharColumnFull(row)) {
+    if (this.entryCount == this.pageSize || needToCutThePage(row)) {
       try {
         semaphore.acquire();
 
@@ -218,6 +235,13 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         }
         dataRows = new ArrayList<>(this.pageSize);
         this.entryCount = 0;
+        // re-init the complexIndexMap
+        this.complexIndexMapCopy = new HashMap<>();
+        for (Map.Entry<Integer, GenericDataType> entry : model.getComplexIndexMap().entrySet()) {
+          this.complexIndexMapCopy.put(entry.getKey(), entry.getValue().deepCopy());
+        }
+        noDictColumnPageSize =
+            new int[model.getNoDictDataTypesList().size() + model.getNoDictAllComplexColumnDepth()];
       } catch (InterruptedException e) {
         LOGGER.error(e.getMessage(), e);
         throw new CarbonDataWriterException(e);
@@ -227,48 +251,127 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   /**
    * Check if column page can be added more rows after adding this row to page.
+   * only few no-dictionary dimensions columns (string, varchar,
+   * complex columns) can grow huge in size.
    *
-   * A varchar column page uses SafeVarLengthColumnPage/UnsafeVarLengthColumnPage to store data
-   * and encoded using HighCardDictDimensionIndexCodec which will call getByteArrayPage() from
-   * column page and flatten into byte[] for compression.
-   * Limited by the index of array, we can only put number of Integer.MAX_VALUE bytes in a page.
    *
-   * Another limitation is from Compressor. Currently we use snappy as default compressor,
-   * and it will call MaxCompressedLength method to estimate the result size for preparing output.
-   * For safety, the estimate result is oversize: `32 + source_len + source_len/6`.
-   * So the maximum bytes to compress by snappy is (2GB-32)*6/7≈1.71GB.
-   *
-   * Size of a row does not exceed 2MB since UnsafeSortDataRows uses 2MB byte[] as rowBuffer.
-   * Such that we can stop adding more row here if any long string column reach this limit.
-   *
-   * If use unsafe column page, please ensure the memory configured is enough.
-   * @param row
-   * @return false if any varchar column page cannot add one more value(2MB)
+   * @param row carbonRow
+   * @return false if next rows can be added to same page.
+   * true if next rows cannot be added to same page
    */
-  private boolean isVarcharColumnFull(CarbonRow row) {
-    //TODO: test and remove this as now  UnsafeSortDataRows can exceed 2MB
-    if (model.getVarcharDimIdxInNoDict().size() > 0) {
+  private boolean needToCutThePage(CarbonRow row) {
+    List<DataType> noDictDataTypesList = model.getNoDictDataTypesList();
+    int totalNoDictPageCount = noDictDataTypesList.size() + model.getNoDictAllComplexColumnDepth();
+    if (totalNoDictPageCount > 0) {
+      int currentElementLength;
+      int bucketCounter = 0;
+      int configuredPageSizeInBytes;
+      String configuredPageSizeStrInBytes =
+          model.getTableSpec().getCarbonTable().getTableInfo().getFactTable().getTableProperties()
+              .get(CarbonCommonConstants.TABLE_PAGE_SIZE_INMB);
+      if (configuredPageSizeStrInBytes != null) {
+        configuredPageSizeInBytes = Integer.parseInt(configuredPageSizeStrInBytes) * 1024 * 1024;
+      } else {
+        // use default value
+        configuredPageSizeInBytes =
+            CarbonCommonConstants.TABLE_PAGE_SIZE_INMB_DEFAULT * 1024 * 1024;
+      }
       Object[] nonDictArray = WriteStepRowUtil.getNoDictAndComplexDimension(row);
-      for (int i = 0; i < model.getVarcharDimIdxInNoDict().size(); i++) {
-        if (DataTypeUtil
-            .isPrimitiveColumn(model.getNoDictAndComplexColumns()[i].getDataType())) {
-          // get the size from the data type
-          varcharColumnSizeInByte[i] +=
-              model.getNoDictAndComplexColumns()[i].getDataType().getSizeInBytes();
-        } else {
-          varcharColumnSizeInByte[i] +=
-              ((byte[]) nonDictArray[model.getVarcharDimIdxInNoDict().get(i)]).length;
-        }
-        if (SnappyCompressor.MAX_BYTE_TO_COMPRESS -
-                (varcharColumnSizeInByte[i] + dataRows.size() * 4) < (2 << 20)) {
-          LOGGER.debug("Limited by varchar column, page size is " + dataRows.size());
-          // re-init for next page
-          varcharColumnSizeInByte = new int[model.getVarcharDimIdxInNoDict().size()];
-          return true;
+      for (int i = 0; i < noDictDataTypesList.size(); i++) {
+        DataType columnType = noDictDataTypesList.get(i);
+        if ((columnType == DataTypes.STRING) || (columnType == DataTypes.VARCHAR)) {
+          currentElementLength = ((byte[]) nonDictArray[i]).length;
+          noDictColumnPageSize[bucketCounter] += currentElementLength;
+          canSnappyHandleThisRow(noDictColumnPageSize[bucketCounter]);
+          // If current page size is more than configured page size, cut the page here.
+          if (noDictColumnPageSize[bucketCounter] + dataRows.size() * 4
+              >= configuredPageSizeInBytes) {
+            LOGGER.debug("cutting the page. Rows count in this page: " + dataRows.size());
+            // re-init for next page
+            noDictColumnPageSize = new int[totalNoDictPageCount];
+            return true;
+          }
+          bucketCounter++;
+        } else if (columnType.isComplexType()) {
+          // this is for depth of each complex column, model is having only total depth.
+          GenericDataType genericDataType = complexIndexMapCopy
+              .get(i - model.getNoDictionaryCount() + model.getPrimitiveDimLens().length);
+          int depth = calculateDepth(genericDataType);
+          List<ArrayList<byte[]>> flatComplexColumnList =
+              row.getComplexFlatByteArrayMap().get(genericDataType.getName());
+          for (int k = 0; k < depth; k++) {
+            ArrayList<byte[]> children = flatComplexColumnList.get(k);
+            // Add child element from inner list.
+            int complexElementSize = 0;
+            for (byte[] child : children) {
+              complexElementSize += child.length;
+            }
+            noDictColumnPageSize[bucketCounter] += complexElementSize;
+            canSnappyHandleThisRow(noDictColumnPageSize[bucketCounter]);
+            // If current page size is more than configured page size, cut the page here.
+            if (noDictColumnPageSize[bucketCounter] + dataRows.size() * 4
+                >= configuredPageSizeInBytes) {
+              LOGGER.info("cutting the page. Rows count: " + dataRows.size());
+              // re-init for next page
+              noDictColumnPageSize = new int[totalNoDictPageCount];
+              return true;
+            }
+            bucketCounter++;
+          }
         }
       }
     }
     return false;
+  }
+
+  private void setFlatCarbonRowForComplex(CarbonRow row) {
+    Map<String, List<ArrayList<byte[]>>> complexFlatByteArrayMap = new HashMap<>();
+    Object[] noDictAndComplexDimension = WriteStepRowUtil.getNoDictAndComplexDimension(row);
+    for (int i = 0; i < noDictAndComplexDimension.length; i++) {
+      // complex types starts after no dictionary dimensions
+      if (i >= model.getNoDictionaryCount() && (model.getTableSpec().getNoDictionaryDimensionSpec()
+          .get(i).getSchemaDataType().isComplexType())) {
+        // this is for depth of each complex column, model is having only total depth.
+        GenericDataType genericDataType = complexIndexMapCopy
+            .get(i - model.getNoDictionaryCount() + model.getPrimitiveDimLens().length);
+        int depth = calculateDepth(genericDataType);
+        // initialize flatComplexColumnList
+        List<ArrayList<byte[]>> flatComplexColumnList = new ArrayList<>(depth);
+        for (int k = 0; k < depth; k++) {
+          flatComplexColumnList.add(new ArrayList<byte[]>());
+        }
+        // flatten the complex byteArray as per depth
+        try {
+          ByteBuffer byteArrayInput = ByteBuffer.wrap((byte[])noDictAndComplexDimension[i]);
+          ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
+          DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutput);
+          genericDataType.parseComplexValue(byteArrayInput, dataOutputStream,
+              model.getComplexDimensionKeyGenerator());
+          genericDataType.getColumnarDataForComplexType(flatComplexColumnList,
+              ByteBuffer.wrap(byteArrayOutput.toByteArray()));
+          byteArrayOutput.close();
+        } catch (IOException | KeyGenException e) {
+          throw new CarbonDataWriterException("Problem in splitting and writing complex data", e);
+        }
+        complexFlatByteArrayMap.put(genericDataType.getName(), flatComplexColumnList);
+      }
+    }
+    if (complexFlatByteArrayMap.size() > 0) {
+      row.setComplexFlatByteArrayMap(complexFlatByteArrayMap);
+    }
+  }
+
+  private int calculateDepth(GenericDataType complexDataType) {
+    List<ComplexColumnInfo> complexColumnInfoList = new ArrayList<>();
+    complexDataType.getComplexColumnInfo(complexColumnInfoList);
+    return complexColumnInfoList.size();
+  }
+
+  private void canSnappyHandleThisRow(int currentRowSize) {
+    if (currentRowSize > SnappyCompressor.MAX_BYTE_TO_COMPRESS) {
+      throw new RuntimeException(" page size: " + currentRowSize + " exceed snappy size: "
+          + SnappyCompressor.MAX_BYTE_TO_COMPRESS + " Bytes. Snappy cannot compress it ");
+    }
   }
 
   /**
@@ -420,8 +523,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
     dataRows = new ArrayList<>(this.pageSize);
 
-    if (model.getVarcharDimIdxInNoDict().size() > 0) {
-      varcharColumnSizeInByte = new int[model.getVarcharDimIdxInNoDict().size()];
+    if (model.getNoDictDataTypesList().size() + model.getNoDictAllComplexColumnDepth() > 0) {
+      noDictColumnPageSize =
+          new int[model.getNoDictDataTypesList().size() + model.getNoDictAllComplexColumnDepth()];
     }
 
     int dimSet =

@@ -62,6 +62,7 @@ public class CarbonWriterBuilder {
   //initialize with empty array , as no columns should be selected for sorting in NO_SORT
   private String[] sortColumns = new String[0];
   private int blockletSize;
+  private int pageSizeInMb;
   private int blockSize;
   private long timestamp;
   private Map<String, String> options;
@@ -269,6 +270,7 @@ public class CarbonWriterBuilder {
    *                           default value is null.
    * l. inverted_index -- comma separated string columns for which inverted index needs to be
    *                      generated
+   * m. table_page_size_inmb -- [1-1755] MB. Default value is 1 MB.
    *
    * @return updated CarbonWriterBuilder
    */
@@ -277,7 +279,7 @@ public class CarbonWriterBuilder {
     Set<String> supportedOptions = new HashSet<>(Arrays
         .asList("table_blocksize", "table_blocklet_size", "local_dictionary_threshold",
             "local_dictionary_enable", "sort_columns", "sort_scope", "long_string_columns",
-            "inverted_index"));
+            "inverted_index","table_page_size_inmb"));
 
     for (String key : options.keySet()) {
       if (!supportedOptions.contains(key.toLowerCase())) {
@@ -317,6 +319,8 @@ public class CarbonWriterBuilder {
           invertedIndexColumns = entry.getValue().split(",");
         }
         this.invertedIndexFor(invertedIndexColumns);
+      } else if (entry.getKey().equalsIgnoreCase("table_page_size_inmb")) {
+        this.withPageSizeInMb(Integer.parseInt(entry.getValue()));
       }
     }
     return this;
@@ -442,6 +446,21 @@ public class CarbonWriterBuilder {
       throw new IllegalArgumentException("blockletSize should be greater than zero");
     }
     this.blockletSize = blockletSize;
+    return this;
+  }
+
+  /**
+   * To set the blocklet size of CarbonData file
+   *
+   * @param pageSizeInMb is page size in MB
+   *                     default value is 1 MB.
+   * @return updated CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder withPageSizeInMb(int pageSizeInMb) {
+    if (pageSizeInMb < 1 || pageSizeInMb > 1755) {
+      throw new IllegalArgumentException("pageSizeInMb must be 1 MB - 1755 MB");
+    }
+    this.pageSizeInMb = pageSizeInMb;
     return this;
   }
 
@@ -626,6 +645,11 @@ public class CarbonWriterBuilder {
     if (blockletSize > 0) {
       tableSchemaBuilder = tableSchemaBuilder.blockletSize(blockletSize);
     }
+
+    if (pageSizeInMb > 0) {
+      tableSchemaBuilder = tableSchemaBuilder.pageSizeInMb(pageSizeInMb);
+    }
+
     tableSchemaBuilder.enableLocalDictionary(isLocalDictionaryEnabled);
     tableSchemaBuilder.localDictionaryThreshold(localDictionaryThreshold);
     List<String> sortColumnsList = new ArrayList<>();

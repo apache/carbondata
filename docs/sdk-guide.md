@@ -382,6 +382,7 @@ public CarbonWriterBuilder withLoadOptions(Map<String, String> options);
  *                           default value is null.
  * l. inverted_index -- comma separated string columns for which inverted index needs to be
  *                      generated
+ * m. table_page_size_inmb -- [1-1755] MB. Default value is 1 MB.
  *
  * @return updated CarbonWriterBuilder
  */

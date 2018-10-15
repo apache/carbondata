@@ -331,6 +331,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
         new BlockletInfo3(encodedBlocklet.getBlockletSize(), currentDataChunksOffset,
             currentDataChunksLength, dimensionOffset, measureOffset,
             encodedBlocklet.getNumberOfPages());
+    blockletInfo3.setRow_count_in_page(encodedBlocklet.getRowCountInPage());
     blockletMetadata.add(blockletInfo3);
   }
 

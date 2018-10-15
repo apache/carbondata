@@ -543,6 +543,38 @@ object CommonUtil {
   }
 
   /**
+   * This method will validate the table page size
+   *
+   * @param tableProperties table property specified by user
+   * @param propertyName property name
+   */
+  def validatePageSizeInmb(tableProperties: Map[String, String], propertyName: String): Unit = {
+    var size: Integer = 0
+    if (tableProperties.get(propertyName).isDefined) {
+      val pageSize: String =
+        parsePropertyValueStringInMB(tableProperties(propertyName))
+      val minPageSize = CarbonCommonConstants.TABLE_PAGE_SIZE_MIN_INMB
+      val maxPageSize = CarbonCommonConstants.TABLE_PAGE_SIZE_MAX_INMB
+      try {
+        size = Integer.parseInt(pageSize)
+      } catch {
+        case e: NumberFormatException =>
+          throw new MalformedCarbonCommandException(s"Invalid $propertyName value found: " +
+                                                    s"$pageSize, only int value from $minPageSize" +
+                                                    s" to " +
+                                                    s"$maxPageSize is supported.")
+      }
+      if (size < minPageSize || size > maxPageSize) {
+        throw new MalformedCarbonCommandException(s"Invalid $propertyName value found: " +
+                                                  s"$pageSize, only int value from $minPageSize " +
+                                                  s"to " +
+                                                  s"$maxPageSize is supported.")
+      }
+      tableProperties.put(propertyName, pageSize)
+    }
+  }
+
+  /**
    * This method will parse the configure string from 'XX MB/M' to 'XX'
    *
    * @param propertyValueString
