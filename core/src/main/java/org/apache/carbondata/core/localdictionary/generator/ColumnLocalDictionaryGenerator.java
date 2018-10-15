@@ -33,18 +33,12 @@ public class ColumnLocalDictionaryGenerator implements LocalDictionaryGenerator 
    */
   private DictionaryStore dictionaryHolder;
 
-  public ColumnLocalDictionaryGenerator(int threshold, int lvLength) {
+  public ColumnLocalDictionaryGenerator(int threshold) {
     // adding 1 to threshold for null value
     int newThreshold = threshold + 1;
     this.dictionaryHolder = new MapBasedDictionaryStore(newThreshold);
-    ByteBuffer byteBuffer = ByteBuffer.allocate(
-        lvLength + CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
-
-    if (lvLength == CarbonCommonConstants.SHORT_SIZE_IN_BYTE) {
-      byteBuffer.putShort((short) CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
-    } else {
-      byteBuffer.putInt(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
-    }
+    ByteBuffer byteBuffer =
+        ByteBuffer.allocate(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
     byteBuffer.put(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
     // for handling null values
     try {

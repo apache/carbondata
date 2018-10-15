@@ -32,7 +32,7 @@ public interface ColumnPageCodec {
    * Return a new Encoder which will be used to encode one column page.
    * This will be called for every column page
    */
-  ColumnPageEncoder createEncoder(Map<String, String> parameter);
+  ColumnPageEncoder createEncoder(Map<String, Object> parameter);
 
   /**
    * Return a new Decoder with specified metadata.

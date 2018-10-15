@@ -809,4 +809,57 @@ public class QueryUtil {
       }
     }
   }
+
+  /**
+   * Below method will be used to generate the offsets(position) of data for string/varchar
+   * data type column based on length data type data
+   * @param data
+   * lv data
+   * @param numberOfRows
+   * total number of rows
+   * @param lengthStoredType
+   * datatype for length part
+   * @return offsets
+   */
+  public static int[] generateOffsetForData(byte[] data, int numberOfRows,
+      DataType lengthStoredType) {
+    int[] dataOffsets = new int[numberOfRows + 1];
+    int dataOffset = 0;
+    int dataTypeLength = 0;
+    if (lengthStoredType == DataTypes.BYTE) {
+      dataTypeLength = 1;
+      dataOffsets[0] = 1;
+      for (int i = 1; i < numberOfRows; i++) {
+        dataOffset += data[dataOffset] + 1;
+        dataOffsets[i] = dataOffset + 1;
+      }
+    } else if (lengthStoredType == DataTypes.SHORT) {
+      dataTypeLength = 2;
+      dataOffsets[0] = 2;
+      for (int i = 1; i < numberOfRows; i++) {
+        dataOffset += (((data[dataOffset] & 0xFF) << 8) | (data[dataOffset + 1] & 0xFF)) + 2;
+        dataOffsets[i] = dataOffset + 2;
+      }
+    } else if (lengthStoredType == DataTypes.SHORT_INT) {
+      dataOffsets[0] = 3;
+      dataTypeLength = 3;
+      for (int i = 1; i < numberOfRows; i++) {
+        dataOffset += (((data[dataOffset] & 0xFF) << 16) | ((data[dataOffset + 1] & 0xFF) << 8) | (
+            data[dataOffset + 2] & 0xFF)) + 3;
+        dataOffsets[i] = dataOffset + 3;
+      }
+    } else {
+      dataTypeLength = 4;
+      dataOffsets[0] = 4;
+      for (int i = 1; i < numberOfRows; i++) {
+        dataOffset += (((data[dataOffset] & 0xFF) << 24) | ((data[dataOffset + 1] & 0xFF) << 16) | (
+            (data[dataOffset + 2] & 0xFF) << 8) | (data[dataOffset + 3] & 0xFF)) + 4;
+        dataOffsets[i] = dataOffset + 4;
+      }
+    }
+    // for last values adding total length + datatype size in bytes for
+    // getting the last cell value
+    dataOffsets[dataOffsets.length - 1] = data.length + dataTypeLength;
+    return dataOffsets;
+  }
 }

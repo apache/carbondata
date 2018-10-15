@@ -97,6 +97,7 @@ class C2DataMapFactory(
 }
 
 class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
+
   def buildTestData(numRows: Int): DataFrame = {
     import sqlContext.implicits._
     sqlContext.sparkContext.parallelize(1 to numRows, 1)
@@ -214,7 +215,7 @@ object DataMapWriterSuite {
         assert(pages.length == 1)
         assert(pages(0).getDataType == DataTypes.STRING)
         val bytes: Array[Byte] = pages(0).getBytes(0)
-        assert(bytes.sameElements(Seq(0, 1, 'b'.toByte)))
+        assert(bytes.sameElements(Seq('b'.toByte)))
         callbackSeq :+= s"add page data: blocklet $blockletId, page $pageId"
       }
 

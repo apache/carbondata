@@ -17,16 +17,13 @@
 
 package org.apache.carbondata.core.datastore.chunk.store;
 
-
-import java.util.BitSet;
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.metadata.blocklet.PresenceMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
@@ -43,21 +40,14 @@ public class ColumnPageWrapper implements DimensionColumnPage {
 
   private boolean isAdaptivePrimitivePage;
 
-  private int[] invertedIndex;
-
-  private int[] invertedReverseIndex;
-
-  private boolean isExplicitSorted;
+  private PresenceMeta presenceMeta;
 
   public ColumnPageWrapper(ColumnPage columnPage, CarbonDictionary localDictionary,
-      int[] invertedIndex, int[] invertedReverseIndex, boolean isAdaptivePrimitivePage,
-      boolean isExplicitSorted) {
+      boolean isAdaptivePrimitivePage) {
     this.columnPage = columnPage;
     this.localDictionary = localDictionary;
-    this.invertedIndex = invertedIndex;
-    this.invertedReverseIndex = invertedReverseIndex;
     this.isAdaptivePrimitivePage = isAdaptivePrimitivePage;
-    this.isExplicitSorted = isExplicitSorted;
+    this.presenceMeta = columnPage.getPresenceMeta();
   }
 
   @Override
@@ -72,15 +62,7 @@ public class ColumnPageWrapper implements DimensionColumnPage {
 
   @Override
   public int fillVector(ColumnVectorInfo[] vectorInfo, int chunkIndex) {
-    ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
-    CarbonColumnVector vector = columnVectorInfo.vector;
-    int offset = columnVectorInfo.offset;
-    int vectorOffset = columnVectorInfo.vectorOffset;
-    int len = offset + columnVectorInfo.size;
-    for (int i = offset; i < len; i++) {
-      fillRow(i, vector, vectorOffset++);
-    }
-    return chunkIndex + 1;
+    throw new UnsupportedOperationException("Operation not supported for complex type");
   }
 
   /**
@@ -91,47 +73,22 @@ public class ColumnPageWrapper implements DimensionColumnPage {
    * @param vectorRow
    */
   private void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
-    if (columnPage.getNullBits().get(rowId)
-        && columnPage.getColumnSpec().getColumnType() == ColumnType.COMPLEX_PRIMITIVE) {
-      // if this row is null, return default null represent in byte array
-      byte[] value = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
-      QueryUtil.putDataToVector(vector, value, vectorRow, value.length);
-    } else if (columnPage.getNullBits().get(rowId)) {
-      // if this row is null, return default null represent in byte array
-      byte[] value = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
-      QueryUtil.putDataToVector(vector, value, vectorRow, value.length);
-    } else {
-      if (isExplicitSorted) {
-        rowId = invertedReverseIndex[rowId];
-      }
-      QueryUtil.putDataToVector(vector, getActualData(rowId, true), vectorRow);
-    }
+    throw new UnsupportedOperationException("Operation not supported for complex type");
   }
 
   @Override
   public int fillVector(int[] filteredRowId, ColumnVectorInfo[] vectorInfo, int chunkIndex) {
-    ColumnVectorInfo columnVectorInfo = vectorInfo[chunkIndex];
-    CarbonColumnVector vector = columnVectorInfo.vector;
-    int offset = columnVectorInfo.offset;
-    int vectorOffset = columnVectorInfo.vectorOffset;
-    int len = offset + columnVectorInfo.size;
-    for (int i = offset; i < len; i++) {
-      fillRow(filteredRowId[i], vector, vectorOffset++);
-    }
-    return chunkIndex + 1;
+    throw new UnsupportedOperationException("Operation not supported for complex type");
   }
 
   @Override public byte[] getChunkData(int rowId) {
-    byte[] nullBitSet = getNullBitSet(rowId, columnPage.getColumnSpec().getColumnType());
-    if (nullBitSet != null) {
+    if ((presenceMeta.isNullBitset() && presenceMeta.getBitSet().get(rowId))
+        || (!presenceMeta.isNullBitset() && !presenceMeta.getBitSet().get(rowId))
+        && columnPage.getColumnSpec().getColumnType() == ColumnType.COMPLEX_PRIMITIVE) {
       // if this row is null, return default null represent in byte array
-      return nullBitSet;
-    } else {
-      if (isExplicitSorted()) {
-        rowId = getInvertedReverseIndex(rowId);
-      }
-      return getChunkDataInBytes(rowId);
+      return CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
     }
+    return getChunkDataInBytes(rowId);
   }
 
   private byte[] getChunkDataInBytes(int rowId) {
@@ -141,8 +98,7 @@ public class ColumnPageWrapper implements DimensionColumnPage {
     if (null != localDictionary) {
       return localDictionary
           .getDictionaryValue(CarbonUtil.getSurrogateInternal(columnPage.getBytes(rowId), 0, 3));
-    } else if ((columnType == ColumnType.COMPLEX_PRIMITIVE && isAdaptiveEncoded()) || (
-        columnType == ColumnType.PLAIN_VALUE && DataTypeUtil.isPrimitiveColumn(srcDataType))) {
+    } else if ((columnType == ColumnType.COMPLEX_PRIMITIVE && isAdaptivePrimitivePage)) {
       if (srcDataType == DataTypes.FLOAT) {
         float floatData = columnPage.getFloat(rowId);
         return ByteUtil.toXorBytes(floatData);
@@ -181,7 +137,7 @@ public class ColumnPageWrapper implements DimensionColumnPage {
       } else {
         throw new RuntimeException("unsupported type: " + targetDataType);
       }
-    } else if ((columnType == ColumnType.COMPLEX_PRIMITIVE && !isAdaptiveEncoded())) {
+    } else if ((columnType == ColumnType.COMPLEX_PRIMITIVE)) {
       if ((srcDataType == DataTypes.BYTE) || (srcDataType == DataTypes.BOOLEAN)) {
         byte[] out = new byte[1];
         out[0] = (columnPage.getByte(rowId));
@@ -291,39 +247,27 @@ public class ColumnPageWrapper implements DimensionColumnPage {
 
   @Override
   public int getInvertedIndex(int rowId) {
-    return invertedIndex[rowId];
+    throw new UnsupportedOperationException("Operation not supported for complex type");
   }
 
   @Override
   public int getInvertedReverseIndex(int rowId) {
-    return invertedReverseIndex[rowId];
+    throw new UnsupportedOperationException("Operation not supported for complex type");
   }
 
   @Override
   public boolean isNoDicitionaryColumn() {
-    return true;
+    return false;
   }
 
   @Override
   public boolean isExplicitSorted() {
-    return isExplicitSorted;
+    return false;
   }
 
   @Override
-  public int compareTo(int rowId, byte[] compareValue) {
-    // rowId is the inverted index, but the null bitset is based on actual data
-    int nullBitSetRowId = rowId;
-    if (isExplicitSorted()) {
-      nullBitSetRowId = getInvertedReverseIndex(rowId);
-    }
-    byte[] nullBitSet = getNullBitSet(nullBitSetRowId, columnPage.getColumnSpec().getColumnType());
-    if (nullBitSet != null) {
-      // if this row is null, return default null represent in byte array
-      return ByteUtil.UnsafeComparer.INSTANCE.compareTo(nullBitSet, compareValue);
-    } else {
-      byte[] chunkData = this.getChunkDataInBytes(rowId);
-      return ByteUtil.UnsafeComparer.INSTANCE.compareTo(chunkData, compareValue);
-    }
+  public int compareTo(int rowId, Object compareValue) {
+    throw new UnsupportedOperationException("Operation not supported for complex type");
   }
 
   @Override
@@ -335,11 +279,10 @@ public class ColumnPageWrapper implements DimensionColumnPage {
   }
 
   @Override public boolean isAdaptiveEncoded() {
-    return isAdaptivePrimitivePage;
+    throw new UnsupportedOperationException("Operation not supported for complex type");
   }
 
-  @Override public BitSet getNullBits() {
-    return columnPage.getNullBits();
+  @Override public PresenceMeta getPresentMeta() {
+    return presenceMeta;
   }
-
 }

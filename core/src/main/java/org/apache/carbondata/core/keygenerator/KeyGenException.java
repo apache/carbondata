@@ -20,7 +20,7 @@ package org.apache.carbondata.core.keygenerator;
 /**
  * It can be thrown while generating the key.
  */
-public class KeyGenException extends Exception {
+public class KeyGenException extends RuntimeException {
 
   private static final long serialVersionUID = 3105132151795358241L;
 

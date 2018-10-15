@@ -114,7 +114,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       "'SORT_SCOPE'='BATCH_SORT')")
     sql(
       s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable1b OPTIONS
-          |('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'batch_sort_size_inmb'='64')""".stripMargin)
+         |('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'batch_sort_size_inmb'='64')""".stripMargin)
     checkAnswer(sql("select empname from sorttable1b"),
       sql("select empname from origintable1 order by empname"))
   }
@@ -361,7 +361,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     val exceptionCaught = intercept[MalformedCarbonCommandException]{
       sql("CREATE TABLE sorttable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='empno,empname,empno')")
     }
-  assert(exceptionCaught.getMessage.equals("SORT_COLUMNS Either having duplicate columns : empno or it contains illegal argumnet."))
+    assert(exceptionCaught.getMessage.equals("SORT_COLUMNS Either having duplicate columns : empno or it contains illegal argumnet."))
   }
 
   test("Test tableTwo data") {

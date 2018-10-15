@@ -17,30 +17,35 @@
 
 package org.apache.carbondata.core.datastore.page.encoding.dimension.legacy;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorage;
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndexForShort;
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForShort;
+import org.apache.carbondata.core.datastore.columnar.BinaryPageIndexGenerator;
+import org.apache.carbondata.core.datastore.columnar.PageIndexGenerator;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
+import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.format.Encoding;
 
+/**
+ * Codec class for binary/String data type columns
+ */
 public class HighCardDictDimensionIndexCodec extends IndexStorageCodec {
-  /**
-   * whether this column is varchar data type(long string)
-   */
-  private boolean isVarcharType;
 
-  public HighCardDictDimensionIndexCodec(boolean isSort, boolean isInvertedIndex,
-      boolean isVarcharType) {
-    super(isSort, isInvertedIndex);
-    this.isVarcharType = isVarcharType;
+  private final List<Encoding> encodingList;
+
+  public HighCardDictDimensionIndexCodec(boolean isSort) {
+    super(isSort);
+    encodingList = new ArrayList<>();
+    encodingList.add(Encoding.DIRECT_STRING);
   }
 
   @Override
@@ -48,40 +53,81 @@ public class HighCardDictDimensionIndexCodec extends IndexStorageCodec {
     return "HighCardDictDimensionIndexCodec";
   }
 
-  @Override
-  public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
-    return new IndexStorageEncoder() {
-
+  @Override public ColumnPageEncoder createEncoder(Map<String, Object> parameter) {
+    return new IndexStorageEncoder(true, null, encodingList) {
+      private final int THREE_BYTES_MAX = (int) Math.pow(2, 23) - 1;
+      private final int THREE_BYTES_MIN = - THREE_BYTES_MAX - 1;
       @Override
-      protected void encodeIndexStorage(ColumnPage input) {
-        BlockIndexerStorage<byte[][]> indexStorage;
+      protected void encodeIndexStorage(ColumnPage input) throws MemoryException, IOException {
+        PageIndexGenerator<byte[][]> pageIndexGenerator;
+        // get actual data
         byte[][] data = input.getByteArrayPage();
-        boolean isDictionary = input.isLocalDictGeneratedPage();
-        if (isInvertedIndex) {
-          indexStorage = new BlockIndexerStorageForShort(data, isDictionary, !isDictionary, isSort);
-        } else {
-          indexStorage =
-              new BlockIndexerStorageForNoInvertedIndexForShort(data, isDictionary);
+        // fill length array
+        int[] lengthArray = new int[data.length];
+        int max = Integer.MIN_VALUE;
+        int min = Integer.MAX_VALUE;
+        int currentDataLength;
+        int size = 0;
+        for (int i = 0; i < lengthArray.length; i++) {
+          currentDataLength = data[i].length;
+          lengthArray[i] = currentDataLength;
+          size += currentDataLength;
+          if (max < currentDataLength) {
+            max = currentDataLength;
+          }
+          if (min > currentDataLength) {
+            min = currentDataLength;
+          }
         }
-        byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
         Compressor compressor = CompressorFactory.getInstance().getCompressor(
             input.getColumnCompressorName());
+        pageIndexGenerator =
+              new BinaryPageIndexGenerator(data, isSort, lengthArray);
+        // free memory
+        selectedDataType = fitLongMinMax(max, min);
+        byte[][] dataPage = pageIndexGenerator.getDataPage();
+        ByteBuffer byteBuffer;
+        if (DataTypes.BYTE == selectedDataType) {
+          byteBuffer = ByteBuffer.allocate(lengthArray.length + size);
+          for (int i = 0; i < lengthArray.length; i++) {
+            byteBuffer.put((byte) lengthArray[i]);
+            byteBuffer.put(dataPage[i]);
+          }
+        } else if (DataTypes.SHORT == selectedDataType) {
+          byteBuffer = ByteBuffer.allocate((lengthArray.length * 2) + size);
+          for (int i = 0; i < lengthArray.length; i++) {
+            byteBuffer.putShort((short) lengthArray[i]);
+            byteBuffer.put(dataPage[i]);
+          }
+        } else if (DataTypes.SHORT_INT == selectedDataType) {
+          byteBuffer = ByteBuffer.allocate((lengthArray.length * 3) + size);
+          for (int i = 0; i < lengthArray.length; i++) {
+            byteBuffer.put(ByteUtil.to3Bytes(lengthArray[i]));
+            byteBuffer.put(dataPage[i]);
+          }
+        } else {
+          byteBuffer = ByteBuffer.allocate((lengthArray.length * 4) + size);
+          for (int i = 0; i < lengthArray.length; i++) {
+            byteBuffer.putInt(lengthArray[i]);
+            byteBuffer.put(dataPage[i]);
+          }
+        }
+        byteBuffer.rewind();
+        byte[] flattened = byteBuffer.array();
         super.compressedDataPage = compressor.compressByte(flattened);
-        super.indexStorage = indexStorage;
+        super.pageIndexGenerator = pageIndexGenerator;
       }
 
-      @Override
-      protected List<Encoding> getEncodingList() {
-        List<Encoding> encodings = new ArrayList<>();
-        if (isVarcharType) {
-          encodings.add(Encoding.DIRECT_COMPRESS_VARCHAR);
-        } else if (indexStorage.getRowIdPageLengthInBytes() > 0) {
-          encodings.add(Encoding.INVERTED_INDEX);
+      private DataType fitLongMinMax(int max, int min) {
+        if (max <= Byte.MAX_VALUE && min >= Byte.MIN_VALUE) {
+          return DataTypes.BYTE;
+        } else if (max <= Short.MAX_VALUE && min >= Short.MIN_VALUE) {
+          return DataTypes.SHORT;
+        } else if (max <= THREE_BYTES_MAX && min >= THREE_BYTES_MIN) {
+          return DataTypes.SHORT_INT;
+        } else {
+          return DataTypes.INT;
         }
-        if (indexStorage.getDataRlePageLengthInBytes() > 0) {
-          encodings.add(Encoding.RLE);
-        }
-        return encodings;
       }
     };
   }

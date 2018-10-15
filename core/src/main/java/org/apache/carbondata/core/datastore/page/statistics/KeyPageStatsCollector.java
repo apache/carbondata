@@ -91,6 +91,10 @@ public class KeyPageStatsCollector implements ColumnPageStatsCollector {
     }
   }
 
+  @Override public void updateNull(int rowId, Object nullValue) {
+
+  }
+
   @Override
   public SimpleStatsResult getPageStats() {
     return new SimpleStatsResult() {

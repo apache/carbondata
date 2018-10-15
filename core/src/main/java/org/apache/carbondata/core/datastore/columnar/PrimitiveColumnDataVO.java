@@ -14,59 +14,67 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.carbondata.core.datastore.columnar;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
-public class ColumnWithRowIdForNoDictionary<T>
-    implements Comparable<ColumnWithRowIdForNoDictionary<T>> {
+/**
+ * primitive column data holder
+ */
+public class PrimitiveColumnDataVO implements ColumnDataVo<Object> {
 
-  Object column;
+  /**
+   * data
+   */
+  private Object column;
 
-  T index;
+  /**
+   * index in data
+   */
+  private Short index;
 
-  DataType dataType;
+  /**
+   * data type based comparator
+   */
+  private SerializableComparator serializableComparator;
 
-  ColumnWithRowIdForNoDictionary(Object column, T index, DataType dataType) {
+  PrimitiveColumnDataVO(Object column, short index, SerializableComparator serializableComparator) {
     this.column = column;
     this.index = index;
-    this.dataType = dataType;
-  }
-
-  @Override public int compareTo(ColumnWithRowIdForNoDictionary o) {
-    // use the data type based comparator for the no dictionary encoded columns
-    SerializableComparator comparator =
-        org.apache.carbondata.core.util.comparator.Comparator.getComparator(dataType);
-    return comparator.compare(column, o.column);
+    this.serializableComparator = serializableComparator;
   }
 
   @Override public boolean equals(Object obj) {
     if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
-    ColumnWithRowIdForNoDictionary o = (ColumnWithRowIdForNoDictionary)obj;
-    return column.equals(o.column) && getIndex() == o.getIndex();
+    PrimitiveColumnDataVO o = (PrimitiveColumnDataVO) obj;
+    return column.equals(o.column) && index.equals(o.index);
   }
 
   @Override public int hashCode() {
-    return getColumn().hashCode() + getIndex().hashCode();
+    return this.column.hashCode() + index.hashCode();
   }
 
   /**
    * @return the index
    */
-  public T getIndex() {
+  public short getIndex() {
     return index;
   }
 
+  @Override public int getLength() {
+    return 0;
+  }
 
   /**
    * @return the column
    */
-  public Object getColumn() {
+  public Object getData() {
     return column;
   }
 
+  @Override public int compareTo(Object other) {
+    return serializableComparator.compare(column, ((PrimitiveColumnDataVO)other).column);
+  }
 }

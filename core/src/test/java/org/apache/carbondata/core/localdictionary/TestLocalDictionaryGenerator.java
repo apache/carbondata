@@ -31,7 +31,7 @@ public class TestLocalDictionaryGenerator {
 
   @Test
   public void testColumnLocalDictionaryGeneratorWithValidDataWithinThreshold() {
-    LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);
+    LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000);
     try {
       for (int i = 1; i <= 1000; i++) {
         generator.generateDictionary(("" + i).getBytes());
@@ -52,7 +52,7 @@ public class TestLocalDictionaryGenerator {
 
   @Test
   public void testColumnLocalDictionaryGeneratorWhenThresholdReached_ExceptionShouldBeThrown() {
-    LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);
+    LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000);
     try {
       for (int i = 1; i <= 10000; i++) {
         generator.generateDictionary(("" + i).getBytes());
@@ -66,10 +66,8 @@ public class TestLocalDictionaryGenerator {
 
   @Test
   public void testColumnLocalDictionaryGeneratorForNullValueIsPresentWithoutAddingAnyData() {
-    LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);
-    ByteBuffer byteBuffer = ByteBuffer.allocate(
-        2 + CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
-    byteBuffer.putShort((short)CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
+    LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000);
+    ByteBuffer byteBuffer = ByteBuffer.allocate(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length);
     byteBuffer.put(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
 
     Assert.assertTrue(Arrays.equals(generator.getDictionaryKeyBasedOnValue(1),

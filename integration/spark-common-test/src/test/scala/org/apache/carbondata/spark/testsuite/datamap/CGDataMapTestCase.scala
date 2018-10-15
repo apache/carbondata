@@ -317,8 +317,8 @@ class CGDataMapWriter(
     var i = 0
     while (i < size) {
       val bytes = pages(0).getBytes(i)
-      val newBytes = new Array[Byte](bytes.length - 2)
-      System.arraycopy(bytes, 2, newBytes, 0, newBytes.length)
+      val newBytes = new Array[Byte](bytes.length)
+      System.arraycopy(bytes, 0, newBytes, 0, newBytes.length)
       list += newBytes
       i = i + 1
     }

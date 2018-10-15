@@ -29,10 +29,12 @@ import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsCollector;
+import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.localdictionary.PageLevelDictionary;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.metadata.blocklet.PresenceMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -58,6 +60,8 @@ public abstract class ColumnPage {
 
   // statistics collector for this column page
   protected ColumnPageStatsCollector statsCollector;
+
+  private PresenceMeta presenceMeta;
 
   protected static final boolean unsafe = Boolean.parseBoolean(CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
@@ -156,29 +160,26 @@ public abstract class ColumnPage {
   }
 
   public static ColumnPage newLocalDictPage(ColumnPageEncoderMeta columnPageEncoderMeta,
-      int pageSize, LocalDictionaryGenerator localDictionaryGenerator,
-      boolean isComplexTypePrimitive) throws MemoryException {
+      int pageSize, LocalDictionaryGenerator localDictionaryGenerator) throws MemoryException {
     boolean isDecoderBasedFallBackEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK,
             CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT));
+    ColumnPageStatsCollector primitivePageStatsCollector =
+        PrimitivePageStatsCollector.newInstance(DataTypes.INT);
     ColumnPage actualPage;
     ColumnPage encodedPage;
+    TableSpec.MeasureSpec encodedSpec = TableSpec.MeasureSpec
+        .newInstance(columnPageEncoderMeta.getColumnSpec().getFieldName(), DataTypes.INT);
     if (unsafe) {
       actualPage = new UnsafeVarLengthColumnPage(columnPageEncoderMeta, pageSize);
-      encodedPage = new UnsafeFixLengthColumnPage(
-          new ColumnPageEncoderMeta(columnPageEncoderMeta.getColumnSpec(), DataTypes.BYTE_ARRAY,
-              columnPageEncoderMeta.getCompressorName()),
-          pageSize,
-          CarbonCommonConstants.LOCAL_DICT_ENCODED_BYTEARRAY_SIZE);
     } else {
       actualPage = new SafeVarLengthColumnPage(columnPageEncoderMeta, pageSize);
-      encodedPage = new SafeFixLengthColumnPage(
-          new ColumnPageEncoderMeta(columnPageEncoderMeta.getColumnSpec(), DataTypes.BYTE_ARRAY,
-              columnPageEncoderMeta.getCompressorName()),
-          pageSize);
     }
+    encodedPage =
+        newIntPage(encodedSpec, new int[pageSize], columnPageEncoderMeta.getCompressorName());
+    encodedPage.setStatsCollector(primitivePageStatsCollector);
     return new LocalDictColumnPage(actualPage, encodedPage, localDictionaryGenerator,
-        isComplexTypePrimitive, isDecoderBasedFallBackEnabled);
+        isDecoderBasedFallBackEnabled);
   }
 
   /**
@@ -399,6 +400,21 @@ public abstract class ColumnPage {
   public abstract void freeMemory();
 
   /**
+   * PutData with default null value used for dictionary/direct dictionary columns
+   * @param rowId
+   * @param value
+   * @param nullValue
+   */
+  public void putData(int rowId, Object value, Object nullValue) {
+    if (value == null) {
+      putNull(rowId, nullValue);
+      statsCollector.updateNull(rowId, nullValue);
+      nullBitSet.set(rowId);
+      return;
+    }
+    putData(rowId, value);
+  }
+  /**
    * Set value at rowId
    */
   public void putData(int rowId, Object value) {
@@ -535,7 +551,18 @@ public abstract class ColumnPage {
    */
   public abstract void putBytes(int rowId, byte[] bytes, int offset, int length);
 
-
+  /**
+   * Set null at rowId with null values passed
+   * this will be used for dictionary columns
+   */
+  protected void putNull(int rowId, Object nullValue) {
+    DataType dataType = columnPageEncoderMeta.getStoreDataType();
+    if (dataType == DataTypes.INT) {
+      putInt(rowId, (int)nullValue);
+    } else {
+      throw new UnsupportedOperationException("Operation Not supported");
+    }
+  }
   /**
    * Set null at rowId
    */
@@ -558,7 +585,7 @@ public abstract class ColumnPage {
     } else if (DataTypes.isDecimal(dataType)) {
       putDecimal(rowId, BigDecimal.ZERO);
     } else {
-      throw new IllegalArgumentException("unsupported data type: " + dataType);
+      putBytes(rowId, new byte[0]);
     }
   }
 
@@ -586,7 +613,7 @@ public abstract class ColumnPage {
     } else if (DataTypes.isDecimal(dataType)) {
       result = getDecimal(rowId);
     } else {
-      throw new IllegalArgumentException("unsupported data type: " + dataType);
+      return new byte[0];
     }
     return result;
   }
@@ -902,5 +929,60 @@ public abstract class ColumnPage {
 
   public ColumnPageEncoderMeta getColumnPageEncoderMeta() {
     return columnPageEncoderMeta;
+  }
+
+  public ColumnPage getLocalDictPage() {
+    throw new UnsupportedOperationException("Operation not supported");
+  }
+
+  /**
+   * Convert the data of the page based on the data type for each row
+   * While preparing the inverted index for the page,
+   * we need the data based on data type for no dict measure column if adaptive encoding is applied
+   * This is similar to page.getByteArrayPage()
+   *
+   * @return
+   */
+  public Object[] getPageBasedOnDataType() {
+    Object[] data = new Object[getActualRowCount()];
+    DataType dataType = columnPageEncoderMeta.getStoreDataType();
+    if (dataType == DataTypes.BYTE || dataType == DataTypes.BOOLEAN) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getByte(i);
+      }
+    } else if (dataType == DataTypes.SHORT) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getShort(i);
+      }
+    } else if (dataType == DataTypes.SHORT_INT) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getShortInt(i);
+      }
+    } else if (dataType == DataTypes.INT) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getInt(i);
+      }
+    } else if (dataType == DataTypes.LONG) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getLong(i);
+      }
+    } else if (dataType == DataTypes.FLOAT) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getFloat(i);
+      }
+    } else if (dataType == DataTypes.DOUBLE) {
+      for (int i = 0; i < getActualRowCount(); i++) {
+        data[i] = getDouble(i);
+      }
+    }
+    return data;
+  }
+
+  public PresenceMeta getPresenceMeta() {
+    return presenceMeta;
+  }
+
+  public void setPresenceMeta(PresenceMeta presenceMeta) {
+    this.presenceMeta = presenceMeta;
   }
 }

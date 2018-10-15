@@ -28,6 +28,7 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
+import org.apache.carbondata.core.metadata.blocklet.PresenceMeta;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -204,7 +205,9 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
         measureColumnChunkLength.get(rawColumnChunk.getColumnIndex()) +
         dataChunk3.getPage_offset().get(pageNumber);
     ColumnPage decodedPage = decodeMeasure(pageMetadata, rawColumnChunk.getRawData(), offset);
-    decodedPage.setNullBits(QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor));
+    PresenceMeta presenceMeta = new PresenceMeta(pageMetadata.presence.represents_presence,
+        QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor));
+    decodedPage.setPresenceMeta(presenceMeta);
     return decodedPage;
   }
 

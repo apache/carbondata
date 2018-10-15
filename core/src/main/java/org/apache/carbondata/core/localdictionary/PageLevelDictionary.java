@@ -17,22 +17,19 @@
 package org.apache.carbondata.core.localdictionary;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.BitSet;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
-import org.apache.carbondata.core.datastore.page.encoding.compress.DirectCompressCodec;
+import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.datastore.page.statistics.DummyStatsCollector;
 import org.apache.carbondata.core.localdictionary.exception.DictionaryThresholdReachedException;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.format.LocalDictionaryChunk;
 
@@ -55,19 +52,13 @@ public class PageLevelDictionary {
 
   private String columnName;
 
-  private DataType dataType;
-
-  private boolean isComplexTypePrimitive;
-  // compressor to be used for the dictionary. The compressor is the same as column compressor.
   private String columnCompressor;
 
   public PageLevelDictionary(LocalDictionaryGenerator localDictionaryGenerator, String columnName,
-      DataType dataType, boolean isComplexTypePrimitive, String columnCompressor) {
+      String columnCompressor) {
     this.localDictionaryGenerator = localDictionaryGenerator;
     this.usedDictionaryValues = new BitSet();
     this.columnName = columnName;
-    this.dataType = dataType;
-    this.isComplexTypePrimitive = isComplexTypePrimitive;
     this.columnCompressor = columnCompressor;
   }
 
@@ -105,42 +96,21 @@ public class PageLevelDictionary {
   public LocalDictionaryChunk getLocalDictionaryChunkForBlocklet()
       throws MemoryException, IOException {
     // TODO support for actual data type dictionary ColumnSPEC
-    ColumnType columnType = ColumnType.PLAIN_VALUE;
-    boolean isVarcharType = false;
-    int lvSize = CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
-    if (DataTypes.VARCHAR == dataType) {
-      columnType = ColumnType.PLAIN_LONG_VALUE;
-      lvSize = CarbonCommonConstants.INT_SIZE_IN_BYTE;
-      isVarcharType = true;
-    }
-    TableSpec.ColumnSpec spec =
-        TableSpec.ColumnSpec.newInstance(columnName, DataTypes.BYTE_ARRAY, columnType);
+    TableSpec.DimensionSpec spec = TableSpec.DimensionSpec
+        .newInstance(columnName, DataTypes.STRING, ColumnType.PLAIN_VALUE);
     ColumnPage dictionaryColumnPage = ColumnPage.newPage(
         new ColumnPageEncoderMeta(spec, DataTypes.BYTE_ARRAY, columnCompressor),
         usedDictionaryValues.cardinality());
     // TODO support data type specific stats collector for numeric data types
     dictionaryColumnPage.setStatsCollector(new DummyStatsCollector());
     int rowId = 0;
-    ByteBuffer byteBuffer = null;
     for (int i = usedDictionaryValues.nextSetBit(0);
          i >= 0; i = usedDictionaryValues.nextSetBit(i + 1)) {
-      if (!isComplexTypePrimitive) {
-        dictionaryColumnPage
-            .putData(rowId++, localDictionaryGenerator.getDictionaryKeyBasedOnValue(i));
-      } else {
-        byte[] dictionaryKeyBasedOnValue = localDictionaryGenerator.getDictionaryKeyBasedOnValue(i);
-        byteBuffer = ByteBuffer.allocate(lvSize + dictionaryKeyBasedOnValue.length);
-        if (!isVarcharType) {
-          byteBuffer.putShort((short) dictionaryKeyBasedOnValue.length);
-        } else {
-          byteBuffer.putInt(dictionaryKeyBasedOnValue.length);
-        }
-        byteBuffer.put(dictionaryKeyBasedOnValue);
-        dictionaryColumnPage.putData(rowId++, byteBuffer.array());
-      }
+      dictionaryColumnPage
+          .putData(rowId++, localDictionaryGenerator.getDictionaryKeyBasedOnValue(i));
     }
-    // creating a encoder
-    ColumnPageEncoder encoder = new DirectCompressCodec(DataTypes.BYTE_ARRAY).createEncoder(null);
+    ColumnPageEncoder encoder =
+        DefaultEncodingFactory.getInstance().createEncoder(spec, dictionaryColumnPage, null);
     // get encoded dictionary values
     LocalDictionaryChunk localDictionaryChunk = encoder.encodeDictionary(dictionaryColumnPage);
     // set compressed dictionary values

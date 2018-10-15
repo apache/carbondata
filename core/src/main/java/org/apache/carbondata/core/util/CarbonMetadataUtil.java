@@ -414,7 +414,7 @@ public class CarbonMetadataUtil {
     DataChunk3 dataChunk = new DataChunk3();
     List<Integer> pageOffsets = new ArrayList<>();
     List<Integer> pageLengths = new ArrayList<>();
-    int length = 0;
+    int length;
     for (DataChunk2 dataChunk2 : dataChunksList) {
       pageOffsets.add(offset);
       length = dataChunk2.getData_page_length() + dataChunk2.getRle_page_length() +

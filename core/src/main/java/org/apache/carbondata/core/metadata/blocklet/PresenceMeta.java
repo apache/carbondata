@@ -15,37 +15,32 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.columnar;
+package org.apache.carbondata.core.metadata.blocklet;
 
-class ColumnarKeyStoreMetadata {
+import java.util.BitSet;
 
-  private int[] columnReverseIndex;
-
-  private int eachRowSize;
-
-  ColumnarKeyStoreMetadata(int eachRowSize) {
-    this.eachRowSize = eachRowSize;
-  }
+public class PresenceMeta {
 
   /**
-   * @return the eachRowSize
+   * true represents null bitset and false no null bitset
    */
-  int getEachRowSize() {
-    return eachRowSize;
-  }
+  private boolean isNullBitset;
 
   /**
-   * @return the columnReverseIndex
+   * null/not null bitset
    */
-  int[] getColumnReverseIndex() {
-    return columnReverseIndex;
+  private BitSet bitSet;
+
+  public PresenceMeta(boolean isNullBitset, BitSet bitSet) {
+    this.isNullBitset = isNullBitset;
+    this.bitSet = bitSet;
   }
 
-  /**
-   * @param columnReverseIndex the columnReverseIndex to set
-   */
-  void setColumnReverseIndex(int[] columnReverseIndex) {
-    this.columnReverseIndex = columnReverseIndex;
+  public boolean isNullBitset() {
+    return isNullBitset;
   }
 
+  public BitSet getBitSet() {
+    return bitSet;
+  }
 }

@@ -18,6 +18,7 @@ package org.apache.carbondata.core.datastore.chunk;
 
 import java.nio.ByteBuffer;
 
+import org.apache.carbondata.core.metadata.blocklet.PresenceMeta;
 import org.apache.carbondata.format.DataChunk3;
 
 /**
@@ -46,6 +47,8 @@ public abstract class AbstractRawColumnChunk {
   protected int length;
 
   private DataChunk3 dataChunkV3;
+
+  private PresenceMeta[] presenceMeta;
 
   public AbstractRawColumnChunk(int columnIndex, ByteBuffer rawData, long offSet, int length) {
     this.columnIndex = columnIndex;
@@ -128,5 +131,12 @@ public abstract class AbstractRawColumnChunk {
 
   public void setMinMaxFlagArray(boolean[] minMaxFlagArray) {
     this.minMaxFlagArray = minMaxFlagArray;
+  }
+  public PresenceMeta[] getPresenceMeta() {
+    return this.presenceMeta;
+  }
+
+  public void setPresenceMeta(PresenceMeta[] presenceMeta) {
+    this.presenceMeta = presenceMeta;
   }
 }
