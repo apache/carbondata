@@ -22,10 +22,16 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
+import org.apache.carbondata.core.datastore.chunk.impl.BooleanTypeDimColumnPage;
+import org.apache.carbondata.core.datastore.chunk.impl.ByteTypeDimColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionColumnPage;
+import org.apache.carbondata.core.datastore.chunk.impl.IntTypeDimColumnPage;
+import org.apache.carbondata.core.datastore.chunk.impl.LongTypeDimColumnPage;
+import org.apache.carbondata.core.datastore.chunk.impl.ShortTypeDimColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.reader.dimension.AbstractChunkReaderV2V3Format;
 import org.apache.carbondata.core.datastore.chunk.store.ColumnPageWrapper;
@@ -38,6 +44,8 @@ import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory
 import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -245,22 +253,43 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       ColumnPage decodedPage = decodeDimensionByMeta(pageMetadata, pageData, offset,
           null != rawColumnPage.getLocalDictionary());
       decodedPage.setNullBits(QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor));
-      int[] invertedIndexes = new int[0];
-      int[] invertedIndexesReverse = new int[0];
-      // in case of no dictionary measure data types, if it is included in sort columns
-      // then inverted index to be uncompressed
-      if (encodings.contains(Encoding.INVERTED_INDEX)) {
-        offset += pageMetadata.data_page_length;
-        if (CarbonUtil.hasEncoding(pageMetadata.encoders, Encoding.INVERTED_INDEX)) {
-          invertedIndexes = CarbonUtil
-              .getUnCompressColumnIndex(pageMetadata.rowid_page_length, pageData, offset);
-          // get the reverse index
-          invertedIndexesReverse = CarbonUtil.getInvertedReverseIndex(invertedIndexes);
+      ColumnType columnType = decodedPage.getColumnSpec().getColumnType();
+      if (ColumnType.COMPLEX_ARRAY == columnType || ColumnType.COMPLEX_STRUCT == columnType
+          || ColumnType.COMPLEX_PRIMITIVE == columnType || ColumnType.COMPLEX == columnType) {
+        return new ColumnPageWrapper(decodedPage, rawColumnPage.getLocalDictionary(),
+            isEncodedWithAdaptiveMeta(pageMetadata));
+      } else {
+        int[] invertedIndexes = new int[0];
+        int[] invertedIndexesReverse = new int[0];
+        // in case of no dictionary measure data types, if it is included in sort columns
+        // then inverted index to be uncompressed
+        if (encodings.contains(Encoding.INVERTED_INDEX)) {
+          offset += pageMetadata.data_page_length;
+          if (CarbonUtil.hasEncoding(pageMetadata.encoders, Encoding.INVERTED_INDEX)) {
+            invertedIndexes = CarbonUtil
+                .getUnCompressColumnIndex(pageMetadata.rowid_page_length, pageData, offset);
+            // get the reverse index
+            invertedIndexesReverse = CarbonUtil.getInvertedReverseIndex(invertedIndexes);
+          }
+        }
+        DataType schemaDataType = decodedPage.getColumnSpec().getSchemaDataType();
+        if (schemaDataType == DataTypes.BOOLEAN) {
+          return new BooleanTypeDimColumnPage(decodedPage, invertedIndexes, invertedIndexesReverse,
+              pageMetadata.numberOfRowsInpage);
+        } else if (schemaDataType == DataTypes.BYTE) {
+          return new ByteTypeDimColumnPage(decodedPage, invertedIndexes, invertedIndexesReverse,
+              pageMetadata.numberOfRowsInpage);
+        } else if (schemaDataType == DataTypes.SHORT) {
+          return new ShortTypeDimColumnPage(decodedPage, invertedIndexes, invertedIndexesReverse,
+              pageMetadata.numberOfRowsInpage);
+        } else if (schemaDataType == DataTypes.SHORT_INT || schemaDataType == DataTypes.INT) {
+          return new IntTypeDimColumnPage(decodedPage, invertedIndexes, invertedIndexesReverse,
+              pageMetadata.numberOfRowsInpage);
+        } else {
+          return new LongTypeDimColumnPage(decodedPage, invertedIndexes, invertedIndexesReverse,
+              pageMetadata.numberOfRowsInpage);
         }
       }
-      return new ColumnPageWrapper(decodedPage, rawColumnPage.getLocalDictionary(), invertedIndexes,
-          invertedIndexesReverse, isEncodedWithAdaptiveMeta(pageMetadata),
-          CarbonUtil.hasEncoding(pageMetadata.encoders, Encoding.INVERTED_INDEX));
     } else {
       // following code is for backward compatibility
       return decodeDimensionLegacy(rawColumnPage, pageData, pageMetadata, offset);
