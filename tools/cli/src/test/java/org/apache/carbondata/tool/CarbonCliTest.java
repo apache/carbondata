@@ -77,8 +77,8 @@ public class CarbonCliTest {
         output.contains(
             "Input Folder: ./CarbonCliTest\n"
           + "## Summary\n"
-          + "total: 6 blocks, 2 shards, 14 blocklets, 314 pages, 10,000,000 rows, 32.26MB\n"
-          + "avg: 5.38MB/block, 2.30MB/blocklet, 1,666,666 rows/block, 714,285 rows/blocklet"));
+          + "total: 6 blocks, 2 shards, 14 blocklets, 314 pages, 10,000,000 rows, 31.81MB\n"
+          + "avg: 5.30MB/block, 2.27MB/blocklet, 1,666,666 rows/block, 714,285 rows/blocklet"));
 
     String[] args2 = {"-cmd", "summary", "-p", path, "-s"};
     out = new ByteArrayOutputStream();
@@ -110,13 +110,13 @@ public class CarbonCliTest {
     Assert.assertTrue(
         output.contains(
             "BLK  BLKLT  NumPages  NumRows  Size      \n"
-          + "0    0      25        800,000  2.58MB    \n"
-          + "0    1      25        800,000  2.58MB    \n"
-          + "1    0      25        800,000  2.58MB    \n"
-          + "1    1      25        800,000  2.58MB    \n"
-          + "2    0      25        800,000  2.58MB    \n"
-          + "2    1      25        800,000  2.58MB    \n"
-          + "2    2      7         200,000  660.74KB  "));
+          + "0    0      25        800,000  2.54MB    \n"
+          + "0    1      25        800,000  2.54MB    \n"
+          + "1    0      25        800,000  2.54MB    \n"
+          + "1    1      25        800,000  2.54MB    \n"
+          + "2    0      25        800,000  2.54MB    \n"
+          + "2    1      25        800,000  2.54MB    \n"
+          + "2    2      7         200,000  651.56KB  "));
 
     String[] args5 = {"-cmd", "summary", "-p", path, "-c", "name"};
     out = new ByteArrayOutputStream();
@@ -126,13 +126,13 @@ public class CarbonCliTest {
     Assert.assertTrue(
         output.contains(
             "BLK  BLKLT  Meta Size  Data Size  LocalDict  DictEntries  DictSize  AvgPageSize  Min%    Max%    \n"
-          + "0    0      1.72KB     295.89KB   false      0            0.0B      11.77KB      robot0  robot1  \n"
-          + "0    1      1.72KB     295.89KB   false      0            0.0B      11.77KB      robot1  robot3  \n"
-          + "1    0      1.72KB     295.89KB   false      0            0.0B      11.77KB      robot3  robot4  \n"
-          + "1    1      1.72KB     295.89KB   false      0            0.0B      11.77KB      robot4  robot6  \n"
-          + "2    0      1.72KB     295.89KB   false      0            0.0B      11.77KB      robot6  robot7  \n"
-          + "2    1      1.72KB     295.89KB   false      0            0.0B      11.77KB      robot8  robot9  \n"
-          + "2    2      492.0B     74.03KB    false      0            0.0B      10.51KB      robot9  robot9  "));
+          + "0    0      1.79KB     259.24KB   false      0            0.0B      10.30KB      robot0  robot1  \n"
+          + "0    1      1.79KB     259.25KB   false      0            0.0B      10.30KB      robot1  robot3  \n"
+          + "1    0      1.79KB     259.24KB   false      0            0.0B      10.30KB      robot3  robot4  \n"
+          + "1    1      1.79KB     259.25KB   false      0            0.0B      10.30KB      robot4  robot6  \n"
+          + "2    0      1.79KB     259.24KB   false      0            0.0B      10.30KB      robot6  robot7  \n"
+          + "2    1      1.79KB     259.24KB   false      0            0.0B      10.30KB      robot8  robot9  \n"
+          + "2    2      513.0B     64.87KB    false      0            0.0B      9.20KB       robot9  robot9  "));
   }
 
   @Test
@@ -146,8 +146,8 @@ public class CarbonCliTest {
         output.contains(
             "Input Folder: ./CarbonCliTest\n"
           + "## Summary\n"
-          + "total: 6 blocks, 2 shards, 14 blocklets, 314 pages, 10,000,000 rows, 32.26MB\n"
-          + "avg: 5.38MB/block, 2.30MB/blocklet, 1,666,666 rows/block, 714,285 rows/blocklet\n"));
+          + "total: 6 blocks, 2 shards, 14 blocklets, 314 pages, 10,000,000 rows, 31.81MB\n"
+          + "avg: 5.30MB/block, 2.27MB/blocklet, 1,666,666 rows/block, 714,285 rows/blocklet\n"));
 
     Assert.assertTrue(
         output.contains(
@@ -163,24 +163,24 @@ public class CarbonCliTest {
     Assert.assertTrue(
         output.contains(
             "BLK  BLKLT  NumPages  NumRows  Size      \n"
-          + "0    0      25        800,000  2.58MB    \n"
-          + "0    1      25        800,000  2.58MB    \n"
-          + "1    0      25        800,000  2.58MB    \n"
-          + "1    1      25        800,000  2.58MB    \n"
-          + "2    0      25        800,000  2.58MB    \n"
-          + "2    1      25        800,000  2.58MB    \n"
-          + "2    2      7         200,000  660.74KB  "));
+          + "0    0      25        800,000  2.54MB    \n"
+          + "0    1      25        800,000  2.54MB    \n"
+          + "1    0      25        800,000  2.54MB    \n"
+          + "1    1      25        800,000  2.54MB    \n"
+          + "2    0      25        800,000  2.54MB    \n"
+          + "2    1      25        800,000  2.54MB    \n"
+          + "2    2      7         200,000  651.56KB  "));
 
     Assert.assertTrue(
         output.contains(
           "BLK  BLKLT  Meta Size  Data Size  LocalDict  DictEntries  DictSize  AvgPageSize  Min%  Max%   \n"
-        + "0    0      2.90KB     4.87MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
-        + "0    1      2.90KB     2.29MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
-        + "1    0      2.90KB     4.87MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
-        + "1    1      2.90KB     2.29MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
-        + "2    0      2.90KB     5.52MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
-        + "2    1      2.90KB     2.94MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
-        + "2    2      830.0B     586.81KB   false      0            0.0B      83.71KB      0.0   100.0 "));
+        + "0    0      2.85KB     4.84MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
+        + "0    1      2.85KB     2.29MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
+        + "1    0      2.85KB     4.84MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
+        + "1    1      2.85KB     2.29MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
+        + "2    0      2.85KB     5.47MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
+        + "2    1      2.85KB     2.93MB     false      0            0.0B      93.76KB      0.0   100.0  \n"
+        + "2    2      816.0B     586.80KB   false      0            0.0B      83.71KB      0.0   100.0 "));
   }
 
   @Test
@@ -193,7 +193,7 @@ public class CarbonCliTest {
     Assert.assertTrue(
         output.contains(
             "Blocklet 0:\n"
-           + "Page 0 (offset 0, length 12049): DataChunk2(chunk_meta:ChunkCompressionMeta(compression_codec:DEPRECATED, total_uncompressed_size:0, total_compressed_size:0, compressor_name:snappy), rowMajor:false, data_page_length:12039, rowid_page_length:10, presence:PresenceMeta(represents_presence:false, present_bit_stream:00), sort_state:SORT_EXPLICIT, encoders:[INVERTED_INDEX], encoder_meta:[], min_max:BlockletMinMaxIndex(min_values:[72 6F 62 6F 74 30], max_values:[72 6F 62 6F 74 30], min_max_presence:[true]), numberOfRowsInpage:32000)"));
+           + "Page 0 (offset 0, length 10545): DataChunk2(chunk_meta:ChunkCompressionMeta(compression_codec:DEPRECATED, total_uncompressed_size:0, total_compressed_size:0, compressor_name:snappy), rowMajor:false, data_page_length:10535, rowid_page_length:10, presence:PresenceMeta(represents_presence:true, present_bit_stream:00), sort_state:SORT_EXPLICIT, encoders:[DIRECT_STRING, INVERTED_INDEX], encoder_meta:[0E], min_max:BlockletMinMaxIndex(min_values:[72 6F 62 6F 74 30], max_values:[72 6F 62 6F 74 30], min_max_presence:[true]), numberOfRowsInpage:32000)"));
   }
 
   @Test

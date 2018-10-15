@@ -23,6 +23,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 class CarbonGetTableDetailCommandTestCase extends QueryTest with BeforeAndAfterAll {
+
   override def beforeAll(): Unit = {
     sql("drop table if exists table_info1")
     sql("create table table_info1 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) stored by 'org.apache.carbondata.format' tblproperties('local_dictionary_enable'='false')")
@@ -43,9 +44,9 @@ class CarbonGetTableDetailCommandTestCase extends QueryTest with BeforeAndAfterA
     assertResult(2)(result.length)
     assertResult("table_info1")(result(0).getString(0))
     // 2221 is the size of carbon table. Note that since 1.5.0, we add additional compressor name in metadata
-    assertResult(2221)(result(0).getLong(1))
+    assertResult(2210)(result(0).getLong(1))
     assertResult("table_info2")(result(1).getString(0))
-    assertResult(2221)(result(1).getLong(1))
+    assertResult(2210)(result(1).getLong(1))
   }
 
   override def afterAll: Unit = {
