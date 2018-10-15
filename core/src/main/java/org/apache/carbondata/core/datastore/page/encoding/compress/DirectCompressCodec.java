@@ -53,9 +53,8 @@ public class DirectCompressCodec implements ColumnPageCodec {
   }
 
   @Override
-  public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
+  public ColumnPageEncoder createEncoder(Map<String, Object> parameter) {
     return new ColumnPageEncoder() {
-
       @Override
       protected byte[] encodeData(ColumnPage input) throws MemoryException, IOException {
         Compressor compressor = CompressorFactory.getInstance().getCompressor(

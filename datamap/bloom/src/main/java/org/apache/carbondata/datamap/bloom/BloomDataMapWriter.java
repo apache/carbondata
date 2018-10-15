@@ -75,25 +75,17 @@ public class BloomDataMapWriter extends AbstractBloomDataMapWriter {
   }
 
   protected byte[] convertNonDictionaryValue(int indexColIdx, Object value) {
-    if (DataTypes.VARCHAR == indexColumns.get(indexColIdx).getDataType()) {
-      return DataConvertUtil.getRawBytesForVarchar((byte[]) value);
-    } else if (DataTypeUtil.isPrimitiveColumn(indexColumns.get(indexColIdx).getDataType())) {
+    if (DataTypeUtil.isPrimitiveColumn(indexColumns.get(indexColIdx).getDataType())) {
       // get bytes for the original value of the no dictionary column
       return CarbonUtil.getValueAsBytes(indexColumns.get(indexColIdx).getDataType(), value);
-    } else {
-      return DataConvertUtil.getRawBytes((byte[]) value);
     }
+    return (byte[]) value;
   }
 
   @Override
   protected byte[] convertDictionaryValue(int indexColIdx, Object value) {
     // input value from onPageAdded in load process is byte[]
-
-    // for dict columns including dictionary and date columns decode value to get the surrogate key
-    int thisKeyIdx = indexCol2MdkIdx.get(indexColumns.get(indexColIdx).getColName());
-    int surrogateKey = CarbonUtil.getSurrogateInternal((byte[]) value, 0,
-        columnarSplitter.getBlockKeySize()[thisKeyIdx]);
     // store the dictionary key in bloom
-    return CarbonUtil.getValueAsBytes(DataTypes.INT, surrogateKey);
+    return CarbonUtil.getValueAsBytes(DataTypes.INT, value);
   }
 }

@@ -19,31 +19,10 @@ package org.apache.carbondata.datamap.bloom;
 
 import java.math.BigDecimal;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 public class DataConvertUtil {
-  /**
-   * get raw bytes from LV structure, L is short encoded
-   */
-  public static byte[] getRawBytes(byte[] lvData) {
-    byte[] indexValue = new byte[lvData.length - CarbonCommonConstants.SHORT_SIZE_IN_BYTE];
-    System.arraycopy(lvData, CarbonCommonConstants.SHORT_SIZE_IN_BYTE,
-        indexValue, 0, lvData.length - CarbonCommonConstants.SHORT_SIZE_IN_BYTE);
-    return indexValue;
-  }
-
-  /**
-   * get raw bytes from LV structure, L is int encoded
-   */
-  public static byte[] getRawBytesForVarchar(byte[] lvData) {
-    byte[] indexValue = new byte[lvData.length - CarbonCommonConstants.INT_SIZE_IN_BYTE];
-    System.arraycopy(lvData, CarbonCommonConstants.INT_SIZE_IN_BYTE,
-        indexValue, 0, lvData.length - CarbonCommonConstants.INT_SIZE_IN_BYTE);
-    return indexValue;
-  }
-
   /**
    * return default null value based on datatype. This method refers to ColumnPage.putNull
    *

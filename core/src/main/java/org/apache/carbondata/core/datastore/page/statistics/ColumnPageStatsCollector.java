@@ -29,6 +29,7 @@ public interface ColumnPageStatsCollector {
   void update(float value);
   void update(BigDecimal value);
   void update(byte[] value);
+  void updateNull(int rowId, Object nullValue);
 
   /**
    * return the collected statistics

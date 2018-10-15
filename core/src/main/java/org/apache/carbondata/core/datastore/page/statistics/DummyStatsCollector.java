@@ -90,6 +90,10 @@ public class DummyStatsCollector implements ColumnPageStatsCollector {
 
   }
 
+  @Override public void updateNull(int rowId, Object nullValue) {
+
+  }
+
   @Override public SimpleStatsResult getPageStats() {
     return DUMMY_STATS;
   }

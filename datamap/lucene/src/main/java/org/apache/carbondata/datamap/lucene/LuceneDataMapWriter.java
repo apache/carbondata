@@ -335,7 +335,7 @@ public class LuceneDataMapWriter extends DataMapWriter {
     } else if (type == DataTypes.STRING) {
       byte[] bytes = page.getBytes(rowId);
       try {
-        value = new String(bytes, 2, bytes.length - 2, "UTF-8");
+        value = new String(bytes, 0, bytes.length, "UTF-8");
       } catch (UnsupportedEncodingException e) {
         throw new RuntimeException(e);
       }

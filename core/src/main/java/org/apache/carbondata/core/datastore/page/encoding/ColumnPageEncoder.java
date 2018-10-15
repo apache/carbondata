@@ -22,6 +22,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -38,7 +39,6 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.format.BlockletMinMaxIndex;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.Encoding;
@@ -116,12 +116,15 @@ public abstract class ColumnPageEncoder {
   }
 
   private void fillNullBitSet(ColumnPage inputPage, DataChunk2 dataChunk) {
+    BitSet nullBits = inputPage.getNullBits();
+    boolean isNullBitSet = true;
     PresenceMeta presenceMeta = new PresenceMeta();
-    presenceMeta.setPresent_bit_streamIsSet(true);
     Compressor compressor = CompressorFactory.getInstance().getCompressor(
         inputPage.getColumnCompressorName());
+    presenceMeta.setPresent_bit_streamIsSet(isNullBitSet);
     presenceMeta.setPresent_bit_stream(
-        compressor.compressByte(inputPage.getNullBits().toByteArray()));
+        compressor.compressByte(nullBits.toByteArray()));
+    presenceMeta.setRepresents_presence(isNullBitSet);
     dataChunk.setPresence(presenceMeta);
   }
 
@@ -130,7 +133,7 @@ public abstract class ColumnPageEncoder {
     dataChunk.setEncoder_meta(buildEncoderMeta(inputPage));
   }
 
-  private List<ByteBuffer> buildEncoderMeta(ColumnPage inputPage) throws IOException {
+  protected List<ByteBuffer> buildEncoderMeta(ColumnPage inputPage) throws IOException {
     ColumnPageEncoderMeta meta = getEncoderMeta(inputPage);
     List<ByteBuffer> metaDatas = new ArrayList<>();
     if (meta != null) {
@@ -143,28 +146,18 @@ public abstract class ColumnPageEncoder {
   }
 
   private void fillMinMaxIndex(ColumnPage inputPage, DataChunk2 dataChunk) {
-    dataChunk.setMin_max(buildMinMaxIndex(inputPage, dataChunk.encoders));
+    dataChunk.setMin_max(buildMinMaxIndex(inputPage));
   }
 
-  private BlockletMinMaxIndex buildMinMaxIndex(ColumnPage inputPage, List<Encoding> encoders) {
+  protected BlockletMinMaxIndex buildMinMaxIndex(ColumnPage inputPage) {
     BlockletMinMaxIndex index = new BlockletMinMaxIndex();
     ByteBuffer max;
     ByteBuffer min;
-    if (CarbonUtil.isEncodedWithMeta(encoders)
-        && inputPage.getColumnSpec().getColumnType() == ColumnType.PLAIN_VALUE) {
-      max = ByteBuffer.wrap(DataTypeUtil
-          .getMinMaxBytesBasedOnDataTypeForNoDictionaryColumn(inputPage.getStatistics().getMax(),
-              inputPage.getDataType()));
-      min = ByteBuffer.wrap(DataTypeUtil
-          .getMinMaxBytesBasedOnDataTypeForNoDictionaryColumn(inputPage.getStatistics().getMin(),
-              inputPage.getDataType()));
-    } else {
-      byte[] bytes =
-          CarbonUtil.getValueAsBytes(inputPage.getDataType(), inputPage.getStatistics().getMax());
-      max = ByteBuffer.wrap(bytes);
-      min = ByteBuffer.wrap(
-          CarbonUtil.getValueAsBytes(inputPage.getDataType(), inputPage.getStatistics().getMin()));
-    }
+    byte[] bytes =
+        CarbonUtil.getValueAsBytes(inputPage.getDataType(), inputPage.getStatistics().getMax());
+    max = ByteBuffer.wrap(bytes);
+    min = ByteBuffer.wrap(
+        CarbonUtil.getValueAsBytes(inputPage.getDataType(), inputPage.getStatistics().getMin()));
     index.addToMax_values(max);
     index.addToMin_values(min);
     index.addToMin_max_presence(inputPage.getStatistics().writeMinMax());
@@ -201,8 +194,17 @@ public abstract class ColumnPageEncoder {
       throws IOException, MemoryException {
     ColumnPageEncoder pageEncoder = createCodecForDimension(page);
     if (pageEncoder == null) {
-      ColumnPageEncoder encoder = new DirectCompressCodec(DataTypes.BYTE_ARRAY).createEncoder(null);
-      return encoder.encode(page);
+      TableSpec.DimensionSpec tableSpec = TableSpec.DimensionSpec
+          .newInstance(page.getColumnSpec().getFieldName(),
+              page.getColumnSpec().getSchemaDataType(), ColumnType.PLAIN_VALUE);
+      if (page.getColumnSpec().getColumnType() == ColumnType.COMPLEX_PRIMITIVE) {
+        return DefaultEncodingFactory.getInstance().createEncoder(tableSpec, page, null)
+            .encode(page);
+      } else {
+        ColumnPageEncoder encoder =
+            new DirectCompressCodec(DataTypes.BYTE_ARRAY).createEncoder(null);
+        return encoder.encode(page);
+      }
     } else {
       LOGGER.debug("Encoder result ---> Source data type: " + pageEncoder.getEncoderMeta(page)
           .getColumnSpec().getSchemaDataType() + " Destination data type: " + pageEncoder

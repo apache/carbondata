@@ -18,27 +18,58 @@
 package org.apache.carbondata.core.datastore.columnar;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
-public abstract class BlockIndexerStorage<T> {
+public abstract class PageIndexGenerator<T> {
 
-  public abstract short[] getRowIdPage();
+  short[] invertedIndex;
 
-  public abstract int getRowIdPageLengthInBytes();
+  short[] rowIdRlePage;
 
-  public abstract short[] getRowIdRlePage();
+  short[] dataRlePage;
 
-  public abstract int getRowIdRlePageLengthInBytes();
+  private boolean alreadySorted;
 
   public abstract T getDataPage();
+  public abstract int[] getLength();
 
-  public abstract short[] getDataRlePage();
+  public short[] getRowIdPage() {
+    return invertedIndex;
+  }
 
-  public abstract int getDataRlePageLengthInBytes();
+  public int getRowIdPageLengthInBytes() {
+    if (invertedIndex != null) {
+      return invertedIndex.length * 2;
+    } else {
+      return 0;
+    }
+  }
+
+  public short[] getRowIdRlePage() {
+    return rowIdRlePage;
+  }
+
+  public int getRowIdRlePageLengthInBytes() {
+    if (rowIdRlePage != null) {
+      return rowIdRlePage.length * 2;
+    } else {
+      return 0;
+    }
+  }
+
+  public short[] getDataRlePage() {
+    return dataRlePage;
+  }
+
+  public int getDataRlePageLengthInBytes() {
+    if (dataRlePage != null) {
+      return dataRlePage.length * 2;
+    } else {
+      return 0;
+    }
+  }
 
   /**
    * It compresses depends up on the sequence numbers.
@@ -50,8 +81,7 @@ public abstract class BlockIndexerStorage<T> {
    *
    * @param rowIds
    */
-  protected Map<String, short[]> rleEncodeOnRowId(short[] rowIds, short[] rowIdPage,
-      short[] rowIdRlePage) {
+  protected void rleEncodeOnRowId(short[] rowIds) {
     List<Short> list = new ArrayList<Short>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     List<Short> map = new ArrayList<Short>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     int k = 0;
@@ -79,26 +109,32 @@ public abstract class BlockIndexerStorage<T> {
     }
     int compressionPercentage = (((list.size() + map.size()) * 100) / rowIds.length);
     if (compressionPercentage > 70) {
-      rowIdPage = rowIds;
+      invertedIndex = rowIds;
     } else {
-      rowIdPage = convertToArray(list);
+      invertedIndex = convertToArray(list);
     }
-    if (rowIds.length == rowIdPage.length) {
+    if (rowIds.length == invertedIndex.length) {
       rowIdRlePage = new short[0];
     } else {
       rowIdRlePage = convertToArray(map);
     }
-    Map<String, short[]> rowIdAndRowRleIdPages = new HashMap<>(2);
-    rowIdAndRowRleIdPages.put("rowIdPage", rowIdPage);
-    rowIdAndRowRleIdPages.put("rowRlePage", rowIdRlePage);
-    return rowIdAndRowRleIdPages;
+    if (invertedIndex.length == 2 && rowIdRlePage.length == 1) {
+      alreadySorted = true;
+    }
   }
-
-  protected short[] convertToArray(List<Short> list) {
+  private short[] convertToArray(List<Short> list) {
     short[] shortArray = new short[list.size()];
     for (int i = 0; i < shortArray.length; i++) {
       shortArray[i] = list.get(i);
     }
     return shortArray;
   }
+
+  /**
+   * @return the alreadySorted
+   */
+  public boolean isAlreadySorted() {
+    return alreadySorted;
+  }
+
 }
