@@ -403,9 +403,18 @@ public class CarbonMetadataUtil {
     dimensionChunkOffsets.addAll(blockletInfo.getMeasureChunkOffsets());
     List<Integer> dimensionChunksLength = blockletInfo.getDimensionChunksLength();
     dimensionChunksLength.addAll(blockletInfo.getMeasureChunksLength());
-    return new BlockletInfo3(blockletInfo.getNumberOfRows(), dimensionChunkOffsets,
-        dimensionChunksLength, blockletInfo.getDimensionOffset(), blockletInfo.getMeasureOffsets(),
-        blockletInfo.getNumberOfPages());
+    BlockletInfo3 blockletInfo3 =
+        new BlockletInfo3(blockletInfo.getNumberOfRows(), dimensionChunkOffsets,
+            dimensionChunksLength, blockletInfo.getDimensionOffset(),
+            blockletInfo.getMeasureOffsets(), blockletInfo.getNumberOfPages());
+    List<Integer> rowsPerPage = new ArrayList<>();
+    if (null != blockletInfo.getNumberOfRowsPerPage()) {
+      for (int i = 0; i < blockletInfo.getNumberOfRowsPerPage().length; i++) {
+        rowsPerPage.add(blockletInfo.getNumberOfRowsPerPage()[i]);
+      }
+      blockletInfo3.setRow_count_in_page(rowsPerPage);
+    }
+    return blockletInfo3;
   }
 
   /**

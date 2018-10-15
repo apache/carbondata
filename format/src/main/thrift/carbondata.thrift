@@ -180,6 +180,7 @@ struct BlockletInfo3{
     4: required i64 dimension_offsets;
     5: required i64 measure_offsets;
     6: required i32 number_number_of_pages; // This is rquired for alter table, in case of alter table when filter is only selected on new added column this will help
+    7: optional list<i32> row_count_in_page; // This will contain the row count in each page.
   }
 
 /**

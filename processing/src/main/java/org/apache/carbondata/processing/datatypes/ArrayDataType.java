@@ -72,6 +72,9 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
    */
   private int dataCounter;
 
+  /* flat complex datatype length, including the children*/
+  private int depth;
+
   private ArrayDataType(int outputArrayIndex, int dataCounter, GenericDataType children,
       String name) {
     this.outputArrayIndex = outputArrayIndex;
@@ -322,4 +325,16 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
             name, false));
     children.getComplexColumnInfo(columnInfoList);
   }
+
+  @Override
+  public int getDepth() {
+    if (depth == 0) {
+      // calculate only one time
+      List<ComplexColumnInfo> complexColumnInfoList = new ArrayList<>();
+      getComplexColumnInfo(complexColumnInfoList);
+      depth = complexColumnInfoList.size();
+    }
+    return depth;
+  }
+
 }

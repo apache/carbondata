@@ -1999,6 +1999,20 @@ public final class CarbonCommonConstants {
    */
   public static final int CARBON_ALLOW_DIRECT_FILL_DICT_COLS_LIMIT = 100;
 
+  /**
+   * page size in mb. If page size exceeds this value before 32000 rows count, page will be cut.
+   * And remaining rows will written in next page.
+   */
+  public static final String TABLE_PAGE_SIZE_INMB = "table_page_size_inmb";
+
+  public static final int TABLE_PAGE_SIZE_MIN_INMB = 1;
+
+  // default 1 MB
+  public static final int TABLE_PAGE_SIZE_INMB_DEFAULT = 1;
+
+  // As due to SnappyCompressor.MAX_BYTE_TO_COMPRESS is 1.75 GB
+  public static final int TABLE_PAGE_SIZE_MAX_INMB = 1755;
+
   //////////////////////////////////////////////////////////////////////////////////////////
   // Unused constants and parameters start here
   //////////////////////////////////////////////////////////////////////////////////////////

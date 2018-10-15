@@ -83,6 +83,12 @@ private[sql] case class CarbonDescribeFormattedCommand(
     val catalog = sparkSession.sessionState.catalog
     val catalogTable = catalog.getTableMetadata(tblIdentifier)
 
+    val pageSizeInMb: String = if (tblProps.get(CarbonCommonConstants.TABLE_PAGE_SIZE_INMB)
+      .isDefined) {
+      tblProps(CarbonCommonConstants.TABLE_PAGE_SIZE_INMB)
+    } else {
+      ""
+    }
     //////////////////////////////////////////////////////////////////////////////
     // Table Basic Information
     //////////////////////////////////////////////////////////////////////////////
@@ -122,7 +128,8 @@ private[sql] case class CarbonDescribeFormattedCommand(
         carbonTable.getMinMaxCachedColumnsInCreateOrder.asScala.mkString(", "), ""),
       ("Min/Max Index Cache Level",
         tblProps.getOrElse(CarbonCommonConstants.CACHE_LEVEL,
-          CarbonCommonConstants.CACHE_LEVEL_DEFAULT_VALUE), "")
+          CarbonCommonConstants.CACHE_LEVEL_DEFAULT_VALUE), ""),
+      ("Table page size in mb", pageSizeInMb, "")
     )
 
     //////////////////////////////////////////////////////////////////////////////
