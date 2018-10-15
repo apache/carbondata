@@ -32,9 +32,13 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonDictionaryImpl;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.Encoding;
 import org.apache.carbondata.format.LocalDictionaryChunk;
 
@@ -53,6 +57,21 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
   private FileReader fileReader;
 
   private CarbonDictionary localDictionary;
+
+  /**
+   * flag for checking whether string/varchar data type length part is adaptive encoded or not
+   */
+  private boolean isAdaptiveForBinaryData;
+
+  /**
+   * flag for checking whether is adaptive encoding is applied for dictionary column
+   */
+  private boolean isAdaptiveForDictionary;
+
+  /**
+   * boolean for checking adaptive applied for no dictionary primitive columns
+   */
+  private boolean isAdaptiveForNoDictionary;
 
   public DimensionRawColumnChunk(int columnIndex, ByteBuffer rawData, long offSet, int length,
       DimensionColumnChunkReader columnChunkReader) {
@@ -148,7 +167,6 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
       try {
         String compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
             getDataChunkV3().data_chunk_list.get(0).chunk_meta);
-
         Compressor compressor = CompressorFactory.getInstance().getCompressor(compressorName);
         localDictionary = getDictionary(getDataChunkV3().local_dictionary, compressor);
       } catch (IOException | MemoryException e) {
@@ -169,30 +187,91 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
   public static CarbonDictionary getDictionary(LocalDictionaryChunk localDictionaryChunk,
       Compressor compressor) throws IOException, MemoryException {
     if (null != localDictionaryChunk) {
-      List<Encoding> encodings = localDictionaryChunk.getDictionary_meta().getEncoders();
-      List<ByteBuffer> encoderMetas = localDictionaryChunk.getDictionary_meta().getEncoder_meta();
-      ColumnPageDecoder decoder = DefaultEncodingFactory.getInstance().createDecoder(
-          encodings, encoderMetas, compressor.getName());
-      ColumnPage decode = decoder.decode(localDictionaryChunk.getDictionary_data(), 0,
-          localDictionaryChunk.getDictionary_data().length);
-      BitSet usedDictionary = BitSet.valueOf(compressor.unCompressByte(
-          localDictionaryChunk.getDictionary_values()));
+      byte[][] dictionaryPage = null;
+      BitSet usedDictionary = BitSet.valueOf(compressor
+          .unCompressByte(localDictionaryChunk.getDictionary_values()));
       int length = usedDictionary.length();
-      int index = 0;
-      byte[][] dictionary = new byte[length][];
-      for (int i = 0; i < length; i++) {
-        if (usedDictionary.get(i)) {
-          dictionary[i] = decode.getBytes(index++);
-        } else {
-          dictionary[i] = null;
+      byte[][] dictionary = null;
+      if (!CarbonUtil.hasEncoding(localDictionaryChunk.getDictionary_meta().getEncoders(),
+          Encoding.DIRECT_STRING)) {
+        dictionaryPage = getDictionaryPage(localDictionaryChunk, compressor.getName());
+        int index = 0;
+        dictionary = new byte[length][];
+        for (int i = 0; i < length; i++) {
+          if (usedDictionary.get(i)) {
+            dictionary[i] = dictionaryPage[index++];
+          } else {
+            dictionary[i] = null;
+          }
+        }
+      } else {
+        int offset = 0;
+        byte[] bytes = compressor.unCompressByte(localDictionaryChunk.getDictionary_data(), offset,
+            localDictionaryChunk.getDictionary_data().length);
+        DataType dataType =
+            DataTypes.valueOf(localDictionaryChunk.getDictionary_meta().encoder_meta.get(0).get());
+        int[] offsets =
+            QueryUtil.generateOffsetForData(bytes, usedDictionary.cardinality(), dataType);
+        int lengthSize  = dataType.getSizeInBytes();
+        dictionary = new byte[length][];
+        int dicOffset = 0;
+        for (int i = 0; i < length; i++) {
+          if (usedDictionary.get(i)) {
+            int currentOffset = offsets[dicOffset];
+            int nextOffset = offsets[dicOffset + 1];
+            int size = nextOffset - currentOffset - lengthSize;
+            dictionary[i] = new byte[size];
+            System.arraycopy(bytes, currentOffset, dictionary[i], 0, size);
+            dicOffset++;
+          } else {
+            dictionary[i] = null;
+          }
         }
       }
-      decode.freeMemory();
       // as dictionary values starts from 1 setting null default value
       dictionary[1] = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
       return new CarbonDictionaryImpl(dictionary, usedDictionary.cardinality());
     }
     return null;
   }
+
+  private static byte[][] getDictionaryPage(LocalDictionaryChunk localDictionaryChunk,
+      String compressorName)
+      throws IOException, MemoryException {
+    List<Encoding> encodings = localDictionaryChunk.getDictionary_meta().getEncoders();
+    List<ByteBuffer> encoderMetas = localDictionaryChunk.getDictionary_meta().getEncoder_meta();
+    ColumnPageDecoder decoder =
+        DefaultEncodingFactory.getInstance().createDecoder(encodings, encoderMetas, compressorName);
+    ColumnPage decode = decoder.decode(localDictionaryChunk.getDictionary_data(), 0,
+        localDictionaryChunk.getDictionary_data().length);
+    byte[][] byteArrayPage = decode.getByteArrayPage();
+    decode.freeMemory();
+    return byteArrayPage;
+  }
+
+  public void setAdaptiveForBinaryData(boolean isAdaptiveForBinaryData) {
+    this.isAdaptiveForBinaryData = isAdaptiveForBinaryData;
+  }
+
+  public void setAdaptiveForDictionary(boolean isAdaptiveForDictionary) {
+    this.isAdaptiveForDictionary = isAdaptiveForDictionary;
+  }
+
+  public void setAdaptiveForNoDictionary(boolean isAdaptiveForNoDictionary) {
+    this.isAdaptiveForNoDictionary = isAdaptiveForNoDictionary;
+  }
+
+  public boolean isAdaptiveForNoDictionary() {
+    return this.isAdaptiveForNoDictionary;
+  }
+
+  public boolean isAdaptiveForDictionary() {
+    return this.isAdaptiveForDictionary;
+  }
+
+  public boolean isAdaptiveForBinaryData() {
+    return isAdaptiveForBinaryData;
+  }
+
 
 }

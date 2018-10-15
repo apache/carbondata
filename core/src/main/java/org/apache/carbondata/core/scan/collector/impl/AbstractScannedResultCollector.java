@@ -133,7 +133,9 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
   }
 
   Object getMeasureData(ColumnPage dataChunk, int index, CarbonMeasure carbonMeasure) {
-    if (!dataChunk.getNullBits().get(index)) {
+    if ((dataChunk.getPresenceMeta().isNullBitset() && !dataChunk.getPresenceMeta().getBitSet()
+        .get(index)) || (!dataChunk.getPresenceMeta().isNullBitset() && dataChunk.getPresenceMeta()
+        .getBitSet().get(index))) {
       DataType dataType = carbonMeasure.getDataType();
       if (dataType == DataTypes.BOOLEAN) {
         return dataChunk.getBoolean(index);

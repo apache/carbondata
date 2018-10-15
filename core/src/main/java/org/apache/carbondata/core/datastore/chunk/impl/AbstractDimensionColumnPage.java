@@ -16,10 +16,9 @@
  */
 package org.apache.carbondata.core.datastore.chunk.impl;
 
-import java.util.BitSet;
-
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionDataChunkStore;
+import org.apache.carbondata.core.metadata.blocklet.PresenceMeta;
 
 /**
  * Class responsibility is to give access to dimension column data chunk store
@@ -44,14 +43,6 @@ public abstract class AbstractDimensionColumnPage implements DimensionColumnPage
    */
   @Override public boolean isExplicitSorted() {
     return dataChunkStore.isExplicitSorted();
-  }
-
-  @Override public boolean isAdaptiveEncoded() {
-    return false;
-  }
-
-  @Override public BitSet getNullBits() {
-    return null;
   }
 
   /**
@@ -86,9 +77,9 @@ public abstract class AbstractDimensionColumnPage implements DimensionColumnPage
    * @param compareValue value to compare
    * @return compare result
    */
-  @Override public int compareTo(int rowId, byte[] compareValue) {
+  @Override public int compareTo(int rowId, Object compareValue) {
     // TODO Auto-generated method stub
-    return dataChunkStore.compareTo(rowId, compareValue);
+    return dataChunkStore.compareTo(rowId, (byte[])compareValue);
   }
 
   /**
@@ -106,5 +97,13 @@ public abstract class AbstractDimensionColumnPage implements DimensionColumnPage
    */
   @Override public boolean isNoDicitionaryColumn() {
     return false;
+  }
+
+  @Override public boolean isAdaptiveEncoded() {
+    return false;
+  }
+
+  @Override public PresenceMeta getPresentMeta() {
+    return null;
   }
 }

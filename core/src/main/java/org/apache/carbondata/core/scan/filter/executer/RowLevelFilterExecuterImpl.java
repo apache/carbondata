@@ -35,8 +35,9 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
+import org.apache.carbondata.core.datastore.chunk.impl.AbstractPrimitiveDimColumnPage;
+import org.apache.carbondata.core.datastore.chunk.impl.BinaryTypeDimColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionColumnPage;
-import org.apache.carbondata.core.datastore.chunk.store.ColumnPageWrapper;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -409,8 +410,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
                 .decodeColumnPage(pageIndex);
         if (!dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY) && (
             columnDataChunk instanceof VariableLengthDimensionColumnPage
-                || columnDataChunk instanceof ColumnPageWrapper)) {
-
+                || columnDataChunk instanceof AbstractPrimitiveDimColumnPage)
+            || columnDataChunk instanceof BinaryTypeDimColumnPage) {
           byte[] memberBytes = columnDataChunk.getChunkData(index);
           if (null != memberBytes) {
             if (Arrays.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, memberBytes)) {
