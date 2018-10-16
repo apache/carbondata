@@ -276,13 +276,19 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
         offset += pageMetadata.data_page_length;
         invertedIndexes = CarbonUtil
             .getUnCompressColumnIndex(pageMetadata.rowid_page_length, pageData, offset);
-        // get the reverse index
-        invertedIndexesReverse = CarbonUtil.getInvertedReverseIndex(invertedIndexes);
+        if (vectorInfo == null) {
+          // get the reverse index
+          invertedIndexesReverse = CarbonUtil.getInvertedReverseIndex(invertedIndexes);
+        } else {
+          vectorInfo.invertedIndex = invertedIndexes;
+        }
       }
       BitSet nullBitSet = QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor);
       ColumnPage decodedPage = decodeDimensionByMeta(pageMetadata, pageData, dataOffset,
           null != rawColumnPage.getLocalDictionary(), vectorInfo, nullBitSet);
-      decodedPage.setNullBits(nullBitSet);
+      if (decodedPage != null) {
+        decodedPage.setNullBits(nullBitSet);
+      }
       return new ColumnPageWrapper(decodedPage, rawColumnPage.getLocalDictionary(), invertedIndexes,
           invertedIndexesReverse, isEncodedWithAdaptiveMeta(pageMetadata), isExplicitSorted);
     } else {

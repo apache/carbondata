@@ -52,7 +52,11 @@ class NonDictionaryVectorFillerFactory {
   public static AbstractNonDictionaryVectorFiller getVectorFiller(DataType type, int lengthSize,
       int numberOfRows) {
     if (type == DataTypes.STRING) {
-      return new StringVectorFiller(lengthSize, numberOfRows);
+      if (lengthSize > 2) {
+        return new LongStringVectorFiller(lengthSize, numberOfRows);
+      } else {
+        return new StringVectorFiller(lengthSize, numberOfRows);
+      }
     } else if (type == DataTypes.VARCHAR) {
       return new LongStringVectorFiller(lengthSize, numberOfRows);
     } else if (type == DataTypes.TIMESTAMP) {

@@ -319,18 +319,20 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
     }
   }
 
-  private boolean isScanRequired(DimensionRawColumnChunk rawColumnChunk, int i) {
+  private boolean isScanRequired(DimensionRawColumnChunk rawColumnChunk, int columnIndex) {
     boolean scanRequired;
     DataType dataType = dimColEvaluatorInfoList.get(0).getDimension().getDataType();
     // for no dictionary measure column comparison can be done
     // on the original data as like measure column
-    if (DataTypeUtil.isPrimitiveColumn(dataType) && !dimColEvaluatorInfoList.get(0)
-        .getDimension().hasEncoding(Encoding.DICTIONARY)) {
+    if (DataTypeUtil.isPrimitiveColumn(dataType) && !dimColEvaluatorInfoList.get(0).getDimension()
+        .hasEncoding(Encoding.DICTIONARY)) {
       scanRequired =
-          isScanRequired(rawColumnChunk.getMaxValues()[i], this.filterRangeValues, dataType);
+          isScanRequired(rawColumnChunk.getMaxValues()[columnIndex], this.filterRangeValues,
+              dataType);
     } else {
-      scanRequired = isScanRequired(rawColumnChunk.getMaxValues()[i], this.filterRangeValues,
-        rawColumnChunk.getMinMaxFlagArray()[i]);
+      scanRequired =
+          isScanRequired(rawColumnChunk.getMaxValues()[columnIndex], this.filterRangeValues,
+              rawColumnChunk.getMinMaxFlagArray()[columnIndex]);
     }
     return scanRequired;
   }

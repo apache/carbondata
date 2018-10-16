@@ -111,7 +111,7 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
   @Override
   public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
       throws FilterUnsupportedException, IOException {
-    return new BitSet();
+    throw new FilterUnsupportedException("Unsupported RestructureEvaluatorImpl on pune pages");
   }
 
   /**
