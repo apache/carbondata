@@ -41,6 +41,7 @@ class RowStreamParserImp extends CarbonStreamParser {
   var dateFormat: SimpleDateFormat = null
   var complexDelimiterLevel1: String = null
   var complexDelimiterLevel2: String = null
+  var complexDelimiterLevel3: String = null
   var serializationNullFormat: String = null
 
   override def initialize(configuration: Configuration, structType: StructType): Unit = {
@@ -54,6 +55,7 @@ class RowStreamParserImp extends CarbonStreamParser {
       this.configuration.get(CarbonCommonConstants.CARBON_DATE_FORMAT))
     this.complexDelimiterLevel1 = this.configuration.get("carbon_complex_delimiter_level_1")
     this.complexDelimiterLevel2 = this.configuration.get("carbon_complex_delimiter_level_2")
+    this.complexDelimiterLevel3 = this.configuration.get("carbon_complex_delimiter_level_3")
     this.serializationNullFormat =
       this.configuration.get(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
   }
