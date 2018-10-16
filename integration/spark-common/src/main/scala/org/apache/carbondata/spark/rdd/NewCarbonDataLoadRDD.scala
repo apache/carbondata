@@ -339,8 +339,9 @@ class NewRddIterator(rddIter: Iterator[Row],
   private val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
     .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
   private val dateFormat = new SimpleDateFormat(dateFormatString)
-  private val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
-  private val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
+  private val delimiterLevel1 = carbonLoadModel.getComplexDelimiters.get(0)
+  private val delimiterLevel2 = carbonLoadModel.getComplexDelimiters.get(1)
+  private val delimiterLevel3 = carbonLoadModel.getComplexDelimiters.get(2)
   private val serializationNullFormat =
     carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
   import scala.collection.JavaConverters._
@@ -388,8 +389,9 @@ class LazyRddIterator(serializer: SerializerInstance,
     .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
       CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
   private val dateFormat = new SimpleDateFormat(dateFormatString)
-  private val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
-  private val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
+  private val delimiterLevel1 = carbonLoadModel.getComplexDelimiters.get(0)
+  private val delimiterLevel2 = carbonLoadModel.getComplexDelimiters.get(1)
+  private val delimiterLevel3 = carbonLoadModel.getComplexDelimiters.get(2)
   private val serializationNullFormat =
     carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
   // the order of fields in dataframe and createTable may be different, here we need to know whether

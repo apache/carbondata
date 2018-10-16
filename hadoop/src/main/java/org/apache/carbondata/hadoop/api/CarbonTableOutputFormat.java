@@ -37,6 +37,7 @@ import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
+import org.apache.carbondata.processing.loading.ComplexDelimitersEnum;
 import org.apache.carbondata.processing.loading.DataLoadExecutor;
 import org.apache.carbondata.processing.loading.TableProcessingOperations;
 import org.apache.carbondata.processing.loading.iterator.CarbonOutputIteratorWrapper;
@@ -338,11 +339,19 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
             SKIP_EMPTY_LINE,
             carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SKIP_EMPTY_LINE)));
 
-    String complexDelim = conf.get(COMPLEX_DELIMITERS, "\\\001" + "," + "\\\002");
+    String complexDelim = conf.get(COMPLEX_DELIMITERS);
+    if (null == complexDelim) {
+      complexDelim = ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_1.value() + ","
+          + ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_2.value() + ","
+          + ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_3.value();
+    }
     String[] split = complexDelim.split(",");
-    model.setComplexDelimiterLevel1(split[0]);
-    if (split.length > 1) {
-      model.setComplexDelimiterLevel2(split[1]);
+    model.setComplexDelimiter(split[0]);
+    if (split.length > 2) {
+      model.setComplexDelimiter(split[1]);
+      model.setComplexDelimiter(split[2]);
+    } else if (split.length > 1) {
+      model.setComplexDelimiter(split[1]);
     }
     model.setDateFormat(
         conf.get(
