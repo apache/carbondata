@@ -18,12 +18,15 @@
 package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 
 import java.nio.ByteBuffer;
+import java.util.BitSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertableVector;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -103,7 +106,14 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
     ByteBuffer buffer = ByteBuffer.wrap(data);
     AbstractNonDictionaryVectorFiller vectorFiller =
         NonDictionaryVectorFillerFactory.getVectorFiller(dt, lengthSize, numberOfRows);
+    BitSet nullBits = new BitSet(numberOfRows);
+    vector = ColumnarVectorWrapperDirectFactory
+        .getDirectVectorWrapperFactory(vector, invertedIndex, nullBits, vectorInfo.deletedRows,
+            false);
     vectorFiller.fillVector(data, vector, buffer);
+    if (vector instanceof ConvertableVector) {
+      ((ConvertableVector) vector).convert();
+    }
   }
 
   protected abstract int getLengthSize();

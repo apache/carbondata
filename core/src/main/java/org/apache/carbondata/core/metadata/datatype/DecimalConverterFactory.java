@@ -106,13 +106,18 @@ public final class DecimalConverterFactory {
       // inefficient.
       CarbonColumnVector vector = info.vector;
       int precision = info.measure.getMeasure().getPrecision();
+      int newMeasureScale = info.measure.getMeasure().getScale();
       if (valuesToBeConverted instanceof byte[]) {
         byte[] data = (byte[]) valuesToBeConverted;
         for (int i = 0; i < size; i++) {
           if (nullBitset.get(i)) {
             vector.putNull(i);
           } else {
-            vector.putDecimal(i, BigDecimal.valueOf(data[i], scale), precision);
+            BigDecimal value = BigDecimal.valueOf(data[i], scale);
+            if (value.scale() < newMeasureScale) {
+              value = value.setScale(newMeasureScale);
+            }
+            vector.putDecimal(i, value, precision);
           }
         }
       } else if (valuesToBeConverted instanceof short[]) {
@@ -121,7 +126,11 @@ public final class DecimalConverterFactory {
           if (nullBitset.get(i)) {
             vector.putNull(i);
           } else {
-            vector.putDecimal(i, BigDecimal.valueOf(data[i], scale), precision);
+            BigDecimal value = BigDecimal.valueOf(data[i], scale);
+            if (value.scale() < newMeasureScale) {
+              value = value.setScale(newMeasureScale);
+            }
+            vector.putDecimal(i, value, precision);
           }
         }
       } else if (valuesToBeConverted instanceof int[]) {
@@ -130,7 +139,11 @@ public final class DecimalConverterFactory {
           if (nullBitset.get(i)) {
             vector.putNull(i);
           } else {
-            vector.putDecimal(i, BigDecimal.valueOf(data[i], scale), precision);
+            BigDecimal value = BigDecimal.valueOf(data[i], scale);
+            if (value.scale() < newMeasureScale) {
+              value = value.setScale(newMeasureScale);
+            }
+            vector.putDecimal(i, value, precision);
           }
         }
       } else if (valuesToBeConverted instanceof long[]) {
@@ -139,7 +152,11 @@ public final class DecimalConverterFactory {
           if (nullBitset.get(i)) {
             vector.putNull(i);
           } else {
-            vector.putDecimal(i, BigDecimal.valueOf(data[i], scale), precision);
+            BigDecimal value = BigDecimal.valueOf(data[i], scale);
+            if (value.scale() < newMeasureScale) {
+              value = value.setScale(newMeasureScale);
+            }
+            vector.putDecimal(i, value, precision);
           }
         }
       }
@@ -225,6 +242,10 @@ public final class DecimalConverterFactory {
         BitSet nullBitset) {
       CarbonColumnVector vector = info.vector;
       int precision = info.measure.getMeasure().getPrecision();
+      int newMeasureScale = info.measure.getMeasure().getScale();
+      if (scale < newMeasureScale) {
+        scale = newMeasureScale;
+      }
       if (valuesToBeConverted instanceof byte[][]) {
         byte[][] data = (byte[][]) valuesToBeConverted;
         for (int i = 0; i < size; i++) {
@@ -232,7 +253,11 @@ public final class DecimalConverterFactory {
             vector.putNull(i);
           } else {
             BigInteger bigInteger = new BigInteger(data[i]);
-            vector.putDecimal(i, new BigDecimal(bigInteger, scale), precision);
+            BigDecimal value = new BigDecimal(bigInteger, scale);
+            if (value.scale() < newMeasureScale) {
+              value = value.setScale(newMeasureScale);
+            }
+            vector.putDecimal(i, value, precision);
           }
         }
       }
@@ -263,13 +288,18 @@ public final class DecimalConverterFactory {
         BitSet nullBitset) {
       CarbonColumnVector vector = info.vector;
       int precision = info.measure.getMeasure().getPrecision();
+      int newMeasureScale = info.measure.getMeasure().getScale();
       if (valuesToBeConverted instanceof byte[][]) {
         byte[][] data = (byte[][]) valuesToBeConverted;
         for (int i = 0; i < size; i++) {
           if (nullBitset.get(i)) {
             vector.putNull(i);
           } else {
-            vector.putDecimal(i, DataTypeUtil.byteToBigDecimal(data[i]), precision);
+            BigDecimal value = DataTypeUtil.byteToBigDecimal(data[i]);
+            if (value.scale() < newMeasureScale) {
+              value = value.setScale(newMeasureScale);
+            }
+            vector.putDecimal(i, value, precision);
           }
         }
       }

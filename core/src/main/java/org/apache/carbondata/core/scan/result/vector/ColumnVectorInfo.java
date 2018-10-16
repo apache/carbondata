@@ -35,6 +35,7 @@ public class ColumnVectorInfo implements Comparable<ColumnVectorInfo> {
   public DirectDictionaryGenerator directDictionaryGenerator;
   public MeasureDataVectorProcessor.MeasureVectorFiller measureVectorFiller;
   public GenericQueryType genericQueryType;
+  public int[] invertedIndex;
   public BitSet deletedRows;
   public DecimalConverterFactory.DecimalConverter decimalConverter;
 

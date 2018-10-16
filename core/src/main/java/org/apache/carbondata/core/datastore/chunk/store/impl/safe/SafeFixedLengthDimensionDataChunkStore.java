@@ -17,12 +17,16 @@
 
 package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 
+import java.util.BitSet;
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertableVector;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 
@@ -49,7 +53,14 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
   public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
       ColumnVectorInfo vectorInfo) {
     CarbonColumnVector vector = vectorInfo.vector;
+    BitSet deletedRows = vectorInfo.deletedRows;
+    BitSet nullBits = new BitSet(numOfRows);
+    vector = ColumnarVectorWrapperDirectFactory
+        .getDirectVectorWrapperFactory(vector, invertedIndex, nullBits, deletedRows, false);
     fillVector(data, vectorInfo, vector);
+    if (vector instanceof ConvertableVector) {
+      ((ConvertableVector) vector).convert();
+    }
   }
 
   private void fillVector(byte[] data, ColumnVectorInfo vectorInfo, CarbonColumnVector vector) {
