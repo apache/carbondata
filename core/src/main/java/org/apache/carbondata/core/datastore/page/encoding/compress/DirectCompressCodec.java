@@ -345,6 +345,11 @@ public class DirectCompressCodec implements ColumnPageCodec {
         DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
         decimalConverter.fillVector(columnPage.getByteArrayPage(), pageSize, vectorInfo,
             columnPage.getNullBits());
+      } else if (vectorDataType == DataTypes.FLOAT) {
+        float[] floatPage = columnPage.getFloatPage();
+        for (int i = 0; i < pageSize; i++) {
+          vector.putFloats(0, pageSize, floatPage, 0);
+        }
       } else {
         double[] doubleData = columnPage.getDoublePage();
         vector.putDoubles(0, pageSize, doubleData, 0);
