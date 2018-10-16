@@ -643,6 +643,7 @@ object CarbonScalaUtil {
                      !x.dataType.get.equalsIgnoreCase("STRING") &&
                      !x.dataType.get.equalsIgnoreCase("VARCHAR") &&
                      !x.dataType.get.equalsIgnoreCase("STRUCT") &&
+                     !x.dataType.get.equalsIgnoreCase("MAP") &&
                      !x.dataType.get.equalsIgnoreCase("ARRAY"))) {
         val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
                        dictColm.trim +

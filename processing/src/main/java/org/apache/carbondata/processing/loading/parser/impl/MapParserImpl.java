@@ -16,53 +16,45 @@
  */
 package org.apache.carbondata.processing.loading.parser.impl;
 
-import java.util.regex.Pattern;
 
-import org.apache.carbondata.core.util.CarbonUtil;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.carbondata.processing.loading.complexobjects.ArrayObject;
-import org.apache.carbondata.processing.loading.parser.ComplexParser;
-import org.apache.carbondata.processing.loading.parser.GenericParser;
 
 import org.apache.commons.lang.ArrayUtils;
 
-/**
- * It parses the string to @{@link ArrayObject} using delimiter.
- * It is thread safe as the state of class don't change while
- * calling @{@link GenericParser#parse(Object)} method
- */
-public class ArrayParserImpl implements ComplexParser<ArrayObject> {
 
-  protected Pattern pattern;
+public class MapParserImpl extends ArrayParserImpl {
 
-  protected GenericParser child;
+  private String keyValueDelimiter;
 
-  protected String nullFormat;
-
-  public ArrayParserImpl(String delimiter, String nullFormat) {
-    pattern = Pattern.compile(CarbonUtil.delimiterConverter(delimiter));
-    this.nullFormat = nullFormat;
+  public MapParserImpl(String delimiter, String nullFormat, String keyValueDelimiter) {
+    super(delimiter, nullFormat);
+    this.keyValueDelimiter = keyValueDelimiter;
   }
 
-  @Override
-  public ArrayObject parse(Object data) {
+  //The Key for Map will always be a PRIMITIVE type so Set<Object> here will work fine
+  //Only the first occurance of key will be added and the remaining will be skipped/ignored
+  @Override public ArrayObject parse(Object data) {
     if (data != null) {
       String value = data.toString();
       if (!value.isEmpty() && !value.equals(nullFormat)) {
         String[] split = pattern.split(value, -1);
         if (ArrayUtils.isNotEmpty(split)) {
-          Object[] array = new Object[split.length];
+          ArrayList<Object> array = new ArrayList<>();
+          Set<Object> set = new HashSet<>();
           for (int i = 0; i < split.length; i++) {
-            array[i] = child.parse(split[i]);
+            Object currKey = split[i].split(keyValueDelimiter)[0];
+            if (set.add(currKey)) {
+              array.add(child.parse(split[i]));
+            }
           }
-          return new ArrayObject(array);
+          return new ArrayObject(array.toArray());
         }
       }
     }
     return null;
-  }
-
-  @Override
-  public void addChildren(GenericParser parser) {
-    child = parser;
   }
 }

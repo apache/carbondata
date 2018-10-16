@@ -55,8 +55,8 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     carbonLoadModel.setFactFilePath(filePath)
     carbonLoadModel.setCsvHeader(header)
     carbonLoadModel.setCsvDelimiter(",")
-    carbonLoadModel.setComplexDelimiterLevel1("$")
-    carbonLoadModel.setComplexDelimiterLevel2(":")
+    carbonLoadModel.setComplexDelimiter("$")
+    carbonLoadModel.setComplexDelimiter(":")
     carbonLoadModel.setAllDictPath(allDictFilePath)
     carbonLoadModel.setSerializationNullFormat(
           TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + ",\\N")
