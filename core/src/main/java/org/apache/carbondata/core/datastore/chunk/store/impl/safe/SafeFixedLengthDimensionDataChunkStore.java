@@ -17,6 +17,11 @@
 
 package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 
@@ -30,9 +35,52 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
    */
   private int columnValueSize;
 
-  public SafeFixedLengthDimensionDataChunkStore(boolean isInvertedIndex, int columnValueSize) {
+  private int numOfRows;
+
+  public SafeFixedLengthDimensionDataChunkStore(boolean isInvertedIndex, int columnValueSize,
+      int numOfRows) {
     super(isInvertedIndex);
     this.columnValueSize = columnValueSize;
+    this.numOfRows = numOfRows;
+  }
+
+  @Override
+  public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+      ColumnVectorInfo vectorInfo) {
+    CarbonColumnVector vector = vectorInfo.vector;
+    fillVector(data, vectorInfo, vector);
+  }
+
+  private void fillVector(byte[] data, ColumnVectorInfo vectorInfo, CarbonColumnVector vector) {
+    DataType dataType = vectorInfo.vector.getBlockDataType();
+    if (dataType == DataTypes.DATE) {
+      for (int i = 0; i < numOfRows; i++) {
+        int surrogateInternal =
+            CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
+        if (surrogateInternal == 1) {
+          vector.putNull(i);
+        } else {
+          vector.putInt(i, surrogateInternal - DateDirectDictionaryGenerator.cutOffDate);
+        }
+      }
+    } else if (dataType == DataTypes.TIMESTAMP) {
+      for (int i = 0; i < numOfRows; i++) {
+        int surrogateInternal =
+            CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
+        if (surrogateInternal == 1) {
+          vector.putNull(i);
+        } else {
+          Object valueFromSurrogate =
+              vectorInfo.directDictionaryGenerator.getValueFromSurrogate(surrogateInternal);
+          vector.putLong(i, (long)valueFromSurrogate);
+        }
+      }
+    } else {
+      for (int i = 0; i < numOfRows; i++) {
+        vector.putInt(i,
+            CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize));
+      }
+    }
   }
 
   /**

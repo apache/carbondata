@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.chunk.reader.measure.v3;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.BitSet;
 
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
@@ -151,8 +152,9 @@ public class CompressedMsrChunkFileBasedPageLevelReaderV3
     ByteBuffer buffer = rawColumnPage.getFileReader()
         .readByteBuffer(filePath, offset, pageMetadata.data_page_length);
 
-    ColumnPage decodedPage = decodeMeasure(pageMetadata, buffer, 0);
-    decodedPage.setNullBits(QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor));
+    BitSet nullBitSet = QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor);
+    ColumnPage decodedPage = decodeMeasure(pageMetadata, buffer, 0, null, nullBitSet);
+    decodedPage.setNullBits(nullBitSet);
     return decodedPage;
   }
 

@@ -18,11 +18,13 @@
 package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 
 import java.nio.ByteBuffer;
+import java.util.BitSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -91,6 +93,25 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
     }
   }
 
+  @Override
+  public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+      ColumnVectorInfo vectorInfo) {
+    this.invertedIndexReverse = invertedIndex;
+
+    // as first position will be start from 2 byte as data is stored first in the memory block
+    // we need to skip first two bytes this is because first two bytes will be length of the data
+    // which we have to skip
+    int lengthSize = getLengthSize();
+    // creating a byte buffer which will wrap the length of the row
+    CarbonColumnVector vector = vectorInfo.vector;
+    DataType dt = vector.getType();
+    ByteBuffer buffer = ByteBuffer.wrap(data);
+    BitSet deletedRows = vectorInfo.deletedRows;
+    AbstractNonDictionaryVectorFiller vectorFiller =
+        NonDictionaryVectorFillerFactory.getVectorFiller(dt, lengthSize, numberOfRows);
+    vectorFiller.fillVector(data, vector, buffer);
+  }
+
   protected abstract int getLengthSize();
   protected abstract int getLengthFromBuffer(ByteBuffer buffer);
 
@@ -150,7 +171,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
       vector.putNull(vectorRow);
     } else {
       if (dt == DataTypes.STRING) {
-        vector.putBytes(vectorRow, currentDataOffset, length, data);
+        vector.putByteArray(vectorRow, currentDataOffset, length, data);
       } else if (dt == DataTypes.BOOLEAN) {
         vector.putBoolean(vectorRow, ByteUtil.toBoolean(data[currentDataOffset]));
       } else if (dt == DataTypes.SHORT) {

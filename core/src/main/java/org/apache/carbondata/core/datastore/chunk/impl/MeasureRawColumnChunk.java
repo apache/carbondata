@@ -24,6 +24,7 @@ import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReader;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 /**
  * Contains raw measure data
@@ -100,6 +101,22 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
     }
     try {
       return chunkReader.decodeColumnPage(this, index);
+    } catch (IOException | MemoryException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Convert raw data with specified page number processed to DimensionColumnDataChunk and fill the
+   * vector
+   *
+   * @param pageNumber page number to decode and fill the vector
+   * @param vectorInfo vector to be filled with column page
+   */
+  public void convertToColumnPageAndFillVector(int pageNumber, ColumnVectorInfo vectorInfo) {
+    assert pageNumber < pagesCount;
+    try {
+      chunkReader.decodeColumnPageAndFillVector(this, pageNumber, vectorInfo);
     } catch (IOException | MemoryException e) {
       throw new RuntimeException(e);
     }

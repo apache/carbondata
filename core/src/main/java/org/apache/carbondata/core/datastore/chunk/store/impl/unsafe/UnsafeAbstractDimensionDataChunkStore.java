@@ -24,6 +24,7 @@ import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
 /**
@@ -113,6 +114,11 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
           dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset,
           invertedIndexReverse.length * CarbonCommonConstants.INT_SIZE_IN_BYTE);
     }
+  }
+
+  @Override public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+      ColumnVectorInfo vectorInfo) {
+    throw new UnsupportedOperationException("This method not supposed to be called here");
   }
 
   /**

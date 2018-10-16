@@ -286,6 +286,34 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     return CarbonUnsafe.getUnsafe().getDouble(baseAddress, baseOffset + offset);
   }
 
+  @Override public byte[] getByteData() {
+    throw new UnsupportedOperationException("Not supported here");
+  }
+
+  @Override public short[] getShortData() {
+    throw new UnsupportedOperationException("Not supported here");
+  }
+
+  @Override public int[] getShortIntData() {
+    throw new UnsupportedOperationException("Not supported here");
+  }
+
+  @Override public int[] getIntData() {
+    throw new UnsupportedOperationException("Not supported here");
+  }
+
+  @Override public long[] getLongData() {
+    throw new UnsupportedOperationException("Not supported here");
+  }
+
+  @Override public float[] getFloatData() {
+    throw new UnsupportedOperationException("Not supported here");
+  }
+
+  @Override public double[] getDoubleData() {
+    throw new UnsupportedOperationException("Not supported here");
+  }
+
   @Override
   public BigDecimal getDecimal(int rowId) {
     throw new UnsupportedOperationException(

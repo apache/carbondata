@@ -26,6 +26,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -281,7 +282,12 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
         schema = schema.add(field);
       }
     }
-    vectorProxy = new CarbonVectorProxy(DEFAULT_MEMORY_MODE,schema,DEFAULT_BATCH_SIZE);
+    short batchSize = DEFAULT_BATCH_SIZE;
+    if (queryModel.isDirectVectorFill()) {
+      batchSize = CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+    }
+    vectorProxy = new CarbonVectorProxy(DEFAULT_MEMORY_MODE, schema, batchSize);
+
     if (partitionColumns != null) {
       int partitionIdx = fields.length;
       for (int i = 0; i < partitionColumns.fields().length; i++) {
@@ -290,12 +296,24 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
       }
     }
     CarbonColumnVector[] vectors = new CarbonColumnVector[fields.length];
-    boolean[] filteredRows = new boolean[vectorProxy.numRows()];
-    for (int i = 0; i < fields.length; i++) {
-      vectors[i] = new ColumnarVectorWrapper(vectorProxy, filteredRows, i);
-      if (isNoDictStringField[i]) {
-        if (vectors[i] instanceof ColumnarVectorWrapper) {
-          ((ColumnarVectorWrapper) vectors[i]).reserveDictionaryIds();
+    boolean[] filteredRows = null;
+    if (queryModel.isDirectVectorFill()) {
+      for (int i = 0; i < fields.length; i++) {
+        vectors[i] = new ColumnarVectorWrapperDirect(vectorProxy, i);
+        if (isNoDictStringField[i]) {
+          if (vectors[i] instanceof ColumnarVectorWrapperDirect) {
+            ((ColumnarVectorWrapperDirect) vectors[i]).reserveDictionaryIds();
+          }
+        }
+      }
+    } else {
+      filteredRows = new boolean[vectorProxy.numRows()];
+      for (int i = 0; i < fields.length; i++) {
+        vectors[i] = new ColumnarVectorWrapper(vectorProxy, filteredRows, i);
+        if (isNoDictStringField[i]) {
+          if (vectors[i] instanceof ColumnarVectorWrapper) {
+            ((ColumnarVectorWrapper) vectors[i]).reserveDictionaryIds();
+          }
         }
       }
     }

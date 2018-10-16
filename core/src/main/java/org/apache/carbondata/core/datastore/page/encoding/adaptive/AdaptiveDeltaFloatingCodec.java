@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.page.encoding.adaptive;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +36,8 @@ import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.Encoding;
 
@@ -123,6 +126,15 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
           throws MemoryException, IOException {
         ColumnPage page = ColumnPage.decompress(meta, input, offset, length, false);
         return LazyColumnPage.newPage(page, converter);
+      }
+
+      @Override
+      public ColumnPage decodeAndFillVector(byte[] input, int offset, int length,
+          ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded)
+          throws MemoryException, IOException {
+        ColumnPage page = ColumnPage.decompress(meta, input, offset, length, isLVEncoded);
+        page.setNullBits(nullBits);
+        return LazyColumnPage.newPage(page, converter, vectorInfo);
       }
 
       @Override public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
@@ -223,6 +235,69 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
     @Override
     public double decodeDouble(long value) {
       return (max - value) / factor;
+    }
+
+    @Override
+    public void decodeAndFillVector(ColumnPage columnPage, ColumnVectorInfo vectorInfo) {
+      CarbonColumnVector vector = vectorInfo.vector;
+      BitSet nullBits = columnPage.getNullBits();
+      DataType type = columnPage.getDataType();
+      int pageSize = columnPage.getPageSize();
+      BitSet deletedRows = vectorInfo.deletedRows;
+      DataType dataType = vector.getType();
+      if (dataType == DataTypes.FLOAT) {
+        float floatFactor = factor.floatValue();
+        if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {
+          byte[] byteData = columnPage.getByteData();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putFloat(i, (max - byteData[i]) / floatFactor);
+          }
+        } else if (type == DataTypes.SHORT) {
+          short[] shortData = columnPage.getShortData();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putFloat(i, (max - shortData[i]) / floatFactor);
+          }
+
+        } else if (type == DataTypes.SHORT_INT) {
+          int[] shortIntData = columnPage.getShortIntData();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putFloat(i, (max - shortIntData[i]) / floatFactor);
+          }
+        } else {
+          throw new RuntimeException("internal error: " + this.toString());
+        }
+      } else {
+        if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {
+          byte[] byteData = columnPage.getByteData();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, (max - byteData[i]) / factor);
+          }
+        } else if (type == DataTypes.SHORT) {
+          short[] shortData = columnPage.getShortData();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, (max - shortData[i]) / factor);
+          }
+
+        } else if (type == DataTypes.SHORT_INT) {
+          int[] shortIntData = columnPage.getShortIntData();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, (max - shortIntData[i]) / factor);
+          }
+        } else if (type == DataTypes.INT) {
+          int[] intData = columnPage.getIntData();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, (max - intData[i]) / factor);
+          }
+        } else {
+          throw new RuntimeException("internal error: " + this.toString());
+        }
+      }
+
+      if (deletedRows == null || deletedRows.isEmpty()) {
+        for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
+          vector.putNull(i);
+        }
+      }
     }
 
     @Override

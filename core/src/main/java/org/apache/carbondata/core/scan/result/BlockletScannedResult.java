@@ -73,6 +73,11 @@ public abstract class BlockletScannedResult {
   private int[] pageFilteredRowCount;
 
   /**
+   * Filtered pages to be decoded and loaded to vector.
+   */
+  private int[] pagesFiltered;
+
+  /**
    * to keep track of number of rows process
    */
   protected int rowCounter;
@@ -304,7 +309,7 @@ public abstract class BlockletScannedResult {
               j :
               pageFilteredRowId[pageCounter][j]);
         }
-        vector.putBytes(vectorOffset++,
+        vector.putByteArray(vectorOffset++,
             data.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       }
     }
@@ -342,6 +347,19 @@ public abstract class BlockletScannedResult {
   }
 
   /**
+   * Just increment the page counter and reset the remaining counters.
+   */
+  public void incrementPageCounter(ColumnVectorInfo[] vectorInfos) {
+    rowCounter = 0;
+    currentRow = -1;
+    pageCounter++;
+    if (null != deletedRecordMap && pageCounter < pagesFiltered.length) {
+      currentDeleteDeltaVo =
+          deletedRecordMap.get(blockletNumber + "_" + pagesFiltered[pageCounter]);
+    }
+  }
+
+  /**
    * This case is used only in case of compaction, since it does not use filter flow.
    */
   public void fillDataChunks() {
@@ -369,6 +387,36 @@ public abstract class BlockletScannedResult {
         pageUncompressTime.getCount() + (System.currentTimeMillis() - startTime));
   }
 
+  /**
+   * Fill all the vectors with data by decompressing/decoding the column page
+   */
+  public void fillDataChunks(ColumnVectorInfo[] dictionaryInfo, ColumnVectorInfo[] noDictionaryInfo,
+      ColumnVectorInfo[] msrVectorInfo, int[] measuresOrdinal) {
+    freeDataChunkMemory();
+    if (pageCounter >= pageFilteredRowCount.length) {
+      return;
+    }
+    long startTime = System.currentTimeMillis();
+
+    for (int i = 0; i < this.dictionaryColumnChunkIndexes.length; i++) {
+      dimRawColumnChunks[dictionaryColumnChunkIndexes[i]]
+          .convertToDimColDataChunkAndFillVector(pagesFiltered[pageCounter], dictionaryInfo[i]);
+    }
+    for (int i = 0; i < this.noDictionaryColumnChunkIndexes.length; i++) {
+      dimRawColumnChunks[noDictionaryColumnChunkIndexes[i]]
+          .convertToDimColDataChunkAndFillVector(pagesFiltered[pageCounter], noDictionaryInfo[i]);
+    }
+
+    for (int i = 0; i < measuresOrdinal.length; i++) {
+      msrRawColumnChunks[measuresOrdinal[i]]
+          .convertToColumnPageAndFillVector(pagesFiltered[pageCounter], msrVectorInfo[i]);
+    }
+    QueryStatistic pageUncompressTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.PAGE_UNCOMPRESS_TIME);
+    pageUncompressTime.addCountStatistic(QueryStatisticsConstants.PAGE_UNCOMPRESS_TIME,
+        pageUncompressTime.getCount() + (System.currentTimeMillis() - startTime));
+  }
+
   // free the memory for the last page chunk
   private void freeDataChunkMemory() {
     for (int i = 0; i < dimensionColumnPages.length; i++) {
@@ -388,6 +436,14 @@ public abstract class BlockletScannedResult {
 
   public int numberOfpages() {
     return pageFilteredRowCount.length;
+  }
+
+  public int[] getPagesFiltered() {
+    return pagesFiltered;
+  }
+
+  public void setPagesFiltered(int[] pagesFiltered) {
+    this.pagesFiltered = pagesFiltered;
   }
 
   /**
@@ -513,7 +569,13 @@ public abstract class BlockletScannedResult {
     // if deleted recors map is present for this block
     // then get the first page deleted vo
     if (null != deletedRecordMap) {
-      currentDeleteDeltaVo = deletedRecordMap.get(blockletNumber + '_' + pageCounter);
+      String key;
+      if (pagesFiltered != null) {
+        key = blockletNumber + '_' + pagesFiltered[pageCounter];
+      } else {
+        key = blockletNumber + '_' + pageCounter;
+      }
+      currentDeleteDeltaVo = deletedRecordMap.get(key);
     }
   }
 
@@ -616,6 +678,12 @@ public abstract class BlockletScannedResult {
    */
   public void setPageFilteredRowCount(int[] pageFilteredRowCount) {
     this.pageFilteredRowCount = pageFilteredRowCount;
+    if (pagesFiltered == null) {
+      pagesFiltered = new int[pageFilteredRowCount.length];
+      for (int i = 0; i < pagesFiltered.length; i++) {
+        pagesFiltered[i] = i;
+      }
+    }
   }
 
   /**
@@ -712,6 +780,10 @@ public abstract class BlockletScannedResult {
       }
     }
     return rowsFiltered;
+  }
+
+  public DeleteDeltaVo getCurrentDeleteDeltaVo() {
+    return currentDeleteDeltaVo;
   }
 
   /**

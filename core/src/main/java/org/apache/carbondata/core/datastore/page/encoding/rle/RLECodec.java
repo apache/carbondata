@@ -23,6 +23,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +36,7 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.format.Encoding;
 
 /**
@@ -312,6 +314,13 @@ public class RLECodec implements ColumnPageCodec {
         throw new RuntimeException("unsupported datatype:" + dataType);
       }
       return resultPage;
+    }
+
+    @Override
+    public ColumnPage decodeAndFillVector(byte[] input, int offset, int length,
+        ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded)
+        throws MemoryException, IOException {
+      return decode(input, offset, length);
     }
 
     @Override public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)

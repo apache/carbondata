@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 /**
  * This is a decorator of column page, it performs decoding lazily (when caller calls getXXX
@@ -42,8 +43,24 @@ public class LazyColumnPage extends ColumnPage {
     this.converter = converter;
   }
 
+  private LazyColumnPage(ColumnPage columnPage, ColumnPageValueConverter converter,
+      ColumnVectorInfo vectorInfo) {
+    super(columnPage.getColumnPageEncoderMeta(), columnPage.getPageSize());
+    this.columnPage = columnPage;
+    this.converter = converter;
+    if (columnPage instanceof DecimalColumnPage) {
+      vectorInfo.decimalConverter = ((DecimalColumnPage) columnPage).getDecimalConverter();
+    }
+    converter.decodeAndFillVector(columnPage, vectorInfo);
+  }
+
   public static ColumnPage newPage(ColumnPage columnPage, ColumnPageValueConverter codec) {
     return new LazyColumnPage(columnPage, codec);
+  }
+
+  public static ColumnPage newPage(ColumnPage columnPage, ColumnPageValueConverter codec,
+      ColumnVectorInfo vectorInfo) {
+    return new LazyColumnPage(columnPage, codec, vectorInfo);
   }
 
   @Override
@@ -90,6 +107,8 @@ public class LazyColumnPage extends ColumnPage {
       throw new RuntimeException("internal error: " + this.toString());
     }
   }
+
+
 
   @Override
   public float getFloat(int rowId) {
@@ -298,6 +317,34 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public int getInt(int rowId) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override public byte[] getByteData() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override public short[] getShortData() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override public int[] getShortIntData() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override public int[] getIntData() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override public long[] getLongData() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override public float[] getFloatData() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override public double[] getDoubleData() {
     throw new UnsupportedOperationException("internal error");
   }
 }

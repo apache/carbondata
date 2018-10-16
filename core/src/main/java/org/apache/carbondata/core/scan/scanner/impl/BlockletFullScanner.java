@@ -123,7 +123,9 @@ public class BlockletFullScanner implements BlockletScanner {
       }
     }
     scannedResult.setPageFilteredRowCount(numberOfRows);
-    scannedResult.fillDataChunks();
+    if (!blockExecutionInfo.isDirectVectorFill()) {
+      scannedResult.fillDataChunks();
+    }
     // adding statistics for carbon scan time
     QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);

@@ -74,8 +74,13 @@ public class ResultCollectorFactory {
         LOGGER.info("Restructure dictionary vector collector is used to scan and collect the data");
         scannerResultAggregator = new RestructureBasedVectorResultCollector(blockExecutionInfo);
       } else {
-        LOGGER.info("Vector based dictionary collector is used to scan and collect the data");
-        scannerResultAggregator = new DictionaryBasedVectorResultCollector(blockExecutionInfo);
+        if (blockExecutionInfo.isDirectVectorFill()) {
+          LOGGER.info("Direct pagewise vector fill collector is used to scan and collect the data");
+          scannerResultAggregator = new DirectPageWiseVectorFillResultCollector(blockExecutionInfo);
+        } else {
+          LOGGER.info("Vector based dictionary collector is used to scan and collect the data");
+          scannerResultAggregator = new DictionaryBasedVectorResultCollector(blockExecutionInfo);
+        }
       }
     } else {
       if (blockExecutionInfo.isRestructuredBlock()) {

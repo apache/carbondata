@@ -478,6 +478,17 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     } else {
       blockExecutionInfo.setPrefetchBlocklet(queryModel.isPreFetchData());
     }
+    // In case of fg datamap it should not go to direct fill.
+    boolean fgDataMapPathPresent = false;
+    for (TableBlockInfo blockInfo : queryModel.getTableBlockInfos()) {
+      fgDataMapPathPresent = blockInfo.getDataMapWriterPath() != null;
+      if (fgDataMapPathPresent) {
+        break;
+      }
+    }
+    blockExecutionInfo
+        .setDirectVectorFill(queryModel.isDirectVectorFill() && !fgDataMapPathPresent);
+
     blockExecutionInfo
         .setTotalNumberOfMeasureToRead(segmentProperties.getMeasuresOrdinalToChunkMapping().size());
     blockExecutionInfo.setComplexDimensionInfoMap(QueryUtil
