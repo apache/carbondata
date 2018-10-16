@@ -20,7 +20,9 @@ package org.apache.spark.rdd
 import org.apache.spark.{Partition, TaskContext}
 import org.apache.spark.sql.SparkSession
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
@@ -32,6 +34,67 @@ case class CarbonMergeFilePartition(rddId: Int, idx: Int, segmentId: String)
   override val index: Int = idx
 
   override def hashCode(): Int = 41 * (41 + rddId) + idx
+}
+
+object CarbonMergeFilesRDD {
+
+  /**
+   * Merge the carbonindex files with in the segment to carbonindexmerge file inside same segment
+   *
+   * @param sparkSession carbon session
+   * @param segmentIds the segments to process
+   * @param segmentFileNameToSegmentIdMap a map that map the segmentFileName to segmentId
+   * @param tablePath table path
+   * @param carbonTable carbon table
+   * @param mergeIndexProperty whether to merge the property of the carbon index, the usage
+   *                           scenario is the same as that of `readFileFooterFromCarbonDataFile`
+   * @param readFileFooterFromCarbonDataFile flag to read file footer information from carbondata
+   *                                         file. This will used in case of upgrade from version
+   *                                         which do not store the blocklet info to current
+   *                                         version
+   */
+  def mergeIndexFiles(sparkSession: SparkSession,
+      segmentIds: Seq[String],
+      segmentFileNameToSegmentIdMap: java.util.Map[String, String],
+      tablePath: String,
+      carbonTable: CarbonTable,
+      mergeIndexProperty: Boolean,
+      readFileFooterFromCarbonDataFile: Boolean = false): Unit = {
+    if (mergeIndexProperty) {
+      new CarbonMergeFilesRDD(
+        sparkSession,
+        carbonTable,
+        segmentIds,
+        segmentFileNameToSegmentIdMap,
+        carbonTable.isHivePartitionTable,
+        readFileFooterFromCarbonDataFile).collect()
+    } else {
+      try {
+        if (CarbonProperties.getInstance().getProperty(
+          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT).toBoolean) {
+          new CarbonMergeFilesRDD(
+            sparkSession,
+            carbonTable,
+            segmentIds,
+            segmentFileNameToSegmentIdMap,
+            carbonTable.isHivePartitionTable,
+            readFileFooterFromCarbonDataFile).collect()
+        }
+      } catch {
+        case _: Exception =>
+          if (CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT.toBoolean) {
+            new CarbonMergeFilesRDD(
+              sparkSession,
+              carbonTable,
+              segmentIds,
+              segmentFileNameToSegmentIdMap,
+              carbonTable.isHivePartitionTable,
+              readFileFooterFromCarbonDataFile).collect()
+          }
+      }
+    }
+  }
 }
 
 /**

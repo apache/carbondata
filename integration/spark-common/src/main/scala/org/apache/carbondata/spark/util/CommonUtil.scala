@@ -29,13 +29,11 @@ import scala.util.Random
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.{SparkContext, SparkEnv}
-import org.apache.spark.rdd.CarbonMergeFilesRDD
-import org.apache.spark.sql.{Row, RowFactory, SparkSession}
+import org.apache.spark.sql.{Row, RowFactory}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
 import org.apache.spark.sql.types.{MetadataBuilder, StringType}
-import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -43,14 +41,13 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.memory.{UnsafeMemoryManager, UnsafeSortMemoryManager}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.partition.PartitionUtil
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
-import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties}
 import org.apache.carbondata.core.util.comparator.Comparator
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
@@ -826,61 +823,4 @@ object CommonUtil {
       })
     }
   }
-
-  /**
-   * Merge the carbonindex files with in the segment to carbonindexmerge file inside same segment
-   *
-   * @param sparkContext
-   * @param segmentIds
-   * @param tablePath
-   * @param carbonTable
-   * @param mergeIndexProperty
-   * @param readFileFooterFromCarbonDataFile flag to read file footer information from carbondata
-   *                                         file. This will used in case of upgrade from version
-   *                                         which do not store the blocklet info to current
-   *                                         version
-   */
-  def mergeIndexFiles(sparkSession: SparkSession,
-    segmentIds: Seq[String],
-    segmentFileNameToSegmentIdMap: java.util.Map[String, String],
-    tablePath: String,
-    carbonTable: CarbonTable,
-    mergeIndexProperty: Boolean,
-    readFileFooterFromCarbonDataFile: Boolean = false): Unit = {
-    if (mergeIndexProperty) {
-      new CarbonMergeFilesRDD(
-        sparkSession,
-        carbonTable,
-        segmentIds,
-        segmentFileNameToSegmentIdMap,
-        carbonTable.isHivePartitionTable,
-        readFileFooterFromCarbonDataFile).collect()
-    } else {
-      try {
-        if (CarbonProperties.getInstance().getProperty(
-          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
-          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT).toBoolean) {
-          new CarbonMergeFilesRDD(
-            sparkSession,
-            carbonTable,
-            segmentIds,
-            segmentFileNameToSegmentIdMap,
-            carbonTable.isHivePartitionTable,
-            readFileFooterFromCarbonDataFile).collect()
-        }
-      } catch {
-        case _: Exception =>
-          if (CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT.toBoolean) {
-            new CarbonMergeFilesRDD(
-              sparkSession,
-              carbonTable,
-              segmentIds,
-              segmentFileNameToSegmentIdMap,
-              carbonTable.isHivePartitionTable,
-              readFileFooterFromCarbonDataFile).collect()
-          }
-      }
-    }
-  }
-
 }
