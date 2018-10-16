@@ -46,6 +46,15 @@ public class TrueFilterExecutor implements FilterExecuter {
   }
 
   @Override
+  public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
+      throws FilterUnsupportedException, IOException {
+    int numberOfPages = rawBlockletColumnChunks.getDataBlock().numberOfPages();
+    BitSet set = new BitSet(numberOfPages);
+    set.set(0, numberOfPages);
+    return set;
+  }
+
+  @Override
   public boolean applyFilter(RowIntf value, int dimOrdinalMax) {
     return true;
   }

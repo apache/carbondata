@@ -98,7 +98,11 @@ public class BlockletFilterScanner extends BlockletFullScanner {
   @Override
   public BlockletScannedResult scanBlocklet(RawBlockletColumnChunks rawBlockletColumnChunks)
       throws IOException, FilterUnsupportedException {
-    return executeFilter(rawBlockletColumnChunks);
+    if (blockExecutionInfo.isDirectVectorFill()) {
+      return executeFilterForPages(rawBlockletColumnChunks);
+    } else {
+      return executeFilter(rawBlockletColumnChunks);
+    }
   }
 
   @Override
@@ -305,6 +309,169 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     scannedResult.setMsrRawColumnChunks(measureRawColumnChunks);
     scannedResult.setPageFilteredRowCount(pageFilteredRowCount);
     scannedResult.fillDataChunks();
+    // adding statistics for carbon scan time
+    QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);
+    scanTime.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKlET_TIME,
+        scanTime.getCount() + (System.currentTimeMillis() - startTime - dimensionReadTime));
+    QueryStatistic readTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.READ_BLOCKlET_TIME);
+    readTime.addCountStatistic(QueryStatisticsConstants.READ_BLOCKlET_TIME,
+        readTime.getCount() + dimensionReadTime);
+    return scannedResult;
+  }
+
+  /**
+   * This method will process the data in below order
+   * 1. first apply min max on the filter tree and check whether any of the filter
+   * is fall on the range of min max, if not then return empty result
+   * 2. If filter falls on min max range then apply filter on actual
+   * data and get the pruned pages.
+   * 3. if pruned pages are not empty then read only those blocks(measure or dimension)
+   * which was present in the query but not present in the filter, as while applying filter
+   * some of the blocks where already read and present in chunk holder so not need to
+   * read those blocks again, this is to avoid reading of same blocks which was already read
+   * 4. Set the blocks and filter pages to scanned result
+   *
+   * @param rawBlockletColumnChunks blocklet raw chunk of all columns
+   * @throws FilterUnsupportedException
+   */
+  private BlockletScannedResult executeFilterForPages(
+      RawBlockletColumnChunks rawBlockletColumnChunks)
+      throws FilterUnsupportedException, IOException {
+    long startTime = System.currentTimeMillis();
+    QueryStatistic totalBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM);
+    totalBlockletStatistic.addCountStatistic(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM,
+        totalBlockletStatistic.getCount() + 1);
+    // apply filter on actual data, for each page
+    BitSet pages = this.filterExecuter.prunePages(rawBlockletColumnChunks);
+    // if filter result is empty then return with empty result
+    if (pages.isEmpty()) {
+      CarbonUtil.freeMemory(rawBlockletColumnChunks.getDimensionRawColumnChunks(),
+          rawBlockletColumnChunks.getMeasureRawColumnChunks());
+
+      QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
+          .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);
+      scanTime.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKlET_TIME,
+          scanTime.getCount() + (System.currentTimeMillis() - startTime));
+
+      QueryStatistic scannedPages = queryStatisticsModel.getStatisticsTypeAndObjMap()
+          .get(QueryStatisticsConstants.PAGE_SCANNED);
+      scannedPages.addCountStatistic(QueryStatisticsConstants.PAGE_SCANNED,
+          scannedPages.getCount());
+      return createEmptyResult();
+    }
+
+    BlockletScannedResult scannedResult =
+        new FilterQueryScannedResult(blockExecutionInfo, queryStatisticsModel);
+
+    // valid scanned blocklet
+    QueryStatistic validScannedBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM);
+    validScannedBlockletStatistic
+        .addCountStatistic(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM,
+            validScannedBlockletStatistic.getCount() + 1);
+    // adding statistics for valid number of pages
+    QueryStatistic validPages = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.VALID_PAGE_SCANNED);
+    validPages.addCountStatistic(QueryStatisticsConstants.VALID_PAGE_SCANNED,
+        validPages.getCount() + pages.cardinality());
+    QueryStatistic scannedPages = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.PAGE_SCANNED);
+    scannedPages.addCountStatistic(QueryStatisticsConstants.PAGE_SCANNED,
+        scannedPages.getCount() + pages.cardinality());
+    // get the row indexes from bit set for each page
+    int[] pageFilteredPages = new int[pages.cardinality()];
+    int index = 0;
+    for (int i = pages.nextSetBit(0); i >= 0; i = pages.nextSetBit(i + 1)) {
+      pageFilteredPages[index++] = i;
+    }
+    // count(*)  case there would not be any dimensions are measures selected.
+    int[] numberOfRows = new int[pages.cardinality()];
+    for (int i = 0; i < numberOfRows.length; i++) {
+      numberOfRows[i] = rawBlockletColumnChunks.getDataBlock().getPageRowCount(i);
+    }
+    long dimensionReadTime = System.currentTimeMillis();
+    dimensionReadTime = System.currentTimeMillis() - dimensionReadTime;
+
+    FileReader fileReader = rawBlockletColumnChunks.getFileReader();
+
+
+    DimensionRawColumnChunk[] dimensionRawColumnChunks =
+        new DimensionRawColumnChunk[blockExecutionInfo.getTotalNumberDimensionToRead()];
+    int numDimensionChunks = dimensionRawColumnChunks.length;
+    // read dimension chunk blocks from file which is not present
+    for (int chunkIndex = 0; chunkIndex < numDimensionChunks; chunkIndex++) {
+      dimensionRawColumnChunks[chunkIndex] =
+          rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex];
+    }
+    int[][] allSelectedDimensionColumnIndexRange =
+        blockExecutionInfo.getAllSelectedDimensionColumnIndexRange();
+    DimensionRawColumnChunk[] projectionListDimensionChunk = rawBlockletColumnChunks.getDataBlock()
+        .readDimensionChunks(fileReader, allSelectedDimensionColumnIndexRange);
+    for (int[] columnIndexRange : allSelectedDimensionColumnIndexRange) {
+      System.arraycopy(projectionListDimensionChunk, columnIndexRange[0],
+          dimensionRawColumnChunks, columnIndexRange[0],
+          columnIndexRange[1] + 1 - columnIndexRange[0]);
+    }
+
+    /*
+     * in case projection if the projected dimension are not loaded in the dimensionColumnDataChunk
+     * then loading them
+     */
+    int[] projectionListDimensionIndexes = blockExecutionInfo.getProjectionListDimensionIndexes();
+    for (int projectionListDimensionIndex : projectionListDimensionIndexes) {
+      if (null == dimensionRawColumnChunks[projectionListDimensionIndex]) {
+        dimensionRawColumnChunks[projectionListDimensionIndex] =
+            rawBlockletColumnChunks.getDataBlock().readDimensionChunk(
+                fileReader, projectionListDimensionIndex);
+      }
+    }
+
+    DimensionColumnPage[][] dimensionColumnPages =
+        new DimensionColumnPage[numDimensionChunks][pages.cardinality()];
+    MeasureRawColumnChunk[] measureRawColumnChunks =
+        new MeasureRawColumnChunk[blockExecutionInfo.getTotalNumberOfMeasureToRead()];
+    int numMeasureChunks = measureRawColumnChunks.length;
+
+    // read the measure chunk blocks which is not present
+    for (int chunkIndex = 0; chunkIndex < numMeasureChunks; chunkIndex++) {
+      if (null != rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex]) {
+        measureRawColumnChunks[chunkIndex] =
+            rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex];
+      }
+    }
+
+    int[][] allSelectedMeasureColumnIndexRange =
+        blockExecutionInfo.getAllSelectedMeasureIndexRange();
+    MeasureRawColumnChunk[] projectionListMeasureChunk = rawBlockletColumnChunks.getDataBlock()
+        .readMeasureChunks(fileReader, allSelectedMeasureColumnIndexRange);
+    for (int[] columnIndexRange : allSelectedMeasureColumnIndexRange) {
+      System.arraycopy(projectionListMeasureChunk, columnIndexRange[0], measureRawColumnChunks,
+          columnIndexRange[0], columnIndexRange[1] + 1 - columnIndexRange[0]);
+    }
+    /*
+     * in case projection if the projected measure are not loaded in the ColumnPage
+     * then loading them
+     */
+    int[] projectionListMeasureIndexes = blockExecutionInfo.getProjectionListMeasureIndexes();
+    for (int projectionListMeasureIndex : projectionListMeasureIndexes) {
+      if (null == measureRawColumnChunks[projectionListMeasureIndex]) {
+        measureRawColumnChunks[projectionListMeasureIndex] = rawBlockletColumnChunks.getDataBlock()
+            .readMeasureChunk(fileReader, projectionListMeasureIndex);
+      }
+    }
+    ColumnPage[][] measureColumnPages = new ColumnPage[numMeasureChunks][pages.cardinality()];
+    scannedResult.setDimensionColumnPages(dimensionColumnPages);
+    scannedResult.setMeasureColumnPages(measureColumnPages);
+    scannedResult.setDimRawColumnChunks(dimensionRawColumnChunks);
+    scannedResult.setMsrRawColumnChunks(measureRawColumnChunks);
+    scannedResult.setPageFilteredRowCount(numberOfRows);
+    scannedResult.setPagesFiltered(pageFilteredPages);
+    scannedResult.setBlockletId(
+        blockExecutionInfo.getBlockIdString() + CarbonCommonConstants.FILE_SEPARATOR +
+            rawBlockletColumnChunks.getDataBlock().blockletIndex());
     // adding statistics for carbon scan time
     QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);

@@ -146,6 +146,44 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
     return applyNoAndDirectFilter(rawBlockletColumnChunks, useBitsetPipeLine);
   }
 
+  @Override
+  public BitSet prunePages(RawBlockletColumnChunks blockChunkHolder)
+      throws FilterUnsupportedException, IOException {
+    // In case of Alter Table Add and Delete Columns the isDimensionPresentInCurrentBlock can be
+    // false, in that scenario the default values of the column should be shown.
+    // select all rows if dimension does not exists in the current block
+    if (!isDimensionPresentInCurrentBlock) {
+      int i = blockChunkHolder.getDataBlock().numberOfPages();
+      BitSet bitSet = new BitSet();
+      bitSet.set(0, i);
+      return bitSet;
+    }
+
+    int chunkIndex = segmentProperties.getDimensionOrdinalToChunkMapping()
+        .get(dimColEvaluatorInfo.getColumnIndex());
+
+    if (null == blockChunkHolder.getDimensionRawColumnChunks()[chunkIndex]) {
+      blockChunkHolder.getDimensionRawColumnChunks()[chunkIndex] = blockChunkHolder.getDataBlock()
+          .readDimensionChunk(blockChunkHolder.getFileReader(), chunkIndex);
+    }
+
+    DimensionRawColumnChunk rawColumnChunk =
+        blockChunkHolder.getDimensionRawColumnChunks()[chunkIndex];
+    BitSet bitSet = new BitSet(rawColumnChunk.getPagesCount());
+    for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
+      if (rawColumnChunk.getMaxValues() != null) {
+        if (isScanRequired(rawColumnChunk.getMinValues()[i], rawColumnChunk.getMaxValues()[i],
+            this.filterRangesValues, rawColumnChunk.getMinMaxFlagArray()[i])) {
+          bitSet.set(i);
+        }
+      } else {
+        bitSet.set(i);
+      }
+    }
+    return bitSet;
+
+  }
+
   /**
    * apply range filter on a row
    */

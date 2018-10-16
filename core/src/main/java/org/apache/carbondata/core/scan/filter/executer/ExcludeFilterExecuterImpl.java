@@ -25,6 +25,7 @@ import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
@@ -139,6 +140,40 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
         bitSetGroup.setBitSet(bitSet, i);
       }
       return bitSetGroup;
+    }
+    return null;
+  }
+
+  @Override
+  public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
+      throws FilterUnsupportedException, IOException {
+    if (isDimensionPresentInCurrentBlock) {
+      int chunkIndex = segmentProperties.getDimensionOrdinalToChunkMapping()
+          .get(dimColEvaluatorInfo.getColumnIndex());
+      if (null == rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex]) {
+        rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex] =
+            rawBlockletColumnChunks.getDataBlock()
+                .readDimensionChunk(rawBlockletColumnChunks.getFileReader(), chunkIndex);
+      }
+      DimensionRawColumnChunk dimensionRawColumnChunk =
+          rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex];
+      BitSet bitSet = new BitSet(dimensionRawColumnChunk.getPagesCount());
+      bitSet.set(0, dimensionRawColumnChunk.getPagesCount());
+      return bitSet;
+    } else if (isMeasurePresentInCurrentBlock) {
+      int chunkIndex = segmentProperties.getMeasuresOrdinalToChunkMapping()
+          .get(msrColumnEvaluatorInfo.getColumnIndex());
+      if (null == rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex]) {
+        rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex] =
+            rawBlockletColumnChunks.getDataBlock()
+                .readMeasureChunk(rawBlockletColumnChunks.getFileReader(), chunkIndex);
+      }
+      MeasureRawColumnChunk measureRawColumnChunk =
+          rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex];
+
+      BitSet bitSet = new BitSet(measureRawColumnChunk.getPagesCount());
+      bitSet.set(0, measureRawColumnChunk.getPagesCount());
+      return bitSet;
     }
     return null;
   }
