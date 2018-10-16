@@ -52,7 +52,7 @@ class NonDictionaryVectorFillerFactory {
   public static AbstractNonDictionaryVectorFiller getVectorFiller(DataType type, int lengthSize,
       int numberOfRows) {
     if (type == DataTypes.STRING) {
-      if (lengthSize > 2) {
+      if (lengthSize > DataTypes.SHORT.getSizeInBytes()) {
         return new LongStringVectorFiller(lengthSize, numberOfRows);
       } else {
         return new StringVectorFiller(lengthSize, numberOfRows);

@@ -1735,7 +1735,7 @@ public final class CarbonCommonConstants {
   public static final String CARBON_PUSH_ROW_FILTERS_FOR_VECTOR =
       "carbon.push.rowfilters.for.vector";
 
-  public static final String CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT = "true";
+  public static final String CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT = "false";
 
   //////////////////////////////////////////////////////////////////////////////////////////
   // Unused constants and parameters start here

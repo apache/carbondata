@@ -717,7 +717,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamap_test5")
   }
 
-  test("test text_match on normal table") {
+  ignore("test text_match on normal table") {
     sql("DROP TABLE IF EXISTS table1")
     sql(
       """

@@ -408,7 +408,7 @@ class SparkCarbonFileFormat extends FileFormat
           model.setFreeUnsafeMemory(!isAdded)
         }
         val carbonReader = if (readVector) {
-          model.setDirectVectorFill(true);
+          model.setDirectVectorFill(true)
           val vectorizedReader = new VectorizedCarbonRecordReader(model,
             null,
             supportBatchValue.toString)

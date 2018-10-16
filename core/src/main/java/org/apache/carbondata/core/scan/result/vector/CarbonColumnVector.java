@@ -20,6 +20,7 @@ package org.apache.carbondata.core.scan.result.vector;
 import java.math.BigDecimal;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
 
 public interface CarbonColumnVector {
 
@@ -107,5 +108,7 @@ public interface CarbonColumnVector {
   boolean hasDictionary();
 
   CarbonColumnVector getDictionaryVector();
+
+  void setLazyPage(LazyPageLoader lazyPage);
 
 }

@@ -30,6 +30,7 @@ import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 import org.apache.carbondata.core.scan.result.BlockletScannedResult;
 import org.apache.carbondata.core.scan.result.impl.NonFilterQueryScannedResult;
 import org.apache.carbondata.core.scan.scanner.BlockletScanner;
+import org.apache.carbondata.core.scan.scanner.LazyBlockletLoader;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
@@ -114,7 +115,9 @@ public class BlockletFullScanner implements BlockletScanner {
         }
       }
     }
-
+    scannedResult.setLazyBlockletLoader(
+        new LazyBlockletLoader(rawBlockletColumnChunks, blockExecutionInfo,
+            dimensionRawColumnChunks, measureRawColumnChunks, queryStatisticsModel));
     // count(*)  case there would not be any dimensions are measures selected.
     if (numberOfRows == null) {
       numberOfRows = new int[rawBlockletColumnChunks.getDataBlock().numberOfPages()];

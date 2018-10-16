@@ -47,7 +47,6 @@ public class SafeFixLengthColumnPage extends ColumnPage {
 
   SafeFixLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
     super(columnPageEncoderMeta, pageSize);
-    this.fixedLengthdata = new byte[pageSize][];
   }
 
   /**
@@ -456,6 +455,9 @@ public class SafeFixLengthColumnPage extends ColumnPage {
         doubleData = newArray;
       }
     } else if (dataType == DataTypes.BYTE_ARRAY) {
+      if (fixedLengthdata == null) {
+        fixedLengthdata = new byte[pageSize][];
+      }
       if (requestSize >= fixedLengthdata.length) {
         byte[][] newArray = new byte[arrayElementCount * 2][];
         int index = 0;
