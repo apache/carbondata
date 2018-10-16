@@ -19,12 +19,16 @@ package org.apache.spark.sql;
 import java.math.BigInteger;
 
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
 
 import org.apache.spark.memory.MemoryMode;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.execution.vectorized.WritableColumnVector;
 import org.apache.spark.sql.types.*;
+import org.apache.spark.sql.vectorized.ColumnVector;
+import org.apache.spark.sql.vectorized.ColumnarArray;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
+import org.apache.spark.sql.vectorized.ColumnarMap;
 import org.apache.spark.unsafe.types.CalendarInterval;
 import org.apache.spark.unsafe.types.UTF8String;
 
@@ -52,23 +56,23 @@ public class CarbonVectorProxy {
     public CarbonVectorProxy(MemoryMode memMode, int rowNum, StructField[] structFileds) {
         WritableColumnVector[] columnVectors =
             ColumnVectorFactory.getColumnVector(memMode, new StructType(structFileds), rowNum);
-        columnarBatch = new ColumnarBatch(columnVectors);
-        columnarBatch.setNumRows(rowNum);
-        columnVectorProxies = new ColumnVectorProxy[columnarBatch.numCols()];
+        columnVectorProxies = new ColumnVectorProxy[columnVectors.length];
         for (int i = 0; i < columnVectorProxies.length; i++) {
-            columnVectorProxies[i] = new ColumnVectorProxy(columnarBatch, i);
+            columnVectorProxies[i] = new ColumnVectorProxy(columnVectors[i]);
         }
+        columnarBatch = new ColumnarBatch(columnVectorProxies);
+        columnarBatch.setNumRows(rowNum);
     }
 
     public CarbonVectorProxy(MemoryMode memMode, StructType outputSchema, int rowNum) {
         WritableColumnVector[] columnVectors = ColumnVectorFactory
                 .getColumnVector(memMode, outputSchema, rowNum);
-        columnarBatch = new ColumnarBatch(columnVectors);
-        columnarBatch.setNumRows(rowNum);
-        columnVectorProxies = new ColumnVectorProxy[columnarBatch.numCols()];
+        columnVectorProxies = new ColumnVectorProxy[columnVectors.length];
         for (int i = 0; i < columnVectorProxies.length; i++) {
-            columnVectorProxies[i] = new ColumnVectorProxy(columnarBatch, i);
+            columnVectorProxies[i] = new ColumnVectorProxy(columnVectors[i]);
         }
+        columnarBatch = new ColumnarBatch(columnVectorProxies);
+        columnarBatch.setNumRows(rowNum);
     }
 
     /**
@@ -86,7 +90,7 @@ public class CarbonVectorProxy {
      * @return
      */
     public WritableColumnVector column(int ordinal) {
-        return (WritableColumnVector) columnarBatch.column(ordinal);
+        return ((ColumnVectorProxy) columnarBatch.column(ordinal)).getVector();
     }
 
     public ColumnVectorProxy getColumnVector(int ordinal) {
@@ -97,12 +101,12 @@ public class CarbonVectorProxy {
      */
     public void reset() {
         for (int i = 0; i < columnarBatch.numCols(); i++) {
-            ((WritableColumnVector)columnarBatch.column(i)).reset();
+            ((ColumnVectorProxy) columnarBatch.column(i)).reset();
         }
     }
 
     public void resetDictionaryIds(int ordinal) {
-        ((WritableColumnVector)columnarBatch.column(ordinal)).getDictionaryIds().reset();
+        (((ColumnVectorProxy) columnarBatch.column(ordinal)).getVector()).getDictionaryIds().reset();
     }
 
     /**
@@ -140,65 +144,70 @@ public class CarbonVectorProxy {
         return columnarBatch.column(ordinal).dataType();
     }
 
-    public static class ColumnVectorProxy {
+    public static class ColumnVectorProxy extends ColumnVector {
 
         private WritableColumnVector vector;
 
-        public ColumnVectorProxy(ColumnarBatch columnarBatch, int ordinal) {
-            vector = (WritableColumnVector) columnarBatch.column(ordinal);
+        private LazyPageLoader pageLoad;
+
+        private boolean isLoaded;
+
+        public ColumnVectorProxy(ColumnVector columnVector) {
+            super(columnVector.dataType());
+            vector = (WritableColumnVector) columnVector;
         }
 
-        public void putRowToColumnBatch(int rowId, Object value, int offset) {
-            DataType t = dataType(offset);
+        public void putRowToColumnBatch(int rowId, Object value) {
+            org.apache.spark.sql.types.DataType t = vector.dataType();
             if (null == value) {
-                putNull(rowId, offset);
+                putNull(rowId);
             } else {
-                if (t == DataTypes.BooleanType) {
-                    putBoolean(rowId, (boolean) value, offset);
-                } else if (t == DataTypes.ByteType) {
-                    putByte(rowId, (byte) value, offset);
-                } else if (t == DataTypes.ShortType) {
-                    putShort(rowId, (short) value, offset);
-                } else if (t == DataTypes.IntegerType) {
-                    putInt(rowId, (int) value, offset);
-                } else if (t == DataTypes.LongType) {
-                    putLong(rowId, (long) value, offset);
-                } else if (t == DataTypes.FloatType) {
-                    putFloat(rowId, (float) value, offset);
-                } else if (t == DataTypes.DoubleType) {
-                    putDouble(rowId, (double) value, offset);
-                } else if (t == DataTypes.StringType) {
+                if (t == org.apache.spark.sql.types.DataTypes.BooleanType) {
+                    putBoolean(rowId, (boolean) value);
+                } else if (t == org.apache.spark.sql.types.DataTypes.ByteType) {
+                    putByte(rowId, (byte) value);
+                } else if (t == org.apache.spark.sql.types.DataTypes.ShortType) {
+                    putShort(rowId, (short) value);
+                } else if (t == org.apache.spark.sql.types.DataTypes.IntegerType) {
+                    putInt(rowId, (int) value);
+                } else if (t == org.apache.spark.sql.types.DataTypes.LongType) {
+                    putLong(rowId, (long) value);
+                } else if (t == org.apache.spark.sql.types.DataTypes.FloatType) {
+                    putFloat(rowId, (float) value);
+                } else if (t == org.apache.spark.sql.types.DataTypes.DoubleType) {
+                    putDouble(rowId, (double) value);
+                } else if (t == org.apache.spark.sql.types.DataTypes.StringType) {
                     UTF8String v = (UTF8String) value;
-                    putByteArray(rowId, v.getBytes(), offset);
-                } else if (t instanceof DecimalType) {
+                    putByteArray(rowId, v.getBytes());
+                } else if (t instanceof org.apache.spark.sql.types.DecimalType) {
                     DecimalType dt = (DecimalType) t;
                     Decimal d = Decimal.fromDecimal(value);
                     if (dt.precision() <= Decimal.MAX_INT_DIGITS()) {
-                        putInt(rowId, (int) d.toUnscaledLong(), offset);
+                        putInt(rowId, (int) d.toUnscaledLong());
                     } else if (dt.precision() <= Decimal.MAX_LONG_DIGITS()) {
-                        putLong(rowId, d.toUnscaledLong(), offset);
+                        putLong(rowId, d.toUnscaledLong());
                     } else {
                         final BigInteger integer = d.toJavaBigDecimal().unscaledValue();
                         byte[] bytes = integer.toByteArray();
-                        putByteArray(rowId, bytes, 0, bytes.length, offset);
+                        putByteArray(rowId, bytes, 0, bytes.length);
                     }
                 } else if (t instanceof CalendarIntervalType) {
                     CalendarInterval c = (CalendarInterval) value;
                     vector.getChild(0).putInt(rowId, c.months);
                     vector.getChild(1).putLong(rowId, c.microseconds);
-                } else if (t instanceof DateType) {
-                    putInt(rowId, (int) value, offset);
-                } else if (t instanceof TimestampType) {
-                    putLong(rowId, (long) value, offset);
+                } else if (t instanceof org.apache.spark.sql.types.DateType) {
+                    putInt(rowId, (int) value);
+                } else if (t instanceof org.apache.spark.sql.types.TimestampType) {
+                    putLong(rowId, (long) value);
                 }
             }
         }
 
-        public void putBoolean(int rowId, boolean value, int ordinal) {
+        public void putBoolean(int rowId, boolean value) {
             vector.putBoolean(rowId, value);
         }
 
-        public void putByte(int rowId, byte value, int ordinal) {
+        public void putByte(int rowId, byte value) {
             vector.putByte(rowId, value);
         }
 
@@ -206,15 +215,15 @@ public class CarbonVectorProxy {
             vector.putBytes(rowId, count, src, srcIndex);
         }
 
-        public void putShort(int rowId, short value, int ordinal) {
+        public void putShort(int rowId, short value) {
             vector.putShort(rowId, value);
         }
 
-        public void putInt(int rowId, int value, int ordinal) {
+        public void putInt(int rowId, int value) {
             vector.putInt(rowId, value);
         }
 
-        public void putFloat(int rowId, float value, int ordinal) {
+        public void putFloat(int rowId, float value) {
             vector.putFloat(rowId, value);
         }
 
@@ -222,19 +231,19 @@ public class CarbonVectorProxy {
             vector.putFloats(rowId, count, src, srcIndex);
         }
 
-        public void putLong(int rowId, long value, int ordinal) {
+        public void putLong(int rowId, long value) {
             vector.putLong(rowId, value);
         }
 
-        public void putDouble(int rowId, double value, int ordinal) {
+        public void putDouble(int rowId, double value) {
             vector.putDouble(rowId, value);
         }
 
-        public void putByteArray(int rowId, byte[] value, int ordinal) {
+        public void putByteArray(int rowId, byte[] value) {
             vector.putByteArray(rowId, value);
         }
 
-        public void putInts(int rowId, int count, int value, int ordinal) {
+        public void putInts(int rowId, int count, int value) {
             vector.putInts(rowId, count, value);
         }
 
@@ -242,7 +251,7 @@ public class CarbonVectorProxy {
             vector.putInts(rowId, count, src, srcIndex);
         }
 
-        public void putShorts(int rowId, int count, short value, int ordinal) {
+        public void putShorts(int rowId, int count, short value) {
             vector.putShorts(rowId, count, value);
         }
 
@@ -250,7 +259,7 @@ public class CarbonVectorProxy {
             vector.putShorts(rowId, count, src, srcIndex);
         }
 
-        public void putLongs(int rowId, int count, long value, int ordinal) {
+        public void putLongs(int rowId, int count, long value) {
             vector.putLongs(rowId, count, value);
         }
 
@@ -258,12 +267,12 @@ public class CarbonVectorProxy {
             vector.putLongs(rowId, count, src, srcIndex);
         }
 
-        public void putDecimal(int rowId, Decimal value, int precision, int ordinal) {
+        public void putDecimal(int rowId, Decimal value, int precision) {
             vector.putDecimal(rowId, value, precision);
 
         }
 
-        public void putDoubles(int rowId, int count, double value, int ordinal) {
+        public void putDoubles(int rowId, int count, double value) {
             vector.putDoubles(rowId, count, value);
         }
 
@@ -271,31 +280,23 @@ public class CarbonVectorProxy {
             vector.putDoubles(rowId, count, src, srcIndex);
         }
 
-        public void putByteArray(int rowId, byte[] value, int offset, int length, int ordinal) {
+        public void putByteArray(int rowId, byte[] value, int offset, int length) {
             vector.putByteArray(rowId, value, offset, length);
         }
 
-        public boolean isNullAt(int rowId, int ordinal) {
-            return vector.isNullAt(rowId);
-        }
-
-        public DataType dataType(int ordinal) {
-            return vector.dataType();
-        }
-
-        public void putNotNull(int rowId, int ordinal) {
+        public void putNotNull(int rowId) {
             vector.putNotNull(rowId);
         }
 
-        public void putNotNulls(int rowId, int count, int ordinal) {
+        public void putNotNulls(int rowId, int count) {
             vector.putNotNulls(rowId, count);
         }
 
-        public void putDictionaryInt(int rowId, int value, int ordinal) {
+        public void putDictionaryInt(int rowId, int value) {
             vector.getDictionaryIds().putInt(rowId, value);
         }
 
-      public void setDictionary(CarbonDictionary dictionary, int ordinal) {
+      public void setDictionary(CarbonDictionary dictionary) {
         if (null != dictionary) {
           vector.setDictionary(new CarbonDictionaryWrapper(dictionary));
         } else {
@@ -303,21 +304,127 @@ public class CarbonVectorProxy {
         }
       }
 
-        public void putNull(int rowId, int ordinal) {
+        public void putNull(int rowId) {
             vector.putNull(rowId);
         }
 
-        public void putNulls(int rowId, int count, int ordinal) {
+        public void putNulls(int rowId, int count) {
             vector.putNulls(rowId, count);
         }
 
-        public boolean hasDictionary(int ordinal) {
+        public boolean hasDictionary() {
             return vector.hasDictionary();
         }
 
-        public Object reserveDictionaryIds(int capacity, int ordinal) {
+        public Object reserveDictionaryIds(int capacity) {
             return vector.reserveDictionaryIds(capacity);
         }
 
+        @Override public boolean isNullAt(int i) {
+            checkPageLoaded();
+            return vector.isNullAt(i);
+        }
+
+        @Override public boolean getBoolean(int i) {
+            checkPageLoaded();
+            return vector.getBoolean(i);
+        }
+
+        @Override public byte getByte(int i) {
+            checkPageLoaded();
+            return vector.getByte(i);
+        }
+
+        @Override public short getShort(int i) {
+            checkPageLoaded();
+            return vector.getShort(i);
+        }
+
+        @Override public int getInt(int i) {
+            checkPageLoaded();
+            return vector.getInt(i);
+        }
+
+        @Override public long getLong(int i) {
+            checkPageLoaded();
+            return vector.getLong(i);
+        }
+
+        @Override public float getFloat(int i) {
+            checkPageLoaded();
+            return vector.getFloat(i);
+        }
+
+        @Override public double getDouble(int i) {
+            checkPageLoaded();
+            return vector.getDouble(i);
+        }
+
+        @Override public void close() {
+            vector.close();
+        }
+
+        @Override public boolean hasNull() {
+            checkPageLoaded();
+            return vector.hasNull();
+        }
+
+        @Override public int numNulls() {
+            checkPageLoaded();
+            return vector.numNulls();
+        }
+
+        @Override public ColumnarArray getArray(int i) {
+            checkPageLoaded();
+            return vector.getArray(i);
+        }
+
+        @Override public ColumnarMap getMap(int i) {
+            checkPageLoaded();
+            return vector.getMap(i);
+        }
+
+        @Override public Decimal getDecimal(int i, int i1, int i2) {
+            checkPageLoaded();
+            return vector.getDecimal(i, i1, i2);
+        }
+
+        @Override public UTF8String getUTF8String(int i) {
+            checkPageLoaded();
+            return vector.getUTF8String(i);
+        }
+
+        @Override public byte[] getBinary(int i) {
+            checkPageLoaded();
+            return vector.getBinary(i);
+        }
+
+        @Override protected ColumnVector getChild(int i) {
+            checkPageLoaded();
+            return vector.getChild(i);
+        }
+
+        private void checkPageLoaded() {
+          if (!isLoaded) {
+              if (pageLoad != null) {
+                  pageLoad.loadPage();
+              }
+              isLoaded = true;
+          }
+        }
+
+        public void reset() {
+            isLoaded = false;
+            pageLoad = null;
+            vector.reset();
+        }
+
+        public void setLazyPage(LazyPageLoader lazyPage) {
+            this.pageLoad = lazyPage;
+        }
+
+        public WritableColumnVector getVector() {
+            return vector;
+        }
     }
 }
