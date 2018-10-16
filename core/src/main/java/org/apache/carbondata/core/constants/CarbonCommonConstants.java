@@ -1725,6 +1725,18 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_WRITTEN_BY_APPNAME = "carbon.writtenby.app.name";
 
+  /**
+   * When enabled complete row filters will be handled by carbon in case of vector.
+   * If it is disabled then only page level pruning will be done by carbon and row level filtering
+   * will be done by spark for vector.
+   * There is no change in flow for non-vector based queries.
+   */
+  @CarbonProperty
+  public static final String CARBON_PUSH_ROW_FILTERS_FOR_VECTOR =
+      "carbon.push.rowfilters.for.vector";
+
+  public static final String CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT = "true";
+
   //////////////////////////////////////////////////////////////////////////////////////////
   // Unused constants and parameters start here
   //////////////////////////////////////////////////////////////////////////////////////////
