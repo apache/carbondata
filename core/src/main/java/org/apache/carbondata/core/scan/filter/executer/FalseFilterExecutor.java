@@ -45,6 +45,14 @@ public class FalseFilterExecutor implements FilterExecuter {
   }
 
   @Override
+  public BitSet prunePages(RawBlockletColumnChunks rawChunks)
+      throws FilterUnsupportedException, IOException {
+    int numberOfPages = rawChunks.getDataBlock().numberOfPages();
+    BitSet set = new BitSet(numberOfPages);
+    return set;
+  }
+
+  @Override
   public boolean applyFilter(RowIntf value, int dimOrdinalMax)
       throws FilterUnsupportedException, IOException {
     return false;
