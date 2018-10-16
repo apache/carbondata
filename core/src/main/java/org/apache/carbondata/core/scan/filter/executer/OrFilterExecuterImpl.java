@@ -45,6 +45,15 @@ public class OrFilterExecuterImpl implements FilterExecuter {
   }
 
   @Override
+  public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
+      throws FilterUnsupportedException, IOException {
+    BitSet leftFilters = leftExecuter.prunePages(rawBlockletColumnChunks);
+    BitSet rightFilters = rightExecuter.prunePages(rawBlockletColumnChunks);
+    leftFilters.or(rightFilters);
+    return leftFilters;
+  }
+
+  @Override
   public boolean applyFilter(RowIntf value, int dimOrdinalMax)
       throws FilterUnsupportedException, IOException {
     return leftExecuter.applyFilter(value, dimOrdinalMax) ||
