@@ -23,6 +23,8 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.spark.internal.Logging
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.CarbonMergeFilesRDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.util.CarbonException
 
@@ -61,7 +63,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
 
             segmentFileNameMap
               .put(loadModel.getSegmentId, String.valueOf(loadModel.getFactTimeStamp))
-            CommonUtil.mergeIndexFiles(sparkSession,
+            CarbonMergeFilesRDD.mergeIndexFiles(sparkSession,
               Seq(loadModel.getSegmentId),
               segmentFileNameMap,
               carbonTable.getTablePath,
@@ -116,7 +118,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
               // readFileFooterFromCarbonDataFile flag should be true. This flag is check for legacy
               // store (store <= 1.1 version) and create merge Index file as per new store so that
               // old store is also upgraded to new store
-              CommonUtil.mergeIndexFiles(
+              CarbonMergeFilesRDD.mergeIndexFiles(
                 sparkSession = sparkSession,
                 segmentIds = validSegmentIds,
                 segmentFileNameToSegmentIdMap = segmentFileNameMap,
@@ -176,7 +178,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
     val validMergedSegIds = validSegments
       .filter { seg => mergedSegmentIds.contains(seg.getSegmentNo) }.map(_.getSegmentNo)
     if (null != validMergedSegIds && validMergedSegIds.nonEmpty) {
-      CommonUtil.mergeIndexFiles(sparkSession,
+      CarbonMergeFilesRDD.mergeIndexFiles(sparkSession,
           validMergedSegIds,
           segmentFileNameMap,
           carbonTable.getTablePath,
