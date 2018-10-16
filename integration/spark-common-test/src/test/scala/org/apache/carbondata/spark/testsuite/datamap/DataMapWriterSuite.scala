@@ -212,7 +212,7 @@ object DataMapWriterSuite {
           pageSize: Int,
           pages: Array[ColumnPage]): Unit = {
         assert(pages.length == 1)
-        assert(pages(0).getDataType == DataTypes.STRING)
+        assert(pages(0).getDataType == DataTypes.BYTE_ARRAY)
         val bytes: Array[Byte] = pages(0).getBytes(0)
         assert(bytes.sameElements(Seq(0, 1, 'b'.toByte)))
         callbackSeq :+= s"add page data: blocklet $blockletId, page $pageId"
