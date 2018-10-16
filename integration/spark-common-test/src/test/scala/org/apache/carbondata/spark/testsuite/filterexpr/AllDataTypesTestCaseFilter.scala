@@ -57,15 +57,25 @@ class AllDataTypesTestCaseFilter extends QueryTest with BeforeAndAfterAll {
   test("verify like query ends with filter push down") {
     val df = sql("select * from alldatatypestableFilter where empname like '%nandh'").queryExecution
       .sparkPlan
-    assert(df.asInstanceOf[CarbonDataSourceScan].metadata
-      .get("PushedFilters").get.contains("CarbonEndsWith"))
+    if (df.isInstanceOf[CarbonDataSourceScan]) {
+      assert(df.asInstanceOf[CarbonDataSourceScan].metadata
+        .get("PushedFilters").get.contains("CarbonEndsWith"))
+    } else {
+      assert(df.children.head.asInstanceOf[CarbonDataSourceScan].metadata
+        .get("PushedFilters").get.contains("CarbonEndsWith"))
+    }
   }
 
   test("verify like query contains with filter push down") {
     val df = sql("select * from alldatatypestableFilter where empname like '%nand%'").queryExecution
       .sparkPlan
-    assert(df.asInstanceOf[CarbonDataSourceScan].metadata
-      .get("PushedFilters").get.contains("CarbonContainsWith"))
+    if (df.isInstanceOf[CarbonDataSourceScan]) {
+      assert(df.asInstanceOf[CarbonDataSourceScan].metadata
+        .get("PushedFilters").get.contains("CarbonContainsWith"))
+    } else {
+      assert(df.children.head.asInstanceOf[CarbonDataSourceScan].metadata
+        .get("PushedFilters").get.contains("CarbonContainsWith"))
+    }
   }
   
   override def afterAll {

@@ -57,4 +57,8 @@ public class DeleteDeltaVo {
   public boolean containsRow(int counter) {
     return bitSet.get(counter);
   }
+
+  public BitSet getBitSet() {
+    return bitSet;
+  }
 }

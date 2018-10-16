@@ -43,8 +43,7 @@ public class BlockIndexerStorageForShort extends BlockIndexerStorage<byte[][]> {
       Arrays.sort(dataWithRowId);
     }
     short[] rowIds = extractDataAndReturnRowId(dataWithRowId, dataPage);
-    Map<String, short[]> rowIdAndRleRowIdPages =
-        rleEncodeOnRowId(rowIds, getRowIdPage(), getRowIdRlePage());
+    Map<String, short[]> rowIdAndRleRowIdPages = rleEncodeOnRowId(rowIds);
     rowIdPage = rowIdAndRleRowIdPages.get("rowIdPage");
     rowIdRlePage = rowIdAndRleRowIdPages.get("rowRlePage");
     if (rleOnData) {

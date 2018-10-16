@@ -45,6 +45,8 @@ public class CarbonVectorProxy {
 
     private ColumnarBatch columnarBatch;
 
+    private ColumnVectorProxy[] columnVectorProxies;
+
     /**
      * Adapter class which handles the columnar vector reading of the carbondata
      * based on the spark ColumnVector and ColumnarBatch API. This proxy class
@@ -57,14 +59,22 @@ public class CarbonVectorProxy {
      */
     public CarbonVectorProxy(MemoryMode memMode, int rowNum, StructField[] structFileds) {
         columnarBatch = ColumnarBatch.allocate(new StructType(structFileds), memMode, rowNum);
+        columnVectorProxies = new ColumnVectorProxy[columnarBatch.numCols()];
+        for (int i = 0; i < columnVectorProxies.length; i++) {
+            columnVectorProxies[i] = new ColumnVectorProxy(columnarBatch, i);
+        }
     }
 
     public CarbonVectorProxy(MemoryMode memMode, StructType outputSchema, int rowNum) {
         columnarBatch = ColumnarBatch.allocate(outputSchema, memMode, rowNum);
+        columnVectorProxies = new ColumnVectorProxy[columnarBatch.numCols()];
+        for (int i = 0; i < columnVectorProxies.length; i++) {
+            columnVectorProxies[i] = new ColumnVectorProxy(columnarBatch, i);
+        }
     }
 
-    public ColumnVector getColumnVector(int ordinal) {
-        return columnarBatch.column(ordinal);
+    public ColumnVectorProxy getColumnVector(int ordinal) {
+        return columnVectorProxies[ordinal];
     }
 
     /**
@@ -74,9 +84,6 @@ public class CarbonVectorProxy {
         columnarBatch.setNumRows(numRows);
     }
 
-    public Object reserveDictionaryIds(int capacity , int ordinal) {
-        return columnarBatch.column(ordinal).reserveDictionaryIds(capacity);
-    }
 
     /**
      * Returns the number of rows for read, including filtered rows.
@@ -85,22 +92,6 @@ public class CarbonVectorProxy {
         return columnarBatch.capacity();
     }
 
-    public void setDictionary(CarbonDictionary dictionary, int ordinal) {
-        if (null != dictionary) {
-            columnarBatch.column(ordinal)
-                .setDictionary(new CarbonDictionaryWrapper(Encoding.PLAIN, dictionary));
-        } else {
-            columnarBatch.column(ordinal).setDictionary(null);
-        }
-    }
-
-    public void putNull(int rowId, int ordinal) {
-        columnarBatch.column(ordinal).putNull(rowId);
-    }
-
-    public void putNulls(int rowId, int count, int ordinal) {
-        columnarBatch.column(ordinal).putNulls(rowId, count);
-    }
 
     /**
      * Called to close all the columns in this batch. It is not valid to access the data after
@@ -139,9 +130,7 @@ public class CarbonVectorProxy {
         return columnarBatch.column(ordinal);
     }
 
-    public boolean hasDictionary(int ordinal) {
-        return columnarBatch.column(ordinal).hasDictionary();
-    }
+
 
     /**
      * Resets this column for writing. The currently stored values are no longer accessible.
@@ -150,127 +139,187 @@ public class CarbonVectorProxy {
         columnarBatch.reset();
     }
 
-    public void putRowToColumnBatch(int rowId, Object value, int offset) {
-        org.apache.spark.sql.types.DataType t = dataType(offset);
-        if (null == value) {
-            putNull(rowId, offset);
-        } else {
-            if (t == org.apache.spark.sql.types.DataTypes.BooleanType) {
-                putBoolean(rowId, (boolean) value, offset);
-            } else if (t == org.apache.spark.sql.types.DataTypes.ByteType) {
-                putByte(rowId, (byte) value, offset);
-            } else if (t == org.apache.spark.sql.types.DataTypes.ShortType) {
-                putShort(rowId, (short) value, offset);
-            } else if (t == org.apache.spark.sql.types.DataTypes.IntegerType) {
-                putInt(rowId, (int) value, offset);
-            } else if (t == org.apache.spark.sql.types.DataTypes.LongType) {
-                putLong(rowId, (long) value, offset);
-            } else if (t == org.apache.spark.sql.types.DataTypes.FloatType) {
-                putFloat(rowId, (float) value, offset);
-            } else if (t == org.apache.spark.sql.types.DataTypes.DoubleType) {
-                putDouble(rowId, (double) value, offset);
-            } else if (t == org.apache.spark.sql.types.DataTypes.StringType) {
-                UTF8String v = (UTF8String) value;
-                putByteArray(rowId, v.getBytes(), offset);
-            } else if (t instanceof org.apache.spark.sql.types.DecimalType) {
-                DecimalType dt = (DecimalType) t;
-                Decimal d = Decimal.fromDecimal(value);
-                if (dt.precision() <= Decimal.MAX_INT_DIGITS()) {
-                    putInt(rowId, (int) d.toUnscaledLong(), offset);
-                } else if (dt.precision() <= Decimal.MAX_LONG_DIGITS()) {
-                    putLong(rowId, d.toUnscaledLong(), offset);
-                } else {
-                    final BigInteger integer = d.toJavaBigDecimal().unscaledValue();
-                    byte[] bytes = integer.toByteArray();
-                    putByteArray(rowId, bytes, 0, bytes.length, offset);
+
+    public static class ColumnVectorProxy {
+
+        private ColumnVector vector;
+
+        public ColumnVectorProxy(ColumnarBatch columnarBatch, int ordinal) {
+            this.vector = columnarBatch.column(ordinal);
+        }
+
+        public void putRowToColumnBatch(int rowId, Object value, int offset) {
+            org.apache.spark.sql.types.DataType t = dataType(offset);
+            if (null == value) {
+                putNull(rowId, offset);
+            } else {
+                if (t == org.apache.spark.sql.types.DataTypes.BooleanType) {
+                    putBoolean(rowId, (boolean) value, offset);
+                } else if (t == org.apache.spark.sql.types.DataTypes.ByteType) {
+                    putByte(rowId, (byte) value, offset);
+                } else if (t == org.apache.spark.sql.types.DataTypes.ShortType) {
+                    putShort(rowId, (short) value, offset);
+                } else if (t == org.apache.spark.sql.types.DataTypes.IntegerType) {
+                    putInt(rowId, (int) value, offset);
+                } else if (t == org.apache.spark.sql.types.DataTypes.LongType) {
+                    putLong(rowId, (long) value, offset);
+                } else if (t == org.apache.spark.sql.types.DataTypes.FloatType) {
+                    putFloat(rowId, (float) value, offset);
+                } else if (t == org.apache.spark.sql.types.DataTypes.DoubleType) {
+                    putDouble(rowId, (double) value, offset);
+                } else if (t == org.apache.spark.sql.types.DataTypes.StringType) {
+                    UTF8String v = (UTF8String) value;
+                    putByteArray(rowId, v.getBytes(), offset);
+                } else if (t instanceof org.apache.spark.sql.types.DecimalType) {
+                    DecimalType dt = (DecimalType) t;
+                    Decimal d = Decimal.fromDecimal(value);
+                    if (dt.precision() <= Decimal.MAX_INT_DIGITS()) {
+                        putInt(rowId, (int) d.toUnscaledLong(), offset);
+                    } else if (dt.precision() <= Decimal.MAX_LONG_DIGITS()) {
+                        putLong(rowId, d.toUnscaledLong(), offset);
+                    } else {
+                        final BigInteger integer = d.toJavaBigDecimal().unscaledValue();
+                        byte[] bytes = integer.toByteArray();
+                        putByteArray(rowId, bytes, 0, bytes.length, offset);
+                    }
+                } else if (t instanceof CalendarIntervalType) {
+                    CalendarInterval c = (CalendarInterval) value;
+                    vector.getChildColumn(0).putInt(rowId, c.months);
+                    vector.getChildColumn(1).putLong(rowId, c.microseconds);
+                } else if (t instanceof org.apache.spark.sql.types.DateType) {
+                    putInt(rowId, (int) value, offset);
+                } else if (t instanceof org.apache.spark.sql.types.TimestampType) {
+                    putLong(rowId, (long) value, offset);
                 }
-            } else if (t instanceof CalendarIntervalType) {
-                CalendarInterval c = (CalendarInterval) value;
-                columnarBatch.column(offset).getChildColumn(0).putInt(rowId, c.months);
-                columnarBatch.column(offset).getChildColumn(1).putLong(rowId, c.microseconds);
-            } else if (t instanceof org.apache.spark.sql.types.DateType) {
-                putInt(rowId, (int) value, offset);
-            } else if (t instanceof org.apache.spark.sql.types.TimestampType) {
-                putLong(rowId, (long) value, offset);
             }
         }
-    }
 
-    public void putBoolean(int rowId, boolean value, int ordinal) {
-        columnarBatch.column(ordinal).putBoolean(rowId, (boolean) value);
-    }
+        public void putBoolean(int rowId, boolean value, int ordinal) {
+            vector.putBoolean(rowId, value);
+        }
 
-    public void putByte(int rowId, byte value, int ordinal) {
-        columnarBatch.column(ordinal).putByte(rowId, (byte) value);
-    }
+        public void putByte(int rowId, byte value, int ordinal) {
+            vector.putByte(rowId, value);
+        }
 
-    public void putShort(int rowId, short value, int ordinal) {
-        columnarBatch.column(ordinal).putShort(rowId, (short) value);
-    }
+        public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
+            vector.putBytes(rowId, count, src, srcIndex);
+        }
 
-    public void putInt(int rowId, int value, int ordinal) {
-        columnarBatch.column(ordinal).putInt(rowId, (int) value);
-    }
+        public void putShort(int rowId, short value, int ordinal) {
+            vector.putShort(rowId, value);
+        }
 
-    public void putFloat(int rowId, float value, int ordinal) {
-        columnarBatch.column(ordinal).putFloat(rowId, (float) value);
-    }
+        public void putInt(int rowId, int value, int ordinal) {
+            vector.putInt(rowId, value);
+        }
 
-    public void putLong(int rowId, long value, int ordinal) {
-        columnarBatch.column(ordinal).putLong(rowId, (long) value);
-    }
+        public void putFloat(int rowId, float value, int ordinal) {
+            vector.putFloat(rowId, value);
+        }
 
-    public void putDouble(int rowId, double value, int ordinal) {
-        columnarBatch.column(ordinal).putDouble(rowId, (double) value);
-    }
+        public void putFloats(int rowId, int count, float[] src, int srcIndex)  {
+            vector.putFloats(rowId, count, src, srcIndex);
+        }
 
-    public void putByteArray(int rowId, byte[] value, int ordinal) {
-        columnarBatch.column(ordinal).putByteArray(rowId, (byte[]) value);
-    }
+        public void putLong(int rowId, long value, int ordinal) {
+            vector.putLong(rowId, value);
+        }
 
-    public void putInts(int rowId, int count, int value, int ordinal) {
-        columnarBatch.column(ordinal).putInts(rowId, count, value);
-    }
+        public void putDouble(int rowId, double value, int ordinal) {
+            vector.putDouble(rowId, value);
+        }
 
-    public void putShorts(int rowId, int count, short value, int ordinal) {
-        columnarBatch.column(ordinal).putShorts(rowId, count, value);
-    }
+        public void putByteArray(int rowId, byte[] value, int ordinal) {
+            vector.putByteArray(rowId, value);
+        }
 
-    public void putLongs(int rowId, int count, long value, int ordinal) {
-        columnarBatch.column(ordinal).putLongs(rowId, count, value);
-    }
+        public void putInts(int rowId, int count, int value, int ordinal) {
+            vector.putInts(rowId, count, value);
+        }
 
-    public void putDecimal(int rowId, Decimal value, int precision, int ordinal) {
-        columnarBatch.column(ordinal).putDecimal(rowId, value, precision);
+        public void putInts(int rowId, int count, int[] src, int srcIndex) {
+            vector.putInts(rowId, count, src, srcIndex);
+        }
 
-    }
+        public void putShorts(int rowId, int count, short value, int ordinal) {
+            vector.putShorts(rowId, count, value);
+        }
 
-    public void putDoubles(int rowId, int count, double value, int ordinal) {
-        columnarBatch.column(ordinal).putDoubles(rowId, count, value);
-    }
+        public void putShorts(int rowId, int count, short[] src, int srcIndex) {
+            vector.putShorts(rowId, count, src, srcIndex);
+        }
 
-    public void putByteArray(int rowId, byte[] value, int offset, int length, int ordinal) {
-        columnarBatch.column(ordinal).putByteArray(rowId, (byte[]) value, offset, length);
-    }
+        public void putLongs(int rowId, int count, long value, int ordinal) {
+            vector.putLongs(rowId, count, value);
+        }
 
-    public boolean isNullAt(int rowId, int ordinal) {
-        return columnarBatch
-                .column(ordinal).isNullAt(rowId);
-    }
+        public void putLongs(int rowId, int count, long[] src, int srcIndex) {
+            vector.putLongs(rowId, count, src, srcIndex);
+        }
 
-    public DataType dataType(int ordinal) {
-        return columnarBatch.column(ordinal).dataType();
-    }
+        public void putDecimal(int rowId, Decimal value, int precision, int ordinal) {
+            vector.putDecimal(rowId, value, precision);
 
-    public void putNotNull(int rowId, int ordinal) {
-        columnarBatch.column(ordinal).putNotNull(rowId);
-    }
+        }
 
-    public void putNotNulls(int rowId, int count, int ordinal) {
-        columnarBatch.column(ordinal).putNotNulls(rowId, count);
-    }
+        public void putDoubles(int rowId, int count, double value, int ordinal) {
+            vector.putDoubles(rowId, count, value);
+        }
 
-    public void putDictionaryInt(int rowId, int value, int ordinal) {
-        columnarBatch.column(ordinal).getDictionaryIds().putInt(rowId, (int) value);
+        public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
+            vector.putDoubles(rowId, count, src, srcIndex);
+        }
+
+        public void putByteArray(int rowId, byte[] value, int offset, int length, int ordinal) {
+            vector.putByteArray(rowId, value, offset, length);
+        }
+
+        public boolean isNullAt(int rowId, int ordinal) {
+            return vector.isNullAt(rowId);
+        }
+
+        public DataType dataType(int ordinal) {
+            return vector.dataType();
+        }
+
+        public void putNotNull(int rowId, int ordinal) {
+            vector.putNotNull(rowId);
+        }
+
+        public void putNotNulls(int rowId, int count, int ordinal) {
+            vector.putNotNulls(rowId, count);
+        }
+
+        public void putDictionaryInt(int rowId, int value, int ordinal) {
+            vector.getDictionaryIds().putInt(rowId, value);
+        }
+
+      public void setDictionary(CarbonDictionary dictionary, int ordinal) {
+        if (null != dictionary) {
+          vector.setDictionary(new CarbonDictionaryWrapper(Encoding.PLAIN, dictionary));
+        } else {
+          vector.setDictionary(null);
+        }
+      }
+
+        public void putNull(int rowId, int ordinal) {
+            vector.putNull(rowId);
+        }
+
+        public void putNulls(int rowId, int count, int ordinal) {
+            vector.putNulls(rowId, count);
+        }
+
+        public boolean hasDictionary(int ordinal) {
+            return vector.hasDictionary();
+        }
+
+        public Object reserveDictionaryIds(int capacity , int ordinal) {
+            return vector.reserveDictionaryIds(capacity);
+        }
+
+     
+
     }
 }

@@ -807,7 +807,7 @@ public class CarbonUtilTest {
         .getFirstIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 1, 3, compareValue, true);
     assertEquals(2, result);
   }
-  
+
   @Test
   public void testBinaryRangeSearch() {
 

@@ -39,8 +39,7 @@ public class BlockIndexerStorageForNoDictionary extends BlockIndexerStorage<Obje
       Arrays.sort(dataWithRowId);
     }
     short[] rowIds = extractDataAndReturnRowId(dataWithRowId, dataPage);
-    Map<String, short[]> rowIdAndRleRowIdPages =
-        rleEncodeOnRowId(rowIds, getRowIdPage(), getRowIdRlePage());
+    Map<String, short[]> rowIdAndRleRowIdPages = rleEncodeOnRowId(rowIds);
     rowIdPage = rowIdAndRleRowIdPages.get("rowIdPage");
     rowIdRlePage = rowIdAndRleRowIdPages.get("rowRlePage");
   }

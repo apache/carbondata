@@ -28,6 +28,9 @@ public final class UnBlockIndexer {
   public static int[] uncompressIndex(int[] indexData, int[] indexMap) {
     int actualSize = indexData.length;
     int mapLength = indexMap.length;
+    if (indexMap.length == 0) {
+      return indexData;
+    }
     for (int i = 0; i < mapLength; i++) {
       actualSize += indexData[indexMap[i] + 1] - indexData[indexMap[i]] - 1;
     }

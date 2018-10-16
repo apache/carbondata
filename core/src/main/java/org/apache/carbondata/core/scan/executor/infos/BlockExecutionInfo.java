@@ -217,6 +217,11 @@ public class BlockExecutionInfo {
   private QueryStatisticsModel queryStatisticsModel;
 
   /**
+   * It fills the vector directly from decoded column page with out any staging and conversions
+   */
+  private boolean isDirectVectorFill;
+
+  /**
    * @param blockIndex the tableBlock to set
    */
   public void setDataBlock(AbstractIndex blockIndex) {
@@ -624,5 +629,13 @@ public class BlockExecutionInfo {
 
   public void setQueryStatisticsModel(QueryStatisticsModel queryStatisticsModel) {
     this.queryStatisticsModel = queryStatisticsModel;
+  }
+
+  public boolean isDirectVectorFill() {
+    return isDirectVectorFill && !isRestructuredBlock;
+  }
+
+  public void setDirectVectorFill(boolean directVectorFill) {
+    isDirectVectorFill = directVectorFill;
   }
 }

@@ -27,17 +27,25 @@ public interface CarbonColumnVector {
 
   void putFloat(int rowId, float value);
 
+  void putFloats(int rowId, int count, float[] src, int srcIndex);
+
   void putShort(int rowId, short value);
 
   void putShorts(int rowId, int count, short value);
+
+  void putShorts(int rowId, int count, short[] src, int srcIndex);
 
   void putInt(int rowId, int value);
 
   void putInts(int rowId, int count, int value);
 
+  void putInts(int rowId, int count, int[] src, int srcIndex);
+
   void putLong(int rowId, long value);
 
   void putLongs(int rowId, int count, long value);
+
+  void putLongs(int rowId, int count, long[] src, int srcIndex);
 
   void putDecimal(int rowId, BigDecimal value, int precision);
 
@@ -47,13 +55,17 @@ public interface CarbonColumnVector {
 
   void putDoubles(int rowId, int count, double value);
 
-  void putBytes(int rowId, byte[] value);
+  void putDoubles(int rowId, int count, double[] src, int srcIndex);
+
+  void putByteArray(int rowId, byte[] value);
+
+  void putByteArray(int rowId, int offset, int length, byte[] value);
+
+  void putByte(int rowId, byte value);
 
   void putBytes(int rowId, int count, byte[] value);
 
-  void putBytes(int rowId, int offset, int length, byte[] value);
-
-  void putByte(int rowId, byte value);
+  void putBytes(int rowId, int count, byte[] src, int srcIndex);
 
   void putNull(int rowId);
 

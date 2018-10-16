@@ -51,4 +51,7 @@ public class CarbonDictionaryImpl implements CarbonDictionary {
     return dictionary[index];
   }
 
+  @Override public byte[][] getAllDictionaryValues() {
+    return dictionary;
+  }
 }
