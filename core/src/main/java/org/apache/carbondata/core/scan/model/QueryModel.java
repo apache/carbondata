@@ -124,6 +124,11 @@ public class QueryModel {
 
   private boolean preFetchData = true;
 
+  /**
+   * It fills the vector directly from decoded column page with out any staging and conversions
+   */
+  private boolean isDirectVectorFill;
+
   private QueryModel(CarbonTable carbonTable) {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
     invalidSegmentIds = new ArrayList<>();
@@ -404,6 +409,14 @@ public class QueryModel {
 
   public void setPreFetchData(boolean preFetchData) {
     this.preFetchData = preFetchData;
+  }
+
+  public boolean isDirectVectorFill() {
+    return isDirectVectorFill;
+  }
+
+  public void setDirectVectorFill(boolean directVectorFill) {
+    isDirectVectorFill = directVectorFill;
   }
 
   @Override

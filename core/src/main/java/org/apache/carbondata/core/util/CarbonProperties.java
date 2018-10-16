@@ -1500,6 +1500,12 @@ public final class CarbonProperties {
     return spillPercentage;
   }
 
+  public boolean isPushRowFiltersForVector() {
+    String pushFilters = getProperty(CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR,
+            CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT);
+    return Boolean.parseBoolean(pushFilters);
+  }
+
   private void validateSortMemorySpillPercentage() {
     String spillPercentageStr = carbonProperties.getProperty(
         CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
@@ -1558,4 +1564,6 @@ public final class CarbonProperties {
           CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT);
     }
   }
+
+
 }
