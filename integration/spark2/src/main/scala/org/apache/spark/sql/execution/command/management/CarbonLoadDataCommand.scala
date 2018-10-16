@@ -192,11 +192,13 @@ case class CarbonLoadDataCommand(
     try {
       val tableProperties = table.getTableInfo.getFactTable.getTableProperties
       val optionsFinal = LoadOption.fillOptionWithDefaultValue(options.asJava)
+      // These two delimiters are non configurable and hardcoded for map type
+      optionsFinal.put("complex_delimiter_level_3", "\003")
+      optionsFinal.put("complex_delimiter_level_4", "\004")
       optionsFinal.put("sort_scope", tableProperties.asScala.getOrElse("sort_scope",
         carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
           carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
             CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))
-
       optionsFinal
         .put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options.asJava, table))
       val factPath = if (dataFrame.isDefined) {

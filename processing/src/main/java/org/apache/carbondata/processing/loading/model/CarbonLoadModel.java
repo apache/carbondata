@@ -67,6 +67,8 @@ public class CarbonLoadModel implements Serializable {
   private String csvDelimiter;
   private String complexDelimiterLevel1;
   private String complexDelimiterLevel2;
+  private String complexDelimiterLevel3;
+  private String complexDelimiterLevel4;
 
   private List<LoadMetadataDetails> loadMetadataDetails;
   private transient SegmentUpdateStatusManager segmentUpdateStatusManager;
@@ -290,6 +292,22 @@ public class CarbonLoadModel implements Serializable {
 
   public void setComplexDelimiterLevel2(String complexDelimiterLevel2) {
     this.complexDelimiterLevel2 = complexDelimiterLevel2;
+  }
+
+  public String getComplexDelimiterLevel3() {
+    return complexDelimiterLevel3;
+  }
+
+  public void setComplexDelimiterLevel3(String complexDelimiterLevel3) {
+    this.complexDelimiterLevel3 = complexDelimiterLevel3;
+  }
+
+  public String getComplexDelimiterLevel4() {
+    return complexDelimiterLevel4;
+  }
+
+  public void setComplexDelimiterLevel4(String complexDelimiterLevel4) {
+    this.complexDelimiterLevel4 = complexDelimiterLevel4;
   }
 
   public String getAllDictPath() {

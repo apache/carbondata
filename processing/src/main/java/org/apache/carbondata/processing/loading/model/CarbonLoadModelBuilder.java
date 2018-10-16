@@ -164,6 +164,8 @@ public class CarbonLoadModelBuilder {
     String delimeter = optionsFinal.get("delimiter");
     String complex_delimeter_level1 = optionsFinal.get("complex_delimiter_level_1");
     String complex_delimeter_level2 = optionsFinal.get("complex_delimiter_level_2");
+    String complex_delimeter_level3 = optionsFinal.get("complex_delimiter_level_3");
+    String complex_delimeter_level4 = optionsFinal.get("complex_delimiter_level_4");
     String all_dictionary_path = optionsFinal.get("all_dictionary_path");
     String column_dict = optionsFinal.get("columndict");
     validateDateTimeFormat(timestampformat, "TimestampFormat");
@@ -255,6 +257,8 @@ public class CarbonLoadModelBuilder {
     } else {
       carbonLoadModel.setComplexDelimiterLevel1(complex_delimeter_level1);
       carbonLoadModel.setComplexDelimiterLevel2(complex_delimeter_level2);
+      carbonLoadModel.setComplexDelimiterLevel3(complex_delimeter_level3);
+      carbonLoadModel.setComplexDelimiterLevel4(complex_delimeter_level4);
     }
     // set local dictionary path, and dictionary file extension
     carbonLoadModel.setAllDictPath(all_dictionary_path);

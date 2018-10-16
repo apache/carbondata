@@ -16,6 +16,9 @@
  */
 package org.apache.carbondata.processing.loading.parser.impl;
 
+import java.util.LinkedList;
+import java.util.Queue;
+
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
@@ -34,8 +37,12 @@ public class RowParserImpl implements RowParser {
   private int numberOfColumns;
 
   public RowParserImpl(DataField[] output, CarbonDataLoadConfiguration configuration) {
-    String[] complexDelimiters =
+    String[] tempComplexDelimiters =
         (String[]) configuration.getDataLoadProperty(DataLoadProcessorConstants.COMPLEX_DELIMITERS);
+    Queue<String> complexDelimiters = new LinkedList<>();
+    for (int i = 0; i < 4; i++) {
+      complexDelimiters.add(tempComplexDelimiters[i]);
+    }
     String nullFormat =
         configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
             .toString();

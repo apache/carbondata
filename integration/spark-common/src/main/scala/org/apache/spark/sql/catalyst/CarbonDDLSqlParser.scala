@@ -862,7 +862,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * @param dimensionDatatype
    */
   def isDetectAsDimentionDatatype(dimensionDatatype: String): Boolean = {
-    val dimensionType = Array("string", "array", "struct", "timestamp", "date", "char")
+    val dimensionType = Array("string", "array", "struct", "map", "timestamp", "date", "char")
     dimensionType.exists(x => dimensionDatatype.toLowerCase.contains(x))
   }
 
@@ -1231,13 +1231,16 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         Field("unknown", Some("struct"), Some("unknown"), Some(e1))
     }
 
+  //  Map<Key,Value> is represented as Map<Struct<Key,Value>>
   protected lazy val mapFieldType: Parser[Field] =
     (MAP ^^^ "map") ~> "<" ~> primitiveFieldType ~ ("," ~> nestedType) <~ ">" ^^ {
       case key ~ value =>
         Field("unknown", Some("map"), Some("unknown"),
           Some(List(
-            Field("key", key.dataType, Some("key"), key.children),
-            Field("value", value.dataType, Some("value"), value.children))))
+            Field("val", Some("struct"), Some("unknown"),
+              Some(List(
+                Field("key", key.dataType, Some("key"), key.children),
+                Field("value", value.dataType, Some("value"), value.children)))))))
     }
 
   protected lazy val measureCol: Parser[Field] =

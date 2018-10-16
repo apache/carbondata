@@ -39,14 +39,7 @@ import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConst
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
-import org.apache.carbondata.processing.loading.steps.CarbonRowDataWriterProcessorStepImpl;
-import org.apache.carbondata.processing.loading.steps.DataConverterProcessorStepImpl;
-import org.apache.carbondata.processing.loading.steps.DataWriterBatchProcessorStepImpl;
-import org.apache.carbondata.processing.loading.steps.DataWriterProcessorStepImpl;
-import org.apache.carbondata.processing.loading.steps.InputProcessorStepImpl;
-import org.apache.carbondata.processing.loading.steps.InputProcessorStepWithNoConverterImpl;
-import org.apache.carbondata.processing.loading.steps.JsonInputProcessorStepImpl;
-import org.apache.carbondata.processing.loading.steps.SortProcessorStepImpl;
+import org.apache.carbondata.processing.loading.steps.*;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.apache.commons.lang3.StringUtils;
@@ -223,8 +216,8 @@ public final class DataLoadProcessBuilder {
     configuration.setSegmentId(loadModel.getSegmentId());
     configuration.setTaskNo(loadModel.getTaskNo());
     configuration.setDataLoadProperty(DataLoadProcessorConstants.COMPLEX_DELIMITERS,
-        new String[] { loadModel.getComplexDelimiterLevel1(),
-            loadModel.getComplexDelimiterLevel2() });
+        new String[] { loadModel.getComplexDelimiterLevel1(), loadModel.getComplexDelimiterLevel2(),
+            loadModel.getComplexDelimiterLevel3(), loadModel.getComplexDelimiterLevel4() });
     configuration.setDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT,
         loadModel.getSerializationNullFormat().split(",")[1]);
     configuration.setDataLoadProperty(DataLoadProcessorConstants.FACT_TIME_STAMP,

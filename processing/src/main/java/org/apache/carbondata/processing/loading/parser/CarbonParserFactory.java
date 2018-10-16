@@ -17,12 +17,14 @@
 package org.apache.carbondata.processing.loading.parser;
 
 import java.util.List;
+import java.util.Queue;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.processing.loading.parser.impl.ArrayParserImpl;
+import org.apache.carbondata.processing.loading.parser.impl.MapParserImpl;
 import org.apache.carbondata.processing.loading.parser.impl.PrimitiveParserImpl;
 import org.apache.carbondata.processing.loading.parser.impl.StructParserImpl;
 
@@ -35,7 +37,8 @@ public final class CarbonParserFactory {
    * @param complexDelimiters
    * @return
    */
-  public static GenericParser createParser(CarbonColumn carbonColumn, String[] complexDelimiters,
+  public static GenericParser createParser(CarbonColumn carbonColumn,
+      Queue<String> complexDelimiters,
       String nullFormat) {
     return createParser(carbonColumn, complexDelimiters, nullFormat, 0);
   }
@@ -51,23 +54,37 @@ public final class CarbonParserFactory {
    *                           delimiters
    * @return GenericParser
    */
-  private static GenericParser createParser(CarbonColumn carbonColumn, String[] complexDelimiters,
+  private static GenericParser createParser(CarbonColumn carbonColumn,
+      Queue<String> complexDelimiters,
       String nullFormat, int depth) {
+    if (depth > 2) {
+      return null;
+    }
     DataType dataType = carbonColumn.getDataType();
-    if (DataTypes.isArrayType(dataType) || DataTypes.isMapType(dataType)) {
+    if (DataTypes.isArrayType(dataType)) {
       List<CarbonDimension> listOfChildDimensions =
           ((CarbonDimension) carbonColumn).getListOfChildDimensions();
       // Create array parser with complex delimiter
-      ArrayParserImpl arrayParser = new ArrayParserImpl(complexDelimiters[depth], nullFormat);
+      ArrayParserImpl arrayParser = new ArrayParserImpl(complexDelimiters.poll(), nullFormat);
       for (CarbonDimension dimension : listOfChildDimensions) {
         arrayParser.addChildren(createParser(dimension, complexDelimiters, nullFormat, depth + 1));
       }
       return arrayParser;
+    } else if (DataTypes.isMapType(dataType)) {
+      List<CarbonDimension> listOfChildDimensions =
+          ((CarbonDimension) carbonColumn).getListOfChildDimensions();
+      // Create map parser with complex delimiter and key-value delimiter
+      MapParserImpl mapParser =
+          new MapParserImpl(complexDelimiters.poll(), nullFormat, complexDelimiters.peek());
+      for (CarbonDimension dimension : listOfChildDimensions) {
+        mapParser.addChildren(createParser(dimension, complexDelimiters, nullFormat, depth));
+      }
+      return mapParser;
     } else if (DataTypes.isStructType(dataType)) {
       List<CarbonDimension> dimensions =
           ((CarbonDimension) carbonColumn).getListOfChildDimensions();
       // Create struct parser with complex delimiter
-      StructParserImpl parser = new StructParserImpl(complexDelimiters[depth], nullFormat);
+      StructParserImpl parser = new StructParserImpl(complexDelimiters.poll(), nullFormat);
       for (CarbonDimension dimension : dimensions) {
         parser.addChildren(createParser(dimension, complexDelimiters, nullFormat, depth + 1));
       }

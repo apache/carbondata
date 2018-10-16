@@ -132,7 +132,7 @@ case class CarbonCreateTableCommand(
             if (partitionInfo != null &&
                 partitionInfo.getPartitionType == PartitionType.NATIVE_HIVE) {
               // Restrict dictionary encoding on partition columns.
-              // TODO Need to decide wherher it is required
+              // TODO Need to decide whether it is required
               val dictionaryOnPartitionColumn =
               partitionInfo.getColumnSchemaList.asScala.exists{p =>
                 p.hasEncoding(Encoding.DICTIONARY) && !p.hasEncoding(Encoding.DIRECT_DICTIONARY)
