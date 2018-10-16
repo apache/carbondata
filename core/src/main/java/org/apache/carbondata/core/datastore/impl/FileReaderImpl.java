@@ -76,6 +76,7 @@ public class FileReaderImpl implements FileReader {
         channel.close();
       }
     }
+    fileNameAndStreamCache.clear();
   }
 
   /**

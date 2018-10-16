@@ -125,7 +125,11 @@ public class QueryModel {
   private boolean preFetchData = true;
 
   /**
-   * It fills the vector directly from decoded column page with out any staging and conversions
+   * It fills the vector directly from decoded column page with out any staging and conversions.
+   * Execution engine can set this filed to true in case of vector flow. Note that execution engine
+   * should make sure that batch size vector should be greater than or equal to column page size.
+   * In this flow only pages will be pruned and decode the page and fill the complete page data to
+   * vector, so it is execution engine responsibility to filter the rows at row level.
    */
   private boolean isDirectVectorFill;
 

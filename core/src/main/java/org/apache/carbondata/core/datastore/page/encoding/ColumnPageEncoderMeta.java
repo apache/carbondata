@@ -49,6 +49,9 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   // Make it protected for RLEEncoderMeta
   protected String compressorName;
 
+  // Whether the flow shoild go to fill complete vector while decoding the page.
+  private transient boolean fillCompleteVector;
+
   public ColumnPageEncoderMeta() {
   }
 
@@ -283,5 +286,13 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
 
   public DataType getSchemaDataType() {
     return columnSpec.getSchemaDataType();
+  }
+
+  public boolean isFillCompleteVector() {
+    return fillCompleteVector;
+  }
+
+  public void setFillCompleteVector(boolean fillCompleteVector) {
+    this.fillCompleteVector = fillCompleteVector;
   }
 }

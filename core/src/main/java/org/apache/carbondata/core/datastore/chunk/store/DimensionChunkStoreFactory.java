@@ -65,8 +65,8 @@ public class DimensionChunkStoreFactory {
    */
   public DimensionDataChunkStore getDimensionChunkStore(int columnValueSize,
       boolean isInvertedIndex, int numberOfRows, long totalSize, DimensionStoreType storeType,
-      CarbonDictionary dictionary) {
-    if (isUnsafe) {
+      CarbonDictionary dictionary, boolean fillDirectVector) {
+    if (isUnsafe && !fillDirectVector) {
       switch (storeType) {
         case FIXED_LENGTH:
           return new UnsafeFixedLengthDimensionDataChunkStore(totalSize, columnValueSize,
@@ -79,24 +79,24 @@ public class DimensionChunkStoreFactory {
               numberOfRows);
         case LOCAL_DICT:
           return new LocalDictDimensionDataChunkStore(
-              new UnsafeFixedLengthDimensionDataChunkStore(totalSize,
-                  3, isInvertedIndex, numberOfRows),
-              dictionary);
+              new UnsafeFixedLengthDimensionDataChunkStore(totalSize, 3, isInvertedIndex,
+                  numberOfRows), dictionary);
         default:
           throw new UnsupportedOperationException("Invalid dimension store type");
       }
     } else {
       switch (storeType) {
         case FIXED_LENGTH:
-          return new SafeFixedLengthDimensionDataChunkStore(isInvertedIndex, columnValueSize);
+          return new SafeFixedLengthDimensionDataChunkStore(isInvertedIndex, columnValueSize,
+              numberOfRows);
         case VARIABLE_SHORT_LENGTH:
           return new SafeVariableShortLengthDimensionDataChunkStore(isInvertedIndex, numberOfRows);
         case VARIABLE_INT_LENGTH:
           return new SafeVariableIntLengthDimensionDataChunkStore(isInvertedIndex, numberOfRows);
         case LOCAL_DICT:
           return new LocalDictDimensionDataChunkStore(
-              new SafeFixedLengthDimensionDataChunkStore(isInvertedIndex,
-                  3), dictionary);
+              new SafeFixedLengthDimensionDataChunkStore(isInvertedIndex, 3, numberOfRows),
+              dictionary);
         default:
           throw new UnsupportedOperationException("Invalid dimension store type");
       }

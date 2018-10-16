@@ -50,8 +50,9 @@ public abstract class BlockIndexerStorage<T> {
    *
    * @param rowIds
    */
-  protected Map<String, short[]> rleEncodeOnRowId(short[] rowIds, short[] rowIdPage,
-      short[] rowIdRlePage) {
+  protected Map<String, short[]> rleEncodeOnRowId(short[] rowIds) {
+    short[] rowIdPage;
+    short[] rowIdRlePage;
     List<Short> list = new ArrayList<Short>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     List<Short> map = new ArrayList<Short>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     int k = 0;

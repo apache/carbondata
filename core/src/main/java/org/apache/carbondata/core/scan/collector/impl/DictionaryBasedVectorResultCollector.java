@@ -18,10 +18,13 @@ package org.apache.carbondata.core.scan.collector.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.List;
 
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
@@ -30,10 +33,18 @@ import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.scan.result.vector.MeasureDataVectorProcessor;
 
+import org.apache.log4j.Logger;
+
 /**
  * It is not a collector it is just a scanned result holder.
  */
 public class DictionaryBasedVectorResultCollector extends AbstractScannedResultCollector {
+
+  /**
+   * logger of result collector factory
+   */
+  private static final Logger LOGGER =
+      LogServiceFactory.getLogService(DictionaryBasedVectorResultCollector.class.getName());
 
   protected ProjectionDimension[] queryDimensions;
 
@@ -51,8 +62,14 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
 
   private ColumnVectorInfo[] implictColumnInfo;
 
+  private boolean isDirectVectorFill;
+
   public DictionaryBasedVectorResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
+    this.isDirectVectorFill = blockExecutionInfos.isDirectVectorFill();
+    if (this.isDirectVectorFill) {
+      LOGGER.info("Direct pagewise vector fill collector is used to scan and collect the data");
+    }
     // initialize only if the current block is not a restructured block else the initialization
     // will be taken care by RestructureBasedVectorResultCollector
     if (!blockExecutionInfos.isRestructuredBlock()) {
@@ -141,29 +158,33 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
   @Override
   public void collectResultInColumnarBatch(BlockletScannedResult scannedResult,
       CarbonColumnarBatch columnarBatch) {
-    int numberOfPages = scannedResult.numberOfpages();
-    int filteredRows = 0;
-    while (scannedResult.getCurrentPageCounter() < numberOfPages) {
-      int currentPageRowCount = scannedResult.getCurrentPageRowCount();
-      if (currentPageRowCount == 0) {
-        scannedResult.incrementPageCounter();
-        continue;
+    if (isDirectVectorFill) {
+      collectResultInColumnarBatchDirect(scannedResult, columnarBatch);
+    } else {
+      int numberOfPages = scannedResult.numberOfpages();
+      int filteredRows = 0;
+      while (scannedResult.getCurrentPageCounter() < numberOfPages) {
+        int currentPageRowCount = scannedResult.getCurrentPageRowCount();
+        if (currentPageRowCount == 0) {
+          scannedResult.incrementPageCounter();
+          continue;
+        }
+        int rowCounter = scannedResult.getRowCounter();
+        int availableRows = currentPageRowCount - rowCounter;
+        // getRowCounter holds total number or rows being placed in Vector. Calculate the
+        // Left over space through getRowCounter only.
+        int requiredRows = columnarBatch.getBatchSize() - columnarBatch.getRowCounter();
+        requiredRows = Math.min(requiredRows, availableRows);
+        if (requiredRows < 1) {
+          return;
+        }
+        fillColumnVectorDetails(columnarBatch, rowCounter, requiredRows);
+        filteredRows = scannedResult.markFilteredRows(columnarBatch, rowCounter, requiredRows,
+            columnarBatch.getRowCounter());
+        fillResultToColumnarBatch(scannedResult, columnarBatch, rowCounter, availableRows,
+            requiredRows);
+        columnarBatch.setActualSize(columnarBatch.getActualSize() + requiredRows - filteredRows);
       }
-      int rowCounter = scannedResult.getRowCounter();
-      int availableRows = currentPageRowCount - rowCounter;
-      // getRowCounter holds total number or rows being placed in Vector. Calculate the
-      // Left over space through getRowCounter only.
-      int requiredRows = columnarBatch.getBatchSize() - columnarBatch.getRowCounter();
-      requiredRows = Math.min(requiredRows, availableRows);
-      if (requiredRows < 1) {
-        return;
-      }
-      fillColumnVectorDetails(columnarBatch, rowCounter, requiredRows);
-      filteredRows = scannedResult.markFilteredRows(
-          columnarBatch, rowCounter, requiredRows, columnarBatch.getRowCounter());
-      fillResultToColumnarBatch(
-          scannedResult, columnarBatch, rowCounter, availableRows, requiredRows);
-      columnarBatch.setActualSize(columnarBatch.getActualSize() + requiredRows - filteredRows);
     }
   }
 
@@ -197,5 +218,52 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
       }
     }
   }
+
+  /**
+   * Fill the vector during the page decoding.
+   */
+  private void collectResultInColumnarBatchDirect(BlockletScannedResult scannedResult,
+      CarbonColumnarBatch columnarBatch) {
+    int numberOfPages = scannedResult.numberOfpages();
+    while (scannedResult.getCurrentPageCounter() < numberOfPages) {
+      int currentPageRowCount = scannedResult.getCurrentPageRowCount();
+      if (currentPageRowCount == 0) {
+        scannedResult.incrementPageCounter(null);
+        continue;
+      }
+      DeleteDeltaVo deltaVo = scannedResult.getCurrentDeleteDeltaVo();
+      BitSet bitSet = null;
+      int deletedRows = 0;
+      if (deltaVo != null) {
+        bitSet = deltaVo.getBitSet();
+        deletedRows = bitSet.cardinality();
+      }
+      fillColumnVectorDetails(columnarBatch, bitSet);
+      fillResultToColumnarBatch(scannedResult);
+      columnarBatch.setActualSize(currentPageRowCount - deletedRows);
+      scannedResult.setRowCounter(currentPageRowCount - deletedRows);
+      scannedResult.incrementPageCounter(null);
+      return;
+    }
+  }
+
+  private void fillResultToColumnarBatch(BlockletScannedResult scannedResult) {
+    scannedResult.fillDataChunks(dictionaryInfo, noDictionaryInfo, measureColumnInfo,
+        measureInfo.getMeasureOrdinals());
+
+  }
+
+  private void fillColumnVectorDetails(CarbonColumnarBatch columnarBatch,
+      BitSet deltaBitSet) {
+    for (int i = 0; i < allColumnInfo.length; i++) {
+      allColumnInfo[i].vectorOffset = columnarBatch.getRowCounter();
+      allColumnInfo[i].vector = columnarBatch.columnVectors[i];
+      allColumnInfo[i].deletedRows = deltaBitSet;
+      if (null != allColumnInfo[i].dimension) {
+        allColumnInfo[i].vector.setBlockDataType(dimensionInfo.dataType[i]);
+      }
+    }
+  }
+
 
 }
