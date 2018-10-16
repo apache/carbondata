@@ -383,15 +383,13 @@ public class BlockletFilterScanner extends BlockletFullScanner {
         scannedPages.getCount() + pages.cardinality());
     // get the row indexes from bit set for each page
     int[] pageFilteredPages = new int[pages.cardinality()];
+    int[] numberOfRows = new int[pages.cardinality()];
     int index = 0;
     for (int i = pages.nextSetBit(0); i >= 0; i = pages.nextSetBit(i + 1)) {
-      pageFilteredPages[index++] = i;
+      pageFilteredPages[index] = i;
+      numberOfRows[index++] = rawBlockletColumnChunks.getDataBlock().getPageRowCount(i);
     }
     // count(*)  case there would not be any dimensions are measures selected.
-    int[] numberOfRows = new int[pages.cardinality()];
-    for (int i = 0; i < numberOfRows.length; i++) {
-      numberOfRows[i] = rawBlockletColumnChunks.getDataBlock().getPageRowCount(i);
-    }
     long dimensionReadTime = System.currentTimeMillis();
     dimensionReadTime = System.currentTimeMillis() - dimensionReadTime;
     FileReader fileReader = rawBlockletColumnChunks.getFileReader();

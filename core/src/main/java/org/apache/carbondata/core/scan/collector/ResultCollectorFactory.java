@@ -17,16 +17,7 @@
 package org.apache.carbondata.core.scan.collector;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.scan.collector.impl.AbstractScannedResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.DictionaryBasedResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.DictionaryBasedVectorResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.RawBasedResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.RestructureBasedDictionaryResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.RestructureBasedRawResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.RestructureBasedVectorResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.RowIdBasedResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.RowIdRawBasedResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.RowIdRestructureBasedRawResultCollector;
+import org.apache.carbondata.core.scan.collector.impl.*;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 
 import org.apache.log4j.Logger;
