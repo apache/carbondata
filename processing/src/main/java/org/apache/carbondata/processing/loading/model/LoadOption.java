@@ -32,6 +32,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.processing.loading.ComplexDelimitersEnum;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.apache.carbondata.processing.util.CarbonLoaderUtil;
@@ -111,13 +112,17 @@ public class LoadOption {
         "all_dictionary_path",
         Maps.getOrDefault(options, "all_dictionary_path", ""));
 
-    optionsFinal.put(
-        "complex_delimiter_level_1",
-        Maps.getOrDefault(options,"complex_delimiter_level_1", "\\\001"));
+    optionsFinal.put("complex_delimiter_level_1",
+        Maps.getOrDefault(options, "complex_delimiter_level_1",
+            ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_1.value()));
 
-    optionsFinal.put(
-        "complex_delimiter_level_2",
-        Maps.getOrDefault(options, "complex_delimiter_level_2", "\\\002"));
+    optionsFinal.put("complex_delimiter_level_2",
+        Maps.getOrDefault(options, "complex_delimiter_level_2",
+            ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_2.value()));
+
+    optionsFinal.put("complex_delimiter_level_3",
+        Maps.getOrDefault(options, "complex_delimiter_level_3",
+            ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_3.value()));
 
     optionsFinal.put(
         "dateformat",

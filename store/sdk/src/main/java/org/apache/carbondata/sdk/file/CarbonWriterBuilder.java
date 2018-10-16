@@ -184,6 +184,7 @@ public class CarbonWriterBuilder {
           !option.equalsIgnoreCase("timestampformat") &&
           !option.equalsIgnoreCase("complex_delimiter_level_1") &&
           !option.equalsIgnoreCase("complex_delimiter_level_2") &&
+          !option.equalsIgnoreCase("complex_delimiter_level_3") &&
           !option.equalsIgnoreCase("quotechar") &&
           !option.equalsIgnoreCase("escapechar")) {
         throw new IllegalArgumentException("Unsupported option:" + option

@@ -42,7 +42,6 @@ case class StreamData(id: Integer, name: String, city: String, salary: java.lang
     register: String, updated: String,
     file: FileElement)
 
-@Ignore
 class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
 
   private val spark = sqlContext.sparkSession
@@ -420,7 +419,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
       continueSeconds = 20,
       generateBadRecords = true,
       badRecordAction = "force",
-      autoHandoff = true
+      autoHandoff = false
     )
 
     // non-filter
