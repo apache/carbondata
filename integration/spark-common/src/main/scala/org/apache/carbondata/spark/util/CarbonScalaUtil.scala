@@ -671,4 +671,20 @@ object CarbonScalaUtil {
     dataType == StringType
   }
 
+  /**
+   * Rearrange the column schema with all the sort columns at first. In case of ALTER ADD COLUMNS,
+   * if the newly added column is a sort column it will be at the last. But we expects all the
+   * SORT_COLUMNS always at first
+   *
+   * @param columnSchemas
+   * @return
+   */
+  def reArrangeColumnSchema(columnSchemas: mutable.Buffer[ColumnSchema]): mutable
+  .Buffer[ColumnSchema] = {
+    val newColumnSchemas = mutable.Buffer[ColumnSchema]()
+    newColumnSchemas ++= columnSchemas.filter(columnSchema => columnSchema.isSortColumn)
+    newColumnSchemas ++= columnSchemas.filterNot(columnSchema => columnSchema.isSortColumn)
+    newColumnSchemas
+  }
+
 }

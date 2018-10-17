@@ -252,12 +252,14 @@ public class ColumnPageWrapper implements DimensionColumnPage {
     // rowId is the inverted index, but the null bitset is based on actual data
     int nullBitSetRowId = rowId;
     if (isExplicitSorted()) {
-      nullBitSetRowId = getInvertedReverseIndex(rowId);
+      nullBitSetRowId = getInvertedIndex(rowId);
     }
     byte[] nullBitSet = getNullBitSet(nullBitSetRowId, columnPage.getColumnSpec().getColumnType());
-    if (nullBitSet != null) {
-      // if this row is null, return default null represent in byte array
-      return ByteUtil.UnsafeComparer.INSTANCE.compareTo(nullBitSet, compareValue);
+    if (nullBitSet != null
+        && ByteUtil.UnsafeComparer.INSTANCE.compareTo(nullBitSet, compareValue) == 0) {
+      // check if the compare value is a null value
+      // if the compare value is null and the data is also null we can directly return 0
+      return 0;
     } else {
       byte[] chunkData = this.getChunkDataInBytes(rowId);
       return ByteUtil.UnsafeComparer.INSTANCE.compareTo(chunkData, compareValue);
