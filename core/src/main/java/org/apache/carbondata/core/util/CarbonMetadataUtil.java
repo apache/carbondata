@@ -27,6 +27,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.blocklet.BlockletEncodedColumnPage;
 import org.apache.carbondata.core.datastore.blocklet.EncodedBlocklet;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.datastore.page.statistics.TablePageStatistics;
@@ -312,15 +313,16 @@ public class CarbonMetadataUtil {
    * before 1.5.0, we set a enum 'compression_codec';
    * after 1.5.0, we use string 'compressor_name' instead
    */
-  public static ChunkCompressionMeta getChunkCompressorMeta(String compressorName) {
+  public static ChunkCompressionMeta getChunkCompressorMeta(
+      ColumnPage inputPage, byte[] encodedBytes) throws IOException {
     ChunkCompressionMeta chunkCompressionMeta = new ChunkCompressionMeta();
     // we will not use this field any longer and will use compressor_name instead,
     // but in thrift definition, this field is required so we cannot set it to null, otherwise
     // it will cause deserialization error in runtime (required field cannot be null).
     chunkCompressionMeta.setCompression_codec(CompressionCodec.DEPRECATED);
-    chunkCompressionMeta.setCompressor_name(compressorName);
-    chunkCompressionMeta.setTotal_compressed_size(0);
-    chunkCompressionMeta.setTotal_uncompressed_size(0);
+    chunkCompressionMeta.setCompressor_name(inputPage.getColumnCompressorName());
+    chunkCompressionMeta.setTotal_compressed_size(encodedBytes.length);
+    chunkCompressionMeta.setTotal_uncompressed_size(inputPage.getPageLengthInBytes());
     return chunkCompressionMeta;
   }
 
