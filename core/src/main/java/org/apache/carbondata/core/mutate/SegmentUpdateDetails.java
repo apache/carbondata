@@ -19,9 +19,10 @@ package org.apache.carbondata.core.mutate;
 
 import java.io.Serializable;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
+
+import org.apache.log4j.Logger;
 
 /**
  * This class stores the segment details of table update status file
@@ -40,7 +41,7 @@ public class SegmentUpdateDetails implements Serializable {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(SegmentUpdateDetails.class.getName());
 
   public String getDeleteDeltaEndTimestamp() {

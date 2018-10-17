@@ -147,7 +147,7 @@ case class CarbonCleanFilesCommand(
       case e: Throwable =>
         // catch all exceptions to avoid failure
         LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-          .error(e, "Failed to clean in progress segments")
+          .error("Failed to clean in progress segments", e)
     }
   }
 }

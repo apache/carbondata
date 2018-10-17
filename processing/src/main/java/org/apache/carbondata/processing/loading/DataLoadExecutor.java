@@ -18,7 +18,6 @@
 package org.apache.carbondata.processing.loading;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.processing.loading.exception.BadRecordFoundException;
@@ -27,12 +26,14 @@ import org.apache.carbondata.processing.loading.exception.NoRetryException;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.util.CarbonBadRecordUtil;
 
+import org.apache.log4j.Logger;
+
 /**
  * It executes the data load.
  */
 public class DataLoadExecutor {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(DataLoadExecutor.class.getName());
 
   private AbstractDataLoadProcessorStep loadProcessorStep;
@@ -62,7 +63,7 @@ public class DataLoadExecutor {
         throw e;
       }
     } catch (Exception e) {
-      LOGGER.error(e, "Data Loading failed for table " + loadModel.getTableName());
+      LOGGER.error("Data Loading failed for table " + loadModel.getTableName(), e);
       throw new CarbonDataLoadingException(
           "Data Loading failed for table " + loadModel.getTableName(), e);
     }

@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.common.logging.impl.Audit;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
@@ -46,6 +46,7 @@ import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWrit
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfo;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfoPreparator;
 
+import org.apache.log4j.Logger;
 
 /**
  * This generator does not maintain the whole cache of dictionary. It just maintains the cache only
@@ -55,7 +56,7 @@ import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfoPrepa
 public class IncrementalColumnDictionaryGenerator implements BiDictionary<Integer, String>,
         DictionaryGenerator<Integer, String>, DictionaryWriter {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
           LogServiceFactory.getLogService(IncrementalColumnDictionaryGenerator.class.getName());
 
   private final Object lock = new Object();
@@ -147,7 +148,7 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
     long sortIndexWriteTime = System.currentTimeMillis() - t3;
     // update Meta Data
     updateMetaData(dictionaryWriter);
-    LOGGER.audit("\n columnName: " + dimension.getColName() +
+    Audit.log(LOGGER, "\n columnName: " + dimension.getColName() +
             "\n columnId: " + dimension.getColumnId() +
             "\n new distinct values count: " + distinctValues.size() +
             "\n create dictionary cache: " + dictCacheTime +

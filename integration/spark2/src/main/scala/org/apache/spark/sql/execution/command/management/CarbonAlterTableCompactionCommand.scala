@@ -25,14 +25,15 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.execution.command.{AlterTableModel, AtomicRunnableCommand, CarbonMergerMapping, CompactionModel}
+import org.apache.spark.sql.execution.command.{AlterTableModel, AtomicRunnableCommand, CompactionModel}
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog}
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -63,7 +64,7 @@ case class CarbonAlterTableCompactionCommand(
   var table: CarbonTable = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val tableName = alterTableModel.tableName.toLowerCase
     val dbName = alterTableModel.dbName.getOrElse(sparkSession.catalog.currentDatabase)
     table = if (tableInfoOp.isDefined) {
@@ -204,7 +205,7 @@ case class CarbonAlterTableCompactionCommand(
       storeLocation: String,
       compactedSegments: java.util.List[String],
       operationContext: OperationContext): Unit = {
-    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val compactionType = CompactionType.valueOf(alterTableModel.compactionType.toUpperCase)
     val compactionSize = CarbonDataMergerUtil.getCompactionSize(compactionType, carbonLoadModel)
     if (CompactionType.IUD_UPDDEL_DELTA == compactionType) {
@@ -216,7 +217,7 @@ case class CarbonAlterTableCompactionCommand(
       }
     }
 
-    LOGGER.audit(s"Compaction request received for table " +
+    Audit.log(LOGGER, s"Compaction request received for table " +
                  s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
 
@@ -313,7 +314,7 @@ case class CarbonAlterTableCompactionCommand(
             throw e
         }
       } else {
-        LOGGER.audit("Not able to acquire the compaction lock for table " +
+        Audit.log(LOGGER, "Not able to acquire the compaction lock for table " +
                      s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         LOGGER.error(s"Not able to acquire the compaction lock for table" +
                      s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
@@ -328,7 +329,7 @@ case class CarbonAlterTableCompactionCommand(
       operationContext: OperationContext,
       sparkSession: SparkSession
   ): Unit = {
-    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     // 1. delete the lock of streaming.lock, forcing the stream to be closed
     val streamingLock = CarbonLockFactory.getCarbonLockObj(

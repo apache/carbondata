@@ -25,7 +25,6 @@ import java.util.Objects;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
@@ -53,6 +52,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
+import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 
@@ -88,7 +88,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
   /**
    * Logger
    */
-  final LogService LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
+  final Logger LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
 
   /**
    * table's index columns
@@ -281,7 +281,7 @@ abstract class LuceneDataMapFactoryBase<T extends DataMap> extends DataMapFactor
     try {
       deleteDatamap();
     } catch (MalformedDataMapCommandException ex) {
-      LOGGER.error(ex, "failed to delete datamap directory ");
+      LOGGER.error("failed to delete datamap directory ", ex);
     }
   }
 

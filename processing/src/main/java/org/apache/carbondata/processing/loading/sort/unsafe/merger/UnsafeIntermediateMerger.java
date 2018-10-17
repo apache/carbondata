@@ -27,7 +27,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.memory.UnsafeSortMemoryManager;
@@ -37,12 +36,14 @@ import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
 
+import org.apache.log4j.Logger;
+
 /**
  * It does mergesort intermediate files to big file.
  */
 public class UnsafeIntermediateMerger {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(UnsafeIntermediateMerger.class.getName());
 
   /**
@@ -211,7 +212,7 @@ public class UnsafeIntermediateMerger {
       try {
         mergerTask.get(i).get();
       } catch (InterruptedException | ExecutionException e) {
-        LOGGER.error(e, e.getMessage());
+        LOGGER.error(e.getMessage(), e);
         throw new CarbonSortKeyAndGroupByException(e.getMessage(), e);
       }
     }

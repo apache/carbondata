@@ -20,15 +20,15 @@ package org.apache.carbondata.core.datastore.compression;
 import java.io.IOException;
 import java.lang.reflect.Field;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 
+import org.apache.log4j.Logger;
 import org.xerial.snappy.Snappy;
 import org.xerial.snappy.SnappyNative;
 
 public class SnappyCompressor implements Compressor {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(SnappyCompressor.class.getName());
 
   // snappy estimate max compressed length as 32 + source_len + source_len/6
@@ -61,7 +61,7 @@ public class SnappyCompressor implements Compressor {
     try {
       return Snappy.rawCompress(unCompInput, unCompInput.length);
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
   }
@@ -70,7 +70,7 @@ public class SnappyCompressor implements Compressor {
     try {
       return Snappy.rawCompress(unCompInput, byteSize);
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
   }
@@ -79,7 +79,7 @@ public class SnappyCompressor implements Compressor {
     try {
       return Snappy.uncompress(compInput);
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
   }
@@ -92,7 +92,7 @@ public class SnappyCompressor implements Compressor {
       data = new byte[uncompressedLength];
       Snappy.uncompress(compInput, offset, length, data, 0);
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
     return data;
@@ -102,7 +102,7 @@ public class SnappyCompressor implements Compressor {
     try {
       return Snappy.compress(unCompInput);
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
   }
@@ -111,7 +111,7 @@ public class SnappyCompressor implements Compressor {
     try {
       return Snappy.uncompressShortArray(compInput, offset, length);
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
   }
@@ -120,7 +120,7 @@ public class SnappyCompressor implements Compressor {
     try {
       return Snappy.compress(unCompInput);
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
   }
@@ -129,7 +129,7 @@ public class SnappyCompressor implements Compressor {
     try {
       return Snappy.uncompressIntArray(compInput, offset, length);
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
   }
@@ -138,7 +138,7 @@ public class SnappyCompressor implements Compressor {
     try {
       return Snappy.compress(unCompInput);
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
   }
@@ -147,7 +147,7 @@ public class SnappyCompressor implements Compressor {
     try {
       return Snappy.uncompressLongArray(compInput, offset, length);
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
   }
@@ -156,7 +156,7 @@ public class SnappyCompressor implements Compressor {
     try {
       return Snappy.compress(unCompInput);
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
   }
@@ -165,7 +165,7 @@ public class SnappyCompressor implements Compressor {
     try {
       return Snappy.uncompressFloatArray(compInput, offset, length);
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
   }
@@ -174,7 +174,7 @@ public class SnappyCompressor implements Compressor {
     try {
       return Snappy.compress(unCompInput);
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
   }
@@ -186,7 +186,7 @@ public class SnappyCompressor implements Compressor {
       snappyNative.rawUncompress(compInput, offset, length, result, 0);
       return result;
     } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
   }

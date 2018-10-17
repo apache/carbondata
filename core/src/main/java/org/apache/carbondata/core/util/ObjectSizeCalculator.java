@@ -19,8 +19,9 @@ package org.apache.carbondata.core.util;
 
 import java.lang.reflect.Method;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+
+import org.apache.log4j.Logger;
 
 /**
  * This wrapper class is created so that core doesnt have direct dependency on spark
@@ -30,7 +31,7 @@ public final class ObjectSizeCalculator {
   /**
    * Logger object for the class
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(ObjectSizeCalculator.class.getName());
 
   /**
@@ -63,7 +64,7 @@ public final class ObjectSizeCalculator {
     } catch (Throwable ex) {
       // throwable is being caught as external interface is being invoked through reflection
       // and runtime exceptions might get thrown
-      LOGGER.error(ex, "Could not access method SizeEstimator:estimate.Returning default value");
+      LOGGER.error("Could not access method SizeEstimator:estimate.Returning default value", ex);
       methodAccessible = false;
       return defValue;
     }

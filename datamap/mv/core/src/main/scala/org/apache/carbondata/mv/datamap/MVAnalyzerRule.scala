@@ -27,6 +27,7 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
@@ -71,7 +72,7 @@ class MVAnalyzerRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
       val modularPlan = catalog.mvSession.sessionState.rewritePlan(plan).withMVTable
       if (modularPlan.find (_.rewritten).isDefined) {
         val compactSQL = modularPlan.asCompactSQL
-        LOGGER.audit(s"\n$compactSQL\n")
+        Audit.log(LOGGER, s"\n$compactSQL\n")
         val analyzed = sparkSession.sql(compactSQL).queryExecution.analyzed
         analyzed
       } else {

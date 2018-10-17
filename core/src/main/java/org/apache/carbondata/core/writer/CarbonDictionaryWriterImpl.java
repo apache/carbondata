@@ -23,7 +23,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -37,6 +36,7 @@ import org.apache.carbondata.core.util.path.HDFSLeaseUtils;
 import org.apache.carbondata.format.ColumnDictionaryChunk;
 import org.apache.carbondata.format.ColumnDictionaryChunkMeta;
 
+import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;
 
 /**
@@ -47,7 +47,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonDictionaryWriterImpl.class.getName());
 
   /**
@@ -352,7 +352,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
       // Cases to handle
       // 1. Handle File lease recovery
       if (HDFSLeaseUtils.checkExceptionMessageForLeaseRecovery(e.getMessage())) {
-        LOGGER.error(e, "Lease recovery exception encountered for file: " + dictionaryFile);
+        LOGGER.error("Lease recovery exception encountered for file: " + dictionaryFile, e);
         boolean leaseRecovered = HDFSLeaseUtils.recoverFileLease(dictionaryFile);
         if (leaseRecovered) {
           // try to open output stream again after recovering the lease on file

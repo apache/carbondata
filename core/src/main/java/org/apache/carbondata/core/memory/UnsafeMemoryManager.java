@@ -23,17 +23,18 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
+
+import org.apache.log4j.Logger;
 
 /**
  * Manages memory for instance.
  */
 public class UnsafeMemoryManager {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(UnsafeMemoryManager.class.getName());
 
   private static boolean offHeap = Boolean.parseBoolean(CarbonProperties.getInstance()

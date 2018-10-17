@@ -28,13 +28,14 @@ import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.util.AlterTableUtil
 
-import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
@@ -48,7 +49,7 @@ case class CarbonAlterTableDropPartitionCommand(
     model: AlterTableDropPartitionModel)
   extends AtomicRunnableCommand {
 
-  private val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
   private val oldPartitionIds: util.ArrayList[Int] = new util.ArrayList[Int]()
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
@@ -121,7 +122,7 @@ case class CarbonAlterTableDropPartitionCommand(
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val dbName = model.databaseName.getOrElse(sparkSession.catalog.currentDatabase)
     val tableName = model.tableName
     var locks = List.empty[ICarbonLock]
@@ -168,7 +169,7 @@ case class CarbonAlterTableDropPartitionCommand(
       LOGGER.info("Locks released after alter table drop partition action.")
     }
     LOGGER.info(s"Alter table drop partition is successful for table $dbName.$tableName")
-    LOGGER.audit(s"Alter table drop partition is successful for table $dbName.$tableName")
+    Audit.log(LOGGER, s"Alter table drop partition is successful for table $dbName.$tableName")
     Seq.empty
   }
 
@@ -177,7 +178,7 @@ case class CarbonAlterTableDropPartitionCommand(
       carbonLoadModel: CarbonLoadModel,
       dropWithData: Boolean,
       oldPartitionIds: List[Int]): Unit = {
-    LOGGER.audit(s"Drop partition request received for table " +
+    Audit.log(LOGGER, s"Drop partition request received for table " +
                  s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
     try {
       startDropThreads(
@@ -246,7 +247,7 @@ case class dropPartitionThread(sqlContext: SQLContext,
     dropWithData: Boolean,
     oldPartitionIds: List[Int]) extends Thread {
 
-  private val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   override def run(): Unit = {
     try {
@@ -254,8 +255,8 @@ case class dropPartitionThread(sqlContext: SQLContext,
         segmentId, partitionId, dropWithData, oldPartitionIds)
     } catch {
       case e: Exception =>
-        val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
-        LOGGER.error(s"Exception in dropping partition thread: ${ e.getMessage } }")
+        val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+        LOGGER.error(s"Exception in dropping partition thread: ${ e.getMessage } }", e)
     }
   }
 
@@ -274,7 +275,7 @@ case class dropPartitionThread(sqlContext: SQLContext,
       future.get
     } catch {
       case e: Exception =>
-        LOGGER.error(e, s"Exception in partition drop thread ${ e.getMessage }")
+        LOGGER.error(s"Exception in partition drop thread ${ e.getMessage }", e)
         throw e
     }
   }

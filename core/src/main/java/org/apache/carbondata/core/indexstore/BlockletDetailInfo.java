@@ -24,13 +24,13 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
 
 import org.apache.hadoop.io.Writable;
+import org.apache.log4j.Logger;
 
 /**
  * Blocklet detail information to be sent to each executor
@@ -40,7 +40,7 @@ public class BlockletDetailInfo implements Serializable, Writable {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(BlockletDetailInfo.class.getName());
 
   private static final long serialVersionUID = 7957493757421513808L;
@@ -128,13 +128,13 @@ public class BlockletDetailInfo implements Serializable, Writable {
       try {
         blockletInfo.readFields(inputStream);
       } catch (IOException e) {
-        LOGGER.error("Problem in reading blocklet info");
+        LOGGER.error("Problem in reading blocklet info", e);
         throw new IOException("Problem in reading blocklet info." + e.getMessage());
       } finally {
         try {
           inputStream.close();
         } catch (IOException e) {
-          LOGGER.error(e, "Problem in closing input stream of reading blocklet info.");
+          LOGGER.error("Problem in closing input stream of reading blocklet info.", e);
         }
       }
     }

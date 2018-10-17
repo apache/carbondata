@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -33,12 +32,13 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 public class DataMapUtil {
 
   private static final String DATA_MAP_DSTR = "mapreduce.input.carboninputformat.datamapdstr";
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(DataMapUtil.class.getName());
 
   /**

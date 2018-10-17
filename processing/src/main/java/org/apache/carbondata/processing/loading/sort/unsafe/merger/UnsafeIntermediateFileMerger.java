@@ -26,7 +26,6 @@ import java.util.NoSuchElementException;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -38,11 +37,13 @@ import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByEx
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
 import org.apache.carbondata.processing.sort.sortdata.TableFieldStat;
 
+import org.apache.log4j.Logger;
+
 public class UnsafeIntermediateFileMerger implements Callable<Void> {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(UnsafeIntermediateFileMerger.class.getName());
 
   /**
@@ -105,7 +106,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
       LOGGER.info("============================== Intermediate Merge of " + fileConterConst
           + " Sort Temp Files Cost Time: " + intermediateMergeCostTime + "(s)");
     } catch (Exception e) {
-      LOGGER.error(e, "Problem while intermediate merging");
+      LOGGER.error("Problem while intermediate merging", e);
       clear();
       throwable = e;
     } finally {
@@ -114,7 +115,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
         try {
           finish();
         } catch (CarbonSortKeyAndGroupByException e) {
-          LOGGER.error(e, "Problem while deleting the merge file");
+          LOGGER.error("Problem while deleting the merge file", e);
           throwable = e;
         }
       } else {

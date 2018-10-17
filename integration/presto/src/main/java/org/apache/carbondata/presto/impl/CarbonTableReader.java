@@ -32,9 +32,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.Objects.requireNonNull;
-
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
@@ -79,6 +76,7 @@ import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;
 
 import static org.apache.hadoop.fs.s3a.Constants.ACCESS_KEY;
@@ -127,7 +125,7 @@ public class CarbonTableReader {
   /**
    * Logger instance
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonTableReader.class.getName());
 
   /**
@@ -136,7 +134,7 @@ public class CarbonTableReader {
   private List<String> schemaNames = new ArrayList<>();
 
   @Inject public CarbonTableReader(CarbonTableConfig config) {
-    this.config = requireNonNull(config, "CarbonTableConfig is null");
+    this.config = Objects.requireNonNull(config, "CarbonTableConfig is null");
     this.carbonCache = new AtomicReference(new HashMap());
     tableList = new ConcurrentSet<>();
     setS3Properties();
@@ -236,7 +234,7 @@ public class CarbonTableReader {
    * @return
    */
   public Set<String> getTableNames(String schema) {
-    requireNonNull(schema, "schema is null");
+    Objects.requireNonNull(schema, "schema is null");
     return updateTableList(schema);
   }
 
@@ -270,7 +268,7 @@ public class CarbonTableReader {
       throw new RuntimeException(e);
     }
 
-    requireNonNull(schemaTableName, "schemaTableName is null");
+    Objects.requireNonNull(schemaTableName, "schemaTableName is null");
     return loadTableMetadata(schemaTableName);
   }
 

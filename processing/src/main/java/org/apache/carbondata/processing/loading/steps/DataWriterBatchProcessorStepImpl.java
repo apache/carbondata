@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
@@ -40,6 +39,8 @@ import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.CarbonFactHandlerFactory;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.log4j.Logger;
+
 /**
  * It reads data from batch of sorted files(it could be in-memory/disk based files)
  * which are generated in previous sort step. And it writes data to carbondata file.
@@ -47,7 +48,7 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
  */
 public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(DataWriterBatchProcessorStepImpl.class.getName());
 
   private Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap;
@@ -112,7 +113,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
         i++;
       }
     } catch (Exception e) {
-      LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterBatchProcessorStepImpl");
+      LOGGER.error("Failed for table: " + tableName + " in DataWriterBatchProcessorStepImpl", e);
       if (e.getCause() instanceof BadRecordFoundException) {
         throw new BadRecordFoundException(e.getCause().getMessage());
       }
@@ -132,7 +133,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
     } catch (Exception e) {
       // if throw exception from here dataHandler will not be closed.
       // so just holding exception and later throwing exception
-      LOGGER.error(e, "Failed for table: " + tableName + " in  finishing data handler");
+      LOGGER.error("Failed for table: " + tableName + " in  finishing data handler", e);
       exception = new CarbonDataWriterException(
           "Failed for table: " + tableName + " in  finishing data handler", e);
     }

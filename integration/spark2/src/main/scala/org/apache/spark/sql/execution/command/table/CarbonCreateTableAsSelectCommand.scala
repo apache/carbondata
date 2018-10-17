@@ -24,7 +24,9 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.execution.command.management.CarbonInsertIntoCommand
 
+import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 
 /**
@@ -53,12 +55,12 @@ case class CarbonCreateTableAsSelectCommand(
       databaseOpt = Some(tableInfo.getDatabaseName)
     }
     val dbName = CarbonEnv.getDatabaseName(databaseOpt)(sparkSession)
-    LOGGER.audit(s"Request received for CTAS for $dbName.$tableName")
+    Audit.log(LOGGER, s"Request received for CTAS for $dbName.$tableName")
     // check if table already exists
     if (sparkSession.sessionState.catalog.listTables(dbName)
       .exists(_.table.equalsIgnoreCase(tableName))) {
       if (!ifNotExistsSet) {
-        LOGGER.audit(
+        Audit.log(LOGGER,
           s"Table creation with Database name [$dbName] and Table name [$tableName] failed. " +
           s"Table [$tableName] already exists under database [$dbName]")
         throw new TableAlreadyExistsException(dbName, tableName)
@@ -96,7 +98,7 @@ case class CarbonCreateTableAsSelectCommand(
       val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
       loadCommand.processData(sparkSession)
       val carbonTable = loadCommand.relation.carbonTable
-      LOGGER.audit(s"CTAS operation completed successfully for " +
+      Audit.log(LOGGER, s"CTAS operation completed successfully for " +
                    s"${carbonTable.getDatabaseName}.${carbonTable.getTableName}")
     }
     Seq.empty

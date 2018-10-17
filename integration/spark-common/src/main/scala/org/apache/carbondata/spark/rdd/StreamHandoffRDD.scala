@@ -28,7 +28,9 @@ import org.apache.spark.{Partition, SerializableWritable, SparkContext, TaskCont
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 
+import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.block.SegmentProperties
@@ -335,7 +337,7 @@ object StreamHandoffRDD {
     } catch {
       case ex: Exception =>
         loadStatus = SegmentStatus.LOAD_FAILURE
-        LOGGER.error(ex, s"Handoff failed on streaming segment $handoffSegmenId")
+        LOGGER.error(s"Handoff failed on streaming segment $handoffSegmenId", ex)
         errorMessage = errorMessage + ": " + ex.getCause.getMessage
         LOGGER.error(errorMessage)
     }
@@ -345,7 +347,7 @@ object StreamHandoffRDD {
       LOGGER.info("********starting clean up**********")
       CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
       LOGGER.info("********clean up done**********")
-      LOGGER.audit(s"Handoff is failed for " +
+      Audit.log(LOGGER, s"Handoff is failed for " +
                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       LOGGER.error("Cannot write load metadata file as handoff failed")
       throw new Exception(errorMessage)
@@ -367,7 +369,7 @@ object StreamHandoffRDD {
         .fireEvent(loadTablePostStatusUpdateEvent, operationContext)
       if (!done) {
         val errorMessage = "Handoff failed due to failure in table status updation."
-        LOGGER.audit("Handoff is failed for " +
+        Audit.log(LOGGER, "Handoff is failed for " +
                      s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         LOGGER.error("Handoff failed due to failure in table status updation.")
         throw new Exception(errorMessage)

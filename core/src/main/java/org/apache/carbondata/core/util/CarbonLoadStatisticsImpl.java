@@ -19,8 +19,9 @@ package org.apache.carbondata.core.util;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+
+import org.apache.log4j.Logger;
 
 /**
  * A util which provide methods used to record time information druing data loading.
@@ -37,7 +38,7 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
     return carbonLoadStatisticsImplInstance;
   }
 
-  private final LogService LOGGER =
+  private static final Logger LOGGER =
           LogServiceFactory.getLogService(CarbonLoadStatisticsImpl.class.getName());
 
   /*

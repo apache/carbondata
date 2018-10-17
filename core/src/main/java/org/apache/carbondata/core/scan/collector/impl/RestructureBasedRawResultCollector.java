@@ -19,8 +19,6 @@ package org.apache.carbondata.core.scan.collector.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
@@ -45,12 +43,6 @@ import org.apache.commons.lang3.ArrayUtils;
  * It is not a collector it is just a scanned result holder.
  */
 public class RestructureBasedRawResultCollector extends RawBasedResultCollector {
-
-  /**
-   * logger
-   */
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(RestructureBasedRawResultCollector.class.getName());
 
   /**
    * Key generator which will form the mdKey according to latest schema

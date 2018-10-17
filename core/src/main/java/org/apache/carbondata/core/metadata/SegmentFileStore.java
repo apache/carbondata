@@ -20,7 +20,6 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
@@ -51,13 +50,14 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import com.google.gson.Gson;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
 
 /**
  * Provide read and write support for segment file associated with each segment
  */
 public class SegmentFileStore {
 
-  private static LogService LOGGER = LogServiceFactory.getLogService(
+  private static final Logger LOGGER = LogServiceFactory.getLogService(
       SegmentFileStore.class.getCanonicalName());
 
   private SegmentFile segmentFile;

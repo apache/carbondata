@@ -27,7 +27,8 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, MetadataCommand}
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 
-import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
@@ -47,8 +48,7 @@ case class RefreshCarbonTableCommand(
     databaseNameOp: Option[String],
     tableName: String)
   extends MetadataCommand {
-  val LOGGER: LogService =
-    LogServiceFactory.getLogService(this.getClass.getName)
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
@@ -88,7 +88,7 @@ case class RefreshCarbonTableCommand(
             val msg = s"Table registration with Database name [$databaseName] and Table name " +
                       s"[$tableName] failed. All the aggregate Tables for table [$tableName] is" +
                       s" not copied under database [$databaseName]"
-            LOGGER.audit(msg)
+            Audit.log(LOGGER, msg)
             throwMetadataException(databaseName, tableName, msg)
           }
           // 2.2.1 Register the aggregate tables to hive
@@ -101,14 +101,14 @@ case class RefreshCarbonTableCommand(
           registerAllPartitionsToHive(identifier, sparkSession)
         }
       } else {
-        LOGGER.audit(
+        Audit.log(LOGGER,
           s"Table registration with Database name [$databaseName] and Table name [$tableName] " +
           s"failed." +
           s"Table [$tableName] either non carbon table or stale carbon table under database " +
           s"[$databaseName]")
       }
     } else {
-      LOGGER.audit(
+      Audit.log(LOGGER,
         s"Table registration with Database name [$databaseName] and Table name [$tableName] " +
         s"failed." +
         s"Table [$tableName] either already exists or registered under database [$databaseName]")
@@ -154,7 +154,7 @@ case class RefreshCarbonTableCommand(
       OperationListenerBus.getInstance.fireEvent(refreshTablePreExecutionEvent, operationContext)
       CarbonCreateTableCommand(tableInfo, ifNotExistsSet = false, tableLocation = Some(tablePath))
         .run(sparkSession)
-      LOGGER.audit(s"Table registration with Database name [$dbName] and Table name " +
+      Audit.log(LOGGER, s"Table registration with Database name [$dbName] and Table name " +
                    s"[$tableName] is successful.")
     } catch {
       case e: AnalysisException => throw e
