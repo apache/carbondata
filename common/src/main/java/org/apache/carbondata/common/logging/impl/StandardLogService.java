@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import org.apache.carbondata.common.logging.LogService;
-
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.log4j.Logger;
 import org.apache.log4j.MDC;
@@ -30,7 +28,7 @@ import org.apache.log4j.MDC;
 /**
  * Default Implementation of the <code>LogService</code>
  */
-public final class StandardLogService implements LogService {
+public final class StandardLogService {
 
   private static final String PARTITION_ID = "[partitionID:";
   private Logger logger;
@@ -190,7 +188,7 @@ public final class StandardLogService implements LogService {
    *
    * @param msg audit log message
    */
-  @Override public void audit(String msg) {
+  public void audit(String msg) {
     String hostName;
     String username;
     try {
@@ -208,7 +206,7 @@ public final class StandardLogService implements LogService {
         "[" + hostName + "]" + "[" + username + "]" + "[Thread-" + threadid + "]" + msg);
   }
 
-  @Override public void statistic(String message) {
+  public void statistic(String message) {
     logger.log(StatisticLevel.STATISTIC, message);
   }
 

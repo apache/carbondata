@@ -20,9 +20,7 @@ package org.apache.spark.sql.execution.command.mutation
 import java.util
 
 import scala.collection.JavaConverters._
-import scala.reflect.ClassTag
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
@@ -34,7 +32,9 @@ import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.SparkSQLUtil
 
-import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.api.CarbonStore.LOGGER
+import org.apache.carbondata.common.logging.impl.Audit
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -46,13 +46,12 @@ import org.apache.carbondata.core.util.{CarbonUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl
 import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputFormat}
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.exception.MultipleMatchingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.spark.DeleteDelataResultImpl
 
 object DeleteExecution {
-  val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   /**
    * generate the delete delta files in each segment as per the RDD.
@@ -167,7 +166,7 @@ object DeleteExecution {
           } else {
             // In case of failure , clean all related delete delta files
             CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
-            LOGGER.audit(s"Delete data operation is failed for ${ database }.${ tableName }")
+            Audit.log(LOGGER, s"Delete data operation is failed for ${ database }.${ tableName }")
             val errorMsg =
               "Delete data operation is failed due to failure in creating delete delta file for " +
               "segment : " + resultOfBlock._2._1.getSegmentName + " block : " +
@@ -202,7 +201,7 @@ object DeleteExecution {
               listOfSegmentToBeMarkedDeleted)
       ) {
         LOGGER.info(s"Delete data operation is successful for ${ database }.${ tableName }")
-        LOGGER.audit(s"Delete data operation is successful for ${ database }.${ tableName }")
+        Audit.log(LOGGER, s"Delete data operation is successful for ${ database }.${ tableName }")
       }
       else {
         // In case of failure , clean all related delete delta files
@@ -210,7 +209,7 @@ object DeleteExecution {
 
         val errorMessage = "Delete data operation is failed due to failure " +
                            "in table status updation."
-        LOGGER.audit(s"Delete data operation is failed for ${ database }.${ tableName }")
+        Audit.log(LOGGER, s"Delete data operation is failed for ${ database }.${ tableName }")
         LOGGER.error("Delete data operation is failed due to failure in table status updation.")
         executorErrors.failureCauses = FailureCauses.STATUS_FILE_UPDATION_FAILURE
         executorErrors.errorMsg = errorMessage
@@ -291,12 +290,12 @@ object DeleteExecution {
           deleteStatus = SegmentStatus.SUCCESS
         } catch {
           case e : MultipleMatchingException =>
-            LOGGER.audit(e.getMessage)
+            Audit.log(LOGGER, e.getMessage)
             LOGGER.error(e.getMessage)
           // dont throw exception here.
           case e: Exception =>
             val errorMsg = s"Delete data operation is failed for ${ database }.${ tableName }."
-            LOGGER.audit(errorMsg)
+            Audit.log(LOGGER, errorMsg)
             LOGGER.error(errorMsg + e.getMessage)
             throw e
         }

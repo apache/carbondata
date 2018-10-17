@@ -22,7 +22,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
@@ -33,12 +32,13 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 /**
  * Below class will be used to execute the detail query and returns columnar vectors.
  */
 public class SearchModeVectorDetailQueryExecutor extends AbstractQueryExecutor<Object> {
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
           LogServiceFactory.getLogService(SearchModeVectorDetailQueryExecutor.class.getName());
   private static ExecutorService executorService = null;
 

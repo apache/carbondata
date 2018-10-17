@@ -24,8 +24,9 @@ import java.util.*;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
-import org.apache.carbondata.common.logging.LogService;
+import org.apache.log4j.Logger;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.common.logging.impl.Audit;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -819,7 +820,7 @@ public class CarbonReaderTest extends TestCase {
         .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, path);
   }
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonReaderTest.class.getName());
 
   @Test
@@ -887,7 +888,7 @@ public class CarbonReaderTest extends TestCase {
       e.printStackTrace();
       Assert.fail(e.getMessage());
     }
-    LOGGER.audit("Bad record location:" + storeLocation);
+    Audit.log(LOGGER, "Bad record location:" + storeLocation);
     File folder = new File(path);
     Assert.assertTrue(folder.exists());
 

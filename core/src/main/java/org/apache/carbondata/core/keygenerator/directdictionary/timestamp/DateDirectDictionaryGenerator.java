@@ -21,12 +21,13 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+
+import org.apache.log4j.Logger;
 
 /**
  * The class provides the method to generate dictionary key and getting the actual value from
@@ -53,7 +54,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
   /**
    * Logger instance
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(DateDirectDictionaryGenerator.class.getName());
 
   static {

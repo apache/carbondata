@@ -24,11 +24,12 @@ import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+
+import org.apache.log4j.Logger;
 
 /**
  * This class handles the file locking in the local file system.
@@ -53,7 +54,7 @@ public class LocalFileLock extends AbstractCarbonLock {
   /**
    * LOGGER for  logging the messages.
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(LocalFileLock.class.getName());
 
   /**

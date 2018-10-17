@@ -21,8 +21,10 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command._
 
+import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
@@ -79,7 +81,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
     var lockStatus = false
     try {
       lockStatus = metadataLock.lockWithRetries()
-      LOGGER.audit(s" Delete data request has been received " +
+      Audit.log(LOGGER, s" Delete data request has been received " +
                    s"for ${carbonTable.getDatabaseName}.${carbonTable.getTableName}.")
       if (lockStatus) {
         LOGGER.info("Successfully able to get the table metadata file lock")
@@ -119,7 +121,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
         CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, e.compactionTimeStamp.toString)
 
       case e: Exception =>
-        LOGGER.error(e, "Exception in Delete data operation " + e.getMessage)
+        LOGGER.error("Exception in Delete data operation " + e.getMessage, e)
         // ****** start clean up.
         // In case of failure , clean all related delete delta files
         CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)

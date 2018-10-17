@@ -27,7 +27,6 @@ import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -35,12 +34,14 @@ import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 
+import org.apache.log4j.Logger;
+
 public class BadRecordsLogger {
 
   /**
    * Comment for <code>LOGGER</code>
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(BadRecordsLogger.class.getName());
   /**
    * Which holds the key and if any bad rec found to check from API to update

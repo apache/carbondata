@@ -21,11 +21,18 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -63,6 +70,7 @@ import org.apache.carbondata.processing.loading.converter.impl.FieldEncoderFacto
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.bloom.CarbonBloomFilter;
 import org.apache.hadoop.util.bloom.Key;
+import org.apache.log4j.Logger;
 
 /**
  * BloomDataCoarseGrainMap is constructed in blocklet level. For each indexed column,
@@ -71,7 +79,7 @@ import org.apache.hadoop.util.bloom.Key;
  */
 @InterfaceAudience.Internal
 public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(BloomCoarseGrainDataMap.class.getName());
   private Map<String, CarbonColumn> name2Col;
   private Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> cache;
@@ -136,7 +144,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         this.name2Converters.put(indexedColumn.get(i).getColName(), fieldConverter);
       }
     } catch (IOException e) {
-      LOGGER.error(e, "Exception occurs while init index columns");
+      LOGGER.error("Exception occurs while init index columns", e);
       throw new RuntimeException(e);
     }
     this.badRecordLogHolder = new BadRecordLogHolder();
@@ -172,7 +180,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     try {
       bloomQueryModels = createQueryModel(filterExp.getFilterExpression());
     } catch (DictionaryGenerationException | UnsupportedEncodingException e) {
-      LOGGER.error(e, "Exception occurs while creating query model");
+      LOGGER.error("Exception occurs while creating query model", e);
       throw new RuntimeException(e);
     }
     for (BloomQueryModel bloomQueryModel : bloomQueryModels) {

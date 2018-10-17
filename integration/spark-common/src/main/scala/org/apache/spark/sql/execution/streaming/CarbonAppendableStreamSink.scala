@@ -283,7 +283,7 @@ object CarbonAppendableStreamSink {
         case t: Throwable =>
           val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentId)
           StreamSegment.recoverSegmentIfRequired(segmentDir)
-          LOGGER.error(t, s"Aborting job ${ job.getJobID }.")
+          LOGGER.error(s"Aborting job ${ job.getJobID }.", t)
           committer.abortJob(job)
           throw new CarbonStreamException("Job failed to write data file", t)
       }

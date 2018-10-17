@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.Map;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
@@ -32,10 +31,11 @@ import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 public class SortParameters implements Serializable {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(SortParameters.class.getName());
   /**
    * tempFileLocation

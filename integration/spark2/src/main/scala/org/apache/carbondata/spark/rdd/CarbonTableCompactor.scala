@@ -27,6 +27,8 @@ import scala.collection.mutable
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel, CompactionModel}
 
+import org.apache.carbondata.api.CarbonStore.LOGGER
+import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.metadata.SegmentFileStore
@@ -68,7 +70,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         scanSegmentsAndSubmitJob(loadsToMerge, compactedSegments)
       } catch {
         case e: Exception =>
-          LOGGER.error(e, s"Exception in compaction thread ${ e.getMessage }")
+          LOGGER.error(s"Exception in compaction thread ${ e.getMessage }", e)
           throw e
       }
 
@@ -302,7 +304,8 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       // true because compaction for all datamaps will be finished at a time to the maximum level
       // possible (level 1, 2 etc). so we need to check for either condition
       if (!statusFileUpdation || !commitComplete) {
-        LOGGER.audit(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
+        Audit.log(LOGGER,
+          s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
                      s"${ carbonLoadModel.getTableName }")
         LOGGER.error(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
                      s"${ carbonLoadModel.getTableName }")
@@ -310,13 +313,14 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
                             s" ${ carbonLoadModel.getDatabaseName }." +
                             s"${ carbonLoadModel.getTableName }")
       } else {
-        LOGGER.audit(s"Compaction request completed for table " +
+        Audit.log(LOGGER,
+          s"Compaction request completed for table " +
                      s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         LOGGER.info(s"Compaction request completed for table " +
                     s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       }
     } else {
-      LOGGER.audit(s"Compaction request failed for table " +
+      Audit.log(LOGGER, s"Compaction request failed for table " +
                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }"
       )
       LOGGER.error(s"Compaction request failed for table " +

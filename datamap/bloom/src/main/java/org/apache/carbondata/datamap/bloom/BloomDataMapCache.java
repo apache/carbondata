@@ -21,8 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CarbonLRUCache;
 import org.apache.carbondata.core.memory.MemoryException;
@@ -38,8 +36,6 @@ import org.apache.hadoop.util.bloom.CarbonBloomFilter;
 @InterfaceAudience.Internal
 public class BloomDataMapCache
     implements Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> {
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(BloomDataMapCache.class.getName());
 
   /**
    * CarbonLRU cache

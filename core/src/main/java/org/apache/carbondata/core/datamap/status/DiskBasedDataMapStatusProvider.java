@@ -17,14 +17,20 @@
 
 package org.apache.carbondata.core.datamap.status;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.common.logging.impl.Audit;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
@@ -39,6 +45,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import com.google.gson.Gson;
+import org.apache.log4j.Logger;
 
 /**
  * It saves/serializes the array of {{@link DataMapStatusDetail}} to disk in json format.
@@ -47,7 +54,7 @@ import com.google.gson.Gson;
  */
 public class DiskBasedDataMapStatusProvider implements DataMapStatusStorageProvider {
 
-  private static final LogService LOG =
+  private static final Logger LOG =
       LogServiceFactory.getLogService(DiskBasedDataMapStatusProvider.class.getName());
 
   private static final String DATAMAP_STATUS_FILE = "datamapstatus";
@@ -72,7 +79,7 @@ public class DiskBasedDataMapStatusProvider implements DataMapStatusStorageProvi
       buffReader = new BufferedReader(inStream);
       dataMapStatusDetails = gsonObjectToRead.fromJson(buffReader, DataMapStatusDetail[].class);
     } catch (IOException e) {
-      LOG.error(e, "Failed to read datamap status");
+      LOG.error("Failed to read datamap status", e);
       throw e;
     } finally {
       CarbonUtil.closeStreams(buffReader, inStream, dataInputStream);
@@ -141,7 +148,7 @@ public class DiskBasedDataMapStatusProvider implements DataMapStatusStorageProvi
       } else {
         String errorMsg = "Upadating datamapstatus is failed due to another process taken the lock"
             + " for updating it";
-        LOG.audit(errorMsg);
+        Audit.log(LOG, errorMsg);
         LOG.error(errorMsg);
         throw new IOException(errorMsg + " Please try after some time.");
       }

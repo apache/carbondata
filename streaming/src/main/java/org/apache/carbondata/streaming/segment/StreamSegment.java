@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -59,13 +58,14 @@ import org.apache.carbondata.streaming.CarbonStreamRecordWriter;
 import org.apache.carbondata.streaming.index.StreamFileIndex;
 
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.log4j.Logger;
 
 /**
  * streaming segment manager
  */
 public class StreamSegment {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(StreamSegment.class.getName());
 
   /**
@@ -301,8 +301,8 @@ public class StreamSegment {
           writer.getMeasureDataTypes(), blockletRowCount);
     } catch (Throwable ex) {
       if (writer != null) {
-        LOGGER.error(ex, "Failed to append batch data to stream segment: " +
-            writer.getSegmentDir());
+        LOGGER.error("Failed to append batch data to stream segment: " +
+            writer.getSegmentDir(), ex);
         writer.setHasException(true);
       }
       throw ex;

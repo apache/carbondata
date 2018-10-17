@@ -22,10 +22,11 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
+
+import org.apache.log4j.Logger;
 
 /**
  * Memory manager to keep track of
@@ -36,7 +37,7 @@ public class UnsafeSortMemoryManager {
   /**
    * logger
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(UnsafeSortMemoryManager.class.getName());
 
   /**

@@ -28,7 +28,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -40,11 +39,13 @@ import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.log4j.Logger;
+
 public class SortDataRows {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(SortDataRows.class.getName());
   /**
    * entryCount
@@ -136,7 +137,7 @@ public class SortDataRows {
         semaphore.acquire();
         dataSorterAndWriterExecutorService.execute(new DataSorterAndWriter(recordHolderListLocal));
       } catch (InterruptedException e) {
-        LOGGER.error(e, "exception occurred while trying to acquire a semaphore lock: ");
+        LOGGER.error("exception occurred while trying to acquire a semaphore lock: ", e);
         throw new CarbonSortKeyAndGroupByException(e);
       }
       // create the new holder Array

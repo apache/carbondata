@@ -29,13 +29,13 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.BLOCKLET_SIZE;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_DATA_FILE_VERSION;
@@ -70,12 +70,13 @@ import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.B
 import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 public final class CarbonProperties {
   /**
    * Attribute for Carbon LOGGER.
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonProperties.class.getName());
 
   /**

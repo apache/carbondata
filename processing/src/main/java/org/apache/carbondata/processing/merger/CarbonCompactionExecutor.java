@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -51,6 +50,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeConverter;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 /**
  * Executor class for executing the query on the selected segments to be merged.
@@ -58,7 +58,7 @@ import org.apache.hadoop.conf.Configuration;
  */
 public class CarbonCompactionExecutor {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonCompactionExecutor.class.getName());
   private final Map<String, List<DataFileFooter>> dataFileMetadataSegMapping;
   private final SegmentProperties destinationSegProperties;
@@ -208,7 +208,7 @@ public class CarbonCompactionExecutor {
       }
       logStatistics(queryStartTime);
     } catch (QueryExecutionException e) {
-      LOGGER.error(e, "Problem while close. Ignoring the exception");
+      LOGGER.error("Problem while close. Ignoring the exception", e);
     }
     clearDictionaryFromQueryModel();
   }

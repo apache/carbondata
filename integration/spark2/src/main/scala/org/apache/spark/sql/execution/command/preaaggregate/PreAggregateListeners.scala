@@ -64,7 +64,7 @@ object AlterTableDropPartitionPreStatusListener extends OperationEventListener {
 
 trait CommitHelper {
 
-  val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   protected def markInProgressSegmentAsDeleted(tableStatusFile: String,
       operationContext: OperationContext,
@@ -586,7 +586,7 @@ object CommitPreAggregateListener extends OperationEventListener with CommitHelp
     } catch {
       case e: Exception =>
         operationContext.setProperty("commitComplete", false)
-        LOGGER.error(e, "Problem while committing data maps")
+        LOGGER.error("Problem while committing data maps", e)
     }
   }
 }

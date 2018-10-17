@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
@@ -51,12 +50,13 @@ import org.apache.carbondata.processing.loading.steps.SortProcessorStepImpl;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 /**
  * It builds the pipe line of steps for loading data to carbon.
  */
 public final class DataLoadProcessBuilder {
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(DataLoadProcessBuilder.class.getName());
 
   public AbstractDataLoadProcessorStep build(CarbonLoadModel loadModel, String[] storeLocation,
