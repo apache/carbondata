@@ -26,6 +26,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.util.SparkSQLUtil
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.util._
 
@@ -55,6 +56,11 @@ abstract class CarbonRDD[T: ClassTag](
     this (sparkSession, List(new OneToOneDependency(oneParent)))
 
   protected def internalGetPartitions: Array[Partition]
+
+
+  CarbonProperties.getInstance()
+    .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME,
+      ss.sparkContext.getConf.get("spark.app.name"))
 
   override def getPartitions: Array[Partition] = {
     ThreadLocalSessionInfo.setConfigurationToCurrentThread(hadoopConf)

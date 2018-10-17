@@ -206,6 +206,7 @@ struct FileFooter3{
     4: optional list<BlockletInfo3> blocklet_info_list3;	// Information about blocklets of all columns in this file for V3 format
     5: optional dictionary.ColumnDictionaryChunk dictionary; // Blocklet local dictionary
     6: optional bool is_sort; // True if the data is sorted in this file, it is used for compaction to decide whether to use merge sort or not
+    7: optional map<string, string> extra_info; // map used to write extra info/metadata to file footer ,like who is writing the file and in which version the file is written etc
 }
 
 /**

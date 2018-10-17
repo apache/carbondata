@@ -42,6 +42,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableSchemaBuilder;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModelBuilder;
@@ -66,6 +67,7 @@ public class CarbonWriterBuilder {
   private boolean isLocalDictionaryEnabled;
   private short numOfThreads;
   private Configuration hadoopConf;
+  private String writtenByApp;
   private enum WRITER_TYPE {
     CSV, AVRO, JSON
   }
@@ -294,6 +296,15 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   * @param appName appName which is writing the carbondata files
+   * @return
+   */
+  public CarbonWriterBuilder writtenBy(String appName) {
+    this.writtenByApp = appName;
+    return this;
+  }
+
+  /**
    * @param enableLocalDictionary enable local dictionary  , default is false
    * @return updated CarbonWriterBuilder
    */
@@ -372,8 +383,15 @@ public class CarbonWriterBuilder {
           "Writer type is not set, use withCsvInput() or withAvroInput() or withJsonInput()  "
               + "API based on input");
     }
+    if (this.writtenByApp == null || this.writtenByApp.isEmpty()) {
+      throw new RuntimeException(
+          "AppName is not set, please use writtenBy() API to set the App Name"
+              + "which is using SDK");
+    }
     CarbonLoadModel loadModel = buildLoadModel(schema);
     loadModel.setSdkWriterCores(numOfThreads);
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, writtenByApp);
     if (hadoopConf == null) {
       hadoopConf = FileFactory.getConfiguration();
     }

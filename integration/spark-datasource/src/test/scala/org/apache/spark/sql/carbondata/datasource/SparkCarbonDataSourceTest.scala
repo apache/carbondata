@@ -987,7 +987,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       val writer =
         builder.outputPath(path)
           .uniqueIdentifier(System.nanoTime()).withBlockSize(2)
-          .withCsvInput(new Schema(structType)).build()
+          .withCsvInput(new Schema(structType)).writtenBy("SparkCarbonDataSourceTest").build()
 
       var i = 0
       while (i < 11) {
@@ -1033,7 +1033,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       val writer =
         builder.outputPath(path)
           .uniqueIdentifier(System.nanoTime()).withBlockSize(2).sortBy(Array("bytefield"))
-          .withCsvInput(new Schema(fields)).build()
+          .withCsvInput(new Schema(fields)).writtenBy("SparkCarbonDataSourceTest").build()
 
       var i = 0
       while (i < 11) {
@@ -1087,7 +1087,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       val writer =
         builder.outputPath(path)
           .uniqueIdentifier(System.nanoTime()).withBlockSize(2)
-          .withCsvInput(new Schema(structType)).build()
+          .withCsvInput(new Schema(structType)).writtenBy("SparkCarbonDataSourceTest").build()
 
       var i = 0
       while (i < 10) {
@@ -1158,7 +1158,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       val writer =
         builder.outputPath(writerPath)
           .uniqueIdentifier(System.nanoTime()).withBlockSize(2).sortBy(sortColumns)
-          .withCsvInput(new Schema(fields)).build()
+          .withCsvInput(new Schema(fields)).writtenBy("SparkCarbonDataSourceTest").build()
 
       var i = 0
       while (i < rows) {
@@ -1255,7 +1255,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       val writer =
         builder.outputPath(path)
           .uniqueIdentifier(System.nanoTime()).withBlockSize(2)
-          .withCsvInput(new Schema(fields)).build()
+          .withCsvInput(new Schema(fields)).writtenBy("SparkCarbonDataSourceTest").build()
 
       var i = 0
       while (i < 33000) {
