@@ -49,14 +49,14 @@ class BlockPruneQueryTestCase extends QueryTest with BeforeAndAfterAll {
       }
     } catch {
       case ex: Exception =>
-        LOGGER.error(ex, "Build test file for block prune failed")
+        LOGGER.error("Build test file for block prune failed", ex)
     } finally {
       if (writer != null) {
         try {
           writer.close()
         } catch {
           case ex: Exception =>
-            LOGGER.error(ex, "Close output stream catching exception")
+            LOGGER.error("Close output stream catching exception", ex)
         }
       }
     }
@@ -102,7 +102,7 @@ class BlockPruneQueryTestCase extends QueryTest with BeforeAndAfterAll {
       }
     } catch {
       case ex: Exception =>
-        LOGGER.error(ex, "Delete temp test data file for block prune catching exception")
+        LOGGER.error("Delete temp test data file for block prune catching exception", ex)
     }
     sql("DROP TABLE IF EXISTS blockprune")
   }
