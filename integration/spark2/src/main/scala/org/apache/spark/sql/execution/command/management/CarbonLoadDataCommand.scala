@@ -636,8 +636,9 @@ case class CarbonLoadDataCommand(
     CarbonSession.threadSet("partition.operationcontext", operationContext)
     // input data from csv files. Convert to logical plan
     val allCols = new ArrayBuffer[String]()
-    allCols ++= table.getAllDimensions.asScala.map(_.getColName)
-    allCols ++= table.getAllMeasures.asScala.map(_.getColName)
+    // get only the visible dimensions from table
+    allCols ++= table.getDimensionByTableName(table.getTableName).asScala.map(_.getColName)
+    allCols ++= table.getMeasureByTableName(table.getTableName).asScala.map(_.getColName)
     var attributes =
       StructType(
         allCols.filterNot(_.equals(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE)).map(
