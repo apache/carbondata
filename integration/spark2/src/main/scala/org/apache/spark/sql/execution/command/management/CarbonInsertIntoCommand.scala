@@ -36,7 +36,7 @@ case class CarbonInsertIntoCommand(
   var loadCommand: CarbonLoadDataCommand = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     def containsLimit(plan: LogicalPlan): Boolean = {
       plan find {
         case limit: GlobalLimit => true

@@ -19,7 +19,6 @@ package org.apache.carbondata.core.reader.sortindex;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -29,6 +28,7 @@ import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
 import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.format.ColumnSortInfo;
 
+import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;
 
 /**
@@ -54,7 +54,7 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
   /**
    * Comment for <code>LOGGER</code>
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonDictionarySortIndexReaderImpl.class.getName());
 
   /**
@@ -97,7 +97,7 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
     try {
       columnSortInfo = (ColumnSortInfo) dictionarySortIndexThriftReader.read();
     } catch (IOException ie) {
-      LOGGER.error(ie, "problem while reading the column sort info.");
+      LOGGER.error("problem while reading the column sort info.", ie);
       throw new IOException("problem while reading the column sort info.", ie);
     } finally {
       if (null != dictionarySortIndexThriftReader) {

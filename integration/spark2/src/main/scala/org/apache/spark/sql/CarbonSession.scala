@@ -170,7 +170,7 @@ class CarbonSession(@transient val sc: SparkContext,
    */
   private def trySearchMode(qe: QueryExecution, sse: SQLStart): DataFrame = {
     val analyzed = qe.analyzed
-    val LOG: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+    val LOG = LogServiceFactory.getLogService(this.getClass.getName)
     analyzed match {
       case _@Project(columns, _@Filter(expr, s: SubqueryAlias))
         if s.child.isInstanceOf[LogicalRelation] &&

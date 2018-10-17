@@ -24,7 +24,9 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.io.IOUtils
 
+import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.HdfsFileLock
 import org.apache.carbondata.core.util.CarbonUtil
@@ -48,7 +50,7 @@ object ResourceRegisterAndCopier {
     if (!file.exists()) {
       sys.error(s"""Provided path $hdfsPath does not exist""")
     }
-    LOGGER.audit("Try downloading resource data")
+    Audit.log(LOGGER, "Try downloading resource data")
     val lock = new HdfsFileLock(hdfsPath, "/resource.lock")
     var bool = false
     try {

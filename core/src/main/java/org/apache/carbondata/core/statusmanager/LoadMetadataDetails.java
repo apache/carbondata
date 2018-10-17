@@ -22,9 +22,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+
+import org.apache.log4j.Logger;
 
 /*
   Prior to Carbon 1.3 the the loadMetaData @timestamp and @loadStartTime was stored as
@@ -95,7 +96,7 @@ public class LoadMetadataDetails implements Serializable {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(LoadMetadataDetails.class.getName());
 
   // dont remove static as the write will fail.

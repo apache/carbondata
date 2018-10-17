@@ -22,7 +22,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -45,6 +44,8 @@ import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.log4j.Logger;
+
 /**
  * This is the Merger class responsible for the merging of the segments.
  */
@@ -61,7 +62,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
    */
   private AbstractQueue<RawResultIterator> recordHolderHeap;
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(RowResultMergerProcessor.class.getName());
 
   public RowResultMergerProcessor(String databaseName,

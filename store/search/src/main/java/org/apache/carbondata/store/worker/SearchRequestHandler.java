@@ -18,11 +18,15 @@
 package org.apache.carbondata.store.worker;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.common.logging.impl.Audit;
 import org.apache.carbondata.core.datamap.DataMapChooser;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.Segment;
@@ -53,6 +57,7 @@ import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.readsupport.impl.CarbonRowReadSupport;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 import org.apache.spark.search.SearchRequest;
 import org.apache.spark.search.SearchResult;
 import org.apache.spark.search.ShutdownRequest;
@@ -64,7 +69,7 @@ import org.apache.spark.search.ShutdownResponse;
 @InterfaceAudience.Internal
 public class SearchRequestHandler {
 
-  private static final LogService LOG =
+  private static final Logger LOG =
       LogServiceFactory.getLogService(SearchRequestHandler.class.getName());
 
   public SearchResult handleSearch(SearchRequest request) {
@@ -96,7 +101,7 @@ public class SearchRequestHandler {
       chooser = new DataMapChooser(table);
       return chooser.chooseFGDataMap(filterInterface);
     } catch (IOException e) {
-      LOG.audit(e.getMessage());
+      Audit.log(LOG, e.getMessage());
       return null;
     }
   }

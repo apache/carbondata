@@ -19,13 +19,11 @@ package org.apache.carbondata.processing.loading.csvinput;
 
 import java.io.IOException;
 
-
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import com.univocity.parsers.common.TextParsingException;
-
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;

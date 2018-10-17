@@ -23,7 +23,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
@@ -40,9 +39,10 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 public class TableProcessingOperations {
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonLoaderUtil.class.getName());
 
   /**
@@ -136,7 +136,7 @@ public class TableProcessingOperations {
             try {
               CarbonUtil.deleteFoldersAndFiles(new File(loc));
             } catch (IOException | InterruptedException e) {
-              LOGGER.error(e, "Failed to delete local data load folder location: " + loc);
+              LOGGER.error("Failed to delete local data load folder location: " + loc, e);
             }
           }
           LOGGER.info(

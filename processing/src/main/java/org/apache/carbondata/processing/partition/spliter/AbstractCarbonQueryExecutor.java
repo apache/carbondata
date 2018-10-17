@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -36,10 +35,11 @@ import org.apache.carbondata.core.scan.result.RowBatch;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 public abstract class AbstractCarbonQueryExecutor {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(AbstractCarbonQueryExecutor.class.getName());
   protected CarbonTable carbonTable;
   protected QueryModel queryModel;
@@ -68,7 +68,7 @@ public abstract class AbstractCarbonQueryExecutor {
     try {
       queryExecutor.finish();
     } catch (QueryExecutionException e) {
-      LOGGER.error(e, "Problem while finish: ");
+      LOGGER.error("Problem while finish: ", e);
     }
     clearDictionaryFromQueryModel();
   }

@@ -27,13 +27,12 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
-
 import org.apache.commons.lang3.SystemUtils;
+import org.apache.log4j.Logger;
 
 public abstract class AbstractDictionaryServer {
 
-  public String findLocalIpAddress(LogService LOGGER) {
+  public String findLocalIpAddress(Logger LOGGER) {
     try {
       String defaultIpOverride = System.getenv("SPARK_LOCAL_IP");
       if (defaultIpOverride != null) {

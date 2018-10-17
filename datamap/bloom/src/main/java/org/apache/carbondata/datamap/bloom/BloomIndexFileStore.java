@@ -16,13 +16,16 @@
  */
 package org.apache.carbondata.datamap.bloom;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
@@ -31,6 +34,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.bloom.CarbonBloomFilter;
+import org.apache.log4j.Logger;
 
 /**
  * This class works for merging and loading bloom index
@@ -38,7 +42,7 @@ import org.apache.hadoop.util.bloom.CarbonBloomFilter;
 @InterfaceAudience.Internal
 public class BloomIndexFileStore {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
           LogServiceFactory.getLogService(BloomIndexFileStore.class.getName());
 
   // suffix of original generated file
@@ -83,7 +87,7 @@ public class BloomIndexFileStore {
         throw new RuntimeException("Failed to create directory " + mergeShardPath);
       }
     } catch (IOException e) {
-      LOGGER.error(e, "Error occurs while create directory " + mergeShardPath);
+      LOGGER.error("Error occurs while create directory " + mergeShardPath, e);
       throw new RuntimeException("Error occurs while create directory " + mergeShardPath);
     }
 
@@ -110,7 +114,7 @@ public class BloomIndexFileStore {
           CarbonUtil.closeStream(dataInputStream);
         }
       } catch (IOException e) {
-        LOGGER.error(e, "Error occurs while merge bloom index file of column: " + indexCol);
+        LOGGER.error("Error occurs while merge bloom index file of column: " + indexCol, e);
         // delete merge shard of bloom index for this segment when failed
         FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(mergeShardPath));
         throw new RuntimeException(
@@ -123,7 +127,7 @@ public class BloomIndexFileStore {
     try {
       FileFactory.deleteFile(mergeInprogressFile, FileFactory.getFileType(mergeInprogressFile));
     } catch (IOException e) {
-      LOGGER.error(e, "Error occurs while deleting file " + mergeInprogressFile);
+      LOGGER.error("Error occurs while deleting file " + mergeInprogressFile, e);
       throw new RuntimeException("Error occurs while deleting file " + mergeInprogressFile);
     }
     // remove old store
@@ -164,7 +168,7 @@ public class BloomIndexFileStore {
 
       return bloomFilters;
     } catch (IOException e) {
-      LOGGER.error(e, "Error occurs while reading bloom index");
+      LOGGER.error("Error occurs while reading bloom index", e);
       throw new RuntimeException("Error occurs while reading bloom index", e);
     } finally {
       CarbonUtil.closeStreams(dataInStream);
@@ -207,7 +211,7 @@ public class BloomIndexFileStore {
           String.format("Read %d bloom indices from %s", bloomFilters.size(), mergeIndexFile));
       return bloomFilters;
     } catch (IOException e) {
-      LOGGER.error(e, "Error occurs while reading merge bloom index");
+      LOGGER.error("Error occurs while reading merge bloom index", e);
       throw new RuntimeException("Error occurs while reading merge bloom index", e);
     } finally {
       CarbonUtil.closeStreams(mergeIndexInStream);

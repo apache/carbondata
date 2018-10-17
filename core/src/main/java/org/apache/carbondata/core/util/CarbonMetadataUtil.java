@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.blocklet.BlockletEncodedColumnPage;
 import org.apache.carbondata.core.datastore.blocklet.EncodedBlocklet;
@@ -51,12 +50,14 @@ import org.apache.carbondata.format.IndexHeader;
 import org.apache.carbondata.format.LocalDictionaryChunk;
 import org.apache.carbondata.format.SegmentInfo;
 
+import org.apache.log4j.Logger;
+
 /**
  * Util class to convert to thrift metdata classes
  */
 public class CarbonMetadataUtil {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonMetadataUtil.class.getName());
 
   private CarbonMetadataUtil() {

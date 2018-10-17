@@ -16,11 +16,15 @@
  */
 package org.apache.carbondata.core.indexstore.blockletindex;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
@@ -66,6 +70,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
 
 /**
  * Datamap implementation for block.
@@ -73,7 +78,7 @@ import org.apache.hadoop.fs.Path;
 public class BlockDataMap extends CoarseGrainDataMap
     implements BlockletDataMapRowIndexes, Serializable {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(BlockDataMap.class.getName());
 
   protected static final long serialVersionUID = -2170289352240810993L;

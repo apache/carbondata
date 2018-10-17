@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.processing.loading.converter.impl;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
@@ -28,12 +27,14 @@ import org.apache.carbondata.processing.loading.converter.FieldConverter;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.log4j.Logger;
+
 /**
  * Converter for measure
  */
 public class MeasureFieldConverterImpl implements FieldConverter {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(MeasureFieldConverterImpl.class.getName());
 
   private int index;

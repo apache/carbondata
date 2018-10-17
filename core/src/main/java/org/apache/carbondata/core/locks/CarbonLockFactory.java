@@ -17,11 +17,12 @@
 
 package org.apache.carbondata.core.locks;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
+
+import org.apache.log4j.Logger;
 
 /**
  * This class is a Lock factory class which is used to provide lock objects.
@@ -32,7 +33,7 @@ public class CarbonLockFactory {
   /**
    * Attribute for LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonLockFactory.class.getName());
   /**
    * lockTypeConfigured to check if zookeeper feature is enabled or not for carbon.

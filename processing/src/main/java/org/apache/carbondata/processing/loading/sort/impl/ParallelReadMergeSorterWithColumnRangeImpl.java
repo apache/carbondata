@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
@@ -44,6 +43,8 @@ import org.apache.carbondata.processing.sort.sortdata.SortIntermediateFileMerger
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.log4j.Logger;
+
 /**
  * It parallely reads data from array of iterates and do merge sort.
  * First it sorts the data and write to temp files. These temp files will be merge sorted to get
@@ -52,7 +53,7 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
  * bucketing,sort_column_bounds, it sorts each range of data separately and write to temp files.
  */
 public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSorter {
-  private static final LogService LOGGER = LogServiceFactory.getLogService(
+  private static final Logger LOGGER = LogServiceFactory.getLogService(
       ParallelReadMergeSorterWithColumnRangeImpl.class.getName());
 
   private SortParameters originSortParameters;

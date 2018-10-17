@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
@@ -52,6 +51,8 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
 
+import org.apache.log4j.Logger;
+
 /**
  * Fact data handler class to handle the fact data
  */
@@ -60,7 +61,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonFactDataHandlerColumnar.class.getName());
 
   private CarbonFactDataHandlerModel model;
@@ -213,7 +214,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         dataRows = new ArrayList<>(this.pageSize);
         this.entryCount = 0;
       } catch (InterruptedException e) {
-        LOGGER.error(e, e.getMessage());
+        LOGGER.error(e.getMessage(), e);
         throw new CarbonDataWriterException(e.getMessage(), e);
       }
     }
@@ -313,7 +314,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       processWriteTaskSubmitList(producerExecutorServiceTaskList);
       processingComplete = true;
     } catch (InterruptedException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       throw new CarbonDataWriterException(e.getMessage(), e);
     }
   }
@@ -331,7 +332,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       service.shutdown();
       service.awaitTermination(1, TimeUnit.DAYS);
     } catch (InterruptedException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       throw new CarbonDataWriterException(e.getMessage());
     }
   }
@@ -349,7 +350,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       try {
         taskList.get(i).get();
       } catch (InterruptedException | ExecutionException e) {
-        LOGGER.error(e, e.getMessage());
+        LOGGER.error(e.getMessage(), e);
         throw new CarbonDataWriterException(e.getMessage(), e);
       }
     }
@@ -587,7 +588,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         tablePageList.put(tablePage, indexInNodeHolderArray);
         return null;
       } catch (Throwable throwable) {
-        LOGGER.error(throwable, "Error in producer");
+        LOGGER.error("Error in producer", throwable);
         consumerExecutorService.shutdownNow();
         resetBlockletProcessingCount();
         throw new CarbonDataWriterException(throwable.getMessage(), throwable);
@@ -626,7 +627,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           if (!processingComplete || blockletProcessingCount.get() > 0) {
             producerExecutorService.shutdownNow();
             resetBlockletProcessingCount();
-            LOGGER.error(throwable, "Problem while writing the carbon data file");
+            LOGGER.error("Problem while writing the carbon data file", throwable);
             throw new CarbonDataWriterException(throwable.getMessage());
           }
         } finally {

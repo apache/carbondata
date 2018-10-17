@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
@@ -39,12 +38,14 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.processing.store.TablePage;
 
+import org.apache.log4j.Logger;
+
 /**
  * It is for writing DataMap for one table
  */
 public class DataMapWriterListener {
 
-  private static final LogService LOG = LogServiceFactory.getLogService(
+  private static final Logger LOG = LogServiceFactory.getLogService(
       DataMapWriterListener.class.getCanonicalName());
 
   // list indexed column -> list of data map writer
@@ -68,7 +69,7 @@ public class DataMapWriterListener {
     try {
       tableIndices = DataMapStoreManager.getInstance().getAllDataMap(carbonTable);
     } catch (IOException e) {
-      LOG.error(e, "Error while retrieving datamaps");
+      LOG.error("Error while retrieving datamaps", e);
       throw new RuntimeException(e);
     }
     if (tableIndices != null) {

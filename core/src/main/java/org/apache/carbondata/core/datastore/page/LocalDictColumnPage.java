@@ -20,7 +20,6 @@ package org.apache.carbondata.core.datastore.page;
 import java.io.IOException;
 import java.math.BigDecimal;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
@@ -29,6 +28,8 @@ import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.localdictionary.PageLevelDictionary;
 import org.apache.carbondata.core.localdictionary.exception.DictionaryThresholdReachedException;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
+
+import org.apache.log4j.Logger;
 
 /**
  * Column page implementation for Local dictionary generated columns
@@ -41,7 +42,7 @@ public class LocalDictColumnPage extends ColumnPage {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(LocalDictColumnPage.class.getName());
 
   /**
@@ -132,8 +133,8 @@ public class LocalDictColumnPage extends ColumnPage {
         encodedDataColumnPage.freeMemory();
         encodedDataColumnPage = null;
       } catch (KeyGenException e) {
-        LOGGER.error(e, "Unable to generate key for: " + actualDataColumnPage
-            .getColumnSpec().getFieldName());
+        LOGGER.error("Unable to generate key for: " + actualDataColumnPage
+            .getColumnSpec().getFieldName(), e);
         throw new RuntimeException(e);
       }
     } else {

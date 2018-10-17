@@ -271,11 +271,11 @@ object DataLoadProcessorStepOnSpark {
       }
     } catch {
       case e: CarbonDataWriterException =>
-        LOGGER.error(e, "Failed for table: " + tableName + " in Data Writer Step")
+        LOGGER.error("Failed for table: " + tableName + " in Data Writer Step", e)
         throw new CarbonDataLoadingException("Error while initializing data handler : " +
           e.getMessage)
       case e: Exception =>
-        LOGGER.error(e, "Failed for table: " + tableName + " in Data Writer Step")
+        LOGGER.error("Failed for table: " + tableName + " in Data Writer Step", e)
         throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage, e)
     } finally {
       if (rowConverter != null) {
@@ -316,11 +316,11 @@ object DataLoadProcessorStepOnSpark {
     e match {
       case e: CarbonDataLoadingException => throw e
       case e: TextParsingException =>
-        LOGGER.error(e, "Data Loading failed for table " + model.getTableName)
+        LOGGER.error("Data Loading failed for table " + model.getTableName, e)
         throw new CarbonDataLoadingException("Data Loading failed for table " + model.getTableName,
           e)
       case e: Exception =>
-        LOGGER.error(e, "Data Loading failed for table " + model.getTableName)
+        LOGGER.error("Data Loading failed for table " + model.getTableName, e)
         throw new CarbonDataLoadingException("Data Loading failed for table " + model.getTableName,
           e)
     }

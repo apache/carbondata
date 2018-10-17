@@ -22,19 +22,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.common.logging.impl.StatisticLevel;
 
 import static org.apache.carbondata.core.util.CarbonUtil.printLine;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 /**
  * Class will be used to record and log the query statistics
  */
 public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorder {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(DriverQueryStatisticsRecorderImpl.class.getName());
 
   /**
@@ -119,7 +120,7 @@ public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorde
             if (entry.getValue().size() >= 2) {
               String tableInfo = collectDriverStatistics(entry.getValue(), queryId);
               if (null != tableInfo) {
-                LOGGER.statistic(tableInfo);
+                LOGGER.log(StatisticLevel.STATISTIC, tableInfo);
                 // clear the statistics that has been printed
                 entries.remove();
               }

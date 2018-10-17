@@ -25,6 +25,8 @@ import org.apache.spark.sql.execution.command.CompactionModel
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 
+import org.apache.carbondata.api.CarbonStore.LOGGER
+import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -130,8 +132,8 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
                                   carbonLoadModel.getTableName)
         LOGGER
           .info(s"Compaction request for datamap ${ carbonTable.getTableUniqueName } is successful")
-        LOGGER
-          .audit(s"Compaction request for datamap ${carbonTable.getTableUniqueName} is successful")
+        Audit.log(LOGGER,
+          s"Compaction request for datamap ${carbonTable.getTableUniqueName} is successful")
       }
     }
   }
