@@ -17,7 +17,6 @@
 package org.apache.carbondata.core.indexstore.blockletindex;
 
 import org.apache.carbondata.core.datamap.DataMapDistributable;
-import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 
 /**
  * This class contains required information to make the Blocklet datamap distributable.
