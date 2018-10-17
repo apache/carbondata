@@ -146,10 +146,12 @@ case class CarbonDropTableCommand(
 
     } catch {
       case ex: NoSuchTableException =>
+        LOGGER.error(ex, ex.getLocalizedMessage)
         if (!ifExistsSet) {
           throw ex
         }
       case ex: ConcurrentOperationException =>
+        LOGGER.error(ex, ex.getLocalizedMessage)
         throw ex
       case ex: Exception =>
         val msg = s"Dropping table $dbName.$tableName failed: ${ex.getMessage}"

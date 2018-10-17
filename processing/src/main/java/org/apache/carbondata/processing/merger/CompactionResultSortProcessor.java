@@ -173,6 +173,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       }
       isCompactionSuccess = true;
     } catch (Exception e) {
+      LOGGER.error(e, e.getLocalizedMessage());
       throw e;
     } finally {
       if (partitionSpec != null) {
