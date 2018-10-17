@@ -28,7 +28,7 @@ public class Audit {
   private static String hostName;
   private static String username;
 
-  {
+  static {
     try {
       hostName = InetAddress.getLocalHost().getHostName();
     } catch (UnknownHostException e) {
