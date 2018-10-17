@@ -192,24 +192,6 @@ public abstract class BlockletScannedResult {
 
   /**
    * Below method will be used to get the key for all the dictionary dimensions
-   * which is present in the query
-   *
-   * @param rowId row id selected after scanning
-   * @return return the dictionary key
-   */
-  protected byte[] getDictionaryKeyArray(int rowId) {
-    byte[] completeKey = new byte[fixedLengthKeySize];
-    int offset = 0;
-    for (int i = 0; i < this.dictionaryColumnChunkIndexes.length; i++) {
-      offset += dimensionColumnPages[dictionaryColumnChunkIndexes[i]][pageCounter].fillRawData(
-          rowId, offset, completeKey);
-    }
-    rowCounter++;
-    return completeKey;
-  }
-
-  /**
-   * Below method will be used to get the key for all the dictionary dimensions
    * in integer array format which is present in the query
    *
    * @param rowId row id selected after scanning
@@ -636,12 +618,6 @@ public abstract class BlockletScannedResult {
    * @return valid row id
    */
   public abstract int getCurrentRowId();
-
-  /**
-   * @return dictionary key array for all the dictionary dimension
-   * selected in query
-   */
-  public abstract byte[] getDictionaryKeyArray();
 
   /**
    * @return dictionary key array for all the dictionary dimension in integer array forat

@@ -375,16 +375,6 @@ public class CarbonUpdateUtil {
         .substring(0, completeBlockName.lastIndexOf(CarbonCommonConstants.HYPHEN));
   }
 
-  /**
-   * returns segment id from segment name
-   *
-   * @param segmentName
-   * @return
-   */
-  public static String getSegmentId(String segmentName) {
-    return segmentName.split(CarbonCommonConstants.UNDERSCORE)[1];
-  }
-
   public static long getLatestTaskIdForSegment(Segment segment, String tablePath)
       throws IOException {
     long max = 0;

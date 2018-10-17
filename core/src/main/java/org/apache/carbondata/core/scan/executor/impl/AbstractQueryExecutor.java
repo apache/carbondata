@@ -34,14 +34,12 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataRefNode;
 import org.apache.carbondata.core.indexstore.blockletindex.IndexWrapper;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
@@ -407,8 +405,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           getBlockExecutionInfoForBlock(
               queryModel,
               abstractIndex,
-              dataRefNode.getBlockInfos().get(0).getBlockletInfos().getStartBlockletNumber(),
-              dataRefNode.numberOfNodes(),
               dataRefNode.getBlockInfos().get(0).getFilePath(),
               dataRefNode.getBlockInfos().get(0).getDeletedDeltaFilePath(),
               dataRefNode.getBlockInfos().get(0).getSegment()));
@@ -432,8 +428,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * @throws QueryExecutionException any failure during block info creation
    */
   private BlockExecutionInfo getBlockExecutionInfoForBlock(QueryModel queryModel,
-      AbstractIndex blockIndex, int startBlockletIndex, int numberOfBlockletToScan, String filePath,
-      String[] deleteDeltaFiles, Segment segment)
+      AbstractIndex blockIndex, String filePath, String[] deleteDeltaFiles, Segment segment)
       throws QueryExecutionException {
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
     SegmentProperties segmentProperties = blockIndex.getSegmentProperties();
@@ -457,15 +452,13 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       blockExecutionInfo.setBlockId(CarbonTablePath.getShortBlockId(blockId));
     }
     blockExecutionInfo.setDeleteDeltaFilePath(deleteDeltaFiles);
-    blockExecutionInfo.setStartBlockletIndex(startBlockletIndex);
-    blockExecutionInfo.setNumberOfBlockletToScan(numberOfBlockletToScan);
     blockExecutionInfo.setProjectionDimensions(projectDimensions
-        .toArray(new ProjectionDimension[projectDimensions.size()]));
+        .toArray(new ProjectionDimension[0]));
     // get measures present in the current block
     List<ProjectionMeasure> currentBlockQueryMeasures =
         getCurrentBlockQueryMeasures(blockExecutionInfo, queryModel, blockIndex);
     blockExecutionInfo.setProjectionMeasures(
-        currentBlockQueryMeasures.toArray(new ProjectionMeasure[currentBlockQueryMeasures.size()]));
+        currentBlockQueryMeasures.toArray(new ProjectionMeasure[0]));
     blockExecutionInfo.setDataBlock(blockIndex);
     // setting whether raw record query or not
     blockExecutionInfo.setRawRecordDetailQuery(queryModel.isForcedDetailRawQuery());
@@ -485,24 +478,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             segmentProperties.getDimensionOrdinalToChunkMapping(),
             segmentProperties.getEachComplexDimColumnValueSize(),
             queryProperties.columnToDictionaryMapping, queryProperties.complexFilterDimension));
-    IndexKey startIndexKey = null;
-    IndexKey endIndexKey = null;
     if (null != queryModel.getFilterExpressionResolverTree()) {
       // loading the filter executor tree for filter evaluation
       blockExecutionInfo.setFilterExecuterTree(FilterUtil
           .getFilterExecuterTree(queryModel.getFilterExpressionResolverTree(), segmentProperties,
               blockExecutionInfo.getComlexDimensionInfoMap()));
     }
-    try {
-      startIndexKey = FilterUtil.prepareDefaultStartIndexKey(segmentProperties);
-      endIndexKey = FilterUtil.prepareDefaultEndIndexKey(segmentProperties);
-    } catch (KeyGenException e) {
-      throw new QueryExecutionException(e);
-    }
-    //setting the start index key of the block node
-    blockExecutionInfo.setStartKey(startIndexKey);
-    //setting the end index key of the block node
-    blockExecutionInfo.setEndKey(endIndexKey);
     // expression measure
     List<CarbonMeasure> expressionMeasures =
         new ArrayList<CarbonMeasure>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -556,12 +537,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     }
     // setting the indexes of list of dimension in projection list
     blockExecutionInfo.setProjectionListDimensionIndexes(ArrayUtils.toPrimitive(
-        allProjectionListDimensionIdexes
-            .toArray(new Integer[allProjectionListDimensionIdexes.size()])));
+        allProjectionListDimensionIdexes.toArray(new Integer[0])));
     // setting the indexes of list of measures in projection list
     blockExecutionInfo.setProjectionListMeasureIndexes(ArrayUtils.toPrimitive(
-        allProjectionListMeasureIndexes
-            .toArray(new Integer[allProjectionListMeasureIndexes.size()])));
+        allProjectionListMeasureIndexes.toArray(new Integer[0])));
     // setting the size of fixed key column (dictionary column)
     blockExecutionInfo
         .setFixedLengthKeySize(getKeySize(projectDimensions, segmentProperties));
@@ -573,24 +552,22 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         segmentProperties.getDimensionOrdinalToChunkMapping(), dictionaryColumnChunkIndex,
         noDictionaryColumnChunkIndex);
     int[] queryDictionaryColumnChunkIndexes = ArrayUtils.toPrimitive(
-        dictionaryColumnChunkIndex.toArray(new Integer[dictionaryColumnChunkIndex.size()]));
+        dictionaryColumnChunkIndex.toArray(new Integer[0]));
     // need to sort the dictionary column as for all dimension
     // column key will be filled based on key order
     Arrays.sort(queryDictionaryColumnChunkIndexes);
     blockExecutionInfo.setDictionaryColumnChunkIndex(queryDictionaryColumnChunkIndexes);
     // setting the no dictionary column block indexes
     blockExecutionInfo.setNoDictionaryColumnChunkIndexes(ArrayUtils.toPrimitive(
-        noDictionaryColumnChunkIndex.toArray(new Integer[noDictionaryColumnChunkIndex.size()])));
-    // setting each column value size
-    blockExecutionInfo.setEachColumnValueSize(segmentProperties.getEachDimColumnValueSize());
+        noDictionaryColumnChunkIndex.toArray(new Integer[0])));
     blockExecutionInfo.setComplexColumnParentBlockIndexes(
         getComplexDimensionParentBlockIndexes(projectDimensions));
     blockExecutionInfo.setVectorBatchCollector(queryModel.isVectorReader());
     // set actual query dimensions and measures. It may differ in case of restructure scenarios
     blockExecutionInfo.setActualQueryDimensions(queryModel.getProjectionDimensions()
-        .toArray(new ProjectionDimension[queryModel.getProjectionDimensions().size()]));
+        .toArray(new ProjectionDimension[0]));
     blockExecutionInfo.setActualQueryMeasures(queryModel.getProjectionMeasures()
-        .toArray(new ProjectionMeasure[queryModel.getProjectionMeasures().size()]));
+        .toArray(new ProjectionMeasure[0]));
     DataTypeUtil.setDataTypeConverter(queryModel.getConverter());
     blockExecutionInfo.setRequiredRowId(queryModel.isRequiredRowId());
     return blockExecutionInfo;

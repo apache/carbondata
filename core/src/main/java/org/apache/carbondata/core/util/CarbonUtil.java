@@ -999,33 +999,6 @@ public final class CarbonUtil {
   }
 
   /**
-   * The method calculate the B-Tree metadata size.
-   *
-   * @param tableBlockInfo
-   * @return
-   */
-  public static long calculateMetaSize(TableBlockInfo tableBlockInfo) throws IOException {
-    FileReader fileReader = null;
-    try {
-      long completeBlockLength = tableBlockInfo.getBlockLength();
-      long footerPointer = completeBlockLength - 8;
-      String filePath = tableBlockInfo.getFilePath();
-      fileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath));
-      long actualFooterOffset = fileReader.readLong(filePath, footerPointer);
-      return footerPointer - actualFooterOffset;
-    } finally {
-      if (null != fileReader) {
-        try {
-          fileReader.finish();
-        } catch (IOException e) {
-          // ignore the exception as nothing we can do about it
-          fileReader = null;
-        }
-      }
-    }
-  }
-
-  /**
    * Below method will be used to get the surrogate key
    *
    * @param data   actual data
@@ -1042,32 +1015,6 @@ public final class CarbonUtil {
     int surrogate = buffer.getInt();
     buffer.clear();
     return surrogate;
-  }
-
-  /**
-   * The method returns the B-Tree for a particular taskId
-   *
-   * @param taskId
-   * @param tableBlockInfoList
-   * @param identifier
-   */
-  public static long calculateDriverBTreeSize(String taskId, String bucketNumber,
-      List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier identifier) {
-    // need to sort the  block info list based for task in ascending  order so
-    // it will be sinkup with block index read from file
-    Collections.sort(tableBlockInfoList);
-    // geting the index file path
-    //TODO need to pass proper partition number when partiton will be supported
-    String carbonIndexFilePath = CarbonTablePath
-        .getCarbonIndexFilePath(identifier.getTablePath(), taskId,
-            tableBlockInfoList.get(0).getSegmentId(),
-            bucketNumber, CarbonTablePath.DataFileUtil
-                .getTimeStampFromFileName(tableBlockInfoList.get(0).getFilePath()),
-            tableBlockInfoList.get(0).getVersion());
-    CarbonFile carbonFile = FileFactory
-        .getCarbonFile(carbonIndexFilePath, FileFactory.getFileType(carbonIndexFilePath));
-    // in case of carbonIndex file whole file is meta only so reading complete file.
-    return carbonFile.getSize();
   }
 
   /**

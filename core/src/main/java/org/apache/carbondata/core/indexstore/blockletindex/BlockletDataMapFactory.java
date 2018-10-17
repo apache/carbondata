@@ -67,7 +67,6 @@ import org.apache.hadoop.fs.RemoteIterator;
 public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     implements BlockletDetailsFetcher, SegmentPropertiesFetcher, CacheableDataMap {
 
-  private static final Log LOG = LogFactory.getLog(BlockletDataMapFactory.class);
   private static final String NAME = "clustered.btree.blocklet";
   /**
    * variable for cache level BLOCKLET
@@ -77,8 +76,6 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   public static final DataMapSchema DATA_MAP_SCHEMA =
       new DataMapSchema(NAME, BlockletDataMapFactory.class.getName());
 
-  private AbsoluteTableIdentifier identifier;
-
   // segmentId -> list of index file
   private Map<String, Set<TableBlockIndexUniqueIdentifier>> segmentMap = new ConcurrentHashMap<>();
 
@@ -86,7 +83,6 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
 
   public BlockletDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
     super(carbonTable, dataMapSchema);
-    this.identifier = carbonTable.getAbsoluteTableIdentifier();
     cache = CacheProvider.getInstance()
         .createCache(CacheType.DRIVER_BLOCKLET_DATAMAP);
   }
@@ -417,8 +413,6 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
               (BlockletDataMapDistributable) distributable);
       if (null == cache.getIfPresent(
           new TableBlockIndexUniqueIdentifierWrapper(validIdentifier, this.getCarbonTable()))) {
-        ((BlockletDataMapDistributable) distributable)
-            .setTableBlockIndexUniqueIdentifier(validIdentifier);
         distributablesToBeLoaded.add(distributable);
       }
     }

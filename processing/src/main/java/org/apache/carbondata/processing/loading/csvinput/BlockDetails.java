@@ -50,20 +50,8 @@ public class BlockDetails extends FileSplit implements Serializable {
     this.locations = locations;
   }
 
-  public long getBlockOffset() {
-    return blockOffset;
-  }
-
   public long getBlockLength() {
     return blockLength;
-  }
-
-  public String getFilePath() {
-    return FileFactory.getUpdatedFilePath(filePath);
-  }
-
-  public void setFilePath(String filePath) {
-    this.filePath = filePath;
   }
 
   public String[] getLocations() {

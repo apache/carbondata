@@ -18,10 +18,7 @@ package org.apache.carbondata.core.scan.filter;
 
 import java.io.IOException;
 import java.util.BitSet;
-import java.util.List;
 
-import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
@@ -63,12 +60,7 @@ import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.TrueConditio
 import org.apache.carbondata.core.scan.partition.PartitionUtil;
 import org.apache.carbondata.core.scan.partition.Partitioner;
 
-import org.apache.log4j.Logger;
-
 public class FilterExpressionProcessor implements FilterProcessor {
-
-  private static final Logger LOGGER =
-      LogServiceFactory.getLogService(FilterExpressionProcessor.class.getName());
 
   /**
    * Implementation will provide the resolved form of filters based on the
@@ -197,26 +189,6 @@ public class FilterExpressionProcessor implements FilterProcessor {
       case NOT_EQUALS:
       default:
         return new KeepAllPartitionFilterImpl();
-    }
-  }
-
-  /**
-   * Selects the blocks based on col max and min value.
-   *
-   * @param listOfDataBlocksToScan
-   * @param dataRefNode
-   */
-  private void addBlockBasedOnMinMaxValue(FilterExecuter filterExecuter,
-      List<DataRefNode> listOfDataBlocksToScan, DataRefNode dataRefNode, boolean[] isMinMaxSet) {
-    if (null == dataRefNode.getColumnsMinValue() || null == dataRefNode.getColumnsMaxValue()) {
-      listOfDataBlocksToScan.add(dataRefNode);
-      return;
-    }
-    BitSet bitSet = filterExecuter
-        .isScanRequired(dataRefNode.getColumnsMaxValue(), dataRefNode.getColumnsMinValue(),
-            isMinMaxSet);
-    if (!bitSet.isEmpty()) {
-      listOfDataBlocksToScan.add(dataRefNode);
     }
   }
 

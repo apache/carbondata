@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.columnar.ColumnarSplitter;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
 
@@ -143,47 +142,8 @@ public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLength
     return split;
   }
 
-  @Override public byte[][] generateAndSplitKey(long[] keys) throws KeyGenException {
-    return splitKey(generateKey(keys));
-  }
-
-  @Override public byte[][] generateAndSplitKey(int[] keys) throws KeyGenException {
-    return splitKey(generateKey(keys));
-  }
-
-  @Override public long[] getKeyArray(byte[][] key) {
-    byte[] fullKey = new byte[getKeySizeInBytes()];
-    int copyIndex = 0;
-    for (int i = 0; i < key.length; i++) {
-      System.arraycopy(key[i], 0, fullKey, copyIndex, key[i].length);
-      copyIndex += key[i].length;
-    }
-    return getKeyArray(fullKey);
-  }
-
-  @Override public byte[] getKeyByteArray(byte[][] key) {
-    byte[] fullKey = new byte[getKeySizeInBytes()];
-    int copyIndex = 0;
-    for (int i = 0; i < key.length; i++) {
-      System.arraycopy(key[i], 0, fullKey, copyIndex, key[i].length);
-      copyIndex += key[i].length;
-    }
-    return fullKey;
-  }
-
-  public int[] getBlockKeySize() {
+  @Override public int[] getBlockKeySize() {
     return blockKeySize;
-  }
-
-  @Override public int getKeySizeByBlock(int[] blockIndexes) {
-    int size = 0;
-
-    for (int i = 0; i < blockIndexes.length; i++) {
-      if (blockIndexes[i] < blockKeySize.length) {
-        size += blockKeySize[blockIndexes[i]];
-      }
-    }
-    return size;
   }
 
   @Override public boolean equals(Object obj) {

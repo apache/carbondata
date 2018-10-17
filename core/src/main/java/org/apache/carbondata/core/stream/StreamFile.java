@@ -45,10 +45,6 @@ public class StreamFile {
     return filePath;
   }
 
-  public void setFilePath(String filePath) {
-    this.filePath = filePath;
-  }
-
   public long getFileSize() {
     return fileSize;
   }

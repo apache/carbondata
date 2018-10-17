@@ -638,11 +638,6 @@ m filterExpression
       if (invalidSegments.size() > 0) {
         queryModel.setInvalidSegmentIds(invalidSegments);
       }
-      List<UpdateVO> invalidTimestampRangeList =
-          split.getAllSplits().get(0).getInvalidTimestampRange();
-      if ((null != invalidTimestampRangeList) && (invalidTimestampRangeList.size() > 0)) {
-        queryModel.setInvalidBlockForSegmentId(invalidTimestampRangeList);
-      }
     }
     return queryModel;
   }

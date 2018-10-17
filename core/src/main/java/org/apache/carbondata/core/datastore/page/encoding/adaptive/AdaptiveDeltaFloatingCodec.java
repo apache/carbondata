@@ -48,12 +48,6 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
   private Double factor;
   private long max;
 
-  public static ColumnPageCodec newInstance(DataType srcDataType, DataType targetDataType,
-      SimpleStatsResult stats, boolean isInvertedIndex) {
-    return new AdaptiveDeltaFloatingCodec(srcDataType, targetDataType, stats,
-        isInvertedIndex);
-  }
-
   public AdaptiveDeltaFloatingCodec(DataType srcDataType, DataType targetDataType,
       SimpleStatsResult stats, boolean isInvertedIndex) {
     super(srcDataType, targetDataType, stats, isInvertedIndex);

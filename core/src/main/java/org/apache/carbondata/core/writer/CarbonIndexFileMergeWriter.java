@@ -261,24 +261,4 @@ public class CarbonIndexFileMergeWriter {
     thriftWriter.close();
   }
 
-  public static class SegmentIndexFIleMergeStatus implements Serializable {
-
-    private SegmentFileStore.SegmentFile segmentFile;
-
-    private List<String> filesTobeDeleted;
-
-    public SegmentIndexFIleMergeStatus(SegmentFileStore.SegmentFile segmentFile,
-        List<String> filesTobeDeleted) {
-      this.segmentFile = segmentFile;
-      this.filesTobeDeleted = filesTobeDeleted;
-    }
-
-    public SegmentFileStore.SegmentFile getSegmentFile() {
-      return segmentFile;
-    }
-
-    public List<String> getFilesTobeDeleted() {
-      return filesTobeDeleted;
-    }
-  }
 }

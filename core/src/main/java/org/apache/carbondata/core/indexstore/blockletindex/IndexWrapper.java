@@ -40,9 +40,6 @@ public class IndexWrapper extends AbstractIndex {
         this.segmentProperties.getDimensionColumnsValueSize());
   }
 
-  @Override public void buildIndex(List<DataFileFooter> footerList) {
-  }
-
   @Override public void clear() {
     super.clear();
     if (blockInfos != null) {

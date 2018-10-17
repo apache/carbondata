@@ -164,9 +164,4 @@ public class RowIdRawBasedResultCollector extends AbstractScannedResultCollector
         measureFillingTime.getCount() + (System.currentTimeMillis() - startTime));
   }
 
-  private void incrementScannedResultRowCounter(BlockletScannedResult scannedResult,
-      int batchSize) {
-    // increment row counter by batch size as those many number of rows have been processed at once
-    scannedResult.incrementCounter(batchSize);
-  }
 }

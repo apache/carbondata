@@ -1028,10 +1028,6 @@ public class BlockDataMap extends CoarseGrainDataMap
     }
   }
 
-  public void setSegmentPropertiesIndex(int segmentPropertiesIndex) {
-    this.segmentPropertiesIndex = segmentPropertiesIndex;
-  }
-
   public int getSegmentPropertiesIndex() {
     return segmentPropertiesIndex;
   }

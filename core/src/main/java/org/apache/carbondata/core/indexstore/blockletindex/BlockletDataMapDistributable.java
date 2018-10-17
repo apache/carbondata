@@ -32,8 +32,6 @@ public class BlockletDataMapDistributable extends DataMapDistributable {
    */
   private String filePath;
 
-  private TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier;
-
   public BlockletDataMapDistributable(String indexFilePath) {
     this.filePath = indexFilePath;
   }
@@ -42,12 +40,4 @@ public class BlockletDataMapDistributable extends DataMapDistributable {
     return filePath;
   }
 
-  public TableBlockIndexUniqueIdentifier getTableBlockIndexUniqueIdentifier() {
-    return tableBlockIndexUniqueIdentifier;
-  }
-
-  public void setTableBlockIndexUniqueIdentifier(
-      TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifiers) {
-    this.tableBlockIndexUniqueIdentifier = tableBlockIndexUniqueIdentifiers;
-  }
 }

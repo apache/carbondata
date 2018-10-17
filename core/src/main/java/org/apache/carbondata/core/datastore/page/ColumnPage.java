@@ -245,14 +245,6 @@ public abstract class ColumnPage {
     return instance;
   }
 
-  public static ColumnPage wrapByteArrayPage(TableSpec.ColumnSpec columnSpec, byte[][] byteArray,
-      String compressorName) {
-    ColumnPage columnPage = createPage(
-        new ColumnPageEncoderMeta(columnSpec, BYTE_ARRAY, compressorName), byteArray.length);
-    columnPage.setByteArrayPage(byteArray);
-    return columnPage;
-  }
-
   private static ColumnPage newBytePage(TableSpec.ColumnSpec columnSpec, byte[] byteData,
       String compressorName) {
     ColumnPage columnPage = createPage(
@@ -718,10 +710,6 @@ public abstract class ColumnPage {
    * Encode the page data by codec (Visitor)
    */
   public abstract void convertValue(ColumnPageValueConverter codec);
-
-  public PageLevelDictionary getPageDictionary() {
-    throw new UnsupportedOperationException("Operation Not Supported");
-  }
 
   /**
    * Compress page data using specified compressor

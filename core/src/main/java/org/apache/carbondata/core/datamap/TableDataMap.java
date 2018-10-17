@@ -166,7 +166,6 @@ public final class TableDataMap extends OperationEventListener {
       for (DataMapDistributable distributable : list) {
         distributable.setDataMapSchema(dataMapSchema);
         distributable.setSegment(segment);
-        distributable.setTablePath(identifier.getTablePath());
       }
       distributables.addAll(list);
     }
@@ -269,28 +268,4 @@ public final class TableDataMap extends OperationEventListener {
     dataMapFactory.fireEvent(event);
   }
 
-  /**
-   * Method to prune the segments based on task min/max values
-   *
-   * @param segments
-   * @param filterExp
-   * @return
-   * @throws IOException
-   */
-  public List<Segment> pruneSegments(List<Segment> segments, FilterResolverIntf filterExp)
-      throws IOException {
-    List<Segment> prunedSegments = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    for (Segment segment : segments) {
-      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segment);
-      for (DataMap dataMap : dataMaps) {
-        if (dataMap.isScanRequired(filterExp)) {
-          // If any one task in a given segment contains the data that means the segment need to
-          // be scanned and we need to validate further data maps in the same segment
-          prunedSegments.add(segment);
-          break;
-        }
-      }
-    }
-    return prunedSegments;
-  }
 }

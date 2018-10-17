@@ -36,15 +36,6 @@ public class NonFilterQueryScannedResult extends BlockletScannedResult {
   }
 
   /**
-   * @return dictionary key array for all the dictionary dimension selected in
-   * query
-   */
-  @Override public byte[] getDictionaryKeyArray() {
-    ++currentRow;
-    return getDictionaryKeyArray(currentRow);
-  }
-
-  /**
    * @return dictionary key integer array for all the dictionary dimension
    * selected in query
    */
