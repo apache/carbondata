@@ -60,7 +60,7 @@ public class ConcurrentAvroSdkWriterTest {
     try {
       CarbonWriterBuilder builder =
           CarbonWriter.builder().outputPath(path).withThreadSafe(numOfThreads);
-      CarbonWriter writer = builder.withAvroInput(avroSchema).build();
+      CarbonWriter writer = builder.withAvroInput(avroSchema).writtenBy("ConcurrentAvroSdkWriterTest").build();
       // write in multi-thread
       for (int i = 0; i < numOfThreads; i++) {
         executorService.submit(new WriteLogic(writer, record));

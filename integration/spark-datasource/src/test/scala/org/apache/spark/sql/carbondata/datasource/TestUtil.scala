@@ -151,7 +151,7 @@ object TestUtil {
     try {
       val writer = CarbonWriter.builder
         .outputPath(writerPath)
-        .uniqueIdentifier(System.currentTimeMillis()).withAvroInput(nn).build()
+        .uniqueIdentifier(System.currentTimeMillis()).withAvroInput(nn).writtenBy("DataSource").build()
       var i = 0
       while (i < rows) {
         writer.write(record)

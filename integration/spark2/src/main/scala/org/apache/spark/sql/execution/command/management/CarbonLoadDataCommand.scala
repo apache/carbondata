@@ -214,6 +214,7 @@ case class CarbonLoadDataCommand(
         .getOrElse(CarbonCommonConstants.COMPRESSOR,
           CompressorFactory.getInstance().getCompressor.getName)
       carbonLoadModel.setColumnCompressor(columnCompressor)
+      carbonLoadModel.setWrittenBy(sparkSession.sparkContext.getConf.get("spark.app.name"))
 
       val javaPartition = mutable.Map[String, String]()
       partition.foreach { case (k, v) =>

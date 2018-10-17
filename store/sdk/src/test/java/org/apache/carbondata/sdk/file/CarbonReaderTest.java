@@ -502,7 +502,7 @@ public class CarbonReaderTest extends TestCase {
     CarbonWriter carbonWriter = null;
     try {
       carbonWriter = builder.outputPath(path1).uniqueIdentifier(12345)
-  .withCsvInput(schema).build();
+  .withCsvInput(schema).writtenBy("CarbonReaderTest").build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
     }
@@ -516,7 +516,7 @@ public class CarbonReaderTest extends TestCase {
     CarbonWriter carbonWriter1 = null;
     try {
       carbonWriter1 = builder1.outputPath(path2).uniqueIdentifier(12345)
-   .withCsvInput(schema1).build();
+   .withCsvInput(schema1).writtenBy("CarbonReaderTest").build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
     }
@@ -766,7 +766,6 @@ public class CarbonReaderTest extends TestCase {
 
     FileUtils.deleteDirectory(new File(path));
   }
-
   @Test
   public void testWriteAndReadFilesNonTransactional() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
@@ -855,7 +854,7 @@ public class CarbonReaderTest extends TestCase {
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
 
-      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CarbonReaderTest").build();
 
       for (int i = 0; i < 100; i++) {
         String[] row = new String[]{
@@ -973,7 +972,7 @@ public class CarbonReaderTest extends TestCase {
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
 
-      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CarbonReaderTest").build();
 
       for (int i = 0; i < 100; i++) {
         String[] row2 = new String[]{
@@ -1081,7 +1080,8 @@ public class CarbonReaderTest extends TestCase {
     fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
 
     try {
-      CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
+      CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path)
+          .writtenBy("SDK_1.0.0");
 
       CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
 
@@ -1105,6 +1105,14 @@ public class CarbonReaderTest extends TestCase {
       Assert.fail(e.getMessage());
     }
 
+    File[] dataFiles1 = new File(path).listFiles(new FilenameFilter() {
+      @Override public boolean accept(File dir, String name) {
+        return name.endsWith("carbondata");
+      }
+    });
+    String versionDetails = CarbonSchemaReader.getVersionDetails(dataFiles1[0].getAbsolutePath());
+    assertTrue(versionDetails.contains("SDK_1.0.0 in version: "));
+
     File[] dataFiles2 = new File(path).listFiles(new FilenameFilter() {
       @Override public boolean accept(File dir, String name) {
         return name.endsWith("carbonindex");
@@ -1112,7 +1120,6 @@ public class CarbonReaderTest extends TestCase {
     });
 
     Schema schema = CarbonSchemaReader.readSchemaInIndexFile(dataFiles2[0].getAbsolutePath()).asOriginOrder();
-
     // Transform the schema
     String[] strings = new String[schema.getFields().length];
     for (int i = 0; i < schema.getFields().length; i++) {
@@ -1252,7 +1259,7 @@ public class CarbonReaderTest extends TestCase {
     try {
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)
-          .withAvroInput(nn).build();
+          .withAvroInput(nn).writtenBy("CarbonReaderTest").build();
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);

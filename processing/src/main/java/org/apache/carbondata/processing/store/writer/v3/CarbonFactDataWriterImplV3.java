@@ -103,6 +103,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
           .convertFileFooterVersion3(blockletMetadata, blockletIndex, localCardinality,
               thriftColumnSchemaList.size());
       convertFileMeta.setIs_sort(isSorted);
+      convertFileMeta.setWritten_by(model.getAppName());
+      convertFileMeta.setVersion(model.getVersion());
       // fill the carbon index details
       fillBlockIndexInfoDetails(convertFileMeta.getNum_rows(), carbonDataFileName, currentPosition);
       // write the footer

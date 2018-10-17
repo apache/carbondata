@@ -98,7 +98,7 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
         .outputPath(writerPath)
         .uniqueIdentifier(System.currentTimeMillis())
         .withLoadOptions(options)
-        .withJsonInput(carbonSchema).build()
+        .withJsonInput(carbonSchema).writtenBy("TestNonTransactionalCarbonTableJsonWriter").build()
       writer.write(jsonRow)
       writer.close()
     }

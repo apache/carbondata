@@ -206,6 +206,8 @@ struct FileFooter3{
     4: optional list<BlockletInfo3> blocklet_info_list3;	// Information about blocklets of all columns in this file for V3 format
     5: optional dictionary.ColumnDictionaryChunk dictionary; // Blocklet local dictionary
     6: optional bool is_sort; // True if the data is sorted in this file, it is used for compaction to decide whether to use merge sort or not
+    7: optional string written_by; // written by is used to write who wrote the file, it can be LOAD, or SDK etc
+    8: optional string version; // version in which this carbondata file is written
 }
 
 /**
