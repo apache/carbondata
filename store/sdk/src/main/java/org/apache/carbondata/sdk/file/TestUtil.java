@@ -113,7 +113,7 @@ public class TestUtil {
         builder = builder.withBlockSize(blockSize);
       }
 
-      CarbonWriter writer = builder.withCsvInput(schema).build();
+      CarbonWriter writer = builder.withCsvInput(schema).writtenBy("TestUtil").build();
 
       for (int i = 0; i < rows; i++) {
         writer.write(new String[]{

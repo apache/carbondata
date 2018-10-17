@@ -56,7 +56,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
       val builder = CarbonWriter.builder()
       val writer =
         builder.outputPath(writerPath + "/Fact/Part0/Segment_null")
-          .withCsvInput(Schema.parseJson(schema)).build()
+          .withCsvInput(Schema.parseJson(schema)).writtenBy("TestCarbonFileInputFormatWithExternalCarbonTable").build()
 
       var i = 0
       while (i < 100) {

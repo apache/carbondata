@@ -123,7 +123,7 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
-      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
 
       for (int i = 0; i < 100; i++) {
         String[] row = new String[]{
@@ -224,7 +224,7 @@ public class CSVCarbonWriterTest {
     fields[1] = new Field("age", DataTypes.INT);
     try {
       carbonWriter = CarbonWriter.builder().
-          outputPath(path).withCsvInput(new Schema(fields)).build();
+          outputPath(path).withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
       Assert.assertTrue(false);
@@ -244,7 +244,7 @@ public class CSVCarbonWriterTest {
     fields[1] = new Field("age", DataTypes.INT);
     try {
       carbonWriter = CarbonWriter.builder().
-          outputPath(path).withCsvInput(new Schema(fields)).build();
+          outputPath(path).withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
       Assert.assertTrue(false);
@@ -270,7 +270,7 @@ public class CSVCarbonWriterTest {
           .taskNo(5)
           .outputPath(path);
 
-      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
 
       for (int i = 0; i < 2; i++) {
         String[] row = new String[]{
@@ -345,7 +345,7 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
-      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
       for (int i = 0; i < 15; i++) {
         String[] row = new String[] { "robot" + (i % 10), String.valueOf(i + "." + i),
             String.valueOf(i + "." + i) };
@@ -380,7 +380,7 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
-      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
       for (int i = 0; i < 15; i++) {
         String[] row = new String[] { "robot" + (i % 10),  "" + i };
         writer.write(row);
@@ -414,7 +414,7 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
-      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
       for (int i = 0; i < 15; i++) {
         String[] row = new String[] { "robot" + (i % 10), "" + i, i + "." + i };
         writer.write(row);
@@ -454,7 +454,7 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
-      CarbonWriter writer = builder.withCsvInput(new Schema(new Field[] {structType})).build();
+      CarbonWriter writer = builder.withCsvInput(new Schema(new Field[] {structType})).writtenBy("CSVCarbonWriterTest").build();
       for (int i = 0; i < 15; i++) {
         String[] row = new String[] { "robot" + (i % 10)+"$" + i+ "$" + i + "." + i };
         writer.write(row);
@@ -493,7 +493,7 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
-      CarbonWriter writer = builder.withCsvInput(new Schema(new Field[] {structType1, structType2})).build();
+      CarbonWriter writer = builder.withCsvInput(new Schema(new Field[] {structType1, structType2})).writtenBy("CSVCarbonWriterTest").build();
       for (int i = 0; i < 15; i++) {
         String[] row = new String[] { "1.0$2.0$3.0", "1$2$3" };
         writer.write(row);

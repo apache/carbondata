@@ -534,6 +534,8 @@ public class CarbonTableReader {
         config.getEnableUnsafeColumnPage());
     addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, config.getEnableUnsafeSort());
     addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, config.getEnableQueryStatistics());
+    // TODO: Support configurable
+    addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, "Presto_Server");
   }
 
   private void setS3Properties() {

@@ -51,7 +51,7 @@ public class ConcurrentSdkWriterTest {
       CarbonWriterBuilder builder = CarbonWriter.builder()
           .outputPath(path).withThreadSafe(numOfThreads);
       CarbonWriter writer =
-          builder.withCsvInput(new Schema(fields)).build();
+          builder.withCsvInput(new Schema(fields)).writtenBy("ConcurrentSdkWriterTest").build();
       // write in multi-thread
       for (int i = 0; i < numOfThreads; i++) {
         executorService.submit(new WriteLogic(writer));

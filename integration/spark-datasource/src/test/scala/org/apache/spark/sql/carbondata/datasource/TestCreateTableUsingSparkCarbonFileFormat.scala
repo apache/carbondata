@@ -79,7 +79,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     try {
       val builder = CarbonWriter.builder()
       val writer =
-        builder.outputPath(writerPath).withCsvInput(Schema.parseJson(schema)).build()
+        builder.outputPath(writerPath).withCsvInput(Schema.parseJson(schema)).writtenBy("TestCreateTableUsingSparkCarbonFileFormat").build()
       var i = 0
       while (i < 100) {
         writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
@@ -376,7 +376,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
       val options=Map("bad_records_action"->"FORCE","complex_delimiter_level_1"->"$").asJava
       val writer = CarbonWriter.builder().outputPath(writerPath).withBlockletSize(16)
         .sortBy(Array("myid", "ingestion_time", "event_id")).withLoadOptions(options)
-        .withCsvInput(new Schema(fields)).build()
+        .withCsvInput(new Schema(fields)).writtenBy("TestCreateTableUsingSparkCarbonFileFormat").build()
       val timeF=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
       val date_F=new SimpleDateFormat("yyyy-MM-dd")
       for(i<- 1 to recordsInBlocklet1){
@@ -434,7 +434,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
       .append("]")
       .toString()
     val builder = CarbonWriter.builder()
-    val writer = builder.outputPath(writerPath).withCsvInput(Schema.parseJson(schema)).build()
+    val writer = builder.outputPath(writerPath).withCsvInput(Schema.parseJson(schema)).writtenBy("TestCreateTableUsingSparkCarbonFileFormat").build()
     val totalRecordsNum = 3
     for (i <- 0 until totalRecordsNum) {
       // write a varchar with 75,000 length

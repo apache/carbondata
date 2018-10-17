@@ -73,6 +73,8 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     import org.apache.carbondata.presto.util.CarbonDataStoreCreator
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION,
       systemPath)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME,
+      "Presto")
     CarbonDataStoreCreator
       .createCarbonStore(storePath,
         s"$rootPath/integration/presto/src/test/resources/alldatatype.csv")
