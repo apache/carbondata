@@ -29,7 +29,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
@@ -50,13 +49,15 @@ import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.CarbonFactHandlerFactory;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.log4j.Logger;
+
 /**
  * It reads data from sorted files which are generated in previous sort step.
  * And it writes data to carbondata file. It also generates mdk key while writing to carbondata file
  */
 public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(DataWriterProcessorStepImpl.class.getName());
 
   private long readCounter;
@@ -137,11 +138,11 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
         throw new CarbonDataWriterException(e);
       }
     } catch (CarbonDataWriterException e) {
-      LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterProcessorStepImpl");
+      LOGGER.error("Failed for table: " + tableName + " in DataWriterProcessorStepImpl", e);
       throw new CarbonDataLoadingException(
           "Error while initializing data handler : " + e.getMessage());
     } catch (Exception e) {
-      LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterProcessorStepImpl");
+      LOGGER.error("Failed for table: " + tableName + " in DataWriterProcessorStepImpl", e);
       throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage(), e);
     }
     return null;
@@ -208,7 +209,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     try {
       dataHandler.finish();
     } catch (Exception e) {
-      LOGGER.error(e, "Failed for table: " + tableName + " in  finishing data handler");
+      LOGGER.error("Failed for table: " + tableName + " in  finishing data handler", e);
     }
     LOGGER.info("Record Processed For table: " + tableName);
     String logMessage =
@@ -230,10 +231,10 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       try {
         dataHandler.closeHandler();
       } catch (CarbonDataWriterException e) {
-        LOGGER.error(e, e.getMessage());
+        LOGGER.error(e.getMessage(), e);
         throw new CarbonDataLoadingException(e.getMessage(), e);
       } catch (Exception e) {
-        LOGGER.error(e, e.getMessage());
+        LOGGER.error(e.getMessage(), e);
         throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage());
       }
     }
@@ -271,7 +272,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
           LOGGER.info("closing all the DataMap writers registered to DataMap writer listener");
           listener.finish();
         } catch (IOException e) {
-          LOGGER.error(e, "error while closing the datamap writers");
+          LOGGER.error("error while closing the datamap writers", e);
           // ignoring the exception
         }
       }

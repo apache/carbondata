@@ -21,14 +21,15 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.processing.loading.partition.Partitioner;
 
+import org.apache.log4j.Logger;
+
 @InterfaceAudience.Internal
 public class RangePartitionerImpl implements Partitioner<CarbonRow> {
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(RangePartitionerImpl.class.getName());
   private CarbonRow[] rangeBounds;
   private Comparator<CarbonRow> comparator;

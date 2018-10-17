@@ -29,7 +29,6 @@ import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.constants.LoggerAction;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -45,13 +44,14 @@ import org.apache.carbondata.processing.util.TableOptionConstant;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 /**
  * Builder for {@link CarbonLoadModel}
  */
 @InterfaceAudience.Internal
 public class CarbonLoadModelBuilder {
-  private static final LogService LOGGER = LogServiceFactory.getLogService(
+  private static final Logger LOGGER = LogServiceFactory.getLogService(
       CarbonLoadModelBuilder.class.getName());
   private CarbonTable table;
 

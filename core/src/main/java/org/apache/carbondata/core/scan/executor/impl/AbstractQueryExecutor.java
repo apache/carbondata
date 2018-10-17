@@ -30,9 +30,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.common.logging.impl.StandardLogService;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datamap.Segment;
@@ -78,6 +76,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 /**
  * This class provides a skeletal implementation of the {@link QueryExecutor}
@@ -86,7 +85,7 @@ import org.apache.hadoop.conf.Configuration;
  */
 public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(AbstractQueryExecutor.class.getName());
   /**
    * holder for query properties which will be used to execute the query
@@ -119,9 +118,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * @param queryModel
    */
   protected void initQuery(QueryModel queryModel) throws IOException {
-    StandardLogService.setThreadName(StandardLogService.getPartitionID(
-        queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName()),
-        queryModel.getQueryId());
     LOGGER.info("Query will be executed on table: " + queryModel.getAbsoluteTableIdentifier()
         .getCarbonTableIdentifier().getTableName());
     this.freeUnsafeMemory = queryModel.isFreeUnsafeMemory();

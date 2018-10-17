@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.examples.sdk;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -25,17 +24,22 @@ import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.sdk.file.*;
+import org.apache.carbondata.sdk.file.CarbonReader;
+import org.apache.carbondata.sdk.file.CarbonWriter;
+import org.apache.carbondata.sdk.file.CarbonWriterBuilder;
+import org.apache.carbondata.sdk.file.Field;
+import org.apache.carbondata.sdk.file.Schema;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.s3a.Constants;
+import org.apache.log4j.Logger;
 
 /**
  * Example for testing CarbonWriter on S3
  */
 public class SDKS3Example {
     public static void main(String[] args) throws Exception {
-        LogService logger = LogServiceFactory.getLogService(SDKS3Example.class.getName());
+        Logger logger = LogServiceFactory.getLogService(SDKS3Example.class.getName());
         if (args == null || args.length < 3) {
             logger.error("Usage: java CarbonS3Example: <access-key> <secret-key>"
                 + "<s3-endpoint> [table-path-on-s3] [rows]");

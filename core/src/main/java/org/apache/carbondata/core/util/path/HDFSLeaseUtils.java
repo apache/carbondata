@@ -20,7 +20,6 @@ package org.apache.carbondata.core.util.path;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -31,6 +30,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.viewfs.ViewFileSystem;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.hdfs.server.namenode.LeaseExpiredException;
+import org.apache.log4j.Logger;
 
 /**
  * Implementation for HDFS utility methods
@@ -47,7 +47,7 @@ public class HDFSLeaseUtils {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(HDFSLeaseUtils.class.getName());
 
   /**
@@ -128,8 +128,8 @@ public class HDFSLeaseUtils {
                     + retryInterval + " ms...");
             Thread.sleep(retryInterval);
           } catch (InterruptedException e) {
-            LOGGER.error(e,
-                "Interrupted exception occurred while recovering lease for file : " + filePath);
+            LOGGER.error(
+                "Interrupted exception occurred while recovering lease for file : " + filePath, e);
           }
         }
       } catch (IOException e) {

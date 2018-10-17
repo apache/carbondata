@@ -19,9 +19,9 @@ package org.apache.carbondata.core.locks;
 
 import java.io.IOException;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 
+import org.apache.log4j.Logger;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
@@ -31,7 +31,7 @@ import org.apache.zookeeper.ZooKeeper;
  */
 public class ZookeeperInit {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(ZookeeperInit.class.getName());
 
   private static ZookeeperInit zooKeeperInit;

@@ -18,7 +18,6 @@ package org.apache.carbondata.spark.dictionary.server;
 
 import java.nio.ByteBuffer;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.dictionary.generator.ServerDictionaryGenerator;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
@@ -28,6 +27,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
+import org.apache.log4j.Logger;
 import org.apache.spark.network.client.RpcResponseCallback;
 import org.apache.spark.network.client.TransportClient;
 import org.apache.spark.network.server.OneForOneStreamManager;
@@ -39,7 +39,7 @@ import org.apache.spark.network.server.StreamManager;
  */
 @ChannelHandler.Sharable public class SecureDictionaryServerHandler extends RpcHandler {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(SecureDictionaryServerHandler.class.getName());
 
   /**

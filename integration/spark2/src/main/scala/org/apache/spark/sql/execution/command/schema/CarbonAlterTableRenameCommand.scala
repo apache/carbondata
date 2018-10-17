@@ -27,12 +27,11 @@ import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog}
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.features.TableOperation
-import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
@@ -44,7 +43,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
   extends MetadataCommand {
 
   override def processMetadata(sparkSession: SparkSession): Seq[Nothing] = {
-    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val oldTableIdentifier = alterTableRenameModel.oldTableIdentifier
     val newTableIdentifier = alterTableRenameModel.newTableIdentifier
     val oldDatabaseName = oldTableIdentifier.database
@@ -61,14 +60,14 @@ private[sql] case class CarbonAlterTableRenameCommand(
     }
     val oldTableName = oldTableIdentifier.table.toLowerCase
     val newTableName = newTableIdentifier.table.toLowerCase
-    LOGGER.audit(s"Rename table request has been received for $oldDatabaseName.$oldTableName")
+    Audit.log(LOGGER, s"Rename table request has been received for $oldDatabaseName.$oldTableName")
     LOGGER.info(s"Rename table request has been received for $oldDatabaseName.$oldTableName")
     val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val relation: CarbonRelation =
       metastore.lookupRelation(oldTableIdentifier.database, oldTableName)(sparkSession)
         .asInstanceOf[CarbonRelation]
     if (relation == null) {
-      LOGGER.audit(s"Rename table request has failed. " +
+      Audit.log(LOGGER, s"Rename table request has failed. " +
                    s"Table $oldDatabaseName.$oldTableName does not exist")
       throwMetadataException(oldDatabaseName, oldTableName, "Table does not exist")
     }
@@ -163,13 +162,13 @@ private[sql] case class CarbonAlterTableRenameCommand(
       OperationListenerBus.getInstance().fireEvent(alterTableRenamePostEvent, operationContext)
 
       sparkSession.catalog.refreshTable(newIdentifier.quotedString)
-      LOGGER.audit(s"Table $oldTableName has been successfully renamed to $newTableName")
+      Audit.log(LOGGER, s"Table $oldTableName has been successfully renamed to $newTableName")
       LOGGER.info(s"Table $oldTableName has been successfully renamed to $newTableName")
     } catch {
       case e: ConcurrentOperationException =>
         throw e
       case e: Exception =>
-        LOGGER.error(e, "Rename table failed: " + e.getMessage)
+        LOGGER.error("Rename table failed: " + e.getMessage, e)
         if (carbonTable != null) {
           AlterTableUtil.revertRenameTableChanges(
             newTableName,

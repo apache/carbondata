@@ -17,9 +17,8 @@
 
 package org.apache.carbondata.common.logging;
 
-import org.apache.carbondata.common.logging.impl.StandardLogService;
-
 import junit.framework.TestCase;
+import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,8 +32,8 @@ public class LogServiceFactoryTest_UT extends TestCase {
   }
 
   @Test public void testGetLogService() {
-    LogService logger = LogServiceFactory.getLogService(this.getClass().getName());
-    assertTrue(logger instanceof StandardLogService);
+    Logger logger = LogServiceFactory.getLogService(this.getClass().getName());
+    assertTrue(logger instanceof Logger);
   }
 
 }

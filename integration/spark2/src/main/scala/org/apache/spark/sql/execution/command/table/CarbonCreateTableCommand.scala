@@ -25,7 +25,9 @@ import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
 import org.apache.spark.sql.execution.command.MetadataCommand
 
+import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -60,12 +62,12 @@ case class CarbonCreateTableCommand(
     // set dbName and tableUnique Name in the table info
     tableInfo.setDatabaseName(dbName)
     tableInfo.setTableUniqueName(CarbonTable.buildUniqueName(dbName, tableName))
-    LOGGER.audit(s"Creating Table with Database name [$dbName] and Table name [$tableName]")
+    Audit.log(LOGGER, s"Creating Table with Database name [$dbName] and Table name [$tableName]")
     val isTransactionalTable = tableInfo.isTransactionalTable
     if (sparkSession.sessionState.catalog.listTables(dbName)
       .exists(_.table.equalsIgnoreCase(tableName))) {
       if (!ifNotExistsSet) {
-        LOGGER.audit(
+        Audit.log(LOGGER,
           s"Table creation with Database name [$dbName] and Table name [$tableName] failed. " +
           s"Table [$tableName] already exists under database [$dbName]")
         throw new TableAlreadyExistsException(dbName, tableName)
@@ -178,15 +180,15 @@ case class CarbonCreateTableCommand(
               case _: Exception => // No operation
             }
             val msg = s"Create table'$tableName' in database '$dbName' failed"
-            LOGGER.audit(msg.concat(", ").concat(e.getMessage))
-            LOGGER.error(e, msg)
+            Audit.log(LOGGER, msg.concat(", ").concat(e.getMessage))
+            LOGGER.error(msg, e)
             throwMetadataException(dbName, tableName, msg.concat(", ").concat(e.getMessage))
         }
       }
       val createTablePostExecutionEvent: CreateTablePostExecutionEvent =
         CreateTablePostExecutionEvent(sparkSession, tableIdentifier)
       OperationListenerBus.getInstance.fireEvent(createTablePostExecutionEvent, operationContext)
-      LOGGER.audit(s"Table created with Database name [$dbName] and Table name [$tableName]")
+      Audit.log(LOGGER, s"Table created with Database name [$dbName] and Table name [$tableName]")
     }
     Seq.empty
   }

@@ -27,7 +27,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
@@ -44,13 +43,15 @@ import org.apache.carbondata.processing.loading.converter.RowConverter;
 import org.apache.carbondata.processing.loading.exception.BadRecordFoundException;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 
+import org.apache.log4j.Logger;
+
 /**
  * It converts the complete row if necessary, dictionary columns are encoded with dictionary values
  * and nondictionary values are converted to binary.
  */
 public class RowConverterImpl implements RowConverter {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(RowConverterImpl.class.getName());
 
   private CarbonDataLoadConfiguration configuration;

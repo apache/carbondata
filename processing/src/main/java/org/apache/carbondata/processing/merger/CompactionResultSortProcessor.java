@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -48,6 +47,8 @@ import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.CarbonFactHandlerFactory;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.log4j.Logger;
+
 /**
  * This class will process the query result and convert the data
  * into a format compatible for data load
@@ -57,7 +58,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CompactionResultSortProcessor.class.getName());
   /**
    * carbon load model that contains all the required information for load
@@ -381,7 +382,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
         try {
           dataHandler.closeHandler();
         } catch (CarbonDataWriterException e) {
-          LOGGER.error(e, "Error in close data handler");
+          LOGGER.error("Error in close data handler", e);
           throw new Exception("Error in close data handler", e);
         }
       }

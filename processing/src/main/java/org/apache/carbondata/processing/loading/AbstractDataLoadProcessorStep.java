@@ -21,11 +21,12 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
+
+import org.apache.log4j.Logger;
 
 /**
  * This base abstract class for data loading.
@@ -38,7 +39,7 @@ import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
  */
 public abstract class AbstractDataLoadProcessorStep {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(AbstractDataLoadProcessorStep.class.getName());
 
   protected CarbonDataLoadConfiguration configuration;

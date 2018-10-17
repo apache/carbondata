@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.fgdatamap.FineGrainBlocklet;
@@ -41,6 +40,7 @@ import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -64,7 +64,7 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
   /**
    * log information
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(LuceneFineGrainDataMap.class.getName());
 
   /**
@@ -436,7 +436,7 @@ public class LuceneFineGrainDataMap extends FineGrainDataMap {
           }
         }
       } catch (IOException e) {
-        LOGGER.error(e, "Ignoring the exception, Error while closing the lucene index reader");
+        LOGGER.error("Ignoring the exception, Error while closing the lucene index reader", e);
       }
     }
   }

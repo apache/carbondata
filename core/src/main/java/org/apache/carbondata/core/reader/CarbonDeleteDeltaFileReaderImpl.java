@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
@@ -38,12 +36,6 @@ import com.google.gson.Gson;
  * This class perform the functionality of reading the delete delta file
  */
 public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileReader {
-
-  /**
-   * LOGGER
-   */
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(CarbonDeleteDeltaFileReaderImpl.class.getName());
 
   private String filePath;
 

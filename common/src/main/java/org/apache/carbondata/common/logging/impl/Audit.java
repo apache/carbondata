@@ -15,27 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.common.logging;
+package org.apache.carbondata.common.logging.impl;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import org.apache.carbondata.common.logging.impl.AuditLevel;
-import org.apache.carbondata.common.logging.impl.StatisticLevel;
-
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.log4j.Logger;
 
-/**
- * Log Services, wrapper of org.apache.log4j.Logger
- */
-public class LogService extends Logger {
-
+public class Audit {
   private static String hostName;
   private static String username;
 
-  {
+  static {
     try {
       hostName = InetAddress.getLocalHost().getHostName();
     } catch (UnknownHostException e) {
@@ -48,58 +41,9 @@ public class LogService extends Logger {
     }
   }
 
-  protected LogService(String name) {
-    super(name);
-  }
-
-  public void debug(String message) {
-    super.debug(message);
-  }
-
-  public void info(String message) {
-    super.info(message);
-  }
-
-  public void warn(String message) {
-    super.warn(message);
-  }
-
-  public void error(String message) {
-    super.error(message);
-  }
-
-  public void error(Throwable throwable) {
-    super.error(throwable);
-  }
-
-  public void error(Throwable throwable, String message) {
-    super.error(message, throwable);
-  }
-
-  public void audit(String message) {
-    String threadid = Thread.currentThread().getId() + "";
-    super.log(AuditLevel.AUDIT,
+  public static void log(Logger logger, String message) {
+    String threadid = String.valueOf(Thread.currentThread().getId());
+    logger.log(AuditLevel.AUDIT,
         "[" + hostName + "]" + "[" + username + "]" + "[Thread-" + threadid + "]" + message);
-  }
-
-  /**
-   * Below method will be used to log the statistic information
-   *
-   * @param message statistic message
-   */
-  public void statistic(String message) {
-    super.log(StatisticLevel.STATISTIC, message);
-  }
-
-  public boolean isDebugEnabled() {
-    return super.isDebugEnabled();
-  }
-
-  public boolean isWarnEnabled() {
-    return super.isEnabledFor(org.apache.log4j.Level.WARN);
-  }
-
-  public boolean isInfoEnabled() {
-    return super.isInfoEnabled();
   }
 }

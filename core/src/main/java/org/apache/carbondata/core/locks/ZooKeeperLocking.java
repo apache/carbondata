@@ -20,13 +20,13 @@ package org.apache.carbondata.core.locks;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs.Ids;
@@ -37,7 +37,7 @@ import org.apache.zookeeper.ZooKeeper;
  */
 public class ZooKeeperLocking extends AbstractCarbonLock {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(ZooKeeperLocking.class.getName());
 
   /**
@@ -106,7 +106,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
         zk.create(this.lockTypeFolder, new byte[1], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
       }
     } catch (KeeperException | InterruptedException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
     }
     initRetry();
   }
@@ -167,7 +167,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
         return false;
       }
     } catch (KeeperException | InterruptedException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       return false;
     }
   }
@@ -183,7 +183,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
         lockPath = null;
       }
     } catch (KeeperException | InterruptedException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       return false;
     }
     return true;

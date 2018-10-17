@@ -226,7 +226,7 @@ class CarbonMergerRDD[K, V](
 
       } catch {
         case e: Exception =>
-          LOGGER.error(e, "Compaction Failed ")
+          LOGGER.error("Compaction Failed ", e)
           throw e
       }
 

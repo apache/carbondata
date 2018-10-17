@@ -20,12 +20,13 @@ package org.apache.carbondata.core.constants;
 import java.io.InputStream;
 import java.util.Properties;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+
+import org.apache.log4j.Logger;
 
 public final class CarbonVersionConstants {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonVersionConstants.class.getName());
   /**
    * the file name of CarbonData version info
@@ -63,13 +64,13 @@ public final class CarbonVersionConstants {
       // read CARBONDATA_VERSION_INFO_FILE into props
       props.load(resourceStream);
     } catch (Exception e) {
-      LOGGER.error(e, "Error loading properties from " + CARBONDATA_VERSION_INFO_FILE);
+      LOGGER.error("Error loading properties from " + CARBONDATA_VERSION_INFO_FILE, e);
     } finally {
       if (resourceStream != null) {
         try {
           resourceStream.close();
         } catch (Exception e) {
-          LOGGER.error(e, "Error closing CarbonData build info resource stream");
+          LOGGER.error("Error closing CarbonData build info resource stream", e);
         }
       }
     }

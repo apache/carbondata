@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -53,11 +52,12 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.log4j.Logger;
 import org.xerial.snappy.SnappyInputStream;
 import org.xerial.snappy.SnappyOutputStream;
 
 public class LocalCarbonFile implements CarbonFile {
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(LocalCarbonFile.class.getName());
   private File file;
 
@@ -118,8 +118,7 @@ public class LocalCarbonFile implements CarbonFile {
     try {
       return file.getCanonicalPath();
     } catch (IOException e) {
-      LOGGER
-          .error(e, "Exception occured" + e.getMessage());
+      LOGGER.error("Exception occured" + e.getMessage(), e);
     }
     return null;
   }

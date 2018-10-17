@@ -18,12 +18,16 @@ package org.apache.carbondata.datamap.bloom;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
@@ -51,13 +55,14 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 /**
  * This class is for Bloom Filter for blocklet level
  */
 @InterfaceAudience.Internal
 public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDataMap> {
-  private static final LogService LOGGER = LogServiceFactory.getLogService(
+  private static final Logger LOGGER = LogServiceFactory.getLogService(
       BloomCoarseGrainDataMapFactory.class.getName());
   /**
    * property for size of bloom filter

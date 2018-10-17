@@ -17,23 +17,24 @@
 
 package org.apache.carbondata.core.load;
 
-import org.apache.carbondata.common.logging.LogService;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 
+import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-
-import static junit.framework.Assert.*;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotSame;
 
 public class LoadMetadataDetailsUnitTest {
 
   private LoadMetadataDetails loadMetadataDetails;
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(LoadMetadataDetailsUnitTest.class.getName());
 
   @Before public void setup() {

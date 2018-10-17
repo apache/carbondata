@@ -54,8 +54,7 @@ object MatchCreateDataSourceTable {
 }
 
 class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
-  val LOGGER: LogService =
-    LogServiceFactory.getLogService(this.getClass.getName)
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
   def apply(plan: LogicalPlan): Seq[SparkPlan] = {
     plan match {
       case LoadDataCommand(identifier, path, isLocal, isOverwrite, partition)

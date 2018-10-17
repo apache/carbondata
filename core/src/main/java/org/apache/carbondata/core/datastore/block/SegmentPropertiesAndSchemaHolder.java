@@ -25,7 +25,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
@@ -36,6 +35,8 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
+import org.apache.log4j.Logger;
+
 /**
  * Singleton class which will help in creating the segment properties
  */
@@ -44,7 +45,7 @@ public class SegmentPropertiesAndSchemaHolder {
   /**
    * Logger
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(SegmentPropertiesAndSchemaHolder.class.getName());
   /**
    * SegmentPropertiesAndSchemaHolder instance

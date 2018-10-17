@@ -31,7 +31,6 @@ import java.util.Set;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.constants.LoggerAction;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
@@ -58,9 +57,10 @@ import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 public final class CarbonDataProcessorUtil {
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonDataProcessorUtil.class.getName());
 
   private CarbonDataProcessorUtil() {
@@ -77,7 +77,7 @@ public final class CarbonDataProcessorUtil {
         try {
           CarbonUtil.deleteFoldersAndFiles(file);
         } catch (IOException | InterruptedException e) {
-          LOGGER.error(e, "Failed to delete " + loc);
+          LOGGER.error("Failed to delete " + loc, e);
         }
       }
     }

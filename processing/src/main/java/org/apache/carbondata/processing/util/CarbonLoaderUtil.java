@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
@@ -60,13 +59,17 @@ import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.merger.NodeMultiBlockRelation;
 
-import static org.apache.carbondata.core.enums.EscapeSequences.*;
+import static org.apache.carbondata.core.enums.EscapeSequences.BACKSPACE;
+import static org.apache.carbondata.core.enums.EscapeSequences.CARRIAGE_RETURN;
+import static org.apache.carbondata.core.enums.EscapeSequences.NEW_LINE;
+import static org.apache.carbondata.core.enums.EscapeSequences.TAB;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 public final class CarbonLoaderUtil {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonLoaderUtil.class.getName());
 
   private CarbonLoaderUtil() {

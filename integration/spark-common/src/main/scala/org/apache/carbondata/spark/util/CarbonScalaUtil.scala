@@ -27,6 +27,7 @@ import scala.collection.mutable
 import scala.util.Try
 
 import com.univocity.parsers.common.TextParsingException
+import org.apache.log4j.Logger
 import org.apache.spark.SparkException
 import org.apache.spark.sql._
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
@@ -363,7 +364,7 @@ object CarbonScalaUtil {
   /**
    * Retrieve error message from exception
    */
-  def retrieveAndLogErrorMsg(ex: Throwable, logger: LogService): (String, String) = {
+  def retrieveAndLogErrorMsg(ex: Throwable, logger: Logger): (String, String) = {
     var errorMessage = "DataLoad failure"
     var executorMessage = ""
     if (ex != null) {
