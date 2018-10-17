@@ -65,6 +65,7 @@ public class CarbonWriterBuilder {
   private boolean isLocalDictionaryEnabled;
   private short numOfThreads;
   private Configuration hadoopConf;
+  private String writtenByApp;
   private enum WRITER_TYPE {
     CSV, AVRO, JSON
   }
@@ -293,6 +294,15 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   * @param appName appName which is writing the carbondata files
+   * @return
+   */
+  public CarbonWriterBuilder writtenBy(String appName) {
+    this.writtenByApp = appName;
+    return this;
+  }
+
+  /**
    * @param enableLocalDictionary enable local dictionary  , default is false
    * @return updated CarbonWriterBuilder
    */
@@ -371,8 +381,14 @@ public class CarbonWriterBuilder {
           "Writer type is not set, use withCsvInput() or withAvroInput() or withJsonInput()  "
               + "API based on input");
     }
+    if (this.writtenByApp == null) {
+      throw new RuntimeException(
+          "AppName is not set, please use writtenBy() API to set the App Name"
+              + "which is using SDK");
+    }
     CarbonLoadModel loadModel = buildLoadModel(schema);
     loadModel.setSdkWriterCores(numOfThreads);
+    loadModel.setAppName(writtenByApp);
     if (hadoopConf == null) {
       hadoopConf = FileFactory.getConfiguration();
     }

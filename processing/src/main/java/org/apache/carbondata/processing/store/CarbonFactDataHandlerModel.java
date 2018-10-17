@@ -187,6 +187,10 @@ public class CarbonFactDataHandlerModel {
 
   private String columnCompressor;
 
+  private String appName;
+
+  private String version;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    */
@@ -313,6 +317,8 @@ public class CarbonFactDataHandlerModel {
     }
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
     carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
+    carbonFactDataHandlerModel.appName = configuration.getAppName();
+    carbonFactDataHandlerModel.version = configuration.getVersion();
     setNumberOfCores(carbonFactDataHandlerModel);
     carbonFactDataHandlerModel.setVarcharDimIdxInNoDict(varcharDimIdxInNoDict);
     return carbonFactDataHandlerModel;
@@ -738,5 +744,14 @@ public class CarbonFactDataHandlerModel {
   public void setNoDictAndComplexColumns(CarbonColumn[] noDictAndComplexColumns) {
     this.noDictAndComplexColumns = noDictAndComplexColumns;
   }
+
+  public String getAppName() {
+    return appName;
+  }
+
+  public String getVersion() {
+    return version;
+  }
+
 }
 

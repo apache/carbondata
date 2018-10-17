@@ -76,7 +76,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val startCommand: Parser[LogicalPlan] =
     loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
-    alterPartition | datamapManagement | alterTableFinishStreaming | stream
+    alterPartition | datamapManagement | alterTableFinishStreaming | stream | cli
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
@@ -492,6 +492,23 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           convertDbNameToLowerCase(databaseName), tableName.toLowerCase(), limit,
           showHistory.isDefined)
     }
+
+
+  protected lazy val cli: Parser[LogicalPlan] =
+    (SHOW ~> SUMMARY ~> FOR ~> TABLE) ~ (ident <~ ".").? ~ ident ~
+    (OPTIONS ~> "(" ~> repsep(summaryOptions, ",") <~ ")").? <~
+    opt(";") ^^ {
+      case showSummary ~ databaseName ~ tableName ~ commandList =>
+        var commandOptions: Map[String, String] = null
+        if (commandList.isDefined) {
+          commandOptions = commandList.getOrElse(List.empty[(String, String)]).toMap
+        }
+        CarbonShowSummaryCommand(
+          convertDbNameToLowerCase(databaseName),
+          tableName.toLowerCase(),
+          commandOptions.map { case (key, value) => key.toLowerCase -> value })
+    }
+
 
   protected lazy val alterTableModifyDataType: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ CHANGE ~ ident ~ ident ~

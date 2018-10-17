@@ -19,6 +19,7 @@ package org.apache.carbondata.tool;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -50,10 +51,12 @@ class ScanBenchmark implements Command {
   private String dataFolder;
   private PrintStream out;
   private DataFile file;
+  private ArrayList<String> outPuts;
 
-  ScanBenchmark(String dataFolder, PrintStream out) {
+  ScanBenchmark(String dataFolder, PrintStream out, ArrayList<String> outPuts) {
     this.dataFolder = dataFolder;
     this.out = out;
+    this.outPuts = outPuts;
   }
 
   @Override
@@ -62,7 +65,7 @@ class ScanBenchmark implements Command {
       String filePath = line.getOptionValue("f");
       file = new DataFile(FileFactory.getCarbonFile(filePath));
     } else {
-      FileCollector collector = new FileCollector(out);
+      FileCollector collector = new FileCollector(out, outPuts);
       collector.collectFiles(dataFolder);
       if (collector.getNumDataFiles() == 0) {
         return;
@@ -71,7 +74,7 @@ class ScanBenchmark implements Command {
       file = dataFiles.entrySet().iterator().next().getValue();
     }
 
-    out.println("\n## Benchmark");
+    outPuts.add("\n## Benchmark");
     AtomicReference<FileHeader> fileHeaderRef = new AtomicReference<>();
     AtomicReference<FileFooter3> fileFoorterRef = new AtomicReference<>();
     AtomicReference<DataFileFooter> convertedFooterRef = new AtomicReference<>();
@@ -97,7 +100,7 @@ class ScanBenchmark implements Command {
 
     if (line.hasOption("c")) {
       String columnName = line.getOptionValue("c");
-      out.println("\nScan column '" + columnName + "'");
+      outPuts.add("\nScan column '" + columnName + "'");
 
       DataFileFooter footer = convertedFooterRef.get();
       AtomicReference<AbstractRawColumnChunk> columnChunk = new AtomicReference<>();
@@ -105,7 +108,7 @@ class ScanBenchmark implements Command {
       boolean dimension = file.getColumn(columnName).isDimensionColumn();
       for (int i = 0; i < footer.getBlockletList().size(); i++) {
         int blockletId = i;
-        out.println(String.format("Blocklet#%d: total size %s, %,d pages, %,d rows",
+        outPuts.add(String.format("Blocklet#%d: total size %s, %,d pages, %,d rows",
             blockletId,
             Strings.formatSize(file.getColumnDataSizeInBytes(blockletId, columnIndex)),
             footer.getBlockletList().get(blockletId).getNumberOfPages(),
@@ -139,7 +142,7 @@ class ScanBenchmark implements Command {
     start = System.nanoTime();
     op.run();
     end = System.nanoTime();
-    out.println(String.format("%s takes %,d us", opName, (end - start) / 1000));
+    outPuts.add(String.format("%s takes %,d us", opName, (end - start) / 1000));
   }
 
   private DataFileFooter readAndConvertFooter(DataFile file) throws IOException {
