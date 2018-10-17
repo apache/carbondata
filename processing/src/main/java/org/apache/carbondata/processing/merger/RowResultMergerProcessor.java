@@ -171,6 +171,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
       mergeStatus = true;
     } catch (Exception e) {
       mergeStatus = false;
+      LOGGER.error(e.getLocalizedMessage(), e);
       throw e;
     } finally {
       try {
