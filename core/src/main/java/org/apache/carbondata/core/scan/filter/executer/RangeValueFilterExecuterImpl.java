@@ -511,7 +511,7 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
 
     // Binary Search cannot be done on '@NU#LL$!", so need to check and compare for null on
     // matching row.
-    if (dimensionColumnPage.isNoDicitionaryColumn()) {
+    if (dimensionColumnPage.isNoDicitionaryColumn() && !dimensionColumnPage.isAdaptiveEncoded()) {
       updateForNoDictionaryColumn(startMin, endMax, dimensionColumnPage, bitSet);
     }
     return bitSet;

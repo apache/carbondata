@@ -301,6 +301,7 @@ class AlterTableColumnSchemaGenerator(
     val columnValidator = CarbonSparkFactory.getCarbonColumnValidator
     columnValidator.validateColumns(allColumns)
 
+    allColumns = CarbonScalaUtil.reArrangeColumnSchema(allColumns)
 
     def getLocalDictColumnList(tableProperties: scala.collection.mutable.Map[String, String],
         columns: scala.collection.mutable.ListBuffer[ColumnSchema]): (scala.collection.mutable
