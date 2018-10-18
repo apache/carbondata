@@ -18,6 +18,7 @@
 package org.apache.carbondata.spark.util
 
 
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util
 import java.util.regex.{Matcher, Pattern}
@@ -705,38 +706,47 @@ object CommonUtil {
       carbonLoadModel: CarbonLoadModel,
       isCompactionFlow: Boolean,
       isAltPartitionFlow: Boolean) : Unit = {
-    var storeLocation: String = null
+    val storeLocation = getTempStoreLocations(index.toString).mkString(File.pathSeparator)
 
-    // this property is used to determine whether temp location for carbon is inside
-    // container temp dir or is yarn application directory.
-    val carbonUseLocalDir = CarbonProperties.getInstance()
-      .getProperty("carbon.use.local.dir", "false")
-
-    if (carbonUseLocalDir.equalsIgnoreCase("true")) {
-
-      val storeLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
-      if (null != storeLocations && storeLocations.nonEmpty) {
-        storeLocation = storeLocations(Random.nextInt(storeLocations.length))
-      }
-      if (storeLocation == null) {
-        storeLocation = System.getProperty("java.io.tmpdir")
-      }
-    } else {
-      storeLocation = System.getProperty("java.io.tmpdir")
-    }
-    storeLocation = storeLocation + CarbonCommonConstants.FILE_SEPARATOR + "carbon" +
-      System.nanoTime() + CarbonCommonConstants.UNDERSCORE + index
-
-    val tempLocationKey = CarbonDataProcessorUtil
-      .getTempStoreLocationKey(carbonLoadModel.getDatabaseName,
-        carbonLoadModel.getTableName,
-        carbonLoadModel.getSegmentId,
-        carbonLoadModel.getTaskNo,
-        isCompactionFlow,
-        isAltPartitionFlow)
+    val tempLocationKey = CarbonDataProcessorUtil.getTempStoreLocationKey(
+      carbonLoadModel.getDatabaseName,
+      carbonLoadModel.getTableName,
+      carbonLoadModel.getSegmentId,
+      carbonLoadModel.getTaskNo,
+      isCompactionFlow,
+      isAltPartitionFlow)
     CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation)
   }
 
+  /**
+   * get the temp locations for each process thread
+   *
+   * @param index the id for each process thread
+   * @return an array of temp locations
+   */
+  def getTempStoreLocations(index: String) : Array[String] = {
+    var storeLocation: Array[String] = Array[String]()
+    val isCarbonUseYarnLocalDir = CarbonProperties.getInstance().getProperty(
+      CarbonCommonConstants.CARBON_LOADING_USE_YARN_LOCAL_DIR,
+      CarbonCommonConstants.CARBON_LOADING_USE_YARN_LOCAL_DIR_DEFAULT).equalsIgnoreCase("true")
+    val tmpLocationSuffix =
+      s"${File.separator}carbon${System.nanoTime()}${CarbonCommonConstants.UNDERSCORE}$index"
+    if (isCarbonUseYarnLocalDir) {
+      val yarnStoreLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
+
+      if (null != yarnStoreLocations && yarnStoreLocations.nonEmpty) {
+        storeLocation = yarnStoreLocations.map(_ + tmpLocationSuffix)
+      } else {
+        LOGGER.warn("It seems that the we didn't configure local dirs for yarn," +
+                    " so we are unable to use them for data loading." +
+                    " Here we will fall back using the java tmp dir.")
+        storeLocation = storeLocation :+ (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
+      }
+    } else {
+      storeLocation = storeLocation :+ (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
+    }
+    storeLocation
+  }
   /**
    * This method will validate the cache level
    *

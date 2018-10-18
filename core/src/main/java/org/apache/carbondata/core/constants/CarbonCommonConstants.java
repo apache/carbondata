@@ -1371,16 +1371,15 @@ public final class CarbonCommonConstants {
   public static final String CARBON_SECURE_DICTIONARY_SERVER_DEFAULT = "true";
 
   /**
-   * whether to use multi directories when loading data,
-   * the main purpose is to avoid single-disk-hot-spot
+   * for loading, whether to use yarn's local dir the main purpose is to avoid single disk hot spot
    */
   @CarbonProperty
-  public static final String CARBON_USE_MULTI_TEMP_DIR = "carbon.use.multiple.temp.dir";
+  public static final String CARBON_LOADING_USE_YARN_LOCAL_DIR = "carbon.use.local.dir";
 
   /**
-   * default value for multi temp dir
+   * default value for whether to enable carbon use yarn local dir
    */
-  public static final String CARBON_USE_MULTI_TEMP_DIR_DEFAULT = "false";
+  public static final String CARBON_LOADING_USE_YARN_LOCAL_DIR_DEFAULT = "true";
 
   /**
    * name of compressor to compress sort temp files
