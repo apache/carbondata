@@ -19,6 +19,8 @@ package org.apache.spark.sql.execution.streaming
 
 import java.util.Date
 
+import scala.collection.JavaConverters._
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
@@ -36,6 +38,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
+import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.stats.QueryStatistic
 import org.apache.carbondata.core.util.CarbonProperties
@@ -43,7 +46,6 @@ import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
-import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.rdd.StreamHandoffRDD
@@ -102,6 +104,17 @@ class CarbonAppendableStreamSink(
     CarbonProperties.getInstance().isEnableAutoHandoff
   )
 
+  // measure data type array
+  private lazy val msrDataTypes = {
+    carbonLoadModel
+      .getCarbonDataLoadSchema
+      .getCarbonTable
+      .getMeasures
+      .asScala
+      .map(_.getDataType)
+      .toArray
+  }
+
   override def addBatch(batchId: Long, data: DataFrame): Unit = {
     if (batchId <= fileLog.getLatest().map(_._1).getOrElse(-1L)) {
       CarbonAppendableStreamSink.LOGGER.info(s"Skipping already committed batch $batchId")
@@ -133,14 +146,14 @@ class CarbonAppendableStreamSink(
       CarbonAppendableStreamSink.writeDataFileJob(
         sparkSession,
         carbonTable,
-        parameters,
         batchId,
         currentSegmentId,
         data.queryExecution,
         committer,
         hadoopConf,
         carbonLoadModel,
-        server)
+        server,
+        msrDataTypes)
       // fire post event on every batch add
       val loadTablePostExecutionEvent = new LoadTablePostExecutionEvent(
         carbonTable.getCarbonTableIdentifier,
@@ -212,14 +225,14 @@ object CarbonAppendableStreamSink {
   def writeDataFileJob(
       sparkSession: SparkSession,
       carbonTable: CarbonTable,
-      parameters: Map[String, String],
       batchId: Long,
       segmentId: String,
       queryExecution: QueryExecution,
       committer: FileCommitProtocol,
       hadoopConf: Configuration,
       carbonLoadModel: CarbonLoadModel,
-      server: Option[DictionaryServer]): Unit = {
+      server: Option[DictionaryServer],
+      msrDataTypes: Array[DataType]): Unit = {
 
     // create job
     val job = Job.getInstance(hadoopConf)
@@ -276,7 +289,7 @@ object CarbonAppendableStreamSink {
         // update data file info in index file
         StreamSegment.updateIndexFile(
           CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentId),
-          result.map(_._2))
+          result.map(_._2), msrDataTypes)
 
       } catch {
         // catch fault of executor side
