@@ -146,6 +146,7 @@ public class TableProcessingOperations {
         }
       });
     } finally {
+      CarbonProperties.getInstance().removeProperty(tempLocationKey);
       if (null != localFolderDeletionService) {
         localFolderDeletionService.shutdown();
       }

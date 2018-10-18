@@ -267,9 +267,6 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
             iterator.closeWriter(true);
           }
           dataLoadExecutor.close();
-          // clean up the folders and files created locally for data load operation
-          TableProcessingOperations.deleteLocalDataLoadFolderLocation(loadModel, false, false);
-
           throw new RuntimeException(e);
         } finally {
           ThreadLocalSessionInfo.unsetAll();
