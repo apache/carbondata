@@ -65,7 +65,8 @@ public class BloomDataMapBuilder extends AbstractBloomDataMapWriter implements D
   protected byte[] convertNonDictionaryValue(int indexColIdx, Object value) {
     // no dictionary measure columns will be of original data, so convert it to bytes
     if (DataTypeUtil.isPrimitiveColumn(indexColumns.get(indexColIdx).getDataType())) {
-      return CarbonUtil.getValueAsBytes(indexColumns.get(indexColIdx).getDataType(), value);
+      return DataTypeUtil.getBytesDataDataTypeForNoDictionaryColumn(value,
+          indexColumns.get(indexColIdx).getDataType());
     }
     return (byte[]) value;
   }

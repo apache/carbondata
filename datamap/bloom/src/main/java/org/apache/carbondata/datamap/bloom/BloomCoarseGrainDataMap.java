@@ -306,12 +306,16 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       format.setLenient(false);
       format.setTimeZone(TimeZone.getTimeZone("GMT"));
       literalValue = format.format(new Date((long) expressionValue / 1000));
-    } else if (le.getLiteralExpDataType() == DataTypes.TIMESTAMP) {
+    } else if (le.getLiteralExpDataType() == DataTypes.TIMESTAMP && (
+        this.name2Col.get(columnName).hasEncoding(Encoding.DICTIONARY) || this.name2Col
+            .get(columnName).hasEncoding(Encoding.DIRECT_DICTIONARY))) {
       DateFormat format =
           new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
       // the below settings are set statically according to TimeStampDirectDirectionaryGenerator
       format.setLenient(false);
       literalValue = format.format(new Date((long) expressionValue / 1000));
+    } else if (le.getLiteralExpDataType() == DataTypes.TIMESTAMP) {
+      literalValue = (long) expressionValue / 1000L;
     } else {
       literalValue = expressionValue;
     }
@@ -350,12 +354,12 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     if (null != filterLiteralValue) {
       strFilterValue = String.valueOf(filterLiteralValue);
     }
-
-    Object convertedValue = this.name2Converters.get(carbonColumn.getColName()).convert(
-        strFilterValue, badRecordLogHolder);
+    Object convertedValue = null;
 
     byte[] internalFilterValue;
     if (carbonColumn.isMeasure()) {
+      convertedValue = this.name2Converters.get(carbonColumn.getColName())
+          .convert(strFilterValue, badRecordLogHolder);
       // for measures, the value is already the type, just convert it to bytes.
       if (convertedValue == null) {
         convertedValue = DataConvertUtil.getNullValueForMeasure(carbonColumn.getDataType(),
@@ -363,26 +367,20 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       }
       // Carbon stores boolean as byte. Here we convert it for `getValueAsBytes`
       if (carbonColumn.getDataType().equals(DataTypes.BOOLEAN)) {
-        convertedValue = BooleanConvert.boolean2Byte((Boolean)convertedValue);
+        convertedValue = BooleanConvert.boolean2Byte((Boolean) convertedValue);
       }
       internalFilterValue = CarbonUtil.getValueAsBytes(carbonColumn.getDataType(), convertedValue);
-    } else if (carbonColumn.hasEncoding(Encoding.DIRECT_DICTIONARY) ||
-        carbonColumn.hasEncoding(Encoding.DICTIONARY)) {
+    } else if (carbonColumn.hasEncoding(Encoding.DIRECT_DICTIONARY) || carbonColumn
+        .hasEncoding(Encoding.DICTIONARY)) {
+      convertedValue = this.name2Converters.get(carbonColumn.getColName())
+          .convert(strFilterValue, badRecordLogHolder);
       // for dictionary/date columns, convert the surrogate key to bytes
       internalFilterValue = CarbonUtil.getValueAsBytes(DataTypes.INT, convertedValue);
     } else {
-      // for non dictionary dimensions, numeric columns will be of original data,
-      // so convert the data to bytes
-      if (DataTypeUtil.isPrimitiveColumn(carbonColumn.getDataType())) {
-        if (convertedValue == null) {
-          convertedValue = DataConvertUtil.getNullValueForMeasure(carbonColumn.getDataType(),
-              carbonColumn.getColumnSchema().getScale());
-        }
-        internalFilterValue =
-            CarbonUtil.getValueAsBytes(carbonColumn.getDataType(), convertedValue);
-      } else {
-        internalFilterValue = (byte[]) convertedValue;
-      }
+      // for non dictionary dimensions, convert the filter value to bytes based on the data type
+      internalFilterValue = DataTypeUtil
+          .getBytesDataDataTypeForNoDictionaryColumn(filterLiteralValue,
+              carbonColumn.getDataType());
     }
     if (internalFilterValue.length == 0) {
       internalFilterValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
