@@ -316,7 +316,7 @@ public final class DataLoadProcessBuilder {
       configuration.setWritingCoresCount(loadModel.getSdkWriterCores());
     }
     configuration.setColumnCompressor(loadModel.getColumnCompressor());
-    configuration.setAppName(loadModel.getAppName());
+    configuration.setWrittenBy(loadModel.getWrittenBy());
     configuration.setVersion(CarbonVersionConstants.CARBONDATA_VERSION);
     return configuration;
   }

@@ -382,7 +382,7 @@ public class CarbonWriterBuilder {
           "Writer type is not set, use withCsvInput() or withAvroInput() or withJsonInput()  "
               + "API based on input");
     }
-    if (this.writtenByApp == null) {
+    if (this.writtenByApp == null || this.writtenByApp.isEmpty()) {
       throw new RuntimeException(
           "AppName is not set, please use writtenBy() API to set the App Name"
               + "which is using SDK");

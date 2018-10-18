@@ -41,6 +41,7 @@ import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonVersionConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -174,6 +175,8 @@ public class StoreCreator {
     loadModel.setSegmentId("0");
     loadModel.setFactTimeStamp(System.currentTimeMillis());
     loadModel.setMaxColumns("10");
+    loadModel.setWrittenBy("StoreCreator");
+    loadModel.setVersion(CarbonVersionConstants.CARBONDATA_VERSION);
     return loadModel;
   }
 

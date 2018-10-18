@@ -73,7 +73,9 @@ public class CarbonLoadModel implements Serializable {
 
   private String blocksID;
 
-  private String appName;
+  private String writtenBy;
+
+  private String version;
 
   /**
    * Map from carbon dimension to pre defined dict file path
@@ -481,7 +483,8 @@ public class CarbonLoadModel implements Serializable {
     copy.parentTablePath = parentTablePath;
     copy.sdkWriterCores = sdkWriterCores;
     copy.columnCompressor = columnCompressor;
-    copy.appName = appName;
+    copy.writtenBy = writtenBy;
+    copy.version = version;
     return copy;
   }
 
@@ -539,7 +542,8 @@ public class CarbonLoadModel implements Serializable {
     copyObj.parentTablePath = parentTablePath;
     copyObj.sdkWriterCores = sdkWriterCores;
     copyObj.columnCompressor = columnCompressor;
-    copyObj.appName = appName;
+    copyObj.writtenBy = writtenBy;
+    copyObj.version = version;
     return copyObj;
   }
 
@@ -941,12 +945,19 @@ public class CarbonLoadModel implements Serializable {
     this.columnCompressor = columnCompressor;
   }
 
-  public String getAppName() {
-    return appName;
+  public String getWrittenBy() {
+    return writtenBy;
   }
 
-  public void setAppName(String appName) {
-    this.appName = appName;
+  public void setWrittenBy(String writtenBy) {
+    this.writtenBy = writtenBy;
   }
 
+  public String getVersion() {
+    return version;
+  }
+
+  public void setVersion(String version) {
+    this.version = version;
+  }
 }

@@ -188,7 +188,7 @@ public class CarbonFactDataHandlerModel {
 
   private String columnCompressor;
 
-  private String appName;
+  private String writtenBy;
 
   private String version;
 
@@ -318,7 +318,7 @@ public class CarbonFactDataHandlerModel {
     }
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
     carbonFactDataHandlerModel.writingCoresCount = configuration.getWritingCoresCount();
-    carbonFactDataHandlerModel.appName = configuration.getAppName();
+    carbonFactDataHandlerModel.writtenBy = configuration.getWrittenBy();
     carbonFactDataHandlerModel.version = configuration.getVersion();
     setNumberOfCores(carbonFactDataHandlerModel);
     carbonFactDataHandlerModel.setVarcharDimIdxInNoDict(varcharDimIdxInNoDict);
@@ -394,6 +394,8 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setPrimitiveDimLens(segmentProperties.getDimColumnsCardinality());
     carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
     carbonFactDataHandlerModel.setColumnCompressor(loadModel.getColumnCompressor());
+    carbonFactDataHandlerModel.writtenBy = loadModel.getWrittenBy();
+    carbonFactDataHandlerModel.version = loadModel.getVersion();
 
     carbonFactDataHandlerModel.tableSpec = new TableSpec(carbonTable);
     DataMapWriterListener listener = new DataMapWriterListener();
@@ -746,8 +748,8 @@ public class CarbonFactDataHandlerModel {
     this.noDictAndComplexColumns = noDictAndComplexColumns;
   }
 
-  public String getAppName() {
-    return appName;
+  public String getWrittenBy() {
+    return writtenBy;
   }
 
   public String getVersion() {

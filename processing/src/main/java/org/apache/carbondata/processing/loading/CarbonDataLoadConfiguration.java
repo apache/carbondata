@@ -127,7 +127,7 @@ public class CarbonDataLoadConfiguration {
    */
   private String columnCompressor;
 
-  private String appName;
+  private String writtenBy;
 
   private String version;
 
@@ -465,12 +465,12 @@ public class CarbonDataLoadConfiguration {
     this.columnCompressor = columnCompressor;
   }
 
-  public String getAppName() {
-    return appName;
+  public String getWrittenBy() {
+    return writtenBy;
   }
 
-  public void setAppName(String appName) {
-    this.appName = appName;
+  public void setWrittenBy(String writtenBy) {
+    this.writtenBy = writtenBy;
   }
 
   public String getVersion() {

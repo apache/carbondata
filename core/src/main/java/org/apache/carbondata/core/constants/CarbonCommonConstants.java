@@ -1710,6 +1710,16 @@ public final class CarbonCommonConstants {
   public static final int CARBON_MINMAX_ALLOWED_BYTE_COUNT_MIN = 10;
   public static final int CARBON_MINMAX_ALLOWED_BYTE_COUNT_MAX = 1000;
 
+  /**
+   * Written by detail to be written in carbondata footer for better maintanability
+   */
+  public static final String CARBON_WRITTEN_BY_FOOTER_INFO = "written_by";
+
+  /**
+   * carbon version detail to be written in carbondata footer for better maintanability
+   */
+  public static final String CARBON_VERSION_FOOTER_INFO = "version";
+
   //////////////////////////////////////////////////////////////////////////////////////////
   // Unused constants and parameters start here
   //////////////////////////////////////////////////////////////////////////////////////////
