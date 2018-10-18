@@ -21,7 +21,6 @@ import java.io.Serializable;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 
 @InterfaceAudience.Internal
 public class StreamFileIndex implements Serializable {
@@ -34,8 +33,6 @@ public class StreamFileIndex implements Serializable {
   private BlockletMinMaxIndex minMaxIndex;
 
   private long rowCount;
-
-  private DataType[] msrDataTypes;
 
   public StreamFileIndex(String fileName, BlockletMinMaxIndex minMaxIndex, long rowCount) {
     this.fileName = fileName;
@@ -67,11 +64,4 @@ public class StreamFileIndex implements Serializable {
     this.rowCount = rowCount;
   }
 
-  public DataType[] getMsrDataTypes() {
-    return msrDataTypes;
-  }
-
-  public void setMsrDataTypes(DataType[] msrDataTypes) {
-    this.msrDataTypes = msrDataTypes;
-  }
 }
