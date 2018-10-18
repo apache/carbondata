@@ -269,10 +269,9 @@ public class StreamSegment {
    * create a StreamBlockIndex from the SimpleStatsResult array
    */
   private static StreamFileIndex createStreamBlockIndex(String fileName,
-      BlockletMinMaxIndex minMaxIndex, DataType[] msrDataTypes, int blockletRowCount) {
+      BlockletMinMaxIndex minMaxIndex, int blockletRowCount) {
     StreamFileIndex streamFileIndex =
         new StreamFileIndex(fileName, minMaxIndex, blockletRowCount);
-    streamFileIndex.setMsrDataTypes(msrDataTypes);
     return streamFileIndex;
   }
 
@@ -298,7 +297,7 @@ public class StreamSegment {
       inputIterators.close();
 
       return createStreamBlockIndex(writer.getFileName(), writer.getBatchMinMaxIndex(),
-          writer.getMeasureDataTypes(), blockletRowCount);
+          blockletRowCount);
     } catch (Throwable ex) {
       if (writer != null) {
         LOGGER.error("Failed to append batch data to stream segment: " +
@@ -449,8 +448,8 @@ public class StreamSegment {
    * 2.1 if blocklet index is null, use the BlockletMinMaxIndex index of stream
    * 2.2 if blocklet index is not null, combine these two index
    */
-  private static void mergeBatchMinMax(StreamFileIndex blockletIndex, BlockletMinMaxIndex fileIndex)
-      throws IOException {
+  private static void mergeBatchMinMax(StreamFileIndex blockletIndex,
+      BlockletMinMaxIndex fileIndex, DataType[] msrDataTypes) throws IOException {
     if (fileIndex == null) {
       // backward compatibility
       // it will not create a min/max index for the old stream file(without min/max index).
@@ -465,7 +464,6 @@ public class StreamSegment {
       return;
     }
 
-    DataType[] msrDataTypes = blockletIndex.getMsrDataTypes();
     SerializableComparator[] comparators = new SerializableComparator[msrDataTypes.length];
     for (int index = 0; index < comparators.length; index++) {
       comparators[index] = Comparator.getComparatorByDataTypeForMeasure(msrDataTypes[index]);
@@ -594,7 +592,8 @@ public class StreamSegment {
    * merge new blocklet index and old file index to create new file index
    */
   private static void updateStreamFileIndex(Map<String, StreamFileIndex> indexMap,
-      String indexPath, FileFactory.FileType fileType) throws IOException {
+      String indexPath, FileFactory.FileType fileType, DataType[] msrDataTypes
+  ) throws IOException {
     List<BlockIndex> blockIndexList = readIndexFile(indexPath, fileType);
     for (BlockIndex blockIndex : blockIndexList) {
       BlockletMinMaxIndex fileIndex = CarbonMetadataUtil
@@ -607,7 +606,7 @@ public class StreamSegment {
       } else {
         // merge minMaxIndex into StreamBlockIndex
         blockletIndex.setRowCount(blockletIndex.getRowCount() + blockIndex.getNum_rows());
-        mergeBatchMinMax(blockletIndex, fileIndex);
+        mergeBatchMinMax(blockletIndex, fileIndex, msrDataTypes);
       }
     }
   }
@@ -616,7 +615,7 @@ public class StreamSegment {
    * update carbon index file after a stream batch.
    */
   public static void updateIndexFile(String segmentDir,
-      StreamFileIndex[] blockIndexes) throws IOException {
+      StreamFileIndex[] blockIndexes, DataType[] msrDataTypes) throws IOException {
     FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);
     String filePath = CarbonTablePath.getCarbonStreamIndexFilePath(segmentDir);
     // update min/max index
@@ -624,7 +623,7 @@ public class StreamSegment {
     for (StreamFileIndex fileIndex : blockIndexes) {
       indexMap.put(fileIndex.getFileName(), fileIndex);
     }
-    updateStreamFileIndex(indexMap, filePath, fileType);
+    updateStreamFileIndex(indexMap, filePath, fileType, msrDataTypes);
 
     String tempFilePath = filePath + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
     CarbonIndexFileWriter writer = new CarbonIndexFileWriter();
