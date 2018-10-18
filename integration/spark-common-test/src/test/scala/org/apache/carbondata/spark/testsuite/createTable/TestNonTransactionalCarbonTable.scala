@@ -389,6 +389,10 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
+    val output = sql("show summary for table sdkOutputTable options('command'='-cmd,summary,-p,-a,-v,-c,age')").collect()
+
+    assert(output.toList.contains(Row("written_by                       Version         ")))
+
     checkExistence(sql("describe formatted sdkOutputTable"), true, "age,name")
 
     checkExistence(sql("describe formatted sdkOutputTable"), true, writerPath)

@@ -17,8 +17,8 @@
 
 package org.apache.carbondata.tool;
 
+import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.HashMap;
@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.Strings;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.memory.MemoryException;
@@ -36,14 +37,15 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonHeaderReader;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 import org.apache.carbondata.format.FileFooter3;
 import org.apache.carbondata.format.FileHeader;
 import org.apache.carbondata.format.TableInfo;
-
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.DEFAULT_CHARSET;
 
 import org.apache.commons.cli.CommandLine;
@@ -53,19 +55,19 @@ import org.apache.commons.cli.CommandLine;
  */
 class DataSummary implements Command {
   private String dataFolder;
-  private PrintStream out;
+  private List<String> outPuts;
 
   // file path mapping to file object
   private LinkedHashMap<String, DataFile> dataFiles;
 
-  DataSummary(String dataFolder, PrintStream out) {
+  DataSummary(String dataFolder, List<String> outPuts) {
     this.dataFolder = dataFolder;
-    this.out = out;
+    this.outPuts = outPuts;
   }
 
   @Override
   public void run(CommandLine line) throws IOException, MemoryException {
-    FileCollector collector = new FileCollector(out);
+    FileCollector collector = new FileCollector(outPuts);
     collector.collectFiles(dataFolder);
     collector.printBasicStats();
     if (collector.getNumDataFiles() == 0) {
@@ -78,47 +80,59 @@ class DataSummary implements Command {
     }
     if (line.hasOption("s") || printAll) {
       if (dataFiles.size() > 0) {
-        printSchema(dataFiles.entrySet().iterator().next().getValue());
+        collectSchemaDetails(dataFiles.entrySet().iterator().next().getValue());
       }
     }
     if (line.hasOption("m") || printAll) {
-      printSegments(collector.getTableStatusFile());
+      collectSegmentsDetails(collector.getTableStatusFile());
     }
     if (line.hasOption("t") || printAll) {
-      printTableProperties(collector.getSchemaFile());
+      collectTableProperties(collector.getSchemaFile());
     }
     if (line.hasOption("b") || printAll) {
-      printBlockletDetail();
+      String limitSize = line.getOptionValue("b");
+      if (limitSize == null) {
+        // by default we can limit the output to two shards and user can increase this limit
+        limitSize = "2";
+      }
+      collectBlockletDetail(Integer.parseInt(limitSize));
+    }
+    if (line.hasOption("v") || printAll) {
+      collectVersionDetails();
+    }
+    if (line.hasOption("B")) {
+      String blockFileName = line.getOptionValue("B");
+      collectBlockDetails(blockFileName);
     }
     if (line.hasOption("c")) {
       String columName = line.getOptionValue("c");
       printColumnStats(columName);
       if (line.hasOption("k")) {
-        printColumnChunkMeta(columName);
+        collectColumnChunkMeta(columName);
       }
     }
   }
 
-  private void printSchema(DataFile dataFile) throws IOException {
+  private void collectSchemaDetails(DataFile dataFile) throws IOException {
     CarbonFile file = FileFactory.getCarbonFile(dataFile.getFilePath());
-    out.println();
-    out.println("## Schema");
-    out.println(String.format("schema in %s", file.getName()));
+    outPuts.add("");
+    outPuts.add("## Schema");
+    outPuts.add(String.format("schema in %s", file.getName()));
     CarbonHeaderReader reader = new CarbonHeaderReader(file.getPath());
     FileHeader header = reader.readHeader();
-    out.println("version: V" + header.version);
-    out.println("timestamp: " + new java.sql.Timestamp(header.time_stamp));
+    outPuts.add("version: V" + header.version);
+    outPuts.add("timestamp: " + new java.sql.Timestamp(header.time_stamp));
     List<ColumnSchema> columns = reader.readSchema();
-    TablePrinter printer = new TablePrinter(
+    TableFormatter tableFormatter = new TableFormatter(
         new String[]{"Column Name", "Data Type", "Column Type",
-            "SortColumn", "Encoding", "Ordinal", "Id"});
+            "SortColumn", "Encoding", "Ordinal", "Id"}, outPuts);
     for (ColumnSchema column : columns) {
       String shortColumnId = "NA";
       if (column.getColumnUniqueId() != null && column.getColumnUniqueId().length() > 4) {
         shortColumnId = "*" +
             column.getColumnUniqueId().substring(column.getColumnUniqueId().length() - 4);
       }
-      printer.addRow(new String[]{
+      tableFormatter.addRow(new String[]{
           column.getColumnName(),
           column.getDataType().getName(),
           column.isDimensionColumn() ? "dimension" : "measure",
@@ -128,19 +142,19 @@ class DataSummary implements Command {
           shortColumnId
       });
     }
-    printer.printFormatted(out);
+    tableFormatter.printFormatted();
   }
 
-  private void printSegments(CarbonFile tableStatusFile) throws IOException {
-    out.println();
-    out.println("## Segment");
+  private void collectSegmentsDetails(CarbonFile tableStatusFile) throws IOException {
+    outPuts.add("");
+    outPuts.add("## Segment");
     if (tableStatusFile != null) {
       // first collect all information in memory then print a formatted table
       LoadMetadataDetails[] segments =
           SegmentStatusManager.readTableStatusFile(tableStatusFile.getPath());
-      TablePrinter printer = new TablePrinter(
+      TableFormatter tableFormatter = new TableFormatter(
           new String[]{"SegmentID", "Status", "Load Start", "Load End",
-              "Merged To", "Format", "Data Size", "Index Size"});
+              "Merged To", "Format", "Data Size", "Index Size"}, outPuts);
       for (LoadMetadataDetails segment : segments) {
         String dataSize, indexSize;
         if (segment.getDataSize() == null) {
@@ -153,7 +167,7 @@ class DataSummary implements Command {
         } else {
           indexSize = Strings.formatSize(Long.parseLong(segment.getIndexSize()));
         }
-        printer.addRow(new String[]{
+        tableFormatter.addRow(new String[]{
             segment.getLoadName(),
             segment.getSegmentStatus().toString(),
             new java.sql.Date(segment.getLoadStartTime()).toString(),
@@ -164,39 +178,38 @@ class DataSummary implements Command {
             indexSize}
         );
       }
-      printer.printFormatted(out);
+      tableFormatter.printFormatted();
     } else {
-      out.println("table status file not found");
+      outPuts.add("table status file not found");
     }
   }
 
-  private void printTableProperties(CarbonFile schemaFile) throws IOException {
-    out.println();
-    out.println("## Table Properties");
+  private void collectTableProperties(CarbonFile schemaFile) throws IOException {
+    outPuts.add("");
+    outPuts.add("## Table Properties");
     if (schemaFile != null) {
       TableInfo thriftTableInfo = CarbonUtil.readSchemaFile(schemaFile.getPath());
       Map<String, String> tblProperties = thriftTableInfo.fact_table.tableProperties;
-      TablePrinter printer = new TablePrinter(
-          new String[]{"Property Name", "Property Value"});
+      TableFormatter tableFormatter = new TableFormatter(
+          new String[]{"Property Name", "Property Value"}, outPuts);
       for (Map.Entry<String, String> entry : tblProperties.entrySet()) {
-        printer.addRow(new String[] {
+        tableFormatter.addRow(new String[] {
             String.format("'%s'", entry.getKey()),
             String.format("'%s'", entry.getValue())
         });
       }
-      printer.printFormatted(out);
+      tableFormatter.printFormatted();
     } else {
-      out.println("schema file not found");
+      outPuts.add("schema file not found");
     }
   }
 
-  private void printBlockletDetail() {
-    out.println();
-    out.println("## Block Detail");
+  private void collectBlockletDetail(int limitSize) {
+    outPuts.add("");
+    outPuts.add("## Block Detail");
 
-    ShardPrinter printer = new ShardPrinter(new String[]{
-        "BLK", "BLKLT", "NumPages", "NumRows", "Size"
-    });
+    ShardPrinter printer =
+        new ShardPrinter(new String[] { "BLK", "BLKLT", "NumPages", "NumRows", "Size" }, outPuts);
 
     for (Map.Entry<String, DataFile> entry : dataFiles.entrySet()) {
       DataFile file = entry.getValue();
@@ -211,8 +224,50 @@ class DataSummary implements Command {
             Strings.formatSize(file.getBlockletSizeInBytes(blockletId))
         });
       }
+      limitSize--;
+      if (limitSize == 0) {
+        break;
+      }
     }
-    printer.printFormatted(out);
+    printer.collectFormattedData();
+  }
+
+  private void collectBlockDetails(String blockFilePath) throws IOException {
+    outPuts.add("");
+    outPuts.add("## Filtered Block Details for: " + blockFilePath
+        .substring(blockFilePath.lastIndexOf(File.separator) + 1, blockFilePath.length()));
+    TableFormatter tableFormatter =
+        new TableFormatter(new String[] { "BLKLT", "NumPages", "NumRows", "Size" }, outPuts);
+    CarbonFile datafile = FileFactory.getCarbonFile(blockFilePath);
+    DataFile dataFile = new DataFile(datafile);
+    dataFile.collectAllMeta();
+    FileFooter3 footer = dataFile.getFooter();
+    for (int blockletId = 0; blockletId < footer.blocklet_info_list3.size(); blockletId++) {
+      BlockletInfo3 blocklet = footer.blocklet_info_list3.get(blockletId);
+      tableFormatter.addRow(new String[]{
+          String.valueOf(blockletId),
+          String.format("%,d", blocklet.number_number_of_pages),
+          String.format("%,d", blocklet.num_rows),
+          Strings.formatSize(dataFile.getBlockletSizeInBytes(blockletId))
+      });
+    }
+    tableFormatter.printFormatted();
+  }
+
+  private void collectVersionDetails() {
+    DataFile file = dataFiles.entrySet().iterator().next().getValue();
+    FileFooter3 footer = file.getFooter();
+    if (null != footer.getExtra_info()) {
+      outPuts.add("");
+      outPuts.add("## version Details");
+      TableFormatter tableFormatter =
+          new TableFormatter(new String[] { "written_by", "Version" }, outPuts);
+      tableFormatter.addRow(new String[] { String.format("%s",
+          footer.getExtra_info().get(CarbonCommonConstants.CARBON_WRITTEN_BY_FOOTER_INFO)),
+          String.format("%s",
+              footer.getExtra_info().get(CarbonCommonConstants.CARBON_WRITTEN_VERSION)) });
+      tableFormatter.printFormatted();
+    }
   }
 
   private int getColumnIndex(String columnName) {
@@ -226,25 +281,57 @@ class DataSummary implements Command {
   private boolean collected = false;
 
   private void printColumnStats(String columnName) throws IOException, MemoryException {
-    out.println();
-    out.println("## Column Statistics for '" + columnName + "'");
+    outPuts.add("");
+    outPuts.add("## Column Statistics for '" + columnName + "'");
     collectStats(columnName);
 
     int columnIndex = getColumnIndex(columnName);
     String[] header = new String[]{"BLK", "BLKLT", "Meta Size", "Data Size",
-        "LocalDict", "DictEntries", "DictSize", "AvgPageSize", "Min%", "Max%"};
+        "LocalDict", "DictEntries", "DictSize", "AvgPageSize", "Min%", "Max%", "Min", "Max"};
 
-    ShardPrinter printer = new ShardPrinter(header);
+    ShardPrinter printer = new ShardPrinter(header, outPuts);
     for (Map.Entry<String, DataFile> entry : dataFiles.entrySet()) {
       DataFile file = entry.getValue();
       for (DataFile.Blocklet blocklet : file.getAllBlocklets()) {
-        String min, max;
+        String min, max, minPercent, maxPercent;
+        byte[] blockletMin = blocklet.getColumnChunk().min;
+        byte[] blockletMax = blocklet.getColumnChunk().max;
         if (blocklet.getColumnChunk().getDataType() == DataTypes.STRING) {
-          min = new String(blocklet.getColumnChunk().min, Charset.forName(DEFAULT_CHARSET));
-          max = new String(blocklet.getColumnChunk().max, Charset.forName(DEFAULT_CHARSET));
+          minPercent = "NA";
+          maxPercent = "NA";
+          // for complex types min max can be given as NA and for varchar where min max is not
+          // written, can give NA
+          if (blocklet.getColumnChunk().column.getColumnName().contains(".val") || blocklet
+              .getColumnChunk().column.getColumnName().contains(".") || !blocklet
+              .getColumnChunk().isMinMaxPresent) {
+            min = "NA";
+            max = "NA";
+          } else {
+            min = new String(blockletMin, Charset.forName(DEFAULT_CHARSET));
+            max = new String(blockletMax, Charset.forName(DEFAULT_CHARSET));
+          }
         } else {
-          min = String.format("%.1f", blocklet.getColumnChunk().getMinPercentage() * 100);
-          max = String.format("%.1f", blocklet.getColumnChunk().getMaxPercentage() * 100);
+          minPercent = String.format("%.1f", blocklet.getColumnChunk().getMinPercentage() * 100);
+          maxPercent = String.format("%.1f", blocklet.getColumnChunk().getMaxPercentage() * 100);
+          DataFile.ColumnChunk columnChunk = blocklet.columnChunk;
+          if (columnChunk.column.isDimensionColumn() && DataTypeUtil
+              .isPrimitiveColumn(columnChunk.column.getDataType())) {
+            min = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(blockletMin,
+                columnChunk.column.getDataType()).toString();
+            max = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(blockletMax,
+                columnChunk.column.getDataType()).toString();
+          } else {
+            if (blockletMin.length > 4) {
+              min = String.valueOf(ByteUtil.toLong(blockletMin, 0, blockletMin.length));
+            } else {
+              min = String.valueOf(ByteUtil.toInt(blockletMin, 0, blockletMin.length));
+            }
+            if (blockletMax.length > 4) {
+              max = String.valueOf(ByteUtil.toLong(blockletMax, 0, blockletMax.length));
+            } else {
+              max = String.valueOf(ByteUtil.toInt(blockletMax, 0, blockletMax.length));
+            }
+          }
         }
         printer.addRow(
             blocklet.getShardName(),
@@ -257,12 +344,14 @@ class DataSummary implements Command {
                 String.valueOf(blocklet.getColumnChunk().blockletDictionaryEntries),
                 Strings.formatSize(blocklet.getColumnChunk().blocketletDictionarySize),
                 Strings.formatSize(blocklet.getColumnChunk().avgPageLengthInBytes),
+                minPercent,
+                maxPercent,
                 min,
                 max}
         );
       }
     }
-    printer.printFormatted(out);
+    printer.collectFormattedData();
   }
 
   private void collectStats(String columnName) throws IOException, MemoryException {
@@ -275,25 +364,25 @@ class DataSummary implements Command {
     }
   }
 
-  private void printColumnChunkMeta(String columnName) throws IOException, MemoryException {
-    out.println();
+  private void collectColumnChunkMeta(String columnName) throws IOException, MemoryException {
     DataFile file = dataFiles.entrySet().iterator().next().getValue();
-    out.println("## Page Meta for column '" + columnName + "' in file " + file.getFilePath());
+    outPuts.add("");
+    outPuts.add("## Page Meta for column '" + columnName + "' in file " + file.getFilePath());
     collectStats(columnName);
     for (int i = 0; i < file.getAllBlocklets().size(); i++) {
       DataFile.Blocklet blocklet = file.getAllBlocklets().get(i);
       DataChunk3 dataChunk3 = blocklet.getColumnChunk().getDataChunk3();
       List<DataChunk2> dataChunk2List = dataChunk3.getData_chunk_list();
-      out.println(String.format("Blocklet %d:", i));
+      outPuts.add(String.format("Blocklet %d:", i));
 
       // There will be many pages, for debugging purpose,
       // just print 3 page for each blocklet is enough
       for (int j = 0; j < dataChunk2List.size() && j < 3; j++) {
-        out.println(String.format("Page %d (offset %d, length %d): %s",
+        outPuts.add(String.format("Page %d (offset %d, length %d): %s",
             j, dataChunk3.page_offset.get(j), dataChunk3.page_length.get(j),
             dataChunk2List.get(j).toString()));
       }
-      out.println("\n");
+      outPuts.add("");
     }
   }
 
