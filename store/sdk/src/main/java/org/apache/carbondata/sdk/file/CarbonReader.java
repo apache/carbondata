@@ -18,6 +18,9 @@
 package org.apache.carbondata.sdk.file;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -112,6 +115,43 @@ public class CarbonReader<T> {
     UUID uuid = UUID.randomUUID();
     String tableName = "UnknownTable" + uuid;
     return builder(tablePath, tableName);
+  }
+
+  /**
+   * Return a new list of {@link CarbonReader} objects
+   *
+   * @param maxSplits
+   */
+  public List<CarbonReader> split(int maxSplits) throws IOException {
+    validateReader();
+    if (maxSplits < 1) {
+      throw new RuntimeException(
+          this.getClass().getSimpleName() + ".split: maxSplits must be positive");
+    }
+
+    List<CarbonReader> carbonReaders = new ArrayList<>();
+
+    // If maxSplits < readers.size
+    // Split the reader into maxSplits splits with each
+    // element contains >= 1 CarbonRecordReader objects
+    if (maxSplits < this.readers.size()) {
+      for (int i = 0; i < maxSplits; ++i) {
+        carbonReaders.add(new CarbonReader<>(this.readers
+            .subList((int) Math.ceil((float) (i * this.readers.size()) / maxSplits),
+                (int) Math.ceil((float) ((i + 1) * this.readers.size()) / maxSplits))));
+      }
+    }
+    // If maxSplits >= readers.size
+    // Split the reader into reader.size splits with each
+    // element contains exactly 1 CarbonRecordReader object
+    else {
+      for (int i = 0; i < this.readers.size(); ++i) {
+        carbonReaders.add(new CarbonReader<>(this.readers.subList(i, i + 1)));
+      }
+    }
+
+    this.initialise = false;
+    return carbonReaders;
   }
 
   /**
