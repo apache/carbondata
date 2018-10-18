@@ -102,7 +102,7 @@ public class CarbonCliTest {
             "## Table Properties\n"
           + "schema file not found"));
 
-    String[] args4 = {"-cmd", "summary", "-p", path, "-b"};
+    String[] args4 = {"-cmd", "summary", "-p", path, "-b", "7"};
     out = new ByteArrayOutputStream();
     stream = new PrintStream(out);
     CarbonCli.run(args4, stream);
@@ -125,14 +125,64 @@ public class CarbonCliTest {
     output = new String(out.toByteArray());
     Assert.assertTrue(
         output.contains(
-            "BLK  BLKLT  Meta Size  Data Size  LocalDict  DictEntries  DictSize  AvgPageSize  Min%    Max%    \n"
-          + "0    0      1.81KB     295.98KB   false      0            0.0B      11.77KB      robot0  robot1  \n"
-          + "0    1      1.81KB     295.99KB   false      0            0.0B      11.77KB      robot1  robot3  \n"
-          + "1    0      1.81KB     295.98KB   false      0            0.0B      11.77KB      robot3  robot4  \n"
-          + "1    1      1.81KB     295.99KB   false      0            0.0B      11.77KB      robot4  robot6  \n"
-          + "2    0      1.81KB     295.98KB   false      0            0.0B      11.77KB      robot6  robot7  \n"
-          + "2    1      1.81KB     295.98KB   false      0            0.0B      11.77KB      robot8  robot9  \n"
-          + "2    2      519.0B     74.06KB    false      0            0.0B      10.51KB      robot9  robot9  "));
+            "BLK  BLKLT  Meta Size  Data Size  LocalDict  DictEntries  DictSize  AvgPageSize  Min%  Max%  Min     Max     \n"
+          + "0    0      1.81KB     295.98KB   false      0            0.0B      11.77KB      NA    NA    robot0  robot1  \n"
+          + "0    1      1.81KB     295.99KB   false      0            0.0B      11.77KB      NA    NA    robot1  robot3  \n"
+          + "1    0      1.81KB     295.98KB   false      0            0.0B      11.77KB      NA    NA    robot3  robot4  \n"
+          + "1    1      1.81KB     295.99KB   false      0            0.0B      11.77KB      NA    NA    robot4  robot6  \n"
+          + "2    0      1.81KB     295.98KB   false      0            0.0B      11.77KB      NA    NA    robot6  robot7  \n"
+          + "2    1      1.81KB     295.98KB   false      0            0.0B      11.77KB      NA    NA    robot8  robot9  \n"
+          + "2    2      519.0B     74.06KB    false      0            0.0B      10.51KB      NA    NA    robot9  robot9 "));
+  }
+
+  @Test
+  public void testSummaryOutputAll() {
+    String[] args = {"-cmd", "summary", "-p", path, "-a", "-c", "age"};
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    PrintStream stream = new PrintStream(out);
+    CarbonCli.run(args, stream);
+    String output = new String(out.toByteArray());
+    Assert.assertTrue(
+        output.contains(
+            "Input Folder: ./CarbonCliTest\n"
+          + "## Summary\n"
+          + "total: 6 blocks, 2 shards, 14 blocklets, 314 pages, 10,000,000 rows, 32.27MB\n"
+          + "avg: 5.38MB/block, 2.30MB/blocklet, 1,666,666 rows/block, 714,285 rows/blocklet\n"));
+
+    Assert.assertTrue(
+        output.contains(
+            "Column Name  Data Type  Column Type  SortColumn  Encoding          Ordinal  Id  \n"
+          + "name         STRING     dimension    true        [INVERTED_INDEX]  0        NA  \n"
+          + "age          INT        measure      false       []                1        NA  \n"));
+
+    Assert.assertTrue(
+        output.contains(
+            "## Table Properties\n"
+          + "schema file not found"));
+
+    Assert.assertTrue(
+        output.contains(
+            "BLK  BLKLT  NumPages  NumRows  Size    \n"
+            + "0    0      25        800,000  2.58MB  \n"
+            + "0    1      25        800,000  2.58MB  \n"
+            + "1    0      25        800,000  2.58MB  \n"
+            + "1    1      25        800,000  2.58MB"));
+
+    Assert.assertTrue(
+        output.contains(
+          "BLK  BLKLT  Meta Size  Data Size  LocalDict  DictEntries  DictSize  AvgPageSize  Min%  Max%   Min  Max      \n"
+        + "0    0      3.00KB     4.87MB     false      0            0.0B      93.76KB      0.0   100.0  0    2999990  \n"
+        + "0    1      3.00KB     2.29MB     false      0            0.0B      93.76KB      0.0   100.0  1    2999992  \n"
+        + "1    0      3.00KB     4.87MB     false      0            0.0B      93.76KB      0.0   100.0  3    2999993  \n"
+        + "1    1      3.00KB     2.29MB     false      0            0.0B      93.76KB      0.0   100.0  4    2999995  \n"
+        + "2    0      3.00KB     5.52MB     false      0            0.0B      93.76KB      0.0   100.0  6    2999997  \n"
+        + "2    1      3.00KB     2.94MB     false      0            0.0B      93.76KB      0.0   100.0  8    2999998  \n"
+        + "2    2      858.0B     586.84KB   false      0            0.0B      83.71KB      0.0   100.0  9    2999999 "));
+
+    Assert.assertTrue(output.contains(
+        "## version Details\n"
+            + "written_by  Version         \n"
+            + "TestUtil    1.6.0-SNAPSHOT"));
   }
 
   @Test

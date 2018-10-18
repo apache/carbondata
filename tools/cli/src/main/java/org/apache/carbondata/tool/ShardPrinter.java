@@ -17,33 +17,35 @@
 
 package org.apache.carbondata.tool;
 
-import java.io.PrintStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 class ShardPrinter {
-  private Map<String, TablePrinter> shardPrinter = new HashMap<>();
+  private Map<String, TableFormatter> shardPrinter = new HashMap<>();
   private String[] header;
+  private List<String> outPuts;
 
-  ShardPrinter(String[] header) {
+  ShardPrinter(String[] header, List<String> outPuts) {
     this.header = header;
+    this.outPuts = outPuts;
   }
 
   void addRow(String shardName, String[] row) {
-    TablePrinter printer = shardPrinter.get(shardName);
-    if (printer == null) {
-      printer = new TablePrinter(header);
-      shardPrinter.put(shardName, printer);
+    TableFormatter tableFormatter = shardPrinter.get(shardName);
+    if (tableFormatter == null) {
+      tableFormatter = new TableFormatter(header, outPuts);
+      shardPrinter.put(shardName, tableFormatter);
     }
-    printer.addRow(row);
+    tableFormatter.addRow(row);
   }
 
-  void printFormatted(PrintStream out) {
+  void collectFormattedData() {
     int shardId = 1;
-    for (Map.Entry<String, TablePrinter> entry : shardPrinter.entrySet()) {
-      out.println(String.format("Shard #%d (%s)", shardId++, entry.getKey()));
-      entry.getValue().printFormatted(out);
-      out.println();
+    for (Map.Entry<String, TableFormatter> entry : shardPrinter.entrySet()) {
+      outPuts.add(String.format("Shard #%d (%s)", shardId++, entry.getKey()));
+      entry.getValue().printFormatted();
+      outPuts.add("");
     }
   }
 }
