@@ -17,13 +17,11 @@
 
 package org.apache.carbondata.spark.rdd
 
-import java.io._
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
 
 import scala.collection.mutable
-import scala.util.Random
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.{TaskAttemptID, TaskType}
@@ -89,35 +87,9 @@ class SparkPartitionLoader(model: CarbonLoadModel,
     CarbonProperties.getInstance().addProperty("aggregate.columnar.keyblock", "true")
     CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false")
 
-    // this property is used to determine whether temp location for carbon is inside
-    // container temp dir or is yarn application directory.
-    val isCarbonUseLocalDir = CarbonProperties.getInstance()
-      .getProperty("carbon.use.local.dir", "false").equalsIgnoreCase("true")
-
-    val isCarbonUseMultiDir = CarbonProperties.getInstance().isUseMultiTempDir
-
-    if (isCarbonUseLocalDir) {
-      val yarnStoreLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
-
-      if (!isCarbonUseMultiDir && null != yarnStoreLocations && yarnStoreLocations.nonEmpty) {
-        // use single dir
-        storeLocation = storeLocation :+
-            (yarnStoreLocations(Random.nextInt(yarnStoreLocations.length)) + tmpLocationSuffix)
-        if (storeLocation == null || storeLocation.isEmpty) {
-          storeLocation = storeLocation :+
-              (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
-        }
-      } else {
-        // use all the yarn dirs
-        storeLocation = yarnStoreLocations.map(_ + tmpLocationSuffix)
-      }
-    } else {
-      storeLocation = storeLocation :+ (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
-    }
+    storeLocation = CommonUtil.getTempStoreLocations(splitIndex.toString)
     LOGGER.info("Temp location for loading data: " + storeLocation.mkString(","))
   }
-
-  private def tmpLocationSuffix = File.separator + "carbon" + System.nanoTime() + "_" + splitIndex
 }
 
 /**
