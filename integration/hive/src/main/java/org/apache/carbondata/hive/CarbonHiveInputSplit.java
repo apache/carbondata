@@ -122,7 +122,7 @@ public class CarbonHiveInputSplit extends FileSplit
     List<TableBlockInfo> tableBlockInfoList = new ArrayList<>();
     for (CarbonHiveInputSplit split : splitList) {
       BlockletInfos blockletInfos =
-          new BlockletInfos(split.getNumberOfBlocklets(), 0, split.getNumberOfBlocklets());
+          new BlockletInfos(0);
       try {
         tableBlockInfoList.add(
             new TableBlockInfo(split.getPath().toString(), split.getStart(), split.getSegmentId(),
@@ -136,7 +136,7 @@ public class CarbonHiveInputSplit extends FileSplit
 
   public static TableBlockInfo getTableBlockInfo(CarbonHiveInputSplit inputSplit) {
     BlockletInfos blockletInfos =
-        new BlockletInfos(inputSplit.getNumberOfBlocklets(), 0, inputSplit.getNumberOfBlocklets());
+        new BlockletInfos(0);
     try {
       return new TableBlockInfo(inputSplit.getPath().toString(), inputSplit.getStart(),
           inputSplit.getSegmentId(), inputSplit.getLocations(), inputSplit.getLength(),

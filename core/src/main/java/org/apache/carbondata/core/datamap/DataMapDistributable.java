@@ -32,21 +32,11 @@ import org.apache.hadoop.mapreduce.InputSplit;
 public abstract class DataMapDistributable extends InputSplit
     implements Distributable, Serializable {
 
-  private String tablePath;
-
   private Segment segment;
 
   private String[] locations;
 
   private DataMapSchema dataMapSchema;
-
-  public String getTablePath() {
-    return tablePath;
-  }
-
-  public void setTablePath(String tablePath) {
-    this.tablePath = tablePath;
-  }
 
   public Segment getSegment() {
     return segment;

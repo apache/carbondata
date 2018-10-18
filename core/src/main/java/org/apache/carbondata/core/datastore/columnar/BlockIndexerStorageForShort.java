@@ -26,8 +26,6 @@ import org.apache.carbondata.core.util.ByteUtil;
 
 public class BlockIndexerStorageForShort extends BlockIndexerStorage<byte[][]> {
 
-  private boolean alreadySorted;
-
   private short[] rowIdPage;
 
   private short[] rowIdRlePage;
@@ -81,13 +79,6 @@ public class BlockIndexerStorageForShort extends BlockIndexerStorage<byte[][]> {
     }
     this.dataPage = dataPage;
     return indexes;
-  }
-
-  /**
-   * @return the alreadySorted
-   */
-  public boolean isAlreadySorted() {
-    return alreadySorted;
   }
 
   /**

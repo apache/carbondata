@@ -74,7 +74,4 @@ public class CarbonSessionInfo implements Serializable, Cloneable {
     return nonSerializableExtraInfo;
   }
 
-  public void setNonSerializableExtraInfo(Map<String, Object> nonSerializableExtraInfo) {
-    this.nonSerializableExtraInfo = nonSerializableExtraInfo;
-  }
 }

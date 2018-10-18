@@ -51,14 +51,6 @@ public final class CarbonCommonConstants {
    * byte to KB conversion factor
    */
   public static final int BYTE_TO_KB_CONVERSION_FACTOR = 1024;
-  /**
-   * BYTE_ENCODING
-   */
-  public static final String BYTE_ENCODING = "ISO-8859-1";
-  /**
-   * measure meta data file name
-   */
-  public static final String MEASURE_METADATA_FILE_NAME = "/msrMetaData_";
 
   /**
    * set the segment ids to query from the table
@@ -226,11 +218,6 @@ public final class CarbonCommonConstants {
       MEMBER_DEFAULT_VAL.getBytes(Charset.forName(DEFAULT_CHARSET));
 
   /**
-   * Bytes for string 0, it is used in codegen in case of null values.
-   */
-  public static final byte[] ZERO_BYTE_ARRAY = "0".getBytes(Charset.forName(DEFAULT_CHARSET));
-
-  /**
    * Empty byte array
    */
   public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
@@ -249,17 +236,9 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_BADRECORDS_LOC_DEFAULT_VAL = "";
   /**
-   * HIERARCHY_FILE_EXTENSION
-   */
-  public static final String HIERARCHY_FILE_EXTENSION = ".hierarchy";
-  /**
    * SORT_TEMP_FILE_LOCATION
    */
   public static final String SORT_TEMP_FILE_LOCATION = "sortrowtmp";
-  /**
-   * CARBON_RESULT_SIZE_DEFAULT
-   */
-  public static final String LEVEL_FILE_EXTENSION = ".level";
   /**
    * FACT_FILE_EXT
    */
@@ -274,26 +253,6 @@ public final class CarbonCommonConstants {
    * UPDATE_DELTA_FILE_EXT
    */
   public static final String UPDATE_DELTA_FILE_EXT = FACT_FILE_EXT;
-  /**
-   * MEASUREMETADATA_FILE_EXT
-   */
-  public static final String MEASUREMETADATA_FILE_EXT = ".msrmetadata";
-  /**
-   * Comment for <code>TYPE_MYSQL</code>
-   */
-  public static final String TYPE_MYSQL = "MYSQL";
-  /**
-   * Comment for <code>TYPE_MSSQL</code>
-   */
-  public static final String TYPE_MSSQL = "MSSQL";
-  /**
-   * Comment for <code>TYPE_ORACLE</code>
-   */
-  public static final String TYPE_ORACLE = "ORACLE";
-  /**
-   * Comment for <code>TYPE_SYBASE</code>
-   */
-  public static final String TYPE_SYBASE = "SYBASE";
   /**
    * SORT_INTERMEDIATE_FILES_LIMIT
    */
@@ -342,18 +301,6 @@ public final class CarbonCommonConstants {
    */
   public static final String NUM_CORES_ALT_PARTITION = "carbon.number.of.cores.while.altPartition";
   /**
-   * Default value of number of cores to be used for block sort
-   */
-  public static final String NUM_CORES_BLOCK_SORT_DEFAULT_VAL = "7";
-  /**
-   * Max value of number of cores to be used for block sort
-   */
-  public static final int NUM_CORES_BLOCK_SORT_MAX_VAL = 12;
-  /**
-   * Min value of number of cores to be used for block sort
-   */
-  public static final int NUM_CORES_BLOCK_SORT_MIN_VAL = 1;
-  /**
    * CSV_READ_BUFFER_SIZE
    */
   @CarbonProperty
@@ -397,18 +344,6 @@ public final class CarbonCommonConstants {
    * SEMICOLON_SPC_CHARATER
    */
   public static final String SEMICOLON_SPC_CHARACTER = ";#!@:SEMIC:@!#;";
-  /**
-   * AMPERSAND_SPC_CHARATER
-   */
-  public static final String AMPERSAND_SPC_CHARACTER = "&#!@:AMPER:@!#&";
-  /**
-   * ATTHERATE_SPC_CHARATER
-   */
-  public static final String COMA_SPC_CHARACTER = ",#!:COMA:!#,";
-  /**
-   * HYPHEN_SPC_CHARACTER
-   */
-  public static final String HYPHEN_SPC_CHARACTER = "-#!:HYPHEN:!#-";
   /**
    * SORT_TEMP_FILE_EXT
    */
@@ -583,23 +518,9 @@ public final class CarbonCommonConstants {
    */
   public static final String DEFAULT_COMPRESSOR = "snappy";
 
-  public static final String STRING = "String";
-
-  public static final String SHORT = "Short";
-  public static final String TIMESTAMP = "Timestamp";
   public static final String ARRAY = "array";
   public static final String STRUCT = "struct";
   public static final String MAP = "map";
-  public static final String FROM = "from";
-  /**
-   * FACT_UPDATE_EXTENSION.
-   */
-  public static final String FACT_UPDATE_EXTENSION = ".carbondata_update";
-  public static final String FACT_DELETE_EXTENSION = "_delete";
-  /**
-   * MARKED_FOR_UPDATION
-   */
-  public static final String FACT_FILE_UPDATED = "update";
   /**
    * MAX_QUERY_EXECUTION_TIME
    */
@@ -1128,11 +1049,6 @@ public final class CarbonCommonConstants {
   public static final String UPDATED_COL_EXTENSION = "-updatedColumn";
 
   /**
-   * appending the key to differentiate the update flow with insert flow.
-   */
-  public static final String RDDUTIL_UPDATE_KEY = "UPDATE_";
-
-  /**
    * to determine to use the rdd persist or not.
    */
   @CarbonProperty
@@ -1181,10 +1097,6 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_DATA_FILE_DEFAULT_VERSION = "V3";
 
-  /**
-   * data file version header
-   */
-  public static final String CARBON_DATA_VERSION_HEADER = "CARBONDATAVERSION#";
   /**
    * Maximum no of column supported
    */

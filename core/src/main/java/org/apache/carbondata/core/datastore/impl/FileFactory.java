@@ -52,9 +52,7 @@ public final class FileFactory {
   }
 
   private static FileTypeInterface fileFileTypeInterface = new DefaultFileTypeProvider();
-  public static void setFileTypeInterface(FileTypeInterface fileTypeInterface) {
-    fileFileTypeInterface = fileTypeInterface;
-  }
+
   private FileFactory() {
 
   }
@@ -514,30 +512,4 @@ public final class FileFactory {
     }
   }
 
-  /**
-   * set the file replication
-   *
-   * @param path file path
-   * @param fileType file type
-   * @param replication replication
-   * @return true, if success; false, if failed
-   * @throws IOException if error occurs
-   */
-  public static boolean setReplication(String path, FileFactory.FileType fileType,
-      short replication) throws IOException {
-    return getCarbonFile(path, fileType).setReplication(path, replication);
-  }
-
-  /**
-   * get the default replication
-   *
-   * @param path file path
-   * @param fileType file type
-   * @return replication
-   * @throws IOException if error occurs
-   */
-  public static short getDefaultReplication(String path, FileFactory.FileType fileType)
-      throws IOException {
-    return getCarbonFile(path, fileType).getDefaultReplication(path);
-  }
 }

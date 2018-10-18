@@ -601,14 +601,6 @@ public class SegmentProperties {
   }
 
   /**
-   * @param blockIndex
-   * @return It returns all dimension present in given block index
-   */
-  public Set<Integer> getDimensionOrdinalForBlock(int blockIndex) {
-    return blockTodimensionOrdinalMapping.get(blockIndex);
-  }
-
-  /**
    * @return It returns block index to dimension ordinal mapping
    */
   public Map<Integer, Set<Integer>> getBlockTodimensionOrdinalMapping() {

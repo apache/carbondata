@@ -27,7 +27,6 @@ import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ColumnPageValueConverter;
 import org.apache.carbondata.core.datastore.page.LazyColumnPage;
-import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
@@ -47,12 +46,6 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
 
   private Double factor;
   private long max;
-
-  public static ColumnPageCodec newInstance(DataType srcDataType, DataType targetDataType,
-      SimpleStatsResult stats, boolean isInvertedIndex) {
-    return new AdaptiveDeltaFloatingCodec(srcDataType, targetDataType, stats,
-        isInvertedIndex);
-  }
 
   public AdaptiveDeltaFloatingCodec(DataType srcDataType, DataType targetDataType,
       SimpleStatsResult stats, boolean isInvertedIndex) {

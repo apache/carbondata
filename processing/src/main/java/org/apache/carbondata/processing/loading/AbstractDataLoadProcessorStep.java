@@ -99,20 +99,6 @@ public abstract class AbstractDataLoadProcessorStep {
   public abstract Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException;
 
   /**
-   * Process the batch of rows as per the step logic.
-   *
-   * @param rowBatch
-   * @return processed row.
-   */
-  protected CarbonRowBatch processRowBatch(CarbonRowBatch rowBatch) {
-    CarbonRowBatch newBatch = new CarbonRowBatch(rowBatch.getSize());
-    while (rowBatch.hasNext()) {
-      newBatch.addRow(null);
-    }
-    return newBatch;
-  }
-
-  /**
    * Get the step name for logging purpose.
    * @return Step name
    */

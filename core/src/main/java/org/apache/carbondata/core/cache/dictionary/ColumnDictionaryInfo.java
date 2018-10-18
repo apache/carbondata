@@ -238,7 +238,7 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
         int mid = (low + high) >>> 1;
         int surrogateKey = sortedSurrogates.get(mid);
         int cmp =
-            compareFilterValue(surrogateKey, sortedSurrogates, byteValueOfFilterMember, filterKey);
+            compareFilterValue(surrogateKey, byteValueOfFilterMember, filterKey);
         if (cmp < 0) {
           low = mid + 1;
         } else if (cmp > 0) {
@@ -250,7 +250,7 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
             int tmp_low = low > 0 ? low + 1 : 0;
             while (tmp_mid >= tmp_low) {
               surrogateKey = sortedSurrogates.get(tmp_mid);
-              cmp = compareFilterValue(surrogateKey, sortedSurrogates, byteValueOfFilterMember,
+              cmp = compareFilterValue(surrogateKey, byteValueOfFilterMember,
                   filterKey);
               if (cmp == 0) {
                 surrogates.add(surrogateKey);
@@ -269,8 +269,8 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
     }
   }
 
-  private int compareFilterValue(int surrogateKey, List<Integer> sortedSurrogates,
-      byte[] byteValueOfFilterMember, String filterKey) {
+  private int compareFilterValue(int surrogateKey, byte[] byteValueOfFilterMember,
+      String filterKey) {
     byte[] dictionaryValue = getDictionaryBytesFromSurrogate(surrogateKey);
     int cmp = -1;
     //fortify fix

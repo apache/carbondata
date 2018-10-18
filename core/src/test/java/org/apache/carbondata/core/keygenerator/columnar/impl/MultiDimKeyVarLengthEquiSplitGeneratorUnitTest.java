@@ -17,16 +17,11 @@
 
 package org.apache.carbondata.core.keygenerator.columnar.impl;
 
-import org.junit.*;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static junit.framework.Assert.assertEquals;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.core.Is.is;
-
 import java.util.Arrays;
 
-import org.apache.carbondata.core.keygenerator.KeyGenException;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class MultiDimKeyVarLengthEquiSplitGeneratorUnitTest {
 
@@ -61,98 +56,12 @@ public class MultiDimKeyVarLengthEquiSplitGeneratorUnitTest {
     Assert.assertTrue(Arrays.deepEquals(result, result_value));
   }
 
-  @Test public void testGenerateAndSplitKeyAndGetKeyArrayWithActualLogic() throws KeyGenException {
-    long[] keys = new long[] { 12253L, 48254L, 451245L, 52245L, 36458L, 48123L, 264L, 5852L, 42L };
-    long[] expected_result = { 12253, 126, 58029, 52245, 36458 };
-    byte[][] result_GenerateAndSplitKey =
-        multiDimKeyVarLengthEquiSplitGenerator.generateAndSplitKey(keys);
-    long[] result_GetKeyArray =
-        multiDimKeyVarLengthEquiSplitGenerator.getKeyArray(result_GenerateAndSplitKey);
-    assertThat(result_GetKeyArray, is(equalTo(expected_result)));
-  }
-
   @Test public void testSplitKey() throws Exception {
     byte[][] result_value =
         new byte[][] { { 1, 102, 20, 56 }, { 64 }, { 36, 18 }, { 16, 28 }, { 98, 93 } };
     byte[] key = new byte[] { 1, 102, 20, 56, 64, 36, 18, 16, 28, 98, 93 };
     byte[][] result = multiDimKeyVarLengthEquiSplitGenerator.splitKey(key);
     Assert.assertTrue(Arrays.deepEquals(result, result_value));
-  }
-
-  @Test public void testGetKeyArray() throws Exception {
-    long[] result_value = new long[] { 23467064L, 64L, 9234L, 4124L, 25181L };
-    byte[][] key = new byte[][] { { 1, 102, 20, 56, 64, 36, 18, 16, 28, 98, 93 } };
-    long[] result = multiDimKeyVarLengthEquiSplitGenerator.getKeyArray(key);
-    assertThat(result, is(equalTo(result_value)));
-  }
-
-  @Test public void testKeyByteArray() throws Exception {
-    byte[] result_value = new byte[] { 1, 102, 20, 56, 64, 36, 18, 16, 28, 98, 93 };
-    byte[][] key = new byte[][] { { 1, 102, 20, 56, 64, 36, 18, 16, 28, 98, 93 } };
-    byte[] result = multiDimKeyVarLengthEquiSplitGenerator.getKeyByteArray(key);
-    Assert.assertTrue(Arrays.equals(result, result_value));
-  }
-
-  /*
-   * In this test scenario We will send  blockIndexes { 0 }.
-   * Where value of blockKeySize is {4,1,2,2,2}
-   * It will add value 0f {0} indexes and will return the size which is 4.
-   *
-   * @throws Exception
-   */
-
-  @Test public void testGetKeySizeByBlockWithBlockIndexesLengthIsZero() throws Exception {
-    int result_value = 4;
-    int[] blockIndexes = new int[] { 0 };
-    int result = multiDimKeyVarLengthEquiSplitGenerator.getKeySizeByBlock(blockIndexes);
-    assertEquals(result_value, result);
-  }
-
-  /*
-   * In this test scenario We will send  blockIndexes { 0, 1, 2 }.
-   * Where value of blockKeySize is {4,1,2,2,2}
-   * It will add value 0f {0, 1, 2} indexes and will return the size which is 7.
-   *
-   * @throws Exception
-   */
-
-  @Test public void testGetKeySizeByBlockWithBlockIndexesLengthIsGreaterThanZero()
-      throws Exception {
-    int result_value = 7;
-    int[] blockIndexes = new int[] { 0, 1, 2 };
-    int result = multiDimKeyVarLengthEquiSplitGenerator.getKeySizeByBlock(blockIndexes);
-    assertEquals(result_value, result);
-  }
-
-  /*
-   * In this test scenario We will send  blockIndexes {1, 2, 7} where {7} > blockKeySize.length which is 5.
-   * Where value of blockKeySize is {4,1,2,2,2}
-   * It will add value 0f {1, 2, 7} indexes and will return the size which is 3.
-   *
-   * @throws Exception
-   */
-
-  @Test public void testGetKeySizeByBlockWithBlockIndexesLengthIsBlockKeySizeLength()
-      throws Exception {
-    int result_value = 3;
-    int[] blockIndexes = new int[] { 1, 2, 7 };
-    int result = multiDimKeyVarLengthEquiSplitGenerator.getKeySizeByBlock(blockIndexes);
-    assertEquals(result_value, result);
-  }
-
-  /*
-   * In this test scenario We will send  blockIndexes {10} where {10} > blockKeySize.length which is 5.
-   * Where value of blockKeySize is {4,1,2,2,2}
-   * It will return default value 0.
-   *
-   * @throws Exception
-   */
-
-  @Test public void testGetKeySizeByBlockWith() throws Exception {
-    int result_value = 0;
-    int[] key = new int[] { 10 };
-    int result = multiDimKeyVarLengthEquiSplitGenerator.getKeySizeByBlock(key);
-    assertEquals(result_value, result);
   }
 
   @Test public void testEqualsWithAnyObject() throws Exception {

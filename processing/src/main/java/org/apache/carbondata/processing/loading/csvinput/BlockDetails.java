@@ -19,8 +19,6 @@ package org.apache.carbondata.processing.loading.csvinput;
 
 import java.io.Serializable;
 
-import org.apache.carbondata.core.datastore.impl.FileFactory;
-
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
@@ -50,20 +48,8 @@ public class BlockDetails extends FileSplit implements Serializable {
     this.locations = locations;
   }
 
-  public long getBlockOffset() {
-    return blockOffset;
-  }
-
   public long getBlockLength() {
     return blockLength;
-  }
-
-  public String getFilePath() {
-    return FileFactory.getUpdatedFilePath(filePath);
-  }
-
-  public void setFilePath(String filePath) {
-    this.filePath = filePath;
   }
 
   public String[] getLocations() {

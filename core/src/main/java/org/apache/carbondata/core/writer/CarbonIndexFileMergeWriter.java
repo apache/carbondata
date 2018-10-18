@@ -17,7 +17,6 @@
 package org.apache.carbondata.core.writer;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -261,24 +260,4 @@ public class CarbonIndexFileMergeWriter {
     thriftWriter.close();
   }
 
-  public static class SegmentIndexFIleMergeStatus implements Serializable {
-
-    private SegmentFileStore.SegmentFile segmentFile;
-
-    private List<String> filesTobeDeleted;
-
-    public SegmentIndexFIleMergeStatus(SegmentFileStore.SegmentFile segmentFile,
-        List<String> filesTobeDeleted) {
-      this.segmentFile = segmentFile;
-      this.filesTobeDeleted = filesTobeDeleted;
-    }
-
-    public SegmentFileStore.SegmentFile getSegmentFile() {
-      return segmentFile;
-    }
-
-    public List<String> getFilesTobeDeleted() {
-      return filesTobeDeleted;
-    }
-  }
 }

@@ -112,13 +112,6 @@ public class CarbonImplicitDimension extends CarbonDimension {
   }
 
   /**
-   * @return columnar or row based
-   */
-  public boolean isColumnar() {
-    return true;
-  }
-
-  /**
    * To specify the visibily of the column by default its false
    */
   public boolean isInvisible() {

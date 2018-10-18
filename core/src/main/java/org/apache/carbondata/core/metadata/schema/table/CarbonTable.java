@@ -278,11 +278,6 @@ public class CarbonTable implements Serializable {
     return null;
   }
 
-  public static CarbonTable buildDummyTable(String tablePath) throws IOException {
-    TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, "null", "null");
-    return CarbonTable.buildFromTableInfo(tableInfoInfer);
-  }
-
   public static CarbonTable buildFromTablePath(String tableName, String dbName, String tablePath,
       String tableId) throws IOException {
     return SchemaReader.readCarbonTableFromStore(
@@ -827,14 +822,6 @@ public class CarbonTable implements Serializable {
    */
   public CarbonTableIdentifier getCarbonTableIdentifier() {
     return tableInfo.getOrCreateAbsoluteTableIdentifier().getCarbonTableIdentifier();
-  }
-
-  /**
-   * gets partition count for this table
-   * TODO: to be implemented while supporting partitioning
-   */
-  public int getPartitionCount() {
-    return 1;
   }
 
   public int getBlockSizeInMB() {

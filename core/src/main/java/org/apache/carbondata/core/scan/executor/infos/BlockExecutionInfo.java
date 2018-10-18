@@ -19,7 +19,6 @@ package org.apache.carbondata.core.scan.executor.infos;
 import java.util.Map;
 
 import org.apache.carbondata.core.datastore.DataRefNode;
-import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
@@ -44,20 +43,6 @@ public class BlockExecutionInfo {
    * execution
    */
   private MeasureInfo measureInfo;
-
-  /**
-   * this will be used to get the first tentative block from which query
-   * execution start, this will be useful in case of filter query to get the
-   * start block based on filter values
-   */
-  private IndexKey startKey;
-
-  /**
-   * this will be used to get the last tentative block till which scanning
-   * will be done, this will be useful in case of filter query to get the last
-   * block based on filter values
-   */
-  private IndexKey endKey;
 
   private String blockId;
 
@@ -116,11 +101,6 @@ public class BlockExecutionInfo {
   private int[] noDictionaryColumnChunkIndexes;
 
   /**
-   * each column value size
-   */
-  private int[] eachColumnValueSize;
-
-  /**
    * filter tree to execute the filter
    */
   private FilterExecuter filterExecuterTree;
@@ -129,16 +109,6 @@ public class BlockExecutionInfo {
    * whether it needs only raw byte records with out aggregation.
    */
   private boolean isRawRecordDetailQuery;
-
-  /**
-   * start index of blocklets
-   */
-  private int startBlockletIndex;
-
-  /**
-   * number of blocklet to be scanned
-   */
-  private int numberOfBlockletToScan;
 
   /**
    * complexParentIndexToQueryMap
@@ -235,34 +205,6 @@ public class BlockExecutionInfo {
    */
   public void setMeasureInfo(MeasureInfo measureInfo) {
     this.measureInfo = measureInfo;
-  }
-
-  /**
-   * @return the startKey
-   */
-  public IndexKey getStartKey() {
-    return startKey;
-  }
-
-  /**
-   * @param startKey the startKey to set
-   */
-  public void setStartKey(IndexKey startKey) {
-    this.startKey = startKey;
-  }
-
-  /**
-   * @return the endKey
-   */
-  public IndexKey getEndKey() {
-    return endKey;
-  }
-
-  /**
-   * @param endKey the endKey to set
-   */
-  public void setEndKey(IndexKey endKey) {
-    this.endKey = endKey;
   }
 
   /**
@@ -379,20 +321,6 @@ public class BlockExecutionInfo {
   }
 
   /**
-   * @return the eachColumnValueSize
-   */
-  public int[] getEachColumnValueSize() {
-    return eachColumnValueSize;
-  }
-
-  /**
-   * @param eachColumnValueSize the eachColumnValueSize to set
-   */
-  public void setEachColumnValueSize(int[] eachColumnValueSize) {
-    this.eachColumnValueSize = eachColumnValueSize;
-  }
-
-  /**
    * @return the dictionaryColumnChunkIndex
    */
   public int[] getDictionaryColumnChunkIndex() {
@@ -470,42 +398,6 @@ public class BlockExecutionInfo {
 
   public void setProjectionMeasures(ProjectionMeasure[] projectionMeasures) {
     this.projectionMeasures = projectionMeasures;
-  }
-
-  /**
-   * The method to set the number of blocklets to be scanned
-   *
-   * @param numberOfBlockletToScan
-   */
-  public void setNumberOfBlockletToScan(int numberOfBlockletToScan) {
-    this.numberOfBlockletToScan = numberOfBlockletToScan;
-  }
-
-  /**
-   * get the no of blocklet  to be scanned
-   *
-   * @return
-   */
-  public int getNumberOfBlockletToScan() {
-    return numberOfBlockletToScan;
-  }
-
-  /**
-   * returns the blocklet index to be scanned
-   *
-   * @return
-   */
-  public int getStartBlockletIndex() {
-    return startBlockletIndex;
-  }
-
-  /**
-   * set the blocklet index to be scanned
-   *
-   * @param startBlockletIndex
-   */
-  public void setStartBlockletIndex(int startBlockletIndex) {
-    this.startBlockletIndex = startBlockletIndex;
   }
 
   public boolean isVectorBatchCollector() {

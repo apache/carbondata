@@ -180,10 +180,10 @@ public class CarbonInputSplit extends FileSplit
     List<TableBlockInfo> tableBlockInfoList = new ArrayList<>();
     for (CarbonInputSplit split : splitList) {
       BlockletInfos blockletInfos =
-          new BlockletInfos(split.getNumberOfBlocklets(), 0, split.getNumberOfBlocklets());
+          new BlockletInfos(0);
       try {
         TableBlockInfo blockInfo =
-            new TableBlockInfo(split.getPath().toString(), split.blockletId, split.getStart(),
+            new TableBlockInfo(split.getPath().toString(), split.getStart(),
                 split.getSegment().toString(), split.getLocations(), split.getLength(),
                 blockletInfos, split.getVersion(), split.getDeleteDeltaFiles());
         blockInfo.setDetailInfo(split.getDetailInfo());
@@ -199,10 +199,10 @@ public class CarbonInputSplit extends FileSplit
 
   public static TableBlockInfo getTableBlockInfo(CarbonInputSplit inputSplit) {
     BlockletInfos blockletInfos =
-        new BlockletInfos(inputSplit.getNumberOfBlocklets(), 0, inputSplit.getNumberOfBlocklets());
+        new BlockletInfos(0);
     try {
       TableBlockInfo blockInfo =
-          new TableBlockInfo(inputSplit.getPath().toString(), inputSplit.blockletId,
+          new TableBlockInfo(inputSplit.getPath().toString(),
               inputSplit.getStart(), inputSplit.getSegment().toString(), inputSplit.getLocations(),
               inputSplit.getLength(), blockletInfos, inputSplit.getVersion(),
               inputSplit.getDeleteDeltaFiles());

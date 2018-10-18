@@ -21,8 +21,6 @@ import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
@@ -67,11 +65,6 @@ public class TableBlockInfo implements Distributable, Serializable {
    */
   private Segment segment;
 
-  /**
-   * id of the Blocklet.
-   */
-  private String blockletId;
-
   private String[] locations;
 
   private ColumnarFormatVersion version;
@@ -85,12 +78,6 @@ public class TableBlockInfo implements Distributable, Serializable {
    * The class holds the blockletsinfo
    */
   private BlockletInfos blockletInfos = new BlockletInfos();
-
-  /**
-   * map of block location and storage id
-   */
-  private Map<String, String> blockStorageIdMap =
-      new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
   /**
    * delete delta files path for this block
@@ -119,7 +106,6 @@ public class TableBlockInfo implements Distributable, Serializable {
       String[] locations, long blockLength, ColumnarFormatVersion version,
       String[] deletedDeltaFilePath) {
     this.filePath = FileFactory.getUpdatedFilePath(filePath);
-    this.blockletId = "0";
     this.blockOffset = blockOffset;
     this.segment = Segment.toSegment(segmentId);
     this.locations = locations;
@@ -151,45 +137,6 @@ public class TableBlockInfo implements Distributable, Serializable {
   }
 
   /**
-   * constructor to initialize the TableBlockInfo with blockletIds
-   *
-   * @param filePath
-   * @param blockOffset
-   * @param segmentId
-   * @param locations
-   * @param blockLength
-   * @param blockletInfos
-   */
-  public TableBlockInfo(String filePath, String blockletId, long blockOffset, String segmentId,
-      String[] locations, long blockLength, BlockletInfos blockletInfos,
-      ColumnarFormatVersion version, String[] deletedDeltaFilePath) {
-    this(filePath, blockOffset, segmentId, locations, blockLength, blockletInfos, version,
-        deletedDeltaFilePath);
-    this.blockletId = blockletId;
-  }
-
-  /**
-   * constructor to initialize the TableBlockInfo with blockStorageIdMap
-   *
-   * @param filePath
-   * @param blockOffset
-   * @param segmentId
-   * @param locations
-   * @param blockLength
-   * @param blockletInfos
-   * @param version
-   * @param blockStorageIdMap
-   */
-  public TableBlockInfo(String filePath, String blockletId, long blockOffset, String segmentId,
-      String[] locations, long blockLength, BlockletInfos blockletInfos,
-      ColumnarFormatVersion version, Map<String, String> blockStorageIdMap,
-      String[] deletedDeltaFilePath) {
-    this(filePath, blockletId, blockOffset, segmentId, locations, blockLength, blockletInfos,
-        version, deletedDeltaFilePath);
-    this.blockStorageIdMap = blockStorageIdMap;
-  }
-
-  /**
    * Create copy of TableBlockInfo object
    */
   public TableBlockInfo copy() {
@@ -198,12 +145,10 @@ public class TableBlockInfo implements Distributable, Serializable {
     info.blockOffset = blockOffset;
     info.blockLength = blockLength;
     info.segment = segment;
-    info.blockletId = blockletId;
     info.locations = locations;
     info.version = version;
     info.isDataBlockFromOldStore = isDataBlockFromOldStore;
     info.blockletInfos = blockletInfos;
-    info.blockStorageIdMap = blockStorageIdMap;
     info.deletedDeltaFilePath = deletedDeltaFilePath;
     info.detailInfo = detailInfo.copy();
     info.dataMapWriterPath = dataMapWriterPath;
@@ -378,48 +323,12 @@ public class TableBlockInfo implements Distributable, Serializable {
     return locations;
   }
 
-  /**
-   * returns BlockletInfos
-   *
-   * @return
-   */
-  public BlockletInfos getBlockletInfos() {
-    return blockletInfos;
-  }
-
-  /**
-   * set the blocklestinfos
-   *
-   * @param blockletInfos
-   */
-  public void setBlockletInfos(BlockletInfos blockletInfos) {
-    this.blockletInfos = blockletInfos;
-  }
-
   public ColumnarFormatVersion getVersion() {
     return version;
   }
 
   public void setVersion(ColumnarFormatVersion version) {
     this.version = version;
-  }
-
-  /**
-   * returns the storage location vs storage id map
-   *
-   * @return
-   */
-  public Map<String, String> getBlockStorageIdMap() {
-    return this.blockStorageIdMap;
-  }
-
-  /**
-   * method to storage location vs storage id map
-   *
-   * @param blockStorageIdMap
-   */
-  public void setBlockStorageIdMap(Map<String, String> blockStorageIdMap) {
-    this.blockStorageIdMap = blockStorageIdMap;
   }
 
   public String[] getDeletedDeltaFilePath() {
@@ -436,14 +345,6 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   public void setDetailInfo(BlockletDetailInfo detailInfo) {
     this.detailInfo = detailInfo;
-  }
-
-  public String getBlockletId() {
-    return blockletId;
-  }
-
-  public void setBlockletId(String blockletId) {
-    this.blockletId = blockletId;
   }
 
   public boolean isDataBlockFromOldStore() {
@@ -469,7 +370,6 @@ public class TableBlockInfo implements Distributable, Serializable {
     sb.append(", blockOffset=").append(blockOffset);
     sb.append(", blockLength=").append(blockLength);
     sb.append(", segment='").append(segment.toString()).append('\'');
-    sb.append(", blockletId='").append(blockletId).append('\'');
     sb.append(", locations=").append(Arrays.toString(locations));
     sb.append('}');
     return sb.toString();

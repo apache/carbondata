@@ -60,12 +60,10 @@ import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.TrueConditio
 @InterfaceAudience.Internal
 public class DataMapChooser {
 
-  private CarbonTable carbonTable;
   private List<TableDataMap> cgDataMaps;
   private List<TableDataMap> fgDataMaps;
 
   public DataMapChooser(CarbonTable carbonTable) throws IOException {
-    this.carbonTable = carbonTable;
     // read all datamaps for this table and populate CG and FG datamap list
     List<TableDataMap> visibleDataMaps =
         DataMapStoreManager.getInstance().getAllVisibleDataMap(carbonTable);
@@ -83,27 +81,6 @@ public class DataMapChooser {
         }
       }
     }
-  }
-
-  /**
-   * Return a chosen datamap based on input filter. See {@link DataMapChooser}
-   */
-  public DataMapExprWrapper choose(FilterResolverIntf filter) {
-    if (filter != null) {
-      Expression expression = filter.getFilterExpression();
-      // First check for FG datamaps if any exist
-      ExpressionTuple tuple = selectDataMap(expression, fgDataMaps, filter);
-      if (tuple.dataMapExprWrapper == null) {
-        // Check for CG datamap
-        tuple = selectDataMap(expression, cgDataMaps, filter);
-      }
-      if (tuple.dataMapExprWrapper != null) {
-        return tuple.dataMapExprWrapper;
-      }
-    }
-    // Return the default datamap if no other datamap exists.
-    return new DataMapExprWrapperImpl(
-        DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable), filter);
   }
 
   /**

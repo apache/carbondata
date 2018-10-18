@@ -259,20 +259,6 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
     }
   }
 
-  public int getScale() {
-    if (DataTypes.isDecimal(columnSpec.getSchemaDataType())) {
-      return columnSpec.getScale();
-    }
-    throw new UnsupportedOperationException();
-  }
-
-  public int getPrecision() {
-    if (DataTypes.isDecimal(columnSpec.getSchemaDataType())) {
-      return columnSpec.getPrecision();
-    }
-    throw new UnsupportedOperationException();
-  }
-
   public TableSpec.ColumnSpec getColumnSpec() {
     return columnSpec;
   }

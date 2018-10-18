@@ -17,7 +17,12 @@
 package org.apache.carbondata.core.indexstore.blockletindex;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.core.cache.Cache;
@@ -46,7 +51,6 @@ import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifierWrapper;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
@@ -54,8 +58,6 @@ import org.apache.carbondata.core.util.BlockletDataMapUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
@@ -67,7 +69,6 @@ import org.apache.hadoop.fs.RemoteIterator;
 public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     implements BlockletDetailsFetcher, SegmentPropertiesFetcher, CacheableDataMap {
 
-  private static final Log LOG = LogFactory.getLog(BlockletDataMapFactory.class);
   private static final String NAME = "clustered.btree.blocklet";
   /**
    * variable for cache level BLOCKLET
@@ -77,8 +78,6 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   public static final DataMapSchema DATA_MAP_SCHEMA =
       new DataMapSchema(NAME, BlockletDataMapFactory.class.getName());
 
-  private AbsoluteTableIdentifier identifier;
-
   // segmentId -> list of index file
   private Map<String, Set<TableBlockIndexUniqueIdentifier>> segmentMap = new ConcurrentHashMap<>();
 
@@ -86,7 +85,6 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
 
   public BlockletDataMapFactory(CarbonTable carbonTable, DataMapSchema dataMapSchema) {
     super(carbonTable, dataMapSchema);
-    this.identifier = carbonTable.getAbsoluteTableIdentifier();
     cache = CacheProvider.getInstance()
         .createCache(CacheType.DRIVER_BLOCKLET_DATAMAP);
   }
@@ -417,8 +415,6 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
               (BlockletDataMapDistributable) distributable);
       if (null == cache.getIfPresent(
           new TableBlockIndexUniqueIdentifierWrapper(validIdentifier, this.getCarbonTable()))) {
-        ((BlockletDataMapDistributable) distributable)
-            .setTableBlockIndexUniqueIdentifier(validIdentifier);
         distributablesToBeLoaded.add(distributable);
       }
     }

@@ -119,8 +119,6 @@ public abstract class AbstractDataFileFooterConverter {
           tableBlockInfo.setBlockOffset(readBlockIndexInfo.getOffset());
           tableBlockInfo.setVersion(
               ColumnarFormatVersion.valueOf((short) readIndexHeader.getVersion()));
-          int blockletSize = getBlockletSize(readBlockIndexInfo);
-          tableBlockInfo.getBlockletInfos().setNoOfBlockLets(blockletSize);
           dataFileFooter.setBlockletIndex(blockletIndex);
           dataFileFooter.setColumnInTable(columnSchemaList);
           dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());
@@ -228,8 +226,6 @@ public abstract class AbstractDataFileFooterConverter {
     ColumnarFormatVersion version =
         ColumnarFormatVersion.valueOf((short) readIndexHeader.getVersion());
     tableBlockInfo.setVersion(version);
-    int blockletSize = getBlockletSize(readBlockIndexInfo);
-    tableBlockInfo.getBlockletInfos().setNoOfBlockLets(blockletSize);
     String fileName = readBlockIndexInfo.file_name;
     // Take only name of file.
     if (fileName.lastIndexOf("/") > 0) {

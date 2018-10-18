@@ -16,13 +16,11 @@
  */
 package org.apache.carbondata.core.datastore.block;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.core.cache.Cacheable;
 import org.apache.carbondata.core.datastore.DataRefNode;
-import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 
 public abstract class AbstractIndex implements Cacheable {
@@ -76,13 +74,6 @@ public abstract class AbstractIndex implements Cacheable {
   }
 
   /**
-   * Below method will be used to load the data block
-   *
-   * @param footerList footer list
-   */
-  public abstract void buildIndex(List<DataFileFooter> footerList);
-
-  /**
    * the method returns the access count
    *
    * @return
@@ -105,13 +96,6 @@ public abstract class AbstractIndex implements Cacheable {
   }
 
   /**
-   * The method is used to set the access count
-   */
-  public void incrementAccessCount() {
-    accessCount.incrementAndGet();
-  }
-
-  /**
    * This method will release the objects and set default value for primitive types
    */
   public void clear() {
@@ -126,14 +110,6 @@ public abstract class AbstractIndex implements Cacheable {
     if (accessCount.get() > 0) {
       accessCount.decrementAndGet();
     }
-  }
-
-  /**
-   * the method is used to set the memory size of the b-tree
-   * @param memorySize
-   */
-  public void setMemorySize(long memorySize) {
-    this.memorySize = memorySize;
   }
 
   /**

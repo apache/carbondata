@@ -45,10 +45,7 @@ import static org.junit.Assert.assertTrue;
 public class ServerDictionaryGeneratorTest {
 
   private static ColumnSchema empColumnSchema;
-  private static CarbonDimension empDimension;
   private static ColumnSchema ageColumnSchema;
-  private static CarbonDimension ageDimension;
-  private static TableSchema tableSchema;
   private static TableInfo tableInfo;
   private static String storePath;
   private static CarbonTable carbonTable;
@@ -65,7 +62,6 @@ public class ServerDictionaryGeneratorTest {
     empColumnSchema.setColumnUniqueId("empNameCol");
     empColumnSchema.setDimensionColumn(true);
     empColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
-    empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0,0);
 
     ageColumnSchema = new ColumnSchema();
     ageColumnSchema.setColumnName("empNameCol");
@@ -73,10 +69,9 @@ public class ServerDictionaryGeneratorTest {
     ageColumnSchema.setDataType(DataTypes.SHORT_INT);
     ageColumnSchema.setDimensionColumn(true);
     ageColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
-    ageDimension = new CarbonDimension(ageColumnSchema, 0, 0, 0, 0);
 
     // Create a Table
-    tableSchema = new TableSchema();
+    TableSchema tableSchema = new TableSchema();
     tableSchema.setTableName("TestTable");
     tableSchema.setTableId("1");
     tableSchema.setListOfColumns(Arrays.asList(empColumnSchema, ageColumnSchema));
