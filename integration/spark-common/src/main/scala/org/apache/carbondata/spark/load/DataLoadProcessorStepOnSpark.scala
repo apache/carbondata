@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.spark.load
 
-import scala.util.Random
-
 import com.univocity.parsers.common.TextParsingException
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{Accumulator, SparkEnv, TaskContext}
@@ -30,8 +28,7 @@ import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException
 import org.apache.carbondata.core.datastore.row.CarbonRow
-import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.processing.loading.{BadRecordsLogger, BadRecordsLoggerProvider, CarbonDataLoadConfiguration, DataLoadProcessBuilder, TableProcessingOperations}
 import org.apache.carbondata.processing.loading.converter.impl.RowConverterImpl
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
@@ -43,7 +40,7 @@ import org.apache.carbondata.processing.sort.sortdata.SortParameters
 import org.apache.carbondata.processing.store.{CarbonFactHandler, CarbonFactHandlerFactory}
 import org.apache.carbondata.processing.util.{CarbonBadRecordUtil, CarbonDataProcessorUtil}
 import org.apache.carbondata.spark.rdd.{NewRddIterator, StringArrayRow}
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, Util}
+import org.apache.carbondata.spark.util.CommonUtil
 
 object DataLoadProcessorStepOnSpark {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -238,7 +235,7 @@ object DataLoadProcessorStepOnSpark {
     var dataWriter: DataWriterProcessorStepImpl = null
     try {
       model = modelBroadcast.value.getCopyWithTaskNo(index.toString)
-      val storeLocation = Array(getTempStoreLocation(index))
+      val storeLocation = CommonUtil.getTempStoreLocations(index.toString)
       val conf = DataLoadProcessBuilder.createConfiguration(model, storeLocation)
 
       tableName = model.getTableName
@@ -289,27 +286,6 @@ object DataLoadProcessorStepOnSpark {
       // clean up the folders and files created locally for data load operation
       TableProcessingOperations.deleteLocalDataLoadFolderLocation(model, false, false)
     }
-  }
-
-  private def getTempStoreLocation(index: Int): String = {
-    var storeLocation = ""
-    // this property is used to determine whether temp location for carbon is inside
-    // container temp dir or is yarn application directory.
-    val carbonUseLocalDir = CarbonProperties.getInstance()
-      .getProperty("carbon.use.local.dir", "false")
-    if (carbonUseLocalDir.equalsIgnoreCase("true")) {
-      val storeLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
-      if (null != storeLocations && storeLocations.nonEmpty) {
-        storeLocation = storeLocations(Random.nextInt(storeLocations.length))
-      }
-      if (storeLocation == null) {
-        storeLocation = System.getProperty("java.io.tmpdir")
-      }
-    } else {
-      storeLocation = System.getProperty("java.io.tmpdir")
-    }
-    storeLocation = storeLocation + '/' + System.nanoTime() + '_' + index
-    storeLocation
   }
 
   private def wrapException(e: Throwable, model: CarbonLoadModel): Unit = {
