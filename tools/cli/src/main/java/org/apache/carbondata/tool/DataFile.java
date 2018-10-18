@@ -317,6 +317,10 @@ class DataFile {
     // min/max stats of this column chunk
     byte[] min, max;
 
+    // to set whether min max is present for the column chunck, as we may not right min max after
+    // specific size
+    boolean isMinMaxPresent;
+
     // percentage of min/max comparing to min/max scope collected in all blocklets
     // they are set after calculation in DataSummary
     double minPercentage, maxPercentage;
@@ -335,6 +339,7 @@ class DataFile {
       this.column = column;
       min = index.min_max_index.min_values.get(columnIndex).array();
       max = index.min_max_index.max_values.get(columnIndex).array();
+      isMinMaxPresent = index.min_max_index.min_max_presence.get(columnIndex);
 
       // read the column chunk metadata: DataChunk3
       ByteBuffer buffer = fileReader.readByteBuffer(
