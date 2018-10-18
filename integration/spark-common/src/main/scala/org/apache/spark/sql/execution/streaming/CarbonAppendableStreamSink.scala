@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.streaming
 
 import java.util.Date
+
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
