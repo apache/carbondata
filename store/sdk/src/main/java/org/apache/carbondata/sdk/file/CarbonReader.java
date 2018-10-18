@@ -18,6 +18,7 @@
 package org.apache.carbondata.sdk.file;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -112,6 +113,57 @@ public class CarbonReader<T> {
     UUID uuid = UUID.randomUUID();
     String tableName = "UnknownTable" + uuid;
     return builder(tablePath, tableName);
+  }
+
+  /**
+   * Breaks the list of CarbonRecordReader in CarbonReader into multiple
+   * CarbonReader objects, each iterating through some 'carbondata' files
+   * and return that list of CarbonReader objects
+   *
+   * If the no. of files is greater than maxSplits, then break the
+   * CarbonReader into maxSplits splits, with each split iterating
+   * through >= 1 file.
+   *
+   * If the no. of files is less than maxSplits, then return list of
+   * CarbonReader with size as the no. of files, with each CarbonReader
+   * iterating through exactly one file
+   *
+   * @param maxSplits: Int
+   * @return list of {@link CarbonReader} objects
+   */
+  public List<CarbonReader> split(int maxSplits) throws IOException {
+    validateReader();
+    if (maxSplits < 1) {
+      throw new RuntimeException(
+          this.getClass().getSimpleName() + ".split: maxSplits must be positive");
+    }
+
+    List<CarbonReader> carbonReaders = new ArrayList<>();
+
+    if (maxSplits < this.readers.size()) {
+      // If maxSplits is less than the no. of files
+      // Split the reader into maxSplits splits with each
+      // element containing >= 1 CarbonRecordReader objects
+      float filesPerSplit = (float) this.readers.size() / maxSplits;
+      for (int i = 0; i < maxSplits; ++i) {
+        carbonReaders.add(new CarbonReader<>(this.readers.subList(
+            (int) Math.ceil(i * filesPerSplit),
+            (int) Math.ceil(((i + 1) * filesPerSplit)))));
+      }
+    } else {
+      // If maxSplits is greater than the no. of files
+      // Split the reader into <num_files> splits with each
+      // element contains exactly 1 CarbonRecordReader object
+      for (int i = 0; i < this.readers.size(); ++i) {
+        carbonReaders.add(new CarbonReader<>(this.readers.subList(i, i + 1)));
+      }
+    }
+
+    // This is to disable the use of this CarbonReader object to iterate
+    // over the files and forces user to only use the returned splits
+    this.initialise = false;
+
+    return carbonReaders;
   }
 
   /**
