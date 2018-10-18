@@ -257,7 +257,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         AttributeSet(handledPredicates.flatMap(_.references)) --
         (projectSet ++ unhandledSet).map(relation.attributeMap)
       } catch {
-        case e => throw new CarbonPhysicalPlanException
+        case e: Throwable => throw new CarbonPhysicalPlanException
       }
     }
     // Combines all Catalyst filter `Expression`s that are either not convertible to data source
