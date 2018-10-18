@@ -347,7 +347,7 @@ case class CarbonLoadDataCommand(
           throw new RuntimeException(s"Dataload failure for $dbName.$tableName, ${ex.getMessage}")
         // In case of event related exception
         case preEventEx: PreEventException =>
-          LOGGER.error(preEventEx, s"Dataload failure for $dbName.$tableName")
+          LOGGER.error(s"Dataload failure for $dbName.$tableName", preEventEx)
           throw new AnalysisException(preEventEx.getMessage)
         case ex: Exception =>
           LOGGER.error(ex)
