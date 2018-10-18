@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.streaming
 
 import java.util.Date
+import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce._
@@ -104,12 +105,13 @@ class CarbonAppendableStreamSink(
 
   // measure data type array
   private lazy val msrDataTypes = {
-    val msrList = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getMeasures
-    val msrDataTypes = new Array[DataType](msrList.size())
-    (0 until msrDataTypes.length).foreach { index =>
-      msrDataTypes(index) = msrList.get(index).getDataType
-    }
-    msrDataTypes
+    carbonLoadModel
+      .getCarbonDataLoadSchema
+      .getCarbonTable
+      .getMeasures
+      .asScala
+      .map(_.getDataType)
+      .toArray
   }
 
   override def addBatch(batchId: Long, data: DataFrame): Unit = {
