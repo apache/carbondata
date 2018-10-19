@@ -118,7 +118,7 @@ Please follow the below steps to query carbondata in presto
     
 ####  Unsafe Properties    
   enable.unsafe.in.query.processing property by default is true in CarbonData system, the carbon.unsafe.working.memory.in.mb 
-  property defines the limit for Unsafe Memory usage in Mega Bytes, the default value is 512 MB.
+  property defines the limit for Unsafe Memory usage in Mega Bytes, the default value is 1024 MB.
   Currently Presto does not support Unsafe Memory so we have to disable the unsafe feature by setting below properties to false.
 
   enable.unsafe.in.query.processing=false.

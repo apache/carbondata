@@ -798,7 +798,7 @@ public final class CarbonCommonConstants {
   public static final String OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT = "64";
   @CarbonProperty
   public static final String UNSAFE_WORKING_MEMORY_IN_MB = "carbon.unsafe.working.memory.in.mb";
-  public static final String UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT = "512";
+  public static final String UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT = "1024";
 
   @CarbonProperty
   public static final String UNSAFE_DRIVER_WORKING_MEMORY_IN_MB =
