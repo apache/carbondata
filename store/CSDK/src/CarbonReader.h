@@ -40,6 +40,21 @@ private:
      */
     jobject carbonReaderObject;
 
+    /**
+     * Return true if carbonReaderBuilder Object isn't NULL
+     * Throw exception if carbonReaderBuilder Object is NULL
+     *
+     * @return true or throw exception
+     */
+    bool checkBuilder();
+
+    /**
+     * Return true if carbonReader Object isn't NULL
+     * Throw exception if carbonReader Object is NULL
+     *
+     * @return true or throw exception
+     */
+    bool checkReader();
 public:
 
     /**

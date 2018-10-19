@@ -35,7 +35,7 @@ Please find example code at  [main.cpp](https://github.com/apache/carbondata/blo
 
 When users use C++ to read carbon files, users should init JVM first. Then users create 
 carbon reader and read data.There are some example code of read data from local disk  
-and read data from S3 at main.cpp of CSDK module.  Finally, Finally, users need to 
+and read data from S3 at main.cpp of CSDK module.  Finally, users need to 
 release the memory and destroy JVM.
 
 ## API List
@@ -100,4 +100,91 @@ release the memory and destroy JVM.
      */
     jboolean close();
 
+```
+
+# CSDK Writer
+This CSDK writer writes CarbonData file and carbonindex file at a given path. 
+External client can make use of this writer to write CarbonData files in C++ 
+code and without CarbonSession. CSDK already supports S3 and local disk.
+
+In the carbon jars package, there exist a carbondata-sdk.jar, 
+including SDK writer for CSDK. 
+
+## Quick example
+Please find example code at  [main.cpp](https://github.com/apache/carbondata/blob/master/store/CSDK/test/main.cpp) of CSDK module  
+
+When users use C++ to write carbon files, users should init JVM first. Then users create 
+carbon writer and write data.There are some example code of write data to local disk  
+and write data to S3 at main.cpp of CSDK module.  Finally, users need to 
+release the memory and destroy JVM.
+
+## API List
+
+```
+    /**
+     * create a CarbonWriterBuilder object for building carbonWriter,
+     * CarbonWriterBuilder object  can configure different parameter
+     *
+     * @param env JNIEnv
+     * @return CarbonWriterBuilder object
+     */
+    void builder(JNIEnv *env);
+```
+```
+    /**
+     * Sets the output path of the writer builder
+     *
+     * @param path is the absolute path where output files are written
+     * This method must be called when building CarbonWriterBuilder
+     * @return updated CarbonWriterBuilder
+     */
+    void outputPath(char *path);
+```
+```
+    /**
+     * configure the schema with json style schema
+     *
+     * @param jsonSchema json style schema
+     * @return updated CarbonWriterBuilder
+     */
+    void withCsvInput(char *jsonSchema);
+```
+```
+    /**
+    * configure parameter, including ak,sk and endpoint
+    *
+    * @param key key word
+    * @param value value
+    * @return CarbonWriterBuilder object
+    */
+    void withHadoopConf(char *key, char *value);
+```
+```
+    /**
+     * @param appName appName which is writing the carbondata files
+     */
+    void writtenBy(char *appName);
+```
+```
+    /**
+     * build carbonWriter object for writing data
+     * it support write data from load disk
+     *
+     * @return carbonWriter object
+     */
+    void build();
+```
+```
+    /**
+     * Write an object to the file, the format of the object depends on the
+     * implementation.
+     * Note: This API is not thread safe
+     */
+    void write(jobject obj);
+```
+```
+    /**
+     * close the carbon Writer
+     */
+    void close();
 ```

@@ -105,6 +105,37 @@ public class CSVCarbonWriterTest {
   }
 
   @Test
+  public void testWriteFilesBuildWithJsonSchema() throws IOException, InvalidLoadOptionException, InterruptedException {
+    String path = "./testWriteFilesJsonSchema";
+    FileUtils.deleteDirectory(new File(path));
+
+    String schema = "[{name:string},{age:int},{height:double}]";
+    CarbonWriterBuilder builder = CarbonWriter
+        .builder()
+        .outputPath(path)
+        .withCsvInput(schema)
+        .writtenBy("testWriteFilesBuildWithJsonSchema");
+
+    CarbonWriter writer = builder.build();
+    for (int i = 0; i < 10; i++) {
+      writer.write(new String[]{
+          "robot" + (i % 10), String.valueOf(i % 3000000), String.valueOf((double) i / 2)});
+    }
+    writer.close();
+
+    CarbonReader carbonReader = CarbonReader.builder(path).build();
+    int i = 0;
+    while (carbonReader.hasNext()) {
+      Object[] row = (Object[]) carbonReader.readNextRow();
+      Assert.assertEquals(row[0], "robot" + i % 10);
+      System.out.println();
+      i++;
+    }
+    carbonReader.close();
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
   public void testAllPrimitiveDataType() throws IOException {
     // TODO: write all data type and read by CarbonRecordReader to verify the content
     String path = "./testWriteFiles";

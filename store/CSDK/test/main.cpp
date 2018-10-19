@@ -20,8 +20,10 @@
 #include <stdlib.h>
 #include <iostream>
 #include <unistd.h>
+#include <sys/time.h>
 #include "../src/CarbonReader.h"
 #include "../src/CarbonRow.h"
+#include "../src/CarbonWriter.h"
 
 using namespace std;
 
@@ -210,6 +212,142 @@ bool tryCatchException(JNIEnv *env) {
     }
     printf("\nfinished handle exception\n");
 }
+
+/**
+ * test write data to local disk
+ *
+ * @param env  jni env
+ * @param path file path
+ * @param argc argument counter
+ * @param argv argument vector
+ * @return true or throw exception
+ */
+bool testWriteData(JNIEnv *env, char *path, int argc, char *argv[]) {
+
+    char *jsonSchema = "[{stringField:string},{shortField:short},{intField:int},{longField:long},{doubleField:double},{boolField:boolean},{dateField:date},{timeField:timestamp},{floatField:float},{arrayField:array}]";
+    try {
+        CarbonWriter writer;
+        writer.builder(env);
+        writer.outputPath(path);
+        writer.withCsvInput(jsonSchema);
+        writer.writtenBy("CSDK");
+        if (argc > 3) {
+            writer.withHadoopConf("fs.s3a.access.key", argv[1]);
+            writer.withHadoopConf("fs.s3a.secret.key", argv[2]);
+            writer.withHadoopConf("fs.s3a.endpoint", argv[3]);
+        }
+        writer.build();
+
+        int rowNum = 10;
+        int size = 10;
+        long longValue = 0;
+        double doubleValue = 0;
+        float floatValue = 0;
+        jclass objClass = env->FindClass("java/lang/String");
+        for (int i = 0; i < rowNum; ++i) {
+            jobjectArray arr = env->NewObjectArray(size, objClass, 0);
+            char ctrInt[10];
+            gcvt(i, 10, ctrInt);
+
+            char a[15] = "robot";
+            strcat(a, ctrInt);
+            jobject stringField = env->NewStringUTF(a);
+            env->SetObjectArrayElement(arr, 0, stringField);
+
+            char ctrShort[10];
+            gcvt(i % 10000, 10, ctrShort);
+            jobject shortField = env->NewStringUTF(ctrShort);
+            env->SetObjectArrayElement(arr, 1, shortField);
+
+            jobject intField = env->NewStringUTF(ctrInt);
+            env->SetObjectArrayElement(arr, 2, intField);
+
+
+            char ctrLong[10];
+            gcvt(longValue, 10, ctrLong);
+            longValue = longValue + 2;
+            jobject longField = env->NewStringUTF(ctrLong);
+            env->SetObjectArrayElement(arr, 3, longField);
+
+            char ctrDouble[10];
+            gcvt(doubleValue, 10, ctrDouble);
+            doubleValue = doubleValue + 2;
+            jobject doubleField = env->NewStringUTF(ctrDouble);
+            env->SetObjectArrayElement(arr, 4, doubleField);
+
+            jobject boolField = env->NewStringUTF("true");
+            env->SetObjectArrayElement(arr, 5, boolField);
+
+            jobject dateField = env->NewStringUTF(" 2019-03-02");
+            env->SetObjectArrayElement(arr, 6, dateField);
+
+            jobject timeField = env->NewStringUTF("2019-02-12 03:03:34");
+            env->SetObjectArrayElement(arr, 7, timeField);
+
+            char ctrFloat[10];
+            gcvt(floatValue, 10, ctrFloat);
+            floatValue = floatValue + 2;
+            jobject floatField = env->NewStringUTF(ctrFloat);
+            env->SetObjectArrayElement(arr, 8, floatField);
+
+            jobject arrayField = env->NewStringUTF("Hello#World#From#Carbon");
+            env->SetObjectArrayElement(arr, 9, arrayField);
+
+
+            writer.write(arr);
+
+            env->DeleteLocalRef(stringField);
+            env->DeleteLocalRef(shortField);
+            env->DeleteLocalRef(intField);
+            env->DeleteLocalRef(longField);
+            env->DeleteLocalRef(doubleField);
+            env->DeleteLocalRef(floatField);
+            env->DeleteLocalRef(dateField);
+            env->DeleteLocalRef(timeField);
+            env->DeleteLocalRef(boolField);
+            env->DeleteLocalRef(arrayField);
+            env->DeleteLocalRef(arr);
+        }
+        writer.close();
+
+        CarbonReader carbonReader;
+        carbonReader.builder(env, path);
+        carbonReader.build();
+        int i = 0;
+        CarbonRow carbonRow(env);
+        while (carbonReader.hasNext()) {
+            jobject row = carbonReader.readNextRow();
+            i++;
+            carbonRow.setCarbonRow(row);
+            printf("%s\t%d\t%ld\t", carbonRow.getString(0), carbonRow.getInt(1), carbonRow.getLong(2));
+            jobjectArray array1 = carbonRow.getArray(3);
+            jsize length = env->GetArrayLength(array1);
+            int j = 0;
+            for (j = 0; j < length; j++) {
+                jobject element = env->GetObjectArrayElement(array1, j);
+                char *str = (char *) env->GetStringUTFChars((jstring) element, JNI_FALSE);
+                printf("%s\t", str);
+            }
+            printf("%d\t", carbonRow.getShort(4));
+            printf("%d\t", carbonRow.getInt(5));
+            printf("%ld\t", carbonRow.getLong(6));
+            printf("%lf\t", carbonRow.getDouble(7));
+            bool bool1 = carbonRow.getBoolean(8);
+            if (bool1) {
+                printf("true\t");
+            } else {
+                printf("false\t");
+            }
+            printf("%f\t\n", carbonRow.getFloat(9));
+            env->DeleteLocalRef(row);
+        }
+        carbonReader.close();
+    } catch (jthrowable ex) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+    }
+}
+
 /**
  * read data from S3
  * parameter is ak sk endpoint
@@ -218,19 +356,11 @@ bool tryCatchException(JNIEnv *env) {
  * @param argv argument vector
  * @return
  */
-bool readFromS3(JNIEnv *env, char *argv[]) {
+bool readFromS3(JNIEnv *env, char *path, char *argv[]) {
     printf("\nRead data from S3:\n");
     CarbonReader reader;
 
-    char *args[3];
-    // "your access key"
-    args[0] = argv[1];
-    // "your secret key"
-    args[1] = argv[2];
-    // "your endPoint"
-    args[2] = argv[3];
-
-    reader.builder(env, "s3a://sdk/WriterOutput/carbondata/", "test");
+    reader.builder(env, path, "test");
     reader.withHadoopConf("fs.s3a.access.key", argv[1]);
     reader.withHadoopConf("fs.s3a.secret.key", argv[2]);
     reader.withHadoopConf("fs.s3a.endpoint", argv[3]);
@@ -250,12 +380,16 @@ int main(int argc, char *argv[]) {
     // init jvm
     JNIEnv *env;
     env = initJVM();
+    char *S3WritePath = "s3a://sdk/WriterOutput/carbondata2";
+    char *S3ReadPath = "s3a://sdk/WriterOutput/carbondata";
 
     if (argc > 3) {
-        readFromS3(env, argv);
+        testWriteData(env, S3WritePath, 4, argv);
+        readFromS3(env, S3ReadPath, argv);
     } else {
         tryCatchException(env);
         readFromLocalWithoutProjection(env);
+        testWriteData(env, "./data", 1, argv);
         readFromLocal(env);
     }
     (jvm)->DestroyJavaVM();
