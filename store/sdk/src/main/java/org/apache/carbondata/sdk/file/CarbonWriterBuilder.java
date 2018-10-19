@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -412,10 +413,13 @@ public class CarbonWriterBuilder {
   public CarbonLoadModel buildLoadModel(Schema carbonSchema)
       throws IOException, InvalidLoadOptionException {
     timestamp = System.nanoTime();
-    Set<String> longStringColumns = null;
-    if (options != null && options.get("long_string_columns") != null) {
-      longStringColumns =
-          new HashSet<>(Arrays.asList(options.get("long_string_columns").toLowerCase().split(",")));
+    Set<String> longStringColumns = new HashSet<>();
+    if (options != null && options.get(CarbonCommonConstants.LONG_STRING_COLUMNS) != null) {
+      String[] specifiedLongStrings =
+          options.get(CarbonCommonConstants.LONG_STRING_COLUMNS).toLowerCase().split(",");
+      for (String str : specifiedLongStrings) {
+        longStringColumns.add(str.trim());
+      }
       validateLongStringColumns(carbonSchema, longStringColumns);
     }
     this.schema = updateSchemaFields(carbonSchema, longStringColumns);
@@ -603,12 +607,11 @@ public class CarbonWriterBuilder {
     for (int i = 0; i < fields.length; i++) {
       if (fields[i] != null) {
         fields[i].updateNameToLowerCase();
-      }
-
-      if (longStringColumns != null) {
-        /* Also update the string type to varchar */
-        if (longStringColumns.contains(fields[i].getFieldName())) {
-          fields[i].updateDataTypeToVarchar();
+        if (longStringColumns != null) {
+          /* Also update the string type to varchar */
+          if (longStringColumns.contains(fields[i].getFieldName())) {
+            fields[i].updateDataTypeToVarchar();
+          }
         }
       }
     }
