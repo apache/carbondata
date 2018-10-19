@@ -40,6 +40,19 @@ private:
      */
     jobject carbonReaderObject;
 
+    /**
+     * check whether has called builder
+     *
+     * @return true or throw exception
+     */
+    bool checkBuilder();
+
+    /**
+     * check reader and whether has called build
+     *
+     * @return true or throw exception
+     */
+    bool checkReader();
 public:
 
     /**
