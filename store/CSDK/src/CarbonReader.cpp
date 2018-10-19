@@ -71,6 +71,12 @@ void CarbonReader::builder(JNIEnv *env, char *path) {
     carbonReaderBuilderObject = env->CallStaticObjectMethodA(carbonReaderClass, carbonReaderBuilderID, args);
 }
 
+bool CarbonReader::checkBuilder() {
+    if (carbonReaderBuilderObject == NULL) {
+        throw std::runtime_error("carbonReaderBuilder Object can't be NULL. Please call builder method first.");
+    }
+}
+
 void CarbonReader::projection(int argc, char *argv[]) {
     if (argc < 0) {
         throw std::runtime_error("argc parameter can't be negative.");
@@ -78,6 +84,7 @@ void CarbonReader::projection(int argc, char *argv[]) {
     if (argv == NULL) {
         throw std::runtime_error("argv parameter can't be NULL.");
     }
+    checkBuilder();
     jclass carbonReaderBuilderClass = jniEnv->GetObjectClass(carbonReaderBuilderObject);
     jmethodID buildID = jniEnv->GetMethodID(carbonReaderBuilderClass, "projection",
         "([Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/CarbonReaderBuilder;");
@@ -106,6 +113,7 @@ void CarbonReader::withHadoopConf(char *key, char *value) {
     if (value == NULL) {
         throw std::runtime_error("value parameter can't be NULL.");
     }
+    checkBuilder();
     jclass carbonReaderBuilderClass = jniEnv->GetObjectClass(carbonReaderBuilderObject);
     jmethodID id = jniEnv->GetMethodID(carbonReaderBuilderClass, "withHadoopConf",
         "(Ljava/lang/String;Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/CarbonReaderBuilder;");
@@ -119,6 +127,7 @@ void CarbonReader::withHadoopConf(char *key, char *value) {
 }
 
 jobject CarbonReader::build() {
+    checkBuilder();
     jclass carbonReaderBuilderClass = jniEnv->GetObjectClass(carbonReaderBuilderObject);
     jmethodID buildID = jniEnv->GetMethodID(carbonReaderBuilderClass, "build",
         "()Lorg/apache/carbondata/sdk/file/CarbonReader;");
@@ -132,7 +141,14 @@ jobject CarbonReader::build() {
     return carbonReaderObject;
 }
 
+bool CarbonReader::checkReader() {
+    if (carbonReaderObject == NULL) {
+        throw std::runtime_error("carbonReader Object is NULL, Please call build first.");
+    }
+}
+
 jboolean CarbonReader::hasNext() {
+    checkReader();
     if (hasNextID == NULL) {
         jclass carbonReader = jniEnv->GetObjectClass(carbonReaderObject);
         hasNextID = jniEnv->GetMethodID(carbonReader, "hasNext", "()Z");
@@ -148,6 +164,7 @@ jboolean CarbonReader::hasNext() {
 }
 
 jobject CarbonReader::readNextRow() {
+    checkReader();
     if (readNextRowID == NULL) {
         jclass carbonReader = jniEnv->GetObjectClass(carbonReaderObject);
         readNextRowID = jniEnv->GetMethodID(carbonReader, "readNextRow",
@@ -164,6 +181,7 @@ jobject CarbonReader::readNextRow() {
 }
 
 void CarbonReader::close() {
+    checkReader();
     jclass carbonReader = jniEnv->GetObjectClass(carbonReaderObject);
     jmethodID closeID = jniEnv->GetMethodID(carbonReader, "close", "()V");
     if (closeID == NULL) {

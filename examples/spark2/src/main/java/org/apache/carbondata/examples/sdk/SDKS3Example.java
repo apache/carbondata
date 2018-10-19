@@ -62,7 +62,7 @@ public class SDKS3Example {
             num = Integer.parseInt(args[4]);
         }
 
-        Configuration conf = new Configuration(false);
+        Configuration conf = new Configuration(true);
         conf.set(Constants.ACCESS_KEY, args[0]);
         conf.set(Constants.SECRET_KEY, args[1]);
         conf.set(Constants.ENDPOINT, args[2]);
@@ -70,8 +70,13 @@ public class SDKS3Example {
         Field[] fields = new Field[2];
         fields[0] = new Field("name", DataTypes.STRING);
         fields[1] = new Field("age", DataTypes.INT);
-        CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path).withHadoopConf(conf);
-        CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
+        CarbonWriter writer = CarbonWriter
+            .builder()
+            .outputPath(path)
+            .withHadoopConf(conf)
+            .withCsvInput(new Schema(fields))
+            .writtenBy("SDKS3Example")
+            .build();
 
         for (int i = 0; i < num; i++) {
             writer.write(new String[]{"robot" + (i % 10), String.valueOf(i)});

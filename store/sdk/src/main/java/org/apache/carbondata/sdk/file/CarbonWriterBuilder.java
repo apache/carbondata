@@ -269,6 +269,21 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   * configure hadoop configuration with key value
+   *
+   * @param key   key word
+   * @param value value
+   * @return this object
+   */
+  public CarbonWriterBuilder withHadoopConf(String key, String value) {
+    if (this.hadoopConf == null) {
+      this.hadoopConf = new Configuration(true);
+    }
+    this.hadoopConf.set(key, value);
+    return this;
+  }
+
+  /**
    * To set the carbondata file size in MB between 1MB-2048MB
    * @param blockSize is size in MB between 1MB to 2048 MB
    * default value is 1024 MB
@@ -337,6 +352,19 @@ public class CarbonWriterBuilder {
   public CarbonWriterBuilder withCsvInput(Schema schema) {
     Objects.requireNonNull(schema, "schema should not be null");
     this.schema = schema;
+    this.writerType = WRITER_TYPE.CSV;
+    return this;
+  }
+
+  /**
+   * to build a {@link CarbonWriter}, which accepts row in CSV format
+   *
+   * @param jsonSchema json Schema string
+   * @return CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder withCsvInput(String jsonSchema) {
+    Objects.requireNonNull(jsonSchema, "schema should not be null");
+    this.schema = Schema.parseJson(jsonSchema);
     this.writerType = WRITER_TYPE.CSV;
     return this;
   }
