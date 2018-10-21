@@ -483,11 +483,13 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     for (TableBlockInfo blockInfo : queryModel.getTableBlockInfos()) {
       fgDataMapPathPresent = blockInfo.getDataMapWriterPath() != null;
       if (fgDataMapPathPresent) {
+        queryModel.setDirectVectorFill(false);
         break;
       }
     }
+
     blockExecutionInfo
-        .setDirectVectorFill(queryModel.isDirectVectorFill() && !fgDataMapPathPresent);
+        .setDirectVectorFill(queryModel.isDirectVectorFill());
 
     blockExecutionInfo
         .setTotalNumberOfMeasureToRead(segmentProperties.getMeasuresOrdinalToChunkMapping().size());

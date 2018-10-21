@@ -18,7 +18,6 @@
 package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 
 import java.nio.ByteBuffer;
-import java.util.BitSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -97,16 +96,11 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
   public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
       ColumnVectorInfo vectorInfo) {
     this.invertedIndexReverse = invertedIndex;
-
-    // as first position will be start from 2 byte as data is stored first in the memory block
-    // we need to skip first two bytes this is because first two bytes will be length of the data
-    // which we have to skip
     int lengthSize = getLengthSize();
-    // creating a byte buffer which will wrap the length of the row
     CarbonColumnVector vector = vectorInfo.vector;
     DataType dt = vector.getType();
+    // creating a byte buffer which will wrap the length of the row
     ByteBuffer buffer = ByteBuffer.wrap(data);
-    BitSet deletedRows = vectorInfo.deletedRows;
     AbstractNonDictionaryVectorFiller vectorFiller =
         NonDictionaryVectorFillerFactory.getVectorFiller(dt, lengthSize, numberOfRows);
     vectorFiller.fillVector(data, vector, buffer);

@@ -37,9 +37,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonProperties;
 
-import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE;
-import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE_ARRAY;
-import static org.apache.carbondata.core.metadata.datatype.DataTypes.LONG;
+import static org.apache.carbondata.core.metadata.datatype.DataTypes.*;
 
 public abstract class ColumnPage {
 
@@ -85,7 +83,7 @@ public abstract class ColumnPage {
 
   private static ColumnPage createDecimalPage(ColumnPageEncoderMeta columnPageEncoderMeta,
       int pageSize) {
-    if (unsafe && !columnPageEncoderMeta.isFillCompleteVector()) {
+    if (isUnsafeEnabled(columnPageEncoderMeta)) {
       try {
         return new UnsafeDecimalColumnPage(columnPageEncoderMeta, pageSize);
       } catch (MemoryException e) {
@@ -98,7 +96,7 @@ public abstract class ColumnPage {
 
   private static ColumnPage createVarLengthPage(ColumnPageEncoderMeta columnPageEncoderMeta,
       int pageSize) {
-    if (unsafe && !columnPageEncoderMeta.isFillCompleteVector()) {
+    if (isUnsafeEnabled(columnPageEncoderMeta)) {
       try {
         return new UnsafeVarLengthColumnPage(columnPageEncoderMeta, pageSize);
       } catch (MemoryException e) {
@@ -111,7 +109,7 @@ public abstract class ColumnPage {
 
   private static ColumnPage createFixLengthPage(
       ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
-    if (unsafe && !columnPageEncoderMeta.isFillCompleteVector()) {
+    if (isUnsafeEnabled(columnPageEncoderMeta)) {
       try {
         return new UnsafeFixLengthColumnPage(columnPageEncoderMeta, pageSize);
       } catch (MemoryException e) {
@@ -124,7 +122,7 @@ public abstract class ColumnPage {
 
   private static ColumnPage createFixLengthByteArrayPage(
       ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize, int eachValueSize) {
-    if (unsafe && !columnPageEncoderMeta.isFillCompleteVector()) {
+    if (isUnsafeEnabled(columnPageEncoderMeta)) {
       try {
         return new UnsafeFixLengthColumnPage(columnPageEncoderMeta, pageSize, eachValueSize);
       } catch (MemoryException e) {
@@ -158,7 +156,7 @@ public abstract class ColumnPage {
             CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT));
     ColumnPage actualPage;
     ColumnPage encodedPage;
-    if (unsafe && !columnPageEncoderMeta.isFillCompleteVector()) {
+    if (isUnsafeEnabled(columnPageEncoderMeta)) {
       actualPage = new UnsafeVarLengthColumnPage(columnPageEncoderMeta, pageSize);
       encodedPage = new UnsafeFixLengthColumnPage(
           new ColumnPageEncoderMeta(columnPageEncoderMeta.getColumnSpec(), DataTypes.BYTE_ARRAY,
@@ -185,7 +183,7 @@ public abstract class ColumnPage {
     DataType dataType = columnPageEncoderMeta.getStoreDataType();
     TableSpec.ColumnSpec columnSpec = columnPageEncoderMeta.getColumnSpec();
     String compressorName = columnPageEncoderMeta.getCompressorName();
-    if (unsafe && !columnPageEncoderMeta.isFillCompleteVector()) {
+    if (isUnsafeEnabled(columnPageEncoderMeta)) {
       if (dataType == DataTypes.BOOLEAN) {
         instance = new UnsafeFixLengthColumnPage(
             new ColumnPageEncoderMeta(columnSpec, BYTE, compressorName), pageSize);
@@ -622,56 +620,6 @@ public abstract class ColumnPage {
    */
   public abstract double getDouble(int rowId);
 
-
-
-
-
-  /**
-   * Get byte value at rowId
-   */
-  public abstract byte[] getByteData();
-
-  /**
-   * Get short value at rowId
-   */
-  public abstract short[] getShortData();
-
-  /**
-   * Get short int value at rowId
-   */
-  public abstract int[] getShortIntData();
-
-  /**
-   * Get boolean value at rowId
-   */
-  public byte[] getBooleanData() {
-    return getByteData();
-  }
-
-  /**
-   * Get int value at rowId
-   */
-  public abstract int[] getIntData();
-
-  /**
-   * Get long value at rowId
-   */
-  public abstract long[] getLongData();
-
-  /**
-   * Get float value at rowId
-   */
-  public abstract float[] getFloatData();
-
-  /**
-   * Get double value at rowId
-   */
-  public abstract double[] getDoubleData();
-
-
-
-
-
   /**
    * Get decimal value at rowId
    */
@@ -943,6 +891,16 @@ public abstract class ColumnPage {
       byte[] lvEncodedBytes = compressor.unCompressByte(compressedData, offset, length);
       return newDecimalPage(meta, lvEncodedBytes);
     }
+  }
+
+  /**
+   * Whether unsafe enabled or not. In case of filling complete vector flow there is no need to use
+   * unsafe flow as we don't store the data in memory for long time.
+   * @param meta ColumnPageEncoderMeta
+   * @return boolean Whether unsafe enabled or not
+   */
+  protected static boolean isUnsafeEnabled(ColumnPageEncoderMeta meta) {
+    return unsafe && !meta.isFillCompleteVector();
   }
 
   public BitSet getNullBits() {

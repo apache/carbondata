@@ -71,6 +71,13 @@ public abstract class EncodingFactory {
 
   /**
    * Return new decoder based on encoder metadata read from file
+   * @param encodings encodings used to decode the page
+   * @param encoderMetas metadata of encodings to decode the data
+   * @param compressor Compressor name which will be used to decode data.
+   * @param fullVectorFill whether the flow should go to fill the given vector completely while
+   *                       decoding the data itself.
+   * @return decoder to decode page.
+   * @throws IOException
    */
   public ColumnPageDecoder createDecoder(List<Encoding> encodings, List<ByteBuffer> encoderMetas,
       String compressor, boolean fullVectorFill) throws IOException {

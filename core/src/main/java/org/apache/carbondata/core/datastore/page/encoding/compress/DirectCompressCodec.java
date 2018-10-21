@@ -27,6 +27,7 @@ import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ColumnPageValueConverter;
+import org.apache.carbondata.core.datastore.page.DecimalColumnPage;
 import org.apache.carbondata.core.datastore.page.LazyColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
@@ -38,6 +39,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.format.Encoding;
 
 /**
@@ -100,17 +102,18 @@ public class DirectCompressCodec implements ColumnPageCodec {
       }
 
       @Override
-      public ColumnPage decodeAndFillVector(byte[] input, int offset, int length,
+      public void decodeAndFillVector(byte[] input, int offset, int length,
           ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded)
           throws MemoryException, IOException {
         ColumnPage decodedPage;
         if (DataTypes.isDecimal(dataType)) {
           decodedPage = ColumnPage.decompressDecimalPage(meta, input, offset, length);
+          vectorInfo.decimalConverter = ((DecimalColumnPage) decodedPage).getDecimalConverter();
         } else {
           decodedPage = ColumnPage.decompress(meta, input, offset, length, isLVEncoded);
         }
         decodedPage.setNullBits(nullBits);
-        return LazyColumnPage.newPage(decodedPage, converter, vectorInfo);
+        converter.decodeAndFillVector(decodedPage, vectorInfo);
       }
 
       @Override public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
@@ -197,14 +200,15 @@ public class DirectCompressCodec implements ColumnPageCodec {
       return value;
     }
 
-    @Override public void decodeAndFillVector(ColumnPage columnPage, ColumnVectorInfo vectorInfo) {
+    @Override
+    public void decodeAndFillVector(ColumnPage columnPage, ColumnVectorInfo vectorInfo) {
       CarbonColumnVector vector = vectorInfo.vector;
       BitSet nullBits = columnPage.getNullBits();
-      DataType dataType = vector.getType();
-      DataType type = columnPage.getDataType();
+      DataType vectorDataType = vector.getType();
+      DataType pageDataType = columnPage.getDataType();
       int pageSize = columnPage.getPageSize();
       BitSet deletedRows = vectorInfo.deletedRows;
-      fillVector(columnPage, vector, dataType, type, pageSize, vectorInfo);
+      fillVector(columnPage, vector, vectorDataType, pageDataType, pageSize, vectorInfo);
       if (deletedRows == null || deletedRows.isEmpty()) {
         for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
           vector.putNull(i);
@@ -212,29 +216,29 @@ public class DirectCompressCodec implements ColumnPageCodec {
       }
     }
 
-    private void fillVector(ColumnPage columnPage, CarbonColumnVector vector, DataType dataType,
-        DataType type, int pageSize, ColumnVectorInfo vectorInfo) {
-      if (type == DataTypes.BOOLEAN || type == DataTypes.BYTE) {
-        byte[] byteData = columnPage.getByteData();
-        if (dataType == DataTypes.SHORT) {
+    private void fillVector(ColumnPage columnPage, CarbonColumnVector vector,
+        DataType vectorDataType, DataType pageDataType, int pageSize, ColumnVectorInfo vectorInfo) {
+      if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {
+        byte[] byteData = columnPage.getBytePage();
+        if (vectorDataType == DataTypes.SHORT) {
           for (int i = 0; i < pageSize; i++) {
             vector.putShort(i, (short) byteData[i]);
           }
-        } else if (dataType == DataTypes.INT) {
+        } else if (vectorDataType == DataTypes.INT) {
           for (int i = 0; i < pageSize; i++) {
             vector.putInt(i, (int) byteData[i]);
           }
-        } else if (dataType == DataTypes.LONG) {
+        } else if (vectorDataType == DataTypes.LONG) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, byteData[i]);
           }
-        } else if (dataType == DataTypes.TIMESTAMP) {
+        } else if (vectorDataType == DataTypes.TIMESTAMP) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, byteData[i] * 1000);
           }
-        } else if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
+        } else if (vectorDataType == DataTypes.BOOLEAN || vectorDataType == DataTypes.BYTE) {
           vector.putBytes(0, pageSize, byteData, 0);
-        } else if (DataTypes.isDecimal(dataType)) {
+        } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
           decimalConverter.fillVector(byteData, pageSize, vectorInfo, columnPage.getNullBits());
         } else {
@@ -242,23 +246,23 @@ public class DirectCompressCodec implements ColumnPageCodec {
             vector.putDouble(i, byteData[i]);
           }
         }
-      } else if (type == DataTypes.SHORT) {
-        short[] shortData = columnPage.getShortData();
-        if (dataType == DataTypes.SHORT) {
+      } else if (pageDataType == DataTypes.SHORT) {
+        short[] shortData = columnPage.getShortPage();
+        if (vectorDataType == DataTypes.SHORT) {
           vector.putShorts(0, pageSize, shortData, 0);
-        } else if (dataType == DataTypes.INT) {
+        } else if (vectorDataType == DataTypes.INT) {
           for (int i = 0; i < pageSize; i++) {
             vector.putInt(i, (int) shortData[i]);
           }
-        } else if (dataType == DataTypes.LONG) {
+        } else if (vectorDataType == DataTypes.LONG) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, shortData[i]);
           }
-        } else if (dataType == DataTypes.TIMESTAMP) {
+        } else if (vectorDataType == DataTypes.TIMESTAMP) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, shortData[i] * 1000);
           }
-        } else if (DataTypes.isDecimal(dataType)) {
+        } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
           decimalConverter.fillVector(shortData, pageSize, vectorInfo, columnPage.getNullBits());
         } else {
@@ -267,39 +271,46 @@ public class DirectCompressCodec implements ColumnPageCodec {
           }
         }
 
-      } else if (type == DataTypes.SHORT_INT) {
-        int[] shortIntData = columnPage.getShortIntData();
-        if (dataType == DataTypes.INT) {
-          vector.putInts(0, pageSize, shortIntData, 0);
-        } else if (dataType == DataTypes.LONG) {
+      } else if (pageDataType == DataTypes.SHORT_INT) {
+        byte[] shortIntPage = columnPage.getShortIntPage();
+        if (vectorDataType == DataTypes.INT) {
           for (int i = 0; i < pageSize; i++) {
-            vector.putLong(i, shortIntData[i]);
+            int shortInt = ByteUtil.valueOf3Bytes(shortIntPage, i * 3);
+            vector.putInt(i, shortInt);
           }
-        } else if (dataType == DataTypes.TIMESTAMP) {
+        } else if (vectorDataType == DataTypes.LONG) {
           for (int i = 0; i < pageSize; i++) {
-            vector.putLong(i, shortIntData[i] * 1000);
+            int shortInt = ByteUtil.valueOf3Bytes(shortIntPage, i * 3);
+            vector.putLong(i, shortInt);
           }
-        } else if (DataTypes.isDecimal(dataType)) {
+        } else if (vectorDataType == DataTypes.TIMESTAMP) {
+          for (int i = 0; i < pageSize; i++) {
+            int shortInt = ByteUtil.valueOf3Bytes(shortIntPage, i * 3);
+            vector.putLong(i, shortInt * 1000);
+          }
+        } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
+          int[] shortIntData = ByteUtil.toIntArray(shortIntPage, pageSize);
           decimalConverter.fillVector(shortIntData, pageSize, vectorInfo, columnPage.getNullBits());
         } else {
           for (int i = 0; i < pageSize; i++) {
-            vector.putDouble(i, shortIntData[i]);
+            int shortInt = ByteUtil.valueOf3Bytes(shortIntPage, i * 3);
+            vector.putDouble(i, shortInt);
           }
         }
-      } else if (type == DataTypes.INT) {
-        int[] intData = columnPage.getIntData();
-        if (dataType == DataTypes.INT) {
+      } else if (pageDataType == DataTypes.INT) {
+        int[] intData = columnPage.getIntPage();
+        if (vectorDataType == DataTypes.INT) {
           vector.putInts(0, pageSize, intData, 0);
-        } else if (dataType == DataTypes.LONG) {
+        } else if (vectorDataType == DataTypes.LONG) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, intData[i]);
           }
-        } else if (dataType == DataTypes.TIMESTAMP) {
+        } else if (vectorDataType == DataTypes.TIMESTAMP) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, intData[i] * 1000);
           }
-        } else if (DataTypes.isDecimal(dataType)) {
+        } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
           decimalConverter.fillVector(intData, pageSize, vectorInfo, columnPage.getNullBits());
         } else {
@@ -307,29 +318,27 @@ public class DirectCompressCodec implements ColumnPageCodec {
             vector.putDouble(i, intData[i]);
           }
         }
-      }  else if (type == DataTypes.LONG) {
-        long[] longData = columnPage.getLongData();
-        if (dataType == DataTypes.LONG) {
+      }  else if (pageDataType == DataTypes.LONG) {
+        long[] longData = columnPage.getLongPage();
+        if (vectorDataType == DataTypes.LONG) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, longData[i]);
           }
           vector.putLongs(0, pageSize, longData, 0);
-        } else if (dataType == DataTypes.TIMESTAMP) {
+        } else if (vectorDataType == DataTypes.TIMESTAMP) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, longData[i] * 1000);
           }
-        } else if (DataTypes.isDecimal(dataType)) {
+        } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
           decimalConverter.fillVector(longData, pageSize, vectorInfo, columnPage.getNullBits());
         }
-      } else if (DataTypes.isDecimal(type)) {
-        if (DataTypes.isDecimal(dataType)) {
-          DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
-          decimalConverter.fillVector(columnPage.getByteArrayPage(), pageSize, vectorInfo,
-              columnPage.getNullBits());
-        }
+      } else if (DataTypes.isDecimal(pageDataType)) {
+        DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
+        decimalConverter.fillVector(columnPage.getByteArrayPage(), pageSize, vectorInfo,
+            columnPage.getNullBits());
       } else {
-        double[] doubleData = columnPage.getDoubleData();
+        double[] doubleData = columnPage.getDoublePage();
         vector.putDoubles(0, pageSize, doubleData, 0);
       }
     }

@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -57,7 +58,7 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
       for (int i = 0; i < numOfRows; i++) {
         int surrogateInternal =
             CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
-        if (surrogateInternal == 1) {
+        if (surrogateInternal == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {
           vector.putNull(i);
         } else {
           vector.putInt(i, surrogateInternal - DateDirectDictionaryGenerator.cutOffDate);
@@ -67,7 +68,7 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
       for (int i = 0; i < numOfRows; i++) {
         int surrogateInternal =
             CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
-        if (surrogateInternal == 1) {
+        if (surrogateInternal == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {
           vector.putNull(i);
         } else {
           Object valueFromSurrogate =

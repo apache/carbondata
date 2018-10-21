@@ -32,8 +32,14 @@ import org.apache.spark.sql.types.Decimal;
  */
 class ColumnarVectorWrapperDirect implements CarbonColumnVector {
 
+  /**
+   * It is one column vector adapter class.
+   */
   protected CarbonVectorProxy.ColumnVectorProxy sparkColumnVectorProxy;
 
+  /**
+   * It is adapter class of complete ColumnarBatch.
+   */
   protected CarbonVectorProxy carbonVectorProxy;
 
   protected int ordinal;

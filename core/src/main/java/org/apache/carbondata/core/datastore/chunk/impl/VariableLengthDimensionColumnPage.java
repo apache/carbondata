@@ -83,7 +83,6 @@ public class VariableLengthDimensionColumnPage extends AbstractDimensionColumnPa
     }
   }
 
-
   /**
    * Below method will be used to fill the data based on offset and row id
    *

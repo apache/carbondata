@@ -285,34 +285,6 @@ public class LocalDictColumnPage extends ColumnPage {
     return actualDataColumnPage.getBytes(rowId);
   }
 
-  @Override public byte[] getByteData() {
-    return new byte[0];
-  }
-
-  @Override public short[] getShortData() {
-    return new short[0];
-  }
-
-  @Override public int[] getShortIntData() {
-    return new int[0];
-  }
-
-  @Override public int[] getIntData() {
-    return new int[0];
-  }
-
-  @Override public long[] getLongData() {
-    return new long[0];
-  }
-
-  @Override public float[] getFloatData() {
-    return new float[0];
-  }
-
-  @Override public double[] getDoubleData() {
-    return new double[0];
-  }
-
   @Override public byte[] getBytePage() {
     throw new UnsupportedOperationException("Operation not supported");
   }

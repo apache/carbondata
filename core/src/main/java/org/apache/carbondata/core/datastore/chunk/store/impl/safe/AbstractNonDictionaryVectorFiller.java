@@ -19,6 +19,8 @@ package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 
 import java.nio.ByteBuffer;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -26,6 +28,8 @@ import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
+@InterfaceAudience.Internal
+@InterfaceStability.Stable
 public abstract class AbstractNonDictionaryVectorFiller {
 
   protected int lengthSize;
@@ -47,12 +51,10 @@ class NonDictionaryVectorFillerFactory {
 
   public static AbstractNonDictionaryVectorFiller getVectorFiller(DataType type, int lengthSize,
       int numberOfRows) {
-    if (type == DataTypes.STRING || type == DataTypes.VARCHAR) {
-      if (lengthSize == 2) {
-        return new StringVectorFiller(lengthSize, numberOfRows);
-      } else {
-        return new LongStringVectorFiller(lengthSize, numberOfRows);
-      }
+    if (type == DataTypes.STRING) {
+      return new StringVectorFiller(lengthSize, numberOfRows);
+    } else if (type == DataTypes.VARCHAR) {
+      return new LongStringVectorFiller(lengthSize, numberOfRows);
     } else if (type == DataTypes.TIMESTAMP) {
       return new TimeStampVectorFiller(lengthSize, numberOfRows);
     } else if (type == DataTypes.BOOLEAN) {
@@ -62,9 +64,11 @@ class NonDictionaryVectorFillerFactory {
     } else if (type == DataTypes.INT) {
       return new IntVectorFiller(lengthSize, numberOfRows);
     } else if (type == DataTypes.LONG) {
-      return new LongStringVectorFiller(lengthSize, numberOfRows);
+      return new LongVectorFiller(lengthSize, numberOfRows);
+    } else {
+      throw new UnsupportedOperationException("Not supported datatype : " + type);
     }
-    return new StringVectorFiller(lengthSize, numberOfRows);
+
   }
 
 }
@@ -79,13 +83,16 @@ class StringVectorFiller extends AbstractNonDictionaryVectorFiller {
   public void fillVector(byte[] data, CarbonColumnVector vector, ByteBuffer buffer) {
     // start position will be used to store the current data position
     int startOffset = 0;
+    // as first position will be start from length of bytes as data is stored first in the memory
+    // block we need to skip first two bytes this is because first two bytes will be length of the
+    // data which we have to skip
     int currentOffset = lengthSize;
-    ByteUtil.UnsafeComparer comparer = ByteUtil.UnsafeComparer.INSTANCE;
+    ByteUtil.UnsafeComparer comparator = ByteUtil.UnsafeComparer.INSTANCE;
     for (int i = 0; i < numberOfRows - 1; i++) {
       buffer.position(startOffset);
       startOffset += getLengthFromBuffer(buffer) + lengthSize;
       int length = startOffset - (currentOffset);
-      if (comparer.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+      if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
           CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentOffset, length)) {
         vector.putNull(i);
       } else {
@@ -93,8 +100,9 @@ class StringVectorFiller extends AbstractNonDictionaryVectorFiller {
       }
       currentOffset = startOffset + lengthSize;
     }
+    // Handle last row
     int length = (data.length - currentOffset);
-    if (comparer.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+    if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
         CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentOffset, length)) {
       vector.putNull(numberOfRows - 1);
     } else {

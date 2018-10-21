@@ -198,8 +198,7 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
   @Override
   public void decodeColumnPageAndFillVector(MeasureRawColumnChunk measureRawColumnChunk,
       int pageNumber, ColumnVectorInfo vectorInfo) throws IOException, MemoryException {
-    ColumnPage columnPage = decodeColumnPage(measureRawColumnChunk, pageNumber, vectorInfo);
-    columnPage.freeMemory();
+    decodeColumnPage(measureRawColumnChunk, pageNumber, vectorInfo);
   }
 
   private ColumnPage decodeColumnPage(
@@ -221,6 +220,9 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     BitSet nullBitSet = QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor);
     ColumnPage decodedPage =
         decodeMeasure(pageMetadata, rawColumnChunk.getRawData(), offset, vectorInfo, nullBitSet);
+    if (decodedPage == null) {
+      return null;
+    }
     decodedPage.setNullBits(nullBitSet);
     return decodedPage;
   }
@@ -237,9 +239,10 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     ColumnPageDecoder codec =
         encodingFactory.createDecoder(encodings, encoderMetas, compressorName, vectorInfo != null);
     if (vectorInfo != null) {
-      return codec
+      codec
           .decodeAndFillVector(pageData.array(), offset, pageMetadata.data_page_length, vectorInfo,
               nullBitSet, false);
+      return null;
     } else {
       return codec.decode(pageData.array(), offset, pageMetadata.data_page_length);
     }

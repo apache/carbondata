@@ -250,9 +250,10 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     ColumnPageDecoder decoder = encodingFactory.createDecoder(encodings, encoderMetas,
         compressorName, vectorInfo != null);
     if (vectorInfo != null) {
-      return decoder
+      decoder
           .decodeAndFillVector(pageData.array(), offset, pageMetadata.data_page_length, vectorInfo,
               nullBitSet, isLocalDictEncodedPage);
+      return null;
     } else {
       return decoder
           .decode(pageData.array(), offset, pageMetadata.data_page_length, isLocalDictEncodedPage);
@@ -271,14 +272,12 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       boolean isExplicitSorted =
           CarbonUtil.hasEncoding(pageMetadata.encoders, Encoding.INVERTED_INDEX);
       int dataOffset = offset;
-      if (encodings.contains(Encoding.INVERTED_INDEX)) {
+      if (isExplicitSorted) {
         offset += pageMetadata.data_page_length;
-        if (isExplicitSorted) {
-          invertedIndexes = CarbonUtil
-              .getUnCompressColumnIndex(pageMetadata.rowid_page_length, pageData, offset);
-          // get the reverse index
-          invertedIndexesReverse = CarbonUtil.getInvertedReverseIndex(invertedIndexes);
-        }
+        invertedIndexes = CarbonUtil
+            .getUnCompressColumnIndex(pageMetadata.rowid_page_length, pageData, offset);
+        // get the reverse index
+        invertedIndexesReverse = CarbonUtil.getInvertedReverseIndex(invertedIndexes);
       }
       BitSet nullBitSet = QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor);
       ColumnPage decodedPage = decodeDimensionByMeta(pageMetadata, pageData, dataOffset,

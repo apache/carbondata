@@ -75,7 +75,7 @@ public abstract class BlockletScannedResult {
   /**
    * Filtered pages to be decoded and loaded to vector.
    */
-  private int[] pagesFiltered;
+  private int[] pageIdFiltered;
 
   /**
    * to keep track of number of rows process
@@ -353,9 +353,9 @@ public abstract class BlockletScannedResult {
     rowCounter = 0;
     currentRow = -1;
     pageCounter++;
-    if (null != deletedRecordMap && pageCounter < pagesFiltered.length) {
+    if (null != deletedRecordMap && pageCounter < pageIdFiltered.length) {
       currentDeleteDeltaVo =
-          deletedRecordMap.get(blockletNumber + "_" + pagesFiltered[pageCounter]);
+          deletedRecordMap.get(blockletNumber + "_" + pageIdFiltered[pageCounter]);
     }
   }
 
@@ -400,16 +400,16 @@ public abstract class BlockletScannedResult {
 
     for (int i = 0; i < this.dictionaryColumnChunkIndexes.length; i++) {
       dimRawColumnChunks[dictionaryColumnChunkIndexes[i]]
-          .convertToDimColDataChunkAndFillVector(pagesFiltered[pageCounter], dictionaryInfo[i]);
+          .convertToDimColDataChunkAndFillVector(pageIdFiltered[pageCounter], dictionaryInfo[i]);
     }
     for (int i = 0; i < this.noDictionaryColumnChunkIndexes.length; i++) {
       dimRawColumnChunks[noDictionaryColumnChunkIndexes[i]]
-          .convertToDimColDataChunkAndFillVector(pagesFiltered[pageCounter], noDictionaryInfo[i]);
+          .convertToDimColDataChunkAndFillVector(pageIdFiltered[pageCounter], noDictionaryInfo[i]);
     }
 
     for (int i = 0; i < measuresOrdinal.length; i++) {
       msrRawColumnChunks[measuresOrdinal[i]]
-          .convertToColumnPageAndFillVector(pagesFiltered[pageCounter], msrVectorInfo[i]);
+          .convertToColumnPageAndFillVector(pageIdFiltered[pageCounter], msrVectorInfo[i]);
     }
     QueryStatistic pageUncompressTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.PAGE_UNCOMPRESS_TIME);
@@ -438,12 +438,12 @@ public abstract class BlockletScannedResult {
     return pageFilteredRowCount.length;
   }
 
-  public int[] getPagesFiltered() {
-    return pagesFiltered;
+  public int[] getPageIdFiltered() {
+    return pageIdFiltered;
   }
 
-  public void setPagesFiltered(int[] pagesFiltered) {
-    this.pagesFiltered = pagesFiltered;
+  public void setPageIdFiltered(int[] pageIdFiltered) {
+    this.pageIdFiltered = pageIdFiltered;
   }
 
   /**
@@ -570,8 +570,8 @@ public abstract class BlockletScannedResult {
     // then get the first page deleted vo
     if (null != deletedRecordMap) {
       String key;
-      if (pagesFiltered != null) {
-        key = blockletNumber + '_' + pagesFiltered[pageCounter];
+      if (pageIdFiltered != null) {
+        key = blockletNumber + '_' + pageIdFiltered[pageCounter];
       } else {
         key = blockletNumber + '_' + pageCounter;
       }
@@ -678,10 +678,10 @@ public abstract class BlockletScannedResult {
    */
   public void setPageFilteredRowCount(int[] pageFilteredRowCount) {
     this.pageFilteredRowCount = pageFilteredRowCount;
-    if (pagesFiltered == null) {
-      pagesFiltered = new int[pageFilteredRowCount.length];
-      for (int i = 0; i < pagesFiltered.length; i++) {
-        pagesFiltered[i] = i;
+    if (pageIdFiltered == null) {
+      pageIdFiltered = new int[pageFilteredRowCount.length];
+      for (int i = 0; i < pageIdFiltered.length; i++) {
+        pageIdFiltered[i] = i;
       }
     }
   }

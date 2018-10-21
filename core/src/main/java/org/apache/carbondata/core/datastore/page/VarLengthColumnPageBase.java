@@ -179,7 +179,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     rowOffset.putInt(counter, offset);
 
     VarLengthColumnPageBase page;
-    if (unsafe && !meta.isFillCompleteVector()) {
+    if (isUnsafeEnabled(meta)) {
       page = new UnsafeDecimalColumnPage(
           new ColumnPageEncoderMeta(columnSpec, columnSpec.getSchemaDataType(), compressorName),
           rowId);
@@ -427,41 +427,6 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   @Override
   public double[] getDoublePage() {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
-  }
-
-  @Override public byte[] getByteData() {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
-  }
-
-  @Override public short[] getShortData() {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
-  }
-
-  @Override public int[] getShortIntData() {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
-  }
-
-  @Override public int[] getIntData() {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
-  }
-
-  @Override public long[] getLongData() {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
-  }
-
-  @Override public float[] getFloatData() {
-    throw new UnsupportedOperationException(
-        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
-  }
-
-  @Override public double[] getDoubleData() {
     throw new UnsupportedOperationException(
         "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
