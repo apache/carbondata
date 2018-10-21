@@ -394,10 +394,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     }
     long dimensionReadTime = System.currentTimeMillis();
     dimensionReadTime = System.currentTimeMillis() - dimensionReadTime;
-
     FileReader fileReader = rawBlockletColumnChunks.getFileReader();
-
-
     DimensionRawColumnChunk[] dimensionRawColumnChunks =
         new DimensionRawColumnChunk[blockExecutionInfo.getTotalNumberDimensionToRead()];
     int numDimensionChunks = dimensionRawColumnChunks.length;
@@ -468,7 +465,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     scannedResult.setDimRawColumnChunks(dimensionRawColumnChunks);
     scannedResult.setMsrRawColumnChunks(measureRawColumnChunks);
     scannedResult.setPageFilteredRowCount(numberOfRows);
-    scannedResult.setPagesFiltered(pageFilteredPages);
+    scannedResult.setPageIdFiltered(pageFilteredPages);
     scannedResult.setBlockletId(
         blockExecutionInfo.getBlockIdString() + CarbonCommonConstants.FILE_SEPARATOR +
             rawBlockletColumnChunks.getDataBlock().blockletIndex());

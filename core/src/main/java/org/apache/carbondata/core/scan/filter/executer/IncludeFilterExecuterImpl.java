@@ -167,19 +167,21 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     return null;
   }
 
-  private boolean isScanRequired(DimensionRawColumnChunk dimensionRawColumnChunk, int i) {
+  private boolean isScanRequired(DimensionRawColumnChunk dimensionRawColumnChunk, int columnIndex) {
     boolean scanRequired;
     // for no dictionary measure column comparison can be done
     // on the original data as like measure column
     if (DataTypeUtil.isPrimitiveColumn(dimColumnEvaluatorInfo.getDimension().getDataType())
         && !dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)) {
-      scanRequired = isScanRequired(dimensionRawColumnChunk.getMaxValues()[i],
-          dimensionRawColumnChunk.getMinValues()[i], dimColumnExecuterInfo.getFilterKeys(),
+      scanRequired = isScanRequired(dimensionRawColumnChunk.getMaxValues()[columnIndex],
+          dimensionRawColumnChunk.getMinValues()[columnIndex],
+          dimColumnExecuterInfo.getFilterKeys(),
           dimColumnEvaluatorInfo.getDimension().getDataType());
     } else {
-      scanRequired = isScanRequired(dimensionRawColumnChunk.getMaxValues()[i],
-        dimensionRawColumnChunk.getMinValues()[i], dimColumnExecuterInfo.getFilterKeys(),
-        dimensionRawColumnChunk.getMinMaxFlagArray()[i]);
+      scanRequired = isScanRequired(dimensionRawColumnChunk.getMaxValues()[columnIndex],
+          dimensionRawColumnChunk.getMinValues()[columnIndex],
+          dimColumnExecuterInfo.getFilterKeys(),
+          dimensionRawColumnChunk.getMinMaxFlagArray()[columnIndex]);
     }
     return scanRequired;
   }

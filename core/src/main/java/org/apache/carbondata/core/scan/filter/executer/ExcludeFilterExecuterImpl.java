@@ -147,35 +147,10 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
   @Override
   public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
       throws FilterUnsupportedException, IOException {
-    if (isDimensionPresentInCurrentBlock) {
-      int chunkIndex = segmentProperties.getDimensionOrdinalToChunkMapping()
-          .get(dimColEvaluatorInfo.getColumnIndex());
-      if (null == rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex]) {
-        rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex] =
-            rawBlockletColumnChunks.getDataBlock()
-                .readDimensionChunk(rawBlockletColumnChunks.getFileReader(), chunkIndex);
-      }
-      DimensionRawColumnChunk dimensionRawColumnChunk =
-          rawBlockletColumnChunks.getDimensionRawColumnChunks()[chunkIndex];
-      BitSet bitSet = new BitSet(dimensionRawColumnChunk.getPagesCount());
-      bitSet.set(0, dimensionRawColumnChunk.getPagesCount());
-      return bitSet;
-    } else if (isMeasurePresentInCurrentBlock) {
-      int chunkIndex = segmentProperties.getMeasuresOrdinalToChunkMapping()
-          .get(msrColumnEvaluatorInfo.getColumnIndex());
-      if (null == rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex]) {
-        rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex] =
-            rawBlockletColumnChunks.getDataBlock()
-                .readMeasureChunk(rawBlockletColumnChunks.getFileReader(), chunkIndex);
-      }
-      MeasureRawColumnChunk measureRawColumnChunk =
-          rawBlockletColumnChunks.getMeasureRawColumnChunks()[chunkIndex];
-
-      BitSet bitSet = new BitSet(measureRawColumnChunk.getPagesCount());
-      bitSet.set(0, measureRawColumnChunk.getPagesCount());
-      return bitSet;
-    }
-    return null;
+    int numberOfPages = rawBlockletColumnChunks.getDataBlock().numberOfPages();
+    BitSet bitSet = new BitSet(numberOfPages);
+    bitSet.set(0, numberOfPages);
+    return bitSet;
   }
 
   @Override

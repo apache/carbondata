@@ -56,8 +56,9 @@ public class ImplicitIncludeFilterExecutorImpl
   @Override
   public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
       throws FilterUnsupportedException, IOException {
-    BitSet bitSet = new BitSet(rawBlockletColumnChunks.getDataBlock().numberOfPages());
-    bitSet.set(0, rawBlockletColumnChunks.getDataBlock().numberOfPages());
+    int numberOfPages = rawBlockletColumnChunks.getDataBlock().numberOfPages();
+    BitSet bitSet = new BitSet(numberOfPages);
+    bitSet.set(0, numberOfPages);
     return bitSet;
   }
 

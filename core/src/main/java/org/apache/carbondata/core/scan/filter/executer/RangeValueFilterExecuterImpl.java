@@ -153,9 +153,9 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
     // false, in that scenario the default values of the column should be shown.
     // select all rows if dimension does not exists in the current block
     if (!isDimensionPresentInCurrentBlock) {
-      int i = blockChunkHolder.getDataBlock().numberOfPages();
+      int numberOfPages = blockChunkHolder.getDataBlock().numberOfPages();
       BitSet bitSet = new BitSet();
-      bitSet.set(0, i);
+      bitSet.set(0, numberOfPages);
       return bitSet;
     }
 
