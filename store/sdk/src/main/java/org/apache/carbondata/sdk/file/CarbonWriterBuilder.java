@@ -42,6 +42,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableSchemaBuilder;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModelBuilder;
@@ -389,7 +390,8 @@ public class CarbonWriterBuilder {
     }
     CarbonLoadModel loadModel = buildLoadModel(schema);
     loadModel.setSdkWriterCores(numOfThreads);
-    loadModel.setWrittenBy(writtenByApp);
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, writtenByApp);
     if (hadoopConf == null) {
       hadoopConf = FileFactory.getConfiguration();
     }

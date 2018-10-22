@@ -81,6 +81,12 @@ public class CarbonSchemaReader {
     return new Schema(columnSchemaList);
   }
 
+  /**
+   * This method return the version details in formatted string by reading from carbondata file
+   * @param dataFilePath
+   * @return
+   * @throws IOException
+   */
   public static String getVersionDetails(String dataFilePath) throws IOException {
     long fileSize =
         FileFactory.getCarbonFile(dataFilePath, FileFactory.getFileType(dataFilePath)).getSize();
@@ -89,9 +95,13 @@ public class CarbonSchemaReader {
         fileReader.readByteBuffer(FileFactory.getUpdatedFilePath(dataFilePath), fileSize - 8, 8);
     CarbonFooterReaderV3 footerReader = new CarbonFooterReaderV3(dataFilePath, buffer.getLong());
     FileFooter3 footer = footerReader.readFooterVersion3();
-    return footer.getExtra_info().get(CarbonCommonConstants.CARBON_WRITTEN_BY_FOOTER_INFO)
-        + " in version: " + footer.getExtra_info()
-        .get(CarbonCommonConstants.CARBON_VERSION_FOOTER_INFO);
+    if (null != footer.getExtra_info()) {
+      return footer.getExtra_info().get(CarbonCommonConstants.CARBON_WRITTEN_BY_FOOTER_INFO)
+          + " in version: " + footer.getExtra_info()
+          .get(CarbonCommonConstants.CARBON_WRITTEN_VERSION);
+    } else {
+      return "Version Details are not found in carbondata file";
+    }
   }
 
   /**

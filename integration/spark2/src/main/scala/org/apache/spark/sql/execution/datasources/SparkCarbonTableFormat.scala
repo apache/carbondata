@@ -121,7 +121,9 @@ with Serializable {
     model.setDictionaryServerPort(options.getOrElse("dictport", "-1").toInt)
     CarbonTableOutputFormat.setOverwrite(conf, options("overwrite").toBoolean)
     model.setLoadWithoutConverterStep(true)
-    model.setWrittenBy(sparkSession.sparkContext.getConf.get("spark.app.name"))
+    carbonProperty
+      .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME,
+        sparkSession.sparkContext.getConf.get("spark.app.name"))
 
     val staticPartition = options.getOrElse("staticpartition", null)
     if (staticPartition != null) {

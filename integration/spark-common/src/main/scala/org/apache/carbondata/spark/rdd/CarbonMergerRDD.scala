@@ -38,7 +38,7 @@ import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonVersionConstants}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.block._
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -71,8 +71,6 @@ class CarbonMergerRDD[K, V](
   ss.sparkContext.setLocalProperty("spark.scheduler.pool", "DDL")
   ss.sparkContext.setLocalProperty("spark.job.interruptOnCancel", "true")
 
-  var writtenBy = ss.sparkContext.getConf.get("spark.app.name")
-
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
   var storeLocation: String = null
   var mergeResult: String = null
@@ -95,8 +93,6 @@ class CarbonMergerRDD[K, V](
       } else {
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
       }
-      carbonLoadModel.setWrittenBy(writtenBy)
-      carbonLoadModel.setVersion(CarbonVersionConstants.CARBONDATA_VERSION)
       val partitionSpec = if (carbonTable.isHivePartitionTable) {
         carbonSparkPartition.partitionSpec.get
       } else {

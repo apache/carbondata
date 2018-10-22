@@ -52,7 +52,7 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants, CarbonVersionConstants}
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -214,8 +214,6 @@ case class CarbonLoadDataCommand(
         .getOrElse(CarbonCommonConstants.COMPRESSOR,
           CompressorFactory.getInstance().getCompressor.getName)
       carbonLoadModel.setColumnCompressor(columnCompressor)
-      carbonLoadModel.setWrittenBy(sparkSession.sparkContext.getConf.get("spark.app.name"))
-      carbonLoadModel.setVersion(CarbonVersionConstants.CARBONDATA_VERSION)
 
       val javaPartition = mutable.Map[String, String]()
       partition.foreach { case (k, v) =>

@@ -62,6 +62,8 @@ public class CarbonTableInputFormatTest {
         addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords");
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, "/tmp/carbon/");
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, "CarbonTableInputFormatTest");
     try {
       creator = new StoreCreator(new File("target/store").getAbsolutePath(),
           new File("../hadoop/src/test/resources/data.csv").getCanonicalPath());

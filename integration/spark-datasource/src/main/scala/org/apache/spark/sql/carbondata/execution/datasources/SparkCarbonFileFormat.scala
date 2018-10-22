@@ -123,10 +123,12 @@ class SparkCarbonFileFormat extends FileFormat
     val conf = job.getConfiguration
 
     val model = CarbonSparkDataSourceUtil.prepareLoadModel(options, dataSchema)
-    model.setWrittenBy(sparkSession.sparkContext.getConf.get("spark.app.name"))
-    model.setVersion(CarbonVersionConstants.CARBONDATA_VERSION)
     model.setLoadWithoutConverterStep(true)
     CarbonTableOutputFormat.setLoadModel(conf, model)
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME,
+        sparkSession.sparkContext.getConf.get("spark.app.name"))
 
     new OutputWriterFactory {
       override def newInstance(

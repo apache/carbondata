@@ -134,7 +134,6 @@ object CarbonDataStoreCreator {
       loadModel.setSegmentId("0")
       loadModel.setFactTimeStamp(System.currentTimeMillis())
       loadModel.setMaxColumns("15")
-      loadModel.setWrittenBy("CarbonDataStoreCreator")
       executeGraph(loadModel, storePath)
     } catch {
       case e: Exception => e.printStackTrace()
