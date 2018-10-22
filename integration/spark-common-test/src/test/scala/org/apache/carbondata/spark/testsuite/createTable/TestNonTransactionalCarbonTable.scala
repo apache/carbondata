@@ -68,46 +68,46 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   def buildTestDataSingleFile(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestData(3, false, null)
+    buildTestData(3, null)
   }
 
   def buildTestDataMultipleFiles(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestData(1000000, false, null)
+    buildTestData(1000000, null)
   }
 
   def buildTestDataTwice(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestData(3, false, null)
-    buildTestData(3, false, null)
+    buildTestData(3, null)
+    buildTestData(3, null)
   }
 
   def buildTestDataSameDirectory(): Any = {
-    buildTestData(3, false, null)
+    buildTestData(3, null)
   }
 
   def buildTestDataWithBadRecordForce(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     var options = Map("bAd_RECords_action" -> "FORCE").asJava
-    buildTestData(3, false, options)
+    buildTestData(3, options)
   }
 
   def buildTestDataWithBadRecordFail(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     var options = Map("bAd_RECords_action" -> "FAIL").asJava
-    buildTestData(15001, false, options)
+    buildTestData(15001, options)
   }
 
   def buildTestDataWithBadRecordIgnore(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     var options = Map("bAd_RECords_action" -> "IGNORE").asJava
-    buildTestData(3, false, options)
+    buildTestData(3, options)
   }
 
   def buildTestDataWithBadRecordRedirect(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     var options = Map("bAd_RECords_action" -> "REDIRECT").asJava
-    buildTestData(3, false, options)
+    buildTestData(3, options)
   }
 
   def buildTestDataWithSortColumns(sortColumns: List[String]): Any = {
@@ -115,7 +115,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     buildTestData(3, null, sortColumns)
   }
 
-  def buildTestData(rows: Int, persistSchema: Boolean, options: util.Map[String, String]): Any = {
+  def buildTestData(rows: Int, options: util.Map[String, String]): Any = {
     buildTestData(rows, options, List("name"))
   }
 
@@ -194,7 +194,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   // prepare sdk writer output
   def buildTestDataWithSameUUID(rows: Int,
-      persistSchema: Boolean,
       options: util.Map[String, String],
       sortColumns: List[String]): Any = {
     val schema = new StringBuilder()
@@ -297,7 +296,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     "Read two sdk writer outputs before and after deleting the existing files and creating new " +
     "files with same schema and UUID") {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestDataWithSameUUID(3, false, null, List("name"))
+    buildTestDataWithSameUUID(3, null, List("name"))
     assert(new File(writerPath).exists())
 
     sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -319,7 +318,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     // and creation of new file can happen at same timestamp.
     Thread.sleep(1000)
     assert(!new File(writerPath).exists())
-    buildTestDataWithSameUUID(4, false, null, List("name"))
+    buildTestDataWithSameUUID(4, null, List("name"))
     checkAnswer(sql("select * from sdkOutputTable"), Seq(
       Row("robot0", 0, 0.0),
       Row("robot1", 1, 0.5),
@@ -334,7 +333,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   test(" test csv fileheader for transactional table") {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestDataWithSameUUID(3, false, null, List("Name"))
+    buildTestDataWithSameUUID(3, null, List("Name"))
     assert(new File(writerPath).exists())
 
     sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -363,14 +362,14 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   test("test count star with multiple loads files with same schema and UUID") {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestDataWithSameUUID(3, false, null, List("namE"))
+    buildTestDataWithSameUUID(3, null, List("namE"))
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
     checkAnswer(sql(s"""select count(*) from sdkOutputTable """), Seq(Row(3)))
-    buildTestDataWithSameUUID(3, false, null, List("name"))
+    buildTestDataWithSameUUID(3, null, List("name"))
     // should reflect new count
     checkAnswer(sql(s"""select count(*) from sdkOutputTable """), Seq(Row(6)))
     sql("DROP TABLE sdkOutputTable")
@@ -841,7 +840,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       Row("robot1", 1, 0.5),
       Row("robot2", 2, 1.0)))
 
-    buildTestDataWithSameUUID(3, false, null, List("name"))
+    buildTestDataWithSameUUID(3, null, List("name"))
 
     checkAnswer(sql("select * from sdkOutputTable"), Seq(
       Row("robot0", 0, 0.0),
@@ -854,7 +853,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       Row("robot1", 1, 0.5),
       Row("robot2", 2, 1.0)))
 
-    buildTestDataWithSameUUID(3, false, null, List("name"))
+    buildTestDataWithSameUUID(3, null, List("name"))
 
     checkAnswer(sql("select * from sdkOutputTable"), Seq(
       Row("robot0", 0, 0.0),
@@ -906,7 +905,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       Row("robot2", 2, 1.0)))
 
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestData(4, false, null)
+    buildTestData(4, null)
 
     checkAnswer(sql("select * from sdkOutputTable"), Seq(
       Row("robot0", 0, 0.0),
