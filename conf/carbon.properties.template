@@ -58,7 +58,7 @@ carbon.inmemory.record.size=120000
 #carbon.timestamp.format=yyyy-MM-dd HH:mm:ss
 ######## Dataload Configuration ########
 ##File write buffer size used during sorting.
-#carbon.sort.file.write.buffer.size=10485760
+#carbon.sort.file.write.buffer.size=16384
 ##Locking mechanism for data loading on a table
 #carbon.lock.type=LOCALLOCK
 ##Minimum no of intermediate files after which sort merged to be started.
