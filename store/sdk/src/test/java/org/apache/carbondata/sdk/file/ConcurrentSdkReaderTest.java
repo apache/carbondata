@@ -79,7 +79,7 @@ public class ConcurrentSdkReaderTest extends TestCase {
     }
   }
 
-  @Test public void testReadParallely() throws IOException {
+  @Test public void testReadParallely() throws IOException, InterruptedException {
     long numRows = 10000000;
     int segmentSize = 10;
     short numThreads = 4;
@@ -88,8 +88,8 @@ public class ConcurrentSdkReaderTest extends TestCase {
     ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
     long count;
 
+    CarbonReader reader = CarbonReader.builder(dataDir).build();
     try {
-      CarbonReader reader = CarbonReader.builder(dataDir).build();
       count = 0;
       long start = System.currentTimeMillis();
       while (reader.hasNext()) {
@@ -102,11 +102,13 @@ public class ConcurrentSdkReaderTest extends TestCase {
     } catch (Exception e) {
       e.printStackTrace();
       Assert.fail(e.getMessage());
+    } finally {
+      reader.close();
     }
 
+    CarbonReader reader2 = CarbonReader.builder(dataDir).build();
     try {
-      CarbonReader reader = CarbonReader.builder(dataDir).build();
-      List<CarbonReader> multipleReaders = reader.split(numThreads);
+      List<CarbonReader> multipleReaders = reader2.split(numThreads);
       List<Future> results = new ArrayList<>();
       count = 0;
       long start = System.currentTimeMillis();
@@ -144,6 +146,8 @@ public class ConcurrentSdkReaderTest extends TestCase {
       } catch (Exception e) {
         e.printStackTrace();
         Assert.fail(e.getMessage());
+      } finally {
+        reader.close();
       }
       return count;
     }
