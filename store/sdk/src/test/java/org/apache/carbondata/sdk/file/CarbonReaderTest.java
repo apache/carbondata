@@ -132,7 +132,7 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
 
     ColumnExpression columnExpression = new ColumnExpression("name", DataTypes.STRING);
     EqualToExpression equalToExpression = new EqualToExpression(columnExpression,
@@ -167,7 +167,7 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
 
     ColumnExpression columnExpression = new ColumnExpression("age", DataTypes.INT);
 
@@ -204,7 +204,7 @@ public class CarbonReaderTest extends TestCase {
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
 
-    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
 
     ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
     EqualToExpression equalToExpression = new EqualToExpression(columnExpression,
@@ -246,7 +246,7 @@ public class CarbonReaderTest extends TestCase {
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
 
-    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
 
     ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
     EqualToExpression equalToExpression = new EqualToExpression(columnExpression,
@@ -288,7 +288,7 @@ public class CarbonReaderTest extends TestCase {
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
 
-    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
 
     ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
     GreaterThanExpression greaterThanExpression = new GreaterThanExpression(columnExpression,
@@ -330,7 +330,7 @@ public class CarbonReaderTest extends TestCase {
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
 
-    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
 
     ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
     LessThanExpression lessThanExpression = new LessThanExpression(columnExpression,
@@ -372,7 +372,7 @@ public class CarbonReaderTest extends TestCase {
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
 
-    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
 
     ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
     LessThanExpression lessThanExpression = new LessThanExpression(columnExpression,
@@ -414,7 +414,7 @@ public class CarbonReaderTest extends TestCase {
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
 
-    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
 
     ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
     LessThanExpression lessThanExpression = new LessThanExpression(columnExpression,
@@ -456,7 +456,7 @@ public class CarbonReaderTest extends TestCase {
     fields[1] = new Field("age", DataTypes.INT);
     fields[2] = new Field("doubleField", DataTypes.DOUBLE);
 
-    TestUtil.writeFilesAndVerify(200, new Schema(fields), path, false, false);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path);
 
     ColumnExpression columnExpression = new ColumnExpression("doubleField", DataTypes.DOUBLE);
     LessThanExpression lessThanExpression = new LessThanExpression(columnExpression,
@@ -1408,9 +1408,9 @@ public class CarbonReaderTest extends TestCase {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(200, new Schema(fields), path1, false, false);
-    TestUtil.writeFilesAndVerify(200, new Schema(fields), path2, false, false);
-    TestUtil.writeFilesAndVerify(200, new Schema(fields), path3, false, false);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path1);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path2);
+    TestUtil.writeFilesAndVerify(200, new Schema(fields), path3);
 
     EqualToExpression equalToExpression = new EqualToExpression(
         new ColumnExpression("name", DataTypes.STRING),
