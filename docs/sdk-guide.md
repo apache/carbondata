@@ -28,7 +28,7 @@ In the carbon jars package, there exist a carbondata-store-sdk-x.x.x-SNAPSHOT.ja
 
 This SDK writer, writes carbondata file and carbonindex file at a given path.
 External client can make use of this writer to convert other format data or live data to create carbondata and index files.
-These SDK writer output contains just a carbondata and carbonindex files. No metadata folder will be present.
+These SDK writer output contains just carbondata and carbonindex files. No metadata folder will be present.
 
 ## Quick example
 
