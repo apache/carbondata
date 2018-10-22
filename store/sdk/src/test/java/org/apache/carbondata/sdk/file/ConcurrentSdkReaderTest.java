@@ -52,7 +52,7 @@ public class ConcurrentSdkReaderTest extends TestCase {
     }
   }
 
-  private void writeTestData(long numRows, int segmentSize) {
+  private void writeTestData(long numRows, int tableBlockSize) {
     cleanTestData();
 
     Field[] fields = new Field[2];
@@ -60,7 +60,7 @@ public class ConcurrentSdkReaderTest extends TestCase {
     fields[1] = new Field("intField", DataTypes.INT);
 
     Map<String, String> tableProperties = new HashMap<>();
-    tableProperties.put("table_blocksize", Integer.toString(segmentSize));
+    tableProperties.put("table_blocksize", Integer.toString(tableBlockSize));
 
     CarbonWriterBuilder builder =
         CarbonWriter.builder().outputPath(dataDir).withTableProperties(tableProperties)
@@ -81,11 +81,9 @@ public class ConcurrentSdkReaderTest extends TestCase {
 
   @Test public void testReadParallely() throws IOException, InterruptedException {
     long numRows = 10000000;
-    int segmentSize = 10;
+    int tableBlockSize = 10;
     short numThreads = 4;
-    writeTestData(numRows, segmentSize);
-
-    ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+    writeTestData(numRows, tableBlockSize);
     long count;
 
     CarbonReader reader = CarbonReader.builder(dataDir).build();
@@ -106,6 +104,7 @@ public class ConcurrentSdkReaderTest extends TestCase {
       reader.close();
     }
 
+    ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
     CarbonReader reader2 = CarbonReader.builder(dataDir).build();
     try {
       List<CarbonReader> multipleReaders = reader2.split(numThreads);
