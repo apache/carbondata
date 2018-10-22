@@ -142,7 +142,7 @@
 |-----------|-------------|--------|
 |carbon.number.of.cores.while.loading|Default: 2. This value should be >= 2|Specifies the number of cores used for data processing during data loading in CarbonData. |
 |carbon.sort.size|Default: 100000. The value should be >= 100.|Threshold to write local file in sort step when loading data|
-|carbon.sort.file.write.buffer.size|Default:  50000.|DataOutputStream buffer. |
+|carbon.sort.file.write.buffer.size|Default:  16384.|CarbonData sorts and writes data to intermediate files to limit the memory usage. This configuration determines the buffer size to be used for reading and writing such files. |
 |carbon.merge.sort.reader.thread|Default: 3 |Specifies the number of cores used for temp file merging during data loading in CarbonData.|
 |carbon.merge.sort.prefetch|Default: true | You may want set this value to false if you have not enough memory|
 
