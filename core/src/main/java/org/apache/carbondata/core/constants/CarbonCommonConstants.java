@@ -361,7 +361,7 @@ public final class CarbonCommonConstants {
   /**
    * CSV_READ_BUFFER_SIZE
    */
-  public static final String CSV_READ_BUFFER_SIZE_DEFAULT = "1048576";
+  public static final String CSV_READ_BUFFER_SIZE_DEFAULT = "1048576"; // 1mb
   /**
    * min value for csv read buffer size
    */
