@@ -156,7 +156,7 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
       rawData.get(dataInv);
       invertedIndexes = CarbonUtil
           .getUnCompressColumnIndex(dimensionColumnChunk.rowid_page_length, dataInv,
-              numberComressor, 0);
+              numberCompressor, 0);
       copySourcePoint += dimensionColumnChunk.rowid_page_length;
       // get the reverse index
       invertedIndexesReverse = CarbonUtil.getInvertedReverseIndex(invertedIndexes);
@@ -167,7 +167,7 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
       byte[] dataRle = new byte[dimensionColumnChunk.rle_page_length];
       rawData.position(copySourcePoint);
       rawData.get(dataRle);
-      rlePage = numberComressor.unCompress(dataRle, 0, dimensionColumnChunk.rle_page_length);
+      rlePage = numberCompressor.unCompress(dataRle, 0, dimensionColumnChunk.rle_page_length);
       // uncompress the data with rle indexes
       dataPage = UnBlockIndexer.uncompressData(dataPage, rlePage, eachColumnValueSize[blockIndex]);
     }

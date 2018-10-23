@@ -54,7 +54,7 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
    * this will be used to uncompress the
    * row id and rle chunk
    */
-  protected NumberCompressor numberComressor;
+  protected NumberCompressor numberCompressor;
 
   /**
    * number of element in each chunk
@@ -80,7 +80,7 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
     } catch (NumberFormatException exception) {
       numberOfElement = Integer.parseInt(CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
     }
-    this.numberComressor = new NumberCompressor(numberOfElement);
+    this.numberCompressor = new NumberCompressor(numberOfElement);
     this.numberOfRows = numberOfRows;
   }
 

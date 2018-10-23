@@ -68,8 +68,6 @@ carbon.major.compaction.size=1024
 #carbon.csv.read.buffersize.byte=1048576
 ##no of threads used for reading intermediate files for final merging.
 #carbon.merge.sort.reader.thread=3
-##Carbon blocklet size. Note: this configuration cannot be change once store is generated
-#carbon.blocklet.size=120000
 ##To disable/enable carbon block distribution
 #carbon.custom.block.distribution=false
 
