@@ -282,7 +282,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       BitSet deletedRows = vectorInfo.deletedRows;
       vector = ColumnarVectorWrapperDirectFactory
           .getDirectVectorWrapperFactory(vector, vectorInfo.invertedIndex, nullBits, deletedRows,
-              true);
+              true, false);
       fillVector(columnPage, vector, vectorDataType, pageDataType, pageSize, vectorInfo);
       if (deletedRows == null || deletedRows.isEmpty()) {
         for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
@@ -369,7 +369,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           }
         } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
-          int[] shortIntData = ByteUtil.toIntArray(shortIntPage, pageSize);
+          int[] shortIntData = ByteUtil.toIntArrayFrom3Bytes(shortIntPage, pageSize);
           decimalConverter.fillVector(shortIntData, pageSize, vectorInfo, columnPage.getNullBits());
         } else {
           for (int i = 0; i < pageSize; i++) {

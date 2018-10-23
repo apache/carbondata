@@ -55,9 +55,9 @@ class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
    */
   public ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex(
       CarbonColumnVector vectorWrapper, BitSet deletedRows, int[] invertedIndex, BitSet nullBits,
-      boolean isnullBitsExists) {
-    super(new CarbonColumnVectorImpl(invertedIndex.length, vectorWrapper.getType()), invertedIndex,
-        isnullBitsExists);
+      boolean isnullBitsExists, boolean isDictVector) {
+    super(new CarbonColumnVectorImpl(invertedIndex.length,
+        isDictVector ? DataTypes.INT : vectorWrapper.getType()), invertedIndex, isnullBitsExists);
     this.deletedRows = deletedRows;
     this.carbonColumnVector = vectorWrapper;
     this.nullBits = nullBits;
@@ -82,7 +82,7 @@ class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
   public void convert() {
     if (columnVector instanceof CarbonColumnVectorImpl) {
       CarbonColumnVectorImpl localVector = (CarbonColumnVectorImpl) columnVector;
-      DataType dataType = carbonColumnVector.getType();
+      DataType dataType = columnVector.getType();
       int length = invertedIndex.length;
       int counter = 0;
       if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
