@@ -255,7 +255,7 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
       BitSet deletedRows = vectorInfo.deletedRows;
       DataType vectorDataType = vector.getType();
       vector = ColumnarVectorWrapperDirectFactory
-          .getDirectVectorWrapperFactory(vector, null, nullBits, deletedRows, true);
+          .getDirectVectorWrapperFactory(vector, null, nullBits, deletedRows, true, false);
       if (vectorDataType == DataTypes.FLOAT) {
         if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {
           byte[] byteData = columnPage.getBytePage();

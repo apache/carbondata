@@ -98,19 +98,14 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
   @Override
   public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
       ColumnVectorInfo vectorInfo) {
-    this.invertedIndexReverse = invertedIndex;
-    int lengthSize = getLengthSize();
     CarbonColumnVector vector = vectorInfo.vector;
     DataType dt = vector.getType();
-    // creating a byte buffer which will wrap the length of the row
-    ByteBuffer buffer = ByteBuffer.wrap(data);
     AbstractNonDictionaryVectorFiller vectorFiller =
-        NonDictionaryVectorFillerFactory.getVectorFiller(dt, lengthSize, numberOfRows);
-    BitSet nullBits = new BitSet(numberOfRows);
+        NonDictionaryVectorFillerFactory.getVectorFiller(getLengthSize(), dt, numberOfRows);
     vector = ColumnarVectorWrapperDirectFactory
-        .getDirectVectorWrapperFactory(vector, invertedIndex, nullBits, vectorInfo.deletedRows,
-            false);
-    vectorFiller.fillVector(data, vector, buffer);
+        .getDirectVectorWrapperFactory(vector, invertedIndex, new BitSet(), vectorInfo.deletedRows,
+            false, false);
+    vectorFiller.fillVector(data, vector);
     if (vector instanceof ConvertableVector) {
       ((ConvertableVector) vector).convert();
     }
