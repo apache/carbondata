@@ -1628,9 +1628,9 @@ public final class CarbonCommonConstants {
   public static final String CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION_DEFAULT = "false";
 
   @CarbonProperty
-  public static final String IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB =
+  public static final String CARBON_SORT_STORAGE_INMEMORY_IN_MB =
       "carbon.sort.storage.inmemory.size.inmb";
-  public static final String IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB_DEFAULT = "512";
+  public static final int CARBON_SORT_STORAGE_INMEMORY_IN_MB_DEFAULT = 512;
 
   @CarbonProperty
   public static final String SUPPORT_DIRECT_QUERY_ON_DATAMAP =
