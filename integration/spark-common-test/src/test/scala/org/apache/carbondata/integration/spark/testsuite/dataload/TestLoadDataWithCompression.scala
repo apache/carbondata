@@ -168,6 +168,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
   private val tableName = "load_test_with_compressor"
   private var executorService: ExecutorService = _
   private val csvDataDir = s"$integrationPath/spark2/target/csv_load_compression"
+  private val compressors = Array("snappy","zstd","gzip")
 
   override protected def beforeAll(): Unit = {
     executorService = Executors.newFixedThreadPool(3)
@@ -252,28 +253,24 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
        """.stripMargin)
   }
 
-  test("test data loading with snappy compressor and offheap") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "snappy")
-    createTable()
-    loadData()
-    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
+  test("test data loading with different compressors and offheap") {
+    for(comp <- compressors){
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, comp)
+      createTable()
+      loadData()
+      checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
+    }
   }
 
-  test("test data loading with zstd compressor and offheap") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "zstd")
-    createTable()
-    loadData()
-    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
-  }
-
-  test("test data loading with zstd compressor and onheap") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "false")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "zstd")
-    createTable()
-    loadData()
-    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
+  test("test data loading with different compressors and onheap") {
+    for(comp <- compressors){
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "false")
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, comp)
+      createTable()
+      loadData()
+      checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
+    }
   }
 
   test("test current zstd compressor on legacy store with snappy") {
@@ -283,7 +280,20 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     loadData()
 
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "zstd")
+    loadData()
+    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(16)))
+  }
+
+  test("test current gzip compressor on legacy store with snappy") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "snappy")
+    createTable()
+    loadData()
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "ZSTD")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "gzip")
     loadData()
     checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(16)))
   }
@@ -311,7 +321,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     loadData()
 
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "zstd")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "gzip")
     loadData()
 
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
@@ -416,6 +426,12 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
       CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, if (Random.nextBoolean()) "snappy" else "zstd")
     }
 
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "gzip")
+    future = compactAsync()
+    while (!future.isDone) {
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, if (Random.nextBoolean()) "snappy" else "gzip")
+    }
+
     checkAnswer(sql(s"SELECT COUNT(*) FROM $tableName"), Seq(Row(lineNum * 2)))
     checkAnswer(sql(s"SELECT stringDictField, stringSortField FROM $tableName WHERE stringDictField='stringDict1'"), Seq(Row("stringDict1", "stringSort1"), Row("stringDict1", "stringSort1")))
   }
@@ -431,6 +447,19 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     val carbonTable = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
     val tableColumnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR)
     assertResult("zstd")(tableColumnCompressor)
+  }
+
+  test("test creating table with specified gzip compressor") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+    // the system configuration for compressor is snappy
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR, "snappy")
+    // create table with zstd as compressor
+    createTable(columnCompressor = "gzip")
+    loadData()
+    checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
+    val carbonTable = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
+    val tableColumnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR)
+    assert("gzip".equalsIgnoreCase(tableColumnCompressor))
   }
 
   test("test creating table with unsupported compressor") {
