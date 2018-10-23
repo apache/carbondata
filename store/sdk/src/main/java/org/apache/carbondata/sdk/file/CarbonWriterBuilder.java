@@ -413,6 +413,7 @@ public class CarbonWriterBuilder {
   public CarbonLoadModel buildLoadModel(Schema carbonSchema)
       throws IOException, InvalidLoadOptionException {
     timestamp = System.nanoTime();
+    // validate long_string_column
     Set<String> longStringColumns = new HashSet<>();
     if (options != null && options.get(CarbonCommonConstants.LONG_STRING_COLUMNS) != null) {
       String[] specifiedLongStrings =
@@ -422,6 +423,7 @@ public class CarbonWriterBuilder {
       }
       validateLongStringColumns(carbonSchema, longStringColumns);
     }
+    // for the longstring field, change the datatype from string to varchar
     this.schema = updateSchemaFields(carbonSchema, longStringColumns);
     // build CarbonTable using schema
     CarbonTable table = buildCarbonTable();
