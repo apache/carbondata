@@ -51,8 +51,8 @@ class CarbonDataWriterFactory {
   /**
    * Below method will be used to get the writer instance based on version
    *
-   * @param version            writer version
-   * @param carbonDataWriterVo writer vo object
+   * @param version writer version
+   * @param model   CarbonFactDataHandlerModel object
    * @return writer instance
    */
   public CarbonFactDataWriter getFactDataWriter(final ColumnarFormatVersion version,
