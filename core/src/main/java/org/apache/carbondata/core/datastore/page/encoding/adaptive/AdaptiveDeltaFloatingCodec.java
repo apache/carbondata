@@ -252,7 +252,7 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
       BitSet deletedRows = vectorInfo.deletedRows;
       DataType vectorDataType = vector.getType();
       vector = ColumnarVectorWrapperDirectFactory
-          .getDirectVectorWrapperFactory(vector, null, nullBits, deletedRows, true);
+          .getDirectVectorWrapperFactory(vector, null, nullBits, deletedRows, true, false);
       if (vectorDataType == DataTypes.FLOAT) {
         float floatFactor = factor.floatValue();
         if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {

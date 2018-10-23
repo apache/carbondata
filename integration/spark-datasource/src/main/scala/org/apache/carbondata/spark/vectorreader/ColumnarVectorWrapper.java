@@ -173,7 +173,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public void putByteArray(int rowId, byte[] value) {
     if (!filteredRows[rowId]) {
-      sparkColumnVectorProxy.putByteArray(counter++, value);
+      sparkColumnVectorProxy.putByteArray(counter++, value, 0, value.length);
     }
   }
 

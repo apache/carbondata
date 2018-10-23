@@ -224,7 +224,7 @@ class CastColumnTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("Dictionary INT In to implicit Int") {
     checkAnswer(
-      sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_1 where workgroupcategory in (1, 2)"),
+      sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_1 where workgroupcategory in ('1', '2')"),
       sql("select empno,empname,workgroupcategory from DICTIONARY_HIVE_1 where workgroupcategory in ('1', '2')")
     )
   }

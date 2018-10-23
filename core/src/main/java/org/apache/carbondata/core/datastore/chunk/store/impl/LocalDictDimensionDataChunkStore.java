@@ -17,11 +17,15 @@
 
 package org.apache.carbondata.core.datastore.chunk.store.impl;
 
+import java.util.BitSet;
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionDataChunkStore;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertableVector;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
@@ -61,16 +65,24 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
       vector.setDictionary(dictionary);
       dictionary.setDictionaryUsed();
     }
+    BitSet nullBitset = new BitSet();
+    CarbonColumnVector dictionaryVector = ColumnarVectorWrapperDirectFactory
+        .getDirectVectorWrapperFactory(vector.getDictionaryVector(), invertedIndex, nullBitset,
+            vectorInfo.deletedRows, false, true);
+    vector = ColumnarVectorWrapperDirectFactory
+        .getDirectVectorWrapperFactory(vector, invertedIndex, nullBitset, vectorInfo.deletedRows,
+            false, false);
     for (int i = 0; i < rowsNum; i++) {
       int surrogate = CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
       if (surrogate == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {
         vector.putNull(i);
-        vector.getDictionaryVector().putNull(i);
+        dictionaryVector.putNull(i);
       } else {
-        vector.putNotNull(i);
-        vector.getDictionaryVector().putInt(i, surrogate);
+        dictionaryVector.putInt(i, surrogate);
       }
-
+    }
+    if (dictionaryVector instanceof ConvertableVector) {
+      ((ConvertableVector) dictionaryVector).convert();
     }
   }
 

@@ -39,7 +39,8 @@ public final class ColumnarVectorWrapperDirectFactory {
    * @return wrapped CarbonColumnVector
    */
   public static CarbonColumnVector getDirectVectorWrapperFactory(CarbonColumnVector columnVector,
-      int[] invertedIndex, BitSet nullBitset, BitSet deletedRows, boolean isnullBitsExists) {
+      int[] invertedIndex, BitSet nullBitset, BitSet deletedRows, boolean isnullBitsExists,
+      boolean isDictVector) {
     if ((invertedIndex != null && invertedIndex.length > 0) && (deletedRows == null || deletedRows
         .isEmpty())) {
       return new ColumnarVectorWrapperDirectWithInvertedIndex(columnVector, invertedIndex,
@@ -50,7 +51,7 @@ public final class ColumnarVectorWrapperDirectFactory {
     } else if ((invertedIndex != null && invertedIndex.length > 0) && (deletedRows != null
         && !deletedRows.isEmpty())) {
       return new ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex(columnVector,
-          deletedRows, invertedIndex, nullBitset, isnullBitsExists);
+          deletedRows, invertedIndex, nullBitset, isnullBitsExists, isDictVector);
     } else {
       return columnVector;
     }
