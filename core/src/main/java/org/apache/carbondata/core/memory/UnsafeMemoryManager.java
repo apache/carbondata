@@ -27,6 +27,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 /**
@@ -43,7 +44,7 @@ public class UnsafeMemoryManager {
   private static Map<String,Set<MemoryBlock>> taskIdToMemoryBlockMap;
   static {
     long size = 0L;
-    String defaultWorkingMemorySize = null;
+    String configuredWorkingMemorySize = null;
     try {
       // check if driver unsafe memory is configured and JVM process is in driver. In that case
       // initialize unsafe memory configured for driver
@@ -51,22 +52,22 @@ public class UnsafeMemoryManager {
           .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "false"));
       boolean initializedWithUnsafeDriverMemory = false;
       if (isDriver) {
-        defaultWorkingMemorySize = CarbonProperties.getInstance()
+        configuredWorkingMemorySize = CarbonProperties.getInstance()
             .getProperty(CarbonCommonConstants.UNSAFE_DRIVER_WORKING_MEMORY_IN_MB);
-        if (null != defaultWorkingMemorySize) {
-          size = Long.parseLong(defaultWorkingMemorySize);
+        if (null != configuredWorkingMemorySize) {
+          size = Long.parseLong(configuredWorkingMemorySize);
           initializedWithUnsafeDriverMemory = true;
         }
       }
       if (!initializedWithUnsafeDriverMemory) {
-        defaultWorkingMemorySize = CarbonProperties.getInstance()
+        configuredWorkingMemorySize = CarbonProperties.getInstance()
             .getProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB);
-        if (null != defaultWorkingMemorySize) {
-          size = Long.parseLong(defaultWorkingMemorySize);
+        if (null != configuredWorkingMemorySize) {
+          size = Long.parseLong(configuredWorkingMemorySize);
         }
       }
     } catch (Exception e) {
-      LOGGER.info("Invalid memory size value: " + defaultWorkingMemorySize);
+      LOGGER.info("Invalid working memory size value: " + configuredWorkingMemorySize);
     }
     long takenSize = size;
     MemoryType memoryType;
@@ -75,6 +76,10 @@ public class UnsafeMemoryManager {
       long defaultSize = Long.parseLong(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT);
       if (takenSize < defaultSize) {
         takenSize = defaultSize;
+        LOGGER.warn(String.format(
+            "It is not recommended to set unsafe working memory size less than %sMB,"
+                + " so setting default value to %d",
+            CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT, defaultSize));
       }
       takenSize = takenSize * 1024 * 1024;
     } else {
@@ -104,27 +109,27 @@ public class UnsafeMemoryManager {
   private UnsafeMemoryManager(long totalMemory, MemoryType memoryType) {
     this.totalMemory = totalMemory;
     this.memoryType = memoryType;
-    LOGGER
-        .info("Working Memory manager is created with size " + totalMemory + " with " + memoryType);
+    LOGGER.info(
+        "Working Memory manager is created with size " + totalMemory + " with " + memoryType);
   }
 
   private synchronized MemoryBlock allocateMemory(MemoryType memoryType, String taskId,
       long memoryRequested) {
     if (memoryUsed + memoryRequested <= totalMemory) {
-      MemoryBlock allocate = getMemoryAllocator(memoryType).allocate(memoryRequested);
-      memoryUsed += allocate.size();
+      MemoryBlock memoryBlock = getMemoryAllocator(memoryType).allocate(memoryRequested);
+      memoryUsed += memoryBlock.size();
       Set<MemoryBlock> listOfMemoryBlock = taskIdToMemoryBlockMap.get(taskId);
       if (null == listOfMemoryBlock) {
         listOfMemoryBlock = new HashSet<>();
         taskIdToMemoryBlockMap.put(taskId, listOfMemoryBlock);
       }
-      listOfMemoryBlock.add(allocate);
+      listOfMemoryBlock.add(memoryBlock);
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Memory block (" + allocate + ") is created with size " + allocate.size()
-            + ". Total memory used " + memoryUsed + "Bytes, left " + (totalMemory - memoryUsed)
-            + "Bytes");
+        LOGGER.debug(String.format("Creating working Memory block (%s) with size %d."
+                + " Total memory used %d Bytes, left %d Bytes.",
+            memoryBlock.toString(), memoryBlock.size(), memoryUsed, totalMemory - memoryUsed));
       }
-      return allocate;
+      return memoryBlock;
     }
     return null;
   }
@@ -138,9 +143,9 @@ public class UnsafeMemoryManager {
       memoryUsed -= memoryBlock.size();
       memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(
-            "Freeing memory of size: " + memoryBlock.size() + "available memory:  " + (totalMemory
-                - memoryUsed));
+        LOGGER.debug(String.format(
+            "Freeing working memory block (%s) with size: %d, current available memory is: %d",
+            memoryBlock.toString(), memoryBlock.size(), totalMemory - memoryUsed));
       }
     }
   }
@@ -163,12 +168,13 @@ public class UnsafeMemoryManager {
     memoryUsed -= occuppiedMemory;
     memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
     if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug(
-          "Freeing memory of size: " + occuppiedMemory + ": Current available memory is: " + (
-              totalMemory - memoryUsed));
+      LOGGER.debug(String.format(
+          "Freeing working memory of size %d. Current available memory is %d",
+          occuppiedMemory, totalMemory - memoryUsed));
     }
-    LOGGER.info("Total memory used after task " + taskId + " is " + memoryUsed
-        + " Current tasks running now are : " + taskIdToMemoryBlockMap.keySet());
+    LOGGER.info(String.format(
+        "Total working memory used after task %s is %d. Current running tasks are %s",
+        taskId, memoryUsed, StringUtils.join(taskIdToMemoryBlockMap.keySet(), ", ")));
   }
 
   public synchronized boolean isMemoryAvailable() {
@@ -195,7 +201,7 @@ public class UnsafeMemoryManager {
       baseBlock = INSTANCE.allocateMemory(memoryType, taskId, size);
       if (baseBlock == null) {
         try {
-          LOGGER.info("Memory is not available, retry after 500 millis");
+          LOGGER.info("Working memory is not available, retry after 500 ms");
           Thread.sleep(500);
         } catch (InterruptedException e) {
           throw new MemoryException(e);
@@ -207,8 +213,8 @@ public class UnsafeMemoryManager {
     }
     if (baseBlock == null) {
       INSTANCE.printCurrentMemoryUsage();
-      throw new MemoryException(
-          "Not enough memory. please increase carbon.unsafe.working.memory.in.mb");
+      throw new MemoryException("Not enough working memory, please increase "
+          + CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB);
     }
     return baseBlock;
   }
@@ -227,7 +233,7 @@ public class UnsafeMemoryManager {
   }
 
   private synchronized void printCurrentMemoryUsage() {
-    LOGGER.error(
-        " Memory Used : " + memoryUsed + " Tasks running : " + taskIdToMemoryBlockMap.keySet());
+    LOGGER.info(String.format("Working memory used %d, running tasks are %s",
+        memoryUsed, StringUtils.join(taskIdToMemoryBlockMap.keySet(), ", ")));
   }
 }
