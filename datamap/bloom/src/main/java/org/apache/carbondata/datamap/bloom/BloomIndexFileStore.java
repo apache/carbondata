@@ -60,6 +60,9 @@ public class BloomIndexFileStore {
 
 
   public static void mergeBloomIndexFile(String dmSegmentPathString, List<String> indexCols) {
+
+    // Step 1. check current folders
+
     // get all shard paths of old store
     CarbonFile segmentPath = FileFactory.getCarbonFile(dmSegmentPathString,
             FileFactory.getFileType(dmSegmentPathString));
@@ -72,6 +75,9 @@ public class BloomIndexFileStore {
 
     String mergeShardPath = dmSegmentPathString + File.separator + MERGE_BLOOM_INDEX_SHARD_NAME;
     String mergeInprogressFile = dmSegmentPathString + File.separator + MERGE_INPROGRESS_FILE;
+
+    // Step 2. prepare for fail-safe merging
+
     try {
       // delete mergeShard folder if exists
       if (FileFactory.isFileExist(mergeShardPath)) {
@@ -87,9 +93,11 @@ public class BloomIndexFileStore {
         throw new RuntimeException("Failed to create directory " + mergeShardPath);
       }
     } catch (IOException e) {
-      LOGGER.error("Error occurs while create directory " + mergeShardPath, e);
-      throw new RuntimeException("Error occurs while create directory " + mergeShardPath);
+      throw new RuntimeException(e);
     }
+
+    // Step 3. merge index files
+    // Query won't use mergeShard until MERGE_INPROGRESS_FILE is deleted
 
     // for each index column, merge the bloomindex files from all shards into one
     for (String indexCol: indexCols) {
@@ -115,15 +123,17 @@ public class BloomIndexFileStore {
         }
       } catch (IOException e) {
         LOGGER.error("Error occurs while merge bloom index file of column: " + indexCol, e);
-        // delete merge shard of bloom index for this segment when failed
+        // if any column failed, delete merge shard for this segment and exit
         FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(mergeShardPath));
+        FileFactory.deleteAllCarbonFilesOfDir(FileFactory.getCarbonFile(mergeInprogressFile));
         throw new RuntimeException(
-            "Error occurs while merge bloom index file of column: " + indexCol);
+            "Error occurs while merge bloom index file of column: " + indexCol, e);
       } finally {
         CarbonUtil.closeStreams(dataInputStream, dataOutputStream);
       }
     }
-    // delete flag file and mergeShard can be used
+
+    // Step 4. delete flag file and mergeShard can be used
     try {
       FileFactory.deleteFile(mergeInprogressFile, FileFactory.getFileType(mergeInprogressFile));
     } catch (IOException e) {

@@ -332,7 +332,7 @@ case class CarbonLoadDataCommand(
         OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
         if (tableDataMaps.size() > 0) {
           val buildDataMapPostExecutionEvent = BuildDataMapPostExecutionEvent(sparkSession,
-            table.getAbsoluteTableIdentifier, Seq(carbonLoadModel.getSegmentId), false)
+            table.getAbsoluteTableIdentifier, null, Seq(carbonLoadModel.getSegmentId), false)
           OperationListenerBus.getInstance()
             .fireEvent(buildDataMapPostExecutionEvent, dataMapOperationContext)
         }
