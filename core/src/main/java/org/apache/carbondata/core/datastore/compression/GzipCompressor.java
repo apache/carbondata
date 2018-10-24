@@ -20,73 +20,76 @@ package org.apache.carbondata.core.datastore.compression;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.LongBuffer;
-import java.nio.ShortBuffer;
-
-import org.apache.carbondata.core.util.ByteUtil;
 
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 
-public class GzipCompressor implements Compressor {
-
-  public GzipCompressor() {
-  }
+/**
+ * Codec Class for performing Gzip Compression
+ */
+public class GzipCompressor extends AbstractCompressor {
 
   @Override public String getName() {
     return "gzip";
   }
 
-  /*
-   * Method called for compressing the data and
-   * return a byte array
+  /**
+   * This method takes the Byte Array data and Compresses in gzip format
+   *
+   * @param data Data Byte Array passed for compression
+   * @return Compressed Byte Array
    */
   private byte[] compressData(byte[] data) {
-
-    ByteArrayOutputStream bt = new ByteArrayOutputStream();
+    int initialSize = (data.length / 2) == 0 ? data.length : data.length / 2;
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(initialSize);
     try {
-      GzipCompressorOutputStream gzos = new GzipCompressorOutputStream(bt);
+      GzipCompressorOutputStream gzipCompressorOutputStream =
+          new GzipCompressorOutputStream(byteArrayOutputStream);
       try {
-        gzos.write(data);
+        /**
+         * Below api will write bytes from specified byte array to the gzipCompressorOutputStream
+         * The output stream will compress the given byte array.
+         */
+        gzipCompressorOutputStream.write(data);
       } catch (IOException e) {
-        e.printStackTrace();
+        throw new RuntimeException("Error during Compression writing step ", e);
       } finally {
-        gzos.close();
+        gzipCompressorOutputStream.close();
       }
     } catch (IOException e) {
-      e.printStackTrace();
+      throw new RuntimeException("Error during Compression step ", e);
     }
-
-    return bt.toByteArray();
+    return byteArrayOutputStream.toByteArray();
   }
 
-  /*
-   * Method called for decompressing the data and
-   * return a byte array
+  /**
+   * This method takes the Byte Array data and Decompresses in gzip format
+   *
+   * @param data   Data Byte Array for Compression
+   * @param offset Start value of Data Byte Array
+   * @param length Size of Byte Array
+   * @return
    */
-  private byte[] decompressData(byte[] data) {
-
-    ByteArrayInputStream bt = new ByteArrayInputStream(data);
-    ByteArrayOutputStream bot = new ByteArrayOutputStream();
-
+  private byte[] decompressData(byte[] data, int offset, int length) {
+    ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(data, offset, length);
+    ByteArrayOutputStream byteOutputStream = new ByteArrayOutputStream();
     try {
-      GzipCompressorInputStream gzis = new GzipCompressorInputStream(bt);
-      byte[] buffer = new byte[1024];
+      GzipCompressorInputStream gzipCompressorInputStream =
+          new GzipCompressorInputStream(byteArrayInputStream);
+      int initialSize = (data.length * 2) < Integer.MAX_VALUE ? (data.length * 2) : data.length;
+      byte[] buffer = new byte[initialSize];
       int len;
-
-      while ((len = gzis.read(buffer)) != -1) {
-        bot.write(buffer, 0, len);
+      /**
+       * Reads the next byte of the data from the input stream and stores them into buffer
+       * Data is then read from the buffer and put into byteOutputStream from a offset.
+       */
+      while ((len = gzipCompressorInputStream.read(buffer)) != -1) {
+        byteOutputStream.write(buffer, 0, len);
       }
-
     } catch (IOException e) {
-      e.printStackTrace();
+      throw new RuntimeException("Error during Decompression step ", e);
     }
-
-    return bot.toByteArray();
+    return byteOutputStream.toByteArray();
   }
 
   @Override public byte[] compressByte(byte[] unCompInput) {
@@ -98,96 +101,20 @@ public class GzipCompressor implements Compressor {
   }
 
   @Override public byte[] unCompressByte(byte[] compInput) {
-    return decompressData(compInput);
+    return decompressData(compInput, 0, compInput.length);
   }
 
   @Override public byte[] unCompressByte(byte[] compInput, int offset, int length) {
-    byte[] data = new byte[length];
-    System.arraycopy(compInput, offset, data, 0, length);
-    return decompressData(data);
+    return decompressData(compInput, offset, length);
   }
 
-  @Override public byte[] compressShort(short[] unCompInput) {
-    ByteBuffer unCompBuffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_SHORT);
-    unCompBuffer.asShortBuffer().put(unCompInput);
-    return compressData(unCompBuffer.array());
-  }
-
-  @Override public short[] unCompressShort(byte[] compInput, int offset, int length) {
-    byte[] unCompArray = unCompressByte(compInput, offset, length);
-    ShortBuffer unCompBuffer = ByteBuffer.wrap(unCompArray).asShortBuffer();
-    short[] shorts = new short[unCompArray.length / ByteUtil.SIZEOF_SHORT];
-    unCompBuffer.get(shorts);
-    return shorts;
-  }
-
-  @Override public byte[] compressInt(int[] unCompInput) {
-    ByteBuffer unCompBuffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_INT);
-    unCompBuffer.asIntBuffer().put(unCompInput);
-    return compressData(unCompBuffer.array());
-  }
-
-  @Override public int[] unCompressInt(byte[] compInput, int offset, int length) {
-    byte[] unCompArray = unCompressByte(compInput, offset, length);
-    IntBuffer unCompBuffer = ByteBuffer.wrap(unCompArray).asIntBuffer();
-    int[] ints = new int[unCompArray.length / ByteUtil.SIZEOF_INT];
-    unCompBuffer.get(ints);
-    return ints;
-  }
-
-  @Override public byte[] compressLong(long[] unCompInput) {
-    ByteBuffer unCompBuffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_LONG);
-    unCompBuffer.asLongBuffer().put(unCompInput);
-    return compressData(unCompBuffer.array());
-  }
-
-  @Override public long[] unCompressLong(byte[] compInput, int offset, int length) {
-    byte[] unCompArray = unCompressByte(compInput, offset, length);
-    LongBuffer unCompBuffer = ByteBuffer.wrap(unCompArray).asLongBuffer();
-    long[] longs = new long[unCompArray.length / ByteUtil.SIZEOF_LONG];
-    unCompBuffer.get(longs);
-    return longs;
-  }
-
-  @Override public byte[] compressFloat(float[] unCompInput) {
-    ByteBuffer unCompBuffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_FLOAT);
-    unCompBuffer.asFloatBuffer().put(unCompInput);
-    return compressData(unCompBuffer.array());
-  }
-
-  @Override public float[] unCompressFloat(byte[] compInput, int offset, int length) {
-    byte[] unCompArray = unCompressByte(compInput, offset, length);
-    FloatBuffer unCompBuffer = ByteBuffer.wrap(unCompArray).asFloatBuffer();
-    float[] floats = new float[unCompArray.length / ByteUtil.SIZEOF_FLOAT];
-    unCompBuffer.get(floats);
-    return floats;
-  }
-
-  @Override public byte[] compressDouble(double[] unCompInput) {
-    ByteBuffer unCompBuffer = ByteBuffer.allocate(unCompInput.length * ByteUtil.SIZEOF_DOUBLE);
-    unCompBuffer.asDoubleBuffer().put(unCompInput);
-    return compressData(unCompBuffer.array());
-  }
-
-  @Override public double[] unCompressDouble(byte[] compInput, int offset, int length) {
-    byte[] unCompArray = unCompressByte(compInput, offset, length);
-    DoubleBuffer unCompBuffer = ByteBuffer.wrap(unCompArray).asDoubleBuffer();
-    double[] doubles = new double[unCompArray.length / ByteUtil.SIZEOF_DOUBLE];
-    unCompBuffer.get(doubles);
-    return doubles;
-  }
-
-  @Override public long rawCompress(long inputAddress, int inputSize, long outputAddress)
-      throws IOException {
-    throw new RuntimeException("Not implemented rawUncompress for gzip yet");
-  }
-
-  @Override public long rawUncompress(byte[] input, byte[] output) throws IOException {
-    //gzip api doesnt have rawCompress yet.
-    return 0;
+  @Override public long rawUncompress(byte[] input, byte[] output) {
+    //gzip api doesnt have rawUncompress yet.
+    throw new RuntimeException("Not implemented rawUcompress for gzip yet");
   }
 
   @Override public long maxCompressedLength(long inputSize) {
+    // Check if input size is lower than the max possible size
     if (inputSize < Integer.MAX_VALUE) {
       return inputSize;
     } else {
@@ -195,7 +122,13 @@ public class GzipCompressor implements Compressor {
     }
   }
 
-  @Override public boolean supportUnsafe() {
-    return false;
+  @Override public int unCompressedLength(byte[] data, int offset, int length) {
+    //gzip api doesnt have UncompressedLength
+    throw new RuntimeException("Unsupported operation Exception");
+  }
+
+  @Override public int rawUncompress(byte[] data, int offset, int length, byte[] output) {
+    //gzip api doesnt have rawUncompress yet.
+    throw new RuntimeException("Not implemented rawUcompress for gzip yet");
   }
 }
