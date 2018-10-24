@@ -18,11 +18,7 @@
 package org.apache.carbondata.tool;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -77,13 +73,17 @@ class FileCollector {
 
       }
     }
-    unsortedFiles.sort((o1, o2) -> {
-      if (o1.getShardName().equalsIgnoreCase(o2.getShardName())) {
-        return Integer.parseInt(o1.getPartNo()) - Integer.parseInt(o2.getPartNo());
-      } else {
-        return o1.getShardName().compareTo(o2.getShardName());
+
+    Collections.sort(unsortedFiles, new Comparator<DataFile>() {
+      @Override public int compare(DataFile o1, DataFile o2) {
+        if (o1.getShardName().equalsIgnoreCase(o2.getShardName())) {
+          return Integer.parseInt(o1.getPartNo()) - Integer.parseInt(o2.getPartNo());
+        } else {
+          return o1.getShardName().compareTo(o2.getShardName());
+        }
       }
     });
+
     for (DataFile collectedFile : unsortedFiles) {
       this.dataFiles.put(collectedFile.getFilePath(), collectedFile);
     }

@@ -72,57 +72,69 @@ class ScanBenchmark implements Command {
     }
 
     outPuts.add("\n## Benchmark");
-    AtomicReference<FileHeader> fileHeaderRef = new AtomicReference<>();
-    AtomicReference<FileFooter3> fileFoorterRef = new AtomicReference<>();
-    AtomicReference<DataFileFooter> convertedFooterRef = new AtomicReference<>();
+    final AtomicReference<FileHeader> fileHeaderRef = new AtomicReference<>();
+    final AtomicReference<FileFooter3> fileFoorterRef = new AtomicReference<>();
+    final AtomicReference<DataFileFooter> convertedFooterRef = new AtomicReference<>();
 
     // benchmark read header and footer time
-    benchmarkOperation("ReadHeaderAndFooter", () -> {
-      fileHeaderRef.set(file.readHeader());
-      fileFoorterRef.set(file.readFooter());
+    benchmarkOperation("ReadHeaderAndFooter", new Operation() {
+      @Override public void run() throws IOException, MemoryException {
+        fileHeaderRef.set(file.readHeader());
+        fileFoorterRef.set(file.readFooter());
+      }
     });
-    FileHeader fileHeader = fileHeaderRef.get();
-    FileFooter3 fileFooter = fileFoorterRef.get();
+    final FileHeader fileHeader = fileHeaderRef.get();
+    final FileFooter3 fileFooter = fileFoorterRef.get();
 
     // benchmark convert footer
-    benchmarkOperation("ConvertFooter", () -> {
-      convertFooter(fileHeader, fileFooter);
+    benchmarkOperation("ConvertFooter", new Operation() {
+      @Override public void run() throws IOException, MemoryException {
+        convertFooter(fileHeader, fileFooter);
+      }
     });
 
     // benchmark read all meta and convert footer
-    benchmarkOperation("ReadAllMetaAndConvertFooter", () -> {
-      DataFileFooter footer = readAndConvertFooter(file);
-      convertedFooterRef.set(footer);
+    benchmarkOperation("ReadAllMetaAndConvertFooter", new Operation() {
+      @Override public void run() throws IOException, MemoryException {
+        DataFileFooter footer = readAndConvertFooter(file);
+        convertedFooterRef.set(footer);
+      }
     });
 
     if (line.hasOption("c")) {
       String columnName = line.getOptionValue("c");
       outPuts.add("\nScan column '" + columnName + "'");
 
-      DataFileFooter footer = convertedFooterRef.get();
-      AtomicReference<AbstractRawColumnChunk> columnChunk = new AtomicReference<>();
-      int columnIndex = file.getColumnIndex(columnName);
-      boolean dimension = file.getColumn(columnName).isDimensionColumn();
+      final DataFileFooter footer = convertedFooterRef.get();
+      final AtomicReference<AbstractRawColumnChunk> columnChunk = new AtomicReference<>();
+      final int columnIndex = file.getColumnIndex(columnName);
+      final boolean dimension = file.getColumn(columnName).isDimensionColumn();
       for (int i = 0; i < footer.getBlockletList().size(); i++) {
-        int blockletId = i;
+        final int blockletId = i;
         outPuts.add(String.format("Blocklet#%d: total size %s, %,d pages, %,d rows",
             blockletId,
             Strings.formatSize(file.getColumnDataSizeInBytes(blockletId, columnIndex)),
             footer.getBlockletList().get(blockletId).getNumberOfPages(),
             footer.getBlockletList().get(blockletId).getNumberOfRows()));
-        benchmarkOperation("\tColumnChunk IO", () -> {
-          columnChunk.set(readBlockletColumnChunkIO(footer, blockletId, columnIndex, dimension));
+        benchmarkOperation("\tColumnChunk IO", new Operation() {
+          @Override public void run() throws IOException, MemoryException {
+            columnChunk.set(readBlockletColumnChunkIO(footer, blockletId, columnIndex, dimension));
+          }
         });
 
         if (dimensionColumnChunkReader != null) {
-          benchmarkOperation("\tDecompress Pages", () -> {
-            decompressDimensionPages(columnChunk.get(),
-                footer.getBlockletList().get(blockletId).getNumberOfPages());
+          benchmarkOperation("\tDecompress Pages", new Operation() {
+            @Override public void run() throws IOException, MemoryException {
+              decompressDimensionPages(columnChunk.get(),
+                  footer.getBlockletList().get(blockletId).getNumberOfPages());
+            }
           });
         } else {
-          benchmarkOperation("\tDecompress Pages", () -> {
-            decompressMeasurePages(columnChunk.get(),
-                footer.getBlockletList().get(blockletId).getNumberOfPages());
+          benchmarkOperation("\tDecompress Pages", new Operation() {
+            @Override public void run() throws IOException, MemoryException {
+              decompressMeasurePages(columnChunk.get(),
+                  footer.getBlockletList().get(blockletId).getNumberOfPages());
+            }
           });
         }
       }
