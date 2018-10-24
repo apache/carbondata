@@ -289,7 +289,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       if (null != tableDataMaps) {
         val buildDataMapPostExecutionEvent = new BuildDataMapPostExecutionEvent(
           sqlContext.sparkSession, carbonTable.getAbsoluteTableIdentifier,
-          Seq(carbonLoadModel.getSegmentId), true)
+          null, Seq(mergedLoadNumber), true)
         OperationListenerBus.getInstance()
           .fireEvent(buildDataMapPostExecutionEvent, dataMapOperationContext)
       }
