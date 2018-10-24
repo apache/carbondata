@@ -48,8 +48,14 @@ class MergeBloomIndexEventListener extends OperationEventListener with Logging {
           _.getDataMapSchema.getProviderName.equalsIgnoreCase(
             DataMapClassProvider.BLOOMFILTER.getShortName))
 
-        // for load process, filter lazy datamap
-        if (!datamapPostEvent.isFromRebuild) {
+        if (datamapPostEvent.isFromRebuild) {
+          if (null != datamapPostEvent.dmName) {
+            // for rebuild process
+            bloomDatamaps = bloomDatamaps.filter(
+              _.getDataMapSchema.getDataMapName.equalsIgnoreCase(datamapPostEvent.dmName))
+          }
+        } else {
+          // for load process, skip lazy datamap
           bloomDatamaps = bloomDatamaps.filter(!_.getDataMapSchema.isLazy)
         }
 
