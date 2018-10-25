@@ -50,8 +50,9 @@ public class RowResultProcessor {
     CarbonDataProcessorUtil.createLocations(tempStoreLocation);
     this.segmentProperties = segProp;
     String tableName = carbonTable.getTableName();
-    String carbonStoreLocation = CarbonDataProcessorUtil.createCarbonStoreLocation(
-        loadModel.getDatabaseName(), tableName, loadModel.getSegmentId());
+    String carbonStoreLocation = CarbonDataProcessorUtil
+        .createCarbonStoreLocation(loadModel.getCarbonDataLoadSchema().getCarbonTable(),
+            loadModel.getSegmentId());
     CarbonFactDataHandlerModel carbonFactDataHandlerModel =
         CarbonFactDataHandlerModel.getCarbonFactDataHandlerModel(loadModel, carbonTable,
             segProp, tableName, tempStoreLocation, carbonStoreLocation);

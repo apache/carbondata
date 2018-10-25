@@ -1001,9 +1001,9 @@ public class SegmentStatusManager {
             CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
           }
           if (updationCompletionStatus) {
-            DeleteLoadFolders.physicalFactAndMeasureMetadataDeletion(
-                identifier, carbonTable.getMetadataPath(),
-                newAddedLoadHistoryList, isForceDeletion, partitionSpecs);
+            DeleteLoadFolders
+                .physicalFactAndMeasureMetadataDeletion(carbonTable, newAddedLoadHistoryList,
+                    isForceDeletion, partitionSpecs);
           }
         }
       }

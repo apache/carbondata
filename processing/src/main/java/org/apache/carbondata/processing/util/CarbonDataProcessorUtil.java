@@ -33,7 +33,6 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.constants.LoggerAction;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -135,25 +134,6 @@ public final class CarbonDataProcessorUtil {
       localDataFolderLocArray[i] = carbonDataDirectoryPath + File.separator + taskId;
     }
     return localDataFolderLocArray;
-  }
-
-  /**
-   * This method will form the local data folder store location
-   *
-   * @param databaseName
-   * @param tableName
-   * @param taskId
-   * @param segmentId
-   * @param isCompactionFlow
-   * @param isAltPartitionFlow
-   * @return
-   */
-  public static String[] getLocalDataFolderLocation(String databaseName, String tableName,
-      String taskId, String segmentId, boolean isCompactionFlow,
-      boolean isAltPartitionFlow) {
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
-    return getLocalDataFolderLocation(carbonTable, taskId,
-        segmentId, isCompactionFlow, isAltPartitionFlow);
   }
 
   /**
@@ -413,14 +393,12 @@ public final class CarbonDataProcessorUtil {
     return columnNames;
   }
 
-  public static DataType[] getMeasureDataType(int measureCount, String databaseName,
-      String tableName) {
+  public static DataType[] getMeasureDataType(int measureCount, CarbonTable carbonTable) {
     DataType[] type = new DataType[measureCount];
     for (int i = 0; i < type.length; i++) {
       type[i] = DataTypes.DOUBLE;
     }
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
-    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(tableName);
+    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(carbonTable.getTableName());
     for (int i = 0; i < type.length; i++) {
       type[i] = measures.get(i).getDataType();
     }
@@ -430,13 +408,12 @@ public final class CarbonDataProcessorUtil {
   /**
    * Get the no dictionary data types on the table
    *
-   * @param databaseName
-   * @param tableName
+   * @param carbonTable
    * @return
    */
-  public static DataType[] getNoDictDataTypes(String databaseName, String tableName) {
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
-    List<CarbonDimension> dimensions = carbonTable.getDimensionByTableName(tableName);
+  public static DataType[] getNoDictDataTypes(CarbonTable carbonTable) {
+    List<CarbonDimension> dimensions =
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
     List<DataType> type = new ArrayList<>();
     for (int i = 0; i < dimensions.size(); i++) {
       if (dimensions.get(i).isSortColumn() && !dimensions.get(i).hasEncoding(Encoding.DICTIONARY)) {
@@ -449,13 +426,12 @@ public final class CarbonDataProcessorUtil {
   /**
    * Get the no dictionary sort column mapping of the table
    *
-   * @param databaseName
-   * @param tableName
+   * @param carbonTable
    * @return
    */
-  public static boolean[] getNoDictSortColMapping(String databaseName, String tableName) {
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
-    List<CarbonDimension> dimensions = carbonTable.getDimensionByTableName(tableName);
+  public static boolean[] getNoDictSortColMapping(CarbonTable carbonTable) {
+    List<CarbonDimension> dimensions =
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
     List<Boolean> noDicSortColMap = new ArrayList<>();
     for (int i = 0; i < dimensions.size(); i++) {
       if (dimensions.get(i).isSortColumn()) {
@@ -477,14 +453,12 @@ public final class CarbonDataProcessorUtil {
   /**
    * Get the data types of the no dictionary sort columns
    *
-   * @param databaseName
-   * @param tableName
+   * @param carbonTable
    * @return
    */
-  public static Map<String, DataType[]> getNoDictSortAndNoSortDataTypes(String databaseName,
-      String tableName) {
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
-    List<CarbonDimension> dimensions = carbonTable.getDimensionByTableName(tableName);
+  public static Map<String, DataType[]> getNoDictSortAndNoSortDataTypes(CarbonTable carbonTable) {
+    List<CarbonDimension> dimensions =
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
     List<DataType> noDictSortType = new ArrayList<>();
     List<DataType> noDictNoSortType = new ArrayList<>();
     for (int i = 0; i < dimensions.size(); i++) {
@@ -509,9 +483,7 @@ public final class CarbonDataProcessorUtil {
    *
    * @return data directory path
    */
-  public static String createCarbonStoreLocation(String databaseName, String tableName,
-      String segmentId) {
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
+  public static String createCarbonStoreLocation(CarbonTable carbonTable, String segmentId) {
     return CarbonTablePath.getSegmentPath(carbonTable.getTablePath(), segmentId);
   }
 

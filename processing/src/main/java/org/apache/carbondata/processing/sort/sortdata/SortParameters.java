@@ -139,6 +139,11 @@ public class SortParameters implements Serializable {
   private int batchSortSizeinMb;
   private int rangeId = 0;
 
+  /**
+   * CarbonTable Info
+   */
+  private CarbonTable carbonTable;
+
   public SortParameters getCopy() {
     SortParameters parameters = new SortParameters();
     parameters.tempFileLocation = tempFileLocation;
@@ -172,6 +177,7 @@ public class SortParameters implements Serializable {
     parameters.numberOfCores = numberOfCores;
     parameters.batchSortSizeinMb = batchSortSizeinMb;
     parameters.rangeId = rangeId;
+    parameters.carbonTable = carbonTable;
     return parameters;
   }
 
@@ -375,11 +381,21 @@ public class SortParameters implements Serializable {
     this.batchSortSizeinMb = batchSortSizeinMb;
   }
 
+  public void setCarbonTable(CarbonTable carbonTable) {
+    this.carbonTable = carbonTable;
+  }
+
+  public CarbonTable getCarbonTable() {
+    return carbonTable;
+  }
+
+
   public static SortParameters createSortParameters(CarbonDataLoadConfiguration configuration) {
     SortParameters parameters = new SortParameters();
     CarbonTableIdentifier tableIdentifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
+    parameters.setCarbonTable(configuration.getTableSpec().getCarbonTable());
     parameters.setDatabaseName(tableIdentifier.getDatabaseName());
     parameters.setTableName(tableIdentifier.getTableName());
     parameters.setPartitionID("0");
@@ -401,8 +417,7 @@ public class SortParameters implements Serializable {
     parameters.setNumberOfSortColumns(configuration.getNumberOfSortColumns());
     parameters.setNumberOfNoDictSortColumns(configuration.getNumberOfNoDictSortColumns());
     parameters.setNoDictionarySortColumn(CarbonDataProcessorUtil
-        .getNoDictSortColMapping(configuration.getTableIdentifier().getDatabaseName(),
-            configuration.getTableIdentifier().getTableName()));
+        .getNoDictSortColMapping(parameters.getCarbonTable()));
     parameters.setSortColumn(configuration.getSortColumnMapping());
     parameters.setObserver(new SortObserver());
     // get sort buffer size
@@ -418,10 +433,9 @@ public class SortParameters implements Serializable {
     LOGGER.info("Number of intermediate file to be merged: " + parameters
         .getNumberOfIntermediateFileToBeMerged());
 
-
-    String[] carbonDataDirectoryPath = CarbonDataProcessorUtil.getLocalDataFolderLocation(
-        tableIdentifier.getDatabaseName(), tableIdentifier.getTableName(),
-        configuration.getTaskNo(), configuration.getSegmentId(), false, false);
+    String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
+        .getLocalDataFolderLocation(parameters.getCarbonTable(),
+            configuration.getTaskNo(), configuration.getSegmentId(), false, false);
     String[] sortTempDirs = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath,
         File.separator, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
 
@@ -453,11 +467,9 @@ public class SortParameters implements Serializable {
     DataType[] measureDataType = configuration.getMeasureDataType();
     parameters.setMeasureDataType(measureDataType);
     parameters.setNoDictDataType(CarbonDataProcessorUtil
-        .getNoDictDataTypes(configuration.getTableIdentifier().getDatabaseName(),
-            configuration.getTableIdentifier().getTableName()));
+        .getNoDictDataTypes(configuration.getTableSpec().getCarbonTable()));
     Map<String, DataType[]> noDictSortAndNoSortDataTypes = CarbonDataProcessorUtil
-        .getNoDictSortAndNoSortDataTypes(configuration.getTableIdentifier().getDatabaseName(),
-            configuration.getTableIdentifier().getTableName());
+        .getNoDictSortAndNoSortDataTypes(configuration.getTableSpec().getCarbonTable());
     parameters.setNoDictSortDataType(noDictSortAndNoSortDataTypes.get("noDictSortDataTypes"));
     parameters.setNoDictNoSortDataType(noDictSortAndNoSortDataTypes.get("noDictNoSortDataTypes"));
     return parameters;
@@ -477,6 +489,7 @@ public class SortParameters implements Serializable {
       boolean[] sortColumnMapping, boolean[] isVarcharDimensionColumn, boolean isCompactionFlow) {
     SortParameters parameters = new SortParameters();
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
+    parameters.setCarbonTable(carbonTable);
     parameters.setDatabaseName(databaseName);
     parameters.setTableName(tableName);
     parameters.setPartitionID(CarbonTablePath.DEPRECATED_PATITION_ID);
@@ -506,7 +519,7 @@ public class SortParameters implements Serializable {
         .getNumberOfIntermediateFileToBeMerged());
 
     String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(databaseName, tableName, taskNo, segmentId,
+        .getLocalDataFolderLocation(carbonTable, taskNo, segmentId,
             isCompactionFlow, false);
     String[] sortTempDirs = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath,
         File.separator, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
@@ -532,17 +545,16 @@ public class SortParameters implements Serializable {
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT)));
 
     DataType[] type = CarbonDataProcessorUtil
-        .getMeasureDataType(parameters.getMeasureColCount(), parameters.getDatabaseName(),
-            parameters.getTableName());
+        .getMeasureDataType(parameters.getMeasureColCount(), parameters.getCarbonTable());
     parameters.setMeasureDataType(type);
     parameters.setNoDictDataType(CarbonDataProcessorUtil
-        .getNoDictDataTypes(parameters.getDatabaseName(), parameters.getTableName()));
+        .getNoDictDataTypes(carbonTable));
     Map<String, DataType[]> noDictSortAndNoSortDataTypes = CarbonDataProcessorUtil
-        .getNoDictSortAndNoSortDataTypes(parameters.getDatabaseName(), parameters.getTableName());
+        .getNoDictSortAndNoSortDataTypes(parameters.getCarbonTable());
     parameters.setNoDictSortDataType(noDictSortAndNoSortDataTypes.get("noDictSortDataTypes"));
     parameters.setNoDictNoSortDataType(noDictSortAndNoSortDataTypes.get("noDictNoSortDataTypes"));
     parameters.setNoDictionarySortColumn(CarbonDataProcessorUtil
-        .getNoDictSortColMapping(parameters.getDatabaseName(), parameters.getTableName()));
+        .getNoDictSortColMapping(parameters.getCarbonTable()));
     return parameters;
   }
 
