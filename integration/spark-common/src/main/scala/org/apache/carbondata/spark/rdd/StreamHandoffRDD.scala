@@ -117,7 +117,6 @@ class StreamHandoffRDD[K, V](
     carbonLoadModel.setTaskNo("" + split.index)
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     DataTypeUtil.setDataTypeConverter(new SparkDataTypeConverterImpl)
-    CarbonMetadata.getInstance().addCarbonTable(carbonTable)
     // the input iterator is using raw row
     val iteratorList = prepareInputIterator(split, carbonTable)
 

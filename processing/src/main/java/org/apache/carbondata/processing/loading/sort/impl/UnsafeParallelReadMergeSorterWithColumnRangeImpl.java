@@ -143,9 +143,9 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
 
   private UnsafeSingleThreadFinalSortFilesMerger getFinalMerger(SortParameters sortParameters) {
     String[] storeLocation = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(sortParameters.getDatabaseName(), sortParameters.getTableName(),
-            String.valueOf(sortParameters.getTaskNo()),
-            sortParameters.getSegmentId() + "", false, false);
+        .getLocalDataFolderLocation(sortParameters.getCarbonTable(),
+            String.valueOf(sortParameters.getTaskNo()), sortParameters.getSegmentId() + "", false,
+            false);
     // Set the data file location
     String[] dataFolderLocation = CarbonDataProcessorUtil.arrayAppend(storeLocation,
         File.separator, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
@@ -182,9 +182,8 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
 
   private void setTempLocation(SortParameters parameters) {
     String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(parameters.getDatabaseName(), parameters.getTableName(),
-            parameters.getTaskNo(), parameters.getSegmentId(),
-            false, false);
+        .getLocalDataFolderLocation(parameters.getCarbonTable(), parameters.getTaskNo(),
+            parameters.getSegmentId(), false, false);
     String[] tmpLoc = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath, File.separator,
         CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     LOGGER.warn("set temp location: " + StringUtils.join(tmpLoc, ", "));

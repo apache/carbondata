@@ -491,7 +491,6 @@ class CarbonFileMetastore extends CarbonMetaStore {
       // in the other beeline need to update.
       checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
 
-      removeTableFromMetadata(dbName, tableName)
       CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
       updateSchemasUpdatedTime(touchSchemaFileSystemTime())
       // discard cached table info in cachedDataSourceTables
@@ -499,6 +498,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
       sparkSession.sessionState.catalog.refreshTable(tableIdentifier)
       DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier)
       SegmentPropertiesAndSchemaHolder.getInstance().invalidate(absoluteTableIdentifier)
+      removeTableFromMetadata(dbName, tableName)
     } else {
       if (!isTransactionalCarbonTable(absoluteTableIdentifier)) {
         removeTableFromMetadata(dbName, tableName)
@@ -508,6 +508,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
         sparkSession.sessionState.catalog.refreshTable(tableIdentifier)
         DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier)
         SegmentPropertiesAndSchemaHolder.getInstance().invalidate(absoluteTableIdentifier)
+        removeTableFromMetadata(dbName, tableName)
       }
     }
   }

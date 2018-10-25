@@ -62,13 +62,11 @@ class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
       val partitionId: Int = partitionInfo.getPartitionId(split.index)
       carbonLoadModel.setTaskNo(String.valueOf(partitionId))
       carbonLoadModel.setSegmentId(segmentId)
-      CarbonMetadata.getInstance().addCarbonTable(
-        carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable)
 
       CommonUtil.setTempStoreLocation(split.index, carbonLoadModel,
         isCompactionFlow = false, isAltPartitionFlow = true)
       val tempStoreLoc: Array[String] = CarbonDataProcessorUtil.getLocalDataFolderLocation(
-        databaseName, factTableName, carbonLoadModel.getTaskNo, segmentId, false, true)
+        carbonTable, carbonLoadModel.getTaskNo, segmentId, false, true)
 
       val loadStatus: Boolean = if (rows.isEmpty) {
         LOGGER.info("After repartition this split, NO target rows to write back.")

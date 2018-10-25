@@ -89,19 +89,16 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     this.carbonFactHandlers = new CopyOnWriteArrayList<>();
   }
 
-  private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier) {
+  private String[] getStoreLocation() {
     String[] storeLocation = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
-            tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()),
-            configuration.getSegmentId(), false, false);
+        .getLocalDataFolderLocation(configuration.getTableSpec().getCarbonTable(),
+            String.valueOf(configuration.getTaskNo()), configuration.getSegmentId(), false, false);
     CarbonDataProcessorUtil.createLocations(storeLocation);
     return storeLocation;
   }
 
   public CarbonFactDataHandlerModel getDataHandlerModel() {
-    CarbonTableIdentifier tableIdentifier =
-        configuration.getTableIdentifier().getCarbonTableIdentifier();
-    String[] storeLocation = getStoreLocation(tableIdentifier);
+    String[] storeLocation = getStoreLocation();
     listener = getDataMapWriterListener(0);
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
         .createCarbonFactDataHandlerModel(configuration, storeLocation, 0, 0, listener);
@@ -170,14 +167,13 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     @Override public Void call() throws Exception {
       LOGGER.info("Process writer forward for table " + tableIdentifier.getTableName()
           + ", range: " + rangeId);
-      processRange(insideRangeIterator, tableIdentifier, rangeId);
+      processRange(insideRangeIterator, rangeId);
       return null;
     }
   }
 
-  private void processRange(Iterator<CarbonRowBatch> insideRangeIterator,
-      CarbonTableIdentifier tableIdentifier, int rangeId) {
-    String[] storeLocation = getStoreLocation(tableIdentifier);
+  private void processRange(Iterator<CarbonRowBatch> insideRangeIterator, int rangeId) {
+    String[] storeLocation = getStoreLocation();
 
     listener = getDataMapWriterListener(rangeId);
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
