@@ -63,8 +63,8 @@ case class RefreshCarbonTableCommand(
     // then do the below steps
     // 2.2.1 validate that all the aggregate tables are copied at the store location.
     // 2.2.2 Register the aggregate tables
-    val tablePath = CarbonEnv.getTablePath(databaseNameOp, tableName)(sparkSession)
-    val identifier = AbsoluteTableIdentifier.from(tablePath, databaseName, tableName)
+    val tablePath = CarbonEnv.getTablePath(databaseNameOp, tableName.toLowerCase)(sparkSession)
+    val identifier = AbsoluteTableIdentifier.from(tablePath, databaseName, tableName.toLowerCase)
     // 2.1 check if the table already register with hive then ignore and continue with the next
     // schema
     if (!sparkSession.sessionState.catalog.listTables(databaseName)
