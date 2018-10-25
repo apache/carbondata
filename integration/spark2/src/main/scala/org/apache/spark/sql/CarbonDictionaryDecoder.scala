@@ -279,11 +279,6 @@ case class CarbonDictionaryDecoder(
               if (null != carbonDimension.getColumnSchema.getParentColumnTableRelations &&
                   !carbonDimension
                     .getColumnSchema.getParentColumnTableRelations.isEmpty) {
-                val parentRelationIdentifier = carbonDimension.getColumnSchema
-                  .getParentColumnTableRelations.get(0).getRelationIdentifier
-                val parentTablePath = CarbonMetadata.getInstance()
-                  .getCarbonTable(parentRelationIdentifier.getDatabaseName,
-                    parentRelationIdentifier.getTableName).getTablePath
                 (QueryUtil
                   .getTableIdentifierForColumn(carbonDimension),
                   new ColumnIdentifier(carbonDimension.getColumnSchema

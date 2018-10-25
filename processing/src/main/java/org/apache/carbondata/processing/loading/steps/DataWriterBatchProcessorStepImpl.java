@@ -67,11 +67,10 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
     child.initialize();
   }
 
-  private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier) {
-    return CarbonDataProcessorUtil.getLocalDataFolderLocation(
-        tableIdentifier.getDatabaseName(), tableIdentifier.getTableName(),
-        String.valueOf(configuration.getTaskNo()),
-        configuration.getSegmentId(), false, false);
+  private String[] getStoreLocation() {
+    return CarbonDataProcessorUtil
+        .getLocalDataFolderLocation(configuration.getTableSpec().getCarbonTable(),
+            String.valueOf(configuration.getTaskNo()), configuration.getSegmentId(), false, false);
   }
 
   @Override public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
@@ -84,7 +83,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
           .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PATITION_ID,
               System.currentTimeMillis());
       int i = 0;
-      String[] storeLocation = getStoreLocation(tableIdentifier);
+      String[] storeLocation = getStoreLocation();
       CarbonDataProcessorUtil.createLocations(storeLocation);
       for (Iterator<CarbonRowBatch> iterator : iterators) {
         int k = 0;

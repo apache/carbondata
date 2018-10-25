@@ -463,7 +463,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private void initializeFinalThreadMergerForMergeSort() {
     boolean[] noDictionarySortColumnMapping = CarbonDataProcessorUtil
-        .getNoDictSortColMapping(carbonTable.getDatabaseName(), carbonTable.getTableName());
+        .getNoDictSortColMapping(carbonTable);
     sortParameters.setNoDictionarySortColumn(noDictionarySortColumnMapping);
     String[] sortTempFileLocation = CarbonDataProcessorUtil.arrayAppend(tempStoreLocation,
         CarbonCommonConstants.FILE_SEPARATOR, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
@@ -482,7 +482,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
               + carbonLoadModel.getFactTimeStamp() + ".tmp";
     } else {
       carbonStoreLocation = CarbonDataProcessorUtil
-          .createCarbonStoreLocation(carbonLoadModel.getDatabaseName(), tableName,
+          .createCarbonStoreLocation(carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable(),
               carbonLoadModel.getSegmentId());
     }
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel

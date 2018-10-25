@@ -69,9 +69,8 @@ public final class CarbonMetadata {
 
   /**
    * Below method will be used to set the carbon table
-   * This method will be used in executor side as driver will always have
-   * updated table so from driver during query execution and data loading
-   * we just need to add the table
+   * Note: Use this method only in driver as clean up in Executor is not handled
+   *       if this table is added to executor
    *
    * @param carbonTable
    */

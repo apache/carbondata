@@ -148,7 +148,7 @@ public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSor
 
   private SingleThreadFinalSortFilesMerger getFinalMerger(SortParameters sortParameters) {
     String[] storeLocation = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(sortParameters.getDatabaseName(), sortParameters.getTableName(),
+        .getLocalDataFolderLocation(sortParameters.getCarbonTable(),
             String.valueOf(sortParameters.getTaskNo()),
             sortParameters.getSegmentId() + "", false, false);
     // Set the data file location
@@ -188,9 +188,9 @@ public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSor
 
   private void setTempLocation(SortParameters parameters) {
     String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(parameters.getDatabaseName(),
-            parameters.getTableName(), parameters.getTaskNo(),
-            parameters.getSegmentId(), false, false);
+        .getLocalDataFolderLocation(parameters.getCarbonTable(), parameters.getTaskNo(),
+            parameters.getSegmentId(),
+            false, false);
     String[] tmpLocs = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath, File.separator,
         CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     parameters.setTempFileLocation(tmpLocs);

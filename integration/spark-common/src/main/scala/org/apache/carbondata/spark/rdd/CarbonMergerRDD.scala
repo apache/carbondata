@@ -86,7 +86,6 @@ class CarbonMergerRDD[K, V](
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-      CarbonMetadata.getInstance().addCarbonTable(carbonTable)
       val carbonSparkPartition = theSplit.asInstanceOf[CarbonSparkPartition]
       if (carbonTable.isPartitionTable) {
         carbonLoadModel.setTaskNo(String.valueOf(carbonSparkPartition.partitionId))
@@ -198,7 +197,7 @@ class CarbonMergerRDD[K, V](
         }
 
         val tempStoreLoc = CarbonDataProcessorUtil.getLocalDataFolderLocation(
-          databaseName, factTableName, carbonLoadModel.getTaskNo, mergeNumber, true, false)
+          carbonTable, carbonLoadModel.getTaskNo, mergeNumber, true, false)
 
         if (restructuredBlockExists) {
           LOGGER.info("CompactionResultSortProcessor flow is selected")

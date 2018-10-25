@@ -66,22 +66,19 @@ public final class DeleteLoadFolders {
     return CarbonTablePath.getSegmentPath(identifier.getTablePath(), segmentId);
   }
 
-  public static void physicalFactAndMeasureMetadataDeletion(
-      AbsoluteTableIdentifier absoluteTableIdentifier,
-      String metadataPath,
+  public static void physicalFactAndMeasureMetadataDeletion(CarbonTable carbonTable,
       LoadMetadataDetails[] newAddedLoadHistoryList,
       boolean isForceDelete,
       List<PartitionSpec> specs) {
-    LoadMetadataDetails[] currentDetails = SegmentStatusManager.readLoadMetadata(metadataPath);
-    physicalFactAndMeasureMetadataDeletion(
-        absoluteTableIdentifier,
+    LoadMetadataDetails[] currentDetails =
+        SegmentStatusManager.readLoadMetadata(carbonTable.getMetadataPath());
+    physicalFactAndMeasureMetadataDeletion(carbonTable,
         currentDetails,
         isForceDelete,
         specs,
         currentDetails);
     if (newAddedLoadHistoryList != null && newAddedLoadHistoryList.length > 0) {
-      physicalFactAndMeasureMetadataDeletion(
-          absoluteTableIdentifier,
+      physicalFactAndMeasureMetadataDeletion(carbonTable,
           newAddedLoadHistoryList,
           isForceDelete,
           specs,
@@ -91,17 +88,15 @@ public final class DeleteLoadFolders {
 
   /**
    * Delete the invalid data physically from table.
-   * @param absoluteTableIdentifier table identifier
+   * @param carbonTable table
    * @param loadDetails Load details which need clean up
    * @param isForceDelete is Force delete requested by user
    * @param specs Partition specs
    * @param currLoadDetails Current table status load details which are required for update manager.
    */
-  private static void physicalFactAndMeasureMetadataDeletion(
-      AbsoluteTableIdentifier absoluteTableIdentifier, LoadMetadataDetails[] loadDetails,
-      boolean isForceDelete, List<PartitionSpec> specs, LoadMetadataDetails[] currLoadDetails) {
-    CarbonTable carbonTable = DataMapStoreManager.getInstance().getCarbonTable(
-        absoluteTableIdentifier);
+  private static void physicalFactAndMeasureMetadataDeletion(CarbonTable carbonTable,
+      LoadMetadataDetails[] loadDetails, boolean isForceDelete, List<PartitionSpec> specs,
+      LoadMetadataDetails[] currLoadDetails) {
     List<TableDataMap> indexDataMaps = new ArrayList<>();
     try {
       for (TableDataMap dataMap : DataMapStoreManager.getInstance().getAllDataMap(carbonTable)) {
@@ -112,7 +107,8 @@ public final class DeleteLoadFolders {
     } catch (IOException e) {
       LOGGER.warn(String.format(
           "Failed to get datamaps for %s.%s, therefore the datamap files could not be cleaned.",
-          absoluteTableIdentifier.getDatabaseName(), absoluteTableIdentifier.getTableName()));
+          carbonTable.getAbsoluteTableIdentifier().getDatabaseName(),
+          carbonTable.getAbsoluteTableIdentifier().getTableName()));
     }
     SegmentUpdateStatusManager updateStatusManager =
         new SegmentUpdateStatusManager(carbonTable, currLoadDetails);
@@ -120,12 +116,11 @@ public final class DeleteLoadFolders {
       if (checkIfLoadCanBeDeletedPhysically(oneLoad, isForceDelete)) {
         try {
           if (oneLoad.getSegmentFile() != null) {
-            SegmentFileStore.deleteSegment(
-                absoluteTableIdentifier.getTablePath(),
+            SegmentFileStore.deleteSegment(carbonTable.getAbsoluteTableIdentifier().getTablePath(),
                 new Segment(oneLoad.getLoadName(), oneLoad.getSegmentFile()),
                 specs, updateStatusManager);
           } else {
-            String path = getSegmentPath(absoluteTableIdentifier, oneLoad);
+            String path = getSegmentPath(carbonTable.getAbsoluteTableIdentifier(), oneLoad);
             boolean status = false;
             if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
               CarbonFile file = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
