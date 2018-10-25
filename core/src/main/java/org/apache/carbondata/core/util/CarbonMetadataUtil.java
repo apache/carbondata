@@ -314,14 +314,14 @@ public class CarbonMetadataUtil {
    * after 1.5.0, we use string 'compressor_name' instead
    */
   public static ChunkCompressionMeta getChunkCompressorMeta(
-      ColumnPage inputPage, byte[] encodedBytes) throws IOException {
+      ColumnPage inputPage, long encodedDataLength) throws IOException {
     ChunkCompressionMeta chunkCompressionMeta = new ChunkCompressionMeta();
     // we will not use this field any longer and will use compressor_name instead,
     // but in thrift definition, this field is required so we cannot set it to null, otherwise
     // it will cause deserialization error in runtime (required field cannot be null).
     chunkCompressionMeta.setCompression_codec(CompressionCodec.DEPRECATED);
     chunkCompressionMeta.setCompressor_name(inputPage.getColumnCompressorName());
-    chunkCompressionMeta.setTotal_compressed_size(encodedBytes.length);
+    chunkCompressionMeta.setTotal_compressed_size(encodedDataLength);
     chunkCompressionMeta.setTotal_uncompressed_size(inputPage.getPageLengthInBytes());
     return chunkCompressionMeta;
   }

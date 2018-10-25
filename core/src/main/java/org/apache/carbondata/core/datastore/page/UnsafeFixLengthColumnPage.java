@@ -536,6 +536,8 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public long getPageLengthInBytes() {
+    // For unsafe column page, we are always tracking the total length
+    // so return it directly instead of calculate it again (super class implementation)
     return totalLength;
   }
 

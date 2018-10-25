@@ -100,7 +100,7 @@ public abstract class ColumnPageEncoder {
       throws IOException {
     DataChunk2 dataChunk = new DataChunk2();
     dataChunk.setData_page_length(encodedBytes.length);
-    fillBasicFields(inputPage, dataChunk, encodedBytes);
+    fillBasicFields(inputPage, dataChunk);
     fillNullBitSet(inputPage, dataChunk);
     fillEncoding(inputPage, dataChunk);
     fillMinMaxIndex(inputPage, dataChunk);
@@ -108,9 +108,10 @@ public abstract class ColumnPageEncoder {
     return dataChunk;
   }
 
-  private void fillBasicFields(ColumnPage inputPage, DataChunk2 dataChunk, byte[] encodedBytes)
+  private void fillBasicFields(ColumnPage inputPage, DataChunk2 dataChunk)
       throws IOException {
-    dataChunk.setChunk_meta(CarbonMetadataUtil.getChunkCompressorMeta(inputPage, encodedBytes));
+    dataChunk.setChunk_meta(CarbonMetadataUtil.getChunkCompressorMeta(inputPage,
+        dataChunk.getData_page_length()));
     dataChunk.setNumberOfRowsInpage(inputPage.getPageSize());
     dataChunk.setRowMajor(false);
   }
