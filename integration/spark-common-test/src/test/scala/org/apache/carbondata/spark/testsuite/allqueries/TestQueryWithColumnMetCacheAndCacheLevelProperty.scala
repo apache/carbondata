@@ -27,6 +27,7 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.dev.DataMap
 import org.apache.carbondata.core.datamap.{DataMapChooser, DataMapStoreManager, Segment, TableDataMap}
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
@@ -41,6 +42,7 @@ import org.apache.carbondata.core.scan.expression.conditional.NotEqualsExpressio
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.core.scan.expression.{ColumnExpression, LiteralExpression}
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * test class for validating COLUMN_META_CACHE and CACHE_LEVEL
@@ -52,6 +54,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
   }
 
   override def afterAll(): Unit = {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT,CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT)
     dropSchema
   }
 
@@ -315,5 +318,53 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
       assert(blocklet.getDetailInfo.isUseMinMaxForPruning)
     }
   }
+
+  test("Test For Cache set but Min/Max exceeds") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT, "30")
+    sql("DROP TABLE IF EXISTS carbonCache")
+    sql(
+      s"""
+         | CREATE TABLE carbonCache (
+         | name STRING,
+         | age STRING,
+         | desc STRING
+         | )
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('COLUMN_META_CACHE'='name,desc')
+       """.stripMargin)
+    sql(
+      "INSERT INTO carbonCache values('Manish Nalla','24'," +
+      "'gvsahgvsahjvcsahjgvavacavkjvaskjvsahgsvagkjvkjgvsackjg')")
+    checkAnswer(sql(
+      "SELECT count(*) FROM carbonCache where " +
+      "desc='gvsahgvsahjvcsahjgvavacavkjvaskjvsahgsvagkjvkjgvsackjg'"),
+      Row(1))
+    sql("DROP table IF EXISTS carbonCahe")
+  }
+  test("Test For Cache set but Min/Max exceeds with Cache Level as Blocklet") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT, "30")
+    sql("DROP TABLE IF EXISTS carbonCache")
+    sql(
+      s"""
+         | CREATE TABLE carbonCache (
+         | name STRING,
+         | age STRING,
+         | desc STRING
+         | )
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('COLUMN_META_CACHE'='name,desc','CACHE_LEVEL'='BLOCKLET')
+       """.stripMargin)
+    sql(
+      "INSERT INTO carbonCache values('Manish Nalla','24'," +
+      "'gvsahgvsahjvcsahjgvavacavkjvaskjvsahgsvagkjvkjgvsackjg')")
+    checkAnswer(sql(
+      "SELECT count(*) FROM carbonCache where " +
+      "desc='gvsahgvsahjvcsahjgvavacavkjvaskjvsahgsvagkjvkjgvsackjg'"),
+      Row(1))
+    sql("DROP table IF EXISTS carbonCahe")
+  }
+
 
 }

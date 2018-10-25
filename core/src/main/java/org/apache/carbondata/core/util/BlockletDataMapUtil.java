@@ -407,6 +407,29 @@ public class BlockletDataMapUtil {
   }
 
   /**
+   * Method to get the flag values for columns to be cached
+   *
+   * @param segmentProperties
+   * @param minMaxCacheColumns
+   * @param minMaxFlag
+   * @return
+   */
+  public static boolean[] getMinMaxFlagValuesForColumnsToBeCached(
+      SegmentProperties segmentProperties, List<CarbonColumn> minMaxCacheColumns,
+      boolean[] minMaxFlag) {
+    boolean[] minMaxFlagValuesForColumnsToBeCached = minMaxFlag;
+    if (null != minMaxCacheColumns) {
+      minMaxFlagValuesForColumnsToBeCached = new boolean[minMaxCacheColumns.size()];
+      int counter = 0;
+      for (CarbonColumn column : minMaxCacheColumns) {
+        minMaxFlagValuesForColumnsToBeCached[counter++] =
+            minMaxFlag[getColumnOrdinal(segmentProperties, column)];
+      }
+    }
+    return minMaxFlagValuesForColumnsToBeCached;
+  }
+
+  /**
    * compute the column ordinal as per data is stored
    *
    * @param segmentProperties
