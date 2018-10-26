@@ -24,6 +24,8 @@
 #include "../src/CarbonReader.h"
 #include "../src/CarbonRow.h"
 #include "../src/CarbonWriter.h"
+#include "../src/CarbonSchemaReader.h"
+#include "../src/Schema.h"
 
 using namespace std;
 
@@ -116,6 +118,65 @@ void printResult(JNIEnv *env, CarbonReader reader) {
         env->DeleteLocalRef(row);
     }
     reader.close();
+}
+
+/**
+ * test read Schema from Index File
+ *
+ * @param env jni env
+ * @return whether it is success
+ */
+bool readSchemaInIndexFile(JNIEnv *env, char *indexFilePath) {
+    printf("\nread Schema from Index File:\n");
+    CarbonSchemaReader carbonSchemaReader(env);
+    jobject schema;
+    try {
+        schema = carbonSchemaReader.readSchemaInIndexFile(indexFilePath);
+        Schema carbonSchema(env, schema);
+        int length = carbonSchema.getFieldsLength();
+        printf("schema length is:%d\n", length);
+        for (int i = 0; i < length; i++) {
+            printf("%d\t", i);
+            printf("%s\t", carbonSchema.getFieldName(i));
+            printf("%s\n", carbonSchema.getFieldDataTypeName(i));
+            if (strcmp(carbonSchema.getFieldDataTypeName(i), "ARRAY") == 0) {
+                printf("Array Element Type Name is:%s\n", carbonSchema.getArrayElementTypeName(i));
+            }
+        }
+
+    } catch (jthrowable e) {
+        env->ExceptionDescribe();
+    }
+    return true;
+}
+
+/**
+ * test read Schema from Data File
+ *
+ * @param env jni env
+ * @return whether it is success
+ */
+bool readSchemaInDataFile(JNIEnv *env, char *dataFilePath) {
+    printf("\nread Schema from Data File:\n");
+    CarbonSchemaReader carbonSchemaReader(env);
+    jobject schema;
+    try {
+        schema = carbonSchemaReader.readSchemaInDataFile(dataFilePath);
+    } catch (jthrowable e) {
+        env->ExceptionDescribe();
+    }
+    Schema carbonSchema(env, schema);
+    int length = carbonSchema.getFieldsLength();
+    printf("schema length is:%d\n", length);
+    for (int i = 0; i < length; i++) {
+        printf("%d\t", i);
+        printf("%s\t", carbonSchema.getFieldName(i));
+        printf("%s\n", carbonSchema.getFieldDataTypeName(i));
+        if (strcmp(carbonSchema.getFieldDataTypeName(i), "ARRAY") == 0) {
+            printf("Array Element Type Name is:%s\n", carbonSchema.getArrayElementTypeName(i));
+        }
+    }
+    return true;
 }
 
 /**
@@ -384,10 +445,15 @@ int main(int argc, char *argv[]) {
     char *S3ReadPath = "s3a://sdk/WriterOutput/carbondata";
 
     if (argc > 3) {
+        // TODO: need support read schema from S3 in the future
         testWriteData(env, S3WritePath, 4, argv);
         readFromS3(env, S3ReadPath, argv);
     } else {
         tryCatchException(env);
+        char *indexFilePath = argv[1];
+        char *dataFilePath = argv[2];
+        readSchemaInIndexFile(env, indexFilePath);
+        readSchemaInDataFile(env, dataFilePath);
         readFromLocalWithoutProjection(env);
         testWriteData(env, "./data", 1, argv);
         readFromLocal(env);
