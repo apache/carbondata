@@ -42,7 +42,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
 
     val descLoc = sql("describe formatted local1").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("false"))
+      case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
   }
@@ -1530,7 +1530,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     val descLoc = sql("describe formatted local1").collect
 
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("false"))
+      case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("SORT_SCOPE")) match {
@@ -1551,7 +1551,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     val descLoc = sql("describe formatted local1").collect
 
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("false"))
+      case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("SORT_SCOPE")) match {
@@ -1572,7 +1572,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     val descLoc = sql("describe formatted local1").collect
 
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("false"))
+      case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("SORT_SCOPE")) match {

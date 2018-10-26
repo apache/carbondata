@@ -38,7 +38,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
   var writerPath = new File(this.getClass.getResource("/").getPath
                             +
                             "../." +
-                            "./src/test/resources/SparkCarbonFileFormat/WriterOutput/")
+                            "./target/SparkCarbonFileFormat/WriterOutput/")
     .getCanonicalPath
   //getCanonicalPath gives path with \, but the code expects /.
   writerPath = writerPath.replace("\\", "/")
@@ -218,7 +218,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
     sql("describe formatted localComplex").show(30, false)
     val descLoc = sql("describe formatted localComplex").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("false"))
+      case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
 
