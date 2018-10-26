@@ -2407,7 +2407,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'$writerPath' """.stripMargin)
     val descLoc = sql("describe formatted sdkTable").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("false"))
+      case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
     FileUtils.deleteDirectory(new File(writerPath))
@@ -2432,7 +2432,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'$writerPath' """.stripMargin)
     val descLoc = sql("describe formatted sdkTable").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("false"))
+      case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
     FileUtils.deleteDirectory(new File(writerPath))
@@ -2453,7 +2453,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'$writerPath' """.stripMargin)
     val descLoc = sql("describe formatted sdkTable").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("false"))
+      case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
     FileUtils.deleteDirectory(new File(writerPath))
@@ -2475,10 +2475,10 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     FileUtils.deleteDirectory(new File(writerPath))
     sql("insert into sdkTable select 's1','s2',23 ")
     assert(FileFactory.getCarbonFile(writerPath).exists())
-    assert(!testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
+    assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
     val descLoc = sql("describe formatted sdkTable").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("false"))
+      case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
     checkAnswer(sql("select count(*) from sdkTable"), Seq(Row(1)))
