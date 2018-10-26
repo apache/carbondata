@@ -28,10 +28,13 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.model.ProjectionDimension;
+import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.util.CarbonSessionInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
+import org.apache.carbondata.hadoop.util.CarbonVectorizedRecordReader;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -51,6 +54,7 @@ public class CarbonReaderBuilder {
   private Expression filterExpression;
   private String tableName;
   private Configuration hadoopConf;
+  private boolean useVectorReader = true;
 
   /**
    * Construct a CarbonReaderBuilder with table path and table name
@@ -119,6 +123,15 @@ public class CarbonReaderBuilder {
   }
 
   /**
+   * Configure Row Record Reader for reading.
+   *
+   */
+  public CarbonReaderBuilder withRowRecordReader() {
+    this.useVectorReader = false;
+    return this;
+  }
+
+  /**
    * Build CarbonReader
    *
    * @param <T>
@@ -158,14 +171,31 @@ public class CarbonReaderBuilder {
     }
 
     try {
-      final List<InputSplit> splits =
-          format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
 
+      if (filterExpression == null) {
+        job.getConfiguration().set("filter_blocks", "false");
+      }
+      List<InputSplit> splits =
+          format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
       List<RecordReader<Void, T>> readers = new ArrayList<>(splits.size());
       for (InputSplit split : splits) {
         TaskAttemptContextImpl attempt =
             new TaskAttemptContextImpl(job.getConfiguration(), new TaskAttemptID());
-        RecordReader reader = format.createRecordReader(split, attempt);
+        RecordReader reader;
+        QueryModel queryModel = format.createQueryModel(split, attempt);
+        boolean hasComplex = false;
+        for (ProjectionDimension projectionDimension : queryModel.getProjectionDimensions()) {
+          if (projectionDimension.getDimension().isComplex()) {
+            hasComplex = true;
+            break;
+          }
+        }
+        if (useVectorReader && !hasComplex) {
+          queryModel.setDirectVectorFill(filterExpression == null);
+          reader = new CarbonVectorizedRecordReader(queryModel);
+        } else {
+          reader = format.createRecordReader(split, attempt);
+        }
         try {
           reader.initialize(split, attempt);
           readers.add(reader);

@@ -456,6 +456,14 @@ public CarbonWriterBuilder writtenBy(String appName) {
 public CarbonWriter build() throws IOException, InvalidLoadOptionException;
 ```
 
+```
+ /**
+   * Configure Row Record Reader for reading.
+   *
+   */
+  public CarbonReaderBuilder withRowRecordReader()
+```
+
 ### Class org.apache.carbondata.sdk.file.CarbonWriter
 ```
 /**
