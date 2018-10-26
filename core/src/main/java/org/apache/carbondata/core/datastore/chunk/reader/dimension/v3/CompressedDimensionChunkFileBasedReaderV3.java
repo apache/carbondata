@@ -252,7 +252,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     if (vectorInfo != null) {
       decoder
           .decodeAndFillVector(pageData.array(), offset, pageMetadata.data_page_length, vectorInfo,
-              nullBitSet, isLocalDictEncodedPage);
+              nullBitSet, isLocalDictEncodedPage, pageMetadata.numberOfRowsInpage);
       return null;
     } else {
       return decoder

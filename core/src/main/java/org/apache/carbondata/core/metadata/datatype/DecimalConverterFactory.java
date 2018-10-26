@@ -21,8 +21,10 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.BitSet;
 
+import org.apache.carbondata.core.datastore.page.ColumnPageByteUtil;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
@@ -75,7 +77,8 @@ public final class DecimalConverterFactory {
 
     BigDecimal getDecimal(Object valueToBeConverted);
 
-    void fillVector(Object valuesToBeConverted, int size, ColumnVectorInfo info, BitSet nullBitset);
+    void fillVector(Object valuesToBeConverted, int size, ColumnVectorInfo info, BitSet nullBitset,
+        DataType pageType);
 
     int getSize();
 
@@ -101,14 +104,18 @@ public final class DecimalConverterFactory {
     }
 
     @Override public void fillVector(Object valuesToBeConverted, int size, ColumnVectorInfo info,
-        BitSet nullBitset) {
+        BitSet nullBitset, DataType pageType) {
       // TODO we need to find way to directly set to vector with out conversion. This way is very
       // inefficient.
       CarbonColumnVector vector = info.vector;
       int precision = info.measure.getMeasure().getPrecision();
       int newMeasureScale = info.measure.getMeasure().getScale();
-      if (valuesToBeConverted instanceof byte[]) {
-        byte[] data = (byte[]) valuesToBeConverted;
+      if (!(valuesToBeConverted instanceof byte[])) {
+        throw new UnsupportedOperationException("This object type " + valuesToBeConverted.getClass()
+            + " is not supported in this method");
+      }
+      byte[] data = (byte[]) valuesToBeConverted;
+      if (pageType == DataTypes.BYTE) {
         for (int i = 0; i < size; i++) {
           if (nullBitset.get(i)) {
             vector.putNull(i);
@@ -120,39 +127,55 @@ public final class DecimalConverterFactory {
             vector.putDecimal(i, value, precision);
           }
         }
-      } else if (valuesToBeConverted instanceof short[]) {
-        short[] data = (short[]) valuesToBeConverted;
+      } else if (pageType == DataTypes.SHORT) {
         for (int i = 0; i < size; i++) {
           if (nullBitset.get(i)) {
             vector.putNull(i);
           } else {
-            BigDecimal value = BigDecimal.valueOf(data[i], scale);
+            BigDecimal value = BigDecimal
+                .valueOf(ColumnPageByteUtil.toShort(data, i * DataTypes.SHORT.getSizeInBytes()),
+                    scale);
             if (value.scale() < newMeasureScale) {
               value = value.setScale(newMeasureScale);
             }
             vector.putDecimal(i, value, precision);
           }
         }
-      } else if (valuesToBeConverted instanceof int[]) {
-        int[] data = (int[]) valuesToBeConverted;
+      } else if (pageType == DataTypes.SHORT_INT) {
         for (int i = 0; i < size; i++) {
           if (nullBitset.get(i)) {
             vector.putNull(i);
           } else {
-            BigDecimal value = BigDecimal.valueOf(data[i], scale);
+            BigDecimal value = BigDecimal
+                .valueOf(ByteUtil.valueOf3Bytes(data, i * DataTypes.SHORT_INT.getSizeInBytes()),
+                    scale);
             if (value.scale() < newMeasureScale) {
               value = value.setScale(newMeasureScale);
             }
             vector.putDecimal(i, value, precision);
           }
         }
-      } else if (valuesToBeConverted instanceof long[]) {
-        long[] data = (long[]) valuesToBeConverted;
+      } else if (pageType == DataTypes.INT) {
         for (int i = 0; i < size; i++) {
           if (nullBitset.get(i)) {
             vector.putNull(i);
           } else {
-            BigDecimal value = BigDecimal.valueOf(data[i], scale);
+            BigDecimal value = BigDecimal
+                .valueOf(ColumnPageByteUtil.toInt(data, i * DataTypes.INT.getSizeInBytes()), scale);
+            if (value.scale() < newMeasureScale) {
+              value = value.setScale(newMeasureScale);
+            }
+            vector.putDecimal(i, value, precision);
+          }
+        }
+      } else if (pageType == DataTypes.LONG) {
+        for (int i = 0; i < size; i++) {
+          if (nullBitset.get(i)) {
+            vector.putNull(i);
+          } else {
+            BigDecimal value = BigDecimal
+                .valueOf(ColumnPageByteUtil.toLong(data, i * DataTypes.LONG.getSizeInBytes()),
+                    scale);
             if (value.scale() < newMeasureScale) {
               value = value.setScale(newMeasureScale);
             }
@@ -239,7 +262,7 @@ public final class DecimalConverterFactory {
     }
 
     @Override public void fillVector(Object valuesToBeConverted, int size, ColumnVectorInfo info,
-        BitSet nullBitset) {
+        BitSet nullBitset, DataType pageType) {
       CarbonColumnVector vector = info.vector;
       int precision = info.measure.getMeasure().getPrecision();
       int newMeasureScale = info.measure.getMeasure().getScale();
@@ -285,7 +308,7 @@ public final class DecimalConverterFactory {
     }
 
     @Override public void fillVector(Object valuesToBeConverted, int size, ColumnVectorInfo info,
-        BitSet nullBitset) {
+        BitSet nullBitset, DataType pageType) {
       CarbonColumnVector vector = info.vector;
       int precision = info.measure.getMeasure().getPrecision();
       int newMeasureScale = info.measure.getMeasure().getScale();
