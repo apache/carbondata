@@ -121,10 +121,6 @@ with Serializable {
     model.setDictionaryServerPort(options.getOrElse("dictport", "-1").toInt)
     CarbonTableOutputFormat.setOverwrite(conf, options("overwrite").toBoolean)
     model.setLoadWithoutConverterStep(true)
-    carbonProperty
-      .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME,
-        sparkSession.sparkContext.getConf.get("spark.app.name"))
-
     val staticPartition = options.getOrElse("staticpartition", null)
     if (staticPartition != null) {
       conf.set("carbon.staticpartition", staticPartition)
@@ -159,6 +155,7 @@ with Serializable {
     if (updateTimeStamp.isDefined) {
       conf.set(CarbonTableOutputFormat.UPADTE_TIMESTAMP, updateTimeStamp.get)
     }
+    conf.set(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, sparkSession.sparkContext.appName)
     CarbonTableOutputFormat.setLoadModel(conf, model)
 
     new OutputWriterFactory {
@@ -175,6 +172,11 @@ with Serializable {
           dataSchema: StructType,
           context: TaskAttemptContext): OutputWriter = {
         val model = CarbonTableOutputFormat.getLoadModel(context.getConfiguration)
+        val appName = context.getConfiguration.get(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME)
+        if (null != appName) {
+          CarbonProperties.getInstance().addProperty(
+            CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, appName)
+        }
         val taskNumber = generateTaskNumber(path, context, model.getSegmentId)
         val storeLocation = CommonUtil.getTempStoreLocations(taskNumber)
         CarbonTableOutputFormat.setTempStoreLocations(context.getConfiguration, storeLocation)

@@ -68,7 +68,7 @@ object DataLoadProcessBuilderOnSpark {
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME,
-        sparkSession.sparkContext.getConf.get("spark.app.name"))
+        sparkSession.sparkContext.appName)
 
     val conf = SparkSQLUtil.broadCastHadoopConf(sc, hadoopConf)
     // 1. Input
