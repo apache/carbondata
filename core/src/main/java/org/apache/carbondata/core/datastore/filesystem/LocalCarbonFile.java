@@ -183,6 +183,25 @@ public class LocalCarbonFile implements CarbonFile {
     return carbonFiles;
   }
 
+  @Override public List<CarbonFile> listFiles(boolean recursive, CarbonFileFilter fileFilter)
+      throws IOException {
+    if (!file.isDirectory()) {
+      return new ArrayList<CarbonFile>();
+    }
+    Collection<File> fileCollection = FileUtils.listFiles(file, null, recursive);
+    if (fileCollection == null) {
+      return new ArrayList<CarbonFile>();
+    }
+    List<CarbonFile> carbonFiles = new ArrayList<CarbonFile>();
+    for (File file : fileCollection) {
+      CarbonFile carbonFile = new LocalCarbonFile(file);
+      if (fileFilter.accept(carbonFile)) {
+        carbonFiles.add(carbonFile);
+      }
+    }
+    return carbonFiles;
+  }
+
   @Override public boolean createNewFile() {
     try {
       return file.createNewFile();
@@ -478,5 +497,9 @@ public class LocalCarbonFile implements CarbonFile {
   @Override
   public short getDefaultReplication(String filePath) throws IOException {
     return 1;
+  }
+
+  @Override public long getLength() {
+    return file.length();
   }
 }

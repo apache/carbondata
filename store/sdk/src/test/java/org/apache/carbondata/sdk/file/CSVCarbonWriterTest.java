@@ -454,7 +454,8 @@ public class CSVCarbonWriterTest {
       writer.close();
       CarbonReader carbonReader =
           new CarbonReaderBuilder(path, "table1").build();
-      for (int i = 0; i < 15; i++) {
+      int i = 0;
+      while(carbonReader.hasNext()) {
         Object[] actualRow = (Object[]) carbonReader.readNextRow();
         String[] expectedRow = new String[] { "robot" + (i % 10), "" + i, i + "." + i };
         for (int j = 0; j < 3; j++) {
@@ -462,6 +463,7 @@ public class CSVCarbonWriterTest {
         }
         assert(actualRow[1] instanceof Byte);
         assert(actualRow[2] instanceof Float);
+        i++;
       }
       carbonReader.close();
     } catch (Exception e) {

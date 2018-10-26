@@ -329,9 +329,6 @@ public class DirectCompressCodec implements ColumnPageCodec {
       }  else if (pageDataType == DataTypes.LONG) {
         long[] longData = columnPage.getLongPage();
         if (vectorDataType == DataTypes.LONG) {
-          for (int i = 0; i < pageSize; i++) {
-            vector.putLong(i, longData[i]);
-          }
           vector.putLongs(0, pageSize, longData, 0);
         } else if (vectorDataType == DataTypes.TIMESTAMP) {
           for (int i = 0; i < pageSize; i++) {
@@ -347,9 +344,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
             columnPage.getNullBits());
       } else if (vectorDataType == DataTypes.FLOAT) {
         float[] floatPage = columnPage.getFloatPage();
-        for (int i = 0; i < pageSize; i++) {
-          vector.putFloats(0, pageSize, floatPage, 0);
-        }
+        vector.putFloats(0, pageSize, floatPage, 0);
       } else {
         double[] doubleData = columnPage.getDoublePage();
         vector.putDoubles(0, pageSize, doubleData, 0);
