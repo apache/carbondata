@@ -584,4 +584,9 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
     return fs.getDefaultReplication(path);
   }
+
+  @Override
+  public long getLength() {
+    return fileStatus.getLen();
+  }
 }

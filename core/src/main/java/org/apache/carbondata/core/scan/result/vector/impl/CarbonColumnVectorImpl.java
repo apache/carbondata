@@ -70,7 +70,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       byteArr = new byte[batchSize];
     } else if (dataType == DataTypes.SHORT) {
       shorts = new short[batchSize];
-    } else if (dataType == DataTypes.INT) {
+    } else if (dataType == DataTypes.INT || dataType == DataTypes.DATE) {
       ints = new int[batchSize];
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       longs = new long[batchSize];
@@ -207,7 +207,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       return  byteArr[rowId];
     } else if (dataType == DataTypes.SHORT) {
       return shorts[rowId];
-    } else if (dataType == DataTypes.INT) {
+    } else if (dataType == DataTypes.INT || dataType == DataTypes.DATE) {
       return ints[rowId];
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       return longs[rowId];
@@ -259,7 +259,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       Arrays.fill(byteArr, (byte) 0);
     } else if (dataType == DataTypes.SHORT) {
       Arrays.fill(shorts, (short) 0);
-    } else if (dataType == DataTypes.INT) {
+    } else if (dataType == DataTypes.INT || dataType == DataTypes.DATE) {
       Arrays.fill(ints, 0);
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       Arrays.fill(longs, 0);

@@ -18,6 +18,7 @@
 package org.apache.carbondata.sdk.file;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -25,14 +26,23 @@ import java.util.Objects;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
+import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.util.CarbonSessionInfo;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
+import org.apache.carbondata.hadoop.util.CarbonVectorizedRecordReader;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobID;
@@ -50,6 +60,7 @@ public class CarbonReaderBuilder {
   private Expression filterExpression;
   private String tableName;
   private Configuration hadoopConf;
+  private boolean useVectorReader;
 
   /**
    * Construct a CarbonReaderBuilder with table path and table name
@@ -118,6 +129,17 @@ public class CarbonReaderBuilder {
   }
 
   /**
+   * Configure Vector Reader for carbonReader.
+   *
+   * @param useVectorReader true will enable vector reader, false will enable record reader.
+   *
+   */
+  public CarbonReaderBuilder withVectorReader(boolean useVectorReader) {
+    this.useVectorReader = useVectorReader;
+    return this;
+  }
+
+  /**
    * Build CarbonReader
    *
    * @param <T>
@@ -156,15 +178,47 @@ public class CarbonReaderBuilder {
       format.setColumnProjection(job.getConfiguration(), projectionColumns);
     }
 
+    final List<InputSplit> splits = new ArrayList<>();
     try {
-      final List<InputSplit> splits =
-          format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
-
+      if (filterExpression == null) {
+        for (CarbonFile carbonFile : FileFactory.getCarbonFile(tablePath)
+            .listFiles(new CarbonFileFilter() {
+              @Override public boolean accept(CarbonFile file) {
+                return file.getName().contains(CarbonTablePath.CARBON_DATA_EXT);
+              }
+            })) {
+          CarbonInputSplit split = new CarbonInputSplit("null",
+              new Path(carbonFile.getAbsolutePath()),0, carbonFile.getLength(),
+              carbonFile.getLocations());
+          split.setVersion(ColumnarFormatVersion.V3);
+          BlockletDetailInfo info = new BlockletDetailInfo();
+          split.setDetailInfo(info);
+          info.setBlockSize(carbonFile.getLength());
+          // Read the footer offset and set.
+          FileReader reader = FileFactory
+              .getFileHolder(FileFactory.getFileType(carbonFile.getAbsolutePath()), hadoopConf);
+          ByteBuffer buffer = reader
+              .readByteBuffer(FileFactory.getUpdatedFilePath(carbonFile.getAbsolutePath()),
+                  carbonFile.getLength() - 8, 8);
+          info.setBlockFooterOffset(buffer.getLong());
+          info.setVersionNumber(split.getVersion().number());
+          info.setUseMinMaxForPruning(false);
+          splits.add(split);
+        }
+      } else {
+        splits.addAll(
+            format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID())));
+      }
       List<RecordReader<Void, T>> readers = new ArrayList<>(splits.size());
       for (InputSplit split : splits) {
         TaskAttemptContextImpl attempt =
             new TaskAttemptContextImpl(job.getConfiguration(), new TaskAttemptID());
-        RecordReader reader = format.createRecordReader(split, attempt);
+        RecordReader reader;
+        if (useVectorReader) {
+          reader = new CarbonVectorizedRecordReader(format.createQueryModel(split, attempt));
+        } else {
+          reader = format.createRecordReader(split, attempt);
+        }
         try {
           reader.initialize(split, attempt);
           readers.add(reader);
