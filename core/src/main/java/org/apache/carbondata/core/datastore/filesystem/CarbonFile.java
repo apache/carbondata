@@ -38,6 +38,8 @@ public interface CarbonFile {
 
   List<CarbonFile> listFiles(Boolean recurssive) throws IOException;
 
+  List<CarbonFile> listFiles(Boolean recursive, CarbonFileFilter fileFilter) throws IOException;
+
   /**
    * It returns list of files with location details.
    * @return
@@ -174,4 +176,10 @@ public interface CarbonFile {
    * @throws IOException if error occurs
    */
   short getDefaultReplication(String filePath) throws IOException;
+
+  /**
+   * Get the length of this file, in bytes.
+   * @return the length of this file, in bytes.
+   */
+  long getLength();
 }

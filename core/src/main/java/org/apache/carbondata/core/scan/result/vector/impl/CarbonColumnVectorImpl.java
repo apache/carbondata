@@ -70,7 +70,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       byteArr = new byte[batchSize];
     } else if (dataType == DataTypes.SHORT) {
       shorts = new short[batchSize];
-    } else if (dataType == DataTypes.INT) {
+    } else if (dataType == DataTypes.INT || dataType == DataTypes.DATE) {
       ints = new int[batchSize];
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       longs = new long[batchSize];
@@ -80,7 +80,8 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       doubles = new double[batchSize];
     } else if (dataType instanceof DecimalType) {
       decimals = new BigDecimal[batchSize];
-    } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
+    } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY
+        || dataType == DataTypes.VARCHAR) {
       dictionaryVector = new CarbonColumnVectorImpl(batchSize, DataTypes.INT);
       bytes = new byte[batchSize][];
     } else {
@@ -207,7 +208,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       return  byteArr[rowId];
     } else if (dataType == DataTypes.SHORT) {
       return shorts[rowId];
-    } else if (dataType == DataTypes.INT) {
+    } else if (dataType == DataTypes.INT || dataType == DataTypes.DATE) {
       return ints[rowId];
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       return longs[rowId];
@@ -217,7 +218,8 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       return doubles[rowId];
     } else if (dataType instanceof DecimalType) {
       return decimals[rowId];
-    } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
+    } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY
+        || dataType == DataTypes.VARCHAR) {
       if (null != carbonDictionary) {
         int dictKey = (Integer) dictionaryVector.getData(rowId);
         return carbonDictionary.getDictionaryValue(dictKey);
@@ -243,7 +245,8 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       return doubles;
     } else if (dataType instanceof DecimalType) {
       return decimals;
-    } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
+    } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY || dataType ==
+        DataTypes.VARCHAR) {
       if (null != carbonDictionary) {
         return ints;
       }
@@ -259,7 +262,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       Arrays.fill(byteArr, (byte) 0);
     } else if (dataType == DataTypes.SHORT) {
       Arrays.fill(shorts, (short) 0);
-    } else if (dataType == DataTypes.INT) {
+    } else if (dataType == DataTypes.INT || dataType == DataTypes.DATE) {
       Arrays.fill(ints, 0);
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       Arrays.fill(longs, 0);
@@ -269,7 +272,8 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       Arrays.fill(doubles, 0);
     } else if (dataType instanceof DecimalType) {
       Arrays.fill(decimals, null);
-    } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
+    } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY
+        || dataType == DataTypes.VARCHAR) {
       Arrays.fill(bytes, null);
       this.dictionaryVector.reset();
     } else {

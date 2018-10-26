@@ -901,7 +901,7 @@ public class CarbonReaderTest extends TestCase {
     Assert.assertTrue(dataFiles.length > 0);
 
     CarbonReader reader = CarbonReader.builder(path, "_temp")
-        
+
         .projection(new String[]{
             "stringField"
             , "shortField"
@@ -1700,6 +1700,7 @@ public class CarbonReaderTest extends TestCase {
       // Read data
       CarbonReader reader = CarbonReader
           .builder(path, "_temp")
+          .withVectorReader(true)
           .build();
 
       int i = 0;
@@ -1721,6 +1722,92 @@ public class CarbonReaderTest extends TestCase {
         assert (RowUtil.getBoolean(data, 9));
         assert (RowUtil.getDecimal(data, 10).equals("12.35"));
         assertEquals(RowUtil.getFloat(data, 11), (float) 1.23);
+        i++;
+      }
+      assert  (i == 10);
+      reader.close();
+    } catch (Throwable e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    } finally {
+      try {
+        FileUtils.deleteDirectory(new File(path));
+      } catch (IOException e) {
+        e.printStackTrace();
+        Assert.fail(e.getMessage());
+      }
+    }
+  }
+
+  @Test
+  public void testVectorReader() {
+    String path = "./testWriteFiles";
+    try {
+      FileUtils.deleteDirectory(new File(path));
+
+      Field[] fields = new Field[12];
+      fields[0] = new Field("stringField", DataTypes.STRING);
+      fields[1] = new Field("shortField", DataTypes.SHORT);
+      fields[2] = new Field("intField", DataTypes.INT);
+      fields[3] = new Field("longField", DataTypes.LONG);
+      fields[4] = new Field("doubleField", DataTypes.DOUBLE);
+      fields[5] = new Field("boolField", DataTypes.BOOLEAN);
+      fields[6] = new Field("dateField", DataTypes.DATE);
+      fields[7] = new Field("timeField", DataTypes.TIMESTAMP);
+      fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
+      fields[9] = new Field("varcharField", DataTypes.VARCHAR);
+      fields[10] = new Field("byteField", DataTypes.BYTE);
+      fields[11] = new Field("floatField", DataTypes.FLOAT);
+      Map<String, String> map = new HashMap<>();
+      map.put("complex_delimiter_level_1", "#");
+      CarbonWriter writer = CarbonWriter.builder()
+          .outputPath(path)
+          .withLoadOptions(map)
+          .withCsvInput(new Schema(fields))
+          .writtenBy("CarbonReaderTest")
+          .build();
+
+      for (int i = 0; i < 10; i++) {
+        String[] row2 = new String[]{
+            "robot" + (i % 10),
+            String.valueOf(i % 10000),
+            String.valueOf(i),
+            String.valueOf(Long.MAX_VALUE - i),
+            String.valueOf((double) i / 2),
+            String.valueOf(true),
+            "2019-03-02",
+            "2019-02-12 03:03:34",
+            "12.345",
+            "varchar",
+            String.valueOf(i),
+            "1.23"
+        };
+        writer.write(row2);
+      }
+      writer.close();
+
+      // Read data
+      CarbonReader reader = CarbonReader
+          .builder(path, "_temp")
+          .withVectorReader(true)
+          .build();
+
+      int i = 0;
+      while (reader.hasNext()) {
+        Object[] data = (Object[]) reader.readNextRow();
+
+        assert (RowUtil.getString(data, 0).equals("robot" + i));
+        assertEquals(RowUtil.getShort(data, 4), i);
+        assertEquals(RowUtil.getInt(data, 5), i);
+        assert (RowUtil.getLong(data, 6) == Long.MAX_VALUE - i);
+        assertEquals(RowUtil.getDouble(data, 7), ((double) i) / 2);
+        assert (RowUtil.getByte(data, 8).equals(new Byte("1")));
+        assertEquals(RowUtil.getInt(data, 1), 17957);
+        assertEquals(RowUtil.getLong(data, 2), 1549920814000000L);
+        assert (RowUtil.getDecimal(data, 9).equals("12.35"));
+        assert (RowUtil.getString(data, 3).equals("varchar"));
+        assertEquals(RowUtil.getByte(data, 10), new Byte(String.valueOf(i)));
+        assertEquals(RowUtil.getFloat(data, 11), new Float("1.23"));
         i++;
       }
       reader.close();

@@ -163,13 +163,14 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
     }
     DataType dt = vector.getType();
 
-    if ((!(dt == DataTypes.STRING) && length == 0) || ByteUtil.UnsafeComparer.INSTANCE
+    if (((!(dt == DataTypes.STRING) && !(dt == DataTypes.VARCHAR)) && length == 0)
+        || ByteUtil.UnsafeComparer.INSTANCE
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
             CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentDataOffset,
             length)) {
       vector.putNull(vectorRow);
     } else {
-      if (dt == DataTypes.STRING) {
+      if (dt == DataTypes.STRING || dt == DataTypes.VARCHAR) {
         vector.putByteArray(vectorRow, currentDataOffset, length, data);
       } else if (dt == DataTypes.BOOLEAN) {
         vector.putBoolean(vectorRow, ByteUtil.toBoolean(data[currentDataOffset]));

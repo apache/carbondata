@@ -524,6 +524,22 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     return getFiles(listStatus);
   }
 
+  @Override public List<CarbonFile> listFiles(Boolean recursive, CarbonFileFilter fileFilter)
+      throws IOException {
+    List<CarbonFile> carbonFiles = new ArrayList<>();
+    if (null != fileStatus && fileStatus.isDirectory()) {
+      RemoteIterator<LocatedFileStatus> listStatus = fs.listFiles(fileStatus.getPath(), recursive);
+      while (listStatus.hasNext()) {
+        LocatedFileStatus locatedFileStatus = listStatus.next();
+        CarbonFile carbonFile = FileFactory.getCarbonFile(locatedFileStatus.getPath().toString());
+        if (fileFilter.accept(carbonFile)) {
+          carbonFiles.add(carbonFile);
+        }
+      }
+    }
+    return carbonFiles;
+  }
+
   @Override
   public CarbonFile[] locationAwareListFiles(PathFilter pathFilter) throws IOException {
     if (null != fileStatus && fileStatus.isDirectory()) {
@@ -583,5 +599,10 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     Path path = new Path(filePath);
     FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
     return fs.getDefaultReplication(path);
+  }
+
+  @Override
+  public long getLength() {
+    return fileStatus.getLen();
   }
 }
