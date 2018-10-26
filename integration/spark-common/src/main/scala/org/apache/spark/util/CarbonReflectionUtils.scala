@@ -18,6 +18,7 @@
 package org.apache.spark.util
 
 import java.lang.reflect.Method
+import java.util.TimeZone
 
 import scala.reflect.runtime._
 import scala.reflect.runtime.universe._
@@ -37,6 +38,7 @@ import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.execution.datasources.{DataSource, LogicalRelation}
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types.StructField
+import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
@@ -330,5 +332,26 @@ object CarbonReflectionUtils {
     val ctor = clazz.getDeclaredConstructors.head
     ctor.setAccessible(true)
     (ctor.newInstance(conArgs: _*), clazz)
+  }
+
+  def getStaticMethod(className: String, methodName: String, args: Class[_]*): (Any, Method) = {
+    val clazz = Utils.classForName(className + "$")
+    val constructor = clazz.getDeclaredConstructors.head
+    constructor.setAccessible(true)
+    val obj = constructor.newInstance()
+    val method = clazz.getDeclaredMethod(methodName, args: _*)
+    (obj, method)
+  }
+
+  def stringToTimestampUsingReflection(s: UTF8String): Option[Long] = {
+    val className = "org.apache.spark.sql.catalyst.util.DateTimeUtils"
+    val methodName = "stringToTimestamp"
+    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
+      val tuple = getStaticMethod(className, methodName, classOf[UTF8String])
+      tuple._2.invoke(tuple._1, s).asInstanceOf[Option[Long]]
+    } else {
+      val tuple = getStaticMethod(className, methodName, classOf[UTF8String], classOf[TimeZone])
+      tuple._2.invoke(tuple._1, s, TimeZone.getTimeZone("GMT")).asInstanceOf[Option[Long]]
+    }
   }
 }
