@@ -37,6 +37,10 @@ abstract class CarbonRDD[T: ClassTag](
     @transient private val ss: SparkSession,
     @transient private var deps: Seq[Dependency[_]]) extends RDD[T](ss.sparkContext, deps) {
 
+  @transient val sparkAppName: String = ss.sparkContext.appName
+  CarbonProperties.getInstance()
+    .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, sparkAppName)
+
   val carbonSessionInfo: CarbonSessionInfo = {
     var info = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (info == null || info.getSessionParams == null) {
@@ -56,11 +60,6 @@ abstract class CarbonRDD[T: ClassTag](
     this (sparkSession, List(new OneToOneDependency(oneParent)))
 
   protected def internalGetPartitions: Array[Partition]
-
-
-  CarbonProperties.getInstance()
-    .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME,
-      ss.sparkContext.getConf.get("spark.app.name"))
 
   override def getPartitions: Array[Partition] = {
     ThreadLocalSessionInfo.setConfigurationToCurrentThread(hadoopConf)
