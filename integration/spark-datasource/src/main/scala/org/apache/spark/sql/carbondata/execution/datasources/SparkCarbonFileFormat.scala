@@ -117,9 +117,13 @@ class SparkCarbonFileFormat extends FileFormat
   /**
    * Add our own protocol to control the commit.
    */
-  SparkSession.getActiveSession.get.sessionState.conf.setConfString(
-    "spark.sql.sources.commitProtocolClass",
-    "org.apache.spark.sql.carbondata.execution.datasources.CarbonSQLHadoopMapReduceCommitProtocol")
+  SparkSession.getActiveSession match {
+    case Some(session) => session.sessionState.conf.setConfString(
+      "spark.sql.sources.commitProtocolClass",
+      "org.apache.spark.sql.carbondata.execution." +
+      "datasources.CarbonSQLHadoopMapReduceCommitProtocol")
+    case _ =>
+  }
 
   /**
    * Prepares a write job and returns an [[OutputWriterFactory]].  Client side job preparation is

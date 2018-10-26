@@ -51,7 +51,6 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
   public SafeVariableLengthDimensionDataChunkStore(boolean isInvertedIndex, int numberOfRows) {
     super(isInvertedIndex);
     this.numberOfRows = numberOfRows;
-    this.dataOffsets = new int[numberOfRows];
   }
 
   /**
@@ -66,6 +65,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
       byte[] data) {
     // first put the data, inverted index and reverse inverted index to memory
     super.putArray(invertedIndex, invertedIndexReverse, data);
+    this.dataOffsets = new int[numberOfRows];
     // As data is of variable length and data format is
     // <length in short><data><length in short><data>
     // we need to store offset of each data so data can be accessed directly

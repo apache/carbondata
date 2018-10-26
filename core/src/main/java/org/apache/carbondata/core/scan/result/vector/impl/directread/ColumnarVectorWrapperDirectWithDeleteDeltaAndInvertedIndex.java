@@ -30,7 +30,7 @@ import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl
  * Column vector for column pages which has delete delta and inverted index, so it uses delta biset
  * to filter out data and use inverted index before filling to actual vector
  */
-class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
+public class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
     extends ColumnarVectorWrapperDirectWithInvertedIndex {
 
   private BitSet deletedRows;
@@ -76,6 +76,10 @@ class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
     } else {
       nullBits.set(invertedIndex[rowId]);
     }
+  }
+
+  @Override public void putAllByteArray(byte[] data, int offset, int length) {
+    carbonColumnVector.putAllByteArray(data, offset, length);
   }
 
   @Override
@@ -163,13 +167,27 @@ class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
           }
         }
       } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
-        byte[][] dataArray = (byte[][]) localVector.getDataArray();
-        for (int i = 0; i < length; i++) {
-          if (!deletedRows.get(i)) {
-            if (nullBits.get(i)) {
-              carbonColumnVector.putNull(counter++);
-            } else {
-              carbonColumnVector.putByteArray(counter++, dataArray[i]);
+        int[] offsets = localVector.getOffsets();
+        int[] lengths = localVector.getLengths();
+        if (offsets != null && lengths != null) {
+          for (int i = 0; i < length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBits.get(i)) {
+                carbonColumnVector.putNull(counter++);
+              } else {
+                carbonColumnVector.putArray(counter++, offsets[i], lengths[i]);
+              }
+            }
+          }
+        } else {
+          byte[][] dataArray = (byte[][]) localVector.getDataArray();
+          for (int i = 0; i < length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBits.get(i)) {
+                carbonColumnVector.putNull(counter++);
+              } else {
+                carbonColumnVector.putByteArray(counter++, dataArray[i]);
+              }
             }
           }
         }

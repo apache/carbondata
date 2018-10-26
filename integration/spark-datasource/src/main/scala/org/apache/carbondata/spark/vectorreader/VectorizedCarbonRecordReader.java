@@ -36,6 +36,8 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.conditional.NotEqualsExpression;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
@@ -282,11 +284,13 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
         schema = schema.add(field);
       }
     }
+    boolean useLazyLoad = false;
     short batchSize = DEFAULT_BATCH_SIZE;
     if (queryModel.isDirectVectorFill()) {
       batchSize = CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+      useLazyLoad = isUseLazyLoad();
     }
-    vectorProxy = new CarbonVectorProxy(DEFAULT_MEMORY_MODE, schema, batchSize);
+    vectorProxy = new CarbonVectorProxy(DEFAULT_MEMORY_MODE, schema, batchSize, useLazyLoad);
 
     if (partitionColumns != null) {
       int partitionIdx = fields.length;
@@ -316,6 +320,31 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
       }
     }
     carbonColumnarBatch = new CarbonColumnarBatch(vectors, vectorProxy.numRows(), filteredRows);
+  }
+
+  /**
+   * Whether to use lazy load in vector or not.
+   * @return
+   */
+  private boolean isUseLazyLoad() {
+    boolean useLazyLoad = false;
+    if (queryModel.getFilterExpressionResolverTree() != null) {
+      Expression expression =
+          queryModel.getFilterExpressionResolverTree().getFilterExpression();
+      useLazyLoad = true;
+      // In case of join queries only not null filter would e pushed down so check and disable the
+      // lazy load in that case.
+      if (expression instanceof NotEqualsExpression) {
+        try {
+          if (((NotEqualsExpression) expression).getRight().evaluate(null).isNull()) {
+            useLazyLoad = false;
+          }
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+    return useLazyLoad;
   }
 
   private void initBatch() {

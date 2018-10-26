@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 import org.xerial.snappy.Snappy;
 import org.xerial.snappy.SnappyNative;
 
-public class SnappyCompressor implements Compressor {
+public class SnappyCompressor extends AbstractCompressor {
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(SnappyCompressor.class.getName());
@@ -90,7 +90,7 @@ public class SnappyCompressor implements Compressor {
     try {
       uncompressedLength = Snappy.uncompressedLength(compInput, offset, length);
       data = new byte[uncompressedLength];
-      Snappy.uncompress(compInput, offset, length, data, 0);
+      snappyNative.rawUncompress(compInput, offset, length, data, 0);
     } catch (IOException e) {
       LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);

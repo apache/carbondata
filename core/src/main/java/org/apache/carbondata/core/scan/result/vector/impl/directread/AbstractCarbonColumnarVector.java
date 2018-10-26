@@ -27,6 +27,12 @@ import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
 public abstract class AbstractCarbonColumnarVector
     implements CarbonColumnVector, ConvertableVector {
 
+  protected CarbonColumnVector columnVector;
+
+  public AbstractCarbonColumnarVector(CarbonColumnVector columnVector) {
+    this.columnVector = columnVector;
+  }
+
   @Override
   public void putShorts(int rowId, int count, short value) {
     throw new UnsupportedOperationException("Not allowed from here " + getClass().getName());
@@ -135,5 +141,9 @@ public abstract class AbstractCarbonColumnarVector
   @Override
   public void setLazyPage(LazyPageLoader lazyPage) {
     throw new UnsupportedOperationException("Not allowed from here " + getClass().getName());
+  }
+
+  @Override public void putAllByteArray(byte[] data, int offset, int length) {
+    columnVector.putAllByteArray(data, offset, length);
   }
 }

@@ -438,14 +438,15 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
         // if filter is null and output projection is empty, use the row number of blocklet header
         if (skipScanData) {
             int rowNums = header.getBlocklet_info().getNum_rows();
-            vectorProxy= new CarbonVectorProxy(MemoryMode.OFF_HEAP,outputSchema,rowNums);
+            vectorProxy = new CarbonVectorProxy(MemoryMode.OFF_HEAP, outputSchema, rowNums, false);
             vectorProxy.setNumRows(rowNums);
             input.skipBlockletData(true);
             return rowNums > 0;
         }
 
         input.readBlockletData(header);
-        vectorProxy= new CarbonVectorProxy(MemoryMode.OFF_HEAP,outputSchema,input.getRowNums());
+        vectorProxy =
+          new CarbonVectorProxy(MemoryMode.OFF_HEAP, outputSchema, input.getRowNums(), false);
         int rowNum = 0;
         if (null == filter) {
             while (input.hasNext()) {
