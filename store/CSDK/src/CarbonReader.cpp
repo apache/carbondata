@@ -86,9 +86,9 @@ void CarbonReader::projection(int argc, char *argv[]) {
     }
     checkBuilder();
     jclass carbonReaderBuilderClass = jniEnv->GetObjectClass(carbonReaderBuilderObject);
-    jmethodID buildID = jniEnv->GetMethodID(carbonReaderBuilderClass, "projection",
+    jmethodID methodID = jniEnv->GetMethodID(carbonReaderBuilderClass, "projection",
         "([Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/CarbonReaderBuilder;");
-    if (buildID == NULL) {
+    if (methodID == NULL) {
         throw std::runtime_error("Can't find the method in java: projection");
     }
     jclass objectArrayClass = jniEnv->FindClass("Ljava/lang/String;");
@@ -103,7 +103,7 @@ void CarbonReader::projection(int argc, char *argv[]) {
 
     jvalue args[1];
     args[0].l = array;
-    carbonReaderBuilderObject = jniEnv->CallObjectMethodA(carbonReaderBuilderObject, buildID, args);
+    carbonReaderBuilderObject = jniEnv->CallObjectMethodA(carbonReaderBuilderObject, methodID, args);
 }
 
 void CarbonReader::withHadoopConf(char *key, char *value) {
@@ -129,12 +129,12 @@ void CarbonReader::withHadoopConf(char *key, char *value) {
 jobject CarbonReader::build() {
     checkBuilder();
     jclass carbonReaderBuilderClass = jniEnv->GetObjectClass(carbonReaderBuilderObject);
-    jmethodID buildID = jniEnv->GetMethodID(carbonReaderBuilderClass, "build",
+    jmethodID methodID = jniEnv->GetMethodID(carbonReaderBuilderClass, "build",
         "()Lorg/apache/carbondata/sdk/file/CarbonReader;");
-    if (buildID == NULL) {
+    if (methodID == NULL) {
         throw std::runtime_error("Can't find the method in java: build");
     }
-    carbonReaderObject = jniEnv->CallObjectMethod(carbonReaderBuilderObject, buildID);
+    carbonReaderObject = jniEnv->CallObjectMethod(carbonReaderBuilderObject, methodID);
     if (jniEnv->ExceptionCheck()) {
         throw jniEnv->ExceptionOccurred();
     }

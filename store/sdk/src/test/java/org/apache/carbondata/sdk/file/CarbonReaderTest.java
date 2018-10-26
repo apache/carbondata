@@ -766,6 +766,7 @@ public class CarbonReaderTest extends TestCase {
 
     FileUtils.deleteDirectory(new File(path));
   }
+
   @Test
   public void testWriteAndReadFilesNonTransactional() throws IOException, InterruptedException {
     String path = "./testWriteFiles";
