@@ -26,18 +26,17 @@ import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
  * Column vector for column pages which has inverted index, so it uses inverted index
  * before filling to actual vector
  */
-class ColumnarVectorWrapperDirectWithInvertedIndex extends AbstractCarbonColumnarVector {
+public class ColumnarVectorWrapperDirectWithInvertedIndex extends AbstractCarbonColumnarVector {
 
   protected int[] invertedIndex;
 
-  protected CarbonColumnVector columnVector;
 
   protected boolean isnullBitsExists;
 
   public ColumnarVectorWrapperDirectWithInvertedIndex(CarbonColumnVector columnVector,
       int[] invertedIndex, boolean isnullBitsExists) {
+    super(columnVector);
     this.invertedIndex = invertedIndex;
-    this.columnVector = columnVector;
     this.isnullBitsExists = isnullBitsExists;
   }
 
@@ -146,5 +145,9 @@ class ColumnarVectorWrapperDirectWithInvertedIndex extends AbstractCarbonColumna
   @Override
   public DataType getBlockDataType() {
     return columnVector.getBlockDataType();
+  }
+
+  @Override public void putArray(int rowId, int offset, int length) {
+    columnVector.putArray(invertedIndex[rowId], offset, length);
   }
 }

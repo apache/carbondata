@@ -53,6 +53,12 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   private DataType blockDataType;
 
+  private int[] lengths;
+
+  private int[] offsets;
+
+  private int batchSize;
+
   /**
    * True if there is at least one NULL byte set. This is an optimization for the writer, to skip
    * having to clear NULL bits.
@@ -64,6 +70,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
   private CarbonColumnVector dictionaryVector;
 
   public CarbonColumnVectorImpl(int batchSize, DataType dataType) {
+    this.batchSize = batchSize;
     nullBytes = new BitSet(batchSize);
     this.dataType = dataType;
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
@@ -223,8 +230,13 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       if (null != carbonDictionary) {
         int dictKey = (Integer) dictionaryVector.getData(rowId);
         return carbonDictionary.getDictionaryValue(dictKey);
+      } else if (byteArr != null) {
+        byte[] bytes = new byte[lengths[rowId]];
+        System.arraycopy(byteArr, offsets[rowId], bytes, 0, bytes.length);
+        return bytes;
+      } else {
+        return bytes[rowId];
       }
-      return bytes[rowId];
     } else {
       return data[rowId];
     }
@@ -356,5 +368,26 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   @Override public void setLazyPage(LazyPageLoader lazyPage) {
     lazyPage.loadPage();
+  }
+
+  @Override public void putArray(int rowId, int offset, int length) {
+    if (offsets == null) {
+      offsets = new int[batchSize];
+      lengths = new int[batchSize];
+    }
+    offsets[rowId] = offset;
+    lengths[rowId] = length;
+  }
+
+  @Override public void putAllByteArray(byte[] data, int offset, int length) {
+    byteArr = data;
+  }
+
+  public int[] getLengths() {
+    return lengths;
+  }
+
+  public int[] getOffsets() {
+    return offsets;
   }
 }

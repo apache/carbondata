@@ -305,4 +305,13 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
     lazyPage.loadPage();
   }
 
+  @Override public void putArray(int rowId, int offset, int length) {
+    if (!filteredRows[rowId]) {
+      columnVector.putArray(counter++, offset, length);
+    }
+  }
+
+  @Override public void putAllByteArray(byte[] data, int offset, int length) {
+    columnVector.putAllByteArray(data, offset, length);
+  }
 }

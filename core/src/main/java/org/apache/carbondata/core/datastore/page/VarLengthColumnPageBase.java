@@ -124,7 +124,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   /**
    * Create a new column page for decimal page
    */
-  static ColumnPage newDecimalColumnPage(ColumnPageEncoderMeta meta,
+  public static ColumnPage newDecimalColumnPage(ColumnPageEncoderMeta meta,
       byte[] lvEncodedBytes) throws MemoryException {
     TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
     DecimalConverterFactory.DecimalConverter decimalConverter =

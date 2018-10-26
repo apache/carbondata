@@ -31,7 +31,6 @@ import org.apache.spark.sql.types.CalendarIntervalType;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.sql.types.DecimalType;
-import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.unsafe.types.CalendarInterval;
 import org.apache.spark.unsafe.types.UTF8String;
@@ -47,25 +46,6 @@ public class CarbonVectorProxy {
   private ColumnarBatch columnarBatch;
   private ColumnVectorProxy[] columnVectorProxies;
 
-  /**
-   * Adapter class which handles the columnar vector reading of the carbondata
-   * based on the spark ColumnVector and ColumnarBatch API. This proxy class
-   * handles the complexity of spark 2.3 version related api changes since
-   * spark ColumnVector and ColumnarBatch interfaces are still evolving.
-   *
-   * @param memMode       which represent the type onheap or offheap vector.
-   * @param rowNum        rows number for vector reading
-   * @param structFileds, metadata related to current schema of table.
-   */
-  public CarbonVectorProxy(MemoryMode memMode, int rowNum, StructField[] structFileds) {
-    columnarBatch = ColumnarBatch.allocate(new StructType(structFileds), memMode, rowNum);
-    columnVectorProxies = new ColumnVectorProxy[columnarBatch.numCols()];
-    for (int i = 0; i < columnVectorProxies.length; i++) {
-      columnVectorProxies[i] = new ColumnVectorProxy(columnarBatch.column(i), rowNum, memMode);
-    }
-    updateColumnVectors();
-
-  }
 
   private void updateColumnVectors() {
     try {
@@ -77,11 +57,28 @@ public class CarbonVectorProxy {
     }
   }
 
-  public CarbonVectorProxy(MemoryMode memMode, StructType outputSchema, int rowNum) {
+  /**
+   * Adapter class which handles the columnar vector reading of the carbondata
+   * based on the spark ColumnVector and ColumnarBatch API. This proxy class
+   * handles the complexity of spark 2.3 version related api changes since
+   * spark ColumnVector and ColumnarBatch interfaces are still evolving.
+   *
+   * @param memMode       which represent the type onheap or offheap vector.
+   * @param outputSchema, metadata related to current schema of table.
+   * @param rowNum        rows number for vector reading
+   * @param useLazyLoad   Whether to use lazy load while getting the data.
+   */
+  public CarbonVectorProxy(MemoryMode memMode, StructType outputSchema, int rowNum,
+      boolean useLazyLoad) {
     columnarBatch = ColumnarBatch.allocate(outputSchema, memMode, rowNum);
     columnVectorProxies = new ColumnVectorProxy[columnarBatch.numCols()];
     for (int i = 0; i < columnVectorProxies.length; i++) {
-      columnVectorProxies[i] = new ColumnVectorProxy(columnarBatch.column(i), rowNum, memMode);
+      if (useLazyLoad) {
+        columnVectorProxies[i] =
+            new ColumnVectorProxyWithLazyLoad(columnarBatch.column(i), rowNum, memMode);
+      } else {
+        columnVectorProxies[i] = new ColumnVectorProxy(columnarBatch.column(i), rowNum, memMode);
+      }
     }
     updateColumnVectors();
   }
@@ -158,10 +155,6 @@ public class CarbonVectorProxy {
 
     private ColumnVector vector;
 
-    private LazyPageLoader pageLoad;
-
-    private boolean isLoaded;
-
     public ColumnVectorProxy(ColumnVector columnVector, int capacity, MemoryMode mode) {
       super(capacity, columnVector.dataType(), mode);
       try {
@@ -170,16 +163,14 @@ public class CarbonVectorProxy {
         childColumns.setAccessible(true);
         Object o = childColumns.get(columnVector);
         childColumns.set(this, o);
-        Field childColumns1 =
+        Field resultArray =
             columnVector.getClass().getSuperclass().getDeclaredField("resultArray");
-        childColumns1.setAccessible(true);
-        Object o1 = childColumns1.get(columnVector);
-        childColumns1.set(this, o1);
-
+        resultArray.setAccessible(true);
+        Object o1 = resultArray.get(columnVector);
+        resultArray.set(this, o1);
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
-
       vector = columnVector;
     }
 
@@ -342,42 +333,34 @@ public class CarbonVectorProxy {
     }
 
     @Override public boolean isNullAt(int i) {
-      checkPageLoaded();
       return vector.isNullAt(i);
     }
 
     @Override public boolean getBoolean(int i) {
-      checkPageLoaded();
       return vector.getBoolean(i);
     }
 
     @Override public byte getByte(int i) {
-      checkPageLoaded();
       return vector.getByte(i);
     }
 
     @Override public short getShort(int i) {
-      checkPageLoaded();
       return vector.getShort(i);
     }
 
     @Override public int getInt(int i) {
-      checkPageLoaded();
       return vector.getInt(i);
     }
 
     @Override public long getLong(int i) {
-      checkPageLoaded();
       return vector.getLong(i);
     }
 
     @Override public float getFloat(int i) {
-      checkPageLoaded();
       return vector.getFloat(i);
     }
 
     @Override public double getDouble(int i) {
-      checkPageLoaded();
       return vector.getDouble(i);
     }
 
@@ -433,12 +416,10 @@ public class CarbonVectorProxy {
     }
 
     @Override public int getArrayLength(int rowId) {
-      checkPageLoaded();
       return vector.getArrayLength(rowId);
     }
 
     @Override public int getArrayOffset(int rowId) {
-      checkPageLoaded();
       return vector.getArrayOffset(rowId);
     }
 
@@ -450,8 +431,96 @@ public class CarbonVectorProxy {
       return vector.putByteArray(rowId, value, offset, count);
     }
 
+    /**
+     * It keeps all binary data of all rows to it.
+     * Should use along with @{putArray(int rowId, int offset, int length)} to keep lengths
+     * and offset.
+     */
+    public void putAllByteArray(byte[] data, int offset, int length) {
+      vector.arrayData().appendBytes(length, data, offset);
+    }
+
     @Override public void close() {
       vector.close();
+    }
+
+    public void reset() {
+      if (isConstant) {
+        return;
+      }
+      vector.reset();
+    }
+
+    public void setLazyPage(LazyPageLoader lazyPage) {
+      lazyPage.loadPage();
+    }
+
+    public ColumnVector getVector() {
+      return vector;
+    }
+  }
+
+  public static class ColumnVectorProxyWithLazyLoad extends ColumnVectorProxy {
+
+    private ColumnVector vector;
+
+    private LazyPageLoader pageLoad;
+
+    private boolean isLoaded;
+
+    public ColumnVectorProxyWithLazyLoad(ColumnVector columnVector, int capacity, MemoryMode mode) {
+      super(columnVector, capacity, mode);
+      vector = columnVector;
+    }
+
+    @Override public boolean isNullAt(int i) {
+      checkPageLoaded();
+      return vector.isNullAt(i);
+    }
+
+    @Override public boolean getBoolean(int i) {
+      checkPageLoaded();
+      return vector.getBoolean(i);
+    }
+
+    @Override public byte getByte(int i) {
+      checkPageLoaded();
+      return vector.getByte(i);
+    }
+
+    @Override public short getShort(int i) {
+      checkPageLoaded();
+      return vector.getShort(i);
+    }
+
+    @Override public int getInt(int i) {
+      checkPageLoaded();
+      return vector.getInt(i);
+    }
+
+    @Override public long getLong(int i) {
+      checkPageLoaded();
+      return vector.getLong(i);
+    }
+
+    @Override public float getFloat(int i) {
+      checkPageLoaded();
+      return vector.getFloat(i);
+    }
+
+    @Override public double getDouble(int i) {
+      checkPageLoaded();
+      return vector.getDouble(i);
+    }
+
+    @Override public int getArrayLength(int rowId) {
+      checkPageLoaded();
+      return vector.getArrayLength(rowId);
+    }
+
+    @Override public int getArrayOffset(int rowId) {
+      checkPageLoaded();
+      return vector.getArrayOffset(rowId);
     }
 
     private void checkPageLoaded() {
@@ -475,8 +544,5 @@ public class CarbonVectorProxy {
       this.pageLoad = lazyPage;
     }
 
-    public ColumnVector getVector() {
-      return vector;
-    }
   }
 }

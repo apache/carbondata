@@ -34,13 +34,11 @@ class ColumnarVectorWrapperDirectWithDeleteDelta extends AbstractCarbonColumnarV
 
   private int counter;
 
-  private CarbonColumnVector columnVector;
-
   public ColumnarVectorWrapperDirectWithDeleteDelta(CarbonColumnVector vectorWrapper,
       BitSet deletedRows, BitSet nullBits) {
+    super(vectorWrapper);
     this.deletedRows = deletedRows;
     this.nullBits = nullBits;
-    this.columnVector = vectorWrapper;
   }
 
   @Override
@@ -211,6 +209,12 @@ class ColumnarVectorWrapperDirectWithDeleteDelta extends AbstractCarbonColumnarV
       if (!deletedRows.get(rowId++)) {
         columnVector.putByte(counter++, src[i]);
       }
+    }
+  }
+
+  @Override public void putArray(int rowId, int offset, int length) {
+    if (!deletedRows.get(rowId)) {
+      columnVector.putArray(counter++, offset, length);
     }
   }
 }

@@ -242,7 +242,7 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     if (vectorInfo != null) {
       codec
           .decodeAndFillVector(pageData.array(), offset, pageMetadata.data_page_length, vectorInfo,
-              nullBitSet, false);
+              nullBitSet, false, pageMetadata.numberOfRowsInpage);
       return null;
     } else {
       return codec.decode(pageData.array(), offset, pageMetadata.data_page_length);
