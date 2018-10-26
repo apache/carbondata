@@ -39,6 +39,7 @@ and read data from S3 at main.cpp of CSDK module.  Finally, users need to
 release the memory and destroy JVM.
 
 ## API List
+### CarbonReader
 ```
     /**
      * create a CarbonReaderBuilder object for building carbonReader,
@@ -119,7 +120,7 @@ and write data to S3 at main.cpp of CSDK module.  Finally, users need to
 release the memory and destroy JVM.
 
 ## API List
-
+### CarbonWriter
 ```
     /**
      * create a CarbonWriterBuilder object for building carbonWriter,
@@ -187,4 +188,83 @@ release the memory and destroy JVM.
      * close the carbon Writer
      */
     void close();
+```
+
+### CarbonSchemaReader
+
+```
+    /**
+     * constructor with jni env
+     *
+     * @param env  jni env
+     */
+    CarbonSchemaReader(JNIEnv *env);
+```
+```
+    /**
+     * read Schema from Data File
+     *
+     * @param path Data File path
+     * @return carbon schema object
+     */
+    jobject readSchemaInDataFile(char *path);
+```
+```
+    /**
+     * read Schema from index File
+     *
+     * @param path index File path
+     * @return carbon schema object
+     */
+    jobject readSchemaInIndexFile(char *path);
+
+```
+###Schema
+``` 
+ /**
+     * constructor with jni env and carbon schema data
+     *
+     * @param env jni env
+     * @param schema  carbon schema data
+     */
+    Schema(JNIEnv *env, jobject schema);
+
+```
+```
+    /**
+     * get fields length of schema
+     *
+     * @return fields length
+     */
+    int getFieldsLength();
+
+```
+```
+    /**
+     * get field name by ordinal
+     *
+     * @param ordinal the data index of carbon schema
+     * @return ordinal field name
+     */
+    char *getFieldName(int ordinal);
+
+```
+```
+    /**
+     * get  field data type name by ordinal
+     *
+     * @param ordinal the data index of carbon schema
+     * @return ordinal field data type name
+     */
+    char *getFieldDataTypeName(int ordinal);
+
+```
+```
+    /**
+     * get  array child element data type name by ordinal
+     *
+     * @param ordinal the data index of carbon schema
+     * @return ordinal array child element data type name
+     */
+    char *getArrayElementTypeName(int ordinal);
 ```
