@@ -734,7 +734,7 @@ public final class ByteUtil {
     return Float.intBitsToFloat(toXorInt(value, offset, length));
   }
 
-  public static int[] toIntArray(byte[] data, int size) {
+  public static int[] toIntArrayFrom3Bytes(byte[] data, int size) {
     int[] ints = new int[size];
     for (int i = 0; i < ints.length; i++) {
       ints[i] = ByteUtil.valueOf3Bytes(data, i * 3);

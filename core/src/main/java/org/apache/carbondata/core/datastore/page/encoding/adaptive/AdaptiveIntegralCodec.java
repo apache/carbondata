@@ -369,7 +369,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           }
         } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
-          int[] shortIntData = ByteUtil.toIntArray(shortIntPage, pageSize);
+          int[] shortIntData = ByteUtil.toIntArrayFrom3Bytes(shortIntPage, pageSize);
           decimalConverter.fillVector(shortIntData, pageSize, vectorInfo, columnPage.getNullBits());
         } else {
           for (int i = 0; i < pageSize; i++) {
