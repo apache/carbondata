@@ -550,7 +550,7 @@ CarbonData DDL statements are documented here,which includes:
   ```
 
   Here writer path will have carbondata and index files.
-  This can be SDK output. Refer [SDK Guide](./sdk-guide.md). 
+  This can be SDK output or CSDK output. Refer [SDK Guide](./sdk-guide.md) and [CSDK Guide](./csdk-guide.md). 
 
   **Note:**
   1. Dropping of the external table should not delete the files present in the location.
