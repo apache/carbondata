@@ -41,7 +41,7 @@ public class UnsafeMemoryManager {
   private static boolean offHeap = Boolean.parseBoolean(CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
           CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT));
-  private static Map<String,Set<MemoryBlock>> taskIdToMemoryBlockMap;
+  private static Map<String,Set<MemoryBlock>> taskIdToOffheapMemoryBlockMap;
   static {
     long size = 0L;
     String configuredWorkingMemorySize = null;
@@ -83,10 +83,12 @@ public class UnsafeMemoryManager {
       }
       takenSize = takenSize * 1024 * 1024;
     } else {
+      // For ON-HEAP case not considering any size as it will based on max memory(Xmx) given to
+      // JVM and JVM will take care of freeing the memory
       memoryType = MemoryType.ONHEAP;
     }
     INSTANCE = new UnsafeMemoryManager(takenSize, memoryType);
-    taskIdToMemoryBlockMap = new HashMap<>();
+    taskIdToOffheapMemoryBlockMap = new HashMap<>();
   }
 
   public static final UnsafeMemoryManager INSTANCE;
@@ -110,10 +112,10 @@ public class UnsafeMemoryManager {
     if (memoryUsed + memoryRequested <= totalMemory && memoryType == MemoryType.OFFHEAP) {
       memoryBlock = MemoryAllocator.UNSAFE.allocate(memoryRequested);
       memoryUsed += memoryBlock.size();
-      Set<MemoryBlock> listOfMemoryBlock = taskIdToMemoryBlockMap.get(taskId);
+      Set<MemoryBlock> listOfMemoryBlock = taskIdToOffheapMemoryBlockMap.get(taskId);
       if (null == listOfMemoryBlock) {
         listOfMemoryBlock = new HashSet<>();
-        taskIdToMemoryBlockMap.put(taskId, listOfMemoryBlock);
+        taskIdToOffheapMemoryBlockMap.put(taskId, listOfMemoryBlock);
       }
       listOfMemoryBlock.add(memoryBlock);
       if (LOGGER.isDebugEnabled()) {
@@ -122,13 +124,8 @@ public class UnsafeMemoryManager {
             memoryBlock.toString(), memoryBlock.size(), memoryUsed, totalMemory - memoryUsed));
       }
     } else {
+      // not adding on heap memory block to map as JVM will take care of freeing the memory
       memoryBlock = MemoryAllocator.HEAP.allocate(memoryRequested);
-      Set<MemoryBlock> listOfMemoryBlock = taskIdToMemoryBlockMap.get(taskId);
-      if (null == listOfMemoryBlock) {
-        listOfMemoryBlock = new HashSet<>();
-        taskIdToMemoryBlockMap.put(taskId, listOfMemoryBlock);
-      }
-      listOfMemoryBlock.add(memoryBlock);
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug(
             String.format("Creating onheap working Memory block (%s) with size:", memoryBlock));
@@ -138,26 +135,24 @@ public class UnsafeMemoryManager {
   }
 
   public synchronized void freeMemory(String taskId, MemoryBlock memoryBlock) {
-    if (taskIdToMemoryBlockMap.containsKey(taskId)) {
-      taskIdToMemoryBlockMap.get(taskId).remove(memoryBlock);
+    if (taskIdToOffheapMemoryBlockMap.containsKey(taskId)) {
+      taskIdToOffheapMemoryBlockMap.get(taskId).remove(memoryBlock);
     }
     if (!memoryBlock.isFreedStatus()) {
       getMemoryAllocator(memoryBlock.getMemoryType()).free(memoryBlock);
-      if (memoryBlock.getMemoryType() == MemoryType.OFFHEAP) {
-        memoryUsed -= memoryBlock.size();
-        memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug(String.format("Freeing offheap working memory block (%s) with size: %d, "
-                  + "current available memory is: %d", memoryBlock.toString(), memoryBlock.size(),
-              totalMemory - memoryUsed));
-        }
+      memoryUsed -= memoryBlock.size();
+      memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug(String.format("Freeing offheap working memory block (%s) with size: %d, "
+                + "current available memory is: %d", memoryBlock.toString(), memoryBlock.size(),
+            totalMemory - memoryUsed));
       }
     }
   }
 
   public synchronized void freeMemoryAll(String taskId) {
     Set<MemoryBlock> memoryBlockSet;
-    memoryBlockSet = taskIdToMemoryBlockMap.remove(taskId);
+    memoryBlockSet = taskIdToOffheapMemoryBlockMap.remove(taskId);
     long occuppiedMemory = 0;
     if (null != memoryBlockSet) {
       Iterator<MemoryBlock> iterator = memoryBlockSet.iterator();
@@ -165,9 +160,7 @@ public class UnsafeMemoryManager {
       while (iterator.hasNext()) {
         memoryBlock = iterator.next();
         if (!memoryBlock.isFreedStatus()) {
-          if (memoryBlock.getMemoryType() == MemoryType.OFFHEAP) {
-            occuppiedMemory += memoryBlock.size();
-          }
+          occuppiedMemory += memoryBlock.size();
           getMemoryAllocator(memoryBlock.getMemoryType()).free(memoryBlock);
         }
       }
@@ -181,7 +174,7 @@ public class UnsafeMemoryManager {
     }
     LOGGER.info(String.format(
         "Total offheap working memory used after task %s is %d. Current running tasks are %s",
-        taskId, memoryUsed, StringUtils.join(taskIdToMemoryBlockMap.keySet(), ", ")));
+        taskId, memoryUsed, StringUtils.join(taskIdToOffheapMemoryBlockMap.keySet(), ", ")));
   }
 
   public synchronized boolean isMemoryAvailable() {
