@@ -151,14 +151,4 @@ public final class CarbonLoadOptionConstants {
   public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE
       = "carbon.load.sortmemory.spill.percentage";
   public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT = "0";
-
-  /**
-   *  if loading data is too small, the original loading method will produce many small files.
-   *  enable set the node load minimum amount of data,avoid producing many small files.
-   *  This option is especially useful when you encounter a lot of small amounts of data.
-   */
-  @CarbonProperty
-  public static final String ENABLE_CARBON_LOAD_NODE_DATA_MIN_SIZE
-      = "carbon.load.min.size.enabled";
-  public static final String ENABLE_CARBON_LOAD_NODE_DATA_MIN_SIZE_DEFAULT = "false";
 }

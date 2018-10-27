@@ -285,6 +285,7 @@ public class CarbonLoadModelBuilder {
     carbonLoadModel.setSortColumnsBoundsStr(optionsFinal.get("sort_column_bounds"));
     carbonLoadModel.setLoadMinSize(
         optionsFinal.get(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB));
+    validateAndSetLoadMinSize(carbonLoadModel);
 
     validateAndSetColumnCompressor(carbonLoadModel);
   }
@@ -401,6 +402,22 @@ public class CarbonLoadModelBuilder {
       return defaultValue;
     } else {
       return value;
+    }
+  }
+
+  private void validateAndSetLoadMinSize(CarbonLoadModel carbonLoadModel) {
+    int size = 0;
+    String loadMinSize = carbonLoadModel.getLoadMinSize();
+    try {
+      size = Integer.parseInt(loadMinSize);
+    } catch (Exception e) {
+      size = 0;
+    }
+    // if the value is negative, set the value is 0
+    if (size > 0) {
+      carbonLoadModel.setLoadMinSize(loadMinSize);
+    } else {
+      carbonLoadModel.setLoadMinSize(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT);
     }
   }
 }

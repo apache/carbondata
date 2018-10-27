@@ -186,8 +186,8 @@ public class LoadOption {
     optionsFinal.put("sort_scope", "local_sort");
     optionsFinal.put("sort_column_bounds", Maps.getOrDefault(options, "sort_column_bounds", ""));
     optionsFinal.put(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
-        Maps.getOrDefault(options,CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
-            CarbonCommonConstants.CARBON_LOAD_MIN_NODE_SIZE_INMB_DEFAULT));
+        Maps.getOrDefault(options, CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
+            CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT));
     return optionsFinal;
   }
 
