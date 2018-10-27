@@ -123,6 +123,12 @@ private[sql] case class CarbonDescribeFormattedCommand(
         tblProps.get(CarbonCommonConstants.LONG_STRING_COLUMNS), ""))
     }
 
+    // load min size info
+    if (tblProps.containsKey(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB)) {
+      results ++= Seq(("Minimum input data size per node for data loading",
+        tblProps.get(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB), ""))
+    }
+
     var isLocalDictEnabled = tblProps.asScala
       .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)
     if (isLocalDictEnabled.isDefined) {

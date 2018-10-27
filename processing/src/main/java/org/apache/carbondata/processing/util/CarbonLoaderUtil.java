@@ -81,7 +81,7 @@ public final class CarbonLoaderUtil {
   public enum BlockAssignmentStrategy {
     BLOCK_NUM_FIRST("Assign blocks to node base on number of blocks"),
     BLOCK_SIZE_FIRST("Assign blocks to node base on data size of blocks"),
-    NODE_MIN_SIZE_FIRST("Assign blocks to node base on minumun size of inputs");
+    NODE_MIN_SIZE_FIRST("Assign blocks to node base on minimum size of inputs");
     private String name;
     BlockAssignmentStrategy(String name) {
       this.name = name;
@@ -546,7 +546,7 @@ public final class CarbonLoaderUtil {
    * @param noOfNodesInput -1 if number of nodes has to be decided
    *                       based on block location information
    * @param blockAssignmentStrategy strategy used to assign blocks
-   * @param loadMinSize the property load_min_size_inmb specified by the user
+   * @param expectedMinSizePerNode the property load_min_size_inmb specified by the user
    * @return a map that maps node to blocks
    */
   public static Map<String, List<Distributable>> nodeBlockMapping(

@@ -21,7 +21,6 @@ import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.constants.CarbonLoadOptionConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
@@ -37,6 +36,9 @@ class TestTableLoadMinSize extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS table_loadminsize1")
     sql("DROP TABLE IF EXISTS table_loadminsize2")
     sql("DROP TABLE IF EXISTS table_loadminsize3")
+    sql("DROP TABLE IF EXISTS table_loadminsize4")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
   }
 
   test("Value test: set table load min size in not int value") {
@@ -48,12 +50,6 @@ class TestTableLoadMinSize extends QueryTest with BeforeAndAfterAll {
         STORED BY 'org.apache.carbondata.format'
         TBLPROPERTIES('table_blocksize'='128 MB')
       """)
-
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-
-    CarbonProperties.getInstance()
-      .addProperty(CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_NODE_DATA_MIN_SIZE, "true")
 
     sql(s"""
            LOAD DATA LOCAL INPATH '$testData1' into table table_loadminsize1 OPTIONS('load_min_size_inmb'='256 MB')
@@ -80,12 +76,6 @@ class TestTableLoadMinSize extends QueryTest with BeforeAndAfterAll {
         STORED BY 'org.apache.carbondata.format'
         TBLPROPERTIES('table_blocksize'='128 MB')
       """)
-
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-
-    CarbonProperties.getInstance()
-      .addProperty(CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_NODE_DATA_MIN_SIZE, "true")
 
     sql(s"""
            LOAD DATA LOCAL INPATH '$testData1' into table table_loadminsize2 OPTIONS('load_min_size_inmb'='256')
@@ -114,12 +104,6 @@ class TestTableLoadMinSize extends QueryTest with BeforeAndAfterAll {
         TBLPROPERTIES('table_blocksize'='128 MB')
       """)
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-
-    CarbonProperties.getInstance()
-      .addProperty(CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_NODE_DATA_MIN_SIZE, "true")
-
     sql(s"""
            LOAD DATA LOCAL INPATH '$testData1' into table table_loadminsize3
            """)
@@ -136,14 +120,50 @@ class TestTableLoadMinSize extends QueryTest with BeforeAndAfterAll {
 
   }
 
+  test("Function test:: set load_min_size_inmb to table property") {
+
+    sql(
+      """
+        CREATE TABLE IF NOT EXISTS table_loadminsize4
+        (ID Int, date Timestamp, country String,
+        name String, phonetype String, serialname String, salary Int)
+        STORED BY 'org.apache.carbondata.format'
+        TBLPROPERTIES('table_blocksize'='128 MB', 'load_min_size_inmb'='256')
+      """)
+
+    sql(
+      """
+        desc formatted table_loadminsize4
+      """).show(false)
+
+    sql(
+      """
+        alter table table_loadminsize4 set TBLPROPERTIES('load_min_size_inmb'='512')
+      """).show(false)
+
+    sql(s"""
+           LOAD DATA LOCAL INPATH '$testData1' into table table_loadminsize4
+           """)
+
+    checkAnswer(
+      sql("""
+           SELECT country, count(salary) AS amount
+           FROM table_loadminsize4
+           WHERE country IN ('china','france')
+           GROUP BY country
+          """),
+      Seq(Row("china", 96), Row("france", 1))
+    )
+
+  }
+
 
   override def afterAll {
     sql("DROP TABLE IF EXISTS table_loadminsize1")
     sql("DROP TABLE IF EXISTS table_loadminsize2")
     sql("DROP TABLE IF EXISTS table_loadminsize3")
+    sql("DROP TABLE IF EXISTS table_loadminsize4")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-    CarbonProperties.getInstance()
-      .addProperty(CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_NODE_DATA_MIN_SIZE, CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_NODE_DATA_MIN_SIZE_DEFAULT)
   }
 }

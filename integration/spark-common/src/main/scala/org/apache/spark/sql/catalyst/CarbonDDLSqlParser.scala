@@ -429,6 +429,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     CommonUtil.validateTableLevelCompactionProperties(tableProperties)
     // validate flat folder property.
     CommonUtil.validateFlatFolder(tableProperties)
+    // validate load_min_size_inmb property
+    CommonUtil.validateLoadMinSize(tableProperties,
+      CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB)
 
     TableModel(
       ifNotExistPresent,
