@@ -39,10 +39,12 @@ import org.junit.*;
 /**
  * multi-thread Test suite for {@link CarbonReader}
  */
-public class ConcurrentSdkReaderTest extends TestCase {
+public class ConcurrentSdkReaderTest {
 
   private static final String dataDir = "./testReadFiles";
 
+  @Before
+  @After
   public void cleanTestData() {
     try {
       FileUtils.deleteDirectory(new File(dataDir));
@@ -53,8 +55,6 @@ public class ConcurrentSdkReaderTest extends TestCase {
   }
 
   private void writeTestData(long numRows, int tableBlockSize) {
-    cleanTestData();
-
     Field[] fields = new Field[2];
     fields[0] = new Field("stringField", DataTypes.STRING);
     fields[1] = new Field("intField", DataTypes.INT);
@@ -95,7 +95,7 @@ public class ConcurrentSdkReaderTest extends TestCase {
         count += 1;
       }
       long end = System.currentTimeMillis();
-      System.out.println("[Sequential read] Time:" + (end - start));
+      System.out.println("[Sequential read] Time: " + (end - start) + " ms");
       Assert.assertEquals(numRows, count);
     } catch (Exception e) {
       e.printStackTrace();
@@ -118,14 +118,12 @@ public class ConcurrentSdkReaderTest extends TestCase {
         count += (long) result_i.get();
       }
       long end = System.currentTimeMillis();
-      System.out.println("[Parallel read] Time:" + (end - start));
+      System.out.println("[Parallel read] Time: " + (end - start) + " ms");
       Assert.assertEquals(numRows, count);
     } catch (Exception e) {
       e.printStackTrace();
       Assert.fail(e.getMessage());
     }
-
-    cleanTestData();
   }
 
   class ReadLogic implements Callable<Long> {
