@@ -89,13 +89,13 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
   }
 
   @Override
-  public boolean renameForce(String changetoName) {
+  public boolean renameForce(String changeToName) {
     FileSystem fs;
     try {
       fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
       if (fs instanceof ViewFileSystem) {
-        fs.delete(new Path(changetoName), true);
-        fs.rename(fileStatus.getPath(), new Path(changetoName));
+        fs.delete(new Path(changeToName), true);
+        fs.rename(fileStatus.getPath(), new Path(changeToName));
         return true;
       } else {
         return false;

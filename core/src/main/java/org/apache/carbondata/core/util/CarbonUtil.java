@@ -936,7 +936,7 @@ public final class CarbonUtil {
   /**
    * Below method will be used to read the data file matadata
    */
-  public static DataFileFooter readMetadatFile(TableBlockInfo tableBlockInfo) throws IOException {
+  public static DataFileFooter readMetadataFile(TableBlockInfo tableBlockInfo) throws IOException {
     return getDataFileFooter(tableBlockInfo, false);
   }
 
@@ -949,7 +949,7 @@ public final class CarbonUtil {
    * @return
    * @throws IOException
    */
-  public static DataFileFooter readMetadatFile(TableBlockInfo tableBlockInfo,
+  public static DataFileFooter readMetadataFile(TableBlockInfo tableBlockInfo,
       boolean forceReadDataFileFooter) throws IOException {
     return getDataFileFooter(tableBlockInfo, forceReadDataFileFooter);
   }

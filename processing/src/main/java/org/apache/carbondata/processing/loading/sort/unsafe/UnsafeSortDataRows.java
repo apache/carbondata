@@ -417,7 +417,7 @@ public class UnsafeSortDataRows {
           page.getBuffer().loadToUnsafe();
           unsafeInMemoryIntermediateFileMerger.addDataChunkToMerge(page);
           LOGGER.info(
-              "Time taken to sort row page with size: " + page.getBuffer().getActualSize() + "is: "
+              "Time taken to sort row page with size: " + page.getBuffer().getActualSize() + " is: "
                   + (System.currentTimeMillis() - startTime));
         }
       } catch (Throwable e) {

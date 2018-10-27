@@ -210,7 +210,7 @@ public class LocalCarbonFileTest {
         };
         new MockUp<CarbonFile>() {
             @Mock
-            boolean renameForce(String changetoName) {
+            boolean renameForce(String changeToName) {
                 return true;
             }
         };

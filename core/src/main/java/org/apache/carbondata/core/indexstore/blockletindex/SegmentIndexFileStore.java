@@ -505,7 +505,7 @@ public class SegmentIndexFileStore {
   private List<BlockletInfo> getBlockletInfoFromIndexInfo(TableBlockInfo blockInfo)
       throws IOException {
     long startTime = System.currentTimeMillis();
-    DataFileFooter carbondataFileFooter = CarbonUtil.readMetadatFile(blockInfo);
+    DataFileFooter carbondataFileFooter = CarbonUtil.readMetadataFile(blockInfo);
     LOGGER.info(
         "Time taken to read carbondata file footer to get blocklet info " + blockInfo.getFilePath()
             + " is " + (System.currentTimeMillis() - startTime));

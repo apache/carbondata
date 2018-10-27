@@ -146,12 +146,12 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     return fileStatus.getLen();
   }
 
-  public boolean renameTo(String changetoName) {
+  public boolean renameTo(String changeToName) {
     FileSystem fs;
     try {
       if (null != fileStatus) {
         fs = fileStatus.getPath().getFileSystem(hadoopConf);
-        return fs.rename(fileStatus.getPath(), new Path(changetoName));
+        return fs.rename(fileStatus.getPath(), new Path(changeToName));
       }
     } catch (IOException e) {
       LOGGER.error("Exception occurred:" + e.getMessage());
