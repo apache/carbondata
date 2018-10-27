@@ -58,9 +58,9 @@ public interface CarbonFile {
 
   long getSize();
 
-  boolean renameTo(String changetoName);
+  boolean renameTo(String changeToName);
 
-  boolean renameForce(String changetoName);
+  boolean renameForce(String changeToName);
 
   boolean delete();
 

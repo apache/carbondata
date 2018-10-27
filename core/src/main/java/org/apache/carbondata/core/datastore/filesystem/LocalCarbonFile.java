@@ -135,9 +135,9 @@ public class LocalCarbonFile implements CarbonFile {
     return file.length();
   }
 
-  public boolean renameTo(String changetoName) {
-    changetoName = FileFactory.getUpdatedFilePath(changetoName, FileFactory.FileType.LOCAL);
-    return file.renameTo(new File(changetoName));
+  public boolean renameTo(String changeToName) {
+    changeToName = FileFactory.getUpdatedFilePath(changeToName, FileFactory.FileType.LOCAL);
+    return file.renameTo(new File(changeToName));
   }
 
   public boolean delete() {
@@ -253,14 +253,14 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
 
-  @Override public boolean renameForce(String changetoName) {
-    File destFile = new File(changetoName);
+  @Override public boolean renameForce(String changeToName) {
+    File destFile = new File(changeToName);
     if (destFile.exists() && !file.getAbsolutePath().equals(destFile.getAbsolutePath())) {
       if (destFile.delete()) {
-        return file.renameTo(new File(changetoName));
+        return file.renameTo(new File(changeToName));
       }
     }
-    return file.renameTo(new File(changetoName));
+    return file.renameTo(new File(changeToName));
   }
 
   @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,

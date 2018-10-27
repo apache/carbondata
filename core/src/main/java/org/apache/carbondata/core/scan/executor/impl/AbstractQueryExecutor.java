@@ -138,7 +138,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
-    // calculating the total number of aggeragted columns
+    // calculating the total number of aggregated columns
     int measureCount = queryModel.getProjectionMeasures().size();
 
     int currentIndex = 0;
@@ -213,10 +213,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         DataFileFooter fileFooter = filePathToFileFooterMapping.get(blockInfo.getFilePath());
         if (null == fileFooter) {
           blockInfo.setDetailInfo(null);
-          fileFooter = CarbonUtil.readMetadatFile(blockInfo);
-          // In case of non transactional table just set columnuniqueid as columnName to support
-          // backward compatabiity. non transactional tables column uniqueid is always equal to
-          // columnname
+          fileFooter = CarbonUtil.readMetadataFile(blockInfo);
+          // In case of non transactional table just set columnUniqueId as columnName to support
+          // backward compatibility. non transactional tables column uniqueId is always equal to
+          // columnName
           if (!queryModel.getTable().isTransactionalTable()) {
             QueryUtil.updateColumnUniqueIdForNonTransactionTable(fileFooter.getColumnInTable());
           }
