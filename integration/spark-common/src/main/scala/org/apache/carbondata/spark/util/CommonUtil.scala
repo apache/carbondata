@@ -833,4 +833,32 @@ object CommonUtil {
       })
     }
   }
+
+  /**
+   * This method will validate single node minimum load data volume of table specified by the user
+   *
+   * @param tableProperties table property specified by user
+   * @param propertyName property name
+   */
+  def validateLoadMinSize(tableProperties: Map[String, String], propertyName: String): Unit = {
+    var size: Integer = 0
+    if (tableProperties.get(propertyName).isDefined) {
+      val loadSizeStr: String =
+        parsePropertyValueStringInMB(tableProperties(propertyName))
+      try {
+        size = Integer.parseInt(loadSizeStr)
+      } catch {
+        case e: NumberFormatException =>
+          throw new MalformedCarbonCommandException(s"Invalid $propertyName value found: " +
+                                                    s"$loadSizeStr, only int value greater " +
+                                                    s"than 0 is supported.")
+      }
+      // if the value is negative, set the value is 0
+      if(size > 0) {
+        tableProperties.put(propertyName, loadSizeStr)
+      } else {
+        tableProperties.put(propertyName, CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT)
+      }
+    }
+  }
 }

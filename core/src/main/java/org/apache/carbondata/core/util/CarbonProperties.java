@@ -1249,17 +1249,6 @@ public final class CarbonProperties {
   }
 
   /**
-   * whether optimization for the node loads the minimum amount of data is enabled
-   * @return true, if enabled; false for not enabled.
-   */
-  public boolean isLoadMinSizeOptimizationEnabled() {
-    String loadMinSize = getProperty(
-            CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_NODE_DATA_MIN_SIZE,
-            CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_NODE_DATA_MIN_SIZE_DEFAULT);
-    return loadMinSize.equalsIgnoreCase("true");
-  }
-
-  /**
    * returns true if carbon property
    * @param key
    * @return

@@ -1171,21 +1171,27 @@ object CarbonDataRDDFactory {
       .ensureExecutorsAndGetNodeList(blockList, sqlContext.sparkContext)
     val skewedDataOptimization = CarbonProperties.getInstance()
       .isLoadSkewedDataOptimizationEnabled()
-    val loadMinSizeOptimization = CarbonProperties.getInstance()
-      .isLoadMinSizeOptimizationEnabled()
     // get user ddl input the node loads the smallest amount of data
-    val expectedMinSizePerNode = carbonLoadModel.getLoadMinSize()
-    val blockAssignStrategy = if (skewedDataOptimization) {
-      CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_SIZE_FIRST
-    } else if (loadMinSizeOptimization) {
+    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    var loadMinSize = carbonLoadModel.getLoadMinSize()
+    if (loadMinSize.equalsIgnoreCase(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT)) {
+      loadMinSize = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
+        .getOrElse(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
+          CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT)
+    }
+
+    val blockAssignStrategy = if (!loadMinSize.equalsIgnoreCase(
+      CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT)) {
       CarbonLoaderUtil.BlockAssignmentStrategy.NODE_MIN_SIZE_FIRST
+    } else if (skewedDataOptimization) {
+      CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_SIZE_FIRST
     } else {
       CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_NUM_FIRST
     }
     LOGGER.info(s"Allocating block to nodes using strategy: $blockAssignStrategy")
 
     val nodeBlockMapping = CarbonLoaderUtil.nodeBlockMapping(blockList.toSeq.asJava, -1,
-      activeNodes.toList.asJava, blockAssignStrategy, expectedMinSizePerNode).asScala.toSeq
+      activeNodes.toList.asJava, blockAssignStrategy, loadMinSize).asScala.toSeq
     val timeElapsed: Long = System.currentTimeMillis - startTime
     LOGGER.info("Total Time taken in block allocation: " + timeElapsed)
     LOGGER.info(s"Total no of blocks: ${ blockList.length }, " +

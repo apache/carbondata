@@ -326,6 +326,9 @@ object AlterTableUtil {
       // validate the local dictionary properties
       validateLocalDictionaryProperties(lowerCasePropertiesMap, tblPropertiesMap, carbonTable)
 
+      // validate the load min size properties
+      validateLoadMinSizeProperties(carbonTable, lowerCasePropertiesMap)
+
       // below map will be used for cache invalidation. As tblProperties map is getting modified
       // in the next few steps the original map need to be retained for any decision making
       val existingTablePropertiesMap = mutable.Map(tblPropertiesMap.toSeq: _*)
@@ -399,7 +402,8 @@ object AlterTableUtil {
       "LOCAL_DICTIONARY_ENABLE",
       "LOCAL_DICTIONARY_THRESHOLD",
       "LOCAL_DICTIONARY_INCLUDE",
-      "LOCAL_DICTIONARY_EXCLUDE")
+      "LOCAL_DICTIONARY_EXCLUDE",
+      "LOAD_MIN_SIZE_INMB")
     supportedOptions.contains(propKey.toUpperCase)
   }
 
@@ -746,6 +750,20 @@ object AlterTableUtil {
         return true
       }
       false
+    }
+  }
+
+  private def validateLoadMinSizeProperties(carbonTable: CarbonTable,
+      propertiesMap: mutable.Map[String, String]): Unit = {
+    // validate load min size property
+    if (propertiesMap.get(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB).isDefined) {
+      // load min size is not allowed for child tables and dataMaps
+      if (carbonTable.isChildDataMap) {
+        throw new MalformedCarbonCommandException(s"Table property ${
+          CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB} is not allowed for child datamaps")
+      }
+      CommonUtil.validateLoadMinSize(propertiesMap,
+        CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB)
     }
   }
 }

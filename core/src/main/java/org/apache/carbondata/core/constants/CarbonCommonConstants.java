@@ -980,8 +980,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_LOAD_MIN_SIZE_INMB = "load_min_size_inmb";
-  public static final String CARBON_LOAD_MIN_NODE_SIZE_INMB_DEFAULT = "256";
-
+  public static final String CARBON_LOAD_MIN_SIZE_INMB_DEFAULT = "0";
   /**
    *  the node minimum load data default value
    */
