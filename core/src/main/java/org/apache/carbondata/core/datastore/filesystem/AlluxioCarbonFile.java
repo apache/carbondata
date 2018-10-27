@@ -91,12 +91,12 @@ public class AlluxioCarbonFile extends AbstractDFSCarbonFile {
   }
 
   @Override
-  public boolean renameForce(String changetoName) {
+  public boolean renameForce(String changeToName) {
     FileSystem fs;
     try {
       fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
       if (fs instanceof DistributedFileSystem) {
-        ((DistributedFileSystem) fs).rename(fileStatus.getPath(), new Path(changetoName),
+        ((DistributedFileSystem) fs).rename(fileStatus.getPath(), new Path(changeToName),
             org.apache.hadoop.fs.Options.Rename.OVERWRITE);
         return true;
       } else {

@@ -59,12 +59,12 @@ public class S3CarbonFile extends HDFSCarbonFile {
           Refer CARBONDATA-2670 for tracking this.
    */
   @Override
-  public boolean renameForce(String changetoName) {
+  public boolean renameForce(String changeToName) {
     FileSystem fs;
     try {
-      deleteFile(changetoName, FileFactory.getFileType(changetoName));
+      deleteFile(changeToName, FileFactory.getFileType(changeToName));
       fs = fileStatus.getPath().getFileSystem(hadoopConf);
-      return fs.rename(fileStatus.getPath(), new Path(changetoName));
+      return fs.rename(fileStatus.getPath(), new Path(changeToName));
     } catch (IOException e) {
       LOGGER.error("Exception occured: " + e.getMessage());
       return false;

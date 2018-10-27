@@ -121,7 +121,7 @@ class CarbonMergerRDD[K, V](
             // Blocks are sorted by order of updation using TableBlockInfo.compare method so
             // the last block after the sort will be the latest one.
             dataFileFooter = CarbonUtil
-              .readMetadatFile(tableBlockInfoList.get(tableBlockInfoList.size() - 1))
+              .readMetadataFile(tableBlockInfoList.get(tableBlockInfoList.size() - 1))
           } catch {
             case e: IOException =>
               logError("Exception in preparing the data file footer for compaction " + e.getMessage)
@@ -345,7 +345,7 @@ class CarbonMergerRDD[K, V](
       var dataFileFooter: DataFileFooter = null
 
       try {
-        dataFileFooter = CarbonUtil.readMetadatFile(
+        dataFileFooter = CarbonUtil.readMetadataFile(
           CarbonInputSplit.getTableBlockInfo(carbonInputSplit))
       } catch {
         case e: IOException =>
@@ -373,7 +373,7 @@ class CarbonMergerRDD[K, V](
 
       // Check the cardinality of each columns and set the highest.
       try {
-        dataFileFooter = CarbonUtil.readMetadatFile(
+        dataFileFooter = CarbonUtil.readMetadataFile(
           CarbonInputSplit.getTableBlockInfo(split))
       } catch {
         case e: IOException =>

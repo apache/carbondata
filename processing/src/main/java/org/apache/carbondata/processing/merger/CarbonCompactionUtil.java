@@ -124,9 +124,9 @@ public class CarbonCompactionUtil {
       // This decision will impact the compaction performance so it needs to be decided carefully
       if (null != blockInfo.getDetailInfo()
           && blockInfo.getDetailInfo().getSchemaUpdatedTimeStamp() == 0L) {
-        dataFileMatadata = CarbonUtil.readMetadatFile(blockInfo, true);
+        dataFileMatadata = CarbonUtil.readMetadataFile(blockInfo, true);
       } else {
-        dataFileMatadata = CarbonUtil.readMetadatFile(blockInfo);
+        dataFileMatadata = CarbonUtil.readMetadataFile(blockInfo);
       }
       if (null == metadataList) {
         // if it is not present
