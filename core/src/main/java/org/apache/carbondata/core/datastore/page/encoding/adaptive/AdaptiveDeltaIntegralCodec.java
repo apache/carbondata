@@ -361,6 +361,10 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
             }
             vector.putDecimal(i, decimal, precision);
           }
+        } else if (vectorDataType == DataTypes.FLOAT) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putFloat(i, (int) (max - pageData[i]));
+          }
         } else {
           for (int i = 0; i < pageSize; i++) {
             vector.putDouble(i, (max - pageData[i]));
@@ -395,6 +399,10 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
             }
             vector.putDecimal(k++, decimal, precision);
           }
+        } else if (vectorDataType == DataTypes.FLOAT) {
+          for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
+            vector.putFloat(k++, (int) (max - ColumnPageByteUtil.toShort(pageData, i)));
+          }
         } else {
           for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
             vector.putDouble(k++, (max - ColumnPageByteUtil.toShort(pageData, i)));
@@ -426,6 +434,11 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
               decimal = decimal.setScale(newScale);
             }
             vector.putDecimal(i, decimal, precision);
+          }
+        } else if (vectorDataType == DataTypes.FLOAT) {
+          for (int i = 0; i < size; i += DataTypes.SHORT_INT.getSizeInBytes()) {
+            int shortInt = ByteUtil.valueOf3Bytes(pageData, i);
+            vector.putFloat(k++, (int) (max - shortInt));
           }
         } else {
           for (int i = 0; i < size; i += DataTypes.SHORT_INT.getSizeInBytes()) {

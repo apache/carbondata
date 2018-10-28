@@ -30,6 +30,7 @@ import static org.apache.carbondata.core.datastore.page.encoding.bool.BooleanCon
 
 /** statics for primitive column page */
 public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, SimpleStatsResult {
+  private static final String ZERO_STRING = "0";
   private DataType dataType;
   private byte minByte, maxByte;
   private short minShort, maxShort;
@@ -243,6 +244,11 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       int integerPlaces = strValue.indexOf('.');
       if (-1 != integerPlaces) {
         decimalPlaces = strValue.length() - integerPlaces - 1;
+        if (decimalPlaces == 1) {
+          if (strValue.substring(integerPlaces + 1, strValue.length()).equals(ZERO_STRING)) {
+            decimalPlaces = 0;
+          }
+        }
       }
     } catch (NumberFormatException e) {
       if (!Double.isInfinite(value)) {

@@ -322,6 +322,10 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
         } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
           decimalConverter.fillVector(pageData, pageSize, vectorInfo, nullBits, pageDataType);
+        } else if (vectorDataType == DataTypes.FLOAT) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putFloat(i, pageData[i]);
+          }
         } else {
           for (int i = 0; i < pageSize; i++) {
             vector.putDouble(i, pageData[i]);
@@ -348,6 +352,10 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
         } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
           decimalConverter.fillVector(pageData, pageSize, vectorInfo, nullBits, pageDataType);
+        } else if (vectorDataType == DataTypes.FLOAT) {
+          for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
+            vector.putFloat(k++, (ColumnPageByteUtil.toShort(pageData, i)));
+          }
         } else {
           for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
             vector.putDouble(k++, ColumnPageByteUtil.toShort(pageData, i));
@@ -374,6 +382,11 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
           decimalConverter
               .fillVector(pageData, pageSize, vectorInfo, nullBits, DataTypes.SHORT_INT);
+        } else if (vectorDataType == DataTypes.FLOAT) {
+          for (int i = 0; i < pageSize; i++) {
+            int shortInt = ByteUtil.valueOf3Bytes(pageData, i * 3);
+            vector.putFloat(i, shortInt);
+          }
         } else {
           for (int i = 0; i < pageSize; i++) {
             int shortInt = ByteUtil.valueOf3Bytes(pageData, i * 3);

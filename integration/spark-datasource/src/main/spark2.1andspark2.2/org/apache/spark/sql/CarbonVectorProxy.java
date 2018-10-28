@@ -170,16 +170,14 @@ public class CarbonVectorProxy {
         childColumns.setAccessible(true);
         Object o = childColumns.get(columnVector);
         childColumns.set(this, o);
-        Field childColumns1 =
+        Field resultArray =
             columnVector.getClass().getSuperclass().getDeclaredField("resultArray");
-        childColumns1.setAccessible(true);
-        Object o1 = childColumns1.get(columnVector);
-        childColumns1.set(this, o1);
-
+        resultArray.setAccessible(true);
+        Object o1 = resultArray.get(columnVector);
+        resultArray.set(this, o1);
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
-
       vector = columnVector;
     }
 
