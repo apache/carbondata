@@ -44,15 +44,15 @@ public abstract class AbstractNonDictionaryVectorFiller {
 class NonDictionaryVectorFillerFactory {
 
   public static AbstractNonDictionaryVectorFiller getVectorFiller(int length, DataType type,
-      int numberOfRows) {
+      int numberOfRows, int actualDataLength) {
     if (type == DataTypes.STRING) {
       if (length > DataTypes.SHORT.getSizeInBytes()) {
-        return new LongStringVectorFiller(numberOfRows);
+        return new LongStringVectorFiller(numberOfRows, actualDataLength);
       } else {
-        return new StringVectorFiller(numberOfRows);
+        return new StringVectorFiller(numberOfRows, actualDataLength);
       }
     } else if (type == DataTypes.VARCHAR) {
-      return new LongStringVectorFiller(numberOfRows);
+      return new LongStringVectorFiller(numberOfRows, actualDataLength);
     } else if (type == DataTypes.TIMESTAMP) {
       return new TimeStampVectorFiller(numberOfRows);
     } else if (type == DataTypes.BOOLEAN) {
@@ -73,8 +73,11 @@ class NonDictionaryVectorFillerFactory {
 
 class StringVectorFiller extends AbstractNonDictionaryVectorFiller {
 
-  public StringVectorFiller(int numberOfRows) {
+  private int actualDataLength;
+
+  public StringVectorFiller(int numberOfRows, int actualDataLength) {
     super(numberOfRows);
+    this.actualDataLength = actualDataLength;
   }
 
   @Override
@@ -93,13 +96,17 @@ class StringVectorFiller extends AbstractNonDictionaryVectorFiller {
       }
       localOffset += length;
     }
-    vector.putAllByteArray(data, 0, data.length);
+    vector.putAllByteArray(data, 0, actualDataLength);
   }
 }
 
 class LongStringVectorFiller extends AbstractNonDictionaryVectorFiller {
-  public LongStringVectorFiller(int numberOfRows) {
+
+  private int actualDataLength;
+
+  public LongStringVectorFiller(int numberOfRows, int actualDataLength) {
     super(numberOfRows);
+    this.actualDataLength = actualDataLength;
   }
 
   @Override public void fillVector(byte[] data, CarbonColumnVector vector) {
@@ -135,7 +142,7 @@ class LongStringVectorFiller extends AbstractNonDictionaryVectorFiller {
         }
         localOffset += length;
       }
-      vector.putAllByteArray(data, 0, data.length);
+      vector.putAllByteArray(data, 0, actualDataLength);
     }
   }
 }

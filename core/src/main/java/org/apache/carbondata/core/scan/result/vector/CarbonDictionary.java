@@ -22,6 +22,10 @@ public interface CarbonDictionary  {
 
   int getDictionarySize();
 
+  boolean isDictionaryUsed();
+
+  void setDictionaryUsed();
+
   byte[] getDictionaryValue(int index);
 
   byte[][] getAllDictionaryValues();

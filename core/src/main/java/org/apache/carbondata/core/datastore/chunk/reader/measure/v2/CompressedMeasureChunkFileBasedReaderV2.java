@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReaderV2V3Format;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -119,7 +120,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
   }
 
   public ColumnPage decodeColumnPage(MeasureRawColumnChunk measureRawColumnChunk,
-      int pageNumber) throws IOException, MemoryException {
+      int pageNumber, ReusableDataBuffer reusableDataBuffer) throws IOException, MemoryException {
     int copyPoint = (int) measureRawColumnChunk.getOffSet();
     int blockIndex = measureRawColumnChunk.getColumnIndex();
     ByteBuffer rawData = measureRawColumnChunk.getRawData();
@@ -127,13 +128,15 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
         measureColumnChunkLength.get(blockIndex));
     copyPoint += measureColumnChunkLength.get(blockIndex);
 
-    ColumnPage page = decodeMeasure(measureRawColumnChunk, measureColumnChunk, copyPoint);
+    ColumnPage page =
+        decodeMeasure(measureRawColumnChunk, measureColumnChunk, copyPoint, reusableDataBuffer);
     page.setNullBits(QueryUtil.getNullBitSet(measureColumnChunk.presence, this.compressor));
     return page;
   }
 
   protected ColumnPage decodeMeasure(MeasureRawColumnChunk measureRawColumnChunk,
-      DataChunk2 measureColumnChunk, int copyPoint) throws MemoryException, IOException {
+      DataChunk2 measureColumnChunk, int copyPoint, ReusableDataBuffer reusableDataBuffer)
+      throws MemoryException, IOException {
     assert (measureColumnChunk.getEncoder_meta().size() > 0);
     List<ByteBuffer> encoder_meta = measureColumnChunk.getEncoder_meta();
     byte[] encodedMeta = encoder_meta.get(0).array();
@@ -142,6 +145,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     ColumnPageDecoder codec = encodingFactory.createDecoderLegacy(meta,
         CompressorFactory.NativeSupportedCompressor.SNAPPY.getName());
     byte[] rawData = measureRawColumnChunk.getRawData().array();
-    return codec.decode(rawData, copyPoint, measureColumnChunk.data_page_length);
+    return codec
+        .decode(rawData, copyPoint, measureColumnChunk.data_page_length);
   }
 }

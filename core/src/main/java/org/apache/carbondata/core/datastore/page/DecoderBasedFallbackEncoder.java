@@ -88,7 +88,8 @@ public class DecoderBasedFallbackEncoder implements Callable<FallbackEncodedColu
           CarbonUtil.getIntArray(data, offset, encodedColumnPage.getPageMetadata().rle_page_length);
       // uncompress the data with rle indexes
       bytes = UnBlockIndexer
-          .uncompressData(bytes, rlePage, CarbonCommonConstants.LOCAL_DICT_ENCODED_BYTEARRAY_SIZE);
+          .uncompressData(bytes, rlePage, CarbonCommonConstants.LOCAL_DICT_ENCODED_BYTEARRAY_SIZE,
+              bytes.length);
     }
 
     // disable encoding using local dictionary

@@ -119,5 +119,8 @@ public abstract class AbstractCompressor implements Compressor {
     throw new RuntimeException("Not implemented rawCompress for " + this.getName());
   }
 
+  @Override public boolean supportReusableBuffer() {
+    return false;
+  }
 
 }

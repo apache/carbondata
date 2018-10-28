@@ -35,6 +35,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.IndexKey;
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -404,19 +405,33 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // fill all the block execution infos for all the blocks selected in
     // query
     // and query will be executed based on that infos
+    ReusableDataBuffer[] dimensionReusableDataBuffers = null;
+    ReusableDataBuffer[] measureReusableDataBuffers = null;
+
     for (int i = 0; i < queryProperties.dataBlocks.size(); i++) {
       AbstractIndex abstractIndex = queryProperties.dataBlocks.get(i);
       BlockletDataRefNode dataRefNode =
           (BlockletDataRefNode) abstractIndex.getDataRefNode();
-      blockExecutionInfoList.add(
-          getBlockExecutionInfoForBlock(
-              queryModel,
-              abstractIndex,
+      final BlockExecutionInfo blockExecutionInfoForBlock =
+          getBlockExecutionInfoForBlock(queryModel, abstractIndex,
               dataRefNode.getBlockInfos().get(0).getBlockletInfos().getStartBlockletNumber(),
-              dataRefNode.numberOfNodes(),
-              dataRefNode.getBlockInfos().get(0).getFilePath(),
+              dataRefNode.numberOfNodes(), dataRefNode.getBlockInfos().get(0).getFilePath(),
               dataRefNode.getBlockInfos().get(0).getDeletedDeltaFilePath(),
-              dataRefNode.getBlockInfos().get(0).getSegment()));
+              dataRefNode.getBlockInfos().get(0).getSegment());
+      if (null == dimensionReusableDataBuffers || null == measureReusableDataBuffers) {
+        dimensionReusableDataBuffers = blockExecutionInfoForBlock.getDimensionResusableDataBuffer();
+        measureReusableDataBuffers = blockExecutionInfoForBlock.getMeasureResusableDataBuffer();
+      } else {
+        if (dimensionReusableDataBuffers.length == blockExecutionInfoForBlock
+            .getDimensionResusableDataBuffer().length) {
+          blockExecutionInfoForBlock.setDimensionResusableDataBuffer(dimensionReusableDataBuffers);
+        }
+        if (measureReusableDataBuffers.length == blockExecutionInfoForBlock
+            .getMeasureResusableDataBuffer().length) {
+          blockExecutionInfoForBlock.setMeasureResusableDataBuffer(measureReusableDataBuffers);
+        }
+      }
+      blockExecutionInfoList.add(blockExecutionInfoForBlock);
     }
     if (null != queryModel.getStatisticsRecorder()) {
       QueryStatistic queryStatistic = new QueryStatistic();
@@ -534,6 +549,16 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     int[] dimensionChunkIndexes = QueryUtil.getDimensionChunkIndexes(projectDimensions,
         segmentProperties.getDimensionOrdinalToChunkMapping(),
         currentBlockFilterDimensions, allProjectionListDimensionIdexes);
+    int reusableBufferSize = segmentProperties.getDimensionOrdinalToChunkMapping().size()
+        < projectDimensions.size() ?
+        projectDimensions.size() :
+        segmentProperties.getDimensionOrdinalToChunkMapping().size();
+    ReusableDataBuffer[] dimensionBuffer =
+        new ReusableDataBuffer[reusableBufferSize];
+    for (int i = 0; i < dimensionBuffer.length; i++) {
+      dimensionBuffer[i] = new ReusableDataBuffer();
+    }
+    blockExecutionInfo.setDimensionResusableDataBuffer(dimensionBuffer);
     int numberOfColumnToBeReadInOneIO = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
             CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE));
@@ -558,6 +583,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         currentBlockQueryMeasures, expressionMeasures,
         segmentProperties.getMeasuresOrdinalToChunkMapping(), filterMeasures,
         allProjectionListMeasureIndexes);
+    ReusableDataBuffer[] measureBuffer =
+        new ReusableDataBuffer[segmentProperties.getMeasuresOrdinalToChunkMapping().size()];
+    for (int i = 0; i < measureBuffer.length; i++) {
+      measureBuffer[i] = new ReusableDataBuffer();
+    }
+    blockExecutionInfo.setMeasureResusableDataBuffer(measureBuffer);
     if (measureChunkIndexes.length > 0) {
 
       numberOfElementToConsider = measureChunkIndexes[measureChunkIndexes.length - 1]

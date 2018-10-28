@@ -308,7 +308,8 @@ public abstract class ColumnPage {
 
   private static ColumnPage newDecimalPage(ColumnPageEncoderMeta meta,
       byte[] lvEncodedByteArray) throws MemoryException {
-    return VarLengthColumnPageBase.newDecimalColumnPage(meta, lvEncodedByteArray);
+    return VarLengthColumnPageBase
+        .newDecimalColumnPage(meta, lvEncodedByteArray, lvEncodedByteArray.length);
   }
 
   private static ColumnPage newLVBytesPage(TableSpec.ColumnSpec columnSpec,

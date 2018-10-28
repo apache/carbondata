@@ -27,8 +27,9 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
  */
 public class SafeVariableIntLengthDimensionDataChunkStore
     extends SafeVariableLengthDimensionDataChunkStore {
-  public SafeVariableIntLengthDimensionDataChunkStore(boolean isInvertedIndex, int numberOfRows) {
-    super(isInvertedIndex, numberOfRows);
+  public SafeVariableIntLengthDimensionDataChunkStore(boolean isInvertedIndex, int numberOfRows,
+      int dataLength) {
+    super(isInvertedIndex, numberOfRows, dataLength);
   }
 
   @Override

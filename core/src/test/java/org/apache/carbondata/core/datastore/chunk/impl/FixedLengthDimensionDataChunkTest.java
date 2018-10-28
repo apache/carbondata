@@ -38,7 +38,8 @@ public class FixedLengthDimensionDataChunkTest {
 
     int invertedIndexReverse[] = { 1, 0, 5, 7, 8 };
     fixedLengthDimensionDataChunk =
-        new FixedLengthDimensionColumnPage(data, invertedIndex, invertedIndexReverse, 5, 4);
+        new FixedLengthDimensionColumnPage(data, invertedIndex, invertedIndexReverse, 5, 4,
+            data.length);
   }
 
   @Test public void fillChunkDataTest() {

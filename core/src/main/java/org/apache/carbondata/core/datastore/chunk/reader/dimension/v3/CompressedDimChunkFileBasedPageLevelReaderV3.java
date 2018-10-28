@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -140,7 +141,8 @@ public class CompressedDimChunkFileBasedPageLevelReaderV3
    * @return DimensionColumnDataChunk
    */
   @Override public DimensionColumnPage decodeColumnPage(
-      DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber)
+      DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber,
+      ReusableDataBuffer reusableDataBuffer)
       throws IOException, MemoryException {
     // data chunk of page
     DataChunk2 pageMetadata = null;
@@ -171,6 +173,7 @@ public class CompressedDimChunkFileBasedPageLevelReaderV3
     ByteBuffer rawData = dimensionRawColumnChunk.getFileReader()
         .readByteBuffer(filePath, offset, length);
 
-    return decodeDimension(dimensionRawColumnChunk, rawData, pageMetadata, 0, null);
+    return decodeDimension(dimensionRawColumnChunk, rawData, pageMetadata, 0, null,
+        reusableDataBuffer);
   }
 }

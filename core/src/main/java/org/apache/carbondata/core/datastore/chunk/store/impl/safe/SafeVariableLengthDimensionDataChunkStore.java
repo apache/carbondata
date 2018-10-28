@@ -48,9 +48,14 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
    */
   private int[] dataOffsets;
 
-  public SafeVariableLengthDimensionDataChunkStore(boolean isInvertedIndex, int numberOfRows) {
+  private int dataLength;
+
+  public SafeVariableLengthDimensionDataChunkStore(boolean isInvertedIndex, int numberOfRows,
+      int dataLength) {
     super(isInvertedIndex);
     this.numberOfRows = numberOfRows;
+    this.dataOffsets = new int[numberOfRows];
+    this.dataLength = dataLength;
   }
 
   /**
@@ -99,9 +104,10 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
   public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
       ColumnVectorInfo vectorInfo) {
     CarbonColumnVector vector = vectorInfo.vector;
+    vector.setDictionary(null);
     DataType dt = vector.getType();
-    AbstractNonDictionaryVectorFiller vectorFiller =
-        NonDictionaryVectorFillerFactory.getVectorFiller(getLengthSize(), dt, numberOfRows);
+    AbstractNonDictionaryVectorFiller vectorFiller = NonDictionaryVectorFillerFactory
+        .getVectorFiller(getLengthSize(), dt, numberOfRows, dataLength);
     vector = ColumnarVectorWrapperDirectFactory
         .getDirectVectorWrapperFactory(vector, invertedIndex, new BitSet(), vectorInfo.deletedRows,
             false, false);
@@ -133,7 +139,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
       length = dataOffsets[rowId + 1] - (currentDataOffset + getLengthSize());
     } else {
       // for last record
-      length = this.data.length - currentDataOffset;
+      length = this.dataLength - currentDataOffset;
     }
     byte[] currentRowData = new byte[length];
     System.arraycopy(data, currentDataOffset, currentRowData, 0, length);
@@ -142,6 +148,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
 
   @Override
   public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+    vector.setDictionary(null);
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplictSorted) {
       rowId = invertedIndexReverse[rowId];
@@ -159,7 +166,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
       length = dataOffsets[rowId + 1] - (currentDataOffset + getLengthSize());
     } else {
       // for last record
-      length = this.data.length - currentDataOffset;
+      length = this.dataLength - currentDataOffset;
     }
     DataType dt = vector.getType();
 
@@ -205,7 +212,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
       length = dataOffsets[rowId + 1] - (currentDataOffset + getLengthSize());
     } else {
       // for last record
-      length = this.data.length - currentDataOffset;
+      length = this.dataLength - currentDataOffset;
     }
     return ByteUtil.UnsafeComparer.INSTANCE
         .compareTo(data, currentDataOffset, length, compareValue, 0, compareValue.length);
