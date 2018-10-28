@@ -18,6 +18,7 @@ package org.apache.carbondata.core.datastore.chunk.reader.measure;
 
 import java.io.IOException;
 
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReader;
 import org.apache.carbondata.core.datastore.compression.Compressor;
@@ -54,9 +55,9 @@ public abstract class AbstractMeasureChunkReader implements MeasureColumnChunkRe
     this.numberOfRows = numberOfRows;
   }
 
-  @Override
-  public void decodeColumnPageAndFillVector(MeasureRawColumnChunk measureRawColumnChunk,
-      int pageNumber, ColumnVectorInfo vectorInfo) throws IOException, MemoryException {
+  @Override public void decodeColumnPageAndFillVector(MeasureRawColumnChunk measureRawColumnChunk,
+      int pageNumber, ColumnVectorInfo vectorInfo, ReusableDataBuffer reusableDataBuffer)
+      throws IOException, MemoryException {
     throw new UnsupportedOperationException(
         "This operation is not supported in this class " + getClass().getName());
   }

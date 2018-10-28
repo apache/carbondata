@@ -365,7 +365,6 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
       for (int i = 0; i < isNoDictStringField.length; i++) {
         if (isNoDictStringField[i]) {
           vectorProxy.resetDictionaryIds(i);
-          vectorProxy.column(i).setDictionary(null);
         }
       }
     }

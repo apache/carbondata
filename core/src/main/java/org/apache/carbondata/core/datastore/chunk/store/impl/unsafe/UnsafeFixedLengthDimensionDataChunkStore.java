@@ -40,8 +40,8 @@ public class UnsafeFixedLengthDimensionDataChunkStore
    * @param numberOfRows    total number of rows
    */
   public UnsafeFixedLengthDimensionDataChunkStore(long totalDataSize, int columnValueSize,
-      boolean isInvertedIdex, int numberOfRows) {
-    super(totalDataSize, isInvertedIdex, numberOfRows);
+      boolean isInvertedIdex, int numberOfRows, int dataLength) {
+    super(totalDataSize, isInvertedIdex, numberOfRows, dataLength);
     this.columnValueSize = columnValueSize;
   }
 

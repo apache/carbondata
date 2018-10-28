@@ -65,22 +65,22 @@ public class DimensionChunkStoreFactory {
    */
   public DimensionDataChunkStore getDimensionChunkStore(int columnValueSize,
       boolean isInvertedIndex, int numberOfRows, long totalSize, DimensionStoreType storeType,
-      CarbonDictionary dictionary, boolean fillDirectVector) {
+      CarbonDictionary dictionary, boolean fillDirectVector, int dataLength) {
     if (isUnsafe && !fillDirectVector) {
       switch (storeType) {
         case FIXED_LENGTH:
           return new UnsafeFixedLengthDimensionDataChunkStore(totalSize, columnValueSize,
-              isInvertedIndex, numberOfRows);
+              isInvertedIndex, numberOfRows, dataLength);
         case VARIABLE_SHORT_LENGTH:
           return new UnsafeVariableShortLengthDimensionDataChunkStore(totalSize, isInvertedIndex,
-              numberOfRows);
+              numberOfRows, dataLength);
         case VARIABLE_INT_LENGTH:
           return new UnsafeVariableIntLengthDimensionDataChunkStore(totalSize, isInvertedIndex,
-              numberOfRows);
+              numberOfRows, dataLength);
         case LOCAL_DICT:
           return new LocalDictDimensionDataChunkStore(
               new UnsafeFixedLengthDimensionDataChunkStore(totalSize, 3, isInvertedIndex,
-                  numberOfRows), dictionary);
+                  numberOfRows, dataLength), dictionary, dataLength);
         default:
           throw new UnsupportedOperationException("Invalid dimension store type");
       }
@@ -90,13 +90,15 @@ public class DimensionChunkStoreFactory {
           return new SafeFixedLengthDimensionDataChunkStore(isInvertedIndex, columnValueSize,
               numberOfRows);
         case VARIABLE_SHORT_LENGTH:
-          return new SafeVariableShortLengthDimensionDataChunkStore(isInvertedIndex, numberOfRows);
+          return new SafeVariableShortLengthDimensionDataChunkStore(isInvertedIndex, numberOfRows,
+              dataLength);
         case VARIABLE_INT_LENGTH:
-          return new SafeVariableIntLengthDimensionDataChunkStore(isInvertedIndex, numberOfRows);
+          return new SafeVariableIntLengthDimensionDataChunkStore(isInvertedIndex, numberOfRows,
+              dataLength);
         case LOCAL_DICT:
           return new LocalDictDimensionDataChunkStore(
               new SafeFixedLengthDimensionDataChunkStore(isInvertedIndex, 3, numberOfRows),
-              dictionary);
+              dictionary, dataLength);
         default:
           throw new UnsupportedOperationException("Invalid dimension store type");
       }

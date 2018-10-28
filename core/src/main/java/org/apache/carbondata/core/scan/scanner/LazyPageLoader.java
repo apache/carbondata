@@ -18,6 +18,7 @@ package org.apache.carbondata.core.scan.scanner;
 
 import java.io.IOException;
 
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
@@ -43,14 +44,17 @@ public class LazyPageLoader {
 
   private QueryStatisticsModel queryStatisticsModel;
 
+  private ReusableDataBuffer reusableDataBuffer;
+
   public LazyPageLoader(LazyBlockletLoader lazyBlockletLoader, int index, boolean isMeasure,
-      int pageNumber, ColumnVectorInfo vectorInfo) {
+      int pageNumber, ColumnVectorInfo vectorInfo, ReusableDataBuffer reusableDataBuffer) {
     this.lazyBlockletLoader = lazyBlockletLoader;
     this.lazyChunkWrapper = lazyBlockletLoader.getLazyChunkWrapper(index, isMeasure);
     this.isMeasure = isMeasure;
     this.pageNumber = pageNumber;
     this.vectorInfo = vectorInfo;
     this.queryStatisticsModel = lazyBlockletLoader.getQueryStatisticsModel();
+    this.reusableDataBuffer = reusableDataBuffer;
   }
 
   public void loadPage() {
@@ -64,10 +68,10 @@ public class LazyPageLoader {
     long startTime = System.currentTimeMillis();
     if (isMeasure) {
       ((MeasureRawColumnChunk) lazyChunkWrapper.getRawColumnChunk())
-          .convertToColumnPageAndFillVector(pageNumber, vectorInfo);
+          .convertToColumnPageAndFillVector(pageNumber, vectorInfo, reusableDataBuffer);
     } else {
       ((DimensionRawColumnChunk) lazyChunkWrapper.getRawColumnChunk())
-          .convertToDimColDataChunkAndFillVector(pageNumber, vectorInfo);
+          .convertToDimColDataChunkAndFillVector(pageNumber, vectorInfo, reusableDataBuffer);
     }
     if (queryStatisticsModel.isEnabled()) {
       QueryStatistic pageUncompressTime = queryStatisticsModel.getStatisticsTypeAndObjMap()

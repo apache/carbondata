@@ -22,6 +22,7 @@ import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReaderV2V3Format;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -188,21 +189,20 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
    * @param pageNumber            number
    * @return DimensionColumnPage
    */
-  @Override
-  public ColumnPage decodeColumnPage(
-      MeasureRawColumnChunk rawColumnChunk, int pageNumber)
+  @Override public ColumnPage decodeColumnPage(MeasureRawColumnChunk rawColumnChunk, int pageNumber,
+      ReusableDataBuffer reusableDataBuffer)
       throws IOException, MemoryException {
-    return decodeColumnPage(rawColumnChunk, pageNumber, null);
+    return decodeColumnPage(rawColumnChunk, pageNumber, null, reusableDataBuffer);
   }
 
-  @Override
-  public void decodeColumnPageAndFillVector(MeasureRawColumnChunk measureRawColumnChunk,
-      int pageNumber, ColumnVectorInfo vectorInfo) throws IOException, MemoryException {
-    decodeColumnPage(measureRawColumnChunk, pageNumber, vectorInfo);
+  @Override public void decodeColumnPageAndFillVector(MeasureRawColumnChunk measureRawColumnChunk,
+      int pageNumber, ColumnVectorInfo vectorInfo, ReusableDataBuffer reusableDataBuffer)
+      throws IOException, MemoryException {
+    decodeColumnPage(measureRawColumnChunk, pageNumber, vectorInfo, reusableDataBuffer);
   }
 
-  private ColumnPage decodeColumnPage(
-      MeasureRawColumnChunk rawColumnChunk, int pageNumber, ColumnVectorInfo vectorInfo)
+  private ColumnPage decodeColumnPage(MeasureRawColumnChunk rawColumnChunk, int pageNumber,
+      ColumnVectorInfo vectorInfo, ReusableDataBuffer reusableDataBuffer)
       throws IOException, MemoryException {
     // data chunk of blocklet column
     DataChunk3 dataChunk3 = rawColumnChunk.getDataChunkV3();
@@ -219,7 +219,8 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
         dataChunk3.getPage_offset().get(pageNumber);
     BitSet nullBitSet = QueryUtil.getNullBitSet(pageMetadata.presence, this.compressor);
     ColumnPage decodedPage =
-        decodeMeasure(pageMetadata, rawColumnChunk.getRawData(), offset, vectorInfo, nullBitSet);
+        decodeMeasure(pageMetadata, rawColumnChunk.getRawData(), offset, vectorInfo, nullBitSet,
+            reusableDataBuffer);
     if (decodedPage == null) {
       return null;
     }
@@ -231,7 +232,8 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
    * Decode measure column page with page header and raw data starting from offset
    */
   protected ColumnPage decodeMeasure(DataChunk2 pageMetadata, ByteBuffer pageData, int offset,
-      ColumnVectorInfo vectorInfo, BitSet nullBitSet) throws MemoryException, IOException {
+      ColumnVectorInfo vectorInfo, BitSet nullBitSet, ReusableDataBuffer reusableDataBuffer)
+      throws MemoryException, IOException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     org.apache.carbondata.core.metadata.encoder.Encoding.validateEncodingTypes(encodings);
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
@@ -240,12 +242,12 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     ColumnPageDecoder codec =
         encodingFactory.createDecoder(encodings, encoderMetas, compressorName, vectorInfo != null);
     if (vectorInfo != null) {
-      codec
-          .decodeAndFillVector(pageData.array(), offset, pageMetadata.data_page_length, vectorInfo,
-              nullBitSet, false, pageMetadata.numberOfRowsInpage);
+      codec.decodeAndFillVector(pageData.array(), offset, pageMetadata.data_page_length, vectorInfo,
+          nullBitSet, false, pageMetadata.numberOfRowsInpage, reusableDataBuffer);
       return null;
     } else {
-      return codec.decode(pageData.array(), offset, pageMetadata.data_page_length);
+      return codec
+          .decode(pageData.array(), offset, pageMetadata.data_page_length);
     }
   }
 }

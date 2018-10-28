@@ -23,6 +23,7 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -107,8 +108,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
   @Override
   public ColumnPageDecoder createDecoder(final ColumnPageEncoderMeta meta) {
     return new ColumnPageDecoder() {
-      @Override
-      public ColumnPage decode(byte[] input, int offset, int length)
+      @Override public ColumnPage decode(byte[] input, int offset, int length)
           throws MemoryException, IOException {
         ColumnPage page = null;
         if (DataTypes.isDecimal(meta.getSchemaDataType())) {
@@ -119,13 +119,19 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
         return LazyColumnPage.newPage(page, converter);
       }
 
-      @Override
-      public void decodeAndFillVector(byte[] input, int offset, int length,
-          ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize)
-          throws MemoryException, IOException {
+      @Override public void decodeAndFillVector(byte[] input, int offset, int length,
+          ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
+          ReusableDataBuffer reusableDataBuffer) throws MemoryException, IOException {
         Compressor compressor =
             CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
-        byte[] unCompressData = compressor.unCompressByte(input, offset, length);
+        byte[] unCompressData;
+        if (null != reusableDataBuffer && compressor.supportReusableBuffer()) {
+          int uncompressedLength = compressor.unCompressedLength(input, offset, length);
+          unCompressData = reusableDataBuffer.getDataBuffer(uncompressedLength);
+          compressor.rawUncompress(input, offset, length, unCompressData);
+        } else {
+          unCompressData = compressor.unCompressByte(input, offset, length);
+        }
         if (DataTypes.isDecimal(meta.getSchemaDataType())) {
           TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
           DecimalConverterFactory.DecimalConverter decimalConverter =

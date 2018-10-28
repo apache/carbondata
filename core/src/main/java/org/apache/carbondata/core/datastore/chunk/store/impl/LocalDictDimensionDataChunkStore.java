@@ -38,10 +38,13 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
 
   private CarbonDictionary dictionary;
 
+  private int dataLength;
+
   public LocalDictDimensionDataChunkStore(DimensionDataChunkStore dimensionDataChunkStore,
-      CarbonDictionary dictionary) {
+      CarbonDictionary dictionary, int dataLength) {
     this.dimensionDataChunkStore = dimensionDataChunkStore;
     this.dictionary = dictionary;
+    this.dataLength = dataLength;
   }
 
   /**
@@ -59,9 +62,12 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
   public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
       ColumnVectorInfo vectorInfo) {
     int columnValueSize = dimensionDataChunkStore.getColumnValueSize();
-    int rowsNum = data.length / columnValueSize;
+    int rowsNum = dataLength / columnValueSize;
     CarbonColumnVector vector = vectorInfo.vector;
-    vector.setDictionary(dictionary);
+    if (!dictionary.isDictionaryUsed()) {
+      vector.setDictionary(dictionary);
+      dictionary.setDictionaryUsed();
+    }
     BitSet nullBitset = new BitSet();
     CarbonColumnVector dictionaryVector = ColumnarVectorWrapperDirectFactory
         .getDirectVectorWrapperFactory(vector.getDictionaryVector(), invertedIndex, nullBitset,
@@ -88,7 +94,10 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
   }
 
   @Override public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
-    vector.setDictionary(dictionary);
+    if (!dictionary.isDictionaryUsed()) {
+      vector.setDictionary(dictionary);
+      dictionary.setDictionaryUsed();
+    }
     int surrogate = dimensionDataChunkStore.getSurrogate(rowId);
     if (surrogate == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {
       vector.putNull(vectorRow);

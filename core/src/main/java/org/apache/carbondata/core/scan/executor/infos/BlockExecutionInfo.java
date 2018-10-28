@@ -20,6 +20,7 @@ import java.util.Map;
 
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.IndexKey;
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
@@ -220,6 +221,10 @@ public class BlockExecutionInfo {
    * It fills the vector directly from decoded column page with out any staging and conversions
    */
   private boolean isDirectVectorFill;
+
+  private ReusableDataBuffer[] dimensionResusableDataBuffer;
+
+  private ReusableDataBuffer[] measureResusableDataBuffer;
 
   /**
    * @param blockIndex the tableBlock to set
@@ -637,5 +642,21 @@ public class BlockExecutionInfo {
 
   public void setDirectVectorFill(boolean directVectorFill) {
     isDirectVectorFill = directVectorFill;
+  }
+
+  public ReusableDataBuffer[] getDimensionResusableDataBuffer() {
+    return dimensionResusableDataBuffer;
+  }
+
+  public void setDimensionResusableDataBuffer(ReusableDataBuffer[] dimensionResusableDataBuffer) {
+    this.dimensionResusableDataBuffer = dimensionResusableDataBuffer;
+  }
+
+  public ReusableDataBuffer[] getMeasureResusableDataBuffer() {
+    return measureResusableDataBuffer;
+  }
+
+  public void setMeasureResusableDataBuffer(ReusableDataBuffer[] measureResusableDataBuffer) {
+    this.measureResusableDataBuffer = measureResusableDataBuffer;
   }
 }

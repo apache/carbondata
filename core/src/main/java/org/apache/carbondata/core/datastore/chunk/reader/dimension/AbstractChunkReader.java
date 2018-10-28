@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.chunk.reader.dimension;
 import java.io.IOException;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkReader;
 import org.apache.carbondata.core.datastore.compression.Compressor;
@@ -86,7 +87,8 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
 
   @Override
   public void decodeColumnPageAndFillVector(DimensionRawColumnChunk dimensionRawColumnChunk,
-      int pageNumber, ColumnVectorInfo vectorInfo) throws IOException, MemoryException {
+      int pageNumber, ColumnVectorInfo vectorInfo, ReusableDataBuffer reusableDataBuffer)
+      throws IOException, MemoryException {
     throw new UnsupportedOperationException(
         "This operation is not supported in this reader " + this.getClass().getName());
   }
