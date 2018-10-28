@@ -88,10 +88,11 @@ class StringVectorFiller extends AbstractNonDictionaryVectorFiller {
           CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
         vector.putNull(i);
       } else {
-        vector.putByteArray(i, localOffset, length, data);
+        vector.putArray(i, localOffset, length);
       }
       localOffset += length;
     }
+    vector.putAllByteArray(data, 0, data.length);
   }
 }
 
@@ -114,10 +115,11 @@ class LongStringVectorFiller extends AbstractNonDictionaryVectorFiller {
           CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
         vector.putNull(i);
       } else {
-        vector.putByteArray(i, localOffset, length, data);
+        vector.putArray(i, localOffset, length);
       }
       localOffset += length;
     }
+    vector.putAllByteArray(data, 0, data.length);
   }
 }
 

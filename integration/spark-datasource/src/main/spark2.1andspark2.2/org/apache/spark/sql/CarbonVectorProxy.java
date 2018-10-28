@@ -448,6 +448,15 @@ public class CarbonVectorProxy {
       return vector.putByteArray(rowId, value, offset, count);
     }
 
+    /**
+     * It keeps all binary data of all rows to it.
+     * Should use along with @{putArray(int rowId, int offset, int length)} to keep lengths
+     * and offset.
+     */
+    public void putAllByteArray(byte[] data, int offset, int length) {
+      vector.arrayData().appendBytes(length, data, offset);
+    }
+
     @Override public void close() {
       vector.close();
     }

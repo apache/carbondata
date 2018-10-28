@@ -231,4 +231,12 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector {
   @Override public void setLazyPage(LazyPageLoader lazyPage) {
     sparkColumnVectorProxy.setLazyPage(lazyPage);
   }
+
+  @Override public void putArray(int rowId, int offset, int length) {
+    sparkColumnVectorProxy.putArray(rowId, offset, length);
+  }
+
+  @Override public void putAllByteArray(byte[] data, int offset, int length) {
+    sparkColumnVectorProxy.putAllByteArray(data, offset, length);
+  }
 }

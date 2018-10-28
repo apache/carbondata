@@ -30,14 +30,13 @@ class ColumnarVectorWrapperDirectWithInvertedIndex extends AbstractCarbonColumna
 
   protected int[] invertedIndex;
 
-  protected CarbonColumnVector columnVector;
 
   protected boolean isnullBitsExists;
 
   public ColumnarVectorWrapperDirectWithInvertedIndex(CarbonColumnVector columnVector,
       int[] invertedIndex, boolean isnullBitsExists) {
+    super(columnVector);
     this.invertedIndex = invertedIndex;
-    this.columnVector = columnVector;
     this.isnullBitsExists = isnullBitsExists;
   }
 
@@ -146,5 +145,9 @@ class ColumnarVectorWrapperDirectWithInvertedIndex extends AbstractCarbonColumna
   @Override
   public DataType getBlockDataType() {
     return columnVector.getBlockDataType();
+  }
+
+  @Override public void putArray(int rowId, int offset, int length) {
+    columnVector.putArray(invertedIndex[rowId], offset, length);
   }
 }

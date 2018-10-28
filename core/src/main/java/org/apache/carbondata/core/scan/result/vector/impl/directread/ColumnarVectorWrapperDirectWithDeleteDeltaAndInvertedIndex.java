@@ -78,6 +78,10 @@ class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
     }
   }
 
+  @Override public void putAllByteArray(byte[] data, int offset, int length) {
+    carbonColumnVector.putAllByteArray(data, offset, length);
+  }
+
   @Override
   public void convert() {
     if (columnVector instanceof CarbonColumnVectorImpl) {
@@ -163,13 +167,27 @@ class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
           }
         }
       } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
-        byte[][] dataArray = (byte[][]) localVector.getDataArray();
-        for (int i = 0; i < length; i++) {
-          if (!deletedRows.get(i)) {
-            if (nullBits.get(i)) {
-              carbonColumnVector.putNull(counter++);
-            } else {
-              carbonColumnVector.putByteArray(counter++, dataArray[i]);
+        int[] offsets = localVector.getOffsets();
+        int[] lengths = localVector.getLengths();
+        if (offsets != null && lengths != null) {
+          for (int i = 0; i < length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBits.get(i)) {
+                carbonColumnVector.putNull(counter++);
+              } else {
+                carbonColumnVector.putArray(counter++, offsets[i], lengths[i]);
+              }
+            }
+          }
+        } else {
+          byte[][] dataArray = (byte[][]) localVector.getDataArray();
+          for (int i = 0; i < length; i++) {
+            if (!deletedRows.get(i)) {
+              if (nullBits.get(i)) {
+                carbonColumnVector.putNull(counter++);
+              } else {
+                carbonColumnVector.putByteArray(counter++, dataArray[i]);
+              }
             }
           }
         }

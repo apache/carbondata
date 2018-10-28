@@ -423,7 +423,20 @@ public class CarbonVectorProxy {
             this.pageLoad = lazyPage;
         }
 
-        public WritableColumnVector getVector() {
+      /**
+       * It keeps all binary data of all rows to it.
+       * Should use along with @{putArray(int rowId, int offset, int length)} to keep lengths
+       * and offset.
+       */
+      public void putAllByteArray(byte[] data, int offset, int length) {
+        vector.arrayData().appendBytes(length, data, offset);
+      }
+
+      public void putArray(int rowId, int offset, int length) {
+        vector.putArray(rowId, offset, length);
+      }
+
+      public WritableColumnVector getVector() {
             return vector;
         }
     }
