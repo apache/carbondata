@@ -27,6 +27,7 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
@@ -295,8 +296,7 @@ public class RLECodec implements ColumnPageCodec {
       this.compressorName = compressorName;
     }
 
-    @Override
-    public ColumnPage decode(byte[] input, int offset, int length)
+    @Override public ColumnPage decode(byte[] input, int offset, int length)
         throws MemoryException, IOException {
       DataType dataType = columnSpec.getSchemaDataType();
       DataInputStream in = new DataInputStream(new ByteArrayInputStream(input, offset, length));
@@ -316,9 +316,9 @@ public class RLECodec implements ColumnPageCodec {
       return resultPage;
     }
 
-    @Override
-    public void decodeAndFillVector(byte[] input, int offset, int length,
-        ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize)
+    @Override public void decodeAndFillVector(byte[] input, int offset, int length,
+        ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
+        ReusableDataBuffer reusableDataBuffer)
         throws MemoryException, IOException {
       throw new UnsupportedOperationException("Not supposed to be called here");
     }

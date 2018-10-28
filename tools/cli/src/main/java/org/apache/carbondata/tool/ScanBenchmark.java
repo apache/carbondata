@@ -205,7 +205,7 @@ class ScanBenchmark implements Command {
     DimensionColumnPage[] pages = new DimensionColumnPage[numPages];
     for (int i = 0; i < pages.length; i++) {
       pages[i] = dimensionColumnChunkReader.decodeColumnPage(
-          (DimensionRawColumnChunk) rawColumnChunk, i);
+          (DimensionRawColumnChunk) rawColumnChunk, i, null);
     }
     return pages;
   }
@@ -215,7 +215,7 @@ class ScanBenchmark implements Command {
     ColumnPage[] pages = new ColumnPage[numPages];
     for (int i = 0; i < pages.length; i++) {
       pages[i] = measureColumnChunkReader.decodeColumnPage(
-          (MeasureRawColumnChunk) rawColumnChunk, i);
+          (MeasureRawColumnChunk) rawColumnChunk, i, null);
     }
     return pages;
   }

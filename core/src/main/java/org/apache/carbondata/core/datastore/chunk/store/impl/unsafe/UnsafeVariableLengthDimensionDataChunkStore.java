@@ -50,8 +50,8 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
   private byte[] value;
 
   public UnsafeVariableLengthDimensionDataChunkStore(long totalSize, boolean isInvertedIdex,
-      int numberOfRows) {
-    super(totalSize, isInvertedIdex, numberOfRows);
+      int numberOfRows, int dataLength) {
+    super(totalSize, isInvertedIdex, numberOfRows, dataLength);
     this.numberOfRows = numberOfRows;
     // initials size assigning to some random value
     this.value = new byte[20];
@@ -220,6 +220,7 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
    */
   @Override
   public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+    vector.setDictionary(null);
     // get the row id from reverse inverted index based on row id
     rowId = getRowId(rowId);
     // get the current row offset

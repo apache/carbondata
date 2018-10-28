@@ -23,6 +23,7 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -93,8 +94,8 @@ public class DirectCompressCodec implements ColumnPageCodec {
   public ColumnPageDecoder createDecoder(final ColumnPageEncoderMeta meta) {
     return new ColumnPageDecoder() {
 
-      @Override
-      public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
+      @Override public ColumnPage decode(byte[] input, int offset, int length)
+          throws MemoryException {
         ColumnPage decodedPage;
         if (DataTypes.isDecimal(dataType)) {
           decodedPage = ColumnPage.decompressDecimalPage(meta, input, offset, length);
@@ -106,11 +107,21 @@ public class DirectCompressCodec implements ColumnPageCodec {
 
       @Override
       public void decodeAndFillVector(byte[] input, int offset, int length,
-          ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize)
+          ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
+          ReusableDataBuffer reusableDataBuffer)
           throws MemoryException, IOException {
         Compressor compressor =
             CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
-        byte[] unCompressData = compressor.unCompressByte(input, offset, length);
+        int uncompressedLength;
+        byte[] unCompressData;
+        if (null != reusableDataBuffer && compressor.supportReusableBuffer()) {
+          uncompressedLength = compressor.unCompressedLength(input, offset, length);
+          unCompressData = reusableDataBuffer.getDataBuffer(uncompressedLength);
+          compressor.rawUncompress(input, offset, length, unCompressData);
+        } else {
+          unCompressData = compressor.unCompressByte(input, offset, length);
+          uncompressedLength = unCompressData.length;
+        }
         if (DataTypes.isDecimal(dataType)) {
           TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
           DecimalConverterFactory.DecimalConverter decimalConverter =
@@ -118,8 +129,8 @@ public class DirectCompressCodec implements ColumnPageCodec {
                   .getDecimalConverter(columnSpec.getPrecision(), columnSpec.getScale());
           vectorInfo.decimalConverter = decimalConverter;
           if (DataTypes.isDecimal(meta.getStoreDataType())) {
-            ColumnPage decimalColumnPage =
-                VarLengthColumnPageBase.newDecimalColumnPage(meta, unCompressData);
+            ColumnPage decimalColumnPage = VarLengthColumnPageBase
+                .newDecimalColumnPage(meta, unCompressData, uncompressedLength);
             decimalConverter.fillVector(decimalColumnPage.getByteArrayPage(), pageSize, vectorInfo,
                 nullBits, meta.getStoreDataType());
           } else {

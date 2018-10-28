@@ -73,13 +73,14 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
    * @param numberOfRows   total number of rows
    */
   public UnsafeAbstractDimensionDataChunkStore(long totalSize, boolean isInvertedIdex,
-      int numberOfRows) {
+      int numberOfRows, int dataLength) {
     try {
       // allocating the data page
       this.dataPageMemoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, totalSize);
     } catch (MemoryException e) {
       throw new RuntimeException(e);
     }
+    this.dataLength = dataLength;
     this.isExplicitSorted = isInvertedIdex;
   }
 
@@ -93,7 +94,6 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
   @Override public void putArray(final int[] invertedIndex, final int[] invertedIndexReverse,
       final byte[] data) {
     assert (!isMemoryOccupied);
-    this.dataLength = data.length;
     this.invertedIndexReverseOffset = dataLength;
     if (isExplicitSorted) {
       this.invertedIndexReverseOffset +=

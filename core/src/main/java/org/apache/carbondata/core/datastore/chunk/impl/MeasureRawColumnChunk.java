@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReader;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
@@ -56,7 +57,7 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
     for (int i = 0; i < pagesCount; i++) {
       try {
         if (columnPages[i] == null) {
-          columnPages[i] = chunkReader.decodeColumnPage(this, i);
+          columnPages[i] = chunkReader.decodeColumnPage(this, i, null);
         }
       } catch (Exception e) {
         throw new RuntimeException(e);
@@ -77,7 +78,7 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
 
     try {
       if (columnPages[pageNumber] == null) {
-        columnPages[pageNumber] = chunkReader.decodeColumnPage(this, pageNumber);
+        columnPages[pageNumber] = chunkReader.decodeColumnPage(this, pageNumber, null);
       }
     } catch (IOException | MemoryException e) {
       throw new RuntimeException(e);
@@ -92,7 +93,8 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
    * @param index
    * @return
    */
-  public ColumnPage convertToColumnPageWithOutCache(int index) {
+  public ColumnPage convertToColumnPageWithOutCache(int index,
+      ReusableDataBuffer reusableDataBuffer) {
     assert index < pagesCount;
     // in case of filter query filter columns blocklet pages will uncompressed
     // so no need to decode again
@@ -100,7 +102,7 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
       return columnPages[index];
     }
     try {
-      return chunkReader.decodeColumnPage(this, index);
+      return chunkReader.decodeColumnPage(this, index, reusableDataBuffer);
     } catch (IOException | MemoryException e) {
       throw new RuntimeException(e);
     }
@@ -113,10 +115,11 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
    * @param pageNumber page number to decode and fill the vector
    * @param vectorInfo vector to be filled with column page
    */
-  public void convertToColumnPageAndFillVector(int pageNumber, ColumnVectorInfo vectorInfo) {
+  public void convertToColumnPageAndFillVector(int pageNumber, ColumnVectorInfo vectorInfo,
+      ReusableDataBuffer reusableDataBuffer) {
     assert pageNumber < pagesCount;
     try {
-      chunkReader.decodeColumnPageAndFillVector(this, pageNumber, vectorInfo);
+      chunkReader.decodeColumnPageAndFillVector(this, pageNumber, vectorInfo, reusableDataBuffer);
     } catch (IOException | MemoryException e) {
       throw new RuntimeException(e);
     }

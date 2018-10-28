@@ -147,6 +147,21 @@ class CustomizeCompressor extends Compressor {
   override def supportUnsafe(): Boolean = {
     false
   }
+
+  override def unCompressedLength(data: Array[Byte],
+      offset: Int,
+      length: Int): Int = {
+    throw new RuntimeException("Unsupported operation Exception")
+  }
+
+  override def rawUncompress(data: Array[Byte],
+      offset: Int,
+      length: Int,
+      output: Array[Byte]): Int = {
+    throw new RuntimeException("Unsupported operation Exception")
+  }
+
+  override def supportReusableBuffer(): Boolean = false
 }
 
 class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {

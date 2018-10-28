@@ -125,7 +125,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
    * Create a new column page for decimal page
    */
   public static ColumnPage newDecimalColumnPage(ColumnPageEncoderMeta meta,
-      byte[] lvEncodedBytes) throws MemoryException {
+      byte[] lvEncodedBytes, int actualDataLength) throws MemoryException {
     TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
     DecimalConverterFactory.DecimalConverter decimalConverter =
         DecimalConverterFactory.INSTANCE.getDecimalConverter(columnSpec.getPrecision(),
@@ -137,7 +137,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
           CarbonCommonConstants.INT_SIZE_IN_BYTE, meta.getCompressorName());
     } else {
       // Here the size is always fixed.
-      return getDecimalColumnPage(meta, lvEncodedBytes, size);
+      return getDecimalColumnPage(meta, lvEncodedBytes, size, actualDataLength);
     }
   }
 
@@ -160,7 +160,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   }
 
   private static ColumnPage getDecimalColumnPage(ColumnPageEncoderMeta meta,
-      byte[] lvEncodedBytes, int size) throws MemoryException {
+      byte[] lvEncodedBytes, int size, int actualDataLength) throws MemoryException {
     TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
     String compressorName = meta.getCompressorName();
     TableSpec.ColumnSpec spec = TableSpec.ColumnSpec
@@ -171,7 +171,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     int offset;
     int rowId = 0;
     int counter = 0;
-    for (offset = 0; offset < lvEncodedBytes.length; offset += size) {
+    for (offset = 0; offset < actualDataLength; offset += size) {
       rowOffset.putInt(counter, offset);
       rowId++;
       counter++;

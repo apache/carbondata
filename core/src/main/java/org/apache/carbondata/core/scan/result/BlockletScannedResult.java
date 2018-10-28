@@ -27,6 +27,7 @@ import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
@@ -149,8 +150,14 @@ public abstract class BlockletScannedResult {
 
   protected LazyBlockletLoader lazyBlockletLoader;
 
+  private ReusableDataBuffer[] dimensionReusableBuffer;
+
+  private ReusableDataBuffer[] measureReusableBuffer;
+
   public BlockletScannedResult(BlockExecutionInfo blockExecutionInfo,
       QueryStatisticsModel queryStatisticsModel) {
+    this.dimensionReusableBuffer = blockExecutionInfo.getDimensionResusableDataBuffer();
+    this.measureReusableBuffer = blockExecutionInfo.getMeasureResusableDataBuffer();
     this.fixedLengthKeySize = blockExecutionInfo.getFixedLengthKeySize();
     this.noDictionaryColumnChunkIndexes = blockExecutionInfo.getNoDictionaryColumnChunkIndexes();
     this.dictionaryColumnChunkIndexes = blockExecutionInfo.getDictionaryColumnChunkIndex();
@@ -382,15 +389,15 @@ public abstract class BlockletScannedResult {
     long startTime = System.currentTimeMillis();
     for (int i = 0; i < dimensionColumnPages.length; i++) {
       if (dimensionColumnPages[i][pageCounter] == null && dimRawColumnChunks[i] != null) {
-        dimensionColumnPages[i][pageCounter] =
-            dimRawColumnChunks[i].convertToDimColDataChunkWithOutCache(pageCounter);
+        dimensionColumnPages[i][pageCounter] = dimRawColumnChunks[i]
+            .convertToDimColDataChunkWithOutCache(pageCounter, null);
       }
     }
 
     for (int i = 0; i < measureColumnPages.length; i++) {
       if (measureColumnPages[i][pageCounter] == null && msrRawColumnChunks[i] != null) {
-        measureColumnPages[i][pageCounter] =
-            msrRawColumnChunks[i].convertToColumnPageWithOutCache(pageCounter);
+        measureColumnPages[i][pageCounter] = msrRawColumnChunks[i]
+            .convertToColumnPageWithOutCache(pageCounter, null);
       }
     }
     QueryStatistic pageUncompressTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
@@ -412,18 +419,20 @@ public abstract class BlockletScannedResult {
     for (int i = 0; i < this.dictionaryColumnChunkIndexes.length; i++) {
       dictionaryInfo[i].vector.setLazyPage(
           new LazyPageLoader(lazyBlockletLoader, dictionaryColumnChunkIndexes[i], false,
-              pageIdFiltered[pageCounter], dictionaryInfo[i]));
+              pageIdFiltered[pageCounter], dictionaryInfo[i], dimensionReusableBuffer[i]));
     }
+    int startIndex = dictionaryColumnChunkIndexes.length;
     for (int i = 0; i < this.noDictionaryColumnChunkIndexes.length; i++) {
       noDictionaryInfo[i].vector.setLazyPage(
           new LazyPageLoader(lazyBlockletLoader, noDictionaryColumnChunkIndexes[i], false,
-              pageIdFiltered[pageCounter], noDictionaryInfo[i]));
+              pageIdFiltered[pageCounter], noDictionaryInfo[i],
+              dimensionReusableBuffer[startIndex++]));
     }
 
     for (int i = 0; i < measuresOrdinal.length; i++) {
       msrVectorInfo[i].vector.setLazyPage(
           new LazyPageLoader(lazyBlockletLoader, measuresOrdinal[i], true,
-              pageIdFiltered[pageCounter], msrVectorInfo[i]));
+              pageIdFiltered[pageCounter], msrVectorInfo[i], measureReusableBuffer[i]));
     }
 
   }

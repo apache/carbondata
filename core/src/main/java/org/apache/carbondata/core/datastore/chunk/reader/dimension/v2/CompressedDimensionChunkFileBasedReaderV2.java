@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionColumnPage;
@@ -118,8 +119,8 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
     return dataChunks;
   }
 
-  public DimensionColumnPage decodeColumnPage(
-      DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber) throws IOException {
+  public DimensionColumnPage decodeColumnPage(DimensionRawColumnChunk dimensionRawColumnChunk,
+      int pageNumber, ReusableDataBuffer reusableDataBuffer) throws IOException {
     byte[] dataPage = null;
     int[] invertedIndexes = new int[0];
     int[] invertedIndexesReverse = new int[0];
@@ -144,10 +145,17 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
           CarbonUtil.readDataChunk(rawData, copySourcePoint, dimensionChunksLength.get(blockIndex));
       copySourcePoint += dimensionChunksLength.get(blockIndex);
     }
-
     // first read the data and uncompressed it
-    dataPage = compressor
-        .unCompressByte(rawData.array(), copySourcePoint, dimensionColumnChunk.data_page_length);
+    int uncompressedSize = compressor.unCompressedLength(rawData.array(), copySourcePoint,
+        dimensionColumnChunk.data_page_length);
+    if (null != reusableDataBuffer) {
+      dataPage = reusableDataBuffer.getDataBuffer(uncompressedSize);
+    } else {
+      dataPage = new byte[uncompressedSize];
+    }
+    compressor
+        .rawUncompress(rawData.array(), copySourcePoint, dimensionColumnChunk.data_page_length,
+            dataPage);
     copySourcePoint += dimensionColumnChunk.data_page_length;
     // if row id block is present then read the row id chunk and uncompress it
     if (CarbonUtil.hasEncoding(dimensionColumnChunk.encoders, Encoding.INVERTED_INDEX)) {
@@ -169,7 +177,9 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
       rawData.get(dataRle);
       rlePage = numberCompressor.unCompress(dataRle, 0, dimensionColumnChunk.rle_page_length);
       // uncompress the data with rle indexes
-      dataPage = UnBlockIndexer.uncompressData(dataPage, rlePage, eachColumnValueSize[blockIndex]);
+      dataPage = UnBlockIndexer
+          .uncompressData(dataPage, rlePage, eachColumnValueSize[blockIndex], uncompressedSize);
+      uncompressedSize = dataPage.length;
     }
     // fill chunk attributes
     DimensionColumnPage columnDataChunk = null;
@@ -180,12 +190,12 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
       columnDataChunk =
           new VariableLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
               numberOfRows, DimensionChunkStoreFactory.DimensionStoreType.VARIABLE_SHORT_LENGTH,
-              null);
+              null, uncompressedSize);
     } else {
       // to store fixed length column chunk values
       columnDataChunk =
           new FixedLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
-              numberOfRows, eachColumnValueSize[blockIndex]);
+              numberOfRows, eachColumnValueSize[blockIndex], uncompressedSize);
     }
     return columnDataChunk;
   }
