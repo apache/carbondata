@@ -1076,7 +1076,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         sql("select * from sdkOutputTable").show(false)
       }
     assert(exception.getMessage()
-      .contains("Problem in loading segment blocks."))
+      .contains("Problem in loading segment blocks"))
 
 
     sql("DROP TABLE sdkOutputTable")

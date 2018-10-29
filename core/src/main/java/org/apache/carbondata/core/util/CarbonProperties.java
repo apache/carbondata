@@ -686,7 +686,8 @@ public final class CarbonProperties {
           CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION);
     } else {
       try {
-        ColumnarFormatVersion.valueOf(carbondataFileVersionString);
+        carbonProperties.setProperty(CARBON_DATA_FILE_VERSION,
+            ColumnarFormatVersion.valueOf(carbondataFileVersionString).name());
       } catch (IllegalArgumentException e) {
         // use default property if user specifies an invalid version property
         LOGGER.warn("Specified file version property is invalid: " + carbondataFileVersionString
@@ -696,9 +697,8 @@ public final class CarbonProperties {
             CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION);
       }
     }
-    LOGGER.info("Carbon Current data file version: " + carbonProperties
-        .setProperty(CARBON_DATA_FILE_VERSION,
-            CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION));
+    LOGGER.info(
+        "Considered file format is: " + carbonProperties.getProperty(CARBON_DATA_FILE_VERSION));
   }
 
   /**
@@ -845,8 +845,7 @@ public final class CarbonProperties {
       return getDefaultFormatVersion();
     } else {
       try {
-        short version = Short.parseShort(versionStr);
-        return ColumnarFormatVersion.valueOf(version);
+        return ColumnarFormatVersion.valueOf(versionStr);
       } catch (IllegalArgumentException e) {
         return getDefaultFormatVersion();
       }

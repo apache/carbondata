@@ -233,6 +233,7 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
   protected ColumnPage decodeMeasure(DataChunk2 pageMetadata, ByteBuffer pageData, int offset,
       ColumnVectorInfo vectorInfo, BitSet nullBitSet) throws MemoryException, IOException {
     List<Encoding> encodings = pageMetadata.getEncoders();
+    org.apache.carbondata.core.metadata.encoder.Encoding.validateEncodingTypes(encodings);
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
     String compressorName =
         CarbonMetadataUtil.getCompressorNameFromChunkMeta(pageMetadata.getChunk_meta());
