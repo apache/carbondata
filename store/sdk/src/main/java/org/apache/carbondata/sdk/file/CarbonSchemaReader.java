@@ -93,6 +93,7 @@ public class CarbonSchemaReader {
     FileReader fileReader = FileFactory.getFileHolder(FileFactory.getFileType(dataFilePath));
     ByteBuffer buffer =
         fileReader.readByteBuffer(FileFactory.getUpdatedFilePath(dataFilePath), fileSize - 8, 8);
+    fileReader.finish();
     CarbonFooterReaderV3 footerReader = new CarbonFooterReaderV3(dataFilePath, buffer.getLong());
     FileFooter3 footer = footerReader.readFooterVersion3();
     if (null != footer.getExtra_info()) {
