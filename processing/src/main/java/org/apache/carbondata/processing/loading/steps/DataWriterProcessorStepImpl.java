@@ -259,7 +259,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       readCounter++;
       dataHandler.addDataToStore(row);
     } catch (Exception e) {
-      throw new CarbonDataLoadingException("unable to generate the mdkey", e);
+      throw new CarbonDataLoadingException(e);
     }
     rowCounter.getAndAdd(1);
   }

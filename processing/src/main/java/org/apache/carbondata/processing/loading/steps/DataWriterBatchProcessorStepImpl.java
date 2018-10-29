@@ -141,7 +141,9 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
     try {
       processingComplete(dataHandler);
     } catch (Exception e) {
-      exception = new CarbonDataWriterException(e.getMessage(), e);
+      if (null == exception) {
+        exception = new CarbonDataWriterException(e.getMessage(), e);
+      }
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
         .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PATITION_ID,
