@@ -209,7 +209,11 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     try {
       processingComplete(dataHandler);
     } catch (CarbonDataLoadingException e) {
-      exception = new CarbonDataWriterException(e.getMessage(), e);
+      // only assign when exception is null
+      // else it will erase original root cause
+      if (null == exception) {
+        exception = new CarbonDataWriterException(e);
+      }
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
         .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PATITION_ID,
@@ -305,7 +309,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       }
       writeCounter[iteratorIndex] += batch.getSize();
     } catch (Exception e) {
-      throw new CarbonDataLoadingException("unable to generate the mdkey", e);
+      throw new CarbonDataLoadingException(e);
     }
     rowCounter.getAndAdd(batch.getSize());
   }
