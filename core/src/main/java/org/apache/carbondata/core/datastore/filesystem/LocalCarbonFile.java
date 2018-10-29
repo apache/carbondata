@@ -141,7 +141,12 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   public boolean delete() {
-    return file.delete();
+    try {
+      return deleteFile(file.getAbsolutePath(), FileFactory.getFileType(file.getAbsolutePath()));
+    } catch (IOException e) {
+      LOGGER.error("Exception occurred:" + e.getMessage(), e);
+      return false;
+    }
   }
 
   @Override public CarbonFile[] listFiles() {

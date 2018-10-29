@@ -300,31 +300,15 @@ public final class CarbonUtil {
 
       @Override public Void run() throws Exception {
         for (int i = 0; i < path.length; i++) {
-          deleteRecursive(path[i]);
+          CarbonFile carbonFile = FileFactory.getCarbonFile(path[i].getAbsolutePath());
+          boolean delete = carbonFile.delete();
+          if (!delete) {
+            throw new IOException("Error while deleting file: " + carbonFile.getAbsolutePath());
+          }
         }
         return null;
       }
     });
-  }
-
-  /**
-   * Recursively delete the files
-   *
-   * @param f File to be deleted
-   * @throws IOException
-   */
-  private static void deleteRecursive(File f) throws IOException {
-    if (f.isDirectory()) {
-      File[] files = f.listFiles();
-      if (null != files) {
-        for (File c : files) {
-          deleteRecursive(c);
-        }
-      }
-    }
-    if (f.exists() && !f.delete()) {
-      throw new IOException("Error while deleting the folders and files");
-    }
   }
 
   public static void deleteFoldersAndFiles(final CarbonFile... file)
@@ -333,7 +317,10 @@ public final class CarbonUtil {
 
       @Override public Void run() throws Exception {
         for (int i = 0; i < file.length; i++) {
-          deleteRecursive(file[i]);
+          boolean delete = file[i].delete();
+          if (!delete) {
+            throw new IOException("Error while deleting file: " + file[i].getAbsolutePath());
+          }
         }
         return null;
       }
@@ -346,43 +333,14 @@ public final class CarbonUtil {
 
       @Override public Void run() throws Exception {
         for (int i = 0; i < file.length; i++) {
-          deleteRecursiveSilent(file[i]);
+          boolean delete = file[i].delete();
+          if (!delete) {
+            LOGGER.warn("Unable to delete file: " + file[i].getCanonicalPath());
+          }
         }
         return null;
       }
     });
-  }
-
-  /**
-   * Recursively delete the files
-   *
-   * @param f File to be deleted
-   * @throws IOException
-   */
-  private static void deleteRecursive(CarbonFile f) throws IOException {
-    if (f.isDirectory()) {
-      if (f.listFiles() != null) {
-        for (CarbonFile c : f.listFiles()) {
-          deleteRecursive(c);
-        }
-      }
-    }
-    if (f.exists() && !f.delete()) {
-      throw new IOException("Error while deleting the folders and files");
-    }
-  }
-
-  private static void deleteRecursiveSilent(CarbonFile f) {
-    if (f.isDirectory()) {
-      if (f.listFiles() != null) {
-        for (CarbonFile c : f.listFiles()) {
-          deleteRecursiveSilent(c);
-        }
-      }
-    }
-    if (f.exists() && !f.delete()) {
-      return;
-    }
   }
 
   public static void deleteFiles(File[] intermediateFiles) throws IOException {
