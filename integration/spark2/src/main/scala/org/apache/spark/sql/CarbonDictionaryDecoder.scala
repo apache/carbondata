@@ -42,7 +42,6 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.scan.executor.util.QueryUtil
 import org.apache.carbondata.core.util.{DataTypeUtil, ThreadLocalSessionInfo}
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.CarbonRDDWithTableInfo
 
@@ -69,6 +68,9 @@ case class CarbonDictionaryDecoder(
   val getDictionaryColumnIds: Array[(String, ColumnIdentifier, CarbonDimension)] =
     CarbonDictionaryDecoder.getDictionaryColumnMapping(child.output, relations, profile, aliasMap)
 
+  val broadcastConf = SparkSQLUtil.broadCastHadoopConf(
+    sparkSession.sparkContext, sparkSession.sessionState.newHadoopConf())
+
   override def doExecute(): RDD[InternalRow] = {
     attachTree(this, "execute") {
       val tableNameToCarbonTableMapping = relations.map { relation =>
@@ -76,12 +78,10 @@ case class CarbonDictionaryDecoder(
         (carbonTable.getTableName, carbonTable)
       }.toMap
 
-      val conf = SparkSQLUtil
-        .broadCastHadoopConf(sparkSession.sparkContext, sparkSession.sessionState.newHadoopConf())
       if (CarbonDictionaryDecoder.isRequiredToDecode(getDictionaryColumnIds)) {
         val dataTypes = child.output.map { attr => attr.dataType }
         child.execute().mapPartitions { iter =>
-          ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf.value.value)
+          ThreadLocalSessionInfo.setConfigurationToCurrentThread(broadcastConf.value.value)
           val cacheProvider: CacheProvider = CacheProvider.getInstance
           val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
             cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
@@ -155,7 +155,8 @@ case class CarbonDictionaryDecoder(
                |${ev.code}
              """.stripMargin
           code +=
-            s"""
+          s"""
+             |ThreadLocalSessionInfo.setConfigurationToCurrentThread(${broadcastConf.value.value});
              |boolean $isNull = false;
              |byte[] $valueIntern = $dictsRef.getDictionaryValueForKeyInBytes(${ ev.value });
              |if ($valueIntern == null ||
