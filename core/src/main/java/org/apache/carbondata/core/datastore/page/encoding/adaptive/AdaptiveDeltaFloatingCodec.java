@@ -272,6 +272,11 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
             int shortInt = ByteUtil.valueOf3Bytes(shortIntPage, i * 3);
             vector.putFloat(i, (max - shortInt) / floatFactor);
           }
+        } else if (pageDataType == DataTypes.INT) {
+          int[] intData = columnPage.getIntPage();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putFloat(i, (max - intData[i]) / floatFactor);
+          }
         } else {
           throw new RuntimeException("internal error: " + this.toString());
         }
@@ -297,6 +302,11 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
           int[] intData = columnPage.getIntPage();
           for (int i = 0; i < pageSize; i++) {
             vector.putDouble(i, (max - intData[i]) / factor);
+          }
+        } else if (pageDataType == DataTypes.LONG) {
+          long[] longData = columnPage.getLongPage();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, (max - longData[i]) / factor);
           }
         } else {
           throw new RuntimeException("Unsupported datatype : " + pageDataType);
