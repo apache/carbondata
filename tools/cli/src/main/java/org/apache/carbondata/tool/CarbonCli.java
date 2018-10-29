@@ -19,6 +19,8 @@ package org.apache.carbondata.tool;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -148,7 +150,10 @@ public class CarbonCli {
       outPuts = new ArrayList<>();
     }
     if (line.hasOption("h")) {
-      printHelp(options);
+      collectHelpInfo(options);
+      for (String output : outPuts) {
+        out.println(output);
+      }
       return;
     }
 
@@ -167,7 +172,10 @@ public class CarbonCli {
     } else {
       out.println("command " + cmd + " is not supported");
       outPuts.add("command " + cmd + " is not supported");
-      printHelp(options);
+      collectHelpInfo(options);
+      for (String output : outPuts) {
+        out.println(output);
+      }
       return;
     }
 
@@ -186,9 +194,14 @@ public class CarbonCli {
     }
   }
 
-  private static void printHelp(Options options) {
+  private static void collectHelpInfo(Options options) {
     HelpFormatter formatter = new HelpFormatter();
-    formatter.printHelp("CarbonCli", options);
+    StringWriter stringWriter = new StringWriter();
+    PrintWriter printWriter = new PrintWriter(stringWriter);
+    formatter.printHelp(printWriter, formatter.getWidth(), "CarbonCli", null, options,
+        formatter.getLeftPadding(), formatter.getDescPadding(), null, false);
+    printWriter.flush();
+    outPuts.add(stringWriter.toString());
   }
 
 }

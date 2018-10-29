@@ -188,7 +188,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val STREAM = carbonKeyWord("STREAM")
   protected val STREAMS = carbonKeyWord("STREAMS")
   protected val STMPROPERTIES = carbonKeyWord("STMPROPERTIES")
-  protected val SUMMARY = carbonKeyWord("SUMMARY")
+  protected val CARBONCLI = carbonKeyWord("CARBONCLI")
 
   protected val doubleQuotedString = "\"([^\"]+)\"".r
   protected val singleQuotedString = "'([^']+)'".r
@@ -1145,10 +1145,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       case _ => ("", "")
     }
 
-  protected lazy val summaryOptions: Parser[(String, String)] =
-    (stringLit <~ "=") ~ stringLit ^^ {
-      case opt ~ optvalue => (opt.trim.toLowerCase(), optvalue)
-      case _ => ("", "")
+  protected lazy val commandOptions: Parser[String] =
+    stringLit ^^ {
+      case optValue => optValue
+      case _ => ""
     }
 
 

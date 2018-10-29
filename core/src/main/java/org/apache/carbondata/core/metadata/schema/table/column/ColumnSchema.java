@@ -571,4 +571,13 @@ public class ColumnSchema implements Serializable, Writable {
     }
     this.isLocalDictColumn = in.readBoolean();
   }
+
+  /**
+   * returns whether column is complex column based on column name for child column
+   * @return
+   */
+  public boolean isComplexColumn() {
+    return this.getColumnName()
+        .contains(".val") || this.getColumnName().contains(".");
+  }
 }

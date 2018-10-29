@@ -33,6 +33,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonFooterReaderV3;
 import org.apache.carbondata.core.reader.CarbonHeaderReader;
@@ -446,7 +447,8 @@ class DataFile {
      * @return result
      */
     private double computePercentage(byte[] data, byte[] min, byte[] max, ColumnSchema column) {
-      if (column.getDataType() == DataTypes.STRING) {
+      if (column.getDataType() == DataTypes.STRING || column.getDataType() == DataTypes.BOOLEAN
+          || column.hasEncoding(Encoding.DICTIONARY) || column.getDataType().isComplexType()) {
         // for string, we do not calculate
         return 0;
       } else if (DataTypes.isDecimal(column.getDataType())) {
@@ -456,7 +458,16 @@ class DataFile {
         return dataValue.divide(factorValue).doubleValue();
       }
       double dataValue, minValue, factorValue;
-      if (column.getDataType() == DataTypes.SHORT) {
+      if (columnChunk.column.isDimensionColumn() &&
+          DataTypeUtil.isPrimitiveColumn(columnChunk.column.getDataType())) {
+        minValue = Double.valueOf(String.valueOf(
+            DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(min, column.getDataType())));
+        dataValue = Double.valueOf(String.valueOf(
+            DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(data, column.getDataType())));
+        factorValue = Double.valueOf(String.valueOf(
+            DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(max, column.getDataType())))
+            - minValue;
+      } else if (column.getDataType() == DataTypes.SHORT) {
         minValue = ByteUtil.toShort(min, 0);
         dataValue = ByteUtil.toShort(data, 0) - minValue;
         factorValue = ByteUtil.toShort(max, 0) - ByteUtil.toShort(min, 0);

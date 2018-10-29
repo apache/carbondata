@@ -20,12 +20,7 @@ package org.apache.carbondata.tool;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -33,11 +28,11 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonHeaderReader;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
-import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.format.BlockletInfo3;
@@ -80,7 +75,9 @@ class DataSummary implements Command {
     }
     if (line.hasOption("s") || printAll) {
       if (dataFiles.size() > 0) {
-        collectSchemaDetails(dataFiles.entrySet().iterator().next().getValue());
+        List<String> dataFilesSet = new ArrayList<>(dataFiles.keySet());
+        Collections.reverse(dataFilesSet);
+        collectSchemaDetails(dataFiles.get(dataFilesSet.get(0)));
       }
     }
     if (line.hasOption("m") || printAll) {
@@ -175,8 +172,8 @@ class DataSummary implements Command {
         tableFormatter.addRow(new String[]{
             segment.getLoadName(),
             segment.getSegmentStatus().toString(),
-            new java.sql.Date(segment.getLoadStartTime()).toString(),
-            new java.sql.Date(segment.getLoadEndTime()).toString(),
+            new java.sql.Timestamp(segment.getLoadStartTime()).toString(),
+            new java.sql.Timestamp(segment.getLoadEndTime()).toString(),
             segment.getMergedLoadName() == null ? "NA" : segment.getMergedLoadName(),
             segment.getFileFormat().toString(),
             dataSize,
@@ -306,9 +303,9 @@ class DataSummary implements Command {
           maxPercent = "NA";
           // for complex types min max can be given as NA and for varchar where min max is not
           // written, can give NA
-          if (blocklet.getColumnChunk().column.getColumnName().contains(".val") || blocklet
-              .getColumnChunk().column.getColumnName().contains(".") || !blocklet
-              .getColumnChunk().isMinMaxPresent) {
+          if (blocklet.getColumnChunk().column.hasEncoding(Encoding.DICTIONARY) ||
+              blocklet.getColumnChunk().column.isComplexColumn() ||
+              !blocklet.getColumnChunk().isMinMaxPresent) {
             min = "NA";
             max = "NA";
           } else {
@@ -316,26 +313,41 @@ class DataSummary implements Command {
             max = new String(blockletMax, Charset.forName(DEFAULT_CHARSET));
           }
         } else {
-          minPercent = String.format("%.1f", blocklet.getColumnChunk().getMinPercentage() * 100);
-          maxPercent = String.format("%.1f", blocklet.getColumnChunk().getMaxPercentage() * 100);
+          // for column has global dictionary and for complex columns,min and max percentage can be
+          // NA
+          if (blocklet.getColumnChunk().column.hasEncoding(Encoding.DICTIONARY) ||
+              blocklet.getColumnChunk().column.isComplexColumn() ||
+              blocklet.getColumnChunk().column.getDataType().isComplexType()) {
+            minPercent = "NA";
+            maxPercent = "NA";
+          } else {
+            minPercent =
+                String.format("%.1f", Math.abs(blocklet.getColumnChunk().getMinPercentage() * 100));
+            maxPercent =
+                String.format("%.1f", Math.abs(blocklet.getColumnChunk().getMaxPercentage() * 100));
+          }
           DataFile.ColumnChunk columnChunk = blocklet.columnChunk;
-          if (columnChunk.column.isDimensionColumn() && DataTypeUtil
+          // need to consider dictionary and complex columns
+          if (columnChunk.column.hasEncoding(Encoding.DICTIONARY) ||
+              blocklet.getColumnChunk().column.isComplexColumn() ||
+              blocklet.getColumnChunk().column.getDataType().isComplexType()) {
+            min = "NA";
+            max = "NA";
+          } else if (columnChunk.column.isDimensionColumn() && DataTypeUtil
               .isPrimitiveColumn(columnChunk.column.getDataType())) {
             min = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(blockletMin,
                 columnChunk.column.getDataType()).toString();
             max = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(blockletMax,
                 columnChunk.column.getDataType()).toString();
+            if (columnChunk.column.getDataType().equals(DataTypes.TIMESTAMP)) {
+              min = new java.sql.Timestamp(Long.parseLong(min) / 1000).toString();
+              max = new java.sql.Timestamp(Long.parseLong(max) / 1000).toString();
+            }
           } else {
-            if (blockletMin.length > 4) {
-              min = String.valueOf(ByteUtil.toLong(blockletMin, 0, blockletMin.length));
-            } else {
-              min = String.valueOf(ByteUtil.toInt(blockletMin, 0, blockletMin.length));
-            }
-            if (blockletMax.length > 4) {
-              max = String.valueOf(ByteUtil.toLong(blockletMax, 0, blockletMax.length));
-            } else {
-              max = String.valueOf(ByteUtil.toInt(blockletMax, 0, blockletMax.length));
-            }
+            min = String.valueOf(DataTypeUtil
+                .getMeasureObjectFromDataType(blockletMin, columnChunk.column.getDataType()));
+            max = String.valueOf(DataTypeUtil
+                .getMeasureObjectFromDataType(blockletMax, columnChunk.column.getDataType()));
           }
         }
         printer.addRow(
@@ -370,24 +382,26 @@ class DataSummary implements Command {
   }
 
   private void collectColumnChunkMeta(String columnName) throws IOException, MemoryException {
-    DataFile file = dataFiles.entrySet().iterator().next().getValue();
-    outPuts.add("");
-    outPuts.add("## Page Meta for column '" + columnName + "' in file " + file.getFilePath());
-    collectStats(columnName);
-    for (int i = 0; i < file.getAllBlocklets().size(); i++) {
-      DataFile.Blocklet blocklet = file.getAllBlocklets().get(i);
-      DataChunk3 dataChunk3 = blocklet.getColumnChunk().getDataChunk3();
-      List<DataChunk2> dataChunk2List = dataChunk3.getData_chunk_list();
-      outPuts.add(String.format("Blocklet %d:", i));
-
-      // There will be many pages, for debugging purpose,
-      // just print 3 page for each blocklet is enough
-      for (int j = 0; j < dataChunk2List.size() && j < 3; j++) {
-        outPuts.add(String.format("Page %d (offset %d, length %d): %s",
-            j, dataChunk3.page_offset.get(j), dataChunk3.page_length.get(j),
-            dataChunk2List.get(j).toString()));
-      }
+    for (Map.Entry<String, DataFile> entry : dataFiles.entrySet()) {
+      DataFile file = entry.getValue();
       outPuts.add("");
+      outPuts.add("## Page Meta for column '" + columnName + "' in file " + file.getFilePath());
+      collectStats(columnName);
+      for (int i = 0; i < file.getAllBlocklets().size(); i++) {
+        DataFile.Blocklet blocklet = file.getAllBlocklets().get(i);
+        DataChunk3 dataChunk3 = blocklet.getColumnChunk().getDataChunk3();
+        List<DataChunk2> dataChunk2List = dataChunk3.getData_chunk_list();
+        outPuts.add(String.format("Blocklet %d:", i));
+
+        // There will be many pages, for debugging purpose,
+        // just print 3 page for each blocklet is enough
+        for (int j = 0; j < dataChunk2List.size() && j < 3; j++) {
+          outPuts.add(String
+              .format("Page %d (offset %d, length %d): %s", j, dataChunk3.page_offset.get(j),
+                  dataChunk3.page_length.get(j), dataChunk2List.get(j).toString()));
+        }
+        outPuts.add("");
+      }
     }
   }
 
