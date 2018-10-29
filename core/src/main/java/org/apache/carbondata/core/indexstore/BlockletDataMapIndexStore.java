@@ -192,7 +192,7 @@ public class BlockletDataMapIndexStore
           dataMap.clear();
         }
       }
-      throw new IOException("Problem in loading segment blocks.", e);
+      throw new IOException("Problem in loading segment blocks: " + e.getMessage(), e);
     }
 
     return blockletDataMapIndexWrappers;
