@@ -264,6 +264,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       ByteBuffer pageData, DataChunk2 pageMetadata, int offset, ColumnVectorInfo vectorInfo)
       throws IOException, MemoryException {
     List<Encoding> encodings = pageMetadata.getEncoders();
+    org.apache.carbondata.core.metadata.encoder.Encoding.validateEncodingTypes(encodings);
     if (CarbonUtil.isEncodedWithMeta(encodings)) {
       int[] invertedIndexes = new int[0];
       int[] invertedIndexesReverse = new int[0];
