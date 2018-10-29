@@ -464,6 +464,9 @@ public class CarbonVectorProxy {
     }
 
     public void reset() {
+      if (isConstant) {
+        return;
+      }
       isLoaded = false;
       vector.reset();
     }

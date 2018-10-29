@@ -1276,6 +1276,40 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     }
   }
 
+  test("test partition issue with add location") {
+    spark.sql("drop table if exists partitionTable_obs")
+    spark.sql("drop table if exists partitionTable_obs_par")
+    spark.sql(s"create table partitionTable_obs (id int,name String,email String) using carbon partitioned by(email) ")
+    spark.sql(s"create table partitionTable_obs_par (id int,name String,email String) using parquet partitioned by(email) ")
+    spark.sql("insert into partitionTable_obs select 1,'huawei','abc'")
+    spark.sql("insert into partitionTable_obs select 1,'huawei','bcd'")
+    spark.sql(s"alter table partitionTable_obs add partition (email='def') location '$warehouse1/test_folder121/'")
+    spark.sql("insert into partitionTable_obs select 1,'huawei','def'")
+
+    spark.sql("insert into partitionTable_obs_par select 1,'huawei','abc'")
+    spark.sql("insert into partitionTable_obs_par select 1,'huawei','bcd'")
+    spark.sql(s"alter table partitionTable_obs_par add partition (email='def') location '$warehouse1/test_folder122/'")
+    spark.sql("insert into partitionTable_obs_par select 1,'huawei','def'")
+
+    checkAnswer(spark.sql("select * from partitionTable_obs"), spark.sql("select * from partitionTable_obs_par"))
+    spark.sql("drop table if exists partitionTable_obs")
+    spark.sql("drop table if exists partitionTable_obs_par")
+  }
+
+  test("test multiple partition  select issue") {
+    spark.sql("drop table if exists t_carbn01b_hive")
+    spark.sql(s"drop table if exists t_carbn01b")
+    spark.sql("create table t_carbn01b_hive(Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Create_date String,Active_status String,Item_type_cd INT, Update_time TIMESTAMP, Discount_price DOUBLE)  using parquet partitioned by (Active_status,Item_type_cd, Update_time, Discount_price)")
+    spark.sql("create table t_carbn01b(Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Create_date String,Active_status String,Item_type_cd INT, Update_time TIMESTAMP, Discount_price DOUBLE)  using carbon partitioned by (Active_status,Item_type_cd, Update_time, Discount_price)")
+    spark.sql("insert into t_carbn01b partition(Active_status, Item_type_cd,Update_time,Discount_price) select * from t_carbn01b_hive")
+    spark.sql("alter table t_carbn01b add partition (active_status='xyz',Item_type_cd=12,Update_time=NULL,Discount_price='3000')")
+    spark.sql("insert overwrite table t_carbn01b select 'xyz', 12, 74,3000,20000000,121.5,4.99,2.44,'RE3423ee','dddd', 'ssss','2012-01-02 23:04:05.12', '2012-01-20'")
+    spark.sql("insert overwrite table t_carbn01b_hive select 'xyz', 12, 74,3000,20000000,121.5,4.99,2.44,'RE3423ee','dddd', 'ssss','2012-01-02 23:04:05.12', '2012-01-20'")
+    checkAnswer(spark.sql("select * from t_carbn01b_hive"), spark.sql("select * from t_carbn01b"))
+    spark.sql("drop table if exists t_carbn01b_hive")
+    spark.sql(s"drop table if exists t_carbn01b")
+  }
+
   override protected def beforeAll(): Unit = {
     drop
     createParquetTable
