@@ -19,6 +19,7 @@ package org.apache.carbondata.core.scan.result.vector.impl.directread;
 
 import java.math.BigDecimal;
 
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 
 /**
@@ -140,5 +141,10 @@ class ColumnarVectorWrapperDirectWithInvertedIndex extends AbstractCarbonColumna
     for (int i = srcIndex; i < count; i++) {
       columnVector.putByte(invertedIndex[rowId++], src[i]);
     }
+  }
+
+  @Override
+  public DataType getBlockDataType() {
+    return columnVector.getBlockDataType();
   }
 }
