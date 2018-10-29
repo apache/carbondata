@@ -114,7 +114,8 @@ class DataFile {
     this.footer = footer;
     String filePath = dataFile.getPath();
     // folder path that contains this file
-    String fileName = filePath.substring(filePath.lastIndexOf(FILE_SEPARATOR));
+    String fileName =
+        filePath.substring(filePath.replaceAll("\\\\", FILE_SEPARATOR).lastIndexOf(FILE_SEPARATOR));
     this.shardName = CarbonTablePath.getShardName(fileName);
     this.partNo = CarbonTablePath.DataFileUtil.getPartNo(fileName);
 
@@ -160,7 +161,9 @@ class DataFile {
   }
 
   FileFooter3 readFooter() throws IOException {
-    this.fileReader = FileFactory.getFileHolder(FileFactory.getFileType(dataFile.getPath()));
+    if (this.fileReader == null) {
+      this.fileReader = FileFactory.getFileHolder(FileFactory.getFileType(dataFile.getPath()));
+    }
     ByteBuffer buffer = fileReader.readByteBuffer(FileFactory.getUpdatedFilePath(
         dataFile.getPath()), dataFile.getSize() - 8, 8);
     this.footerOffset = buffer.getLong();
@@ -500,4 +503,7 @@ class DataFile {
     }
   }
 
+  public void close() throws IOException {
+    this.fileReader.finish();
+  }
 }
