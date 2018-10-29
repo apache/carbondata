@@ -18,6 +18,7 @@
 package org.apache.carbondata.tool;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -68,7 +69,12 @@ class ScanBenchmark implements Command {
         return;
       }
       Map<String, DataFile> dataFiles = collector.getDataFiles();
-      file = dataFiles.entrySet().iterator().next().getValue();
+      Iterator<DataFile> iterator = dataFiles.values().iterator();
+      // use the first file and close the rest
+      file = iterator.next();
+      while (iterator.hasNext()) {
+        iterator.next().close();
+      }
     }
 
     outPuts.add("\n## Benchmark");
@@ -139,7 +145,7 @@ class ScanBenchmark implements Command {
         }
       }
     }
-
+    file.close();
   }
 
   interface Operation {

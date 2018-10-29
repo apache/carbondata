@@ -145,4 +145,10 @@ class FileCollector {
         numRow / numBlocklet);
     outPuts.add(format1);
   }
+
+  public void close() throws IOException {
+    for (DataFile file : dataFiles.values()) {
+      file.close();
+    }
+  }
 }

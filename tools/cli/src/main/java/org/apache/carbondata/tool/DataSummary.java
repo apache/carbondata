@@ -111,6 +111,11 @@ class DataSummary implements Command {
         collectColumnChunkMeta(columName);
       }
     }
+
+    collector.close();
+    for (DataFile file : dataFiles.values()) {
+      file.close();
+    }
   }
 
   private void collectSchemaDetails(DataFile dataFile) throws IOException {
