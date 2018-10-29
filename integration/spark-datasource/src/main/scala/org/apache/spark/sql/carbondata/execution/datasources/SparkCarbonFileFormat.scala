@@ -27,6 +27,7 @@ import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.TaskContext
 import org.apache.spark.internal.Logging
+import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.memory.MemoryMode
 import org.apache.spark.sql._
 import org.apache.spark.sql.carbondata.execution.datasources.readsupport.SparkUnsafeRowReadSuport
@@ -112,6 +113,13 @@ class SparkCarbonFileFormat extends FileFormat
   }
 
   /**
+   * Add our own protocol to control the commit.
+   */
+  SparkSession.getActiveSession.get.sessionState.conf.setConfString(
+    "spark.sql.sources.commitProtocolClass",
+    "org.apache.spark.sql.carbondata.execution.datasources.CarbonSQLHadoopMapReduceCommitProtocol")
+
+  /**
    * Prepares a write job and returns an [[OutputWriterFactory]].  Client side job preparation is
    * done here.
    */
@@ -125,6 +133,7 @@ class SparkCarbonFileFormat extends FileFormat
     val model = CarbonSparkDataSourceUtil.prepareLoadModel(options, dataSchema)
     model.setLoadWithoutConverterStep(true)
     CarbonTableOutputFormat.setLoadModel(conf, model)
+    conf.set(CarbonSQLHadoopMapReduceCommitProtocol.COMMIT_PROTOCOL, "true")
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME,
@@ -314,7 +323,6 @@ class SparkCarbonFileFormat extends FileFormat
     vectorizedReader.toBoolean && schema.forall(_.dataType.isInstanceOf[AtomicType])
   }
 
-
   /**
    * Returns whether this format support returning columnar batch or not.
    */
@@ -451,7 +459,61 @@ class SparkCarbonFileFormat extends FileFormat
     }
   }
 
+}
 
+/**
+ * Since carbon writes 2 files carbondata files and index file , but spark cannot understand two
+ * files so added custom protocol to copy the files in case of custom partition location.
+ */
+case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, isAppend: Boolean)
+  extends SQLHadoopMapReduceCommitProtocol(jobId, path, isAppend) {
+
+  override def newTaskTempFileAbsPath(
+      taskContext: TaskAttemptContext, absoluteDir: String, ext: String): String = {
+    val carbonFlow = taskContext.getConfiguration.get(
+      CarbonSQLHadoopMapReduceCommitProtocol.COMMIT_PROTOCOL)
+    val tempPath = super.newTaskTempFileAbsPath(taskContext, absoluteDir, ext)
+    // Call only in case of carbon flow.
+    if (carbonFlow != null) {
+      // Create subfolder with uuid and write carbondata files
+      val path = new Path(tempPath)
+      val uuid = path.getName.substring(0, path.getName.indexOf("-part-"))
+      new Path(new Path(path.getParent, uuid), path.getName).toString
+    } else {
+      tempPath
+    }
+  }
+
+  override def commitJob(jobContext: JobContext,
+      taskCommits: Seq[FileCommitProtocol.TaskCommitMessage]): Unit = {
+    val carbonFlow = jobContext.getConfiguration.get(
+      CarbonSQLHadoopMapReduceCommitProtocol.COMMIT_PROTOCOL)
+    var updatedTaskCommits = taskCommits
+    // Call only in case of carbon flow.
+    if (carbonFlow != null) {
+      val filesToMove = taskCommits.map(_.obj.asInstanceOf[Map[String, String]])
+        .foldLeft(Map[String, String]())(_ ++ _)
+      val fs = new Path(path).getFileSystem(jobContext.getConfiguration)
+      // Move files from stage directory to actual location.
+      filesToMove.foreach{case (src, dest) =>
+        val srcPath = new Path(src)
+        val name = srcPath.getName
+        // Get uuid from spark's stage filename
+        val uuid = name.substring(0, name.indexOf("-part-"))
+        // List all the files under the uuid location
+        val list = fs.listStatus(new Path(new Path(src).getParent, uuid))
+        // Move all these files to actual folder.
+        list.foreach{ f =>
+          fs.rename(f.getPath, new Path(new Path(dest).getParent, f.getPath.getName))
+        }
+      }
+      updatedTaskCommits = taskCommits.map(f => new FileCommitProtocol.TaskCommitMessage(Map.empty))
+    }
+    super.commitJob(jobContext, updatedTaskCommits)
+  }
+}
+object CarbonSQLHadoopMapReduceCommitProtocol {
+  val COMMIT_PROTOCOL = "carbon.commit.protocol"
 }
 
 
