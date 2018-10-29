@@ -147,7 +147,7 @@ class FileCollector {
   }
 
   public void close() throws IOException {
-    for(DataFile file : dataFiles.values()) {
+    for (DataFile file : dataFiles.values()) {
       file.close();
     }
   }

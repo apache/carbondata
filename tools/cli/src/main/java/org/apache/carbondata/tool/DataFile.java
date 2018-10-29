@@ -503,7 +503,7 @@ class DataFile {
     }
   }
 
-  public void close() throws IOException{
+  public void close() throws IOException {
     this.fileReader.finish();
   }
 }

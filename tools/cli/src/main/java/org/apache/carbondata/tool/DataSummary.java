@@ -113,7 +113,7 @@ class DataSummary implements Command {
     }
 
     collector.close();
-    for(DataFile file : dataFiles.values()) {
+    for (DataFile file : dataFiles.values()) {
       file.close();
     }
   }
