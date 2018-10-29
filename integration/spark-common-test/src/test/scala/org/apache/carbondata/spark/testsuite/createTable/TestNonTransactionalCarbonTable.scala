@@ -389,7 +389,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
 
-    val output = sql("show summary for table sdkOutputTable options('command'='-cmd,summary,-p,-a,-v,-c,age')").collect()
+    val output = sql("Carboncli for table sdkOutputTable options('-cmd summary -a -v -c age')").collect()
 
     assert(output.toList.contains(Row("written_by                       Version         ")))
 

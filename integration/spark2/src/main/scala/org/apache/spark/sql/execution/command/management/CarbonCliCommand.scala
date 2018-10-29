@@ -29,28 +29,28 @@ import org.apache.spark.sql.types.StringType
 import org.apache.carbondata.tool.CarbonCli
 
 /**
- * Show summary command class which is integrated to cli and sql support is provided via this class
+ * CarbonCLi command class which is integrated to cli and sql support is provided via this class
  * @param databaseNameOp
  * @param tableName
  * @param commandOptions
  */
-case class CarbonShowSummaryCommand(
+case class CarbonCliCommand(
     databaseNameOp: Option[String],
     tableName: String,
-    commandOptions: Map[String, String])
+    commandOptions: String)
   extends DataCommand {
 
   override def output: Seq[Attribute] = {
-      Seq(AttributeReference("Table Summary", StringType, nullable = false)())
+      Seq(AttributeReference("CarbonCli", StringType, nullable = false)())
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
-    val commandArgs: Seq[String] = commandOptions("command").split(",")
+    val commandArgs: Seq[String] = commandOptions.split("\\s+")
     val finalCommands = commandArgs.collect {
-      case a if a.trim.equalsIgnoreCase("-p") =>
-        Seq(a, carbonTable.getTablePath)
+      case a if a.trim.equalsIgnoreCase("summary") || a.trim.equalsIgnoreCase("benchmark") =>
+        Seq(a, "-p", carbonTable.getTablePath)
       case x => Seq(x.trim)
     }.flatten
     val summaryOutput = new util.ArrayList[String]()
