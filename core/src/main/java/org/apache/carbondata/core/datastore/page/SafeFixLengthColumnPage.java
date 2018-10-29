@@ -41,6 +41,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   private double[] doubleData;
   private byte[] shortIntData;
   private byte[][] fixedLengthdata;
+  private int totalLength;
 
   // total number of entries in array
   private int arrayElementCount = 0;
@@ -57,6 +58,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     ensureArraySize(rowId, DataTypes.BYTE);
     byteData[rowId] = value;
     arrayElementCount++;
+    totalLength += DataTypes.BYTE.getSizeInBytes();
   }
 
   /**
@@ -67,6 +69,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     ensureArraySize(rowId, DataTypes.SHORT);
     shortData[rowId] = value;
     arrayElementCount++;
+    totalLength += DataTypes.SHORT.getSizeInBytes();
   }
 
   /**
@@ -77,6 +80,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     ensureArraySize(rowId, DataTypes.INT);
     intData[rowId] = value;
     arrayElementCount++;
+    totalLength += DataTypes.INT.getSizeInBytes();
   }
 
   /**
@@ -87,6 +91,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     ensureArraySize(rowId, DataTypes.LONG);
     longData[rowId] = value;
     arrayElementCount++;
+    totalLength += DataTypes.LONG.getSizeInBytes();
   }
 
   /**
@@ -97,6 +102,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     ensureArraySize(rowId, DataTypes.DOUBLE);
     doubleData[rowId] = value;
     arrayElementCount++;
+    totalLength += DataTypes.DOUBLE.getSizeInBytes();
   }
 
   /**
@@ -107,6 +113,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     ensureArraySize(rowId, DataTypes.FLOAT);
     floatData[rowId] = value;
     arrayElementCount++;
+    totalLength += DataTypes.FLOAT.getSizeInBytes();
   }
 
   /**
@@ -117,6 +124,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     ensureArraySize(rowId, DataTypes.BYTE_ARRAY);
     this.fixedLengthdata[rowId] = bytes;
     arrayElementCount++;
+    totalLength += bytes.length;
   }
 
   @Override
@@ -125,6 +133,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     byte[] converted = ByteUtil.to3Bytes(value);
     System.arraycopy(converted, 0, shortIntData, rowId * 3, 3);
     arrayElementCount++;
+    totalLength += DataTypes.SHORT_INT.getSizeInBytes();
   }
 
   @Override
@@ -475,4 +484,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     return arrayElementCount;
   }
 
+  @Override
+  public long getPageLengthInBytes() throws IOException {
+    return totalLength;
+  }
 }
