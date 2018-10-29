@@ -181,6 +181,8 @@ public class CarbonCli {
       out.flush();
     } catch (IOException | MemoryException e) {
       e.printStackTrace();
+    } finally {
+      out.close();
     }
   }
 
