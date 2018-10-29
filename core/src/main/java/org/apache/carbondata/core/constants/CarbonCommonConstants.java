@@ -766,7 +766,7 @@ public final class CarbonCommonConstants {
   /**
    * default value of ENABLE_UNSAFE_COLUMN_PAGE
    */
-  public static final String ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT = "false";
+  public static final String ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT = "true";
 
   /**
    * to enable offheap sort
