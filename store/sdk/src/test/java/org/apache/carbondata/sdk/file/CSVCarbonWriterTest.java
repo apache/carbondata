@@ -324,6 +324,7 @@ public class CSVCarbonWriterTest {
       FileReader fileReader = FileFactory.getFileHolder(FileFactory.getFileType(dataFile.getPath()));
       ByteBuffer buffer = fileReader.readByteBuffer(FileFactory.getUpdatedFilePath(
           dataFile.getPath()), dataFile.getSize() - 8, 8);
+      fileReader.finish();
       CarbonFooterReaderV3 footerReader =
           new CarbonFooterReaderV3(dataFile.getAbsolutePath(), buffer.getLong());
       FileFooter3 footer = footerReader.readFooterVersion3();

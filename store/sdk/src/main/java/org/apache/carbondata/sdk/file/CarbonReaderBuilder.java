@@ -29,6 +29,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.util.CarbonSessionInfo;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
 
@@ -169,7 +170,7 @@ public class CarbonReaderBuilder {
           reader.initialize(split, attempt);
           readers.add(reader);
         } catch (Exception e) {
-          reader.close();
+          CarbonUtil.closeStreams(readers.toArray(new RecordReader[0]));
           throw e;
         }
       }
