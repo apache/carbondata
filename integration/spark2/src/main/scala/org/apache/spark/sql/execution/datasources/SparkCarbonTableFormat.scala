@@ -173,10 +173,8 @@ with Serializable {
           context: TaskAttemptContext): OutputWriter = {
         val model = CarbonTableOutputFormat.getLoadModel(context.getConfiguration)
         val appName = context.getConfiguration.get(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME)
-        if (null != appName) {
-          CarbonProperties.getInstance().addProperty(
-            CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, appName)
-        }
+        CarbonProperties.getInstance().addProperty(
+          CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, appName)
         val taskNumber = generateTaskNumber(path, context, model.getSegmentId)
         val storeLocation = CommonUtil.getTempStoreLocations(taskNumber)
         CarbonTableOutputFormat.setTempStoreLocations(context.getConfiguration, storeLocation)

@@ -39,8 +39,7 @@ abstract class CarbonRDD[T: ClassTag](
 
   @transient val sparkAppName: String = ss.sparkContext.appName
   CarbonProperties.getInstance()
-    .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME,
-      sparkAppName)
+    .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, sparkAppName)
 
   val carbonSessionInfo: CarbonSessionInfo = {
     var info = ThreadLocalSessionInfo.getCarbonSessionInfo
