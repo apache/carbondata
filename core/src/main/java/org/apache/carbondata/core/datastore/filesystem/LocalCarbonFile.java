@@ -474,8 +474,4 @@ public class LocalCarbonFile implements CarbonFile {
   public short getDefaultReplication(String filePath) throws IOException {
     return 1;
   }
-
-  @Override public long getLength() {
-    return file.length();
-  }
 }

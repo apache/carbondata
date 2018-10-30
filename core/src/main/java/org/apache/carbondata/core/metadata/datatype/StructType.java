@@ -23,7 +23,7 @@ public class StructType extends DataType {
 
   private List<StructField> fields;
 
-  public StructType(List<StructField> fields) {
+  StructType(List<StructField> fields) {
     super(DataTypes.STRUCT_TYPE_ID, 10, "STRUCT", -1);
     this.fields = fields;
   }

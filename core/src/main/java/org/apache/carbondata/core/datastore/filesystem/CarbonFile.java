@@ -174,10 +174,4 @@ public interface CarbonFile {
    * @throws IOException if error occurs
    */
   short getDefaultReplication(String filePath) throws IOException;
-
-  /**
-   * Get the length of this file, in bytes.
-   * @return the length of this file, in bytes.
-   */
-  long getLength();
 }

@@ -138,19 +138,6 @@ public class CarbonInputSplit extends FileSplit
     version = CarbonProperties.getInstance().getFormatVersion();
   }
 
-  public CarbonInputSplit(String segmentId, Path path, long start, long length,
-      String[] locations) {
-    super(path, start, length, locations);
-    this.segment = Segment.toSegment(segmentId);
-    this.fileFormat = FileFormat.COLUMNAR_V3;
-    taskId = "0";
-    bucketId = "0";
-    blockletId = "0";
-    numberOfBlocklets = 0;
-    invalidSegments = new ArrayList<>();
-    version = CarbonProperties.getInstance().getFormatVersion();
-  }
-
   public CarbonInputSplit(String segmentId, Path path, long start, long length, String[] locations,
       String[] inMemoryHosts, FileFormat fileFormat) {
     super(path, start, length, locations, inMemoryHosts);
