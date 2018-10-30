@@ -123,8 +123,8 @@ public class CarbonCli {
     CommandLine line;
     try {
       line = parser.parse(options, args);
-    } catch (ParseException exp) {
-      throw new RuntimeException("Parsing failed. Reason: " + exp.getMessage());
+    } catch (ParseException ex) {
+      throw new RuntimeException("Parsing failed. Reason: " + ex.getMessage(), ex);
     }
 
     runCli(System.out, options, line);

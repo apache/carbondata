@@ -641,7 +641,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             producerExecutorService.shutdownNow();
             resetBlockletProcessingCount();
             LOGGER.error("Problem while writing the carbon data file", throwable);
-            throw new CarbonDataWriterException(throwable.getMessage());
+            throw new CarbonDataWriterException(throwable);
           }
         } finally {
           semaphore.release();

@@ -199,8 +199,8 @@ public class UnsafeSortDataRows {
           } catch (Exception ex) {
             // row page has freed in handlePreviousPage(), so other iterator may try to access it.
             rowPage = null;
-            LOGGER.error(
-                "exception occurred while trying to acquire a semaphore lock: " + ex.getMessage());
+            LOGGER.error("exception occurred while trying to acquire a semaphore lock: "
+                + ex.getMessage(), ex);
             throw new CarbonSortKeyAndGroupByException(ex);
           }
         }
@@ -236,8 +236,8 @@ public class UnsafeSortDataRows {
           rowPage = createUnsafeRowPage();
         } catch (Exception ex) {
           rowPage = null;
-          LOGGER.error(
-              "exception occurred while trying to acquire a semaphore lock: " + ex.getMessage());
+          LOGGER.error("exception occurred while trying to acquire a semaphore lock: "
+              + ex.getMessage(), ex);
           throw new CarbonSortKeyAndGroupByException(ex);
         }
       }
