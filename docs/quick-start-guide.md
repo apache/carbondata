@@ -294,7 +294,7 @@ hdfs://<host_name>:port/user/hive/warehouse/carbon.store
 ## Installing and Configuring CarbonData on Presto
 
 **NOTE:** **CarbonData tables cannot be created nor loaded from Presto. User need to create CarbonData Table and load data into it
-either with [Spark](#installing-and-configuring-carbondata-to-run-locally-with-spark-shell) or [SDK](./sdk-guide.md) or [CSDK](./csdk-guide.md).
+either with [Spark](#installing-and-configuring-carbondata-to-run-locally-with-spark-shell) or [SDK](./sdk-guide.md) or [C++ SDK](./csdk-guide.md).
 Once the table is created,it can be queried from Presto.**
 
 

@@ -24,15 +24,19 @@ import java.util.UUID;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTaskInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
+import org.apache.carbondata.hadoop.CarbonRecordReader;
+import org.apache.carbondata.hadoop.util.CarbonVectorizedRecordReader;
 
 import org.apache.hadoop.mapreduce.RecordReader;
 
 
 /**
- * Reader for carbondata file
+ * Reader for CarbonData file
  */
 @InterfaceAudience.User
 @InterfaceStability.Evolving
@@ -45,6 +49,11 @@ public class CarbonReader<T> {
   private int index;
 
   private boolean initialise;
+
+  /**
+   * save batch rows data
+   */
+  private Object[] batchRows;
 
   /**
    * Call {@link #builder(String)} to construct an instance
@@ -89,6 +98,43 @@ public class CarbonReader<T> {
   public T readNextRow() throws IOException, InterruptedException {
     validateReader();
     return currentReader.getCurrentValue();
+  }
+
+  /**
+   * Read and return next batch row objects
+   */
+  public Object[] readNextBatchRow() throws Exception {
+    validateReader();
+    if (currentReader instanceof CarbonRecordReader) {
+      List<Object> batchValue = ((CarbonRecordReader) currentReader).getBatchValue();
+      if (batchValue == null) {
+        return null;
+      } else {
+        return batchValue.toArray();
+      }
+    } else if (currentReader instanceof CarbonVectorizedRecordReader) {
+      int batch = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE,
+              String.valueOf(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT)));
+      batchRows = new Object[batch];
+      int sum = 0;
+      for (int i = 0; i < batch; i++) {
+        batchRows[i] = currentReader.getCurrentValue();
+        sum++;
+        if (i != batch - 1) {
+          if (!hasNext()) {
+            Object[] lessBatch = new Object[sum];
+            for (int j = 0; j < sum; j++) {
+              lessBatch[j] = batchRows[j];
+            }
+            return lessBatch;
+          }
+        }
+      }
+      return batchRows;
+    } else {
+      throw new Exception("Didn't support read next batch row by this reader.");
+    }
   }
 
   /**
@@ -173,6 +219,9 @@ public class CarbonReader<T> {
    */
   public void close() throws IOException {
     validateReader();
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE,
+            String.valueOf(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT));
     this.currentReader.close();
     this.initialise = false;
   }

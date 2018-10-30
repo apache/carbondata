@@ -1486,7 +1486,9 @@ public class CarbonReaderTest extends TestCase {
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)
           .withLoadOptions(map)
-          .withCsvInput(new Schema(fields)).build();
+          .withCsvInput(new Schema(fields))
+          .writtenBy("CarbonReaderTest")
+          .build();
 
       for (int i = 0; i < 10; i++) {
         String[] row2 = new String[]{
@@ -1840,6 +1842,185 @@ public class CarbonReaderTest extends TestCase {
       } catch (IOException e) {
         e.printStackTrace();
         Assert.fail(e.getMessage());
+      }
+    }
+  }
+
+  @Test
+  public void testReadNextBatchRow() {
+    String path = "./carbondata";
+    try {
+      FileUtils.deleteDirectory(new File(path));
+
+      Field[] fields = new Field[12];
+      fields[0] = new Field("stringField", DataTypes.STRING);
+      fields[1] = new Field("shortField", DataTypes.SHORT);
+      fields[2] = new Field("intField", DataTypes.INT);
+      fields[3] = new Field("longField", DataTypes.LONG);
+      fields[4] = new Field("doubleField", DataTypes.DOUBLE);
+      fields[5] = new Field("boolField", DataTypes.BOOLEAN);
+      fields[6] = new Field("dateField", DataTypes.DATE);
+      fields[7] = new Field("timeField", DataTypes.TIMESTAMP);
+      fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
+      fields[9] = new Field("varcharField", DataTypes.VARCHAR);
+      fields[10] = new Field("arrayField", DataTypes.createArrayType(DataTypes.STRING));
+      fields[11] = new Field("floatField", DataTypes.FLOAT);
+      Map<String, String> map = new HashMap<>();
+      map.put("complex_delimiter_level_1", "#");
+      CarbonWriter writer = CarbonWriter.builder()
+          .outputPath(path)
+          .withLoadOptions(map)
+          .withCsvInput(new Schema(fields))
+          .writtenBy("CarbonReaderTest")
+          .build();
+
+      for (int i = 0; i < 10; i++) {
+        String[] row2 = new String[]{
+            "robot" + (i % 10),
+            String.valueOf(i % 10000),
+            String.valueOf(i),
+            String.valueOf(Long.MAX_VALUE - i),
+            String.valueOf((double) i / 2),
+            String.valueOf(true),
+            "2019-03-02",
+            "2019-02-12 03:03:34",
+            "12.345",
+            "varchar",
+            "Hello#World#From#Carbon",
+            "1.23"
+        };
+        writer.write(row2);
+      }
+      writer.close();
+
+      // Read data
+      int batchSize =4;
+      CarbonReader reader = CarbonReader
+          .builder(path, "_temp")
+          .withBatch(4)
+          .build();
+
+      int i = 0;
+      while (reader.hasNext()) {
+        Object[] batch = reader.readNextBatchRow();
+        Assert.assertTrue(batch.length <= batchSize);
+
+        for (int j = 0; j < batch.length; j++) {
+
+          Object[] data = (Object[]) batch[j];
+          assert (RowUtil.getString(data, 0).equals("robot" + i));
+          assertEquals(RowUtil.getInt(data, 1), 17957);
+          assert (RowUtil.getVarchar(data, 3).equals("varchar"));
+          Object[] arr = RowUtil.getArray(data, 4);
+          assert (arr[0].equals("Hello"));
+          assert (arr[1].equals("World"));
+          assert (arr[2].equals("From"));
+          assert (arr[3].equals("Carbon"));
+          assertEquals(RowUtil.getShort(data, 5), i);
+          assertEquals(RowUtil.getInt(data, 6), i);
+          assertEquals(RowUtil.getLong(data, 7), Long.MAX_VALUE - i);
+          assertEquals(RowUtil.getDouble(data, 8), ((double) i) / 2);
+          assert (RowUtil.getBoolean(data, 9));
+          assert (RowUtil.getDecimal(data, 10).equals("12.35"));
+          assertEquals(RowUtil.getFloat(data, 11), (float) 1.23);
+          i++;
+        }
+        System.out.println("batch is " + i);
+      }
+      reader.close();
+    } catch (Throwable e) {
+      e.printStackTrace();
+    } finally {
+      try {
+        FileUtils.deleteDirectory(new File(path));
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+  @Test
+  public void testReadNextBatchRowWithVectorReader() {
+    String path = "./carbondata";
+    try {
+      FileUtils.deleteDirectory(new File(path));
+
+      Field[] fields = new Field[11];
+      fields[0] = new Field("stringField", DataTypes.STRING);
+      fields[1] = new Field("shortField", DataTypes.SHORT);
+      fields[2] = new Field("intField", DataTypes.INT);
+      fields[3] = new Field("longField", DataTypes.LONG);
+      fields[4] = new Field("doubleField", DataTypes.DOUBLE);
+      fields[5] = new Field("boolField", DataTypes.BOOLEAN);
+      fields[6] = new Field("dateField", DataTypes.DATE);
+      fields[7] = new Field("timeField", DataTypes.TIMESTAMP);
+      fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
+      fields[9] = new Field("varcharField", DataTypes.VARCHAR);
+      // Vector don't support complex data type
+      // fields[10] = new Field("arrayField", DataTypes.createArrayType(DataTypes.STRING));
+      fields[10] = new Field("floatField", DataTypes.FLOAT);
+      Map<String, String> map = new HashMap<>();
+      map.put("complex_delimiter_level_1", "#");
+      CarbonWriter writer = CarbonWriter.builder()
+          .outputPath(path)
+          .withLoadOptions(map)
+          .withCsvInput(new Schema(fields))
+          .writtenBy("CarbonReaderTest")
+          .build();
+
+      for (int i = 0; i < 10; i++) {
+        String[] row2 = new String[]{
+            "robot" + (i % 10),
+            String.valueOf(i % 10000),
+            String.valueOf(i),
+            String.valueOf(Long.MAX_VALUE - i),
+            String.valueOf((double) i / 2),
+            String.valueOf(true),
+            "2019-03-02",
+            "2019-02-12 03:03:34",
+            "12.345",
+            "varchar",
+            "1.23"
+        };
+        writer.write(row2);
+      }
+      writer.close();
+
+      // Read data
+      int batchSize =4;
+      CarbonReader reader = CarbonReader
+          .builder(path, "_temp")
+          .withBatch(4)
+          .build();
+
+      int i = 0;
+      while (reader.hasNext()) {
+        Object[] batch = reader.readNextBatchRow();
+        Assert.assertTrue(batch.length <= batchSize);
+
+        for (int j = 0; j < batch.length; j++) {
+
+          Object[] data = (Object[]) batch[j];
+          assert (RowUtil.getString(data, 0).equals("robot" + i));
+          assertEquals(RowUtil.getInt(data, 1), 17957);
+          assert (RowUtil.getVarchar(data, 3).equals("varchar"));
+          assertEquals(RowUtil.getShort(data, 4), i);
+          assertEquals(RowUtil.getInt(data, 5), i);
+          assertEquals(RowUtil.getLong(data, 6), Long.MAX_VALUE - i);
+          assertEquals(RowUtil.getDouble(data, 7), ((double) i) / 2);
+          assert (RowUtil.getDecimal(data, 9).equals("12.35"));
+          assertEquals(RowUtil.getFloat(data, 10), (float) 1.23);
+          i++;
+        }
+        System.out.println("batch is " + i);
+      }
+      reader.close();
+    } catch (Throwable e) {
+      e.printStackTrace();
+    } finally {
+      try {
+        FileUtils.deleteDirectory(new File(path));
+      } catch (IOException e) {
+        e.printStackTrace();
       }
     }
   }

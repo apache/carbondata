@@ -38,7 +38,7 @@ private:
     /**
      * carbon row data
      */
-    jobject carbonRow;
+    jobject carbonRow = NULL;
 
     /**
      * check ordinal, ordinal can't be negative
@@ -46,6 +46,11 @@ private:
      * @param ordinal int value, the data index of carbon Row
      */
     void checkOrdinal(int ordinal);
+
+    /**
+     * check ordinal, ordinal can't be negative
+     */
+    void checkCarbonRow();
 
 public:
 

@@ -119,8 +119,8 @@ public class RowUtil implements Serializable {
 
   /**
    * get varchar data type data by ordinal
-   * This is for CSDK
-   * JNI don't support varchar, so carbon convert varchar to string
+   * This is for C++ SDK
+   * JNI don't support varchar, so carbon convert decimal to string
    *
    * @param data carbon row data
    * @param ordinal the data index of Row
@@ -132,7 +132,7 @@ public class RowUtil implements Serializable {
 
   /**
    * get decimal data type data by ordinal
-   * This is for CSDK
+   * This is for C++ SDK
    * JNI don't support Decimal, so carbon convert decimal to string
    *
    * @param data carbon row data
