@@ -142,7 +142,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
       processingComplete(dataHandler);
     } catch (Exception e) {
       if (null == exception) {
-        exception = new CarbonDataWriterException(e.getMessage(), e);
+        exception = new CarbonDataWriterException(e);
       }
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
