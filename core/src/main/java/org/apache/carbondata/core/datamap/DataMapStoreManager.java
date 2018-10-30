@@ -512,7 +512,7 @@ public final class DataMapStoreManager {
             .buildFromTablePath(identifier.getTableName(), identifier.getDatabaseName(),
                 identifier.getTablePath(), identifier.getCarbonTableIdentifier().getTableId());
       } catch (IOException e) {
-        LOGGER.warn("failed to get carbon table from table Path" + e.getMessage());
+        LOGGER.warn("failed to get carbon table from table Path" + e.getMessage(), e);
         // ignoring exception
       }
     }

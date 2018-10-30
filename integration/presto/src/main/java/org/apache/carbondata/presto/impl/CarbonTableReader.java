@@ -262,9 +262,9 @@ public class CarbonTableReader {
       try {
         loadMetadataDetails = SegmentStatusManager.readTableStatusFile(
             CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath()));
-      } catch (IOException exception) {
-        LOGGER.error(exception.getMessage());
-        throw exception;
+      } catch (IOException e) {
+        LOGGER.error(e.getMessage(), e);
+        throw e;
       }
       filteredPartitions = findRequiredPartitions(constraints, carbonTable, loadMetadataDetails);
     }
@@ -329,9 +329,9 @@ public class CarbonTableReader {
             new SegmentFileStore(carbonTable.getTablePath(), loadMetadataDetail.getSegmentFile());
         partitionSpecs.addAll(segmentFileStore.getPartitionSpecs());
 
-      } catch (IOException exception) {
-        LOGGER.error(exception.getMessage());
-        throw exception;
+      } catch (IOException e) {
+        LOGGER.error(e.getMessage(), e);
+        throw e;
       }
     }
     List<String> partitionValuesFromExpression =

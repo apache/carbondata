@@ -91,7 +91,7 @@ public class CarbonDeleteFilesDataReader {
       executorService.shutdown();
       executorService.awaitTermination(30, TimeUnit.MINUTES);
     } catch (InterruptedException e) {
-      LOGGER.error("Error while reading the delete delta files : " + e.getMessage());
+      LOGGER.error("Error while reading the delete delta files : " + e.getMessage(), e);
     }
 
     Map<Integer, Integer[]> pageIdDeleteRowsMap =
@@ -109,8 +109,8 @@ public class CarbonDeleteFilesDataReader {
         }
 
       } catch (Throwable e) {
-        LOGGER.error(e.getMessage());
-        throw new Exception(e.getMessage());
+        LOGGER.error(e.getMessage(), e);
+        throw new Exception(e);
       }
     }
     return pageIdDeleteRowsMap;
@@ -134,7 +134,7 @@ public class CarbonDeleteFilesDataReader {
       executorService.shutdown();
       executorService.awaitTermination(30, TimeUnit.MINUTES);
     } catch (InterruptedException e) {
-      LOGGER.error("Error while reading the delete delta files : " + e.getMessage());
+      LOGGER.error("Error while reading the delete delta files : " + e.getMessage(), e);
     }
     Map<String, DeleteDeltaVo> pageIdToBlockLetVo = new HashMap<>();
     List<DeleteDeltaBlockletDetails> blockletDetails = null;
@@ -175,7 +175,7 @@ public class CarbonDeleteFilesDataReader {
       executorService.shutdown();
       executorService.awaitTermination(30, TimeUnit.MINUTES);
     } catch (InterruptedException e) {
-      LOGGER.error("Error while reading the delete delta files : " + e.getMessage());
+      LOGGER.error("Error while reading the delete delta files : " + e.getMessage(), e);
     }
 
     // Get a new DeleteDeltaBlockDetails as result set where all the data will me merged
@@ -190,8 +190,8 @@ public class CarbonDeleteFilesDataReader {
           deleteDeltaResultSet.addBlockletDetails(blocklet);
         }
       } catch (Throwable e) {
-        LOGGER.error(e.getMessage());
-        throw new Exception(e.getMessage());
+        LOGGER.error(e.getMessage(), e);
+        throw new Exception(e);
       }
     }
     return deleteDeltaResultSet;

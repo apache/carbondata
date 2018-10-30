@@ -64,7 +64,7 @@ public class JsonRowParser implements RowParser {
       jsonNodeMapCaseInsensitive.putAll(jsonNodeMap);
       return jsonToCarbonRecord(jsonNodeMapCaseInsensitive, dataFields);
     } catch (IOException e) {
-      throw new IOException("Failed to parse Json String: " + e.getMessage());
+      throw new IOException("Failed to parse Json String: " + e.getMessage(), e);
     }
   }
 

@@ -157,13 +157,13 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
         }
       }
     } catch (FileNotFoundException e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw new CarbonSortKeyAndGroupByException(tempFile + " No Found", e);
     } catch (IOException e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw new CarbonSortKeyAndGroupByException(tempFile + " No Found", e);
     } catch (Exception e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw new CarbonSortKeyAndGroupByException(tempFile + " Problem while reading", e);
     }
   }
@@ -204,7 +204,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
         try {
           submit.get();
         } catch (Exception e) {
-          LOGGER.error(e);
+          LOGGER.error(e.getMessage(), e);
         }
         bufferRowCounter = 0;
         currentBuffer = backupBuffer;
@@ -330,7 +330,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
           currentBuffer = prefetchRecordsFromFile(numberOfRecords);
         }
       } catch (Exception e) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
       }
       return null;
     }

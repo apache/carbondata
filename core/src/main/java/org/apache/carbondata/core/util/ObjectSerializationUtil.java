@@ -65,7 +65,7 @@ public class ObjectSerializationUtil {
           baos.close();
         }
       } catch (IOException e) {
-        LOG.error(e);
+        LOG.error(e.getMessage(), e);
       }
     }
 
@@ -110,7 +110,7 @@ public class ObjectSerializationUtil {
           bais.close();
         }
       } catch (IOException e) {
-        LOG.error(e);
+        LOG.error(e.getMessage(), e);
       }
     }
   }

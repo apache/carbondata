@@ -213,7 +213,7 @@ public class UnsafeIntermediateMerger {
         mergerTask.get(i).get();
       } catch (InterruptedException | ExecutionException e) {
         LOGGER.error(e.getMessage(), e);
-        throw new CarbonSortKeyAndGroupByException(e.getMessage(), e);
+        throw new CarbonSortKeyAndGroupByException(e);
       }
     }
   }

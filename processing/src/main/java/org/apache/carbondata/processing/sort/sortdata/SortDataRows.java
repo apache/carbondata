@@ -174,7 +174,7 @@ public class SortDataRows {
               .execute(new DataSorterAndWriter(recordHolderListLocal));
         } catch (Exception e) {
           LOGGER.error(
-              "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
+              "exception occurred while trying to acquire a semaphore lock: " + e.getMessage(), e);
           throw new CarbonSortKeyAndGroupByException(e);
         }
         // create the new holder Array

@@ -113,7 +113,7 @@ public class LoadMetadataDetailsUnitTest {
     try {
       return simpleDateFormat.parse(date).getTime() * 1000;
     } catch (ParseException e) {
-      LOGGER.error("Error while parsing " + date + " " + e.getMessage());
+      LOGGER.error("Error while parsing " + date + " " + e.getMessage(), e);
       return null;
     }
   }

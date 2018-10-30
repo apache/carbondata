@@ -123,7 +123,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
       this.cache = CacheProvider.getInstance()
           .createCache(new CacheType("bloom_cache"), BloomDataMapCache.class.getName());
     } catch (Exception e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw new MalformedDataMapCommandException(e.getMessage());
     }
   }

@@ -146,7 +146,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     } catch (CarbonDataWriterException e) {
       LOGGER.error("Failed for table: " + tableName + " in DataWriterProcessorStepImpl", e);
       throw new CarbonDataLoadingException(
-          "Error while initializing data handler : " + e.getMessage());
+          "Error while initializing data handler : " + e.getMessage(), e);
     } catch (Exception e) {
       LOGGER.error("Failed for table: " + tableName + " in DataWriterProcessorStepImpl", e);
       if (e instanceof BadRecordFoundException) {
@@ -234,10 +234,10 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
         dataHandler.closeHandler();
       } catch (CarbonDataWriterException e) {
         LOGGER.error(e.getMessage(), e);
-        throw new CarbonDataLoadingException(e.getMessage());
+        throw new CarbonDataLoadingException(e);
       } catch (Exception e) {
         LOGGER.error(e.getMessage(), e);
-        throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage());
+        throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage(), e);
       }
     }
   }
@@ -330,7 +330,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       try {
         doExecute(this.iterator, iteratorIndex);
       } catch (IOException e) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
         throw new RuntimeException(e);
       }
     }

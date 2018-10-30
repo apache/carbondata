@@ -356,7 +356,7 @@ public final class DataTypeUtil {
           Date dateToStr = dateformatter.get().parse(data);
           return dateToStr.getTime() * 1000;
         } catch (ParseException e) {
-          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
+          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage(), e);
           return null;
         }
       } else if (actualDataType == DataTypes.TIMESTAMP) {
@@ -367,7 +367,7 @@ public final class DataTypeUtil {
           Date dateToStr = timeStampformatter.get().parse(data);
           return dateToStr.getTime() * 1000;
         } catch (ParseException e) {
-          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
+          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage(), e);
           return null;
         }
       } else if (DataTypes.isDecimal(actualDataType)) {
@@ -675,7 +675,7 @@ public final class DataTypeUtil {
           Date dateToStr = dateformatter.get().parse(data5);
           return dateToStr.getTime() * 1000;
         } catch (ParseException e) {
-          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
+          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage(), e);
           return null;
         }
       } else if (dataType == DataTypes.TIMESTAMP) {
@@ -687,7 +687,7 @@ public final class DataTypeUtil {
           Date dateToStr = timeStampformatter.get().parse(data6);
           return dateToStr.getTime() * 1000;
         } catch (ParseException e) {
-          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
+          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage(), e);
           return null;
         }
       } else if (DataTypes.isDecimal(dataType)) {

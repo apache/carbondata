@@ -145,13 +145,13 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
         }
       }
     } catch (FileNotFoundException e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(tempFile + " No Found", e);
     } catch (IOException e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(tempFile + " No Found", e);
     } catch (Exception e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(tempFile + " Problem while reading", e);
     }
   }
@@ -193,7 +193,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
         try {
           submit.get();
         } catch (Exception e) {
-          LOGGER.error(e);
+          LOGGER.error(e.getMessage(), e);
         }
         bufferRowCounter = 0;
         currentBuffer = backupBuffer;
@@ -319,7 +319,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
           currentBuffer = prefetchRecordsFromFile(numberOfRecords);
         }
       } catch (Exception e) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
       }
       return null;
     }

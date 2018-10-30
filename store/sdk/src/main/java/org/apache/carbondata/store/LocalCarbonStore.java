@@ -109,7 +109,7 @@ class LocalCarbonStore extends MetaCachedCarbonStore {
         try {
           reader.close();
         } catch (IOException e) {
-          LOGGER.error(e);
+          LOGGER.error(e.getMessage(), e);
         }
       }
     } catch (InterruptedException e) {
@@ -119,7 +119,7 @@ class LocalCarbonStore extends MetaCachedCarbonStore {
         try {
           reader.close();
         } catch (IOException e) {
-          LOGGER.error(e);
+          LOGGER.error(e.getMessage(), e);
         }
       }
     }

@@ -47,7 +47,7 @@ public class ZookeeperInit {
       zk = new ZooKeeper(zooKeeperUrl, sessionTimeOut, new DummyWatcher());
 
     } catch (IOException e) {
-      LOGGER.error(e.getMessage());
+      LOGGER.error(e.getMessage(), e);
     }
 
   }

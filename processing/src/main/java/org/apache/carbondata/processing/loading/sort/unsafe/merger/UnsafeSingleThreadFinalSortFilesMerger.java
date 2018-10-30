@@ -154,7 +154,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
 
       LOGGER.info("Heap Size: " + this.recordHolderHeapLocal.size());
     } catch (Exception e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw new CarbonDataWriterException(e);
     }
   }
@@ -238,7 +238,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
     try {
       poll.readRow();
     } catch (Exception e) {
-      throw new CarbonDataWriterException(e.getMessage(), e);
+      throw new CarbonDataWriterException(e);
     }
 
     // add to heap

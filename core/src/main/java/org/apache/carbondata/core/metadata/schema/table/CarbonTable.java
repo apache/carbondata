@@ -1133,7 +1133,7 @@ public class CarbonTable implements Serializable {
     } catch (Exception e) {
       // since method returns true or false and based on that calling function throws exception, no
       // need to throw the catched exception
-      LOGGER.error(e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       return true;
     }
     return true;

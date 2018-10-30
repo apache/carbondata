@@ -84,7 +84,7 @@ import org.apache.spark.network.server.StreamManager;
       key.writeData(buff);
       rpcResponseCallback.onSuccess(buff.nioBuffer());
     } catch (Exception e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
     }
   }
 

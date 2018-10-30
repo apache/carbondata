@@ -220,7 +220,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         this.entryCount = 0;
       } catch (InterruptedException e) {
         LOGGER.error(e.getMessage(), e);
-        throw new CarbonDataWriterException(e.getMessage(), e);
+        throw new CarbonDataWriterException(e);
       }
     }
   }
@@ -326,7 +326,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       processingComplete = true;
     } catch (InterruptedException e) {
       LOGGER.error(e.getMessage(), e);
-      throw new CarbonDataWriterException(e.getMessage(), e);
+      throw new CarbonDataWriterException(e);
     }
   }
 
@@ -344,7 +344,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       service.awaitTermination(1, TimeUnit.DAYS);
     } catch (InterruptedException e) {
       LOGGER.error(e.getMessage(), e);
-      throw new CarbonDataWriterException(e.getMessage());
+      throw new CarbonDataWriterException(e);
     }
   }
 
@@ -362,7 +362,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         taskList.get(i).get();
       } catch (InterruptedException | ExecutionException e) {
         LOGGER.error(e.getMessage(), e);
-        throw new CarbonDataWriterException(e.getMessage(), e);
+        throw new CarbonDataWriterException(e);
       }
     }
   }
@@ -382,7 +382,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         try {
           Thread.sleep(50);
         } catch (InterruptedException e) {
-          throw new CarbonDataWriterException(e.getMessage());
+          throw new CarbonDataWriterException(e);
         }
       }
       consumerExecutorService.shutdownNow();
@@ -641,7 +641,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             producerExecutorService.shutdownNow();
             resetBlockletProcessingCount();
             LOGGER.error("Problem while writing the carbon data file", throwable);
-            throw new CarbonDataWriterException(throwable.getMessage());
+            throw new CarbonDataWriterException(throwable);
           }
         } finally {
           semaphore.release();

@@ -212,7 +212,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
     try {
       executorService.awaitTermination(2, TimeUnit.HOURS);
     } catch (Exception e) {
-      throw new CarbonDataWriterException(e.getMessage(), e);
+      throw new CarbonDataWriterException(e);
     }
     checkFailure();
     LOGGER.info("final merger Heap Size" + this.recordHolderHeapLocal.size());
@@ -290,7 +290,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
       poll.readRow();
     } catch (CarbonSortKeyAndGroupByException e) {
       close();
-      throw new CarbonDataWriterException(e.getMessage(), e);
+      throw new CarbonDataWriterException(e);
     }
 
     // add to heap

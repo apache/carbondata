@@ -136,7 +136,7 @@ public class AlluxioCarbonFile extends HDFSCarbonFile {
       }
       return false;
     } catch (IOException e) {
-      LOGGER.error("Exception occured: " + e.getMessage());
+      LOGGER.error("Exception occured: " + e.getMessage(), e);
       return false;
     }
   }
