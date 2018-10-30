@@ -335,7 +335,7 @@ public final class FileFactory {
           CarbonFile carbonFile = FileFactory.getCarbonFile(path, fileType);
           carbonFile.truncate(path, newSize);
         } catch (Exception e) {
-          LOGGER.error("Other exception occurred while truncating the file " + e.getMessage());
+          LOGGER.error("Other exception occurred while truncating the file " + e.getMessage(), e);
         }
         return;
       default:
@@ -505,7 +505,7 @@ public final class FileFactory {
             fs.setPermission(path, permission);
           }
         } catch (IOException e) {
-          LOGGER.error("Exception occurred : " + e.getMessage());
+          LOGGER.error("Exception occurred : " + e.getMessage(), e);
           throw e;
         }
         return;

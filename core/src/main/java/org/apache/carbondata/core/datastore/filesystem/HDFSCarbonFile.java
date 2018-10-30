@@ -111,7 +111,7 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
         return fs.rename(fileStatus.getPath(), new Path(changeToName));
       }
     } catch (IOException e) {
-      LOGGER.error("Exception occured: " + e.getMessage());
+      LOGGER.error("Exception occured: " + e.getMessage(), e);
       return false;
     }
   }

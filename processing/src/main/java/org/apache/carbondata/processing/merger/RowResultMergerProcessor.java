@@ -244,7 +244,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
         row1 = o1.fetchConverted();
         row2 = o2.fetchConverted();
       } catch (KeyGenException e) {
-        LOGGER.error(e.getMessage());
+        LOGGER.error(e.getMessage(), e);
       }
       if (null == row1 || null == row2) {
         return 0;

@@ -115,7 +115,7 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
     try {
       executorService.awaitTermination(2, TimeUnit.DAYS);
     } catch (InterruptedException e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
     }
   }
 
@@ -167,7 +167,7 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
           }
         }
       } catch (Exception e) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
         this.threadStatusObserver.notifyFailed(e);
       } finally {
         synchronized (sortDataRows) {

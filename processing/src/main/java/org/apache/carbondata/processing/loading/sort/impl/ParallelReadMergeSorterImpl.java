@@ -217,7 +217,7 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
           }
         }
       } catch (Exception e) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
         observer.notifyFailed(e);
       }
     }

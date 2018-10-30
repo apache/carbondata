@@ -421,7 +421,7 @@ public class CarbonLoadModelBuilder {
       CompressorFactory.getInstance().getCompressor(columnCompressor);
       carbonLoadModel.setColumnCompressor(columnCompressor);
     } catch (Exception e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw new InvalidLoadOptionException("Failed to load the compressor");
     }
   }

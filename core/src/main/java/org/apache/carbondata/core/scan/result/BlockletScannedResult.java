@@ -303,7 +303,7 @@ public abstract class BlockletScannedResult {
           reuseableDataOutput.reset();
         } catch (IOException e) {
           isExceptionThrown = true;
-          LOGGER.error(e);
+          LOGGER.error(e.getMessage(), e);
         } finally {
           if (isExceptionThrown) {
             CarbonUtil.closeStreams(reuseableDataOutput);
@@ -574,7 +574,7 @@ public abstract class BlockletScannedResult {
           reUseableDataOutput.reset();
         } catch (IOException e) {
           isExceptionThrown = true;
-          LOGGER.error(e);
+          LOGGER.error(e.getMessage(), e);
         } finally {
           if (isExceptionThrown) {
             CarbonUtil.closeStreams(reUseableDataOutput);
@@ -639,7 +639,7 @@ public abstract class BlockletScannedResult {
         reUsableDataOutput.reset();
       } catch (IOException e) {
         isExceptionThrown = true;
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
       } finally {
         if (isExceptionThrown) {
           CarbonUtil.closeStreams(reUsableDataOutput);

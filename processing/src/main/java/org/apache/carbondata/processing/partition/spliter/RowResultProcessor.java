@@ -86,8 +86,7 @@ public class RowResultProcessor {
       }
       processStatus = true;
     } catch (CarbonDataWriterException e) {
-      LOGGER.error(e.getMessage(), e);
-      LOGGER.error("Exception in executing RowResultProcessor" + e.getMessage());
+      LOGGER.error("Exception in executing RowResultProcessor" + e.getMessage(), e);
       processStatus = false;
     } finally {
       try {
@@ -95,7 +94,8 @@ public class RowResultProcessor {
           this.dataHandler.closeHandler();
         }
       } catch (Exception e) {
-        LOGGER.error("Exception while closing the handler in RowResultProcessor" + e.getMessage());
+        LOGGER.error("Exception while closing the handler in RowResultProcessor"
+            + e.getMessage(), e);
         processStatus = false;
       }
     }

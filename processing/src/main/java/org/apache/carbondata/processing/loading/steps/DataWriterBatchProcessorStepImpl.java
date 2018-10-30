@@ -116,7 +116,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
       if (e.getCause() instanceof BadRecordFoundException) {
         throw new BadRecordFoundException(e.getCause().getMessage());
       }
-      throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage());
+      throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage(), e);
     }
     return null;
   }
@@ -160,7 +160,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
       try {
         dataHandler.closeHandler();
       } catch (Exception e) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
         throw new CarbonDataLoadingException(
             "There is an unexpected error while closing data handler", e);
       }

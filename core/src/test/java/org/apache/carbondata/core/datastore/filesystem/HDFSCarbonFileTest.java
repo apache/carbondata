@@ -90,7 +90,7 @@ public class HDFSCarbonFileTest {
         try {
             fs.delete(pt, true);
         } catch (IOException e) {
-            LOGGER.error("Exception Occured" + e.getMessage());
+            LOGGER.error("Exception Occured" + e.getMessage(), e);
         }
     }
 

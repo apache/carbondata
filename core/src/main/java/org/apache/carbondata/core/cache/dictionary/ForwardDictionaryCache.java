@@ -138,7 +138,7 @@ public class ForwardDictionaryCache<K extends
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.HOURS);
     } catch (InterruptedException e) {
-      LOGGER.error("Error loading the dictionary: " + e.getMessage());
+      LOGGER.error("Error loading the dictionary: " + e.getMessage(), e);
     }
     for (int i = 0; i < taskSubmitList.size(); i++) {
       try {

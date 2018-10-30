@@ -82,7 +82,7 @@ public abstract class AbstractDataLoadProcessorStep {
               Thread.sleep(10000);
             } catch (InterruptedException e) {
               //ignore
-              LOGGER.error(e.getMessage());
+              LOGGER.error(e.getMessage(), e);
             }
           }
         }
