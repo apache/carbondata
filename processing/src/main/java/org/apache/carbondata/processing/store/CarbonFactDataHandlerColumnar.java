@@ -344,7 +344,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       service.awaitTermination(1, TimeUnit.DAYS);
     } catch (InterruptedException e) {
       LOGGER.error(e.getMessage(), e);
-      throw new CarbonDataWriterException(e.getMessage());
+      throw new CarbonDataWriterException(e);
     }
   }
 
@@ -382,7 +382,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         try {
           Thread.sleep(50);
         } catch (InterruptedException e) {
-          throw new CarbonDataWriterException(e.getMessage());
+          throw new CarbonDataWriterException(e);
         }
       }
       consumerExecutorService.shutdownNow();

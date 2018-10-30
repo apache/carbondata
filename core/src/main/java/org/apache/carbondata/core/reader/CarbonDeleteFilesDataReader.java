@@ -110,7 +110,7 @@ public class CarbonDeleteFilesDataReader {
 
       } catch (Throwable e) {
         LOGGER.error(e.getMessage(), e);
-        throw new Exception(e.getMessage());
+        throw new Exception(e);
       }
     }
     return pageIdDeleteRowsMap;
@@ -191,7 +191,7 @@ public class CarbonDeleteFilesDataReader {
         }
       } catch (Throwable e) {
         LOGGER.error(e.getMessage(), e);
-        throw new Exception(e.getMessage());
+        throw new Exception(e);
       }
     }
     return deleteDeltaResultSet;
