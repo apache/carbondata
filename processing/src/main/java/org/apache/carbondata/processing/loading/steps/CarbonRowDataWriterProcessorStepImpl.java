@@ -215,7 +215,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       // only assign when exception is null
       // else it will erase original root cause
       if (null == exception) {
-        exception = new CarbonDataWriterException(e.getMessage(), e);
+        exception = new CarbonDataWriterException(e);
       }
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
