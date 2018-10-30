@@ -176,7 +176,7 @@ public class SegmentStatusManager {
         }
       }
     } catch (IOException e) {
-      LOG.error(e);
+      LOG.error(e.getMessage(), e);
       throw e;
     }
     return new ValidAndInvalidSegmentsInfo(listOfValidSegments, listOfValidUpdatedSegments,
