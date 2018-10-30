@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.{Partition, TaskContext}
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.errors.attachTree
@@ -31,6 +32,7 @@ import org.apache.spark.sql.execution.{CodegenSupport, SparkPlan, UnaryExecNode}
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.{SparkSQLUtil, SparkTypeConverter}
+import org.apache.spark.util.SerializableConfiguration
 
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
@@ -137,7 +139,7 @@ case class CarbonDictionaryDecoder(
       val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
         cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
       val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryWrapper(tableNameToCarbonTableMapping,
-        forwardDictionaryCache)
+        forwardDictionaryCache, broadcastConf)
 
       val exprs = child.output.map { exp =>
         ExpressionCanonicalizer.execute(BindReferences.bindReference(exp, child.output))
@@ -155,8 +157,7 @@ case class CarbonDictionaryDecoder(
                |${ev.code}
              """.stripMargin
           code +=
-          s"""
-             |ThreadLocalSessionInfo.setConfigurationToCurrentThread(${broadcastConf.value.value});
+            s"""
              |boolean $isNull = false;
              |byte[] $valueIntern = $dictsRef.getDictionaryValueForKeyInBytes(${ ev.value });
              |if ($valueIntern == null ||
@@ -270,7 +271,8 @@ case class CarbonDictionaryDecoder(
   }
 
   private def getDictionaryWrapper(atiMap: Map[String, CarbonTable],
-      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary]) = {
+      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary],
+      broadcastConf: Broadcast[SerializableConfiguration]) = {
     val allDictIdentifiers = new ArrayBuffer[DictionaryColumnUniqueIdentifier]()
     val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryColumnIds.map {
       case (tableName, columnIdentifier, carbonDimension) =>
@@ -301,7 +303,7 @@ case class CarbonDictionaryDecoder(
               newColumnIdentifier, carbonDimension.getDataType,
               dictionaryPath)
             allDictIdentifiers += dictionaryColumnUniqueIdentifier
-            new ForwardDictionaryWrapper(dictionaryColumnUniqueIdentifier)
+            new ForwardDictionaryWrapper(dictionaryColumnUniqueIdentifier, broadcastConf)
           } catch {
             case _: Throwable => null
           }
@@ -558,9 +560,11 @@ class CarbonDecoderRDD(
  * It is a wrapper around Dictionary, it is a work around to keep the dictionary serializable in
  * case of codegen
  * @param dictIdentifier Dictionary column unique identifier
+ * @param broadcastConf hadoop broadcast conf for serialization, that contains carbon conf.
  */
 class ForwardDictionaryWrapper(
-    dictIdentifier: DictionaryColumnUniqueIdentifier) extends Serializable {
+    dictIdentifier: DictionaryColumnUniqueIdentifier,
+    broadcastConf: Broadcast[SerializableConfiguration]) extends Serializable {
 
   var dictionary: Dictionary = null
 
@@ -568,6 +572,7 @@ class ForwardDictionaryWrapper(
 
   def getDictionaryValueForKeyInBytes (surrogateKey: Int): Array[Byte] = {
     if (dictionary == null) {
+      ThreadLocalSessionInfo.setConfigurationToCurrentThread(broadcastConf.value.value)
       dictionary = dictionaryLoader.getDictionary(dictIdentifier)
     }
     dictionary.getDictionaryValueForKeyInBytes(surrogateKey)
