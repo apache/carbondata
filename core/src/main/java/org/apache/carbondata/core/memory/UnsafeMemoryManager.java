@@ -140,12 +140,14 @@ public class UnsafeMemoryManager {
     }
     if (!memoryBlock.isFreedStatus()) {
       getMemoryAllocator(memoryBlock.getMemoryType()).free(memoryBlock);
-      memoryUsed -= memoryBlock.size();
-      memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(String.format("Freeing offheap working memory block (%s) with size: %d, "
-                + "current available memory is: %d", memoryBlock.toString(), memoryBlock.size(),
-            totalMemory - memoryUsed));
+      if (memoryBlock.getMemoryType() == MemoryType.OFFHEAP) {
+        memoryUsed -= memoryBlock.size();
+        memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug(String.format("Freeing offheap working memory block (%s) with size: %d, "
+                  + "current available memory is: %d", memoryBlock.toString(), memoryBlock.size(),
+              totalMemory - memoryUsed));
+        }
       }
     }
   }
