@@ -102,7 +102,14 @@ void CarbonRow::checkOrdinal(int ordinal) {
     }
 }
 
+void CarbonRow::checkCarbonRow() {
+    if (carbonRow == NULL) {
+        throw std::runtime_error("carbonRow is NULL! Please set carbonRow first..");
+    }
+}
+
 short CarbonRow::getShort(int ordinal) {
+    checkCarbonRow();
     checkOrdinal(ordinal);
     jvalue args[2];
     args[0].l = carbonRow;
@@ -111,6 +118,7 @@ short CarbonRow::getShort(int ordinal) {
 }
 
 int CarbonRow::getInt(int ordinal) {
+    checkCarbonRow();
     checkOrdinal(ordinal);
     jvalue args[2];
     args[0].l = carbonRow;
@@ -119,6 +127,7 @@ int CarbonRow::getInt(int ordinal) {
 }
 
 long CarbonRow::getLong(int ordinal) {
+    checkCarbonRow();
     checkOrdinal(ordinal);
     jvalue args[2];
     args[0].l = carbonRow;
@@ -127,6 +136,7 @@ long CarbonRow::getLong(int ordinal) {
 }
 
 double CarbonRow::getDouble(int ordinal) {
+    checkCarbonRow();
     checkOrdinal(ordinal);
     jvalue args[2];
     args[0].l = carbonRow;
@@ -136,6 +146,7 @@ double CarbonRow::getDouble(int ordinal) {
 
 
 float CarbonRow::getFloat(int ordinal) {
+    checkCarbonRow();
     checkOrdinal(ordinal);
     jvalue args[2];
     args[0].l = carbonRow;
@@ -144,6 +155,7 @@ float CarbonRow::getFloat(int ordinal) {
 }
 
 jboolean CarbonRow::getBoolean(int ordinal) {
+    checkCarbonRow();
     checkOrdinal(ordinal);
     jvalue args[2];
     args[0].l = carbonRow;
@@ -152,6 +164,7 @@ jboolean CarbonRow::getBoolean(int ordinal) {
 }
 
 char *CarbonRow::getString(int ordinal) {
+    checkCarbonRow();
     checkOrdinal(ordinal);
     jvalue args[2];
     args[0].l = carbonRow;
@@ -163,6 +176,7 @@ char *CarbonRow::getString(int ordinal) {
 }
 
 char *CarbonRow::getDecimal(int ordinal) {
+    checkCarbonRow();
     checkOrdinal(ordinal);
     jvalue args[2];
     args[0].l = carbonRow;
@@ -174,6 +188,7 @@ char *CarbonRow::getDecimal(int ordinal) {
 }
 
 char *CarbonRow::getVarchar(int ordinal) {
+    checkCarbonRow();
     checkOrdinal(ordinal);
     jvalue args[2];
     args[0].l = carbonRow;
@@ -185,6 +200,7 @@ char *CarbonRow::getVarchar(int ordinal) {
 }
 
 jobjectArray CarbonRow::getArray(int ordinal) {
+    checkCarbonRow();
     checkOrdinal(ordinal);
     jvalue args[2];
     args[0].l = carbonRow;

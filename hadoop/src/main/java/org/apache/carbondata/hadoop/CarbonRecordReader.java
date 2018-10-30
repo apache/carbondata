@@ -131,6 +131,20 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     return readSupport.readRow(carbonIterator.next());
   }
 
+  /**
+   * get batch result
+   *
+   * @return rows
+   */
+  public List<Object[]> getBatchValue() {
+    if (null != inputMetricsStats) {
+      inputMetricsStats.incrementRecordRead(1L);
+    }
+    List<Object[]> objects = ((ChunkRowIterator) carbonIterator).nextBatch();
+    rowCount += objects.size();
+    return objects;
+  }
+
   @Override public float getProgress() throws IOException, InterruptedException {
     // TODO : Implement it based on total number of rows it is going to retrieve.
     return 0;

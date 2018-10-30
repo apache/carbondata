@@ -24,12 +24,14 @@ import java.util.Objects;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonSessionInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
@@ -103,6 +105,19 @@ public class CarbonReaderBuilder {
     if (conf != null) {
       this.hadoopConf = conf;
     }
+    return this;
+  }
+
+  /**
+   * set read batch size before build
+   *
+   * @param batch batch size
+   * @return updated CarbonReaderBuilder
+   */
+  public CarbonReaderBuilder withBatch(int batch) {
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE,
+            String.valueOf(batch));
     return this;
   }
 
