@@ -691,9 +691,9 @@ public class CarbonUpdateUtil {
         CarbonUtil.deleteFoldersAndFiles(invalidFile);
         return true;
       } catch (IOException e) {
-        LOGGER.error("error in clean up of compacted files." + e.getMessage());
+        LOGGER.error("error in clean up of compacted files." + e.getMessage(), e);
       } catch (InterruptedException e) {
-        LOGGER.error("error in clean up of compacted files." + e.getMessage());
+        LOGGER.error("error in clean up of compacted files." + e.getMessage(), e);
       }
     }
     return false;

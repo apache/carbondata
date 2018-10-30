@@ -213,7 +213,7 @@ public class UnsafeSortDataRows {
           i--;
         } else {
           LOGGER.error(
-              "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
+              "exception occurred while trying to acquire a semaphore lock: " + e.getMessage(), e);
           throw new CarbonSortKeyAndGroupByException(e);
         }
       }
@@ -249,7 +249,7 @@ public class UnsafeSortDataRows {
         addRow(row);
       } else {
         LOGGER.error(
-            "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
+            "exception occurred while trying to acquire a semaphore lock: " + e.getMessage(), e);
         throw new CarbonSortKeyAndGroupByException(e);
       }
     }

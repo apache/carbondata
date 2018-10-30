@@ -143,7 +143,7 @@ public final class CarbonLoaderUtil {
         CarbonUtil.deleteFoldersAndFiles(carbonFile);
       }
     } catch (IOException | InterruptedException e) {
-      LOGGER.error("Unable to delete the given path :: " + e.getMessage());
+      LOGGER.error("Unable to delete the given path :: " + e.getMessage(), e);
     }
   }
 
@@ -354,7 +354,7 @@ public final class CarbonLoaderUtil {
           try {
             CarbonUtil.deleteFoldersAndFiles(staleFolder);
           } catch (IOException | InterruptedException e) {
-            LOGGER.error("Failed to delete stale folder: " + e.getMessage());
+            LOGGER.error("Failed to delete stale folder: " + e.getMessage(), e);
           }
         }
         status = true;

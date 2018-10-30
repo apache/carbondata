@@ -91,7 +91,7 @@ public class CarbonDeleteFilesDataReader {
       executorService.shutdown();
       executorService.awaitTermination(30, TimeUnit.MINUTES);
     } catch (InterruptedException e) {
-      LOGGER.error("Error while reading the delete delta files : " + e.getMessage());
+      LOGGER.error("Error while reading the delete delta files : " + e.getMessage(), e);
     }
 
     Map<Integer, Integer[]> pageIdDeleteRowsMap =
@@ -134,7 +134,7 @@ public class CarbonDeleteFilesDataReader {
       executorService.shutdown();
       executorService.awaitTermination(30, TimeUnit.MINUTES);
     } catch (InterruptedException e) {
-      LOGGER.error("Error while reading the delete delta files : " + e.getMessage());
+      LOGGER.error("Error while reading the delete delta files : " + e.getMessage(), e);
     }
     Map<String, DeleteDeltaVo> pageIdToBlockLetVo = new HashMap<>();
     List<DeleteDeltaBlockletDetails> blockletDetails = null;
@@ -175,7 +175,7 @@ public class CarbonDeleteFilesDataReader {
       executorService.shutdown();
       executorService.awaitTermination(30, TimeUnit.MINUTES);
     } catch (InterruptedException e) {
-      LOGGER.error("Error while reading the delete delta files : " + e.getMessage());
+      LOGGER.error("Error while reading the delete delta files : " + e.getMessage(), e);
     }
 
     // Get a new DeleteDeltaBlockDetails as result set where all the data will me merged

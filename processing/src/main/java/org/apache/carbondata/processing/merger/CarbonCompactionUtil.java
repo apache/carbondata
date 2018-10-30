@@ -180,7 +180,7 @@ public class CarbonCompactionUtil {
         return true;
       }
     } catch (IOException e) {
-      LOGGER.error("Exception in isFileExist compaction request file " + e.getMessage());
+      LOGGER.error("Exception in isFileExist compaction request file " + e.getMessage(), e);
     }
     return false;
   }
@@ -207,7 +207,7 @@ public class CarbonCompactionUtil {
       }
 
     } catch (IOException e) {
-      LOGGER.error("Exception in determining the compaction request file " + e.getMessage());
+      LOGGER.error("Exception in determining the compaction request file " + e.getMessage(), e);
     }
     return CompactionType.MINOR;
   }
@@ -243,7 +243,7 @@ public class CarbonCompactionUtil {
         LOGGER.info("Compaction request file is not present. file is : " + compactionRequiredFile);
       }
     } catch (IOException e) {
-      LOGGER.error("Exception in deleting the compaction request file " + e.getMessage());
+      LOGGER.error("Exception in deleting the compaction request file " + e.getMessage(), e);
     }
     return false;
   }
@@ -277,7 +277,7 @@ public class CarbonCompactionUtil {
         LOGGER.info("Compaction request file : " + statusFile + " already exist.");
       }
     } catch (IOException e) {
-      LOGGER.error("Exception in creating the compaction request file " + e.getMessage());
+      LOGGER.error("Exception in creating the compaction request file " + e.getMessage(), e);
     }
     return false;
   }

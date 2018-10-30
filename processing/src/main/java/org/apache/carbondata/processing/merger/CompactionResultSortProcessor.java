@@ -226,7 +226,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
         try {
           CarbonUtil.deleteFoldersAndFiles(new File(tempLoc));
         } catch (IOException | InterruptedException e) {
-          LOGGER.error("Problem deleting local folders during compaction: " + e.getMessage());
+          LOGGER.error("Problem deleting local folders during compaction: " + e.getMessage(), e);
         }
       }
     }
@@ -257,7 +257,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       sortDataRows.startSorting();
     } catch (CarbonSortKeyAndGroupByException e) {
       LOGGER.error(e.getMessage(), e);
-      throw new Exception("Problem loading data during compaction: " + e.getMessage());
+      throw new Exception("Problem loading data during compaction: " + e.getMessage(), e);
     }
   }
 
@@ -421,7 +421,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       sortDataRows.addRow(row);
     } catch (CarbonSortKeyAndGroupByException e) {
       LOGGER.error(e.getMessage(), e);
-      throw new Exception("Row addition for sorting failed during compaction: " + e.getMessage());
+      throw new Exception("Row addition for sorting failed during compaction: " + e.getMessage(), e);
     }
   }
 
@@ -461,7 +461,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     } catch (CarbonSortKeyAndGroupByException e) {
       LOGGER.error(e.getMessage(), e);
       throw new Exception(
-          "Error initializing sort data rows object during compaction: " + e.getMessage());
+          "Error initializing sort data rows object during compaction: " + e.getMessage(), e);
     }
   }
 
@@ -518,7 +518,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       dataHandler.initialise();
     } catch (CarbonDataWriterException e) {
       LOGGER.error(e.getMessage(), e);
-      throw new Exception("Problem initialising data handler during compaction: " + e.getMessage());
+      throw new Exception("Problem initialising data handler during compaction: " + e.getMessage(), e);
     }
   }
 

@@ -89,7 +89,7 @@ public class TableDictionaryGenerator
       executorService.shutdown();
       executorService.awaitTermination(1, TimeUnit.HOURS);
     } catch (InterruptedException e) {
-      LOGGER.error("Error loading the dictionary: " + e.getMessage());
+      LOGGER.error("Error loading the dictionary: " + e.getMessage(), e);
     }
     LOGGER.info("Total time taken to write dictionary file is: " +
             (System.currentTimeMillis() - start));

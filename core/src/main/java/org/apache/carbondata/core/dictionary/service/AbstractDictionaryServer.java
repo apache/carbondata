@@ -78,10 +78,10 @@ public abstract class AbstractDictionaryServer {
         return address.getHostAddress();
       }
     } catch (UnknownHostException e) {
-      LOGGER.error("do not get local host address:" + e.getMessage());
+      LOGGER.error("do not get local host address:" + e.getMessage(), e);
       throw new RuntimeException(e);
     } catch (SocketException e) {
-      LOGGER.error("do not get net work interface:" + e.getMessage());
+      LOGGER.error("do not get net work interface:" + e.getMessage(), e);
       throw new RuntimeException(e);
     }
   }

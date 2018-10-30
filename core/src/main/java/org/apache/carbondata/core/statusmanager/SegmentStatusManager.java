@@ -391,7 +391,7 @@ public class SegmentStatusManager {
         throw new Exception(errorMsg + " Please try after some time.");
       }
     } catch (IOException e) {
-      LOG.error("IOException" + e.getMessage());
+      LOG.error("IOException" + e.getMessage(), e);
       throw e;
     } finally {
       CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
@@ -472,7 +472,7 @@ public class SegmentStatusManager {
         throw new Exception(errorMsg + " Please try after some time.");
       }
     } catch (IOException e) {
-      LOG.error("Error message: " + "IOException" + e.getMessage());
+      LOG.error("Error message: " + "IOException" + e.getMessage(), e);
       throw e;
     } finally {
       CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);

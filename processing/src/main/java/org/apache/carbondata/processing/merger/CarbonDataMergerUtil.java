@@ -554,7 +554,7 @@ public final class CarbonDataMergerUtil {
         try {
           segDate2 = sdf.parse(sdf.format(segmentDate));
         } catch (ParseException e) {
-          LOGGER.error("Error while parsing segment start time" + e.getMessage());
+          LOGGER.error("Error while parsing segment start time" + e.getMessage(), e);
         }
 
         if (isTwoDatesPresentInRequiredRange(segDate1, segDate2, numberOfDaysAllowedToMerge)) {
@@ -596,7 +596,7 @@ public final class CarbonDataMergerUtil {
     try {
       segDate1 = sdf.parse(sdf.format(baselineLoadStartTime));
     } catch (ParseException e) {
-      LOGGER.error("Error while parsing segment start time" + e.getMessage());
+      LOGGER.error("Error while parsing segment start time" + e.getMessage(), e);
     }
     loadsOfSameDate.add(segment);
     return segDate1;

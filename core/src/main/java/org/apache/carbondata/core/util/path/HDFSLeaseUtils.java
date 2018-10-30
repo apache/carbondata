@@ -133,7 +133,7 @@ public class HDFSLeaseUtils {
           LOGGER.error("The given file does not exist at path " + filePath);
           throw e;
         } else {
-          LOGGER.error("Recover lease threw exception : " + e.getMessage());
+          LOGGER.error("Recover lease threw exception : " + e.getMessage(), e);
           ioException = e;
         }
       }

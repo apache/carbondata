@@ -747,7 +747,7 @@ public final class CarbonProperties {
     try {
       initPropertySet();
     } catch (IllegalAccessException e) {
-      LOGGER.error("Illegal access to declared field" + e.getMessage());
+      LOGGER.error("Illegal access to declared field" + e.getMessage(), e);
     }
   }
 

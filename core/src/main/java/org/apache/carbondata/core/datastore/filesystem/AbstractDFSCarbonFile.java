@@ -74,7 +74,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
       fs = path.getFileSystem(this.hadoopConf);
       fileStatus = fs.getFileStatus(path);
     } catch (IOException e) {
-      LOGGER.debug("Exception occurred:" + e.getMessage());
+      LOGGER.debug("Exception occurred:" + e.getMessage(), e);
     }
   }
 
@@ -89,7 +89,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
       fs = path.getFileSystem(this.hadoopConf);
       fileStatus = fs.getFileStatus(path);
     } catch (IOException e) {
-      LOGGER.debug("Exception occurred:" + e.getMessage());
+      LOGGER.debug("Exception occurred:" + e.getMessage(), e);
     }
   }
 
@@ -129,7 +129,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
         return fs.exists(fileStatus.getPath());
       }
     } catch (IOException e) {
-      LOGGER.error("Exception occurred:" + e.getMessage());
+      LOGGER.error("Exception occurred:" + e.getMessage(), e);
     }
     return false;
   }
@@ -154,7 +154,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
         return fs.rename(fileStatus.getPath(), new Path(changeToName));
       }
     } catch (IOException e) {
-      LOGGER.error("Exception occurred:" + e.getMessage());
+      LOGGER.error("Exception occurred:" + e.getMessage(), e);
       return false;
     }
     return false;
@@ -168,7 +168,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
         return fs.delete(fileStatus.getPath(), true);
       }
     } catch (IOException e) {
-      LOGGER.error("Exception occurred:" + e.getMessage());
+      LOGGER.error("Exception occurred:" + e.getMessage(), e);
       return false;
     }
     return false;
@@ -238,7 +238,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
       tempFile.renameForce(fileName);
       fileTruncatedSuccessfully = true;
     } catch (IOException e) {
-      LOGGER.error("Exception occurred while truncating the file " + e.getMessage());
+      LOGGER.error("Exception occurred while truncating the file " + e.getMessage(), e);
     } finally {
       CarbonUtil.closeStreams(dataOutputStream, dataInputStream);
     }
@@ -506,7 +506,7 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
         return new CarbonFile[0];
       }
     } catch (IOException e) {
-      LOGGER.error("Exception occured: " + e.getMessage());
+      LOGGER.error("Exception occured: " + e.getMessage(), e);
       return new CarbonFile[0];
     }
     return getFiles(listStatus);

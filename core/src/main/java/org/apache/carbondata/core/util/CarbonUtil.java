@@ -1446,7 +1446,7 @@ public final class CarbonUtil {
       stream.flush();
       thriftByteArray = stream.toByteArray();
     } catch (TException | IOException e) {
-      LOGGER.error("Error while converting to byte array from thrift object: " + e.getMessage());
+      LOGGER.error("Error while converting to byte array from thrift object: " + e.getMessage(), e);
       closeStreams(stream);
     } finally {
       closeStreams(stream);
