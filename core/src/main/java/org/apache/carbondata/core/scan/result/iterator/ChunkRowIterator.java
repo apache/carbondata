@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.scan.result.iterator;
 
+import java.util.List;
+
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.scan.result.RowBatch;
 
@@ -72,6 +74,15 @@ public class ChunkRowIterator extends CarbonIterator<Object[]> {
    */
   @Override public Object[] next() {
     return currentChunk.next();
+  }
+
+  /**
+   * read next batch
+   *
+   * @return list of batch result
+   */
+  public List<Object[]> nextBatch() {
+    return currentChunk.nextBatch();
   }
 
 }

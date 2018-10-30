@@ -63,7 +63,9 @@ public class CSVCarbonWriterTest {
       assert (false);
     }
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, path);
+        .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, path)
+        .addProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE,
+            String.valueOf(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT));
     assert (TestUtil.cleanMdtFile());
   }
 
