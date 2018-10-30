@@ -87,7 +87,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
         SegmentPropertiesAndSchemaHolder.getInstance()
             .getSegmentPropertiesWrapper(segmentPropertiesIndex);
     try {
-      return segmentPropertiesWrapper.getTaskSummarySchema(false, isFilePathStored);
+      return segmentPropertiesWrapper.getTaskSummarySchemaForBlocklet(false, isFilePathStored);
     } catch (MemoryException e) {
       throw new RuntimeException(e);
     }

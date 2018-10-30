@@ -1006,7 +1006,7 @@ public class BlockDataMap extends CoarseGrainDataMap
         SegmentPropertiesAndSchemaHolder.getInstance()
             .getSegmentPropertiesWrapper(segmentPropertiesIndex);
     try {
-      return segmentPropertiesWrapper.getTaskSummarySchema(true, isFilePathStored);
+      return segmentPropertiesWrapper.getTaskSummarySchemaForBlock(true, isFilePathStored);
     } catch (MemoryException e) {
       throw new RuntimeException(e);
     }

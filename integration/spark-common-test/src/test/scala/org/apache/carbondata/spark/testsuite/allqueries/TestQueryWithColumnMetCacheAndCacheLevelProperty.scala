@@ -92,7 +92,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
       expectedLength: Int, storeBlockletCount: Boolean = false): Boolean = {
     val index = dataMaps(0).asInstanceOf[BlockDataMap].getSegmentPropertiesIndex
     val summarySchema = SegmentPropertiesAndSchemaHolder.getInstance()
-      .getSegmentPropertiesWrapper(index).getTaskSummarySchema(storeBlockletCount, false)
+      .getSegmentPropertiesWrapper(index).getTaskSummarySchemaForBlock(storeBlockletCount, false)
     val minSchemas = summarySchema(0).asInstanceOf[CarbonRowSchema.StructCarbonRowSchema]
       .getChildSchemas
     minSchemas.length == expectedLength
