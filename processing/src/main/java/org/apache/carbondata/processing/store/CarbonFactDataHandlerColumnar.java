@@ -220,7 +220,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         this.entryCount = 0;
       } catch (InterruptedException e) {
         LOGGER.error(e.getMessage(), e);
-        throw new CarbonDataWriterException(e.getMessage(), e);
+        throw new CarbonDataWriterException(e);
       }
     }
   }
@@ -326,7 +326,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       processingComplete = true;
     } catch (InterruptedException e) {
       LOGGER.error(e.getMessage(), e);
-      throw new CarbonDataWriterException(e.getMessage(), e);
+      throw new CarbonDataWriterException(e);
     }
   }
 
@@ -362,7 +362,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         taskList.get(i).get();
       } catch (InterruptedException | ExecutionException e) {
         LOGGER.error(e.getMessage(), e);
-        throw new CarbonDataWriterException(e.getMessage(), e);
+        throw new CarbonDataWriterException(e);
       }
     }
   }

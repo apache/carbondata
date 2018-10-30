@@ -150,7 +150,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     } catch (Exception e) {
       LOGGER.error("Failed for table: " + tableName + " in DataWriterProcessorStepImpl", e);
       if (e instanceof BadRecordFoundException) {
-        throw new BadRecordFoundException(e.getMessage(), e);
+        throw new BadRecordFoundException(e);
       }
       throw new CarbonDataLoadingException(e.getMessage(), e);
     }

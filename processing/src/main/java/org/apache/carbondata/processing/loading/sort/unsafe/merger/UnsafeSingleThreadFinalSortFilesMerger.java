@@ -238,7 +238,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
     try {
       poll.readRow();
     } catch (Exception e) {
-      throw new CarbonDataWriterException(e.getMessage(), e);
+      throw new CarbonDataWriterException(e);
     }
 
     // add to heap

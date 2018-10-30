@@ -107,7 +107,7 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
       try {
         writableArr[i] = createWritableObject(data[i], carbonColumns[i]);
       } catch (IOException e) {
-        throw new RuntimeException(e.getMessage(), e);
+        throw new RuntimeException(e);
       }
     }
 
