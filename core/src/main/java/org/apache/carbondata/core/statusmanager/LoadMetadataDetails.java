@@ -257,8 +257,8 @@ public class LoadMetadataDetails implements Serializable {
         dateToStr = parser.parse(factTimeStamp);
         return dateToStr.getTime();
       } catch (ParseException e) {
-        LOGGER
-            .error("Cannot convert" + factTimeStamp + " to Time/Long type value" + e.getMessage(), e);
+        LOGGER.error("Cannot convert" + factTimeStamp + " to Time/Long type value"
+            + e.getMessage(), e);
         parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
         try {
           // if the load is in progress, factTimeStamp will be null, so use current time

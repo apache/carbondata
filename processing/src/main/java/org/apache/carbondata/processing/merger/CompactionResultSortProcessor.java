@@ -421,7 +421,8 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       sortDataRows.addRow(row);
     } catch (CarbonSortKeyAndGroupByException e) {
       LOGGER.error(e.getMessage(), e);
-      throw new Exception("Row addition for sorting failed during compaction: " + e.getMessage(), e);
+      throw new Exception("Row addition for sorting failed during compaction: "
+          + e.getMessage(), e);
     }
   }
 
@@ -518,7 +519,8 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       dataHandler.initialise();
     } catch (CarbonDataWriterException e) {
       LOGGER.error(e.getMessage(), e);
-      throw new Exception("Problem initialising data handler during compaction: " + e.getMessage(), e);
+      throw new Exception("Problem initialising data handler during compaction: "
+          + e.getMessage(), e);
     }
   }
 
