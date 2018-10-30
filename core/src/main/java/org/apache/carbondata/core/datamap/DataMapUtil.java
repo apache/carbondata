@@ -51,7 +51,7 @@ public class DataMapUtil {
     try {
       return Class.forName(className).getDeclaredConstructors()[0].newInstance();
     } catch (Exception e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       return null;
     }
   }

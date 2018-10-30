@@ -765,7 +765,7 @@ public final class CarbonUtil {
         created = true;
       }
     } catch (IOException e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
     }
     return created;
   }
@@ -1539,7 +1539,7 @@ public final class CarbonUtil {
       objStream = new ObjectInputStream(aos);
       meta = (ValueEncoderMeta) objStream.readObject();
     } catch (ClassNotFoundException e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
     } catch (IOException e) {
       CarbonUtil.closeStreams(objStream);
     }

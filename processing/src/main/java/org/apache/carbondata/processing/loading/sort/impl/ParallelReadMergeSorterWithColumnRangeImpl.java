@@ -238,7 +238,7 @@ public class ParallelReadMergeSorterWithColumnRangeImpl extends AbstractMergeSor
         }
         LOGGER.info("Rows processed by each range: " + insideCounterList);
       } catch (Exception e) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
         this.threadStatusObserver.notifyFailed(e);
       }
     }

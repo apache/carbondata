@@ -61,7 +61,7 @@ public class NonSecureDictionaryClientHandler extends ChannelInboundHandlerAdapt
       data.release();
       responseMsgQueue.add(key);
     } catch (Exception e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw e;
     }
   }
@@ -102,7 +102,7 @@ public class NonSecureDictionaryClientHandler extends ChannelInboundHandlerAdapt
       }
       return dictionaryMessage;
     } catch (Exception e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw new RuntimeException(e);
     }
   }

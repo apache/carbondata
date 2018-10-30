@@ -967,7 +967,7 @@ public final class CarbonLoaderUtil {
                     + StringUtils.join(block.getLocations(), ", ")
                     + ")-->" + activeExecutor);
               } catch (IOException e) {
-                LOGGER.error(e);
+                LOGGER.error(e.getMessage(), e);
               }
             }
             remainingBlocks.remove(block);

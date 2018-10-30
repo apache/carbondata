@@ -2124,7 +2124,7 @@ public final class FilterUtil {
             dummy[0] = i;
             encodedFilters.add(keyGenerator.generateKey(dummy));
           } catch (KeyGenException e) {
-            LOGGER.error(e);
+            LOGGER.error(e.getMessage(), e);
           }
           break;
         }
@@ -2215,7 +2215,7 @@ public final class FilterUtil {
           encodedFilterValues.add(keyGenerator.generateKey(dummy));
         }
       } catch (KeyGenException e) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
       }
       return encodedFilterValues.toArray(new byte[encodedFilterValues.size()][]);
     } else {
@@ -2227,7 +2227,7 @@ public final class FilterUtil {
           }
         }
       } catch (KeyGenException e) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
       }
     }
     return getSortedEncodedFilters(encodedFilterValues);

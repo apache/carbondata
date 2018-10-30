@@ -208,7 +208,7 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
           }
         }
       } catch (Exception e) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
         this.threadStatusObserver.notifyFailed(e);
       }
     }

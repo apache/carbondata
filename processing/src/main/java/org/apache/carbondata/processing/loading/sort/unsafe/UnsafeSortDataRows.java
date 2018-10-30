@@ -422,7 +422,7 @@ public class UnsafeSortDataRows {
         try {
           threadStatusObserver.notifyFailed(e);
         } catch (CarbonSortKeyAndGroupByException ex) {
-          LOGGER.error(e);
+          LOGGER.error(e.getMessage(), e);
         }
       } finally {
         semaphore.release();

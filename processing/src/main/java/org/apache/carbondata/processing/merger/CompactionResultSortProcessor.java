@@ -256,7 +256,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     try {
       sortDataRows.startSorting();
     } catch (CarbonSortKeyAndGroupByException e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw new Exception("Problem loading data during compaction: " + e.getMessage());
     }
   }
@@ -394,10 +394,10 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       }
       dataHandler.finish();
     } catch (CarbonDataWriterException e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw new Exception("Problem loading data during compaction.", e);
     } catch (Exception e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw new Exception("Problem loading data during compaction.", e);
     } finally {
       if (null != dataHandler) {
@@ -420,7 +420,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     try {
       sortDataRows.addRow(row);
     } catch (CarbonSortKeyAndGroupByException e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw new Exception("Row addition for sorting failed during compaction: " + e.getMessage());
     }
   }
@@ -459,7 +459,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     try {
       this.sortDataRows.initialize();
     } catch (CarbonSortKeyAndGroupByException e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw new Exception(
           "Error initializing sort data rows object during compaction: " + e.getMessage());
     }
@@ -517,7 +517,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     try {
       dataHandler.initialise();
     } catch (CarbonDataWriterException e) {
-      LOGGER.error(e);
+      LOGGER.error(e.getMessage(), e);
       throw new Exception("Problem initialising data handler during compaction: " + e.getMessage());
     }
   }

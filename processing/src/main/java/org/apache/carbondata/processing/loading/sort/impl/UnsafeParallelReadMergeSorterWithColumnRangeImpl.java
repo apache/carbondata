@@ -232,7 +232,7 @@ public class UnsafeParallelReadMergeSorterWithColumnRangeImpl extends AbstractMe
         }
         LOGGER.info("Rows processed by each range: " + insideRowCounterList);
       } catch (Exception e) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
         this.threadStatusObserver.notifyFailed(e);
       }
     }

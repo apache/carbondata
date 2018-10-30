@@ -160,7 +160,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
       try {
         dataHandler.closeHandler();
       } catch (Exception e) {
-        LOGGER.error(e);
+        LOGGER.error(e.getMessage(), e);
         throw new CarbonDataLoadingException(
             "There is an unexpected error while closing data handler", e);
       }
