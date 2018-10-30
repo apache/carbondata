@@ -284,11 +284,17 @@ public class SegmentPropertiesAndSchemaHolder {
     private int[] columnCardinality;
     private SegmentProperties segmentProperties;
     private List<CarbonColumn> minMaxCacheColumns;
-    private CarbonRowSchema[] taskSummarySchema;
-    // same variable can be used for block and blocklet schema because at any given cache_level
-    // with either block or blocklet and whenever cache_level is changed the cache and its
-    // corresponding segmentProperties is flushed
-    private CarbonRowSchema[] fileFooterEntrySchema;
+    // in case of hybrid store we can have block as well as blocklet schema
+    // Scenario: When there is a hybrid store in which few loads are from legacy store which do
+    // not contain the blocklet information and hence they will be, by default have cache_level as
+    // BLOCK and few loads with latest store which contain the BLOCKLET information and have
+    // cache_level BLOCKLET. For these type of scenarios we need to have separate task and footer
+    // schemas. For all loads with/without blocklet info there will not be any additional cost
+    // of maintaining 2 variables
+    private CarbonRowSchema[] taskSummarySchemaForBlock;
+    private CarbonRowSchema[] taskSummarySchemaForBlocklet;
+    private CarbonRowSchema[] fileFooterEntrySchemaForBlock;
+    private CarbonRowSchema[] fileFooterEntrySchemaForBlocklet;
 
     public SegmentPropertiesWrapper(CarbonTable carbonTable,
         List<ColumnSchema> columnsInTable, int[] columnCardinality) {
@@ -314,8 +320,10 @@ public class SegmentPropertiesAndSchemaHolder {
       if (null != minMaxCacheColumns) {
         minMaxCacheColumns.clear();
       }
-      taskSummarySchema = null;
-      fileFooterEntrySchema = null;
+      taskSummarySchemaForBlock = null;
+      taskSummarySchemaForBlocklet = null;
+      fileFooterEntrySchemaForBlock = null;
+      fileFooterEntrySchemaForBlocklet = null;
     }
 
     @Override public boolean equals(Object obj) {
@@ -350,48 +358,62 @@ public class SegmentPropertiesAndSchemaHolder {
       return columnCardinality;
     }
 
-    public CarbonRowSchema[] getTaskSummarySchema(boolean storeBlockletCount,
+    public CarbonRowSchema[] getTaskSummarySchemaForBlock(boolean storeBlockletCount,
         boolean filePathToBeStored) throws MemoryException {
-      if (null == taskSummarySchema) {
+      if (null == taskSummarySchemaForBlock) {
         synchronized (taskSchemaLock) {
-          if (null == taskSummarySchema) {
-            taskSummarySchema = SchemaGenerator
+          if (null == taskSummarySchemaForBlock) {
+            taskSummarySchemaForBlock = SchemaGenerator
                 .createTaskSummarySchema(segmentProperties, minMaxCacheColumns, storeBlockletCount,
                     filePathToBeStored);
           }
         }
       }
-      return taskSummarySchema;
+      return taskSummarySchemaForBlock;
+    }
+
+    public CarbonRowSchema[] getTaskSummarySchemaForBlocklet(boolean storeBlockletCount,
+        boolean filePathToBeStored) throws MemoryException {
+      if (null == taskSummarySchemaForBlocklet) {
+        synchronized (taskSchemaLock) {
+          if (null == taskSummarySchemaForBlocklet) {
+            taskSummarySchemaForBlocklet = SchemaGenerator
+                .createTaskSummarySchema(segmentProperties, minMaxCacheColumns, storeBlockletCount,
+                    filePathToBeStored);
+          }
+        }
+      }
+      return taskSummarySchemaForBlocklet;
     }
 
     public CarbonRowSchema[] getBlockFileFooterEntrySchema() {
-      return getOrCreateFileFooterEntrySchema(true);
+      if (null == fileFooterEntrySchemaForBlock) {
+        synchronized (fileFooterSchemaLock) {
+          if (null == fileFooterEntrySchemaForBlock) {
+            fileFooterEntrySchemaForBlock =
+                SchemaGenerator.createBlockSchema(segmentProperties, minMaxCacheColumns);
+          }
+        }
+      }
+      return fileFooterEntrySchemaForBlock;
     }
 
     public CarbonRowSchema[] getBlockletFileFooterEntrySchema() {
-      return getOrCreateFileFooterEntrySchema(false);
+      if (null == fileFooterEntrySchemaForBlocklet) {
+        synchronized (fileFooterSchemaLock) {
+          if (null == fileFooterEntrySchemaForBlocklet) {
+            fileFooterEntrySchemaForBlocklet =
+                SchemaGenerator.createBlockletSchema(segmentProperties, minMaxCacheColumns);
+          }
+        }
+      }
+      return fileFooterEntrySchemaForBlocklet;
     }
 
     public List<CarbonColumn> getMinMaxCacheColumns() {
       return minMaxCacheColumns;
     }
 
-    private CarbonRowSchema[] getOrCreateFileFooterEntrySchema(boolean isCacheLevelBlock) {
-      if (null == fileFooterEntrySchema) {
-        synchronized (fileFooterSchemaLock) {
-          if (null == fileFooterEntrySchema) {
-            if (isCacheLevelBlock) {
-              fileFooterEntrySchema =
-                  SchemaGenerator.createBlockSchema(segmentProperties, minMaxCacheColumns);
-            } else {
-              fileFooterEntrySchema =
-                  SchemaGenerator.createBlockletSchema(segmentProperties, minMaxCacheColumns);
-            }
-          }
-        }
-      }
-      return fileFooterEntrySchema;
-    }
   }
 
   /**
