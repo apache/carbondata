@@ -109,7 +109,7 @@ public class CarbonDeleteFilesDataReader {
         }
 
       } catch (Throwable e) {
-        LOGGER.error(e.getMessage());
+        LOGGER.error(e.getMessage(), e);
         throw new Exception(e.getMessage());
       }
     }
@@ -190,7 +190,7 @@ public class CarbonDeleteFilesDataReader {
           deleteDeltaResultSet.addBlockletDetails(blocklet);
         }
       } catch (Throwable e) {
-        LOGGER.error(e.getMessage());
+        LOGGER.error(e.getMessage(), e);
         throw new Exception(e.getMessage());
       }
     }

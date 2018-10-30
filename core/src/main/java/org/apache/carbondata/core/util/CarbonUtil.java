@@ -744,7 +744,7 @@ public final class CarbonUtil {
         created = FileFactory.mkdirs(path, fileType);
       }
     } catch (IOException e) {
-      LOGGER.error(e.getMessage());
+      LOGGER.error(e.getMessage(), e);
     }
     return created;
   }

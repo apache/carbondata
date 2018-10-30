@@ -940,7 +940,7 @@ public final class FilterUtil {
         columnFilterInfo.setFilterList(filterValuesList);
       }
     } catch (FilterIllegalMemberException e) {
-      LOGGER.error(e.getMessage());
+      LOGGER.error(e.getMessage(), e);
     }
     return columnFilterInfo;
   }
@@ -980,7 +980,7 @@ public final class FilterUtil {
         }
       }
     } catch (FilterIllegalMemberException e) {
-      LOGGER.error(e.getMessage());
+      LOGGER.error(e.getMessage(), e);
     }
 
     if (null == defaultValues) {
@@ -1020,7 +1020,7 @@ public final class FilterUtil {
               break;
             }
           } catch (KeyGenException e) {
-            LOGGER.error(e.getMessage());
+            LOGGER.error(e.getMessage(), e);
           }
         }
       }
@@ -1095,7 +1095,7 @@ public final class FilterUtil {
       keys[carbonDimension.getKeyOrdinal()] = surrogate;
       maskedKey = getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys));
     } catch (KeyGenException e) {
-      LOGGER.error(e.getMessage());
+      LOGGER.error(e.getMessage(), e);
     }
     return maskedKey;
   }
@@ -1438,7 +1438,7 @@ public final class FilterUtil {
       indexKey =
           new IndexKey(keyGenerator.generateKey(startOrEndKey), startOrEndKeyForNoDictDimension);
     } catch (KeyGenException e) {
-      LOGGER.error(e.getMessage());
+      LOGGER.error(e.getMessage(), e);
     }
     return indexKey;
   }
