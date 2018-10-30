@@ -61,7 +61,9 @@ public class CarbonReaderExample {
             CarbonWriter writer = CarbonWriter.builder()
                 .outputPath(path)
                 .withLoadOptions(map)
-                .withCsvInput(new Schema(fields)).writtenBy("CarbonReaderExample").build();
+                .withCsvInput(new Schema(fields))
+                .writtenBy("CarbonReaderExample")
+                .build();
 
             for (int i = 0; i < 10; i++) {
                 String[] row2 = new String[]{

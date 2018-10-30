@@ -448,7 +448,7 @@ class DataFile {
      */
     private double computePercentage(byte[] data, byte[] min, byte[] max, ColumnSchema column) {
       if (column.getDataType() == DataTypes.STRING || column.getDataType() == DataTypes.BOOLEAN
-          || column.hasEncoding(Encoding.DICTIONARY)) {
+          || column.hasEncoding(Encoding.DICTIONARY) || column.getDataType().isComplexType()) {
         // for string, we do not calculate
         return 0;
       } else if (DataTypes.isDecimal(column.getDataType())) {
@@ -458,8 +458,8 @@ class DataFile {
         return dataValue.divide(factorValue).doubleValue();
       }
       double dataValue, minValue, factorValue;
-      if (columnChunk.column.isDimensionColumn() && DataTypeUtil
-          .isPrimitiveColumn(columnChunk.column.getDataType())) {
+      if (columnChunk.column.isDimensionColumn() &&
+          DataTypeUtil.isPrimitiveColumn(columnChunk.column.getDataType())) {
         minValue = Double.valueOf(String.valueOf(
             DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(min, column.getDataType())));
         dataValue = Double.valueOf(String.valueOf(

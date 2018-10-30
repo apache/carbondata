@@ -303,10 +303,9 @@ class DataSummary implements Command {
           maxPercent = "NA";
           // for complex types min max can be given as NA and for varchar where min max is not
           // written, can give NA
-          if (blocklet.getColumnChunk().column.hasEncoding(Encoding.DICTIONARY) || blocklet
-              .getColumnChunk().column.getColumnName().contains(".val") || blocklet
-              .getColumnChunk().column.getColumnName().contains(".") || !blocklet
-              .getColumnChunk().isMinMaxPresent) {
+          if (blocklet.getColumnChunk().column.hasEncoding(Encoding.DICTIONARY) ||
+              blocklet.getColumnChunk().column.isComplexColumn() ||
+              !blocklet.getColumnChunk().isMinMaxPresent) {
             min = "NA";
             max = "NA";
           } else {
@@ -314,12 +313,24 @@ class DataSummary implements Command {
             max = new String(blockletMax, Charset.forName(DEFAULT_CHARSET));
           }
         } else {
-          minPercent = String.format("%.1f", blocklet.getColumnChunk().getMinPercentage() * 100);
-          maxPercent = String.format("%.1f", blocklet.getColumnChunk().getMaxPercentage() * 100);
+          // for column has global dictionary and for complex columns,min and max percentage can be
+          // NA
+          if (blocklet.getColumnChunk().column.hasEncoding(Encoding.DICTIONARY) ||
+              blocklet.getColumnChunk().column.isComplexColumn() ||
+              blocklet.getColumnChunk().column.getDataType().isComplexType()) {
+            minPercent = "NA";
+            maxPercent = "NA";
+          } else {
+            minPercent =
+                String.format("%.1f", Math.abs(blocklet.getColumnChunk().getMinPercentage() * 100));
+            maxPercent =
+                String.format("%.1f", Math.abs(blocklet.getColumnChunk().getMaxPercentage() * 100));
+          }
           DataFile.ColumnChunk columnChunk = blocklet.columnChunk;
-          if (columnChunk.column.hasEncoding(Encoding.DICTIONARY) || blocklet
-              .getColumnChunk().column.getColumnName().contains(".val") || blocklet
-              .getColumnChunk().column.getColumnName().contains(".")) {
+          // need to consider dictionary and complex columns
+          if (columnChunk.column.hasEncoding(Encoding.DICTIONARY) ||
+              blocklet.getColumnChunk().column.isComplexColumn() ||
+              blocklet.getColumnChunk().column.getDataType().isComplexType()) {
             min = "NA";
             max = "NA";
           } else if (columnChunk.column.isDimensionColumn() && DataTypeUtil
@@ -371,24 +382,26 @@ class DataSummary implements Command {
   }
 
   private void collectColumnChunkMeta(String columnName) throws IOException, MemoryException {
-    DataFile file = dataFiles.entrySet().iterator().next().getValue();
-    outPuts.add("");
-    outPuts.add("## Page Meta for column '" + columnName + "' in file " + file.getFilePath());
-    collectStats(columnName);
-    for (int i = 0; i < file.getAllBlocklets().size(); i++) {
-      DataFile.Blocklet blocklet = file.getAllBlocklets().get(i);
-      DataChunk3 dataChunk3 = blocklet.getColumnChunk().getDataChunk3();
-      List<DataChunk2> dataChunk2List = dataChunk3.getData_chunk_list();
-      outPuts.add(String.format("Blocklet %d:", i));
-
-      // There will be many pages, for debugging purpose,
-      // just print 3 page for each blocklet is enough
-      for (int j = 0; j < dataChunk2List.size() && j < 3; j++) {
-        outPuts.add(String.format("Page %d (offset %d, length %d): %s",
-            j, dataChunk3.page_offset.get(j), dataChunk3.page_length.get(j),
-            dataChunk2List.get(j).toString()));
-      }
+    for (Map.Entry<String, DataFile> entry : dataFiles.entrySet()) {
+      DataFile file = entry.getValue();
       outPuts.add("");
+      outPuts.add("## Page Meta for column '" + columnName + "' in file " + file.getFilePath());
+      collectStats(columnName);
+      for (int i = 0; i < file.getAllBlocklets().size(); i++) {
+        DataFile.Blocklet blocklet = file.getAllBlocklets().get(i);
+        DataChunk3 dataChunk3 = blocklet.getColumnChunk().getDataChunk3();
+        List<DataChunk2> dataChunk2List = dataChunk3.getData_chunk_list();
+        outPuts.add(String.format("Blocklet %d:", i));
+
+        // There will be many pages, for debugging purpose,
+        // just print 3 page for each blocklet is enough
+        for (int j = 0; j < dataChunk2List.size() && j < 3; j++) {
+          outPuts.add(String
+              .format("Page %d (offset %d, length %d): %s", j, dataChunk3.page_offset.get(j),
+                  dataChunk3.page_length.get(j), dataChunk2List.get(j).toString()));
+        }
+        outPuts.add("");
+      }
     }
   }
 
