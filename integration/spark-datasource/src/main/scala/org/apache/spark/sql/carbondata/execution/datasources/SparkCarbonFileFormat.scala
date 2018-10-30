@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.carbondata.execution.datasources
 
+import java.net.URI
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
@@ -381,7 +383,7 @@ class SparkCarbonFileFormat extends FileFormat
 
       if (file.filePath.endsWith(CarbonTablePath.CARBON_DATA_EXT)) {
         val split = new CarbonInputSplit("null",
-          new Path(file.filePath),
+          new Path(new URI(file.filePath)),
           file.start,
           file.length,
           file.locations,
@@ -392,10 +394,12 @@ class SparkCarbonFileFormat extends FileFormat
         split.setDetailInfo(info)
         info.setBlockSize(file.length)
         // Read the footer offset and set.
-        val reader = FileFactory.getFileHolder(FileFactory.getFileType(file.filePath),
+        val reader = FileFactory.getFileHolder(FileFactory.getFileType(split.getPath.toString),
           broadcastedHadoopConf.value.value)
         val buffer = reader
-          .readByteBuffer(FileFactory.getUpdatedFilePath(file.filePath), file.length - 8, 8)
+          .readByteBuffer(FileFactory.getUpdatedFilePath(split.getPath.toString),
+            file.length - 8,
+            8)
         info.setBlockFooterOffset(buffer.getLong)
         info.setVersionNumber(split.getVersion.number())
         info.setUseMinMaxForPruning(true)
@@ -491,8 +495,15 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
     var updatedTaskCommits = taskCommits
     // Call only in case of carbon flow.
     if (carbonFlow != null) {
-      val filesToMove = taskCommits.map(_.obj.asInstanceOf[Map[String, String]])
-        .foldLeft(Map[String, String]())(_ ++ _)
+      val (allAbsPathFiles, allPartitionPaths) =
+        // spark 2.1 and 2.2 case
+        if (taskCommits.exists(_.obj.isInstanceOf[Map[String, String]])) {
+        (taskCommits.map(_.obj.asInstanceOf[Map[String, String]]), null)
+      } else {
+          // spark 2.3 and above
+        taskCommits.map(_.obj.asInstanceOf[(Map[String, String], Set[String])]).unzip
+      }
+      val filesToMove = allAbsPathFiles.foldLeft(Map[String, String]())(_ ++ _)
       val fs = new Path(path).getFileSystem(jobContext.getConfiguration)
       // Move files from stage directory to actual location.
       filesToMove.foreach{case (src, dest) =>
@@ -507,7 +518,13 @@ case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, i
           fs.rename(f.getPath, new Path(new Path(dest).getParent, f.getPath.getName))
         }
       }
-      updatedTaskCommits = taskCommits.map(f => new FileCommitProtocol.TaskCommitMessage(Map.empty))
+      updatedTaskCommits = if (allPartitionPaths == null) {
+        taskCommits.map(f => new FileCommitProtocol.TaskCommitMessage(Map.empty))
+      } else {
+        taskCommits.zipWithIndex.map{f =>
+          new FileCommitProtocol.TaskCommitMessage((Map.empty, allPartitionPaths(f._2)))
+        }
+      }
     }
     super.commitJob(jobContext, updatedTaskCommits)
   }
