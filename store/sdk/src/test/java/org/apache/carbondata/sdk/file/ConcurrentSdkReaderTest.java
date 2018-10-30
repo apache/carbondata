@@ -20,20 +20,16 @@ package org.apache.carbondata.sdk.file;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
-import junit.framework.TestCase;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOExceptionWithCause;
 import org.junit.*;
 
 /**
@@ -43,9 +39,7 @@ public class ConcurrentSdkReaderTest {
 
   private static final String dataDir = "./testReadFiles";
 
-  @Before
-  @After
-  public void cleanTestData() {
+  @Before @After public void cleanTestData() {
     try {
       FileUtils.deleteDirectory(new File(dataDir));
     } catch (Exception e) {
@@ -54,38 +48,38 @@ public class ConcurrentSdkReaderTest {
     }
   }
 
-  private void writeTestData(long numRows, int tableBlockSize) {
+  private void writeDataMultipleFiles(int numFiles, long numRowsPerFile) {
     Field[] fields = new Field[2];
     fields[0] = new Field("stringField", DataTypes.STRING);
     fields[1] = new Field("intField", DataTypes.INT);
 
-    Map<String, String> tableProperties = new HashMap<>();
-    tableProperties.put("table_blocksize", Integer.toString(tableBlockSize));
+    for (int numFile = 0; numFile < numFiles; ++numFile) {
+      CarbonWriterBuilder builder =
+          CarbonWriter.builder().outputPath(dataDir).withCsvInput(new Schema(fields))
+              .writtenBy("ConcurrentSdkReaderTest");
 
-    CarbonWriterBuilder builder =
-        CarbonWriter.builder().outputPath(dataDir).withTableProperties(tableProperties)
-            .withCsvInput(new Schema(fields));
+      try {
+        CarbonWriter writer = builder.build();
 
-    try {
-      CarbonWriter writer = builder.build();
-
-      for (long i = 0; i < numRows; ++i) {
-        writer.write(new String[] { "robot_" + i, String.valueOf(i) });
+        for (long i = 0; i < numRowsPerFile; ++i) {
+          writer.write(new String[] { "robot_" + i, String.valueOf(i) });
+        }
+        writer.close();
+      } catch (Exception e) {
+        e.printStackTrace();
+        Assert.fail(e.getMessage());
       }
-      writer.close();
-    } catch (Exception e) {
-      e.printStackTrace();
-      Assert.fail(e.getMessage());
     }
   }
 
   @Test public void testReadParallely() throws IOException, InterruptedException {
-    long numRows = 10000000;
-    int tableBlockSize = 10;
+    int numFiles = 10;
+    int numRowsPerFile = 10;
     short numThreads = 4;
-    writeTestData(numRows, tableBlockSize);
+    writeDataMultipleFiles(numFiles, numRowsPerFile);
     long count;
 
+    // Sequential Reading
     CarbonReader reader = CarbonReader.builder(dataDir).build();
     try {
       count = 0;
@@ -96,7 +90,7 @@ public class ConcurrentSdkReaderTest {
       }
       long end = System.currentTimeMillis();
       System.out.println("[Sequential read] Time: " + (end - start) + " ms");
-      Assert.assertEquals(numRows, count);
+      Assert.assertEquals(numFiles * numRowsPerFile, count);
     } catch (Exception e) {
       e.printStackTrace();
       Assert.fail(e.getMessage());
@@ -104,25 +98,37 @@ public class ConcurrentSdkReaderTest {
       reader.close();
     }
 
+    // Concurrent Reading
     ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
-    CarbonReader reader2 = CarbonReader.builder(dataDir).build();
     try {
+      CarbonReader reader2 = CarbonReader.builder(dataDir).build();
       List<CarbonReader> multipleReaders = reader2.split(numThreads);
-      List<Future> results = new ArrayList<>();
-      count = 0;
-      long start = System.currentTimeMillis();
-      for (CarbonReader reader_i : multipleReaders) {
-        results.add(executorService.submit(new ReadLogic(reader_i)));
+      try {
+        List<ReadLogic> tasks = new ArrayList<>();
+        List<Future<Long>> results;
+        count = 0;
+
+        for (CarbonReader reader_i : multipleReaders) {
+          tasks.add(new ReadLogic(reader_i));
+        }
+        long start = System.currentTimeMillis();
+        results = executorService.invokeAll(tasks);
+        for (Future result_i : results) {
+          count += (long) result_i.get();
+        }
+        long end = System.currentTimeMillis();
+        System.out.println("[Parallel read] Time: " + (end - start) + " ms");
+        Assert.assertEquals(numFiles * numRowsPerFile, count);
+      } catch (Exception e) {
+        e.printStackTrace();
+        Assert.fail(e.getMessage());
       }
-      for (Future result_i : results) {
-        count += (long) result_i.get();
-      }
-      long end = System.currentTimeMillis();
-      System.out.println("[Parallel read] Time: " + (end - start) + " ms");
-      Assert.assertEquals(numRows, count);
     } catch (Exception e) {
       e.printStackTrace();
       Assert.fail(e.getMessage());
+    } finally {
+      executorService.shutdown();
+      executorService.awaitTermination(10, TimeUnit.MINUTES);
     }
   }
 

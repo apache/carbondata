@@ -18,9 +18,7 @@
 package org.apache.carbondata.sdk.file;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -118,9 +116,20 @@ public class CarbonReader<T> {
   }
 
   /**
-   * Return a new list of {@link CarbonReader} objects
+   * Breaks the list of CarbonRecordReader in CarbonReader into multiple
+   * CarbonReader objects, each iterating through some 'carbondata' files
+   * and return that list of CarbonReader objects
    *
-   * @param maxSplits
+   * If the no. of files is greater than maxSplits, then break the
+   * CarbonReader into maxSplits splits, with each split iterating
+   * through >= 1 file.
+   *
+   * If the no. of files is less than maxSplits, then return list of
+   * CarbonReader with size as the no. of files, with each CarbonReader
+   * iterating through exactly one file
+   *
+   * @param maxSplits: Int
+   * @return list of {@link CarbonReader} objects
    */
   public List<CarbonReader> split(int maxSplits) throws IOException {
     validateReader();
@@ -131,26 +140,29 @@ public class CarbonReader<T> {
 
     List<CarbonReader> carbonReaders = new ArrayList<>();
 
-    // If maxSplits < readers.size
-    // Split the reader into maxSplits splits with each
-    // element contains >= 1 CarbonRecordReader objects
     if (maxSplits < this.readers.size()) {
+      // If maxSplits is less than the no. of files
+      // Split the reader into maxSplits splits with each
+      // element containing >= 1 CarbonRecordReader objects
+      float filesPerSplit = (float) this.readers.size() / maxSplits;
       for (int i = 0; i < maxSplits; ++i) {
-        carbonReaders.add(new CarbonReader<>(this.readers
-            .subList((int) Math.ceil((float) (i * this.readers.size()) / maxSplits),
-                (int) Math.ceil((float) ((i + 1) * this.readers.size()) / maxSplits))));
+        carbonReaders.add(new CarbonReader<>(this.readers.subList(
+            (int) Math.ceil(i * filesPerSplit),
+            (int) Math.ceil(((i + 1) * filesPerSplit)))));
       }
-    }
-    // If maxSplits >= readers.size
-    // Split the reader into reader.size splits with each
-    // element contains exactly 1 CarbonRecordReader object
-    else {
+    } else {
+      // If maxSplits is greater than the no. of files
+      // Split the reader into <num_files> splits with each
+      // element contains exactly 1 CarbonRecordReader object
       for (int i = 0; i < this.readers.size(); ++i) {
         carbonReaders.add(new CarbonReader<>(this.readers.subList(i, i + 1)));
       }
     }
 
+    // This is to disable the use of this CarbonReader object to iterate
+    // over the files and forces user to only use the returned splits
     this.initialise = false;
+
     return carbonReaders;
   }
 
