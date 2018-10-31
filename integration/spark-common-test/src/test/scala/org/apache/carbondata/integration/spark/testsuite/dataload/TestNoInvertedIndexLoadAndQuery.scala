@@ -19,9 +19,12 @@ package org.apache.carbondata.integration.spark.testsuite.dataload
 
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 
 /**
  * Test Class for no inverted index load and query
@@ -287,6 +290,44 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table testNull OPTIONS('delimiter'=';','fileheader'='c1,c2,c3,c5')""")
     sql("""select c2 from testNull where c2 is null""").show()
     checkAnswer(sql("""select c2 from testNull where c2 is null"""), Seq(Row(null), Row(null), Row(null), Row(null), Row(null), Row(null)))
+  }
+
+  test("inverted index with Dictionary_EXCLUDE and INVERTED_INDEX") {
+    sql("drop table if exists index1")
+    sql(
+      """
+           CREATE TABLE IF NOT EXISTS index1
+           (id Int, name String, city String)
+           STORED BY 'org.apache.carbondata.format'
+           TBLPROPERTIES('DICTIONARY_EXCLUDE'='city','INVERTED_INDEX'='city')
+      """)
+    sql(
+      s"""
+           LOAD DATA LOCAL INPATH '$testData1' into table index1
+           """)
+    checkAnswer(
+      sql(
+        """
+           SELECT * FROM index1 WHERE city = "Bangalore"
+        """),
+      Seq(Row(19.0, "Emily", "Bangalore")))
+  }
+
+  test("test same column in inverted and no inverted index"){
+    sql("drop table if exists index1")
+    val exception = intercept[MalformedCarbonCommandException] {
+      sql(
+        """
+           CREATE TABLE IF NOT EXISTS index1
+           (id Int, name String, city String)
+           STORED BY 'org.apache.carbondata.format'
+           TBLPROPERTIES('NO_INVERTED_INDEX'='city','INVERTED_INDEX'='city')
+      """)
+    }
+    assert(exception.getMessage
+      .contains(
+        "Column ambiguity as duplicate column(s):city is present in INVERTED_INDEX and " +
+        "NO_INVERTED_INDEX. Duplicate columns are not allowed."))
   }
 
   override def afterAll {

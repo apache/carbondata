@@ -440,8 +440,13 @@ public final class CarbonCommonConstants {
   public static final String TABLE_BLOCKSIZE = "table_blocksize";
   // table blocklet size in MB
   public static final String TABLE_BLOCKLET_SIZE = "table_blocklet_size";
-  // set in column level to disable inverted index
+  /**
+   * set in column level to disable inverted index
+   * @Deprecated :This property is deprecated, it is kep just for compatibility
+   */
   public static final String NO_INVERTED_INDEX = "no_inverted_index";
+  // set in column level to enable inverted index
+  public static final String INVERTED_INDEX = "inverted_index";
   // table property name of major compaction size
   public static final String TABLE_MAJOR_COMPACTION_SIZE = "major_compaction_size";
   // table property name of auto load merge

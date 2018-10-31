@@ -641,7 +641,29 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       """)
 
     sql("alter table NO_INVERTED_CARBON add columns(col1 string,col2 string) tblproperties('NO_INVERTED_INDEX'='col2')")
-    checkExistenceCount(sql("desc formatted NO_INVERTED_CARBON"),2,"NOINVERTEDINDEX")
+    checkExistenceCount(sql("desc formatted NO_INVERTED_CARBON"),4,"NOINVERTEDINDEX")
+  }
+
+  test("inverted index after alter command") {
+    sql("drop table if exists NO_INVERTED_CARBON")
+    sql(
+      """
+           CREATE TABLE IF NOT EXISTS NO_INVERTED_CARBON
+           (id Int, name String, city String)
+           STORED BY 'org.apache.carbondata.format'
+           TBLPROPERTIES('INVERTED_INDEX'='city')
+      """)
+
+    sql("alter table NO_INVERTED_CARBON add columns(col1 string,col2 string) tblproperties('INVERTED_INDEX'='col2')")
+    val descLoc = sql("describe formatted NO_INVERTED_CARBON").collect
+    descLoc.find(_.get(0).toString.contains("name")) match {
+      case Some(row) => assert(row.get(2).toString.contains("INVERTEDINDEX"))
+      case None => assert(false)
+    }
+    descLoc.find(_.get(0).toString.contains("col2")) match {
+      case Some(row) => assert(row.get(2).toString.contains("INVERTEDINDEX"))
+      case None => assert(false)
+    }
   }
 
   test("test if adding column in pre-aggregate table throws exception") {
