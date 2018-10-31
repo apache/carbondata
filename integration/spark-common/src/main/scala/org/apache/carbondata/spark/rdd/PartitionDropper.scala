@@ -22,9 +22,7 @@ import java.io.IOException
 import org.apache.spark.sql.execution.command.{AlterPartitionModel, DropPartitionCallableModel}
 import org.apache.spark.util.PartitionUtils
 
-import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.spark.{AlterPartitionResultImpl, PartitionFactory}
 
@@ -89,8 +87,6 @@ object PartitionDropper {
             finalDropStatus = dropStatus.forall(_._2)
           }
           if (!finalDropStatus) {
-            Audit.log(logger, s"Drop Partition request failed for table " +
-                         s"${ dbName }.${ tableName }")
             logger.error(s"Drop Partition request failed for table " +
                          s"${ dbName }.${ tableName }")
           }
@@ -105,8 +101,6 @@ object PartitionDropper {
             case e: IOException =>
               throw new IOException("Exception while delete original carbon files ", e)
           }
-          Audit.log(logger, s"Drop Partition request completed for table " +
-                       s"${ dbName }.${ tableName }")
           logger.info(s"Drop Partition request completed for table " +
                       s"${ dbName }.${ tableName }")
         }
@@ -117,8 +111,6 @@ object PartitionDropper {
     } else {
       PartitionUtils.deleteOriginalCarbonFile(alterPartitionModel, absoluteTableIdentifier,
         Seq(partitionId).toList, dbName, tableName, partitionInfo)
-      Audit.log(logger, s"Drop Partition request completed for table " +
-                   s"${ dbName }.${ tableName }")
       logger.info(s"Drop Partition request completed for table " +
                   s"${ dbName }.${ tableName }")
     }

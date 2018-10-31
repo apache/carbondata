@@ -19,15 +19,12 @@ package org.apache.spark.sql.execution.command.table
 
 import scala.collection.JavaConverters._
 
-import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, _}
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
 import org.apache.spark.sql.execution.command.MetadataCommand
 
-import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -36,7 +33,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.{CarbonUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.events.{CreateTablePostExecutionEvent, CreateTablePreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
@@ -59,17 +56,16 @@ case class CarbonCreateTableCommand(
       databaseOpt = Some(tableInfo.getDatabaseName)
     }
     val dbName = CarbonEnv.getDatabaseName(databaseOpt)(sparkSession)
+    setAuditTable(dbName, tableName)
+    setAuditInfo(tableInfo.getFactTable.getTableProperties.asScala.toMap
+                 ++ Map("external" -> isExternal.toString))
     // set dbName and tableUnique Name in the table info
     tableInfo.setDatabaseName(dbName)
     tableInfo.setTableUniqueName(CarbonTable.buildUniqueName(dbName, tableName))
-    Audit.log(LOGGER, s"Creating Table with Database name [$dbName] and Table name [$tableName]")
     val isTransactionalTable = tableInfo.isTransactionalTable
     if (sparkSession.sessionState.catalog.listTables(dbName)
       .exists(_.table.equalsIgnoreCase(tableName))) {
       if (!ifNotExistsSet) {
-        Audit.log(LOGGER,
-          s"Table creation with Database name [$dbName] and Table name [$tableName] failed. " +
-          s"Table [$tableName] already exists under database [$dbName]")
         throw new TableAlreadyExistsException(dbName, tableName)
       }
     } else {
@@ -180,16 +176,15 @@ case class CarbonCreateTableCommand(
               case _: Exception => // No operation
             }
             val msg = s"Create table'$tableName' in database '$dbName' failed"
-            Audit.log(LOGGER, msg.concat(", ").concat(e.getMessage))
-            LOGGER.error(msg, e)
             throwMetadataException(dbName, tableName, msg.concat(", ").concat(e.getMessage))
         }
       }
       val createTablePostExecutionEvent: CreateTablePostExecutionEvent =
         CreateTablePostExecutionEvent(sparkSession, tableIdentifier)
       OperationListenerBus.getInstance.fireEvent(createTablePostExecutionEvent, operationContext)
-      Audit.log(LOGGER, s"Table created with Database name [$dbName] and Table name [$tableName]")
     }
     Seq.empty
   }
+
+  override protected def opName: String = "CREATE TABLE"
 }

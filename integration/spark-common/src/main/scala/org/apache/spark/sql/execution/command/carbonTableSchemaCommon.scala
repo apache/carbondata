@@ -22,20 +22,15 @@ import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.util.CarbonException
 
-import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
-import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, DecimalType}
@@ -45,7 +40,7 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationId
 import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema, ParentColumnTableRelation}
 import org.apache.carbondata.core.service.impl.ColumnUniqueIdGenerator
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
+import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.CompactionType
@@ -281,20 +276,10 @@ class AlterTableColumnSchemaGenerator(
     allColumns.filter(x => !x.isInvisible).groupBy(_.getColumnName)
       .foreach(f => if (f._2.size > 1) {
         val name = f._1
-        LOGGER.error(s"Duplicate column found with name: $name")
-        Audit.log(LOGGER,
-          s"Validation failed for Create/Alter Table Operation " +
-          s"for ${ dbName }.${ alterTableModel.tableName }. " +
-          s"Duplicate column found with name: $name")
         sys.error(s"Duplicate column found with name: $name")
       })
 
     if (newCols.exists(_.getDataType.isComplexType)) {
-      LOGGER.error(s"Complex column cannot be added")
-      Audit.log(LOGGER,
-        s"Validation failed for Create/Alter Table Operation " +
-        s"for ${ dbName }.${ alterTableModel.tableName }. " +
-        s"Complex column cannot be added")
       sys.error(s"Complex column cannot be added")
     }
 
@@ -782,10 +767,6 @@ class TableNewProcessor(cm: TableModel) {
     allColumns.groupBy(_.getColumnName).foreach { f =>
       if (f._2.size > 1) {
         val name = f._1
-        LOGGER.error(s"Duplicate column found with name: $name")
-        Audit.log(LOGGER,
-          s"Validation failed for Create/Alter Table Operation " +
-          s"Duplicate column found with name: $name")
         CarbonException.analysisException(s"Duplicate dimensions found with name: $name")
       }
     }

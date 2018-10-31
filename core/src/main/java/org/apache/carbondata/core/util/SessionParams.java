@@ -24,7 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.constants.LoggerAction;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.common.logging.impl.Audit;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
@@ -99,26 +98,13 @@ public class SessionParams implements Serializable, Cloneable {
    * @return properties value
    */
   public SessionParams addProperty(String key, String value) throws InvalidConfigurationException {
-    return addProperty(key, value, true);
-  }
-
-  /**
-   * This method will be used to add a new property
-   *
-   * @param key
-   * @return properties value
-   */
-  public SessionParams addProperty(String key, String value, Boolean doAuditing)
-      throws InvalidConfigurationException {
     boolean isValidConf = validateKeyValue(key, value);
     if (isValidConf) {
       if (key.equals(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION)) {
         value = value.toUpperCase();
       }
-      if (doAuditing) {
-        Audit.log(LOGGER,
-            "The key " + key + " with value " + value + " added in the session param");
-      }
+      LOGGER.info(
+          "The key " + key + " with value " + value + " added in the session param");
       sProps.put(key, value);
     }
     return this;

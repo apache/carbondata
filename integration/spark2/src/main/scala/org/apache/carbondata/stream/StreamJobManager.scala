@@ -21,19 +21,15 @@ import java.util.concurrent.{ConcurrentHashMap, CountDownLatch, TimeUnit}
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonEnv, DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.streaming.StreamingQuery
 import org.apache.spark.sql.types.{StructField, StructType}
 
-import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.exceptions.NoSuchStreamException
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
-import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.spark.StreamingOption
 import org.apache.carbondata.streaming.CarbonStreamException
 
@@ -160,9 +156,6 @@ object StreamJobManager {
         StreamJobDesc(job, streamName, sourceTable.getDatabaseName, sourceTable.getTableName,
           sinkTable.getDatabaseName, sinkTable.getTableName, query, thread))
 
-      Audit.log(LOGGER, s"STREAM $streamName started with job id '${job.id.toString}', " +
-                   s"from ${sourceTable.getDatabaseName}.${sourceTable.getTableName} " +
-                   s"to ${sinkTable.getDatabaseName}.${sinkTable.getTableName}")
       job.id.toString
     } else {
       thread.interrupt()
@@ -181,10 +174,6 @@ object StreamJobManager {
       jobDesc.streamingQuery.stop()
       jobDesc.thread.interrupt()
       jobs.remove(streamName)
-      Audit.log(LOGGER,
-        s"STREAM $streamName stopped, job id '${jobDesc.streamingQuery.id.toString}', " +
-                   s"from ${jobDesc.sourceDb}.${jobDesc.sourceTable} " +
-                   s"to ${jobDesc.sinkDb}.${jobDesc.sinkTable}")
     } else {
       if (!ifExists) {
         throw new NoSuchStreamException(streamName)

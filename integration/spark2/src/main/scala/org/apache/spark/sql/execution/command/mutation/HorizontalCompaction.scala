@@ -28,7 +28,6 @@ import org.apache.spark.sql.execution.command.management.CarbonAlterTableCompact
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -130,7 +129,6 @@ object HorizontalCompaction {
     }
 
     LOG.info(s"Horizontal Update Compaction operation started for [$db.$table].")
-    Audit.log(LOG, s"Horizontal Update Compaction operation started for [$db.$table].")
 
     try {
       // Update Compaction.
@@ -154,7 +152,6 @@ object HorizontalCompaction {
           s"Horizontal Update Compaction Failed for [${ db }.${ table }]. " + msg, factTimeStamp)
     }
     LOG.info(s"Horizontal Update Compaction operation completed for [${ db }.${ table }].")
-    Audit.log(LOG, s"Horizontal Update Compaction operation completed for [${ db }.${ table }].")
   }
 
   /**
@@ -180,7 +177,6 @@ object HorizontalCompaction {
     }
 
     LOG.info(s"Horizontal Delete Compaction operation started for [$db.$table].")
-    Audit.log(LOG, s"Horizontal Delete Compaction operation started for [$db.$table].")
 
     try {
 
@@ -225,7 +221,6 @@ object HorizontalCompaction {
         timestamp.toString,
         segmentUpdateStatusManager)
       if (updateStatus == false) {
-        Audit.log(LOG, s"Delete Compaction data operation is failed for [$db.$table].")
         LOG.error("Delete Compaction data operation is failed.")
         throw new HorizontalCompactionException(
           s"Horizontal Delete Compaction Failed for [$db.$table] ." +
@@ -233,7 +228,6 @@ object HorizontalCompaction {
       }
       else {
         LOG.info(s"Horizontal Delete Compaction operation completed for [$db.$table].")
-        Audit.log(LOG, s"Horizontal Delete Compaction operation completed for [$db.$table].")
       }
     }
     catch {

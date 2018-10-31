@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.execution.command
 
+import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 import org.apache.spark.sql._
@@ -24,6 +25,8 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.processing.util.Auditor
 import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 object Checker {
@@ -61,20 +64,71 @@ trait DataProcessOperation {
 }
 
 /**
+ * An utility that run the command with audit log
+ */
+trait Auditable {
+  // operation id that will be written in audit log
+  private val operationId: String = String.valueOf(System.nanoTime())
+
+  // extra info to be written in audit log, set by subclass of AtomicRunnableCommand
+  var auditInfo: Map[String, String] = _
+
+  // holds the dbName and tableName for which this command is executed for
+  // used for audit log, set by subclass of AtomicRunnableCommand
+  private var table: String = _
+
+  // implement by subclass, return the operation name that record in audit log
+  protected def opName: String
+
+  protected def opTime(startTime: Long) = s"${System.currentTimeMillis() - startTime} ms"
+
+  protected def setAuditTable(dbName: String, tableName: String): Unit =
+    table = s"$dbName.$tableName"
+
+  protected def setAuditTable(carbonTable: CarbonTable): Unit =
+    table = s"${carbonTable.getDatabaseName}.${carbonTable.getTableName}"
+
+  protected def setAuditInfo(map: Map[String, String]): Unit = auditInfo = map
+
+  /**
+   * Run the passed command and record the audit log.
+   * Two audit log will be output, one for operation start another for operation success/failure
+   * @param runCmd command to run
+   * @param spark session
+   * @return command result
+   */
+  protected def runWithAudit(runCmd: (SparkSession => Seq[Row]), spark: SparkSession): Seq[Row] = {
+    val start = System.currentTimeMillis()
+    Auditor.logOperationStart(opName, operationId)
+    val rows = try {
+      runCmd(spark)
+    } catch {
+      case e: Throwable =>
+        val map = Map("Exception" -> e.getClass.getName, "Message" -> e.getMessage)
+        Auditor.logOperationEnd(opName, operationId, false, table, opTime(start), map.asJava)
+        throw e
+    }
+    Auditor.logOperationEnd(opName, operationId, true, table, opTime(start),
+      if (auditInfo != null) auditInfo.asJava else new java.util.HashMap[String, String]())
+    rows
+  }
+}
+
+/**
  * Command that modifies metadata(schema, table_status, etc) only without processing data
  */
-abstract class MetadataCommand extends RunnableCommand with MetadataProcessOpeation {
+abstract class MetadataCommand extends RunnableCommand with MetadataProcessOpeation with Auditable {
   override def run(sparkSession: SparkSession): Seq[Row] = {
-    processMetadata(sparkSession)
+    runWithAudit(processMetadata, sparkSession)
   }
 }
 
 /**
  * Command that process data only without modifying metadata
  */
-abstract class DataCommand extends RunnableCommand with DataProcessOperation {
+abstract class DataCommand extends RunnableCommand with DataProcessOperation with Auditable {
   override def run(sparkSession: SparkSession): Seq[Row] = {
-    processData(sparkSession)
+    runWithAudit(processData, sparkSession)
   }
 }
 
@@ -84,17 +138,19 @@ abstract class DataCommand extends RunnableCommand with DataProcessOperation {
  * if process data failed.
  */
 abstract class AtomicRunnableCommand
-  extends RunnableCommand with MetadataProcessOpeation with DataProcessOperation {
+  extends RunnableCommand with MetadataProcessOpeation with DataProcessOperation with Auditable {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
-    processMetadata(sparkSession)
-    try {
-      processData(sparkSession)
-    } catch {
-      case e: Exception =>
-        undoMetadata(sparkSession, e)
-        throw e
-    }
+    runWithAudit(spark => {
+      processMetadata(spark)
+      try {
+        processData(spark)
+      } catch {
+        case e: Exception =>
+          undoMetadata(spark, e)
+          throw e
+      }
+    }, sparkSession)
   }
 
   /**

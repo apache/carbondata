@@ -30,7 +30,6 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.util.{AlterTableUtil, PartitionUtils}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
@@ -62,6 +61,8 @@ case class CarbonAlterTableSplitPartitionCommand(
     val dbName = splitPartitionModel.databaseName.getOrElse(sparkSession.catalog.currentDatabase)
     val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val tableName = splitPartitionModel.tableName
+    setAuditTable(dbName, tableName)
+    setAuditInfo(Map("partition" -> splitPartitionModel.partitionId))
     val relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
       .asInstanceOf[CarbonRelation]
     val tablePath = relation.carbonTable.getTablePath
@@ -187,8 +188,6 @@ case class CarbonAlterTableSplitPartitionCommand(
       LOGGER.info("Locks released after alter table add/split partition action.")
       if (success) {
         LOGGER.info(s"Alter table add/split partition is successful for table $dbName.$tableName")
-        Audit.log(LOGGER,
-          s"Alter table add/split partition is successful for table $dbName.$tableName")
       }
     }
     Seq.empty
@@ -200,8 +199,6 @@ case class CarbonAlterTableSplitPartitionCommand(
       carbonLoadModel: CarbonLoadModel,
       oldPartitionIdList: List[Int]
   ): Unit = {
-    Audit.log(LOGGER, s"Add partition request received for table " +
-                 s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
     try {
       startSplitThreads(sqlContext,
         carbonLoadModel,
@@ -257,6 +254,8 @@ case class CarbonAlterTableSplitPartitionCommand(
       }
     }
   }
+
+  override protected def opName: String = "SPLIT CUSTOM PARTITION"
 }
 
 case class SplitThread(sqlContext: SQLContext,

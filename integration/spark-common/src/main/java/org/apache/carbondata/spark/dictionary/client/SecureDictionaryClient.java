@@ -19,7 +19,6 @@ package org.apache.carbondata.spark.dictionary.client;
 import java.nio.charset.Charset;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.common.logging.impl.Audit;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
@@ -60,7 +59,7 @@ public class SecureDictionaryClient implements DictionaryClient {
    */
   @Override public void startClient(String secretKey, String address, int port,
       boolean encryptSecureServer) {
-    Audit.log(LOGGER, "Starting client on " + address + " " + port);
+    LOGGER.info("Starting client on " + address + " " + port);
     long start = System.currentTimeMillis();
 
     SecurityManager securityMgr;

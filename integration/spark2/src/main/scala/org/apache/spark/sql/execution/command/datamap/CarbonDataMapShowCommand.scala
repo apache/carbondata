@@ -58,6 +58,7 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
     tableIdentifier match {
       case Some(table) =>
         val carbonTable = CarbonEnv.getCarbonTable(table)(sparkSession)
+        setAuditTable(carbonTable)
         Checker.validateTableExists(table.database, table.table, sparkSession)
         if (carbonTable.hasDataMapSchema) {
           dataMapSchemaList.addAll(carbonTable.getTableInfo.getDataMapSchemaList)
@@ -97,4 +98,6 @@ case class CarbonDataMapShowCommand(tableIdentifier: Option[TableIdentifier])
       Seq.empty
     }
   }
+
+  override protected def opName: String = "SHOW DATAMAP"
 }

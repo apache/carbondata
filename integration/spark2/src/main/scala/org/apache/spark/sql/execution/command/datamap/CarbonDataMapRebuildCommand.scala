@@ -65,6 +65,8 @@ case class CarbonDataMapRebuildCommand(
         )(sparkSession)
     }
 
+    setAuditTable(table)
+
     val provider = DataMapManager.get().getDataMapProvider(table, schema, sparkSession)
     provider.rebuild()
 
@@ -87,4 +89,5 @@ case class CarbonDataMapRebuildCommand(
     Seq.empty
   }
 
+  override protected def opName: String = "REBUILD DATAMAP"
 }

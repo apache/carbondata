@@ -55,6 +55,8 @@ case class CarbonAlterTableAddHivePartitionCommand(
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     table = CarbonEnv.getCarbonTable(tableName)(sparkSession)
+    setAuditTable(table)
+    setAuditInfo(Map("partition" -> partitionSpecsAndLocs.mkString(", ")))
     if (table.isHivePartitionTable) {
       if (table.isChildDataMap) {
         throw new UnsupportedOperationException("Cannot add partition directly on aggregate tables")
@@ -156,4 +158,5 @@ case class CarbonAlterTableAddHivePartitionCommand(
     Seq.empty[Row]
   }
 
+  override protected def opName: String = "ADD HIVE PARTITION"
 }

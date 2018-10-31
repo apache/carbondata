@@ -33,7 +33,6 @@ import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -67,6 +66,10 @@ case class CarbonAlterTableCompactionCommand(
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val tableName = alterTableModel.tableName.toLowerCase
     val dbName = alterTableModel.dbName.getOrElse(sparkSession.catalog.currentDatabase)
+    setAuditTable(dbName, tableName)
+    if (alterTableModel.customSegmentIds.nonEmpty) {
+      setAuditInfo(Map("segmentIds" -> alterTableModel.customSegmentIds.get.mkString(", ")))
+    }
     table = if (tableInfoOp.isDefined) {
       CarbonTable.buildFromTableInfo(tableInfoOp.get)
     } else {
@@ -217,8 +220,6 @@ case class CarbonAlterTableCompactionCommand(
       }
     }
 
-    Audit.log(LOGGER, s"Compaction request received for table " +
-                 s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
 
     if (null == carbonLoadModel.getLoadMetadataDetails) {
@@ -314,8 +315,6 @@ case class CarbonAlterTableCompactionCommand(
             throw e
         }
       } else {
-        Audit.log(LOGGER, "Not able to acquire the compaction lock for table " +
-                     s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         LOGGER.error(s"Not able to acquire the compaction lock for table" +
                      s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         CarbonException.analysisException(
@@ -378,5 +377,9 @@ case class CarbonAlterTableCompactionCommand(
                      " during streaming finished")
       }
     }
+  }
+
+  override protected def opName: String = {
+    s"ALTER TABLE COMPACTION ${alterTableModel.compactionType.toUpperCase}"
   }
 }

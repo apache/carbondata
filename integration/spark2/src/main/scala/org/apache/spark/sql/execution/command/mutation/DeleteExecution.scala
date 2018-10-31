@@ -32,8 +32,6 @@ import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.SparkSQLUtil
 
-import org.apache.carbondata.api.CarbonStore.LOGGER
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
@@ -166,7 +164,6 @@ object DeleteExecution {
           } else {
             // In case of failure , clean all related delete delta files
             CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
-            Audit.log(LOGGER, s"Delete data operation is failed for ${ database }.${ tableName }")
             val errorMsg =
               "Delete data operation is failed due to failure in creating delete delta file for " +
               "segment : " + resultOfBlock._2._1.getSegmentName + " block : " +
@@ -201,19 +198,14 @@ object DeleteExecution {
               listOfSegmentToBeMarkedDeleted)
       ) {
         LOGGER.info(s"Delete data operation is successful for ${ database }.${ tableName }")
-        Audit.log(LOGGER, s"Delete data operation is successful for ${ database }.${ tableName }")
-      }
-      else {
+      } else {
         // In case of failure , clean all related delete delta files
         CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
-
         val errorMessage = "Delete data operation is failed due to failure " +
                            "in table status updation."
-        Audit.log(LOGGER, s"Delete data operation is failed for ${ database }.${ tableName }")
         LOGGER.error("Delete data operation is failed due to failure in table status updation.")
         executorErrors.failureCauses = FailureCauses.STATUS_FILE_UPDATION_FAILURE
         executorErrors.errorMsg = errorMessage
-        // throw new Exception(errorMessage)
       }
     }
 
@@ -290,12 +282,10 @@ object DeleteExecution {
           deleteStatus = SegmentStatus.SUCCESS
         } catch {
           case e : MultipleMatchingException =>
-            Audit.log(LOGGER, e.getMessage)
             LOGGER.error(e.getMessage)
           // dont throw exception here.
           case e: Exception =>
             val errorMsg = s"Delete data operation is failed for ${ database }.${ tableName }."
-            Audit.log(LOGGER, errorMsg)
             LOGGER.error(errorMsg + e.getMessage)
             throw e
         }

@@ -56,4 +56,6 @@ case class CarbonGetTableDetailCommand(
       AttributeReference("table size", LongType, nullable = false)(),
       AttributeReference("last modified time", LongType, nullable = false)())
   }
+
+  override protected def opName: String = "GET TABLE DETAIL"
 }

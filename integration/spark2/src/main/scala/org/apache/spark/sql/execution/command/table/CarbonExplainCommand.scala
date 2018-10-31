@@ -32,7 +32,7 @@ case class CarbonExplainCommand(
 ) extends MetadataCommand {
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val explainCommand = child.asInstanceOf[ExplainCommand]
-
+    setAuditInfo(Map("query" -> explainCommand.logicalPlan.simpleString))
     val isCommand = explainCommand.logicalPlan match {
       case _: Command => true
       case Union(childern) if childern.forall(_.isInstanceOf[Command]) => true
@@ -61,5 +61,7 @@ case class CarbonExplainCommand(
       ExplainCollector.remove()
     }
   }
+
+  override protected def opName: String = "EXPLAIN"
 }
 

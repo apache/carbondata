@@ -57,7 +57,10 @@ case class CarbonCleanFilesCommand(
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName.get)(sparkSession)
-
+    setAuditTable(carbonTable)
+    setAuditInfo(Map(
+      "force" -> forceTableClean.toString,
+      "internal" -> isInternalCleanCall.toString))
     if (carbonTable.hasAggregationDataMap) {
       cleanFileCommands = carbonTable.getTableInfo.getDataMapSchemaList.asScala.map {
         dataMapSchema =>
@@ -150,4 +153,6 @@ case class CarbonCleanFilesCommand(
           .error("Failed to clean in progress segments", e)
     }
   }
+
+  override protected def opName: String = "CLEAN FILES"
 }

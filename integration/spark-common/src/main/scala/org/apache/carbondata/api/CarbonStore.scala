@@ -29,7 +29,6 @@ import org.apache.spark.unsafe.types.UTF8String
 import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -159,7 +158,6 @@ object CarbonStore {
       carbonTable: CarbonTable,
       forceTableClean: Boolean,
       currentTablePartitions: Option[Seq[PartitionSpec]] = None): Unit = {
-    Audit.log(LOGGER, s"The clean files request has been received for $dbName.$tableName")
     var carbonCleanFilesLock: ICarbonLock = null
     val absoluteTableIdentifier = if (forceTableClean) {
       AbsoluteTableIdentifier.from(tablePath, dbName, tableName, tableName)
@@ -203,7 +201,6 @@ object CarbonStore {
         CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)
       }
     }
-    Audit.log(LOGGER, s"Clean files operation is success for $dbName.$tableName.")
   }
 
   /**
@@ -282,7 +279,6 @@ object CarbonStore {
       tableName: String,
       carbonTable: CarbonTable): Unit = {
 
-    Audit.log(LOGGER, s"Delete segment by Id request has been received for $dbName.$tableName")
     validateLoadIds(loadids)
 
     val path = carbonTable.getMetadataPath
@@ -291,7 +287,7 @@ object CarbonStore {
       val invalidLoadIds = SegmentStatusManager.updateDeletionStatus(
         carbonTable.getAbsoluteTableIdentifier, loadids.asJava, path).asScala
       if (invalidLoadIds.isEmpty) {
-        Audit.log(LOGGER, s"Delete segment by Id is successfull for $dbName.$tableName.")
+        LOGGER.info(s"Delete segment by Id is successfull for $dbName.$tableName.")
       } else {
         sys.error(s"Delete segment by Id is failed. Invalid ID is: ${invalidLoadIds.mkString(",")}")
       }
@@ -308,7 +304,6 @@ object CarbonStore {
       dbName: String,
       tableName: String,
       carbonTable: CarbonTable): Unit = {
-    Audit.log(LOGGER, s"Delete segment by Id request has been received for $dbName.$tableName")
 
     val time = validateTimeFormat(timestamp)
     val path = carbonTable.getMetadataPath
@@ -321,7 +316,7 @@ object CarbonStore {
           path,
           time).asScala
       if (invalidLoadTimestamps.isEmpty) {
-        Audit.log(LOGGER, s"Delete segment by date is successful for $dbName.$tableName.")
+        LOGGER.info(s"Delete segment by date is successful for $dbName.$tableName.")
       } else {
         sys.error("Delete segment by date is failed. No matching segment found.")
       }
