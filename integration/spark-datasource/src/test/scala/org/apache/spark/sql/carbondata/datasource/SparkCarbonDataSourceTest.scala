@@ -386,8 +386,10 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     // Saves dataframe to carbon file
     df.write
       .format("parquet").saveAsTable("testparquet")
-    spark.sql("create table carbon_table(c1 string, c2 string, number int) using carbon options('table_blocksize'='256')")
+    spark.sql("create table carbon_table(c1 string, c2 string, number int) using carbon options('table_blocksize'='256','inverted_index'='c1')")
+    spark.sql("describe formatted carbon_table").show()
     TestUtil.checkExistence(spark.sql("describe formatted carbon_table"), true, "table_blocksize")
+    TestUtil.checkExistence(spark.sql("describe formatted carbon_table"), true, "inverted_index")
     spark.sql("insert into carbon_table select * from testparquet")
     spark.sql("select * from carbon_table").show()
     spark.sql("drop table if exists carbon_table")

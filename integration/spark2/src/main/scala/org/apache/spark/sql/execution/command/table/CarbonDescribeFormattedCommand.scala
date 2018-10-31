@@ -63,13 +63,13 @@ private[sql] case class CarbonDescribeFormattedCommand(
         if (dimension.hasEncoding(Encoding.DICTIONARY) &&
             !dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
           "DICTIONARY, KEY COLUMN" + (if (dimension.hasEncoding(Encoding.INVERTED_INDEX)) {
-            "".concat(",").concat(colComment)
+            ",INVERTEDINDEX".concat(",").concat(colComment)
           } else {
             ",NOINVERTEDINDEX".concat(",").concat(colComment)
           })
         } else {
           "KEY COLUMN" + (if (dimension.hasEncoding(Encoding.INVERTED_INDEX)) {
-            "".concat(",").concat(colComment)
+            ",INVERTEDINDEX".concat(",").concat(colComment)
           } else {
             ",NOINVERTEDINDEX".concat(",").concat(colComment)
           })

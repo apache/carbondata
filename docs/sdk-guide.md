@@ -375,6 +375,8 @@ public CarbonWriterBuilder withLoadOptions(Map<String, String> options);
 * j. sort_scope -- "local_sort", "no_sort", "batch_sort". default value is "local_sort"
 * k. long_string_columns -- comma separated string columns which are more than 32k length. 
 *                           default value is null.
+* l. inverted_index -- comma separated string columns for which inverted index needs to be
+*                      generated
 *
 * @return updated CarbonWriterBuilder
 */
@@ -441,6 +443,17 @@ public CarbonWriterBuilder withJsonInput(Schema carbonSchema);
 * @return CarbonWriterBuilder
 */
 public CarbonWriterBuilder writtenBy(String appName) {
+```
+
+```
+/**
+* sets the list of columns for which inverted index needs to generated
+* @param invertedIndexColumns is a string array of columns for which inverted index needs to
+* generated.
+* If it is null or an empty array, inverted index will be generated for none of the columns
+* @return updated CarbonWriterBuilder
+*/
+public CarbonWriterBuilder invertedIndexFor(String[] invertedIndexColumns);
 ```
 
 ```
