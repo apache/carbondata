@@ -21,7 +21,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.common.logging.impl.Audit;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 
 import io.netty.buffer.ByteBuf;
@@ -49,7 +48,7 @@ public class NonSecureDictionaryClientHandler extends ChannelInboundHandlerAdapt
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
     this.ctx = ctx;
     channelFutureListener = new DictionaryChannelFutureListener(ctx);
-    Audit.log(LOGGER, "Connected client " + ctx);
+    LOGGER.info("Connected client " + ctx);
     super.channelActive(ctx);
   }
 

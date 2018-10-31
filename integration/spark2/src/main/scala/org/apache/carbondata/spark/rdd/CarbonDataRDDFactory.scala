@@ -28,27 +28,24 @@ import scala.collection.mutable.ListBuffer
 import scala.util.Random
 import scala.util.control.Breaks._
 
-import com.univocity.parsers.common.TextParsingException
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
-import org.apache.spark.{SparkEnv, SparkException, TaskContext}
+import org.apache.spark.{SparkEnv, TaskContext}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, NewHadoopRDD, RDD}
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, DataFrame, Row, SQLContext}
+import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SQLContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{CompactionModel, ExecutionErrors, UpdateTableModel}
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.{CarbonException, SparkSQLUtil}
 
-import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
@@ -68,16 +65,15 @@ import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentSta
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, StringArrayWritable}
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostStatusUpdateEvent, LoadTablePreStatusUpdateEvent}
-import org.apache.carbondata.processing.loading.exception.{CarbonDataLoadingException, NoRetryException}
+import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
-import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
+import org.apache.carbondata.processing.util.{Auditor, CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.{DataLoadResultImpl, PartitionFactory, _}
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
@@ -132,8 +128,6 @@ object CarbonDataRDDFactory {
           }
       }
     } else {
-      Audit.log(LOGGER, "Not able to acquire the system level compaction lock for table " +
-          s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       LOGGER.error("Not able to acquire the compaction lock for table " +
           s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       CarbonCompactionUtil
@@ -308,9 +302,7 @@ object CarbonDataRDDFactory {
       hadoopConf: Configuration,
       dataFrame: Option[DataFrame] = None,
       updateModel: Option[UpdateTableModel] = None,
-      operationContext: OperationContext): Unit = {
-    Audit.log(LOGGER, s"Data load request has been received for table" +
-                 s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+      operationContext: OperationContext): LoadMetadataDetails = {
     // Check if any load need to be deleted before loading new data
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     var status: Array[(String, (LoadMetadataDetails, ExecutionErrors))] = null
@@ -428,11 +420,11 @@ object CarbonDataRDDFactory {
     if (updateModel.isDefined) {
       if (loadStatus == SegmentStatus.LOAD_FAILURE) {
         CarbonScalaUtil.updateErrorInUpdateModel(updateModel.get, executorMessage)
-        return
+        return null
       } else if (loadStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS &&
                  updateModel.get.executorErrors.failureCauses == FailureCauses.BAD_RECORDS &&
                  carbonLoadModel.getBadRecordsAction.split(",")(1) == LoggerAction.FAIL.name) {
-        return
+        return null
       } else {
         // in success case handle updation of the table status file.
         // success case.
@@ -451,9 +443,7 @@ object CarbonDataRDDFactory {
         // this means that the update doesnt have any records to update so no need to do table
         // status file updation.
         if (resultSize == 0) {
-          Audit.log(LOGGER, "Data update is successful with 0 rows updation for " +
-                       s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
-          return
+          return null
         }
         if (CarbonUpdateUtil.updateTableMetadataStatus(
           segmentDetails,
@@ -462,20 +452,15 @@ object CarbonDataRDDFactory {
           true,
           new util.ArrayList[Segment](0),
           new util.ArrayList[Segment](segmentFiles), "")) {
-          Audit.log(LOGGER, "Data update is successful for " +
-                       s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         } else {
-          val errorMessage = "Data update failed due to failure in table status updation."
-          Audit.log(LOGGER, "Data update is failed for " +
-                       s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
           LOGGER.error("Data update failed due to failure in table status updation.")
           updateModel.get.executorErrors.errorMsg = errorMessage
           updateModel.get.executorErrors.failureCauses = FailureCauses
             .STATUS_FILE_UPDATION_FAILURE
-          return
+          return null
         }
       }
-      return
+      return null
     }
     val uniqueTableStatusId = operationContext.getProperty("uuid").asInstanceOf[String]
     if (loadStatus == SegmentStatus.LOAD_FAILURE) {
@@ -488,8 +473,6 @@ object CarbonDataRDDFactory {
         clearDataMapFiles(carbonTable, carbonLoadModel.getSegmentId)
       }
       LOGGER.info("********clean up done**********")
-      Audit.log(LOGGER, s"Data load is failed for " +
-                   s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       LOGGER.warn("Cannot write load metadata file as data load failed")
       throw new Exception(errorMessage)
     } else {
@@ -507,8 +490,6 @@ object CarbonDataRDDFactory {
           clearDataMapFiles(carbonTable, carbonLoadModel.getSegmentId)
         }
         LOGGER.info("********clean up done**********")
-        Audit.log(LOGGER, s"Data load is failed for " +
-                     s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         throw new Exception(status(0)._2._2.errorMsg)
       }
       // as no record loaded in new segment, new segment should be deleted
@@ -542,11 +523,10 @@ object CarbonDataRDDFactory {
         carbonTable.getCarbonTableIdentifier,
         carbonLoadModel)
       OperationListenerBus.getInstance().fireEvent(loadTablePreStatusUpdateEvent, operationContext)
-      val done =
+      val (done, writtenSegment) =
         updateTableStatus(
           status,
           carbonLoadModel,
-          loadStatus,
           newEntryLoadStatus,
           overwriteTable,
           segmentFileName,
@@ -575,18 +555,17 @@ object CarbonDataRDDFactory {
           clearDataMapFiles(carbonTable, carbonLoadModel.getSegmentId)
         }
         LOGGER.info("********clean up done**********")
-        Audit.log(LOGGER, "Data load is failed for " +
-                     s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         LOGGER.error("Data load failed due to failure in table status updation.")
         throw new Exception("Data load failed due to failure in table status updation.")
       }
       if (SegmentStatus.LOAD_PARTIAL_SUCCESS == loadStatus) {
-        Audit.log(LOGGER, "Data load is partially successful for " +
+        LOGGER.info("Data load is partially successful for " +
                      s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       } else {
-        Audit.log(LOGGER, "Data load is successful for " +
+        LOGGER.info("Data load is successful for " +
                      s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       }
+
       try {
         // compaction handling
         if (carbonTable.isHivePartitionTable) {
@@ -605,6 +584,7 @@ object CarbonDataRDDFactory {
             operationContext)
           carbonLoadModel.setMergedSegmentIds(compactedSegments)
         }
+        writtenSegment
       } catch {
         case e: Exception =>
           throw new Exception(
@@ -845,8 +825,6 @@ object CarbonDataRDDFactory {
                 s" ${ CarbonDataMergerUtil.checkIfAutoLoadMergingRequired(carbonTable) }")
     if (!carbonTable.isChildDataMap &&
         CarbonDataMergerUtil.checkIfAutoLoadMergingRequired(carbonTable)) {
-      Audit.log(LOGGER, s"Compaction request received for table " +
-                   s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       val compactionSize = 0
       val isCompactionTriggerByDDl = false
       val compactionModel = CompactionModel(
@@ -905,8 +883,6 @@ object CarbonDataRDDFactory {
               throw e
           }
         } else {
-          Audit.log(LOGGER, "Not able to acquire the compaction lock for table " +
-                       s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName}")
           LOGGER.error("Not able to acquire the compaction lock for table " +
                        s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName}")
         }
@@ -916,15 +892,22 @@ object CarbonDataRDDFactory {
 
   /**
    * Update table status file after data loading
+   * @param status status collected from each task
+   * @param carbonLoadModel load model used for loading
+   * @param newEntryLoadStatus segment status to set in the metadata
+   * @param overwriteTable true the operation is overwrite
+   * @param segmentFileName segment file name
+   * @param uuid uuid for the table status file name
+   * @return whether operation success and
+   *         the segment metadata that written into the segment status file
    */
   private def updateTableStatus(
       status: Array[(String, (LoadMetadataDetails, ExecutionErrors))],
       carbonLoadModel: CarbonLoadModel,
-      loadStatus: SegmentStatus,
       newEntryLoadStatus: SegmentStatus,
       overwriteTable: Boolean,
       segmentFileName: String,
-      uuid: String = ""): Boolean = {
+      uuid: String = ""): (Boolean, LoadMetadataDetails) = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val metadataDetails = if (status != null && status.size > 0 && status(0) != null) {
       status(0)._2._1
@@ -948,14 +931,12 @@ object CarbonDataRDDFactory {
     if (!done) {
       val errorMessage = s"Dataload failed due to failure in table status updation for" +
                          s" ${carbonLoadModel.getTableName}"
-      Audit.log(LOGGER, "Data load is failed for " +
-                   s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}")
-      LOGGER.error("Dataload failed due to failure in table status updation.")
+      LOGGER.error(errorMessage)
       throw new Exception(errorMessage)
     } else {
       DataMapStatusManager.disableAllLazyDataMaps(carbonTable)
     }
-    done
+    (done, metadataDetails)
   }
 
   /**

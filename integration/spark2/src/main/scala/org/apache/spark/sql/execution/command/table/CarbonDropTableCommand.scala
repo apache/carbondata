@@ -27,7 +27,6 @@ import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.execution.command.datamap.CarbonDropDataMapCommand
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
@@ -54,6 +53,7 @@ case class CarbonDropTableCommand(
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
     val dbName = databaseNameOp.getOrElse(sparkSession.catalog.currentDatabase)
+    setAuditTable(dbName, tableName)
     val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
     try {
       carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
@@ -71,7 +71,6 @@ case class CarbonDropTableCommand(
       if (SegmentStatusManager.isLoadInProgressInTable(carbonTable)) {
         throw new ConcurrentOperationException(carbonTable, "loading", "drop table")
       }
-      Audit.log(LOGGER, s"Deleting table [$tableName] under database [$dbName]")
       if (carbonTable.isStreamingSink) {
         // streaming table should acquire streaming.lock
         carbonLocks += CarbonLockUtil.getLockObject(identifier, LockUsage.STREAMING_LOCK)
@@ -142,8 +141,6 @@ case class CarbonDropTableCommand(
           ifExistsSet,
           sparkSession)
       OperationListenerBus.getInstance.fireEvent(dropTablePostEvent, operationContext)
-      Audit.log(LOGGER, s"Deleted table [$tableName] under database [$dbName]")
-
     } catch {
       case ex: NoSuchTableException =>
         LOGGER.error(ex.getLocalizedMessage, ex)
@@ -200,4 +197,5 @@ case class CarbonDropTableCommand(
     Seq.empty
   }
 
+  override protected def opName: String = "DROP TABLE"
 }

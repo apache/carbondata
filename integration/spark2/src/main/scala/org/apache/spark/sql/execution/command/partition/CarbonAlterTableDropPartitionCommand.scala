@@ -29,7 +29,6 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
@@ -58,6 +57,8 @@ case class CarbonAlterTableDropPartitionCommand(
     }
     val dbName = model.databaseName.getOrElse(sparkSession.catalog.currentDatabase)
     val tableName = model.tableName
+    setAuditTable(dbName, tableName)
+    setAuditInfo(Map("partition" -> model.partitionId))
     val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
       .asInstanceOf[CarbonRelation]
@@ -169,7 +170,6 @@ case class CarbonAlterTableDropPartitionCommand(
       LOGGER.info("Locks released after alter table drop partition action.")
     }
     LOGGER.info(s"Alter table drop partition is successful for table $dbName.$tableName")
-    Audit.log(LOGGER, s"Alter table drop partition is successful for table $dbName.$tableName")
     Seq.empty
   }
 
@@ -178,8 +178,6 @@ case class CarbonAlterTableDropPartitionCommand(
       carbonLoadModel: CarbonLoadModel,
       dropWithData: Boolean,
       oldPartitionIds: List[Int]): Unit = {
-    Audit.log(LOGGER, s"Drop partition request received for table " +
-                 s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
     try {
       startDropThreads(
         sqlContext,
@@ -237,6 +235,8 @@ case class CarbonAlterTableDropPartitionCommand(
       }
     }
   }
+
+  override protected def opName: String = "DROP CUSTOM PARTITION"
 }
 
 case class dropPartitionThread(sqlContext: SQLContext,

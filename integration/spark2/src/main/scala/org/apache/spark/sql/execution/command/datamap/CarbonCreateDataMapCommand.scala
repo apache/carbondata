@@ -22,10 +22,8 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
 
-import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
@@ -63,6 +61,11 @@ case class CarbonCreateDataMapCommand(
       case _ => null
     }
 
+    if (mainTable != null) {
+      setAuditTable(mainTable)
+    }
+    setAuditInfo(Map("provider" -> dmProviderName, "dmName" -> dataMapName) ++ dmProperties)
+
     if (mainTable != null && !mainTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
@@ -75,7 +78,7 @@ case class CarbonCreateDataMapCommand(
       }
     }
 
-    if (mainTable !=null && CarbonUtil.getFormatVersion(mainTable) != ColumnarFormatVersion.V3) {
+    if (mainTable != null && CarbonUtil.getFormatVersion(mainTable) != ColumnarFormatVersion.V3) {
       throw new MalformedCarbonCommandException(s"Unsupported operation on table with " +
                                                 s"V1 or V2 format data")
     }
@@ -153,7 +156,6 @@ case class CarbonCreateDataMapCommand(
         systemFolderLocation, tableIdentifier, dmProviderName)
     OperationListenerBus.getInstance().fireEvent(createDataMapPostExecutionEvent,
       operationContext)
-    Audit.log(LOGGER, s"DataMap $dataMapName successfully added")
     Seq.empty
   }
 
@@ -192,5 +194,7 @@ case class CarbonCreateDataMapCommand(
     }
     Seq.empty
   }
+
+  override protected def opName: String = "CREATE DATAMAP"
 }
 

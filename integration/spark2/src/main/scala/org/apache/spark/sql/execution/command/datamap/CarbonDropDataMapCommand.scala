@@ -29,7 +29,6 @@ import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
 
 import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
@@ -59,6 +58,7 @@ case class CarbonDropDataMapCommand(
   var dataMapSchema: DataMapSchema = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
+    setAuditInfo(Map("dmName" -> dataMapName))
     if (table.isDefined) {
       val databaseNameOp = table.get.database
       val tableName = table.get.table
@@ -78,6 +78,7 @@ case class CarbonDropDataMapCommand(
             null
         }
       }
+      setAuditTable(mainTable)
       val tableIdentifier =
         AbsoluteTableIdentifier
           .from(tablePath,
@@ -112,8 +113,6 @@ case class CarbonDropDataMapCommand(
         locksToBeAcquired foreach {
           lock => carbonLocks += CarbonLockUtil.getLockObject(tableIdentifier, lock)
         }
-        Audit.log(LOGGER, s"Deleting datamap [$dataMapName] under table [$tableName]")
-
         // drop index,mv datamap on the main table.
         if (mainTable != null &&
             DataMapStoreManager.getInstance().getAllDataMap(mainTable).size() > 0) {
@@ -242,4 +241,5 @@ case class CarbonDropDataMapCommand(
     Seq.empty
   }
 
+  override protected def opName: String = "DROP DATAMAP"
 }

@@ -22,7 +22,7 @@ import java.net.URI
 
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTableType, CatalogUtils}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.command.{AlterTableRecoverPartitionsCommand, RunnableCommand}
+import org.apache.spark.sql.execution.command.{AlterTableRecoverPartitionsCommand, AtomicRunnableCommand, RunnableCommand}
 import org.apache.spark.sql.execution.datasources.{DataSource, HadoopFsRelation}
 import org.apache.spark.sql.sources.BaseRelation
 import org.apache.spark.sql.{AnalysisException, Dataset, Row, SaveMode, SparkSession}
@@ -41,11 +41,15 @@ case class CreateCarbonSourceTableAsSelectCommand(
     table: CatalogTable,
     mode: SaveMode,
     query: LogicalPlan)
-  extends RunnableCommand {
+  extends AtomicRunnableCommand {
 
   override protected def innerChildren: Seq[LogicalPlan] = Seq(query)
 
-  override def run(sparkSession: SparkSession): Seq[Row] = {
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
+    Seq.empty
+  }
+
+  override def processData(sparkSession: SparkSession): Seq[Row] ={
     assert(table.tableType != CatalogTableType.VIEW)
     assert(table.provider.isDefined)
 
@@ -53,6 +57,7 @@ case class CreateCarbonSourceTableAsSelectCommand(
     val db = table.identifier.database.getOrElse(sessionState.catalog.getCurrentDatabase)
     val tableIdentWithDB = table.identifier.copy(database = Some(db))
     val tableName = tableIdentWithDB.unquotedString
+    setAuditTable(db, table.identifier.table)
 
     if (sessionState.catalog.tableExists(tableIdentWithDB)) {
       assert(mode != SaveMode.Overwrite,
@@ -127,4 +132,6 @@ case class CreateCarbonSourceTableAsSelectCommand(
         throw ex
     }
   }
+
+  override protected def opName: String = "CREATE TABLE AS SELECT"
 }

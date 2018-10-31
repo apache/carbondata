@@ -34,7 +34,7 @@ import org.apache.carbondata.spark.rdd.CarbonRDD
  * RDD to merge all bloomindex files of specified segment for bloom datamap
  */
 class CarbonMergeBloomIndexFilesRDD(
-  @transient ss: SparkSession,
+  @transient private val ss: SparkSession,
   carbonTable: CarbonTable,
   segmentIds: Seq[String],
   bloomDatamapNames: Seq[String],

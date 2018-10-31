@@ -26,7 +26,6 @@ import org.apache.avro.generic.GenericData;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.log4j.Logger;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.common.logging.impl.Audit;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -908,7 +907,6 @@ public class CarbonReaderTest extends TestCase {
       e.printStackTrace();
       Assert.fail(e.getMessage());
     }
-    Audit.log(LOGGER, "Bad record location:" + storeLocation);
     File folder = new File(path);
     Assert.assertTrue(folder.exists());
 

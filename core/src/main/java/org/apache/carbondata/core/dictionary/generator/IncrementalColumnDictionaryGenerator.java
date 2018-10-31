@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.common.logging.impl.Audit;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
@@ -148,7 +147,7 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
     long sortIndexWriteTime = System.currentTimeMillis() - t3;
     // update Meta Data
     updateMetaData(dictionaryWriter);
-    Audit.log(LOGGER, "\n columnName: " + dimension.getColName() +
+    LOGGER.info("\n columnName: " + dimension.getColName() +
             "\n columnId: " + dimension.getColumnId() +
             "\n new distinct values count: " + distinctValues.size() +
             "\n create dictionary cache: " + dictCacheTime +

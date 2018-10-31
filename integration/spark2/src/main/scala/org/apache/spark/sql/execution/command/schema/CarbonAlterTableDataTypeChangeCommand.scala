@@ -26,7 +26,6 @@ import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
@@ -45,8 +44,10 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
     val tableName = alterTableDataTypeChangeModel.tableName
     val dbName = alterTableDataTypeChangeModel.databaseName
       .getOrElse(sparkSession.catalog.currentDatabase)
-    Audit.log(LOGGER,
-      s"Alter table change data type request has been received for $dbName.$tableName")
+    setAuditTable(dbName, tableName)
+    setAuditInfo(Map(
+      "column" -> alterTableDataTypeChangeModel.columnName,
+      "newType" -> alterTableDataTypeChangeModel.dataTypeInfo.dataType))
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
     var locks = List.empty[ICarbonLock]
     // get the latest carbon table and check for column existence
@@ -70,16 +71,12 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
       val columnName = alterTableDataTypeChangeModel.columnName
       val carbonColumns = carbonTable.getCreateOrderColumn(tableName).asScala.filter(!_.isInvisible)
       if (!carbonColumns.exists(_.getColName.equalsIgnoreCase(columnName))) {
-        Audit.log(LOGGER, s"Alter table change data type request has failed. " +
-                     s"Column $columnName does not exist")
         throwMetadataException(dbName, tableName, s"Column does not exist: $columnName")
       }
       val carbonColumn = carbonColumns.filter(_.getColName.equalsIgnoreCase(columnName))
       if (carbonColumn.size == 1) {
         validateColumnDataType(alterTableDataTypeChangeModel.dataTypeInfo, carbonColumn.head)
       } else {
-        Audit.log(LOGGER, s"Alter table change data type request has failed. " +
-                     s"Column $columnName is invalid")
         throwMetadataException(dbName, tableName, s"Invalid Column: $columnName")
       }
       // read the latest schema file
@@ -118,11 +115,8 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
           alterTableDataTypeChangeModel)
       OperationListenerBus.getInstance.fireEvent(alterTablePostExecutionEvent, operationContext)
       LOGGER.info(s"Alter table for data type change is successful for table $dbName.$tableName")
-      Audit.log(LOGGER,
-        s"Alter table for data type change is successful for table $dbName.$tableName")
     } catch {
       case e: Exception =>
-        LOGGER.error("Alter table change datatype failed : " + e.getMessage)
         if (carbonTable != null) {
           AlterTableUtil.revertDataTypeChanges(dbName, tableName, timeStamp)(sparkSession)
         }
@@ -181,4 +175,6 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
                   s"Only Int and Decimal data types are allowed for modification")
     }
   }
+
+  override protected def opName: String = "ALTER TABLE CHANGE DATA TYPE"
 }

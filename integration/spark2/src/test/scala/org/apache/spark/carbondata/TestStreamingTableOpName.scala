@@ -47,7 +47,7 @@ import org.apache.carbondata.spark.exception.ProcessMetaDataException
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
 
-class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
+class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
 
   private val spark = sqlContext.sparkSession
   private val dataFilePath = s"$resourcesPath/streamSample.csv"

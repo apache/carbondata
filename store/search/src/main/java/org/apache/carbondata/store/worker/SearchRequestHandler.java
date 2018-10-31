@@ -26,7 +26,6 @@ import java.util.Objects;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.common.logging.impl.Audit;
 import org.apache.carbondata.core.datamap.DataMapChooser;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.Segment;
@@ -78,7 +77,7 @@ public class SearchRequestHandler {
       List<CarbonRow> rows = handleRequest(request);
       LOG.info(String.format("[SearchId:%d] sending success response", request.searchId()));
       return createSuccessResponse(request, rows);
-    } catch (IOException | InterruptedException e) {
+    } catch (IOException e) {
       LOG.error(e);
       LOG.info(String.format("[SearchId:%d] sending failure response", request.searchId()));
       return createFailureResponse(request, e);
@@ -95,22 +94,16 @@ public class SearchRequestHandler {
 
   private DataMapExprWrapper chooseFGDataMap(
           CarbonTable table,
-          FilterResolverIntf filterInterface) {
-    DataMapChooser chooser = null;
-    try {
-      chooser = new DataMapChooser(table);
-      return chooser.chooseFGDataMap(filterInterface);
-    } catch (IOException e) {
-      Audit.log(LOG, e.getMessage());
-      return null;
-    }
+          FilterResolverIntf filterInterface) throws IOException {
+    DataMapChooser chooser = new DataMapChooser(table);
+    return chooser.chooseFGDataMap(filterInterface);
   }
 
   /**
    * Builds {@link QueryModel} and read data from files
    */
   private List<CarbonRow> handleRequest(SearchRequest request)
-      throws IOException, InterruptedException {
+      throws IOException {
     CarbonTaskInfo carbonTaskInfo = new CarbonTaskInfo();
     carbonTaskInfo.setTaskId(CarbonUtil.generateUUID());
     ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo);

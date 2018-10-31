@@ -39,6 +39,7 @@ private[sql] case class CarbonShowCarbonPartitionsCommand(
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(tableIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
     val carbonTable = relation.carbonTable
+    setAuditTable(carbonTable)
     val partitionInfo = carbonTable.getPartitionInfo(
       carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
     if (partitionInfo == null) {
@@ -51,4 +52,6 @@ private[sql] case class CarbonShowCarbonPartitionsCommand(
     LOGGER.info("partition column name:" + columnName)
     CommonUtil.getPartitionInfo(columnName, partitionType, partitionInfo)
   }
+
+  override protected def opName: String = "SHOW CUSTOM PARTITION"
 }
