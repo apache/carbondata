@@ -67,7 +67,7 @@ These SDK writer output contains just carbondata and carbonindex files. No metad
 
      CarbonProperties.getInstance().addProperty("enable.offheap.sort", enableOffheap);
  
-     CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path).withCsvInput(schema);
+     CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path).withCsvInput(schema).writtenBy("SDK");
  
      CarbonWriter writer = builder.build();
  
@@ -124,7 +124,7 @@ public class TestSdkAvro {
     try {
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)
-          .withAvroInput(new org.apache.avro.Schema.Parser().parse(avroSchema)).build();
+          .withAvroInput(new org.apache.avro.Schema.Parser().parse(avroSchema))..writtenBy("SDK").build();
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -164,7 +164,7 @@ public class TestSdkJson {
 
     Schema CarbonSchema = new Schema(fields);
 
-    CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path).withJsonInput(CarbonSchema);
+    CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path).withJsonInput(CarbonSchema).writtenBy("SDK");
 
     // initialize json writer with carbon schema
     CarbonWriter writer = builder.build();
@@ -431,6 +431,15 @@ public CarbonWriterBuilder withJsonInput(Schema carbonSchema);
 
 ```
 /**
+* To support writing the ApplicationName which is writing the carbondata file
+* @param application name which is writing the carbondata files
+* @return CarbonWriterBuilder
+*/
+public CarbonWriterBuilder writtenBy(String appName) {
+```
+
+```
+/**
 * Build a {@link CarbonWriter}
 * This writer is not thread safe,
 * use withThreadSafe() configuration in multi thread environment
@@ -684,6 +693,16 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    * @throws IOException
    */
   public static Schema readSchemaInIndexFile(String indexFilePath);
+```
+
+```
+  /**
+   * This method return the version details in formatted string by reading from carbondata file
+   * @param dataFilePath complete path including carbondata file name
+   * @return string with information of who has written this file in which carbondata project version
+   * @throws IOException
+   */
+  public static String getVersionDetails(String dataFilePath);
 ```
 
 ### Class org.apache.carbondata.sdk.file.Schema
