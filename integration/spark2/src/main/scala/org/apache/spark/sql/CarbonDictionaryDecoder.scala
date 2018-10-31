@@ -572,6 +572,9 @@ class ForwardDictionaryWrapper(
 
   def getDictionaryValueForKeyInBytes (surrogateKey: Int): Array[Byte] = {
     if (dictionary == null) {
+      // Note: from doConsume() codegen, this is the first method called.
+      // so setting conf to threadlocal here. If any new method added before calling this method.
+      // Need to set this in that method instead of here.
       ThreadLocalSessionInfo.setConfigurationToCurrentThread(broadcastConf.value.value)
       dictionary = dictionaryLoader.getDictionary(dictIdentifier)
     }
