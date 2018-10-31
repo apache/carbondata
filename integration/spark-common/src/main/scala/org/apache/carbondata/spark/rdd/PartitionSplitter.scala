@@ -87,8 +87,8 @@ object PartitionSplitter {
            deleteOriginalCarbonFile(alterPartitionModel, absoluteTableIdentifier,
              Seq(partitionId).toList, databaseName, tableName, partitionInfo)
        } catch {
-         case e: IOException => sys.error(s"Exception while delete original carbon files " +
-         e.getMessage)
+         case e: IOException =>
+           throw new IOException("Exception while delete original carbon files ", e)
        }
        Audit.log(logger, s"Add/Split Partition request completed for table " +
                     s"${ databaseName }.${ tableName }")
