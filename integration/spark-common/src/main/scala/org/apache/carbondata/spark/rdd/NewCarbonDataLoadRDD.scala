@@ -156,6 +156,8 @@ class NewCarbonDataLoadRDD[K, V](
           logInfo("Bad Record Found")
         case e: Exception =>
           loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_FAILURE)
+          executionErrors.failureCauses = FailureCauses.EXECUTOR_FAILURE
+          executionErrors.errorMsg = e.getMessage
           logInfo("DataLoad failure", e)
           LOGGER.error(e)
           throw e
