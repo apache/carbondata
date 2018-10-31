@@ -26,6 +26,7 @@
 #include "../src/CarbonWriter.h"
 #include "../src/CarbonSchemaReader.h"
 #include "../src/Schema.h"
+#include "../src/CarbonProperties.h"
 
 using namespace std;
 
@@ -274,6 +275,16 @@ bool tryCatchException(JNIEnv *env) {
     printf("\nfinished handle exception\n");
 }
 
+void testCarbonProperties(JNIEnv *env) {
+    printf("%s", "test Carbon Properties:");
+    CarbonProperties carbonProperties(env);
+    char *key = "carbon.unsafe.working.memory.in.mb";
+    printf("%s\t", carbonProperties.getProperty(key));
+    printf("%s\t", carbonProperties.getProperty(key, "512"));
+    carbonProperties.addProperty(key, "1024");
+    printf("%s\t", carbonProperties.getProperty(key));
+}
+
 /**
  * test write data to local disk
  *
@@ -452,11 +463,12 @@ int main(int argc, char *argv[]) {
         tryCatchException(env);
         char *indexFilePath = argv[1];
         char *dataFilePath = argv[2];
-        readSchemaInIndexFile(env, indexFilePath);
-        readSchemaInDataFile(env, dataFilePath);
+        testCarbonProperties(env);
         readFromLocalWithoutProjection(env);
         testWriteData(env, "./data", 1, argv);
         readFromLocal(env);
+        readSchemaInIndexFile(env, indexFilePath);
+        readSchemaInDataFile(env, dataFilePath);
     }
     (jvm)->DestroyJavaVM();
 
