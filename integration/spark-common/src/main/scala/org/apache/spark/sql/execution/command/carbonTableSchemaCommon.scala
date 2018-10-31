@@ -58,6 +58,7 @@ case class TableModel(
     varcharCols: Option[Seq[String]],
     highcardinalitydims: Option[Seq[String]],
     noInvertedIdxCols: Option[Seq[String]],
+    innvertedIdxCols: Option[Seq[String]],
     colProps: Option[util.Map[String, util.List[ColumnProperty]]] = None,
     bucketFields: Option[BucketFields],
     partitionInfo: Option[PartitionInfo],
@@ -236,6 +237,11 @@ class AlterTableColumnSchemaGenerator(
     val existingColsSize = tableCols.size
     var allColumns = tableCols.filter(x => x.isDimensionColumn)
     var newCols = Seq[ColumnSchema]()
+    var invertedIndxCols: Array[String] = Array[String]()
+    if (alterTableModel.tableProperties.get(CarbonCommonConstants.INVERTED_INDEX).isDefined) {
+      invertedIndxCols = alterTableModel.tableProperties(CarbonCommonConstants.INVERTED_INDEX)
+        .split(',').map(_.trim)
+    }
 
     alterTableModel.dimCols.foreach(field => {
       val encoders = new java.util.ArrayList[Encoding]()
@@ -270,6 +276,14 @@ class AlterTableColumnSchemaGenerator(
       allColumns ++= Seq(columnSchema)
       newCols ++= Seq(columnSchema)
     })
+
+    if (invertedIndxCols.nonEmpty) {
+      for (column <- newCols) {
+        if (invertedIndxCols.contains(column.getColumnName) && column.isDimensionColumn) {
+          column.setUseInvertedIndex(true)
+        }
+      }
+    }
 
     // Check if there is any duplicate measures or dimensions.
     // Its based on the dimension name and measure name
@@ -537,7 +551,6 @@ object TableNewProcessor {
     columnSchema.setPrecision(precision)
     columnSchema.setScale(scale)
     columnSchema.setSchemaOrdinal(schemaOrdinal)
-    columnSchema.setUseInvertedIndex(isDimensionCol)
     columnSchema.setSortColumn(isSortColumn)
     columnSchema
   }
@@ -773,19 +786,20 @@ class TableNewProcessor(cm: TableModel) {
 
     val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
 
-    // Setting the boolean value of useInvertedIndex in column schema, if Paranet table is defined
+    // Setting the boolean value of useInvertedIndex in column schema, if Parent table is defined
     // Encoding is already decided above
     if (!cm.parentTable.isDefined) {
       val noInvertedIndexCols = cm.noInvertedIdxCols.getOrElse(Seq())
+      val invertedIndexCols = cm.innvertedIdxCols.getOrElse(Seq())
       LOGGER.info("NoINVERTEDINDEX columns are : " + noInvertedIndexCols.mkString(","))
       for (column <- allColumns) {
         // When the column is measure or the specified no inverted index column in DDL,
         // set useInvertedIndex to false, otherwise true.
-        if (noInvertedIndexCols.contains(column.getColumnName) ||
-            cm.msrCols.exists(_.column.equalsIgnoreCase(column.getColumnName))) {
-          column.setUseInvertedIndex(false)
-        } else {
+        if (invertedIndexCols.contains(column.getColumnName) &&
+            !cm.msrCols.exists(_.column.equalsIgnoreCase(column.getColumnName))) {
           column.setUseInvertedIndex(true)
+        } else {
+          column.setUseInvertedIndex(false)
         }
       }
     }

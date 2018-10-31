@@ -370,6 +370,24 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     // get no inverted index columns from table properties.
     val noInvertedIdxCols = extractNoInvertedIndexColumns(fields, tableProperties)
+    // get inverted index columns from table properties
+    val invertedIdxCols = extractInvertedIndexColumns(fields, tableProperties)
+
+    // check for any duplicate columns in inverted and noinverted columns defined in tblproperties
+    if (invertedIdxCols.nonEmpty && noInvertedIdxCols.nonEmpty) {
+      invertedIdxCols.foreach { distCol =>
+        if (noInvertedIdxCols.exists(x => x.equalsIgnoreCase(distCol.trim))) {
+          val duplicateColumns = (invertedIdxCols ++ noInvertedIdxCols)
+            .diff((invertedIdxCols ++ noInvertedIdxCols).distinct).distinct
+          val errMsg = "Column ambiguity as duplicate column(s):" +
+                       duplicateColumns.mkString(",") +
+                       " is present in INVERTED_INDEX " +
+                       "and NO_INVERTED_INDEX. Duplicate columns are not allowed."
+          throw new MalformedCarbonCommandException(errMsg)
+        }
+      }
+    }
+
     // get partitionInfo
     val partitionInfo = getPartitionInfo(partitionCols, tableProperties)
     if (tableProperties.get(CarbonCommonConstants.COLUMN_META_CACHE).isDefined) {
@@ -444,6 +462,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       Option(varcharColumns),
       Option(noDictionaryDims),
       Option(noInvertedIdxCols),
+      Option(invertedIdxCols),
       Some(colProps),
       bucketFields: Option[BucketFields],
       partitionInfo,
@@ -623,7 +642,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
   /**
    * This will extract the no inverted columns fields.
-   * By default all dimensions use inverted index.
+   * This is still kept for backward compatibility, from carbondata-1.6 onwards,  by default all the
+   * dimensions will be no inverted index only
    *
    * @param fields
    * @param tableProperties
@@ -637,7 +657,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     if (tableProperties.get(CarbonCommonConstants.NO_INVERTED_INDEX).isDefined) {
       noInvertedIdxColsProps =
-        tableProperties.get(CarbonCommonConstants.NO_INVERTED_INDEX).get.split(',').map(_.trim)
+        tableProperties(CarbonCommonConstants.NO_INVERTED_INDEX).split(',').map(_.trim)
       noInvertedIdxColsProps.foreach { noInvertedIdxColProp =>
         if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
           val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
@@ -656,6 +676,35 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     }
     )
     noInvertedIdxCols
+  }
+
+  protected def extractInvertedIndexColumns(fields: Seq[Field],
+      tableProperties: Map[String, String]): Seq[String] = {
+    // check whether the column name is in fields
+    var invertedIdxColsProps: Array[String] = Array[String]()
+    var invertedIdxCols: Seq[String] = Seq[String]()
+
+    if (tableProperties.get(CarbonCommonConstants.INVERTED_INDEX).isDefined) {
+      invertedIdxColsProps =
+        tableProperties(CarbonCommonConstants.INVERTED_INDEX).split(',').map(_.trim)
+      invertedIdxColsProps.foreach { invertedIdxColProp =>
+        if (!fields.exists(x => x.column.equalsIgnoreCase(invertedIdxColProp))) {
+          val errormsg = "INVERTED_INDEX column: " + invertedIdxColProp +
+                         " does not exist in table. Please check create table statement."
+          throw new MalformedCarbonCommandException(errormsg)
+        }
+      }
+    }
+    // check duplicate columns and only 1 col left
+    val distinctCols = invertedIdxColsProps.toSet
+    // extract the inverted index columns
+    fields.foreach(field => {
+      if (distinctCols.exists(x => x.equalsIgnoreCase(field.column))) {
+        invertedIdxCols :+= field.column
+      }
+    }
+    )
+    invertedIdxCols
   }
 
   /**
