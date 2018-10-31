@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.common.logging.impl.Audit;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessageType;
@@ -145,7 +144,7 @@ public class SecureDictionaryServer extends AbstractDictionaryServer implements 
         //iteratively listening to newports
         context
             .createServer(host, newPort, Lists.<TransportServerBootstrap>newArrayList(bootstrap));
-        Audit.log(LOGGER,
+        LOGGER.info(
             "Dictionary Server started, Time spent " + (System.currentTimeMillis() - start)
             + " Listening on port " + newPort);
         this.port = newPort;

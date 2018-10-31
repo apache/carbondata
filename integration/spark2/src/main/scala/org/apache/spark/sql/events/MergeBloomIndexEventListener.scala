@@ -24,7 +24,6 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -37,7 +36,7 @@ class MergeBloomIndexEventListener extends OperationEventListener with Logging {
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
     event match {
       case datamapPostEvent: BuildDataMapPostExecutionEvent =>
-        Audit.log(LOGGER, "Load post status event-listener called for merge bloom index")
+        LOGGER.info("Load post status event-listener called for merge bloom index")
         val carbonTableIdentifier = datamapPostEvent.identifier
         val carbonTable = DataMapStoreManager.getInstance().getCarbonTable(carbonTableIdentifier)
         val tableDataMaps = DataMapStoreManager.getInstance().getAllDataMap(carbonTable)

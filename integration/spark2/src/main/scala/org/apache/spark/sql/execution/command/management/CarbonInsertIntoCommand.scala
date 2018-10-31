@@ -36,6 +36,7 @@ case class CarbonInsertIntoCommand(
   var loadCommand: CarbonLoadDataCommand = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
+    setAuditTable(relation.carbonTable.getDatabaseName, relation.carbonTable.getTableName)
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     def containsLimit(plan: LogicalPlan): Boolean = {
       plan find {
@@ -82,9 +83,19 @@ case class CarbonInsertIntoCommand(
   }
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     if (null != loadCommand) {
-      loadCommand.processData(sparkSession)
+      val rows = loadCommand.processData(sparkSession)
+      setAuditInfo(loadCommand.auditInfo)
+      rows
     } else {
       Seq.empty
+    }
+  }
+
+  override protected def opName: String = {
+    if (overwrite) {
+      "INSERT OVERWRITE"
+    } else {
+      "INSERT INTO"
     }
   }
 }

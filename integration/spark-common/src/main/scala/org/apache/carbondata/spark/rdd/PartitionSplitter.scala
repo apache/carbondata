@@ -22,9 +22,7 @@ import java.io.IOException
 import org.apache.spark.sql.execution.command.{AlterPartitionModel, SplitPartitionCallableModel}
 import org.apache.spark.util.PartitionUtils
 
-import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.spark.{AlterPartitionResultImpl, PartitionFactory}
 
 object PartitionSplitter {
@@ -75,8 +73,6 @@ object PartitionSplitter {
          finalSplitStatus = splitStatus.forall(_._2)
        }
        if (!finalSplitStatus) {
-         Audit.log(logger, s"Add/Split Partition request failed for table " +
-                      s"${ databaseName }.${ tableName }")
          logger.error(s"Add/Split Partition request failed for table " +
                       s"${ databaseName }.${ tableName }")
        }
@@ -90,8 +86,6 @@ object PartitionSplitter {
          case e: IOException =>
            throw new IOException("Exception while delete original carbon files ", e)
        }
-       Audit.log(logger, s"Add/Split Partition request completed for table " +
-                    s"${ databaseName }.${ tableName }")
        logger.info(s"Add/Split Partition request completed for table " +
                    s"${ databaseName }.${ tableName }")
      }

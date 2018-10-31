@@ -30,7 +30,10 @@ case class CarbonDropStreamCommand(
     ifExists: Boolean
 ) extends MetadataCommand {
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
+    setAuditInfo(Map("streamName" -> streamName))
     StreamJobManager.stopStream(streamName, ifExists)
     Seq.empty
   }
+
+  override protected def opName: String = "DROP STREAM"
 }

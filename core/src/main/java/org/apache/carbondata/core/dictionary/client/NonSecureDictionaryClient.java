@@ -19,7 +19,6 @@ package org.apache.carbondata.core.dictionary.client;
 import java.net.InetSocketAddress;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.common.logging.impl.Audit;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 
 import io.netty.bootstrap.Bootstrap;
@@ -52,7 +51,7 @@ public class NonSecureDictionaryClient implements DictionaryClient {
    */
   @Override public void startClient(String secretKey, String address, int port,
       boolean encryptSecureServer) {
-    Audit.log(LOGGER, "Starting client on " + address + " " + port);
+    LOGGER.info("Starting client on " + address + " " + port);
     long start = System.currentTimeMillis();
     // Create an Event with 1 thread.
     workerGroup = new NioEventLoopGroup(1);

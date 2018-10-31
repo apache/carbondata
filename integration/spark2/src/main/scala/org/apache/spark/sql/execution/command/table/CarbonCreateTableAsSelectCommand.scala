@@ -24,9 +24,6 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.execution.command.management.CarbonInsertIntoCommand
 
-import org.apache.carbondata.api.CarbonStore.LOGGER
-import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 
 /**
@@ -47,7 +44,6 @@ case class CarbonCreateTableAsSelectCommand(
   var loadCommand: CarbonInsertIntoCommand = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val tableName = tableInfo.getFactTable.getTableName
     var isTableCreated = false
     var databaseOpt: Option[String] = None
@@ -55,14 +51,12 @@ case class CarbonCreateTableAsSelectCommand(
       databaseOpt = Some(tableInfo.getDatabaseName)
     }
     val dbName = CarbonEnv.getDatabaseName(databaseOpt)(sparkSession)
-    Audit.log(LOGGER, s"Request received for CTAS for $dbName.$tableName")
+    setAuditTable(dbName, tableName)
+    setAuditInfo(Map("query" -> query.simpleString))
     // check if table already exists
     if (sparkSession.sessionState.catalog.listTables(dbName)
       .exists(_.table.equalsIgnoreCase(tableName))) {
       if (!ifNotExistsSet) {
-        Audit.log(LOGGER,
-          s"Table creation with Database name [$dbName] and Table name [$tableName] failed. " +
-          s"Table [$tableName] already exists under database [$dbName]")
         throw new TableAlreadyExistsException(dbName, tableName)
       }
     } else {
@@ -78,7 +72,6 @@ case class CarbonCreateTableAsSelectCommand(
         databaseOpt = Some(tableInfo.getDatabaseName)
       }
       val dbName = CarbonEnv.getDatabaseName(databaseOpt)(sparkSession)
-      val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
       val carbonDataSourceHadoopRelation = CarbonEnv.getInstance(sparkSession).carbonMetastore
         .createCarbonDataSourceHadoopRelation(sparkSession,
           TableIdentifier(tableName, Option(dbName)))
@@ -95,11 +88,7 @@ case class CarbonCreateTableAsSelectCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     if (null != loadCommand) {
-      val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
       loadCommand.processData(sparkSession)
-      val carbonTable = loadCommand.relation.carbonTable
-      Audit.log(LOGGER, s"CTAS operation completed successfully for " +
-                   s"${carbonTable.getDatabaseName}.${carbonTable.getTableName}")
     }
     Seq.empty
   }
@@ -117,4 +106,6 @@ case class CarbonCreateTableAsSelectCommand(
       Option(dbName), tableName).run(sparkSession)
     Seq.empty
   }
+
+  override protected def opName: String = "CREATE TABLE AS SELECT"
 }

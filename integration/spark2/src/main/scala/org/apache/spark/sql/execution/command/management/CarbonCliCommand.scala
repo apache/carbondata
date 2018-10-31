@@ -47,6 +47,8 @@ case class CarbonCliCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+    setAuditTable(carbonTable)
+    setAuditInfo(Map("options" -> commandOptions))
     val commandArgs: Seq[String] = commandOptions.split("\\s+")
     val finalCommands = commandArgs.collect {
       case a if a.trim.equalsIgnoreCase("summary") || a.trim.equalsIgnoreCase("benchmark") =>
@@ -59,4 +61,6 @@ case class CarbonCliCommand(
       Row(x)
     )
   }
+
+  override protected def opName: String = "CLI"
 }

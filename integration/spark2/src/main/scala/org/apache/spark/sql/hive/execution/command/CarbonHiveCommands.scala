@@ -63,11 +63,11 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
 }
 
 case class CarbonSetCommand(command: SetCommand)
-  extends RunnableCommand {
+  extends MetadataCommand {
 
   override val output: Seq[Attribute] = command.output
 
-  override def run(sparkSession: SparkSession): Seq[Row] = {
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val sessionParams = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.getSessionParams
     command.kv match {
       case Some((key, Some(value))) =>
@@ -86,6 +86,9 @@ case class CarbonSetCommand(command: SetCommand)
     }
     command.run(sparkSession)
   }
+
+  override protected def opName: String = "SET"
+
 }
 
 object CarbonSetCommand {

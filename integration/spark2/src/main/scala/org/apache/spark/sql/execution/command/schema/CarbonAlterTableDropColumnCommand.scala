@@ -27,7 +27,6 @@ import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
@@ -46,7 +45,8 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
     val tableName = alterTableDropColumnModel.tableName
     val dbName = alterTableDropColumnModel.databaseName
       .getOrElse(sparkSession.catalog.currentDatabase)
-    Audit.log(LOGGER, s"Alter table drop columns request has been received for $dbName.$tableName")
+    setAuditTable(dbName, tableName)
+    setAuditInfo(Map("column" -> alterTableDropColumnModel.columns.mkString(", ")))
     var locks = List.empty[ICarbonLock]
     var timeStamp = 0L
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
@@ -161,10 +161,8 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
       OperationListenerBus.getInstance().fireEvent(alterTableDropColumnPostEvent, operationContext)
 
       LOGGER.info(s"Alter table for drop columns is successful for table $dbName.$tableName")
-      Audit.log(LOGGER, s"Alter table for drop columns is successful for table $dbName.$tableName")
     } catch {
       case e: Exception =>
-        LOGGER.error("Alter table drop columns failed : " + e.getMessage)
         if (carbonTable != null) {
           AlterTableUtil.revertDropColumnChanges(dbName, tableName, timeStamp)(sparkSession)
         }
@@ -176,4 +174,6 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
     }
     Seq.empty
   }
+
+  override protected def opName: String = "ALTER TABLE DROP COLUMN"
 }

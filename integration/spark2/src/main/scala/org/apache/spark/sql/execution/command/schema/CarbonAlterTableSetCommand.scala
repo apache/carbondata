@@ -29,17 +29,18 @@ private[sql] case class CarbonAlterTableSetCommand(
     isView: Boolean)
   extends MetadataCommand {
 
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processMetadata(sparkSession)
-  }
-
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
+    setAuditTable(tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase),
+      tableIdentifier.table)
     AlterTableUtil.modifyTableProperties(
       tableIdentifier,
       properties,
       Nil,
       set = true)(sparkSession,
       sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog])
+    setAuditInfo(properties)
     Seq.empty
   }
+
+  override protected def opName: String = "ALTER TABLE SET"
 }

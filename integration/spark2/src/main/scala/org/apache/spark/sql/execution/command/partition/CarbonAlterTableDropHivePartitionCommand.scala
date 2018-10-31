@@ -68,6 +68,8 @@ case class CarbonAlterTableDropHivePartitionCommand(
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     table = CarbonEnv.getCarbonTable(tableName)(sparkSession)
+    setAuditTable(table)
+    setAuditInfo(Map("partition" -> specs.mkString(",")))
     if (table.isHivePartitionTable) {
       var locks = List.empty[ICarbonLock]
       try {
@@ -204,4 +206,5 @@ case class CarbonAlterTableDropHivePartitionCommand(
     Seq.empty[Row]
   }
 
+  override protected def opName: String = "DROP HIVE PARTITION"
 }

@@ -26,7 +26,6 @@ import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.features.TableOperation
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
@@ -44,7 +43,7 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
     val tableName = alterTableAddColumnsModel.tableName
     val dbName = alterTableAddColumnsModel.databaseName
       .getOrElse(sparkSession.catalog.currentDatabase)
-    Audit.log(LOGGER, s"Alter table add columns request has been received for $dbName.$tableName")
+    setAuditTable(dbName, tableName)
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
     var locks = List.empty[ICarbonLock]
     var timeStamp = 0L
@@ -82,6 +81,8 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
         wrapperTableInfo,
         carbonTable.getAbsoluteTableIdentifier,
         sparkSession.sparkContext).process
+      setAuditInfo(Map(
+        "newColumn" -> newCols.map(x => s"${x.getColumnName}:${x.getDataType}").mkString(",")))
       // generate dictionary files for the newly added columns
       new AlterTableAddColumnRDD(sparkSession,
         newCols,
@@ -105,10 +106,8 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
           carbonTable, alterTableAddColumnsModel)
       OperationListenerBus.getInstance.fireEvent(alterTablePostExecutionEvent, operationContext)
       LOGGER.info(s"Alter table for add columns is successful for table $dbName.$tableName")
-      Audit.log(LOGGER, s"Alter table for add columns is successful for table $dbName.$tableName")
     } catch {
       case e: Exception =>
-        LOGGER.error("Alter table add columns failed", e)
         if (newCols.nonEmpty) {
           LOGGER.info("Cleaning up the dictionary files as alter table add operation failed")
           new AlterTableDropColumnRDD(sparkSession,
@@ -124,4 +123,6 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
     }
     Seq.empty
   }
+
+  override protected def opName: String = "ALTER TABLE ADD COLUMN"
 }

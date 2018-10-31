@@ -55,6 +55,8 @@ case class CarbonCreateStreamCommand(
       AttributeReference("Status", StringType, nullable = false)())
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
+    setAuditTable(CarbonEnv.getDatabaseName(sinkDbName)(sparkSession), sinkTableName)
+    setAuditInfo(Map("streamName" -> streamName, "query" -> query) ++ optionMap)
     val inputQuery = sparkSession.sql(query)
     val sourceTableSeq = inputQuery.logicalPlan collect {
       case r: LogicalRelation
@@ -286,4 +288,5 @@ case class CarbonCreateStreamCommand(
     Util.convertToSparkSchema(sourceTable, sortedCols)
   }
 
+  override protected def opName: String = "CREATE STREAM"
 }

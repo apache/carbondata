@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.common.logging.impl.Audit;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
@@ -148,7 +147,6 @@ public class DiskBasedDataMapStatusProvider implements DataMapStatusStorageProvi
       } else {
         String errorMsg = "Upadating datamapstatus is failed due to another process taken the lock"
             + " for updating it";
-        Audit.log(LOG, errorMsg);
         LOG.error(errorMsg);
         throw new IOException(errorMsg + " Please try after some time.");
       }

@@ -21,24 +21,19 @@ import java.text.SimpleDateFormat
 import java.util
 import java.util.{Date, UUID}
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.{Job, RecordReader, TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-import org.apache.spark.{Partition, SerializableWritable, SparkContext, TaskContext}
+import org.apache.spark.{Partition, SerializableWritable, TaskContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 
-import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.block.SegmentProperties
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
-import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.scan.model.QueryModel
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
@@ -346,8 +341,6 @@ object StreamHandoffRDD {
       LOGGER.info("********starting clean up**********")
       CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
       LOGGER.info("********clean up done**********")
-      Audit.log(LOGGER, s"Handoff is failed for " +
-                   s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       LOGGER.error("Cannot write load metadata file as handoff failed")
       throw new Exception(errorMessage)
     }
@@ -367,9 +360,6 @@ object StreamHandoffRDD {
       OperationListenerBus.getInstance()
         .fireEvent(loadTablePostStatusUpdateEvent, operationContext)
       if (!done) {
-        val errorMessage = "Handoff failed due to failure in table status updation."
-        Audit.log(LOGGER, "Handoff is failed for " +
-                     s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         LOGGER.error("Handoff failed due to failure in table status updation.")
         throw new Exception(errorMessage)
       }

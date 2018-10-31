@@ -39,7 +39,6 @@ import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
@@ -548,11 +547,6 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
               val colName = name.substring(14)
               if (name.startsWith("default.value.") &&
                   fields.count(p => p.column.equalsIgnoreCase(colName)) == 1) {
-                LOGGER.error(s"Duplicate default value exist for new column: ${ colName }")
-                Audit.log(LOGGER,
-                  s"Validation failed for Create/Alter Table Operation " +
-                  s"for ${ table }. " +
-                  s"Duplicate default value exist for new column: ${ colName }")
                 sys.error(s"Duplicate default value exist for new column: ${ colName }")
               }
             }

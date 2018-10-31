@@ -45,6 +45,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(tblIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
+    setAuditTable(relation.databaseName, relation.tableName)
     val mapper = new ObjectMapper()
     val colProps = StringBuilder.newBuilder
     val dims = relation.metaData.dims.map(x => x.toLowerCase)
@@ -267,4 +268,6 @@ private[sql] case class CarbonDescribeFormattedCommand(
         Row(f"$name%-36s", f"$dataType%-80s", f"$comment%-72s")
     }
   }
+
+  override protected def opName: String = "DESC FORMATTED"
 }

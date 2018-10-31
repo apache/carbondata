@@ -49,6 +49,7 @@ case class CarbonShowStreamsCommand(
       case None => StreamJobManager.getAllJobs.toSeq
       case Some(table) =>
         val carbonTable = CarbonEnv.getCarbonTable(table.database, table.table)(sparkSession)
+        setAuditTable(carbonTable)
         StreamJobManager.getAllJobs.filter { job =>
           job.sinkTable.equalsIgnoreCase(carbonTable.getTableName) &&
           job.sinkDb.equalsIgnoreCase(carbonTable.getDatabaseName)
@@ -73,4 +74,6 @@ case class CarbonShowStreamsCommand(
       )
     }
   }
+
+  override protected def opName: String = "SHOW STREAMS"
 }
