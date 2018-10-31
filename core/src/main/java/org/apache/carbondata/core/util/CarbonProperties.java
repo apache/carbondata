@@ -755,7 +755,7 @@ public final class CarbonProperties {
   /**
    * This method will be used to get the properties value
    *
-   * @param key
+   * @param key property key
    * @return properties value
    */
   public String getProperty(String key) {
@@ -789,9 +789,10 @@ public final class CarbonProperties {
 
   /**
    * This method will be used to get the properties value if property is not
-   * present then it will return tghe default value
+   * present then it will return the default value
    *
-   * @param key
+   * @param key property key
+   * @param defaultValue properties default value
    * @return properties value
    */
   public String getProperty(String key, String defaultValue) {
@@ -805,8 +806,9 @@ public final class CarbonProperties {
   /**
    * This method will be used to add a new property
    *
-   * @param key
-   * @return properties value
+   * @param key property key
+   * @param value properties value
+   * @return CarbonProperties object
    */
   public CarbonProperties addProperty(String key, String value) {
     carbonProperties.setProperty(key, value);

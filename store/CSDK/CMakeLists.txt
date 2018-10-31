@@ -8,7 +8,9 @@ find_package(JNI REQUIRED)
 include_directories(${JNI_INCLUDE_DIRS})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-set(SOURCE_FILES src/CarbonReader.cpp src/CarbonReader.h test/main.cpp src/CarbonRow.h src/CarbonRow.cpp src/CarbonWriter.h  src/CarbonWriter.cpp src/CarbonSchemaReader.h src/CarbonSchemaReader.cpp src/Schema.h src/Schema.cpp)
+set(SOURCE_FILES src/CarbonReader.cpp src/CarbonReader.h test/main.cpp src/CarbonRow.h
+        src/CarbonRow.cpp src/CarbonWriter.h  src/CarbonWriter.cpp src/CarbonSchemaReader.h
+        src/CarbonSchemaReader.cpp src/Schema.h src/Schema.cpp src/CarbonProperties.cpp src/CarbonProperties.h)
 
 add_executable(CJDK ${SOURCE_FILES})
 get_filename_component(JAVA_JVM_LIBRARY_DIR ${JAVA_JVM_LIBRARY} DIRECTORY)

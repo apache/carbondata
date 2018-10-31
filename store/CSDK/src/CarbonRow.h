@@ -58,7 +58,6 @@ public:
      * Constructor and express the carbon row result
      *
      * @param env JNI env
-     * @param jo carbon Row object
      */
     CarbonRow(JNIEnv *env);
 
