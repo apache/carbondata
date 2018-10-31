@@ -102,8 +102,8 @@ object PartitionDropper {
               Seq(partitionId, targetPartitionId).toList, dbName,
               tableName, partitionInfo)
           } catch {
-            case e: IOException => sys.error(s"Exception while delete original carbon files " +
-                                             e.getMessage)
+            case e: IOException =>
+              throw new IOException("Exception while delete original carbon files ", e)
           }
           Audit.log(logger, s"Drop Partition request completed for table " +
                        s"${ dbName }.${ tableName }")
@@ -111,7 +111,8 @@ object PartitionDropper {
                       s"${ dbName }.${ tableName }")
         }
       } catch {
-        case e: Exception => sys.error(s"Exception in dropping partition action: ${ e.getMessage }")
+        case e: Exception =>
+          throw new RuntimeException("Exception in dropping partition action", e)
       }
     } else {
       PartitionUtils.deleteOriginalCarbonFile(alterPartitionModel, absoluteTableIdentifier,
