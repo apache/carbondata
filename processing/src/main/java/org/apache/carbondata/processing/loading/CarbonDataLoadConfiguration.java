@@ -116,7 +116,7 @@ public class CarbonDataLoadConfiguration {
   private boolean carbonTransactionalTable;
 
   /**
-   * Flder path to where data should be written for this load.
+   * Folder path to where data should be written for this load.
    */
   private String dataWritePath;
 

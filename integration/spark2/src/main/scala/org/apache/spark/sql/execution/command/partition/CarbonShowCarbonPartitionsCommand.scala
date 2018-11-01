@@ -36,7 +36,7 @@ private[sql] case class CarbonShowCarbonPartitionsCommand(
   override val output: Seq[Attribute] = CommonUtil.partitionInfoOutput
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val relation = CarbonEnv.getInstance(sparkSession).carbonMetaStore
       .lookupRelation(tableIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
     val carbonTable = relation.carbonTable
     setAuditTable(carbonTable)

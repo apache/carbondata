@@ -75,7 +75,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
       tableName: String,
       segmentId: String,
       isSchemaModified: Boolean = false): List[DataMap[_ <: Blocklet]] = {
-    val relation: CarbonRelation = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
+    val relation: CarbonRelation = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore
       .lookupRelation(Some(dbName), tableName)(sqlContext.sparkSession)
       .asInstanceOf[CarbonRelation]
     val carbonTable = relation.carbonTable
@@ -291,7 +291,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     sql("insert into minMaxSerialize select 'a','aa','aaa'")
     checkAnswer(sql("select * from minMaxSerialize where name='a'"), Row("a", "aa", "aaa"))
     checkAnswer(sql("select * from minMaxSerialize where name='b'"), Seq.empty)
-    val relation: CarbonRelation = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
+    val relation: CarbonRelation = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore
       .lookupRelation(Some("default"), "minMaxSerialize")(sqlContext.sparkSession)
       .asInstanceOf[CarbonRelation]
     val carbonTable = relation.carbonTable

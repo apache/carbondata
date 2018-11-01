@@ -45,7 +45,7 @@ import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
  */
 class CarbonEnv {
 
-  var carbonMetastore: CarbonMetaStore = _
+  var carbonMetaStore: CarbonMetaStore = _
 
   var sessionParams: SessionParams = _
 
@@ -53,7 +53,7 @@ class CarbonEnv {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  // set readsupport class global so that the executor can get it.
+  // set readSupport class global so that the executor can get it.
   SparkReadSupport.readSupportClass = classOf[SparkRowReadSupportImpl]
 
   var initialized = false
@@ -105,7 +105,7 @@ class CarbonEnv {
         }
         // add session params after adding DefaultCarbonParams
         config.addDefaultCarbonSessionParams()
-        carbonMetastore = {
+        carbonMetaStore = {
           // trigger event for CarbonEnv create
           val operationContext = new OperationContext
           val carbonEnvInitPreEvent: CarbonEnvInitPreEvent =
@@ -195,7 +195,7 @@ object CarbonEnv {
     (sparkSession: SparkSession): CarbonTable = {
     refreshRelationFromCache(TableIdentifier(tableName, databaseNameOp))(sparkSession)
     val databaseName = getDatabaseName(databaseNameOp)(sparkSession)
-    val catalog = getInstance(sparkSession).carbonMetastore
+    val catalog = getInstance(sparkSession).carbonMetaStore
     // refresh cache
     catalog.checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, databaseNameOp))
 
@@ -211,10 +211,10 @@ object CarbonEnv {
   def refreshRelationFromCache(identifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
     var isRefreshed = false
     val carbonEnv = getInstance(sparkSession)
-    val table = carbonEnv.carbonMetastore.getTableFromMetadataCache(
+    val table = carbonEnv.carbonMetaStore.getTableFromMetadataCache(
       identifier.database.getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase),
       identifier.table)
-    if (carbonEnv.carbonMetastore
+    if (carbonEnv.carbonMetaStore
           .checkSchemasModifiedTimeAndReloadTable(identifier)  && table.isDefined) {
       sparkSession.sessionState.catalog.refreshTable(identifier)
       val tablePath = table.get.getTablePath

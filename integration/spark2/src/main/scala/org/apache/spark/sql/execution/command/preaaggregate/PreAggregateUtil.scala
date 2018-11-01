@@ -426,7 +426,7 @@ object PreAggregateUtil {
     val dbName = carbonTable.getDatabaseName
     val tableName = carbonTable.getTableName
     try {
-      val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
       locks = acquireLock(dbName, tableName, locksToBeAcquired, carbonTable)
       // get the latest carbon table and check for column existence
       // read the latest schema file
@@ -468,7 +468,7 @@ object PreAggregateUtil {
       thriftTable: TableInfo)(sparkSession: SparkSession): Unit = {
     val dbName = carbonTable.getDatabaseName
     val tableName = carbonTable.getTableName
-    CarbonEnv.getInstance(sparkSession).carbonMetastore
+    CarbonEnv.getInstance(sparkSession).carbonMetaStore
       .updateTableSchemaForDataMap(carbonTable.getCarbonTableIdentifier,
         carbonTable.getCarbonTableIdentifier,
         thriftTable,
@@ -527,7 +527,7 @@ object PreAggregateUtil {
    */
   def revertMainTableChanges(dbName: String, tableName: String, numberOfChildSchema: Int)
     (sparkSession: SparkSession): Unit = {
-    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
     carbonTable.getTableLastUpdatedTime
     val thriftTable: TableInfo = metastore.getThriftTableInfo(carbonTable)
@@ -539,7 +539,7 @@ object PreAggregateUtil {
 
   def getChildCarbonTable(databaseName: String, tableName: String)
     (sparkSession: SparkSession): Option[CarbonTable] = {
-    val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val carbonTable = metaStore.getTableFromMetadataCache(databaseName, tableName)
     if (carbonTable.isEmpty) {
       try {

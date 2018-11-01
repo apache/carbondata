@@ -569,9 +569,9 @@ public final class CarbonLoaderUtil {
       nodes.add(relation.getNode());
     }
 
-    int noofNodes = (-1 == noOfNodesInput) ? nodes.size() : noOfNodesInput;
+    int noOfNodes = (-1 == noOfNodesInput) ? nodes.size() : noOfNodesInput;
     if (null != activeNodes) {
-      noofNodes = activeNodes.size();
+      noOfNodes = activeNodes.size();
     }
 
     // calculate the average expected size for each node
@@ -579,7 +579,7 @@ public final class CarbonLoaderUtil {
     long totalFileSize = 0;
     if (BlockAssignmentStrategy.BLOCK_NUM_FIRST == blockAssignmentStrategy) {
       if (blockInfos.size() > 0) {
-        sizePerNode = blockInfos.size() / noofNodes;
+        sizePerNode = blockInfos.size() / noOfNodes;
       }
       sizePerNode = sizePerNode <= 0 ? 1 : sizePerNode;
     } else if (BlockAssignmentStrategy.BLOCK_SIZE_FIRST == blockAssignmentStrategy
@@ -587,7 +587,7 @@ public final class CarbonLoaderUtil {
       for (Distributable blockInfo : uniqueBlocks) {
         totalFileSize += ((TableBlockInfo) blockInfo).getBlockLength();
       }
-      sizePerNode = totalFileSize / noofNodes;
+      sizePerNode = totalFileSize / noOfNodes;
     }
 
     // if enable to control the minimum amount of input data for each node
@@ -1152,7 +1152,7 @@ public final class CarbonLoaderUtil {
    * @return
    * @throws IOException
    */
-  public static String mergeIndexFilesinPartitionedSegment(CarbonTable table, String segmentId,
+  public static String mergeIndexFilesInPartitionedSegment(CarbonTable table, String segmentId,
       String uuid) throws IOException {
     String tablePath = table.getTablePath();
     return new CarbonIndexFileMergeWriter(table)

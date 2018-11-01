@@ -208,7 +208,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       .getCarbonTable(Some("iud_db"), "update_status_files")(sqlContext.sparkSession)
     val metaPath = carbonTable.getMetadataPath
     val files = FileFactory.getCarbonFile(metaPath)
-    val result = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.getClass
+    val result = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.getClass
     if(result.getCanonicalName.contains("CarbonFileMetastore")) {
       assert(files.listFiles(new CarbonFileFilter {
         override def accept(file: CarbonFile): Boolean = !file.isDirectory
@@ -257,11 +257,11 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     assert(
       listOfTupleId(4).contains("0/0/0-0_batchno0-0-0-") && listOfTupleId(4).endsWith("/0/0/4"))
 
-    val carbonTable_part = CarbonEnv.getInstance(Spark2TestQueryExecutor.spark).carbonMetastore
+    val carbonTable_part = CarbonEnv.getInstance(Spark2TestQueryExecutor.spark).carbonMetaStore
       .lookupRelation(Option("iud_db"), "dest_tuple_part")(Spark2TestQueryExecutor.spark)
       .asInstanceOf[CarbonRelation].carbonTable
 
-    val carbonTable = CarbonEnv.getInstance(Spark2TestQueryExecutor.spark).carbonMetastore
+    val carbonTable = CarbonEnv.getInstance(Spark2TestQueryExecutor.spark).carbonMetaStore
       .lookupRelation(Option("iud_db"), "dest_tuple")(Spark2TestQueryExecutor.spark)
       .asInstanceOf[CarbonRelation].carbonTable
 

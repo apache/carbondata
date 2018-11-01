@@ -121,7 +121,7 @@ public class CarbonLockUtil {
    */
   public static void deleteExpiredSegmentLockFiles(CarbonTable carbonTable) {
     final long currTime = System.currentTimeMillis();
-    final long segmentLockFilesPreservTime =
+    final long segmentLockFilesPreserveTime =
         CarbonProperties.getInstance().getSegmentLockFilesPreserveHours();
     AbsoluteTableIdentifier absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
     String lockFilesDir = CarbonProperties.getInstance()
@@ -137,7 +137,7 @@ public class CarbonLockUtil {
 
             @Override public boolean accept(CarbonFile pathName) {
               if (CarbonTablePath.isSegmentLockFilePath(pathName.getName())) {
-                return (currTime - pathName.getLastModifiedTime()) > segmentLockFilesPreservTime;
+                return (currTime - pathName.getLastModifiedTime()) > segmentLockFilesPreserveTime;
               }
               return false;
             }

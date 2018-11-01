@@ -218,7 +218,7 @@ public class CarbonLoadModel implements Serializable {
   private boolean isJsonFileLoad;
 
   /**
-   * Flder path to where data should be written for this load.
+   * Folder path to where data should be written for this load.
    */
   private String dataWritePath;
 

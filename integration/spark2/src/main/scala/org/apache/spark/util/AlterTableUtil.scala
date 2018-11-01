@@ -63,7 +63,7 @@ object AlterTableUtil {
       locksToBeAcquired: List[String])
     (sparkSession: SparkSession): List[ICarbonLock] = {
     val relation =
-      CarbonEnv.getInstance(sparkSession).carbonMetastore
+      CarbonEnv.getInstance(sparkSession).carbonMetaStore
         .lookupRelation(Option(dbName), tableName)(sparkSession)
         .asInstanceOf[CarbonRelation]
     if (relation == null) {
@@ -116,7 +116,7 @@ object AlterTableUtil {
       Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]]) = {
     val dbName = carbonTable.getDatabaseName
     val tableName = carbonTable.getTableName
-    CarbonEnv.getInstance(sparkSession).carbonMetastore
+    CarbonEnv.getInstance(sparkSession).carbonMetaStore
       .updateTableSchemaForAlter(carbonTable.getCarbonTableIdentifier,
         carbonTable.getCarbonTableIdentifier,
         thriftTable,
@@ -124,7 +124,7 @@ object AlterTableUtil {
         carbonTable.getAbsoluteTableIdentifier.getTablePath)(sparkSession)
     val tableIdentifier = TableIdentifier(tableName, Some(dbName))
     sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
-    val schema = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val schema = CarbonEnv.getInstance(sparkSession).carbonMetaStore
       .lookupRelation(tableIdentifier)(sparkSession).schema.json
     val schemaParts = prepareSchemaJsonForAlterTable(sparkSession.sparkContext.getConf, schema)
     (tableIdentifier, schemaParts, cols)
@@ -167,7 +167,7 @@ object AlterTableUtil {
     val oldCarbonTableIdentifier = oldCarbonTable.getCarbonTableIdentifier
     val database = oldCarbonTable.getDatabaseName
     val newCarbonTableIdentifier = new CarbonTableIdentifier(database, newTableName, tableId)
-    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val fileType = FileFactory.getFileType(tablePath)
     if (FileFactory.isFileExist(tablePath, fileType)) {
       val tableInfo = metastore.getThriftTableInfo(oldCarbonTable)
@@ -195,7 +195,7 @@ object AlterTableUtil {
    */
   def revertAddColumnChanges(dbName: String, tableName: String, timeStamp: Long)
     (sparkSession: SparkSession): Unit = {
-    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
     val thriftTable: TableInfo = metastore.getThriftTableInfo(carbonTable)
     val evolutionEntryList = thriftTable.fact_table.schema_evolution.schema_evolution_history
@@ -220,7 +220,7 @@ object AlterTableUtil {
    */
   def revertDropColumnChanges(dbName: String, tableName: String, timeStamp: Long)
     (sparkSession: SparkSession): Unit = {
-    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
     val thriftTable: TableInfo = metastore.getThriftTableInfo(carbonTable)
     val evolutionEntryList = thriftTable.fact_table.schema_evolution.schema_evolution_history
@@ -251,7 +251,7 @@ object AlterTableUtil {
    */
   def revertDataTypeChanges(dbName: String, tableName: String, timeStamp: Long)
     (sparkSession: SparkSession): Unit = {
-    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
     val thriftTable: TableInfo = metastore.getThriftTableInfo(carbonTable)
     val evolutionEntryList = thriftTable.fact_table.schema_evolution.schema_evolution_history
@@ -294,7 +294,7 @@ object AlterTableUtil {
     try {
       locks = AlterTableUtil
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
-      val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
       val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
       val lowerCasePropertiesMap: mutable.Map[String, String] = mutable.Map.empty
       // convert all the keys to lower case

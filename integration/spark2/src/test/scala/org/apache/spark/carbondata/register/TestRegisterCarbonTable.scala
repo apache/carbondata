@@ -67,7 +67,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     backUpData(dblocation, "carbontable")
     sql("drop table carbontable")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       restoreData(dblocation, "carbontable")
       sql("refresh table carbontable")
       checkAnswer(sql("select count(*) from carbontable"), Row(1))
@@ -83,7 +83,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     backUpData(dblocation, "carbontable")
     sql("drop table carbontable")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       restoreData(dblocation, "carbontable")
       sql("refresh table carbontable")
       checkAnswer(sql("select count(*) from carbontable"), Row(1))
@@ -103,7 +103,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     backUpData(dblocation, "carbontable")
     backUpData(dblocation, "carbontable_preagg1")
     sql("drop table carbontable")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       restoreData(dblocation, "carbontable")
       restoreData(dblocation, "carbontable_preagg1")
       sql("refresh table carbontable")
@@ -126,7 +126,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     backUpData(dblocation, "carbontable")
     backUpData(dblocation, "carbontable_preagg1")
     sql("drop table carbontable")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       restoreData(dblocation, "carbontable")
       restoreData(dblocation, "carbontable_preagg1")
       sql("refresh table carbontable")
@@ -149,7 +149,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     backUpData(dblocation, "carbontable")
     backUpData(dblocation, "carbontable_preagg1")
     sql("drop table carbontable")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       restoreData(dblocation, "carbontable")
       intercept[ProcessMetaDataException] {
         sql("refresh table carbontable")
@@ -169,7 +169,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("insert into carbontable select 'b',1,'bb','bbb'")
     backUpData(dblocation, "carbontable")
     sql("drop table carbontable")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       restoreData(dblocation, "carbontable")
       sql("refresh table carbontable")
       // update operation
@@ -195,7 +195,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table automerge")
     backUpData(dblocation, "automerge")
     sql("drop table automerge")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       restoreData(dblocation, "automerge")
       sql("refresh table automerge")
       // update operation
@@ -216,7 +216,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("insert into carbontable select 'b',1,'bb','bbb'")
     backUpData(dblocation, "carbontable")
     sql("drop table carbontable")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       restoreData(dblocation, "carbontable")
       sql("refresh table carbontable")
       // delete operation
@@ -238,7 +238,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("insert into carbontable select 'b',1,'bb','bbb'")
     backUpData(dblocation, "carbontable")
     sql("drop table carbontable")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       restoreData(dblocation, "carbontable")
       sql("refresh table carbontable")
       sql("Alter table carbontable add columns(c4 string) " +
@@ -260,7 +260,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("insert into carbontable select 'b',1,'bb','bbb'")
     backUpData(dblocation, "carbontable")
     sql("drop table carbontable")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       restoreData(dblocation, "carbontable")
       sql("refresh table carbontable")
       sql("Alter table carbontable change c2 c2 long")
@@ -281,7 +281,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("insert into carbontable select 'b',1,'bb','bbb'")
     backUpData(dblocation, "carbontable")
     sql("drop table carbontable")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       restoreData(dblocation, "carbontable")
       sql("refresh table carbontable")
       sql("Alter table carbontable drop columns(c2)")
