@@ -185,7 +185,9 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     }
     for (BloomQueryModel bloomQueryModel : bloomQueryModels) {
       Set<Blocklet> tempHitBlockletsResult = new HashSet<>();
-      LOGGER.debug("prune blocklet for query: " + bloomQueryModel);
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("prune blocklet for query: " + bloomQueryModel);
+      }
       BloomCacheKeyValue.CacheKey cacheKey = new BloomCacheKeyValue.CacheKey(
           this.indexPath.toString(), bloomQueryModel.columnName);
       BloomCacheKeyValue.CacheValue cacheValue = cache.get(cacheKey);
@@ -205,12 +207,14 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
           }
         }
         if (scanRequired) {
-          LOGGER.debug(String.format("BloomCoarseGrainDataMap: Need to scan -> blocklet#%s",
-              String.valueOf(bloomFilter.getBlockletNo())));
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(String.format("BloomCoarseGrainDataMap: Need to scan -> blocklet#%s",
+                String.valueOf(bloomFilter.getBlockletNo())));
+          }
           Blocklet blocklet = new Blocklet(bloomFilter.getShardName(),
               String.valueOf(bloomFilter.getBlockletNo()));
           tempHitBlockletsResult.add(blocklet);
-        } else {
+        } else if (LOGGER.isDebugEnabled()) {
           LOGGER.debug(String.format("BloomCoarseGrainDataMap: Skip scan -> blocklet#%s",
               String.valueOf(bloomFilter.getBlockletNo())));
         }
