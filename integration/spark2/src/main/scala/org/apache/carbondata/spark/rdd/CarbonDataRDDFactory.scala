@@ -192,7 +192,7 @@ object CarbonDataRDDFactory {
             LOGGER.info("System level compaction lock is enabled.")
             val skipCompactionTables = ListBuffer[CarbonTableIdentifier]()
             var tableForCompaction = CarbonCompactionUtil.getNextTableToCompact(
-              CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
+              CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore
                 .listAllTables(sqlContext.sparkSession).toArray,
               skipCompactionTables.toList.asJava)
             while (null != tableForCompaction) {
@@ -247,7 +247,7 @@ object CarbonDataRDDFactory {
               }
               // ********* check again for all the tables.
               tableForCompaction = CarbonCompactionUtil.getNextTableToCompact(
-                CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
+                CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore
                   .listAllTables(sqlContext.sparkSession).toArray,
                 skipCompactionTables.asJava)
             }

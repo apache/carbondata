@@ -738,7 +738,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
     val identifier = TableIdentifier(
       dataMapSchema.getChildSchema.getTableName,
       Some(parentTable.getDatabaseName))
-    val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val catalog = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val carbonRelation =
       catalog.lookupRelation(identifier)(sparkSession).asInstanceOf[CarbonRelation]
     val segmentStatusManager = new SegmentStatusManager(carbonRelation.carbonTable
@@ -1045,7 +1045,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
     if (!selectedAggMaps.isEmpty) {
       // filter the selected child schema based on size to select the pre-aggregate tables
       // that are enabled
-      val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val catalog = CarbonEnv.getInstance(sparkSession).carbonMetaStore
       val relationBuffer = selectedAggMaps.asScala.map { selectedDataMapSchema =>
         val identifier = TableIdentifier(
           selectedDataMapSchema.getRelationIdentifier.getTableName,

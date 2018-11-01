@@ -284,7 +284,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table carbontable")
     // perform file check
     assert(FileFactory.isFileExist(timestampFile, timestampFileType, true) ||
-           CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore)
+           CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore)
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,
@@ -295,7 +295,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table carbontable")
     // perform file check
     assert(FileFactory.isFileExist(timestampFile, timestampFileType, true) ||
-           CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore)
+           CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore)
   }
 
   override def afterAll {

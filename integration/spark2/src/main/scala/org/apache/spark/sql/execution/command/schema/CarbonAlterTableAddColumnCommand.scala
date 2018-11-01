@@ -57,7 +57,7 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
       // completion of 1st operation but as look up relation is called before it will have the
       // older carbon table and this can lead to inconsistent state in the system. Therefor look
       // up relation should be called after acquiring the lock
-      val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
       carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
       if (!carbonTable.canAllow(carbonTable, TableOperation.ALTER_ADD_COLUMN)) {
         throw new MalformedCarbonCommandException(

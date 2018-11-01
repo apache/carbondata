@@ -39,7 +39,7 @@ class DictionaryLRUCacheTestCase extends Spark2QueryTest with BeforeAndAfterAll 
   var path : String = null
 
   def checkDictionaryAccessCount(databaseName: String, tableName: String): Unit = {
-    val carbonTable = CarbonEnv.getInstance(Spark2TestQueryExecutor.spark).carbonMetastore
+    val carbonTable = CarbonEnv.getInstance(Spark2TestQueryExecutor.spark).carbonMetaStore
       .lookupRelation(Option(databaseName), tableName)(Spark2TestQueryExecutor.spark)
       .asInstanceOf[CarbonRelation].carbonTable
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier

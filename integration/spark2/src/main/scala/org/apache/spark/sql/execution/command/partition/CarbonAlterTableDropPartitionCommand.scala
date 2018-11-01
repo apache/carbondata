@@ -59,7 +59,7 @@ case class CarbonAlterTableDropPartitionCommand(
     val tableName = model.tableName
     setAuditTable(dbName, tableName)
     setAuditInfo(Map("partition" -> model.partitionId))
-    val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
       .asInstanceOf[CarbonRelation]
     val tablePath = relation.carbonTable.getTablePath

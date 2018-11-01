@@ -69,7 +69,7 @@ object CleanFiles {
       forceTableClean = args(2).toBoolean
     }
     val spark = TableAPIUtil.spark(storePath, s"CleanFiles: $dbName.$tableName")
-    CarbonEnv.getInstance(spark).carbonMetastore.
+    CarbonEnv.getInstance(spark).carbonMetaStore.
       checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
 
     cleanFiles(spark, dbName, tableName, forceTableClean)

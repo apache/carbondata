@@ -107,11 +107,11 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
         FileFactory.getFileType(queryModel.getAbsoluteTableIdentifier().getTablePath()));
     this.fileReader.setReadPageByPage(queryModel.isReadPageByPage());
     this.execService = execService;
-    intialiseInfos();
+    initialiseInfos();
     initQueryStatiticsModel();
   }
 
-  private void intialiseInfos() {
+  private void initialiseInfos() {
     for (BlockExecutionInfo blockInfo : blockExecutionInfos) {
       Map<String, DeleteDeltaVo> deletedRowsMap = null;
       // if delete delta file is present
@@ -172,7 +172,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
           carbonDeleteDeltaFileReader = new CarbonDeleteFilesDataReader();
           Map<String, DeleteDeltaVo> deletedRowsMap = carbonDeleteDeltaFileReader
               .getDeletedRowsDataVo(deleteDeltaInfo.getDeleteDeltaFile());
-          setDeltedDeltaBoToDataBlock(deleteDeltaInfo, deletedRowsMap, dataBlock);
+          setDeletedDeltaBoToDataBlock(deleteDeltaInfo, deletedRowsMap, dataBlock);
           // remove the lock
           deleteDeltaToLockObjectMap.remove(deleteDeltaInfo);
           return deletedRowsMap;
@@ -193,7 +193,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
    * @param deletedRecordsMap
    * @param dataBlock
    */
-  private void setDeltedDeltaBoToDataBlock(DeleteDeltaInfo deleteDeltaInfo,
+  private void setDeletedDeltaBoToDataBlock(DeleteDeltaInfo deleteDeltaInfo,
       Map<String, DeleteDeltaVo> deletedRecordsMap, AbstractIndex dataBlock) {
     // check if timestamp of data block is less than the latest delete delta timestamp
     // then update the delete delta details and timestamp in data block

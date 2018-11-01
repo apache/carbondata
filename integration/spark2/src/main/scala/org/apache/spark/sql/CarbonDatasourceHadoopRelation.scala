@@ -61,7 +61,7 @@ case class CarbonDatasourceHadoopRelation(
   CarbonSession.updateSessionInfoToCurrentThread(sparkSession)
 
   @transient lazy val carbonRelation: CarbonRelation =
-    CarbonEnv.getInstance(sparkSession).carbonMetastore.
+    CarbonEnv.getInstance(sparkSession).carbonMetaStore.
     createCarbonRelation(parameters, identifier, sparkSession)
 
 
