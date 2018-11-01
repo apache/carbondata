@@ -25,7 +25,9 @@ CarbonData provides SDK to facilitate
 # SDK Writer
 
 In the carbon jars package, there exist a carbondata-store-sdk-x.x.x-SNAPSHOT.jar, including SDK writer and reader. 
-If you want to use SDK, it needs other carbon jar or you can use carbondata-sdk.jar.
+If user want to use SDK, it needs carbondata-core-x.x.x-SNAPSHOT.jar, carbondata-common-x.x.x-SNAPSHOT.jar, 
+carbondata-format-x.x.x-SNAPSHOT.jar, carbondata-hadoop-x.x.x-SNAPSHOT.jar and carbondata-processing-x.x.x-SNAPSHOT.jar.
+What's more, user can use carbondata-sdk.jar directly.
 
 This SDK writer, writes carbondata file and carbonindex file at a given path.
 External client can make use of this writer to convert other format data or live data to create carbondata and index files.
