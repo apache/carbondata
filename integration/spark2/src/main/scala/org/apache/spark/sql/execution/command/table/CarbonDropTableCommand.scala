@@ -95,7 +95,7 @@ case class CarbonDropTableCommand(
           sparkSession)
       OperationListenerBus.getInstance.fireEvent(dropTablePreEvent, operationContext)
 
-      CarbonEnv.getInstance(sparkSession).carbonMetastore.dropTable(identifier)(sparkSession)
+      CarbonEnv.getInstance(sparkSession).carbonMetaStore.dropTable(identifier)(sparkSession)
 
       if (carbonTable.hasDataMapSchema) {
         // drop all child tables

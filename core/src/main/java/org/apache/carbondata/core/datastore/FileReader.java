@@ -56,7 +56,7 @@ public interface FileReader {
 
   /**
    * This method will be used to read int from file from postion(offset), here
-   * length will be always 4 bacause int byte size if 4
+   * length will be always 4 because int byte size if 4
    *
    * @param filePath fully qualified file path
    * @param offset   reading start position,
@@ -66,7 +66,7 @@ public interface FileReader {
 
   /**
    * This method will be used to read long from file from postion(offset), here
-   * length will be always 8 bacause int byte size is 8
+   * length will be always 8 because int byte size is 8
    *
    * @param filePath fully qualified file path
    * @param offset   reading start position,
@@ -76,7 +76,7 @@ public interface FileReader {
 
   /**
    * This method will be used to read int from file from postion(offset), here
-   * length will be always 4 bacause int byte size if 4
+   * length will be always 4 because int byte size if 4
    *
    * @param filePath fully qualified file path
    * @return read int

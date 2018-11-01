@@ -36,7 +36,7 @@ object Checker {
       session: SparkSession): Unit = {
     val database = dbName.getOrElse(session.catalog.currentDatabase)
     val identifier = TableIdentifier(tableName, dbName)
-    if (!CarbonEnv.getInstance(session).carbonMetastore.tableExists(identifier)(session)) {
+    if (!CarbonEnv.getInstance(session).carbonMetaStore.tableExists(identifier)(session)) {
       val err = s"table $dbName.$tableName not found"
       LogServiceFactory.getLogService(this.getClass.getName).error(err)
       throw new NoSuchTableException(database, tableName)

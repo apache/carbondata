@@ -59,7 +59,7 @@ case class CarbonAlterTableSplitPartitionCommand(
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val dbName = splitPartitionModel.databaseName.getOrElse(sparkSession.catalog.currentDatabase)
-    val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val tableName = splitPartitionModel.tableName
     setAuditTable(dbName, tableName)
     setAuditInfo(Map("partition" -> splitPartitionModel.partitionId))

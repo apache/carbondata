@@ -62,7 +62,7 @@ object TableAPIUtil {
       spark: SparkSession,
       dbName: String,
       tableName: String): Unit = {
-    if (!CarbonEnv.getInstance(spark).carbonMetastore
+    if (!CarbonEnv.getInstance(spark).carbonMetaStore
       .tableExists(tableName, Some(dbName))(spark)) {
       val err = s"table $dbName.$tableName not found"
       LOGGER.error(err)
