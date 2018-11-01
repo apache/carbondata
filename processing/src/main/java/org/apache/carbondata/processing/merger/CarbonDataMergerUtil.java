@@ -1190,8 +1190,9 @@ public final class CarbonDataMergerUtil {
    */
   public static boolean isHorizontalCompactionEnabled() {
     if ((CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.isHorizontalCompactionEnabled,
-            CarbonCommonConstants.defaultIsHorizontalCompactionEnabled)).equalsIgnoreCase("true")) {
+        .getProperty(CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE,
+            CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE_DEFAULT))
+        .equalsIgnoreCase("true")) {
       return true;
     } else {
       return false;

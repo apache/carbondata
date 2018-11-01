@@ -112,7 +112,7 @@ object CarbonSetCommand {
         sessionParams.addProperty(key.toLowerCase, value)
       } else {
         throw new MalformedCarbonCommandException("property should be in " +
-          "\" carbon.datamap.visible.<database_name>.<table_name>.<database_name>" +
+          "\" carbon.datamap.visible.<database_name>.<table_name>.<datamap_name>" +
           " = <true/false> \" format")
       }
     } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL)) {

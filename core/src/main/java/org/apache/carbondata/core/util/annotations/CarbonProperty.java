@@ -15,14 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.util;
+package org.apache.carbondata.core.util.annotations;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * CarbonProperty annotation
+ * Carbon property that can be dynamic configure
+ * it can be used set command to configure in beeline
  */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface CarbonProperty {
+  /**
+   * default value is false, it means this property isn't dynamic configurable.
+   * if set the value as true, it means this property can be dynamic configurable,
+   * but still need support it when validate key and value
+   *
+   * @return
+   */
+  boolean dynamicConfigurable() default false;
 }
