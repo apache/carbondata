@@ -47,8 +47,6 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.datamap.{TextMatch, TextMatchLimit, TextMatchMaxDocUDF, TextMatchUDF}
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
-import org.apache.carbondata.spark.util.CarbonScalaUtil
-
 
 /**
  * Carbon specific optimization for late decode (convert dictionary key to value as late as
@@ -56,8 +54,6 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
  */
 private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   val PUSHED_FILTERS = "PushedFilters"
-
-  val vectorPushRowFilters = CarbonProperties.getInstance().isPushRowFiltersForVector
 
   /*
   Spark 2.3.1 plan there can be case of multiple projections like below
@@ -307,6 +303,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     // applying the filter in spark's side. So we should disable vectorPushRowFilters option
     // in case of filters on global dictionary.
     val hasDictionaryFilterCols = hasFilterOnDictionaryColumn(filterSet, table)
+    val vectorPushRowFilters = CarbonProperties.getInstance().isPushRowFiltersForVector
     if (projects.map(_.toAttribute) == projects &&
         projectSet.size == projects.size &&
         filterSet.subsetOf(projectSet)) {

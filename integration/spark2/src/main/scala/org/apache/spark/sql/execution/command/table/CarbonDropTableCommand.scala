@@ -183,7 +183,8 @@ case class CarbonDropTableCommand(
         CarbonUtil.deleteFoldersAndFilesSilent(file)
       }
       // Delete lock directory if external lock path is specified.
-      if (CarbonProperties.getInstance.getProperty(CarbonCommonConstants.LOCK_PATH, "").toLowerCase
+      if (CarbonProperties.getInstance.getProperty(CarbonCommonConstants.LOCK_PATH,
+        CarbonCommonConstants.LOCK_PATH_DEFAULT).toLowerCase
         .nonEmpty) {
         val tableLockPath = CarbonLockFactory
           .getLockpath(carbonTable.getCarbonTableIdentifier.getTableId)

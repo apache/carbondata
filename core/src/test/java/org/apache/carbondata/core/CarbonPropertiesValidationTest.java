@@ -24,7 +24,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 import junit.framework.TestCase;
-import org.junit.Assert;
 import org.junit.Test;
 
 /**

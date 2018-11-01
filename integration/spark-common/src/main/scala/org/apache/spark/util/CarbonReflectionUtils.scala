@@ -196,7 +196,7 @@ object CarbonReflectionUtils {
       sparkSession: SparkSession): AstBuilder = {
     val className = sparkSession.sparkContext.conf.get(
       CarbonCommonConstants.CARBON_SQLASTBUILDER_CLASSNAME,
-      "org.apache.spark.sql.hive.CarbonSqlAstBuilder")
+      CarbonCommonConstants.CARBON_SQLASTBUILDER_CLASSNAME_DEFAULT)
     createObject(className,
       conf,
       sqlParser, sparkSession)._1.asInstanceOf[AstBuilder]

@@ -208,7 +208,8 @@ case class CarbonLoadDataCommand(
       carbonLoadModel.setFactFilePath(factPath)
       carbonLoadModel.setCarbonTransactionalTable(table.getTableInfo.isTransactionalTable)
       carbonLoadModel.setAggLoadRequest(
-        internalOptions.getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL, "false").toBoolean)
+        internalOptions.getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL,
+          CarbonCommonConstants.IS_INTERNAL_LOAD_CALL_DEFAULT).toBoolean)
       carbonLoadModel.setSegmentId(internalOptions.getOrElse("mergedSegmentName", ""))
       val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
         .getOrElse(CarbonCommonConstants.COMPRESSOR,

@@ -591,7 +591,8 @@ public final class CarbonLoaderUtil {
       } else {
         LOGGER.warn("Invalid load_min_size_inmb value found: " + expectedMinSizePerNode
             + ", only int value greater than 0 is supported.");
-        iexpectedMinSizePerNode = CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_DEFAULT;
+        iexpectedMinSizePerNode = Integer.parseInt(
+            CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT);
       }
       // If the average expected size for each node greater than load min size,
       // then fall back to default strategy

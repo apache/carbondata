@@ -152,7 +152,8 @@ public class CacheProvider {
    */
   private void createLRULevelCacheInstance() {
     boolean isDriver = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "false"));
+        .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE,
+            CarbonCommonConstants.IS_DRIVER_INSTANCE_DEFAULT));
     if (isDriver) {
       carbonLRUCache = new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE,
           CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);

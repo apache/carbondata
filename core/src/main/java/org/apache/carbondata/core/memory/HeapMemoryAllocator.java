@@ -41,7 +41,8 @@ public class HeapMemoryAllocator implements MemoryAllocator {
   public HeapMemoryAllocator() {
     poolingThresholdBytes = CarbonProperties.getInstance().getHeapMemoryPoolingThresholdBytes();
     boolean isDriver = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "false"));
+        .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE,
+            CarbonCommonConstants.IS_DRIVER_INSTANCE_DEFAULT));
     // if set 'poolingThresholdBytes' to -1 or the object creation call is in driver,
     // it should not go through the pooling mechanism.
     if (poolingThresholdBytes == -1 || isDriver) {

@@ -41,7 +41,7 @@ public class CarbonLockFactory {
   private static String lockTypeConfigured;
 
   private static String lockPath = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.LOCK_PATH, "")
+      .getProperty(CarbonCommonConstants.LOCK_PATH, CarbonCommonConstants.LOCK_PATH_DEFAULT)
       .toLowerCase();
 
   static {
