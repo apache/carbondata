@@ -49,7 +49,8 @@ public class UnsafeMemoryManager {
       // check if driver unsafe memory is configured and JVM process is in driver. In that case
       // initialize unsafe memory configured for driver
       boolean isDriver = Boolean.parseBoolean(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "false"));
+          .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE,
+              CarbonCommonConstants.IS_DRIVER_INSTANCE_DEFAULT));
       boolean initializedWithUnsafeDriverMemory = false;
       if (isDriver) {
         configuredWorkingMemorySize = CarbonProperties.getInstance()

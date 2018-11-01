@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.core.constants;
 
-import org.apache.carbondata.core.util.CarbonProperty;
+import org.apache.carbondata.core.util.annotations.CarbonProperty;
 
 /**
  * Constants for V3 data format
@@ -26,7 +26,7 @@ public interface CarbonV3DataFormatConstants {
   /**
    * each blocklet group size in mb
    */
-  @CarbonProperty
+  @CarbonProperty(dynamicConfigurable = true)
   String BLOCKLET_SIZE_IN_MB = "carbon.blockletgroup.size.in.mb";
 
   /**

@@ -35,6 +35,7 @@ import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.util.annotations.CarbonProperty;
 
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.BLOCKLET_SIZE;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
@@ -706,9 +707,9 @@ public final class CarbonProperties {
    * memory
    */
   private void loadProperties() {
-    String property = System.getProperty("carbon.properties.filepath");
+    String property = System.getProperty(CarbonCommonConstants.CARBON_PROPERTIES_FILE_PATH);
     if (null == property) {
-      property = CarbonCommonConstants.CARBON_PROPERTIES_FILE_PATH;
+      property = CarbonCommonConstants.CARBON_PROPERTIES_FILE_PATH_DEFAULT;
     }
     File file = new File(property);
     LOGGER.info("Property file path: " + file.getAbsolutePath());
@@ -722,17 +723,22 @@ public final class CarbonProperties {
       }
     } catch (FileNotFoundException e) {
       LOGGER.error(
-          "The file: " + CarbonCommonConstants.CARBON_PROPERTIES_FILE_PATH + " does not exist");
+          "The file: " + FileFactory.getCarbonFile(CarbonCommonConstants
+              .CARBON_PROPERTIES_FILE_PATH_DEFAULT).getAbsolutePath()
+              + " does not exist");
     } catch (IOException e) {
       LOGGER.error(
-          "Error while reading the file: " + CarbonCommonConstants.CARBON_PROPERTIES_FILE_PATH);
+          "Error while reading the file: "
+              + FileFactory.getCarbonFile(CarbonCommonConstants
+              .CARBON_PROPERTIES_FILE_PATH_DEFAULT).getAbsolutePath());
     } finally {
       if (null != fis) {
         try {
           fis.close();
         } catch (IOException e) {
           LOGGER.error("Error while closing the file stream for file: "
-              + CarbonCommonConstants.CARBON_PROPERTIES_FILE_PATH);
+              + FileFactory.getCarbonFile(CarbonCommonConstants
+              .CARBON_PROPERTIES_FILE_PATH_DEFAULT).getAbsolutePath());
         }
       }
     }
@@ -1189,15 +1195,15 @@ public final class CarbonProperties {
    * @return boolean
    */
   public boolean isPersistUpdateDataset() {
-    String isPersistEnabled = getProperty(CarbonCommonConstants.isPersistEnabled,
-            CarbonCommonConstants.defaultValueIsPersistEnabled);
+    String isPersistEnabled = getProperty(CarbonCommonConstants.CARBON_UPDATE_PERSIST_ENABLE,
+            CarbonCommonConstants.CARBON_UPDATE_PERSIST_ENABLE_DEFAULT);
     boolean validatePersistEnabled = CarbonUtil.validateBoolean(isPersistEnabled);
     if (!validatePersistEnabled) {
-      LOGGER.warn("The " + CarbonCommonConstants.isPersistEnabled
+      LOGGER.warn("The " + CarbonCommonConstants.CARBON_UPDATE_PERSIST_ENABLE
           + " configuration value is invalid. It will use default value("
-          + CarbonCommonConstants.defaultValueIsPersistEnabled
+          + CarbonCommonConstants.CARBON_UPDATE_PERSIST_ENABLE_DEFAULT
           + ").");
-      isPersistEnabled = CarbonCommonConstants.defaultValueIsPersistEnabled;
+      isPersistEnabled = CarbonCommonConstants.CARBON_UPDATE_PERSIST_ENABLE_DEFAULT;
     }
     return isPersistEnabled.equalsIgnoreCase("true");
   }
