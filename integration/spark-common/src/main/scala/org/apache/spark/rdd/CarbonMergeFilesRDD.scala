@@ -127,7 +127,7 @@ class CarbonMergeFilesRDD(
 
       if (isHivePartitionedTable) {
         CarbonLoaderUtil
-          .mergeIndexFilesinPartitionedSegment(carbonTable, split.segmentId,
+          .mergeIndexFilesInPartitionedSegment(carbonTable, split.segmentId,
             segmentFileNameToSegmentIdMap.get(split.segmentId))
       } else {
         new CarbonIndexFileMergeWriter(carbonTable)

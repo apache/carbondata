@@ -55,7 +55,7 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
     try {
       locks = AlterTableUtil
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
-      val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
       carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
       if (!carbonTable.canAllow(carbonTable, TableOperation.ALTER_DROP,
           alterTableDropColumnModel.columns.asJava)) {

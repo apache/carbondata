@@ -137,7 +137,7 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       .config("spark.executor.heartbeatInterval", "600s")
       .config("carbon.enable.vector.reader","false")
       .getOrCreateCarbonSession(storeLocation, metastoredb)
-    val catalog = CarbonEnv.getInstance(spark).carbonMetastore
+    val catalog = CarbonEnv.getInstance(spark).carbonMetaStore
     sampleRelation = catalog.lookupRelation(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
       "sample")(spark).asInstanceOf[CarbonRelation]
     complexRelation = catalog.lookupRelation(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),

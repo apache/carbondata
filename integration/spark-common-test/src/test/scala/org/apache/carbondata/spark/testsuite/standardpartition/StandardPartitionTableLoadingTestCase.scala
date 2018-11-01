@@ -406,7 +406,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     val dblocation = table.getTablePath.substring(0, table.getTablePath.lastIndexOf("/"))
     backUpData(dblocation, "restorepartition")
     sql("drop table restorepartition")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       restoreData(dblocation, "restorepartition")
       sql("refresh table restorepartition")
       checkAnswer(sql("select count(*) from restorepartition"), rows)

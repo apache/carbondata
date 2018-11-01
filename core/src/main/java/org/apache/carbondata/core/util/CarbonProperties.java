@@ -593,21 +593,21 @@ public final class CarbonProperties {
    * This method validates the number of column read in one IO
    */
   private void validateNumberOfColumnPerIORead() {
-    String numberofColumnPerIOString = carbonProperties
+    String numberOfColumnPerIOString = carbonProperties
         .getProperty(NUMBER_OF_COLUMN_TO_READ_IN_IO,
             CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
     try {
-      short numberofColumnPerIO = Short.parseShort(numberofColumnPerIOString);
+      short numberofColumnPerIO = Short.parseShort(numberOfColumnPerIOString);
       if (numberofColumnPerIO < CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_MIN
           || numberofColumnPerIO > CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_MAX) {
-        LOGGER.info("The Number Of pages per blocklet column value \"" + numberofColumnPerIOString
+        LOGGER.info("The Number Of pages per blocklet column value \"" + numberOfColumnPerIOString
             + "\" is invalid. Using the default value \""
             + CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
         carbonProperties.setProperty(NUMBER_OF_COLUMN_TO_READ_IN_IO,
             CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
       }
     } catch (NumberFormatException e) {
-      LOGGER.info("The Number Of pages per blocklet column value \"" + numberofColumnPerIOString
+      LOGGER.info("The Number Of pages per blocklet column value \"" + numberOfColumnPerIOString
           + "\" is invalid. Using the default value \""
           + CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
       carbonProperties.setProperty(NUMBER_OF_COLUMN_TO_READ_IN_IO,

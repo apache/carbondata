@@ -91,7 +91,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     CarbonEnv.getInstance(sqlContext.sparkSession)
     var newParameters = CarbonScalaUtil.getDeserializedParameters(parameters)
     val options = new CarbonOption(newParameters)
-    val isExists = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.tableExists(
+    val isExists = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.tableExists(
       options.tableName, options.dbName)(sqlContext.sparkSession)
     val (doSave, doAppend) = (mode, isExists) match {
       case (SaveMode.ErrorIfExists, true) =>
@@ -182,7 +182,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       case _: NoSuchTableException =>
         LOGGER.warn("Carbon Table [" +dbName +"] [" +tableName +"] is not found, " +
           "Now existing Schema will be overwritten with default properties")
-        val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+        val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
         val identifier = AbsoluteTableIdentifier.from(
           CarbonEnv.getTablePath(Some(dbName), tableName)(sparkSession),
           dbName,
@@ -295,7 +295,7 @@ object CarbonSource {
             "Schema cannot be specified in a Create Table As Select (CTAS) statement")
         }
         sqlParser
-          .getFields(CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .getFields(CarbonEnv.getInstance(sparkSession).carbonMetaStore
             .getSchemaFromUnresolvedRelation(sparkSession, q))
       case None =>
         sqlParser.getFields(dataSchema)
@@ -315,7 +315,7 @@ object CarbonSource {
       tableDesc: CatalogTable,
       sparkSession: SparkSession,
       query: Option[LogicalPlan] = None): CatalogTable = {
-    val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val storageFormat = tableDesc.storage
     val properties = storageFormat.properties
     if (!properties.contains("carbonSchemaPartsNo")) {

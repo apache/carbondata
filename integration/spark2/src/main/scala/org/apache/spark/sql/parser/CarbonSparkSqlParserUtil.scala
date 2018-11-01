@@ -115,7 +115,7 @@ object CarbonSparkSqlParserUtil {
           operationNotAllowed("Create external table as select", tableHeader)
         }
         fields = parser
-          .getFields(CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .getFields(CarbonEnv.getInstance(sparkSession).carbonMetaStore
             .getSchemaFromUnresolvedRelation(sparkSession, Some(q).get))
       case _ =>
       // ignore this case

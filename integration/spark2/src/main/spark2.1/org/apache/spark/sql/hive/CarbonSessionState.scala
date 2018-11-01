@@ -164,10 +164,10 @@ class CarbonHiveSessionCatalog(
       carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation): Boolean = {
     var isRefreshed = false
     val storePath = CarbonProperties.getStorePath
-    carbonEnv.carbonMetastore.
+    carbonEnv.carbonMetaStore.
       checkSchemasModifiedTimeAndReloadTable(identifier)
 
-    val table = carbonEnv.carbonMetastore.getTableFromMetadataCache(
+    val table = carbonEnv.carbonMetaStore.getTableFromMetadataCache(
       carbonDatasourceHadoopRelation.carbonTable.getDatabaseName,
       carbonDatasourceHadoopRelation.carbonTable.getTableName)
     if (table.isEmpty || (table.isDefined &&

@@ -83,7 +83,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       backUpData(dbLocationCustom, "carbontable")
       sql("drop table carbontable")
       restoreData(dbLocationCustom, "carbontable")
@@ -99,7 +99,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("use carbon")
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       backUpData(dbLocationCustom, "carbontable")
       sql("drop table carbontable")
       restoreData(dbLocationCustom, "carbontable")
@@ -118,7 +118,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("insert into carbontable select 'b',1,'aa','aaa'")
     sql("insert into carbontable select 'a',10,'aa','aaa'")
     sql("create datamap preagg1 on table carbontable using 'preaggregate' as select c1,sum(c2) from carbontable group by c1")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       backUpData(dbLocationCustom, "carbontable")
       backUpData(dbLocationCustom, "carbontable_preagg1")
       sql("drop table carbontable")
@@ -141,7 +141,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("insert into carbontable select 'b',1,'aa','aaa'")
     sql("insert into carbontable select 'a',10,'aa','aaa'")
     sql("create datamap preagg1 on table carbontable using 'preaggregate' as select c1,sum(c2) from carbontable group by c1")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       backUpData(dbLocationCustom, "carbontable")
       backUpData(dbLocationCustom, "carbontable_preagg1")
       sql("drop table carbontable")
@@ -164,7 +164,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("insert into carbontable select 'b',1,'aa','aaa'")
     sql("insert into carbontable select 'a',10,'aa','aaa'")
     sql("create datamap preagg1 on table carbontable using 'preaggregate' as select c1,sum(c2) from carbontable group by c1")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       backUpData(dbLocationCustom, "carbontable")
       backUpData(dbLocationCustom, "carbontable_preagg1")
       sql("drop table carbontable")
@@ -183,7 +183,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       backUpData(dbLocationCustom, "carbontable")
       sql("drop table carbontable")
       restoreData(dbLocationCustom, "carbontable")
@@ -205,7 +205,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       backUpData(dbLocationCustom, "carbontable")
       sql("drop table carbontable")
       restoreData(dbLocationCustom, "carbontable")
@@ -227,7 +227,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       backUpData(dbLocationCustom, "carbontable")
       sql("drop table carbontable")
       restoreData(dbLocationCustom, "carbontable")
@@ -249,7 +249,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       backUpData(dbLocationCustom, "carbontable")
       sql("drop table carbontable")
       restoreData(dbLocationCustom, "carbontable")
@@ -270,7 +270,7 @@ class TestRegisterCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
-    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.isReadFromHiveMetaStore) {
+    if (!CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore) {
       backUpData(dbLocationCustom, "carbontable")
       sql("drop table carbontable")
       restoreData(dbLocationCustom, "carbontable")
