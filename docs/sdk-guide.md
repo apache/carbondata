@@ -444,12 +444,10 @@ public CarbonWriter build() throws IOException, InvalidLoadOptionException;
 
 ```
  /**
-   * Configure Vector Reader for carbonReader.
-   *
-   * @param useVectorReader true will enable vector reader, false will enable record reader.
+   * Configure Row Record Reader for reading.
    *
    */
-  public CarbonReaderBuilder withVectorReader(boolean useVectorReader)
+  public CarbonReaderBuilder withRowRecordReader()
 ```
 
 ### Class org.apache.carbondata.sdk.file.CarbonWriter

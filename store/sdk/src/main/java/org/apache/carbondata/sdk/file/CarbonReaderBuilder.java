@@ -54,7 +54,7 @@ public class CarbonReaderBuilder {
   private Expression filterExpression;
   private String tableName;
   private Configuration hadoopConf;
-  private boolean useVectorReader;
+  private boolean useVectorReader = true;
 
   /**
    * Construct a CarbonReaderBuilder with table path and table name
@@ -123,13 +123,11 @@ public class CarbonReaderBuilder {
   }
 
   /**
-   * Configure Vector Reader for carbonReader.
-   *
-   * @param useVectorReader true will enable vector reader, false will enable record reader.
+   * Configure Row Record Reader for reading.
    *
    */
-  public CarbonReaderBuilder withVectorReader(boolean useVectorReader) {
-    this.useVectorReader = useVectorReader;
+  public CarbonReaderBuilder withRowRecordReader() {
+    this.useVectorReader = false;
     return this;
   }
 
@@ -173,12 +171,12 @@ public class CarbonReaderBuilder {
     }
 
     try {
-      List<InputSplit> splits;
+
       if (filterExpression == null) {
-        splits = format.getAllFileSplits(job);
-      } else {
-        splits = format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
+        job.getConfiguration().set("filter_blocks", "false");
       }
+      List<InputSplit> splits =
+          format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
       List<RecordReader<Void, T>> readers = new ArrayList<>(splits.size());
       for (InputSplit split : splits) {
         TaskAttemptContextImpl attempt =
@@ -193,7 +191,7 @@ public class CarbonReaderBuilder {
           }
         }
         if (useVectorReader && !hasComplex) {
-          queryModel.setDirectVectorFill(true);
+          queryModel.setDirectVectorFill(filterExpression == null);
           reader = new CarbonVectorizedRecordReader(queryModel);
         } else {
           reader = format.createRecordReader(split, attempt);

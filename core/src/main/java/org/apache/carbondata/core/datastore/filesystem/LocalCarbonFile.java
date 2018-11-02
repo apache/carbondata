@@ -178,7 +178,7 @@ public class LocalCarbonFile implements CarbonFile {
     return carbonFiles;
   }
 
-  @Override public List<CarbonFile> listFiles(Boolean recursive, CarbonFileFilter fileFilter)
+  @Override public List<CarbonFile> listFiles(boolean recursive, CarbonFileFilter fileFilter)
       throws IOException {
     if (!file.isDirectory()) {
       return new ArrayList<CarbonFile>();

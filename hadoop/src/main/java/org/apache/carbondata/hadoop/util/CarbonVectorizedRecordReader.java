@@ -18,12 +18,15 @@
 package org.apache.carbondata.hadoop.util;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
+import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalType;
@@ -75,6 +78,17 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
       throws IOException, InterruptedException {
     List<CarbonInputSplit> splitList;
     if (inputSplit instanceof CarbonInputSplit) {
+      // Read the footer offset and set.
+      String splitPath = ((CarbonInputSplit) inputSplit).getPath().toString();
+      if (((CarbonInputSplit) inputSplit).getDetailInfo().getBlockFooterOffset() == 0L) {
+        FileReader reader = FileFactory.getFileHolder(FileFactory.getFileType(splitPath),
+            taskAttemptContext.getConfiguration());
+        ByteBuffer buffer = reader
+            .readByteBuffer(FileFactory.getUpdatedFilePath(splitPath),
+                ((CarbonInputSplit) inputSplit).getDetailInfo().getBlockSize() - 8,
+                8);
+        ((CarbonInputSplit) inputSplit).getDetailInfo().setBlockFooterOffset(buffer.getLong());
+      }
       splitList = new ArrayList<>(1);
       splitList.add((CarbonInputSplit) inputSplit);
     } else {
@@ -161,6 +175,9 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
           || carbonColumnarBatch.columnVectors[i].getType() == DataTypes.VARCHAR) {
         byte[] data = (byte[]) carbonColumnarBatch.columnVectors[i].getData(batchIdx - 1);
         row[i] = ByteUtil.toString(data, 0, data.length);
+      } else if (carbonColumnarBatch.columnVectors[i].getType() == DataTypes.BOOLEAN) {
+        byte data = (byte) carbonColumnarBatch.columnVectors[i].getData(batchIdx - 1);
+        row[i] = ByteUtil.toBoolean(data);
       } else {
         row[i] = carbonColumnarBatch.columnVectors[i].getData(batchIdx - 1);
       }
@@ -169,7 +186,7 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   }
 
   @Override public Void getCurrentKey() throws IOException, InterruptedException {
-    return null;
+    throw new UnsupportedOperationException("Operation not allowed on CarbonVectorizedReader");
   }
 
   @Override public float getProgress() throws IOException, InterruptedException {

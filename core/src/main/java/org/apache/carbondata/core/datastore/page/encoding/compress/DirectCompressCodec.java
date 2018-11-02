@@ -329,9 +329,6 @@ public class DirectCompressCodec implements ColumnPageCodec {
       }  else if (pageDataType == DataTypes.LONG) {
         long[] longData = columnPage.getLongPage();
         if (vectorDataType == DataTypes.LONG) {
-          for (int i = 0; i < pageSize; i++) {
-            vector.putLong(i, longData[i]);
-          }
           vector.putLongs(0, pageSize, longData, 0);
         } else if (vectorDataType == DataTypes.TIMESTAMP) {
           for (int i = 0; i < pageSize; i++) {

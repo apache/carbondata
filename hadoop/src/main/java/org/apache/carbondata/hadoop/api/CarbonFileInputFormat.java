@@ -19,7 +19,6 @@ package org.apache.carbondata.hadoop.api;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
@@ -30,7 +29,6 @@ import java.util.List;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -100,50 +98,6 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
   }
 
   /**
-   * This method will list all the carbondata files in the table path and treat one carbondata
-   * file as one split.
-   */
-  public List<InputSplit> getAllFileSplits(JobContext job) throws IOException {
-    List<InputSplit> splits = new ArrayList<>();
-    CarbonTable carbonTable = getOrCreateCarbonTable(job.getConfiguration());
-    if (null == carbonTable) {
-      throw new IOException("Missing/Corrupt schema file for table.");
-    }
-    for (CarbonFile carbonFile : getAllCarbonDataFiles(carbonTable.getTablePath())) {
-      CarbonInputSplit split =
-          new CarbonInputSplit("null", new Path(carbonFile.getAbsolutePath()), 0,
-              carbonFile.getLength(), carbonFile.getLocations(), FileFormat.COLUMNAR_V3);
-      split.setVersion(ColumnarFormatVersion.V3);
-      BlockletDetailInfo info = new BlockletDetailInfo();
-      split.setDetailInfo(info);
-      info.setBlockSize(carbonFile.getLength());
-      // Read the footer offset and set.
-      FileReader reader = FileFactory
-          .getFileHolder(FileFactory.getFileType(carbonFile.getAbsolutePath()),
-              job.getConfiguration());
-      ByteBuffer buffer = reader
-          .readByteBuffer(FileFactory.getUpdatedFilePath(carbonFile.getAbsolutePath()),
-              carbonFile.getLength() - 8, 8);
-      info.setBlockFooterOffset(buffer.getLong());
-      info.setVersionNumber(split.getVersion().number());
-      info.setUseMinMaxForPruning(false);
-      splits.add(split);
-    }
-    if (getColumnProjection(job.getConfiguration()) == null) {
-      // If the user projection is empty, use default all columns as projections.
-      // All column name will be filled inside getSplits, so can update only here.
-      String[]  projectionColumns = projectAllColumns(carbonTable);
-      setColumnProjection(job.getConfiguration(), projectionColumns);
-    }
-    Collections.sort(splits, new Comparator<InputSplit>() {
-      @Override public int compare(InputSplit o1, InputSplit o2) {
-        return ((CarbonInputSplit) o1).getPath().compareTo(((CarbonInputSplit) o2).getPath());
-      }
-    });
-    return splits;
-  }
-
-  /**
    * {@inheritDoc}
    * Configurations FileInputFormat.INPUT_DIR
    * are used to get table path to read.
@@ -200,9 +154,35 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
           externalTableSegments.add(seg);
         }
       }
-      // do block filtering and get split
-      List<InputSplit> splits =
-          getSplits(job, filter, externalTableSegments, null, partitionInfo, null);
+      List<InputSplit> splits = new ArrayList<>();
+      boolean useBlockDataMap = job.getConfiguration().getBoolean("filter_blocks", true);
+      // useBlockDataMap would be false in case of SDK when user has not provided any filter, In
+      // this case we dont want to load block/blocklet datamap. It would be true in all other
+      // scenarios
+      if (useBlockDataMap) {
+        // do block filtering and get split
+        splits = getSplits(job, filter, externalTableSegments, null, partitionInfo, null);
+      } else {
+        for (CarbonFile carbonFile : getAllCarbonDataFiles(carbonTable.getTablePath())) {
+          // Segment id is set to null because SDK does not write carbondata files with respect
+          // to segments. So no specific name is present for this load.
+          CarbonInputSplit split =
+              new CarbonInputSplit("null", new Path(carbonFile.getAbsolutePath()), 0,
+                  carbonFile.getLength(), carbonFile.getLocations(), FileFormat.COLUMNAR_V3);
+          split.setVersion(ColumnarFormatVersion.V3);
+          BlockletDetailInfo info = new BlockletDetailInfo();
+          split.setDetailInfo(info);
+          info.setBlockSize(carbonFile.getLength());
+          info.setVersionNumber(split.getVersion().number());
+          info.setUseMinMaxForPruning(false);
+          splits.add(split);
+        }
+        Collections.sort(splits, new Comparator<InputSplit>() {
+          @Override public int compare(InputSplit o1, InputSplit o2) {
+            return ((CarbonInputSplit) o1).getPath().compareTo(((CarbonInputSplit) o2).getPath());
+          }
+        });
+      }
       if (getColumnProjection(job.getConfiguration()) == null) {
         // If the user projection is empty, use default all columns as projections.
         // All column name will be filled inside getSplits, so can update only here.

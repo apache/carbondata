@@ -524,7 +524,12 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     return getFiles(listStatus);
   }
 
-  @Override public List<CarbonFile> listFiles(Boolean recursive, CarbonFileFilter fileFilter)
+  /**
+   * Method used to list files recursively and apply file filter on the result.
+   *
+   */
+  @Override
+  public List<CarbonFile> listFiles(boolean recursive, CarbonFileFilter fileFilter)
       throws IOException {
     List<CarbonFile> carbonFiles = new ArrayList<>();
     if (null != fileStatus && fileStatus.isDirectory()) {
