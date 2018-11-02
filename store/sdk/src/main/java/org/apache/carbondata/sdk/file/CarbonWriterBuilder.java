@@ -68,6 +68,7 @@ public class CarbonWriterBuilder {
   private short numOfThreads;
   private Configuration hadoopConf;
   private String writtenByApp;
+  private String[] invertedIndexColumns;
   private enum WRITER_TYPE {
     CSV, AVRO, JSON
   }
@@ -100,6 +101,23 @@ public class CarbonWriterBuilder {
       }
     }
     this.sortColumns = sortColumns;
+    return this;
+  }
+
+  /**
+   * sets the list of columns for which inverted index needs to generated
+   * @param invertedIndexColumns is a string array of columns for which inverted index needs to
+   * generated.
+   * If it is null or an empty array, inverted index will be generated for none of the columns
+   * @return updated CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder invertedIndexFor(String[] invertedIndexColumns) {
+    if (invertedIndexColumns != null) {
+      for (int i = 0; i < invertedIndexColumns.length; i++) {
+        invertedIndexColumns[i] = invertedIndexColumns[i].toLowerCase();
+      }
+    }
+    this.invertedIndexColumns = invertedIndexColumns;
     return this;
   }
 
@@ -195,6 +213,8 @@ public class CarbonWriterBuilder {
    * j. sort_scope -- "local_sort", "no_sort", "batch_sort". default value is "local_sort"
    * k. long_string_columns -- comma separated string columns which are more than 32k length.
    *                           default value is null.
+   * l. inverted_index -- comma separated string columns for which inverted index needs to be
+   *                      generated
    *
    * @return updated CarbonWriterBuilder
    */
@@ -202,7 +222,8 @@ public class CarbonWriterBuilder {
     Objects.requireNonNull(options, "Table properties should not be null");
     Set<String> supportedOptions = new HashSet<>(Arrays
         .asList("table_blocksize", "table_blocklet_size", "local_dictionary_threshold",
-            "local_dictionary_enable", "sort_columns", "sort_scope", "long_string_columns"));
+            "local_dictionary_enable", "sort_columns", "sort_scope", "long_string_columns",
+            "inverted_index"));
 
     for (String key : options.keySet()) {
       if (!supportedOptions.contains(key.toLowerCase())) {
@@ -233,6 +254,15 @@ public class CarbonWriterBuilder {
         this.withSortScope(entry);
       } else if (entry.getKey().equalsIgnoreCase("long_string_columns")) {
         updateToLoadOptions(entry);
+      } else if (entry.getKey().equalsIgnoreCase("inverted_index")) {
+        //inverted index columns
+        String[] invertedIndexColumns;
+        if (entry.getValue().trim().isEmpty()) {
+          invertedIndexColumns = new String[0];
+        } else {
+          invertedIndexColumns = entry.getValue().split(",");
+        }
+        this.invertedIndexFor(invertedIndexColumns);
       }
     }
     return this;
@@ -535,8 +565,13 @@ public class CarbonWriterBuilder {
       sortColumnsList = Arrays.asList(sortColumns);
     }
     ColumnSchema[] sortColumnsSchemaList = new ColumnSchema[sortColumnsList.size()];
+    List<String> invertedIdxColumnsList = new ArrayList<>();
+    if (null != invertedIndexColumns) {
+      invertedIdxColumnsList = Arrays.asList(invertedIndexColumns);
+    }
     Field[] fields = schema.getFields();
-    buildTableSchema(fields, tableSchemaBuilder, sortColumnsList, sortColumnsSchemaList);
+    buildTableSchema(fields, tableSchemaBuilder, sortColumnsList, sortColumnsSchemaList,
+        invertedIdxColumnsList);
 
     tableSchemaBuilder.setSortColumns(Arrays.asList(sortColumnsSchemaList));
     String tableName;
@@ -552,7 +587,8 @@ public class CarbonWriterBuilder {
   }
 
   private void buildTableSchema(Field[] fields, TableSchemaBuilder tableSchemaBuilder,
-      List<String> sortColumnsList, ColumnSchema[] sortColumnsSchemaList) {
+      List<String> sortColumnsList, ColumnSchema[] sortColumnsSchemaList,
+      List<String> invertedIdxColumnsList) {
     Set<String> uniqueFields = new HashSet<>();
     // a counter which will be used in case of complex array type. This valIndex will be assigned
     // to child of complex array type in the order val1, val2 so that each array type child is
@@ -572,6 +608,20 @@ public class CarbonWriterBuilder {
             "column: " + sortColumn + " specified in sort columns does not exist in schema");
       }
     }
+    // Check if any of the columns specified in inverted index are missing from schema.
+    for (String invertedIdxColumn: invertedIdxColumnsList) {
+      boolean exists = false;
+      for (Field field : fields) {
+        if (field.getFieldName().equalsIgnoreCase(invertedIdxColumn)) {
+          exists = true;
+          break;
+        }
+      }
+      if (!exists) {
+        throw new RuntimeException(
+            "column: " + invertedIdxColumn + " specified in sort columns does not exist in schema");
+      }
+    }
     int i = 0;
     for (Field field : fields) {
       if (null != field) {
@@ -580,6 +630,7 @@ public class CarbonWriterBuilder {
               "Duplicate column " + field.getFieldName() + " found in table schema");
         }
         int isSortColumn = sortColumnsList.indexOf(field.getFieldName());
+        int isInvertedIdxColumn = invertedIdxColumnsList.indexOf(field.getFieldName());
         if (isSortColumn > -1) {
           // unsupported types for ("array", "struct", "double", "float", "decimal")
           if (field.getDataType() == DataTypes.DOUBLE || field.getDataType() == DataTypes.FLOAT
@@ -597,7 +648,8 @@ public class CarbonWriterBuilder {
             DataType complexType =
                 DataTypes.createArrayType(field.getChildren().get(0).getDataType());
             tableSchemaBuilder
-                .addColumn(new StructField(field.getFieldName(), complexType), valIndex, false);
+                .addColumn(new StructField(field.getFieldName(), complexType), valIndex, false,
+                    isInvertedIdxColumn > -1);
           } else if (field.getDataType().getName().equalsIgnoreCase("STRUCT")) {
             // Loop through the inner columns and for a StructData
             List<StructField> structFieldsArray =
@@ -608,18 +660,20 @@ public class CarbonWriterBuilder {
             }
             DataType complexType = DataTypes.createStructType(structFieldsArray);
             tableSchemaBuilder
-                .addColumn(new StructField(field.getFieldName(), complexType), valIndex, false);
+                .addColumn(new StructField(field.getFieldName(), complexType), valIndex, false,
+                    isInvertedIdxColumn > -1);
           } else if (field.getDataType().getName().equalsIgnoreCase("MAP")) {
             // Loop through the inner columns for MapType
             DataType mapType = DataTypes.createMapType(((MapType) field.getDataType()).getKeyType(),
                 field.getChildren().get(0).getDataType());
             tableSchemaBuilder
-                .addColumn(new StructField(field.getFieldName(), mapType), valIndex, false);
+                .addColumn(new StructField(field.getFieldName(), mapType), valIndex, false,
+                    isInvertedIdxColumn > -1);
           }
         } else {
           ColumnSchema columnSchema = tableSchemaBuilder
-              .addColumn(new StructField(field.getFieldName(), field.getDataType()),
-                  valIndex, isSortColumn > -1);
+              .addColumn(new StructField(field.getFieldName(), field.getDataType()), valIndex,
+                  isSortColumn > -1, isInvertedIdxColumn > -1);
           if (isSortColumn > -1) {
             columnSchema.setSortColumn(true);
             sortColumnsSchemaList[isSortColumn] = columnSchema;

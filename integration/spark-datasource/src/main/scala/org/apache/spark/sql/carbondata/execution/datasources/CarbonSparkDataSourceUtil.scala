@@ -244,6 +244,16 @@ object CarbonSparkDataSourceUtil {
       case _ => null
     }
     builder.sortBy(sortCols)
+    val invertedIdxCols = options.get(CarbonCommonConstants.INVERTED_INDEX) match {
+      case Some(cols) =>
+        if (cols.trim.isEmpty) {
+          Array[String]()
+        } else {
+          cols.split(",").map(_.trim)
+        }
+      case _ => null
+    }
+    builder.invertedIndexFor(invertedIdxCols)
     val longStringColumns: String = options
       .getOrElse(CarbonCommonConstants.LONG_STRING_COLUMNS, null)
     if (longStringColumns != null) {

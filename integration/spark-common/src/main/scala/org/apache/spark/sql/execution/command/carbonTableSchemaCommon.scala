@@ -279,7 +279,7 @@ class AlterTableColumnSchemaGenerator(
 
     if (invertedIndxCols.nonEmpty) {
       for (column <- newCols) {
-        if (invertedIndxCols.contains(column.getColumnName)) {
+        if (invertedIndxCols.contains(column.getColumnName) && column.isDimensionColumn) {
           column.setUseInvertedIndex(true)
         }
       }
@@ -795,7 +795,8 @@ class TableNewProcessor(cm: TableModel) {
       for (column <- allColumns) {
         // When the column is measure or the specified no inverted index column in DDL,
         // set useInvertedIndex to false, otherwise true.
-        if (invertedIndexCols.contains(column.getColumnName)) {
+        if (invertedIndexCols.contains(column.getColumnName) &&
+            !cm.msrCols.exists(_.column.equalsIgnoreCase(column.getColumnName))) {
           column.setUseInvertedIndex(true)
         } else {
           column.setUseInvertedIndex(false)

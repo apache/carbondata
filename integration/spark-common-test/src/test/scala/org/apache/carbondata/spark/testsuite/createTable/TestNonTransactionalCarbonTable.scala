@@ -2419,7 +2419,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       Map("table_blocksize" -> "12",
         "sort_columns" -> "name",
         "local_dictionary_threshold" -> "200",
-        "local_dictionary_enable" -> "true").asJava
+        "local_dictionary_enable" -> "true",
+        "inverted_index" -> "name").asJava
     val builder = CarbonWriter.builder
       .withTableProperties(tablePropertiesMap)
       .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath).writtenBy("TestNonTransactionalCarbonTable")
@@ -2433,6 +2434,10 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val descLoc = sql("describe formatted sdkTable").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
+    }
+    descLoc.find(_.get(0).toString.contains("name")) match {
+      case Some(row) => assert(row.get(2).toString.contains("INVERTEDINDEX"))
       case None => assert(false)
     }
     FileUtils.deleteDirectory(new File(writerPath))
@@ -2479,6 +2484,28 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val descLoc = sql("describe formatted sdkTable").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
       case Some(row) => assert(row.get(1).toString.contains("true"))
+      case None => assert(false)
+    }
+    checkAnswer(sql("select count(*) from sdkTable"), Seq(Row(1)))
+    FileUtils.deleteDirectory(new File(writerPath))
+  }
+
+  test("test inverted index column by API") {
+    FileUtils.deleteDirectory(new File(writerPath))
+    val builder = CarbonWriter.builder
+      .sortBy(Array[String]("name")).withBlockSize(12).enableLocalDictionary(true)
+      .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath)
+      .invertedIndexFor(Array[String]("name")).writtenBy("TestNonTransactionalCarbonTable")
+    generateCarbonData(builder)
+    sql("DROP TABLE IF EXISTS sdkTable")
+    sql(
+      s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION
+         |'$writerPath' """.stripMargin)
+    FileUtils.deleteDirectory(new File(writerPath))
+    sql("insert into sdkTable select 's1','s2',23 ")
+    val descLoc = sql("describe formatted sdkTable").collect
+    descLoc.find(_.get(0).toString.contains("name")) match {
+      case Some(row) => assert(row.get(2).toString.contains("INVERTEDINDEX"))
       case None => assert(false)
     }
     checkAnswer(sql("select count(*) from sdkTable"), Seq(Row(1)))

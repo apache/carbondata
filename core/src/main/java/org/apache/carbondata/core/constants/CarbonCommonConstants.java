@@ -442,7 +442,7 @@ public final class CarbonCommonConstants {
   public static final String TABLE_BLOCKLET_SIZE = "table_blocklet_size";
   /**
    * set in column level to disable inverted index
-   * @Deprecated :This property is deprecated, it is kep just for compatibility
+   * @Deprecated :This property is deprecated, it is kept just for compatibility
    */
   public static final String NO_INVERTED_INDEX = "no_inverted_index";
   // set in column level to enable inverted index
