@@ -124,7 +124,7 @@ public class TestSdkAvro {
     try {
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)
-          .withAvroInput(new org.apache.avro.Schema.Parser().parse(avroSchema))..writtenBy("SDK").build();
+          .withAvroInput(new org.apache.avro.Schema.Parser().parse(avroSchema)).writtenBy("SDK").build();
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -432,6 +432,7 @@ public CarbonWriterBuilder withJsonInput(Schema carbonSchema);
 ```
 /**
 * To support writing the ApplicationName which is writing the carbondata file
+* This is a mandatory API to call, else the build() call will fail with error.
 * @param application name which is writing the carbondata files
 * @return CarbonWriterBuilder
 */
@@ -698,6 +699,8 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 ```
   /**
    * This method return the version details in formatted string by reading from carbondata file
+   * If application name is SDK_1.0.0 and this has written the carbondata file in carbondata 1.6 project version,
+   * then this API returns the String "SDK_1.0.0 in version: 1.6.0-SNAPSHOT"
    * @param dataFilePath complete path including carbondata file name
    * @return string with information of who has written this file in which carbondata project version
    * @throws IOException
