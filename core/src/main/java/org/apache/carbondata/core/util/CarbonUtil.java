@@ -24,7 +24,6 @@ import java.nio.charset.Charset;
 import java.security.PrivilegedExceptionAction;
 import java.util.*;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
@@ -112,6 +111,7 @@ import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
@@ -123,7 +123,7 @@ public final class CarbonUtil {
   /**
    * Attribute for Carbon LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonUtil.class.getName());
 
   /**
@@ -164,7 +164,7 @@ public final class CarbonUtil {
         try {
           closeStream(stream);
         } catch (IOException e) {
-          LOGGER.error(e, "Error while closing stream:" + e);
+          LOGGER.error("Error while closing stream:" + e, e);
         }
       }
     }
@@ -300,31 +300,15 @@ public final class CarbonUtil {
 
       @Override public Void run() throws Exception {
         for (int i = 0; i < path.length; i++) {
-          deleteRecursive(path[i]);
+          CarbonFile carbonFile = FileFactory.getCarbonFile(path[i].getAbsolutePath());
+          boolean delete = carbonFile.delete();
+          if (!delete) {
+            throw new IOException("Error while deleting file: " + carbonFile.getAbsolutePath());
+          }
         }
         return null;
       }
     });
-  }
-
-  /**
-   * Recursively delete the files
-   *
-   * @param f File to be deleted
-   * @throws IOException
-   */
-  private static void deleteRecursive(File f) throws IOException {
-    if (f.isDirectory()) {
-      File[] files = f.listFiles();
-      if (null != files) {
-        for (File c : files) {
-          deleteRecursive(c);
-        }
-      }
-    }
-    if (f.exists() && !f.delete()) {
-      throw new IOException("Error while deleting the folders and files");
-    }
   }
 
   public static void deleteFoldersAndFiles(final CarbonFile... file)
@@ -333,7 +317,10 @@ public final class CarbonUtil {
 
       @Override public Void run() throws Exception {
         for (int i = 0; i < file.length; i++) {
-          deleteRecursive(file[i]);
+          boolean delete = file[i].delete();
+          if (!delete) {
+            throw new IOException("Error while deleting file: " + file[i].getAbsolutePath());
+          }
         }
         return null;
       }
@@ -346,43 +333,14 @@ public final class CarbonUtil {
 
       @Override public Void run() throws Exception {
         for (int i = 0; i < file.length; i++) {
-          deleteRecursiveSilent(file[i]);
+          boolean delete = file[i].delete();
+          if (!delete) {
+            LOGGER.warn("Unable to delete file: " + file[i].getCanonicalPath());
+          }
         }
         return null;
       }
     });
-  }
-
-  /**
-   * Recursively delete the files
-   *
-   * @param f File to be deleted
-   * @throws IOException
-   */
-  private static void deleteRecursive(CarbonFile f) throws IOException {
-    if (f.isDirectory()) {
-      if (f.listFiles() != null) {
-        for (CarbonFile c : f.listFiles()) {
-          deleteRecursive(c);
-        }
-      }
-    }
-    if (f.exists() && !f.delete()) {
-      throw new IOException("Error while deleting the folders and files");
-    }
-  }
-
-  private static void deleteRecursiveSilent(CarbonFile f) {
-    if (f.isDirectory()) {
-      if (f.listFiles() != null) {
-        for (CarbonFile c : f.listFiles()) {
-          deleteRecursiveSilent(c);
-        }
-      }
-    }
-    if (f.exists() && !f.delete()) {
-      return;
-    }
   }
 
   public static void deleteFiles(File[] intermediateFiles) throws IOException {
@@ -936,7 +894,7 @@ public final class CarbonUtil {
   /**
    * Below method will be used to read the data file matadata
    */
-  public static DataFileFooter readMetadatFile(TableBlockInfo tableBlockInfo) throws IOException {
+  public static DataFileFooter readMetadataFile(TableBlockInfo tableBlockInfo) throws IOException {
     return getDataFileFooter(tableBlockInfo, false);
   }
 
@@ -949,7 +907,7 @@ public final class CarbonUtil {
    * @return
    * @throws IOException
    */
-  public static DataFileFooter readMetadatFile(TableBlockInfo tableBlockInfo,
+  public static DataFileFooter readMetadataFile(TableBlockInfo tableBlockInfo,
       boolean forceReadDataFileFooter) throws IOException {
     return getDataFileFooter(tableBlockInfo, forceReadDataFileFooter);
   }

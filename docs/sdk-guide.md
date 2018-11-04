@@ -28,7 +28,7 @@ In the carbon jars package, there exist a carbondata-store-sdk-x.x.x-SNAPSHOT.ja
 
 This SDK writer, writes carbondata file and carbonindex file at a given path.
 External client can make use of this writer to convert other format data or live data to create carbondata and index files.
-These SDK writer output contains just a carbondata and carbonindex files. No metadata folder will be present.
+These SDK writer output contains just carbondata and carbonindex files. No metadata folder will be present.
 
 ## Quick example
 
@@ -67,7 +67,7 @@ These SDK writer output contains just a carbondata and carbonindex files. No met
 
      CarbonProperties.getInstance().addProperty("enable.offheap.sort", enableOffheap);
  
-     CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path).withCsvInput(schema);
+     CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path).withCsvInput(schema).writtenBy("SDK");
  
      CarbonWriter writer = builder.build();
  
@@ -124,7 +124,7 @@ public class TestSdkAvro {
     try {
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)
-          .withAvroInput(new org.apache.avro.Schema.Parser().parse(avroSchema)).build();
+          .withAvroInput(new org.apache.avro.Schema.Parser().parse(avroSchema)).writtenBy("SDK").build();
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -164,7 +164,7 @@ public class TestSdkJson {
 
     Schema CarbonSchema = new Schema(fields);
 
-    CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path).withJsonInput(CarbonSchema);
+    CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path).withJsonInput(CarbonSchema).writtenBy("SDK");
 
     // initialize json writer with carbon schema
     CarbonWriter writer = builder.build();
@@ -431,6 +431,16 @@ public CarbonWriterBuilder withJsonInput(Schema carbonSchema);
 
 ```
 /**
+* To support writing the ApplicationName which is writing the carbondata file
+* This is a mandatory API to call, else the build() call will fail with error.
+* @param application name which is writing the carbondata files
+* @return CarbonWriterBuilder
+*/
+public CarbonWriterBuilder writtenBy(String appName) {
+```
+
+```
+/**
 * Build a {@link CarbonWriter}
 * This writer is not thread safe,
 * use withThreadSafe() configuration in multi thread environment
@@ -581,6 +591,26 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 ```
 
 ```
+/**
+  * Breaks the list of CarbonRecordReader in CarbonReader into multiple
+  * CarbonReader objects, each iterating through some 'carbondata' files
+  * and return that list of CarbonReader objects
+  *
+  * If the no. of files is greater than maxSplits, then break the
+  * CarbonReader into maxSplits splits, with each split iterating
+  * through >= 1 file.
+  *
+  * If the no. of files is less than maxSplits, then return list of
+  * CarbonReader with size as the no. of files, with each CarbonReader
+  * iterating through exactly one file
+  *
+  * @param maxSplits: Int
+  * @return list of CarbonReader objects
+  */
+  public List<CarbonReader> split(int maxSplits);
+``
+
+```
   /**
    * Return true if has next row
    */
@@ -684,6 +714,18 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    * @throws IOException
    */
   public static Schema readSchemaInIndexFile(String indexFilePath);
+```
+
+```
+  /**
+   * This method return the version details in formatted string by reading from carbondata file
+   * If application name is SDK_1.0.0 and this has written the carbondata file in carbondata 1.6 project version,
+   * then this API returns the String "SDK_1.0.0 in version: 1.6.0-SNAPSHOT"
+   * @param dataFilePath complete path including carbondata file name
+   * @return string with information of who has written this file in which carbondata project version
+   * @throws IOException
+   */
+  public static String getVersionDetails(String dataFilePath);
 ```
 
 ### Class org.apache.carbondata.sdk.file.Schema

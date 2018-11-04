@@ -20,7 +20,6 @@ package org.apache.carbondata.core.cache.dictionary;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
@@ -35,6 +34,8 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.log4j.Logger;
+
 /**
  * This class is aimed at managing dictionary files for any new addition and deletion
  * and calling of clear cache for BTree and dictionary instances from LRU cache
@@ -44,7 +45,7 @@ public class ManageDictionaryAndBTree {
   /**
    * Attribute for Carbon LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(ManageDictionaryAndBTree.class.getName());
 
   /**

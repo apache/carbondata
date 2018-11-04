@@ -27,7 +27,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -51,12 +50,13 @@ import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.io.compress.Lz4Codec;
 import org.apache.hadoop.io.compress.SnappyCodec;
+import org.apache.log4j.Logger;
 
 public abstract class AbstractDFSCarbonFile implements CarbonFile {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(AbstractDFSCarbonFile.class.getName());
   protected FileStatus fileStatus;
   public FileSystem fs;
@@ -146,12 +146,12 @@ public abstract class AbstractDFSCarbonFile implements CarbonFile {
     return fileStatus.getLen();
   }
 
-  public boolean renameTo(String changetoName) {
+  public boolean renameTo(String changeToName) {
     FileSystem fs;
     try {
       if (null != fileStatus) {
         fs = fileStatus.getPath().getFileSystem(hadoopConf);
-        return fs.rename(fileStatus.getPath(), new Path(changetoName));
+        return fs.rename(fileStatus.getPath(), new Path(changeToName));
       }
     } catch (IOException e) {
       LOGGER.error("Exception occurred:" + e.getMessage());

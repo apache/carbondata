@@ -133,7 +133,7 @@ object IndexDataMapRebuildRDD {
     }
 
     val buildDataMapPostExecutionEvent = new BuildDataMapPostExecutionEvent(sparkSession,
-      tableIdentifier, validSegments.asScala.map(_.getSegmentNo), true)
+      tableIdentifier, schema.getDataMapName, validSegments.asScala.map(_.getSegmentNo), true)
     OperationListenerBus.getInstance().fireEvent(buildDataMapPostExecutionEvent, operationContext)
   }
 }
@@ -403,7 +403,7 @@ class IndexDataMapRebuildRDD[K, V](
             reader.close()
           } catch {
             case ex: Throwable =>
-              LOGGER.error(ex, "Failed to close reader")
+              LOGGER.error("Failed to close reader", ex)
           }
         }
 
@@ -412,7 +412,7 @@ class IndexDataMapRebuildRDD[K, V](
             refresher.close()
           } catch {
             case ex: Throwable =>
-              LOGGER.error(ex, "Failed to close index writer")
+              LOGGER.error("Failed to close index writer", ex)
           }
         }
       }

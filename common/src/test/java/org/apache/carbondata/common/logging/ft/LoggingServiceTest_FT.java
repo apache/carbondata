@@ -24,11 +24,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import org.apache.carbondata.common.logging.LogService;
+import org.apache.log4j.Logger;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.common.logging.impl.Audit;
+import org.apache.carbondata.common.logging.impl.AuditLevel;
 
 import junit.framework.TestCase;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.apache.log4j.MDC;
 import org.junit.Assert;
 import org.junit.Before;
@@ -36,7 +39,7 @@ import org.junit.Test;
 
 public class LoggingServiceTest_FT extends TestCase {
 
-  private static LogService logger =
+  private static Logger logger =
       LogServiceFactory.getLogService(LoggingServiceTest_FT.class.getName());
 
   @Before public void setUp() throws Exception {
@@ -56,7 +59,7 @@ public class LoggingServiceTest_FT extends TestCase {
     String expectedAuditLine =
         "[main] AUDIT [org.apache.carbondata.common.logging.ft.LoggingServiceTest_FT] 127.0.0.1 "
             + "testuser Function Test log- audit message created";
-    logger.audit("audit message created");
+    Audit.log(logger, "audit message created");
 
     LogManager.shutdown();
 

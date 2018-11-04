@@ -70,7 +70,7 @@ public final class Comparator {
     } else if (dataType == DataTypes.BYTE) {
       return new ByteArraySerializableComparator();
     } else {
-      throw new IllegalArgumentException("Unsupported data type");
+      throw new IllegalArgumentException("Unsupported data type: " + dataType.getName());
     }
   }
 }

@@ -87,7 +87,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
         SegmentPropertiesAndSchemaHolder.getInstance()
             .getSegmentPropertiesWrapper(segmentPropertiesIndex);
     try {
-      return segmentPropertiesWrapper.getTaskSummarySchema(false, isFilePathStored);
+      return segmentPropertiesWrapper.getTaskSummarySchemaForBlocklet(false, isFilePathStored);
     } catch (MemoryException e) {
       throw new RuntimeException(e);
     }
@@ -116,7 +116,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
     String tempFilePath = null;
     DataMapRowImpl summaryRow = null;
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
-    boolean[] summaryRowMinMaxFlag = new boolean[segmentProperties.getDimensions().size()];
+    boolean[] summaryRowMinMaxFlag = new boolean[segmentProperties.getColumnsValueSize().length];
     Arrays.fill(summaryRowMinMaxFlag, true);
     // Relative blocklet ID is the id assigned to a blocklet within a part file
     int relativeBlockletId = 0;
@@ -173,6 +173,9 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
       byte[][] maxValuesForColumnsToBeCached = BlockletDataMapUtil
           .getMinMaxForColumnsToBeCached(segmentProperties, minMaxCacheColumns,
               minMaxIndex.getMaxValues());
+      boolean[] minMaxFlagValuesForColumnsToBeCached = BlockletDataMapUtil
+          .getMinMaxFlagValuesForColumnsToBeCached(segmentProperties, minMaxCacheColumns,
+              fileFooter.getBlockletIndex().getMinMaxIndex().getIsMinMaxSet());
       row.setRow(addMinMax(schema[ordinal], minValuesForColumnsToBeCached), ordinal);
       // compute and set task level min values
       addTaskMinMaxValues(summaryRow, taskSummarySchema, taskMinMaxOrdinal,
@@ -201,9 +204,7 @@ public class BlockletDataMap extends BlockDataMap implements Serializable {
         // Store block size
         row.setLong(blockMetaInfo.getSize(), ordinal++);
         // add min max flag for all the dimension columns
-        addMinMaxFlagValues(row, schema[ordinal],
-            fileFooter.getBlockletIndex().getMinMaxIndex().getIsMinMaxSet(), ordinal,
-            segmentProperties.getDimensions().size());
+        addMinMaxFlagValues(row, schema[ordinal], minMaxFlagValuesForColumnsToBeCached, ordinal);
         ordinal++;
         // add blocklet info
         ByteArrayOutputStream stream = new ByteArrayOutputStream();

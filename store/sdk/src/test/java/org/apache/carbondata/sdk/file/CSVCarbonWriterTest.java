@@ -105,6 +105,37 @@ public class CSVCarbonWriterTest {
   }
 
   @Test
+  public void testWriteFilesBuildWithJsonSchema() throws IOException, InvalidLoadOptionException, InterruptedException {
+    String path = "./testWriteFilesJsonSchema";
+    FileUtils.deleteDirectory(new File(path));
+
+    String schema = "[{name:string},{age:int},{height:double}]";
+    CarbonWriterBuilder builder = CarbonWriter
+        .builder()
+        .outputPath(path)
+        .withCsvInput(schema)
+        .writtenBy("testWriteFilesBuildWithJsonSchema");
+
+    CarbonWriter writer = builder.build();
+    for (int i = 0; i < 10; i++) {
+      writer.write(new String[]{
+          "robot" + (i % 10), String.valueOf(i % 3000000), String.valueOf((double) i / 2)});
+    }
+    writer.close();
+
+    CarbonReader carbonReader = CarbonReader.builder(path).build();
+    int i = 0;
+    while (carbonReader.hasNext()) {
+      Object[] row = (Object[]) carbonReader.readNextRow();
+      Assert.assertEquals(row[0], "robot" + i % 10);
+      System.out.println();
+      i++;
+    }
+    carbonReader.close();
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
   public void testAllPrimitiveDataType() throws IOException {
     // TODO: write all data type and read by CarbonRecordReader to verify the content
     String path = "./testWriteFiles";
@@ -123,7 +154,7 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
-      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
 
       for (int i = 0; i < 100; i++) {
         String[] row = new String[]{
@@ -224,7 +255,7 @@ public class CSVCarbonWriterTest {
     fields[1] = new Field("age", DataTypes.INT);
     try {
       carbonWriter = CarbonWriter.builder().
-          outputPath(path).withCsvInput(new Schema(fields)).build();
+          outputPath(path).withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
       Assert.assertTrue(false);
@@ -244,7 +275,7 @@ public class CSVCarbonWriterTest {
     fields[1] = new Field("age", DataTypes.INT);
     try {
       carbonWriter = CarbonWriter.builder().
-          outputPath(path).withCsvInput(new Schema(fields)).build();
+          outputPath(path).withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
       Assert.assertTrue(false);
@@ -270,7 +301,7 @@ public class CSVCarbonWriterTest {
           .taskNo(5)
           .outputPath(path);
 
-      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
 
       for (int i = 0; i < 2; i++) {
         String[] row = new String[]{
@@ -324,6 +355,7 @@ public class CSVCarbonWriterTest {
       FileReader fileReader = FileFactory.getFileHolder(FileFactory.getFileType(dataFile.getPath()));
       ByteBuffer buffer = fileReader.readByteBuffer(FileFactory.getUpdatedFilePath(
           dataFile.getPath()), dataFile.getSize() - 8, 8);
+      fileReader.finish();
       CarbonFooterReaderV3 footerReader =
           new CarbonFooterReaderV3(dataFile.getAbsolutePath(), buffer.getLong());
       FileFooter3 footer = footerReader.readFooterVersion3();
@@ -345,7 +377,7 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
-      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
       for (int i = 0; i < 15; i++) {
         String[] row = new String[] { "robot" + (i % 10), String.valueOf(i + "." + i),
             String.valueOf(i + "." + i) };
@@ -380,7 +412,7 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
-      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
       for (int i = 0; i < 15; i++) {
         String[] row = new String[] { "robot" + (i % 10),  "" + i };
         writer.write(row);
@@ -414,7 +446,7 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
-      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).build();
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
       for (int i = 0; i < 15; i++) {
         String[] row = new String[] { "robot" + (i % 10), "" + i, i + "." + i };
         writer.write(row);
@@ -454,7 +486,7 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
-      CarbonWriter writer = builder.withCsvInput(new Schema(new Field[] {structType})).build();
+      CarbonWriter writer = builder.withCsvInput(new Schema(new Field[] {structType})).writtenBy("CSVCarbonWriterTest").build();
       for (int i = 0; i < 15; i++) {
         String[] row = new String[] { "robot" + (i % 10)+"$" + i+ "$" + i + "." + i };
         writer.write(row);
@@ -493,7 +525,7 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
-      CarbonWriter writer = builder.withCsvInput(new Schema(new Field[] {structType1, structType2})).build();
+      CarbonWriter writer = builder.withCsvInput(new Schema(new Field[] {structType1, structType2})).writtenBy("CSVCarbonWriterTest").build();
       for (int i = 0; i < 15; i++) {
         String[] row = new String[] { "1.0$2.0$3.0", "1$2$3" };
         writer.write(row);

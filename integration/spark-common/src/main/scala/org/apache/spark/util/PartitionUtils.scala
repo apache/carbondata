@@ -149,7 +149,7 @@ object PartitionUtils {
         oldPartitionIdList,
         partitionInfo,
         carbonTable)
-    val footer = CarbonUtil.readMetadatFile(tableBlockInfoList.get(0))
+    val footer = CarbonUtil.readMetadataFile(tableBlockInfoList.get(0))
     val segmentProperties = new SegmentProperties(footer.getColumnInTable,
       footer.getSegmentInfo.getColumnCardinality)
     segmentProperties

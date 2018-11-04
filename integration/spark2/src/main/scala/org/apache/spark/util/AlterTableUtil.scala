@@ -29,8 +29,10 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog}
 import org.apache.spark.sql.hive.HiveExternalCatalog._
 
+import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
@@ -68,7 +70,7 @@ object AlterTableUtil {
         .lookupRelation(Option(dbName), tableName)(sparkSession)
         .asInstanceOf[CarbonRelation]
     if (relation == null) {
-      LOGGER.audit(s"Alter table request has failed. " +
+      Audit.log(LOGGER, s"Alter table request has failed. " +
                    s"Table $dbName.$tableName does not exist")
       sys.error(s"Table $dbName.$tableName does not exist")
     }
@@ -292,7 +294,7 @@ object AlterTableUtil {
     (sparkSession: SparkSession, catalog: CarbonSessionCatalog): Unit = {
     val tableName = tableIdentifier.table
     val dbName = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
-    LOGGER.audit(s"Alter table newProperties request has been received for $dbName.$tableName")
+    Audit.log(LOGGER, s"Alter table newProperties request has been received for $dbName.$tableName")
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
     var locks = List.empty[ICarbonLock]
     try {
@@ -323,6 +325,9 @@ object AlterTableUtil {
 
       // validate the local dictionary properties
       validateLocalDictionaryProperties(lowerCasePropertiesMap, tblPropertiesMap, carbonTable)
+
+      // validate the load min size properties
+      validateLoadMinSizeProperties(carbonTable, lowerCasePropertiesMap)
 
       // below map will be used for cache invalidation. As tblProperties map is getting modified
       // in the next few steps the original map need to be retained for any decision making
@@ -378,10 +383,10 @@ object AlterTableUtil {
         propKeys,
         set)
       LOGGER.info(s"Alter table newProperties is successful for table $dbName.$tableName")
-      LOGGER.audit(s"Alter table newProperties is successful for table $dbName.$tableName")
+      Audit.log(LOGGER, s"Alter table newProperties is successful for table $dbName.$tableName")
     } catch {
       case e: Exception =>
-        LOGGER.error(e, "Alter table newProperties failed")
+        LOGGER.error("Alter table newProperties failed", e)
         sys.error(s"Alter table newProperties operation failed: ${e.getMessage}")
     } finally {
       // release lock after command execution completion
@@ -397,7 +402,8 @@ object AlterTableUtil {
       "LOCAL_DICTIONARY_ENABLE",
       "LOCAL_DICTIONARY_THRESHOLD",
       "LOCAL_DICTIONARY_INCLUDE",
-      "LOCAL_DICTIONARY_EXCLUDE")
+      "LOCAL_DICTIONARY_EXCLUDE",
+      "LOAD_MIN_SIZE_INMB")
     supportedOptions.contains(propKey.toUpperCase)
   }
 
@@ -744,6 +750,20 @@ object AlterTableUtil {
         return true
       }
       false
+    }
+  }
+
+  private def validateLoadMinSizeProperties(carbonTable: CarbonTable,
+      propertiesMap: mutable.Map[String, String]): Unit = {
+    // validate load min size property
+    if (propertiesMap.get(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB).isDefined) {
+      // load min size is not allowed for child tables and dataMaps
+      if (carbonTable.isChildDataMap) {
+        throw new MalformedCarbonCommandException(s"Table property ${
+          CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB} is not allowed for child datamaps")
+      }
+      CommonUtil.validateLoadMinSize(propertiesMap,
+        CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB)
     }
   }
 }

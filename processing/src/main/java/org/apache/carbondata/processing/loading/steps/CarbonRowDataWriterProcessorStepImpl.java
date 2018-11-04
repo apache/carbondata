@@ -25,7 +25,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
@@ -49,13 +48,15 @@ import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.CarbonFactHandlerFactory;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.log4j.Logger;
+
 /**
  * It reads data from sorted files which are generated in previous sort step.
  * And it writes data to carbondata file. It also generates mdk key while writing to carbondata file
  */
 public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonRowDataWriterProcessorStepImpl.class.getName());
 
   private int dimensionWithComplexCount;
@@ -99,13 +100,10 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     child.initialize();
   }
 
-  private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier) {
-    String[] storeLocation = CarbonDataProcessorUtil.getLocalDataFolderLocation(
-        tableIdentifier.getDatabaseName(),
-        tableIdentifier.getTableName(),
-        String.valueOf(configuration.getTaskNo()), configuration.getSegmentId(),
-        false,
-        false);
+  private String[] getStoreLocation() {
+    String[] storeLocation = CarbonDataProcessorUtil
+        .getLocalDataFolderLocation(this.configuration.getTableSpec().getCarbonTable(),
+            String.valueOf(configuration.getTaskNo()), configuration.getSegmentId(), false, false);
     CarbonDataProcessorUtil.createLocations(storeLocation);
     return storeLocation;
   }
@@ -146,11 +144,11 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
         }
       }
     } catch (CarbonDataWriterException e) {
-      LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterProcessorStepImpl");
+      LOGGER.error("Failed for table: " + tableName + " in DataWriterProcessorStepImpl", e);
       throw new CarbonDataLoadingException(
           "Error while initializing data handler : " + e.getMessage());
     } catch (Exception e) {
-      LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterProcessorStepImpl");
+      LOGGER.error("Failed for table: " + tableName + " in DataWriterProcessorStepImpl", e);
       if (e instanceof BadRecordFoundException) {
         throw new BadRecordFoundException(e.getMessage(), e);
       }
@@ -160,7 +158,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
   }
 
   private void doExecute(Iterator<CarbonRowBatch> iterator, int iteratorIndex) throws IOException {
-    String[] storeLocation = getStoreLocation(tableIdentifier);
+    String[] storeLocation = getStoreLocation();
     DataMapWriterListener listener = getDataMapWriterListener(0);
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(
         configuration, storeLocation, 0, iteratorIndex, listener);
@@ -198,7 +196,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     } catch (Exception e) {
       // if throw exception from here dataHandler will not be closed.
       // so just holding exception and later throwing exception
-      LOGGER.error(e, "Failed for table: " + tableName + " in  finishing data handler");
+      LOGGER.error("Failed for table: " + tableName + " in  finishing data handler", e);
       exception = new CarbonDataWriterException(
           "Failed for table: " + tableName + " in  finishing data handler", e);
     }
@@ -211,7 +209,11 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     try {
       processingComplete(dataHandler);
     } catch (CarbonDataLoadingException e) {
-      exception = new CarbonDataWriterException(e.getMessage(), e);
+      // only assign when exception is null
+      // else it will erase original root cause
+      if (null == exception) {
+        exception = new CarbonDataWriterException(e);
+      }
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
         .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PATITION_ID,
@@ -229,10 +231,10 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       try {
         dataHandler.closeHandler();
       } catch (CarbonDataWriterException e) {
-        LOGGER.error(e, e.getMessage());
+        LOGGER.error(e.getMessage(), e);
         throw new CarbonDataLoadingException(e.getMessage());
       } catch (Exception e) {
-        LOGGER.error(e, e.getMessage());
+        LOGGER.error(e.getMessage(), e);
         throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage());
       }
     }
@@ -307,7 +309,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       }
       writeCounter[iteratorIndex] += batch.getSize();
     } catch (Exception e) {
-      throw new CarbonDataLoadingException("unable to generate the mdkey", e);
+      throw new CarbonDataLoadingException(e);
     }
     rowCounter.getAndAdd(batch.getSize());
   }

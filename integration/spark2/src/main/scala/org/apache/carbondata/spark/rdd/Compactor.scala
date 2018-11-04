@@ -37,7 +37,7 @@ abstract class Compactor(carbonLoadModel: CarbonLoadModel,
     sqlContext: SQLContext,
     storeLocation: String) {
 
-  val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def executeCompaction(): Unit
 

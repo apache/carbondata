@@ -33,7 +33,7 @@ case class CarbonAlterTableFinishStreaming(
   extends MetadataCommand {
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val carbonTable = CarbonEnv.getCarbonTable(dbName, tableName)(sparkSession)
-    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val streamingLock = CarbonLockFactory.getCarbonLockObj(
       carbonTable.getTableInfo().getOrCreateAbsoluteTableIdentifier(),
       LockUsage.STREAMING_LOCK)

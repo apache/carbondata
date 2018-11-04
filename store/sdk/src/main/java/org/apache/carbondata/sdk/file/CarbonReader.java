@@ -18,13 +18,12 @@
 package org.apache.carbondata.sdk.file;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonTaskInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
@@ -93,35 +92,6 @@ public class CarbonReader<T> {
   }
 
   /**
-   * Read and return next string row object
-   * limitation: only single dimension Array is supported
-   * TODO: support didfferent data type
-   */
-  public Object[] readNextStringRow() throws IOException, InterruptedException {
-    validateReader();
-    T t = currentReader.getCurrentValue();
-    Object[] objects = (Object[]) t;
-    String[] strings = new String[objects.length];
-    for (int i = 0; i < objects.length; i++) {
-      if (objects[i] instanceof Object[]) {
-        Object[] arrayString = (Object[]) objects[i];
-        StringBuffer stringBuffer = new StringBuffer();
-        stringBuffer.append(String.valueOf(arrayString[0]));
-        if (arrayString.length > 1) {
-          for (int j = 1; j < arrayString.length; j++) {
-            stringBuffer.append(CarbonCommonConstants.ARRAY_SEPARATOR)
-                .append(String.valueOf(arrayString[j]));
-          }
-        }
-        strings[i] = stringBuffer.toString();
-      } else {
-        strings[i] = String.valueOf(objects[i]);
-      }
-    }
-    return strings;
-  }
-
-  /**
    * Return a new {@link CarbonReaderBuilder} instance
    *
    * @param tablePath table store path
@@ -140,9 +110,60 @@ public class CarbonReader<T> {
    * @return CarbonReaderBuilder object
    */
   public static CarbonReaderBuilder builder(String tablePath) {
-    String time = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date());
-    String tableName = "UnknownTable" + time;
+    UUID uuid = UUID.randomUUID();
+    String tableName = "UnknownTable" + uuid;
     return builder(tablePath, tableName);
+  }
+
+  /**
+   * Breaks the list of CarbonRecordReader in CarbonReader into multiple
+   * CarbonReader objects, each iterating through some 'carbondata' files
+   * and return that list of CarbonReader objects
+   *
+   * If the no. of files is greater than maxSplits, then break the
+   * CarbonReader into maxSplits splits, with each split iterating
+   * through >= 1 file.
+   *
+   * If the no. of files is less than maxSplits, then return list of
+   * CarbonReader with size as the no. of files, with each CarbonReader
+   * iterating through exactly one file
+   *
+   * @param maxSplits: Int
+   * @return list of {@link CarbonReader} objects
+   */
+  public List<CarbonReader> split(int maxSplits) throws IOException {
+    validateReader();
+    if (maxSplits < 1) {
+      throw new RuntimeException(
+          this.getClass().getSimpleName() + ".split: maxSplits must be positive");
+    }
+
+    List<CarbonReader> carbonReaders = new ArrayList<>();
+
+    if (maxSplits < this.readers.size()) {
+      // If maxSplits is less than the no. of files
+      // Split the reader into maxSplits splits with each
+      // element containing >= 1 CarbonRecordReader objects
+      float filesPerSplit = (float) this.readers.size() / maxSplits;
+      for (int i = 0; i < maxSplits; ++i) {
+        carbonReaders.add(new CarbonReader<>(this.readers.subList(
+            (int) Math.ceil(i * filesPerSplit),
+            (int) Math.ceil(((i + 1) * filesPerSplit)))));
+      }
+    } else {
+      // If maxSplits is greater than the no. of files
+      // Split the reader into <num_files> splits with each
+      // element contains exactly 1 CarbonRecordReader object
+      for (int i = 0; i < this.readers.size(); ++i) {
+        carbonReaders.add(new CarbonReader<>(this.readers.subList(i, i + 1)));
+      }
+    }
+
+    // This is to disable the use of this CarbonReader object to iterate
+    // over the files and forces user to only use the returned splits
+    this.initialise = false;
+
+    return carbonReaders;
   }
 
   /**

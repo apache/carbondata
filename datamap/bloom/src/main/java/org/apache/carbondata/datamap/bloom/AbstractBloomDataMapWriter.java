@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
@@ -43,8 +41,6 @@ import org.apache.hadoop.util.hash.Hash;
 
 @InterfaceAudience.Internal
 public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
-  private static final LogService LOG = LogServiceFactory.getLogService(
-      BloomDataMapWriter.class.getCanonicalName());
   private int bloomFilterSize;
   private double bloomFilterFpp;
   private boolean compressBloom;

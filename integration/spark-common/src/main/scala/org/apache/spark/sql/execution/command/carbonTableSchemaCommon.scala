@@ -29,7 +29,9 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.util.CarbonException
 
+import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -280,7 +282,7 @@ class AlterTableColumnSchemaGenerator(
       .foreach(f => if (f._2.size > 1) {
         val name = f._1
         LOGGER.error(s"Duplicate column found with name: $name")
-        LOGGER.audit(
+        Audit.log(LOGGER,
           s"Validation failed for Create/Alter Table Operation " +
           s"for ${ dbName }.${ alterTableModel.tableName }. " +
           s"Duplicate column found with name: $name")
@@ -289,7 +291,7 @@ class AlterTableColumnSchemaGenerator(
 
     if (newCols.exists(_.getDataType.isComplexType)) {
       LOGGER.error(s"Complex column cannot be added")
-      LOGGER.audit(
+      Audit.log(LOGGER,
         s"Validation failed for Create/Alter Table Operation " +
         s"for ${ dbName }.${ alterTableModel.tableName }. " +
         s"Complex column cannot be added")
@@ -299,6 +301,7 @@ class AlterTableColumnSchemaGenerator(
     val columnValidator = CarbonSparkFactory.getCarbonColumnValidator
     columnValidator.validateColumns(allColumns)
 
+    allColumns = CarbonScalaUtil.reArrangeColumnSchema(allColumns)
 
     def getLocalDictColumnList(tableProperties: scala.collection.mutable.Map[String, String],
         columns: scala.collection.mutable.ListBuffer[ColumnSchema]): (scala.collection.mutable
@@ -780,7 +783,7 @@ class TableNewProcessor(cm: TableModel) {
       if (f._2.size > 1) {
         val name = f._1
         LOGGER.error(s"Duplicate column found with name: $name")
-        LOGGER.audit(
+        Audit.log(LOGGER,
           s"Validation failed for Create/Alter Table Operation " +
           s"Duplicate column found with name: $name")
         CarbonException.analysisException(s"Duplicate dimensions found with name: $name")

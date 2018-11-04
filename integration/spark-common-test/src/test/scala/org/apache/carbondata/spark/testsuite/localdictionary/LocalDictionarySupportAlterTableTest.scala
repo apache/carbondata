@@ -880,7 +880,7 @@ class LocalDictionarySupportAlterTableTest extends QueryTest with BeforeAndAfter
     sql("alter table local1 unset tblproperties('local_dictionary_enable')")
     val descLoc2 = sql("describe formatted local1").collect
     descLoc2.find(_.get(0).toString.contains("Local Dictionary Enable")) match {
-      case Some(row) => assert(row.get(1).toString.contains("false"))
+      case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
   }

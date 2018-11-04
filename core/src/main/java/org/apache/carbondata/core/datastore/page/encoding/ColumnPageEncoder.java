@@ -24,7 +24,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
@@ -49,12 +48,14 @@ import org.apache.carbondata.format.PresenceMeta;
 import static org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory.selectCodecByAlgorithmForFloating;
 import static org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory.selectCodecByAlgorithmForIntegral;
 
+import org.apache.log4j.Logger;
+
 public abstract class ColumnPageEncoder {
 
   /**
    * logger
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(ColumnPageEncoder.class.getName());
 
   protected abstract byte[] encodeData(ColumnPage input) throws MemoryException, IOException;
@@ -108,9 +109,10 @@ public abstract class ColumnPageEncoder {
     return dataChunk;
   }
 
-  private void fillBasicFields(ColumnPage inputPage, DataChunk2 dataChunk) {
-    dataChunk.setChunk_meta(
-        CarbonMetadataUtil.getChunkCompressorMeta(inputPage.getColumnCompressorName()));
+  private void fillBasicFields(ColumnPage inputPage, DataChunk2 dataChunk)
+      throws IOException {
+    dataChunk.setChunk_meta(CarbonMetadataUtil.getChunkCompressorMeta(inputPage,
+        dataChunk.getData_page_length()));
     dataChunk.setNumberOfRowsInpage(inputPage.getPageSize());
     dataChunk.setRowMajor(false);
   }

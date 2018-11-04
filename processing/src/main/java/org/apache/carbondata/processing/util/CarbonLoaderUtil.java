@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
@@ -60,13 +59,17 @@ import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.merger.NodeMultiBlockRelation;
 
-import static org.apache.carbondata.core.enums.EscapeSequences.*;
+import static org.apache.carbondata.core.enums.EscapeSequences.BACKSPACE;
+import static org.apache.carbondata.core.enums.EscapeSequences.CARRIAGE_RETURN;
+import static org.apache.carbondata.core.enums.EscapeSequences.NEW_LINE;
+import static org.apache.carbondata.core.enums.EscapeSequences.TAB;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 public final class CarbonLoaderUtil {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonLoaderUtil.class.getName());
 
   private CarbonLoaderUtil() {
@@ -78,7 +81,7 @@ public final class CarbonLoaderUtil {
   public enum BlockAssignmentStrategy {
     BLOCK_NUM_FIRST("Assign blocks to node base on number of blocks"),
     BLOCK_SIZE_FIRST("Assign blocks to node base on data size of blocks"),
-    NODE_MIN_SIZE_FIRST("Assign blocks to node base on minumun size of inputs");
+    NODE_MIN_SIZE_FIRST("Assign blocks to node base on minimum size of inputs");
     private String name;
     BlockAssignmentStrategy(String name) {
       this.name = name;
@@ -543,7 +546,7 @@ public final class CarbonLoaderUtil {
    * @param noOfNodesInput -1 if number of nodes has to be decided
    *                       based on block location information
    * @param blockAssignmentStrategy strategy used to assign blocks
-   * @param loadMinSize the property load_min_size_inmb specified by the user
+   * @param expectedMinSizePerNode the property load_min_size_inmb specified by the user
    * @return a map that maps node to blocks
    */
   public static Map<String, List<Distributable>> nodeBlockMapping(

@@ -17,15 +17,16 @@
 
 package org.apache.carbondata.core.memory;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+
+import org.apache.log4j.Logger;
 
 /**
  * Holds the pointers for rows.
  */
 public class IntPointerBuffer {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(IntPointerBuffer.class.getName());
 
   private int length;

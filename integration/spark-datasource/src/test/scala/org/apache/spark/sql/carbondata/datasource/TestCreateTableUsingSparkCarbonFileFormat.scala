@@ -19,7 +19,6 @@ package org.apache.spark.sql.carbondata.datasource
 
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util
 import java.util.{Date, Random}
 
 import scala.collection.JavaConverters._
@@ -30,17 +29,14 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.apache.spark.util.SparkUtil
 import org.apache.spark.sql.carbondata.datasource.TestUtil.{spark, _}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonV3DataFormatConstants}
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataFileFooterConverter}
 import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
-import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.carbondata.execution.datasources.CarbonFileIndexReplaceRule
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
@@ -83,7 +79,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     try {
       val builder = CarbonWriter.builder()
       val writer =
-        builder.outputPath(writerPath).withCsvInput(Schema.parseJson(schema)).build()
+        builder.outputPath(writerPath).withCsvInput(Schema.parseJson(schema)).writtenBy("TestCreateTableUsingSparkCarbonFileFormat").build()
       var i = 0
       while (i < 100) {
         writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
@@ -380,7 +376,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
       val options=Map("bad_records_action"->"FORCE","complex_delimiter_level_1"->"$").asJava
       val writer = CarbonWriter.builder().outputPath(writerPath).withBlockletSize(16)
         .sortBy(Array("myid", "ingestion_time", "event_id")).withLoadOptions(options)
-        .withCsvInput(new Schema(fields)).build()
+        .withCsvInput(new Schema(fields)).writtenBy("TestCreateTableUsingSparkCarbonFileFormat").build()
       val timeF=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
       val date_F=new SimpleDateFormat("yyyy-MM-dd")
       for(i<- 1 to recordsInBlocklet1){
@@ -433,14 +429,16 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
       .append("[ \n")
       .append("   {\"name\":\"string\"},\n")
       .append("   {\"address\":\"varchar\"},\n")
-      .append("   {\"age\":\"int\"}\n")
+      .append("   {\"age\":\"int\"},\n")
+      .append("   {\"note\":\"varchar\"}\n")
       .append("]")
       .toString()
     val builder = CarbonWriter.builder()
-    val writer = builder.outputPath(writerPath).withCsvInput(Schema.parseJson(schema)).build()
-    for (i <- 0 until 3) {
+    val writer = builder.outputPath(writerPath).withCsvInput(Schema.parseJson(schema)).writtenBy("TestCreateTableUsingSparkCarbonFileFormat").build()
+    val totalRecordsNum = 3
+    for (i <- 0 until totalRecordsNum) {
       // write a varchar with 75,000 length
-      writer.write(Array[String](s"name_$i", RandomStringUtils.randomAlphabetic(75000), i.toString))
+      writer.write(Array[String](s"name_$i", RandomStringUtils.randomAlphabetic(75000), i.toString, RandomStringUtils.randomAlphabetic(75000)))
     }
     writer.close()
 
@@ -449,19 +447,19 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     if (spark.sparkContext.version.startsWith("2.1")) {
       //data source file format
       spark.sql(
-        s"""CREATE TABLE sdkOutputTable (name string, address string, age int)
-           |USING carbon OPTIONS (PATH '$writerPath', "long_String_columns" "address") """
+        s"""CREATE TABLE sdkOutputTable (name string, address string, age int, note string)
+           |USING carbon OPTIONS (PATH '$writerPath', "long_String_columns" "address, note") """
           .stripMargin)
     } else {
       //data source file format
       spark.sql(
-        s"""CREATE TABLE sdkOutputTable (name string, address string, age int) USING carbon
-           |OPTIONS("long_String_columns"="address") LOCATION
+        s"""CREATE TABLE sdkOutputTable (name string, address string, age int, note string) USING carbon
+           |OPTIONS("long_String_columns"="address, note") LOCATION
            |'$writerPath' """.stripMargin)
     }
-    assert(spark.sql("select * from sdkOutputTable where age = 0").count() == 1)
-    val op = spark.sql("select address from sdkOutputTable limit 1").collectAsList()
-    assert(op.get(0).getString(0).length == 75000)
+    checkAnswer(spark.sql("select count(*) from sdkOutputTable where age = 0"), Seq(Row(1)))
+    checkAnswer(spark.sql("SELECT COUNT(*) FROM (select address,age,note from sdkOutputTable where length(address)=75000 and length(note)=75000)"),
+      Seq(Row(totalRecordsNum)))
     spark.sql("DROP TABLE sdkOutputTable")
 
     //--------------- data source external table without schema ---------------------------
@@ -471,16 +469,16 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
       spark
         .sql(
           s"""CREATE TABLE sdkOutputTableWithoutSchema USING carbon OPTIONS (PATH
-             |'$writerPath', "long_String_columns" "address") """.stripMargin)
+             |'$writerPath', "long_String_columns" "address, note") """.stripMargin)
     } else {
       //data source file format
       spark.sql(
         s"""CREATE TABLE sdkOutputTableWithoutSchema USING carbon OPTIONS
-           |("long_String_columns"="address") LOCATION '$writerPath' """.stripMargin)
+           |("long_String_columns"="address, note") LOCATION '$writerPath' """.stripMargin)
     }
-    assert(spark.sql("select * from sdkOutputTableWithoutSchema where age = 0").count() == 1)
-    val op1 = spark.sql("select address from sdkOutputTableWithoutSchema limit 1").collectAsList()
-    assert(op1.get(0).getString(0).length == 75000)
+    checkAnswer(spark.sql("select count(*) from sdkOutputTableWithoutSchema where age = 0"), Seq(Row(1)))
+    checkAnswer(spark.sql("SELECT COUNT(*) FROM (select address,age,note from sdkOutputTableWithoutSchema where length(address)=75000 and length(note)=75000)"),
+      Seq(Row(totalRecordsNum)))
     spark.sql("DROP TABLE sdkOutputTableWithoutSchema")
     clearDataMapCache
     cleanTestData()

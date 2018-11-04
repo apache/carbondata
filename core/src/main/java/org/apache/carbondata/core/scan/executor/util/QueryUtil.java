@@ -760,7 +760,7 @@ public class QueryUtil {
       vector.putNull(vectorRow);
     } else {
       if (dt == DataTypes.STRING) {
-        vector.putBytes(vectorRow, 0, length, value);
+        vector.putByteArray(vectorRow, 0, length, value);
       } else if (dt == DataTypes.BOOLEAN) {
         vector.putBoolean(vectorRow, ByteUtil.toBoolean(value[0]));
       } else if (dt == DataTypes.BYTE) {
@@ -774,38 +774,6 @@ public class QueryUtil {
             .getDataBasedOnRestructuredDataType(value, vector.getBlockDataType(), 0, length));
       } else if (dt == DataTypes.TIMESTAMP) {
         vector.putLong(vectorRow, ByteUtil.toXorLong(value, 0, length) * 1000L);
-      }
-    }
-  }
-
-  /**
-   * Put the data to vector
-   *
-   * @param vector
-   * @param value
-   * @param vectorRow
-   */
-  public static void putDataToVector(CarbonColumnVector vector, Object value, int vectorRow) {
-    DataType dt = vector.getType();
-    if (value.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY) || value
-        .equals(CarbonCommonConstants.EMPTY_BYTE_ARRAY)) {
-      vector.putNull(vectorRow);
-    } else {
-      if (dt == DataTypes.STRING) {
-        vector.putBytes(vectorRow, (byte[]) value);
-      } else if (dt == DataTypes.BOOLEAN) {
-        vector.putBoolean(vectorRow, (boolean) value);
-      } else if (dt == DataTypes.BYTE) {
-        vector.putByte(vectorRow, (byte) value);
-      } else if (dt == DataTypes.SHORT) {
-        vector.putShort(vectorRow, (short) value);
-      } else if (dt == DataTypes.INT) {
-        vector.putInt(vectorRow, (int) value);
-      } else if (dt == DataTypes.LONG) {
-        vector.putLong(vectorRow,
-            DataTypeUtil.getDataBasedOnRestructuredDataType(value, vector.getBlockDataType()));
-      } else if (dt == DataTypes.TIMESTAMP) {
-        vector.putLong(vectorRow, (long) value * 1000L);
       }
     }
   }

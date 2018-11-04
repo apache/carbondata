@@ -20,7 +20,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -31,10 +30,11 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
 
 public class S3CarbonFile extends HDFSCarbonFile {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(HDFSCarbonFile.class.getName());
 
   public S3CarbonFile(String filePath) {
@@ -59,12 +59,12 @@ public class S3CarbonFile extends HDFSCarbonFile {
           Refer CARBONDATA-2670 for tracking this.
    */
   @Override
-  public boolean renameForce(String changetoName) {
+  public boolean renameForce(String changeToName) {
     FileSystem fs;
     try {
-      deleteFile(changetoName, FileFactory.getFileType(changetoName));
+      deleteFile(changeToName, FileFactory.getFileType(changeToName));
       fs = fileStatus.getPath().getFileSystem(hadoopConf);
-      return fs.rename(fileStatus.getPath(), new Path(changetoName));
+      return fs.rename(fileStatus.getPath(), new Path(changeToName));
     } catch (IOException e) {
       LOGGER.error("Exception occured: " + e.getMessage());
       return false;

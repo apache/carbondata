@@ -30,9 +30,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.common.logging.impl.StandardLogService;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datamap.Segment;
@@ -78,6 +76,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 /**
  * This class provides a skeletal implementation of the {@link QueryExecutor}
@@ -86,7 +85,7 @@ import org.apache.hadoop.conf.Configuration;
  */
 public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(AbstractQueryExecutor.class.getName());
   /**
    * holder for query properties which will be used to execute the query
@@ -119,9 +118,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * @param queryModel
    */
   protected void initQuery(QueryModel queryModel) throws IOException {
-    StandardLogService.setThreadName(StandardLogService.getPartitionID(
-        queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName()),
-        queryModel.getQueryId());
     LOGGER.info("Query will be executed on table: " + queryModel.getAbsoluteTableIdentifier()
         .getCarbonTableIdentifier().getTableName());
     this.freeUnsafeMemory = queryModel.isFreeUnsafeMemory();
@@ -142,7 +138,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
-    // calculating the total number of aggeragted columns
+    // calculating the total number of aggregated columns
     int measureCount = queryModel.getProjectionMeasures().size();
 
     int currentIndex = 0;
@@ -217,10 +213,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         DataFileFooter fileFooter = filePathToFileFooterMapping.get(blockInfo.getFilePath());
         if (null == fileFooter) {
           blockInfo.setDetailInfo(null);
-          fileFooter = CarbonUtil.readMetadatFile(blockInfo);
-          // In case of non transactional table just set columnuniqueid as columnName to support
-          // backward compatabiity. non transactional tables column uniqueid is always equal to
-          // columnname
+          fileFooter = CarbonUtil.readMetadataFile(blockInfo);
+          // In case of non transactional table just set columnUniqueId as columnName to support
+          // backward compatibility. non transactional tables column uniqueId is always equal to
+          // columnName
           if (!queryModel.getTable().isTransactionalTable()) {
             QueryUtil.updateColumnUniqueIdForNonTransactionTable(fileFooter.getColumnInTable());
           }
@@ -482,6 +478,19 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     } else {
       blockExecutionInfo.setPrefetchBlocklet(queryModel.isPreFetchData());
     }
+    // In case of fg datamap it should not go to direct fill.
+    boolean fgDataMapPathPresent = false;
+    for (TableBlockInfo blockInfo : queryModel.getTableBlockInfos()) {
+      fgDataMapPathPresent = blockInfo.getDataMapWriterPath() != null;
+      if (fgDataMapPathPresent) {
+        queryModel.setDirectVectorFill(false);
+        break;
+      }
+    }
+
+    blockExecutionInfo
+        .setDirectVectorFill(queryModel.isDirectVectorFill());
+
     blockExecutionInfo
         .setTotalNumberOfMeasureToRead(segmentProperties.getMeasuresOrdinalToChunkMapping().size());
     blockExecutionInfo.setComplexDimensionInfoMap(QueryUtil

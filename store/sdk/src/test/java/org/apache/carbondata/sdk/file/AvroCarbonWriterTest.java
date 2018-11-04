@@ -61,7 +61,8 @@ public class AvroCarbonWriterTest {
   }
 
   @After
-  public void verifyDMFile() {
+  public void verifyDMFile() throws IOException {
+    FileUtils.deleteDirectory(new File(path));
     assert (!TestUtil.verifyMdtFile());
   }
 
@@ -85,7 +86,7 @@ public class AvroCarbonWriterTest {
     GenericData.Record record = TestUtil.jsonToAvro(json, avroSchema);
     try {
       CarbonWriter writer = CarbonWriter.builder().outputPath(path)
-          .withAvroInput(new Schema.Parser().parse(avroSchema)).build();
+          .withAvroInput(new Schema.Parser().parse(avroSchema)).writtenBy("AvroCarbonWriterTest").build();
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -150,7 +151,7 @@ public class AvroCarbonWriterTest {
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)
           
-          .withAvroInput(new Schema.Parser().parse(avroSchema)).build();
+          .withAvroInput(new Schema.Parser().parse(avroSchema)).writtenBy("AvroCarbonWriterTest").build();
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -236,7 +237,7 @@ public class AvroCarbonWriterTest {
     GenericData.Record record = TestUtil.jsonToAvro(json, mySchema);
 
     try {
-      CarbonWriter writer = CarbonWriter.builder().outputPath(path).withAvroInput(nn).build();
+      CarbonWriter writer = CarbonWriter.builder().outputPath(path).withAvroInput(nn).writtenBy("AvroCarbonWriterTest").build();
       for (int i = 0; i < 100; i++) {
         writer.write(record);
       }
@@ -290,7 +291,7 @@ public class AvroCarbonWriterTest {
     GenericData.Record record = TestUtil.jsonToAvro(json, mySchema);
 
     try {
-      CarbonWriter writer = CarbonWriter.builder().outputPath(path).withAvroInput(nn).build();
+      CarbonWriter writer = CarbonWriter.builder().outputPath(path).withAvroInput(nn).writtenBy("AvroCarbonWriterTest").build();
       for (int i = 0; i < 100; i++) {
         writer.write(record);
       }
@@ -320,7 +321,7 @@ public class AvroCarbonWriterTest {
     GenericData.Record record = TestUtil.jsonToAvro(json, mySchema);
     try {
       CarbonWriter writer =
-          CarbonWriter.builder().outputPath(path).sortBy(sortColumns).withAvroInput(nn).build();
+          CarbonWriter.builder().outputPath(path).sortBy(sortColumns).withAvroInput(nn).writtenBy("AvroCarbonWriterTest").build();
       for (int i = 0; i < 100; i++) {
         writer.write(record);
       }
@@ -434,7 +435,7 @@ public class AvroCarbonWriterTest {
         .uniqueIdentifier(System.currentTimeMillis()).outputPath(path);
 
     try {
-      writer.withCsvInput(new org.apache.carbondata.sdk.file.Schema(field)).build();
+      writer.withCsvInput(new org.apache.carbondata.sdk.file.Schema(field)).writtenBy("AvroCarbonWriterTest").build();
       Assert.fail();
     } catch (Exception e) {
       assert(e.getMessage().contains("Duplicate column name found in table schema"));
@@ -454,7 +455,7 @@ public class AvroCarbonWriterTest {
       Map<String, String> loadOptions = new HashMap<String, String>();
       loadOptions.put("bad_records_action", "fail");
       CarbonWriter carbonWriter =
-          writer.withLoadOptions(loadOptions).withCsvInput(new org.apache.carbondata.sdk.file.Schema(field)).build();
+          writer.withLoadOptions(loadOptions).withCsvInput(new org.apache.carbondata.sdk.file.Schema(field)).writtenBy("AvroCarbonWriterTest").build();
       carbonWriter.write(new String[] { "k", "20-02-2233" });
       carbonWriter.close();
       Assert.fail();
@@ -481,7 +482,7 @@ public class AvroCarbonWriterTest {
     GenericData.Record record = TestUtil.jsonToAvro(json, avroSchema);
     try {
       CarbonWriter writer = CarbonWriter.builder().outputPath(path)
-          .withAvroInput(new Schema.Parser().parse(avroSchema)).build();
+          .withAvroInput(new Schema.Parser().parse(avroSchema)).writtenBy("AvroCarbonWriterTest").build();
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);

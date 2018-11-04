@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -53,11 +52,12 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.log4j.Logger;
 import org.xerial.snappy.SnappyInputStream;
 import org.xerial.snappy.SnappyOutputStream;
 
 public class LocalCarbonFile implements CarbonFile {
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(LocalCarbonFile.class.getName());
   private File file;
 
@@ -118,8 +118,7 @@ public class LocalCarbonFile implements CarbonFile {
     try {
       return file.getCanonicalPath();
     } catch (IOException e) {
-      LOGGER
-          .error(e, "Exception occured" + e.getMessage());
+      LOGGER.error("Exception occured" + e.getMessage(), e);
     }
     return null;
   }
@@ -136,13 +135,18 @@ public class LocalCarbonFile implements CarbonFile {
     return file.length();
   }
 
-  public boolean renameTo(String changetoName) {
-    changetoName = FileFactory.getUpdatedFilePath(changetoName, FileFactory.FileType.LOCAL);
-    return file.renameTo(new File(changetoName));
+  public boolean renameTo(String changeToName) {
+    changeToName = FileFactory.getUpdatedFilePath(changeToName, FileFactory.FileType.LOCAL);
+    return file.renameTo(new File(changeToName));
   }
 
   public boolean delete() {
-    return file.delete();
+    try {
+      return deleteFile(file.getAbsolutePath(), FileFactory.getFileType(file.getAbsolutePath()));
+    } catch (IOException e) {
+      LOGGER.error("Exception occurred:" + e.getMessage(), e);
+      return false;
+    }
   }
 
   @Override public CarbonFile[] listFiles() {
@@ -254,14 +258,14 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
 
-  @Override public boolean renameForce(String changetoName) {
-    File destFile = new File(changetoName);
+  @Override public boolean renameForce(String changeToName) {
+    File destFile = new File(changeToName);
     if (destFile.exists() && !file.getAbsolutePath().equals(destFile.getAbsolutePath())) {
       if (destFile.delete()) {
-        return file.renameTo(new File(changetoName));
+        return file.renameTo(new File(changeToName));
       }
     }
-    return file.renameTo(new File(changetoName));
+    return file.renameTo(new File(changeToName));
   }
 
   @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,

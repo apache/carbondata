@@ -58,10 +58,15 @@ public interface CarbonFile {
 
   long getSize();
 
-  boolean renameTo(String changetoName);
+  boolean renameTo(String changeToName);
 
-  boolean renameForce(String changetoName);
+  boolean renameForce(String changeToName);
 
+  /**
+   * This method will delete the files recursively from file system
+   *
+   * @return true if success
+   */
   boolean delete();
 
   boolean createNewFile();

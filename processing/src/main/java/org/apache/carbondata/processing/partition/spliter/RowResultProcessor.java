@@ -18,7 +18,6 @@ package org.apache.carbondata.processing.partition.spliter;
 
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
@@ -33,6 +32,8 @@ import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.log4j.Logger;
+
 public class RowResultProcessor {
 
   private CarbonFactHandler dataHandler;
@@ -40,7 +41,7 @@ public class RowResultProcessor {
 
   private CarbonColumn[] noDicAndComplexColumns;
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(RowResultProcessor.class.getName());
 
 
@@ -49,8 +50,9 @@ public class RowResultProcessor {
     CarbonDataProcessorUtil.createLocations(tempStoreLocation);
     this.segmentProperties = segProp;
     String tableName = carbonTable.getTableName();
-    String carbonStoreLocation = CarbonDataProcessorUtil.createCarbonStoreLocation(
-        loadModel.getDatabaseName(), tableName, loadModel.getSegmentId());
+    String carbonStoreLocation = CarbonDataProcessorUtil
+        .createCarbonStoreLocation(loadModel.getCarbonDataLoadSchema().getCarbonTable(),
+            loadModel.getSegmentId());
     CarbonFactDataHandlerModel carbonFactDataHandlerModel =
         CarbonFactDataHandlerModel.getCarbonFactDataHandlerModel(loadModel, carbonTable,
             segProp, tableName, tempStoreLocation, carbonStoreLocation);
@@ -84,7 +86,7 @@ public class RowResultProcessor {
       }
       processStatus = true;
     } catch (CarbonDataWriterException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       LOGGER.error("Exception in executing RowResultProcessor" + e.getMessage());
       processStatus = false;
     } finally {

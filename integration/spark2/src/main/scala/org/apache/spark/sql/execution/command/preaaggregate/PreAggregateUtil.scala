@@ -419,11 +419,10 @@ object PreAggregateUtil {
    */
   def updateMainTable(carbonTable: CarbonTable,
       childSchema: DataMapSchema, sparkSession: SparkSession): TableInfo = {
-    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK,
       LockUsage.DROP_TABLE_LOCK)
     var locks = List.empty[ICarbonLock]
-    var numberOfCurrentChild: Int = 0
     val dbName = carbonTable.getDatabaseName
     val tableName = carbonTable.getTableName
     try {
@@ -450,7 +449,7 @@ object PreAggregateUtil {
       thriftTableInfo
     } catch {
       case e: Exception =>
-        LOGGER.error(e, "Pre Aggregate Parent table update failed reverting changes")
+        LOGGER.error("Pre Aggregate Parent table update failed reverting changes", e)
         throw e
     } finally {
       // release lock after command execution completion

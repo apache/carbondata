@@ -80,10 +80,10 @@ public class DFSFileReaderImpl implements FileReader {
    * @return byte buffer
    */
   private byte[] read(FSDataInputStream channel, int size, long offset) throws IOException {
-    byte[] byteBffer = new byte[size];
+    byte[] byteBuffer = new byte[size];
     channel.seek(offset);
-    channel.readFully(byteBffer);
-    return byteBffer;
+    channel.readFully(byteBuffer);
+    return byteBuffer;
   }
 
   /**
@@ -94,9 +94,9 @@ public class DFSFileReaderImpl implements FileReader {
    * @return byte buffer
    */
   private byte[] read(FSDataInputStream channel, int size) throws IOException {
-    byte[] byteBffer = new byte[size];
-    channel.readFully(byteBffer);
-    return byteBffer;
+    byte[] byteBuffer = new byte[size];
+    channel.readFully(byteBuffer);
+    return byteBuffer;
   }
 
   @Override public int readInt(String filePath, long offset) throws IOException {

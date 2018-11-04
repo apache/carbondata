@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -32,6 +31,8 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.ThriftWriter;
 import org.apache.carbondata.format.ColumnSortInfo;
+
+import org.apache.log4j.Logger;
 
 /**
  * The class responsible for writing the dictionary/column sort index and sort index inverted data
@@ -61,7 +62,7 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
   /**
    * Comment for <code>LOGGER</code>
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonDictionarySortIndexWriterImpl.class.getName());
 
   /**
@@ -119,8 +120,8 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
         this.sortIndexThriftWriter.open();
         sortIndexThriftWriter.write(columnSortInfo);
       } catch (IOException ie) {
-        LOGGER.error(ie,
-            "problem while writing the dictionary sort index file.");
+        LOGGER.error(
+            "problem while writing the dictionary sort index file.", ie);
         throw new IOException("problem while writing the dictionary sort index file.", ie);
       } finally {
         if (null != sortIndexThriftWriter) {

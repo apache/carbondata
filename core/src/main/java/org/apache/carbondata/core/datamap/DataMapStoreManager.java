@@ -28,7 +28,6 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
@@ -54,6 +53,7 @@ import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassPro
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.PREAGGREGATE;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
 
 /**
  * It maintains all the DataMaps in it.
@@ -87,7 +87,7 @@ public final class DataMapStoreManager {
   private DataMapSchemaStorageProvider provider = new DiskBasedDMSchemaStorageProvider(
       CarbonProperties.getInstance().getSystemFolderLocation());
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(DataMapStoreManager.class.getName());
 
   private DataMapStoreManager() {
@@ -292,7 +292,7 @@ public final class DataMapStoreManager {
           dataMapCatalog.registerSchema(schema);
         } catch (Exception e) {
           // Ignore the schema
-          LOGGER.error(e, "Error while registering schema");
+          LOGGER.error("Error while registering schema", e);
         }
       }
     }
@@ -471,7 +471,7 @@ public final class DataMapStoreManager {
       try {
         DataMapUtil.executeDataMapJobForClearingDataMaps(carbonTable);
       } catch (IOException e) {
-        LOGGER.error(e, "clear dataMap job failed");
+        LOGGER.error("clear dataMap job failed", e);
         // ignoring the exception
       }
     }
@@ -540,7 +540,7 @@ public final class DataMapStoreManager {
             DataMapUtil.executeDataMapJobForClearingDataMaps(carbonTable);
             tableDataMap.clear();
           } catch (IOException e) {
-            LOGGER.error(e, "clear dataMap job failed");
+            LOGGER.error("clear dataMap job failed", e);
             // ignoring the exception
           }
           tableDataMap.deleteDatamapData();

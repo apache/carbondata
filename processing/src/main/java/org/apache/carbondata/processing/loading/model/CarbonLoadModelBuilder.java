@@ -29,7 +29,6 @@ import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.constants.LoggerAction;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -45,13 +44,14 @@ import org.apache.carbondata.processing.util.TableOptionConstant;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 /**
  * Builder for {@link CarbonLoadModel}
  */
 @InterfaceAudience.Internal
 public class CarbonLoadModelBuilder {
-  private static final LogService LOGGER = LogServiceFactory.getLogService(
+  private static final Logger LOGGER = LogServiceFactory.getLogService(
       CarbonLoadModelBuilder.class.getName());
   private CarbonTable table;
 
@@ -285,6 +285,7 @@ public class CarbonLoadModelBuilder {
     carbonLoadModel.setSortColumnsBoundsStr(optionsFinal.get("sort_column_bounds"));
     carbonLoadModel.setLoadMinSize(
         optionsFinal.get(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB));
+    validateAndSetLoadMinSize(carbonLoadModel);
 
     validateAndSetColumnCompressor(carbonLoadModel);
   }
@@ -401,6 +402,22 @@ public class CarbonLoadModelBuilder {
       return defaultValue;
     } else {
       return value;
+    }
+  }
+
+  private void validateAndSetLoadMinSize(CarbonLoadModel carbonLoadModel) {
+    int size = 0;
+    String loadMinSize = carbonLoadModel.getLoadMinSize();
+    try {
+      size = Integer.parseInt(loadMinSize);
+    } catch (Exception e) {
+      size = 0;
+    }
+    // if the value is negative, set the value is 0
+    if (size > 0) {
+      carbonLoadModel.setLoadMinSize(loadMinSize);
+    } else {
+      carbonLoadModel.setLoadMinSize(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT);
     }
   }
 }

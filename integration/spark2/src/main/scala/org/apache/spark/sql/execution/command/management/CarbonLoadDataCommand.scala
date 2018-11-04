@@ -27,6 +27,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
+import org.apache.log4j.Logger
 import org.apache.spark.rdd.RDD
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql._
@@ -48,7 +49,8 @@ import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.{CarbonReflectionUtils, CausedBy, FileUtils}
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datamap.DataMapStoreManager
@@ -109,7 +111,7 @@ case class CarbonLoadDataCommand(
   var parentTablePath: String = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
     table = if (tableInfoOp.isDefined) {
         CarbonTable.buildFromTableInfo(tableInfoOp.get)
@@ -121,7 +123,7 @@ case class CarbonLoadDataCommand(
         }
         if (null == relation.carbonTable) {
           LOGGER.error(s"Data loading failed. table not found: $dbName.$tableName")
-          LOGGER.audit(s"Data loading failed. table not found: $dbName.$tableName")
+          Audit.log(LOGGER, s"Data loading failed. table not found: $dbName.$tableName")
           throw new NoSuchTableException(dbName, tableName)
         }
         relation.carbonTable
@@ -150,7 +152,7 @@ case class CarbonLoadDataCommand(
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val carbonProperty: CarbonProperties = CarbonProperties.getInstance()
     var concurrentLoadLock: Option[ICarbonLock] = None
     carbonProperty.addProperty("zookeeper.enable.lock", "false")
@@ -330,7 +332,7 @@ case class CarbonLoadDataCommand(
         OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
         if (tableDataMaps.size() > 0) {
           val buildDataMapPostExecutionEvent = BuildDataMapPostExecutionEvent(sparkSession,
-            table.getAbsoluteTableIdentifier, Seq(carbonLoadModel.getSegmentId), false)
+            table.getAbsoluteTableIdentifier, null, Seq(carbonLoadModel.getSegmentId), false)
           OperationListenerBus.getInstance()
             .fireEvent(buildDataMapPostExecutionEvent, dataMapOperationContext)
         }
@@ -341,10 +343,11 @@ case class CarbonLoadDataCommand(
           if (isUpdateTableStatusRequired) {
             CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uuid)
           }
-          LOGGER.error(ex, s"Dataload failure for $dbName.$tableName")
+          LOGGER.error(s"Dataload failure for $dbName.$tableName", ex)
           throw new RuntimeException(s"Dataload failure for $dbName.$tableName, ${ex.getMessage}")
         // In case of event related exception
         case preEventEx: PreEventException =>
+          LOGGER.error(s"Dataload failure for $dbName.$tableName", preEventEx)
           throw new AnalysisException(preEventEx.getMessage)
         case ex: Exception =>
           LOGGER.error(ex)
@@ -352,7 +355,7 @@ case class CarbonLoadDataCommand(
           if (isUpdateTableStatusRequired) {
             CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uuid)
           }
-          LOGGER.audit(s"Dataload failure for $dbName.$tableName. Please check the logs")
+          Audit.log(LOGGER, s"Dataload failure for $dbName.$tableName. Please check the logs")
           throw ex
       } finally {
         releaseConcurrentLoadLock(concurrentLoadLock, LOGGER)
@@ -369,7 +372,7 @@ case class CarbonLoadDataCommand(
         } catch {
           case ex: Exception =>
             LOGGER.error(ex)
-            LOGGER.audit(s"Dataload failure for $dbName.$tableName. " +
+            Audit.log(LOGGER, s"Dataload failure for $dbName.$tableName. " +
                          "Problem deleting the partition folder")
             throw ex
         }
@@ -377,10 +380,10 @@ case class CarbonLoadDataCommand(
       }
     } catch {
       case dle: DataLoadingException =>
-        LOGGER.audit(s"Dataload failed for $dbName.$tableName. " + dle.getMessage)
+        Audit.log(LOGGER, s"Dataload failed for $dbName.$tableName. " + dle.getMessage)
         throw dle
       case mce: MalformedCarbonCommandException =>
-        LOGGER.audit(s"Dataload failed for $dbName.$tableName. " + mce.getMessage)
+        Audit.log(LOGGER, s"Dataload failed for $dbName.$tableName. " + mce.getMessage)
         throw mce
     }
     Seq.empty
@@ -412,7 +415,7 @@ case class CarbonLoadDataCommand(
   }
 
   private def releaseConcurrentLoadLock(concurrentLoadLock: Option[ICarbonLock],
-      LOGGER: LogService): Unit = {
+      LOGGER: Logger): Unit = {
     if (concurrentLoadLock.isDefined) {
       if (concurrentLoadLock.get.unlock()) {
         LOGGER.info("concurrent_load lock for table" + table.getTablePath +
@@ -432,7 +435,7 @@ case class CarbonLoadDataCommand(
       partitionStatus: SegmentStatus,
       hadoopConf: Configuration,
       operationContext: OperationContext,
-      LOGGER: LogService): Seq[Row] = {
+      LOGGER: Logger): Seq[Row] = {
     var rows = Seq.empty[Row]
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier
@@ -561,7 +564,7 @@ case class CarbonLoadDataCommand(
       partitionStatus: SegmentStatus,
       hadoopConf: Configuration,
       operationContext: OperationContext,
-      LOGGER: LogService): Seq[Row] = {
+      LOGGER: Logger): Seq[Row] = {
     var rows = Seq.empty[Row]
     val (dictionaryDataFrame, loadDataFrame) = if (updateModel.isDefined) {
       val dataFrameWithTupleId: DataFrame = getDataFrameWithTupleID()
@@ -615,9 +618,8 @@ case class CarbonLoadDataCommand(
       hadoopConf: Configuration,
       dataFrame: Option[DataFrame],
       operationContext: OperationContext,
-      LOGGER: LogService): Seq[Row] = {
+      LOGGER: Logger): Seq[Row] = {
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    val identifier = TableIdentifier(table.getTableName, Some(table.getDatabaseName))
     val catalogTable: CatalogTable = logicalPartitionRelation.catalogTable.get
     var timeStampformatString = carbonLoadModel.getTimestampformat
     if (timeStampformatString.isEmpty) {
@@ -634,8 +636,9 @@ case class CarbonLoadDataCommand(
     CarbonSession.threadSet("partition.operationcontext", operationContext)
     // input data from csv files. Convert to logical plan
     val allCols = new ArrayBuffer[String]()
-    allCols ++= table.getAllDimensions.asScala.map(_.getColName)
-    allCols ++= table.getAllMeasures.asScala.map(_.getColName)
+    // get only the visible dimensions from table
+    allCols ++= table.getDimensionByTableName(table.getTableName).asScala.map(_.getColName)
+    allCols ++= table.getMeasureByTableName(table.getTableName).asScala.map(_.getColName)
     var attributes =
       StructType(
         allCols.filterNot(_.equals(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE)).map(

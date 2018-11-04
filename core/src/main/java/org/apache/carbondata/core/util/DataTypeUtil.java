@@ -28,7 +28,6 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
@@ -42,12 +41,14 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
+import org.apache.log4j.Logger;
+
 public final class DataTypeUtil {
 
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(DataTypeUtil.class.getName());
 
   private static final ThreadLocal<DateFormat> timeStampformatter = new ThreadLocal<DateFormat>() {
@@ -1079,24 +1080,6 @@ public final class DataTypeUtil {
       value = ByteUtil.toXorInt(data, currentDataOffset, length);
     } else if (restructuredDataType == DataTypes.LONG) {
       value = ByteUtil.toXorLong(data, currentDataOffset, length);
-    }
-    return value;
-  }
-
-  /**
-   * Method to type case the data based on modified data type. This method will used for
-   * retrieving the data after change in data type restructure operation
-   *
-   * @param data
-   * @param restructureDataType
-   * @return
-   */
-  public static long getDataBasedOnRestructuredDataType(Object data, DataType restructureDataType) {
-    long value = 0L;
-    if (restructureDataType == DataTypes.INT) {
-      value = (int) data;
-    } else if (restructureDataType == DataTypes.LONG) {
-      value = (long) data;
     }
     return value;
   }

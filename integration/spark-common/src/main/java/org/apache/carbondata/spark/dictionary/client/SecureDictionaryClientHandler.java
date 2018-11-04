@@ -20,13 +20,13 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import org.apache.log4j.Logger;
 import org.apache.spark.network.client.RpcResponseCallback;
 import org.apache.spark.network.client.TransportClient;
 import org.apache.spark.network.server.OneForOneStreamManager;
@@ -38,7 +38,7 @@ import org.apache.spark.network.server.StreamManager;
  */
 public class SecureDictionaryClientHandler extends RpcHandler {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(SecureDictionaryClientHandler.class.getName());
 
   private final BlockingQueue<DictionaryMessage> responseMsgQueue = new LinkedBlockingQueue<>();
@@ -58,7 +58,7 @@ public class SecureDictionaryClientHandler extends RpcHandler {
       key.writeData(buffer);
       resp = client.sendRpcSync(buffer.nioBuffer(), 100000);
     } catch (Exception e) {
-      LOGGER.error(e, "Error while send request to server ");
+      LOGGER.error("Error while send request to server ", e);
     }
     try {
       if (resp == null) {

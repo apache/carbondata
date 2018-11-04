@@ -31,6 +31,7 @@ import org.apache.spark.sql.catalyst.util.sideBySide
 import org.junit.Assert
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.sdk.file.CarbonWriter
 
@@ -38,7 +39,7 @@ object TestUtil {
 
   val rootPath = new File(this.getClass.getResource("/").getPath
                           + "../../../..").getCanonicalPath
-  val warehouse1 = s"$rootPath/integration/spark-datasource/target/warehouse"
+  val warehouse1 = FileFactory.getPath(s"$rootPath/integration/spark-datasource/target/warehouse").toString
   val resource = s"$rootPath/integration/spark-datasource/src/test/resources"
   val metastoredb1 = s"$rootPath/integration/spark-datasource/target"
   val spark = SparkSession
@@ -150,7 +151,7 @@ object TestUtil {
     try {
       val writer = CarbonWriter.builder
         .outputPath(writerPath)
-        .uniqueIdentifier(System.currentTimeMillis()).withAvroInput(nn).build()
+        .uniqueIdentifier(System.currentTimeMillis()).withAvroInput(nn).writtenBy("DataSource").build()
       var i = 0
       while (i < rows) {
         writer.write(record)

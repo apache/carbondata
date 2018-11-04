@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -41,6 +42,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableSchemaBuilder;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModelBuilder;
@@ -65,6 +67,7 @@ public class CarbonWriterBuilder {
   private boolean isLocalDictionaryEnabled;
   private short numOfThreads;
   private Configuration hadoopConf;
+  private String writtenByApp;
   private enum WRITER_TYPE {
     CSV, AVRO, JSON
   }
@@ -266,6 +269,21 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   * configure hadoop configuration with key value
+   *
+   * @param key   key word
+   * @param value value
+   * @return this object
+   */
+  public CarbonWriterBuilder withHadoopConf(String key, String value) {
+    if (this.hadoopConf == null) {
+      this.hadoopConf = new Configuration(true);
+    }
+    this.hadoopConf.set(key, value);
+    return this;
+  }
+
+  /**
    * To set the carbondata file size in MB between 1MB-2048MB
    * @param blockSize is size in MB between 1MB to 2048 MB
    * default value is 1024 MB
@@ -289,6 +307,15 @@ public class CarbonWriterBuilder {
           "Local Dictionary Threshold should be greater than 0");
     }
     this.localDictionaryThreshold = localDictionaryThreshold;
+    return this;
+  }
+
+  /**
+   * @param appName appName which is writing the carbondata files
+   * @return
+   */
+  public CarbonWriterBuilder writtenBy(String appName) {
+    this.writtenByApp = appName;
     return this;
   }
 
@@ -325,6 +352,19 @@ public class CarbonWriterBuilder {
   public CarbonWriterBuilder withCsvInput(Schema schema) {
     Objects.requireNonNull(schema, "schema should not be null");
     this.schema = schema;
+    this.writerType = WRITER_TYPE.CSV;
+    return this;
+  }
+
+  /**
+   * to build a {@link CarbonWriter}, which accepts row in CSV format
+   *
+   * @param jsonSchema json Schema string
+   * @return CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder withCsvInput(String jsonSchema) {
+    Objects.requireNonNull(jsonSchema, "schema should not be null");
+    this.schema = Schema.parseJson(jsonSchema);
     this.writerType = WRITER_TYPE.CSV;
     return this;
   }
@@ -371,8 +411,15 @@ public class CarbonWriterBuilder {
           "Writer type is not set, use withCsvInput() or withAvroInput() or withJsonInput()  "
               + "API based on input");
     }
+    if (this.writtenByApp == null || this.writtenByApp.isEmpty()) {
+      throw new RuntimeException(
+          "AppName is not set, please use writtenBy() API to set the App Name"
+              + "which is using SDK");
+    }
     CarbonLoadModel loadModel = buildLoadModel(schema);
     loadModel.setSdkWriterCores(numOfThreads);
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, writtenByApp);
     if (hadoopConf == null) {
       hadoopConf = FileFactory.getConfiguration();
     }
@@ -412,12 +459,17 @@ public class CarbonWriterBuilder {
   public CarbonLoadModel buildLoadModel(Schema carbonSchema)
       throws IOException, InvalidLoadOptionException {
     timestamp = System.nanoTime();
-    Set<String> longStringColumns = null;
-    if (options != null && options.get("long_string_columns") != null) {
-      longStringColumns =
-          new HashSet<>(Arrays.asList(options.get("long_string_columns").toLowerCase().split(",")));
+    // validate long_string_column
+    Set<String> longStringColumns = new HashSet<>();
+    if (options != null && options.get(CarbonCommonConstants.LONG_STRING_COLUMNS) != null) {
+      String[] specifiedLongStrings =
+          options.get(CarbonCommonConstants.LONG_STRING_COLUMNS).toLowerCase().split(",");
+      for (String str : specifiedLongStrings) {
+        longStringColumns.add(str.trim());
+      }
       validateLongStringColumns(carbonSchema, longStringColumns);
     }
+    // for the longstring field, change the datatype from string to varchar
     this.schema = updateSchemaFields(carbonSchema, longStringColumns);
     // build CarbonTable using schema
     CarbonTable table = buildCarbonTable();
@@ -603,12 +655,11 @@ public class CarbonWriterBuilder {
     for (int i = 0; i < fields.length; i++) {
       if (fields[i] != null) {
         fields[i].updateNameToLowerCase();
-      }
-
-      if (longStringColumns != null) {
-        /* Also update the string type to varchar */
-        if (longStringColumns.contains(fields[i].getFieldName())) {
-          fields[i].updateDataTypeToVarchar();
+        if (longStringColumns != null) {
+          /* Also update the string type to varchar */
+          if (longStringColumns.contains(fields[i].getFieldName())) {
+            fields[i].updateDataTypeToVarchar();
+          }
         }
       }
     }

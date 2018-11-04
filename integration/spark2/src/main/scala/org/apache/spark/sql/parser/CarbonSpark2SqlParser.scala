@@ -37,7 +37,9 @@ import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand,
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
+import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
@@ -76,7 +78,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val startCommand: Parser[LogicalPlan] =
     loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
-    alterPartition | datamapManagement | alterTableFinishStreaming | stream
+    alterPartition | datamapManagement | alterTableFinishStreaming | stream | cli
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
@@ -493,6 +495,23 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           showHistory.isDefined)
     }
 
+
+  protected lazy val cli: Parser[LogicalPlan] =
+    (SHOW ~> SUMMARY ~> FOR ~> TABLE) ~> (ident <~ ".").? ~ ident ~
+    (OPTIONS ~> "(" ~> repsep(summaryOptions, ",") <~ ")").? <~
+    opt(";") ^^ {
+      case databaseName ~ tableName ~ commandList =>
+        var commandOptions: Map[String, String] = null
+        if (commandList.isDefined) {
+          commandOptions = commandList.getOrElse(List.empty[(String, String)]).toMap
+        }
+        CarbonShowSummaryCommand(
+          convertDbNameToLowerCase(databaseName),
+          tableName.toLowerCase(),
+          commandOptions.map { case (key, value) => key.toLowerCase -> value })
+    }
+
+
   protected lazy val alterTableModifyDataType: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ CHANGE ~ ident ~ ident ~
     ident ~ opt("(" ~> rep1sep(valueOptions, ",") <~ ")") <~ opt(";") ^^ {
@@ -530,7 +549,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
               if (name.startsWith("default.value.") &&
                   fields.count(p => p.column.equalsIgnoreCase(colName)) == 1) {
                 LOGGER.error(s"Duplicate default value exist for new column: ${ colName }")
-                LOGGER.audit(
+                Audit.log(LOGGER,
                   s"Validation failed for Create/Alter Table Operation " +
                   s"for ${ table }. " +
                   s"Duplicate default value exist for new column: ${ colName }")

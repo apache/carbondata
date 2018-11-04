@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -48,6 +47,8 @@ import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.CarbonFactHandlerFactory;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.log4j.Logger;
+
 /**
  * This class will process the query result and convert the data
  * into a format compatible for data load
@@ -57,7 +58,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CompactionResultSortProcessor.class.getName());
   /**
    * carbon load model that contains all the required information for load
@@ -172,6 +173,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       }
       isCompactionSuccess = true;
     } catch (Exception e) {
+      LOGGER.error(e.getLocalizedMessage(), e);
       throw e;
     } finally {
       if (partitionSpec != null) {
@@ -381,7 +383,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
         try {
           dataHandler.closeHandler();
         } catch (CarbonDataWriterException e) {
-          LOGGER.error(e, "Error in close data handler");
+          LOGGER.error("Error in close data handler", e);
           throw new Exception("Error in close data handler", e);
         }
       }
@@ -413,12 +415,12 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     isVarcharDimMapping = new boolean[dimensions.size()];
     int i = 0;
     for (CarbonDimension dimension : dimensions) {
+      if (dimension.isSortColumn()) {
+        sortColumnMapping[i] = true;
+      }
       if (CarbonUtil.hasEncoding(dimension.getEncoder(), Encoding.DICTIONARY)) {
         i++;
         continue;
-      }
-      if (dimension.isSortColumn()) {
-        sortColumnMapping[i] = true;
       }
       noDictionaryColMapping[i] = true;
       if (dimension.getColumnSchema().getDataType() == DataTypes.VARCHAR) {
@@ -461,7 +463,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private void initializeFinalThreadMergerForMergeSort() {
     boolean[] noDictionarySortColumnMapping = CarbonDataProcessorUtil
-        .getNoDictSortColMapping(carbonTable.getDatabaseName(), carbonTable.getTableName());
+        .getNoDictSortColMapping(carbonTable);
     sortParameters.setNoDictionarySortColumn(noDictionarySortColumnMapping);
     String[] sortTempFileLocation = CarbonDataProcessorUtil.arrayAppend(tempStoreLocation,
         CarbonCommonConstants.FILE_SEPARATOR, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
@@ -480,7 +482,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
               + carbonLoadModel.getFactTimeStamp() + ".tmp";
     } else {
       carbonStoreLocation = CarbonDataProcessorUtil
-          .createCarbonStoreLocation(carbonLoadModel.getDatabaseName(), tableName,
+          .createCarbonStoreLocation(carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable(),
               carbonLoadModel.getSegmentId());
     }
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel

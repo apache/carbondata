@@ -566,7 +566,7 @@ public class CarbonUtilTest {
     }
   }
 
-  @Test public void testToReadMetadatFile() throws IOException {
+  @Test public void testToReadMetadataFile() throws IOException {
     new MockUp<DataFileFooterConverter>() {
       @SuppressWarnings("unused") @Mock
       public DataFileFooter readDataFileFooter(TableBlockInfo info) {
@@ -578,15 +578,15 @@ public class CarbonUtilTest {
     TableBlockInfo info =
         new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);
 
-    assertEquals(CarbonUtil.readMetadatFile(info).getVersionId().number(), 1);
+    assertEquals(CarbonUtil.readMetadataFile(info).getVersionId().number(), 1);
   }
 
   @Test(expected = IOException.class)
-  public void testToReadMetadatFileWithException()
+  public void testToReadMetadataFileWithException()
       throws Exception {
     TableBlockInfo info =
         new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);
-    CarbonUtil.readMetadatFile(info);
+    CarbonUtil.readMetadataFile(info);
   }
 
   @Test public void testToFindDimension() {
@@ -807,7 +807,7 @@ public class CarbonUtilTest {
         .getFirstIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 1, 3, compareValue, true);
     assertEquals(2, result);
   }
-  
+
   @Test
   public void testBinaryRangeSearch() {
 

@@ -27,7 +27,6 @@ import java.util.Map;
 import org.apache.carbondata.common.Maps;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
@@ -39,6 +38,7 @@ import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 /**
  * Provide utilities to populate loading options
@@ -46,7 +46,7 @@ import org.apache.hadoop.conf.Configuration;
 @InterfaceAudience.Internal
 public class LoadOption {
 
-  private static LogService LOG = LogServiceFactory.getLogService(LoadOption.class.getName());
+  private static final Logger LOG = LogServiceFactory.getLogService(LoadOption.class.getName());
 
   /**
    * Based on the input options, fill and return data loading options with default value
@@ -186,8 +186,8 @@ public class LoadOption {
     optionsFinal.put("sort_scope", "local_sort");
     optionsFinal.put("sort_column_bounds", Maps.getOrDefault(options, "sort_column_bounds", ""));
     optionsFinal.put(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
-        Maps.getOrDefault(options,CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
-            CarbonCommonConstants.CARBON_LOAD_MIN_NODE_SIZE_INMB_DEFAULT));
+        Maps.getOrDefault(options, CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
+            CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT));
     return optionsFinal;
   }
 

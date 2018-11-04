@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.carbondata.execution.datasources
 
+import java.net.URI
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
@@ -27,6 +29,7 @@ import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.TaskContext
 import org.apache.spark.internal.Logging
+import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.memory.MemoryMode
 import org.apache.spark.sql._
 import org.apache.spark.sql.carbondata.execution.datasources.readsupport.SparkUnsafeRowReadSuport
@@ -44,7 +47,7 @@ import org.apache.spark.util.{SerializableConfiguration, TaskCompletionListener}
 import org.apache.carbondata.common.annotations.{InterfaceAudience, InterfaceStability}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonVersionConstants}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnarFormatVersion}
@@ -112,6 +115,13 @@ class SparkCarbonFileFormat extends FileFormat
   }
 
   /**
+   * Add our own protocol to control the commit.
+   */
+  SparkSession.getActiveSession.get.sessionState.conf.setConfString(
+    "spark.sql.sources.commitProtocolClass",
+    "org.apache.spark.sql.carbondata.execution.datasources.CarbonSQLHadoopMapReduceCommitProtocol")
+
+  /**
    * Prepares a write job and returns an [[OutputWriterFactory]].  Client side job preparation is
    * done here.
    */
@@ -121,10 +131,11 @@ class SparkCarbonFileFormat extends FileFormat
       dataSchema: StructType): OutputWriterFactory = {
 
     val conf = job.getConfiguration
-
+    conf.set(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, sparkSession.sparkContext.appName)
     val model = CarbonSparkDataSourceUtil.prepareLoadModel(options, dataSchema)
     model.setLoadWithoutConverterStep(true)
     CarbonTableOutputFormat.setLoadModel(conf, model)
+    conf.set(CarbonSQLHadoopMapReduceCommitProtocol.COMMIT_PROTOCOL, "true")
 
     new OutputWriterFactory {
       override def newInstance(
@@ -310,7 +321,6 @@ class SparkCarbonFileFormat extends FileFormat
     vectorizedReader.toBoolean && schema.forall(_.dataType.isInstanceOf[AtomicType])
   }
 
-
   /**
    * Returns whether this format support returning columnar batch or not.
    */
@@ -369,7 +379,7 @@ class SparkCarbonFileFormat extends FileFormat
 
       if (file.filePath.endsWith(CarbonTablePath.CARBON_DATA_EXT)) {
         val split = new CarbonInputSplit("null",
-          new Path(file.filePath),
+          new Path(new URI(file.filePath)),
           file.start,
           file.length,
           file.locations,
@@ -380,10 +390,12 @@ class SparkCarbonFileFormat extends FileFormat
         split.setDetailInfo(info)
         info.setBlockSize(file.length)
         // Read the footer offset and set.
-        val reader = FileFactory.getFileHolder(FileFactory.getFileType(file.filePath),
+        val reader = FileFactory.getFileHolder(FileFactory.getFileType(split.getPath.toString),
           broadcastedHadoopConf.value.value)
         val buffer = reader
-          .readByteBuffer(FileFactory.getUpdatedFilePath(file.filePath), file.length - 8, 8)
+          .readByteBuffer(FileFactory.getUpdatedFilePath(split.getPath.toString),
+            file.length - 8,
+            8)
         info.setBlockFooterOffset(buffer.getLong)
         info.setVersionNumber(split.getVersion.number())
         info.setUseMinMaxForPruning(true)
@@ -404,6 +416,7 @@ class SparkCarbonFileFormat extends FileFormat
           model.setFreeUnsafeMemory(!isAdded)
         }
         val carbonReader = if (readVector) {
+          model.setDirectVectorFill(true)
           val vectorizedReader = new VectorizedCarbonRecordReader(model,
             null,
             supportBatchValue.toString)
@@ -446,7 +459,74 @@ class SparkCarbonFileFormat extends FileFormat
     }
   }
 
+}
 
+/**
+ * Since carbon writes 2 files carbondata files and index file , but spark cannot understand two
+ * files so added custom protocol to copy the files in case of custom partition location.
+ */
+case class CarbonSQLHadoopMapReduceCommitProtocol(jobId: String, path: String, isAppend: Boolean)
+  extends SQLHadoopMapReduceCommitProtocol(jobId, path, isAppend) {
+
+  override def newTaskTempFileAbsPath(
+      taskContext: TaskAttemptContext, absoluteDir: String, ext: String): String = {
+    val carbonFlow = taskContext.getConfiguration.get(
+      CarbonSQLHadoopMapReduceCommitProtocol.COMMIT_PROTOCOL)
+    val tempPath = super.newTaskTempFileAbsPath(taskContext, absoluteDir, ext)
+    // Call only in case of carbon flow.
+    if (carbonFlow != null) {
+      // Create subfolder with uuid and write carbondata files
+      val path = new Path(tempPath)
+      val uuid = path.getName.substring(0, path.getName.indexOf("-part-"))
+      new Path(new Path(path.getParent, uuid), path.getName).toString
+    } else {
+      tempPath
+    }
+  }
+
+  override def commitJob(jobContext: JobContext,
+      taskCommits: Seq[FileCommitProtocol.TaskCommitMessage]): Unit = {
+    val carbonFlow = jobContext.getConfiguration.get(
+      CarbonSQLHadoopMapReduceCommitProtocol.COMMIT_PROTOCOL)
+    var updatedTaskCommits = taskCommits
+    // Call only in case of carbon flow.
+    if (carbonFlow != null) {
+      val (allAbsPathFiles, allPartitionPaths) =
+        // spark 2.1 and 2.2 case
+        if (taskCommits.exists(_.obj.isInstanceOf[Map[String, String]])) {
+        (taskCommits.map(_.obj.asInstanceOf[Map[String, String]]), null)
+      } else {
+          // spark 2.3 and above
+        taskCommits.map(_.obj.asInstanceOf[(Map[String, String], Set[String])]).unzip
+      }
+      val filesToMove = allAbsPathFiles.foldLeft(Map[String, String]())(_ ++ _)
+      val fs = new Path(path).getFileSystem(jobContext.getConfiguration)
+      // Move files from stage directory to actual location.
+      filesToMove.foreach{case (src, dest) =>
+        val srcPath = new Path(src)
+        val name = srcPath.getName
+        // Get uuid from spark's stage filename
+        val uuid = name.substring(0, name.indexOf("-part-"))
+        // List all the files under the uuid location
+        val list = fs.listStatus(new Path(new Path(src).getParent, uuid))
+        // Move all these files to actual folder.
+        list.foreach{ f =>
+          fs.rename(f.getPath, new Path(new Path(dest).getParent, f.getPath.getName))
+        }
+      }
+      updatedTaskCommits = if (allPartitionPaths == null) {
+        taskCommits.map(f => new FileCommitProtocol.TaskCommitMessage(Map.empty))
+      } else {
+        taskCommits.zipWithIndex.map{f =>
+          new FileCommitProtocol.TaskCommitMessage((Map.empty, allPartitionPaths(f._2)))
+        }
+      }
+    }
+    super.commitJob(jobContext, updatedTaskCommits)
+  }
+}
+object CarbonSQLHadoopMapReduceCommitProtocol {
+  val COMMIT_PROTOCOL = "carbon.commit.protocol"
 }
 
 

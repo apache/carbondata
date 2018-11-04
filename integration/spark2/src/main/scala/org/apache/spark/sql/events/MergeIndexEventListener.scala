@@ -24,10 +24,12 @@ import scala.collection.mutable
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.CarbonMergeFilesRDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.util.CarbonException
 
-import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
@@ -40,12 +42,12 @@ import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
 import org.apache.carbondata.spark.util.CommonUtil
 
 class MergeIndexEventListener extends OperationEventListener with Logging {
-  val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
     event match {
       case preStatusUpdateEvent: LoadTablePostExecutionEvent =>
-        LOGGER.audit("Load post status event-listener called for merge index")
+        Audit.log(LOGGER, "Load post status event-listener called for merge index")
         val loadModel = preStatusUpdateEvent.getCarbonLoadModel
         val carbonTable = loadModel.getCarbonDataLoadSchema.getCarbonTable
         val compactedSegments = loadModel.getMergedSegmentIds
@@ -61,7 +63,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
 
             segmentFileNameMap
               .put(loadModel.getSegmentId, String.valueOf(loadModel.getFactTimeStamp))
-            CommonUtil.mergeIndexFiles(sparkSession,
+            CarbonMergeFilesRDD.mergeIndexFiles(sparkSession,
               Seq(loadModel.getSegmentId),
               segmentFileNameMap,
               carbonTable.getTablePath,
@@ -71,7 +73,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
           }
         }
       case alterTableCompactionPostEvent: AlterTableCompactionPostEvent =>
-        LOGGER.audit("Merge index for compaction called")
+        Audit.log(LOGGER, "Merge index for compaction called")
         val carbonTable = alterTableCompactionPostEvent.carbonTable
         val mergedLoads = alterTableCompactionPostEvent.compactedLoads
         val sparkSession = alterTableCompactionPostEvent.sparkSession
@@ -79,11 +81,10 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
           mergeIndexFilesForCompactedSegments(sparkSession, carbonTable, mergedLoads)
         }
       case alterTableMergeIndexEvent: AlterTableMergeIndexEvent =>
-        val alterTableModel = alterTableMergeIndexEvent.alterTableModel
         val carbonMainTable = alterTableMergeIndexEvent.carbonTable
         val sparkSession = alterTableMergeIndexEvent.sparkSession
         if (!carbonMainTable.isStreamingSink) {
-          LOGGER.audit(s"Compaction request received for table " +
+          Audit.log(LOGGER, s"Compaction request received for table " +
                        s"${ carbonMainTable.getDatabaseName }.${ carbonMainTable.getTableName }")
           LOGGER.info(s"Merge Index request received for table " +
                       s"${ carbonMainTable.getDatabaseName }.${ carbonMainTable.getTableName }")
@@ -117,7 +118,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
               // readFileFooterFromCarbonDataFile flag should be true. This flag is check for legacy
               // store (store <= 1.1 version) and create merge Index file as per new store so that
               // old store is also upgraded to new store
-              CommonUtil.mergeIndexFiles(
+              CarbonMergeFilesRDD.mergeIndexFiles(
                 sparkSession = sparkSession,
                 segmentIds = validSegmentIds,
                 segmentFileNameToSegmentIdMap = segmentFileNameMap,
@@ -129,7 +130,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
               clearBlockDataMapCache(carbonMainTable, validSegmentIds)
               val requestMessage = "Compaction request completed for table " +
                 s"${ carbonMainTable.getDatabaseName }.${ carbonMainTable.getTableName }"
-              LOGGER.audit(requestMessage)
+              Audit.log(LOGGER, requestMessage)
               LOGGER.info(requestMessage)
             } else {
               val lockMessage = "Not able to acquire the compaction lock for table " +
@@ -138,7 +139,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
                                     .getTableName
                                 }"
 
-              LOGGER.audit(lockMessage)
+              Audit.log(LOGGER, lockMessage)
               LOGGER.error(lockMessage)
               CarbonException.analysisException(
                 "Table is already locked for compaction. Please try after some time.")
@@ -177,7 +178,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
     val validMergedSegIds = validSegments
       .filter { seg => mergedSegmentIds.contains(seg.getSegmentNo) }.map(_.getSegmentNo)
     if (null != validMergedSegIds && validMergedSegIds.nonEmpty) {
-      CommonUtil.mergeIndexFiles(sparkSession,
+      CarbonMergeFilesRDD.mergeIndexFiles(sparkSession,
           validMergedSegIds,
           segmentFileNameMap,
           carbonTable.getTablePath,

@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
+import org.apache.log4j.Logger;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapMeta;
@@ -49,7 +49,7 @@ import org.apache.hadoop.conf.Configuration;
  * Min Max DataMap Factory
  */
 public class MinMaxIndexDataMapFactory extends CoarseGrainDataMapFactory {
-  private static final LogService LOGGER = LogServiceFactory.getLogService(
+  private static final Logger LOGGER = LogServiceFactory.getLogService(
       MinMaxIndexDataMapFactory.class.getName());
   private DataMapMeta dataMapMeta;
   private String dataMapName;

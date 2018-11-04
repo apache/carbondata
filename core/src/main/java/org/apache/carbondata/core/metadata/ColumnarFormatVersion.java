@@ -49,7 +49,7 @@ public enum ColumnarFormatVersion {
       case 3:
         return V3;
       default:
-        return V3;
+        throw new UnsupportedOperationException("Unsupported columnar format version: " + version);
     }
   }
 }

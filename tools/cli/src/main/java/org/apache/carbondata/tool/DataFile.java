@@ -114,7 +114,8 @@ class DataFile {
     this.footer = footer;
     String filePath = dataFile.getPath();
     // folder path that contains this file
-    String fileName = filePath.substring(filePath.lastIndexOf(FILE_SEPARATOR));
+    String fileName =
+        filePath.substring(filePath.replaceAll("\\\\", FILE_SEPARATOR).lastIndexOf(FILE_SEPARATOR));
     this.shardName = CarbonTablePath.getShardName(fileName);
     this.partNo = CarbonTablePath.DataFileUtil.getPartNo(fileName);
 
@@ -160,7 +161,9 @@ class DataFile {
   }
 
   FileFooter3 readFooter() throws IOException {
-    this.fileReader = FileFactory.getFileHolder(FileFactory.getFileType(dataFile.getPath()));
+    if (this.fileReader == null) {
+      this.fileReader = FileFactory.getFileHolder(FileFactory.getFileType(dataFile.getPath()));
+    }
     ByteBuffer buffer = fileReader.readByteBuffer(FileFactory.getUpdatedFilePath(
         dataFile.getPath()), dataFile.getSize() - 8, 8);
     this.footerOffset = buffer.getLong();
@@ -317,6 +320,10 @@ class DataFile {
     // min/max stats of this column chunk
     byte[] min, max;
 
+    // to set whether min max is present for the column chunck, as we may not right min max after
+    // specific size
+    boolean isMinMaxPresent;
+
     // percentage of min/max comparing to min/max scope collected in all blocklets
     // they are set after calculation in DataSummary
     double minPercentage, maxPercentage;
@@ -335,6 +342,7 @@ class DataFile {
       this.column = column;
       min = index.min_max_index.min_values.get(columnIndex).array();
       max = index.min_max_index.max_values.get(columnIndex).array();
+      isMinMaxPresent = index.min_max_index.min_max_presence.get(columnIndex);
 
       // read the column chunk metadata: DataChunk3
       ByteBuffer buffer = fileReader.readByteBuffer(
@@ -495,4 +503,7 @@ class DataFile {
     }
   }
 
+  public void close() throws IOException {
+    this.fileReader.finish();
+  }
 }

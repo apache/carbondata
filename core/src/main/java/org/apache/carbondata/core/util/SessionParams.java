@@ -23,8 +23,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.constants.LoggerAction;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.common.logging.impl.Audit;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstantsInternal;
@@ -56,12 +56,14 @@ import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CAR
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT;
 import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB;
 
+import org.apache.log4j.Logger;
+
 /**
  * This class maintains carbon session params
  */
 public class SessionParams implements Serializable, Cloneable {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CacheProvider.class.getName());
   private static final long serialVersionUID = -7801994600594915264L;
 
@@ -124,7 +126,8 @@ public class SessionParams implements Serializable, Cloneable {
         value = value.toUpperCase();
       }
       if (doAuditing) {
-        LOGGER.audit("The key " + key + " with value " + value + " added in the session param");
+        Audit.log(LOGGER,
+            "The key " + key + " with value " + value + " added in the session param");
       }
       sProps.put(key, value);
     }

@@ -17,15 +17,15 @@
 
 package org.apache.carbondata.examples.sdk;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
-import org.apache.carbondata.sdk.file.*;
+import org.apache.carbondata.sdk.file.CarbonReader;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 import static org.apache.hadoop.fs.s3a.Constants.ACCESS_KEY;
 import static org.apache.hadoop.fs.s3a.Constants.ENDPOINT;
@@ -36,7 +36,7 @@ import static org.apache.hadoop.fs.s3a.Constants.SECRET_KEY;
  */
 public class SDKS3ReadExample {
     public static void main(String[] args) throws Exception {
-        LogService logger = LogServiceFactory.getLogService(SDKS3ReadExample.class.getName());
+        Logger logger = LogServiceFactory.getLogService(SDKS3ReadExample.class.getName());
         if (args == null || args.length < 3) {
             logger.error("Usage: java CarbonS3Example: <access-key> <secret-key>"
                 + "<s3-endpoint> [table-path-on-s3]");

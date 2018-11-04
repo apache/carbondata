@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -49,6 +48,7 @@ import org.apache.carbondata.format.MergedBlockIndex;
 import org.apache.carbondata.format.MergedBlockIndexHeader;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;
 
 /**
@@ -60,7 +60,7 @@ public class SegmentIndexFileStore {
   /**
    * Logger constant
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(SegmentIndexFileStore.class.getName());
   /**
    * Stores the indexfile name and related binary file data in it.
@@ -505,7 +505,7 @@ public class SegmentIndexFileStore {
   private List<BlockletInfo> getBlockletInfoFromIndexInfo(TableBlockInfo blockInfo)
       throws IOException {
     long startTime = System.currentTimeMillis();
-    DataFileFooter carbondataFileFooter = CarbonUtil.readMetadatFile(blockInfo);
+    DataFileFooter carbondataFileFooter = CarbonUtil.readMetadataFile(blockInfo);
     LOGGER.info(
         "Time taken to read carbondata file footer to get blocklet info " + blockInfo.getFilePath()
             + " is " + (System.currentTimeMillis() - startTime));

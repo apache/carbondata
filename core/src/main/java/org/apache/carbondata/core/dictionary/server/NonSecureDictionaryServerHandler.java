@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.core.dictionary.server;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.dictionary.generator.ServerDictionaryGenerator;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
@@ -26,6 +25,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import org.apache.log4j.Logger;
 
 /**
  * Handler for Dictionary server.
@@ -33,7 +33,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 @ChannelHandler.Sharable public class NonSecureDictionaryServerHandler
     extends ChannelInboundHandlerAdapter {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(NonSecureDictionaryServerHandler.class.getName());
 
   /**
@@ -77,7 +77,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
    * @param cause
    */
   @Override public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-    LOGGER.error(cause, "exceptionCaught");
+    LOGGER.error("exceptionCaught", cause);
     ctx.close();
   }
 

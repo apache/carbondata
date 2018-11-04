@@ -696,17 +696,17 @@ object GlobalDictionaryUtil {
     } catch {
       case ex: Exception =>
         if (ex.getCause != null && ex.getCause.isInstanceOf[NoRetryException]) {
-          LOGGER.error(ex.getCause, "generate global dictionary failed")
+          LOGGER.error("generate global dictionary failed", ex.getCause)
           throw new Exception("generate global dictionary failed, " +
                               ex.getCause.getMessage)
         }
         ex match {
           case spx: SparkException =>
-            LOGGER.error(spx, "generate global dictionary failed")
+            LOGGER.error("generate global dictionary failed", spx)
             throw new Exception("generate global dictionary failed, " +
                                 trimErrorMessage(spx.getMessage))
           case _ =>
-            LOGGER.error(ex, "generate global dictionary failed")
+            LOGGER.error("generate global dictionary failed", ex)
             throw ex
         }
     }

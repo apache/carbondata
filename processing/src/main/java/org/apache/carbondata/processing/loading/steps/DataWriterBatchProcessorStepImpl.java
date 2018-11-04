@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
@@ -40,6 +39,8 @@ import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.CarbonFactHandlerFactory;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.log4j.Logger;
+
 /**
  * It reads data from batch of sorted files(it could be in-memory/disk based files)
  * which are generated in previous sort step. And it writes data to carbondata file.
@@ -47,7 +48,7 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
  */
 public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(DataWriterBatchProcessorStepImpl.class.getName());
 
   private Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap;
@@ -66,11 +67,10 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
     child.initialize();
   }
 
-  private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier) {
-    return CarbonDataProcessorUtil.getLocalDataFolderLocation(
-        tableIdentifier.getDatabaseName(), tableIdentifier.getTableName(),
-        String.valueOf(configuration.getTaskNo()),
-        configuration.getSegmentId(), false, false);
+  private String[] getStoreLocation() {
+    return CarbonDataProcessorUtil
+        .getLocalDataFolderLocation(configuration.getTableSpec().getCarbonTable(),
+            String.valueOf(configuration.getTaskNo()), configuration.getSegmentId(), false, false);
   }
 
   @Override public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
@@ -83,7 +83,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
           .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PATITION_ID,
               System.currentTimeMillis());
       int i = 0;
-      String[] storeLocation = getStoreLocation(tableIdentifier);
+      String[] storeLocation = getStoreLocation();
       CarbonDataProcessorUtil.createLocations(storeLocation);
       for (Iterator<CarbonRowBatch> iterator : iterators) {
         int k = 0;
@@ -112,7 +112,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
         i++;
       }
     } catch (Exception e) {
-      LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterBatchProcessorStepImpl");
+      LOGGER.error("Failed for table: " + tableName + " in DataWriterBatchProcessorStepImpl", e);
       if (e.getCause() instanceof BadRecordFoundException) {
         throw new BadRecordFoundException(e.getCause().getMessage());
       }
@@ -132,7 +132,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
     } catch (Exception e) {
       // if throw exception from here dataHandler will not be closed.
       // so just holding exception and later throwing exception
-      LOGGER.error(e, "Failed for table: " + tableName + " in  finishing data handler");
+      LOGGER.error("Failed for table: " + tableName + " in  finishing data handler", e);
       exception = new CarbonDataWriterException(
           "Failed for table: " + tableName + " in  finishing data handler", e);
     }
@@ -140,7 +140,9 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
     try {
       processingComplete(dataHandler);
     } catch (Exception e) {
-      exception = new CarbonDataWriterException(e.getMessage(), e);
+      if (null == exception) {
+        exception = new CarbonDataWriterException(e);
+      }
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
         .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PATITION_ID,

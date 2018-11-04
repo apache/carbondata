@@ -68,46 +68,46 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   def buildTestDataSingleFile(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestData(3, false, null)
+    buildTestData(3, null)
   }
 
   def buildTestDataMultipleFiles(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestData(1000000, false, null)
+    buildTestData(1000000, null)
   }
 
   def buildTestDataTwice(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestData(3, false, null)
-    buildTestData(3, false, null)
+    buildTestData(3, null)
+    buildTestData(3, null)
   }
 
   def buildTestDataSameDirectory(): Any = {
-    buildTestData(3, false, null)
+    buildTestData(3, null)
   }
 
   def buildTestDataWithBadRecordForce(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     var options = Map("bAd_RECords_action" -> "FORCE").asJava
-    buildTestData(3, false, options)
+    buildTestData(3, options)
   }
 
   def buildTestDataWithBadRecordFail(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     var options = Map("bAd_RECords_action" -> "FAIL").asJava
-    buildTestData(15001, false, options)
+    buildTestData(15001, options)
   }
 
   def buildTestDataWithBadRecordIgnore(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     var options = Map("bAd_RECords_action" -> "IGNORE").asJava
-    buildTestData(3, false, options)
+    buildTestData(3, options)
   }
 
   def buildTestDataWithBadRecordRedirect(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
     var options = Map("bAd_RECords_action" -> "REDIRECT").asJava
-    buildTestData(3, false, options)
+    buildTestData(3, options)
   }
 
   def buildTestDataWithSortColumns(sortColumns: List[String]): Any = {
@@ -115,7 +115,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     buildTestData(3, null, sortColumns)
   }
 
-  def buildTestData(rows: Int, persistSchema: Boolean, options: util.Map[String, String]): Any = {
+  def buildTestData(rows: Int, options: util.Map[String, String]): Any = {
     buildTestData(rows, options, List("name"))
   }
 
@@ -139,13 +139,13 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
             .sortBy(sortColumns.toArray)
             .uniqueIdentifier(
               System.currentTimeMillis).withBlockSize(2).withLoadOptions(options)
-            .withCsvInput(Schema.parseJson(schema)).build()
+            .withCsvInput(Schema.parseJson(schema)).writtenBy("TestNonTransactionalCarbonTable").build()
         } else {
           builder.outputPath(writerPath)
             .sortBy(sortColumns.toArray)
             .uniqueIdentifier(
               System.currentTimeMillis).withBlockSize(2)
-            .withCsvInput(Schema.parseJson(schema)).build()
+            .withCsvInput(Schema.parseJson(schema)).writtenBy("TestNonTransactionalCarbonTable").build()
         }
       var i = 0
       while (i < rows) {
@@ -180,7 +180,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       val writer =
         builder.outputPath(writerPath)
           .uniqueIdentifier(System.currentTimeMillis()).withBlockSize(2).sortBy(sortColumns)
-          .withCsvInput(new Schema(fields)).build()
+          .withCsvInput(new Schema(fields)).writtenBy("TestNonTransactionalCarbonTable").build()
       var i = 0
       while (i < rows) {
         writer.write(Array[String]("true", String.valueOf(i), String.valueOf(i.toDouble / 2)))
@@ -194,7 +194,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   // prepare sdk writer output
   def buildTestDataWithSameUUID(rows: Int,
-      persistSchema: Boolean,
       options: util.Map[String, String],
       sortColumns: List[String]): Any = {
     val schema = new StringBuilder()
@@ -212,7 +211,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
           .sortBy(sortColumns.toArray)
           .uniqueIdentifier(
             123).withBlockSize(2)
-          .withCsvInput(Schema.parseJson(schema)).build()
+          .withCsvInput(Schema.parseJson(schema)).writtenBy("TestNonTransactionalCarbonTable").build()
       var i = 0
       while (i < rows) {
         writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
@@ -297,7 +296,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     "Read two sdk writer outputs before and after deleting the existing files and creating new " +
     "files with same schema and UUID") {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestDataWithSameUUID(3, false, null, List("name"))
+    buildTestDataWithSameUUID(3, null, List("name"))
     assert(new File(writerPath).exists())
 
     sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -319,7 +318,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     // and creation of new file can happen at same timestamp.
     Thread.sleep(1000)
     assert(!new File(writerPath).exists())
-    buildTestDataWithSameUUID(4, false, null, List("name"))
+    buildTestDataWithSameUUID(4, null, List("name"))
     checkAnswer(sql("select * from sdkOutputTable"), Seq(
       Row("robot0", 0, 0.0),
       Row("robot1", 1, 0.5),
@@ -334,7 +333,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   test(" test csv fileheader for transactional table") {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestDataWithSameUUID(3, false, null, List("Name"))
+    buildTestDataWithSameUUID(3, null, List("Name"))
     assert(new File(writerPath).exists())
 
     sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -363,14 +362,14 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
   test("test count star with multiple loads files with same schema and UUID") {
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestDataWithSameUUID(3, false, null, List("namE"))
+    buildTestDataWithSameUUID(3, null, List("namE"))
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
     sql(
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY 'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
     checkAnswer(sql(s"""select count(*) from sdkOutputTable """), Seq(Row(3)))
-    buildTestDataWithSameUUID(3, false, null, List("name"))
+    buildTestDataWithSameUUID(3, null, List("name"))
     // should reflect new count
     checkAnswer(sql(s"""select count(*) from sdkOutputTable """), Seq(Row(6)))
     sql("DROP TABLE sdkOutputTable")
@@ -389,6 +388,10 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY
          |'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
+
+    val output = sql("show summary for table sdkOutputTable options('command'='-cmd,summary,-p,-a,-v,-c,age')").collect()
+
+    assert(output.toList.contains(Row("written_by                       Version         ")))
 
     checkExistence(sql("describe formatted sdkOutputTable"), true, "age,name")
 
@@ -841,7 +844,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       Row("robot1", 1, 0.5),
       Row("robot2", 2, 1.0)))
 
-    buildTestDataWithSameUUID(3, false, null, List("name"))
+    buildTestDataWithSameUUID(3, null, List("name"))
 
     checkAnswer(sql("select * from sdkOutputTable"), Seq(
       Row("robot0", 0, 0.0),
@@ -854,7 +857,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       Row("robot1", 1, 0.5),
       Row("robot2", 2, 1.0)))
 
-    buildTestDataWithSameUUID(3, false, null, List("name"))
+    buildTestDataWithSameUUID(3, null, List("name"))
 
     checkAnswer(sql("select * from sdkOutputTable"), Seq(
       Row("robot0", 0, 0.0),
@@ -906,7 +909,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
       Row("robot2", 2, 1.0)))
 
     FileUtils.deleteDirectory(new File(writerPath))
-    buildTestData(4, false, null)
+    buildTestData(4, null)
 
     checkAnswer(sql("select * from sdkOutputTable"), Seq(
       Row("robot0", 0, 0.0),
@@ -986,7 +989,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val builder: CarbonWriterBuilder = CarbonWriter.builder.outputPath(writerPath)
       .withLoadOptions(options)
 
-    val writer: CarbonWriter = builder.withCsvInput(new Schema(fields)).build()
+    val writer: CarbonWriter = builder.withCsvInput(new Schema(fields)).writtenBy("TestNonTransactionalCarbonTable").build()
     writer.write(Array("babu","1","02-01-2002","02-01-2002 01:01:00"))
     writer.close()
 
@@ -1073,7 +1076,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         sql("select * from sdkOutputTable").show(false)
       }
     assert(exception.getMessage()
-      .contains("Problem in loading segment blocks."))
+      .contains("Problem in loading segment blocks"))
 
 
     sql("DROP TABLE sdkOutputTable")
@@ -1111,7 +1114,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     try {
       val writer = CarbonWriter.builder
         .outputPath(writerPath)
-        .uniqueIdentifier(System.currentTimeMillis()).withAvroInput(nn).build()
+        .uniqueIdentifier(System.currentTimeMillis()).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTable").build()
       var i = 0
       while (i < rows) {
         writer.write(record)
@@ -2085,7 +2088,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
     assert(intercept[RuntimeException] {
       val writer = CarbonWriter.builder.sortBy(Array("name", "id"))
-        .outputPath(writerPath).withAvroInput(nn).build()
+        .outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTable").build()
       writer.write(record)
       writer.close()
     }.getMessage.toLowerCase.contains("column: name specified in sort columns"))
@@ -2125,7 +2128,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).withAvroInput(nn).build()
+      .outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTable").build()
     writer.write(record)
     writer.close()
   }
@@ -2163,7 +2166,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder.sortBy(Array("id"))
-      .outputPath(writerPath).withAvroInput(nn).build()
+      .outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTable").build()
     writer.write(record)
     writer.close()
   }
@@ -2207,7 +2210,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val record = testUtil.jsonToAvro(json1, schema)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).withAvroInput(nn).build()
+      .outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTable").build()
     writer.write(record)
     writer.close()
   }
@@ -2247,7 +2250,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).withAvroInput(nn).build()
+      .outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTable").build()
     writer.write(record)
     writer.close()
     sql(
@@ -2293,7 +2296,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val record = testUtil.jsonToAvro(json1, schema1)
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).withAvroInput(nn).build()
+      .outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTable").build()
     writer.write(record)
     writer.close()
     sql(
@@ -2340,7 +2343,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
 
     val writer = CarbonWriter.builder
-      .outputPath(writerPath).withAvroInput(nn).build()
+      .outputPath(writerPath).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTable").build()
     writer.write(record)
     writer.close()
     sql(
@@ -2360,7 +2363,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val writer: CarbonWriter = CarbonWriter.builder
       .outputPath(writerPath)
       .withTableProperties(options)
-      .withCsvInput(new Schema(fields)).build()
+      .withCsvInput(new Schema(fields)).writtenBy("TestNonTransactionalCarbonTable").build()
     writer.write(Array("carbon", "1"))
     writer.write(Array("hydrogen", "10"))
     writer.write(Array("boron", "4"))
@@ -2378,7 +2381,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     // write local sort data
     val writer1: CarbonWriter = CarbonWriter.builder
       .outputPath(writerPath)
-      .withCsvInput(new Schema(fields)).build()
+      .withCsvInput(new Schema(fields)).writtenBy("TestNonTransactionalCarbonTable").build()
     writer1.write(Array("carbon", "1"))
     writer1.write(Array("hydrogen", "10"))
     writer1.write(Array("boron", "4"))
@@ -2394,7 +2397,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     FileUtils.deleteDirectory(new File(writerPath))
     val builder = CarbonWriter.builder
       .sortBy(Array[String]("name")).withBlockSize(12).enableLocalDictionary(true)
-      .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath)
+      .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath).writtenBy("TestNonTransactionalCarbonTable")
     generateCarbonData(builder)
     assert(FileFactory.getCarbonFile(writerPath).exists())
     assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
@@ -2404,7 +2407,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'$writerPath' """.stripMargin)
     val descLoc = sql("describe formatted sdkTable").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("false"))
+      case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
     FileUtils.deleteDirectory(new File(writerPath))
@@ -2419,7 +2422,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         "local_dictionary_enable" -> "true").asJava
     val builder = CarbonWriter.builder
       .withTableProperties(tablePropertiesMap)
-      .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath)
+      .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath).writtenBy("TestNonTransactionalCarbonTable")
     generateCarbonData(builder)
     assert(FileFactory.getCarbonFile(writerPath).exists())
     assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
@@ -2429,7 +2432,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'$writerPath' """.stripMargin)
     val descLoc = sql("describe formatted sdkTable").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("false"))
+      case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
     FileUtils.deleteDirectory(new File(writerPath))
@@ -2440,7 +2443,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val builder = CarbonWriter.builder
       .sortBy(Array[String]("name")).withBlockSize(12).enableLocalDictionary(true)
       .localDictionaryThreshold(5)
-      .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath)
+      .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath).writtenBy("TestNonTransactionalCarbonTable")
     generateCarbonData(builder)
     assert(FileFactory.getCarbonFile(writerPath).exists())
     assert(!testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
@@ -2450,7 +2453,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'$writerPath' """.stripMargin)
     val descLoc = sql("describe formatted sdkTable").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("false"))
+      case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
     FileUtils.deleteDirectory(new File(writerPath))
@@ -2461,7 +2464,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     val builder = CarbonWriter.builder
       .sortBy(Array[String]("name")).withBlockSize(12).enableLocalDictionary(true)
       .localDictionaryThreshold(200)
-      .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath)
+      .uniqueIdentifier(System.currentTimeMillis).taskNo(System.nanoTime).outputPath(writerPath).writtenBy("TestNonTransactionalCarbonTable")
     generateCarbonData(builder)
     assert(FileFactory.getCarbonFile(writerPath).exists())
     assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
@@ -2472,10 +2475,10 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     FileUtils.deleteDirectory(new File(writerPath))
     sql("insert into sdkTable select 's1','s2',23 ")
     assert(FileFactory.getCarbonFile(writerPath).exists())
-    assert(!testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
+    assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
     val descLoc = sql("describe formatted sdkTable").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("false"))
+      case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
     checkAnswer(sql("select count(*) from sdkTable"), Seq(Row(1)))

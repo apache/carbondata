@@ -28,7 +28,8 @@ import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
 
 import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException
-import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.impl.Audit
 import org.apache.carbondata.core.datamap.{DataMapProvider, DataMapStoreManager}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
@@ -52,7 +53,7 @@ case class CarbonDropDataMapCommand(
     forceDrop: Boolean = false)
   extends AtomicRunnableCommand {
 
-  private val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   private var dataMapProvider: DataMapProvider = _
   var mainTable: CarbonTable = _
   var dataMapSchema: DataMapSchema = _
@@ -111,7 +112,7 @@ case class CarbonDropDataMapCommand(
         locksToBeAcquired foreach {
           lock => carbonLocks += CarbonLockUtil.getLockObject(tableIdentifier, lock)
         }
-        LOGGER.audit(s"Deleting datamap [$dataMapName] under table [$tableName]")
+        Audit.log(LOGGER, s"Deleting datamap [$dataMapName] under table [$tableName]")
 
         // drop index,mv datamap on the main table.
         if (mainTable != null &&
@@ -172,7 +173,7 @@ case class CarbonDropDataMapCommand(
         case e: NoSuchDataMapException =>
           throw e
         case ex: Exception =>
-          LOGGER.error(ex, s"Dropping datamap $dataMapName failed")
+          LOGGER.error(s"Dropping datamap $dataMapName failed", ex)
           throwMetadataException(dbName, tableName,
             s"Dropping datamap $dataMapName failed: ${ ex.getMessage }")
       }

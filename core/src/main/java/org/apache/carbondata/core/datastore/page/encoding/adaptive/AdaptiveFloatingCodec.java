@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.page.encoding.adaptive;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
@@ -26,6 +27,7 @@ import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ColumnPageValueConverter;
+import org.apache.carbondata.core.datastore.page.DecimalColumnPage;
 import org.apache.carbondata.core.datastore.page.LazyColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
@@ -34,6 +36,10 @@ import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.Encoding;
 
@@ -113,7 +119,20 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
         return LazyColumnPage.newPage(page, converter);
       }
 
-      @Override public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
+      @Override
+      public void decodeAndFillVector(byte[] input, int offset, int length,
+          ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded)
+          throws MemoryException, IOException {
+        ColumnPage page = ColumnPage.decompress(meta, input, offset, length, isLVEncoded);
+        page.setNullBits(nullBits);
+        if (page instanceof DecimalColumnPage) {
+          vectorInfo.decimalConverter = ((DecimalColumnPage) page).getDecimalConverter();
+        }
+        converter.decodeAndFillVector(page, vectorInfo);
+      }
+
+      @Override
+      public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)
           throws MemoryException, IOException {
         return decode(input, offset, length);
       }
@@ -225,6 +244,82 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
     @Override
     public double decodeDouble(double value) {
       throw new RuntimeException("internal error: " + debugInfo());
+    }
+
+    @Override
+    public void decodeAndFillVector(ColumnPage columnPage, ColumnVectorInfo vectorInfo) {
+      CarbonColumnVector vector = vectorInfo.vector;
+      BitSet nullBits = columnPage.getNullBits();
+      DataType pageDataType = columnPage.getDataType();
+      int pageSize = columnPage.getPageSize();
+      BitSet deletedRows = vectorInfo.deletedRows;
+      DataType vectorDataType = vector.getType();
+      vector = ColumnarVectorWrapperDirectFactory
+          .getDirectVectorWrapperFactory(vector, null, nullBits, deletedRows, true, false);
+      if (vectorDataType == DataTypes.FLOAT) {
+        if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {
+          byte[] byteData = columnPage.getBytePage();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putFloat(i, (byteData[i] / floatFactor));
+          }
+        } else if (pageDataType == DataTypes.SHORT) {
+          short[] shortData = columnPage.getShortPage();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putFloat(i, (shortData[i] / floatFactor));
+          }
+
+        } else if (pageDataType == DataTypes.SHORT_INT) {
+          byte[] shortIntPage = columnPage.getShortIntPage();
+          for (int i = 0; i < pageSize; i++) {
+            int shortInt = ByteUtil.valueOf3Bytes(shortIntPage, i * 3);
+            vector.putFloat(i, (shortInt / floatFactor));
+          }
+        } else if (pageDataType == DataTypes.INT) {
+          int[] intData = columnPage.getIntPage();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putFloat(i, (intData[i] / floatFactor));
+          }
+        } else {
+          throw new RuntimeException("internal error: " + this.toString());
+        }
+      } else {
+        if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {
+          byte[] byteData = columnPage.getBytePage();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, (byteData[i] / factor));
+          }
+        } else if (pageDataType == DataTypes.SHORT) {
+          short[] shortData = columnPage.getShortPage();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, (shortData[i] / factor));
+          }
+
+        } else if (pageDataType == DataTypes.SHORT_INT) {
+          byte[] shortIntPage = columnPage.getShortIntPage();
+          for (int i = 0; i < pageSize; i++) {
+            int shortInt = ByteUtil.valueOf3Bytes(shortIntPage, i * 3);
+            vector.putDouble(i, (shortInt / factor));
+          }
+        } else if (pageDataType == DataTypes.INT) {
+          int[] intData = columnPage.getIntPage();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, (intData[i] / factor));
+          }
+        } else if (pageDataType == DataTypes.LONG) {
+          long[] longData = columnPage.getLongPage();
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i, (longData[i] / factor));
+          }
+        } else {
+          throw new RuntimeException("Unsupported datatype : " + pageDataType);
+        }
+      }
+
+      if (deletedRows == null || deletedRows.isEmpty()) {
+        for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
+          vector.putNull(i);
+        }
+      }
     }
   };
 }

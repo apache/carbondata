@@ -22,7 +22,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -31,9 +30,7 @@ import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
@@ -44,6 +41,8 @@ import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+
+import org.apache.log4j.Logger;
 
 /**
  * This is the Merger class responsible for the merging of the segments.
@@ -61,7 +60,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
    */
   private AbstractQueue<RawResultIterator> recordHolderHeap;
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(RowResultMergerProcessor.class.getName());
 
   public RowResultMergerProcessor(String databaseName,
@@ -73,18 +72,19 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
     this.loadModel = loadModel;
     CarbonDataProcessorUtil.createLocations(tempStoreLocation);
 
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
     String carbonStoreLocation;
     if (partitionSpec != null) {
       carbonStoreLocation =
           partitionSpec.getLocation().toString() + CarbonCommonConstants.FILE_SEPARATOR + loadModel
               .getFactTimeStamp() + ".tmp";
     } else {
-      carbonStoreLocation = CarbonDataProcessorUtil.createCarbonStoreLocation(
-          loadModel.getDatabaseName(), tableName, loadModel.getSegmentId());
+      carbonStoreLocation = CarbonDataProcessorUtil
+          .createCarbonStoreLocation(loadModel.getCarbonDataLoadSchema().getCarbonTable(),
+              loadModel.getSegmentId());
     }
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
-        .getCarbonFactDataHandlerModel(loadModel, carbonTable, segProp, tableName,
+        .getCarbonFactDataHandlerModel(loadModel,
+            loadModel.getCarbonDataLoadSchema().getCarbonTable(), segProp, tableName,
             tempStoreLocation, carbonStoreLocation);
     setDataFileAttributesInModel(loadModel, compactionType, carbonFactDataHandlerModel);
     carbonFactDataHandlerModel.setCompactionFlow(true);
@@ -170,6 +170,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
       mergeStatus = true;
     } catch (Exception e) {
       mergeStatus = false;
+      LOGGER.error(e.getLocalizedMessage(), e);
       throw e;
     } finally {
       try {

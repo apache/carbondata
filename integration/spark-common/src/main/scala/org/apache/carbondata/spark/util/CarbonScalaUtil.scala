@@ -27,6 +27,7 @@ import scala.collection.mutable
 import scala.util.Try
 
 import com.univocity.parsers.common.TextParsingException
+import org.apache.log4j.Logger
 import org.apache.spark.SparkException
 import org.apache.spark.sql._
 import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
@@ -363,7 +364,7 @@ object CarbonScalaUtil {
   /**
    * Retrieve error message from exception
    */
-  def retrieveAndLogErrorMsg(ex: Throwable, logger: LogService): (String, String) = {
+  def retrieveAndLogErrorMsg(ex: Throwable, logger: Logger): (String, String) = {
     var errorMessage = "DataLoad failure"
     var executorMessage = ""
     if (ex != null) {
@@ -668,6 +669,22 @@ object CarbonScalaUtil {
 
   def isStringDataType(dataType: DataType): Boolean = {
     dataType == StringType
+  }
+
+  /**
+   * Rearrange the column schema with all the sort columns at first. In case of ALTER ADD COLUMNS,
+   * if the newly added column is a sort column it will be at the last. But we expects all the
+   * SORT_COLUMNS always at first
+   *
+   * @param columnSchemas
+   * @return
+   */
+  def reArrangeColumnSchema(columnSchemas: mutable.Buffer[ColumnSchema]): mutable
+  .Buffer[ColumnSchema] = {
+    val newColumnSchemas = mutable.Buffer[ColumnSchema]()
+    newColumnSchemas ++= columnSchemas.filter(columnSchema => columnSchema.isSortColumn)
+    newColumnSchemas ++= columnSchemas.filterNot(columnSchema => columnSchema.isSortColumn)
+    newColumnSchemas
   }
 
 }

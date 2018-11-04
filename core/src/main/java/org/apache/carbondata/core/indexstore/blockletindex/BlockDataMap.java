@@ -16,11 +16,15 @@
  */
 package org.apache.carbondata.core.indexstore.blockletindex;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
@@ -66,6 +70,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
 
 /**
  * Datamap implementation for block.
@@ -73,7 +78,7 @@ import org.apache.hadoop.fs.Path;
 public class BlockDataMap extends CoarseGrainDataMap
     implements BlockletDataMapRowIndexes, Serializable {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(BlockDataMap.class.getName());
 
   protected static final long serialVersionUID = -2170289352240810993L;
@@ -210,7 +215,7 @@ public class BlockDataMap extends CoarseGrainDataMap
       List<DataFileFooter> indexInfo) throws IOException, MemoryException {
     DataMapRowImpl summaryRow = null;
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
-    boolean[] minMaxFlag = new boolean[segmentProperties.getDimensions().size()];
+    boolean[] minMaxFlag = new boolean[segmentProperties.getColumnsValueSize().length];
     Arrays.fill(minMaxFlag, true);
     for (DataFileFooter fileFooter : indexInfo) {
       TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
@@ -250,8 +255,11 @@ public class BlockDataMap extends CoarseGrainDataMap
       CarbonRowSchema[] taskSummarySchema, SegmentProperties segmentProperties,
       boolean[] minMaxFlag) {
     // add min max flag for all the dimension columns
-    addMinMaxFlagValues(summaryRow, taskSummarySchema[TASK_MIN_MAX_FLAG], minMaxFlag,
-        TASK_MIN_MAX_FLAG, segmentProperties.getDimensions().size());
+    boolean[] minMaxFlagValuesForColumnsToBeCached = BlockletDataMapUtil
+        .getMinMaxFlagValuesForColumnsToBeCached(segmentProperties, getMinMaxCacheColumns(),
+            minMaxFlag);
+    addMinMaxFlagValues(summaryRow, taskSummarySchema[TASK_MIN_MAX_FLAG],
+        minMaxFlagValuesForColumnsToBeCached, TASK_MIN_MAX_FLAG);
   }
 
   /**
@@ -276,10 +284,10 @@ public class BlockDataMap extends CoarseGrainDataMap
     boolean isLastFileFooterEntryNeedToBeAdded = false;
     CarbonRowSchema[] schema = getFileFooterEntrySchema();
     // flag for each block entry
-    boolean[] minMaxFlag = new boolean[segmentProperties.getDimensions().size()];
+    boolean[] minMaxFlag = new boolean[segmentProperties.getColumnsValueSize().length];
     Arrays.fill(minMaxFlag, true);
     // min max flag for task summary
-    boolean[] taskSummaryMinMaxFlag = new boolean[segmentProperties.getDimensions().size()];
+    boolean[] taskSummaryMinMaxFlag = new boolean[segmentProperties.getColumnsValueSize().length];
     Arrays.fill(taskSummaryMinMaxFlag, true);
     for (DataFileFooter fileFooter : indexInfo) {
       TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
@@ -323,7 +331,7 @@ public class BlockDataMap extends CoarseGrainDataMap
               summaryRow,
               blockletDataMapInfo.getBlockMetaInfoMap().get(previousBlockInfo.getFilePath()),
               blockMinValues, blockMaxValues, minMaxFlag);
-          minMaxFlag = new boolean[segmentProperties.getDimensions().size()];
+          minMaxFlag = new boolean[segmentProperties.getColumnsValueSize().length];
           Arrays.fill(minMaxFlag, true);
           // flag to check whether last file footer entry is different from previous entry.
           // If yes then it need to be added at last
@@ -407,6 +415,8 @@ public class BlockDataMap extends CoarseGrainDataMap
         .getMinMaxForColumnsToBeCached(segmentProperties, minMaxCacheColumns, minValues);
     byte[][] maxValuesForColumnsToBeCached = BlockletDataMapUtil
         .getMinMaxForColumnsToBeCached(segmentProperties, minMaxCacheColumns, maxValues);
+    boolean[] minMaxFlagValuesForColumnsToBeCached = BlockletDataMapUtil
+        .getMinMaxFlagValuesForColumnsToBeCached(segmentProperties, minMaxCacheColumns, minMaxFlag);
     row.setRow(addMinMax(schema[ordinal], minValuesForColumnsToBeCached), ordinal);
     // compute and set task level min values
     addTaskMinMaxValues(summaryRow, taskSummarySchema, taskMinMaxOrdinal,
@@ -435,8 +445,7 @@ public class BlockDataMap extends CoarseGrainDataMap
       // store block size
       row.setLong(blockMetaInfo.getSize(), ordinal++);
       // add min max flag for all the dimension columns
-      addMinMaxFlagValues(row, schema[ordinal], minMaxFlag, ordinal,
-          segmentProperties.getDimensions().size());
+      addMinMaxFlagValues(row, schema[ordinal], minMaxFlagValuesForColumnsToBeCached, ordinal);
       memoryDMStore.addIndexRow(schema, row);
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -445,13 +454,13 @@ public class BlockDataMap extends CoarseGrainDataMap
   }
 
   protected void addMinMaxFlagValues(DataMapRow row, CarbonRowSchema carbonRowSchema,
-      boolean[] minMaxFlag, int ordinal, int dimensionCount) {
+      boolean[] minMaxFlag, int ordinal) {
     CarbonRowSchema[] minMaxFlagSchema =
         ((CarbonRowSchema.StructCarbonRowSchema) carbonRowSchema).getChildSchemas();
     DataMapRow minMaxFlagRow = new DataMapRowImpl(minMaxFlagSchema);
     int flagOrdinal = 0;
     // min value adding
-    for (int i = 0; i < dimensionCount; i++) {
+    for (int i = 0; i < minMaxFlag.length; i++) {
       minMaxFlagRow.setBoolean(minMaxFlag[i], flagOrdinal++);
     }
     row.setRow(minMaxFlagRow, ordinal);
@@ -997,7 +1006,7 @@ public class BlockDataMap extends CoarseGrainDataMap
         SegmentPropertiesAndSchemaHolder.getInstance()
             .getSegmentPropertiesWrapper(segmentPropertiesIndex);
     try {
-      return segmentPropertiesWrapper.getTaskSummarySchema(true, isFilePathStored);
+      return segmentPropertiesWrapper.getTaskSummarySchemaForBlock(true, isFilePathStored);
     } catch (MemoryException e) {
       throw new RuntimeException(e);
     }

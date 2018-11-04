@@ -571,7 +571,8 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     spark.sql("drop table if exists array_com_hive")
     spark.sql(s"drop table if exists array_com")
     spark.sql("create table array_com_hive (CUST_ID string, YEAR int, MONTH int, AGE int, GENDER string, EDUCATED string, IS_MARRIED string, ARRAY_INT array<int>,ARRAY_STRING array<string>,ARRAY_DATE array<timestamp>,CARD_COUNT int,DEBIT_COUNT int, CREDIT_COUNT int, DEPOSIT double, HQ_DEPOSIT double) row format delimited fields terminated by ',' collection items terminated by '$'")
-    spark.sql(s"load data local inpath '$resource/Array.csv' into table array_com_hive")
+    val sourceFile = FileFactory.getPath(s"$resource/Array.csv").toString
+    spark.sql(s"load data local inpath '$sourceFile' into table array_com_hive")
     spark.sql("create table Array_com (CUST_ID string, YEAR int, MONTH int, AGE int, GENDER string, EDUCATED string, IS_MARRIED string, ARRAY_INT array<int>,ARRAY_STRING array<string>,ARRAY_DATE array<timestamp>,CARD_COUNT int,DEBIT_COUNT int, CREDIT_COUNT int, DEPOSIT double, HQ_DEPOSIT double) using carbon")
     spark.sql("insert into Array_com select * from array_com_hive")
     TestUtil.checkAnswer(spark.sql("select * from Array_com order by CUST_ID ASC limit 3"), spark.sql("select * from array_com_hive order by CUST_ID ASC limit 3"))
@@ -583,7 +584,8 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     spark.sql("drop table if exists STRUCT_OF_ARRAY_com_hive")
     spark.sql(s"drop table if exists STRUCT_OF_ARRAY_com")
     spark.sql(" create table STRUCT_OF_ARRAY_com_hive (CUST_ID string, YEAR int, MONTH int, AGE int, GENDER string, EDUCATED string, IS_MARRIED string, STRUCT_OF_ARRAY struct<ID: int,CHECK_DATE: timestamp ,SNo: array<int>,sal1: array<double>,state: array<string>,date1: array<timestamp>>,CARD_COUNT int,DEBIT_COUNT int, CREDIT_COUNT int, DEPOSIT float, HQ_DEPOSIT double) row format delimited fields terminated by ',' collection items terminated by '$' map keys terminated by '&'")
-    spark.sql(s"load data local inpath '$resource/structofarray.csv' into table STRUCT_OF_ARRAY_com_hive")
+    val sourceFile = FileFactory.getPath(s"$resource/structofarray.csv").toString
+    spark.sql(s"load data local inpath '$sourceFile' into table STRUCT_OF_ARRAY_com_hive")
     spark.sql("create table STRUCT_OF_ARRAY_com (CUST_ID string, YEAR int, MONTH int, AGE int, GENDER string, EDUCATED string, IS_MARRIED string, STRUCT_OF_ARRAY struct<ID: int,CHECK_DATE: timestamp,SNo: array<int>,sal1: array<double>,state: array<string>,date1: array<timestamp>>,CARD_COUNT int,DEBIT_COUNT int, CREDIT_COUNT int, DEPOSIT double, HQ_DEPOSIT double) using carbon")
     spark.sql(" insert into STRUCT_OF_ARRAY_com select * from STRUCT_OF_ARRAY_com_hive")
     TestUtil.checkAnswer(spark.sql("select * from STRUCT_OF_ARRAY_com  order by CUST_ID ASC"), spark.sql("select * from STRUCT_OF_ARRAY_com_hive  order by CUST_ID ASC"))
@@ -628,7 +630,8 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       PDP_ADDR string,APN_NI string,APN_OI string,CARD_ID string,TIME_OUT int,LOGIN_TIME timestamp,USER_IMPU string,OPPO_IMPU string,USER_LAST_IMPI string,
       USER_CURR_IMPI string,SUPSERVICE_TYPE bigint,SUPSERVICE_TYPE_SUBCODE bigint,SMS_CENTERNUM string,USER_LAST_LONGITUDE double,USER_LAST_LATITUDE double,
       USER_LAST_MSC string,USER_LAST_BASE_STATION string,LOAD_ID bigint,P_CAP_TIME string)  ROW format delimited FIELDS terminated by '|'""".stripMargin)
-    spark.sql(s"load data local inpath '$resource/j2.csv' into table h_jin")
+    val sourceFile = FileFactory.getPath(s"$resource/j2.csv").toString
+    spark.sql(s"load data local inpath '$sourceFile' into table h_jin")
     spark.sql(s"""create table c_jin(RECORD_ID string,
       CDR_ID string,LOCATION_CODE int,SYSTEM_ID string,
       CLUE_ID string,HIT_ELEMENT string,CARRIER_CODE string,CAP_TIME date,
@@ -970,7 +973,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
 
   test("test struct of float type and byte type") {
     import scala.collection.JavaConverters._
-    val path = new File(warehouse1+"/sdk1").getAbsolutePath
+    val path = FileFactory.getPath(warehouse1+"/sdk1").toString
     FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
     spark.sql("drop table if exists complextable")
     val fields = List(new StructField
@@ -984,7 +987,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       val writer =
         builder.outputPath(path)
           .uniqueIdentifier(System.nanoTime()).withBlockSize(2)
-          .withCsvInput(new Schema(structType)).build()
+          .withCsvInput(new Schema(structType)).writtenBy("SparkCarbonDataSourceTest").build()
 
       var i = 0
       while (i < 11) {
@@ -1014,8 +1017,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
   }
 
   test("test bytefield as sort column") {
-    import scala.collection.JavaConverters._
-    val path = new File(warehouse1+"/sdk1").getAbsolutePath
+    val path = FileFactory.getPath(warehouse1+"/sdk1").toString
     FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
     var fields: Array[Field] = new Array[Field](8)
     // same column name, but name as boolean type
@@ -1031,7 +1033,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       val writer =
         builder.outputPath(path)
           .uniqueIdentifier(System.nanoTime()).withBlockSize(2).sortBy(Array("bytefield"))
-          .withCsvInput(new Schema(fields)).build()
+          .withCsvInput(new Schema(fields)).writtenBy("SparkCarbonDataSourceTest").build()
 
       var i = 0
       while (i < 11) {
@@ -1070,7 +1072,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
 
   test("test array of float type and byte type") {
     import scala.collection.JavaConverters._
-    val path = new File(warehouse1+"/sdk1").getAbsolutePath
+    val path = FileFactory.getPath(warehouse1+"/sdk1").toString
     FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
     spark.sql("drop table if exists complextable")
     val structType =
@@ -1085,7 +1087,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       val writer =
         builder.outputPath(path)
           .uniqueIdentifier(System.nanoTime()).withBlockSize(2)
-          .withCsvInput(new Schema(structType)).build()
+          .withCsvInput(new Schema(structType)).writtenBy("SparkCarbonDataSourceTest").build()
 
       var i = 0
       while (i < 10) {
@@ -1156,7 +1158,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       val writer =
         builder.outputPath(writerPath)
           .uniqueIdentifier(System.nanoTime()).withBlockSize(2).sortBy(sortColumns)
-          .withCsvInput(new Schema(fields)).build()
+          .withCsvInput(new Schema(fields)).writtenBy("SparkCarbonDataSourceTest").build()
 
       var i = 0
       while (i < rows) {
@@ -1239,7 +1241,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
   }
 
   test("test byte and float for multiple pages") {
-    val path = new File(warehouse1+"/sdk1").getAbsolutePath
+    val path = FileFactory.getPath(warehouse1+"/sdk1").toString
     FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
     spark.sql("drop table if exists multi_page")
     var fields: Array[Field] = new Array[Field](8)
@@ -1253,7 +1255,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
       val writer =
         builder.outputPath(path)
           .uniqueIdentifier(System.nanoTime()).withBlockSize(2)
-          .withCsvInput(new Schema(fields)).build()
+          .withCsvInput(new Schema(fields)).writtenBy("SparkCarbonDataSourceTest").build()
 
       var i = 0
       while (i < 33000) {
@@ -1272,6 +1274,40 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     } finally {
       FileFactory.deleteAllFilesOfDir(new File(warehouse1+"/sdk1"))
     }
+  }
+
+  test("test partition issue with add location") {
+    spark.sql("drop table if exists partitionTable_obs")
+    spark.sql("drop table if exists partitionTable_obs_par")
+    spark.sql(s"create table partitionTable_obs (id int,name String,email String) using carbon partitioned by(email) ")
+    spark.sql(s"create table partitionTable_obs_par (id int,name String,email String) using parquet partitioned by(email) ")
+    spark.sql("insert into partitionTable_obs select 1,'huawei','abc'")
+    spark.sql("insert into partitionTable_obs select 1,'huawei','bcd'")
+    spark.sql(s"alter table partitionTable_obs add partition (email='def') location '$warehouse1/test_folder121/'")
+    spark.sql("insert into partitionTable_obs select 1,'huawei','def'")
+
+    spark.sql("insert into partitionTable_obs_par select 1,'huawei','abc'")
+    spark.sql("insert into partitionTable_obs_par select 1,'huawei','bcd'")
+    spark.sql(s"alter table partitionTable_obs_par add partition (email='def') location '$warehouse1/test_folder122/'")
+    spark.sql("insert into partitionTable_obs_par select 1,'huawei','def'")
+
+    checkAnswer(spark.sql("select * from partitionTable_obs"), spark.sql("select * from partitionTable_obs_par"))
+    spark.sql("drop table if exists partitionTable_obs")
+    spark.sql("drop table if exists partitionTable_obs_par")
+  }
+
+  test("test multiple partition  select issue") {
+    spark.sql("drop table if exists t_carbn01b_hive")
+    spark.sql(s"drop table if exists t_carbn01b")
+    spark.sql("create table t_carbn01b_hive(Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Create_date String,Active_status String,Item_type_cd INT, Update_time TIMESTAMP, Discount_price DOUBLE)  using parquet partitioned by (Active_status,Item_type_cd, Update_time, Discount_price)")
+    spark.sql("create table t_carbn01b(Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Create_date String,Active_status String,Item_type_cd INT, Update_time TIMESTAMP, Discount_price DOUBLE)  using carbon partitioned by (Active_status,Item_type_cd, Update_time, Discount_price)")
+    spark.sql("insert into t_carbn01b partition(Active_status, Item_type_cd,Update_time,Discount_price) select * from t_carbn01b_hive")
+    spark.sql("alter table t_carbn01b add partition (active_status='xyz',Item_type_cd=12,Update_time=NULL,Discount_price='3000')")
+    spark.sql("insert overwrite table t_carbn01b select 'xyz', 12, 74,3000,20000000,121.5,4.99,2.44,'RE3423ee','dddd', 'ssss','2012-01-02 23:04:05.12', '2012-01-20'")
+    spark.sql("insert overwrite table t_carbn01b_hive select 'xyz', 12, 74,3000,20000000,121.5,4.99,2.44,'RE3423ee','dddd', 'ssss','2012-01-02 23:04:05.12', '2012-01-20'")
+    checkAnswer(spark.sql("select * from t_carbn01b_hive"), spark.sql("select * from t_carbn01b"))
+    spark.sql("drop table if exists t_carbn01b_hive")
+    spark.sql(s"drop table if exists t_carbn01b")
   }
 
   override protected def beforeAll(): Unit = {

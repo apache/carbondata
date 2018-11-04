@@ -236,6 +236,12 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
   public RecordWriter<NullWritable, ObjectArrayWritable> getRecordWriter(
       final TaskAttemptContext taskAttemptContext) throws IOException {
     final CarbonLoadModel loadModel = getLoadModel(taskAttemptContext.getConfiguration());
+    String appName =
+        taskAttemptContext.getConfiguration().get(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME);
+    if (null != appName) {
+      CarbonProperties.getInstance()
+          .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, appName);
+    }
     //if loadModel having taskNo already(like in SDK) then no need to overwrite
     short sdkWriterCores = loadModel.getSdkWriterCores();
     int itrSize = (sdkWriterCores > 0) ? sdkWriterCores : 1;
@@ -267,9 +273,6 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
             iterator.closeWriter(true);
           }
           dataLoadExecutor.close();
-          // clean up the folders and files created locally for data load operation
-          TableProcessingOperations.deleteLocalDataLoadFolderLocation(loadModel, false, false);
-
           throw new RuntimeException(e);
         } finally {
           ThreadLocalSessionInfo.unsetAll();

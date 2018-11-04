@@ -38,7 +38,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
   var writerPath = new File(this.getClass.getResource("/").getPath
                             +
                             "../." +
-                            "./src/test/resources/SparkCarbonFileFormat/WriterOutput/")
+                            "./target/SparkCarbonFileFormat/WriterOutput/")
     .getCanonicalPath
   //getCanonicalPath gives path with \, but the code expects /.
   writerPath = writerPath.replace("\\", "/")
@@ -68,11 +68,11 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
         CarbonWriter.builder
           .outputPath(writerPath).enableLocalDictionary(true)
           .localDictionaryThreshold(2000)
-          .uniqueIdentifier(System.currentTimeMillis()).withAvroInput(nn).build()
+          .uniqueIdentifier(System.currentTimeMillis()).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithComplexType").build()
       } else {
         CarbonWriter.builder
           .outputPath(writerPath)
-          .uniqueIdentifier(System.currentTimeMillis()).withAvroInput(nn).build()
+          .uniqueIdentifier(System.currentTimeMillis()).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithComplexType").build()
       }
       var i = 0
       while (i < rows) {
@@ -218,7 +218,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
     sql("describe formatted localComplex").show(30, false)
     val descLoc = sql("describe formatted localComplex").collect
     descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("false"))
+      case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
 
@@ -268,7 +268,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
       """.stripMargin
     val pschema= org.apache.avro.Schema.parse(mySchema)
     val records = testUtil.jsonToAvro(jsonvalue, mySchema)
-    val writer = CarbonWriter.builder().outputPath(writerPath).withAvroInput(pschema).build()
+    val writer = CarbonWriter.builder().outputPath(writerPath).withAvroInput(pschema).writtenBy("TestNonTransactionalCarbonTableWithComplexType").build()
     writer.write(records)
     writer.close()
     sql("DROP TABLE IF EXISTS sdkOutputTable")

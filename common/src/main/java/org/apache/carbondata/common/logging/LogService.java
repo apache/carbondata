@@ -17,35 +17,89 @@
 
 package org.apache.carbondata.common.logging;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
+import org.apache.carbondata.common.logging.impl.AuditLevel;
+import org.apache.carbondata.common.logging.impl.StatisticLevel;
+
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.log4j.Logger;
+
 /**
- * for Log Services
+ * Log Services, wrapper of org.apache.log4j.Logger
  */
-public interface LogService {
+public class LogService extends Logger {
 
-  void debug(String message);
+  private static String hostName;
+  private static String username;
 
-  void info(String message);
+  {
+    try {
+      hostName = InetAddress.getLocalHost().getHostName();
+    } catch (UnknownHostException e) {
+      hostName = "localhost";
+    }
+    try {
+      username = UserGroupInformation.getCurrentUser().getShortUserName();
+    } catch (IOException e) {
+      username = "unknown";
+    }
+  }
 
-  void warn(String message);
+  protected LogService(String name) {
+    super(name);
+  }
 
-  void error(String message);
+  public void debug(String message) {
+    super.debug(message);
+  }
 
-  void error(Throwable throwable);
+  public void info(String message) {
+    super.info(message);
+  }
 
-  void error(Throwable throwable, String message);
+  public void warn(String message) {
+    super.warn(message);
+  }
 
-  void audit(String message);
+  public void error(String message) {
+    super.error(message);
+  }
+
+  public void error(Throwable throwable) {
+    super.error(throwable);
+  }
+
+  public void error(Throwable throwable, String message) {
+    super.error(message, throwable);
+  }
+
+  public void audit(String message) {
+    String threadid = Thread.currentThread().getId() + "";
+    super.log(AuditLevel.AUDIT,
+        "[" + hostName + "]" + "[" + username + "]" + "[Thread-" + threadid + "]" + message);
+  }
 
   /**
    * Below method will be used to log the statistic information
    *
    * @param message statistic message
    */
-  void statistic(String message);
+  public void statistic(String message) {
+    super.log(StatisticLevel.STATISTIC, message);
+  }
 
-  boolean isDebugEnabled();
+  public boolean isDebugEnabled() {
+    return super.isDebugEnabled();
+  }
 
-  boolean isWarnEnabled();
+  public boolean isWarnEnabled() {
+    return super.isEnabledFor(org.apache.log4j.Level.WARN);
+  }
 
-  boolean isInfoEnabled();
+  public boolean isInfoEnabled() {
+    return super.isInfoEnabled();
+  }
 }

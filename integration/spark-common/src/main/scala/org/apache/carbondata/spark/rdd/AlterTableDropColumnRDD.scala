@@ -71,7 +71,7 @@ class AlterTableDropColumnRDD[K, V](
         }
       } catch {
         case ex: Exception =>
-          LOGGER.error(ex, ex.getMessage)
+          LOGGER.error(ex.getMessage, ex)
           throw ex
       }
 

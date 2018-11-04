@@ -34,7 +34,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
@@ -93,6 +92,7 @@ import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
+import org.apache.log4j.Logger;
 
 /**
  * This class will create store file based on provided schema
@@ -100,7 +100,7 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
  */
 public class StoreCreator {
 
-  private static LogService LOG =
+  private static final Logger LOG =
       LogServiceFactory.getLogService(StoreCreator.class.getCanonicalName());
   private AbsoluteTableIdentifier absoluteTableIdentifier;
   private String storePath = null;

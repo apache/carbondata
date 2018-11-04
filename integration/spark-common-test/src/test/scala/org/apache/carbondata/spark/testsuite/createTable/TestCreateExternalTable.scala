@@ -101,7 +101,7 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
            |LOCATION '$storeLocation/origin'
      """.stripMargin)
     }
-    assert(ex.message.contains("Schema may not be specified for external table"))
+    assert(ex.message.contains("Schema must not be specified for external table"))
 
     sql("DROP TABLE IF EXISTS source")
 

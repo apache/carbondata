@@ -72,11 +72,6 @@ public class TestUtil {
         100, schema, path, sortColumns, -1, -1);
   }
 
-  public static void writeFilesAndVerify(int rows, Schema schema, String path) {
-    writeFilesAndVerify(
-        rows, schema, path, null, -1, -1);
-  }
-
   public static void writeFilesAndVerify(Schema schema, String path) {
     writeFilesAndVerify(
         100, schema, path, null, -1, -1);
@@ -85,14 +80,12 @@ public class TestUtil {
   /**
    * write file and verify
    *
-   * @param rows                 number of rows
-   * @param schema               schema
-   * @param path                 table store path
-   * @param persistSchema        whether persist schema
-   * @param isTransactionalTable whether is transactional table
+   * @param rows   number of rows
+   * @param schema schema
+   * @param path   table store path
    */
   public static void writeFilesAndVerify(
-      int rows, Schema schema, String path, boolean persistSchema, boolean isTransactionalTable) {
+      int rows, Schema schema, String path) {
     writeFilesAndVerify(rows, schema, path, null, -1, -1);
   }
 
@@ -120,7 +113,7 @@ public class TestUtil {
         builder = builder.withBlockSize(blockSize);
       }
 
-      CarbonWriter writer = builder.withCsvInput(schema).build();
+      CarbonWriter writer = builder.withCsvInput(schema).writtenBy("TestUtil").build();
 
       for (int i = 0; i < rows; i++) {
         writer.write(new String[]{

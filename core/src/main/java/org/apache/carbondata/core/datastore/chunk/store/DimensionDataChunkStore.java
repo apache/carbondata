@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datastore.chunk.store;
 
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 /**
  * Interface responsibility is to store dimension data in memory.
@@ -33,6 +34,12 @@ public interface DimensionDataChunkStore {
    * @param data                 data to be stored
    */
   void putArray(int[] invertedIndex, int[] invertedIndexReverse, byte[] data);
+
+  /**
+   * Fill the vector with decoded data.
+   */
+  void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+      ColumnVectorInfo vectorInfo);
 
   /**
    * Below method will be used to get the row

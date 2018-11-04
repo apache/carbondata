@@ -18,7 +18,8 @@
 package org.apache.carbondata.tool;
 
 import java.io.IOException;
-import java.io.PrintStream;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -48,12 +49,12 @@ import org.apache.commons.cli.CommandLine;
 class ScanBenchmark implements Command {
 
   private String dataFolder;
-  private PrintStream out;
   private DataFile file;
+  private List<String> outPuts;
 
-  ScanBenchmark(String dataFolder, PrintStream out) {
+  ScanBenchmark(String dataFolder, List<String> outPuts) {
     this.dataFolder = dataFolder;
-    this.out = out;
+    this.outPuts = outPuts;
   }
 
   @Override
@@ -62,72 +63,89 @@ class ScanBenchmark implements Command {
       String filePath = line.getOptionValue("f");
       file = new DataFile(FileFactory.getCarbonFile(filePath));
     } else {
-      FileCollector collector = new FileCollector(out);
+      FileCollector collector = new FileCollector(outPuts);
       collector.collectFiles(dataFolder);
       if (collector.getNumDataFiles() == 0) {
         return;
       }
       Map<String, DataFile> dataFiles = collector.getDataFiles();
-      file = dataFiles.entrySet().iterator().next().getValue();
+      Iterator<DataFile> iterator = dataFiles.values().iterator();
+      // use the first file and close the rest
+      file = iterator.next();
+      while (iterator.hasNext()) {
+        iterator.next().close();
+      }
     }
 
-    out.println("\n## Benchmark");
-    AtomicReference<FileHeader> fileHeaderRef = new AtomicReference<>();
-    AtomicReference<FileFooter3> fileFoorterRef = new AtomicReference<>();
-    AtomicReference<DataFileFooter> convertedFooterRef = new AtomicReference<>();
+    outPuts.add("\n## Benchmark");
+    final AtomicReference<FileHeader> fileHeaderRef = new AtomicReference<>();
+    final AtomicReference<FileFooter3> fileFoorterRef = new AtomicReference<>();
+    final AtomicReference<DataFileFooter> convertedFooterRef = new AtomicReference<>();
 
     // benchmark read header and footer time
-    benchmarkOperation("ReadHeaderAndFooter", () -> {
-      fileHeaderRef.set(file.readHeader());
-      fileFoorterRef.set(file.readFooter());
+    benchmarkOperation("ReadHeaderAndFooter", new Operation() {
+      @Override public void run() throws IOException, MemoryException {
+        fileHeaderRef.set(file.readHeader());
+        fileFoorterRef.set(file.readFooter());
+      }
     });
-    FileHeader fileHeader = fileHeaderRef.get();
-    FileFooter3 fileFooter = fileFoorterRef.get();
+    final FileHeader fileHeader = fileHeaderRef.get();
+    final FileFooter3 fileFooter = fileFoorterRef.get();
 
     // benchmark convert footer
-    benchmarkOperation("ConvertFooter", () -> {
-      convertFooter(fileHeader, fileFooter);
+    benchmarkOperation("ConvertFooter", new Operation() {
+      @Override public void run() throws IOException, MemoryException {
+        convertFooter(fileHeader, fileFooter);
+      }
     });
 
     // benchmark read all meta and convert footer
-    benchmarkOperation("ReadAllMetaAndConvertFooter", () -> {
-      DataFileFooter footer = readAndConvertFooter(file);
-      convertedFooterRef.set(footer);
+    benchmarkOperation("ReadAllMetaAndConvertFooter", new Operation() {
+      @Override public void run() throws IOException, MemoryException {
+        DataFileFooter footer = readAndConvertFooter(file);
+        convertedFooterRef.set(footer);
+      }
     });
 
     if (line.hasOption("c")) {
       String columnName = line.getOptionValue("c");
-      out.println("\nScan column '" + columnName + "'");
+      outPuts.add("\nScan column '" + columnName + "'");
 
-      DataFileFooter footer = convertedFooterRef.get();
-      AtomicReference<AbstractRawColumnChunk> columnChunk = new AtomicReference<>();
-      int columnIndex = file.getColumnIndex(columnName);
-      boolean dimension = file.getColumn(columnName).isDimensionColumn();
+      final DataFileFooter footer = convertedFooterRef.get();
+      final AtomicReference<AbstractRawColumnChunk> columnChunk = new AtomicReference<>();
+      final int columnIndex = file.getColumnIndex(columnName);
+      final boolean dimension = file.getColumn(columnName).isDimensionColumn();
       for (int i = 0; i < footer.getBlockletList().size(); i++) {
-        int blockletId = i;
-        out.println(String.format("Blocklet#%d: total size %s, %,d pages, %,d rows",
+        final int blockletId = i;
+        outPuts.add(String.format("Blocklet#%d: total size %s, %,d pages, %,d rows",
             blockletId,
             Strings.formatSize(file.getColumnDataSizeInBytes(blockletId, columnIndex)),
             footer.getBlockletList().get(blockletId).getNumberOfPages(),
             footer.getBlockletList().get(blockletId).getNumberOfRows()));
-        benchmarkOperation("\tColumnChunk IO", () -> {
-          columnChunk.set(readBlockletColumnChunkIO(footer, blockletId, columnIndex, dimension));
+        benchmarkOperation("\tColumnChunk IO", new Operation() {
+          @Override public void run() throws IOException, MemoryException {
+            columnChunk.set(readBlockletColumnChunkIO(footer, blockletId, columnIndex, dimension));
+          }
         });
 
         if (dimensionColumnChunkReader != null) {
-          benchmarkOperation("\tDecompress Pages", () -> {
-            decompressDimensionPages(columnChunk.get(),
-                footer.getBlockletList().get(blockletId).getNumberOfPages());
+          benchmarkOperation("\tDecompress Pages", new Operation() {
+            @Override public void run() throws IOException, MemoryException {
+              decompressDimensionPages(columnChunk.get(),
+                  footer.getBlockletList().get(blockletId).getNumberOfPages());
+            }
           });
         } else {
-          benchmarkOperation("\tDecompress Pages", () -> {
-            decompressMeasurePages(columnChunk.get(),
-                footer.getBlockletList().get(blockletId).getNumberOfPages());
+          benchmarkOperation("\tDecompress Pages", new Operation() {
+            @Override public void run() throws IOException, MemoryException {
+              decompressMeasurePages(columnChunk.get(),
+                  footer.getBlockletList().get(blockletId).getNumberOfPages());
+            }
           });
         }
       }
     }
-
+    file.close();
   }
 
   interface Operation {
@@ -139,7 +157,7 @@ class ScanBenchmark implements Command {
     start = System.nanoTime();
     op.run();
     end = System.nanoTime();
-    out.println(String.format("%s takes %,d us", opName, (end - start) / 1000));
+    outPuts.add(String.format("%s takes %,d us", opName, (end - start) / 1000));
   }
 
   private DataFileFooter readAndConvertFooter(DataFile file) throws IOException {

@@ -18,12 +18,7 @@
 package org.apache.carbondata.tool;
 
 import java.io.IOException;
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.common.Strings;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -43,16 +38,16 @@ class FileCollector {
   private long numPage;
   private long numRow;
   private long totalDataSize;
+  private List<String> outPuts;
 
   // file path mapping to file object
   private LinkedHashMap<String, DataFile> dataFiles = new LinkedHashMap<>();
   private CarbonFile tableStatusFile;
   private CarbonFile schemaFile;
 
-  private PrintStream out;
 
-  FileCollector(PrintStream out) {
-    this.out = out;
+  FileCollector(List<String> outPuts) {
+    this.outPuts = outPuts;
   }
 
   void collectFiles(String dataFolder) throws IOException {
@@ -73,17 +68,22 @@ class FileCollector {
       } else if (file.getName().startsWith(CarbonTablePath.SCHEMA_FILE)) {
         schemaFile = file;
       } else if (isStreamFile(file.getName())) {
-        out.println("WARN: input path contains streaming file, this tool does not support it yet, "
-            + "skipping it...");
+        outPuts.add(("WARN: input path contains streaming file, this tool does not support it yet, "
+            + "skipping it..."));
+
       }
     }
-    unsortedFiles.sort((o1, o2) -> {
-      if (o1.getShardName().equalsIgnoreCase(o2.getShardName())) {
-        return Integer.parseInt(o1.getPartNo()) - Integer.parseInt(o2.getPartNo());
-      } else {
-        return o1.getShardName().compareTo(o2.getShardName());
+
+    Collections.sort(unsortedFiles, new Comparator<DataFile>() {
+      @Override public int compare(DataFile o1, DataFile o2) {
+        if (o1.getShardName().equalsIgnoreCase(o2.getShardName())) {
+          return Integer.parseInt(o1.getPartNo()) - Integer.parseInt(o2.getPartNo());
+        } else {
+          return o1.getShardName().compareTo(o2.getShardName());
+        }
       }
     });
+
     for (DataFile collectedFile : unsortedFiles) {
       this.dataFiles.put(collectedFile.getFilePath(), collectedFile);
     }
@@ -133,15 +133,22 @@ class FileCollector {
       System.out.println("no data file found");
       return;
     }
-    out.println("## Summary");
-    out.println(
-        String.format("total: %,d blocks, %,d shards, %,d blocklets, %,d pages, %,d rows, %s",
-            numBlock, numShard, numBlocklet, numPage, numRow, Strings.formatSize(totalDataSize)));
-    out.println(
-        String.format("avg: %s/block, %s/blocklet, %,d rows/block, %,d rows/blocklet",
-            Strings.formatSize((float) totalDataSize / numBlock),
-            Strings.formatSize((float) totalDataSize / numBlocklet),
-            numRow / numBlock,
-            numRow / numBlocklet));
+    outPuts.add("## Summary");
+    String format = String
+        .format("total: %,d blocks, %,d shards, %,d blocklets, %,d pages, %,d rows, %s", numBlock,
+            numShard, numBlocklet, numPage, numRow, Strings.formatSize(totalDataSize));
+    outPuts.add(format);
+
+    String format1 = String.format("avg: %s/block, %s/blocklet, %,d rows/block, %,d rows/blocklet",
+        Strings.formatSize((float) totalDataSize / numBlock),
+        Strings.formatSize((float) totalDataSize / numBlocklet), numRow / numBlock,
+        numRow / numBlocklet);
+    outPuts.add(format1);
+  }
+
+  public void close() throws IOException {
+    for (DataFile file : dataFiles.values()) {
+      file.close();
+    }
   }
 }

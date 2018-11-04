@@ -30,8 +30,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.common.logging.impl.Audit;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -56,13 +56,14 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import com.google.gson.Gson;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 /**
  * Manages Load/Segment status
  */
 public class SegmentStatusManager {
 
-  private static final LogService LOG =
+  private static final Logger LOG =
       LogServiceFactory.getLogService(SegmentStatusManager.class.getName());
 
   private AbsoluteTableIdentifier identifier;
@@ -252,7 +253,7 @@ public class SegmentStatusManager {
       listOfLoadFolderDetailsArray =
           gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
     } catch (IOException e) {
-      LOG.error(e, "Failed to read metadata of load");
+      LOG.error("Failed to read metadata of load", e);
       throw e;
     } finally {
       closeStreams(buffReader, inStream, dataInputStream);
@@ -370,7 +371,7 @@ public class SegmentStatusManager {
               String errorMsg = "Delete segment by id is failed for " + tableDetails
                   + ". Not able to acquire the table status lock due to other operation running "
                   + "in the background.";
-              LOG.audit(errorMsg);
+              Audit.log(LOG, errorMsg);
               LOG.error(errorMsg);
               throw new Exception(errorMsg + " Please try after some time.");
             }
@@ -380,7 +381,7 @@ public class SegmentStatusManager {
           }
 
         } else {
-          LOG.audit("Delete segment by Id is failed. No matching segment id found.");
+          Audit.log(LOG, "Delete segment by Id is failed. No matching segment id found.");
           return loadIds;
         }
 
@@ -388,7 +389,7 @@ public class SegmentStatusManager {
         String errorMsg = "Delete segment by id is failed for " + tableDetails
             + ". Not able to acquire the delete segment lock due to another delete "
             + "operation is running in the background.";
-        LOG.audit(errorMsg);
+        Audit.log(LOG, errorMsg);
         LOG.error(errorMsg);
         throw new Exception(errorMsg + " Please try after some time.");
       }
@@ -452,7 +453,7 @@ public class SegmentStatusManager {
               String errorMsg = "Delete segment by date is failed for " + tableDetails
                   + ". Not able to acquire the table status lock due to other operation running "
                   + "in the background.";
-              LOG.audit(errorMsg);
+              Audit.log(LOG, errorMsg);
               LOG.error(errorMsg);
               throw new Exception(errorMsg + " Please try after some time.");
 
@@ -462,7 +463,7 @@ public class SegmentStatusManager {
           }
 
         } else {
-          LOG.audit("Delete segment by date is failed. No matching segment found.");
+          Audit.log(LOG, "Delete segment by date is failed. No matching segment found.");
           invalidLoadTimestamps.add(loadDate);
           return invalidLoadTimestamps;
         }
@@ -471,7 +472,7 @@ public class SegmentStatusManager {
         String errorMsg = "Delete segment by date is failed for " + tableDetails
             + ". Not able to acquire the delete segment lock due to another delete "
             + "operation is running in the background.";
-        LOG.audit(errorMsg);
+        Audit.log(LOG, errorMsg);
         LOG.error(errorMsg);
         throw new Exception(errorMsg + " Please try after some time.");
       }
@@ -578,7 +579,7 @@ public class SegmentStatusManager {
       }
 
       if (!loadFound) {
-        LOG.audit("Delete segment by ID is failed. No matching segment id found :" + loadId);
+        Audit.log(LOG, "Delete segment by ID is failed. No matching segment id found :" + loadId);
         invalidLoadIds.add(loadId);
         return invalidLoadIds;
       }
@@ -632,7 +633,7 @@ public class SegmentStatusManager {
 
     if (!loadFound) {
       invalidLoadTimestamps.add(loadDate);
-      LOG.audit("Delete segment by date is failed. No matching segment found.");
+      Audit.log(LOG, "Delete segment by date is failed. No matching segment found.");
       return invalidLoadTimestamps;
     }
     return invalidLoadTimestamps;
@@ -991,7 +992,7 @@ public class SegmentStatusManager {
                 dbName + "." + tableName +
                 ". Not able to acquire the table status lock due to other operation " +
                 "running in the background.";
-            LOG.audit(errorMsg);
+            Audit.log(LOG, errorMsg);
             LOG.error(errorMsg);
             throw new IOException(errorMsg + " Please try after some time.");
           }
@@ -1000,9 +1001,9 @@ public class SegmentStatusManager {
             CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
           }
           if (updationCompletionStatus) {
-            DeleteLoadFolders.physicalFactAndMeasureMetadataDeletion(
-                identifier, carbonTable.getMetadataPath(),
-                newAddedLoadHistoryList, isForceDeletion, partitionSpecs);
+            DeleteLoadFolders
+                .physicalFactAndMeasureMetadataDeletion(carbonTable, newAddedLoadHistoryList,
+                    isForceDeletion, partitionSpecs);
           }
         }
       }

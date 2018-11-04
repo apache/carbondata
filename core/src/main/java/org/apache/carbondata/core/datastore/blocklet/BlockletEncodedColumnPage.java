@@ -24,7 +24,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.page.ActualDataBasedFallbackEncoder;
 import org.apache.carbondata.core.datastore.page.DecoderBasedFallbackEncoder;
@@ -34,6 +33,8 @@ import org.apache.carbondata.core.localdictionary.PageLevelDictionary;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.format.LocalDictionaryChunk;
+
+import org.apache.log4j.Logger;
 
 /**
  * Maintains the list of encoded page of a column in a blocklet
@@ -47,7 +48,7 @@ public class BlockletEncodedColumnPage {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(BlockletEncodedColumnPage.class.getName());
 
   /**

@@ -171,6 +171,6 @@ public class CompressedDimChunkFileBasedPageLevelReaderV3
     ByteBuffer rawData = dimensionRawColumnChunk.getFileReader()
         .readByteBuffer(filePath, offset, length);
 
-    return decodeDimension(dimensionRawColumnChunk, rawData, pageMetadata, 0);
+    return decodeDimension(dimensionRawColumnChunk, rawData, pageMetadata, 0, null);
   }
 }

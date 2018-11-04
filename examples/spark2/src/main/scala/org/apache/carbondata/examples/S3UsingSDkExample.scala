@@ -34,8 +34,7 @@ object S3UsingSDKExample {
   // prepare SDK writer output
   def buildTestData(
       path: String,
-      num: Int = 3,
-      persistSchema: Boolean = false): Any = {
+      num: Int = 3): Any = {
 
     // getCanonicalPath gives path with \, but the code expects /.
     val writerPath = path.replace("\\", "/");

@@ -20,15 +20,17 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.common.logging.impl.StatisticLevel;
+
+import org.apache.log4j.Logger;
 
 /**
  * Class will be used to record and log the query statistics
  */
 public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Serializable {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(QueryStatisticsRecorderImpl.class.getName());
 
   /**
@@ -67,7 +69,7 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
    */
   public void logStatistics() {
     for (QueryStatistic statistic : queryStatistics) {
-      LOGGER.statistic(statistic.getStatistics(queryId));
+      LOGGER.log(StatisticLevel.STATISTIC, statistic.getStatistics(queryId));
     }
   }
 
@@ -76,7 +78,8 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
    */
   public void logStatisticsForTask(TaskStatistics result) {
     if (null != result) {
-      LOGGER.statistic("Print query statistic for each task id:" + "\n" + result.toString());
+      LOGGER.log(StatisticLevel.STATISTIC,
+          "Print query statistic for each task id:" + "\n" + result.toString());
     }
   }
 

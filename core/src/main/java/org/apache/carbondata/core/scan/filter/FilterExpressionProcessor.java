@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.BitSet;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -64,9 +63,11 @@ import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.TrueConditio
 import org.apache.carbondata.core.scan.partition.PartitionUtil;
 import org.apache.carbondata.core.scan.partition.Partitioner;
 
+import org.apache.log4j.Logger;
+
 public class FilterExpressionProcessor implements FilterProcessor {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(FilterExpressionProcessor.class.getName());
 
   /**

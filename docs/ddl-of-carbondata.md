@@ -33,7 +33,9 @@ CarbonData DDL statements are documented here,which includes:
   * [Hive/Parquet folder Structure](#support-flat-folder-same-as-hiveparquet)
   * [Extra Long String columns](#string-longer-than-32000-characters)
   * [Compression for Table](#compression-for-table)
-  * [Bad Records Path](#bad-records-path)
+  * [Bad Records Path](#bad-records-path) 
+  * [Load Minimum Input File Size](#load-minimum-data-size) 
+
 * [CREATE TABLE AS SELECT](#create-table-as-select)
 * [CREATE EXTERNAL TABLE](#create-external-table)
   * [External Table on Transactional table location](#create-external-table-on-managed-table-data-location)
@@ -104,6 +106,7 @@ CarbonData DDL statements are documented here,which includes:
 | [LONG_STRING_COLUMNS](#string-longer-than-32000-characters)  | Columns which are greater than 32K characters                |
 | [BUCKETNUMBER](#bucketing)                                   | Number of buckets to be created                              |
 | [BUCKETCOLUMNS](#bucketing)                                  | Columns which are to be placed in buckets                    |
+| [LOAD_MIN_SIZE_INMB](#load-minimum-data-size)                | Minimum input data size per node for data loading          |
 
  Following are the guidelines for TBLPROPERTIES, CarbonData's additional table options can be set via carbon.properties.
 
@@ -474,7 +477,19 @@ CarbonData DDL statements are documented here,which includes:
      be later viewed in table description for reference.
 
      ```
-       TBLPROPERTIES('BAD_RECORD_PATH'='/opt/badrecords'')
+       TBLPROPERTIES('BAD_RECORD_PATH'='/opt/badrecords')
+     ```
+     
+   - ##### Load minimum data size
+     This property indicates the minimum input data size per node for data loading.
+     By default it is not enabled. Setting a non-zero integer value will enable this feature.
+     This property is useful if you have a large cluster and only want a small portion of the nodes to process data loading.
+     For example, if you have a cluster with 10 nodes and the input data is about 1GB. Without this property, each node will process about 100MB input data and result in at least 10 data files. With this property configured with 512, only 2 nodes will be chosen to process the input data, each with about 512MB input and result in about 2 or 4 files based on the compress ratio.
+     Moreover, this property can also be specified in the load option.
+     Notice that once you enable this feature, for load balance, carbondata will ignore the data locality while assigning input data to nodes, this will cause more network traffic.
+
+     ```
+       TBLPROPERTIES('LOAD_MIN_SIZE_INMB'='256')
      ```
 
 ## CREATE TABLE AS SELECT
@@ -550,7 +565,7 @@ CarbonData DDL statements are documented here,which includes:
   ```
 
   Here writer path will have carbondata and index files.
-  This can be SDK output. Refer [SDK Guide](./sdk-guide.md). 
+  This can be SDK output or CSDK output. Refer [SDK Guide](./sdk-guide.md) and [CSDK Guide](./csdk-guide.md). 
 
   **Note:**
   1. Dropping of the external table should not delete the files present in the location.
