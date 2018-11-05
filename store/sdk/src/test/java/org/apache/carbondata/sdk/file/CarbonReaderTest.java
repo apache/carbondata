@@ -2023,4 +2023,53 @@ public class CarbonReaderTest extends TestCase {
     }
   }
 
+  @Test
+  public void testReadingNullValues() {
+    String path = "./testWriteFiles";
+    try {
+      FileUtils.deleteDirectory(new File(path));
+
+      Field[] fields = new Field[2];
+      fields[0] = new Field("stringField", DataTypes.STRING);
+      fields[1] = new Field("booleanField", DataTypes.BOOLEAN);
+      CarbonWriter writer = CarbonWriter.builder()
+          .outputPath(path)
+          .withCsvInput(new Schema(fields))
+          .writtenBy("CarbonReaderTest")
+          .build();
+
+      for (int i = 0; i < 2; i++) {
+        String[] row2 = new String[]{
+            "robot" + (i % 10),
+            "",
+        };
+        writer.write(row2);
+      }
+      writer.close();
+
+      // Read data
+      CarbonReader reader = CarbonReader
+          .builder(path, "_temp")
+          .build();
+
+      int i = 0;
+      while (reader.hasNext()) {
+        reader.readNextRow();
+        i++;
+      }
+      assert (i == 2);
+      reader.close();
+    } catch (Throwable e) {
+      e.printStackTrace();
+      Assert.fail(e.getMessage());
+    } finally {
+      try {
+        FileUtils.deleteDirectory(new File(path));
+      } catch (IOException e) {
+        e.printStackTrace();
+        Assert.fail(e.getMessage());
+      }
+    }
+  }
+
 }
