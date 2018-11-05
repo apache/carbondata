@@ -733,4 +733,28 @@ public final class ByteUtil {
   public static float toXorFloat(byte[] value, int offset, int length) {
     return Float.intBitsToFloat(toXorInt(value, offset, length));
   }
+
+  public static int toIntLittleEndian(byte[] bytes, int offset) {
+    return (((int) bytes[offset + 3] & 0xff) << 24) + (((int) bytes[offset + 2] & 0xff) << 16) + (
+        ((int) bytes[offset + 1] & 0xff) << 8) + ((int) bytes[offset] & 0xff);
+  }
+
+  public static short toShortLittleEndian(byte[] bytes, int offset) {
+    return (short) ((((int) bytes[offset + 1] & 0xff) << 8) + ((int) bytes[offset] & 0xff));
+  }
+
+  public static double toDoubleLittleEndian(byte[] bytes, int offset) {
+    return Double.longBitsToDouble(toLongLittleEndian(bytes, offset));
+  }
+
+  public static float toFloatLittleEndian(byte[] bytes, int offset) {
+    return Float.intBitsToFloat(toIntLittleEndian(bytes, offset));
+  }
+
+  public static long toLongLittleEndian(byte[] bytes, int offset) {
+    return ((((long) bytes[offset + 7]) << 56) | (((long) bytes[offset + 6] & 0xff) << 48) | (
+        ((long) bytes[offset + 5] & 0xff) << 40) | (((long) bytes[offset + 4] & 0xff) << 32) | (
+        ((long) bytes[offset + 3] & 0xff) << 24) | (((long) bytes[offset + 2] & 0xff) << 16) | (
+        ((long) bytes[offset + 1] & 0xff) << 8) | (((long) bytes[offset] & 0xff)));
+  }
 }

@@ -21,7 +21,6 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.BitSet;
 
-import org.apache.carbondata.core.datastore.page.ColumnPageByteUtil;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -133,7 +132,7 @@ public final class DecimalConverterFactory {
             vector.putNull(i);
           } else {
             BigDecimal value = BigDecimal
-                .valueOf(ColumnPageByteUtil.toShort(data, i * DataTypes.SHORT.getSizeInBytes()),
+                .valueOf(ByteUtil.toShortLittleEndian(data, i * DataTypes.SHORT.getSizeInBytes()),
                     scale);
             if (value.scale() < newMeasureScale) {
               value = value.setScale(newMeasureScale);
@@ -161,7 +160,8 @@ public final class DecimalConverterFactory {
             vector.putNull(i);
           } else {
             BigDecimal value = BigDecimal
-                .valueOf(ColumnPageByteUtil.toInt(data, i * DataTypes.INT.getSizeInBytes()), scale);
+                .valueOf(ByteUtil.toIntLittleEndian(data, i * DataTypes.INT.getSizeInBytes()),
+                    scale);
             if (value.scale() < newMeasureScale) {
               value = value.setScale(newMeasureScale);
             }
@@ -174,7 +174,7 @@ public final class DecimalConverterFactory {
             vector.putNull(i);
           } else {
             BigDecimal value = BigDecimal
-                .valueOf(ColumnPageByteUtil.toLong(data, i * DataTypes.LONG.getSizeInBytes()),
+                .valueOf(ByteUtil.toLongLittleEndian(data, i * DataTypes.LONG.getSizeInBytes()),
                     scale);
             if (value.scale() < newMeasureScale) {
               value = value.setScale(newMeasureScale);

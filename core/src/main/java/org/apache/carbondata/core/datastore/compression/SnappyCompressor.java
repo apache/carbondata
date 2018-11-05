@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 import org.xerial.snappy.Snappy;
 import org.xerial.snappy.SnappyNative;
 
-public class SnappyCompressor implements Compressor {
+public class SnappyCompressor extends AbstractCompressor {
 
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(SnappyCompressor.class.getName());

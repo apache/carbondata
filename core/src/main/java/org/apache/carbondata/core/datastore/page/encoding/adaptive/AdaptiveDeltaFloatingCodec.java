@@ -26,7 +26,6 @@ import java.util.Map;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.datastore.page.ColumnPageByteUtil;
 import org.apache.carbondata.core.datastore.page.ColumnPageValueConverter;
 import org.apache.carbondata.core.datastore.page.LazyColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
@@ -260,7 +259,7 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
         } else if (pageDataType == DataTypes.SHORT) {
           int size = pageSize * DataTypes.SHORT.getSizeInBytes();
           for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
-            vector.putFloat(k++, (max - ColumnPageByteUtil.toShort(pageData, i)) / floatFactor);
+            vector.putFloat(k++, (max - ByteUtil.toShortLittleEndian(pageData, i)) / floatFactor);
           }
 
         } else if (pageDataType == DataTypes.SHORT_INT) {
@@ -285,7 +284,7 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
         } else if (pageDataType == DataTypes.SHORT) {
           int size = pageSize * DataTypes.SHORT.getSizeInBytes();
           for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
-            vector.putDouble(k++, (max - ColumnPageByteUtil.toShort(pageData, i)) / factor);
+            vector.putDouble(k++, (max - ByteUtil.toShortLittleEndian(pageData, i)) / factor);
           }
 
         } else if (pageDataType == DataTypes.SHORT_INT) {
@@ -297,7 +296,7 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
         } else if (pageDataType == DataTypes.INT) {
           int size = pageSize * DataTypes.INT.getSizeInBytes();
           for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
-            vector.putDouble(k++, (max - ColumnPageByteUtil.toInt(pageData, i)) / factor);
+            vector.putDouble(k++, (max - ByteUtil.toIntLittleEndian(pageData, i)) / factor);
           }
         } else if (pageDataType == DataTypes.LONG) {
           long[] longData = columnPage.getLongPage();
