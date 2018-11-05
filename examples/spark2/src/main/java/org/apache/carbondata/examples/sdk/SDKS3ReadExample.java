@@ -43,26 +43,23 @@ public class SDKS3ReadExample {
             System.exit(0);
         }
 
-        String path = "s3a://sdk/WriterOutput";
+        String path = "s3a://sdk/WriterOutput/carbondata5";
         if (args.length > 3) {
             path=args[3];
         }
 
         // Read data
-
         EqualToExpression equalToExpression = new EqualToExpression(
             new ColumnExpression("name", DataTypes.STRING),
             new LiteralExpression("robot1", DataTypes.STRING));
 
-        Configuration configuration = new Configuration();
-        configuration.set(ACCESS_KEY, args[0]);
-        configuration.set(SECRET_KEY, args[1]);
-        configuration.set(ENDPOINT, args[2]);
         CarbonReader reader = CarbonReader
             .builder(path, "_temp")
             .projection(new String[]{"name", "age"})
             .filter(equalToExpression)
-            .withHadoopConf(configuration)
+            .withHadoopConf(ACCESS_KEY, args[0])
+            .withHadoopConf(SECRET_KEY, args[1])
+            .withHadoopConf(ENDPOINT, args[2])
             .build();
 
         System.out.println("\nData:");
@@ -79,7 +76,9 @@ public class SDKS3ReadExample {
         CarbonReader reader2 = CarbonReader
             .builder(path, "_temp")
             .projection(new String[]{"name", "age"})
-            .withHadoopConf(configuration)
+            .withHadoopConf(ACCESS_KEY, args[0])
+            .withHadoopConf(SECRET_KEY, args[1])
+            .withHadoopConf(ENDPOINT, args[2])
             .build();
 
         System.out.println("\nData:");

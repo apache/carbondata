@@ -34,7 +34,7 @@ jobject CarbonSchemaReader::readSchema(char *path) {
         throw std::runtime_error("path parameter can't be NULL.");
     }
     jmethodID methodID = jniEnv->GetStaticMethodID(carbonSchemaReaderClass, "readSchema",
-                                                   "(Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/Schema;");
+        "(Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/Schema;");
     if (methodID == NULL) {
         throw std::runtime_error("Can't find the method in java: readSchema");
     }
@@ -53,7 +53,7 @@ jobject CarbonSchemaReader::readSchema(char *path, bool validateSchema) {
         throw std::runtime_error("path parameter can't be NULL.");
     }
     jmethodID methodID = jniEnv->GetStaticMethodID(carbonSchemaReaderClass, "readSchema",
-                                                   "(Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/Schema;");
+        "(Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/Schema;");
     if (methodID == NULL) {
         throw std::runtime_error("Can't find the method in java: readSchema");
     }
