@@ -56,11 +56,9 @@ public class CarbonReaderExample {
             fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
             fields[9] = new Field("varcharField", DataTypes.VARCHAR);
             fields[10] = new Field("arrayField", DataTypes.createArrayType(DataTypes.STRING));
-            Map<String, String> map = new HashMap<>();
-            map.put("complex_delimiter_level_1", "#");
             CarbonWriter writer = CarbonWriter.builder()
                 .outputPath(path)
-                .withLoadOptions(map)
+                .withLoadOption("complex_delimiter_level_1", "#")
                 .withCsvInput(new Schema(fields))
                 .writtenBy("CarbonReaderExample")
                 .build();
