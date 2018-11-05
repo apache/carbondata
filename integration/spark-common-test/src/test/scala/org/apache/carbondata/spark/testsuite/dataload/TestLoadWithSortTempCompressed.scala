@@ -81,6 +81,22 @@ class TestLoadWithSortTempCompressed extends QueryTest
     checkAnswer(sql(s"select count(*) from $simpleTable where c5 > 5001"), Row(5001))
   }
 
+  test("test data load for simple table without sort temp compressed and off-heap sort enabled") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR, "")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "true")
+    testSimpleTable()
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
+      originOffHeapStatus)
+  }
+
+  test("test data load for simple table without sort temp compressed and off-heap sort disabled") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR, "")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, "false")
+    testSimpleTable()
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
+      originOffHeapStatus)
+  }
+
   test("test data load for simple table with sort temp compressed with snappy" +
        " and off-heap sort enabled") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR,
