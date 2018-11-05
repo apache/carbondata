@@ -16,12 +16,21 @@
  */
 package org.apache.carbondata.core.scan.result.iterator;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.scan.result.RowBatch;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 import org.apache.log4j.Logger;
 
@@ -40,12 +49,14 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
    */
   private CarbonIterator<RowBatch> detailRawQueryResultIterator;
 
-  /**
-   * Counter to maintain the row counter.
-   */
-  private int counter = 0;
-
-  private Object[] currentConveretedRawRow = null;
+  private boolean prefetchEnabled;
+  private List<Object[]> currentBuffer;
+  private List<Object[]> backupBuffer;
+  private int currentIdxInBuffer;
+  private ExecutorService executorService;
+  private Future<Void> fetchFuture;
+  private Object[] currentRawRow = null;
+  private boolean isBackupFilled = false;
 
   /**
    * LOGGER
@@ -53,72 +64,126 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(RawResultIterator.class.getName());
 
-  /**
-   * batch of the result.
-   */
-  private RowBatch batch;
-
   public RawResultIterator(CarbonIterator<RowBatch> detailRawQueryResultIterator,
-      SegmentProperties sourceSegProperties, SegmentProperties destinationSegProperties) {
+      SegmentProperties sourceSegProperties, SegmentProperties destinationSegProperties,
+      boolean isStreamingHandoff) {
     this.detailRawQueryResultIterator = detailRawQueryResultIterator;
     this.sourceSegProperties = sourceSegProperties;
     this.destinationSegProperties = destinationSegProperties;
+    this.executorService = Executors.newFixedThreadPool(1);
+
+    if (!isStreamingHandoff) {
+      init();
+    }
+  }
+
+  private void init() {
+    this.prefetchEnabled = CarbonProperties.getInstance().getProperty(
+        CarbonCommonConstants.CARBON_COMPACTION_PREFETCH_ENABLE,
+        CarbonCommonConstants.CARBON_COMPACTION_PREFETCH_ENABLE_DEFAULT).equalsIgnoreCase("true");
+    try {
+      new RowsFetcher(false).call();
+      if (prefetchEnabled) {
+        this.fetchFuture = executorService.submit(new RowsFetcher(true));
+      }
+    } catch (Exception e) {
+      LOGGER.error("Error occurs while fetching records", e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * fetch rows
+   */
+  private final class RowsFetcher implements Callable<Void> {
+    private boolean isBackupFilling;
+
+    private RowsFetcher(boolean isBackupFilling) {
+      this.isBackupFilling = isBackupFilling;
+    }
+
+    @Override
+    public Void call() throws Exception {
+      if (isBackupFilling) {
+        backupBuffer = fetchRows();
+        isBackupFilled = true;
+      } else {
+        currentBuffer = fetchRows();
+      }
+      return null;
+    }
+  }
+
+  private List<Object[]> fetchRows() throws Exception {
+    List<Object[]> converted = new ArrayList<>();
+    if (detailRawQueryResultIterator.hasNext()) {
+      for (Object[] r : detailRawQueryResultIterator.next().getRows()) {
+        converted.add(convertRow(r));
+      }
+      return converted;
+    } else {
+      return new ArrayList<>();
+    }
+  }
+
+  private void fillDataFromPrefetch() {
+    try {
+      if (currentIdxInBuffer >= currentBuffer.size() && 0 != currentIdxInBuffer) {
+        if (prefetchEnabled) {
+          if (!isBackupFilled) {
+            fetchFuture.get();
+          }
+          // copy backup buffer to current buffer and fill backup buffer asyn
+          currentIdxInBuffer = 0;
+          currentBuffer.clear();
+          currentBuffer = backupBuffer;
+          isBackupFilled = false;
+          fetchFuture = executorService.submit(new RowsFetcher(true));
+        } else {
+          currentIdxInBuffer = 0;
+          new RowsFetcher(false).call();
+        }
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * populate a row with index counter increased
+   */
+  private void popRow() {
+    fillDataFromPrefetch();
+    currentRawRow = currentBuffer.get(currentIdxInBuffer);
+    currentIdxInBuffer++;
+  }
+
+  /**
+   * populate a row with index counter unchanged
+   */
+  private void pickRow() {
+    fillDataFromPrefetch();
+    currentRawRow = currentBuffer.get(currentIdxInBuffer);
   }
 
   @Override
   public boolean hasNext() {
-    if (null == batch || checkIfBatchIsProcessedCompletely(batch)) {
-      if (detailRawQueryResultIterator.hasNext()) {
-        batch = null;
-        batch = detailRawQueryResultIterator.next();
-        counter = 0; // batch changed so reset the counter.
-      } else {
-        return false;
-      }
-    }
-    if (!checkIfBatchIsProcessedCompletely(batch)) {
+    fillDataFromPrefetch();
+    if (currentIdxInBuffer < currentBuffer.size()) {
       return true;
-    } else {
-      return false;
     }
+
+    return false;
   }
 
   @Override
   public Object[] next() {
-    if (null == batch) { // for 1st time
-      batch = detailRawQueryResultIterator.next();
-    }
-    if (!checkIfBatchIsProcessedCompletely(batch)) {
-      try {
-        if (null != currentConveretedRawRow) {
-          counter++;
-          Object[] currentConveretedRawRowTemp = this.currentConveretedRawRow;
-          currentConveretedRawRow = null;
-          return currentConveretedRawRowTemp;
-        }
-        return convertRow(batch.getRawRow(counter++));
-      } catch (KeyGenException e) {
-        LOGGER.error(e.getMessage());
-        return null;
-      }
-    } else { // completed one batch.
-      batch = null;
-      batch = detailRawQueryResultIterator.next();
-      counter = 0;
-    }
     try {
-      if (null != currentConveretedRawRow) {
-        counter++;
-        Object[] currentConveretedRawRowTemp = this.currentConveretedRawRow;
-        currentConveretedRawRow = null;
-        return currentConveretedRawRowTemp;
-      }
-      return convertRow(batch.getRawRow(counter++));
-    } catch (KeyGenException e) {
-      LOGGER.error(e.getMessage());
-      return null;
+      popRow();
+      return this.currentRawRow;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
-
   }
 
   /**
@@ -126,17 +191,8 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
    * @return
    */
   public Object[] fetchConverted() throws KeyGenException {
-    if (null != currentConveretedRawRow) {
-      return currentConveretedRawRow;
-    }
-    if (hasNext()) {
-      Object[] rawRow = batch.getRawRow(counter);
-      currentConveretedRawRow = convertRow(rawRow);
-      return currentConveretedRawRow;
-    }
-    else {
-      return null;
-    }
+    pickRow();
+    return this.currentRawRow;
   }
 
   private Object[] convertRow(Object[] rawRow) throws KeyGenException {
@@ -148,16 +204,9 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
     return rawRow;
   }
 
-  /**
-   * To check if the batch is processed completely
-   * @param batch
-   * @return
-   */
-  private boolean checkIfBatchIsProcessedCompletely(RowBatch batch) {
-    if (counter < batch.getSize()) {
-      return false;
-    } else {
-      return true;
+  public void close() {
+    if (null != executorService) {
+      executorService.shutdownNow();
     }
   }
 }

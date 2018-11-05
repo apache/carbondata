@@ -79,7 +79,7 @@ class HandoffPartition(
  */
 class StreamingRawResultIterator(
     recordReader: RecordReader[Void, Any]
-) extends RawResultIterator(null, null, null) {
+) extends RawResultIterator(null, null, null, false) {
 
   override def hasNext: Boolean = {
     recordReader.nextKeyValue()
