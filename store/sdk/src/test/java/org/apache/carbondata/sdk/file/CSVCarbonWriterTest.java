@@ -543,4 +543,42 @@ public class CSVCarbonWriterTest {
     }
   }
 
+  @Test
+  public void testWithTableProperties() throws IOException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    try {
+      CarbonWriter writer = CarbonWriter
+          .builder()
+          .taskNo(5)
+          .outputPath(path)
+          .withCsvInput(new Schema(fields))
+          .writtenBy("CSVCarbonWriterTest")
+          .withTableProperty("sort_columns", "name")
+          .build();
+      writer.write(new String[]{"name3", "21"});
+      writer.write(new String[]{"name1", "7"});
+      writer.write(new String[]{"name2", "18"});
+      writer.close();
+
+      CarbonReader reader = CarbonReader.builder(path, "test").build();
+      int i = 0;
+      while (reader.hasNext()) {
+        i++;
+        Object[] row = (Object[]) reader.readNextRow();
+        Assert.assertTrue(("name" + i).equalsIgnoreCase(row[0].toString()));
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
 }
