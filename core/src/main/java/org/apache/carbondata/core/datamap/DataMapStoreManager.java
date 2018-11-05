@@ -345,6 +345,12 @@ public final class DataMapStoreManager {
     if (dataMap == null) {
       throw new RuntimeException("Datamap does not exist");
     }
+    // This is done to handle the scenario of stale cache because of which schema mismatch
+    // exception can be thrown. Scenario: In case of carbondata used through FileFormat API,
+    // once a table is dropped and recreated with the same name again then because the dataMap
+    // contains the stale carbon table schema mismatch exception is thrown. To avoid such scenarios
+    // it is always better to update the carbon table object retrieved
+    dataMap.getDataMapFactory().setCarbonTable(table);
     return dataMap;
   }
 

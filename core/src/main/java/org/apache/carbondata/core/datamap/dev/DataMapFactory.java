@@ -54,6 +54,10 @@ public abstract class DataMapFactory<T extends DataMap> {
     return carbonTable;
   }
 
+  public void setCarbonTable(CarbonTable carbonTable) {
+    this.carbonTable = carbonTable;
+  }
+
   public DataMapSchema getDataMapSchema() {
     return dataMapSchema;
   }
