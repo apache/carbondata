@@ -43,6 +43,7 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.mutate.data.BlockMappingVO;
+import org.apache.carbondata.core.profiler.ExplainCollector;
 import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
@@ -575,6 +576,14 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
    */
   public BlockMappingVO getBlockRowCount(Job job, CarbonTable table,
       List<PartitionSpec> partitions) throws IOException {
+    // Normal query flow goes to CarbonInputFormat#getPrunedBlocklets and initialize the
+    // pruning info for table we queried. But here count star query without filter uses a different
+    // query plan, and no pruning info is initialized. When it calls default data map to
+    // prune(with a null filter), exception will occur during setting pruning info.
+    // Considering no useful information about block/blocklet pruning for such query
+    // (actually no pruning), so we disable explain collector here
+    ExplainCollector.remove();
+
     AbsoluteTableIdentifier identifier = table.getAbsoluteTableIdentifier();
     TableDataMap blockletMap = DataMapStoreManager.getInstance().getDefaultDataMap(table);
 
