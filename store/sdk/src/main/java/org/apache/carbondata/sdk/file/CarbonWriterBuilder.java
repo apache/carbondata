@@ -77,8 +77,9 @@ public class CarbonWriterBuilder {
 
   /**
    * Sets the output path of the writer builder
+   *
    * @param path is the absolute path where output files are written
-   * This method must be called when building CarbonWriterBuilder
+   *             This method must be called when building CarbonWriterBuilder
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder outputPath(String path) {
@@ -89,9 +90,10 @@ public class CarbonWriterBuilder {
 
   /**
    * sets the list of columns that needs to be in sorted order
+   *
    * @param sortColumns is a string array of columns that needs to be sorted.
-   * If it is null or by default all dimensions are selected for sorting
-   * If it is empty array, no columns are sorted
+   *                    If it is null or by default all dimensions are selected for sorting
+   *                    If it is empty array, no columns are sorted
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder sortBy(String[] sortColumns) {
@@ -124,8 +126,9 @@ public class CarbonWriterBuilder {
   /**
    * sets the taskNo for the writer. SDKs concurrently running
    * will set taskNo in order to avoid conflicts in file's name during write.
+   *
    * @param taskNo is the TaskNo user wants to specify.
-   * by default it is system time in nano seconds.
+   *               by default it is system time in nano seconds.
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder taskNo(long taskNo) {
@@ -135,8 +138,9 @@ public class CarbonWriterBuilder {
 
   /**
    * to set the timestamp in the carbondata and carbonindex index files
+   *
    * @param timestamp is a timestamp to be used in the carbondata and carbonindex index files.
-   * By default set to zero.
+   *                  By default set to zero.
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder uniqueIdentifier(long timestamp) {
@@ -196,6 +200,22 @@ public class CarbonWriterBuilder {
       this.options = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     }
     this.options.putAll(options);
+    return this;
+  }
+
+  /**
+   * To support the load options for sdk writer
+   *
+   * @param key   the key of load option
+   * @param value the value of load option
+   * @return updated CarbonWriterBuilder object
+   */
+  public CarbonWriterBuilder withLoadOption(String key, String value) {
+    Objects.requireNonNull(key, "key of table properties should not be null");
+    Objects.requireNonNull(key, "value of table properties  should not be null");
+    Map map = new HashMap();
+    map.put(key, value);
+    withLoadOptions(map);
     return this;
   }
 
@@ -269,6 +289,22 @@ public class CarbonWriterBuilder {
   }
 
   /**
+   * To support the table properties for sdk writer
+   *
+   * @param key   property key
+   * @param value property value
+   * @return CarbonWriterBuilder object
+   */
+  public CarbonWriterBuilder withTableProperty(String key, String value) {
+    Objects.requireNonNull(key, "key of table properties should not be null");
+    Objects.requireNonNull(key, "value of table properties  should not be null");
+    Map map = new HashMap();
+    map.put(key, value);
+    withTableProperties(map);
+    return this;
+  }
+
+  /**
    * To make sdk writer thread safe.
    *
    * @param numOfThreads should number of threads in which writer is called in multi-thread scenario
@@ -315,8 +351,9 @@ public class CarbonWriterBuilder {
 
   /**
    * To set the carbondata file size in MB between 1MB-2048MB
+   *
    * @param blockSize is size in MB between 1MB to 2048 MB
-   * default value is 1024 MB
+   *                  default value is 1024 MB
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder withBlockSize(int blockSize) {
@@ -328,7 +365,7 @@ public class CarbonWriterBuilder {
   }
 
   /**
-   * @param localDictionaryThreshold is localDictionaryThreshold,default is 10000
+   * @param localDictionaryThreshold is localDictionaryThreshold, default is 10000
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder localDictionaryThreshold(int localDictionaryThreshold) {
@@ -350,7 +387,7 @@ public class CarbonWriterBuilder {
   }
 
   /**
-   * @param enableLocalDictionary enable local dictionary  , default is false
+   * @param enableLocalDictionary enable local dictionary, default is false
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder enableLocalDictionary(boolean enableLocalDictionary) {
@@ -361,8 +398,9 @@ public class CarbonWriterBuilder {
 
   /**
    * To set the blocklet size of CarbonData file
+   *
    * @param blockletSize is blocklet size in MB
-   * default value is 64 MB
+   *                     default value is 64 MB
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder withBlockletSize(int blockletSize) {
