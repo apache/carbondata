@@ -65,7 +65,8 @@ public class CarbonWriterBuilder {
   private Map<String, String> options;
   private String taskNo;
   private int localDictionaryThreshold;
-  private boolean isLocalDictionaryEnabled;
+  private boolean isLocalDictionaryEnabled = Boolean.parseBoolean(
+          CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT);
   private short numOfThreads;
   private Configuration hadoopConf;
   private String writtenByApp;
