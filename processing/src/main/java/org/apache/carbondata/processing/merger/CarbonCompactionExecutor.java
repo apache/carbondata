@@ -136,7 +136,7 @@ public class CarbonCompactionExecutor {
         resultList.add(
             new RawResultIterator(executeBlockList(list, segmentId, task, configuration),
                 sourceSegProperties,
-                destinationSegProperties));
+                destinationSegProperties, false));
       }
     }
     return resultList;
