@@ -199,7 +199,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
     try {
       carbonFiles = FileFactory.getCarbonFile(tablePath).listFiles(true, new CarbonFileFilter() {
         @Override public boolean accept(CarbonFile file) {
-          return file.getName().contains(CarbonTablePath.CARBON_DATA_EXT);
+          return file.getName().endsWith(CarbonTablePath.CARBON_DATA_EXT);
         }
       });
     } catch (IOException e) {
