@@ -230,6 +230,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           updateColumns(queryModel, fileFooter.getColumnInTable(), blockInfo.getFilePath());
           filePathToSegmentPropertiesMap.put(blockInfo.getFilePath(), segmentProperties);
         }
+        LOGGER.warn("Skipping Direct Vector Filling as it is not Supported "
+            + "for Legacy store prior to V3 store");
+        if (blockletDetailInfo.isLegacyStore()) {
+          queryModel.setDirectVectorFill(false);
+        }
         readAndFillBlockletInfo(tableBlockInfos, blockInfo,
             blockletDetailInfo, fileFooter, segmentProperties);
       } else {
