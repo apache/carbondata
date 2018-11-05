@@ -17,26 +17,41 @@
 
 package org.apache.carbondata.examples.sql;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.examples.util.ExampleUtils;
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.spark.sql.SparkSession;
-
 import java.io.File;
 import java.io.IOException;
 
-public class CarbonSessionExample {
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
+
+import org.apache.log4j.PropertyConfigurator;
+import org.apache.spark.sql.CarbonSession;
+import org.apache.spark.sql.SparkSession;
+
+public class JavaCarbonSessionExample {
 
   public static void main(String[] args) {
-    File file = new File(CarbonSessionExample.class.getResource("/").getPath() + "../..");
     try {
-      String rootPath = file.getCanonicalPath();
+      // configure log4j
+      String rootPath =
+          new File(JavaCarbonSessionExample.class.getResource("/").getPath() + "../../../..")
+              .getCanonicalPath();
       System.setProperty("path.target", rootPath + "/examples/spark2/target");
       PropertyConfigurator.configure(rootPath + "/examples/spark2/src/main/resources/log4j.properties");
-      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true");
-      SparkSession carbon = ExampleUtils.createCarbonSession("JavaCarbonSessionExample", 1);
-      carbon.sparkContext().setLogLevel("INFO");
+
+      // set timestamp and date format used in data.csv for loading
+      CarbonProperties.getInstance()
+          .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
+          .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd");
+
+      // create CarbonSession
+
+      SparkSession.Builder builder = SparkSession.builder()
+          .master("local")
+          .appName("JavaCarbonSessionExample")
+          .config("spark.driver.host", "localhost");
+
+      SparkSession carbon = new CarbonSession.CarbonBuilder(builder)
+          .getOrCreateCarbonSession();
 
       carbon.sql("DROP TABLE IF EXISTS carbonsession_table");
       carbon.sql("DROP TABLE IF EXISTS stored_as_carbondata_table");
@@ -54,8 +69,7 @@ public class CarbonSessionExample {
                       "charField CHAR(5), " +
                       "floatField FLOAT " +
                       ") " +
-                      "STORED AS carbondata" +
-                      "TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')"
+                      "STORED AS carbondata"
       );
 
       String path = rootPath + "/examples/spark2/src/main/resources/data.csv";
