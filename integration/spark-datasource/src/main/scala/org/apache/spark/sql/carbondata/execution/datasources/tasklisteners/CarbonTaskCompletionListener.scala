@@ -53,6 +53,7 @@ case class CarbonQueryTaskCompletionListenerImpl(iter: RecordReaderIterator[Inte
     if (freeMemory) {
       UnsafeMemoryManager.INSTANCE
         .freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+      ThreadLocalTaskInfo.clearCarbonTaskInfo()
     }
     DataTypeUtil.clearFormatter()
   }
@@ -68,6 +69,7 @@ case class CarbonLoadTaskCompletionListenerImpl(recordWriter: RecordWriter[NullW
     } finally {
       UnsafeMemoryManager.INSTANCE
         .freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+      ThreadLocalTaskInfo.clearCarbonTaskInfo()
       DataTypeUtil.clearFormatter()
     }
   }
