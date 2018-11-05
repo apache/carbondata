@@ -1310,6 +1310,24 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     spark.sql(s"drop table if exists t_carbn01b")
   }
 
+  test("test fileformat flow with drop and query on same table") {
+    spark.sql("drop table if exists fileformat_drop")
+    spark.sql("drop table if exists fileformat_drop_hive")
+    spark.sql("create table fileformat_drop (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId double,deviceInformationId double,productionDate Timestamp,deliveryDate timestamp,deliverycharge double) using carbon options('table_blocksize'='1','LOCAL_DICTIONARY_ENABLE'='TRUE','LOCAL_DICTIONARY_THRESHOLD'='1000')")
+    spark.sql("create table fileformat_drop_hive(imei string,deviceInformationId double,AMSize string,channelsId string,ActiveCountry string,Activecity string,gamePointId double,productionDate Timestamp,deliveryDate timestamp,deliverycharge double)row format delimited FIELDS terminated by ',' LINES terminated by '\n' stored as textfile")
+    val sourceFile = FileFactory.getPath(s"$resource/vardhandaterestruct.csv").toString
+    spark.sql(s"load data local inpath '$sourceFile' into table fileformat_drop_hive")
+    spark.sql("insert into fileformat_drop select imei ,deviceInformationId ,AMSize ,channelsId ,ActiveCountry ,Activecity ,gamePointId ,productionDate ,deliveryDate ,deliverycharge from fileformat_drop_hive")
+    assert(spark.sql("select count(*) from fileformat_drop where imei='1AA10000'").collect().length == 1)
+
+    spark.sql("drop table if exists fileformat_drop")
+    spark.sql("create table fileformat_drop (imei string,deviceInformationId double,AMSize string,channelsId string,ActiveCountry string,Activecity string,gamePointId float,productionDate timestamp,deliveryDate timestamp,deliverycharge decimal(10,2)) using carbon options('table_blocksize'='1','LOCAL_DICTIONARY_ENABLE'='true','local_dictionary_threshold'='1000')")
+    spark.sql("insert into fileformat_drop select imei ,deviceInformationId ,AMSize ,channelsId ,ActiveCountry ,Activecity ,gamePointId ,productionDate ,deliveryDate ,deliverycharge from fileformat_drop_hive")
+    assert(spark.sql("select count(*) from fileformat_drop where imei='1AA10000'").collect().length == 1)
+    spark.sql("drop table if exists fileformat_drop")
+    spark.sql("drop table if exists fileformat_drop_hive")
+  }
+
   override protected def beforeAll(): Unit = {
     drop
     createParquetTable
