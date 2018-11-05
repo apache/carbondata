@@ -29,7 +29,6 @@ import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
@@ -149,7 +148,8 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
               new StructField(msr.getColumnName(), msr.getMeasure().getDataType());
         } else if (DataTypes.isDecimal(dataType)) {
           fields[msr.getOrdinal()] = new StructField(msr.getColumnName(),
-              new DecimalType(msr.getMeasure().getPrecision(), msr.getMeasure().getScale()));
+              DataTypes.createDecimalType(msr.getMeasure().getPrecision(),
+                  msr.getMeasure().getScale()));
         } else {
           fields[msr.getOrdinal()] = new StructField(msr.getColumnName(), DataTypes.DOUBLE);
         }
@@ -171,13 +171,20 @@ public class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     rowCount += 1;
     Object[] row = new Object[carbonColumnarBatch.columnVectors.length];
     for (int i = 0; i < carbonColumnarBatch.columnVectors.length; i ++) {
+      Object data = carbonColumnarBatch.columnVectors[i].getData(batchIdx - 1);
       if (carbonColumnarBatch.columnVectors[i].getType() == DataTypes.STRING
           || carbonColumnarBatch.columnVectors[i].getType() == DataTypes.VARCHAR) {
-        byte[] data = (byte[]) carbonColumnarBatch.columnVectors[i].getData(batchIdx - 1);
-        row[i] = ByteUtil.toString(data, 0, data.length);
+        if (data == null) {
+          row[i] = null;
+        } else {
+          row[i] = ByteUtil.toString((byte[]) data, 0, (((byte[]) data).length));
+        }
       } else if (carbonColumnarBatch.columnVectors[i].getType() == DataTypes.BOOLEAN) {
-        byte data = (byte) carbonColumnarBatch.columnVectors[i].getData(batchIdx - 1);
-        row[i] = ByteUtil.toBoolean(data);
+        if (data == null) {
+          row[i] = null;
+        } else {
+          row[i] = ByteUtil.toBoolean((byte) data);
+        }
       } else {
         row[i] = carbonColumnarBatch.columnVectors[i].getData(batchIdx - 1);
       }

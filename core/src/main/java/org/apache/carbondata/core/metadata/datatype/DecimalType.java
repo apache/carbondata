@@ -23,7 +23,7 @@ public class DecimalType extends DataType {
   private int scale;
 
   // create a decimal type object with specified precision and scale
-  public DecimalType(int precision, int scale) {
+  DecimalType(int precision, int scale) {
     super(DataTypes.DECIMAL_TYPE_ID, 8, "DECIMAL", -1);
     this.precision = precision;
     this.scale = scale;
