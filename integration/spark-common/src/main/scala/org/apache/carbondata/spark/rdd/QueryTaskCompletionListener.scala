@@ -51,6 +51,7 @@ class QueryTaskCompletionListener(freeMemory: Boolean,
     if (freeMemory) {
       UnsafeMemoryManager.INSTANCE
         .freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+      ThreadLocalTaskInfo.clearCarbonTaskInfo()
       DataTypeUtil.clearFormatter()
     }
   }

@@ -36,4 +36,11 @@ public class ThreadLocalTaskInfo {
     }
     return threadLocal.get();
   }
+
+  public static void clearCarbonTaskInfo() {
+    if (null != threadLocal.get()) {
+      threadLocal.set(null);
+    }
+
+  }
 }

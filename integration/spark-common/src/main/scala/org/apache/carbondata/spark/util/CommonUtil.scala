@@ -48,7 +48,7 @@ import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties}
+import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, ThreadLocalTaskInfo}
 import org.apache.carbondata.core.util.comparator.Comparator
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
@@ -642,6 +642,7 @@ object CommonUtil {
       INSTANCE.freeMemoryAll(taskId)
     UnsafeSortMemoryManager.
       INSTANCE.freeMemoryAll(taskId)
+    ThreadLocalTaskInfo.clearCarbonTaskInfo()
   }
 
   /**

@@ -797,6 +797,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     if (freeUnsafeMemory) {
       UnsafeMemoryManager.INSTANCE
           .freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId());
+      ThreadLocalTaskInfo.clearCarbonTaskInfo();
     }
     if (null != queryProperties.executorService) {
       // In case of limit query when number of limit records is already found so executors
