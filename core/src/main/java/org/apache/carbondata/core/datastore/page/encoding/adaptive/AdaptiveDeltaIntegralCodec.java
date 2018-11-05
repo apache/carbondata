@@ -328,7 +328,7 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
       if (vectorInfo.measure != null) {
         newScale = vectorInfo.measure.getMeasure().getScale();
       }
-      int k = 0;
+      int rowId = 0;
       if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {
         if (vectorDataType == DataTypes.SHORT) {
           for (int i = 0; i < pageSize; i++) {
@@ -373,19 +373,20 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
         int size = pageSize * DataTypes.SHORT.getSizeInBytes();
         if (vectorDataType == DataTypes.SHORT) {
           for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
-            vector.putShort(k++, (short) (max - ByteUtil.toShortLittleEndian(pageData, i)));
+            vector.putShort(rowId++, (short) (max - ByteUtil.toShortLittleEndian(pageData, i)));
           }
         } else if (vectorDataType == DataTypes.INT) {
           for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
-            vector.putInt(k++, (int) (max - ByteUtil.toShortLittleEndian(pageData, i)));
+            vector.putInt(rowId++, (int) (max - ByteUtil.toShortLittleEndian(pageData, i)));
           }
         } else if (vectorDataType == DataTypes.LONG) {
           for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
-            vector.putLong(k++, (max - ByteUtil.toShortLittleEndian(pageData, i)));
+            vector.putLong(rowId++, (max - ByteUtil.toShortLittleEndian(pageData, i)));
           }
         } else if (vectorDataType == DataTypes.TIMESTAMP) {
           for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
-            vector.putLong(k++, (max - (long) ByteUtil.toShortLittleEndian(pageData, i)) * 1000);
+            vector
+                .putLong(rowId++, (max - (long) ByteUtil.toShortLittleEndian(pageData, i)) * 1000);
           }
         } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
@@ -396,15 +397,15 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
             if (decimal.scale() < newScale) {
               decimal = decimal.setScale(newScale);
             }
-            vector.putDecimal(k++, decimal, precision);
+            vector.putDecimal(rowId++, decimal, precision);
           }
         } else if (vectorDataType == DataTypes.FLOAT) {
           for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
-            vector.putFloat(k++, (int) (max - ByteUtil.toShortLittleEndian(pageData, i)));
+            vector.putFloat(rowId++, (int) (max - ByteUtil.toShortLittleEndian(pageData, i)));
           }
         } else {
           for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
-            vector.putDouble(k++, (max - ByteUtil.toShortLittleEndian(pageData, i)));
+            vector.putDouble(rowId++, (max - ByteUtil.toShortLittleEndian(pageData, i)));
           }
         }
       } else if (pageDataType == DataTypes.SHORT_INT) {
@@ -412,16 +413,16 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
         if (vectorDataType == DataTypes.INT) {
           for (int i = 0; i < size; i += DataTypes.SHORT_INT.getSizeInBytes()) {
             int shortInt = ByteUtil.valueOf3Bytes(pageData, i);
-            vector.putInt(k++, (int) (max - shortInt));
+            vector.putInt(rowId++, (int) (max - shortInt));
           }
         } else if (vectorDataType == DataTypes.LONG) {
           for (int i = 0; i < size; i += DataTypes.SHORT_INT.getSizeInBytes()) {
             int shortInt = ByteUtil.valueOf3Bytes(pageData, i);
-            vector.putLong(k++, (max - shortInt));
+            vector.putLong(rowId++, (max - shortInt));
           }
         } else if (vectorDataType == DataTypes.TIMESTAMP) {
           for (int i = 0; i < size; i += DataTypes.SHORT_INT.getSizeInBytes()) {
-            vector.putLong(k++, (max - (long) ByteUtil.valueOf3Bytes(pageData, i)) * 1000);
+            vector.putLong(rowId++, (max - (long) ByteUtil.valueOf3Bytes(pageData, i)) * 1000);
           }
         } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
@@ -437,27 +438,27 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
         } else if (vectorDataType == DataTypes.FLOAT) {
           for (int i = 0; i < size; i += DataTypes.SHORT_INT.getSizeInBytes()) {
             int shortInt = ByteUtil.valueOf3Bytes(pageData, i);
-            vector.putFloat(k++, (int) (max - shortInt));
+            vector.putFloat(rowId++, (int) (max - shortInt));
           }
         } else {
           for (int i = 0; i < size; i += DataTypes.SHORT_INT.getSizeInBytes()) {
             int shortInt = ByteUtil.valueOf3Bytes(pageData, i);
-            vector.putDouble(k++, (max - shortInt));
+            vector.putDouble(rowId++, (max - shortInt));
           }
         }
       } else if (pageDataType == DataTypes.INT) {
         int size = pageSize * DataTypes.INT.getSizeInBytes();
         if (vectorDataType == DataTypes.INT) {
           for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
-            vector.putInt(k++, (int) (max - ByteUtil.toIntLittleEndian(pageData, i)));
+            vector.putInt(rowId++, (int) (max - ByteUtil.toIntLittleEndian(pageData, i)));
           }
         } else if (vectorDataType == DataTypes.LONG) {
           for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
-            vector.putLong(k++, (max - ByteUtil.toIntLittleEndian(pageData, i)));
+            vector.putLong(rowId++, (max - ByteUtil.toIntLittleEndian(pageData, i)));
           }
         } else if (vectorDataType == DataTypes.TIMESTAMP) {
           for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
-            vector.putLong(k++, (max - (long) ByteUtil.toIntLittleEndian(pageData, i)) * 1000);
+            vector.putLong(rowId++, (max - (long) ByteUtil.toIntLittleEndian(pageData, i)) * 1000);
           }
         } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
@@ -468,22 +469,22 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
             if (decimal.scale() < newScale) {
               decimal = decimal.setScale(newScale);
             }
-            vector.putDecimal(k++, decimal, precision);
+            vector.putDecimal(rowId++, decimal, precision);
           }
         } else {
           for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
-            vector.putDouble(k++, (max - ByteUtil.toIntLittleEndian(pageData, i)));
+            vector.putDouble(rowId++, (max - ByteUtil.toIntLittleEndian(pageData, i)));
           }
         }
       } else if (pageDataType == DataTypes.LONG) {
         int size = pageSize * DataTypes.LONG.getSizeInBytes();
         if (vectorDataType == DataTypes.LONG) {
           for (int i = 0; i < size; i += DataTypes.LONG.getSizeInBytes()) {
-            vector.putLong(k++, (max - ByteUtil.toLongLittleEndian(pageData, i)));
+            vector.putLong(rowId++, (max - ByteUtil.toLongLittleEndian(pageData, i)));
           }
         } else if (vectorDataType == DataTypes.TIMESTAMP) {
           for (int i = 0; i < size; i += DataTypes.LONG.getSizeInBytes()) {
-            vector.putLong(k++, (max - ByteUtil.toLongLittleEndian(pageData, i)) * 1000);
+            vector.putLong(rowId++, (max - ByteUtil.toLongLittleEndian(pageData, i)) * 1000);
           }
         } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
@@ -494,7 +495,7 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
             if (decimal.scale() < newScale) {
               decimal = decimal.setScale(newScale);
             }
-            vector.putDecimal(k++, decimal, precision);
+            vector.putDecimal(rowId++, decimal, precision);
           }
         }
       } else {

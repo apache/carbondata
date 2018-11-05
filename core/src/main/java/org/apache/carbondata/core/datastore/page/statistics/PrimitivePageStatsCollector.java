@@ -244,6 +244,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       int integerPlaces = strValue.indexOf('.');
       if (-1 != integerPlaces) {
         decimalPlaces = strValue.length() - integerPlaces - 1;
+        // If decimal places are one and it is just zero then treat the decimal count a zero.
         if (decimalPlaces == 1) {
           if (strValue.substring(integerPlaces + 1, strValue.length()).equals(ZERO_STRING)) {
             decimalPlaces = 0;

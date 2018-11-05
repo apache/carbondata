@@ -249,7 +249,7 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
       DataType vectorDataType = vector.getType();
       vector = ColumnarVectorWrapperDirectFactory
           .getDirectVectorWrapperFactory(vector, null, nullBits, deletedRows, true, false);
-      int k = 0;
+      int rowId = 0;
       if (vectorDataType == DataTypes.FLOAT) {
         float floatFactor = factor.floatValue();
         if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {
@@ -259,19 +259,20 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
         } else if (pageDataType == DataTypes.SHORT) {
           int size = pageSize * DataTypes.SHORT.getSizeInBytes();
           for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
-            vector.putFloat(k++, (max - ByteUtil.toShortLittleEndian(pageData, i)) / floatFactor);
+            vector
+                .putFloat(rowId++, (max - ByteUtil.toShortLittleEndian(pageData, i)) / floatFactor);
           }
 
         } else if (pageDataType == DataTypes.SHORT_INT) {
           int size = pageSize * DataTypes.SHORT_INT.getSizeInBytes();
           for (int i = 0; i < size; i += DataTypes.SHORT_INT.getSizeInBytes()) {
             int shortInt = ByteUtil.valueOf3Bytes(pageData, i);
-            vector.putFloat(k++, (max - shortInt) / floatFactor);
+            vector.putFloat(rowId++, (max - shortInt) / floatFactor);
           }
         } else if (pageDataType == DataTypes.INT) {
-          int[] intData = columnPage.getIntPage();
-          for (int i = 0; i < pageSize; i++) {
-            vector.putFloat(i, (max - intData[i]) / floatFactor);
+          int size = pageSize * DataTypes.INT.getSizeInBytes();
+          for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
+            vector.putFloat(rowId++, (max - ByteUtil.toIntLittleEndian(pageData, i)) / floatFactor);
           }
         } else {
           throw new RuntimeException("internal error: " + this.toString());
@@ -279,29 +280,29 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
       } else {
         if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {
           for (int i = 0; i < pageSize; i++) {
-            vector.putDouble(k++, (max - pageData[i]) / factor);
+            vector.putDouble(rowId++, (max - pageData[i]) / factor);
           }
         } else if (pageDataType == DataTypes.SHORT) {
           int size = pageSize * DataTypes.SHORT.getSizeInBytes();
           for (int i = 0; i < size; i += DataTypes.SHORT.getSizeInBytes()) {
-            vector.putDouble(k++, (max - ByteUtil.toShortLittleEndian(pageData, i)) / factor);
+            vector.putDouble(rowId++, (max - ByteUtil.toShortLittleEndian(pageData, i)) / factor);
           }
 
         } else if (pageDataType == DataTypes.SHORT_INT) {
           int size = pageSize * DataTypes.SHORT_INT.getSizeInBytes();
           for (int i = 0; i < size; i += DataTypes.SHORT_INT.getSizeInBytes()) {
             int shortInt = ByteUtil.valueOf3Bytes(pageData, i);
-            vector.putDouble(k++, (max - shortInt) / factor);
+            vector.putDouble(rowId++, (max - shortInt) / factor);
           }
         } else if (pageDataType == DataTypes.INT) {
           int size = pageSize * DataTypes.INT.getSizeInBytes();
           for (int i = 0; i < size; i += DataTypes.INT.getSizeInBytes()) {
-            vector.putDouble(k++, (max - ByteUtil.toIntLittleEndian(pageData, i)) / factor);
+            vector.putDouble(rowId++, (max - ByteUtil.toIntLittleEndian(pageData, i)) / factor);
           }
         } else if (pageDataType == DataTypes.LONG) {
-          long[] longData = columnPage.getLongPage();
-          for (int i = 0; i < pageSize; i++) {
-            vector.putDouble(i, (max - longData[i]) / factor);
+          int size = pageSize * DataTypes.LONG.getSizeInBytes();
+          for (int i = 0; i < size; i += DataTypes.LONG.getSizeInBytes()) {
+            vector.putDouble(rowId++, (max - ByteUtil.toLongLittleEndian(pageData, i)) / factor);
           }
         } else {
           throw new RuntimeException("Unsupported datatype : " + pageDataType);
