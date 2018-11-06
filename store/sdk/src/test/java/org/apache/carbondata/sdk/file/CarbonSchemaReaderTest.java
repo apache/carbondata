@@ -110,8 +110,8 @@ public class CarbonSchemaReaderTest extends TestCase {
       assertEquals(schema.getFieldsLength(), 12);
       checkSchema(schema);
     } catch (Throwable e) {
-      Assert.fail();
       e.printStackTrace();
+      Assert.fail();
     }
   }
 
@@ -123,8 +123,8 @@ public class CarbonSchemaReaderTest extends TestCase {
           .asOriginOrder();
       checkSchema(schema);
     } catch (Throwable e) {
-      Assert.fail();
       e.printStackTrace();
+      Assert.fail();
     }
   }
 
@@ -185,8 +185,8 @@ public class CarbonSchemaReaderTest extends TestCase {
       assertEquals(schema.getFieldsLength(), 12);
       checkSchema(schema);
     } catch (Throwable e) {
-      Assert.fail();
       e.printStackTrace();
+      Assert.fail();
     }
   }
 
@@ -194,12 +194,12 @@ public class CarbonSchemaReaderTest extends TestCase {
   public void testReadSchemaAndCheckFilesSchema() {
     try {
       Schema schema = CarbonSchemaReader
-          .readSchema(path, false)
+          .readSchema(path, true)
           .asOriginOrder();
       checkSchema(schema);
     } catch (Throwable e) {
-      Assert.fail();
       e.printStackTrace();
+      Assert.fail();
     }
   }
 
@@ -231,8 +231,8 @@ public class CarbonSchemaReaderTest extends TestCase {
             .equalsIgnoreCase("Schema is different between different files."));
       }
     } catch (Throwable e) {
-      Assert.fail();
       e.printStackTrace();
+      Assert.fail();
     }
   }
 

@@ -74,7 +74,7 @@ public class CarbonSchemaReader {
   private static CarbonFile[] getCarbonFile(String path, final String extension)
       throws IOException {
     String dataFilePath = path;
-    if (!(dataFilePath.contains(extension))) {
+    if (!(dataFilePath.endsWith(extension))) {
       CarbonFile[] carbonFiles = FileFactory
           .getCarbonFile(path)
           .listFiles(new CarbonFileFilter() {
@@ -90,8 +90,10 @@ public class CarbonSchemaReader {
         throw new IOException("Carbon file not exists.");
       }
       return carbonFiles;
+    } else {
+      throw new CarbonDataLoadingException("Please ensure path "
+          + path + " end with " + extension);
     }
-    return null;
   }
 
   /**
@@ -129,7 +131,7 @@ public class CarbonSchemaReader {
         schema = readSchemaFromIndexFile(carbonIndexFiles[0].getAbsolutePath());
         for (int i = 1; i < carbonIndexFiles.length; i++) {
           Schema schema2 = readSchemaFromIndexFile(carbonIndexFiles[i].getAbsolutePath());
-          if (schema != schema2) {
+          if (!schema.equals(schema2)) {
             throw new CarbonDataLoadingException("Schema is different between different files.");
           }
         }
@@ -146,16 +148,7 @@ public class CarbonSchemaReader {
       }
     } else {
       String indexFilePath = getCarbonFile(path, INDEX_FILE_EXT)[0].getAbsolutePath();
-      if (indexFilePath != null) {
-        return readSchemaFromIndexFile(indexFilePath);
-      } else {
-        String dataFilePath = getCarbonFile(path, CARBON_DATA_EXT)[0].getAbsolutePath();
-        if (dataFilePath == null) {
-          throw new CarbonDataLoadingException("No carbonindex and carbondata file in the path");
-        } else {
-          return readSchemaFromDataFile(dataFilePath);
-        }
-      }
+      return readSchemaFromIndexFile(indexFilePath);
     }
   }
 
