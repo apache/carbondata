@@ -325,32 +325,42 @@ public class DefaultEncodingFactory extends EncodingFactory {
     //Here we should use the Max abs as max to getDatatype, let's say -1 and -10000000, -1 is max,
     //but we can't use -1 to getDatatype, we should use -10000000.
     double absMaxValue = Math.max(Math.abs(maxValue), Math.abs(minValue));
-    if (decimalCount == 0) {
+    if (srcDataType == DataTypes.FLOAT && decimalCount == 0) {
+      return getColumnPageCodec(stats, isComplexPrimitive, columnSpec, srcDataType, maxValue,
+          minValue, decimalCount, absMaxValue);
+    } else if (decimalCount == 0) {
       // short, int, long
       return selectCodecByAlgorithmForIntegral(stats, false, columnSpec);
     } else if (decimalCount < 0 && !isComplexPrimitive) {
       return new DirectCompressCodec(DataTypes.DOUBLE);
     } else {
-      // double
-      // If absMaxValue exceeds LONG.MAX_VALUE, then go for direct compression
-      if ((Math.pow(10, decimalCount) * absMaxValue) > Long.MAX_VALUE) {
-        return new DirectCompressCodec(DataTypes.DOUBLE);
+      return getColumnPageCodec(stats, isComplexPrimitive, columnSpec, srcDataType, maxValue,
+          minValue, decimalCount, absMaxValue);
+    }
+  }
+
+  private static ColumnPageCodec getColumnPageCodec(SimpleStatsResult stats,
+      boolean isComplexPrimitive, TableSpec.ColumnSpec columnSpec, DataType srcDataType,
+      double maxValue, double minValue, int decimalCount, double absMaxValue) {
+    // double
+    // If absMaxValue exceeds LONG.MAX_VALUE, then go for direct compression
+    if ((Math.pow(10, decimalCount) * absMaxValue) > Long.MAX_VALUE) {
+      return new DirectCompressCodec(DataTypes.DOUBLE);
+    } else {
+      long max = (long) (Math.pow(10, decimalCount) * absMaxValue);
+      DataType adaptiveDataType = fitLongMinMax(max, 0);
+      DataType deltaDataType = compareMinMaxAndSelectDataType(
+          (long) (Math.pow(10, decimalCount) * (maxValue - minValue)));
+      if (adaptiveDataType.getSizeInBytes() > deltaDataType.getSizeInBytes()) {
+        return new AdaptiveDeltaFloatingCodec(srcDataType, deltaDataType, stats,
+            isInvertedIndex(isComplexPrimitive, columnSpec));
+      } else if (adaptiveDataType.getSizeInBytes() < DataTypes.DOUBLE.getSizeInBytes() || (
+          (isComplexPrimitive) && (adaptiveDataType.getSizeInBytes() == DataTypes.DOUBLE
+              .getSizeInBytes()))) {
+        return new AdaptiveFloatingCodec(srcDataType, adaptiveDataType, stats,
+            isInvertedIndex(isComplexPrimitive, columnSpec));
       } else {
-        long max = (long) (Math.pow(10, decimalCount) * absMaxValue);
-        DataType adaptiveDataType = fitLongMinMax(max, 0);
-        DataType deltaDataType = compareMinMaxAndSelectDataType(
-            (long) (Math.pow(10, decimalCount) * (maxValue - minValue)));
-        if (adaptiveDataType.getSizeInBytes() > deltaDataType.getSizeInBytes()) {
-          return new AdaptiveDeltaFloatingCodec(srcDataType, deltaDataType, stats,
-              isInvertedIndex(isComplexPrimitive, columnSpec));
-        } else if (adaptiveDataType.getSizeInBytes() < DataTypes.DOUBLE.getSizeInBytes() || (
-            (isComplexPrimitive) && (adaptiveDataType.getSizeInBytes() == DataTypes.DOUBLE
-                .getSizeInBytes()))) {
-          return new AdaptiveFloatingCodec(srcDataType, adaptiveDataType, stats,
-              isInvertedIndex(isComplexPrimitive, columnSpec));
-        } else {
-          return new DirectCompressCodec(DataTypes.DOUBLE);
-        }
+        return new DirectCompressCodec(DataTypes.DOUBLE);
       }
     }
   }
