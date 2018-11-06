@@ -37,8 +37,6 @@ import org.apache.carbondata.core.datastore.compression.SnappyCompressor;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -46,7 +44,6 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
-import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
@@ -411,12 +408,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       varcharColumnSizeInByte = new int[model.getVarcharDimIdxInNoDict().size()];
     }
 
-    int dimSet =
-        Integer.parseInt(CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
-    // if at least one dimension is present then initialize column splitter otherwise null
-    int[] keyBlockSize = new int[getExpandedComplexColsCount()];
-
-    // agg type
     List<Integer> otherMeasureIndexList =
         new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     List<Integer> customMeasureIndexList =
@@ -439,41 +430,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       customMeasureIndex[i] = customMeasureIndexList.get(i);
     }
     setComplexMapSurrogateIndex(model.getDimensionCount());
-    int[] blockKeySize = getBlockKeySizeWithComplexTypes(new MultiDimKeyVarLengthEquiSplitGenerator(
-        CarbonUtil.getIncrementedCardinalityFullyFilled(model.getDimLens().clone()), (byte) dimSet)
-        .getBlockKeySize());
-    System.arraycopy(blockKeySize, 0, keyBlockSize, 0, blockKeySize.length);
     this.dataWriter = getFactDataWriter();
     // initialize the channel;
     this.dataWriter.initializeWriter();
-  }
-
-  /**
-   * This method combines primitive dimensions with complex metadata columns
-   *
-   * @param primitiveBlockKeySize
-   * @return all dimensions cardinality including complex dimension metadata column
-   */
-  private int[] getBlockKeySizeWithComplexTypes(int[] primitiveBlockKeySize) {
-    int allColsCount = getExpandedComplexColsCount();
-    int[] blockKeySizeWithComplexTypes = new int[allColsCount];
-
-    List<Integer> blockKeySizeWithComplex =
-        new ArrayList<Integer>(blockKeySizeWithComplexTypes.length);
-    int dictDimensionCount = model.getDimensionCount();
-    for (int i = 0; i < dictDimensionCount; i++) {
-      GenericDataType complexDataType = model.getComplexIndexMap().get(i);
-      if (complexDataType != null) {
-        complexDataType.fillBlockKeySize(blockKeySizeWithComplex, primitiveBlockKeySize);
-      } else {
-        blockKeySizeWithComplex.add(primitiveBlockKeySize[i]);
-      }
-    }
-    for (int i = 0; i < blockKeySizeWithComplexTypes.length; i++) {
-      blockKeySizeWithComplexTypes[i] = blockKeySizeWithComplex.get(i);
-    }
-
-    return blockKeySizeWithComplexTypes;
   }
 
   /**

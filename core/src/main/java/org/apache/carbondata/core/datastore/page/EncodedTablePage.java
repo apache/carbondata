@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.datastore.page;
 
-import java.io.IOException;
-
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 
 /**
