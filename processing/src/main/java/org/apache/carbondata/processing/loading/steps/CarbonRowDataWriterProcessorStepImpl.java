@@ -271,7 +271,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
    * @param row
    * @return
    */
-  private CarbonRow convertRow(CarbonRow row) throws KeyGenException {
+  private CarbonRow convertRow(CarbonRow row) {
     int dictIndex = 0;
     int nonDicIndex = 0;
     int[] dim = new int[this.dimensionCount];

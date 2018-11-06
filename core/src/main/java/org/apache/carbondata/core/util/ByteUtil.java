@@ -475,6 +475,17 @@ public final class ByteUtil {
     return b;
   }
 
+  public static byte[] toBytes(int val, int byteArraySize) {
+    assert (byteArraySize > 0 && byteArraySize <= 4);
+    byte[] b = new byte[byteArraySize];
+    for (int i = byteArraySize - 1; i > 0; i--) {
+      b[i] = (byte) val;
+      val >>>= 8;
+    }
+    b[0] = (byte) val;
+    return b;
+  }
+
   /**
    * int => byte[3]
    * supported range is [-8388608, 8388607], note that Math.pow(2, 24) == 8388608

@@ -270,7 +270,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * generate the EncodedTablePage from the input rows (one page in case of V3 format)
    */
   private TablePage processDataRows(List<CarbonRow> dataRows)
-      throws CarbonDataWriterException, KeyGenException, MemoryException, IOException {
+      throws CarbonDataWriterException, MemoryException, IOException {
     if (dataRows.size() == 0) {
       return new TablePage(model, 0);
     }
@@ -578,7 +578,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
      * @return computed result
      * @throws Exception if unable to compute a result
      */
-    @Override public Void call() throws Exception {
+    @Override public Void call() {
       try {
         TablePage tablePage = processDataRows(dataRows);
         dataRows = null;

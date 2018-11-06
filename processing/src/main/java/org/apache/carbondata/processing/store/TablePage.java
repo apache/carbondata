@@ -39,7 +39,6 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
-import org.apache.carbondata.core.datastore.page.key.TablePageKey;
 import org.apache.carbondata.core.datastore.page.statistics.KeyPageStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.LVLongStringStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.LVShortStringStatsCollector;
@@ -52,6 +51,7 @@ import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGener
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 
@@ -80,8 +80,6 @@ public class TablePage {
   private int pageSize;
 
   private CarbonFactDataHandlerModel model;
-
-  private TablePageKey key;
 
   private EncodedTablePage encodedTablePage;
 
@@ -186,9 +184,6 @@ public class TablePage {
       measurePages[i] = page;
     }
 
-    boolean hasNoDictionary = noDictDimensionPages.length > 0;
-    this.key = new TablePageKey(pageSize, model.getSegmentProperties(), hasNoDictionary);
-
     // for complex type, `complexIndexMap` is used in multithread (in multiple Producer),
     // we need to clone the index map to make it thread safe
     this.complexIndexMap = new HashMap<>();
@@ -203,20 +198,14 @@ public class TablePage {
    * @param rowId Id of the input row
    * @param row   row object
    */
-  public void addRow(int rowId, CarbonRow row) throws KeyGenException {
-    // convert each column category, update key and stats
-    byte[] mdk = WriteStepRowUtil.getMdk(row, model.getMDKeyGenerator());
-    convertToColumnarAndAddToPages(rowId, row, mdk);
-    key.update(rowId, row, mdk);
-  }
+  public void addRow(int rowId, CarbonRow row) {
+    // convert the input row object to columnar data and add to column pages
 
-  // convert the input row object to columnar data and add to column pages
-  private void convertToColumnarAndAddToPages(int rowId, CarbonRow row, byte[] mdk)
-      throws KeyGenException {
     // 1. convert dictionary columns
-    byte[][] keys = model.getSegmentProperties().getFixedLengthKeySplitter().splitKey(mdk);
-    for (int i = 0; i < dictDimensionPages.length; i++) {
-      dictDimensionPages[i].putData(rowId, keys[i]);
+    int[] dictCols = WriteStepRowUtil.getDictDimension(row);
+    int[] keySize = model.getSegmentProperties().getFixedLengthKeySplitter().getBlockKeySize();
+    for (int i = 0; i < dictCols.length; i++) {
+      dictDimensionPages[i].putData(rowId, ByteUtil.toBytes(dictCols[i], keySize[i]));
     }
 
     // 2. convert noDictionary columns and complex columns and varchar columns.
@@ -366,11 +355,11 @@ public class TablePage {
     return output;
   }
 
-  void encode() throws KeyGenException, MemoryException, IOException {
+  void encode() throws MemoryException, IOException {
     // encode dimensions and measure
     EncodedColumnPage[] dimensions = encodeAndCompressDimensions();
     EncodedColumnPage[] measures = encodeAndCompressMeasures();
-    this.encodedTablePage = EncodedTablePage.newInstance(pageSize, dimensions, measures, key);
+    this.encodedTablePage = EncodedTablePage.newInstance(pageSize, dimensions, measures);
   }
 
   public EncodedTablePage getEncodedTablePage() {
@@ -391,7 +380,7 @@ public class TablePage {
 
   // apply and compress each dimension, set encoded data in `encodedData`
   private EncodedColumnPage[] encodeAndCompressDimensions()
-      throws KeyGenException, IOException, MemoryException {
+      throws IOException, MemoryException {
     List<EncodedColumnPage> encodedDimensions = new ArrayList<>();
     List<EncodedColumnPage> encodedComplexDimenions = new ArrayList<>();
     TableSpec tableSpec = model.getTableSpec();

@@ -262,12 +262,8 @@ public class CarbonMetadataUtil {
       blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(min));
     }
     BlockletBTreeIndex blockletBTreeIndex = new BlockletBTreeIndex();
-    byte[] startKey = encodedBlocklet.getPageMetadataList().get(0).serializeStartKey();
-    blockletBTreeIndex.setStart_key(startKey);
-    byte[] endKey =
-        encodedBlocklet.getPageMetadataList().get(encodedBlocklet.getPageMetadataList().size() - 1)
-            .serializeEndKey();
-    blockletBTreeIndex.setEnd_key(endKey);
+    blockletBTreeIndex.setStart_key(new byte[0]);
+    blockletBTreeIndex.setEnd_key(new byte[0]);
     BlockletIndex blockletIndex = new BlockletIndex();
     blockletIndex.setMin_max_index(blockletMinMaxIndex);
     blockletIndex.setB_tree_index(blockletBTreeIndex);
