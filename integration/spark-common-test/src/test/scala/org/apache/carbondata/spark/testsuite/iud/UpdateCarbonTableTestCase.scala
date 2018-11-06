@@ -772,6 +772,25 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table if exists iud.dest33_part""")
   }
 
+  test("check data after update with row.filter pushdown as false") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants
+      .CARBON_PUSH_ROW_FILTERS_FOR_VECTOR, "false")
+    sql("""drop table if exists iud.dest33_flat""")
+    sql(
+      """create table iud.dest33_part (c1 int,c2 string, c3 short) STORED BY 'carbondata'"""
+        .stripMargin)
+    sql(
+      s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/negativevalue.csv' INTO table iud
+         |.dest33_part options('header'='false')""".stripMargin)
+    sql(
+      """update iud.dest33_part d set (c1) = (5) where d.c1 = 0""".stripMargin).show()
+    checkAnswer(sql("select c3 from iud.dest33_part"), Seq(Row(-300), Row(0), Row(-200), Row(700)
+      , Row(100), Row(-100), Row(null)))
+    sql("""drop table if exists iud.dest33_part""")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants
+      .CARBON_PUSH_ROW_FILTERS_FOR_VECTOR, "true")
+  }
+
   override def afterAll {
     sql("use default")
     sql("drop database  if exists iud cascade")
@@ -779,5 +798,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.isHorizontalCompactionEnabled , "true")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants
+      .CARBON_PUSH_ROW_FILTERS_FOR_VECTOR, "false")
   }
 }

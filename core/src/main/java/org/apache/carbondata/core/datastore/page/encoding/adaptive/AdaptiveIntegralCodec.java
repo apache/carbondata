@@ -280,10 +280,17 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       DataType pageDataType = columnPage.getDataType();
       int pageSize = columnPage.getPageSize();
       BitSet deletedRows = vectorInfo.deletedRows;
-      vector = ColumnarVectorWrapperDirectFactory
+      CarbonColumnVector underlyingVector = ColumnarVectorWrapperDirectFactory
           .getDirectVectorWrapperFactory(vector, vectorInfo.invertedIndex, nullBits, deletedRows,
               true, false);
-      fillVector(columnPage, vector, vectorDataType, pageDataType, pageSize, vectorInfo);
+      // check if a new columnvector object is created due to invertedIndex or deleted rows
+      // present in the table. If this is the case then we cannot fill the vector directly we
+      // need to check the vector for null values(already done by putInt/putFloat instead of
+      // putInts/putFloats).
+      boolean isUnderlyingVectorPresent = vector != underlyingVector;
+      vector = underlyingVector;
+      fillVector(columnPage, vector, vectorDataType, pageDataType, pageSize, vectorInfo,
+          isUnderlyingVectorPresent);
       if (deletedRows == null || deletedRows.isEmpty()) {
         for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
           vector.putNull(i);
@@ -296,7 +303,8 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
     }
 
     private void fillVector(ColumnPage columnPage, CarbonColumnVector vector,
-        DataType vectorDataType, DataType pageDataType, int pageSize, ColumnVectorInfo vectorInfo) {
+        DataType vectorDataType, DataType pageDataType, int pageSize, ColumnVectorInfo vectorInfo,
+        boolean isUnderlyingVectorPresent) {
       if (pageDataType == DataTypes.BOOLEAN || pageDataType == DataTypes.BYTE) {
         byte[] byteData = columnPage.getBytePage();
         if (vectorDataType == DataTypes.SHORT) {
@@ -316,7 +324,13 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
             vector.putLong(i, (long) byteData[i] * 1000);
           }
         } else if (vectorDataType == DataTypes.BOOLEAN) {
-          vector.putBytes(0, pageSize, byteData, 0);
+          if (isUnderlyingVectorPresent) {
+            for (int i = 0; i < pageSize; i++) {
+              vector.putByte(i,  byteData[i]);
+            }
+          } else {
+            vector.putBytes(0, pageSize, byteData, 0);
+          }
         } else if (DataTypes.isDecimal(vectorDataType)) {
           DecimalConverterFactory.DecimalConverter decimalConverter = vectorInfo.decimalConverter;
           decimalConverter.fillVector(byteData, pageSize, vectorInfo, columnPage.getNullBits());
@@ -328,7 +342,13 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       } else if (pageDataType == DataTypes.SHORT) {
         short[] shortData = columnPage.getShortPage();
         if (vectorDataType == DataTypes.SHORT) {
-          vector.putShorts(0, pageSize, shortData, 0);
+          if (isUnderlyingVectorPresent) {
+            for (int i = 0; i < pageSize; i++) {
+              vector.putShort(i,  shortData[i]);
+            }
+          } else {
+            vector.putShorts(0, pageSize, shortData, 0);
+          }
         } else if (vectorDataType == DataTypes.INT) {
           for (int i = 0; i < pageSize; i++) {
             vector.putInt(i, (int) shortData[i]);
@@ -380,7 +400,13 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       } else if (pageDataType == DataTypes.INT) {
         int[] intData = columnPage.getIntPage();
         if (vectorDataType == DataTypes.INT) {
-          vector.putInts(0, pageSize, intData, 0);
+          if (isUnderlyingVectorPresent) {
+            for (int i = 0; i < pageSize; i++) {
+              vector.putInt(i,  intData[i]);
+            }
+          } else {
+            vector.putInts(0, pageSize, intData, 0);
+          }
         } else if (vectorDataType == DataTypes.LONG) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, intData[i]);
@@ -400,7 +426,13 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       } else if (pageDataType == DataTypes.LONG) {
         long[] longData = columnPage.getLongPage();
         if (vectorDataType == DataTypes.LONG) {
-          vector.putLongs(0, pageSize, longData, 0);
+          if (isUnderlyingVectorPresent) {
+            for (int i = 0; i < pageSize; i++) {
+              vector.putLong(i, longData[i]);
+            }
+          } else {
+            vector.putLongs(0, pageSize, longData, 0);
+          }
         } else if (vectorDataType == DataTypes.TIMESTAMP) {
           for (int i = 0; i < pageSize; i++) {
             vector.putLong(i, longData[i] * 1000);
@@ -411,7 +443,13 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
         }
       } else {
         double[] doubleData = columnPage.getDoublePage();
-        vector.putDoubles(0, pageSize, doubleData, 0);
+        if (isUnderlyingVectorPresent) {
+          for (int i = 0; i < pageSize; i++) {
+            vector.putDouble(i,  doubleData[i]);
+          }
+        } else {
+          vector.putDoubles(0, pageSize, doubleData, 0);
+        }
       }
     }
   };

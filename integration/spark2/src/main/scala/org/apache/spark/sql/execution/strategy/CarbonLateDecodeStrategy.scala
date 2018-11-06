@@ -57,7 +57,7 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
 private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   val PUSHED_FILTERS = "PushedFilters"
 
-  val vectorPushRowFilters = CarbonProperties.getInstance().isPushRowFiltersForVector
+  def vectorPushRowFilters: Boolean = CarbonProperties.getInstance().isPushRowFiltersForVector
 
   /*
   Spark 2.3.1 plan there can be case of multiple projections like below
