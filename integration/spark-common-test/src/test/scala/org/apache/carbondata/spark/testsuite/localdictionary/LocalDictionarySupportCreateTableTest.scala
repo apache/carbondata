@@ -1511,7 +1511,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
-    descLoc.find(_.get(0).toString.contains("SORT_SCOPE")) match {
+    descLoc.find(_.get(0).toString.contains("Sort Scope")) match {
       case Some(row) => assert(row.get(1).toString.contains("global_sort"))
       case None => assert(false)
     }
@@ -1533,7 +1533,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
-    descLoc.find(_.get(0).toString.contains("SORT_SCOPE")) match {
+    descLoc.find(_.get(0).toString.contains("Sort Scope")) match {
       case Some(row) => assert(row.get(1).toString.contains("batch_sort"))
       case None => assert(false)
     }
@@ -1554,7 +1554,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
-    descLoc.find(_.get(0).toString.contains("SORT_SCOPE")) match {
+    descLoc.find(_.get(0).toString.contains("Sort Scope")) match {
       case Some(row) => assert(row.get(1).toString.contains("no_sort"))
       case None => assert(false)
     }
@@ -1575,7 +1575,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
-    descLoc.find(_.get(0).toString.contains("SORT_SCOPE")) match {
+    descLoc.find(_.get(0).toString.contains("Sort Scope")) match {
       case Some(row) => assert(row.get(1).toString.contains("local_sort"))
       case None => assert(false)
     }
