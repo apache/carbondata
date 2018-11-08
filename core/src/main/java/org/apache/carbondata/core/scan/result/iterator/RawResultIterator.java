@@ -120,10 +120,8 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
       for (Object[] r : detailRawQueryResultIterator.next().getRows()) {
         converted.add(convertRow(r));
       }
-      return converted;
-    } else {
-      return new ArrayList<>();
     }
+    return converted;
   }
 
   private void fillDataFromPrefetch() {
