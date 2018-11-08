@@ -24,12 +24,15 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
+import org.apache.carbondata.core.constants.SortScopeOptions;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
@@ -55,6 +58,7 @@ import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
 import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -62,6 +66,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV;
 import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
 
+import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
@@ -841,6 +846,15 @@ public class CarbonTable implements Serializable {
     return blockSize;
   }
 
+  public int getBlockletSizeInMB() {
+    try {
+      return Integer.parseInt(tableInfo.getFactTable().getTableProperties().get(
+          CarbonCommonConstants.TABLE_BLOCKLET_SIZE));
+    } catch (NumberFormatException e) {
+      return Integer.parseInt(CarbonCommonConstants.TABLE_BLOCKLET_SIZE_DEFAULT);
+    }
+  }
+
   /**
    * to get the normal dimension or the primitive dimension of the complex type
    *
@@ -919,6 +933,10 @@ public class CarbonTable implements Serializable {
       }
     }
     return sort_columsList;
+  }
+
+  public List<String> getSortColumns() {
+    return getSortColumns(getTableName());
   }
 
   public int getNumberOfSortColumns() {
@@ -1214,16 +1232,22 @@ public class CarbonTable implements Serializable {
     String tableName = tableInfo.getFactTable().getTableName();
     String cacheColumns =
         tableInfo.getFactTable().getTableProperties().get(CarbonCommonConstants.COLUMN_META_CACHE);
-    if (null != cacheColumns && !cacheColumns.isEmpty()) {
-      String[] cachedCols = cacheColumns.split(",");
-      for (String column : cachedCols) {
-        CarbonColumn carbonColumn = getColumnByName(tableName, column);
-        if (null != carbonColumn && !carbonColumn.isInvisible()) {
-          cachedColsList.add(carbonColumn.getColName());
+    if (null != cacheColumns) {
+      if (!cacheColumns.isEmpty()) {
+        String[] cachedCols = cacheColumns.split(",");
+        for (String column : cachedCols) {
+          CarbonColumn carbonColumn = getColumnByName(tableName, column);
+          if (null != carbonColumn && !carbonColumn.isInvisible()) {
+            cachedColsList.add(carbonColumn.getColName());
+          }
         }
+        return cachedColsList;
+      } else {
+        return new LinkedList<>();
       }
+    } else {
+      return Lists.newArrayList("All columns");
     }
-    return cachedColsList;
   }
 
   /**
@@ -1296,5 +1320,42 @@ public class CarbonTable implements Serializable {
       }
     }
     return false;
+  }
+
+  /**
+   * Return all inverted index columns in this table
+   */
+  public List<ColumnSchema> getInvertedIndexColumns() {
+    if (getSortScope() == SortScopeOptions.SortScope.NO_SORT) {
+      return new LinkedList<>();
+    }
+    List<ColumnSchema> columns = new LinkedList<>();
+    for (ColumnSchema column : tableInfo.getFactTable().getListOfColumns()) {
+      if (column.isUseInvertedIndex() && column.isSortColumn()) {
+        columns.add(column);
+      }
+    }
+    return columns;
+  }
+
+  /**
+   * Return table level sort scope
+   */
+  public SortScopeOptions.SortScope getSortScope() {
+    String sortScope = tableInfo.getFactTable().getTableProperties().get("sort_scope");
+    if (sortScope == null) {
+      if (getNumberOfSortColumns() == 0) {
+        return SortScopeOptions.SortScope.NO_SORT;
+      } else {
+        return SortScopeOptions.getSortScope(
+            CarbonProperties.getInstance().getProperty(
+                CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
+                CarbonProperties.getInstance().getProperty(
+                    CarbonCommonConstants.LOAD_SORT_SCOPE,
+                    CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)));
+      }
+    } else {
+      return SortScopeOptions.getSortScope(sortScope);
+    }
   }
 }

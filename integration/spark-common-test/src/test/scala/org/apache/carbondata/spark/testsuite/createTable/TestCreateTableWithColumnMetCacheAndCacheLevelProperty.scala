@@ -109,14 +109,14 @@ class TestCreateTableWithColumnMetCacheAndCacheLevelProperty extends QueryTest w
     sql("drop table if exists column_meta_cache")
     sql("create table column_meta_cache(c1 String, c2 String, c3 int, c4 double) stored by 'carbondata' TBLPROPERTIES('COLUMN_meta_CachE'='c2')")
     val descResult = sql("describe formatted column_meta_cache")
-    checkExistence(descResult, true, "COLUMN_META_CACHE")
+    checkExistence(descResult, true, "Cached Min/Max Index Columns c2")
   }
 
   test("validate describe formatted command to display column_meta_cache when column_meta_cache is not set - COLUMN_META_CACHE_11") {
     sql("drop table if exists column_meta_cache")
     sql("create table column_meta_cache(c1 String, c2 String, c3 int, c4 double) stored by 'carbondata'")
     val descResult = sql("describe formatted column_meta_cache")
-    checkExistence(descResult, false, "COLUMN_META_CACHE")
+    checkExistence(descResult, false, "Cached Min/Max Index Columns c2")
   }
 
   test("validate column_meta_cache after column drop - COLUMN_META_CACHE_12") {
@@ -157,7 +157,7 @@ class TestCreateTableWithColumnMetCacheAndCacheLevelProperty extends QueryTest w
     sql("drop table if exists cache_level")
     sql("create table cache_level(c1 String) stored by 'carbondata' TBLPROPERTIES('cache_level'='bloCKlet')")
     val descResult = sql("describe formatted cache_level")
-    checkExistence(descResult, true, "CACHE_LEVEL")
+    checkExistence(descResult, true, "Min/Max Index Cache Level BLOCKLET")
   }
 
   test("validate describe formatted command to display cache_level when cache_level is not set - CACHE_LEVEL_06") {
@@ -165,7 +165,7 @@ class TestCreateTableWithColumnMetCacheAndCacheLevelProperty extends QueryTest w
     sql("create table cache_level(c1 String) stored by 'carbondata'")
     val descResult = sql("describe formatted cache_level")
     // even though not configured default cache level will be displayed as BLOCK
-    checkExistence(descResult, true, "CACHE_LEVEL")
+    checkExistence(descResult, true, "Min/Max Index Cache Level BLOCK")
   }
 
 }

@@ -17,7 +17,10 @@
 
 package org.apache.spark.sql
 
+import java.util.Date
+
 import org.apache.spark.sql.test.util.QueryTest
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.scalatest.BeforeAndAfterAll
 
@@ -59,7 +62,7 @@ class GetDataSizeAndIndexSizeTest extends QueryTest with BeforeAndAfterAll {
       .filter(row => row.getString(0).contains(CarbonCommonConstants.TABLE_DATA_SIZE) ||
       row.getString(0).contains(CarbonCommonConstants.TABLE_INDEX_SIZE))
     assert(res1.length == 2)
-    res1.foreach(row => assert(row.getString(1).trim.toLong > 0))
+    res1.foreach(row => assert(row.getString(1).trim.substring(0, 2).toDouble > 0))
   }
 
   test("get data size and index size after major compaction") {
@@ -73,7 +76,7 @@ class GetDataSizeAndIndexSizeTest extends QueryTest with BeforeAndAfterAll {
       .filter(row => row.getString(0).contains(CarbonCommonConstants.TABLE_DATA_SIZE) ||
         row.getString(0).contains(CarbonCommonConstants.TABLE_INDEX_SIZE))
     assert(res2.length == 2)
-    res2.foreach(row => assert(row.getString(1).trim.toLong > 0))
+    res2.foreach(row => assert(row.getString(1).trim.substring(0, 2).toDouble > 0))
   }
 
   test("get data size and index size after minor compaction") {
@@ -91,7 +94,7 @@ class GetDataSizeAndIndexSizeTest extends QueryTest with BeforeAndAfterAll {
       .filter(row => row.getString(0).contains(CarbonCommonConstants.TABLE_DATA_SIZE) ||
         row.getString(0).contains(CarbonCommonConstants.TABLE_INDEX_SIZE))
     assert(res3.length == 2)
-    res3.foreach(row => assert(row.getString(1).trim.toLong > 0))
+    res3.foreach(row => assert(row.getString(1).trim.substring(0, 2).toDouble > 0))
   }
 
   test("get data size and index size after insert into") {
@@ -105,7 +108,7 @@ class GetDataSizeAndIndexSizeTest extends QueryTest with BeforeAndAfterAll {
       .filter(row => row.getString(0).contains(CarbonCommonConstants.TABLE_DATA_SIZE) ||
         row.getString(0).contains(CarbonCommonConstants.TABLE_INDEX_SIZE))
     assert(res4.length == 2)
-    res4.foreach(row => assert(row.getString(1).trim.toLong > 0))
+    res4.foreach(row => assert(row.getString(1).trim.substring(0, 2).toDouble > 0))
   }
 
   test("get data size and index size after insert overwrite") {
@@ -119,7 +122,7 @@ class GetDataSizeAndIndexSizeTest extends QueryTest with BeforeAndAfterAll {
       .filter(row => row.getString(0).contains(CarbonCommonConstants.TABLE_DATA_SIZE) ||
         row.getString(0).contains(CarbonCommonConstants.TABLE_INDEX_SIZE))
     assert(res5.length == 2)
-    res5.foreach(row => assert(row.getString(1).trim.toLong > 0))
+    res5.foreach(row => assert(row.getString(1).trim.substring(0, 2).toDouble > 0))
   }
 
   test("get data size and index size for empty table") {
@@ -128,15 +131,14 @@ class GetDataSizeAndIndexSizeTest extends QueryTest with BeforeAndAfterAll {
       .filter(row => row.getString(0).contains(CarbonCommonConstants.TABLE_DATA_SIZE) ||
         row.getString(0).contains(CarbonCommonConstants.TABLE_INDEX_SIZE))
     assert(res6.length == 2)
-    res6.foreach(row => assert(row.getString(1).trim.toLong == 0))
+    res6.foreach(row => assert(row.getString(1).trim.substring(0, 2).toDouble == 0))
   }
 
   test("get last update time for empty table") {
     sql("CREATE TABLE tableSize9 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED BY 'org.apache.carbondata.format'")
     val res7 = sql("DESCRIBE FORMATTED tableSize9").collect()
-      .filter(row => row.getString(0).contains(CarbonCommonConstants.LAST_UPDATE_TIME))
+      .filter(row => row.getString(0).contains("Last Update"))
     assert(res7.length == 1)
-    res7.foreach(row => assert(row.getString(1).trim.toLong == 0))
   }
 
   test("get last update time for unempty table") {
@@ -144,9 +146,8 @@ class GetDataSizeAndIndexSizeTest extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE tableSize10 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
 
     val res8 = sql("DESCRIBE FORMATTED tableSize10").collect()
-      .filter(row => row.getString(0).contains(CarbonCommonConstants.LAST_UPDATE_TIME))
+      .filter(row => row.getString(0).contains("Last Update"))
     assert(res8.length == 1)
-    res8.foreach(row => assert(row.getString(1).trim.toLong > 0))
   }
 
   test("index and datasize for update scenario") {
@@ -160,13 +161,13 @@ class GetDataSizeAndIndexSizeTest extends QueryTest with BeforeAndAfterAll {
       .filter(row => row.getString(0).contains(CarbonCommonConstants.TABLE_DATA_SIZE) ||
                      row.getString(0).contains(CarbonCommonConstants.TABLE_INDEX_SIZE))
     assert(res9.length == 2)
-    res9.foreach(row => assert(row.getString(1).trim.toLong > 0))
+    res9.foreach(row => assert(row.getString(1).trim.substring(0, 2).toDouble > 0))
     sql("update tableSize11 set (empno) = (234)").show()
     val res10 = sql("DESCRIBE FORMATTED tableSize11").collect()
       .filter(row => row.getString(0).contains(CarbonCommonConstants.TABLE_DATA_SIZE) ||
                      row.getString(0).contains(CarbonCommonConstants.TABLE_INDEX_SIZE))
     assert(res10.length == 2)
-    res10.foreach(row => assert(row.getString(1).trim.toLong > 0))
+    res10.foreach(row => assert(row.getString(1).trim.substring(0, 2).toDouble > 0))
   }
 
 }

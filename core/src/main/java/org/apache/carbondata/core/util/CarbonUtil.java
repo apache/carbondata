@@ -2513,6 +2513,9 @@ public final class CarbonUtil {
                 FileFactory.getCarbonFile(tableStatusPath, FileFactory.getFileType(tableStatusPath))
                     .getLastModifiedTime();
           }
+          if (!FileFactory.isFileExist(metadataPath)) {
+            dataSize = FileFactory.getDirectorySize(carbonTable.getTablePath());
+          }
           dataIndexSizeMap
               .put(String.valueOf(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE), dataSize);
           dataIndexSizeMap

@@ -269,7 +269,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       sql("SELECT decimal FROM carbon11"),Seq(Row(BigDecimal.valueOf(10000.00)),Row(BigDecimal.valueOf(1234.44))))
     val descResult =sql("desc formatted carbon11")
     val isStreaming: String = descResult.collect().find(row=>row(0).asInstanceOf[String].trim.equalsIgnoreCase("streaming")).get.get(1).asInstanceOf[String]
-    assert(isStreaming.contains("true"))
+    assert(isStreaming.contains("sink"))
   }
 
   test("test datasource table with specified char") {
@@ -287,7 +287,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
   private def getSortColumnValue(tableName: String): Array[String] = {
     val desc = sql(s"desc formatted $tableName")
     val sortColumnRow = desc.collect.find(r =>
-      r(0).asInstanceOf[String].trim.equalsIgnoreCase("SORT_COLUMNS")
+      r(0).asInstanceOf[String].trim.equalsIgnoreCase("Sort Columns")
     )
     assert(sortColumnRow.isDefined)
     sortColumnRow.get.get(1).asInstanceOf[String].split(",")

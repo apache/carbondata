@@ -1661,7 +1661,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
     val resultStreaming = sql("DESC FORMATTED stream_table_file").collect()
       .filter(_.getString(0).trim.equals("Streaming"))
     assertResult(1)(resultStreaming.length)
-    assertResult("true")(resultStreaming(0).getString(1).trim)
+    assertResult("sink")(resultStreaming(0).getString(1).trim)
   }
 
 

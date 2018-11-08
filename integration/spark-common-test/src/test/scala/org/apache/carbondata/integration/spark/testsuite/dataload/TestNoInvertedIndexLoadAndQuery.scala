@@ -283,7 +283,12 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
         """
            describe formatted indexFormat
         """),
-      true,"NOINVERTEDINDEX")
+      true,"Inverted Index Columns")
+
+    sql(
+      """
+           describe formatted indexFormat
+        """).show(100, false)
   }
 
   test("filter query on dictionary and no inverted index column where all values are null"){

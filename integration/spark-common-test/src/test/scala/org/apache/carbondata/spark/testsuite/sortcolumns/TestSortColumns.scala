@@ -353,8 +353,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
 
   test("describe formatted for sort_columns") {
     sql("CREATE TABLE sorttableDesc (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='empno,empname')")
-    checkExistence(sql("describe formatted sorttableDesc"),true,"SORT_COLUMNS")
-    checkExistence(sql("describe formatted sorttableDesc"),true,"empno,empname")
+    checkExistence(sql("describe formatted sorttableDesc"),true,"Sort Columns empno, empname")
   }
 
   test("duplicate columns in sort_columns") {

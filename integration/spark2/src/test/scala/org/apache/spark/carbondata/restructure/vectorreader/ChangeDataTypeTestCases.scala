@@ -119,9 +119,9 @@ class ChangeDataTypeTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       checkAnswer(sql("SELECT decimalField FROM changedatatypetest"),
         Seq(Row(new BigDecimal("21.23").setScale(5)), Row(new BigDecimal("21.23").setScale(5))))
       sql("ALTER TABLE changedatatypetest COMPACT 'major'")
-      checkExistence(sql("SHOW SEGMENTS FOR TABLE changedatatypetest"), true, "0Compacted")
-      checkExistence(sql("SHOW SEGMENTS FOR TABLE changedatatypetest"), true, "1Compacted")
-      checkExistence(sql("SHOW SEGMENTS FOR TABLE changedatatypetest"), true, "0.1Success")
+      checkExistence(sql("SHOW SEGMENTS FOR TABLE changedatatypetest"), true, "0 Compacted")
+      checkExistence(sql("SHOW SEGMENTS FOR TABLE changedatatypetest"), true, "1 Compacted")
+      checkExistence(sql("SHOW SEGMENTS FOR TABLE changedatatypetest"), true, "0.1 Success")
       afterAll
     }
     sqlContext.setConf("carbon.enable.vector.reader", "true")
