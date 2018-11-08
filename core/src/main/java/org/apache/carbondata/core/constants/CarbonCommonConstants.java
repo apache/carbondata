@@ -62,11 +62,6 @@ public final class CarbonCommonConstants {
   public static final int BLOCKLET_SIZE_MAX_VAL = 12000000;
 
   /**
-   * default block size in MB
-   */
-  public static final String BLOCK_SIZE_DEFAULT_VAL = "1024";
-
-  /**
    * min block size in MB
    */
   public static final int BLOCK_SIZE_MIN_VAL = 1;
@@ -438,8 +433,16 @@ public final class CarbonCommonConstants {
   public static final String COLUMN_PROPERTIES = "columnproperties";
   // table block size in MB
   public static final String TABLE_BLOCKSIZE = "table_blocksize";
+
+  // default block size in MB
+  public static final String TABLE_BLOCK_SIZE_DEFAULT = "1024";
+
   // table blocklet size in MB
   public static final String TABLE_BLOCKLET_SIZE = "table_blocklet_size";
+
+  // default blocklet size value in MB
+  public static final String TABLE_BLOCKLET_SIZE_DEFAULT = "64";
+
   /**
    * set in column level to disable inverted index
    * @Deprecated :This property is deprecated, it is kept just for compatibility

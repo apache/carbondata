@@ -61,7 +61,7 @@ class StoredAsCarbondataSuite extends QueryTest with BeforeAndAfterEach {
       .filter(row => row.getString(0).contains(CarbonCommonConstants.TABLE_DATA_SIZE) ||
         row.getString(0).contains(CarbonCommonConstants.TABLE_INDEX_SIZE))
     assert(res3.length == 2)
-    res3.foreach(row => assert(row.getString(1).trim.toLong > 0))
+    res3.foreach(row => assert(row.getString(1).trim.substring(0, 3).toDouble > 0))
   }
 
   test("CARBONDATA-2262: Don't Support the syntax of 'STORED AS 'carbondata''") {

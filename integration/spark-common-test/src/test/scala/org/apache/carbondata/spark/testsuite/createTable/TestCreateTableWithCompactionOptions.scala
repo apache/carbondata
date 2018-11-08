@@ -175,24 +175,4 @@ class TestCreateTableWithCompactionOptions extends QueryTest with BeforeAndAfter
         "only int value between 0 and 100 is supported."))
   }
 
-  test("test create table without compaction options") {
-    sql(
-      s"""
-         | CREATE TABLE $tableWithoutCompactionOptions(
-         | intField INT,
-         | stringField STRING
-         | )
-         | STORED BY 'carbondata'
-       """.stripMargin)
-
-    val tableOptions = sql(s"DESCRIBE FORMATTED $tableWithoutCompactionOptions")
-      .collect().map(r => (r.getString(0).trim, r.getString(1).trim)).toMap
-
-    assert(!tableOptions.contains("MAJOR_COMPACTION_SIZE"))
-    assert(!tableOptions.contains("AUTO_LOAD_MERGE"))
-    assert(!tableOptions.contains("COMPACTION_LEVEL_THRESHOLD"))
-    assert(!tableOptions.contains("COMPACTION_PRESERVE_SEGMENTS"))
-    assert(!tableOptions.contains("ALLOWED_COMPACTION_DAYS"))
-  }
-
 }
