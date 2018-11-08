@@ -1181,7 +1181,7 @@ public final class CarbonCommonConstants {
   /**
    * ENABLE_QUERY_STATISTICS
    */
-  @CarbonProperty
+  @CarbonProperty(dynamicConfigurable = true)
   public static final String ENABLE_QUERY_STATISTICS = "enable.query.statistics";
 
   /**
@@ -1203,7 +1203,7 @@ public final class CarbonCommonConstants {
   /**
    * The batch size of records which returns to client.
    */
-  @CarbonProperty
+  @CarbonProperty(dynamicConfigurable = true)
   public static final String DETAIL_QUERY_BATCH_SIZE = "carbon.detail.batch.size";
 
   public static final int DETAIL_QUERY_BATCH_SIZE_DEFAULT = 100;
@@ -1229,7 +1229,7 @@ public final class CarbonCommonConstants {
   /**
    * property to enable min max during filter query
    */
-  @CarbonProperty
+  @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_QUERY_MIN_MAX_ENABLED = "carbon.enableMinMax";
 
   /**
@@ -1267,7 +1267,7 @@ public final class CarbonCommonConstants {
   /**
    * This property defines how the tasks are split/combined and launch spark tasks during query
    */
-  @CarbonProperty
+  @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_TASK_DISTRIBUTION = "carbon.task.distribution";
 
   /**

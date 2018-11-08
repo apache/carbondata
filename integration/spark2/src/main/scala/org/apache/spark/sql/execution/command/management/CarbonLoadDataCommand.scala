@@ -51,7 +51,7 @@ import org.apache.spark.util.{CarbonReflectionUtils, CausedBy, FileUtils}
 import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, SortScopeOptions}
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -74,7 +74,6 @@ import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataE
 import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.{CarbonLoadModelBuilder, LoadOption}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.processing.loading.sort.SortScopeOptions
 import org.apache.carbondata.processing.util.{CarbonBadRecordUtil, CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.dictionary.provider.SecureDictionaryServiceProvider
 import org.apache.carbondata.spark.dictionary.server.SecureDictionaryServer
@@ -187,31 +186,26 @@ case class CarbonLoadDataCommand(
     val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
     val hadoopConf = sparkSession.sessionState.newHadoopConf()
     val carbonLoadModel = new CarbonLoadModel()
-    val tableProperties = table.getTableInfo.getFactTable.getTableProperties
     val optionsFinal = LoadOption.fillOptionWithDefaultValue(options.asJava)
-    optionsFinal.put("sort_scope", tableProperties.asScala.getOrElse("sort_scope",
-      carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
-        carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-          CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))
-
-      optionsFinal
-        .put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options.asJava, table))
-      val factPath = if (dataFrame.isDefined) {
-        ""
-      } else {
-        FileUtils.getPaths(factPathFromUser, hadoopConf)
-      }
-      carbonLoadModel.setParentTablePath(parentTablePath)
-      carbonLoadModel.setFactFilePath(factPath)
-      carbonLoadModel.setCarbonTransactionalTable(table.getTableInfo.isTransactionalTable)
-      carbonLoadModel.setAggLoadRequest(
-        internalOptions.getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL,
-          CarbonCommonConstants.IS_INTERNAL_LOAD_CALL_DEFAULT).toBoolean)
-      carbonLoadModel.setSegmentId(internalOptions.getOrElse("mergedSegmentName", ""))
-      val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
-        .getOrElse(CarbonCommonConstants.COMPRESSOR,
-          CompressorFactory.getInstance().getCompressor.getName)
-      carbonLoadModel.setColumnCompressor(columnCompressor)
+    optionsFinal.put("sort_scope", table.getSortScope.toString)
+    optionsFinal
+      .put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options.asJava, table))
+    val factPath = if (dataFrame.isDefined) {
+      ""
+    } else {
+      FileUtils.getPaths(factPathFromUser, hadoopConf)
+    }
+    carbonLoadModel.setParentTablePath(parentTablePath)
+    carbonLoadModel.setFactFilePath(factPath)
+    carbonLoadModel.setCarbonTransactionalTable(table.getTableInfo.isTransactionalTable)
+    carbonLoadModel.setAggLoadRequest(
+      internalOptions.getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL,
+        CarbonCommonConstants.IS_INTERNAL_LOAD_CALL_DEFAULT).toBoolean)
+    carbonLoadModel.setSegmentId(internalOptions.getOrElse("mergedSegmentName", ""))
+    val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
+      .getOrElse(CarbonCommonConstants.COMPRESSOR,
+        CompressorFactory.getInstance().getCompressor.getName)
+    carbonLoadModel.setColumnCompressor(columnCompressor)
 
     val javaPartition = mutable.Map[String, String]()
     partition.foreach { case (k, v) =>

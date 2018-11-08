@@ -30,6 +30,8 @@ import java.util.Map;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
+import org.apache.carbondata.core.constants.SortScopeOptions;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
@@ -55,6 +57,7 @@ import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
 import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -919,6 +922,24 @@ public class CarbonTable implements Serializable {
       }
     }
     return sort_columsList;
+  }
+
+  public SortScopeOptions.SortScope getSortScope() {
+    String sortScope = tableInfo.getFactTable().getTableProperties().get("sort_scope");
+    if (sortScope == null) {
+      if (getNumberOfSortColumns() == 0) {
+        return SortScopeOptions.SortScope.NO_SORT;
+      } else {
+        return SortScopeOptions.getSortScope(
+            CarbonProperties.getInstance().getProperty(
+                CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
+                CarbonProperties.getInstance().getProperty(
+                    CarbonCommonConstants.LOAD_SORT_SCOPE,
+                    CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)));
+      }
+    } else {
+      return SortScopeOptions.getSortScope(sortScope);
+    }
   }
 
   public int getNumberOfSortColumns() {

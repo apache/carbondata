@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.SortScopeOptions;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.dictionary.service.DictionaryServiceProvider;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -935,5 +936,10 @@ public class CarbonLoadModel implements Serializable {
 
   public void setColumnCompressor(String columnCompressor) {
     this.columnCompressor = columnCompressor;
+  }
+
+  public boolean isSortTable() {
+    return carbonDataLoadSchema.getCarbonTable().getSortScope() !=
+        SortScopeOptions.SortScope.NO_SORT;
   }
 }

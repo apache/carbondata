@@ -15,9 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.loading.sort;
-
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
+package org.apache.carbondata.core.constants;
 
 /**
  * Sort scope options

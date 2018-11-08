@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.rdd
 
+import java.net.URI
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
@@ -24,13 +25,16 @@ import java.util.{Date, UUID}
 import scala.collection.mutable
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.{TaskAttemptID, TaskType}
+import org.apache.hadoop.mapreduce.lib.input.FileSplit
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{Partition, SparkEnv, TaskContext}
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionWrap, RDD}
 import org.apache.spark.serializer.SerializerInstance
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.execution.command.ExecutionErrors
+import org.apache.spark.sql.execution.datasources.FilePartition
 import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.CarbonIterator
@@ -47,7 +51,8 @@ import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonQueryUtil
 import org.apache.carbondata.spark.DataLoadResult
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
+import org.apache.carbondata.spark.load.CsvRDDHelper
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
 
 /**
  * This partition class use to split by Host
@@ -110,8 +115,14 @@ class NewCarbonDataLoadRDD[K, V](
   }
 
   override def internalGetPartitions: Array[Partition] = {
-    blocksGroupBy.zipWithIndex.map { b =>
-      new CarbonNodePartition(id, b._2, b._1._1, b._1._2)
+    if (carbonLoadModel.isSortTable) {
+      blocksGroupBy.zipWithIndex.map { b =>
+        new CarbonNodePartition(id, b._2, b._1._1, b._1._2)
+      }
+    } else {
+      val configuration = FileFactory.getConfiguration
+      CsvRDDHelper.csvGetPartition(ss, carbonLoadModel, configuration)
+        .map(_.asInstanceOf[Partition])
     }
   }
 
@@ -123,9 +134,9 @@ class NewCarbonDataLoadRDD[K, V](
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
       val loadMetadataDetails = new LoadMetadataDetails()
-      val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
+      val executionErrors = ExecutionErrors(FailureCauses.NONE, "")
       var model: CarbonLoadModel = _
-      val uniqueLoadStatusId =
+      val uniqueLoadStatusId: String =
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
       try {
         loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PATITION_ID)
@@ -134,6 +145,10 @@ class NewCarbonDataLoadRDD[K, V](
         val preFetch = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
           .USE_PREFETCH_WHILE_LOADING, CarbonCommonConstants.USE_PREFETCH_WHILE_LOADING_DEFAULT)
         carbonLoadModel.setPreFetch(preFetch.toBoolean)
+        carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
+        model = carbonLoadModel.getCopyWithPartition(
+          carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
+
         val recordReaders = getInputIterators
         val loader = new SparkPartitionLoader(model,
           theSplit.index,
@@ -179,25 +194,38 @@ class NewCarbonDataLoadRDD[K, V](
         val hadoopAttemptContext = new TaskAttemptContextImpl(configuration, attemptId)
         val format = new CSVInputFormat
 
-        val split = theSplit.asInstanceOf[CarbonNodePartition]
-        val inputSize = split.blocksDetails.map(_.getBlockLength).sum * 0.1 * 10  / 1024 / 1024
-        logInfo("Input split: " + split.serializableHadoopSplit)
-        logInfo("The block count in this node: " + split.nodeBlocksDetail.length)
-        logInfo(f"The input data size in this node: $inputSize%.2fMB")
-        CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordHostBlockMap(
-            split.serializableHadoopSplit, split.nodeBlocksDetail.length)
-        carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
-        val fileList: java.util.List[String] = new java.util.ArrayList[String](
-            CarbonCommonConstants.CONSTANT_SIZE_TEN)
-        CarbonQueryUtil.splitFilePath(carbonLoadModel.getFactFilePath, fileList, ",")
-        model = carbonLoadModel.getCopyWithPartition(
-          carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
-        val readers =
-          split.nodeBlocksDetail.map(format.createRecordReader(_, hadoopAttemptContext))
-        readers.zipWithIndex.map { case (reader, index) =>
-          new CSVRecordReaderIterator(reader, split.nodeBlocksDetail(index), hadoopAttemptContext)
+        val (inputSplits, numBlocks, inputSize) = if (carbonLoadModel.isSortTable) {
+          val split = theSplit.asInstanceOf[CarbonNodePartition]
+          val inputSize = split.blocksDetails.map(_.getBlockLength).sum * 0.1 * 10 / 1024 / 1024
+          val numBlocks = split.nodeBlocksDetail.length
+          val inputSplits: Seq[FileSplit] = split.nodeBlocksDetail
+          CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordHostBlockMap(
+            split.serializableHadoopSplit, numBlocks)
+          (inputSplits, numBlocks, inputSize)
+        } else {
+          val split = theSplit.asInstanceOf[FilePartition]
+          val inputSize = split.files.map(x => x.length).sum * 0.1 * 10 / 1024 / 1024
+          val numBlocks = split.files.size
+          val inputSplits: Seq[FileSplit] = split.files.map { file =>
+            new FileSplit(new Path(new URI(file.filePath)), file.start, file.length, Array.empty)
+          }
+          (inputSplits, numBlocks, inputSize)
         }
+
+        logInfo("Input split: " + inputSplits.mkString(", "))
+        logInfo("The block count in this node: " + numBlocks)
+        logInfo(f"The input data size in this node: $inputSize%.2fMB")
+
+        val fileList: java.util.List[String] = new java.util.ArrayList[String](
+          CarbonCommonConstants.CONSTANT_SIZE_TEN)
+        CarbonQueryUtil.splitFilePath(carbonLoadModel.getFactFilePath, fileList, ",")
+
+        val readers = inputSplits.map(format.createRecordReader(_, hadoopAttemptContext))
+        readers.zipWithIndex.map { case (reader, index) =>
+          new CSVRecordReaderIterator(reader, inputSplits(index), hadoopAttemptContext)
+        }.toArray
       }
+
       /**
        * generate blocks id
        *
@@ -223,17 +251,22 @@ class NewCarbonDataLoadRDD[K, V](
   }
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
-    val theSplit = split.asInstanceOf[CarbonNodePartition]
-    val firstOptionLocation: Seq[String] = List(theSplit.serializableHadoopSplit)
-    logInfo("Preferred Location for split : " + firstOptionLocation.mkString(","))
-    /**
-     * At original logic, we were adding the next preferred location so that in case of the
-     * failure the Spark should know where to schedule the failed task.
-     * Remove the next preferred location is because some time Spark will pick the same node
-     * for 2 tasks, so one node is getting over loaded with the task and one have no task to
-     * do. And impacting the performance despite of any failure.
-     */
-    firstOptionLocation
+    if (carbonLoadModel.isSortTable) {
+      val theSplit = split.asInstanceOf[CarbonNodePartition]
+      val firstOptionLocation: Seq[String] = List(theSplit.serializableHadoopSplit)
+      logInfo("Preferred Location for split : " + firstOptionLocation.mkString(","))
+
+      /**
+       * At original logic, we were adding the next preferred location so that in case of the
+       * failure the Spark should know where to schedule the failed task.
+       * Remove the next preferred location is because some time Spark will pick the same node
+       * for 2 tasks, so one node is getting over loaded with the task and one have no task to
+       * do. And impacting the performance despite of any failure.
+       */
+      firstOptionLocation
+    } else {
+      super.getPreferredLocations(split)
+    }
   }
 }
 

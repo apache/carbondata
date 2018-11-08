@@ -28,6 +28,7 @@ import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.{TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.hadoop.mapreduce.task.{JobContextImpl, TaskAttemptContextImpl}
+import org.apache.spark.Partition
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
@@ -37,7 +38,7 @@ import org.apache.spark.sql.execution.datasources.{FilePartition, FileScanRDD, P
 import org.apache.spark.sql.util.SparkSQLUtil
 import org.apache.spark.sql.util.SparkSQLUtil.sessionState
 
-import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
@@ -48,15 +49,10 @@ object CsvRDDHelper {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  /**
-   * createsw a RDD that does reading of multiple CSV files
-   */
-  def csvFileScanRDD(
+  def csvGetPartition(
       spark: SparkSession,
       model: CarbonLoadModel,
-      hadoopConf: Configuration
-  ): RDD[InternalRow] = {
-    // 1. partition
+      hadoopConf: Configuration): Array[FilePartition] = {
     val defaultMaxSplitBytes = sessionState(spark).conf.filesMaxPartitionBytes
     val openCostInBytes = sessionState(spark).conf.filesOpenCostInBytes
     val defaultParallelism = spark.sparkContext.defaultParallelism
@@ -108,6 +104,19 @@ object CsvRDDHelper {
       currentFiles += file
     }
     closePartition()
+    partitions.toArray
+  }
+
+  /**
+   * createsw a RDD that does reading of multiple CSV files
+   */
+  def csvFileScanRDD(
+      spark: SparkSession,
+      model: CarbonLoadModel,
+      hadoopConf: Configuration
+  ): RDD[InternalRow] = {
+    // 1. partition
+    val partitions = csvGetPartition(spark, model, hadoopConf)
 
     // 2. read function
     val serializableConfiguration = SparkSQLUtil.getSerializableConfigurableInstance(hadoopConf)

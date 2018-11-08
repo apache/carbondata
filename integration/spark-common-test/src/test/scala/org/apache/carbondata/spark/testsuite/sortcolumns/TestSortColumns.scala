@@ -92,7 +92,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       " workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
       "utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties" +
-      "('dictionary_exclude'='empno','sort_columns'='empno', 'SORT_SCOPE'='BATCH_SORT')")
+      "('dictionary_exclude'='empno','sort_columns'='empno', 'SORT_SCOPE'='NO_SORT')")
     sql(
       s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable1a OPTIONS
          |('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'batch_sort_size_inmb'='64')""".stripMargin)
