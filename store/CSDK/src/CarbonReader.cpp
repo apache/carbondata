@@ -207,6 +207,18 @@ jobject CarbonReader::readNextRow() {
     return result;
 }
 
+jobjectArray CarbonReader::readNextStringRow() {
+    if (readNextStringRowID == NULL) {
+        jclass carbonReader = jniEnv->GetObjectClass(carbonReaderObject);
+        readNextStringRowID = jniEnv->GetMethodID(carbonReader, "readNextStringRow",
+            "()Ljava/lang/String;");
+        if (readNextStringRowID == NULL) {
+            throw std::runtime_error("Can't find the method in java: readNextStringRow");
+        }
+    }
+    return (jobjectArray) jniEnv->CallObjectMethod(carbonReaderObject, readNextStringRowID);
+}
+
 jobjectArray CarbonReader::readNextBatchRow() {
     if (readNextBatchRowID == NULL) {
         jclass carbonReader = jniEnv->GetObjectClass(carbonReaderObject);
@@ -217,6 +229,18 @@ jobjectArray CarbonReader::readNextBatchRow() {
         }
     }
     return (jobjectArray) jniEnv->CallObjectMethod(carbonReaderObject, readNextBatchRowID);
+}
+
+jobject CarbonReader::readNextBatchStringRow() {
+    if (readNextBatchStringRowID == NULL) {
+        jclass carbonReader = jniEnv->GetObjectClass(carbonReaderObject);
+        readNextBatchStringRowID = jniEnv->GetMethodID(carbonReader, "readNextBatchStringRow",
+             "()Ljava/lang/String;");
+        if (readNextBatchStringRowID == NULL) {
+            throw std::runtime_error("Can't find the method in java: readNextBatchStringRow");
+        }
+    }
+    return jniEnv->CallObjectMethod(carbonReaderObject, readNextBatchStringRowID);
 }
 
 void CarbonReader::close() {

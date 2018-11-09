@@ -42,6 +42,9 @@ import junit.framework.TestCase;
 import org.apache.commons.io.FileUtils;
 import org.junit.*;
 
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.BATCH_SEPARATOR;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ROW_SEPARATOR;
+
 public class CarbonReaderTest extends TestCase {
 
   @Before
@@ -2070,6 +2073,130 @@ public class CarbonReaderTest extends TestCase {
         Assert.fail(e.getMessage());
       }
     }
+  }
+
+  public void testReadNextStringRow() throws IOException, InterruptedException, InvalidLoadOptionException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+    DataMapStoreManager.getInstance()
+        .clearDataMaps(AbsoluteTableIdentifier.from(path));
+
+    Field[] fields = new Field[6];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("home", DataTypes.STRING);
+    fields[2] = new Field("school", DataTypes.STRING);
+    fields[3] = new Field("company", DataTypes.STRING);
+    fields[4] = new Field("schoolTime", DataTypes.TIMESTAMP);
+    fields[5] = new Field("companyTime", DataTypes.TIMESTAMP);
+
+    CarbonWriter writer = CarbonWriter.builder()
+        .outputPath(path)
+        .withCsvInput(new Schema(fields))
+        .writtenBy("CarbonReaderTest")
+        .build();
+
+    for (int i = 0; i < 10; i++) {
+      String[] row = new String[]{
+          "name" + (i),
+          "home" + (i % 10),
+          "school" + (i * 10),
+          "company" + (i / 10),
+          "2019-02-12 03:03:34",
+          "2017-04-19 00:00:01"
+      };
+      writer.write(row);
+    }
+    writer.close();
+
+    CarbonReader reader = CarbonReader
+        .builder(path)
+        .build();
+
+    // expected output after sorting
+    String[] name = new String[200];
+    Integer[] age = new Integer[200];
+    for (int i = 0; i < 200; i++) {
+      name[i] = "robot" + (i / 10);
+      age[i] = i;
+    }
+
+    int i = 0;
+    while (reader.hasNext()) {
+      String stringRow = reader.readNextStringRow();
+      String[] row = stringRow.split(ROW_SEPARATOR);
+      Assert.assertTrue(row[0].equalsIgnoreCase("name" + (i)));
+      Assert.assertTrue(row[1].equalsIgnoreCase("home" + (i % 10)));
+      Assert.assertTrue(row[2].equalsIgnoreCase("school" + (i * 10)));
+      Assert.assertTrue(row[3].equalsIgnoreCase("company" + (i / 10)));
+      i++;
+    }
+    Assert.assertEquals(i, 10);
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testReadNextBatchStringRow() throws Exception {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+    DataMapStoreManager.getInstance()
+        .clearDataMaps(AbsoluteTableIdentifier.from(path));
+
+    Field[] fields = new Field[6];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("home", DataTypes.STRING);
+    fields[2] = new Field("school", DataTypes.STRING);
+    fields[3] = new Field("company", DataTypes.STRING);
+    fields[4] = new Field("schoolTime", DataTypes.TIMESTAMP);
+    fields[5] = new Field("companyTime", DataTypes.TIMESTAMP);
+
+    CarbonWriter writer = CarbonWriter.builder()
+        .outputPath(path)
+        .withCsvInput(new Schema(fields))
+        .writtenBy("CarbonReaderTest")
+        .build();
+
+    for (int i = 0; i < 10; i++) {
+      String[] row = new String[]{
+          "name" + (i),
+          "home" + (i % 10),
+          "school" + (i * 10),
+          "company" + (i / 10),
+          "2019-02-12 03:03:34",
+          "2017-04-19 00:00:01"
+      };
+      writer.write(row);
+    }
+    writer.close();
+
+    CarbonReader reader = CarbonReader
+        .builder(path)
+        .withBatch(3)
+        .withRowRecordReader()
+        .build();
+
+    // expected output after sorting
+    String[] name = new String[200];
+    Integer[] age = new Integer[200];
+    for (int i = 0; i < 200; i++) {
+      name[i] = "robot" + (i / 10);
+      age[i] = i;
+    }
+
+    int i = 0;
+    while (reader.hasNext()) {
+      String stringRow = reader.readNextBatchStringRow();
+      String[] rows = stringRow.split(BATCH_SEPARATOR);
+      for (int j = 0; j < rows.length; j++) {
+        String[] row = rows[j].split(ROW_SEPARATOR);
+        Assert.assertTrue(row[0].equalsIgnoreCase("name" + (i)));
+        Assert.assertTrue(row[1].equalsIgnoreCase("home" + (i % 10)));
+        Assert.assertTrue(row[2].equalsIgnoreCase("school" + (i * 10)));
+        Assert.assertTrue(row[3].equalsIgnoreCase("company" + (i / 10)));
+        i++;
+      }
+    }
+    Assert.assertEquals(i, 10);
+    FileUtils.deleteDirectory(new File(path));
   }
 
 }

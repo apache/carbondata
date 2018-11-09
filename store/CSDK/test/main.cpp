@@ -23,6 +23,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <vector>
 #include "../src/CarbonReader.h"
 #include "../src/CarbonRow.h"
 #include "../src/CarbonWriter.h"
@@ -291,6 +292,13 @@ void testReadNextRow(JNIEnv *env, char *path, int printNum, char **argv, int arg
         while (carbonReaderClass.hasNext()) {
 
             row = carbonReaderClass.readNextRow();
+            carbonRow.setCarbonRow(row);
+            carbonRow.getString(0);
+            carbonRow.getString(1);
+            carbonRow.getString(2);
+            carbonRow.getString(3);
+            carbonRow.getLong(4);
+            carbonRow.getLong(5);
 
             i++;
             if (i > 1 && i % printNum == 0) {
@@ -300,7 +308,6 @@ void testReadNextRow(JNIEnv *env, char *path, int printNum, char **argv, int arg
                 printf("%d: time is %lf s, speed is %lf records/s  ", i, time / 1000000.0,
                        printNum / (time / 1000000.0));
 
-                carbonRow.setCarbonRow(row);
                 printf("%s\t", carbonRow.getString(0));
                 printf("%s\t", carbonRow.getString(1));
                 printf("%s\t", carbonRow.getString(2));
@@ -327,17 +334,98 @@ void testReadNextRow(JNIEnv *env, char *path, int printNum, char **argv, int arg
 }
 
 /**
+ * test read data by readNextStringRow method
+ *
+ * @param env  jni env
+ */
+void testReadNextStringRow(JNIEnv *env, char *path, int printNum, char **argv, int argc, bool useVectorReader) {
+    printf("\nTest next Row Performance, useVectorReader is ");
+    printBoolean(useVectorReader);
+    printf("\n");
+
+    struct timeval start, build, startRead, endBatchRead, endRead;
+    gettimeofday(&start, NULL);
+
+    try {
+        CarbonReader carbonReaderClass;
+
+        carbonReaderClass.builder(env, path);
+        if (argc > 1) {
+            carbonReaderClass.withHadoopConf("fs.s3a.access.key", argv[1]);
+            carbonReaderClass.withHadoopConf("fs.s3a.secret.key", argv[2]);
+            carbonReaderClass.withHadoopConf("fs.s3a.endpoint", argv[3]);
+        }
+        if (!useVectorReader) {
+            carbonReaderClass.withRowRecordReader();
+        }
+        carbonReaderClass.build();
+
+        gettimeofday(&build, NULL);
+        int time = 1000000 * (build.tv_sec - start.tv_sec) + build.tv_usec - start.tv_usec;
+        double buildTime = time / 1000000.0;
+        printf("\n\nbuild time is: %lf s\n\n", time / 1000000.0);
+
+        int i = 0;
+        gettimeofday(&startRead, NULL);
+        jobject row;
+        int sum2 = 0;
+        while (carbonReaderClass.hasNext()) {
+
+            row = carbonReaderClass.readNextStringRow();
+            char *charArray = (char *) env->GetStringUTFChars((jstring) row, JNI_FALSE);
+            sum2++;
+            int index = 0;
+            int j = 0;
+            while (charArray[j] != '\0') {
+                if ('\001' == charArray[j]) {
+                    char *temp = new char[j - index];
+                    for (int i = 0; i < j - index; i++) {
+                        temp[i] = charArray[index + i];
+                    }
+                    index = j + 1;
+                }
+                j++;
+            }
+            char *temp = new char[j - index];
+            for (int i = 0; i < j - index; i++) {
+                temp[i] = charArray[index + i];
+            }
+            i++;
+            if (i > 1 && i % printNum == 0) {
+                gettimeofday(&endBatchRead, NULL);
+                time = 1000000 * (endBatchRead.tv_sec - startRead.tv_sec) + endBatchRead.tv_usec - startRead.tv_usec;
+                printf("%d: time is %lf s, speed is %lf records/s  ", i, time / 1000000.0,
+                       printNum / (time / 1000000.0));
+                printf("\n");
+                gettimeofday(&startRead, NULL);
+            }
+            env->DeleteLocalRef(row);
+        }
+
+        gettimeofday(&endRead, NULL);
+        time = 1000000 * (endRead.tv_sec - build.tv_sec) + endRead.tv_usec - build.tv_usec;
+        printf("total line is: %d,\t build time is: %lf s,\tread time is %lf s, average speed is %lf records/s  ",
+               i, buildTime, time / 1000000.0, i / (time / 1000000.0));
+        carbonReaderClass.close();
+    } catch (jthrowable) {
+        env->ExceptionDescribe();
+    }
+}
+
+/**
  * test read data by readNextBatchRow method
  *
  * @param env  jni env
  */
 void testReadNextBatchRow(JNIEnv *env, char *path, int batchSize, int printNum, char **argv, int argc,
                           bool useVectorReader) {
-    printf("\n\nTest next Batch Row Performance:\n");
+    printf("\n\nTest next Batch Row Performance, useVectorReader is ");
     printBoolean(useVectorReader);
     printf("\n");
 
     struct timeval start, build, read;
+    int sumHasNext = 0;
+    int sumReadNext = 0;
     gettimeofday(&start, NULL);
 
     CarbonReader carbonReaderClass;
@@ -399,6 +487,8 @@ void testReadNextBatchRow(JNIEnv *env, char *path, int batchSize, int printNum, 
                                                endReadNextBatchRow.tv_usec - startReadNextBatchRow.tv_usec;
 
                     time = 1000000 * (read.tv_sec - startHasNext.tv_sec) + read.tv_usec - startHasNext.tv_usec;
+                    sumHasNext = sumHasNext + hasNextTime;
+                    sumReadNext = sumReadNext + readNextBatchTime;
                     printf("%d: time is %lf s, speed is %lf records/s, hasNext time is %lf s,readNextBatchRow time is %lf s ",
                            i, time / 1000000.0, printNum / (time / 1000000.0), hasNextTime / 1000000.0,
                            readNextBatchTime / 1000000.0);
@@ -420,10 +510,89 @@ void testReadNextBatchRow(JNIEnv *env, char *path, int batchSize, int printNum, 
     }
     gettimeofday(&endRead, NULL);
     time = 1000000 * (endRead.tv_sec - build.tv_sec) + endRead.tv_usec - build.tv_usec;
-    printf("total line is: %d,\t build time is: %lf s,\tread time is %lf s, average speed is %lf records/s  ",
-           i, buildTime, time / 1000000.0, i / (time / 1000000.0));
+    printf("total line is: %d,\t build time is: %lf s,\tread time is %lf s, average speed is %lf records/s, "
+           "hasNext total time is %lf, readNextBatch total time is %lf.\n",
+           i, buildTime, time / 1000000.0, i / (time / 1000000.0), sumHasNext / 1000000.0, sumReadNext / 1000000.0);
     carbonReaderClass.close();
     carbonRow.close();
+}
+
+/**
+ * test read data by readNextBatchRow method
+ *
+ * @param env  jni env
+ */
+void testReadNextBatchStringRow(JNIEnv *env, char *path, int batchSize, int printNum, char **argv, int argc,
+                                bool useVectorReader) {
+    printf("\n\nTest next Batch Row Performance, useVectorReader is ");
+    printBoolean(useVectorReader);
+    printf("\n");
+
+    struct timeval start, build;
+    int sumHasNext = 0;
+    int sumReadNext = 0;
+    gettimeofday(&start, NULL);
+
+    CarbonReader carbonReaderClass;
+
+    carbonReaderClass.builder(env, path);
+    if (argc > 1) {
+        carbonReaderClass.withHadoopConf("fs.s3a.access.key", argv[1]);
+        carbonReaderClass.withHadoopConf("fs.s3a.secret.key", argv[2]);
+        carbonReaderClass.withHadoopConf("fs.s3a.endpoint", argv[3]);
+    }
+    if (!useVectorReader) {
+        carbonReaderClass.withRowRecordReader();
+    }
+    carbonReaderClass.withBatch(batchSize);
+    try {
+        carbonReaderClass.build();
+    } catch (jthrowable e) {
+        env->ExceptionDescribe();
+    }
+
+    gettimeofday(&build, NULL);
+    int time = 1000000 * (build.tv_sec - start.tv_sec) + build.tv_usec - start.tv_usec;
+    double buildTime = time / 1000000.0;
+    printf("\n\nbuild time is: %lf s\n\n", time / 1000000.0);
+
+    int i = 0;
+    struct timeval startHasNext, startBatch, startReadNextBatchRow, endReadNextBatchRow, endRead, getString;
+    gettimeofday(&startHasNext, NULL);
+    gettimeofday(&startBatch, NULL);
+
+    int sum2;
+    while (carbonReaderClass.hasNext()) {
+
+        gettimeofday(&startReadNextBatchRow, NULL);
+        jobject batchString = carbonReaderClass.readNextBatchStringRow();
+        i = i + batchSize;
+        if (env->ExceptionCheck()) {
+            env->ExceptionDescribe();
+        }
+        gettimeofday(&endReadNextBatchRow, NULL);
+        char *charArray = (char *) env->GetStringUTFChars((jstring) batchString, JNI_FALSE);
+        string str = charArray;
+        for (int j = 0; j < str.length(); ++j) {
+            char s2 = '\002';
+            char s3 = charArray[j];
+            if (s3 == s2) {
+                sum2++;
+                if (sum2 > 0 && sum2 % printNum == 0) {
+                    cout << sum2 << ":" << j << "\n";
+                }
+            }
+        }
+        env->DeleteLocalRef(batchString);
+        gettimeofday(&startHasNext, NULL);
+    }
+    printf("%d", sum2);
+    gettimeofday(&endRead, NULL);
+    time = 1000000 * (endRead.tv_sec - build.tv_sec) + endRead.tv_usec - build.tv_usec;
+    printf("\ntotal line is: %d,\t build time is: %lf s,\tread time is %lf s, average speed is %lf records/s, "
+           "hasNext total time is %lf, readNextBatch total time is %lf.",
+           i, buildTime, time / 1000000.0, i / (time / 1000000.0), sumHasNext / 1000000.0, sumReadNext / 1000000.0);
+    carbonReaderClass.close();
 }
 
 /**
@@ -696,6 +865,9 @@ int main(int argc, char *argv[]) {
     } else {
         tryCatchException(env);
         tryCarbonRowException(env, smallFilePath);
+        int batch = 32000;
+        int printNum = 32000;
+
         testCarbonProperties(env);
         testWriteData(env, "./data", 1, argv);
         testWriteData(env, "./data", 1, argv);
@@ -704,8 +876,9 @@ int main(int argc, char *argv[]) {
         readSchema(env, path, false);
         readSchema(env, path, true);
 
-        int batch = 32000;
-        int printNum = 32000;
+        testReadNextStringRow(env, path, printNum, argv, 0, true);
+        testReadNextBatchStringRow(env, path, batch, printNum, argv, 0, true);
+
         testReadNextRow(env, path, printNum, argv, 0, true);
         testReadNextRow(env, path, printNum, argv, 0, false);
         testReadNextBatchRow(env, path, batch, printNum, argv, 0, true);

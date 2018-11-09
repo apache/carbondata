@@ -1704,10 +1704,8 @@ public final class CarbonCommonConstants {
    */
   public static final String FILE_SEPARATOR = "/";
 
-  /**
-   * ARRAY separator
-   */
-  public static final String ARRAY_SEPARATOR = "\001";
+  public static final String ROW_SEPARATOR = "\001";
+  public static final String BATCH_SEPARATOR = "\002";
   public static final String STRING = "String";
   public static final String SHORT = "Short";
   public static final String TIMESTAMP = "Timestamp";

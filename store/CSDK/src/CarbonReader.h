@@ -29,11 +29,14 @@ private:
      */
     jmethodID readNextRowID = NULL;
 
+    jmethodID readNextStringRowID = NULL;
+
     /**
      * readNextBatchRow jmethodID
      */
     jmethodID readNextBatchRowID = NULL;
 
+    jmethodID readNextBatchStringRowID = NULL;
     /**
      * carbonReaderBuilder object for building carbonReader
      * it can configure some operation
@@ -142,11 +145,24 @@ public:
     jobject readNextRow();
 
     /**
+     * read Next string Row
+     * @return rows
+     */
+    jobjectArray readNextStringRow();
+
+
+    /**
      * read Next Batch Row
      *
      * @return rows
      */
     jobjectArray readNextBatchRow();
+
+    /**
+     * read Next Batch Row
+     * @return rows
+     */
+    jobject readNextBatchStringRow();
 
     /**
      * close the carbon reader

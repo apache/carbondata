@@ -17,11 +17,6 @@
 
 #include <jni.h>
 
-#ifndef CJDK_SCHEMA_H
-#define CJDK_SCHEMA_H
-
-#endif //CJDK_SCHEMA_H
-
 class Schema {
 private:
 
