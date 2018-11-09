@@ -104,7 +104,6 @@
     <module>integration/spark-common-test</module>
     <module>datamap/examples</module>
     <module>store/sdk</module>
-    <module>store/search</module>
     <module>assembly</module>
     <module>tools/cli</module>
   </modules>
@@ -536,8 +535,6 @@
                 <sourceDirectory>${basedir}/streaming/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/store/sdk/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/store/search/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/store/search/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/datamap/bloom/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/datamap/lucene/src/main/java</sourceDirectory>
               </sourceDirectories>
@@ -599,8 +596,6 @@
                 <sourceDirectory>${basedir}/streaming/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/store/sdk/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/store/search/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/store/search/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/datamap/bloom/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/datamap/lucene/src/main/java</sourceDirectory>
               </sourceDirectories>
@@ -658,8 +653,6 @@
                 <sourceDirectory>${basedir}/streaming/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/streaming/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/store/sdk/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/store/search/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/store/search/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/datamap/bloom/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/datamap/lucene/src/main/java</sourceDirectory>
               </sourceDirectories>

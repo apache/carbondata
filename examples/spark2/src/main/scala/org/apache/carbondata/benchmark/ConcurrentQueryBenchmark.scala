@@ -25,7 +25,7 @@ import java.util.concurrent.{Callable, Executors, Future, TimeUnit}
 
 import scala.util.Random
 
-import org.apache.spark.sql.{CarbonSession, DataFrame, Row, SaveMode, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonVersionConstants}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
@@ -76,8 +76,6 @@ object ConcurrentQueryBenchmark {
   var generateFile = true
   // whether delete file
   var deleteFile = true
-  // open search mode, default value is false
-  var openSearchMode = false
   // carbon store location
   var storeLocation = "/tmp"
 
@@ -239,24 +237,22 @@ object ConcurrentQueryBenchmark {
     } else {
       null
     }
-    if (!openSearchMode) {
-      val table1Time = time {
-        if (table1.endsWith("parquet")) {
-          if (generateFile) {
-            generateParquetTable(spark, df, storeLocation + "/" + table1)
-          }
-          spark.read.parquet(storeLocation + "/" + table1).createOrReplaceTempView(table1)
-        } else if (table1.endsWith("orc")) {
-          if (generateFile) {
-            generateOrcTable(spark, df, table1)
-            spark.read.orc(table1).createOrReplaceTempView(table1)
-          }
-        } else {
-          sys.error("invalid table: " + table1)
+    val table1Time = time {
+      if (table1.endsWith("parquet")) {
+        if (generateFile) {
+          generateParquetTable(spark, df, storeLocation + "/" + table1)
         }
+        spark.read.parquet(storeLocation + "/" + table1).createOrReplaceTempView(table1)
+      } else if (table1.endsWith("orc")) {
+        if (generateFile) {
+          generateOrcTable(spark, df, table1)
+          spark.read.orc(table1).createOrReplaceTempView(table1)
+        }
+      } else {
+        sys.error("invalid table: " + table1)
       }
-      println(s"$table1 completed, time: $table1Time sec")
     }
+    println(s"$table1 completed, time: $table1Time sec")
 
     val table2Time: Double = if (generateFile) {
       generateCarbonTable(spark, df, table2)
@@ -423,26 +419,13 @@ object ConcurrentQueryBenchmark {
    */
   def runTest(spark: SparkSession, table1: String, table2: String): Unit = {
     // run queries on parquet and carbon
-    if (!openSearchMode) {
-      runQueries(spark, table1)
-    }
+    runQueries(spark, table1)
     // do GC and sleep for some time before running next table
     System.gc()
     Thread.sleep(1000)
     System.gc()
     Thread.sleep(1000)
     runQueries(spark, table2)
-    if (openSearchMode) {
-      runQueries(spark, table2)
-      // start search mode (start all gRPC server)
-      // following queries will be run using gRPC
-      spark.asInstanceOf[CarbonSession].startSearchMode()
-      println("Open search mode:")
-      runQueries(spark, table2)
-      runQueries(spark, table2)
-      // stop gRPC servers
-      spark.asInstanceOf[CarbonSession].stopSearchMode()
-    }
   }
 
   /**
@@ -516,16 +499,7 @@ object ConcurrentQueryBenchmark {
       }
     }
     if (arr.length > 8) {
-      openSearchMode = if (arr(8).equalsIgnoreCase("true")) {
-        true
-      } else if (arr(8).equalsIgnoreCase("false")) {
-        false
-      } else {
-        throw new Exception("error parameter, should be true or false")
-      }
-    }
-    if (arr.length > 9) {
-      storeLocation = arr(9)
+      storeLocation = arr(8)
     }
   }
 
@@ -555,7 +529,6 @@ object ConcurrentQueryBenchmark {
       "\trunInLocal: " + runInLocal +
       "\tgenerateFile: " + generateFile +
       "\tdeleteFile: " + deleteFile +
-      "\topenSearchMode: " + openSearchMode +
       "\tstoreLocation: " + storeLocation
 
     val spark = if (runInLocal) {
