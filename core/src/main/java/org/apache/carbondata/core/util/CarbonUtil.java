@@ -2474,7 +2474,7 @@ public final class CarbonUtil {
           lockAcquired = carbonLock.lockWithRetries();
         }
         if (lockAcquired) {
-          LOGGER.info("Acquired lock for table for table status updation");
+          LOGGER.debug("Acquired lock for table for table status updation");
           String metadataPath = carbonTable.getMetadataPath();
           LoadMetadataDetails[] loadMetadataDetails =
               SegmentStatusManager.readLoadMetadata(metadataPath);
@@ -2488,7 +2488,7 @@ public final class CarbonUtil {
               // If it is old segment, need to calculate data size and index size again
               if (null == dsize || null == isize) {
                 needUpdate = true;
-                LOGGER.info("It is an old segment, need calculate data size and index size again");
+                LOGGER.debug("It is an old segment, need calculate data size and index size again");
                 HashMap<String, Long> map = CarbonUtil.getDataSizeAndIndexSize(
                     identifier.getTablePath(), loadMetadataDetail.getLoadName());
                 dsize = String.valueOf(map.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE));
@@ -2524,7 +2524,7 @@ public final class CarbonUtil {
         }
       } finally {
         if (carbonLock.unlock()) {
-          LOGGER.info("Table unlocked successfully after table status updation");
+          LOGGER.debug("Table unlocked successfully after table status updation");
         } else {
           LOGGER.error("Unable to unlock Table lock for table during table status updation");
         }
@@ -2727,7 +2727,8 @@ public final class CarbonUtil {
       String carbonDataDirectoryPath, long fileSizeInBytes)
       throws CarbonDataWriterException {
     long copyStartTime = System.currentTimeMillis();
-    LOGGER.info("Copying " + localFilePath + " --> " + carbonDataDirectoryPath);
+    LOGGER.info(String.format("Copying %s to %s, operation id %d", localFilePath,
+        carbonDataDirectoryPath, copyStartTime));
     try {
       CarbonFile localCarbonFile =
           FileFactory.getCarbonFile(localFilePath, FileFactory.getFileType(localFilePath));
@@ -2740,9 +2741,8 @@ public final class CarbonUtil {
       throw new CarbonDataWriterException(
           "Problem while copying file from local store to carbon store", e);
     }
-    LOGGER.info(
-        "Total copy time (ms) to copy file " + localFilePath + " is " + (System.currentTimeMillis()
-            - copyStartTime));
+    LOGGER.info(String.format("Total copy time is %d ms, operation id %d",
+        System.currentTimeMillis() - copyStartTime, copyStartTime));
   }
 
   /**
@@ -2797,10 +2797,12 @@ public final class CarbonUtil {
     String readableBlockSize = ByteUtil.convertByteToReadable(blockSize);
     String readableFileSize = ByteUtil.convertByteToReadable(fileSize);
     String readableMaxSize = ByteUtil.convertByteToReadable(maxSize);
-    LOGGER.info(
-        "The configured block size is " + readableBlockSize + ", the actual carbon file size is "
-            + readableFileSize + ", choose the max value " + readableMaxSize
-            + " as the block size on HDFS");
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug(
+          "The configured block size is " + readableBlockSize + ", the actual carbon file size is "
+              + readableFileSize + ", choose the max value " + readableMaxSize
+              + " as the block size on HDFS");
+    }
     return maxSize;
   }
 
@@ -3117,10 +3119,11 @@ public final class CarbonUtil {
       }
     }
     if (islocalDictEnabled) {
-      LOGGER.info("Local dictionary is enabled for table: " + carbonTable.getTableUniqueName());
-      LOGGER.info(
-          "Local dictionary threshold for table: " + carbonTable.getTableUniqueName() + " is: "
-              + carbonTable.getLocalDictionaryThreshold());
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Local dictionary is enabled for table: " + carbonTable.getTableUniqueName());
+        LOGGER.debug(String.format("Local dictionary threshold for table %s is %d",
+            carbonTable.getTableUniqueName(), carbonTable.getLocalDictionaryThreshold()));
+      }
       Iterator<Map.Entry<String, LocalDictionaryGenerator>> iterator =
           columnLocalDictGenMap.entrySet().iterator();
       StringBuilder stringBuilder = new StringBuilder();
@@ -3129,8 +3132,10 @@ public final class CarbonUtil {
         stringBuilder.append(next.getKey());
         stringBuilder.append(',');
       }
-      LOGGER.info("Local dictionary will be generated for the columns:" + stringBuilder.toString()
-          + " for table: " + carbonTable.getTableUniqueName());
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug(String.format("Local dictionary will be generated for the columns: %s for"
+                + " table %s", stringBuilder.toString(), carbonTable.getTableUniqueName()));
+      }
     }
     return columnLocalDictGenMap;
   }
