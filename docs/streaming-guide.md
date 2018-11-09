@@ -31,9 +31,10 @@
 - [StreamSQL](#streamsql)
   - [Defining Streaming Table](#streaming-table)
   - [Streaming Job Management](#streaming-job-management)
-    - [START STREAM](#start-stream)
-    - [STOP STREAM](#stop-stream)
+    - [CREATE STREAM](#create-stream)
+    - [DROP STREAM](#drop-stream)
     - [SHOW STREAMS](#show-streams)
+    - [CLOSE STREAM](#close-stream)
 
 ## Quick example
 Download and unzip spark-2.2.0-bin-hadoop2.7.tgz, and export $SPARK_HOME
@@ -333,7 +334,7 @@ Following example shows how to start a streaming ingest job
 
     sql(
       """
-        |START STREAM job123 ON TABLE sink
+        |CREATE STREAM job123 ON TABLE sink
         |STMPROPERTIES(
         |  'trigger'='ProcessingTime',
         |  'interval'='1 seconds')
@@ -343,7 +344,7 @@ Following example shows how to start a streaming ingest job
         |  WHERE id % 2 = 1
       """.stripMargin)
 
-    sql("STOP STREAM job123")
+    sql("DROP STREAM job123")
 
     sql("SHOW STREAMS [ON TABLE tableName]")
 ```
@@ -360,13 +361,13 @@ These two tables are normal carbon tables, they can be queried independently.
 
 As above example shown:
 
-- `START STREAM jobName ON TABLE tableName` is used to start a streaming ingest job. 
-- `STOP STREAM jobName` is used to stop a streaming job by its name
+- `CREATE STREAM jobName ON TABLE tableName` is used to start a streaming ingest job. 
+- `DROP STREAM jobName` is used to stop a streaming job by its name
 - `SHOW STREAMS [ON TABLE tableName]` is used to print streaming job information
 
 
 
-##### START STREAM
+##### CREATE STREAM
 
 When this is issued, carbon will start a structured streaming job to do the streaming ingestion. Before launching the job, system will validate:
 
@@ -424,11 +425,25 @@ For Kafka data source, create the source table by:
   )
   ```
 
+- Then CREATE STREAM can be used to start the streaming ingest job from source table to sink table
+```
+CREATE STREAM job123 ON TABLE sink
+STMPROPERTIES(
+    'trigger'='ProcessingTime',
+     'interval'='10 seconds'
+) 
+AS
+   SELECT *
+   FROM source
+   WHERE id % 2 = 1
+```
 
-##### STOP STREAM
+##### DROP STREAM
 
-When this is issued, the streaming job will be stopped immediately. It will fail if the jobName specified is not exist.
-
+When `DROP STREAM` is issued, the streaming job will be stopped immediately. It will fail if the jobName specified is not exist.
+```
+DROP STREAM job123
+```
 
 
 ##### SHOW STREAMS
@@ -440,5 +455,10 @@ When this is issued, the streaming job will be stopped immediately. It will fail
 | job123   | Started | device | fact | 2018-02-03 14:32:42 | 10d2h32m     |
 
 `SHOW STREAMS` command will show all stream jobs in the system.
+
+##### ALTER TABLE CLOSE STREAM
+
+When the streaming application is stopped, and user want to manually trigger data conversion from carbon streaming files to columnar files, one can use
+`ALTER TABLE sink COMPACT 'CLOSE_STREAMING';`
 
 
