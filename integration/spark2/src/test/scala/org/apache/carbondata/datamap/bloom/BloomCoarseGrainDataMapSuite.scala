@@ -294,17 +294,6 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     val expectedAnswer1 = sql(s"select * from $normalTable where id = 1").collect()
     val expectedAnswer2 = sql(s"select * from $normalTable where city in ('city_999')").collect()
 
-    carbonSession.startSearchMode()
-    assert(carbonSession.isSearchModeEnabled)
-
-    checkAnswer(
-      sql(s"select * from $bloomDMSampleTable where id = 1"), expectedAnswer1)
-    checkAnswer(
-      sql(s"select * from $bloomDMSampleTable where city in ('city_999')"), expectedAnswer2)
-
-    carbonSession.stopSearchMode()
-    assert(!carbonSession.isSearchModeEnabled)
-
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
   }
@@ -975,10 +964,6 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
   }
 
   override protected def afterAll(): Unit = {
-    // in case of search mode test case failed, stop search mode again
-    if (carbonSession.isSearchModeEnabled) {
-      carbonSession.stopSearchMode()
-    }
     deleteFile(bigFile)
     deleteFile(smallFile)
     sql(s"DROP TABLE IF EXISTS $normalTable")

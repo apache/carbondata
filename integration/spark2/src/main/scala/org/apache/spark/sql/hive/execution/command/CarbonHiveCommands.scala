@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.hive.execution.command
 
-import org.apache.spark.sql.{CarbonEnv, CarbonSession, Row, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 import org.apache.spark.sql.catalyst.expressions.Attribute
@@ -72,17 +72,7 @@ case class CarbonSetCommand(command: SetCommand)
     command.kv match {
       case Some((key, Some(value))) =>
         CarbonSetCommand.validateAndSetValue(sessionParams, key, value)
-
-        // handle search mode start/stop for ThriftServer usage
-        if (key.equalsIgnoreCase(CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE)) {
-          if (value.equalsIgnoreCase("true")) {
-            sparkSession.asInstanceOf[CarbonSession].startSearchMode()
-          } else {
-            sparkSession.asInstanceOf[CarbonSession].stopSearchMode()
-          }
-        }
       case _ =>
-
     }
     command.run(sparkSession)
   }

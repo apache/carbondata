@@ -48,8 +48,6 @@ import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_MAX;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_MIN;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SEARCH_MODE_SCAN_THREAD;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SEARCH_MODE_WORKER_WORKLOAD_LIMIT;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_BLOCK;
@@ -187,12 +185,6 @@ public final class CarbonProperties {
         break;
       case CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO:
         validateSchedulerMinRegisteredRatio();
-        break;
-      case CARBON_SEARCH_MODE_SCAN_THREAD:
-        validatePositiveInteger(CARBON_SEARCH_MODE_SCAN_THREAD);
-        break;
-      case CARBON_SEARCH_MODE_WORKER_WORKLOAD_LIMIT:
-        validatePositiveInteger(CARBON_SEARCH_MODE_WORKER_WORKLOAD_LIMIT);
         break;
       case CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE:
         validateSortMemorySpillPercentage();
@@ -1409,55 +1401,6 @@ public final class CarbonProperties {
       systemLocation = FileFactory.getUpdatedFilePath(systemLocation);
     }
     return systemLocation + CarbonCommonConstants.FILE_SEPARATOR + "_system";
-  }
-
-  /**
-   * Return true if search mode is enabled
-   */
-  public static boolean isSearchModeEnabled() {
-    String value = getInstance().getProperty(
-        CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE,
-        CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE_DEFAULT);
-    return Boolean.valueOf(value);
-  }
-
-  public static void enableSearchMode(boolean enable) {
-    getInstance().addProperty(
-        CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE, String.valueOf(enable));
-  }
-
-  public static int getSearchMasterPort() {
-    try {
-      return Integer.parseInt(
-          getInstance().getProperty(
-              CarbonCommonConstants.CARBON_SEARCH_MODE_MASTER_PORT,
-              CarbonCommonConstants.CARBON_SEARCH_MODE_MASTER_PORT_DEFAULT));
-    } catch (NumberFormatException e) {
-      return Integer.parseInt(CarbonCommonConstants.CARBON_SEARCH_MODE_MASTER_PORT_DEFAULT);
-    }
-  }
-
-  public static int getSearchWorkerPort() {
-    try {
-      return Integer.parseInt(
-          getInstance().getProperty(
-              CarbonCommonConstants.CARBON_SEARCH_MODE_WORKER_PORT,
-              CarbonCommonConstants.CARBON_SEARCH_MODE_WORKER_PORT_DEFAULT));
-    } catch (NumberFormatException e) {
-      return Integer.parseInt(CarbonCommonConstants.CARBON_SEARCH_MODE_WORKER_PORT_DEFAULT);
-    }
-  }
-
-  public static int getMaxWorkloadForWorker(int workerCores) {
-    int defaultValue = workerCores * 10;
-    try {
-      return Integer.parseInt(
-          getInstance().getProperty(
-              CarbonCommonConstants.CARBON_SEARCH_MODE_WORKER_WORKLOAD_LIMIT,
-              String.valueOf(defaultValue)));
-    } catch (NumberFormatException e) {
-      return defaultValue;
-    }
   }
 
   /**
