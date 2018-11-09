@@ -37,9 +37,9 @@ import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.carbondata.execution.datasources.tasklisteners.CarbonLoadTaskCompletionListener
 import org.apache.spark.sql.execution.SQLExecution
-import org.apache.spark.sql.profiler.{GetPartition, Profiler, QueryTaskEnd}
+import org.apache.spark.sql.profiler.{GetPartition, Profiler}
 import org.apache.spark.sql.util.SparkSQLUtil.sessionState
-import org.apache.spark.util.{CarbonReflectionUtils, TaskCompletionListener}
+import org.apache.spark.util.TaskCompletionListener
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
@@ -52,7 +52,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.filter.FilterUtil
 import org.apache.carbondata.core.scan.model.QueryModel
-import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
+import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstants}
 import org.apache.carbondata.core.statusmanager.FileFormat
 import org.apache.carbondata.core.util._
 import org.apache.carbondata.hadoop._
@@ -258,14 +258,7 @@ class CarbonScanRDD[T: ClassTag](
             CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION,
             "false").toBoolean ||
           carbonDistribution.equalsIgnoreCase(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_CUSTOM)
-        val enableSearchMode = CarbonProperties.getInstance().getProperty(
-          CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE,
-          CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE_DEFAULT).toBoolean
-        if (useCustomDistribution || enableSearchMode) {
-          if (enableSearchMode) {
-            // force to assign only one task contains multiple splits each node
-            parallelism = 0
-          }
+        if (useCustomDistribution) {
           // create a list of block based on split
           val blockList = splits.asScala.map(_.asInstanceOf[Distributable])
 

@@ -59,8 +59,7 @@ object S3UsingSDKExample {
       }
       writer.close()
     } catch {
-      case ex: Exception => None
-      case e => None
+      case ex: Throwable => None
     }
   }
 

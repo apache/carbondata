@@ -139,7 +139,6 @@ public class SessionParams implements Serializable, Cloneable {
       case CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE:
       case CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD:
       case CARBON_OPTIONS_SINGLE_PASS:
-      case CARBON_SEARCH_MODE_ENABLE:
       case ENABLE_VECTOR_READER:
       case ENABLE_UNSAFE_IN_QUERY_EXECUTION:
       case ENABLE_AUTO_LOAD_MERGE:
