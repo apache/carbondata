@@ -282,7 +282,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
               .add(executorService.submit(new CompleteHdfsBackendThread(carbonDataFileTempPath)));
         }
       } catch (IOException e) {
-        LOGGER.error("Failed to delete carbondata file from temp location" + e.getMessage());
+        LOGGER.error(e);
       }
     }
   }

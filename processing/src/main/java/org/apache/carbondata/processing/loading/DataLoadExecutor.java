@@ -53,8 +53,6 @@ public class DataLoadExecutor {
       // check and remove any bad record key from bad record entry logger static map
       if (CarbonBadRecordUtil.hasBadRecord(loadModel)) {
         LOGGER.error("Data Load is partially success for table " + loadModel.getTableName());
-      } else {
-        LOGGER.info("Data loading is successful for table " + loadModel.getTableName());
       }
     } catch (CarbonDataLoadingException e) {
       if (e instanceof BadRecordFoundException) {

@@ -144,8 +144,11 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
           addPageData(tablePage);
         }
 
-        LOGGER.info("Number of Pages for blocklet is: " + blockletDataHolder.getNumberOfPagesAdded()
-            + " :Rows Added: " + blockletDataHolder.getTotalRows());
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("Number of Pages for blocklet is: " +
+              blockletDataHolder.getNumberOfPagesAdded() +
+              " :Rows Added: " + blockletDataHolder.getTotalRows());
+        }
 
         // write the data
         writeBlockletToFile();

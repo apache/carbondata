@@ -194,11 +194,11 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
         configuration.getTableIdentifier().getCarbonTableIdentifier();
     String tableName = tableIdentifier.getTableName();
     dataHandler.finish();
-    LOGGER.info("Record Processed For table: " + tableName);
-    String logMessage =
-        "Finished Carbon DataWriterProcessorStepImpl: Read: " + readCounter + ": Write: "
-            + rowCounter.get();
-    LOGGER.info(logMessage);
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Record Processed For table: " + tableName);
+      LOGGER.debug("Finished Carbon DataWriterProcessorStepImpl: Read: " + readCounter +
+          ": Write: " + rowCounter.get());
+    }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordTotalRecords(rowCounter.get());
     processingComplete(dataHandler);
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
@@ -235,7 +235,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       super.close();
       if (listener != null) {
         try {
-          LOGGER.info("closing all the DataMap writers registered to DataMap writer listener");
+          LOGGER.debug("closing all the DataMap writers registered to DataMap writer listener");
           listener.finish();
         } catch (IOException e) {
           LOGGER.error("error while closing the datamap writers", e);
