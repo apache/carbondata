@@ -522,7 +522,6 @@ public final class CarbonDataProcessorUtil {
             configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
                 .toString());
       }
-      LOGGER.info("sort scope is set to " + sortScope);
     } catch (Exception e) {
       sortScope = SortScopeOptions.getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
       LOGGER.warn("Exception occured while resolving sort scope. " +

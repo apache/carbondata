@@ -200,11 +200,13 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       exception = new CarbonDataWriterException(
           "Failed for table: " + tableName + " in  finishing data handler", e);
     }
-    LOGGER.info("Record Processed For table: " + tableName);
-    String logMessage =
-        "Finished Carbon DataWriterProcessorStepImpl: Read: " + readCounter[iteratorIndex]
-            + ": Write: " + readCounter[iteratorIndex];
-    LOGGER.info(logMessage);
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Record Processed For table: " + tableName);
+      String logMessage =
+          "Finished Carbon DataWriterProcessorStepImpl: Read: " + readCounter[iteratorIndex] +
+              ": Write: " + readCounter[iteratorIndex];
+      LOGGER.debug(logMessage);
+    }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordTotalRecords(rowCounter.get());
     try {
       processingComplete(dataHandler);

@@ -134,7 +134,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       }
     }
 
-    LOGGER.info("Columns considered as NoInverted Index are " + noInvertedIdxCol.toString());
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Columns considered as NoInverted Index are " + noInvertedIdxCol.toString());
+    }
   }
 
   private void initParameters(CarbonFactDataHandlerModel model) {
@@ -146,7 +148,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
                 .getBucketId()));
     producerExecutorServiceTaskList =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    LOGGER.info("Initializing writer executors");
+    LOGGER.debug("Initializing writer executors");
     consumerExecutorService = Executors.newFixedThreadPool(1, new CarbonThreadFactory(
         "ConsumerPool_" + System.nanoTime() + ":" + model.getTableName() + ", range: " + model
             .getBucketId()));
@@ -210,7 +212,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         blockletProcessingCount.incrementAndGet();
         // set the entry count to zero
         processedDataCount += entryCount;
-        LOGGER.info("Total Number Of records added to store: " + processedDataCount);
+
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("Total Number Of records added to store: " + processedDataCount);
+        }
         dataRows = new ArrayList<>(this.pageSize);
         this.entryCount = 0;
       } catch (InterruptedException e) {
@@ -256,7 +261,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         }
         if (SnappyCompressor.MAX_BYTE_TO_COMPRESS -
                 (varcharColumnSizeInByte[i] + dataRows.size() * 4) < (2 << 20)) {
-          LOGGER.info("Limited by varchar column, page size is " + dataRows.size());
+          LOGGER.debug("Limited by varchar column, page size is " + dataRows.size());
           // re-init for next page
           varcharColumnSizeInByte = new int[model.getVarcharDimIdxInNoDict().size()];
           return true;
@@ -284,7 +289,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
     tablePage.encode();
 
-    LOGGER.info("Number Of records processed: " + dataRows.size());
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Number Of records processed: " + dataRows.size());
+    }
     return tablePage;
   }
 
@@ -302,14 +309,18 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     if (producerExecutorService.isShutdown()) {
       return;
     }
-    LOGGER.info("Started Finish Operation");
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Started Finish Operation");
+    }
     try {
       semaphore.acquire();
       producerExecutorServiceTaskList.add(producerExecutorService
           .submit(new Producer(tablePageList, dataRows, ++writerTaskSequenceCounter, true)));
       blockletProcessingCount.incrementAndGet();
       processedDataCount += entryCount;
-      LOGGER.info("Total Number Of records added to store: " + processedDataCount);
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Total Number Of records added to store: " + processedDataCount);
+      }
       closeWriterExecutionService(producerExecutorService);
       processWriteTaskSubmitList(producerExecutorServiceTaskList);
       processingComplete = true;
@@ -377,7 +388,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       consumerExecutorService.shutdownNow();
       processWriteTaskSubmitList(consumerExecutorServiceTaskList);
       this.dataWriter.writeFooter();
-      LOGGER.info("All blocklets have been finished writing");
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("All blocklets have been finished writing");
+      }
       // close all the open stream for both the files
       this.dataWriter.closeWriter();
     }
@@ -402,12 +415,12 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
               pageSize :
               CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
     }
-    LOGGER.info("Number of rows per column page is configured as pageSize = " + pageSize);
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Number of rows per column page is configured as pageSize = " + pageSize);
+    }
     dataRows = new ArrayList<>(this.pageSize);
 
     if (model.getVarcharDimIdxInNoDict().size() > 0) {
-      LOGGER.info("Number of rows per column blocklet is constrained by pageSize and actual size " +
-              "of long string column(s)");
       varcharColumnSizeInByte = new int[model.getVarcharDimIdxInNoDict().size()];
     }
 
