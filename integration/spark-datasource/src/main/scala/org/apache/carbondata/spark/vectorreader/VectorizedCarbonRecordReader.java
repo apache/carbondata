@@ -307,7 +307,7 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
     } else {
       filteredRows = new boolean[vectorProxy.numRows()];
       for (int i = 0; i < fields.length; i++) {
-        vectors[i] = new ColumnarVectorWrapper(vectorProxy, filteredRows, i);
+        vectors[i] = new ColumnarVectorWrapper(vectorProxy, i);
         if (isNoDictStringField[i]) {
           if (vectors[i] instanceof ColumnarVectorWrapper) {
             ((ColumnarVectorWrapper) vectors[i]).reserveDictionaryIds();
