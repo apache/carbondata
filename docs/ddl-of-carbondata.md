@@ -123,11 +123,11 @@ CarbonData DDL statements are documented here,which includes:
 
    - ##### Inverted Index Configuration
 
-     By default inverted index is enabled, it might help to improve compression ratio and query speed, especially for low cardinality columns which are in reward position.
+     By default inverted index is disabled as store size will be reduced, it can be enabled by using a table property. It might help to improve compression ratio and query speed, especially for low cardinality columns which are in reward position.
      Suggested use cases : For high cardinality columns, you can disable the inverted index for improving the data loading performance.
 
      ```
-     TBLPROPERTIES ('NO_INVERTED_INDEX'='column1, column3')
+     TBLPROPERTIES ('NO_INVERTED_INDEX'='column1', 'INVERTED_INDEX'='column2, column3')
      ```
 
    - ##### Sort Columns Configuration
