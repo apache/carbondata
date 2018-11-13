@@ -47,7 +47,7 @@ object DataLoadProcessBuilderOnSpark {
       sparkSession: SparkSession,
       dataFrame: Option[DataFrame],
       model: CarbonLoadModel,
-      hadoopConf: Configuration): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+      hadoopConf: Configuration): Array[(String, (LoadMetadataDetails, ExecutionErrors, Long))] = {
     val originRDD = if (dataFrame.isDefined) {
       dataFrame.get.rdd
     } else {
@@ -147,13 +147,13 @@ object DataLoadProcessBuilderOnSpark {
       loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
       executionErrors.failureCauses = FailureCauses.BAD_RECORDS
-      Array((uniqueLoadStatusId, (loadMetadataDetails, executionErrors)))
+      Array((uniqueLoadStatusId, (loadMetadataDetails, executionErrors, writeStepRowCounter.value)))
     } else {
       val uniqueLoadStatusId = model.getTableName + CarbonCommonConstants.UNDERSCORE + "Success"
       val loadMetadataDetails = new LoadMetadataDetails()
       loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
-      Array((uniqueLoadStatusId, (loadMetadataDetails, executionErrors)))
+      Array((uniqueLoadStatusId, (loadMetadataDetails, executionErrors, writeStepRowCounter.value)))
     }
   }
 }

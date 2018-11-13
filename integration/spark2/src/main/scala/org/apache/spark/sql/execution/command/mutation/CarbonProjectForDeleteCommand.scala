@@ -18,8 +18,10 @@
 package org.apache.spark.sql.execution.command.mutation
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.types.LongType
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -41,6 +43,10 @@ private[sql] case class CarbonProjectForDeleteCommand(
     tableName: String,
     timestamp: String)
   extends DataCommand {
+
+  override def output: Seq[Attribute] = {
+    Seq(AttributeReference("Total Rows Deleted", LongType, nullable = false)())
+  }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -135,7 +141,7 @@ private[sql] case class CarbonProjectForDeleteCommand(
         CarbonLockUtil.fileUnlock(metadataLock, LockUsage.METADATA_LOCK)
       }
     }
-    Seq.empty
+    Seq(Row(dataRdd.count()))
   }
 
   override protected def opName: String = "DELETE DATA"

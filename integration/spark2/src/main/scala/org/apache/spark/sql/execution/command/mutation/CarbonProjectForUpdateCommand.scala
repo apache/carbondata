@@ -18,11 +18,12 @@
 package org.apache.spark.sql.execution.command.mutation
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.types.ArrayType
+import org.apache.spark.sql.types.{ArrayType, LongType}
 import org.apache.spark.storage.StorageLevel
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -45,6 +46,10 @@ private[sql] case class CarbonProjectForUpdateCommand(
     tableName: String,
     columns: List[String])
   extends DataCommand {
+
+  override def output: Seq[Attribute] = {
+    Seq(AttributeReference("Total Rows Updated", LongType, nullable = false)())
+  }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -98,6 +103,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
     //    var dataFrame: DataFrame = null
     var dataSet: DataFrame = null
     val isPersistEnabled = CarbonProperties.getInstance.isPersistUpdateDataset
+    var numberOfRowsLoaded = Seq.empty[Row]
     try {
       lockStatus = metadataLock.lockWithRetries()
       if (lockStatus) {
@@ -136,7 +142,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
       }
 
       // do update operation.
-      performUpdate(dataSet,
+      numberOfRowsLoaded = performUpdate(dataSet,
         databaseNameOp,
         tableName,
         plan,
@@ -187,7 +193,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
         CarbonLockUtil.fileUnlock(metadataLock, LockUsage.METADATA_LOCK)
       }
     }
-    Seq.empty
+    numberOfRowsLoaded
   }
 
   private def performUpdate(
@@ -198,7 +204,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
       sparkSession: SparkSession,
       currentTime: Long,
       executorErrors: ExecutionErrors,
-      deletedSegments: Seq[Segment]): Unit = {
+      deletedSegments: Seq[Segment]): Seq[Row] = {
 
     def isDestinationRelation(relation: CarbonDatasourceHadoopRelation): Boolean = {
       val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
@@ -261,7 +267,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
 
     val header = getHeader(carbonRelation, plan)
 
-    CarbonLoadDataCommand(
+    val numberOfRowsLoaded = CarbonLoadDataCommand(
       Some(carbonRelation.identifier.getCarbonTableIdentifier.getDatabaseName),
       carbonRelation.identifier.getCarbonTableIdentifier.getTableName,
       null,
@@ -275,7 +281,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
     executorErrors.errorMsg = updateTableModel.executorErrors.errorMsg
     executorErrors.failureCauses = updateTableModel.executorErrors.failureCauses
 
-    Seq.empty
+    numberOfRowsLoaded
 
   }
 

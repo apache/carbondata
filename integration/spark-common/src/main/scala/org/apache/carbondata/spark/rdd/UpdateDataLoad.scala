@@ -40,7 +40,7 @@ object UpdateDataLoad {
       index: Long,
       iter: Iterator[Row],
       carbonLoadModel: CarbonLoadModel,
-      loadMetadataDetails: LoadMetadataDetails): Unit = {
+      loadMetadataDetails: LoadMetadataDetails): Long = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     try {
       val recordReaders = mutable.Buffer[CarbonIterator[Array[AnyRef]]]()
@@ -61,7 +61,7 @@ object UpdateDataLoad {
         executor.close()
         CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
       }
-      executor.execute(carbonLoadModel,
+      return executor.execute(carbonLoadModel,
         loader.storeLocation,
         recordReaders.toArray)
 

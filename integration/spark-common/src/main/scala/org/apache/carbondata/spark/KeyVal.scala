@@ -48,29 +48,30 @@ class RawValueImpl extends RawValue[Array[Any]] {
 }
 
 trait DataLoadResult[K, V] extends Serializable {
-  def getKey(key: String, value: (LoadMetadataDetails, ExecutionErrors)): (K, V)
+  def getKey(key: String, value: (LoadMetadataDetails, ExecutionErrors, Long)): (K, V)
 }
 
-class DataLoadResultImpl extends DataLoadResult[String, (LoadMetadataDetails, ExecutionErrors)] {
+class DataLoadResultImpl extends
+  DataLoadResult[String, (LoadMetadataDetails, ExecutionErrors, Long)] {
   override def getKey(key: String,
-      value: (LoadMetadataDetails, ExecutionErrors)): (String, (LoadMetadataDetails,
-    ExecutionErrors)) = {
+      value: (LoadMetadataDetails, ExecutionErrors, Long)): (String, (LoadMetadataDetails,
+    ExecutionErrors, Long)) = {
     (key, value)
   }
 }
 
 trait updateResult[K, V] extends Serializable {
   def getKey(key: String,
-             value: (LoadMetadataDetails, ExecutionErrors)):
+             value: (LoadMetadataDetails, ExecutionErrors, Long)):
   (K, V)
 }
 
 class updateResultImpl
-  extends updateResult[String, (LoadMetadataDetails, ExecutionErrors)] {
+  extends updateResult[String, (LoadMetadataDetails, ExecutionErrors, Long)] {
   override def getKey(key: String,
-                      value: (LoadMetadataDetails, ExecutionErrors)):
+                      value: (LoadMetadataDetails, ExecutionErrors, Long)):
   (String,
-    (LoadMetadataDetails, ExecutionErrors)) = {
+    (LoadMetadataDetails, ExecutionErrors, Long)) = {
     (key, value)
   }
 }

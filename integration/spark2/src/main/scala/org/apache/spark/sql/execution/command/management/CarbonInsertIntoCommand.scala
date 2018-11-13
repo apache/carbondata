@@ -18,8 +18,10 @@
 package org.apache.spark.sql.execution.command.management
 
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Dataset, Row, SparkSession}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.{GlobalLimit, LogicalPlan}
 import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, DataCommand}
+import org.apache.spark.sql.types.LongType
 import org.apache.spark.storage.StorageLevel
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -34,6 +36,10 @@ case class CarbonInsertIntoCommand(
   extends AtomicRunnableCommand {
 
   var loadCommand: CarbonLoadDataCommand = _
+
+  override def output: Seq[Attribute] = {
+    Seq(AttributeReference("Total Rows Inserted", LongType, nullable = false)())
+  }
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     setAuditTable(relation.carbonTable.getDatabaseName, relation.carbonTable.getTableName)

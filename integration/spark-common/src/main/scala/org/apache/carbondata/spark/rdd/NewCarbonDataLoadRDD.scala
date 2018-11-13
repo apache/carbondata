@@ -127,6 +127,7 @@ class NewCarbonDataLoadRDD[K, V](
       var model: CarbonLoadModel = _
       val uniqueLoadStatusId =
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
+      var numberOfRowsLoaded = 0L
       try {
         loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PATITION_ID)
         loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
@@ -145,7 +146,7 @@ class NewCarbonDataLoadRDD[K, V](
         // in case of success, failure or cancelation clear memory and stop execution
         context
           .addTaskCompletionListener { new InsertTaskCompletionListener(executor, executionErrors) }
-        executor.execute(model,
+        numberOfRowsLoaded = executor.execute(model,
           loader.storeLocation,
           recordReaders)
       } catch {
@@ -216,7 +217,8 @@ class NewCarbonDataLoadRDD[K, V](
 
       override def next(): (K, V) = {
         finished = true
-        result.getKey(uniqueLoadStatusId, (loadMetadataDetails, executionErrors))
+        result.getKey(uniqueLoadStatusId,
+          (loadMetadataDetails, executionErrors, numberOfRowsLoaded))
       }
     }
     iter
@@ -255,6 +257,7 @@ class NewDataFrameLoaderRDD[K, V](
       val model: CarbonLoadModel = carbonLoadModel
       val uniqueLoadStatusId =
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
+      var numberOfRowsLoaded = 0L
       try {
 
         loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PATITION_ID)
@@ -284,7 +287,7 @@ class NewDataFrameLoaderRDD[K, V](
         // in case of success, failure or cancelation clear memory and stop execution
         context
           .addTaskCompletionListener(new InsertTaskCompletionListener(executor, executionErrors))
-        executor.execute(model, loader.storeLocation, recordReaders.toArray)
+        numberOfRowsLoaded = executor.execute(model, loader.storeLocation, recordReaders.toArray)
       } catch {
         case e: NoRetryException =>
           loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
@@ -312,7 +315,8 @@ class NewDataFrameLoaderRDD[K, V](
 
       override def next(): (K, V) = {
         finished = true
-        result.getKey(uniqueLoadStatusId, (loadMetadataDetails, executionErrors))
+        result.getKey(uniqueLoadStatusId,
+          (loadMetadataDetails, executionErrors, numberOfRowsLoaded))
       }
     }
     iter
@@ -464,6 +468,7 @@ class PartitionTableDataLoaderRDD[K, V](
       val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
       val uniqueLoadStatusId =
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
+      var numberOfRowsLoaded = 0L
       try {
 
         loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PATITION_ID)
@@ -484,7 +489,7 @@ class PartitionTableDataLoaderRDD[K, V](
         // in case of success, failure or cancelation clear memory and stop execution
         context.addTaskCompletionListener { context => executor.close()
           CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
-        executor.execute(model, loader.storeLocation, recordReaders)
+        numberOfRowsLoaded = executor.execute(model, loader.storeLocation, recordReaders)
       } catch {
         case e: NoRetryException =>
           loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
@@ -511,7 +516,8 @@ class PartitionTableDataLoaderRDD[K, V](
 
       override def next(): (K, V) = {
         finished = true
-        result.getKey(uniqueLoadStatusId, (loadMetadataDetails, executionErrors))
+        result.getKey(uniqueLoadStatusId,
+          (loadMetadataDetails, executionErrors, numberOfRowsLoaded))
       }
     }
     iter

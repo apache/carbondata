@@ -25,6 +25,7 @@ import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression,
 import org.apache.spark.sql.catalyst.plans.logical.{UnaryNode, _}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
+import org.apache.spark.sql.types.LongType
 
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
@@ -69,7 +70,8 @@ case class ProjectForUpdate(
     table: UnresolvedRelation,
     columns: List[String],
     children: Seq[LogicalPlan] ) extends LogicalPlan {
-  override def output: Seq[AttributeReference] = Seq.empty
+  override def output: Seq[AttributeReference] =
+    Seq(AttributeReference("Total Rows Updated", LongType, nullable = false)())
 }
 
 case class UpdateTable(
@@ -102,7 +104,8 @@ case class InsertIntoCarbonTable (table: CarbonDatasourceHadoopRelation,
     ifNotExists: Boolean)
   extends Command {
 
-    override def output: Seq[Attribute] = Seq.empty
+    override def output: Seq[Attribute] =
+      Seq(AttributeReference("Total Rows Inserted", LongType, nullable = false)())
 
     // This is the expected schema of the table prepared to be inserted into
     // including dynamic partition columns.

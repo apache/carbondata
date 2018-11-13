@@ -40,7 +40,7 @@ public class DataLoadExecutor {
 
   private boolean isClosed;
 
-  public void execute(CarbonLoadModel loadModel, String[] storeLocation,
+  public long execute(CarbonLoadModel loadModel, String[] storeLocation,
       CarbonIterator<Object[]>[] inputIterators) throws Exception {
     try {
       loadProcessorStep =
@@ -54,6 +54,7 @@ public class DataLoadExecutor {
       if (CarbonBadRecordUtil.hasBadRecord(loadModel)) {
         LOGGER.error("Data Load is partially success for table " + loadModel.getTableName());
       }
+      return loadProcessorStep.rowCounter.get();
     } catch (CarbonDataLoadingException e) {
       if (e instanceof BadRecordFoundException) {
         throw new NoRetryException(e.getMessage());

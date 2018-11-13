@@ -34,7 +34,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, UnresolvedAttribute}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.catalyst.expressions.{Ascending, AttributeReference, SortOrder}
+import org.apache.spark.sql.catalyst.expressions.{Ascending, Attribute, AttributeReference, SortOrder}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, Sort}
 import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
@@ -106,6 +106,10 @@ case class CarbonLoadDataCommand(
   var currPartitions: util.List[PartitionSpec] = _
 
   var parentTablePath: String = _
+
+  override def output: Seq[Attribute] = {
+    Seq(AttributeReference("Total Rows Loaded", LongType, nullable = false)())
+  }
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -239,6 +243,7 @@ case class CarbonLoadDataCommand(
     } else {
       ""
     }
+    var numberOfRowsLoaded = 0L
     try {
       operationContext.setProperty("uuid", uuid)
       val loadTablePreExecutionEvent: LoadTablePreExecutionEvent =
@@ -303,7 +308,7 @@ case class CarbonLoadDataCommand(
       val partitionStatus = SegmentStatus.SUCCESS
       val columnar = sparkSession.conf.get("carbon.is.columnar.storage", "true").toBoolean
       if (carbonLoadModel.getUseOnePass) {
-        loadDataUsingOnePass(
+        numberOfRowsLoaded = loadDataUsingOnePass(
           sparkSession,
           carbonProperty,
           carbonLoadModel,
@@ -313,7 +318,7 @@ case class CarbonLoadDataCommand(
           operationContext,
           LOGGER)
       } else {
-        loadData(
+        numberOfRowsLoaded = loadData(
           sparkSession,
           carbonLoadModel,
           columnar,
@@ -365,7 +370,7 @@ case class CarbonLoadDataCommand(
         CarbonUtil.deleteFoldersAndFiles(file)
       }
     }
-    Seq.empty
+    Seq(Row(numberOfRowsLoaded))
   }
 
   private def acquireConcurrentLoadLock(): Option[ICarbonLock] = {
@@ -414,8 +419,7 @@ case class CarbonLoadDataCommand(
       partitionStatus: SegmentStatus,
       hadoopConf: Configuration,
       operationContext: OperationContext,
-      LOGGER: Logger): Seq[Row] = {
-    var rows = Seq.empty[Row]
+      LOGGER: Logger): Long = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       .getCarbonTableIdentifier
@@ -500,7 +504,7 @@ case class CarbonLoadDataCommand(
 
     if (carbonTable.isHivePartitionTable) {
       try {
-        rows = loadDataWithPartition(
+        loadDataWithPartition(
           sparkSession,
           carbonLoadModel,
           hadoopConf,
@@ -521,7 +525,7 @@ case class CarbonLoadDataCommand(
         }
       }
     } else {
-      val loadResult = CarbonDataRDDFactory.loadCarbonData(
+      val (loadResult, numberOfRowsLoaded) = CarbonDataRDDFactory.loadCarbonData(
         sparkSession.sqlContext,
         carbonLoadModel,
         columnar,
@@ -536,8 +540,8 @@ case class CarbonLoadDataCommand(
         val info = makeAuditInfo(loadResult)
         setAuditInfo(info)
       }
+      numberOfRowsLoaded
     }
-    rows
   }
 
   private def makeAuditInfo(loadResult: LoadMetadataDetails): Map[String, String] = {
@@ -558,8 +562,7 @@ case class CarbonLoadDataCommand(
       partitionStatus: SegmentStatus,
       hadoopConf: Configuration,
       operationContext: OperationContext,
-      LOGGER: Logger): Seq[Row] = {
-    var rows = Seq.empty[Row]
+      LOGGER: Logger): Long = {
     val (dictionaryDataFrame, loadDataFrame) = if (updateModel.isDefined) {
       val dataFrameWithTupleId: DataFrame = getDataFrameWithTupleID()
       // getting all fields except tupleId field as it is not required in the value
@@ -579,14 +582,14 @@ case class CarbonLoadDataCommand(
         dictionaryDataFrame)
     }
     if (table.isHivePartitionTable) {
-      rows = loadDataWithPartition(
+      loadDataWithPartition(
         sparkSession,
         carbonLoadModel,
         hadoopConf,
         loadDataFrame,
         operationContext, LOGGER)
     } else {
-      val loadResult = CarbonDataRDDFactory.loadCarbonData(
+      val (loadResult, numberOfRowsLoaded) = CarbonDataRDDFactory.loadCarbonData(
         sparkSession.sqlContext,
         carbonLoadModel,
         columnar,
@@ -599,8 +602,8 @@ case class CarbonLoadDataCommand(
         operationContext)
       val info = makeAuditInfo(loadResult)
       setAuditInfo(info)
+      numberOfRowsLoaded
     }
-    rows
   }
 
   /**
@@ -614,7 +617,7 @@ case class CarbonLoadDataCommand(
       hadoopConf: Configuration,
       dataFrame: Option[DataFrame],
       operationContext: OperationContext,
-      LOGGER: Logger): Seq[Row] = {
+      LOGGER: Logger): Long = {
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val catalogTable: CatalogTable = logicalPartitionRelation.catalogTable.get
     var timeStampformatString = carbonLoadModel.getTimestampformat
@@ -662,6 +665,7 @@ case class CarbonLoadDataCommand(
       Array[String]()
     }
     var persistedRDD: Option[RDD[InternalRow]] = None
+    var numberOfRowsLoaded = 0L
     try {
       val query: LogicalPlan = if (dataFrame.isDefined) {
         val (rdd, dfAttributes) = if (updateModel.isDefined) {
@@ -739,6 +743,7 @@ case class CarbonLoadDataCommand(
             attributes,
             sortScope,
             isDataFrame = true)
+        numberOfRowsLoaded = dataFrame.get.count()
         partitionsLen = partitions
         persistedRDD = persistedRDDLocal
         transformedPlan
@@ -758,6 +763,7 @@ case class CarbonLoadDataCommand(
             attributes,
             sortScope,
             isDataFrame = false)
+        numberOfRowsLoaded = rdd.count()
         partitionsLen = partitions
         persistedRDD = persistedRDDLocal
         transformedPlan
@@ -850,15 +856,7 @@ case class CarbonLoadDataCommand(
           "Dataload is success. Auto-Compaction has failed. Please check logs.",
           e)
     }
-    val specs =
-      SegmentFileStore.getPartitionSpecs(carbonLoadModel.getSegmentId, carbonLoadModel.getTablePath)
-    if (specs != null) {
-      specs.asScala.map{ spec =>
-        Row(spec.getPartitions.asScala.mkString("/"), spec.getLocation.toString, spec.getUuid)
-      }
-    } else {
-      Seq.empty[Row]
-    }
+    numberOfRowsLoaded
   }
 
   /**
