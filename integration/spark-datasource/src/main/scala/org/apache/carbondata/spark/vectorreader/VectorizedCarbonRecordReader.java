@@ -161,8 +161,8 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
 
   @Override
   public void close() throws IOException {
-    logStatistics(rowCount, queryModel.getStatisticsRecorder());
     if (vectorProxy != null) {
+      logStatistics(rowCount, queryModel.getStatisticsRecorder());
       vectorProxy.close();
       vectorProxy = null;
     }
@@ -198,7 +198,7 @@ public class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
   @Override
   public Object getCurrentValue() throws IOException, InterruptedException {
     if (returnColumnarBatch) {
-      int value = vectorProxy.numRows();
+      int value = carbonColumnarBatch.getActualSize();
       rowCount += value;
       if (inputMetricsStats != null) {
         inputMetricsStats.incrementRecordRead((long) value);
