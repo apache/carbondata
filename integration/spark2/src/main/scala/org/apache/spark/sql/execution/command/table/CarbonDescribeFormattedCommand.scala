@@ -32,6 +32,7 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.carbondata.common.Strings
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 
@@ -151,18 +152,23 @@ private[sql] case class CarbonDescribeFormattedCommand(
     //////////////////////////////////////////////////////////////////////////////
     // Partition Information
     //////////////////////////////////////////////////////////////////////////////
-
-    if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null) {
+    val partitionInfo = carbonTable.getPartitionInfo()
+    if (partitionInfo != null) {
       results ++= Seq(
         ("", "", ""),
         ("## Partition Information", "", ""),
-        ("Partition Type", carbonTable.getPartitionInfo().getPartitionType.toString, ""),
+        ("Partition Type", partitionInfo.getPartitionType.toString, ""),
         ("Partition Columns",
-          carbonTable.getPartitionInfo().getColumnSchemaList.asScala.map {
+          partitionInfo.getColumnSchemaList.asScala.map {
             col => s"${col.getColumnName}:${col.getDataType.getName}"}.mkString(", "), ""),
-        ("Number of Partitions", carbonTable.getPartitionInfo().getNumPartitions.toString, ""),
-        ("Partitions Ids", carbonTable.getPartitionInfo().getPartitionIds.asScala.mkString(","), "")
+        ("Number of Partitions", partitionInfo.getNumPartitions.toString, ""),
+        ("Partitions Ids", partitionInfo.getPartitionIds.asScala.mkString(","), "")
       )
+      if (partitionInfo.getPartitionType == PartitionType.RANGE) {
+        results ++= Seq(("Range", partitionInfo.getRangeInfo.asScala.mkString(", "), ""))
+      } else if (partitionInfo.getPartitionType == PartitionType.LIST) {
+        results ++= Seq(("List", partitionInfo.getListInfo.asScala.mkString(", "), ""))
+      }
     }
     if (partitionSpec.nonEmpty) {
       val partitions = sparkSession.sessionState.catalog.getPartition(tblIdentifier, partitionSpec)
