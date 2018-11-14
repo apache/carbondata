@@ -167,19 +167,7 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
 
     @Override
     public void encode(int rowId, float value) {
-      if (targetDataType == DataTypes.BYTE) {
-        encodedPage.putByte(rowId, (byte) (value * floatFactor));
-      } else if (targetDataType == DataTypes.SHORT) {
-        encodedPage.putShort(rowId, (short) (value * floatFactor));
-      } else if (targetDataType == DataTypes.SHORT_INT) {
-        encodedPage.putShortInt(rowId, (int) (value * floatFactor));
-      } else if (targetDataType == DataTypes.INT) {
-        encodedPage.putInt(rowId, (int) (value * floatFactor));
-      } else if (targetDataType == DataTypes.LONG) {
-        encodedPage.putLong(rowId, (long) (value * floatFactor));
-      } else {
-        throw new RuntimeException("internal error: " + debugInfo());
-      }
+      encode(rowId, (double) value);
     }
 
     @Override
