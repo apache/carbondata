@@ -116,8 +116,7 @@ public class BlockletDataMapIndexStore
                   identifierWrapper.getConfiguration());
           dataMaps.add(blockletDataMap);
           blockletDataMapIndexWrapper =
-              new BlockletDataMapIndexWrapper(identifier.getSegmentId(), dataMaps,
-                  identifierWrapper.getConfiguration());
+              new BlockletDataMapIndexWrapper(identifier.getSegmentId(), dataMaps);
         } else {
           // if the identifier is a merge file then collect the index files and load the datamaps
           List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
@@ -138,8 +137,7 @@ public class BlockletDataMapIndexStore
             }
           }
           blockletDataMapIndexWrapper =
-              new BlockletDataMapIndexWrapper(identifier.getSegmentId(), dataMaps,
-                  identifierWrapper.getConfiguration());
+              new BlockletDataMapIndexWrapper(identifier.getSegmentId(), dataMaps);
         }
         if (identifierWrapper.isAddTableBlockToUnsafeAndLRUCache()) {
           lruCache.put(identifier.getUniqueTableSegmentIdentifier(), blockletDataMapIndexWrapper,
