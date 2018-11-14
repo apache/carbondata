@@ -2424,15 +2424,9 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
-    val descLoc = sql("describe formatted sdkTable").collect
-    descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("true"))
-      case None => assert(false)
-    }
-    descLoc.find(_.get(0).toString.contains("name")) match {
-      case Some(row) => assert(row.get(2).toString.contains("INVERTEDINDEX"))
-      case None => assert(false)
-    }
+    val df = sql("describe formatted sdkTable")
+    checkExistence(df, true, "Local Dictionary Enabled true")
+    checkExistence(df, true, "Inverted Index Columns name")
     FileUtils.deleteDirectory(new File(writerPath))
   }
 
@@ -2449,11 +2443,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""CREATE EXTERNAL TABLE sdkTable STORED BY 'carbondata' LOCATION
          |'$writerPath' """.stripMargin)
-    val descLoc = sql("describe formatted sdkTable").collect
-    descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("true"))
-      case None => assert(false)
-    }
+    val df = sql("describe formatted sdkTable")
+    checkExistence(df, true, "Local Dictionary Enabled true")
     FileUtils.deleteDirectory(new File(writerPath))
   }
 
@@ -2474,11 +2465,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     sql("insert into sdkTable select 's1','s2',23 ")
     assert(FileFactory.getCarbonFile(writerPath).exists())
     assert(testUtil.checkForLocalDictionary(testUtil.getDimRawChunk(0,writerPath)))
-    val descLoc = sql("describe formatted sdkTable").collect
-    descLoc.find(_.get(0).toString.contains("Local Dictionary Enabled")) match {
-      case Some(row) => assert(row.get(1).toString.contains("true"))
-      case None => assert(false)
-    }
+    val df = sql("describe formatted sdkTable")
+    checkExistence(df, true, "Local Dictionary Enabled true")
     checkAnswer(sql("select count(*) from sdkTable"), Seq(Row(1)))
     FileUtils.deleteDirectory(new File(writerPath))
   }
@@ -2496,11 +2484,8 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'$writerPath' """.stripMargin)
     FileUtils.deleteDirectory(new File(writerPath))
     sql("insert into sdkTable select 's1','s2',23 ")
-    val descLoc = sql("describe formatted sdkTable").collect
-    descLoc.find(_.get(0).toString.contains("name")) match {
-      case Some(row) => assert(row.get(2).toString.contains("INVERTEDINDEX"))
-      case None => assert(false)
-    }
+    val df = sql("describe formatted sdkTable")
+    checkExistence(df, true, "Inverted Index Columns name")
     checkAnswer(sql("select count(*) from sdkTable"), Seq(Row(1)))
     FileUtils.deleteDirectory(new File(writerPath))
   }
