@@ -438,13 +438,13 @@ public class CarbonWriterBuilder {
     Objects.requireNonNull(path, "path should not be null");
     if (this.writerType == null) {
       throw new IOException(
-          "Writer type is not set, use withCsvInput() or withAvroInput() or withJsonInput()  "
+          "'writerType' must be set, use withCsvInput() or withAvroInput() or withJsonInput()  "
               + "API based on input");
     }
     if (this.writtenByApp == null || this.writtenByApp.isEmpty()) {
       throw new RuntimeException(
-          "AppName is not set, please use writtenBy() API to set the App Name"
-              + "which is using SDK");
+          "'writtenBy' must be set when writing carbon files, use writtenBy() API to "
+              + "set it, it can be the name of the application which is using the SDK");
     }
     CarbonLoadModel loadModel = buildLoadModel(schema);
     loadModel.setSdkWriterCores(numOfThreads);
