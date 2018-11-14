@@ -24,8 +24,6 @@ import org.apache.carbondata.core.cache.Cacheable;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockDataMap;
 
-import org.apache.hadoop.conf.Configuration;
-
 /**
  * A cacheable wrapper of datamaps
  */
@@ -37,14 +35,10 @@ public class BlockletDataMapIndexWrapper implements Cacheable, Serializable {
 
   private String segmentId;
 
-  private transient Configuration configuration;
-
   // size of the wrapper. basically the total size of the datamaps this wrapper is holding
   private long wrapperSize;
 
-  public BlockletDataMapIndexWrapper(String segmentId,List<BlockDataMap> dataMaps, Configuration
-      configuration) {
-    this.configuration = configuration;
+  public BlockletDataMapIndexWrapper(String segmentId,List<BlockDataMap> dataMaps) {
     this.dataMaps = dataMaps;
     this.wrapperSize = 0L;
     this.segmentId = segmentId;
@@ -78,9 +72,5 @@ public class BlockletDataMapIndexWrapper implements Cacheable, Serializable {
 
   public String getSegmentId() {
     return segmentId;
-  }
-
-  public Configuration getConfiguration() {
-    return configuration;
   }
 }
