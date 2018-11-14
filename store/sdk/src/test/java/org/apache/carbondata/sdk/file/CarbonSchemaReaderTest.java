@@ -18,6 +18,7 @@
 package org.apache.carbondata.sdk.file;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,13 +36,19 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.apache.carbondata.core.util.path.CarbonTablePath.CARBON_DATA_EXT;
+import static org.apache.carbondata.core.util.path.CarbonTablePath.INDEX_FILE_EXT;
+
 public class CarbonSchemaReaderTest extends TestCase {
   String path = "./testWriteFiles";
 
   @Before
   public void setUp() throws IOException, InvalidLoadOptionException {
     FileUtils.deleteDirectory(new File(path));
+    writeData();
+  }
 
+  private void writeData() throws IOException, InvalidLoadOptionException {
     Field[] fields = new Field[12];
     fields[0] = new Field("stringField", DataTypes.STRING);
     fields[1] = new Field("shortField", DataTypes.SHORT);
@@ -229,6 +236,81 @@ public class CarbonSchemaReaderTest extends TestCase {
       } catch (Exception e) {
         Assert.assertTrue(e.getMessage()
             .equalsIgnoreCase("Schema is different between different files."));
+      }
+    } catch (Throwable e) {
+      e.printStackTrace();
+      Assert.fail();
+    }
+  }
+
+  @Test
+  public void testGetVersionDetailsAndValidate() {
+    try {
+      String versionDetails = CarbonSchemaReader
+          .getVersionDetails(path);
+      Assert.assertTrue(versionDetails.contains("CarbonSchemaReaderTest in version: "));
+    } catch (Throwable e) {
+      e.printStackTrace();
+      Assert.fail();
+    }
+  }
+
+  @Test
+  public void testGetVersionDetailsWithoutValidate() {
+    try {
+      String versionDetails = CarbonSchemaReader
+          .getVersionDetails(path);
+      Assert.assertTrue(versionDetails.contains("CarbonSchemaReaderTest in version: "));
+    } catch (Throwable e) {
+      e.printStackTrace();
+      Assert.fail();
+    }
+  }
+
+  @Test
+  public void testGetVersionDetailsWithCarbonDataFile() {
+    try {
+      File[] dataFiles = new File(path).listFiles(new FilenameFilter() {
+        @Override
+        public boolean accept(File dir, String name) {
+          return name.endsWith(CARBON_DATA_EXT);
+        }
+      });
+      String versionDetails = CarbonSchemaReader.getVersionDetails(dataFiles[0].getAbsolutePath());
+      Assert.assertTrue(versionDetails.contains("CarbonSchemaReaderTest in version: "));
+    } catch (Throwable e) {
+      e.printStackTrace();
+      Assert.fail();
+    }
+  }
+
+  @Test
+  public void testGetVersionDetailsWithCarbonIndexFile() {
+    try {
+      File[] indexFiles = new File(path).listFiles(new FilenameFilter() {
+        @Override
+        public boolean accept(File dir, String name) {
+          return name.endsWith(INDEX_FILE_EXT);
+        }
+      });
+      CarbonSchemaReader.getVersionDetails(indexFiles[0].getAbsolutePath());
+      Assert.fail();
+    } catch (Throwable e) {
+      Assert.assertTrue(e.getMessage()
+          .equalsIgnoreCase("Can't get version details from carbonindex file."));
+    }
+  }
+
+  public void testGetVersionDetailsWithTheSameSchema() {
+    try {
+      writeData();
+      try {
+        String versionDetails = CarbonSchemaReader
+            .getVersionDetails(path);
+        Assert.assertTrue(versionDetails
+            .contains("CarbonSchemaReaderTest in version: "));
+      } catch (Exception e) {
+        Assert.fail();
       }
     } catch (Throwable e) {
       e.printStackTrace();

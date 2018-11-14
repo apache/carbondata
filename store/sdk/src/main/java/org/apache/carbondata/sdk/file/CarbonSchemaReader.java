@@ -285,12 +285,40 @@ public class CarbonSchemaReader {
 
   /**
    * This method return the version details in formatted string by reading from carbondata file
+   * default won't validate the version details between different carbondata files.
    *
-   * @param dataFilePath
-   * @return
+   * @param path carbondata file path or folder path
+   * @param conf configuration support, can set s3a AK,SK,
+   *             end point and other conf with this
+   * @return string with information of who has written this file
+   * in which carbondata project version
    * @throws IOException
    */
-  public static String getVersionDetails(String dataFilePath) throws IOException {
+  public static String getVersionDetails(String path, Configuration conf) throws IOException {
+    if (path.endsWith(INDEX_FILE_EXT)) {
+      throw new RuntimeException("Can't get version details from carbonindex file.");
+    } else if (path.endsWith(CARBON_DATA_EXT)) {
+      return getVersionDetailsFromDataFile(path);
+    } else {
+      String dataFilePath = getCarbonFile(path, CARBON_DATA_EXT, conf)[0].getAbsolutePath();
+      return getVersionDetailsFromDataFile(dataFilePath);
+    }
+  }
+
+  /**
+   * This method return the version details in formatted string by reading from carbondata file
+   * default won't validate the version details between different carbondata files.
+   *
+   * @param path carbondata file path or folder path
+   * @return string with information of who has written this file
+   * in which carbondata project version
+   * @throws IOException
+   */
+  public static String getVersionDetails(String path) throws IOException {
+    return getVersionDetails(path, new Configuration());
+  }
+
+  private static String getVersionDetailsFromDataFile(String dataFilePath) throws IOException {
     long fileSize =
         FileFactory.getCarbonFile(dataFilePath, FileFactory.getFileType(dataFilePath)).getSize();
     FileReader fileReader = FileFactory.getFileHolder(FileFactory.getFileType(dataFilePath));

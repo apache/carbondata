@@ -86,4 +86,27 @@ public:
      */
     jobject readSchema(char *path, bool validateSchema);
 
+    /**
+     * This method return the version details in formatted string by reading from carbondata file
+     * default won't validate the version details between different carbondata files.
+     *
+     * @param path carbondata file path or folder path
+     * @return string with information of who has written this file
+     * in which carbondata project version
+     * @throws IOException
+     */
+    char *getVersionDetails(char *path);
+
+    /**
+     * This method return the version details in formatted string by reading from carbondata file
+     * default won't validate the version details between different carbondata files.
+     *
+     * @param path carbondata file path or folder path
+     * @param conf           configuration support, can set s3a AK,SK,
+     *                       end point and other conf with this
+     * @return string with information of who has written this file
+     * in which carbondata project version
+     * @throws IOException
+     */
+    char *getVersionDetails(char *path, Configuration conf);
 };

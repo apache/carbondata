@@ -236,6 +236,36 @@ bool tryCarbonRowException(JNIEnv *env, char *path) {
     printResultWithException(env, carbonReaderClass);
 }
 
+/*
+ * test get Version Details from path
+ *
+ * @param env jni env
+ * @return whether it is success
+ */
+bool getVersionDetails(JNIEnv *env, char *Path, char **argv, int argc) {
+    printf("\nget version details from path:\n");
+    try {
+        Configuration conf(env);
+        if (argc > 3) {
+            conf.set("fs.s3a.access.key", argv[1]);
+            conf.set("fs.s3a.secret.key", argv[2]);
+            conf.set("fs.s3a.endpoint", argv[3]);
+        }
+        CarbonSchemaReader carbonSchemaReader(env);
+        char *version;
+        if (argc > 2) {
+            version = carbonSchemaReader.getVersionDetails(Path, conf);
+            printf("\n%s\t\n", version);
+        } else {
+            version = carbonSchemaReader.getVersionDetails(Path);
+            printf("\n%s\t\n", version);
+        }
+    } catch (jthrowable e) {
+        env->ExceptionDescribe();
+    }
+    return true;
+}
+
 /**
  * test read data from local disk, without projection
  *
@@ -844,9 +874,10 @@ int main(int argc, char *argv[]) {
         testWriteData(env, S3WritePath, 4, argv);
         readSchema(env, S3WritePath, true, argv,4);
         readSchema(env, S3WritePath, false, argv, 4);
-        readFromS3(env, S3ReadPath, argv);
+//        readFromS3(env, S3ReadPath, argv);
         testWithTableProperty(env, "s3a://csdk/dataProperty", 4, argv);
         testSortBy(env, "s3a://csdk/dataSort", 4, argv);
+        getVersionDetails(env, S3WritePath, argv, 4);
 
         testReadNextRow(env, S3Path, 100000, argv, 4, false);
         testReadNextRow(env, S3Path, 100000, argv, 4, true);
@@ -856,6 +887,7 @@ int main(int argc, char *argv[]) {
         int batch = 32000;
         int printNum = 32000;
 
+        char *writePath = "./data";
         tryCatchException(env);
         tryCarbonRowException(env, smallFilePath);
         testCarbonProperties(env);
@@ -867,6 +899,7 @@ int main(int argc, char *argv[]) {
         testSortBy(env, "./dataSort", 1, argv);
         readSchema(env, path, false, argv, 1);
         readSchema(env, path, true, argv, 1);
+        getVersionDetails(env, writePath, argv, 1);
 
         testReadNextRow(env, path, printNum, argv, 0, true);
         testReadNextRow(env, path, printNum, argv, 0, false);
