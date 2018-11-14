@@ -1310,6 +1310,21 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     checkAnswer(spark.sql("select * from t_carbn01b_hive"), spark.sql("select * from t_carbn01b"))
     spark.sql("drop table if exists t_carbn01b_hive")
     spark.sql(s"drop table if exists t_carbn01b")
+    }
+
+  test("Test Float value by having negative exponents") {
+    spark.sql("DROP TABLE IF EXISTS float_p")
+    spark.sql("DROP TABLE IF EXISTS float_c")
+    spark.sql("CREATE TABLE float_p(f float) using parquet")
+    spark.sql("CREATE TABLE float_c(f float) using carbon")
+    spark.sql("INSERT INTO float_p select \"1.4E-3\"")
+    spark.sql("INSERT INTO float_p select \"1.4E-38\"")
+    spark.sql("INSERT INTO float_c select \"1.4E-3\"")
+    spark.sql("INSERT INTO float_c select \"1.4E-38\"")
+    checkAnswer(spark.sql("SELECT * FROM float_p"),
+      spark.sql("SELECT * FROM float_c"))
+    spark.sql("DROP TABLE float_p")
+    spark.sql("DROP TABLE float_c")
   }
 
   override protected def beforeAll(): Unit = {

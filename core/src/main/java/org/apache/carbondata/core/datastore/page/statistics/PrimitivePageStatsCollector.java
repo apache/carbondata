@@ -253,19 +253,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   }
 
   private int getDecimalCount(float value) {
-    int decimalPlaces = 0;
-    try {
-      String strValue = Float.valueOf(Math.abs(value)).toString();
-      int integerPlaces = strValue.indexOf('.');
-      if (-1 != integerPlaces) {
-        decimalPlaces = strValue.length() - integerPlaces - 1;
-      }
-    } catch (NumberFormatException e) {
-      if (!Double.isInfinite(value)) {
-        throw e;
-      }
-    }
-    return decimalPlaces;
+    return getDecimalCount((double) value);
   }
 
   @Override
