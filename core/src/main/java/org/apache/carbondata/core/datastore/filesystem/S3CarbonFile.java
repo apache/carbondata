@@ -107,8 +107,11 @@ public class S3CarbonFile extends HDFSCarbonFile {
         // create buffer
         byte[] byteStreamBuffer = new byte[count];
         int bytesRead = dataInputStream.read(byteStreamBuffer);
+        dataInputStream.close();
         stream = fileSystem.create(pt, true, bufferSize);
-        stream.write(byteStreamBuffer, 0, bytesRead);
+        if (bytesRead > 0) {
+          stream.write(byteStreamBuffer, 0, bytesRead);
+        }
       } else {
         stream = fileSystem.create(pt, true, bufferSize);
       }
