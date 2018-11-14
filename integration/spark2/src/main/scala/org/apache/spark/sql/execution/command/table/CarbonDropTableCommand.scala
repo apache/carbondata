@@ -143,7 +143,6 @@ case class CarbonDropTableCommand(
       OperationListenerBus.getInstance.fireEvent(dropTablePostEvent, operationContext)
     } catch {
       case ex: NoSuchTableException =>
-        LOGGER.error(ex.getLocalizedMessage, ex)
         if (!ifExistsSet) {
           throw ex
         }
