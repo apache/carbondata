@@ -157,8 +157,8 @@ object S3Example {
   }
 
   def getSparkMaster(args: Array[String]): String = {
-      if (args.length == 5) args(4)
-      else if (args(3).contains("spark:") || args(3).contains("mesos:")) args(3)
-      else "local"
-    }
+    if (args.length == 5) args(4)
+    else if (args(3).contains("spark:") || args(3).contains("mesos:")) args(3)
+    else "local"
+  }
 }
