@@ -98,8 +98,15 @@ case class CarbonRelation(
   override val output = {
     val columns = carbonTable.getCreateOrderColumn(carbonTable.getTableName)
       .asScala
+    val partitionColumnSchemas = if (carbonTable.getPartitionInfo() != null) {
+      carbonTable.getPartitionInfo.getColumnSchemaList.asScala
+    } else {
+      Nil
+    }
+    val otherColumns = columns.filterNot(a => partitionColumnSchemas.contains(a.getColumnSchema))
+    val partitionColumns = columns.filter(a => partitionColumnSchemas.contains(a.getColumnSchema))
     // convert each column to Attribute
-    columns.filter(!_.isInvisible).map { column: CarbonColumn =>
+    (otherColumns ++= partitionColumns).filter(!_.isInvisible).map { column: CarbonColumn =>
       if (column.isDimension()) {
         val output: DataType = column.getDataType.getName.toLowerCase match {
           case "array" =>
