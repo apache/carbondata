@@ -50,6 +50,7 @@ object CarbonThriftServer {
 
     val builder = SparkSession
       .builder()
+      .master(getSparkMaster(args))
       .config(sparkConf)
       .appName("Carbon Thrift Server(uses CarbonSession)")
       .enableHiveSupport()
@@ -113,4 +114,9 @@ object CarbonThriftServer {
     else ""
   }
 
+  def getSparkMaster(args: Array[String]): String = {
+    if (args.length == 5) args(4)
+    else if (args(3).contains("spark:") || args(3).contains("mesos:")) args(3)
+    else "local"
+  }
 }
