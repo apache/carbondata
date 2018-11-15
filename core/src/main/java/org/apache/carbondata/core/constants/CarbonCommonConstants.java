@@ -1951,9 +1951,9 @@ public final class CarbonCommonConstants {
 
   /**
    * When more global dictionary columns are there then there is issue in generating codegen to them
-   * and it slows down the query.So we limit to 40 for now
+   * and it slows down the query.So we limit to 100 for now
    */
-  public static final int CARBON_ALLOW_DIRECT_FILL_DICT_COLS_LIMIT = 40;
+  public static final int CARBON_ALLOW_DIRECT_FILL_DICT_COLS_LIMIT = 100;
 
   //////////////////////////////////////////////////////////////////////////////////////////
   // Unused constants and parameters start here

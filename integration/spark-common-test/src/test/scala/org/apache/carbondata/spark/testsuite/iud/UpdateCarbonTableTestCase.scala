@@ -773,8 +773,6 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("check data after update with row.filter pushdown as false") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants
-      .CARBON_PUSH_ROW_FILTERS_FOR_VECTOR, "false")
     sql("""drop table if exists iud.dest33_flat""")
     sql(
       """create table iud.dest33_part (c1 int,c2 string, c3 short) STORED BY 'carbondata'"""
@@ -787,8 +785,6 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select c3 from iud.dest33_part"), Seq(Row(-300), Row(0), Row(-200), Row(700)
       , Row(100), Row(-100), Row(null)))
     sql("""drop table if exists iud.dest33_part""")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants
-      .CARBON_PUSH_ROW_FILTERS_FOR_VECTOR, "true")
   }
 
     override def afterAll {
