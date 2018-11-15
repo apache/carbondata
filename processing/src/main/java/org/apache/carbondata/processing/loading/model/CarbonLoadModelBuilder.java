@@ -206,11 +206,18 @@ public class CarbonLoadModelBuilder {
       } else {
         if (StringUtils.isEmpty(fileHeader)) {
           List<CarbonColumn> columns = table.getCreateOrderColumn(table.getTableName());
-          String[] columnNames = new String[columns.size()];
-          for (int i = 0; i < columnNames.length; i++) {
-            columnNames[i] = columns.get(i).getColName();
+          List<String> columnNames = new ArrayList<>();
+          List<String> partitionColumns = new ArrayList<>();
+          for (int i = 0; i < columns.size(); i++) {
+            if (table.getPartitionInfo() != null && table.getPartitionInfo().getColumnSchemaList()
+                .contains(columns.get(i).getColumnSchema())) {
+              partitionColumns.add(columns.get(i).getColName());
+            } else {
+              columnNames.add(columns.get(i).getColName());
+            }
           }
-          fileHeader = Strings.mkString(columnNames, ",");
+          columnNames.addAll(partitionColumns);
+          fileHeader = Strings.mkString(columnNames.toArray(new String[columnNames.size()]), ",");
         }
       }
     }
