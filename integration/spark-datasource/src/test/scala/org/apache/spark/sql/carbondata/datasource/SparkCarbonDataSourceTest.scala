@@ -1345,6 +1345,15 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
     spark.sql("drop table if exists fileformat_drop_hive")
   }
 
+  test("validate the columns not present in schema") {
+    spark.sql("drop table if exists validate")
+    spark.sql("create table validate (name string, age int, address string) using carbon options('inverted_index'='abc')")
+    val ex = intercept[Exception] {
+      spark.sql("insert into validate select 'abc',4,'def'")
+    }
+    assert(ex.getMessage.contains("column: abc specified in inverted index columns does not exist in schema"))
+  }
+
   override protected def beforeAll(): Unit = {
     drop
     createParquetTable
