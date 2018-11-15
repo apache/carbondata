@@ -618,8 +618,8 @@ public class CarbonWriterBuilder {
         }
       }
       if (!exists) {
-        throw new RuntimeException(
-            "column: " + invertedIdxColumn + " specified in sort columns does not exist in schema");
+        throw new RuntimeException("column: " + invertedIdxColumn
+            + " specified in inverted index columns does not exist in schema");
       }
     }
     int i = 0;

@@ -86,6 +86,7 @@ CarbonData DDL statements are documented here,which includes:
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | [DICTIONARY_INCLUDE](#dictionary-encoding-configuration)     | Columns for which dictionary needs to be generated           |
 | [NO_INVERTED_INDEX](#inverted-index-configuration)           | Columns to exclude from inverted index generation            |
+| [INVERTED_INDEX](#inverted-index-configuration)              | Columns to include for inverted index generation             |
 | [SORT_COLUMNS](#sort-columns-configuration)                  | Columns to include in sort and its order of sort             |
 | [SORT_SCOPE](#sort-scope-configuration)                      | Sort scope of the load.Options include no sort, local sort ,batch sort and global sort |
 | [TABLE_BLOCKSIZE](#table-block-size-configuration)           | Size of blocks to write onto hdfs                            |
