@@ -437,6 +437,20 @@ test("Creation of partition table should fail if the colname in table schema and
     sql("drop datamap if exists preaggTable on table partitionTable")
   }
 
+  test("validate data in partition table after dropping and adding a column") {
+    sql("drop table if exists par")
+    sql("create table par(name string) partitioned by (age double) stored by " +
+              "'carbondata'")
+    sql(s"load data local inpath '$resourcesPath/uniqwithoutheader.csv' into table par options" +
+        s"('header'='false')")
+    sql("alter table par drop columns(name)")
+    sql("alter table par add columns(name string)")
+    sql(s"load data local inpath '$resourcesPath/uniqwithoutheader.csv' into table par options" +
+        s"('header'='false')")
+    checkAnswer(sql("select name from par"), Seq(Row("a"),Row("b"), Row(null), Row(null)))
+    sql("drop table if exists par")
+  }
+
 
   private def verifyPartitionInfo(frame: DataFrame, partitionNames: Seq[String]) = {
     val plan = frame.queryExecution.sparkPlan
@@ -473,6 +487,7 @@ test("Creation of partition table should fail if the colname in table schema and
     sql("drop table if exists staticpartitionlocloadother")
     sql("drop table if exists staticpartitionextlocload_new")
     sql("drop table if exists staticpartitionlocloadother_new")
+    sql("drop table if exists par")
   }
 
 }

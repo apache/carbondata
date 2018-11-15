@@ -302,6 +302,11 @@ class AlterTableColumnSchemaGenerator(
 
     allColumns = CarbonScalaUtil.reArrangeColumnSchema(allColumns)
 
+    if (tableInfo.getFactTable.getPartitionInfo != null) {
+      val par = tableInfo.getFactTable.getPartitionInfo.getColumnSchemaList
+      allColumns = allColumns.filterNot(b => par.contains(b)) ++= par.asScala
+    }
+
     def getLocalDictColumnList(tableProperties: scala.collection.mutable.Map[String, String],
         columns: scala.collection.mutable.ListBuffer[ColumnSchema]): (scala.collection.mutable
     .ListBuffer[ColumnSchema], scala.collection.mutable.ListBuffer[ColumnSchema]) = {
