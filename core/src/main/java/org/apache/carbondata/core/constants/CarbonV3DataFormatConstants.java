@@ -35,9 +35,9 @@ public interface CarbonV3DataFormatConstants {
   String BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE = "64";
 
   /**
-   * blocklet group size min value
+   * blocklet size min value
    */
-  short BLOCKLET_SIZE_IN_MB_MIN = 16;
+  short BLOCKLET_SIZE_IN_MB_MIN = 1;
 
   /**
    * number of column to be read in one IO in query
