@@ -30,7 +30,7 @@ import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl
  * Column vector for column pages which has delete delta and inverted index, so it uses delta biset
  * to filter out data and use inverted index before filling to actual vector
  */
-class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
+public class ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex
     extends ColumnarVectorWrapperDirectWithInvertedIndex {
 
   private BitSet deletedRows;

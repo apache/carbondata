@@ -26,7 +26,7 @@ import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
  * Column vector for column pages which has inverted index, so it uses inverted index
  * before filling to actual vector
  */
-class ColumnarVectorWrapperDirectWithInvertedIndex extends AbstractCarbonColumnarVector {
+public class ColumnarVectorWrapperDirectWithInvertedIndex extends AbstractCarbonColumnarVector {
 
   protected int[] invertedIndex;
 

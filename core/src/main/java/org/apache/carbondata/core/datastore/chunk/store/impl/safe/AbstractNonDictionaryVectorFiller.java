@@ -23,6 +23,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectWithInvertedIndex;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -101,25 +102,41 @@ class LongStringVectorFiller extends AbstractNonDictionaryVectorFiller {
     super(numberOfRows);
   }
 
-  @Override
-  public void fillVector(byte[] data, CarbonColumnVector vector) {
+  @Override public void fillVector(byte[] data, CarbonColumnVector vector) {
     // start position will be used to store the current data position
+    boolean invertedIndex = vector instanceof ColumnarVectorWrapperDirectWithInvertedIndex;
     int localOffset = 0;
     ByteUtil.UnsafeComparer comparator = ByteUtil.UnsafeComparer.INSTANCE;
-    for (int i = 0; i < numberOfRows; i++) {
-      int length =
-          (((data[localOffset] & 0xFF) << 24) | ((data[localOffset + 1] & 0xFF) << 16) | (
-              (data[localOffset + 2] & 0xFF) << 8) | (data[localOffset + 3] & 0xFF));
-      localOffset += 4;
-      if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
-          CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
-        vector.putNull(i);
-      } else {
-        vector.putArray(i, localOffset, length);
+    if (invertedIndex) {
+      for (int i = 0; i < numberOfRows; i++) {
+        int length =
+            (((data[localOffset] & 0xFF) << 24) | ((data[localOffset + 1] & 0xFF) << 16) | (
+                (data[localOffset + 2] & 0xFF) << 8) | (data[localOffset + 3] & 0xFF));
+        localOffset += 4;
+        if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+            CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
+          vector.putNull(i);
+        } else {
+          vector.putByteArray(i, localOffset, length, data);
+        }
+        localOffset += length;
       }
-      localOffset += length;
+    } else {
+      for (int i = 0; i < numberOfRows; i++) {
+        int length =
+            (((data[localOffset] & 0xFF) << 24) | ((data[localOffset + 1] & 0xFF) << 16) | (
+                (data[localOffset + 2] & 0xFF) << 8) | (data[localOffset + 3] & 0xFF));
+        localOffset += 4;
+        if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+            CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
+          vector.putNull(i);
+        } else {
+          vector.putArray(i, localOffset, length);
+        }
+        localOffset += length;
+      }
+      vector.putAllByteArray(data, 0, data.length);
     }
-    vector.putAllByteArray(data, 0, data.length);
   }
 }
 
