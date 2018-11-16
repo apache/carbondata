@@ -443,7 +443,7 @@ public class CarbonWriterBuilder {
     }
     if (this.writtenByApp == null || this.writtenByApp.isEmpty()) {
       throw new RuntimeException(
-          "'writtenBy' must be set when writting carbon files, use writtenBy() API to "
+          "'writtenBy' must be set when writing carbon files, use writtenBy() API to "
               + "set it, it can be the name of the application which is using the SDK");
     }
     CarbonLoadModel loadModel = buildLoadModel(schema);
