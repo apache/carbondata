@@ -104,9 +104,13 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
           .convertFileFooterVersion3(blockletMetadata, blockletIndex, localCardinality,
               thriftColumnSchemaList.size());
       convertFileMeta.setIs_sort(isSorted);
-      convertFileMeta.putToExtra_info(CarbonCommonConstants.CARBON_WRITTEN_BY_FOOTER_INFO,
-          CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME));
+      String appName = CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME);
+      if (appName == null) {
+        throw new CarbonDataWriterException(
+            "DataLoading failed as CARBON_WRITTEN_BY_APPNAME is null");
+      }
+      convertFileMeta.putToExtra_info(CarbonCommonConstants.CARBON_WRITTEN_BY_FOOTER_INFO, appName);
       convertFileMeta.putToExtra_info(CarbonCommonConstants.CARBON_WRITTEN_VERSION,
           CarbonVersionConstants.CARBONDATA_VERSION);
       // fill the carbon index details
