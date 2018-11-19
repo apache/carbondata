@@ -72,10 +72,16 @@ JNIEnv *initJVM() {
  * @param arr array
  */
 void printArray(JNIEnv *env, jobjectArray arr) {
+    if (env->ExceptionCheck()) {
+        throw env->ExceptionOccurred();
+    }
     jsize length = env->GetArrayLength(arr);
     int j = 0;
     for (j = 0; j < length; j++) {
         jobject element = env->GetObjectArrayElement(arr, j);
+        if (env->ExceptionCheck()) {
+            throw env->ExceptionOccurred();
+        }
         char *str = (char *) env->GetStringUTFChars((jstring) element, JNI_FALSE);
         printf("%s\t", str);
     }
@@ -102,27 +108,66 @@ void printBoolean(jboolean bool1) {
  * @param env JNIEnv
  * @param reader CarbonReader object
  */
-void printResult(JNIEnv *env, CarbonReader reader) {
-    CarbonRow carbonRow(env);
-    while (reader.hasNext()) {
-        jobject row = reader.readNextRow();
-        carbonRow.setCarbonRow(row);
-        printf("%s\t", carbonRow.getString(0));
-        printf("%d\t", carbonRow.getInt(1));
-        printf("%ld\t", carbonRow.getLong(2));
-        printf("%s\t", carbonRow.getVarchar(3));
-        printArray(env, carbonRow.getArray(4));
-        printf("%d\t", carbonRow.getShort(5));
-        printf("%d\t", carbonRow.getInt(6));
-        printf("%ld\t", carbonRow.getLong(7));
-        printf("%lf\t", carbonRow.getDouble(8));
-        printBoolean(carbonRow.getBoolean(9));
-        printf("%s\t", carbonRow.getDecimal(10));
-        printf("%f\t", carbonRow.getFloat(11));
-        printf("\n");
-        env->DeleteLocalRef(row);
+void printResultWithException(JNIEnv *env, CarbonReader reader) {
+    try {
+        CarbonRow carbonRow(env);
+        while (reader.hasNext()) {
+            jobject row = reader.readNextRow();
+            carbonRow.setCarbonRow(row);
+            printf("%s\t", carbonRow.getString(1));
+            printf("%d\t", carbonRow.getInt(1));
+            printf("%ld\t", carbonRow.getLong(2));
+            printf("%s\t", carbonRow.getVarchar(1));
+            printArray(env, carbonRow.getArray(0));
+            printf("%d\t", carbonRow.getShort(5));
+            printf("%d\t", carbonRow.getInt(6));
+            printf("%ld\t", carbonRow.getLong(7));
+            printf("%lf\t", carbonRow.getDouble(8));
+            printBoolean(carbonRow.getBoolean(9));
+            printf("%s\t", carbonRow.getDecimal(9));
+            printf("%f\t", carbonRow.getFloat(11));
+            printf("\n");
+            env->DeleteLocalRef(row);
+        }
+        reader.close();
+        carbonRow.close();
+    } catch (jthrowable e) {
+        env->ExceptionDescribe();
     }
-    reader.close();
+}
+
+/**
+ * print result of reading data
+ *
+ * @param env JNIEnv
+ * @param reader CarbonReader object
+ */
+void printResult(JNIEnv *env, CarbonReader reader) {
+    try {
+        CarbonRow carbonRow(env);
+        while (reader.hasNext()) {
+            jobject row = reader.readNextRow();
+            carbonRow.setCarbonRow(row);
+            printf("%s\t", carbonRow.getString(0));
+            printf("%d\t", carbonRow.getInt(1));
+            printf("%ld\t", carbonRow.getLong(2));
+            printf("%s\t", carbonRow.getVarchar(3));
+            printArray(env, carbonRow.getArray(4));
+            printf("%d\t", carbonRow.getShort(5));
+            printf("%d\t", carbonRow.getInt(6));
+            printf("%ld\t", carbonRow.getLong(7));
+            printf("%lf\t", carbonRow.getDouble(8));
+            printBoolean(carbonRow.getBoolean(9));
+            printf("%s\t", carbonRow.getDecimal(10));
+            printf("%f\t", carbonRow.getFloat(11));
+            printf("\n");
+            env->DeleteLocalRef(row);
+        }
+        carbonRow.close();
+        reader.close();
+    } catch (jthrowable e) {
+        env->ExceptionDescribe();
+    }
 }
 
 /**
@@ -156,6 +201,30 @@ bool readSchema(JNIEnv *env, char *Path, bool validateSchema) {
         env->ExceptionDescribe();
     }
     return true;
+}
+
+/**
+ * test the exception when carbonRow with wrong index.
+ *
+ * @param env  jni env
+ * @return
+ */
+bool tryCarbonRowException(JNIEnv *env, char *path) {
+    printf("\nRead data from local without projection:\n");
+
+    CarbonReader carbonReaderClass;
+    try {
+        carbonReaderClass.builder(env, path);
+    } catch (runtime_error e) {
+        printf("\nget exception fro builder and throw\n");
+        throw e;
+    }
+    try {
+        carbonReaderClass.build();
+    } catch (jthrowable e) {
+        env->ExceptionDescribe();
+    }
+    printResultWithException(env, carbonReaderClass);
 }
 
 /**
@@ -251,6 +320,7 @@ void testReadNextRow(JNIEnv *env, char *path, int printNum, char **argv, int arg
         printf("total line is: %d,\t build time is: %lf s,\tread time is %lf s, average speed is %lf records/s  ",
                i, buildTime, time / 1000000.0, i / (time / 1000000.0));
         carbonReaderClass.close();
+        carbonRow.close();
     } catch (jthrowable) {
         env->ExceptionDescribe();
     }
@@ -353,6 +423,7 @@ void testReadNextBatchRow(JNIEnv *env, char *path, int batchSize, int printNum, 
     printf("total line is: %d,\t build time is: %lf s,\tread time is %lf s, average speed is %lf records/s  ",
            i, buildTime, time / 1000000.0, i / (time / 1000000.0));
     carbonReaderClass.close();
+    carbonRow.close();
 }
 
 /**
@@ -410,6 +481,7 @@ bool readFromLocalWithProjection(JNIEnv *env, char *path) {
     }
 
     reader.close();
+    carbonRow.close();
 }
 
 
@@ -566,6 +638,7 @@ bool testWriteData(JNIEnv *env, char *path, int argc, char *argv[]) {
             env->DeleteLocalRef(row);
         }
         carbonReader.close();
+        carbonRow.close();
     } catch (jthrowable ex) {
         env->ExceptionDescribe();
         env->ExceptionClear();
@@ -604,36 +677,39 @@ int main(int argc, char *argv[]) {
     // init jvm
     JNIEnv *env;
     env = initJVM();
-    char *S3WritePath = "s3a://sdk/WriterOutput/carbondata2";
-    char *S3ReadPath = "s3a://sdk/WriterOutput/carbondata";
+    char *S3WritePath = "s3a://csdk/WriterOutput/carbondata2";
+    char *S3ReadPath = "s3a://csdk/WriterOutput/carbondata";
 
     char *smallFilePath = "../../../../resources/carbondata";
     char *path = "../../../../../../../Downloads/carbon-data-big/dir2";
-    char *S3Path = "s3a://sdk/ges/i400bs128";
+    char *S3Path = "s3a://csdk/bigData/i400bs128";
 
     if (argc > 3) {
         // TODO: need support read schema from S3 in the future
         testWriteData(env, S3WritePath, 4, argv);
         readFromS3(env, S3ReadPath, argv);
+
         testReadNextRow(env, S3Path, 100000, argv, 4, false);
         testReadNextRow(env, S3Path, 100000, argv, 4, true);
         testReadNextBatchRow(env, S3Path, 100000, 100000, argv, 4, false);
         testReadNextBatchRow(env, S3Path, 100000, 100000, argv, 4, true);
     } else {
         tryCatchException(env);
+        tryCarbonRowException(env, smallFilePath);
         testCarbonProperties(env);
         testWriteData(env, "./data", 1, argv);
         testWriteData(env, "./data", 1, argv);
         readFromLocalWithoutProjection(env, smallFilePath);
         readFromLocalWithProjection(env, smallFilePath);
+        readSchema(env, path, false);
+        readSchema(env, path, true);
+
         int batch = 32000;
         int printNum = 32000;
         testReadNextRow(env, path, printNum, argv, 0, true);
         testReadNextRow(env, path, printNum, argv, 0, false);
         testReadNextBatchRow(env, path, batch, printNum, argv, 0, true);
         testReadNextBatchRow(env, path, batch, printNum, argv, 0, false);
-        readSchema(env, path, false);
-        readSchema(env, path, true);
     }
     (jvm)->DestroyJavaVM();
 

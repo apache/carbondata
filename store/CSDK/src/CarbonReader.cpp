@@ -31,7 +31,7 @@ void CarbonReader::builder(JNIEnv *env, char *path, char *tableName) {
         throw std::runtime_error("tableName parameter can't be NULL.");
     }
     jniEnv = env;
-    jclass carbonReaderClass = env->FindClass("org/apache/carbondata/sdk/file/CarbonReader");
+    carbonReaderClass = env->FindClass("org/apache/carbondata/sdk/file/CarbonReader");
     if (carbonReaderClass == NULL) {
         throw std::runtime_error("Can't find the class in java: org/apache/carbondata/sdk/file/CarbonReader");
     }
@@ -56,7 +56,7 @@ void CarbonReader::builder(JNIEnv *env, char *path) {
         throw std::runtime_error("path parameter can't be NULL.");
     }
     jniEnv = env;
-    jclass carbonReaderClass = env->FindClass("org/apache/carbondata/sdk/file/CarbonReader");
+    carbonReaderClass = env->FindClass("org/apache/carbondata/sdk/file/CarbonReader");
     if (carbonReaderClass == NULL) {
         throw std::runtime_error("Can't find the class in java: org/apache/carbondata/sdk/file/CarbonReader");
     }
@@ -230,4 +230,7 @@ void CarbonReader::close() {
     if (jniEnv->ExceptionCheck()) {
         throw jniEnv->ExceptionOccurred();
     }
+    jniEnv->DeleteLocalRef(carbonReaderBuilderObject);
+    jniEnv->DeleteLocalRef(carbonReaderObject);
+    jniEnv->DeleteLocalRef(carbonReaderClass);
 }
