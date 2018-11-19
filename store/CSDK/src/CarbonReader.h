@@ -46,6 +46,11 @@ private:
     jobject carbonReaderObject = NULL;
 
     /**
+    * carbonReader class for reading data
+    */
+    jclass carbonReaderClass = NULL;
+
+    /**
      * Return true if carbonReaderBuilder Object isn't NULL
      * Throw exception if carbonReaderBuilder Object is NULL
      *

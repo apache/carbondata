@@ -154,4 +154,10 @@ public:
      * @return jobjectArray data type data
      */
     jobjectArray getArray(int ordinal);
+
+    /**
+     * delete data and release
+     * @return
+     */
+    void close();
 };

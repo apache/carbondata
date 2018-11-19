@@ -70,7 +70,12 @@ public class RowUtil implements Serializable {
    * @return array data type data
    */
   public static Object[] getArray(Object[] data, int ordinal) {
-    return (Object[]) data[ordinal];
+    Object object = data[ordinal];
+    if (object instanceof Object[]) {
+      return (Object[]) data[ordinal];
+    } else {
+      throw new IllegalArgumentException("It's not an array in ordinal of data.");
+    }
   }
 
   /**
