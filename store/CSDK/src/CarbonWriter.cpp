@@ -164,4 +164,7 @@ void CarbonWriter::close() {
     if (jniEnv->ExceptionCheck()) {
         throw jniEnv->ExceptionOccurred();
     }
+    jniEnv->DeleteLocalRef(carbonWriterBuilderObject);
+    jniEnv->DeleteLocalRef(carbonWriterObject);
+    jniEnv->DeleteLocalRef(carbonWriter);
 }

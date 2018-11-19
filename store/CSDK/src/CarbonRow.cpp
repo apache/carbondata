@@ -87,6 +87,9 @@ CarbonRow::CarbonRow(JNIEnv *env) {
     if (getArrayId == NULL) {
         throw std::runtime_error("Can't find the method in java: getArray");
     }
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
 }
 
 void CarbonRow::setCarbonRow(jobject data) {
@@ -114,7 +117,11 @@ short CarbonRow::getShort(int ordinal) {
     jvalue args[2];
     args[0].l = carbonRow;
     args[1].i = ordinal;
-    return jniEnv->CallStaticShortMethodA(rowUtilClass, getShortId, args);
+    short result = jniEnv->CallStaticShortMethodA(rowUtilClass, getShortId, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
+    return result;
 }
 
 int CarbonRow::getInt(int ordinal) {
@@ -123,7 +130,11 @@ int CarbonRow::getInt(int ordinal) {
     jvalue args[2];
     args[0].l = carbonRow;
     args[1].i = ordinal;
-    return jniEnv->CallStaticIntMethodA(rowUtilClass, getIntId, args);
+    int result = jniEnv->CallStaticIntMethodA(rowUtilClass, getIntId, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
+    return result;
 }
 
 long CarbonRow::getLong(int ordinal) {
@@ -132,7 +143,11 @@ long CarbonRow::getLong(int ordinal) {
     jvalue args[2];
     args[0].l = carbonRow;
     args[1].i = ordinal;
-    return jniEnv->CallStaticLongMethodA(rowUtilClass, getLongId, args);
+    long result = jniEnv->CallStaticLongMethodA(rowUtilClass, getLongId, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
+    return result;
 }
 
 double CarbonRow::getDouble(int ordinal) {
@@ -141,9 +156,12 @@ double CarbonRow::getDouble(int ordinal) {
     jvalue args[2];
     args[0].l = carbonRow;
     args[1].i = ordinal;
-    return jniEnv->CallStaticDoubleMethodA(rowUtilClass, getDoubleId, args);
+    double result = jniEnv->CallStaticDoubleMethodA(rowUtilClass, getDoubleId, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
+    return result;
 }
-
 
 float CarbonRow::getFloat(int ordinal) {
     checkCarbonRow();
@@ -151,7 +169,11 @@ float CarbonRow::getFloat(int ordinal) {
     jvalue args[2];
     args[0].l = carbonRow;
     args[1].i = ordinal;
-    return jniEnv->CallStaticFloatMethodA(rowUtilClass, getFloatId, args);
+    float result = jniEnv->CallStaticFloatMethodA(rowUtilClass, getFloatId, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
+    return result;
 }
 
 jboolean CarbonRow::getBoolean(int ordinal) {
@@ -160,7 +182,11 @@ jboolean CarbonRow::getBoolean(int ordinal) {
     jvalue args[2];
     args[0].l = carbonRow;
     args[1].i = ordinal;
-    return jniEnv->CallStaticBooleanMethodA(rowUtilClass, getBooleanId, args);
+    bool result = jniEnv->CallStaticBooleanMethodA(rowUtilClass, getBooleanId, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
+    return result;
 }
 
 char *CarbonRow::getString(int ordinal) {
@@ -170,6 +196,9 @@ char *CarbonRow::getString(int ordinal) {
     args[0].l = carbonRow;
     args[1].i = ordinal;
     jobject data = jniEnv->CallStaticObjectMethodA(rowUtilClass, getStringId, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
     char *str = (char *) jniEnv->GetStringUTFChars((jstring) data, JNI_FALSE);
     jniEnv->DeleteLocalRef(data);
     return str;
@@ -182,6 +211,9 @@ char *CarbonRow::getDecimal(int ordinal) {
     args[0].l = carbonRow;
     args[1].i = ordinal;
     jobject data = jniEnv->CallStaticObjectMethodA(rowUtilClass, getDecimalId, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
     char *str = (char *) jniEnv->GetStringUTFChars((jstring) data, JNI_FALSE);
     jniEnv->DeleteLocalRef(data);
     return str;
@@ -194,6 +226,9 @@ char *CarbonRow::getVarchar(int ordinal) {
     args[0].l = carbonRow;
     args[1].i = ordinal;
     jobject data = jniEnv->CallStaticObjectMethodA(rowUtilClass, getVarcharId, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
     char *str = (char *) jniEnv->GetStringUTFChars((jstring) data, JNI_FALSE);
     jniEnv->DeleteLocalRef(data);
     return str;
@@ -205,5 +240,14 @@ jobjectArray CarbonRow::getArray(int ordinal) {
     jvalue args[2];
     args[0].l = carbonRow;
     args[1].i = ordinal;
-    return (jobjectArray) jniEnv->CallStaticObjectMethodA(rowUtilClass, getArrayId, args);
+    jobjectArray result = (jobjectArray) jniEnv->CallStaticObjectMethodA(rowUtilClass, getArrayId, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
+    return result;
+}
+
+void CarbonRow::close() {
+    jniEnv->DeleteLocalRef(rowUtilClass);
+    jniEnv->DeleteLocalRef(carbonRow);
 }
