@@ -743,7 +743,7 @@ case class CarbonLoadDataCommand(
             attributes,
             sortScope,
             isDataFrame = true)
-        numberOfRowsLoaded = dataFrame.get.count()
+        numberOfRowsLoaded = rdd.count()
         partitionsLen = partitions
         persistedRDD = persistedRDDLocal
         transformedPlan
