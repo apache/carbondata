@@ -629,7 +629,7 @@ public class BlockDataMap extends CoarseGrainDataMap
   }
 
   // get total block number in this datamap
-  protected int getTotalBlocks() {
+  public int getTotalBlocks() {
     if (isLegacyStore) {
       // dummy value
       return 0;
