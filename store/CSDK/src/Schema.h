@@ -28,17 +28,17 @@ private:
     /**
      * jni env
      */
-    JNIEnv *jniEnv;
+    JNIEnv *jniEnv = NULL;
 
     /**
      * schema class for get method id
      */
-    jclass schemaClass;
+    jclass schemaClass = NULL;
 
     /**
      * carbon schema data
      */
-    jobject schema;
+    jobject schema = NULL;
 
     /**
      * check ordinal, ordinal can't be negative

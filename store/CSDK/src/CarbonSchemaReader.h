@@ -23,12 +23,12 @@ private:
     /**
      * jni env
      */
-    JNIEnv *jniEnv;
+    JNIEnv *jniEnv = NULL;
 
     /**
      * carbonSchemaReader Class for get method id and call method
      */
-    jclass carbonSchemaReaderClass;
+    jclass carbonSchemaReaderClass = NULL;
 
 public:
 
