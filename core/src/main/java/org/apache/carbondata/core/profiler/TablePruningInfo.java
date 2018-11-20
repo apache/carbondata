@@ -42,11 +42,11 @@ public class TablePruningInfo {
   private int numBlocksAfterFGPruning;
   private int numBlockletsAfterFGPruning;
 
-  void addTotalBlocks(int numBlocks) {
+  synchronized void addTotalBlocks(int numBlocks) {
     this.totalBlocks += numBlocks;
   }
 
-  void addTotalBlocklets(int numBlocklets) {
+  synchronized void addTotalBlocklets(int numBlocklets) {
     this.totalBlocklets += numBlocklets;
   }
 
@@ -67,7 +67,7 @@ public class TablePruningInfo {
    * we accumulate blocklet number in default datamap instead of setting it
    * in CarbonInputFormat
    */
-  void addNumBlockletsAfterDefaultPruning(int numBlocklets) {
+  synchronized void addNumBlockletsAfterDefaultPruning(int numBlocklets) {
     this.numBlockletsAfterDefaultPruning += numBlocklets;
   }
 
