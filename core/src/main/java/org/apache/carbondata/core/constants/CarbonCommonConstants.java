@@ -1399,6 +1399,17 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT = "false";
 
+  /**
+   * max driver threads used for block pruning [1 to 4 threads]
+   */
+  @CarbonProperty public static final String CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING =
+      "carbon.max.driver.threads.for.block.pruning";
+
+  public static final String CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT = "4";
+
+  // block prune in multi-thread if files size more than 100K files.
+  public static final int CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT = 100000;
+
   //////////////////////////////////////////////////////////////////////////////////////////
   // Datamap parameter start here
   //////////////////////////////////////////////////////////////////////////////////////////
