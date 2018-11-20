@@ -43,33 +43,29 @@ public class CarbonVectorProxy {
     private ColumnarBatch columnarBatch;
     private ColumnVectorProxy[] columnVectorProxies;
 
-    /**
-     * Adapter class which handles the columnar vector reading of the carbondata
-     * based on the spark ColumnVector and ColumnarBatch API. This proxy class
-     * handles the complexity of spark 2.3 version related api changes since
-     * spark ColumnVector and ColumnarBatch interfaces are still evolving.
-     *
-     * @param memMode       which represent the type onheap or offheap vector.
-     * @param rowNum        rows number for vector reading
-     * @param structFileds, metadata related to current schema of table.
-     */
-    public CarbonVectorProxy(MemoryMode memMode, int rowNum, StructField[] structFileds) {
-        WritableColumnVector[] columnVectors =
-            ColumnVectorFactory.getColumnVector(memMode, new StructType(structFileds), rowNum);
-        columnVectorProxies = new ColumnVectorProxy[columnVectors.length];
-        for (int i = 0; i < columnVectorProxies.length; i++) {
-            columnVectorProxies[i] = new ColumnVectorProxy(columnVectors[i]);
-        }
-        columnarBatch = new ColumnarBatch(columnVectorProxies);
-        columnarBatch.setNumRows(rowNum);
-    }
 
-    public CarbonVectorProxy(MemoryMode memMode, StructType outputSchema, int rowNum) {
+  /**
+   * Adapter class which handles the columnar vector reading of the carbondata
+   * based on the spark ColumnVector and ColumnarBatch API. This proxy class
+   * handles the complexity of spark 2.3 version related api changes since
+   * spark ColumnVector and ColumnarBatch interfaces are still evolving.
+   *
+   * @param memMode       which represent the type onheap or offheap vector.
+   * @param outputSchema, metadata related to current schema of table.
+   * @param rowNum        rows number for vector reading
+   * @param useLazyLoad   Whether to use lazy load while getting the data.
+   */
+    public CarbonVectorProxy(MemoryMode memMode, StructType outputSchema, int rowNum,
+        boolean useLazyLoad) {
         WritableColumnVector[] columnVectors = ColumnVectorFactory
                 .getColumnVector(memMode, outputSchema, rowNum);
         columnVectorProxies = new ColumnVectorProxy[columnVectors.length];
         for (int i = 0; i < columnVectorProxies.length; i++) {
+          if (useLazyLoad) {
+            columnVectorProxies[i] = new ColumnVectorProxyWithLazyLoad(columnVectors[i]);
+          } else {
             columnVectorProxies[i] = new ColumnVectorProxy(columnVectors[i]);
+          }
         }
         columnarBatch = new ColumnarBatch(columnVectorProxies);
         columnarBatch.setNumRows(rowNum);
@@ -147,10 +143,6 @@ public class CarbonVectorProxy {
     public static class ColumnVectorProxy extends ColumnVector {
 
         private WritableColumnVector vector;
-
-        private LazyPageLoader pageLoad;
-
-        private boolean isLoaded;
 
         public ColumnVectorProxy(ColumnVector columnVector) {
             super(columnVector.dataType());
@@ -321,42 +313,34 @@ public class CarbonVectorProxy {
         }
 
         @Override public boolean isNullAt(int i) {
-            checkPageLoaded();
             return vector.isNullAt(i);
         }
 
         @Override public boolean getBoolean(int i) {
-            checkPageLoaded();
             return vector.getBoolean(i);
         }
 
         @Override public byte getByte(int i) {
-            checkPageLoaded();
             return vector.getByte(i);
         }
 
         @Override public short getShort(int i) {
-            checkPageLoaded();
             return vector.getShort(i);
         }
 
         @Override public int getInt(int i) {
-            checkPageLoaded();
             return vector.getInt(i);
         }
 
         @Override public long getLong(int i) {
-            checkPageLoaded();
             return vector.getLong(i);
         }
 
         @Override public float getFloat(int i) {
-            checkPageLoaded();
             return vector.getFloat(i);
         }
 
         @Override public double getDouble(int i) {
-            checkPageLoaded();
             return vector.getDouble(i);
         }
 
@@ -365,62 +349,43 @@ public class CarbonVectorProxy {
         }
 
         @Override public boolean hasNull() {
-            checkPageLoaded();
             return vector.hasNull();
         }
 
         @Override public int numNulls() {
-            checkPageLoaded();
             return vector.numNulls();
         }
 
         @Override public ColumnarArray getArray(int i) {
-            checkPageLoaded();
             return vector.getArray(i);
         }
 
         @Override public ColumnarMap getMap(int i) {
-            checkPageLoaded();
             return vector.getMap(i);
         }
 
         @Override public Decimal getDecimal(int i, int i1, int i2) {
-            checkPageLoaded();
             return vector.getDecimal(i, i1, i2);
         }
 
         @Override public UTF8String getUTF8String(int i) {
-            checkPageLoaded();
             return vector.getUTF8String(i);
         }
 
         @Override public byte[] getBinary(int i) {
-            checkPageLoaded();
             return vector.getBinary(i);
         }
 
         @Override protected ColumnVector getChild(int i) {
-            checkPageLoaded();
             return vector.getChild(i);
         }
 
-        private void checkPageLoaded() {
-          if (!isLoaded) {
-              if (pageLoad != null) {
-                  pageLoad.loadPage();
-              }
-              isLoaded = true;
-          }
-        }
-
         public void reset() {
-            isLoaded = false;
-            pageLoad = null;
             vector.reset();
         }
 
         public void setLazyPage(LazyPageLoader lazyPage) {
-            this.pageLoad = lazyPage;
+            lazyPage.loadPage();
         }
 
       /**
@@ -440,4 +405,118 @@ public class CarbonVectorProxy {
             return vector;
         }
     }
+
+  public static class ColumnVectorProxyWithLazyLoad extends ColumnVectorProxy {
+
+    private WritableColumnVector vector;
+
+    private LazyPageLoader pageLoad;
+
+    private boolean isLoaded;
+
+    public ColumnVectorProxyWithLazyLoad(ColumnVector columnVector) {
+      super(columnVector);
+      vector = (WritableColumnVector) columnVector;
+    }
+
+    @Override public boolean isNullAt(int i) {
+      checkPageLoaded();
+      return vector.isNullAt(i);
+    }
+
+    @Override public boolean getBoolean(int i) {
+      checkPageLoaded();
+      return vector.getBoolean(i);
+    }
+
+    @Override public byte getByte(int i) {
+      checkPageLoaded();
+      return vector.getByte(i);
+    }
+
+    @Override public short getShort(int i) {
+      checkPageLoaded();
+      return vector.getShort(i);
+    }
+
+    @Override public int getInt(int i) {
+      checkPageLoaded();
+      return vector.getInt(i);
+    }
+
+    @Override public long getLong(int i) {
+      checkPageLoaded();
+      return vector.getLong(i);
+    }
+
+    @Override public float getFloat(int i) {
+      checkPageLoaded();
+      return vector.getFloat(i);
+    }
+
+    @Override public double getDouble(int i) {
+      checkPageLoaded();
+      return vector.getDouble(i);
+    }
+
+    @Override public boolean hasNull() {
+      checkPageLoaded();
+      return vector.hasNull();
+    }
+
+    @Override public int numNulls() {
+      checkPageLoaded();
+      return vector.numNulls();
+    }
+
+    @Override public ColumnarArray getArray(int i) {
+      checkPageLoaded();
+      return vector.getArray(i);
+    }
+
+    @Override public ColumnarMap getMap(int i) {
+      checkPageLoaded();
+      return vector.getMap(i);
+    }
+
+    @Override public Decimal getDecimal(int i, int i1, int i2) {
+      checkPageLoaded();
+      return vector.getDecimal(i, i1, i2);
+    }
+
+    @Override public UTF8String getUTF8String(int i) {
+      checkPageLoaded();
+      return vector.getUTF8String(i);
+    }
+
+    @Override public byte[] getBinary(int i) {
+      checkPageLoaded();
+      return vector.getBinary(i);
+    }
+
+    @Override protected ColumnVector getChild(int i) {
+      checkPageLoaded();
+      return vector.getChild(i);
+    }
+
+    public void reset() {
+      isLoaded = false;
+      pageLoad = null;
+      vector.reset();
+    }
+
+    private void checkPageLoaded() {
+      if (!isLoaded) {
+        if (pageLoad != null) {
+          pageLoad.loadPage();
+        }
+        isLoaded = true;
+      }
+    }
+
+    public void setLazyPage(LazyPageLoader lazyPage) {
+      this.pageLoad = lazyPage;
+    }
+
+  }
 }
