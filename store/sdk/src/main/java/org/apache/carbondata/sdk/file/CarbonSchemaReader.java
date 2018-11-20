@@ -42,6 +42,8 @@ import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWra
 import static org.apache.carbondata.core.util.path.CarbonTablePath.CARBON_DATA_EXT;
 import static org.apache.carbondata.core.util.path.CarbonTablePath.INDEX_FILE_EXT;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Schema reader for carbon files, including carbondata file, carbonindex file, and schema file
  */
@@ -68,15 +70,18 @@ public class CarbonSchemaReader {
   /**
    * get carbondata/carbonindex file in path
    *
-   * @param path carbon file path
+   * @param path      carbon file path
+   * @param extension carbon file extension
+   * @param conf      hadoop configuration support, can set s3a AK,SK,
+   *                  end point and other conf with this
    * @return CarbonFile array
    */
-  private static CarbonFile[] getCarbonFile(String path, final String extension)
+  private static CarbonFile[] getCarbonFile(String path, final String extension, Configuration conf)
       throws IOException {
     String dataFilePath = path;
     if (!(dataFilePath.endsWith(extension))) {
       CarbonFile[] carbonFiles = FileFactory
-          .getCarbonFile(path)
+          .getCarbonFile(path, conf)
           .listFiles(new CarbonFileFilter() {
             @Override
             public boolean accept(CarbonFile file) {
@@ -106,7 +111,22 @@ public class CarbonSchemaReader {
    * @throws IOException
    */
   public static Schema readSchema(String path) throws IOException {
-    return readSchema(path, false);
+    Configuration conf = new Configuration();
+    return readSchema(path, false, conf);
+  }
+
+  /**
+   * read schema from path,
+   * path can be folder path, carbonindex file path, and carbondata file path
+   * and will not check all files schema
+   *
+   * @param path file/folder path
+   * @param conf hadoop configuration support, can set s3a AK,SK,end point and other conf with this
+   * @return schema
+   * @throws IOException
+   */
+  public static Schema readSchema(String path, Configuration conf) throws IOException {
+    return readSchema(path, false, conf);
   }
 
   /**
@@ -114,30 +134,33 @@ public class CarbonSchemaReader {
    * path can be folder path, carbonindex file path, and carbondata file path
    * and user can decide whether check all files schema
    *
-   * @param path             file/folder path
+   * @param path           file/folder path
    * @param validateSchema whether check all files schema
+   * @param conf           hadoop configuration support, can set s3a AK,SK,
+   *                       end point and other conf with this
    * @return schema
    * @throws IOException
    */
-  public static Schema readSchema(String path, boolean validateSchema) throws IOException {
+  public static Schema readSchema(String path, boolean validateSchema, Configuration conf)
+      throws IOException {
     if (path.endsWith(INDEX_FILE_EXT)) {
-      return readSchemaFromIndexFile(path);
+      return readSchemaFromIndexFile(path, conf);
     } else if (path.endsWith(CARBON_DATA_EXT)) {
-      return readSchemaFromDataFile(path);
+      return readSchemaFromDataFile(path, conf);
     } else if (validateSchema) {
-      CarbonFile[] carbonIndexFiles = getCarbonFile(path, INDEX_FILE_EXT);
+      CarbonFile[] carbonIndexFiles = getCarbonFile(path, INDEX_FILE_EXT, conf);
       Schema schema;
       if (carbonIndexFiles != null && carbonIndexFiles.length != 0) {
-        schema = readSchemaFromIndexFile(carbonIndexFiles[0].getAbsolutePath());
+        schema = readSchemaFromIndexFile(carbonIndexFiles[0].getAbsolutePath(), conf);
         for (int i = 1; i < carbonIndexFiles.length; i++) {
-          Schema schema2 = readSchemaFromIndexFile(carbonIndexFiles[i].getAbsolutePath());
+          Schema schema2 = readSchemaFromIndexFile(carbonIndexFiles[i].getAbsolutePath(), conf);
           if (!schema.equals(schema2)) {
             throw new CarbonDataLoadingException("Schema is different between different files.");
           }
         }
-        CarbonFile[] carbonDataFiles = getCarbonFile(path, CARBON_DATA_EXT);
+        CarbonFile[] carbonDataFiles = getCarbonFile(path, CARBON_DATA_EXT, conf);
         for (int i = 0; i < carbonDataFiles.length; i++) {
-          Schema schema2 = readSchemaFromDataFile(carbonDataFiles[i].getAbsolutePath());
+          Schema schema2 = readSchemaFromDataFile(carbonDataFiles[i].getAbsolutePath(), conf);
           if (!schema.equals(schema2)) {
             throw new CarbonDataLoadingException("Schema is different between different files.");
           }
@@ -147,9 +170,24 @@ public class CarbonSchemaReader {
         throw new CarbonDataLoadingException("No carbonindex file in this path.");
       }
     } else {
-      String indexFilePath = getCarbonFile(path, INDEX_FILE_EXT)[0].getAbsolutePath();
-      return readSchemaFromIndexFile(indexFilePath);
+      String indexFilePath = getCarbonFile(path, INDEX_FILE_EXT, conf)[0].getAbsolutePath();
+      return readSchemaFromIndexFile(indexFilePath, conf);
     }
+  }
+
+  /**
+   * read schema from path,
+   * path can be folder path, carbonindex file path, and carbondata file path
+   * and user can decide whether check all files schema
+   *
+   * @param path           file/folder path
+   * @param validateSchema whether check all files schema
+   * @return schema
+   * @throws IOException
+   */
+  public static Schema readSchema(String path, boolean validateSchema) throws IOException {
+    Configuration conf = new Configuration();
+    return readSchema(path, validateSchema, conf);
   }
 
   /**
@@ -170,11 +208,14 @@ public class CarbonSchemaReader {
    * Read schema from carbondata file
    *
    * @param dataFilePath carbondata file path
+   * @param conf         hadoop configuration support, can set s3a AK,SK,
+   *                     end point and other conf with this
    * @return carbon data schema
    * @throws IOException
    */
-  public static Schema readSchemaFromDataFile(String dataFilePath) throws IOException {
-    CarbonHeaderReader reader = new CarbonHeaderReader(dataFilePath);
+  private static Schema readSchemaFromDataFile(String dataFilePath, Configuration conf)
+      throws IOException {
+    CarbonHeaderReader reader = new CarbonHeaderReader(dataFilePath, conf);
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     List<ColumnSchema> schemaList = reader.readSchema();
     for (int i = 0; i < schemaList.size(); i++) {
@@ -204,18 +245,21 @@ public class CarbonSchemaReader {
    * Read schema from carbonindex file
    *
    * @param indexFilePath carbonindex file path
+   * @param conf          hadoop configuration support, can set s3a AK,SK,
+   *                      end point and other conf with this
    * @return carbon data Schema
    * @throws IOException
    */
-  private static Schema readSchemaFromIndexFile(String indexFilePath) throws IOException {
+  private static Schema readSchemaFromIndexFile(String indexFilePath, Configuration conf)
+      throws IOException {
     CarbonFile indexFile =
-        FileFactory.getCarbonFile(indexFilePath, FileFactory.getFileType(indexFilePath));
+        FileFactory.getCarbonFile(indexFilePath, conf);
     if (!indexFile.getName().endsWith(INDEX_FILE_EXT)) {
       throw new IOException("Not an index file name");
     }
     // read schema from the first index file
     DataInputStream dataInputStream =
-        FileFactory.getDataInputStream(indexFilePath, FileFactory.getFileType(indexFilePath));
+        FileFactory.getDataInputStream(indexFilePath, FileFactory.getFileType(indexFilePath), conf);
     byte[] bytes = new byte[(int) indexFile.getSize()];
     try {
       //get the file in byte buffer

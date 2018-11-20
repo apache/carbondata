@@ -813,6 +813,36 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 
 ```
   /**
+   * read schema from path,
+   * path can be folder path, carbonindex file path, and carbondata file path
+   * and will not check all files schema
+   *
+   * @param path file/folder path
+   * @param conf hadoop configuration support, can set s3a AK,SK,end point and other conf with this
+   * @return schema
+   * @throws IOException
+   */
+  public static Schema readSchema(String path, Configuration conf);
+```
+
+```
+  /**
+   * read schema from path,
+   * path can be folder path, carbonindex file path, and carbondata file path
+   * and user can decide whether check all files schema
+   *
+   * @param path           file/folder path
+   * @param validateSchema whether check all files schema
+   * @param conf           hadoop configuration support, can set s3a AK,SK,
+   *                       end point and other conf with this
+   * @return schema
+   * @throws IOException
+   */
+  public static Schema readSchema(String path, boolean validateSchema, Configuration conf);
+```
+
+```
+  /**
    * This method return the version details in formatted string by reading from carbondata file
    * If application name is SDK_1.0.0 and this has written the carbondata file in carbondata 1.6 project version,
    * then this API returns the String "SDK_1.0.0 in version: 1.6.0-SNAPSHOT"

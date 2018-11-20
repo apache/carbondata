@@ -408,8 +408,39 @@ release the memory and destroy JVM.
     jobject readSchema(char *path, bool validateSchema);
 ```
 
+=======
+```
+    /**
+     * read schema from path,
+     * path can be folder path, carbonindex file path, and carbondata file path
+     * and will not check all files schema
+     *
+     * @param path file/folder path
+     * @param conf           configuration support, can set s3a AK,SK,
+     *                       end point and other conf with this
+     * @return schema
+     */
+    jobject readSchema(char *path, Configuration conf);
+```
+
+```
+    /**
+     *  read schema from path,
+     *  path can be folder path, carbonindex file path, and carbondata file path
+     *  and user can decide whether check all files schema
+     *
+     * @param path carbon data path
+     * @param validateSchema whether check all files schema
+     * @param conf           configuration support, can set s3a AK,SK,
+     *                       end point and other conf with this
+     * @return schema
+     */
+    jobject readSchema(char *path, bool validateSchema, Configuration conf);
+
+```
+
 ### Schema
-``` 
+```
  /**
      * constructor with jni env and carbon schema data
      *

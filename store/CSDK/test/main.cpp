@@ -176,15 +176,24 @@ void printResult(JNIEnv *env, CarbonReader reader) {
  * @param env jni env
  * @return whether it is success
  */
-bool readSchema(JNIEnv *env, char *Path, bool validateSchema) {
-    printf("\nread Schema from Index File:\n");
+bool readSchema(JNIEnv *env, char *Path, bool validateSchema, char **argv, int argc) {
     try {
+        printf("\nread Schema:\n");
+        Configuration conf(env);
+        if (argc > 3) {
+            conf.set("fs.s3a.access.key", argv[1]);
+            conf.set("fs.s3a.secret.key", argv[2]);
+            conf.set("fs.s3a.endpoint", argv[3]);
+        }
+        printf("%s\n", conf.get("fs.s3a.endpoint", "default"));
+
         CarbonSchemaReader carbonSchemaReader(env);
         jobject schema;
+
         if (validateSchema) {
-            schema = carbonSchemaReader.readSchema(Path, validateSchema);
+            schema = carbonSchemaReader.readSchema(Path, validateSchema, conf);
         } else {
-            schema = carbonSchemaReader.readSchema(Path);
+            schema = carbonSchemaReader.readSchema(Path, conf);
         }
         Schema carbonSchema(env, schema);
         int length = carbonSchema.getFieldsLength();
@@ -822,16 +831,17 @@ int main(int argc, char *argv[]) {
     // init jvm
     JNIEnv *env;
     env = initJVM();
-    char *S3WritePath = "s3a://csdk/WriterOutput/carbondata2";
-    char *S3ReadPath = "s3a://csdk/WriterOutput/carbondata";
+    char *S3WritePath = "s3a://xubo/WriterOutput/carbondata2";
+    char *S3ReadPath = "s3a://xubo/WriterOutput/carbondata";
 
     char *smallFilePath = "../../../../resources/carbondata";
     char *path = "../../../../../../../Downloads/carbon-data-big/dir2";
     char *S3Path = "s3a://csdk/bigData/i400bs128";
 
     if (argc > 3) {
-        // TODO: need support read schema from S3 in the future
         testWriteData(env, S3WritePath, 4, argv);
+        readSchema(env, S3WritePath, true, argv,4);
+        readSchema(env, S3WritePath, false, argv, 4);
         readFromS3(env, S3ReadPath, argv);
         testWithTableProperty(env, "s3a://csdk/dataProperty", 4, argv);
         testSortBy(env, "s3a://csdk/dataSort", 4, argv);
@@ -851,10 +861,10 @@ int main(int argc, char *argv[]) {
         testWriteData(env, "./dataLoadOption", 1, argv);
         readFromLocalWithoutProjection(env, smallFilePath);
         readFromLocalWithProjection(env, smallFilePath);
-        readSchema(env, path, false);
-        readSchema(env, path, true);
         testWithTableProperty(env, "./dataProperty", 1, argv);
         testSortBy(env, "./dataSort", 1, argv);
+        readSchema(env, path, false, argv, 1);
+        readSchema(env, path, true, argv, 1);
 
         testReadNextRow(env, path, printNum, argv, 0, true);
         testReadNextRow(env, path, printNum, argv, 0, false);
