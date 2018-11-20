@@ -56,7 +56,7 @@ class PreAggregateTestCase extends QueryTest with BeforeAndAfterEach {
   //test to check existence of datamap
   test("PreAggregateTestCase_TC001", Include) {
     Assert.assertEquals(sql("show datamap on table PreAggMain").count(), 5)
-    checkExistence(sql("Describe formatted PreAggMain_PreAggSum"), true, "DICTIONARY")
+    checkExistence(sql("Describe formatted PreAggMain_PreAggSum"), true, "Dictionary")
   }
 
   //check for load data should reflects in all preaggregate tables
