@@ -1655,6 +1655,7 @@ public class CarbonReaderTest extends TestCase {
         assert (arr[3].equals("Carbon"));
 
         assertEquals(RowUtil.getFloat(data, 11), (float) 1.23);
+        assertEquals(RowUtil.getLength(data), 12);
         i++;
       }
       reader.close();
