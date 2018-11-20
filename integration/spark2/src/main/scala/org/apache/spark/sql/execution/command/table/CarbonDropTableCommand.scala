@@ -145,6 +145,8 @@ case class CarbonDropTableCommand(
       case ex: NoSuchTableException =>
         if (!ifExistsSet) {
           throw ex
+        } else {
+          LOGGER.info("Masking error: " + ex.getLocalizedMessage)
         }
       case ex: ConcurrentOperationException =>
         LOGGER.error(ex.getLocalizedMessage, ex)
