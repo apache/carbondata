@@ -22,17 +22,17 @@ private:
     /**
      * carbonProperties Class
      */
-    jclass carbonPropertiesClass;
+    jclass carbonPropertiesClass = NULL;
 
     /**
      * carbonProperties Object
      */
-    jobject carbonPropertiesObject;
+    jobject carbonPropertiesObject = NULL;
 public:
     /**
      * jni env
      */
-    JNIEnv *jniEnv;
+    JNIEnv *jniEnv = NULL;
 
     /**
      * Constructor of CarbonProperties

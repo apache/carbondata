@@ -22,7 +22,7 @@ private:
     /**
     * jni env
     */
-    JNIEnv *jniEnv;
+    JNIEnv *jniEnv = NULL;
 
     /**
      * carbonWriterBuilder object for building carbonWriter
@@ -33,12 +33,12 @@ private:
     /**
      * carbonWriter object for writing data
      */
-    jobject carbonWriterObject;
+    jobject carbonWriterObject = NULL;
 
     /**
      * carbon writer class
      */
-    jclass carbonWriter;
+    jclass carbonWriter = NULL;
 
     /**
      * write method id
