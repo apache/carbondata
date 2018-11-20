@@ -38,12 +38,12 @@ private:
      * carbonReaderBuilder object for building carbonReader
      * it can configure some operation
      */
-    jobject carbonReaderBuilderObject;
+    jobject carbonReaderBuilderObject = NULL;
 
     /**
      * carbonReader object for reading data
      */
-    jobject carbonReaderObject;
+    jobject carbonReaderObject = NULL;
 
     /**
      * Return true if carbonReaderBuilder Object isn't NULL
@@ -65,7 +65,7 @@ public:
     /**
      * jni env
      */
-    JNIEnv *jniEnv;
+    JNIEnv *jniEnv = NULL;
 
     /**
      * create a CarbonReaderBuilder object for building carbonReader,

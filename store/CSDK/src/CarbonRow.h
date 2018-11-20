@@ -19,21 +19,21 @@
 
 class CarbonRow {
 private:
-    jmethodID getShortId;
-    jmethodID getIntId;
-    jmethodID getLongId;
-    jmethodID getDoubleId;
-    jmethodID getFloatId;
-    jmethodID getBooleanId;
-    jmethodID getStringId;
-    jmethodID getDecimalId;
-    jmethodID getVarcharId;
-    jmethodID getArrayId;
+    jmethodID getShortId = NULL;
+    jmethodID getIntId = NULL;
+    jmethodID getLongId = NULL;
+    jmethodID getDoubleId = NULL;
+    jmethodID getFloatId = NULL;
+    jmethodID getBooleanId = NULL;
+    jmethodID getStringId = NULL;
+    jmethodID getDecimalId = NULL;
+    jmethodID getVarcharId = NULL;
+    jmethodID getArrayId = NULL;
 
     /**
      * RowUtil Class for read data from Carbon Row
      */
-    jclass rowUtilClass;
+    jclass rowUtilClass = NULL;
 
     /**
      * carbon row data
@@ -57,7 +57,7 @@ public:
     /**
      * jni env
      */
-    JNIEnv *jniEnv;
+    JNIEnv *jniEnv = NULL;
 
     /**
      * Constructor and express the carbon row result
