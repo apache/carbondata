@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.strategy
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.rdd.RDD
@@ -235,7 +236,9 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       }
     }.asInstanceOf[Seq[NamedExpression]]
 
-    val projectSet = AttributeSet(projects.flatMap(_.references))
+    // contains the original order of the projection requested
+    val projectsAttr = projects.flatMap(_.references)
+    val projectSet = AttributeSet(projectsAttr)
     val filterSet = AttributeSet(filterPredicates.flatMap(_.references))
 
     val candidatePredicates = filterPredicates.map {
@@ -387,7 +390,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       }
       // Don't request columns that are only referenced by pushed filters.
       val requestedColumns =
-        (projectSet ++ filterSet -- handledSet).map(relation.attributeMap).toSeq ++ newProjectList
+        (projectsAttr.to[mutable.LinkedHashSet] ++ filterSet -- handledSet)
+          .map(relation.attributeMap).toSeq ++ newProjectList
 
       var updateRequestedColumns =
         if (!vectorPushRowFilters && !implictsExisted && !hasDictionaryFilterCols
