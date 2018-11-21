@@ -52,6 +52,8 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -2245,6 +2247,27 @@ public final class FilterUtil {
         return ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValue, minMaxBytes);
       }
     }
+  }
+
+  /**
+   * This method is used to get default null values for a direct dictionary column
+   * @param currentBlockDimension
+   * @param segmentProperties
+   * @return
+   */
+  public static byte[] getDefaultNullValue(CarbonDimension currentBlockDimension,
+      SegmentProperties segmentProperties) {
+    byte[] defaultValue = null;
+    DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+        .getDirectDictionaryGenerator(currentBlockDimension.getDataType());
+    int key = directDictionaryGenerator.generateDirectSurrogateKey(null);
+    if (currentBlockDimension.isSortColumn()) {
+      defaultValue = FilterUtil
+          .getMaskKey(key, currentBlockDimension, segmentProperties.getSortColumnsGenerator());
+    } else {
+      defaultValue = ByteUtil.toXorBytes(key);
+    }
+    return defaultValue;
   }
 
 }

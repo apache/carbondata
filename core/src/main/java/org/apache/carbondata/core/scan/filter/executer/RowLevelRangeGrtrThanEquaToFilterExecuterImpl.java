@@ -454,10 +454,16 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
     byte[] defaultValue = null;
     if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() == DataTypes.STRING) {
       defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
+    } else if (dimColEvaluatorInfoList.get(0).getDimension()
+        .hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      defaultValue = FilterUtil
+          .getDefaultNullValue(dimColEvaluatorInfoList.get(0).getDimension(), segmentProperties);
     } else if (!dimensionColumnPage.isAdaptiveEncoded()) {
       defaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
     }
-    if (dimensionColumnPage.isNoDicitionaryColumn()) {
+    if (dimensionColumnPage.isNoDicitionaryColumn() || (
+        dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)
+            && dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY))) {
       FilterUtil.removeNullValues(dimensionColumnPage, bitSet, defaultValue);
     }
     return bitSet;
