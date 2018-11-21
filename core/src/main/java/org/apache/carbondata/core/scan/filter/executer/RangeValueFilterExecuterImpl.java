@@ -24,8 +24,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -55,10 +53,6 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
   private byte[][] filterRangesValues;
   private SegmentProperties segmentProperties;
   private boolean isDefaultValuePresentInFilter;
-  /**
-   * it has index at which given dimension is stored in file
-   */
-  private int dimensionChunkIndex;
 
   /**
    * flag to check whether the filter dimension is present in current block list of dimensions.
@@ -106,8 +100,6 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
         segmentProperties.getDimensionFromCurrentBlock(dimColEvaluatorInfo.getDimension());
     if (null != dimensionFromCurrentBlock) {
       dimColEvaluatorInfo.setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
-      this.dimensionChunkIndex = segmentProperties.getDimensionOrdinalToChunkMapping()
-          .get(dimensionFromCurrentBlock.getOrdinal());
       isDimensionPresentInCurrentBlock = true;
     }
   }
@@ -656,17 +648,8 @@ public class RangeValueFilterExecuterImpl implements FilterExecuter {
     } else {
       byte[] defaultValue = null;
       if (dimColEvaluatorInfo.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-        DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
-            .getDirectDictionaryGenerator(dimColEvaluatorInfo.getDimension().getDataType());
-        int key = directDictionaryGenerator.generateDirectSurrogateKey(null);
-        CarbonDimension currentBlockDimension =
-            segmentProperties.getDimensions().get(dimensionChunkIndex);
-        if (currentBlockDimension.isSortColumn()) {
-          defaultValue = FilterUtil.getMaskKey(key, currentBlockDimension,
-              this.segmentProperties.getSortColumnsGenerator());
-        } else {
-          defaultValue = ByteUtil.toXorBytes(key);
-        }
+        defaultValue =
+            FilterUtil.getDefaultNullValue(dimColEvaluatorInfo.getDimension(), segmentProperties);
       } else {
         if (dimColEvaluatorInfo.getDimension().getDataType() == DataTypes.STRING) {
           defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;

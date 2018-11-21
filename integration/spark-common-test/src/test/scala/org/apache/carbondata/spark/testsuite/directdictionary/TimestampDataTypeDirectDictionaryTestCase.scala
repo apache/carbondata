@@ -141,9 +141,39 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
     )
   }
 
+  test("test timestamp with dictionary include and no_inverted index") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR, "true")
+    sql("drop table if exists test_timestamp")
+    sql("drop table if exists test_timestamp_hive")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
+    sql(
+      "create table test_timestamp(col timestamp) stored by 'carbondata' tblproperties" +
+      "('no_inverted_index'='col','dictionary_include'='col')")
+    val csvFilePath = s"$resourcesPath/data_timestamp.csv"
+    sql(
+      "load data inpath '" + csvFilePath +
+      "' into table test_timestamp options('delimiter'='=','quotechar'=''," +
+      "'bad_records_action'='force','fileheader'='col')")
+    sql(
+      "create table test_timestamp_hive(col timestamp) row format delimited fields terminated by " +
+      "','")
+    sql("load data inpath '" + csvFilePath + "' into table test_timestamp_hive ")
+    checkAnswer(sql(
+      "select col from test_timestamp where col not between '2014-01-01 18:00:00' and '0'"),
+      sql("select col from test_timestamp_hive where col not between '2014-01-01 18:00:00' and " +
+          "'0'"))
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR,
+        CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT)
+  }
+
   override def afterAll {
     sql("drop table directDictionaryTable")
     sql("drop table directDictionaryTable_hive")
+    sql("drop table if exists test_timestamp")
+    sql("drop table if exists test_timestamp_hive")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
