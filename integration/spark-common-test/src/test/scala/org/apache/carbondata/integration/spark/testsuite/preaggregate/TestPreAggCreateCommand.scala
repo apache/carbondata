@@ -438,6 +438,29 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("test codegen issue with preaggregate") {
+    sql("DROP TABLE IF EXISTS PreAggMain")
+    sql("CREATE TABLE PreAggMain (id Int, date date, country string, phonetype string, " +
+        "serialname String,salary int ) STORED BY 'org.apache.carbondata.format' " +
+        "tblproperties('dictionary_include'='country')")
+    sql("create datamap PreAggSum on table PreAggMain using 'preaggregate' as " +
+        "select country,sum(salary) as sum from PreAggMain group by country")
+    sql("create datamap PreAggAvg on table PreAggMain using 'preaggregate' as " +
+        "select country,avg(salary) as avg from PreAggMain group by country")
+    sql("create datamap PreAggCount on table PreAggMain using 'preaggregate' as " +
+        "select country,count(salary) as count from PreAggMain group by country")
+    sql("create datamap PreAggMin on table PreAggMain using 'preaggregate' as " +
+        "select country,min(salary) as min from PreAggMain group by country")
+    sql("create datamap PreAggMax on table PreAggMain using 'preaggregate' as " +
+        "select country,max(salary) as max from PreAggMain group by country")
+    sql(s"LOAD DATA INPATH '$integrationPath/spark-common-test/src/test/resources/source.csv' " +
+        s"into table PreAggMain")
+    checkExistence(sql("select t1.country,sum(id) from PreAggMain t1 join (select " +
+                       "country as newcountry,sum(salary) as sum from PreAggMain group by country)" +
+                       "t2 on t1.country=t2.newcountry group by country"), true, "france")
+    sql("DROP TABLE IF EXISTS PreAggMain")
+  }
+
   // TODO: Need to Fix
   ignore("test creation of multiple preaggregate of same name concurrently") {
     sql("DROP TABLE IF EXISTS tbl_concurr")
