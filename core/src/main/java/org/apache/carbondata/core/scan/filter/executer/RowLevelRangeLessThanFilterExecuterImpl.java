@@ -26,8 +26,6 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -422,18 +420,8 @@ public class RowLevelRangeLessThanFilterExecuterImpl extends RowLevelFilterExecu
       int numerOfRows) {
     byte[] defaultValue = null;
     if (dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-      DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
-          .getDirectDictionaryGenerator(
-              dimColEvaluatorInfoList.get(0).getDimension().getDataType());
-      int key = directDictionaryGenerator.generateDirectSurrogateKey(null);
-      CarbonDimension currentBlockDimension =
-          segmentProperties.getDimensions().get(dimensionChunkIndex[0]);
-      if (currentBlockDimension.isSortColumn()) {
-        defaultValue = FilterUtil.getMaskKey(key, currentBlockDimension,
-            this.segmentProperties.getSortColumnsGenerator());
-      } else {
-        defaultValue = ByteUtil.toXorBytes(key);
-      }
+      defaultValue = FilterUtil
+          .getDefaultNullValue(dimColEvaluatorInfoList.get(0).getDimension(), segmentProperties);
     } else if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() != DataTypes.STRING) {
       defaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
     }
@@ -448,7 +436,9 @@ public class RowLevelRangeLessThanFilterExecuterImpl extends RowLevelFilterExecu
     if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() == DataTypes.STRING) {
       defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
     }
-    if (dimensionColumnPage.isNoDicitionaryColumn()) {
+    if (dimensionColumnPage.isNoDicitionaryColumn() || (
+        dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)
+            && dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY))) {
       FilterUtil.removeNullValues(dimensionColumnPage, bitSet, defaultValue);
     }
     return bitSet;
