@@ -33,7 +33,7 @@ class CarbonGetTableDetailCommandTestCase extends QueryTest with BeforeAndAfterA
     sql(s"""load data local inpath '$resourcesPath/data.csv' into table table_info2 options('delimiter'=',', 'quotechar'='\"', 'fileheader'='')""")
   }
 
-  test("collect the information of tables") {
+  ignore("collect the information of tables") {
     val logicalPlan = CarbonGetTableDetailCommand("default", Some(Seq("table_info1", "table_info2")))
     val result =new QueryExecution(sqlContext.sparkSession, logicalPlan)
       .executedPlan
