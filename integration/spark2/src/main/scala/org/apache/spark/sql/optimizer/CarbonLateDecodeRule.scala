@@ -119,7 +119,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     if (validateQuery && isPreAggDataMapExists) {
       val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
       if (null != carbonSessionInfo) {
-        val supportQueryOnDataMap = CarbonEnv.getThreadParam(
+        val supportQueryOnDataMap = CarbonProperties.getInstance.getProperty(
           CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
             CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE).toBoolean
         if (!supportQueryOnDataMap) {
@@ -127,8 +127,10 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
         }
       }
     }
-    if(isThrowException) {
-      throw new AnalysisException("Query On DataMap not supported")
+    if (isThrowException) {
+      throw new AnalysisException("Query On DataMap not supported because "
+        + CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP + " is false. " +
+        "Please change the value to true by set command or other if you want to query on DataMap.")
     }
   }
 

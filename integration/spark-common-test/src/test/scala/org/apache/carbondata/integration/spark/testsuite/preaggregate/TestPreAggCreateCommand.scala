@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
+import java.io.File
 import java.util
 import java.util.concurrent.{Callable, ExecutorService, Executors, TimeUnit}
 
@@ -484,6 +485,48 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     executorService.awaitTermination(5, TimeUnit.MINUTES)
     checkExistence(sql("show tables"), true, "agg_concu1", "tbl_concurr")
     executorService.shutdown()
+  }
+
+  test("support set carbon.query.directQueryOnDataMap.enabled=true") {
+    val rootPath = new File(this.getClass.getResource("/").getPath
+      + "../../../..").getCanonicalPath
+    val testData = s"$rootPath/integration/spark-common-test/src/test/resources/sample.csv"
+    sql("drop table if exists mainTable")
+    sql(
+      s"""
+         | CREATE TABLE mainTable
+         |   (id Int,
+         |   name String,
+         |   city String,
+         |   age Int)
+         | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$testData'
+         | into table mainTable
+       """.stripMargin)
+
+    sql(
+      s"""
+         | create datamap preagg_sum on table mainTable
+         | using 'preaggregate'
+         | as select id,sum(age) from mainTable group by id
+       """.stripMargin)
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.VALIDATE_DIRECT_QUERY_ON_DATAMAP, "true")
+
+    sql("set carbon.query.directQueryOnDataMap.enabled=true")
+    checkAnswer(sql("select count(*) from maintable_preagg_sum"), Row(4))
+    sql("set carbon.query.directQueryOnDataMap.enabled=false")
+    val exception: Exception = intercept[AnalysisException] {
+      sql("select count(*) from maintable_preagg_sum").collect()
+    }
+    assert(exception.getMessage.contains("Query On DataMap not supported"))
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.VALIDATE_DIRECT_QUERY_ON_DATAMAP, "false")
   }
 
   class QueryTask(query: String) extends Callable[String] {
