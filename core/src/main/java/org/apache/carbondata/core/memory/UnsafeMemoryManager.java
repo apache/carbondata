@@ -103,7 +103,7 @@ public class UnsafeMemoryManager {
   private UnsafeMemoryManager(long totalMemory, MemoryType memoryType) {
     this.totalMemory = totalMemory;
     this.memoryType = memoryType;
-    LOGGER.info("offheap Working Memory manager is created with size " + totalMemory + " with "
+    LOGGER.info("Offheap Working Memory manager is created with size " + totalMemory + " with "
         + memoryType);
   }
 
@@ -128,8 +128,8 @@ public class UnsafeMemoryManager {
       // not adding on heap memory block to map as JVM will take care of freeing the memory
       memoryBlock = MemoryAllocator.HEAP.allocate(memoryRequested);
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(
-            String.format("Creating onheap working Memory block (%s) with size:", memoryBlock));
+        LOGGER.debug(String
+            .format("Creating onheap working Memory block (%s) with size:", memoryBlock.size()));
       }
     }
     return memoryBlock;
@@ -143,7 +143,7 @@ public class UnsafeMemoryManager {
       getMemoryAllocator(memoryBlock.getMemoryType()).free(memoryBlock);
       memoryUsed -= memoryBlock.size();
       memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
-      if (LOGGER.isDebugEnabled()) {
+      if (LOGGER.isDebugEnabled() && memoryBlock.getMemoryType() == MemoryType.OFFHEAP) {
         LOGGER.debug(String.format("Freeing offheap working memory block (%s) with size: %d, "
                 + "current available memory is: %d", memoryBlock.toString(), memoryBlock.size(),
             totalMemory - memoryUsed));
