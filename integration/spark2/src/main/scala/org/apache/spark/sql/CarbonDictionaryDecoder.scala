@@ -248,34 +248,34 @@ case class CarbonDictionaryDecoder(
                |org.apache.spark.sql.DictTuple $value = $decodeDecimal($dictRef, ${ev.value});
                  """.stripMargin
             ExprCode(code, s"$value.getIsNull()",
-              s"(org.apache.spark.sql.types.Decimal)$value.getValue()")
+              s"((org.apache.spark.sql.types.Decimal)$value.getValue())")
           } else {
             getDictionaryColumnIds(index)._3.getDataType match {
               case CarbonDataTypes.INT => code +=
                 s"""
                    |org.apache.spark.sql.DictTuple $value = $decodeInt($dictRef, ${ ev.value });
                  """.stripMargin
-                ExprCode(code, s"$value.getIsNull()", s"(Integer)$value.getValue()")
+                ExprCode(code, s"$value.getIsNull()", s"((Integer)$value.getValue())")
               case CarbonDataTypes.SHORT => code +=
                 s"""
                    |org.apache.spark.sql.DictTuple $value = $decodeShort($dictRef, ${ ev.value });
                  """.stripMargin
-                ExprCode(code, s"$value.getIsNull()", s"(Short)$value.getValue()")
+                ExprCode(code, s"$value.getIsNull()", s"((Short)$value.getValue())")
               case CarbonDataTypes.DOUBLE => code +=
                  s"""
                     |org.apache.spark.sql.DictTuple $value = $decodeDouble($dictRef, ${ ev.value });
                  """.stripMargin
-                ExprCode(code, s"$value.getIsNull()", s"(Double)$value.getValue()")
+                ExprCode(code, s"$value.getIsNull()", s"((Double)$value.getValue())")
               case CarbonDataTypes.LONG => code +=
                  s"""
                     |org.apache.spark.sql.DictTuple $value = $decodeLong($dictRef, ${ ev.value });
                  """.stripMargin
-                ExprCode(code, s"$value.getIsNull()", s"(Long)$value.getValue()")
+                ExprCode(code, s"$value.getIsNull()", s"((Long)$value.getValue())")
               case _ => code +=
                 s"""
                    |org.apache.spark.sql.DictTuple $value = $decodeStr($dictRef, ${ev.value});
                  """.stripMargin
-                ExprCode(code, s"$value.getIsNull()", s"(UTF8String)$value.getValue()")
+                ExprCode(code, s"$value.getIsNull()", s"((UTF8String)$value.getValue())")
 
             }
           }
