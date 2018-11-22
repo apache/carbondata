@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -143,6 +144,7 @@ public final class TableDataMap extends OperationEventListener {
     }
     // for filter queries
     int totalFiles = 0;
+    int datamapsCount = 0;
     boolean isBlockDataMapType = true;
     for (Segment segment : segments) {
       for (DataMap dataMap : dataMaps.get(segment)) {
@@ -151,6 +153,7 @@ public final class TableDataMap extends OperationEventListener {
           break;
         }
         totalFiles += ((BlockDataMap) dataMap).getTotalBlocks();
+        datamapsCount++;
       }
       if (!isBlockDataMapType) {
         // totalFiles fill be 0 for non-BlockDataMap Type. ex: lucene, bloom datamap. use old flow.
@@ -158,9 +161,7 @@ public final class TableDataMap extends OperationEventListener {
       }
     }
     int numOfThreadsForPruning = getNumOfThreadsForPruning();
-    int filesPerEachThread = totalFiles / numOfThreadsForPruning;
-    if (numOfThreadsForPruning == 1 || filesPerEachThread == 1
-        || segments.size() < numOfThreadsForPruning || totalFiles
+    if (numOfThreadsForPruning == 1 || datamapsCount < numOfThreadsForPruning || totalFiles
         < CarbonCommonConstants.CARBON_DRIVER_PRUNING_MULTI_THREAD_ENABLE_FILES_COUNT) {
       // use multi-thread, only if the files are more than 0.1 million.
       // As 0.1 million files block pruning can take only 1 second.
@@ -205,66 +206,103 @@ public final class TableDataMap extends OperationEventListener {
       List<ExtendedBlocklet> blocklets, final Map<Segment, List<DataMap>> dataMaps,
       int totalFiles) {
     int numOfThreadsForPruning = getNumOfThreadsForPruning();
-    int filesPerEachThread = (int) Math.ceil((double)totalFiles / numOfThreadsForPruning);
-    int prev = 0;
+    int filesPerEachThread = totalFiles / numOfThreadsForPruning;
+    int prev;
     int filesCount = 0;
     int processedFileCount = 0;
-    List<List<Segment>> segmentList = new ArrayList<>();
-    for (int i = 0; i < segments.size(); i++) {
-      Segment segment = segments.get(i);
-      for (DataMap dataMap : dataMaps.get(segment)) {
+    List<List<SegmentDataMapGroup>> segmentList = new ArrayList<>(numOfThreadsForPruning);
+    List<SegmentDataMapGroup> segmentDataMapGroupList = new ArrayList<>();
+    for (Segment segment : segments) {
+      List<DataMap> eachSegmentDataMapList = dataMaps.get(segment);
+      prev = 0;
+      for (int i = 0; i < eachSegmentDataMapList.size(); i++) {
+        DataMap dataMap = eachSegmentDataMapList.get(i);
         filesCount += ((BlockDataMap) dataMap).getTotalBlocks();
-      }
-      if (filesCount >= filesPerEachThread) {
-        // make a sublist
-        segmentList.add(segments.subList(prev, i + 1));
-        prev = i + 1;
-        processedFileCount += filesCount;
-        filesCount = 0;
-      }
-    }
-    if (processedFileCount < totalFiles) {
-      // last segment sublist
-      segmentList.add(segments.subList(prev, segments.size()));
-    }
-    if (segmentList.size() > numOfThreadsForPruning) {
-      // this should not happen
-      throw new RuntimeException(" Segment list size is greater than threads for pruning");
-    }
-    final ExecutorService executorService = Executors.newFixedThreadPool(segmentList.size());
-    List<Future<List<ExtendedBlocklet>>> result = new ArrayList<>(segmentList.size());
-    for (int i = 0; i < segmentList.size(); i++) {
-      final List<Segment> segmentSublist = segmentList.get(i);
-      result.add(executorService.submit(new Callable<List<ExtendedBlocklet>>() {
-        @Override public List<ExtendedBlocklet> call() throws IOException {
-          List<ExtendedBlocklet> blockletList = new ArrayList<>();
-          for (Segment segment : segmentSublist) {
-            List<Blocklet> pruneBlocklets = new ArrayList<>();
-            for (DataMap dataMap : dataMaps.get(segment)) {
-              pruneBlocklets.addAll(dataMap
-                  .prune(filterExp, segmentPropertiesFetcher.getSegmentProperties(segment),
-                      partitions));
-            }
-            blockletList.addAll(
-                addSegmentId(blockletDetailsFetcher.getExtendedBlocklets(pruneBlocklets, segment),
-                    segment.toString()));
+        if (filesCount >= filesPerEachThread) {
+          if (segmentList.size() != numOfThreadsForPruning - 1) {
+            // not the last segmentList
+            segmentDataMapGroupList.add(new SegmentDataMapGroup(segment, prev, i));
+            // save the last value to process in next thread
+            prev = i + 1;
+            segmentList.add(segmentDataMapGroupList);
+            segmentDataMapGroupList = new ArrayList<>();
+            processedFileCount += filesCount;
+            filesCount = 0;
+          } else {
+            // add remaining in the end
+            processedFileCount += filesCount;
+            filesCount = 0;
           }
-          return blockletList;
+        }
+      }
+      if (prev == 0 || prev != eachSegmentDataMapList.size()) {
+        // if prev == 0. Add a segment's all datamaps
+        // eachSegmentDataMapList.size() != prev, adding the last remaining datamaps of this segment
+        segmentDataMapGroupList
+            .add(new SegmentDataMapGroup(segment, prev, eachSegmentDataMapList.size() - 1));
+      }
+    }
+    // adding the last segmentList data
+    segmentList.add(segmentDataMapGroupList);
+    processedFileCount += filesCount;
+    if (processedFileCount != totalFiles) {
+      // this should not happen
+      throw new RuntimeException(" not all the files processed ");
+    }
+    List<Future<Void>> results = new ArrayList<>(numOfThreadsForPruning);
+    final Map<Segment, List<Blocklet>> prunedBlockletMap = new ConcurrentHashMap<>(segments.size());
+    final ExecutorService executorService = Executors.newFixedThreadPool(numOfThreadsForPruning);
+    final String threadName = Thread.currentThread().getName();
+    for (int i = 0; i < numOfThreadsForPruning; i++) {
+      final List<SegmentDataMapGroup> segmentDataMapGroups = segmentList.get(i);
+      results.add(executorService.submit(new Callable<Void>() {
+        @Override public Void call() throws IOException {
+          Thread.currentThread().setName(threadName);
+          for (SegmentDataMapGroup segmentDataMapGroup : segmentDataMapGroups) {
+            List<Blocklet> pruneBlocklets = new ArrayList<>();
+            List<DataMap> dataMapList = dataMaps.get(segmentDataMapGroup.getSegment());
+            for (int i = segmentDataMapGroup.getFromIndex();
+                 i <= segmentDataMapGroup.getToIndex(); i++) {
+              pruneBlocklets.addAll(dataMapList.get(i).prune(filterExp,
+                  segmentPropertiesFetcher.getSegmentProperties(segmentDataMapGroup.getSegment()),
+                  partitions));
+            }
+            synchronized (prunedBlockletMap) {
+              List<Blocklet> pruneBlockletsExisting =
+                  prunedBlockletMap.get(segmentDataMapGroup.getSegment());
+              if (pruneBlockletsExisting != null) {
+                pruneBlockletsExisting.addAll(pruneBlocklets);
+              } else {
+                prunedBlockletMap.put(segmentDataMapGroup.getSegment(), pruneBlocklets);
+              }
+            }
+          }
+          return null;
         }
       }));
-    }
-    for (Future<List<ExtendedBlocklet>> eachExecutorResult : result) {
-      try {
-        blocklets.addAll(eachExecutorResult.get());
-      } catch (InterruptedException | ExecutionException e) {
-        LOG.error("Error in pruning datamap in multi-thread for getting result " + e.getMessage());
-      }
     }
     executorService.shutdown();
     try {
       executorService.awaitTermination(2, TimeUnit.HOURS);
     } catch (InterruptedException e) {
       LOG.error("Error in pruning datamap in multi-thread: " + e.getMessage());
+    }
+    // check for error
+    for (Future<Void> result : results) {
+      try {
+        result.get();
+      } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    for (Map.Entry<Segment, List<Blocklet>> entry : prunedBlockletMap.entrySet()) {
+      try {
+        blocklets.addAll(addSegmentId(
+            blockletDetailsFetcher.getExtendedBlocklets(entry.getValue(), entry.getKey()),
+            entry.getKey().toString()));
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
     }
     return blocklets;
   }
