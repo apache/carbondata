@@ -262,6 +262,7 @@ public class DataBlockIterator extends CarbonIterator<List<Object[]>> {
         if (blockletScannedResult != null) {
           blockletScannedResult.freeMemory();
         }
+        future = null;
       } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);
       }
