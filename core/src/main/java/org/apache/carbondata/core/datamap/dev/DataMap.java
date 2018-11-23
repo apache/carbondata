@@ -70,4 +70,8 @@ public interface DataMap<T extends Blocklet> {
    */
   void finish();
 
+  /*
+  * Returns number of records information that are stored in datamap.
+  * */
+  int getNumberOfEntries();
 }

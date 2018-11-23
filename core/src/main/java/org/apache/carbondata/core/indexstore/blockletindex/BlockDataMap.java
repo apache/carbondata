@@ -1039,4 +1039,18 @@ public class BlockDataMap extends CoarseGrainDataMap
   public int getSegmentPropertiesIndex() {
     return segmentPropertiesIndex;
   }
+
+  @Override public int getNumberOfEntries() {
+    if (memoryDMStore != null) {
+      if (memoryDMStore.getRowCount() == 0) {
+        // so that one datamap considered as one record
+        return 1;
+      } else {
+        return memoryDMStore.getRowCount();
+      }
+    } else {
+      // legacy store
+      return 1;
+    }
+  }
 }
