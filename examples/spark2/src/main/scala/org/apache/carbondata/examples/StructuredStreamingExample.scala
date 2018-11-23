@@ -52,7 +52,6 @@ object StructuredStreamingExample {
              | CREATE TABLE ${ streamTableName }(
              | id INT,
              | name STRING,
-             | city STRING,
              | salary FLOAT,
              | file struct<school:array<string>, age:int>
              | )
@@ -66,7 +65,6 @@ object StructuredStreamingExample {
              | CREATE TABLE ${ streamTableName }(
              | id INT,
              | name STRING,
-             | city STRING,
              | salary FLOAT
              | )
              | STORED BY 'carbondata'
@@ -130,6 +128,7 @@ object StructuredStreamingExample {
       override def run(): Unit = {
         for (_ <- 0 to 1000) {
           spark.sql(s"select count(*) from $tableName").show(truncate = false)
+          spark.sql(s"show segments for table $tableName").show
           Thread.sleep(1000 * 3)
         }
       }
@@ -175,7 +174,7 @@ object StructuredStreamingExample {
     thread
   }
 
-  def writeSocket(serverSocket: ServerSocket): Thread = {
+  def writeSocket(serverSocket: ServerSocket, recordFormat: String = "csv"): Thread = {
     val thread = new Thread() {
       override def run(): Unit = {
         // wait for client to connection request and accept
@@ -186,9 +185,15 @@ object StructuredStreamingExample {
           // write 5 records per iteration
           for (_ <- 0 to 1000) {
             index = index + 1
-            socketWriter.println(index.toString + ",name_" + index
-                                 + ",city_" + index + "," + (index * 10000.00).toString +
-                                 ",school_" + index + ":school_" + index + index + "$" + index)
+            recordFormat match {
+              case "csv" =>
+                socketWriter.println(index.toString + ",name_" + index
+                                     + "," + (index * 10000.00).toString +
+                                     ",school_" + index + ":school_" + index + index + "$" + index)
+              case "json" =>
+                socketWriter.println(
+                  s"""{"id":$index,"name":"s","salary":4.3,"file":{"school":["a","b"],"age":6}}""")
+            }
           }
           socketWriter.flush()
           Thread.sleep(1000)

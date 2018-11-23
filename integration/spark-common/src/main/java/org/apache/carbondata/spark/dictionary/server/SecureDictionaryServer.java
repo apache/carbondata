@@ -19,7 +19,6 @@ package org.apache.carbondata.spark.dictionary.server;
 import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
@@ -33,6 +32,7 @@ import com.google.common.collect.Lists;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.log4j.Logger;
 import org.apache.spark.SecurityManager;
 import org.apache.spark.SparkConf;
 import org.apache.spark.network.TransportContext;
@@ -47,7 +47,7 @@ import scala.Some;
  */
 public class SecureDictionaryServer extends AbstractDictionaryServer implements DictionaryServer  {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(SecureDictionaryServer.class.getName());
 
   private SecureDictionaryServerHandler secureDictionaryServerHandler;
@@ -73,10 +73,8 @@ public class SecureDictionaryServer extends AbstractDictionaryServer implements 
           return null;
         }
       });
-    } catch (IOException io) {
-      LOGGER.error(io, "Failed to start Dictionary Server in secure mode");
-    } catch (InterruptedException ie) {
-      LOGGER.error(ie, "Failed to start Dictionary Server in secure mode");
+    } catch (IOException | InterruptedException io) {
+      LOGGER.error("Failed to start Dictionary Server in secure mode", io);
     }
   }
 
@@ -143,14 +141,17 @@ public class SecureDictionaryServer extends AbstractDictionaryServer implements 
         TransportServerBootstrap bootstrap =
             new SaslServerBootstrap(transportConf, securityManager);
         String host = findLocalIpAddress(LOGGER);
-        context.createServer(host, port, Lists.<TransportServerBootstrap>newArrayList(bootstrap));
-        LOGGER.audit("Dictionary Server started, Time spent " + (System.currentTimeMillis() - start)
+        //iteratively listening to newports
+        context
+            .createServer(host, newPort, Lists.<TransportServerBootstrap>newArrayList(bootstrap));
+        LOGGER.info(
+            "Dictionary Server started, Time spent " + (System.currentTimeMillis() - start)
             + " Listening on port " + newPort);
         this.port = newPort;
         this.host = host;
         break;
       } catch (Exception e) {
-        LOGGER.error(e, "Dictionary Server Failed to bind to port:");
+        LOGGER.error("Dictionary Server Failed to bind to port: " + newPort, e);
         if (i == 9) {
           throw new RuntimeException("Dictionary Server Could not bind to any port");
         }
@@ -207,14 +208,12 @@ public class SecureDictionaryServer extends AbstractDictionaryServer implements 
           return null;
         }
       });
-    } catch (IOException io) {
-      LOGGER.error(io, "Failed to stop Dictionary Server in secure mode");
-    } catch (InterruptedException ie) {
-      LOGGER.error(ie, "Failed to stop Dictionary Server in secure mode");
+    } catch (IOException | InterruptedException e) {
+      LOGGER.error("Failed to stop Dictionary Server in secure mode", e);
     }
   }
 
-  public void initializeDictionaryGenerator(CarbonTable carbonTable) throws Exception {
+  public void initializeDictionaryGenerator(CarbonTable carbonTable) {
     secureDictionaryServerHandler.initializeTable(carbonTable);
   }
 

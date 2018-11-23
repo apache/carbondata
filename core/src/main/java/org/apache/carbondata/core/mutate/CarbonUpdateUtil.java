@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
@@ -48,13 +47,14 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
 
 /**
  * This class contains all update utility methods
  */
 public class CarbonUpdateUtil {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
           LogServiceFactory.getLogService(CarbonUpdateUtil.class.getName());
 
   /**
@@ -228,7 +228,7 @@ public class CarbonUpdateUtil {
             }
 
             // if the segments is in the list of marked for delete then update the status.
-            if (segmentsToBeDeleted.contains(new Segment(loadMetadata.getLoadName(), null))) {
+            if (segmentsToBeDeleted.contains(new Segment(loadMetadata.getLoadName()))) {
               loadMetadata.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
               loadMetadata.setModificationOrdeletionTimesStamp(Long.parseLong(updatedTimeStamp));
             }
@@ -391,7 +391,7 @@ public class CarbonUpdateUtil {
     List<String> dataFiles = new ArrayList<>();
     if (segment.getSegmentFileName() != null) {
       SegmentFileStore fileStore = new SegmentFileStore(tablePath, segment.getSegmentFileName());
-      fileStore.readIndexFiles();
+      fileStore.readIndexFiles(FileFactory.getConfiguration());
       Map<String, List<String>> indexFilesMap = fileStore.getIndexFilesMap();
       List<String> dataFilePaths = new ArrayList<>();
       for (List<String> paths : indexFilesMap.values()) {
@@ -539,22 +539,6 @@ public class CarbonUpdateUtil {
             for (CarbonFile invalidFile : completeListOfDeleteDeltaFiles) {
 
               compareTimestampsAndDelete(invalidFile, forceDelete, false);
-            }
-
-            CarbonFile[] blockRelatedFiles = updateStatusManager
-                    .getAllBlockRelatedFiles(allSegmentFiles,
-                            block.getActualBlockName());
-
-            // now for each invalid index file need to check the query execution time out
-            // and then delete.
-
-            for (CarbonFile invalidFile : blockRelatedFiles) {
-
-              if (compareTimestampsAndDelete(invalidFile, forceDelete, false)) {
-                if (invalidFile.getName().endsWith(CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)) {
-                  updateSegmentFile = true;
-                }
-              }
             }
 
           } else {
@@ -753,7 +737,7 @@ public class CarbonUpdateUtil {
     for (Map.Entry<String, Long> eachSeg : segmentBlockCount.entrySet()) {
 
       if (eachSeg.getValue() == 0) {
-        segmentsToBeDeleted.add(new Segment(eachSeg.getKey(), null));
+        segmentsToBeDeleted.add(new Segment(eachSeg.getKey(), ""));
       }
 
     }

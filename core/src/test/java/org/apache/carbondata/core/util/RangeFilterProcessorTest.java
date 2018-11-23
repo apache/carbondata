@@ -17,10 +17,13 @@
 
 package org.apache.carbondata.core.util;
 
+import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
@@ -37,9 +40,14 @@ import org.apache.carbondata.core.scan.expression.logical.TrueExpression;
 import org.apache.carbondata.core.scan.filter.executer.RangeValueFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
 import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
 import mockit.Deencapsulation;
+import mockit.Mock;
 import mockit.MockUp;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -47,7 +55,15 @@ import org.junit.Test;
 
 /* Test Cases for Range Filter */
 public class RangeFilterProcessorTest {
+
+  public static DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo =
+      new DimColumnResolvedFilterInfo();
+
   @BeforeClass public static void setUp() throws Exception {
+    ColumnSchema columnSchema = new ColumnSchema();
+    columnSchema.setDataType(DataTypes.STRING);
+    CarbonDimension carbonDimension = new CarbonDimension(columnSchema, 0, 0, 0);
+    dimColumnResolvedFilterInfo.setDimension(carbonDimension);
   }
 
   public boolean checkBothTrees(Expression a, Expression b) {
@@ -320,7 +336,9 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
-    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax);
+    Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
+
+    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     Assert.assertFalse(result);
   }
 
@@ -336,7 +354,8 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
-    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax);
+    Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
+    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     Assert.assertFalse(result);
   }
 
@@ -352,7 +371,8 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
-    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax);
+    Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
+    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     Assert.assertTrue(result);
   }
 
@@ -369,8 +389,9 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
+    Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
 
-    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax);
+    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     rangeCovered = Deencapsulation.getField(range, "isRangeFullyCoverBlock");
     Assert.assertTrue(result);
     Assert.assertTrue(rangeCovered);
@@ -389,8 +410,9 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
+    Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
 
-    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax);
+    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     startBlockMinIsDefaultStart = Deencapsulation.getField(range, "startBlockMinIsDefaultStart");
     Assert.assertTrue(result);
     Assert.assertTrue(startBlockMinIsDefaultStart);
@@ -409,8 +431,9 @@ public class RangeFilterProcessorTest {
     Deencapsulation.setField(range, "isDimensionPresentInCurrentBlock", true);
     Deencapsulation.setField(range, "lessThanExp", true);
     Deencapsulation.setField(range, "greaterThanExp", true);
+    Deencapsulation.setField(range, "dimColEvaluatorInfo", dimColumnResolvedFilterInfo);
 
-    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax);
+    result = range.isScanRequired(BlockMin, BlockMax, filterMinMax, true);
     endBlockMaxisDefaultEnd = Deencapsulation.getField(range, "endBlockMaxisDefaultEnd");
     Assert.assertTrue(result);
     Assert.assertTrue(endBlockMaxisDefaultEnd);

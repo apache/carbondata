@@ -19,12 +19,13 @@ package org.apache.carbondata.processing.loading.sort.unsafe;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.memory.IntPointerBuffer;
 import org.apache.carbondata.core.memory.MemoryBlock;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.memory.UnsafeSortMemoryManager;
+import org.apache.carbondata.core.util.ReUsableByteArrayDataOutputStream;
 import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
 import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
 import org.apache.carbondata.processing.sort.sortdata.TableFieldStat;
@@ -45,13 +46,14 @@ public class UnsafeCarbonRowPage {
 
   private MemoryManagerType managerType;
 
-  private long taskId;
+  private String taskId;
 
   private TableFieldStat tableFieldStat;
   private SortStepRowHandler sortStepRowHandler;
+  private boolean convertNoSortFields;
 
   public UnsafeCarbonRowPage(TableFieldStat tableFieldStat, MemoryBlock memoryBlock,
-      boolean saveToDisk, long taskId) {
+      boolean saveToDisk, String taskId) {
     this.tableFieldStat = tableFieldStat;
     this.sortStepRowHandler = new SortStepRowHandler(tableFieldStat);
     this.saveToDisk = saveToDisk;
@@ -63,8 +65,10 @@ public class UnsafeCarbonRowPage {
     this.managerType = MemoryManagerType.UNSAFE_MEMORY_MANAGER;
   }
 
-  public int addRow(Object[] row, ByteBuffer rowBuffer) {
-    int size = addRow(row, dataBlock.getBaseOffset() + lastSize, rowBuffer);
+  public int addRow(Object[] row,
+      ReUsableByteArrayDataOutputStream reUsableByteArrayDataOutputStream)
+      throws MemoryException, IOException {
+    int size = addRow(row, dataBlock.getBaseOffset() + lastSize, reUsableByteArrayDataOutputStream);
     buffer.set(lastSize);
     lastSize = lastSize + size;
     return size;
@@ -77,9 +81,12 @@ public class UnsafeCarbonRowPage {
    * @param address
    * @return
    */
-  private int addRow(Object[] row, long address, ByteBuffer rowBuffer) {
-    return sortStepRowHandler.writeRawRowAsIntermediateSortTempRowToUnsafeMemory(row,
-        dataBlock.getBaseObject(), address, rowBuffer);
+  private int addRow(Object[] row, long address,
+      ReUsableByteArrayDataOutputStream reUsableByteArrayDataOutputStream)
+      throws MemoryException, IOException {
+    return sortStepRowHandler
+        .writeRawRowAsIntermediateSortTempRowToUnsafeMemory(row, dataBlock.getBaseObject(), address,
+            reUsableByteArrayDataOutputStream, dataBlock.size() - lastSize, dataBlock.size());
   }
 
   /**
@@ -88,8 +95,13 @@ public class UnsafeCarbonRowPage {
    * @return one row
    */
   public IntermediateSortTempRow getRow(long address) {
-    return sortStepRowHandler.readIntermediateSortTempRowFromUnsafeMemory(
-        dataBlock.getBaseObject(), address);
+    if (convertNoSortFields) {
+      return sortStepRowHandler
+          .readRowFromMemoryWithNoSortFieldConvert(dataBlock.getBaseObject(), address);
+    } else {
+      return sortStepRowHandler
+          .readFromMemoryWithoutNoSortFieldConvert(dataBlock.getBaseObject(), address);
+    }
   }
 
   /**
@@ -98,9 +110,9 @@ public class UnsafeCarbonRowPage {
    * @param stream stream
    * @throws IOException
    */
-  public void writeRow(long address, DataOutputStream stream) throws IOException {
+  public void writeRow(long address, DataOutputStream stream) throws IOException, MemoryException {
     sortStepRowHandler.writeIntermediateSortTempRowFromUnsafeMemoryToStream(
-        dataBlock.getBaseObject(), address, stream);
+        dataBlock.getBaseObject(), address, stream, dataBlock.size() - lastSize, dataBlock.size());
   }
 
   public void freeMemory() {
@@ -145,5 +157,13 @@ public class UnsafeCarbonRowPage {
 
   public enum MemoryManagerType {
     UNSAFE_MEMORY_MANAGER, UNSAFE_SORT_MEMORY_MANAGER
+  }
+
+  public void setReadConvertedNoSortField() {
+    this.convertNoSortFields = true;
+  }
+
+  public void makeCanAddFail() {
+    this.lastSize = (int) sizeToBeUsed;
   }
 }

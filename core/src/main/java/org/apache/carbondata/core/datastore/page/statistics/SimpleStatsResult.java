@@ -29,4 +29,6 @@ public interface SimpleStatsResult {
 
   DataType getDataType();
 
+  boolean writeMinMax();
+
 }

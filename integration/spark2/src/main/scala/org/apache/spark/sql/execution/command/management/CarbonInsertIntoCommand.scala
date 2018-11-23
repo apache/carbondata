@@ -18,15 +18,13 @@
 package org.apache.spark.sql.execution.command.management
 
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Dataset, Row, SparkSession}
-import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.plans.logical.{GlobalLimit, LogicalPlan}
 import org.apache.spark.sql.execution.command.{AtomicRunnableCommand, DataCommand}
 import org.apache.spark.storage.StorageLevel
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.util.CarbonSparkUtil
+import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 
 case class CarbonInsertIntoCommand(
     relation: CarbonDatasourceHadoopRelation,
@@ -38,13 +36,17 @@ case class CarbonInsertIntoCommand(
   var loadCommand: CarbonLoadDataCommand = _
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+    setAuditTable(relation.carbonTable.getDatabaseName, relation.carbonTable.getTableName)
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     def containsLimit(plan: LogicalPlan): Boolean = {
       plan find {
         case limit: GlobalLimit => true
         case other => false
       } isDefined
     }
+
+    ThreadLocalSessionInfo
+      .setConfigurationToCurrentThread(sparkSession.sessionState.newHadoopConf())
     val isPersistEnabledUserValue = CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.CARBON_INSERT_PERSIST_ENABLED,
         CarbonCommonConstants.CARBON_INSERT_PERSIST_ENABLED_DEFAULT)
@@ -81,9 +83,19 @@ case class CarbonInsertIntoCommand(
   }
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     if (null != loadCommand) {
-      loadCommand.processData(sparkSession)
+      val rows = loadCommand.processData(sparkSession)
+      setAuditInfo(loadCommand.auditInfo)
+      rows
     } else {
       Seq.empty
+    }
+  }
+
+  override protected def opName: String = {
+    if (overwrite) {
+      "INSERT OVERWRITE"
+    } else {
+      "INSERT INTO"
     }
   }
 }

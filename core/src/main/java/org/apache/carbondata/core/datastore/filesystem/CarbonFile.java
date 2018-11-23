@@ -38,6 +38,8 @@ public interface CarbonFile {
 
   List<CarbonFile> listFiles(Boolean recurssive) throws IOException;
 
+  List<CarbonFile> listFiles(boolean recursive, CarbonFileFilter fileFilter) throws IOException;
+
   /**
    * It returns list of files with location details.
    * @return
@@ -58,10 +60,15 @@ public interface CarbonFile {
 
   long getSize();
 
-  boolean renameTo(String changetoName);
+  boolean renameTo(String changeToName);
 
-  boolean renameForce(String changetoName);
+  boolean renameForce(String changeToName);
 
+  /**
+   * This method will delete the files recursively from file system
+   *
+   * @return true if success
+   */
   boolean delete();
 
   boolean createNewFile();
@@ -174,4 +181,10 @@ public interface CarbonFile {
    * @throws IOException if error occurs
    */
   short getDefaultReplication(String filePath) throws IOException;
+
+  /**
+   * Get the length of this file, in bytes.
+   * @return the length of this file, in bytes.
+   */
+  long getLength();
 }

@@ -27,11 +27,13 @@ import scala.collection.mutable
 import scala.util.Try
 
 import com.univocity.parsers.common.TextParsingException
+import org.apache.log4j.Logger
 import org.apache.spark.SparkException
 import org.apache.spark.sql._
+import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
-import org.apache.spark.sql.execution.command.{DataTypeInfo, UpdateTableModel}
+import org.apache.spark.sql.execution.command.{Field, UpdateTableModel}
 import org.apache.spark.sql.types._
 import org.apache.spark.util.CarbonReflectionUtils
 
@@ -43,7 +45,7 @@ import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumn
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory
 import org.apache.carbondata.core.metadata.ColumnIdentifier
-import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, DecimalType => CarbonDecimalType, StructField => CarbonStructField}
+import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
@@ -57,55 +59,6 @@ import org.apache.carbondata.streaming.parser.FieldConverter
 object CarbonScalaUtil {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
-  // TODO: move this to spark module
-  def convertSparkToCarbonDataType(dataType: DataType): CarbonDataType = {
-    dataType match {
-      case StringType => CarbonDataTypes.STRING
-      case ShortType => CarbonDataTypes.SHORT
-      case IntegerType => CarbonDataTypes.INT
-      case LongType => CarbonDataTypes.LONG
-      case DoubleType => CarbonDataTypes.DOUBLE
-      case FloatType => CarbonDataTypes.FLOAT
-      case DateType => CarbonDataTypes.DATE
-      case BooleanType => CarbonDataTypes.BOOLEAN
-      case TimestampType => CarbonDataTypes.TIMESTAMP
-      case ArrayType(elementType, _) =>
-        CarbonDataTypes.createArrayType(CarbonScalaUtil.convertSparkToCarbonDataType(elementType))
-      case StructType(fields) =>
-        val carbonFields = new util.ArrayList[CarbonStructField]
-        fields.map { field =>
-          carbonFields.add(
-            new CarbonStructField(
-              field.name,
-              CarbonScalaUtil.convertSparkToCarbonDataType(field.dataType)))
-        }
-        CarbonDataTypes.createStructType(carbonFields)
-      case NullType => CarbonDataTypes.NULL
-      case decimal: DecimalType =>
-        CarbonDataTypes.createDecimalType(decimal.precision, decimal.scale)
-      case _ => throw new UnsupportedOperationException("getting " + dataType + " from spark")
-    }
-  }
-
-  def convertCarbonToSparkDataType(dataType: CarbonDataType): types.DataType = {
-    if (CarbonDataTypes.isDecimal(dataType)) {
-      DecimalType(dataType.asInstanceOf[CarbonDecimalType].getPrecision,
-        dataType.asInstanceOf[CarbonDecimalType].getScale)
-    } else {
-      dataType match {
-        case CarbonDataTypes.STRING => StringType
-        case CarbonDataTypes.SHORT => ShortType
-        case CarbonDataTypes.INT => IntegerType
-        case CarbonDataTypes.LONG => LongType
-        case CarbonDataTypes.DOUBLE => DoubleType
-        case CarbonDataTypes.BOOLEAN => BooleanType
-        case CarbonDataTypes.TIMESTAMP => TimestampType
-        case CarbonDataTypes.DATE => DateType
-        case CarbonDataTypes.VARCHAR => StringType
-      }
-    }
-  }
 
   def getString(value: Any,
       serializationNullFormat: String,
@@ -150,7 +103,8 @@ object CarbonScalaUtil {
         case _ =>
           val convertedValue =
             DataTypeUtil
-              .getDataBasedOnDataType(value, convertSparkToCarbonDataType(dataType))
+              .getDataBasedOnDataType(value,
+                CarbonSparkDataSourceUtil.convertSparkToCarbonDataType(dataType))
           if (convertedValue == null) {
             if (defaultValue) {
               return dataType match {
@@ -301,7 +255,8 @@ object CarbonScalaUtil {
         pvalue
       }
       val carbonColumn = table.getColumnByName(table.getTableName, col.toLowerCase)
-      val dataType = CarbonScalaUtil.convertCarbonToSparkDataType(carbonColumn.getDataType)
+      val dataType =
+        CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(carbonColumn.getDataType)
       try {
         if (value.equals(hivedefaultpartition)) {
           (col, value)
@@ -409,7 +364,7 @@ object CarbonScalaUtil {
   /**
    * Retrieve error message from exception
    */
-  def retrieveAndLogErrorMsg(ex: Throwable, logger: LogService): (String, String) = {
+  def retrieveAndLogErrorMsg(ex: Throwable, logger: Logger): (String, String) = {
     var errorMessage = "DataLoad failure"
     var executorMessage = ""
     if (ex != null) {
@@ -509,7 +464,6 @@ object CarbonScalaUtil {
         }
         i += 1
       }
-      table
     } catch {
       case e: Exception =>
         // ignore it
@@ -641,8 +595,96 @@ object CarbonScalaUtil {
     }
   }
 
+  /**
+   * This method validates all the child columns of complex column recursively to check whether
+   * any of the child column is of string dataType or not
+   *
+   * @param field
+   */
+  def validateChildColumnsRecursively(field: Field): Boolean = {
+    if (field.children.isDefined && null != field.children.get) {
+      field.children.get.exists { childColumn =>
+        if (childColumn.children.isDefined && null != childColumn.children.get) {
+          validateChildColumnsRecursively(childColumn)
+        } else {
+          childColumn.dataType.get.equalsIgnoreCase("string")
+        }
+      }
+    } else {
+      false
+    }
+  }
+
+  /**
+   * This method validates the local dictionary configured columns
+   *
+   * @param fields
+   * @param tableProperties
+   */
+  def validateLocalConfiguredDictionaryColumns(fields: Seq[Field],
+      tableProperties: mutable.Map[String, String], localDictColumns: Seq[String]): Unit = {
+    var dictIncludeColumns: Seq[String] = Seq[String]()
+
+    // validate the local dict columns
+    CarbonScalaUtil.validateLocalDictionaryColumns(tableProperties, localDictColumns)
+    // check if the column specified exists in table schema
+    localDictColumns.foreach { distCol =>
+      if (!fields.exists(x => x.column.equalsIgnoreCase(distCol.trim))) {
+        val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " + distCol.trim +
+                       " does not exist in table. Please check the DDL."
+        throw new MalformedCarbonCommandException(errormsg)
+      }
+    }
+
+    // check if column is other than STRING or VARCHAR datatype
+    localDictColumns.foreach { dictColm =>
+      if (fields
+        .exists(x => x.column.equalsIgnoreCase(dictColm) &&
+                     !x.dataType.get.equalsIgnoreCase("STRING") &&
+                     !x.dataType.get.equalsIgnoreCase("VARCHAR") &&
+                     !x.dataType.get.equalsIgnoreCase("STRUCT") &&
+                     !x.dataType.get.equalsIgnoreCase("ARRAY"))) {
+        val errormsg = "LOCAL_DICTIONARY_INCLUDE/LOCAL_DICTIONARY_EXCLUDE column: " +
+                       dictColm.trim +
+                       " is not a string/complex/varchar datatype column. LOCAL_DICTIONARY_COLUMN" +
+                       " should be no dictionary string/complex/varchar datatype column." +
+                       "Please check the DDL."
+        throw new MalformedCarbonCommandException(errormsg)
+      }
+    }
+
+    // Validate whether any of the child columns of complex dataType column is a string column
+    localDictColumns.foreach { dictColm =>
+      if (fields
+        .exists(x => x.column.equalsIgnoreCase(dictColm) && x.children.isDefined &&
+                     null != x.children.get &&
+                     !validateChildColumnsRecursively(x))) {
+        val errMsg =
+          s"None of the child columns of complex dataType column $dictColm specified in " +
+          "local_dictionary_include are not of string dataType."
+        throw new MalformedCarbonCommandException(errMsg)
+      }
+    }
+  }
+
   def isStringDataType(dataType: DataType): Boolean = {
     dataType == StringType
+  }
+
+  /**
+   * Rearrange the column schema with all the sort columns at first. In case of ALTER ADD COLUMNS,
+   * if the newly added column is a sort column it will be at the last. But we expects all the
+   * SORT_COLUMNS always at first
+   *
+   * @param columnSchemas
+   * @return
+   */
+  def reArrangeColumnSchema(columnSchemas: mutable.Buffer[ColumnSchema]): mutable
+  .Buffer[ColumnSchema] = {
+    val newColumnSchemas = mutable.Buffer[ColumnSchema]()
+    newColumnSchemas ++= columnSchemas.filter(columnSchema => columnSchema.isSortColumn)
+    newColumnSchemas ++= columnSchemas.filterNot(columnSchema => columnSchema.isSortColumn)
+    newColumnSchemas
   }
 
 }

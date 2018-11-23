@@ -20,9 +20,9 @@ package org.apache.carbondata.core.util;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.constants.LoggerAction;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -31,10 +31,7 @@ import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_OFFHEAP_SORT;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_UNSAFE_SORT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.*;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH;
@@ -46,23 +43,26 @@ import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CAR
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT;
+import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB;
+
+import org.apache.log4j.Logger;
 
 /**
  * This class maintains carbon session params
  */
 public class SessionParams implements Serializable, Cloneable {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CacheProvider.class.getName());
   private static final long serialVersionUID = -7801994600594915264L;
 
   private Map<String, String> sProps;
-  private Map<String, String> addedProps;
+  private ConcurrentHashMap<String, String> addedProps;
   // below field to be used when we want the objects to be serialized
   private Map<String, Object> extraInfo;
   public SessionParams() {
     sProps = new HashMap<>();
-    addedProps = new HashMap<>();
+    addedProps = new ConcurrentHashMap<>();
     extraInfo = new HashMap<>();
   }
 
@@ -98,25 +98,13 @@ public class SessionParams implements Serializable, Cloneable {
    * @return properties value
    */
   public SessionParams addProperty(String key, String value) throws InvalidConfigurationException {
-    return addProperty(key, value, true);
-  }
-
-  /**
-   * This method will be used to add a new property
-   *
-   * @param key
-   * @return properties value
-   */
-  public SessionParams addProperty(String key, String value, Boolean doAuditing)
-      throws InvalidConfigurationException {
     boolean isValidConf = validateKeyValue(key, value);
     if (isValidConf) {
       if (key.equals(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION)) {
         value = value.toUpperCase();
       }
-      if (doAuditing) {
-        LOGGER.audit("The key " + key + " with value " + value + " added in the session param");
-      }
+      LOGGER.info(
+          "The key " + key + " with value " + value + " added in the session param");
       sProps.put(key, value);
     }
     return this;
@@ -151,7 +139,10 @@ public class SessionParams implements Serializable, Cloneable {
       case CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE:
       case CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD:
       case CARBON_OPTIONS_SINGLE_PASS:
-      case CARBON_SEARCH_MODE_ENABLE:
+      case ENABLE_VECTOR_READER:
+      case ENABLE_UNSAFE_IN_QUERY_EXECUTION:
+      case ENABLE_AUTO_LOAD_MERGE:
+      case CARBON_PUSH_ROW_FILTERS_FOR_VECTOR:
         isValid = CarbonUtil.validateBoolean(value);
         if (!isValid) {
           throw new InvalidConfigurationException("Invalid value " + value + " for key " + key);
@@ -175,6 +166,10 @@ public class SessionParams implements Serializable, Cloneable {
         break;
       case CARBON_OPTIONS_BATCH_SORT_SIZE_INMB:
       case CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS:
+      case NUM_CORES_LOADING:
+      case NUM_CORES_COMPACTING:
+      case BLOCKLET_SIZE_IN_MB:
+      case CARBON_MAJOR_COMPACTION_SIZE:
         isValid = CarbonUtil.validateValidIntType(value);
         if (!isValid) {
           throw new InvalidConfigurationException(
@@ -197,6 +192,14 @@ public class SessionParams implements Serializable, Cloneable {
         break;
       // no validation needed while set for CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT
       case CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT:
+        isValid = true;
+        break;
+      case COMPACTION_SEGMENT_LEVEL_THRESHOLD:
+        int[] values = CarbonProperties.getInstance().getIntArray(value);
+        if (values.length != 2) {
+          throw new InvalidConfigurationException(
+              "Invalid COMPACTION_SEGMENT_LEVEL_THRESHOLD: " + value);
+        }
         isValid = true;
         break;
       default:

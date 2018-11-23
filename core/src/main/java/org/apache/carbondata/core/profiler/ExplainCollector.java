@@ -26,7 +26,9 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapWrapperSimpleInfo;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * An information collector used for EXPLAIN command, to print out
@@ -52,7 +54,12 @@ public class ExplainCollector {
   }
 
   public static void setup() {
-    INSTANCE = new ExplainCollector();
+    boolean isQueryStatisticsEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+            CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT));
+    if (isQueryStatisticsEnabled) {
+      INSTANCE = new ExplainCollector();
+    }
   }
 
   public static void remove() {
@@ -94,27 +101,40 @@ public class ExplainCollector {
     }
   }
 
-  public static void recordDefaultDataMapPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
-      int numBlocklets) {
+  public static void setShowPruningInfo(boolean showPruningInfo) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
-      scan.setNumBlockletsAfterDefaultPruning(dataMapWrapperSimpleInfo, numBlocklets);
+      scan.setShowPruningInfo(showPruningInfo);
+    }
+  }
+
+  public static void addDefaultDataMapPruningHit(int numBlocklets) {
+    if (enabled()) {
+      TablePruningInfo scan = getCurrentTablePruningInfo();
+      scan.addNumBlockletsAfterDefaultPruning(numBlocklets);
+    }
+  }
+
+  public static void setDefaultDataMapPruningBlockHit(int numBlocks) {
+    if (enabled()) {
+      TablePruningInfo scan = getCurrentTablePruningInfo();
+      scan.setNumBlocksAfterDefaultPruning(numBlocks);
     }
   }
 
   public static void recordCGDataMapPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
-      int numBlocklets) {
+      int numBlocklets, int numBlocks) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
-      scan.setNumBlockletsAfterCGPruning(dataMapWrapperSimpleInfo, numBlocklets);
+      scan.setNumBlockletsAfterCGPruning(dataMapWrapperSimpleInfo, numBlocklets, numBlocks);
     }
   }
 
   public static void recordFGDataMapPruning(DataMapWrapperSimpleInfo dataMapWrapperSimpleInfo,
-      int numBlocklets) {
+      int numBlocklets, int numBlocks) {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
-      scan.setNumBlockletsAfterFGPruning(dataMapWrapperSimpleInfo, numBlocklets);
+      scan.setNumBlockletsAfterFGPruning(dataMapWrapperSimpleInfo, numBlocklets, numBlocks);
     }
   }
 
@@ -122,6 +142,13 @@ public class ExplainCollector {
     if (enabled()) {
       TablePruningInfo scan = getCurrentTablePruningInfo();
       scan.addTotalBlocklets(numBlocklets);
+    }
+  }
+
+  public static void addTotalBlocks(int numBlocks) {
+    if (enabled()) {
+      TablePruningInfo scan = getCurrentTablePruningInfo();
+      scan.addTotalBlocks(numBlocks);
     }
   }
 

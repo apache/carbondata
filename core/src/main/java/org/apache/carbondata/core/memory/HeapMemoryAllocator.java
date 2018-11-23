@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import javax.annotation.concurrent.GuardedBy;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
@@ -39,8 +40,12 @@ public class HeapMemoryAllocator implements MemoryAllocator {
 
   public HeapMemoryAllocator() {
     poolingThresholdBytes = CarbonProperties.getInstance().getHeapMemoryPoolingThresholdBytes();
-    // if set 'poolingThresholdBytes' to -1, it should not go through the pooling mechanism.
-    if (poolingThresholdBytes == -1) {
+    boolean isDriver = Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE,
+            CarbonCommonConstants.IS_DRIVER_INSTANCE_DEFAULT));
+    // if set 'poolingThresholdBytes' to -1 or the object creation call is in driver,
+    // it should not go through the pooling mechanism.
+    if (poolingThresholdBytes == -1 || isDriver) {
       shouldPooling = false;
     }
   }
@@ -67,7 +72,8 @@ public class HeapMemoryAllocator implements MemoryAllocator {
             final long[] array = arrayReference.get();
             if (array != null) {
               assert (array.length * 8L >= size);
-              MemoryBlock memory = new MemoryBlock(array, CarbonUnsafe.LONG_ARRAY_OFFSET, size);
+              MemoryBlock memory =
+                  new MemoryBlock(array, CarbonUnsafe.LONG_ARRAY_OFFSET, size, MemoryType.ONHEAP);
               // reuse this MemoryBlock
               memory.setFreedStatus(false);
               return memory;
@@ -78,7 +84,7 @@ public class HeapMemoryAllocator implements MemoryAllocator {
       }
     }
     long[] array = new long[numWords];
-    return new MemoryBlock(array, CarbonUnsafe.LONG_ARRAY_OFFSET, size);
+    return new MemoryBlock(array, CarbonUnsafe.LONG_ARRAY_OFFSET, size, MemoryType.ONHEAP);
   }
 
   @Override public void free(MemoryBlock memory) {

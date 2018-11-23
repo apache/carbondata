@@ -21,6 +21,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Objects;
 
+import static java.math.RoundingMode.HALF_UP;
+
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
@@ -28,7 +30,6 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
-import com.facebook.presto.spi.block.BlockBuilderStatus;
 import com.facebook.presto.spi.type.DecimalType;
 import com.facebook.presto.spi.type.Decimals;
 import com.facebook.presto.spi.type.Type;
@@ -40,7 +41,9 @@ import static com.facebook.presto.spi.type.Decimals.rescale;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static io.airlift.slice.Slices.utf8Slice;
-import static java.math.RoundingMode.HALF_UP;
+
+
+
 
 /**
  * Reader for DecimalValues
@@ -59,7 +62,7 @@ public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
     super(batchSize, dataType);
     this.type = DecimalType.createDecimalType(dataType.getPrecision(), dataType.getScale());
     this.batchSize = batchSize;
-    this.builder = type.createBlockBuilder(new BlockBuilderStatus(), batchSize);
+    this.builder = type.createBlockBuilder(null, batchSize);
     this.dictionary = dictionary;
   }
 
@@ -91,7 +94,7 @@ public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
   }
 
   @Override public void reset() {
-    builder = type.createBlockBuilder(new BlockBuilderStatus(), batchSize);
+    builder = type.createBlockBuilder(null, batchSize);
   }
 
   private void decimalBlockWriter(BigDecimal value) {

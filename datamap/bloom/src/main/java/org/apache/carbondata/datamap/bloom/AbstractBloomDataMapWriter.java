@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
@@ -43,8 +41,6 @@ import org.apache.hadoop.util.hash.Hash;
 
 @InterfaceAudience.Internal
 public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
-  private static final LogService LOG = LogServiceFactory.getLogService(
-      BloomDataMapWriter.class.getCanonicalName());
   private int bloomFilterSize;
   private double bloomFilterFpp;
   private boolean compressBloom;
@@ -144,7 +140,7 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
           || indexColumns.get(indexColIdx).hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         indexValue = convertDictionaryValue(indexColIdx, value);
       } else {
-        indexValue = convertNonDictionaryValue(indexColIdx, (byte[]) value);
+        indexValue = convertNonDictionaryValue(indexColIdx, value);
       }
     }
     if (indexValue.length == 0) {
@@ -155,7 +151,7 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
 
   protected abstract byte[] convertDictionaryValue(int indexColIdx, Object value);
 
-  protected abstract byte[] convertNonDictionaryValue(int indexColIdx, byte[] value);
+  protected abstract byte[] convertNonDictionaryValue(int indexColIdx, Object value);
 
   private void initDataMapFile() throws IOException {
     if (!FileFactory.isFileExist(dataMapPath)) {
@@ -164,7 +160,7 @@ public abstract class AbstractBloomDataMapWriter extends DataMapWriter {
       }
     }
     for (int indexColId = 0; indexColId < indexColumns.size(); indexColId++) {
-      String dmFile = BloomCoarseGrainDataMap.getBloomIndexFile(dataMapPath,
+      String dmFile = BloomIndexFileStore.getBloomIndexFile(dataMapPath,
           indexColumns.get(indexColId).getColName());
       DataOutputStream dataOutStream = null;
       try {

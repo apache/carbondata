@@ -30,7 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
@@ -53,6 +52,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import com.google.gson.Gson;
+import org.apache.log4j.Logger;
 
 /**
  * Manages Segment & block status of carbon table for Delete operation
@@ -62,7 +62,7 @@ public class SegmentUpdateStatusManager {
   /**
    * logger
    */
-  private static final LogService LOG =
+  private static final Logger LOG =
       LogServiceFactory.getLogService(SegmentUpdateStatusManager.class.getName());
 
   private final AbsoluteTableIdentifier identifier;
@@ -724,6 +724,8 @@ public class SegmentUpdateStatusManager {
       brWriter.write(metadataInstance);
     } catch (IOException ioe) {
       LOG.error("Error message: " + ioe.getLocalizedMessage());
+      fileWrite.setFailed();
+      throw ioe;
     } finally {
       if (null != brWriter) {
         brWriter.flush();
@@ -777,6 +779,33 @@ public class SegmentUpdateStatusManager {
     }
     return range;
   }
+
+  /**
+   * Returns the invalid timestamp range of a segment.
+   * @return
+   */
+  public List<UpdateVO> getInvalidTimestampRange() {
+    List<UpdateVO> ranges = new ArrayList<UpdateVO>();
+    for (LoadMetadataDetails segment : segmentDetails) {
+      if ((SegmentStatus.LOAD_FAILURE == segment.getSegmentStatus()
+          || SegmentStatus.COMPACTED == segment.getSegmentStatus()
+          || SegmentStatus.MARKED_FOR_DELETE == segment.getSegmentStatus())) {
+        UpdateVO range = new UpdateVO();
+        range.setSegmentId(segment.getLoadName());
+        range.setFactTimestamp(segment.getLoadStartTime());
+        if (!segment.getUpdateDeltaStartTimestamp().isEmpty() &&
+            !segment.getUpdateDeltaEndTimestamp().isEmpty()) {
+          range.setUpdateDeltaStartTimestamp(
+              CarbonUpdateUtil.getTimeStampAsLong(segment.getUpdateDeltaStartTimestamp()));
+          range.setLatestUpdateTimestamp(
+              CarbonUpdateUtil.getTimeStampAsLong(segment.getUpdateDeltaEndTimestamp()));
+        }
+        ranges.add(range);
+      }
+    }
+    return ranges;
+  }
+
   /**
    *
    * @param block
@@ -822,33 +851,6 @@ public class SegmentUpdateStatusManager {
           }
         }
       }
-    }
-
-    return files.toArray(new CarbonFile[files.size()]);
-  }
-
-  /**
-   *
-   * @param allSegmentFiles
-   * @return
-   */
-  public CarbonFile[] getAllBlockRelatedFiles(CarbonFile[] allSegmentFiles,
-      String actualBlockName) {
-    List<CarbonFile> files = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-
-    for (CarbonFile eachFile : allSegmentFiles) {
-
-      // for carbon data.
-      if (eachFile.getName().equalsIgnoreCase(actualBlockName)) {
-        files.add(eachFile);
-      }
-
-      // get carbon index files of the block.
-      String indexFileName = CarbonTablePath.getCarbonIndexFileName(actualBlockName);
-      if (eachFile.getName().equalsIgnoreCase(indexFileName)) {
-        files.add(eachFile);
-      }
-
     }
 
     return files.toArray(new CarbonFile[files.size()]);

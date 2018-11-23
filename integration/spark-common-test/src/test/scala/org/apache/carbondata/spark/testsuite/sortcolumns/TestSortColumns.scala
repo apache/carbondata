@@ -343,12 +343,17 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA local inpath '$resourcesPath/numeric_column_invalid_values.csv' INTO TABLE test_sort_col OPTIONS('FILEHEADER'='id,name,age')")
     // compare hive and carbon data
     checkAnswer(sql("select * from test_sort_col_hive"), sql("select * from test_sort_col"))
+    checkAnswer(sql("select * from test_sort_col_hive where age < 25"), sql("select * from test_sort_col where age < 25"))
+    checkAnswer(sql("select * from test_sort_col_hive where age <= 25"), sql("select * from test_sort_col where age <= 25"))
+    checkAnswer(sql("select * from test_sort_col_hive where age > 25"), sql("select * from test_sort_col where age > 25"))
+    checkAnswer(sql("select * from test_sort_col_hive where age >= 25"), sql("select * from test_sort_col where age >= 25"))
+    checkAnswer(sql("select * from test_sort_col_hive where age is null"), sql("select * from test_sort_col where age is null"))
+    checkAnswer(sql("select * from test_sort_col_hive where age is not null"), sql("select * from test_sort_col where age is not null"))
   }
 
   test("describe formatted for sort_columns") {
     sql("CREATE TABLE sorttableDesc (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='empno,empname')")
-    checkExistence(sql("describe formatted sorttableDesc"),true,"SORT_COLUMNS")
-    checkExistence(sql("describe formatted sorttableDesc"),true,"empno,empname")
+    checkExistence(sql("describe formatted sorttableDesc"),true,"Sort Columns empno, empname")
   }
 
   test("duplicate columns in sort_columns") {

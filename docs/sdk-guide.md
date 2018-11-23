@@ -1,9 +1,38 @@
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one or more 
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership. 
+    The ASF licenses this file to you under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with 
+    the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing, software 
+    distributed under the License is distributed on an "AS IS" BASIS, 
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and 
+    limitations under the License.
+-->
+
 # SDK Guide
-In the carbon jars package, there exist a carbondata-store-sdk-x.x.x-SNAPSHOT.jar, including SDK writer and reader.
+
+CarbonData provides SDK to facilitate
+
+1. [Writing carbondata files from other application which does not use Spark](#sdk-writer)
+2. [Reading carbondata files from other application which does not use Spark](#sdk-reader)
+
 # SDK Writer
+
+In the carbon jars package, there exist a carbondata-store-sdk-x.x.x-SNAPSHOT.jar, including SDK writer and reader. 
+If user want to use SDK, except carbondata-store-sdk-x.x.x-SNAPSHOT.jar, 
+it needs carbondata-core-x.x.x-SNAPSHOT.jar, carbondata-common-x.x.x-SNAPSHOT.jar, 
+carbondata-format-x.x.x-SNAPSHOT.jar, carbondata-hadoop-x.x.x-SNAPSHOT.jar and carbondata-processing-x.x.x-SNAPSHOT.jar.
+What's more, user also can use carbondata-sdk.jar directly.
+
 This SDK writer, writes carbondata file and carbonindex file at a given path.
 External client can make use of this writer to convert other format data or live data to create carbondata and index files.
-These SDK writer output contains just a carbondata and carbonindex files. No metadata folder will be present.
+These SDK writer output contains just carbondata and carbonindex files. No metadata folder will be present.
 
 ## Quick example
 
@@ -42,9 +71,9 @@ These SDK writer output contains just a carbondata and carbonindex files. No met
 
      CarbonProperties.getInstance().addProperty("enable.offheap.sort", enableOffheap);
  
-     CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
+     CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path).withCsvInput(schema).writtenBy("SDK");
  
-     CarbonWriter writer = builder.buildWriterForCSVInput(schema);
+     CarbonWriter writer = builder.build();
  
      int rows = 5;
      for (int i = 0; i < rows; i++) {
@@ -99,7 +128,7 @@ public class TestSdkAvro {
     try {
       CarbonWriter writer = CarbonWriter.builder()
           .outputPath(path)
-          .buildWriterForAvroInput(new org.apache.avro.Schema.Parser().parse(avroSchema));
+          .withAvroInput(new org.apache.avro.Schema.Parser().parse(avroSchema)).writtenBy("SDK").build();
 
       for (int i = 0; i < 100; i++) {
         writer.write(record);
@@ -130,7 +159,7 @@ public class TestSdkJson {
        testJsonSdkWriter();
    }
    
-   public void testJsonSdkWriter() throws InvalidLoadOptionException {
+   public static void testJsonSdkWriter() throws InvalidLoadOptionException {
     String path = "./target/testJsonSdkWriter";
 
     Field[] fields = new Field[2];
@@ -139,10 +168,10 @@ public class TestSdkJson {
 
     Schema CarbonSchema = new Schema(fields);
 
-    CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
+    CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path).withJsonInput(CarbonSchema).writtenBy("SDK");
 
     // initialize json writer with carbon schema
-    CarbonWriter writer = builder.buildWriterForJsonInput(CarbonSchema);
+    CarbonWriter writer = builder.build();
     // one row of json Data as String
     String  JsonRow = "{\"name\":\"abcd\", \"age\":10}";
 
@@ -156,23 +185,34 @@ public class TestSdkJson {
 ```
 
 ## Datatypes Mapping
-Each of SQL data types are mapped into data types of SDK. Following are the mapping:
+Each of SQL data types and Avro Data Types are mapped into data types of SDK. Following are the mapping:
 
-| SQL DataTypes | Mapped SDK DataTypes |
-|---------------|----------------------|
-| BOOLEAN | DataTypes.BOOLEAN |
-| SMALLINT | DataTypes.SHORT |
-| INTEGER | DataTypes.INT |
-| BIGINT | DataTypes.LONG |
-| DOUBLE | DataTypes.DOUBLE |
-| VARCHAR | DataTypes.STRING |
-| DATE | DataTypes.DATE |
-| TIMESTAMP | DataTypes.TIMESTAMP |
-| STRING | DataTypes.STRING |
-| DECIMAL | DataTypes.createDecimalType(precision, scale) |
+| SQL DataTypes | Avro DataTypes | Mapped SDK DataTypes |
+|---------------|----------------|----------------------|
+| BOOLEAN | BOOLEAN | DataTypes.BOOLEAN |
+| SMALLINT |  -  | DataTypes.SHORT |
+| INTEGER | INTEGER | DataTypes.INT |
+| BIGINT | LONG | DataTypes.LONG |
+| DOUBLE | DOUBLE | DataTypes.DOUBLE |
+| VARCHAR |  -  | DataTypes.STRING |
+| FLOAT | FLOAT | DataTypes.FLOAT |
+| BYTE |  -  | DataTypes.BYTE |
+| DATE | DATE | DataTypes.DATE |
+| TIMESTAMP |  -  | DataTypes.TIMESTAMP |
+| STRING | STRING | DataTypes.STRING |
+| DECIMAL | DECIMAL | DataTypes.createDecimalType(precision, scale) |
+| ARRAY | ARRAY | DataTypes.createArrayType(elementType) |
+| STRUCT | RECORD | DataTypes.createStructType(fields) |
+|  -  | ENUM | DataTypes.STRING |
+|  -  | UNION | DataTypes.createStructType(types) |
+|  -  | MAP | DataTypes.createMapType(keyType, valueType) |
+|  -  | TimeMillis | DataTypes.INT |
+|  -  | TimeMicros | DataTypes.LONG |
+|  -  | TimestampMillis | DataTypes.TIMESTAMP |
+|  -  | TimestampMicros | DataTypes.TIMESTAMP |
 
 **NOTE:**
- Carbon Supports below logical types of AVRO.
+ 1. Carbon Supports below logical types of AVRO.
  a. Date
     The date logical type represents a date within the calendar, with no reference to a particular time zone or time of day.
     A date logical type annotates an Avro int, where the int stores the number of days from the unix epoch, 1 January 1970 (ISO calendar). 
@@ -182,10 +222,22 @@ Each of SQL data types are mapped into data types of SDK. Following are the mapp
  c. Timestamp (microsecond precision)
     The timestamp-micros logical type represents an instant on the global timeline, independent of a particular time zone or calendar, with a precision of one microsecond.
     A timestamp-micros logical type annotates an Avro long, where the long stores the number of microseconds from the unix epoch, 1 January 1970 00:00:00.000000 UTC.
+ d. Decimal
+    The decimal logical type represents an arbitrary-precision signed decimal number of the form unscaled × 10-scale.
+    A decimal logical type annotates Avro bytes or fixed types. The byte array must contain the two's-complement representation of the unscaled integer value in big-endian byte order. The scale is fixed, and is specified using an attribute.
+ e. Time (millisecond precision)
+    The time-millis logical type represents a time of day, with no reference to a particular calendar, time zone or date, with a precision of one millisecond.
+    A time-millis logical type annotates an Avro int, where the int stores the number of milliseconds after midnight, 00:00:00.000.
+ f. Time (microsecond precision)
+    The time-micros logical type represents a time of day, with no reference to a particular calendar, time zone or date, with a precision of one microsecond.
+    A time-micros logical type annotates an Avro long, where the long stores the number of microseconds after midnight, 00:00:00.000000.
+
     
     Currently the values of logical types are not validated by carbon. 
-    Expect that avro record passed by the user is already validated by avro record generator tools.   
-
+    Expect that avro record passed by the user is already validated by avro record generator tools.    
+ 2. If the string data is more than 32K in length, use withTableProperties() with "long_string_columns" property
+    or directly use DataTypes.VARCHAR if it is carbon schema.
+ 3. Avro Bytes, Fixed and Duration data types are not yet supported.
 ## Run SQL on files directly
 Instead of creating table and query it, you can also query that file directly with SQL.
 
@@ -205,20 +257,6 @@ Find example code at [DirectSQLExample](https://github.com/apache/carbondata/blo
 * @return updated CarbonWriterBuilder
 */
 public CarbonWriterBuilder outputPath(String path);
-```
-
-```
-/**
-* If set false, writes the carbondata and carbonindex files in a flat folder structure
-* @param isTransactionalTable is a boolelan value
-*             if set to false, then writes the carbondata and carbonindex files
-*                                                            in a flat folder structure.
-*             if set to true, then writes the carbondata and carbonindex files
-*                                                            in segment folder structure..
-*             By default set to false.
-* @return updated CarbonWriterBuilder
-*/
-public CarbonWriterBuilder isTransactionalTable(boolean isTransactionalTable);
 ```
 
 ```
@@ -281,23 +319,13 @@ public CarbonWriterBuilder sortBy(String[] sortColumns);
 
 ```
 /**
-* If set, create a schema file in metadata folder.
-* @param persist is a boolean value, If set to true, creates a schema file in metadata folder.
-*                By default set to false. will not create metadata folder
-* @return updated CarbonWriterBuilder
-*/
-public CarbonWriterBuilder persistSchemaFile(boolean persist);
-```
-
-```
-/**
 * sets the taskNo for the writer. SDKs concurrently running
 * will set taskNo in order to avoid conflicts in file's name during write.
 * @param taskNo is the TaskNo user wants to specify.
 *               by default it is system time in nano seconds.
 * @return updated CarbonWriterBuilder
 */
-public CarbonWriterBuilder taskNo(String taskNo);
+public CarbonWriterBuilder taskNo(long taskNo);
 ```
 
 ```
@@ -314,7 +342,7 @@ public CarbonWriterBuilder taskNo(String taskNo);
 *                g. complex_delimiter_level_2 -- value to Split the nested complexTypeData
 *                h. quotechar
 *                i. escapechar
-*
+*                
 *                Default values are as follows.
 *
 *                a. bad_records_logger_enable -- "false"
@@ -334,35 +362,119 @@ public CarbonWriterBuilder withLoadOptions(Map<String, String> options);
 
 ```
 /**
-* Build a {@link CarbonWriter}, which accepts row in CSV format object
+* To support the table properties for sdk writer
+*
+* @param options key,value pair of create table properties.
+* supported keys values are
+* a. table_blocksize -- [1-2048] values in MB. Default value is 1024
+* b. table_blocklet_size -- values in MB. Default value is 64 MB
+* c. local_dictionary_threshold -- positive value, default is 10000
+* d. local_dictionary_enable -- true / false. Default is false
+* e. sort_columns -- comma separated column. "c1,c2". Default all dimensions are sorted.
+                     If empty string "" is passed. No columns are sorted
+* j. sort_scope -- "local_sort", "no_sort", "batch_sort". default value is "local_sort"
+* k. long_string_columns -- comma separated string columns which are more than 32k length. 
+*                           default value is null.
+* l. inverted_index -- comma separated string columns for which inverted index needs to be
+*                      generated
+*
+* @return updated CarbonWriterBuilder
+*/
+public CarbonWriterBuilder withTableProperties(Map<String, String> options);
+```
+
+```
+/**
+* To make sdk writer thread safe.
+*
+* @param numOfThreads should number of threads in which writer is called in multi-thread scenario
+*                     default sdk writer is not thread safe.
+*                     can use one writer instance in one thread only.
+* @return updated CarbonWriterBuilder
+*/
+public CarbonWriterBuilder withThreadSafe(short numOfThreads);
+```
+
+```
+/**
+* To support hadoop configuration
+*
+* @param conf hadoop configuration support, can set s3a AK,SK,end point and other conf with this
+* @return updated CarbonWriterBuilder
+*/
+public CarbonWriterBuilder withHadoopConf(Configuration conf)
+```
+
+```
+/**
+* to build a {@link CarbonWriter}, which accepts row in CSV format
+*
 * @param schema carbon Schema object {org.apache.carbondata.sdk.file.Schema}
-* @return CSVCarbonWriter
-* @throws IOException
-* @throws InvalidLoadOptionException
+* @return CarbonWriterBuilder
 */
-public CarbonWriter buildWriterForCSVInput() throws IOException, InvalidLoadOptionException;
+public CarbonWriterBuilder withCsvInput(Schema schema);
 ```
 
-```  
+```
 /**
-* Build a {@link CarbonWriter}, which accepts Avro format object
+* to build a {@link CarbonWriter}, which accepts Avro object
+*
 * @param avroSchema avro Schema object {org.apache.avro.Schema}
-* @return AvroCarbonWriter 
-* @throws IOException
-* @throws InvalidLoadOptionException
+* @return CarbonWriterBuilder
 */
-public CarbonWriter buildWriterForAvroInput() throws IOException, InvalidLoadOptionException;
+public CarbonWriterBuilder withAvroInput(org.apache.avro.Schema avroSchema);
 ```
 
 ```
 /**
-* Build a {@link CarbonWriter}, which accepts Json object
+* to build a {@link CarbonWriter}, which accepts Json object
+*
 * @param carbonSchema carbon Schema object
-* @return JsonCarbonWriter
+* @return CarbonWriterBuilder
+*/
+public CarbonWriterBuilder withJsonInput(Schema carbonSchema);
+```
+
+```
+/**
+* To support writing the ApplicationName which is writing the carbondata file
+* This is a mandatory API to call, else the build() call will fail with error.
+* @param application name which is writing the carbondata files
+* @return CarbonWriterBuilder
+*/
+public CarbonWriterBuilder writtenBy(String appName) {
+```
+
+```
+/**
+* sets the list of columns for which inverted index needs to generated
+* @param invertedIndexColumns is a string array of columns for which inverted index needs to
+* generated.
+* If it is null or an empty array, inverted index will be generated for none of the columns
+* @return updated CarbonWriterBuilder
+*/
+public CarbonWriterBuilder invertedIndexFor(String[] invertedIndexColumns);
+```
+
+```
+/**
+* Build a {@link CarbonWriter}
+* This writer is not thread safe,
+* use withThreadSafe() configuration in multi thread environment
+* 
+* @return CarbonWriter {AvroCarbonWriter/CSVCarbonWriter/JsonCarbonWriter based on Input Type }
 * @throws IOException
 * @throws InvalidLoadOptionException
 */
-public JsonCarbonWriter buildWriterForJsonInput(Schema carbonSchema);
+public CarbonWriter build() throws IOException, InvalidLoadOptionException;
+```
+
+```
+ /**
+   * Configure Row Record Reader for reading.
+   *
+   */
+  public CarbonReaderBuilder withRowRecordReader()
 ```
 
 ### Class org.apache.carbondata.sdk.file.CarbonWriter
@@ -373,7 +485,6 @@ public JsonCarbonWriter buildWriterForJsonInput(Schema carbonSchema);
 *                      which is one row of data.
 * If CSVCarbonWriter, object is of type String[], which is one row of data
 * If JsonCarbonWriter, object is of type String, which is one row of json
-* Note: This API is not thread safe
 * @param object
 * @throws IOException
 */
@@ -505,6 +616,26 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 ```
 
 ```
+/**
+  * Breaks the list of CarbonRecordReader in CarbonReader into multiple
+  * CarbonReader objects, each iterating through some 'carbondata' files
+  * and return that list of CarbonReader objects
+  *
+  * If the no. of files is greater than maxSplits, then break the
+  * CarbonReader into maxSplits splits, with each split iterating
+  * through >= 1 file.
+  *
+  * If the no. of files is less than maxSplits, then return list of
+  * CarbonReader with size as the no. of files, with each CarbonReader
+  * iterating through exactly one file
+  *
+  * @param maxSplits: Int
+  * @return list of CarbonReader objects
+  */
+  public List<CarbonReader> split(int maxSplits);
+``
+
+```
   /**
    * Return true if has next row
    */
@@ -547,19 +678,6 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 ```
 
 ```
-  /**
-   * Configure the transactional status of table
-   * If set to false, then reads the carbondata and carbonindex files from a flat folder structure.
-   * If set to true, then reads the carbondata and carbonindex files from segment folder structure.
-   * Default value is false
-   *
-   * @param isTransactionalTable whether is transactional table or not
-   * @return CarbonReaderBuilder object
-   */
-  public CarbonReaderBuilder isTransactionalTable(boolean isTransactionalTable);
-```
-
-```
  /**
   * Configure the filter expression for carbon reader
   *
@@ -570,66 +688,13 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 ```
 
 ```
-  /**
-   * Set the access key for S3
-   *
-   * @param key   the string of access key for different S3 type,like: fs.s3a.access.key
-   * @param value the value of access key
-   * @return CarbonWriterBuilder
-   */
-  public CarbonReaderBuilder setAccessKey(String key, String value);
-```
-
-```
-  /**
-   * Set the access key for S3.
-   *
-   * @param value the value of access key
-   * @return CarbonWriterBuilder object
-   */
-  public CarbonReaderBuilder setAccessKey(String value);
-```
-
-```
-  /**
-   * Set the secret key for S3
-   *
-   * @param key   the string of secret key for different S3 type,like: fs.s3a.secret.key
-   * @param value the value of secret key
-   * @return CarbonWriterBuilder object
-   */
-  public CarbonReaderBuilder setSecretKey(String key, String value);
-```
-
-```
-  /**
-   * Set the secret key for S3
-   *
-   * @param value the value of secret key
-   * @return CarbonWriterBuilder object
-   */
-  public CarbonReaderBuilder setSecretKey(String value);
-```
-
-```
- /**
-   * Set the endpoint for S3
-   *
-   * @param key   the string of endpoint for different S3 type,like: fs.s3a.endpoint
-   * @param value the value of endpoint
-   * @return CarbonWriterBuilder object
-   */
-  public CarbonReaderBuilder setEndPoint(String key, String value);
-```
-
-``` 
-  /**
-   * Set the endpoint for S3
-   *
-   * @param value the value of endpoint
-   * @return CarbonWriterBuilder object
-   */
-  public CarbonReaderBuilder setEndPoint(String value);
+/**
+ * To support hadoop configuration
+ *
+ * @param conf hadoop configuration support, can set s3a AK,SK,end point and other conf with this
+ * @return updated CarbonReaderBuilder
+ */
+ public CarbonReaderBuilder withHadoopConf(Configuration conf);
 ```
 
 ```
@@ -661,7 +726,6 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    *
    * @param dataFilePath complete path including carbondata file name
    * @return Schema object
-   * @throws IOException
    */
   public static Schema readSchemaInDataFile(String dataFilePath);
 ```
@@ -675,6 +739,43 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    * @throws IOException
    */
   public static Schema readSchemaInIndexFile(String indexFilePath);
+```
+```
+  /**
+   * read schema from path,
+   * path can be folder path,carbonindex file path, and carbondata file path
+   * and will not check all files schema
+   *
+   * @param path file/folder path
+   * @return schema
+   * @throws IOException
+   */
+  public static Schema readSchema(String path);
+```
+```
+  /**
+   * read schema from path,
+   * path can be folder path,carbonindex file path, and carbondata file path
+   * and user can decide whether check all files schema
+   *
+   * @param path             file/folder path
+   * @param validateSchema whether check all files schema
+   * @return schema
+   * @throws IOException
+   */
+  public static Schema readSchema(String path, boolean validateSchema);
+```
+
+```
+  /**
+   * This method return the version details in formatted string by reading from carbondata file
+   * If application name is SDK_1.0.0 and this has written the carbondata file in carbondata 1.6 project version,
+   * then this API returns the String "SDK_1.0.0 in version: 1.6.0-SNAPSHOT"
+   * @param dataFilePath complete path including carbondata file name
+   * @return string with information of who has written this file in which carbondata project version
+   * @throws IOException
+   */
+  public static String getVersionDetails(String dataFilePath);
 ```
 
 ### Class org.apache.carbondata.sdk.file.Schema
@@ -785,4 +886,5 @@ public String getProperty(String key);
 */
 public String getProperty(String key, String defaultValue);
 ```
-Reference : [list of carbon properties](http://carbondata.apache.org/configuration-parameters.html)
+Reference : [list of carbon properties](./configuration-parameters.md)
+

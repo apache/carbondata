@@ -21,11 +21,13 @@ import java.util
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.dev.DataMap
 import org.apache.carbondata.core.datamap.{DataMapChooser, DataMapStoreManager, Segment, TableDataMap}
 import org.apache.carbondata.core.datastore.block.SegmentPropertiesAndSchemaHolder
@@ -33,11 +35,14 @@ import org.apache.carbondata.core.indexstore.blockletindex.{BlockDataMap, Blockl
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema
 import org.apache.carbondata.core.indexstore.Blocklet
 import org.apache.carbondata.core.metadata.datatype.DataTypes
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope
 import org.apache.carbondata.core.scan.expression.conditional.NotEqualsExpression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.core.scan.expression.{ColumnExpression, LiteralExpression}
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * test class for validating COLUMN_META_CACHE and CACHE_LEVEL
@@ -49,6 +54,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
   }
 
   override def afterAll(): Unit = {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT,CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT)
     dropSchema
   }
 
@@ -86,7 +92,7 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
       expectedLength: Int, storeBlockletCount: Boolean = false): Boolean = {
     val index = dataMaps(0).asInstanceOf[BlockDataMap].getSegmentPropertiesIndex
     val summarySchema = SegmentPropertiesAndSchemaHolder.getInstance()
-      .getSegmentPropertiesWrapper(index).getTaskSummarySchema(storeBlockletCount, false)
+      .getSegmentPropertiesWrapper(index).getTaskSummarySchemaForBlock(storeBlockletCount, false)
     val minSchemas = summarySchema(0).asInstanceOf[CarbonRowSchema.StructCarbonRowSchema]
       .getChildSchemas
     minSchemas.length == expectedLength
@@ -300,9 +306,11 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
     val notEqualsExpression = new NotEqualsExpression(columnExpression, literalNullExpression)
     val equalsExpression = new NotEqualsExpression(columnExpression, literalValueExpression)
     val andExpression = new AndExpression(notEqualsExpression, equalsExpression)
-    val resolveFilter: FilterResolverIntf = carbonTable.resolveFilter(andExpression)
+    val resolveFilter: FilterResolverIntf =
+      CarbonTable.resolveFilter(andExpression, carbonTable.getAbsoluteTableIdentifier)
     val exprWrapper = DataMapChooser.getDefaultDataMap(carbonTable, resolveFilter)
-    val segment = new Segment("0")
+    val segment = new Segment("0", new TableStatusReadCommittedScope(carbonTable
+      .getAbsoluteTableIdentifier, new Configuration(false)))
     // get the pruned blocklets
     val prunedBlocklets = exprWrapper.prune(List(segment).asJava, null)
     prunedBlocklets.asScala.foreach { blocklet =>
@@ -310,5 +318,53 @@ class TestQueryWithColumnMetCacheAndCacheLevelProperty extends QueryTest with Be
       assert(blocklet.getDetailInfo.isUseMinMaxForPruning)
     }
   }
+
+  test("Test For Cache set but Min/Max exceeds") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT, "30")
+    sql("DROP TABLE IF EXISTS carbonCache")
+    sql(
+      s"""
+         | CREATE TABLE carbonCache (
+         | name STRING,
+         | age STRING,
+         | desc STRING
+         | )
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('COLUMN_META_CACHE'='name,desc')
+       """.stripMargin)
+    sql(
+      "INSERT INTO carbonCache values('Manish Nalla','24'," +
+      "'gvsahgvsahjvcsahjgvavacavkjvaskjvsahgsvagkjvkjgvsackjg')")
+    checkAnswer(sql(
+      "SELECT count(*) FROM carbonCache where " +
+      "desc='gvsahgvsahjvcsahjgvavacavkjvaskjvsahgsvagkjvkjgvsackjg'"),
+      Row(1))
+    sql("DROP table IF EXISTS carbonCahe")
+  }
+  test("Test For Cache set but Min/Max exceeds with Cache Level as Blocklet") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT, "30")
+    sql("DROP TABLE IF EXISTS carbonCache")
+    sql(
+      s"""
+         | CREATE TABLE carbonCache (
+         | name STRING,
+         | age STRING,
+         | desc STRING
+         | )
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('COLUMN_META_CACHE'='name,desc','CACHE_LEVEL'='BLOCKLET')
+       """.stripMargin)
+    sql(
+      "INSERT INTO carbonCache values('Manish Nalla','24'," +
+      "'gvsahgvsahjvcsahjgvavacavkjvaskjvsahgsvagkjvkjgvsackjg')")
+    checkAnswer(sql(
+      "SELECT count(*) FROM carbonCache where " +
+      "desc='gvsahgvsahjvcsahjgvavacavkjvaskjvsahgsvagkjvkjgvsackjg'"),
+      Row(1))
+    sql("DROP table IF EXISTS carbonCahe")
+  }
+
 
 }

@@ -27,7 +27,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
  * example: bloom datamap, Lucene datamap
  */
 case class CreateDataMapPostExecutionEvent(sparkSession: SparkSession,
-    storePath: String, tableIdentifier: TableIdentifier)
+    storePath: String, tableIdentifier: Option[TableIdentifier], dmProviderName: String)
   extends Event with CreateDataMapEventsInfo
 
 /**
@@ -58,9 +58,17 @@ case class BuildDataMapPreExecutionEvent(sparkSession: SparkSession,
 /**
  * For handling operation's after finish of index build over table with index datamap
  * example: bloom datamap, Lucene datamap
+ *
+ * @param sparkSession
+ * @param identifier
+ * @param dmName set to specify datamap name in rebuild process;
+ *               set to Null in loading and compaction and it will deal all datamaps
+ * @param segmentIdList
+ * @param isFromRebuild set to false in loading process for skipping lazy datamap
  */
 case class BuildDataMapPostExecutionEvent(sparkSession: SparkSession,
-    identifier: AbsoluteTableIdentifier)
+    identifier: AbsoluteTableIdentifier, dmName: String,
+    segmentIdList: Seq[String], isFromRebuild: Boolean)
   extends Event with TableEventInfo
 
 /**

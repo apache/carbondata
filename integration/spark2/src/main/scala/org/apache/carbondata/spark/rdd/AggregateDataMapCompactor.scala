@@ -130,8 +130,6 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
                                   carbonLoadModel.getTableName)
         LOGGER
           .info(s"Compaction request for datamap ${ carbonTable.getTableUniqueName } is successful")
-        LOGGER
-          .audit(s"Compaction request for datamap ${carbonTable.getTableUniqueName} is successful")
       }
     }
   }

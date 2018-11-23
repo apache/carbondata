@@ -17,8 +17,10 @@
 package org.apache.carbondata.core.datamap.dev;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
@@ -26,6 +28,7 @@ import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapLevel;
 import org.apache.carbondata.core.datamap.DataMapMeta;
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -51,6 +54,10 @@ public abstract class DataMapFactory<T extends DataMap> {
     return carbonTable;
   }
 
+  public void setCarbonTable(CarbonTable carbonTable) {
+    this.carbonTable = carbonTable;
+  }
+
   public DataMapSchema getDataMapSchema() {
     return dataMapSchema;
   }
@@ -67,6 +74,19 @@ public abstract class DataMapFactory<T extends DataMap> {
    */
   public abstract DataMapBuilder createBuilder(Segment segment, String shardName,
       SegmentProperties segmentProperties) throws IOException;
+
+  /**
+   * Get the datamap for all segments
+   */
+  public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments)
+      throws IOException {
+    Map<Segment, List<CoarseGrainDataMap>> dataMaps = new HashMap<>();
+    for (Segment segment : segments) {
+      dataMaps.put(segment, (List<CoarseGrainDataMap>) this.getDataMaps(segment));
+    }
+    return dataMaps;
+  }
+
   /**
    * Get the datamap for segmentid
    */
@@ -157,4 +177,10 @@ public abstract class DataMapFactory<T extends DataMap> {
     return false;
   }
 
+  /**
+   * whether this datamap support rebuild
+   */
+  public boolean supportRebuild() {
+    return false;
+  }
 }

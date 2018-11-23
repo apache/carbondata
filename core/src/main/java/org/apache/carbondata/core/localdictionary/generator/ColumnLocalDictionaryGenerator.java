@@ -33,8 +33,6 @@ public class ColumnLocalDictionaryGenerator implements LocalDictionaryGenerator 
    */
   private DictionaryStore dictionaryHolder;
 
-  private long currentSize;
-
   public ColumnLocalDictionaryGenerator(int threshold, int lvLength) {
     // adding 1 to threshold for null value
     int newThreshold = threshold + 1;
@@ -54,7 +52,6 @@ public class ColumnLocalDictionaryGenerator implements LocalDictionaryGenerator 
     } catch (DictionaryThresholdReachedException e) {
       // do nothing
     }
-    currentSize += byteBuffer.array().length;
   }
 
   /**
@@ -64,11 +61,6 @@ public class ColumnLocalDictionaryGenerator implements LocalDictionaryGenerator 
    * @return dictionary value
    */
   @Override public int generateDictionary(byte[] data) throws DictionaryThresholdReachedException {
-    currentSize += data.length;
-    if (currentSize >= Integer.MAX_VALUE) {
-      throw new DictionaryThresholdReachedException(
-          "Unable to generate dictionary. Dictionary Size crossed 2GB limit");
-    }
     return this.dictionaryHolder.putIfAbsent(data);
   }
 

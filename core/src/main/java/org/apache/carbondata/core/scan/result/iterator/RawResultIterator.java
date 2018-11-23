@@ -24,7 +24,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -33,17 +32,14 @@ import org.apache.carbondata.core.scan.result.RowBatch;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+import org.apache.log4j.Logger;
+
 /**
  * This is a wrapper iterator over the detail raw query iterator.
  * This iterator will handle the processing of the raw rows.
  * This will handle the batch results and will iterate on the batches and give single row.
  */
 public class RawResultIterator extends CarbonIterator<Object[]> {
-  /**
-   * LOGGER
-   */
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(RawResultIterator.class.getName());
 
   private final SegmentProperties sourceSegProperties;
 
@@ -62,15 +58,21 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
   private Object[] currentRawRow = null;
   private boolean isBackupFilled = false;
 
+  /**
+   * LOGGER
+   */
+  private static final Logger LOGGER =
+      LogServiceFactory.getLogService(RawResultIterator.class.getName());
+
   public RawResultIterator(CarbonIterator<RowBatch> detailRawQueryResultIterator,
       SegmentProperties sourceSegProperties, SegmentProperties destinationSegProperties,
-      boolean isStreamingHandOff) {
+      boolean isStreamingHandoff) {
     this.detailRawQueryResultIterator = detailRawQueryResultIterator;
     this.sourceSegProperties = sourceSegProperties;
     this.destinationSegProperties = destinationSegProperties;
     this.executorService = Executors.newFixedThreadPool(1);
 
-    if (!isStreamingHandOff) {
+    if (!isStreamingHandoff) {
       init();
     }
   }
@@ -85,7 +87,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
         this.fetchFuture = executorService.submit(new RowsFetcher(true));
       }
     } catch (Exception e) {
-      LOGGER.error(e, "Error occurs while fetching records");
+      LOGGER.error("Error occurs while fetching records", e);
       throw new RuntimeException(e);
     }
   }
@@ -112,12 +114,14 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
     }
   }
 
-  private List<Object[]> fetchRows() {
+  private List<Object[]> fetchRows() throws Exception {
+    List<Object[]> converted = new ArrayList<>();
     if (detailRawQueryResultIterator.hasNext()) {
-      return detailRawQueryResultIterator.next().getRows();
-    } else {
-      return new ArrayList<>();
+      for (Object[] r : detailRawQueryResultIterator.next().getRows()) {
+        converted.add(convertRow(r));
+      }
     }
+    return converted;
   }
 
   private void fillDataFromPrefetch() {
@@ -129,6 +133,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
           }
           // copy backup buffer to current buffer and fill backup buffer asyn
           currentIdxInBuffer = 0;
+          currentBuffer.clear();
           currentBuffer = backupBuffer;
           isBackupFilled = false;
           fetchFuture = executorService.submit(new RowsFetcher(true));
@@ -173,8 +178,8 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
   public Object[] next() {
     try {
       popRow();
-      return convertRow(this.currentRawRow);
-    } catch (KeyGenException e) {
+      return this.currentRawRow;
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
@@ -185,15 +190,15 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
    */
   public Object[] fetchConverted() throws KeyGenException {
     pickRow();
-    return convertRow(this.currentRawRow);
+    return this.currentRawRow;
   }
 
   private Object[] convertRow(Object[] rawRow) throws KeyGenException {
     byte[] dims = ((ByteArrayWrapper) rawRow[0]).getDictionaryKey();
     long[] keyArray = sourceSegProperties.getDimensionKeyGenerator().getKeyArray(dims);
-    byte[] convertedBytes =
+    byte[] covertedBytes =
         destinationSegProperties.getDimensionKeyGenerator().generateKey(keyArray);
-    ((ByteArrayWrapper) rawRow[0]).setDictionaryKey(convertedBytes);
+    ((ByteArrayWrapper) rawRow[0]).setDictionaryKey(covertedBytes);
     return rawRow;
   }
 

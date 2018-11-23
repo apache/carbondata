@@ -53,7 +53,7 @@ class QueryTest extends PlanTest {
    * @param keywords keyword in string array
    */
   def checkExistence(df: DataFrame, exists: Boolean, keywords: String*) {
-    val outputs = df.collect().map(_.mkString).mkString
+    val outputs = df.collect().map(_.mkString(" ")).mkString(" ")
     for (key <- keywords) {
       if (exists) {
         assert(outputs.contains(key), s"Failed for $df ($key doesn't exist in result)")

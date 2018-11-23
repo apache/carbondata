@@ -30,7 +30,17 @@ public abstract class AbstractCarbonLock implements ICarbonLock {
 
   private int retryTimeout;
 
+  /**
+   * lockFilePath is the location of the lock file.
+   */
+  protected String lockFilePath;
+
   public abstract boolean lock();
+
+  @Override
+  public String getLockFilePath() {
+    return this.lockFilePath;
+  }
 
   /**
    * API for enabling the locking of file with retries.

@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.parser
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.antlr.v4.runtime.tree.TerminalNode
@@ -27,8 +28,7 @@ import org.apache.spark.sql.catalyst.parser.ParserUtils.operationNotAllowed
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{PartitionerField, TableModel, TableNewProcessor}
-import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand,
-CarbonCreateTableCommand}
+import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand, CarbonCreateTableCommand}
 import org.apache.spark.sql.types.StructField
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -37,6 +37,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.SchemaReader
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
@@ -122,11 +123,28 @@ object CarbonSparkSqlParserUtil {
     if (partitionFields.nonEmpty && options.isStreaming) {
       operationNotAllowed("Streaming is not allowed on partitioned table", partitionColumns)
     }
+
+    if (external && fields.isEmpty && tableProperties.nonEmpty) {
+      // as fields are always zero for external table, cannot validate table properties.
+      operationNotAllowed(
+        "table properties are not supported for external table", tablePropertyList)
+    }
+
     // validate tblProperties
     val bucketFields = parser.getBucketFields(tableProperties, fields, options)
     var isTransactionalTable: Boolean = true
 
     val tableInfo = if (external) {
+      if (fields.nonEmpty) {
+        // user provided schema for this external table, this is not allow currently
+        // see CARBONDATA-2866
+        operationNotAllowed(
+          "Schema must not be specified for external table", columns)
+      }
+      if (partitionByStructFields.nonEmpty) {
+        operationNotAllowed(
+          "Partition is not supported for external table", partitionColumns)
+      }
       // read table info from schema file in the provided table path
       // external table also must convert table name to lower case
       val identifier = AbsoluteTableIdentifier.from(
@@ -142,15 +160,14 @@ object CarbonSparkSqlParserUtil {
             isTransactionalTable = false
             SchemaReader.inferSchema(identifier, false)
           }
-        }
-        else {
+        } else {
           SchemaReader.getTableInfo(identifier)
         }
-      }
-      catch {
+      } catch {
         case e: Throwable =>
           operationNotAllowed(s"Invalid table path provided: ${ tablePath.get } ", tableHeader)
       }
+
       // set "_external" property, so that DROP TABLE will not delete the data
       if (provider.equalsIgnoreCase("'carbonfile'")) {
         table.getFactTable.getTableProperties.put("_filelevelformat", "true")
@@ -164,7 +181,9 @@ object CarbonSparkSqlParserUtil {
       if (null == isLocalDic_enabled) {
         table.getFactTable.getTableProperties
           .put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
-            CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
+            CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE,
+                CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT))
       }
       isLocalDic_enabled = table.getFactTable.getTableProperties
         .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)

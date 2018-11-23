@@ -17,11 +17,12 @@
 
 package org.apache.carbondata.spark.rdd
 
-import org.apache.spark.{Partition, SparkContext, TaskContext}
+import org.apache.spark.{Partition, TaskContext}
+import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.statusmanager.SegmentStatus
@@ -44,12 +45,13 @@ class DropColumnPartition(rddId: Int, idx: Int, schema: ColumnSchema) extends Pa
 /**
  * This class is aimed at generating dictionary file for the newly added columns
  */
-class AlterTableDropColumnRDD[K, V](sc: SparkContext,
-    @transient newColumns: Seq[ColumnSchema],
+class AlterTableDropColumnRDD[K, V](
+    @transient private val ss: SparkSession,
+    @transient private val newColumns: Seq[ColumnSchema],
     carbonTableIdentifier: AbsoluteTableIdentifier)
-  extends CarbonRDD[(Int, SegmentStatus)](sc, Nil, sc.hadoopConfiguration) {
+  extends CarbonRDD[(Int, SegmentStatus)](ss, Nil) {
 
-  override def getPartitions: Array[Partition] = {
+  override def internalGetPartitions: Array[Partition] = {
     newColumns.zipWithIndex.map { column =>
       new DropColumnPartition(id, column._2, column._1)
     }.toArray
@@ -69,7 +71,7 @@ class AlterTableDropColumnRDD[K, V](sc: SparkContext,
         }
       } catch {
         case ex: Exception =>
-          LOGGER.error(ex, ex.getMessage)
+          LOGGER.error(ex.getMessage, ex)
           throw ex
       }
 

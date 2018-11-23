@@ -17,10 +17,16 @@
 
 package org.apache.carbondata.core.datastore.chunk.store.impl;
 
+import java.util.BitSet;
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionDataChunkStore;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertableVector;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * Dimension chunk store for local dictionary encoded data.
@@ -32,10 +38,13 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
 
   private CarbonDictionary dictionary;
 
+  private int dataLength;
+
   public LocalDictDimensionDataChunkStore(DimensionDataChunkStore dimensionDataChunkStore,
-      CarbonDictionary dictionary) {
+      CarbonDictionary dictionary, int dataLength) {
     this.dimensionDataChunkStore = dimensionDataChunkStore;
     this.dictionary = dictionary;
+    this.dataLength = dataLength;
   }
 
   /**
@@ -47,6 +56,37 @@ public class LocalDictDimensionDataChunkStore implements DimensionDataChunkStore
    */
   public void putArray(int[] invertedIndex, int[] invertedIndexReverse, byte[] data) {
     this.dimensionDataChunkStore.putArray(invertedIndex, invertedIndexReverse, data);
+  }
+
+  @Override
+  public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+      ColumnVectorInfo vectorInfo) {
+    int columnValueSize = dimensionDataChunkStore.getColumnValueSize();
+    int rowsNum = dataLength / columnValueSize;
+    CarbonColumnVector vector = vectorInfo.vector;
+    if (!dictionary.isDictionaryUsed()) {
+      vector.setDictionary(dictionary);
+      dictionary.setDictionaryUsed();
+    }
+    BitSet nullBitset = new BitSet();
+    CarbonColumnVector dictionaryVector = ColumnarVectorWrapperDirectFactory
+        .getDirectVectorWrapperFactory(vector.getDictionaryVector(), invertedIndex, nullBitset,
+            vectorInfo.deletedRows, false, true);
+    vector = ColumnarVectorWrapperDirectFactory
+        .getDirectVectorWrapperFactory(vector, invertedIndex, nullBitset, vectorInfo.deletedRows,
+            false, false);
+    for (int i = 0; i < rowsNum; i++) {
+      int surrogate = CarbonUtil.getSurrogateInternal(data, i * columnValueSize, columnValueSize);
+      if (surrogate == CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY) {
+        vector.putNull(i);
+        dictionaryVector.putNull(i);
+      } else {
+        dictionaryVector.putInt(i, surrogate);
+      }
+    }
+    if (dictionaryVector instanceof ConvertableVector) {
+      ((ConvertableVector) dictionaryVector).convert();
+    }
   }
 
   @Override public byte[] getRow(int rowId) {

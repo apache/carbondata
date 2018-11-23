@@ -18,7 +18,6 @@ package org.apache.carbondata.spark.dictionary.client;
 
 import java.nio.charset.Charset;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
@@ -26,6 +25,7 @@ import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 
 import com.google.common.collect.Lists;
 import io.netty.channel.nio.NioEventLoopGroup;
+import org.apache.log4j.Logger;
 import org.apache.spark.SecurityManager;
 import org.apache.spark.SparkConf;
 import org.apache.spark.network.TransportContext;
@@ -41,7 +41,7 @@ import org.apache.spark.network.util.TransportConf;
  */
 public class SecureDictionaryClient implements DictionaryClient {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(SecureDictionaryClient.class.getName());
 
   private SecureDictionaryClientHandler dictionaryClientHandler =
@@ -59,7 +59,7 @@ public class SecureDictionaryClient implements DictionaryClient {
    */
   @Override public void startClient(String secretKey, String address, int port,
       boolean encryptSecureServer) {
-    LOGGER.audit("Starting client on " + address + " " + port);
+    LOGGER.info("Starting client on " + address + " " + port);
     long start = System.currentTimeMillis();
 
     SecurityManager securityMgr;
@@ -91,7 +91,7 @@ public class SecureDictionaryClient implements DictionaryClient {
     try {
       client = clientFactory.createClient(address, port);
     } catch (Exception e) {
-      LOGGER.error(e, "Dictionary Client Failed to bind to port:");
+      LOGGER.error("Dictionary Client Failed to bind to port:", e);
     }
     LOGGER.info(
         "Dictionary client Started, Total time spent : " + (System.currentTimeMillis() - start));

@@ -39,12 +39,16 @@ public class JsonInputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   private CarbonIterator<Object[]>[] inputIterators;
 
-  boolean isRawDataRequired = false;
+  private boolean isRawDataRequired = false;
+
+  // cores used in SDK writer, set by the user
+  private short sdkWriterCores;
 
   public JsonInputProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       CarbonIterator<Object[]>[] inputIterators) {
     super(configuration, null);
     this.inputIterators = inputIterators;
+    sdkWriterCores = configuration.getWritingCoresCount();
   }
 
   @Override public DataField[] getOutput() {
@@ -61,7 +65,7 @@ public class JsonInputProcessorStepImpl extends AbstractDataLoadProcessorStep {
   @Override public Iterator<CarbonRowBatch>[] execute() {
     int batchSize = CarbonProperties.getInstance().getBatchSize();
     List<CarbonIterator<Object[]>>[] readerIterators =
-        CarbonDataProcessorUtil.partitionInputReaderIterators(inputIterators);
+        CarbonDataProcessorUtil.partitionInputReaderIterators(inputIterators, sdkWriterCores);
     Iterator<CarbonRowBatch>[] outIterators = new Iterator[readerIterators.length];
     for (int i = 0; i < outIterators.length; i++) {
       outIterators[i] =

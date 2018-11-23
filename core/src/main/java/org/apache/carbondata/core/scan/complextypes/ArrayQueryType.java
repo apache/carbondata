@@ -88,6 +88,14 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
   }
 
   @Override public Object getDataBasedOnDataType(ByteBuffer dataBuffer) {
+    Object[] data = fillData(dataBuffer);
+    if (data == null) {
+      return null;
+    }
+    return DataTypeUtil.getDataTypeConverter().wrapWithGenericArrayData(data);
+  }
+
+  protected Object[] fillData(ByteBuffer dataBuffer) {
     int dataLength = dataBuffer.getInt();
     if (dataLength == -1) {
       return null;
@@ -96,7 +104,7 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     for (int i = 0; i < dataLength; i++) {
       data[i] = children.getDataBasedOnDataType(dataBuffer);
     }
-    return DataTypeUtil.getDataTypeConverter().wrapWithGenericArrayData(data);
+    return data;
   }
 
   @Override public Object getDataBasedOnColumn(ByteBuffer dataBuffer, CarbonDimension parent,

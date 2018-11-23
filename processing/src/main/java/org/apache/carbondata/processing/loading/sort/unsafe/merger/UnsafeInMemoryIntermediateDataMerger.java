@@ -26,7 +26,6 @@ import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.concurrent.Callable;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -39,11 +38,13 @@ import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeInmemor
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
 
+import org.apache.log4j.Logger;
+
 public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(UnsafeInMemoryIntermediateDataMerger.class.getName());
 
   /**
@@ -117,7 +118,7 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
             + ", containing rows: " + totalSize);
       }
     } catch (Exception e) {
-      LOGGER.error(e, "Problem while intermediate merging");
+      LOGGER.error("Problem while intermediate merging", e);
       throw e;
     } finally {
       if (spillDisk) {

@@ -28,8 +28,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 public class UnsafeVariableShortLengthDimensionDataChunkStore
     extends UnsafeVariableLengthDimensionDataChunkStore {
   public UnsafeVariableShortLengthDimensionDataChunkStore(long totalSize, boolean isInvertedIdex,
-      int numberOfRows) {
-    super(totalSize, isInvertedIdex, numberOfRows);
+      int numberOfRows, int dataLength) {
+    super(totalSize, isInvertedIdex, numberOfRows, dataLength);
   }
 
   @Override

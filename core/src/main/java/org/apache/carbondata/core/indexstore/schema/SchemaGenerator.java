@@ -56,6 +56,9 @@ public class SchemaGenerator {
     indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
     // for storing block length.
     indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.LONG));
+    // for storing min max flag for each column which reflects whether min max for a column is
+    // written in the metadata or not.
+    addMinMaxFlagSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
     CarbonRowSchema[] schema = indexSchemas.toArray(new CarbonRowSchema[indexSchemas.size()]);
     return schema;
   }
@@ -85,6 +88,9 @@ public class SchemaGenerator {
     indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
     // for storing block length.
     indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.LONG));
+    // for storing min max flag for each column which reflects whether min max for a column is
+    // written in the metadata or not.
+    addMinMaxFlagSchema(segmentProperties, indexSchemas, minMaxCacheColumns);
     //for blocklet info
     indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
     // for number of pages.
@@ -115,6 +121,9 @@ public class SchemaGenerator {
     // for storing segmentid
     taskMinMaxSchemas
         .add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
+    // for storing min max flag for each column which reflects whether min max for a column is
+    // written in the metadata or not.
+    addMinMaxFlagSchema(segmentProperties, taskMinMaxSchemas, minMaxCacheColumns);
     // store path only in case of partition table or non transactional table
     if (filePathToBeStored) {
       // for storing file path
@@ -166,6 +175,28 @@ public class SchemaGenerator {
               mapSchemas);
       minMaxSchemas.add(mapSchema);
     }
+  }
+
+  /**
+   * Method to add min max flag schema for all the dimensions
+   * @param segmentProperties
+   * @param indexSchemas
+   * @param minMaxCacheColumns
+   */
+  private static void addMinMaxFlagSchema(SegmentProperties segmentProperties,
+      List<CarbonRowSchema> indexSchemas, List<CarbonColumn> minMaxCacheColumns) {
+    int minMaxFlagLength = segmentProperties.getColumnsValueSize().length;
+    if (null != minMaxCacheColumns) {
+      minMaxFlagLength = minMaxCacheColumns.size();
+    }
+    CarbonRowSchema[] minMaxFlagSchemas = new CarbonRowSchema[minMaxFlagLength];
+    for (int i = 0; i < minMaxFlagLength; i++) {
+      minMaxFlagSchemas[i] = new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.BOOLEAN);
+    }
+    CarbonRowSchema structMinMaxFlagSchema =
+        new CarbonRowSchema.StructCarbonRowSchema(DataTypes.createDefaultStructType(),
+            minMaxFlagSchemas);
+    indexSchemas.add(structMinMaxFlagSchema);
   }
 
   /**

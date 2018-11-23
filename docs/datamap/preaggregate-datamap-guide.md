@@ -1,3 +1,20 @@
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one or more 
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership. 
+    The ASF licenses this file to you under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with 
+    the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software 
+    distributed under the License is distributed on an "AS IS" BASIS, 
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and 
+    limitations under the License.
+-->
+
 # CarbonData Pre-aggregate DataMap
   
 * [Quick Example](#quick-example)
@@ -47,7 +64,7 @@ Start spark-shell in new terminal, type :paste, then copy and run the following 
       | country string,
       | quantity int,
       | price bigint)
-      | STORED BY 'carbondata'
+      | STORED AS carbondata
     """.stripMargin)
  
  // Create pre-aggregate table on the main table
@@ -109,7 +126,7 @@ kinds of DataMap:
    a. 'path' is used to specify the store location of the datamap.('path'='/location/').
    b. 'partitioning' when set to false enables user to disable partitioning of the datamap.
        Default value is true for this property.
-2. timeseries, for timeseries roll-up table. Please refer to [Timeseries DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/timeseries-datamap-guide.md)
+2. timeseries, for timeseries roll-up table. Please refer to [Timeseries DataMap](./timeseries-datamap-guide.md)
 
 DataMap can be dropped using following DDL
   ```
@@ -145,7 +162,7 @@ It will show all DataMaps created on main table.
     country string,
     quantity int,
     price bigint)
-  STORED BY 'carbondata'
+  STORED AS carbondata
   ```
   
   User can create pre-aggregate tables using the Create DataMap DDL
@@ -234,7 +251,7 @@ pre-aggregate tables. To further improve the query performance, compaction on pr
 can be triggered to merge the segments and files in the pre-aggregate tables. 
 
 ## Data Management with pre-aggregate tables
-In current implementation, data consistence need to be maintained for both main table and pre-aggregate
+In current implementation, data consistency needs to be maintained for both main table and pre-aggregate
 tables. Once there is pre-aggregate table created on the main table, following command on the main 
 table
 is not supported:
@@ -252,5 +269,4 @@ release, user can do as following:
 2. Carry out the data management operation on main table
 3. Create the pre-aggregate table again by `CREATE DATAMAP` command
 Basically, user can manually trigger the operation by re-building the datamap.
-
 

@@ -44,6 +44,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 import org.apache.carbondata.streaming.{CarbonStreamException, CarbonStreamingQueryListener, StreamSinkFactory}
@@ -56,6 +57,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
   with SchemaRelationProvider with StreamSinkProvider with DataSourceRegister {
 
   override def shortName(): String = "carbondata"
+  private val LOGGER = LogServiceFactory.getLogService(CarbonSource.getClass.getName)
 
   // will be called if hive supported create table command is provided
   override def createRelation(sqlContext: SQLContext,
@@ -142,7 +144,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       .exists(_.table.equalsIgnoreCase(tableName))) {
         getPathForTable(sqlContext.sparkSession, dbName, tableName, newParameters)
     } else {
-        createTableIfNotExists(sqlContext.sparkSession, newParameters, dataSchema)
+      createTableIfNotExists(sqlContext.sparkSession, dbName, tableName, newParameters, dataSchema)
     }
 
     CarbonDatasourceHadoopRelation(sqlContext.sparkSession, Array(path), updatedParams,
@@ -159,6 +161,8 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
 
   private def createTableIfNotExists(
       sparkSession: SparkSession,
+      dbName: String,
+      tableName: String,
       parameters: Map[String, String],
       dataSchema: StructType): (String, Map[String, String]) = {
 
@@ -166,10 +170,18 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     val tableName: String = parameters.getOrElse("tableName", "").toLowerCase
 
     try {
-      val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
-      (carbonTable.getTablePath, parameters)
+      if (!(parameters.contains("carbonSchemaPartsNo")
+        || parameters.contains("carbonschemapartsno"))) {
+        val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
+        (carbonTable.getTablePath, parameters)
+      } else {
+        (getPathForTable(sparkSession, dbName, tableName, parameters))
+      }
+
     } catch {
       case _: NoSuchTableException =>
+        LOGGER.warn("Carbon Table [" +dbName +"] [" +tableName +"] is not found, " +
+          "Now existing Schema will be overwritten with default properties")
         val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
         val identifier = AbsoluteTableIdentifier.from(
           CarbonEnv.getTablePath(Some(dbName), tableName)(sparkSession),
@@ -323,9 +335,7 @@ object CarbonSource {
       tableDesc.copy(storage = updatedFormat)
     } else {
       val tableInfo = CarbonUtil.convertGsonToTableInfo(properties.asJava)
-      val isExternal = properties.getOrElse("isExternal", "false")
-      val isTransactionalTable = properties.getOrElse("isTransactional", "true")
-        .contains("true")
+      val isTransactionalTable = properties.getOrElse("isTransactional", "true").contains("true")
       tableInfo.setTransactionalTable(isTransactionalTable)
       if (isTransactionalTable && !metaStore.isReadFromHiveMetaStore) {
         // save to disk
@@ -349,10 +359,7 @@ object CarbonSource {
       query: Option[LogicalPlan]): Map[String, String] = {
     val model = createTableInfoFromParams(properties, dataSchema, identifier, query, sparkSession)
     val tableInfo: TableInfo = TableNewProcessor(model)
-    val isExternal = properties.getOrElse("isExternal", "false")
-    val isTransactionalTable = properties.getOrElse("isTransactional", "true")
-      .contains("true")
-    val tablePath = properties.getOrElse("path", "")
+    val isTransactionalTable = properties.getOrElse("isTransactional", "true").contains("true")
     tableInfo.setTablePath(identifier.getTablePath)
     tableInfo.setTransactionalTable(isTransactionalTable)
     tableInfo.setDatabaseName(identifier.getDatabaseName)

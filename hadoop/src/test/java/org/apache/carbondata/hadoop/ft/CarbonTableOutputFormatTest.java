@@ -53,8 +53,11 @@ public class CarbonTableOutputFormatTest {
         addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords");
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, "/tmp/carbon/");
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, "CarbonTableOutputFormatTest");
     try {
-      carbonLoadModel = StoreCreator.createTableAndLoadModel();
+      carbonLoadModel = new StoreCreator(new File("target/store").getAbsolutePath(),
+          new File("../hadoop/src/test/resources/data.csv").getCanonicalPath()).createTableAndLoadModel();
     } catch (Exception e) {
       Assert.fail("create table failed: " + e.getMessage());
     }

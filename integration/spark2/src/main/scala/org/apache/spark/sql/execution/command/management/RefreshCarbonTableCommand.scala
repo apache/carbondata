@@ -20,6 +20,7 @@ package org.apache.spark.sql.execution.command.management
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -27,7 +28,7 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, MetadataCommand}
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 
-import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.indexstore.PartitionSpec
@@ -47,12 +48,12 @@ case class RefreshCarbonTableCommand(
     databaseNameOp: Option[String],
     tableName: String)
   extends MetadataCommand {
-  val LOGGER: LogService =
-    LogServiceFactory.getLogService(this.getClass.getName)
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val databaseName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
+    setAuditTable(databaseName, tableName)
     // Steps
     // 1. get table path
     // 2. perform the below steps
@@ -62,8 +63,8 @@ case class RefreshCarbonTableCommand(
     // then do the below steps
     // 2.2.1 validate that all the aggregate tables are copied at the store location.
     // 2.2.2 Register the aggregate tables
-    val tablePath = CarbonEnv.getTablePath(databaseNameOp, tableName)(sparkSession)
-    val identifier = AbsoluteTableIdentifier.from(tablePath, databaseName, tableName)
+    val tablePath = CarbonEnv.getTablePath(databaseNameOp, tableName.toLowerCase)(sparkSession)
+    val identifier = AbsoluteTableIdentifier.from(tablePath, databaseName, tableName.toLowerCase)
     // 2.1 check if the table already register with hive then ignore and continue with the next
     // schema
     if (!sparkSession.sessionState.catalog.listTables(databaseName)
@@ -75,6 +76,9 @@ case class RefreshCarbonTableCommand(
       if (FileFactory.isFileExist(schemaFilePath, FileFactory.getFileType(schemaFilePath))) {
         // read TableInfo
         val tableInfo = SchemaReader.getTableInfo(identifier)
+        // refresh the column schema in case of store before V3
+        refreshColumnSchema(tableInfo)
+
         // 2.2 register the table with the hive check if the table being registered has
         // aggregate table then do the below steps
         // 2.2.1 validate that all the aggregate tables are copied at the store location.
@@ -88,7 +92,6 @@ case class RefreshCarbonTableCommand(
             val msg = s"Table registration with Database name [$databaseName] and Table name " +
                       s"[$tableName] failed. All the aggregate Tables for table [$tableName] is" +
                       s" not copied under database [$databaseName]"
-            LOGGER.audit(msg)
             throwMetadataException(databaseName, tableName, msg)
           }
           // 2.2.1 Register the aggregate tables to hive
@@ -100,22 +103,38 @@ case class RefreshCarbonTableCommand(
             tableInfo.getFactTable.getPartitionInfo.getPartitionType == PartitionType.NATIVE_HIVE) {
           registerAllPartitionsToHive(identifier, sparkSession)
         }
-      } else {
-        LOGGER.audit(
-          s"Table registration with Database name [$databaseName] and Table name [$tableName] " +
-          s"failed." +
-          s"Table [$tableName] either non carbon table or stale carbon table under database " +
-          s"[$databaseName]")
       }
-    } else {
-      LOGGER.audit(
-        s"Table registration with Database name [$databaseName] and Table name [$tableName] " +
-        s"failed." +
-        s"Table [$tableName] either already exists or registered under database [$databaseName]")
     }
     // update the schema modified time
     metaStore.updateAndTouchSchemasUpdatedTime()
     Seq.empty
+  }
+
+  /**
+   * Refresh the sort_column flag in column schema in case of old store. Before V3, sort_column
+   * option is not set but by default all dimension columns should be treated
+   * as sort columns if SORT_COLUMNS property is not defined in tblproperties
+   *
+   * @param tableInfo
+   */
+  def refreshColumnSchema(tableInfo: TableInfo): Unit = {
+    val tableProps: mutable.Map[String, String] = tableInfo.getFactTable.getTableProperties.asScala
+    val sortColumns = tableProps.get(CarbonCommonConstants.SORT_COLUMNS)
+    sortColumns match {
+      case Some(sortColumn) =>
+      // don't do anything
+      case None =>
+        // iterate over all the columns and make all the dimensions as sort columns true
+        // check for the complex data types parent and child columns to
+        // avoid adding them in SORT_COLUMNS
+        tableInfo.getFactTable.getListOfColumns.asScala collect
+        ({
+          case columnSchema if columnSchema.isDimensionColumn &&
+                               !columnSchema.getDataType.isComplexType &&
+                               columnSchema.getSchemaOrdinal != -1 =>
+            columnSchema.setSortColumn(true)
+        })
+    }
   }
 
   /**
@@ -154,8 +173,6 @@ case class RefreshCarbonTableCommand(
       OperationListenerBus.getInstance.fireEvent(refreshTablePreExecutionEvent, operationContext)
       CarbonCreateTableCommand(tableInfo, ifNotExistsSet = false, tableLocation = Some(tablePath))
         .run(sparkSession)
-      LOGGER.audit(s"Table registration with Database name [$dbName] and Table name " +
-                   s"[$tableName] is successful.")
     } catch {
       case e: AnalysisException => throw e
       case e: Exception =>
@@ -257,4 +274,6 @@ case class RefreshCarbonTableCommand(
       AlterTableAddPartitionCommand(identifier, specs, true).run(sparkSession)
     }
   }
+
+  override protected def opName: String = "REFRESH TABLE"
 }

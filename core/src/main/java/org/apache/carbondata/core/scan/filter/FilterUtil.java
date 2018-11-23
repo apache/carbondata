@@ -36,7 +36,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
@@ -53,6 +52,8 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -113,10 +114,11 @@ import org.apache.carbondata.core.util.comparator.Comparator;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.log4j.Logger;
 import org.roaringbitmap.RoaringBitmap;
 
 public final class FilterUtil {
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(FilterUtil.class.getName());
 
   private FilterUtil() {
@@ -397,7 +399,7 @@ public final class FilterUtil {
     int columnIndexInMinMaxByteArray = -1;
     int columnCounter = 0;
     for (CarbonColumn cachedColumn : carbonDimensionsToBeCached) {
-      if (cachedColumn.getColumnId().equals(filterColumn.getColumnId())) {
+      if (cachedColumn.getColumnId().equalsIgnoreCase(filterColumn.getColumnId())) {
         columnIndexInMinMaxByteArray = columnCounter;
         break;
       }
@@ -645,8 +647,9 @@ public final class FilterUtil {
           continue;
         }
 
-        filterValuesList
-            .add(DataTypeUtil.getMeasureValueBasedOnDataType(result, dataType, carbonMeasure));
+        filterValuesList.add(DataTypeUtil
+            .getMeasureValueBasedOnDataType(result, dataType, carbonMeasure.getScale(),
+                carbonMeasure.getPrecision()));
 
       }
     } catch (Throwable ex) {
@@ -664,6 +667,27 @@ public final class FilterUtil {
 
     }
     return columnFilterInfo;
+  }
+
+  public static DataType getMeasureDataType(
+      MeasureColumnResolvedFilterInfo msrColumnEvaluatorInfo) {
+    if (msrColumnEvaluatorInfo.getType() == DataTypes.BOOLEAN) {
+      return DataTypes.BOOLEAN;
+    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.SHORT) {
+      return DataTypes.SHORT;
+    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.INT) {
+      return DataTypes.INT;
+    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.LONG) {
+      return DataTypes.LONG;
+    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.FLOAT) {
+      return DataTypes.FLOAT;
+    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.BYTE) {
+      return DataTypes.BYTE;
+    } else if (DataTypes.isDecimal(msrColumnEvaluatorInfo.getType())) {
+      return DataTypes.createDefaultDecimalType();
+    } else {
+      return DataTypes.DOUBLE;
+    }
   }
 
   /**
@@ -1866,7 +1890,7 @@ public final class FilterUtil {
    */
   public static void logError(Throwable e, boolean invalidRowsPresent) {
     if (!invalidRowsPresent) {
-      LOGGER.error(e, CarbonCommonConstants.FILTER_INVALID_MEMBER + e.getMessage());
+      LOGGER.error(CarbonCommonConstants.FILTER_INVALID_MEMBER + e.getMessage(), e);
     }
   }
 
@@ -1922,12 +1946,22 @@ public final class FilterUtil {
    * @param dimensionColumnPage
    * @param bitSet
    */
-  public static void removeNullValues(DimensionColumnPage dimensionColumnPage,
-      BitSet bitSet, byte[] defaultValue) {
+  public static void removeNullValues(DimensionColumnPage dimensionColumnPage, BitSet bitSet,
+      byte[] defaultValue) {
     if (!bitSet.isEmpty()) {
-      for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
-        if (dimensionColumnPage.compareTo(i, defaultValue) == 0) {
-          bitSet.flip(i);
+      if (null != dimensionColumnPage.getNullBits()) {
+        if (!dimensionColumnPage.getNullBits().isEmpty()) {
+          for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
+            if (dimensionColumnPage.getNullBits().get(i)) {
+              bitSet.flip(i);
+            }
+          }
+        }
+      } else {
+        for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
+          if (dimensionColumnPage.compareTo(i, defaultValue) == 0) {
+            bitSet.flip(i);
+          }
         }
       }
     }
@@ -2178,4 +2212,62 @@ public final class FilterUtil {
     }
     return filterExecuter;
   }
+
+  /**
+   * This method is used to compare the filter value with min and max values.
+   * This is used in case of filter queries on no dictionary column.
+   *
+   * @param filterValue
+   * @param minMaxBytes
+   * @param carbonDimension
+   * @param isMin
+   * @return
+   */
+  public static int compareValues(byte[] filterValue, byte[] minMaxBytes,
+      CarbonDimension carbonDimension, boolean isMin) {
+    DataType dataType = carbonDimension.getDataType();
+    if (DataTypeUtil.isPrimitiveColumn(dataType) && !carbonDimension
+        .hasEncoding(Encoding.DICTIONARY)) {
+      Object value =
+          DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(minMaxBytes, dataType);
+      // filter value should be in range of max and min value i.e
+      // max>filtervalue>min
+      // so filter-max should be negative
+      Object data = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(filterValue, dataType);
+      SerializableComparator comparator = Comparator.getComparator(dataType);
+      if (isMin) {
+        return comparator.compare(value, data);
+      } else {
+        return comparator.compare(data, value);
+      }
+    } else {
+      if (isMin) {
+        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(minMaxBytes, filterValue);
+      } else {
+        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValue, minMaxBytes);
+      }
+    }
+  }
+
+  /**
+   * This method is used to get default null values for a direct dictionary column
+   * @param currentBlockDimension
+   * @param segmentProperties
+   * @return
+   */
+  public static byte[] getDefaultNullValue(CarbonDimension currentBlockDimension,
+      SegmentProperties segmentProperties) {
+    byte[] defaultValue = null;
+    DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+        .getDirectDictionaryGenerator(currentBlockDimension.getDataType());
+    int key = directDictionaryGenerator.generateDirectSurrogateKey(null);
+    if (currentBlockDimension.isSortColumn()) {
+      defaultValue = FilterUtil
+          .getMaskKey(key, currentBlockDimension, segmentProperties.getSortColumnsGenerator());
+    } else {
+      defaultValue = ByteUtil.toXorBytes(key);
+    }
+    return defaultValue;
+  }
+
 }

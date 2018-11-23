@@ -165,14 +165,15 @@ public class RestructureUtil {
     // column ID but can have same column name
     if (tableColumn.getDataType().isComplexType() && !(tableColumn.getDataType().getId()
         == DataTypes.ARRAY_TYPE_ID)) {
-      if (tableColumn.getColumnId().equals(queryColumn.getColumnId())) {
+      if (tableColumn.getColumnId().equalsIgnoreCase(queryColumn.getColumnId())) {
         return true;
       } else {
         return isColumnMatchesStruct(tableColumn, queryColumn);
       }
     } else {
-      return (tableColumn.getColumnId().equals(queryColumn.getColumnId()) || (!isTransactionalTable
-          && tableColumn.getColName().equals(queryColumn.getColName())));
+      return (tableColumn.getColumnId().equalsIgnoreCase(queryColumn.getColumnId()) || (
+          !isTransactionalTable && tableColumn.getColName()
+              .equalsIgnoreCase(queryColumn.getColName())));
     }
   }
 
@@ -296,7 +297,7 @@ public class RestructureUtil {
         value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         noDictionaryDefaultValue = Long.parseLong(value);
       } else if (datatype == DataTypes.TIMESTAMP) {
-        long timestampValue = ByteUtil.toLong(defaultValue, 0, defaultValue.length);
+        long timestampValue = ByteUtil.toXorLong(defaultValue, 0, defaultValue.length);
         noDictionaryDefaultValue = timestampValue * 1000L;
       } else {
         noDictionaryDefaultValue =

@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.{Partition, TaskContext}
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.errors.attachTree
@@ -30,18 +31,19 @@ import org.apache.spark.sql.catalyst.plans.physical.Partitioning
 import org.apache.spark.sql.execution.{CodegenSupport, SparkPlan, UnaryExecNode}
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types._
-import org.apache.spark.util.SparkTypeConverter
+import org.apache.spark.sql.util.{SparkSQLUtil, SparkTypeConverter}
+import org.apache.spark.util.SerializableConfiguration
 
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.{CarbonMetadata, ColumnIdentifier}
+import org.apache.carbondata.core.metadata.ColumnIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.scan.executor.util.QueryUtil
-import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.util.{DataTypeUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.CarbonRDDWithTableInfo
 
@@ -68,6 +70,9 @@ case class CarbonDictionaryDecoder(
   val getDictionaryColumnIds: Array[(String, ColumnIdentifier, CarbonDimension)] =
     CarbonDictionaryDecoder.getDictionaryColumnMapping(child.output, relations, profile, aliasMap)
 
+  val broadcastConf = SparkSQLUtil.broadCastHadoopConf(
+    sparkSession.sparkContext, sparkSession.sessionState.newHadoopConf())
+
   override def doExecute(): RDD[InternalRow] = {
     attachTree(this, "execute") {
       val tableNameToCarbonTableMapping = relations.map { relation =>
@@ -78,6 +83,7 @@ case class CarbonDictionaryDecoder(
       if (CarbonDictionaryDecoder.isRequiredToDecode(getDictionaryColumnIds)) {
         val dataTypes = child.output.map { attr => attr.dataType }
         child.execute().mapPartitions { iter =>
+          ThreadLocalSessionInfo.setConfigurationToCurrentThread(broadcastConf.value.value)
           val cacheProvider: CacheProvider = CacheProvider.getInstance
           val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
             cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
@@ -133,85 +139,147 @@ case class CarbonDictionaryDecoder(
       val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
         cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
       val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryWrapper(tableNameToCarbonTableMapping,
-        forwardDictionaryCache)
+        forwardDictionaryCache, broadcastConf)
 
       val exprs = child.output.map { exp =>
         ExpressionCanonicalizer.execute(BindReferences.bindReference(exp, child.output))
       }
       ctx.currentVars = input
+      val dictTuple = exprs.map(e => new DictTuple(null, false))
+      val decodeDictionary = ctx.freshName("deDict")
+      ctx.addNewFunction(decodeDictionary,
+        s"""
+           |private org.apache.spark.sql.DictTuple $decodeDictionary(
+           |  org.apache.spark.sql.ForwardDictionaryWrapper dict, int surg)
+           |    throws java.io.IOException {
+           |  boolean isNull = false;
+           |  byte[] valueIntern = dict.getDictionaryValueForKeyInBytes(surg);
+           |  if (valueIntern == null ||
+           |    java.util.Arrays.equals(org.apache.carbondata.core.constants
+           |  .CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, valueIntern)) {
+           |    isNull = true;
+           |    valueIntern = org.apache.carbondata.core.constants
+           |    .CarbonCommonConstants.ZERO_BYTE_ARRAY;
+           |  }
+           |  return new org.apache.spark.sql.DictTuple(valueIntern, isNull);
+           |}""".stripMargin)
+
+      val decodeDecimal = ctx.freshName("deDictDec")
+      ctx.addNewFunction(decodeDecimal,
+        s"""
+           |private org.apache.spark.sql.DictTuple $decodeDecimal(
+           |  org.apache.spark.sql.ForwardDictionaryWrapper dict, int surg)
+           | throws java.io.IOException {
+           |  org.apache.spark.sql.DictTuple tuple = $decodeDictionary(dict, surg);
+           |  tuple.setValue(org.apache.spark.sql.types.Decimal.apply(new java.math.BigDecimal(
+           |  new String((byte[])tuple.getValue(),
+           |  org.apache.carbondata.core.constants.CarbonCommonConstants.DEFAULT_CHARSET_CLASS))));
+           |  return tuple;
+           |}""".stripMargin)
+
+      val decodeInt = ctx.freshName("deDictInt")
+      ctx.addNewFunction(decodeInt,
+        s"""
+           |private org.apache.spark.sql.DictTuple $decodeInt(
+           |  org.apache.spark.sql.ForwardDictionaryWrapper dict, int surg)
+           | throws java.io.IOException {
+           |  org.apache.spark.sql.DictTuple tuple = $decodeDictionary(dict, surg);
+           |  tuple.setValue(Integer.parseInt(new String((byte[])tuple.getValue(),
+           |    org.apache.carbondata.core.constants.CarbonCommonConstants.DEFAULT_CHARSET_CLASS)));
+           |  return tuple;
+           |}""".stripMargin)
+      val decodeShort = ctx.freshName("deDictShort")
+      ctx.addNewFunction(decodeShort,
+        s"""
+           |private org.apache.spark.sql.DictTuple $decodeShort(
+           |  org.apache.spark.sql.ForwardDictionaryWrapper dict, int surg)
+           | throws java.io.IOException {
+           |  org.apache.spark.sql.DictTuple tuple = $decodeDictionary(dict, surg);
+           |  tuple.setValue(Short.parseShort(new String((byte[])tuple.getValue(),
+           |    org.apache.carbondata.core.constants.CarbonCommonConstants.DEFAULT_CHARSET_CLASS)));
+           |  return tuple;
+           |}""".stripMargin)
+      val decodeDouble = ctx.freshName("deDictDoub")
+      ctx.addNewFunction(decodeDouble,
+        s"""
+           |private org.apache.spark.sql.DictTuple $decodeDouble(
+           |  org.apache.spark.sql.ForwardDictionaryWrapper dict, int surg)
+           | throws java.io.IOException {
+           |  org.apache.spark.sql.DictTuple tuple = $decodeDictionary(dict, surg);
+           |  tuple.setValue(Double.parseDouble(new String((byte[])tuple.getValue(),
+           |    org.apache.carbondata.core.constants.CarbonCommonConstants.DEFAULT_CHARSET_CLASS)));
+           |  return tuple;
+           |}""".stripMargin)
+      val decodeLong = ctx.freshName("deDictLong")
+      ctx.addNewFunction(decodeLong,
+        s"""
+           |private org.apache.spark.sql.DictTuple $decodeLong(
+           |  org.apache.spark.sql.ForwardDictionaryWrapper dict, int surg)
+           | throws java.io.IOException {
+           |  org.apache.spark.sql.DictTuple tuple = $decodeDictionary(dict, surg);
+           |  tuple.setValue(Long.parseLong(new String((byte[])tuple.getValue(),
+           |    org.apache.carbondata.core.constants.CarbonCommonConstants.DEFAULT_CHARSET_CLASS)));
+           |  return tuple;
+           |}""".stripMargin)
+      val decodeStr = ctx.freshName("deDictStr")
+      ctx.addNewFunction(decodeStr,
+        s"""
+           |private org.apache.spark.sql.DictTuple $decodeStr(
+           |  org.apache.spark.sql.ForwardDictionaryWrapper dict, int surg)
+           | throws java.io.IOException {
+           |  org.apache.spark.sql.DictTuple tuple = $decodeDictionary(dict, surg);
+           |  tuple.setValue(UTF8String.fromBytes((byte[])tuple.getValue()));
+           |  return tuple;
+           |}""".stripMargin)
+
+
       val resultVars = exprs.zipWithIndex.map { case (expr, index) =>
         if (dicts(index) != null) {
           val ev = expr.genCode(ctx)
-          val value = ctx.freshName("value")
-          val valueIntern = ctx.freshName("valueIntern")
-          val isNull = ctx.freshName("isNull")
-          val dictsRef = ctx.addReferenceObj("dictsRef", dicts(index))
+          val dictRef = ctx.addReferenceObj("df", dicts(index))
+          val value = ctx.freshName("v")
           var code =
             s"""
                |${ev.code}
              """.stripMargin
-          code +=
+          if (CarbonDataTypes.isDecimal(getDictionaryColumnIds(index)._3.getDataType)) {
+            code +=
             s"""
-             |boolean $isNull = false;
-             |byte[] $valueIntern = $dictsRef.getDictionaryValueForKeyInBytes(${ ev.value });
-             |if ($valueIntern == null ||
-             |  java.util.Arrays.equals(org.apache.carbondata.core.constants
-             |.CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, $valueIntern)) {
-             |  $isNull = true;
-             |  $valueIntern = org.apache.carbondata.core.constants
-             |  .CarbonCommonConstants.ZERO_BYTE_ARRAY;
-             |}
-             """.stripMargin
-
-            val caseCode =
-              if (CarbonDataTypes.isDecimal(getDictionaryColumnIds(index)._3.getDataType)) {
+               |org.apache.spark.sql.DictTuple $value = $decodeDecimal($dictRef, ${ev.value});
+                 """.stripMargin
+            ExprCode(code, s"$value.getIsNull()",
+              s"((org.apache.spark.sql.types.Decimal)$value.getValue())")
+          } else {
+            getDictionaryColumnIds(index)._3.getDataType match {
+              case CarbonDataTypes.INT => code +=
                 s"""
-                   |org.apache.spark.sql.types.Decimal $value =
-                   |Decimal.apply(new java.math.BigDecimal(
-                   |new String($valueIntern, org.apache.carbondata.core.constants
-                   |.CarbonCommonConstants.DEFAULT_CHARSET_CLASS)));
+                   |org.apache.spark.sql.DictTuple $value = $decodeInt($dictRef, ${ ev.value });
                  """.stripMargin
-              } else {
-                getDictionaryColumnIds(index)._3.getDataType match {
-                  case CarbonDataTypes.INT =>
-                    s"""
-                       |int $value = Integer.parseInt(new String($valueIntern,
-                       |org.apache.carbondata.core.constants.CarbonCommonConstants
-                       |.DEFAULT_CHARSET_CLASS));
+                ExprCode(code, s"$value.getIsNull()", s"((Integer)$value.getValue())")
+              case CarbonDataTypes.SHORT => code +=
+                s"""
+                   |org.apache.spark.sql.DictTuple $value = $decodeShort($dictRef, ${ ev.value });
                  """.stripMargin
-                  case CarbonDataTypes.SHORT =>
-                    s"""
-                       |short $value =
-                       |Short.parseShort(new String($valueIntern,
-                       |org.apache.carbondata.core.constants.CarbonCommonConstants
-                       |.DEFAULT_CHARSET_CLASS));
+                ExprCode(code, s"$value.getIsNull()", s"((Short)$value.getValue())")
+              case CarbonDataTypes.DOUBLE => code +=
+                 s"""
+                    |org.apache.spark.sql.DictTuple $value = $decodeDouble($dictRef, ${ ev.value });
                  """.stripMargin
-                  case CarbonDataTypes.DOUBLE =>
-                    s"""
-                       |double $value =
-                       |Double.parseDouble(new String($valueIntern,
-                       |org.apache.carbondata.core.constants.CarbonCommonConstants
-                       |.DEFAULT_CHARSET_CLASS));
+                ExprCode(code, s"$value.getIsNull()", s"((Double)$value.getValue())")
+              case CarbonDataTypes.LONG => code +=
+                 s"""
+                    |org.apache.spark.sql.DictTuple $value = $decodeLong($dictRef, ${ ev.value });
                  """.stripMargin
-                  case CarbonDataTypes.LONG =>
-                    s"""
-                       |long $value =
-                       |Long.parseLong(new String($valueIntern,
-                       |org.apache.carbondata.core.constants.CarbonCommonConstants
-                       |.DEFAULT_CHARSET_CLASS));
+                ExprCode(code, s"$value.getIsNull()", s"((Long)$value.getValue())")
+              case _ => code +=
+                s"""
+                   |org.apache.spark.sql.DictTuple $value = $decodeStr($dictRef, ${ev.value});
                  """.stripMargin
-                  case _ =>
-                    s"""
-                       | UTF8String $value = UTF8String.fromBytes($valueIntern);
-                 """.stripMargin
-                }
-              }
-          code +=
-            s"""
-               |$caseCode
-             """.stripMargin
+                ExprCode(code, s"$value.getIsNull()", s"((UTF8String)$value.getValue())")
 
-          ExprCode(code, isNull, value)
+            }
+          }
+
         } else {
           expr.genCode(ctx)
         }
@@ -265,7 +333,8 @@ case class CarbonDictionaryDecoder(
   }
 
   private def getDictionaryWrapper(atiMap: Map[String, CarbonTable],
-      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary]) = {
+      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary],
+      broadcastConf: Broadcast[SerializableConfiguration]) = {
     val allDictIdentifiers = new ArrayBuffer[DictionaryColumnUniqueIdentifier]()
     val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryColumnIds.map {
       case (tableName, columnIdentifier, carbonDimension) =>
@@ -275,11 +344,6 @@ case class CarbonDictionaryDecoder(
               if (null != carbonDimension.getColumnSchema.getParentColumnTableRelations &&
                   !carbonDimension
                     .getColumnSchema.getParentColumnTableRelations.isEmpty) {
-                val parentRelationIdentifier = carbonDimension.getColumnSchema
-                  .getParentColumnTableRelations.get(0).getRelationIdentifier
-                val parentTablePath = CarbonMetadata.getInstance()
-                  .getCarbonTable(parentRelationIdentifier.getDatabaseName,
-                    parentRelationIdentifier.getTableName).getTablePath
                 (QueryUtil
                   .getTableIdentifierForColumn(carbonDimension),
                   new ColumnIdentifier(carbonDimension.getColumnSchema
@@ -296,7 +360,7 @@ case class CarbonDictionaryDecoder(
               newColumnIdentifier, carbonDimension.getDataType,
               dictionaryPath)
             allDictIdentifiers += dictionaryColumnUniqueIdentifier
-            new ForwardDictionaryWrapper(dictionaryColumnUniqueIdentifier)
+            new ForwardDictionaryWrapper(dictionaryColumnUniqueIdentifier, broadcastConf)
           } catch {
             case _: Throwable => null
           }
@@ -439,7 +503,9 @@ class CarbonDecoderRDD(
     val prev: RDD[InternalRow],
     output: Seq[Attribute],
     serializedTableInfo: Array[Byte])
-  extends CarbonRDDWithTableInfo[InternalRow](prev, serializedTableInfo) {
+  extends CarbonRDDWithTableInfo[InternalRow](relations.head.carbonRelation.sparkSession,
+    prev,
+    serializedTableInfo) {
 
   def canBeDecoded(attr: Attribute): Boolean = {
     profile match {
@@ -543,16 +609,19 @@ class CarbonDecoderRDD(
     dicts
   }
 
-  override protected def getPartitions: Array[Partition] = firstParent[InternalRow].partitions
+  override protected def internalGetPartitions: Array[Partition] =
+    firstParent[InternalRow].partitions
 }
 
 /**
  * It is a wrapper around Dictionary, it is a work around to keep the dictionary serializable in
  * case of codegen
  * @param dictIdentifier Dictionary column unique identifier
+ * @param broadcastConf hadoop broadcast conf for serialization, that contains carbon conf.
  */
 class ForwardDictionaryWrapper(
-    dictIdentifier: DictionaryColumnUniqueIdentifier) extends Serializable {
+    dictIdentifier: DictionaryColumnUniqueIdentifier,
+    broadcastConf: Broadcast[SerializableConfiguration]) extends Serializable {
 
   var dictionary: Dictionary = null
 
@@ -560,6 +629,10 @@ class ForwardDictionaryWrapper(
 
   def getDictionaryValueForKeyInBytes (surrogateKey: Int): Array[Byte] = {
     if (dictionary == null) {
+      // Note: from doConsume() codegen, this is the first method called.
+      // so setting conf to threadlocal here. If any new method added before calling this method.
+      // Need to set this in that method instead of here.
+      ThreadLocalSessionInfo.setConfigurationToCurrentThread(broadcastConf.value.value)
       dictionary = dictionaryLoader.getDictionary(dictIdentifier)
     }
     dictionary.getDictionaryValueForKeyInBytes(surrogateKey)
@@ -574,6 +647,21 @@ class ForwardDictionaryWrapper(
       dictionary = dictionaryLoader.getDictionary(dictIdentifier)
     }
     dictionary.clear()
+  }
+}
+
+class DictTuple(var value: AnyRef, var isNull: Boolean) extends Serializable {
+
+  def getValue: AnyRef = value
+
+  def getIsNull: Boolean = isNull
+
+  def setValue(value: AnyRef): Unit = {
+    this.value = value
+  }
+
+  def setIsNull(isNull: Boolean): Unit = {
+    this.isNull = isNull
   }
 }
 

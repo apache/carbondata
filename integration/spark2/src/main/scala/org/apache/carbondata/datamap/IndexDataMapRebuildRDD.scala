@@ -36,6 +36,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.Decimal
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.converter.SparkDataTypeConverterImpl
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datamap.dev.DataMapBuilder
@@ -51,7 +52,7 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSch
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{CarbonUtil, TaskMetricsMap}
+import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil, TaskMetricsMap}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.datamap.bloom.DataConvertUtil
 import org.apache.carbondata.events.{BuildDataMapPostExecutionEvent, BuildDataMapPreExecutionEvent, OperationContext, OperationListenerBus}
@@ -60,7 +61,6 @@ import org.apache.carbondata.hadoop.api.{CarbonInputFormat, CarbonTableInputForm
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 import org.apache.carbondata.spark.{RefreshResult, RefreshResultImpl}
 import org.apache.carbondata.spark.rdd.{CarbonRDDWithTableInfo, CarbonSparkPartition}
-import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
 
 
 /**
@@ -131,10 +131,9 @@ object IndexDataMapRebuildRDD {
     if (failedSegments.nonEmpty) {
       throw new Exception(s"Failed to refresh datamap ${ schema.getDataMapName }")
     }
-    DataMapStoreManager.getInstance().clearDataMaps(tableIdentifier)
 
     val buildDataMapPostExecutionEvent = new BuildDataMapPostExecutionEvent(sparkSession,
-      tableIdentifier)
+      tableIdentifier, schema.getDataMapName, validSegments.asScala.map(_.getSegmentNo), true)
     OperationListenerBus.getInstance().fireEvent(buildDataMapPostExecutionEvent, operationContext)
   }
 }
@@ -265,8 +264,26 @@ class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Ar
       rtn(i) = if (indexCol2IdxInDictArray.contains(col.getColName)) {
         surrogatKeys(indexCol2IdxInDictArray(col.getColName)).toInt.asInstanceOf[Integer]
       } else if (indexCol2IdxInNoDictArray.contains(col.getColName)) {
-        data(0).asInstanceOf[ByteArrayWrapper].getNoDictionaryKeyByIndex(
+        val bytes = data(0).asInstanceOf[ByteArrayWrapper].getNoDictionaryKeyByIndex(
           indexCol2IdxInNoDictArray(col.getColName))
+        // no dictionary primitive columns are expected to be in original data while loading,
+        // so convert it to original data
+        if (DataTypeUtil.isPrimitiveColumn(col.getDataType)) {
+          var dataFromBytes = DataTypeUtil
+            .getDataBasedOnDataTypeForNoDictionaryColumn(bytes, col.getDataType)
+          if (dataFromBytes == null) {
+            dataFromBytes = DataConvertUtil
+              .getNullValueForMeasure(col.getDataType, col.getColumnSchema.getScale)
+          }
+          // for timestamp the above method will give the original data, so it should be
+          // converted again to the format to be loaded (without micros)
+          if (null != dataFromBytes && col.getDataType == DataTypes.TIMESTAMP) {
+            dataFromBytes = (dataFromBytes.asInstanceOf[Long] / 1000L).asInstanceOf[Object];
+          }
+          dataFromBytes
+        } else {
+          bytes
+        }
       } else {
         // measures start from 1
         val value = data(1 + indexCol2IdxInMeasureArray(col.getColName))
@@ -293,14 +310,13 @@ class RawBytesReadSupport(segmentProperties: SegmentProperties, indexColumns: Ar
 }
 
 class IndexDataMapRebuildRDD[K, V](
-    session: SparkSession,
+    @transient private val session: SparkSession,
     result: RefreshResult[K, V],
-    @transient tableInfo: TableInfo,
+    @transient private val tableInfo: TableInfo,
     dataMapName: String,
     indexColumns: Array[CarbonColumn],
-    segments: Set[Segment]
-) extends CarbonRDDWithTableInfo[(K, V)](
-  session.sparkContext, Nil, tableInfo.serialize()) {
+    segments: Set[Segment])
+  extends CarbonRDDWithTableInfo[(K, V)](session, Nil, tableInfo.serialize()) {
 
   private val dataMapSchema = DataMapStoreManager.getInstance().getDataMapSchema(dataMapName)
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
@@ -324,7 +340,7 @@ class IndexDataMapRebuildRDD[K, V](
       inputMetrics.initBytesReadCallback(context, inputSplit)
 
       val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
-      val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
+      val attemptContext = new TaskAttemptContextImpl(FileFactory.getConfiguration, attemptId)
       val format = createInputFormat(segment.get, attemptContext)
 
       val model = format.createQueryModel(inputSplit, attemptContext)
@@ -352,18 +368,29 @@ class IndexDataMapRebuildRDD[K, V](
         } else {
           new OriginalReadSupport(indexColumns.map(_.getDataType))
         }
-        reader = new CarbonRecordReader[Array[Object]](model, readSupport, inputMetrics)
+        reader = new CarbonRecordReader[Array[Object]](model, readSupport, inputMetrics,
+          attemptContext.getConfiguration)
         reader.initialize(inputSplit, attemptContext)
         // skip clear datamap and we will do this adter rebuild
         reader.setSkipClearDataMapAtClose(true)
 
+        // Note that datamap rebuilding is based on query, the blockletId in rowWithPosition
+        // is set to relative number in carbondata file in query process.
+        // In order to get absolute blockletId in shard like the one filled in loading process,
+        // here we use another way to generate it.
+        var blockletId = 0
+        var firstRow = true
         while (reader.nextKeyValue()) {
           val rowWithPosition = reader.getCurrentValue
           val size = rowWithPosition.length
-          val blockletId = rowWithPosition(size - 3).asInstanceOf[Int]
           val pageId = rowWithPosition(size - 2).asInstanceOf[Int]
           val rowId = rowWithPosition(size - 1).asInstanceOf[Int]
 
+          if (!firstRow && pageId == 0 && rowId == 0) {
+            blockletId = blockletId + 1
+          } else {
+            firstRow = false
+          }
           refresher.addRow(blockletId, pageId, rowId, rowWithPosition)
         }
 
@@ -376,7 +403,7 @@ class IndexDataMapRebuildRDD[K, V](
             reader.close()
           } catch {
             case ex: Throwable =>
-              LOGGER.error(ex, "Failed to close reader")
+              LOGGER.error("Failed to close reader", ex)
           }
         }
 
@@ -385,7 +412,7 @@ class IndexDataMapRebuildRDD[K, V](
             refresher.close()
           } catch {
             case ex: Throwable =>
-              LOGGER.error(ex, "Failed to close index writer")
+              LOGGER.error("Failed to close index writer", ex)
           }
         }
       }
@@ -432,11 +459,11 @@ class IndexDataMapRebuildRDD[K, V](
     format
   }
 
-  override protected def getPartitions = {
+  override protected def internalGetPartitions = {
     if (!dataMapSchema.isIndexDataMap) {
       throw new UnsupportedOperationException
     }
-    val conf = new Configuration()
+    val conf = FileFactory.getConfiguration
     val jobConf = new JobConf(conf)
     SparkHadoopUtil.get.addCredentials(jobConf)
     val job = Job.getInstance(jobConf)

@@ -30,13 +30,12 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.common.logging.impl.StandardLogService;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.IndexKey;
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -52,12 +51,16 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
+import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
+import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
 import org.apache.carbondata.core.scan.model.ProjectionDimension;
 import org.apache.carbondata.core.scan.model.ProjectionMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
@@ -68,10 +71,13 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 /**
  * This class provides a skeletal implementation of the {@link QueryExecutor}
@@ -80,12 +86,15 @@ import org.apache.commons.lang3.ArrayUtils;
  */
 public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(AbstractQueryExecutor.class.getName());
   /**
    * holder for query properties which will be used to execute the query
    */
   protected QueryExecutorProperties queryProperties;
+
+  // whether to clear/free unsafe memory or not
+  private boolean freeUnsafeMemory;
 
   /**
    * query result iterator which will execute the query
@@ -93,7 +102,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    */
   protected CarbonIterator queryIterator;
 
-  public AbstractQueryExecutor() {
+  public AbstractQueryExecutor(Configuration configuration) {
+    ThreadLocalSessionInfo.setConfigurationToCurrentThread(configuration);
     queryProperties = new QueryExecutorProperties();
   }
 
@@ -109,11 +119,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * @param queryModel
    */
   protected void initQuery(QueryModel queryModel) throws IOException {
-    StandardLogService.setThreadName(StandardLogService.getPartitionID(
-        queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName()),
-        queryModel.getQueryId());
     LOGGER.info("Query will be executed on table: " + queryModel.getAbsoluteTableIdentifier()
         .getCarbonTableIdentifier().getTableName());
+    this.freeUnsafeMemory = queryModel.isFreeUnsafeMemory();
     // Initializing statistics list to record the query statistics
     // creating copy on write to handle concurrent scenario
     queryProperties.queryStatisticsRecorder = queryModel.getStatisticsRecorder();
@@ -131,7 +139,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
-    // calculating the total number of aggeragted columns
+    // calculating the total number of aggregated columns
     int measureCount = queryModel.getProjectionMeasures().size();
 
     int currentIndex = 0;
@@ -206,14 +214,27 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         DataFileFooter fileFooter = filePathToFileFooterMapping.get(blockInfo.getFilePath());
         if (null == fileFooter) {
           blockInfo.setDetailInfo(null);
-          fileFooter = CarbonUtil.readMetadatFile(blockInfo);
+          fileFooter = CarbonUtil.readMetadataFile(blockInfo);
+          // In case of non transactional table just set columnUniqueId as columnName to support
+          // backward compatibility. non transactional tables column uniqueId is always equal to
+          // columnName
+          if (!queryModel.getTable().isTransactionalTable()) {
+            QueryUtil.updateColumnUniqueIdForNonTransactionTable(fileFooter.getColumnInTable());
+          }
           filePathToFileFooterMapping.put(blockInfo.getFilePath(), fileFooter);
           blockInfo.setDetailInfo(blockletDetailInfo);
         }
         if (null == segmentProperties) {
           segmentProperties = new SegmentProperties(fileFooter.getColumnInTable(),
-              blockInfo.getDetailInfo().getDimLens());
+              fileFooter.getSegmentInfo().getColumnCardinality());
+          createFilterExpression(queryModel, segmentProperties);
+          updateColumns(queryModel, fileFooter.getColumnInTable(), blockInfo.getFilePath());
           filePathToSegmentPropertiesMap.put(blockInfo.getFilePath(), segmentProperties);
+        }
+        if (blockletDetailInfo.isLegacyStore()) {
+          LOGGER.warn("Skipping Direct Vector Filling as it is not Supported "
+              + "for Legacy store prior to V3 store");
+          queryModel.setDirectVectorFill(false);
         }
         readAndFillBlockletInfo(tableBlockInfos, blockInfo,
             blockletDetailInfo, fileFooter, segmentProperties);
@@ -221,6 +242,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         if (null == segmentProperties) {
           segmentProperties = new SegmentProperties(blockInfo.getDetailInfo().getColumnSchemas(),
               blockInfo.getDetailInfo().getDimLens());
+          createFilterExpression(queryModel, segmentProperties);
+          updateColumns(queryModel, blockInfo.getDetailInfo().getColumnSchemas(),
+              blockInfo.getFilePath());
           filePathToSegmentPropertiesMap.put(blockInfo.getFilePath(), segmentProperties);
         }
         tableBlockInfos.add(blockInfo);
@@ -232,6 +256,88 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           filePathToSegmentPropertiesMap.get(tableBlockInfos.get(0).getFilePath())));
     }
     return indexList;
+  }
+
+  /**
+   * It updates dimensions and measures of query model. In few scenarios like SDK user can configure
+   * sort options per load, so if first load has c1 as integer column and configure as sort column
+   * then carbon treat that as dimension.But in second load if user change the sort option then the
+   * c1 become measure as bydefault integers are measures. So this method updates the measures to
+   * dimensions and vice versa as per the indexfile schema.
+   */
+  private void updateColumns(QueryModel queryModel, List<ColumnSchema> columnsInTable,
+      String filePath) throws IOException {
+    if (queryModel.getTable().isTransactionalTable()) {
+      return;
+    }
+    // First validate the schema of the carbondata file
+    boolean sameColumnSchemaList = BlockletDataMapUtil.isSameColumnSchemaList(columnsInTable,
+        queryModel.getTable().getTableInfo().getFactTable().getListOfColumns());
+    if (!sameColumnSchemaList) {
+      LOGGER.error("Schema of " + filePath + " doesn't match with the table's schema");
+      throw new IOException("All the files doesn't have same schema. "
+          + "Unsupported operation on nonTransactional table. Check logs.");
+    }
+    List<ProjectionDimension> dimensions = queryModel.getProjectionDimensions();
+    List<ProjectionMeasure> measures = queryModel.getProjectionMeasures();
+    List<ProjectionDimension> updatedDims = new ArrayList<>();
+    List<ProjectionMeasure> updatedMsrs = new ArrayList<>();
+
+    // Check and update dimensions to measures if it is measure in indexfile schema
+    for (ProjectionDimension dimension : dimensions) {
+      int index = columnsInTable.indexOf(dimension.getDimension().getColumnSchema());
+      if (index > -1) {
+        if (!columnsInTable.get(index).isDimensionColumn()) {
+          ProjectionMeasure measure = new ProjectionMeasure(
+              new CarbonMeasure(columnsInTable.get(index), dimension.getDimension().getOrdinal(),
+                  dimension.getDimension().getSchemaOrdinal()));
+          measure.setOrdinal(dimension.getOrdinal());
+          updatedMsrs.add(measure);
+        } else {
+          updatedDims.add(dimension);
+        }
+      } else {
+        updatedDims.add(dimension);
+      }
+    }
+
+    // Check and update measure to dimension if it is dimension in indexfile schema.
+    for (ProjectionMeasure measure : measures) {
+      int index = columnsInTable.indexOf(measure.getMeasure().getColumnSchema());
+      if (index > -1) {
+        if (columnsInTable.get(index).isDimensionColumn()) {
+          ProjectionDimension dimension = new ProjectionDimension(
+              new CarbonDimension(columnsInTable.get(index), measure.getMeasure().getOrdinal(),
+                  measure.getMeasure().getSchemaOrdinal(), -1, -1));
+          dimension.setOrdinal(measure.getOrdinal());
+          updatedDims.add(dimension);
+        } else {
+          updatedMsrs.add(measure);
+        }
+      } else {
+        updatedMsrs.add(measure);
+      }
+    }
+    // Clear and update the query model projections.
+    dimensions.clear();
+    dimensions.addAll(updatedDims);
+    measures.clear();
+    measures.addAll(updatedMsrs);
+  }
+
+  private void createFilterExpression(QueryModel queryModel, SegmentProperties properties) {
+    Expression expression = queryModel.getFilterExpression();
+    if (expression != null) {
+      QueryModel.FilterProcessVO processVO =
+          new QueryModel.FilterProcessVO(properties.getDimensions(), properties.getMeasures(),
+              new ArrayList<CarbonDimension>());
+      QueryModel.processFilterExpression(processVO, expression, null, null);
+      // Optimize Filter Expression and fit RANGE filters is conditions apply.
+      FilterOptimizer rangeFilterOptimizer = new RangeFilterOptmizer(expression);
+      rangeFilterOptimizer.optimizeFilter();
+      queryModel.setFilterExpressionResolverTree(
+          CarbonTable.resolveFilter(expression, queryModel.getAbsoluteTableIdentifier()));
+    }
   }
 
   /**
@@ -279,8 +385,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           blockletInfo.getBlockletIndex().getMinMaxIndex().getMaxValues());
       // update min and max values in case of old store for measures as min and max is written
       // opposite for measures in old store ( store <= 1.1 version)
+      byte[][] tempMaxValues = maxValues;
       maxValues = CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, false);
-      minValues = CarbonUtil.updateMinMaxValues(fileFooter, maxValues, minValues, true);
+      minValues = CarbonUtil.updateMinMaxValues(fileFooter, tempMaxValues, minValues, true);
       info.setDataBlockFromOldStore(true);
     }
     blockletInfo.getBlockletIndex().getMinMaxIndex().setMaxValues(maxValues);
@@ -298,19 +405,33 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // fill all the block execution infos for all the blocks selected in
     // query
     // and query will be executed based on that infos
+    ReusableDataBuffer[] dimensionReusableDataBuffers = null;
+    ReusableDataBuffer[] measureReusableDataBuffers = null;
+
     for (int i = 0; i < queryProperties.dataBlocks.size(); i++) {
       AbstractIndex abstractIndex = queryProperties.dataBlocks.get(i);
       BlockletDataRefNode dataRefNode =
           (BlockletDataRefNode) abstractIndex.getDataRefNode();
-      blockExecutionInfoList.add(
-          getBlockExecutionInfoForBlock(
-              queryModel,
-              abstractIndex,
+      final BlockExecutionInfo blockExecutionInfoForBlock =
+          getBlockExecutionInfoForBlock(queryModel, abstractIndex,
               dataRefNode.getBlockInfos().get(0).getBlockletInfos().getStartBlockletNumber(),
-              dataRefNode.numberOfNodes(),
-              dataRefNode.getBlockInfos().get(0).getFilePath(),
+              dataRefNode.numberOfNodes(), dataRefNode.getBlockInfos().get(0).getFilePath(),
               dataRefNode.getBlockInfos().get(0).getDeletedDeltaFilePath(),
-              dataRefNode.getBlockInfos().get(0).getSegment()));
+              dataRefNode.getBlockInfos().get(0).getSegment());
+      if (null == dimensionReusableDataBuffers || null == measureReusableDataBuffers) {
+        dimensionReusableDataBuffers = blockExecutionInfoForBlock.getDimensionResusableDataBuffer();
+        measureReusableDataBuffers = blockExecutionInfoForBlock.getMeasureResusableDataBuffer();
+      } else {
+        if (dimensionReusableDataBuffers.length == blockExecutionInfoForBlock
+            .getDimensionResusableDataBuffer().length) {
+          blockExecutionInfoForBlock.setDimensionResusableDataBuffer(dimensionReusableDataBuffers);
+        }
+        if (measureReusableDataBuffers.length == blockExecutionInfoForBlock
+            .getMeasureResusableDataBuffer().length) {
+          blockExecutionInfoForBlock.setMeasureResusableDataBuffer(measureReusableDataBuffers);
+        }
+      }
+      blockExecutionInfoList.add(blockExecutionInfoForBlock);
     }
     if (null != queryModel.getStatisticsRecorder()) {
       QueryStatistic queryStatistic = new QueryStatistic();
@@ -372,7 +493,24 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo
         .setTotalNumberDimensionToRead(
             segmentProperties.getDimensionOrdinalToChunkMapping().size());
-    blockExecutionInfo.setPrefetchBlocklet(!queryModel.isReadPageByPage());
+    if (queryModel.isReadPageByPage()) {
+      blockExecutionInfo.setPrefetchBlocklet(false);
+    } else {
+      blockExecutionInfo.setPrefetchBlocklet(queryModel.isPreFetchData());
+    }
+    // In case of fg datamap it should not go to direct fill.
+    boolean fgDataMapPathPresent = false;
+    for (TableBlockInfo blockInfo : queryModel.getTableBlockInfos()) {
+      fgDataMapPathPresent = blockInfo.getDataMapWriterPath() != null;
+      if (fgDataMapPathPresent) {
+        queryModel.setDirectVectorFill(false);
+        break;
+      }
+    }
+
+    blockExecutionInfo
+        .setDirectVectorFill(queryModel.isDirectVectorFill());
+
     blockExecutionInfo
         .setTotalNumberOfMeasureToRead(segmentProperties.getMeasuresOrdinalToChunkMapping().size());
     blockExecutionInfo.setComplexDimensionInfoMap(QueryUtil
@@ -411,6 +549,16 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     int[] dimensionChunkIndexes = QueryUtil.getDimensionChunkIndexes(projectDimensions,
         segmentProperties.getDimensionOrdinalToChunkMapping(),
         currentBlockFilterDimensions, allProjectionListDimensionIdexes);
+    int reusableBufferSize = segmentProperties.getDimensionOrdinalToChunkMapping().size()
+        < projectDimensions.size() ?
+        projectDimensions.size() :
+        segmentProperties.getDimensionOrdinalToChunkMapping().size();
+    ReusableDataBuffer[] dimensionBuffer =
+        new ReusableDataBuffer[reusableBufferSize];
+    for (int i = 0; i < dimensionBuffer.length; i++) {
+      dimensionBuffer[i] = new ReusableDataBuffer();
+    }
+    blockExecutionInfo.setDimensionResusableDataBuffer(dimensionBuffer);
     int numberOfColumnToBeReadInOneIO = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
             CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE));
@@ -435,6 +583,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         currentBlockQueryMeasures, expressionMeasures,
         segmentProperties.getMeasuresOrdinalToChunkMapping(), filterMeasures,
         allProjectionListMeasureIndexes);
+    ReusableDataBuffer[] measureBuffer =
+        new ReusableDataBuffer[segmentProperties.getMeasuresOrdinalToChunkMapping().size()];
+    for (int i = 0; i < measureBuffer.length; i++) {
+      measureBuffer[i] = new ReusableDataBuffer();
+    }
+    blockExecutionInfo.setMeasureResusableDataBuffer(measureBuffer);
     if (measureChunkIndexes.length > 0) {
 
       numberOfElementToConsider = measureChunkIndexes[measureChunkIndexes.length - 1]
@@ -641,8 +795,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         exceptionOccurred = e;
       }
     }
-    // clear all the unsafe memory used for the given task ID
-    UnsafeMemoryManager.INSTANCE.freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId());
+    // clear all the unsafe memory used for the given task ID only if it is neccessary to be cleared
+    if (freeUnsafeMemory) {
+      UnsafeMemoryManager.INSTANCE
+          .freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId());
+    }
     if (null != queryProperties.executorService) {
       // In case of limit query when number of limit records is already found so executors
       // must stop all the running execution otherwise it will keep running and will hit

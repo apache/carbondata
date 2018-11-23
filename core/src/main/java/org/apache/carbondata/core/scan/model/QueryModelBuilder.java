@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -33,6 +32,8 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.DataTypeConverter;
+
+import org.apache.log4j.Logger;
 
 public class QueryModelBuilder {
 
@@ -45,7 +46,7 @@ public class QueryModelBuilder {
   /**
    * log information
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(QueryModelBuilder.class.getName());
 
   public QueryModelBuilder(CarbonTable table) {
@@ -311,14 +312,19 @@ public class QueryModelBuilder {
     queryModel.setReadPageByPage(readPageByPage);
     queryModel.setProjection(projection);
 
-    // set the filter to the query model in order to filter blocklet before scan
-    boolean[] isFilterDimensions = new boolean[table.getDimensionOrdinalMax()];
-    boolean[] isFilterMeasures = new boolean[table.getAllMeasures().size()];
-    table.processFilterExpression(filterExpression, isFilterDimensions, isFilterMeasures);
-    queryModel.setIsFilterDimensions(isFilterDimensions);
-    queryModel.setIsFilterMeasures(isFilterMeasures);
-    FilterResolverIntf filterIntf = table.resolveFilter(filterExpression);
-    queryModel.setFilterExpressionResolverTree(filterIntf);
+    if (table.isTransactionalTable()) {
+      // set the filter to the query model in order to filter blocklet before scan
+      boolean[] isFilterDimensions = new boolean[table.getDimensionOrdinalMax()];
+      boolean[] isFilterMeasures = new boolean[table.getAllMeasures().size()];
+      table.processFilterExpression(filterExpression, isFilterDimensions, isFilterMeasures);
+      queryModel.setIsFilterDimensions(isFilterDimensions);
+      queryModel.setIsFilterMeasures(isFilterMeasures);
+      FilterResolverIntf filterIntf =
+          CarbonTable.resolveFilter(filterExpression, table.getAbsoluteTableIdentifier());
+      queryModel.setFilterExpressionResolverTree(filterIntf);
+    } else {
+      queryModel.setFilterExpression(filterExpression);
+    }
     return queryModel;
   }
 }

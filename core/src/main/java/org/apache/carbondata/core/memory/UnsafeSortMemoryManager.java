@@ -22,10 +22,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 /**
  * Memory manager to keep track of
@@ -36,7 +38,7 @@ public class UnsafeSortMemoryManager {
   /**
    * logger
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(UnsafeSortMemoryManager.class.getName());
 
   /**
@@ -49,7 +51,7 @@ public class UnsafeSortMemoryManager {
   /**
    * map to keep taskid to memory blocks
    */
-  private static Map<Long, Set<MemoryBlock>> taskIdToMemoryBlockMap;
+  private static Map<String, Set<MemoryBlock>> taskIdToMemoryBlockMap;
 
   /**
    * singleton instance
@@ -74,17 +76,18 @@ public class UnsafeSortMemoryManager {
   static {
     long size;
     try {
-      size = Long.parseLong(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB,
-              CarbonCommonConstants.IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB_DEFAULT));
+      size = Long.parseLong(CarbonProperties.getInstance().getProperty(
+          CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB));
     } catch (Exception e) {
-      size = Long.parseLong(CarbonCommonConstants.IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB_DEFAULT);
-      LOGGER.info("Wrong memory size given, " + "so setting default value to " + size);
+      size = CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB_DEFAULT;
+      LOGGER.info("Wrong memory size given, so setting default value to " + size);
     }
-    if (size < 1024) {
-      size = 1024;
-      LOGGER.info("It is not recommended to keep unsafe memory size less than 1024MB, "
-          + "so setting default value to " + size);
+    if (size < CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB_DEFAULT) {
+      size = CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB_DEFAULT;
+      LOGGER.warn(String.format(
+          "It is not recommended to set unsafe sort memory size less than %dMB,"
+              + " so setting default value to %d",
+          CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB_DEFAULT, size));
     }
 
     long takenSize = size * 1024 * 1024;
@@ -136,13 +139,13 @@ public class UnsafeSortMemoryManager {
   public synchronized void allocateDummyMemory(long size) {
     memoryUsed += size;
     if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug("Working Memory block (" + size + ") is created with size " + size
-          + ". Total memory used " + memoryUsed + "Bytes, left " + (totalMemory - memoryUsed)
-          + "Bytes");
+      LOGGER.debug(String.format(
+          "Sort Memory block is created with size %d. Total memory used %d Bytes, left %d Bytes",
+          size, memoryUsed, totalMemory - memoryUsed));
     }
   }
 
-  public synchronized void freeMemory(long taskId, MemoryBlock memoryBlock) {
+  public synchronized void freeMemory(String taskId, MemoryBlock memoryBlock) {
     if (taskIdToMemoryBlockMap.containsKey(taskId)) {
       taskIdToMemoryBlockMap.get(taskId).remove(memoryBlock);
     }
@@ -151,9 +154,9 @@ public class UnsafeSortMemoryManager {
       memoryUsed -= memoryBlock.size();
       memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(
-            "Freeing memory of size: " + memoryBlock.size() + ": Current available memory is: " + (
-                totalMemory - memoryUsed));
+        LOGGER.debug(String.format(
+            "Freeing sort memory block (%s) with size: %d, current available memory is: %d",
+            memoryBlock.toString(), memoryBlock.size(), totalMemory - memoryUsed));
       }
     }
   }
@@ -164,7 +167,7 @@ public class UnsafeSortMemoryManager {
    * when in case of task failure we need to clear all the memory occupied
    * @param taskId
    */
-  public synchronized void freeMemoryAll(long taskId) {
+  public synchronized void freeMemoryAll(String taskId) {
     Set<MemoryBlock> memoryBlockSet = null;
     memoryBlockSet = taskIdToMemoryBlockMap.remove(taskId);
     long occuppiedMemory = 0;
@@ -183,9 +186,12 @@ public class UnsafeSortMemoryManager {
     memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug(
-          "Freeing memory of size: " + occuppiedMemory + ": Current available memory is: " + (
-              totalMemory - memoryUsed));
+          String.format("Freeing sort memory of size: %d, current available memory is: %d",
+              occuppiedMemory, totalMemory - memoryUsed));
     }
+    LOGGER.info(String.format(
+        "Total sort memory used after task %s is %d. Current running tasks are: %s",
+        taskId, memoryUsed, StringUtils.join(taskIdToMemoryBlockMap.keySet(), ", ")));
   }
 
   /**
@@ -196,7 +202,7 @@ public class UnsafeSortMemoryManager {
    * @param memoryRequested
    * @return memory block
    */
-  public synchronized MemoryBlock allocateMemoryLazy(long taskId, long memoryRequested) {
+  public synchronized MemoryBlock allocateMemoryLazy(String taskId, long memoryRequested) {
     MemoryBlock allocate = allocator.allocate(memoryRequested);
     Set<MemoryBlock> listOfMemoryBlock = taskIdToMemoryBlockMap.get(taskId);
     if (null == listOfMemoryBlock) {
@@ -210,7 +216,8 @@ public class UnsafeSortMemoryManager {
   /**
    * It tries to allocate memory of `size` bytes, keep retry until it allocates successfully.
    */
-  public static MemoryBlock allocateMemoryWithRetry(long taskId, long size) throws MemoryException {
+  public static MemoryBlock allocateMemoryWithRetry(String taskId, long size)
+          throws MemoryException {
     MemoryBlock baseBlock = null;
     int tries = 0;
     while (tries < 100) {
@@ -227,20 +234,20 @@ public class UnsafeSortMemoryManager {
       tries++;
     }
     if (baseBlock == null) {
-      throw new MemoryException("Not enough memory");
+      throw new MemoryException("Not enough sort memory, please increase "
+          + CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB);
     }
     return baseBlock;
   }
 
-  private synchronized MemoryBlock allocateMemory(long taskId, long memoryRequested) {
+  private synchronized MemoryBlock allocateMemory(String taskId, long memoryRequested) {
     if (memoryUsed + memoryRequested <= totalMemory) {
       MemoryBlock allocate = allocator.allocate(memoryRequested);
       memoryUsed += allocate.size();
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(
-            "Working Memory block (" + allocate.size() + ") is created with size " + allocate.size()
-                + ". Total memory used " + memoryUsed + "Bytes, left " + (totalMemory - memoryUsed)
-                + "Bytes");
+        LOGGER.debug(String.format(
+            "Sort Memory block is created with size %d. Total memory used %d Bytes, left %d Bytes",
+            allocate.size(), memoryUsed, totalMemory - memoryUsed));
       }
       Set<MemoryBlock> listOfMemoryBlock = taskIdToMemoryBlockMap.get(taskId);
       if (null == listOfMemoryBlock) {

@@ -25,6 +25,10 @@
     * BIGINT
     * DOUBLE
     * DECIMAL
+    * FLOAT
+    * BYTE
+    
+    **NOTE**: Float and Bytes are only supported for SDK and FileFormat.
 
   * Date/Time Types
     * TIMESTAMP
@@ -35,11 +39,16 @@
     * CHAR
     * VARCHAR
 
+    **NOTE**: For string longer than 32000 characters, use `LONG_STRING_COLUMNS` in table property.
+    Please refer to TBLProperties in [CreateTable](./ddl-of-carbondata.md#create-table) for more information.
+
   * Complex Types
     * arrays: ARRAY``<data_type>``
     * structs: STRUCT``<col_name : data_type COMMENT col_comment, ...>``
+    * maps: MAP``<primitive_type, data_type>``
     
     **NOTE**: Only 2 level complex type schema is supported for now.
 
   * Other Types
     * BOOLEAN
+

@@ -37,31 +37,38 @@ case class CarbonShowLoadsCommand(
     if (showHistory) {
       Seq(AttributeReference("SegmentSequenceId", StringType, nullable = false)(),
         AttributeReference("Status", StringType, nullable = false)(),
-        AttributeReference("Load Start Time", TimestampType, nullable = false)(),
-        AttributeReference("Load End Time", TimestampType, nullable = true)(),
+        AttributeReference("Load Start Time", StringType, nullable = false)(),
+        AttributeReference("Load End Time", StringType, nullable = true)(),
         AttributeReference("Merged To", StringType, nullable = false)(),
         AttributeReference("File Format", StringType, nullable = false)(),
-        AttributeReference("Visibility", StringType, nullable = false)())
+        AttributeReference("Visibility", StringType, nullable = false)(),
+        AttributeReference("Data Size", StringType, nullable = false)(),
+        AttributeReference("Index Size", StringType, nullable = false)())
     } else {
       Seq(AttributeReference("SegmentSequenceId", StringType, nullable = false)(),
         AttributeReference("Status", StringType, nullable = false)(),
-        AttributeReference("Load Start Time", TimestampType, nullable = false)(),
-        AttributeReference("Load End Time", TimestampType, nullable = true)(),
+        AttributeReference("Load Start Time", StringType, nullable = false)(),
+        AttributeReference("Load End Time", StringType, nullable = true)(),
         AttributeReference("Merged To", StringType, nullable = false)(),
-        AttributeReference("File Format", StringType, nullable = false)())
+        AttributeReference("File Format", StringType, nullable = false)(),
+        AttributeReference("Data Size", StringType, nullable = false)(),
+        AttributeReference("Index Size", StringType, nullable = false)())
     }
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+    setAuditTable(carbonTable)
     if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
     CarbonStore.showSegments(
       limit,
-      carbonTable.getMetadataPath,
+      carbonTable.getTablePath,
       showHistory
     )
   }
+
+  override protected def opName: String = "SHOW SEGMENTS"
 }

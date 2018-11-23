@@ -44,9 +44,10 @@ case class CarbonCreateDataMapCommand(
     dmProperties: Map[String, String],
     queryString: Option[String],
     ifNotExistsSet: Boolean = false,
-    deferredRebuild: Boolean = false)
+    var deferredRebuild: Boolean = false)
   extends AtomicRunnableCommand {
 
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
   private var dataMapProvider: DataMapProvider = _
   private var mainTable: CarbonTable = _
   private var dataMapSchema: DataMapSchema = _
@@ -60,6 +61,11 @@ case class CarbonCreateDataMapCommand(
       case _ => null
     }
 
+    if (mainTable != null) {
+      setAuditTable(mainTable)
+    }
+    setAuditInfo(Map("provider" -> dmProviderName, "dmName" -> dataMapName) ++ dmProperties)
+
     if (mainTable != null && !mainTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
@@ -72,15 +78,7 @@ case class CarbonCreateDataMapCommand(
       }
     }
 
-    if (mainTable != null &&
-        mainTable.isStreamingSink &&
-        !(dmProviderName.equalsIgnoreCase(DataMapClassProvider.PREAGGREGATE.toString)
-          || dmProviderName.equalsIgnoreCase(DataMapClassProvider.TIMESERIES.toString))) {
-      throw new MalformedCarbonCommandException(s"Streaming table does not support creating " +
-                                                s"$dmProviderName datamap")
-    }
-
-    if (mainTable !=null && CarbonUtil.getFormatVersion(mainTable) != ColumnarFormatVersion.V3) {
+    if (mainTable != null && CarbonUtil.getFormatVersion(mainTable) != ColumnarFormatVersion.V3) {
       throw new MalformedCarbonCommandException(s"Unsupported operation on table with " +
                                                 s"V1 or V2 format data")
     }
@@ -89,6 +87,13 @@ case class CarbonCreateDataMapCommand(
 
     val property = dmProperties.map(x => (x._1.trim, x._2.trim)).asJava
     val javaMap = new java.util.HashMap[String, String](property)
+    // for MV, it is deferred rebuild by default and cannot be non-deferred rebuild
+    if (dataMapSchema.getProviderName.equalsIgnoreCase(DataMapClassProvider.MV.getShortName)) {
+      if (!deferredRebuild) {
+        LOGGER.warn(s"DEFERRED REBUILD is enabled by default for MV datamap $dataMapName")
+      }
+      deferredRebuild = true
+    }
     javaMap.put(DataMapProperty.DEFERRED_REBUILD, deferredRebuild.toString)
     dataMapSchema.setProperties(javaMap)
 
@@ -97,6 +102,14 @@ case class CarbonCreateDataMapCommand(
         "For this datamap, main table is required. Use `CREATE DATAMAP ... ON TABLE ...` ")
     }
     dataMapProvider = DataMapManager.get.getDataMapProvider(mainTable, dataMapSchema, sparkSession)
+    if (deferredRebuild && !dataMapProvider.supportRebuild()) {
+      throw new MalformedDataMapCommandException(
+        s"DEFERRED REBUILD is not supported on this datamap $dataMapName" +
+        s" with provider ${dataMapSchema.getProviderName}")
+    }
+
+    val systemFolderLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
+    val operationContext: OperationContext = new OperationContext()
 
     // If it is index datamap, check whether the column has datamap created already
     dataMapProvider match {
@@ -128,8 +141,6 @@ case class CarbonCreateDataMapCommand(
           }
         }
 
-        val operationContext: OperationContext = new OperationContext()
-        val systemFolderLocation: String = CarbonProperties.getInstance().getSystemFolderLocation
         val createDataMapPreExecutionEvent: CreateDataMapPreExecutionEvent =
           new CreateDataMapPreExecutionEvent(sparkSession,
             systemFolderLocation, tableIdentifier.get)
@@ -137,20 +148,14 @@ case class CarbonCreateDataMapCommand(
           operationContext)
         dataMapProvider.initMeta(queryString.orNull)
         DataMapStatusManager.disableDataMap(dataMapName)
-        val createDataMapPostExecutionEvent: CreateDataMapPostExecutionEvent =
-          new CreateDataMapPostExecutionEvent(sparkSession,
-            systemFolderLocation, tableIdentifier.get)
-        OperationListenerBus.getInstance().fireEvent(createDataMapPostExecutionEvent,
-          operationContext)
       case _ =>
-        if (deferredRebuild) {
-          throw new MalformedDataMapCommandException(
-            "DEFERRED REBUILD is not supported on this DataMap")
-        }
         dataMapProvider.initMeta(queryString.orNull)
     }
-    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    LOGGER.audit(s"DataMap $dataMapName successfully added")
+    val createDataMapPostExecutionEvent: CreateDataMapPostExecutionEvent =
+      new CreateDataMapPostExecutionEvent(sparkSession,
+        systemFolderLocation, tableIdentifier, dmProviderName)
+    OperationListenerBus.getInstance().fireEvent(createDataMapPostExecutionEvent,
+      operationContext)
     Seq.empty
   }
 
@@ -181,9 +186,15 @@ case class CarbonCreateDataMapCommand(
 
   override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {
     if (dataMapProvider != null) {
-      dataMapProvider.cleanMeta()
+        CarbonDropDataMapCommand(
+          dataMapName,
+          true,
+          Some(TableIdentifier(mainTable.getTableName, Some(mainTable.getDatabaseName))),
+          forceDrop = false).run(sparkSession)
     }
     Seq.empty
   }
+
+  override protected def opName: String = "CREATE DATAMAP"
 }
 

@@ -27,11 +27,11 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.metadata.datatype.ArrayType;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalType;
+import org.apache.carbondata.core.metadata.datatype.MapType;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -49,6 +49,8 @@ public class TableSchemaBuilder {
   private List<ColumnSchema> sortColumns = new LinkedList<>();
 
   private List<ColumnSchema> dimension = new LinkedList<>();
+
+  private List<ColumnSchema> varCharColumns = new LinkedList<>();
 
   private List<ColumnSchema> complex = new LinkedList<>();
 
@@ -107,6 +109,7 @@ public class TableSchemaBuilder {
     schema.setSchemaEvolution(schemaEvol);
     List<ColumnSchema> allColumns = new LinkedList<>(sortColumns);
     allColumns.addAll(dimension);
+    allColumns.addAll(varCharColumns);
     allColumns.addAll(complex);
     allColumns.addAll(measures);
     schema.setListOfColumns(allColumns);
@@ -116,7 +119,7 @@ public class TableSchemaBuilder {
       property.put(CarbonCommonConstants.TABLE_BLOCKSIZE, String.valueOf(blockSize));
     }
     if (blockletSize > 0) {
-      property.put(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB, String.valueOf(blockletSize));
+      property.put(CarbonCommonConstants.TABLE_BLOCKLET_SIZE, String.valueOf(blockletSize));
     }
 
     // Adding local dictionary, applicable only for String(dictionary exclude)
@@ -146,12 +149,13 @@ public class TableSchemaBuilder {
     this.sortColumns = sortColumns;
   }
 
-  public ColumnSchema addColumn(StructField field, AtomicInteger valIndex, boolean isSortColumn) {
-    return addColumn(field, null, valIndex, isSortColumn, false);
+  public ColumnSchema addColumn(StructField field, AtomicInteger valIndex, boolean isSortColumn,
+      boolean isInvertedIdxColumn) {
+    return addColumn(field, null, valIndex, isSortColumn, false, isInvertedIdxColumn);
   }
 
   private ColumnSchema addColumn(StructField field, String parentName, AtomicInteger valIndex,
-      boolean isSortColumn, boolean isComplexChild) {
+      boolean isSortColumn, boolean isComplexChild, boolean isInvertedIdxColumn) {
     Objects.requireNonNull(field);
     if (isComplexChild) {
       // if field is complex then append parent name to the child field to check
@@ -193,9 +197,10 @@ public class TableSchemaBuilder {
     // SO, this will not have any impact.
     newColumn.setColumnUniqueId(field.getFieldName());
     newColumn.setColumnReferenceId(newColumn.getColumnUniqueId());
-    newColumn.setEncodingList(createEncoding(field.getDataType(), isSortColumn, isComplexChild));
+    newColumn
+        .setEncodingList(createEncoding(field.getDataType(), isInvertedIdxColumn, isComplexChild));
     if (field.getDataType().isComplexType()) {
-      if (field.getDataType().getName().equalsIgnoreCase("ARRAY")) {
+      if (DataTypes.isArrayType(field.getDataType()) || DataTypes.isMapType(field.getDataType())) {
         newColumn.setNumberOfChild(1);
       } else {
         newColumn.setNumberOfChild(((StructType) field.getDataType()).getFields().size());
@@ -209,29 +214,35 @@ public class TableSchemaBuilder {
     if (!isSortColumn) {
       if (!newColumn.isDimensionColumn()) {
         measures.add(newColumn);
-      } else if (DataTypes.isStructType(field.getDataType()) ||
-          DataTypes.isArrayType(field.getDataType()) || isComplexChild) {
+      } else if (DataTypes.isStructType(field.getDataType()) || DataTypes
+          .isArrayType(field.getDataType()) || DataTypes.isMapType(field.getDataType())
+          || isComplexChild) {
         complex.add(newColumn);
       } else {
-        dimension.add(newColumn);
+        if (field.getDataType() == DataTypes.VARCHAR) {
+          varCharColumns.add(newColumn);
+        } else {
+          dimension.add(newColumn);
+        }
       }
-    }
-    if (newColumn.isDimensionColumn()) {
-      newColumn.setUseInvertedIndex(true);
     }
     if (field.getDataType().isComplexType()) {
       String parentFieldName = newColumn.getColumnName();
-      if (field.getDataType().getName().equalsIgnoreCase("ARRAY")) {
+      if (DataTypes.isArrayType(field.getDataType())) {
         String colName = getColNameForArray(valIndex);
         addColumn(new StructField(colName, ((ArrayType) field.getDataType()).getElementType()),
-            field.getFieldName(), valIndex, false, true);
-      } else if (field.getDataType().getName().equalsIgnoreCase("STRUCT")
+            field.getFieldName(), valIndex, false, true, isInvertedIdxColumn);
+      } else if (DataTypes.isStructType(field.getDataType())
           && ((StructType) field.getDataType()).getFields().size() > 0) {
         // This field has children.
         List<StructField> fields = ((StructType) field.getDataType()).getFields();
         for (int i = 0; i < fields.size(); i++) {
-          addColumn(fields.get(i), parentFieldName, valIndex, false, true);
+          addColumn(fields.get(i), parentFieldName, valIndex, false, true, isInvertedIdxColumn);
         }
+      } else if (DataTypes.isMapType(field.getDataType())) {
+        String colName = getColNameForArray(valIndex);
+        addColumn(new StructField(colName, ((MapType) field.getDataType()).getValueType()),
+            parentFieldName, valIndex, false, true, isInvertedIdxColumn);
       }
     }
     // todo: need more information such as long_string_columns
@@ -278,14 +289,14 @@ public class TableSchemaBuilder {
     }
   }
 
-  private List<Encoding> createEncoding(DataType dataType, boolean isSortColumn,
+  private List<Encoding> createEncoding(DataType dataType, boolean isInvertedIdxColumn,
       boolean isComplexChild) {
     List<Encoding> encodings = new LinkedList<>();
     if (dataType == DataTypes.DATE && !isComplexChild) {
       encodings.add(Encoding.DIRECT_DICTIONARY);
       encodings.add(Encoding.DICTIONARY);
     }
-    if (isSortColumn) {
+    if (isInvertedIdxColumn) {
       encodings.add(Encoding.INVERTED_INDEX);
     }
     return encodings;

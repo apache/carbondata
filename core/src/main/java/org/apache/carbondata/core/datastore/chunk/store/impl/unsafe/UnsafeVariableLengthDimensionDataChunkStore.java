@@ -21,11 +21,8 @@ import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
-import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
-import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
  * Below class is responsible to store variable length dimension data chunk in
@@ -53,8 +50,8 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
   private byte[] value;
 
   public UnsafeVariableLengthDimensionDataChunkStore(long totalSize, boolean isInvertedIdex,
-      int numberOfRows) {
-    super(totalSize, isInvertedIdex, numberOfRows);
+      int numberOfRows, int dataLength) {
+    super(totalSize, isInvertedIdex, numberOfRows, dataLength);
     this.numberOfRows = numberOfRows;
     // initials size assigning to some random value
     this.value = new byte[20];
@@ -223,6 +220,7 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
    */
   @Override
   public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+    vector.setDictionary(null);
     // get the row id from reverse inverted index based on row id
     rowId = getRowId(rowId);
     // get the current row offset
@@ -236,28 +234,7 @@ public abstract class UnsafeVariableLengthDimensionDataChunkStore
     }
     // get the row from unsafe
     fillRowInternal(length, value, currentDataOffset);
-    DataType dt = vector.getType();
-    if ((!(dt == DataTypes.STRING) && length == 0) || ByteUtil.UnsafeComparer.INSTANCE
-        .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
-            CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, value, 0, length)) {
-      vector.putNull(vectorRow);
-    } else {
-      if (dt == DataTypes.STRING) {
-        vector.putBytes(vectorRow, 0, length, value);
-      } else if (dt == DataTypes.BOOLEAN) {
-        vector.putBoolean(vectorRow, ByteUtil.toBoolean(value[0]));
-      } else if (dt == DataTypes.SHORT) {
-        vector.putShort(vectorRow, ByteUtil.toShort(value, 0, length));
-      } else if (dt == DataTypes.INT) {
-        vector.putInt(vectorRow, ByteUtil.toInt(value, 0, length));
-      } else if (dt == DataTypes.LONG) {
-        vector.putLong(vectorRow,
-            DataTypeUtil.getDataBasedOnRestructuredDataType(value, vector.getBlockDataType(), 0,
-                length));
-      } else if (dt == DataTypes.TIMESTAMP) {
-        vector.putLong(vectorRow, ByteUtil.toLong(value, 0, length) * 1000L);
-      }
-    }
+    QueryUtil.putDataToVector(vector, value, vectorRow, length);
   }
 
   /**

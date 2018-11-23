@@ -20,6 +20,7 @@ package org.apache.spark.rdd
 import scala.reflect.ClassTag
 
 import org.apache.spark._
+import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.spark.rdd.CarbonRDD
 
@@ -27,12 +28,12 @@ import org.apache.carbondata.spark.rdd.CarbonRDD
 case class DataLoadPartitionWrap[T: ClassTag](rdd: RDD[T], partition: Partition)
 
 class DataLoadCoalescedRDD[T: ClassTag](
-    @transient var prev: RDD[T],
+    @transient private val sparkSession: SparkSession,
+    @transient private var prev: RDD[T],
     nodeList: Array[String])
-  extends CarbonRDD[DataLoadPartitionWrap[T]](prev.context, Nil,
-    prev.sparkContext.hadoopConfiguration) {
+  extends CarbonRDD[DataLoadPartitionWrap[T]](sparkSession, Nil) {
 
-  override def getPartitions: Array[Partition] = {
+  override def internalGetPartitions: Array[Partition] = {
     new DataLoadPartitionCoalescer(prev, nodeList).run
   }
 

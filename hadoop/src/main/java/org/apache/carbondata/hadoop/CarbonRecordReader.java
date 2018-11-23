@@ -17,6 +17,7 @@
 package org.apache.carbondata.hadoop;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +25,9 @@ import java.util.Map;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
+import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
@@ -33,6 +36,7 @@ import org.apache.carbondata.core.scan.result.iterator.ChunkRowIterator;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
@@ -57,15 +61,16 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
   private boolean skipClearDataMapAtClose = false;
 
   public CarbonRecordReader(QueryModel queryModel, CarbonReadSupport<T> readSupport,
-      InputMetricsStats inputMetricsStats) {
-    this(queryModel, readSupport);
+      InputMetricsStats inputMetricsStats, Configuration configuration) {
+    this(queryModel, readSupport, configuration);
     this.inputMetricsStats = inputMetricsStats;
   }
 
-  public CarbonRecordReader(QueryModel queryModel, CarbonReadSupport<T> readSupport) {
+  public CarbonRecordReader(QueryModel queryModel, CarbonReadSupport<T> readSupport,
+      Configuration configuration) {
     this.queryModel = queryModel;
     this.readSupport = readSupport;
-    this.queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
+    this.queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel, configuration);
   }
 
   @Override
@@ -76,6 +81,18 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     List<CarbonInputSplit> splitList;
     if (inputSplit instanceof CarbonInputSplit) {
       splitList = new ArrayList<>(1);
+      String splitPath = ((CarbonInputSplit) inputSplit).getPath().toString();
+      // BlockFooterOffSet will be null in case of CarbonVectorizedReader as this has to be set
+      // where multiple threads are able to read small set of files to calculate footer instead
+      // of the main thread setting this for all the files.
+      if (((CarbonInputSplit) inputSplit).getDetailInfo().getBlockFooterOffset() == 0L) {
+        FileReader reader = FileFactory.getFileHolder(FileFactory.getFileType(splitPath),
+            context.getConfiguration());
+        ByteBuffer buffer = reader
+            .readByteBuffer(FileFactory.getUpdatedFilePath(splitPath), inputSplit.getLength() - 8,
+                8);
+        ((CarbonInputSplit) inputSplit).getDetailInfo().setBlockFooterOffset(buffer.getLong());
+      }
       splitList.add((CarbonInputSplit) inputSplit);
     } else if (inputSplit instanceof CarbonMultiBlockSplit) {
       // contains multiple blocks, this is an optimization for concurrent query.
@@ -114,8 +131,22 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     return readSupport.readRow(carbonIterator.next());
   }
 
+  /**
+   * get batch result
+   *
+   * @return rows
+   */
+  public List<Object[]> getBatchValue() {
+    if (null != inputMetricsStats) {
+      inputMetricsStats.incrementRecordRead(1L);
+    }
+    List<Object[]> objects = ((ChunkRowIterator) carbonIterator).nextBatch();
+    rowCount += objects.size();
+    return objects;
+  }
+
   @Override public float getProgress() throws IOException, InterruptedException {
-    // TODO : Implement it based on total number of rows it is going to retrive.
+    // TODO : Implement it based on total number of rows it is going to retrieve.
     return 0;
   }
 

@@ -45,14 +45,18 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   // storage data type of this column, it could be different from data type in the column spec
   private DataType storeDataType;
 
-  // compressor name for compressing and decompressing this column
-  private String compressorName;
+  // compressor name for compressing and decompressing this column.
+  // Make it protected for RLEEncoderMeta
+  protected String compressorName;
+
+  // Whether the flow shoild go to fill complete vector while decoding the page.
+  private transient boolean fillCompleteVector;
 
   public ColumnPageEncoderMeta() {
   }
 
   public ColumnPageEncoderMeta(TableSpec.ColumnSpec columnSpec, DataType storeDataType,
-      SimpleStatsResult stats, String compressorName) {
+      String compressorName) {
     if (columnSpec == null) {
       throw new IllegalArgumentException("columm spec must not be null");
     }
@@ -66,6 +70,11 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
     this.storeDataType = storeDataType;
     this.compressorName = compressorName;
     setType(DataType.convertType(storeDataType));
+  }
+
+  public ColumnPageEncoderMeta(TableSpec.ColumnSpec columnSpec, DataType storeDataType,
+      SimpleStatsResult stats, String compressorName) {
+    this(columnSpec, storeDataType, compressorName);
     if (stats != null) {
       setDecimal(stats.getDecimalCount());
       setMaxValue(stats.getMax());
@@ -126,6 +135,10 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       out.writeDouble((Double) getMaxValue());
       out.writeDouble((Double) getMinValue());
       out.writeDouble(0d); // unique value is obsoleted, maintain for compatibility
+    } else if (dataType == DataTypes.FLOAT) {
+      out.writeFloat((Float) getMaxValue());
+      out.writeFloat((Float) getMinValue());
+      out.writeFloat(0f); // unique value is obsoleted, maintain for compatibility
     } else if (DataTypes.isDecimal(dataType)) {
       byte[] maxAsBytes = getMaxAsBytes(columnSpec.getSchemaDataType());
       byte[] minAsBytes = getMinAsBytes(columnSpec.getSchemaDataType());
@@ -175,6 +188,10 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       this.setMaxValue(in.readDouble());
       this.setMinValue(in.readDouble());
       in.readDouble(); // for non exist value which is obsoleted, it is backward compatibility;
+    } else if (dataType == DataTypes.FLOAT) {
+      this.setMaxValue(in.readFloat());
+      this.setMinValue(in.readFloat());
+      in.readFloat(); // for non exist value which is obsoleted, it is backward compatibility;
     } else if (DataTypes.isDecimal(dataType)) {
       byte[] max = new byte[in.readShort()];
       in.readFully(max);
@@ -269,5 +286,13 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
 
   public DataType getSchemaDataType() {
     return columnSpec.getSchemaDataType();
+  }
+
+  public boolean isFillCompleteVector() {
+    return fillCompleteVector;
+  }
+
+  public void setFillCompleteVector(boolean fillCompleteVector) {
+    this.fillCompleteVector = fillCompleteVector;
   }
 }

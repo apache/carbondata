@@ -29,12 +29,12 @@ import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.util.{AlterTableUtil, PartitionUtils}
 
-import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
@@ -54,13 +54,15 @@ case class CarbonAlterTableSplitPartitionCommand(
     splitPartitionModel: AlterTableSplitPartitionModel)
   extends AtomicRunnableCommand {
 
-  private val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
   private val oldPartitionIds: util.ArrayList[Int] = new util.ArrayList[Int]()
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val dbName = splitPartitionModel.databaseName.getOrElse(sparkSession.catalog.currentDatabase)
     val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val tableName = splitPartitionModel.tableName
+    setAuditTable(dbName, tableName)
+    setAuditInfo(Map("partition" -> splitPartitionModel.partitionId))
     val relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
       .asInstanceOf[CarbonRelation]
     val tablePath = relation.carbonTable.getTablePath
@@ -142,8 +144,12 @@ case class CarbonAlterTableSplitPartitionCommand(
         LockUsage.ALTER_PARTITION_LOCK)
       locks = AlterTableUtil.validateTableAndAcquireLock(dbName, tableName,
         locksToBeAcquired)(sparkSession)
-      val carbonLoadModel = new CarbonLoadModel()
       val table = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
+      val carbonLoadModel = new CarbonLoadModel()
+      val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
+        .getOrElse(CarbonCommonConstants.COMPRESSOR,
+          CompressorFactory.getInstance().getCompressor.getName)
+      carbonLoadModel.setColumnCompressor(columnCompressor)
       val tablePath = table.getTablePath
       val dataLoadSchema = new CarbonDataLoadSchema(table)
       carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
@@ -178,11 +184,10 @@ case class CarbonAlterTableSplitPartitionCommand(
     } finally {
       AlterTableUtil.releaseLocks(locks)
       CacheProvider.getInstance().dropAllCache()
-      val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+      val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
       LOGGER.info("Locks released after alter table add/split partition action.")
       if (success) {
         LOGGER.info(s"Alter table add/split partition is successful for table $dbName.$tableName")
-        LOGGER.audit(s"Alter table add/split partition is successful for table $dbName.$tableName")
       }
     }
     Seq.empty
@@ -194,8 +199,6 @@ case class CarbonAlterTableSplitPartitionCommand(
       carbonLoadModel: CarbonLoadModel,
       oldPartitionIdList: List[Int]
   ): Unit = {
-    LOGGER.audit(s"Add partition request received for table " +
-                 s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
     try {
       startSplitThreads(sqlContext,
         carbonLoadModel,
@@ -212,10 +215,8 @@ case class CarbonAlterTableSplitPartitionCommand(
       carbonLoadModel: CarbonLoadModel,
       partitionId: String,
       oldPartitionIdList: List[Int]): Unit = {
-    val numberOfCores = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.NUM_CORES_ALT_PARTITION,
-        CarbonCommonConstants.DEFAULT_NUMBER_CORES)
-    val executor : ExecutorService = Executors.newFixedThreadPool(numberOfCores.toInt)
+    val numberOfCores = CarbonProperties.getInstance().getNumberOfAltPartitionCores
+    val executor : ExecutorService = Executors.newFixedThreadPool(numberOfCores)
     try {
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
       val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
@@ -251,6 +252,8 @@ case class CarbonAlterTableSplitPartitionCommand(
       }
     }
   }
+
+  override protected def opName: String = "SPLIT CUSTOM PARTITION"
 }
 
 case class SplitThread(sqlContext: SQLContext,
@@ -260,7 +263,7 @@ case class SplitThread(sqlContext: SQLContext,
     partitionId: String,
     oldPartitionIdList: List[Int]) extends Thread {
 
-  private val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   override def run(): Unit = {
     var triggeredSplitPartitionStatus = false
@@ -271,7 +274,7 @@ case class SplitThread(sqlContext: SQLContext,
       triggeredSplitPartitionStatus = true
     } catch {
       case e: Exception =>
-        val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+        val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
         LOGGER.error(s"Exception in partition split thread: ${ e.getMessage } }")
         exception = e
     }
@@ -297,7 +300,7 @@ case class SplitThread(sqlContext: SQLContext,
       }
     } catch {
       case e: Exception =>
-        LOGGER.error(e, s"Exception in partition split thread ${ e.getMessage }")
+        LOGGER.error(s"Exception in partition split thread ${ e.getMessage }", e)
         throw e
     }
   }

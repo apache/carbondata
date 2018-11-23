@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -38,13 +37,15 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
 
+import org.apache.log4j.Logger;
+
 /**
  * Store the information about the table.
  * it stores the fact table as well as aggregate table present in the schema
  */
 public class TableInfo implements Serializable, Writable {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(TableInfo.class.getName());
 
   /**
@@ -256,10 +257,13 @@ public class TableInfo implements Serializable, Writable {
       tableBlockSize = tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE);
     }
     if (null == tableBlockSize) {
-      tableBlockSize = CarbonCommonConstants.BLOCK_SIZE_DEFAULT_VAL;
-      LOGGER.info("Table block size not specified for " + getTableUniqueName()
-          + ". Therefore considering the default value "
-          + CarbonCommonConstants.BLOCK_SIZE_DEFAULT_VAL + " MB");
+      tableBlockSize = CarbonCommonConstants.TABLE_BLOCK_SIZE_DEFAULT;
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug(
+            "Table block size not specified for " + getTableUniqueName() +
+                ". Therefore considering the default value " +
+                CarbonCommonConstants.TABLE_BLOCK_SIZE_DEFAULT + " MB");
+      }
     }
     return Integer.parseInt(tableBlockSize);
   }

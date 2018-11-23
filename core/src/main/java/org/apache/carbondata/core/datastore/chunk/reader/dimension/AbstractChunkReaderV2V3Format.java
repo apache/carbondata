@@ -22,7 +22,6 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
-import org.apache.carbondata.format.Encoding;
 
 /**
  * Abstract class for V2, V3 format dimension column reader
@@ -111,16 +110,5 @@ public abstract class AbstractChunkReaderV2V3Format extends AbstractChunkReader 
    */
   protected abstract DimensionRawColumnChunk[] readRawDimensionChunksInGroup(FileReader fileReader,
       int startColumnBlockletIndex, int endColumnBlockletIndex) throws IOException;
-
-  /**
-   * Below method will be used to check whether particular encoding is present
-   * in the dimension or not
-   *
-   * @param encoding encoding to search
-   * @return if encoding is present in dimension
-   */
-  protected boolean hasEncoding(List<Encoding> encodings, Encoding encoding) {
-    return encodings.contains(encoding);
-  }
 
 }

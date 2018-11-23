@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
@@ -48,8 +47,11 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
+
+import org.apache.log4j.Logger;
 
 /**
  * Fact data handler class to handle the fact data
@@ -59,7 +61,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonFactDataHandlerColumnar.class.getName());
 
   private CarbonFactDataHandlerModel model;
@@ -132,7 +134,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       }
     }
 
-    LOGGER.info("Columns considered as NoInverted Index are " + noInvertedIdxCol.toString());
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Columns considered as NoInverted Index are " + noInvertedIdxCol.toString());
+    }
   }
 
   private void initParameters(CarbonFactDataHandlerModel model) {
@@ -144,7 +148,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
                 .getBucketId()));
     producerExecutorServiceTaskList =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    LOGGER.info("Initializing writer executors");
+    LOGGER.debug("Initializing writer executors");
     consumerExecutorService = Executors.newFixedThreadPool(1, new CarbonThreadFactory(
         "ConsumerPool_" + System.nanoTime() + ":" + model.getTableName() + ", range: " + model
             .getBucketId()));
@@ -208,11 +212,14 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         blockletProcessingCount.incrementAndGet();
         // set the entry count to zero
         processedDataCount += entryCount;
-        LOGGER.info("Total Number Of records added to store: " + processedDataCount);
+
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("Total Number Of records added to store: " + processedDataCount);
+        }
         dataRows = new ArrayList<>(this.pageSize);
         this.entryCount = 0;
       } catch (InterruptedException e) {
-        LOGGER.error(e, e.getMessage());
+        LOGGER.error(e.getMessage(), e);
         throw new CarbonDataWriterException(e.getMessage(), e);
       }
     }
@@ -239,13 +246,22 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * @return false if any varchar column page cannot add one more value(2MB)
    */
   private boolean isVarcharColumnFull(CarbonRow row) {
+    //TODO: test and remove this as now  UnsafeSortDataRows can exceed 2MB
     if (model.getVarcharDimIdxInNoDict().size() > 0) {
-      byte[][] nonDictArray = WriteStepRowUtil.getNoDictAndComplexDimension(row);
+      Object[] nonDictArray = WriteStepRowUtil.getNoDictAndComplexDimension(row);
       for (int i = 0; i < model.getVarcharDimIdxInNoDict().size(); i++) {
-        varcharColumnSizeInByte[i] += nonDictArray[model.getVarcharDimIdxInNoDict().get(i)].length;
+        if (DataTypeUtil
+            .isPrimitiveColumn(model.getNoDictAndComplexColumns()[i].getDataType())) {
+          // get the size from the data type
+          varcharColumnSizeInByte[i] +=
+              model.getNoDictAndComplexColumns()[i].getDataType().getSizeInBytes();
+        } else {
+          varcharColumnSizeInByte[i] +=
+              ((byte[]) nonDictArray[model.getVarcharDimIdxInNoDict().get(i)]).length;
+        }
         if (SnappyCompressor.MAX_BYTE_TO_COMPRESS -
                 (varcharColumnSizeInByte[i] + dataRows.size() * 4) < (2 << 20)) {
-          LOGGER.info("Limited by varchar column, page size is " + dataRows.size());
+          LOGGER.debug("Limited by varchar column, page size is " + dataRows.size());
           // re-init for next page
           varcharColumnSizeInByte = new int[model.getVarcharDimIdxInNoDict().size()];
           return true;
@@ -273,7 +289,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
     tablePage.encode();
 
-    LOGGER.info("Number Of records processed: " + dataRows.size());
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Number Of records processed: " + dataRows.size());
+    }
     return tablePage;
   }
 
@@ -291,19 +309,23 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     if (producerExecutorService.isShutdown()) {
       return;
     }
-    LOGGER.info("Started Finish Operation");
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Started Finish Operation");
+    }
     try {
       semaphore.acquire();
       producerExecutorServiceTaskList.add(producerExecutorService
           .submit(new Producer(tablePageList, dataRows, ++writerTaskSequenceCounter, true)));
       blockletProcessingCount.incrementAndGet();
       processedDataCount += entryCount;
-      LOGGER.info("Total Number Of records added to store: " + processedDataCount);
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Total Number Of records added to store: " + processedDataCount);
+      }
       closeWriterExecutionService(producerExecutorService);
       processWriteTaskSubmitList(producerExecutorServiceTaskList);
       processingComplete = true;
     } catch (InterruptedException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       throw new CarbonDataWriterException(e.getMessage(), e);
     }
   }
@@ -321,7 +343,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       service.shutdown();
       service.awaitTermination(1, TimeUnit.DAYS);
     } catch (InterruptedException e) {
-      LOGGER.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       throw new CarbonDataWriterException(e.getMessage());
     }
   }
@@ -339,7 +361,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       try {
         taskList.get(i).get();
       } catch (InterruptedException | ExecutionException e) {
-        LOGGER.error(e, e.getMessage());
+        LOGGER.error(e.getMessage(), e);
         throw new CarbonDataWriterException(e.getMessage(), e);
       }
     }
@@ -365,8 +387,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       }
       consumerExecutorService.shutdownNow();
       processWriteTaskSubmitList(consumerExecutorServiceTaskList);
-      this.dataWriter.writeFooterToFile();
-      LOGGER.info("All blocklets have been finished writing");
+      this.dataWriter.writeFooter();
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("All blocklets have been finished writing");
+      }
       // close all the open stream for both the files
       this.dataWriter.closeWriter();
     }
@@ -391,12 +415,12 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
               pageSize :
               CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
     }
-    LOGGER.info("Number of rows per column page is configured as pageSize = " + pageSize);
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Number of rows per column page is configured as pageSize = " + pageSize);
+    }
     dataRows = new ArrayList<>(this.pageSize);
 
     if (model.getVarcharDimIdxInNoDict().size() > 0) {
-      LOGGER.info("Number of rows per column blocklet is constrained by pageSize and actual size " +
-              "of long string column(s)");
       varcharColumnSizeInByte = new int[model.getVarcharDimIdxInNoDict().size()];
     }
 
@@ -577,7 +601,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         tablePageList.put(tablePage, indexInNodeHolderArray);
         return null;
       } catch (Throwable throwable) {
-        LOGGER.error(throwable, "Error in producer");
+        LOGGER.error("Error in producer", throwable);
         consumerExecutorService.shutdownNow();
         resetBlockletProcessingCount();
         throw new CarbonDataWriterException(throwable.getMessage(), throwable);
@@ -616,7 +640,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           if (!processingComplete || blockletProcessingCount.get() > 0) {
             producerExecutorService.shutdownNow();
             resetBlockletProcessingCount();
-            LOGGER.error(throwable, "Problem while writing the carbon data file");
+            LOGGER.error("Problem while writing the carbon data file", throwable);
             throw new CarbonDataWriterException(throwable.getMessage());
           }
         } finally {

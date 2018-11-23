@@ -23,7 +23,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
@@ -33,13 +32,15 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+import org.apache.log4j.Logger;
+
 /**
  * Dictionary generation for table.
  */
 public class TableDictionaryGenerator
     implements DictionaryGenerator<Integer, DictionaryMessage>, DictionaryWriter {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
           LogServiceFactory.getLogService(TableDictionaryGenerator.class.getName());
 
   private CarbonTable carbonTable;
@@ -77,7 +78,7 @@ public class TableDictionaryGenerator
   }
 
   @Override public void writeDictionaryData() {
-    int numOfCores = CarbonProperties.getInstance().getNumberOfCores();
+    int numOfCores = CarbonProperties.getInstance().getNumberOfLoadingCores();
     long start = System.currentTimeMillis();
     ExecutorService executorService = Executors.newFixedThreadPool(numOfCores);
     for (final DictionaryGenerator generator : columnMap.values()) {

@@ -44,6 +44,7 @@ import org.apache.carbondata.processing.loading.partition.impl.RangePartitionerI
 import org.apache.carbondata.processing.loading.partition.impl.RawRowComparator;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
 import org.apache.carbondata.processing.util.CarbonBadRecordUtil;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -134,12 +135,14 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     // sort the range bounds (sort in carbon is a little different from what we think)
     Arrays.sort(convertedSortColumnRanges,
         new RawRowComparator(sortColumnRangeInfo.getSortColumnIndex(),
-            sortColumnRangeInfo.getIsSortColumnNoDict()));
+            sortColumnRangeInfo.getIsSortColumnNoDict(), CarbonDataProcessorUtil
+            .getNoDictDataTypes(configuration.getTableSpec().getCarbonTable())));
 
     // range partitioner to dispatch rows by sort columns
     this.partitioner = new RangePartitionerImpl(convertedSortColumnRanges,
         new RawRowComparator(sortColumnRangeInfo.getSortColumnIndex(),
-            sortColumnRangeInfo.getIsSortColumnNoDict()));
+            sortColumnRangeInfo.getIsSortColumnNoDict(), CarbonDataProcessorUtil
+            .getNoDictDataTypes(configuration.getTableSpec().getCarbonTable())));
   }
 
   // only convert sort column fields

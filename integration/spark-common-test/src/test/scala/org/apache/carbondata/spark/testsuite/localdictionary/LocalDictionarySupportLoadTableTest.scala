@@ -35,7 +35,7 @@ import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFi
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
-import org.apache.carbondata.core.util.{CarbonProperties, DataFileFooterConverterV3}
+import org.apache.carbondata.core.util.{CarbonMetadataUtil, CarbonProperties, DataFileFooterConverterV3}
 
 class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterAll {
 
@@ -65,14 +65,14 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     sql("drop table if exists local2")
     sql(
       "CREATE TABLE local2(name string) STORED BY 'carbondata' tblproperties" +
-      "('local_dictionary_threshold'='9001','local_dictionary_include'='name')")
+      "('local_dictionary_enable'='true','local_dictionary_threshold'='9001','local_dictionary_include'='name')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
     assert(checkForLocalDictionary(getDimRawChunk(0)))
   }
 
   test("test successful local dictionary generation for default configs") {
     sql("drop table if exists local2")
-    sql("CREATE TABLE local2(name string) STORED BY 'carbondata'")
+    sql("CREATE TABLE local2(name string) STORED BY 'carbondata' tblproperties('local_dictionary_enable'='true')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
     assert(checkForLocalDictionary(getDimRawChunk(0)))
   }
@@ -90,7 +90,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     sql("drop table if exists local2")
     sql(
       "CREATE TABLE local2(name string) STORED BY 'carbondata' tblproperties" +
-      "('dictionary_exclude'='name')")
+      "('local_dictionary_enable'='true','dictionary_exclude'='name')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
     assert(checkForLocalDictionary(getDimRawChunk(0)))
   }
@@ -108,7 +108,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     sql("drop table if exists local2")
     sql(
       "CREATE TABLE local2(name string) STORED BY 'carbondata' tblproperties" +
-      "('local_dictionary_include'='name','local_dictionary_threshold'='300000')")
+      "('local_dictionary_enable'='true','local_dictionary_include'='name','local_dictionary_threshold'='300000')")
     sql("load data inpath '" + file1 + "' into table local2 OPTIONS('header'='false')")
     assert(checkForLocalDictionary(getDimRawChunk(0)))
   }
@@ -117,7 +117,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     sql("drop table if exists local2")
     sql(
       "CREATE TABLE local2(name string, age string) STORED BY 'carbondata' tblproperties" +
-      "('local_dictionary_include'='name', 'local_dictionary_exclude'='age')")
+      "('local_dictionary_enable'='true','local_dictionary_include'='name', 'local_dictionary_exclude'='age')")
     sql("insert into table local2 values('vishal', '30')")
     assert(checkForLocalDictionary(getDimRawChunk(0)))
     assert(!checkForLocalDictionary(getDimRawChunk(1)))
@@ -127,7 +127,7 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     sql("drop table if exists local2")
     sql(
       "CREATE TABLE local2(name struct<i:string,s:string>) STORED BY 'carbondata' tblproperties" +
-      "('local_dictionary_include'='name')")
+      "('local_dictionary_enable'='true','local_dictionary_include'='name')")
     sql("load data inpath '" + file2 +
         "' into table local2 OPTIONS('header'='false','COMPLEX_DELIMITER_LEVEL_1'='$', " +
         "'COMPLEX_DELIMITER_LEVEL_2'=':')")
@@ -136,9 +136,23 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
     assert(checkForLocalDictionary(getDimRawChunk(2)))
   }
 
+  test("test local dictionary data validation") {
+    sql("drop table if exists local_query_enable")
+    sql("drop table if exists local_query_disable")
+    sql(
+      "CREATE TABLE local_query_enable(name string) STORED BY 'carbondata' tblproperties" +
+      "('local_dictionary_enable'='false','local_dictionary_include'='name')")
+    sql("load data inpath '" + file1 + "' into table local_query_enable OPTIONS('header'='false')")
+    sql(
+      "CREATE TABLE local_query_disable(name string) STORED BY 'carbondata' tblproperties" +
+      "('local_dictionary_enable'='true','local_dictionary_include'='name')")
+    sql("load data inpath '" + file1 + "' into table local_query_disable OPTIONS('header'='false')")
+    checkAnswer(sql("select name from local_query_enable"), sql("select name from local_query_disable"))
+  }
+
   test("test to validate local dictionary values"){
     sql("drop table if exists local2")
-    sql("CREATE TABLE local2(name string) STORED BY 'carbondata'")
+    sql("CREATE TABLE local2(name string) STORED BY 'carbondata' tblproperties('local_dictionary_enable'='true')")
     sql("load data inpath '" + resourcesPath + "/localdictionary.csv" + "' into table local2")
     val dimRawChunk = getDimRawChunk(0)
     val dictionaryData = Array("vishal", "kumar", "akash", "praveen", "brijoo")
@@ -277,16 +291,18 @@ class LocalDictionarySupportLoadTableTest extends QueryTest with BeforeAndAfterA
       data: Array[String]): Boolean = {
     val local_dictionary = rawColumnPage.getDataChunkV3.local_dictionary
     if (null != local_dictionary) {
+      val compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
+        rawColumnPage.getDataChunkV3.getData_chunk_list.get(0).getChunk_meta)
       val encodings = local_dictionary.getDictionary_meta.encoders
       val encoderMetas = local_dictionary.getDictionary_meta.getEncoder_meta
       val encodingFactory = DefaultEncodingFactory.getInstance
-      val decoder = encodingFactory.createDecoder(encodings, encoderMetas)
+      val decoder = encodingFactory.createDecoder(encodings, encoderMetas, compressorName)
       val dictionaryPage = decoder
         .decode(local_dictionary.getDictionary_data, 0, local_dictionary.getDictionary_data.length)
       val dictionaryMap = new
           util.HashMap[DictionaryByteArrayWrapper, Integer]
       val usedDictionaryValues = util.BitSet
-        .valueOf(CompressorFactory.getInstance.getCompressor
+        .valueOf(CompressorFactory.getInstance.getCompressor(compressorName)
           .unCompressByte(local_dictionary.getDictionary_values))
       var index = 0
       var i = usedDictionaryValues.nextSetBit(0)

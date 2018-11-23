@@ -46,6 +46,15 @@ public class TrueFilterExecutor implements FilterExecuter {
   }
 
   @Override
+  public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
+      throws FilterUnsupportedException, IOException {
+    int numberOfPages = rawBlockletColumnChunks.getDataBlock().numberOfPages();
+    BitSet set = new BitSet(numberOfPages);
+    set.set(0, numberOfPages);
+    return set;
+  }
+
+  @Override
   public boolean applyFilter(RowIntf value, int dimOrdinalMax) {
     return true;
   }
@@ -58,7 +67,8 @@ public class TrueFilterExecutor implements FilterExecuter {
    * @param blockMinValue
    * @return BitSet
    */
-  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
+      boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     bitSet.flip(0, 1);
     return bitSet;

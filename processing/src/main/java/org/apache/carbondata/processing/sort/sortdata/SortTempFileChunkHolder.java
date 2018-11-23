@@ -27,7 +27,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -38,12 +37,14 @@ import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
 import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 
+import org.apache.log4j.Logger;
+
 public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHolder> {
 
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(SortTempFileChunkHolder.class.getName());
 
   /**
@@ -98,6 +99,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   private TableFieldStat tableFieldStat;
   private SortStepRowHandler sortStepRowHandler;
   private Comparator<IntermediateSortTempRow> comparator;
+  private boolean convertToActualField;
   /**
    * Constructor to initialize
    *
@@ -105,7 +107,8 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    * @param sortParameters
    * @param tableName
    */
-  public SortTempFileChunkHolder(File tempFile, SortParameters sortParameters, String tableName) {
+  public SortTempFileChunkHolder(File tempFile, SortParameters sortParameters, String tableName,
+      boolean convertToActualField) {
     // set temp file
     this.tempFile = tempFile;
     this.readBufferSize = sortParameters.getBufferSize();
@@ -113,9 +116,10 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     this.tableFieldStat = new TableFieldStat(sortParameters);
     this.sortStepRowHandler = new SortStepRowHandler(tableFieldStat);
     this.comparator = new IntermediateSortTempRowComparator(
-        tableFieldStat.getIsSortColNoDictFlags());
+        tableFieldStat.getIsSortColNoDictFlags(), tableFieldStat.getNoDictDataType());
     this.executorService = Executors
         .newFixedThreadPool(1, new CarbonThreadFactory("SafeSortTempChunkHolderPool:" + tableName));
+    this.convertToActualField = convertToActualField;
   }
 
   /**
@@ -168,7 +172,11 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
       fillDataForPrefetch();
     } else {
       try {
-        this.returnRow = sortStepRowHandler.readIntermediateSortTempRowFromInputStream(stream);
+        if (convertToActualField) {
+          this.returnRow = sortStepRowHandler.readWithNoSortFieldConvert(stream);
+        } else {
+          this.returnRow = sortStepRowHandler.readWithoutNoSortFieldConvert(stream);
+        }
         this.numberOfObjectRead++;
       } catch (IOException e) {
         throw new CarbonSortKeyAndGroupByException("Problem while reading rows", e);
@@ -214,9 +222,11 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   private IntermediateSortTempRow[] readBatchedRowFromStream(int expected) throws IOException {
     IntermediateSortTempRow[] holders = new IntermediateSortTempRow[expected];
     for (int i = 0; i < expected; i++) {
-      IntermediateSortTempRow holder
-          = sortStepRowHandler.readIntermediateSortTempRowFromInputStream(stream);
-      holders[i] = holder;
+      if (convertToActualField) {
+        holders[i] = sortStepRowHandler.readWithNoSortFieldConvert(stream);
+      } else {
+        holders[i] = sortStepRowHandler.readWithoutNoSortFieldConvert(stream);
+      }
     }
     this.numberOfObjectRead += expected;
     return holders;

@@ -17,14 +17,18 @@
 
 package org.apache.carbondata.sdk.file;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.metadata.datatype.ArrayType;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.MapType;
 import org.apache.carbondata.core.metadata.datatype.StructField;
+import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 /**
@@ -38,7 +42,7 @@ public class Field {
   private DataType type;
   private List<StructField> children;
   private String parent;
-  private String storeType = "columnnar";
+  private String storeType = "columnar";
   private int schemaOrdinal = -1;
   private int precision = 0;
   private int scale = 0;
@@ -78,8 +82,9 @@ public class Field {
       this.type = DataTypes.createDefaultArrayType();
     } else if (type.equalsIgnoreCase("struct")) {
       this.type = DataTypes.createDefaultStructType();
-    }
-    else {
+    } else if (type.equalsIgnoreCase("map")) {
+      this.type = DataTypes.createDefaultMapType();
+    } else {
       throw new IllegalArgumentException("unsupported data type: " + type);
     }
   }
@@ -113,8 +118,7 @@ public class Field {
       this.type = DataTypes.createArrayType(fields.get(0).getDataType());
     } else if (type.equalsIgnoreCase("struct")) {
       this.type = DataTypes.createStructType(fields);
-    }
-    else {
+    } else {
       throw new IllegalArgumentException("unsupported data type: " + type);
     }
   }
@@ -130,6 +134,7 @@ public class Field {
   public Field(String name, DataType type) {
     this.name = name;
     this.type = type;
+    initComplexTypeChildren();
   }
 
   /**
@@ -212,5 +217,99 @@ public class Field {
 
   public void setColumnComment(String columnComment) {
     this.columnComment = columnComment;
+  }
+
+  /* for SDK, change string type to varchar by default for parent columns */
+  public void updateDataTypeToVarchar() {
+    this.type = DataTypes.VARCHAR;
+  }
+
+  /*can use to change the case of the schema */
+  public void updateNameToLowerCase() {
+    this.name = name.toLowerCase();
+  }
+
+  private void initComplexTypeChildren() {
+    if (getDataType().isComplexType()) {
+      StructField subFields = prepareSubFields(getFieldName(), getDataType());
+      if (DataTypes.isArrayType(getDataType()) || DataTypes.isMapType(getDataType())) {
+        children = subFields.getChildren();
+      } else if (DataTypes.isStructType(getDataType())) {
+        children = ((StructType) subFields.getDataType()).getFields();
+      }
+    }
+  }
+
+  @Override
+  public String toString() {
+    return "Field{" +
+        "name='" + name + '\'' +
+        ", type=" + type +
+        ", schemaOrdinal=" + schemaOrdinal +
+        '}';
+  }
+
+  /**
+   * prepare sub fields for complex types
+   *
+   * @param fieldName column name
+   * @param dataType data type of column or it's children
+   * @return
+   */
+  private StructField prepareSubFields(String fieldName, DataType dataType) {
+    if (DataTypes.isArrayType(dataType)) {
+      List<StructField> arrayFields = new ArrayList<>();
+      StructField arrayField = prepareSubFields(fieldName, ((ArrayType) dataType).getElementType());
+      arrayFields.add(arrayField);
+      return new StructField(fieldName, DataTypes.createArrayType(arrayField.getDataType()),
+          arrayFields);
+    } else if (DataTypes.isStructType(dataType)) {
+      List<StructField> structFields = new ArrayList<>();
+      List<StructField> fields = ((StructType) dataType).getFields();
+      for (StructField field : fields) {
+        structFields.add(prepareSubFields(field.getFieldName(), field.getDataType()));
+      }
+      return new StructField(fieldName, DataTypes.createStructType(structFields), structFields);
+    } else if (DataTypes.isMapType(dataType)) {
+      // Internally Map<key, value> is stored as Array<struct<key, value>>. So the below method
+      // will convert a map type into similar field structure. The columnSchema will be formed
+      // as Map<Struct<key,value>>
+      List<StructField> mapFields = new ArrayList<>();
+      MapType mapType = (MapType) dataType;
+      // key is primitive type so type can be fetched directly
+      StructField keyField = new StructField(fieldName + ".key", mapType.getKeyType());
+      StructField valueField = prepareSubFields(fieldName + ".value", mapType.getValueType());
+      mapFields.add(keyField);
+      mapFields.add(valueField);
+      StructField field =
+          new StructField(fieldName + ".val", DataTypes.createStructType(mapFields));
+      MapType mapDataType = DataTypes.createMapType(keyField.getDataType(), field.getDataType());
+      List<StructField> mapStructField = new ArrayList<>();
+      mapStructField.add(field);
+      return new StructField(fieldName, mapDataType, mapStructField);
+    } else {
+      return new StructField(fieldName, dataType);
+    }
+  }
+
+  @Override
+  public int hashCode() {
+    return super.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof Field) {
+      Field field = (Field) obj;
+      if ((!this.getDataType().equals(field.getDataType()))
+          || (!this.getFieldName().equals(field.getFieldName()))
+          || (!(this.getSchemaOrdinal() == (field.getSchemaOrdinal())))
+          ) {
+        return false;
+      }
+    } else {
+      return false;
+    }
+    return true;
   }
 }

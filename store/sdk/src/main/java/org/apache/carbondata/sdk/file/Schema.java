@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.metadata.datatype.ArrayType;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 import com.google.gson.GsonBuilder;
@@ -95,6 +96,48 @@ public class Schema {
   }
 
   /**
+   * get fields length of schema
+   *
+   * @return fields length
+   */
+  public int getFieldsLength() {
+    return fields.length;
+  }
+
+  /**
+   * get field name by ordinal
+   *
+   * @param ordinal the data index of carbon schema
+   * @return ordinal field name
+   */
+  public String getFieldName(int ordinal) {
+    return fields[ordinal].getFieldName();
+  }
+
+  /**
+   * get  field data type name by ordinal
+   *
+   * @param ordinal the data index of carbon schema
+   * @return ordinal field data type name
+   */
+  public String getFieldDataTypeName(int ordinal) {
+    return fields[ordinal].getDataType().getName();
+  }
+
+  /**
+   * get  array child element data type name by ordinal
+   *
+   * @param ordinal the data index of carbon schema
+   * @return ordinal array child element data type name
+   */
+  public String getArrayElementTypeName(int ordinal) {
+    if (getFieldDataTypeName(ordinal).equalsIgnoreCase("ARRAY")) {
+      return ((ArrayType) fields[ordinal].getDataType()).getElementType().getName();
+    }
+    throw new RuntimeException("Only support Array type.");
+  }
+
+  /**
    * Sort the schema order as original order
    *
    * @return Schema object
@@ -107,5 +150,25 @@ public class Schema {
       }
     });
     return this;
+  }
+
+  @Override
+  public int hashCode() {
+    return super.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof Schema) {
+      Schema schema = (Schema) obj;
+      for (int i = 0; i < this.fields.length; i++) {
+        if (!(schema.fields)[i].equals((this.fields)[i])) {
+          return false;
+        }
+      }
+    } else {
+      return false;
+    }
+    return true;
   }
 }

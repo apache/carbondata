@@ -25,9 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
@@ -40,17 +40,21 @@ import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.scanner.LazyBlockletLoader;
+import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
 import org.apache.carbondata.core.util.CarbonUtil;
+
+import org.apache.log4j.Logger;
 
 /**
  * Scanned result class which will store and provide the result on request
  */
 public abstract class BlockletScannedResult {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(BlockletScannedResult.class.getName());
   /**
    * current row number
@@ -70,6 +74,11 @@ public abstract class BlockletScannedResult {
    * total number of filtered rows for each page
    */
   private int[] pageFilteredRowCount;
+
+  /**
+   * Filtered pages to be decoded and loaded to vector.
+   */
+  private int[] pageIdFiltered;
 
   /**
    * to keep track of number of rows process
@@ -139,8 +148,16 @@ public abstract class BlockletScannedResult {
 
   protected QueryStatisticsModel queryStatisticsModel;
 
+  protected LazyBlockletLoader lazyBlockletLoader;
+
+  private ReusableDataBuffer[] dimensionReusableBuffer;
+
+  private ReusableDataBuffer[] measureReusableBuffer;
+
   public BlockletScannedResult(BlockExecutionInfo blockExecutionInfo,
       QueryStatisticsModel queryStatisticsModel) {
+    this.dimensionReusableBuffer = blockExecutionInfo.getDimensionResusableDataBuffer();
+    this.measureReusableBuffer = blockExecutionInfo.getMeasureResusableDataBuffer();
     this.fixedLengthKeySize = blockExecutionInfo.getFixedLengthKeySize();
     this.noDictionaryColumnChunkIndexes = blockExecutionInfo.getNoDictionaryColumnChunkIndexes();
     this.dictionaryColumnChunkIndexes = blockExecutionInfo.getDictionaryColumnChunkIndex();
@@ -177,6 +194,14 @@ public abstract class BlockletScannedResult {
 
   public void setMsrRawColumnChunks(MeasureRawColumnChunk[] msrRawColumnChunks) {
     this.msrRawColumnChunks = msrRawColumnChunks;
+  }
+
+  public LazyBlockletLoader getLazyBlockletLoader() {
+    return lazyBlockletLoader;
+  }
+
+  public void setLazyBlockletLoader(LazyBlockletLoader lazyBlockletLoader) {
+    this.lazyBlockletLoader = lazyBlockletLoader;
   }
 
   /**
@@ -240,10 +265,9 @@ public abstract class BlockletScannedResult {
    * Fill the column data to vector
    */
   public void fillColumnarNoDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
-    int column = 0;
     for (int i = 0; i < this.noDictionaryColumnChunkIndexes.length; i++) {
-      column = dimensionColumnPages[noDictionaryColumnChunkIndexes[i]][pageCounter]
-          .fillVector(vectorInfo, column);
+      dimensionColumnPages[noDictionaryColumnChunkIndexes[i]][pageCounter]
+          .fillVector(vectorInfo, i);
     }
   }
 
@@ -304,7 +328,7 @@ public abstract class BlockletScannedResult {
               j :
               pageFilteredRowId[pageCounter][j]);
         }
-        vector.putBytes(vectorOffset++,
+        vector.putByteArray(vectorOffset++,
             data.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       }
     }
@@ -342,6 +366,19 @@ public abstract class BlockletScannedResult {
   }
 
   /**
+   * Just increment the page counter and reset the remaining counters.
+   */
+  public void incrementPageCounter(ColumnVectorInfo[] vectorInfos) {
+    rowCounter = 0;
+    currentRow = -1;
+    pageCounter++;
+    if (null != deletedRecordMap && pageCounter < pageIdFiltered.length) {
+      currentDeleteDeltaVo =
+          deletedRecordMap.get(blockletNumber + "_" + pageIdFiltered[pageCounter]);
+    }
+  }
+
+  /**
    * This case is used only in case of compaction, since it does not use filter flow.
    */
   public void fillDataChunks() {
@@ -352,21 +389,52 @@ public abstract class BlockletScannedResult {
     long startTime = System.currentTimeMillis();
     for (int i = 0; i < dimensionColumnPages.length; i++) {
       if (dimensionColumnPages[i][pageCounter] == null && dimRawColumnChunks[i] != null) {
-        dimensionColumnPages[i][pageCounter] =
-            dimRawColumnChunks[i].convertToDimColDataChunkWithOutCache(pageCounter);
+        dimensionColumnPages[i][pageCounter] = dimRawColumnChunks[i]
+            .convertToDimColDataChunkWithOutCache(pageCounter, null);
       }
     }
 
     for (int i = 0; i < measureColumnPages.length; i++) {
       if (measureColumnPages[i][pageCounter] == null && msrRawColumnChunks[i] != null) {
-        measureColumnPages[i][pageCounter] =
-            msrRawColumnChunks[i].convertToColumnPageWithOutCache(pageCounter);
+        measureColumnPages[i][pageCounter] = msrRawColumnChunks[i]
+            .convertToColumnPageWithOutCache(pageCounter, null);
       }
     }
     QueryStatistic pageUncompressTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.PAGE_UNCOMPRESS_TIME);
     pageUncompressTime.addCountStatistic(QueryStatisticsConstants.PAGE_UNCOMPRESS_TIME,
         pageUncompressTime.getCount() + (System.currentTimeMillis() - startTime));
+  }
+
+  /**
+   * Fill all the vectors with data by decompressing/decoding the column page
+   */
+  public void fillDataChunks(ColumnVectorInfo[] dictionaryInfo, ColumnVectorInfo[] noDictionaryInfo,
+      ColumnVectorInfo[] msrVectorInfo, int[] measuresOrdinal) {
+    freeDataChunkMemory();
+    if (pageCounter >= pageFilteredRowCount.length) {
+      return;
+    }
+
+    for (int i = 0; i < this.dictionaryColumnChunkIndexes.length; i++) {
+      dictionaryInfo[i].vector.setLazyPage(
+          new LazyPageLoader(lazyBlockletLoader, dictionaryColumnChunkIndexes[i], false,
+              pageIdFiltered[pageCounter], dictionaryInfo[i], dimensionReusableBuffer[i]));
+    }
+    int startIndex = dictionaryColumnChunkIndexes.length;
+    for (int i = 0; i < this.noDictionaryColumnChunkIndexes.length; i++) {
+      noDictionaryInfo[i].vector.setLazyPage(
+          new LazyPageLoader(lazyBlockletLoader, noDictionaryColumnChunkIndexes[i], false,
+              pageIdFiltered[pageCounter], noDictionaryInfo[i],
+              dimensionReusableBuffer[startIndex++]));
+    }
+
+    for (int i = 0; i < measuresOrdinal.length; i++) {
+      msrVectorInfo[i].vector.setLazyPage(
+          new LazyPageLoader(lazyBlockletLoader, measuresOrdinal[i], true,
+              pageIdFiltered[pageCounter], msrVectorInfo[i], measureReusableBuffer[i]));
+    }
+
   }
 
   // free the memory for the last page chunk
@@ -388,6 +456,14 @@ public abstract class BlockletScannedResult {
 
   public int numberOfpages() {
     return pageFilteredRowCount.length;
+  }
+
+  public int[] getPageIdFiltered() {
+    return pageIdFiltered;
+  }
+
+  public void setPageIdFiltered(int[] pageIdFiltered) {
+    this.pageIdFiltered = pageIdFiltered;
   }
 
   /**
@@ -513,7 +589,13 @@ public abstract class BlockletScannedResult {
     // if deleted recors map is present for this block
     // then get the first page deleted vo
     if (null != deletedRecordMap) {
-      currentDeleteDeltaVo = deletedRecordMap.get(blockletNumber + '_' + pageCounter);
+      String key;
+      if (pageIdFiltered != null) {
+        key = blockletNumber + '_' + pageIdFiltered[pageCounter];
+      } else {
+        key = blockletNumber + '_' + pageCounter;
+      }
+      currentDeleteDeltaVo = deletedRecordMap.get(key);
     }
   }
 
@@ -616,6 +698,12 @@ public abstract class BlockletScannedResult {
    */
   public void setPageFilteredRowCount(int[] pageFilteredRowCount) {
     this.pageFilteredRowCount = pageFilteredRowCount;
+    if (pageIdFiltered == null) {
+      pageIdFiltered = new int[pageFilteredRowCount.length];
+      for (int i = 0; i < pageIdFiltered.length; i++) {
+        pageIdFiltered[i] = i;
+      }
+    }
   }
 
   /**
@@ -712,6 +800,10 @@ public abstract class BlockletScannedResult {
       }
     }
     return rowsFiltered;
+  }
+
+  public DeleteDeltaVo getCurrentDeleteDeltaVo() {
+    return currentDeleteDeltaVo;
   }
 
   /**

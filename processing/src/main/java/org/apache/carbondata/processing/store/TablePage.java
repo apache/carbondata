@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
@@ -34,6 +35,7 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
@@ -53,11 +55,16 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 
+import org.apache.log4j.Logger;
+
 /**
  * Represent a page data for all columns, we store its data in columnar layout, so that
  * all processing apply to TablePage can be done in vectorized fashion.
  */
 public class TablePage {
+
+  private static final Logger LOGGER =
+      LogServiceFactory.getLogService(TablePage.class.getName());
 
   // For all dimension and measure columns, we store the column data directly in the page,
   // the length of the page is the number of rows.
@@ -85,12 +92,16 @@ public class TablePage {
 
   // used for complex column to deserilize the byte array in input CarbonRow
   private Map<Integer, GenericDataType> complexIndexMap = null;
+  // name of compressor that used to compress column data,
+  // currently all the columns share the same compressor.
+  private String columnCompressor;
 
   TablePage(CarbonFactDataHandlerModel model, int pageSize) throws MemoryException {
     this.model = model;
     this.pageSize = pageSize;
     int numDictDimension = model.getMDKeyGenerator().getDimCount();
     TableSpec tableSpec = model.getTableSpec();
+    this.columnCompressor = model.getColumnCompressor();
 
     dictDimensionPages = new ColumnPage[numDictDimension];
     noDictDimensionPages = new ColumnPage[model.getNoDictionaryCount()];
@@ -102,7 +113,8 @@ public class TablePage {
       ColumnPage page;
       if (ColumnType.GLOBAL_DICTIONARY == columnType
           || ColumnType.DIRECT_DICTIONARY == columnType) {
-        page = ColumnPage.newPage(spec, DataTypes.BYTE_ARRAY, pageSize);
+        page = ColumnPage.newPage(
+            new ColumnPageEncoderMeta(spec, DataTypes.BYTE_ARRAY, columnCompressor), pageSize);
         page.setStatsCollector(KeyPageStatsCollector.newInstance(DataTypes.BYTE_ARRAY));
         dictDimensionPages[tmpNumDictDimIdx++] = page;
       } else {
@@ -113,14 +125,40 @@ public class TablePage {
         if (DataTypes.VARCHAR == spec.getSchemaDataType()) {
           dataType = DataTypes.VARCHAR;
         }
+        ColumnPageEncoderMeta columnPageEncoderMeta =
+            new ColumnPageEncoderMeta(spec, dataType, columnCompressor);
         if (null != localDictionaryGenerator) {
-          page = ColumnPage
-              .newLocalDictPage(spec, dataType, pageSize, localDictionaryGenerator, false);
+          page = ColumnPage.newLocalDictPage(
+              columnPageEncoderMeta, pageSize, localDictionaryGenerator, false);
         } else {
-          page = ColumnPage.newPage(spec, dataType, pageSize);
+          if (DataTypeUtil.isPrimitiveColumn(spec.getSchemaDataType())) {
+            if (spec.getSchemaDataType() == DataTypes.TIMESTAMP) {
+              columnPageEncoderMeta =
+                  new ColumnPageEncoderMeta(spec, DataTypes.LONG, columnCompressor);
+            } else {
+              columnPageEncoderMeta =
+                  new ColumnPageEncoderMeta(spec, spec.getSchemaDataType(), columnCompressor);
+            }
+            // create the column page according to the data type for no dictionary numeric columns
+            if (DataTypes.isDecimal(spec.getSchemaDataType())) {
+              page = ColumnPage.newDecimalPage(columnPageEncoderMeta, pageSize);
+            } else {
+              page = ColumnPage.newPage(columnPageEncoderMeta, pageSize);
+            }
+          } else {
+            page = ColumnPage.newPage(columnPageEncoderMeta, pageSize);
+          }
         }
+        // set the stats collector according to the data type of the columns
         if (DataTypes.VARCHAR == dataType) {
           page.setStatsCollector(LVLongStringStatsCollector.newInstance());
+        } else if (DataTypeUtil.isPrimitiveColumn(spec.getSchemaDataType())) {
+          if (spec.getSchemaDataType() == DataTypes.TIMESTAMP) {
+            page.setStatsCollector(PrimitivePageStatsCollector.newInstance(DataTypes.LONG));
+          } else {
+            page.setStatsCollector(
+                PrimitivePageStatsCollector.newInstance(spec.getSchemaDataType()));
+          }
         } else {
           page.setStatsCollector(LVShortStringStatsCollector.newInstance());
         }
@@ -136,15 +174,15 @@ public class TablePage {
     measurePages = new ColumnPage[model.getMeasureCount()];
     DataType[] dataTypes = model.getMeasureDataType();
     for (int i = 0; i < measurePages.length; i++) {
-      TableSpec.MeasureSpec spec = model.getTableSpec().getMeasureSpec(i);
+      ColumnPageEncoderMeta columnPageEncoderMeta = new ColumnPageEncoderMeta(
+          model.getTableSpec().getMeasureSpec(i), dataTypes[i], columnCompressor);
       ColumnPage page;
-      if (DataTypes.isDecimal(spec.getSchemaDataType())) {
-        page = ColumnPage.newDecimalPage(spec, dataTypes[i], pageSize);
+      if (DataTypes.isDecimal(columnPageEncoderMeta.getSchemaDataType())) {
+        page = ColumnPage.newDecimalPage(columnPageEncoderMeta, pageSize);
       } else {
-        page = ColumnPage.newPage(spec, dataTypes[i], pageSize);
+        page = ColumnPage.newPage(columnPageEncoderMeta, pageSize);
       }
-      page.setStatsCollector(
-          PrimitivePageStatsCollector.newInstance(dataTypes[i]));
+      page.setStatsCollector(PrimitivePageStatsCollector.newInstance(dataTypes[i]));
       measurePages[i] = page;
     }
 
@@ -186,20 +224,35 @@ public class TablePage {
     int complexColumnCount = complexDimensionPages.length;
     if (noDictionaryCount > 0 || complexColumnCount > 0) {
       TableSpec tableSpec = model.getTableSpec();
-      byte[][] noDictAndComplex = WriteStepRowUtil.getNoDictAndComplexDimension(row);
+      List<TableSpec.DimensionSpec> noDictionaryDimensionSpec =
+          tableSpec.getNoDictionaryDimensionSpec();
+      Object[] noDictAndComplex = WriteStepRowUtil.getNoDictAndComplexDimension(row);
       for (int i = 0; i < noDictAndComplex.length; i++) {
-        if (tableSpec.getDimensionSpec(dictDimensionPages.length + i).getSchemaDataType()
+        if (noDictionaryDimensionSpec.get(i).getSchemaDataType()
             == DataTypes.VARCHAR) {
-          byte[] valueWithLength = addIntLengthToByteArray(noDictAndComplex[i]);
+          byte[] valueWithLength = addIntLengthToByteArray((byte[]) noDictAndComplex[i]);
           noDictDimensionPages[i].putData(rowId, valueWithLength);
         } else if (i < noDictionaryCount) {
-          // noDictionary columns, since it is variable length, we need to prepare each
-          // element as LV result byte array (first two bytes are the length of the array)
-          byte[] valueWithLength = addShortLengthToByteArray(noDictAndComplex[i]);
-          noDictDimensionPages[i].putData(rowId, valueWithLength);
+          if (DataTypeUtil
+              .isPrimitiveColumn(noDictDimensionPages[i].getColumnSpec().getSchemaDataType())) {
+            // put the actual data to the row
+            Object value = noDictAndComplex[i];
+            // in compaction flow the measure with decimal type will come as Spark decimal.
+            // need to convert it to byte array.
+            if (DataTypes.isDecimal(noDictDimensionPages[i].getDataType()) && model
+                .isCompactionFlow() && value != null) {
+              value = DataTypeUtil.getDataTypeConverter().convertFromDecimalToBigDecimal(value);
+            }
+            noDictDimensionPages[i].putData(rowId, value);
+          } else {
+            // noDictionary columns, since it is variable length, we need to prepare each
+            // element as LV result byte array (first two bytes are the length of the array)
+            byte[] valueWithLength = addShortLengthToByteArray((byte[]) noDictAndComplex[i]);
+            noDictDimensionPages[i].putData(rowId, valueWithLength);
+          }
         } else {
           // complex columns
-          addComplexColumn(i - noDictionaryCount, rowId, noDictAndComplex[i]);
+          addComplexColumn(i - noDictionaryCount, rowId, (byte[]) noDictAndComplex[i]);
         }
       }
     }
@@ -239,8 +292,8 @@ public class TablePage {
       complexDataType.getComplexColumnInfo(complexColumnInfoList);
       complexDimensionPages[index] = new ComplexColumnPage(complexColumnInfoList);
       try {
-        complexDimensionPages[index]
-            .initialize(model.getColumnLocalDictGenMap(), pageSize);
+        complexDimensionPages[index].initialize(
+            model.getColumnLocalDictGenMap(), pageSize, columnCompressor);
       } catch (MemoryException e) {
         throw new RuntimeException(e);
       }
@@ -363,7 +416,20 @@ public class TablePage {
           columnPageEncoder = encodingFactory.createEncoder(
               spec,
               noDictDimensionPages[noDictIndex]);
-          encodedPage = columnPageEncoder.encode(noDictDimensionPages[noDictIndex++]);
+          encodedPage = columnPageEncoder.encode(noDictDimensionPages[noDictIndex]);
+          if (LOGGER.isDebugEnabled()) {
+            DataType targetDataType =
+                columnPageEncoder.getTargetDataType(noDictDimensionPages[noDictIndex]);
+            if (null != targetDataType) {
+              LOGGER.debug(
+                  "Encoder result ---> Source data type: " + noDictDimensionPages[noDictIndex]
+                      .getDataType().getName() + " Destination data type: " + targetDataType
+                      .getName() + " for the column: " + noDictDimensionPages[noDictIndex]
+                      .getColumnSpec().getFieldName() + " having encoding type: "
+                      + columnPageEncoder.getEncodingType());
+            }
+          }
+          noDictIndex++;
           encodedDimensions.add(encodedPage);
           break;
         case COMPLEX:

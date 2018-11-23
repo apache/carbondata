@@ -54,6 +54,17 @@ class CountStarTestCase extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+  test("explain select count star without filter") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
+
+    sql("explain select count(*) from filterTimestampDataType").collect()
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
+  }
+
   override def afterAll {
     sql("drop table if exists filtertestTables")
     sql("drop table if exists filterTimestampDataType")

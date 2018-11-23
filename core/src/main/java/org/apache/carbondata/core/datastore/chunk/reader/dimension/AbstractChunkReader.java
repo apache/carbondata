@@ -16,11 +16,16 @@
  */
 package org.apache.carbondata.core.datastore.chunk.reader.dimension;
 
+import java.io.IOException;
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
+import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkReader;
 import org.apache.carbondata.core.datastore.compression.Compressor;
-import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
+import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
@@ -32,7 +37,7 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
   /**
    * compressor will be used to uncompress the data
    */
-  protected static final Compressor COMPRESSOR = CompressorFactory.getInstance().getCompressor();
+  protected Compressor compressor;
 
   /**
    * size of the each column value
@@ -50,7 +55,7 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
    * this will be used to uncompress the
    * row id and rle chunk
    */
-  protected NumberCompressor numberComressor;
+  protected NumberCompressor numberCompressor;
 
   /**
    * number of element in each chunk
@@ -76,23 +81,15 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
     } catch (NumberFormatException exception) {
       numberOfElement = Integer.parseInt(CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
     }
-    this.numberComressor = new NumberCompressor(numberOfElement);
+    this.numberCompressor = new NumberCompressor(numberOfElement);
     this.numberOfRows = numberOfRows;
   }
 
-  /**
-   * Below method will be used to create the inverted index reverse
-   * this will be used to point to actual data in the chunk
-   *
-   * @param invertedIndex inverted index
-   * @return reverse inverted index
-   */
-  protected int[] getInvertedReverseIndex(int[] invertedIndex) {
-    int[] columnIndexTemp = new int[invertedIndex.length];
-
-    for (int i = 0; i < invertedIndex.length; i++) {
-      columnIndexTemp[invertedIndex[i]] = i;
-    }
-    return columnIndexTemp;
+  @Override
+  public void decodeColumnPageAndFillVector(DimensionRawColumnChunk dimensionRawColumnChunk,
+      int pageNumber, ColumnVectorInfo vectorInfo, ReusableDataBuffer reusableDataBuffer)
+      throws IOException, MemoryException {
+    throw new UnsupportedOperationException(
+        "This operation is not supported in this reader " + this.getClass().getName());
   }
 }

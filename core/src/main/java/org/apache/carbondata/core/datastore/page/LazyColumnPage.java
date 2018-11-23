@@ -37,7 +37,7 @@ public class LazyColumnPage extends ColumnPage {
   private ColumnPageValueConverter converter;
 
   private LazyColumnPage(ColumnPage columnPage, ColumnPageValueConverter converter) {
-    super(columnPage.getColumnSpec(), columnPage.getDataType(), columnPage.getPageSize());
+    super(columnPage.getColumnPageEncoderMeta(), columnPage.getPageSize());
     this.columnPage = columnPage;
     this.converter = converter;
   }
@@ -93,7 +93,7 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public float getFloat(int rowId) {
-    throw new UnsupportedOperationException("internal error");
+    return (float) getDouble(rowId);
   }
 
   @Override
@@ -258,6 +258,11 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public void putDouble(int rowId, double value) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void putFloat(int rowId, float value) {
     throw new UnsupportedOperationException("internal error");
   }
 

@@ -36,6 +36,12 @@ public interface FilterExecuter {
       boolean useBitsetPipeLine) throws FilterUnsupportedException, IOException;
 
   /**
+   * Prune pages as per the filter
+   */
+  BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
+      throws FilterUnsupportedException, IOException;
+
+  /**
    * apply range filter on a row
    * @return true: if the value satisfy the filter; or else false.
    */
@@ -48,13 +54,15 @@ public interface FilterExecuter {
    *
    * @param blockMaxValue, maximum value of the
    * @param blockMinValue
+   * @param isMinMaxSet  flag to specify whether min max for the filter dimension is written or not
    * @return BitSet
    */
-  BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue);
+  BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue, boolean[] isMinMaxSet);
 
   /**
    * It just reads necessary block for filter executor, it does not uncompress the data.
+   *
    * @param rawBlockletColumnChunks
    */
-  void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks)throws IOException;
+  void readColumnChunks(RawBlockletColumnChunks rawBlockletColumnChunks) throws IOException;
 }

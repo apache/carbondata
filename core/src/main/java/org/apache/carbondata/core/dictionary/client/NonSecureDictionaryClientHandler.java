@@ -20,7 +20,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 
@@ -29,13 +28,14 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import org.apache.log4j.Logger;
 
 /**
  * Client handler to get data.
  */
 public class NonSecureDictionaryClientHandler extends ChannelInboundHandlerAdapter {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
           LogServiceFactory.getLogService(NonSecureDictionaryClientHandler.class.getName());
 
   private final BlockingQueue<DictionaryMessage> responseMsgQueue = new LinkedBlockingQueue<>();
@@ -48,7 +48,7 @@ public class NonSecureDictionaryClientHandler extends ChannelInboundHandlerAdapt
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
     this.ctx = ctx;
     channelFutureListener = new DictionaryChannelFutureListener(ctx);
-    LOGGER.audit("Connected client " + ctx);
+    LOGGER.info("Connected client " + ctx);
     super.channelActive(ctx);
   }
 
@@ -68,7 +68,7 @@ public class NonSecureDictionaryClientHandler extends ChannelInboundHandlerAdapt
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-    LOGGER.error(cause, "exceptionCaught");
+    LOGGER.error("exceptionCaught", cause);
     ctx.close();
   }
 
@@ -85,7 +85,7 @@ public class NonSecureDictionaryClientHandler extends ChannelInboundHandlerAdapt
       key.writeData(buffer);
       ctx.writeAndFlush(buffer).addListener(channelFutureListener);
     } catch (Exception e) {
-      LOGGER.error(e, "Error while send request to server ");
+      LOGGER.error("Error while send request to server ", e);
       ctx.close();
     }
     try {
@@ -118,7 +118,7 @@ public class NonSecureDictionaryClientHandler extends ChannelInboundHandlerAdapt
     @Override
     public void operationComplete(ChannelFuture future) throws Exception {
       if (!future.isSuccess()) {
-        LOGGER.error(future.cause(), "Error while sending request to Dictionary Server");
+        LOGGER.error("Error while sending request to Dictionary Server", future.cause());
         ctx.close();
       }
     }

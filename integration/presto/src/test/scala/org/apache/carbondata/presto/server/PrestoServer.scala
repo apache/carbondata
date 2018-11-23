@@ -32,6 +32,7 @@ import com.facebook.presto.tests.DistributedQueryRunner
 import com.google.common.collect.ImmutableMap
 import org.slf4j.{Logger, LoggerFactory}
 
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.presto.CarbondataPlugin
 
 object PrestoServer {

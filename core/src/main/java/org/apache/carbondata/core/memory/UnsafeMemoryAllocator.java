@@ -28,7 +28,7 @@ public class UnsafeMemoryAllocator implements MemoryAllocator {
     long address = CarbonUnsafe.getUnsafe().allocateMemory(size);
     // initializing memory with zero
     CarbonUnsafe.getUnsafe().setMemory(null, address, size, (byte) 0);
-    return new MemoryBlock(null, address, size);
+    return new MemoryBlock(null, address, size, MemoryType.OFFHEAP);
   }
 
   @Override

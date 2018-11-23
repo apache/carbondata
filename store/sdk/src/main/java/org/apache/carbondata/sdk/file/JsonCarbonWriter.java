@@ -46,15 +46,14 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
   private TaskAttemptContext context;
   private ObjectArrayWritable writable;
 
-  JsonCarbonWriter(CarbonLoadModel loadModel) throws IOException {
-    Configuration OutputHadoopConf = new Configuration();
-    CarbonTableOutputFormat.setLoadModel(OutputHadoopConf, loadModel);
+  JsonCarbonWriter(CarbonLoadModel loadModel, Configuration configuration) throws IOException {
+    CarbonTableOutputFormat.setLoadModel(configuration, loadModel);
     CarbonTableOutputFormat outputFormat = new CarbonTableOutputFormat();
     JobID jobId = new JobID(UUID.randomUUID().toString(), 0);
     Random random = new Random();
     TaskID task = new TaskID(jobId, TaskType.MAP, random.nextInt());
     TaskAttemptID attemptID = new TaskAttemptID(task, random.nextInt());
-    TaskAttemptContextImpl context = new TaskAttemptContextImpl(OutputHadoopConf, attemptID);
+    TaskAttemptContextImpl context = new TaskAttemptContextImpl(configuration, attemptID);
     this.recordWriter = outputFormat.getRecordWriter(context);
     this.context = context;
     this.writable = new ObjectArrayWritable();

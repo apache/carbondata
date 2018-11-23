@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
@@ -61,12 +60,14 @@ import org.apache.carbondata.processing.loading.dictionary.PreCreatedDictionary;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.log4j.Logger;
+
 /**
  * Primitive DataType stateless object used in data loading
  */
 public class PrimitiveDataType implements GenericDataType<Object> {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(PrimitiveDataType.class.getName());
 
   /**
@@ -363,7 +364,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
               if (surrogateKey == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
                 value = new byte[0];
               } else {
-                value = ByteUtil.toBytes(surrogateKey);
+                value = ByteUtil.toXorBytes(surrogateKey);
               }
             } else {
               // If the input is a long value then this means that logical type was provided by
@@ -372,10 +373,10 @@ public class PrimitiveDataType implements GenericDataType<Object> {
                   || this.carbonDimension.getDataType().equals(DataTypes.TIMESTAMP)
                   && input instanceof Long) {
                 if (dictionaryGenerator != null) {
-                  value = ByteUtil.toBytes(((DirectDictionary) dictionaryGenerator)
+                  value = ByteUtil.toXorBytes(((DirectDictionary) dictionaryGenerator)
                       .generateKey((long) input));
                 } else {
-                  value = ByteUtil.toBytes(Long.parseLong(parsedValue));
+                  value = ByteUtil.toXorBytes(Long.parseLong(parsedValue));
                 }
               } else {
                 value = DataTypeUtil.getBytesBasedOnDataTypeForNoDictionaryColumn(parsedValue,
@@ -392,7 +393,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
             Object value;
             if (dictionaryGenerator instanceof DirectDictionary
                 && input instanceof Long) {
-              value = ByteUtil.toBytes(
+              value = ByteUtil.toXorBytes(
                   ((DirectDictionary) dictionaryGenerator).generateKey((long) input));
             } else {
               value = DataTypeUtil.getDataDataTypeForNoDictionaryColumn(parsedValue,

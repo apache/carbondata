@@ -20,14 +20,12 @@ import java.util.LinkedHashSet
 
 import scala.Array.canBuildFrom
 import scala.collection.JavaConverters._
-import scala.util.parsing.combinator.RegexParsers
 
 import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan}
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.util.CarbonException
-import org.apache.spark.util.{CarbonMetastoreTypes, SparkTypeConverter}
+import org.apache.spark.sql.util.{CarbonMetastoreTypes, SparkTypeConverter}
 
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
@@ -65,6 +63,9 @@ case class CarbonRelation(
         case "struct" =>
           CarbonMetastoreTypes.toDataType(
             s"struct<${SparkTypeConverter.getStructChildren(carbonTable, dim.getColName)}>")
+        case "map" =>
+          CarbonMetastoreTypes.toDataType(
+            s"map<${SparkTypeConverter.getMapChildren(carbonTable, dim.getColName)}>")
         case dType =>
           val dataType = addDecimalScaleAndPrecision(dimval, dType)
           CarbonMetastoreTypes.toDataType(dataType)
@@ -97,8 +98,15 @@ case class CarbonRelation(
   override val output = {
     val columns = carbonTable.getCreateOrderColumn(carbonTable.getTableName)
       .asScala
+    val partitionColumnSchemas = if (carbonTable.getPartitionInfo() != null) {
+      carbonTable.getPartitionInfo.getColumnSchemaList.asScala
+    } else {
+      Nil
+    }
+    val otherColumns = columns.filterNot(a => partitionColumnSchemas.contains(a.getColumnSchema))
+    val partitionColumns = columns.filter(a => partitionColumnSchemas.contains(a.getColumnSchema))
     // convert each column to Attribute
-    columns.filter(!_.isInvisible).map { column: CarbonColumn =>
+    (otherColumns ++= partitionColumns).filter(!_.isInvisible).map { column: CarbonColumn =>
       if (column.isDimension()) {
         val output: DataType = column.getDataType.getName.toLowerCase match {
           case "array" =>
@@ -107,6 +115,9 @@ case class CarbonRelation(
           case "struct" =>
             CarbonMetastoreTypes.toDataType(
               s"struct<${SparkTypeConverter.getStructChildren(carbonTable, column.getColName)}>")
+          case "map" =>
+            CarbonMetastoreTypes.toDataType(
+              s"map<${SparkTypeConverter.getMapChildren(carbonTable, column.getColName)}>")
           case dType =>
             val dataType = SparkTypeConverter.addDecimalScaleAndPrecision(column, dType)
             CarbonMetastoreTypes.toDataType(dataType)
@@ -158,39 +169,48 @@ case class CarbonRelation(
   private var sizeInBytesLocalValue = 0L
 
   def sizeInBytes: Long = {
-    val tableStatusNewLastUpdatedTime = SegmentStatusManager.getTableStatusLastModifiedTime(
-      carbonTable.getAbsoluteTableIdentifier)
-    if (tableStatusLastUpdateTime != tableStatusNewLastUpdatedTime) {
-      if (new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
-        .getValidAndInvalidSegments.getValidSegments.isEmpty) {
-        sizeInBytesLocalValue = 0L
-      } else {
-        val tablePath = carbonTable.getTablePath
-        val fileType = FileFactory.getFileType(tablePath)
-        if (FileFactory.isFileExist(tablePath, fileType)) {
-          // get the valid segments
-          val segments = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
-            .getValidAndInvalidSegments.getValidSegments.asScala
-          var size = 0L
-          // for each segment calculate the size
-          segments.foreach {validSeg =>
-            // for older store
-            if (null != validSeg.getLoadMetadataDetails.getDataSize &&
-                null != validSeg.getLoadMetadataDetails.getIndexSize) {
-              size = size + validSeg.getLoadMetadataDetails.getDataSize.toLong +
-                     validSeg.getLoadMetadataDetails.getIndexSize.toLong
-            } else {
-              size = size + FileFactory.getDirectorySize(
-                CarbonTablePath.getSegmentPath(tablePath, validSeg.getSegmentNo))
+    if (carbonTable.isExternalTable) {
+      val tablePath = carbonTable.getTablePath
+      val fileType = FileFactory.getFileType(tablePath)
+      if (FileFactory.isFileExist(tablePath, fileType)) {
+        sizeInBytesLocalValue = FileFactory.getDirectorySize(tablePath)
+      }
+    } else {
+      val tableStatusNewLastUpdatedTime = SegmentStatusManager.getTableStatusLastModifiedTime(
+        carbonTable.getAbsoluteTableIdentifier)
+      if (tableStatusLastUpdateTime != tableStatusNewLastUpdatedTime) {
+        if (new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
+          .getValidAndInvalidSegments.getValidSegments.isEmpty) {
+          sizeInBytesLocalValue = 0L
+        } else {
+          val tablePath = carbonTable.getTablePath
+          val fileType = FileFactory.getFileType(tablePath)
+          if (FileFactory.isFileExist(tablePath, fileType)) {
+            // get the valid segments
+            val segments = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
+              .getValidAndInvalidSegments.getValidSegments.asScala
+            var size = 0L
+            // for each segment calculate the size
+            segments.foreach { validSeg =>
+              // for older store
+              if (null != validSeg.getLoadMetadataDetails.getDataSize &&
+                  null != validSeg.getLoadMetadataDetails.getIndexSize) {
+                size = size + validSeg.getLoadMetadataDetails.getDataSize.toLong +
+                       validSeg.getLoadMetadataDetails.getIndexSize.toLong
+              } else {
+                size = size + FileFactory.getDirectorySize(
+                  CarbonTablePath.getSegmentPath(tablePath, validSeg.getSegmentNo))
+              }
             }
+            // update the new table status time
+            tableStatusLastUpdateTime = tableStatusNewLastUpdatedTime
+            // update the new size
+            sizeInBytesLocalValue = size
           }
-          // update the new table status time
-          tableStatusLastUpdateTime = tableStatusNewLastUpdatedTime
-          // update the new size
-          sizeInBytesLocalValue = size
         }
       }
     }
+
     sizeInBytesLocalValue
   }
 

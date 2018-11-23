@@ -25,7 +25,6 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
-import com.facebook.presto.spi.block.BlockBuilderStatus;
 import com.facebook.presto.spi.type.BigintType;
 import com.facebook.presto.spi.type.Type;
 
@@ -42,7 +41,7 @@ public class LongStreamReader extends CarbonColumnVectorImpl implements PrestoVe
   public LongStreamReader(int batchSize, DataType dataType, Dictionary dictionary) {
     super(batchSize, dataType);
     this.batchSize = batchSize;
-    this.builder = type.createBlockBuilder(new BlockBuilderStatus(), batchSize);
+    this.builder = type.createBlockBuilder(null, batchSize);
     this.dictionary = dictionary;
   }
 
@@ -73,6 +72,6 @@ public class LongStreamReader extends CarbonColumnVectorImpl implements PrestoVe
   }
 
   @Override public void reset() {
-    builder = type.createBlockBuilder(new BlockBuilderStatus(), batchSize);
+    builder = type.createBlockBuilder(null, batchSize);
   }
 }

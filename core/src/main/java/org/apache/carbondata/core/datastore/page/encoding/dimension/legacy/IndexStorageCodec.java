@@ -17,20 +17,17 @@
 
 package org.apache.carbondata.core.datastore.page.encoding.dimension.legacy;
 
-import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 
 public abstract class IndexStorageCodec implements ColumnPageCodec {
-  protected Compressor compressor;
   protected boolean isSort;
   protected boolean isInvertedIndex;
 
-  IndexStorageCodec(boolean isSort, boolean isInvertedIndex, Compressor compressor) {
+  IndexStorageCodec(boolean isSort, boolean isInvertedIndex) {
     this.isSort = isSort;
     this.isInvertedIndex = isInvertedIndex;
-    this.compressor = compressor;
   }
 
   @Override

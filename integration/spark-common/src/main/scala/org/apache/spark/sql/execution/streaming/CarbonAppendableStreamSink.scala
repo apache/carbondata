@@ -38,6 +38,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
+import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.stats.QueryStatistic
 import org.apache.carbondata.core.util.CarbonProperties
@@ -49,6 +50,7 @@ import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePost
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.rdd.StreamHandoffRDD
 import org.apache.carbondata.streaming.{CarbonStreamException, CarbonStreamOutputFormat}
+import org.apache.carbondata.streaming.index.StreamFileIndex
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
 import org.apache.carbondata.streaming.segment.StreamSegment
 
@@ -102,6 +104,17 @@ class CarbonAppendableStreamSink(
     CarbonProperties.getInstance().isEnableAutoHandoff
   )
 
+  // measure data type array
+  private lazy val msrDataTypes = {
+    carbonLoadModel
+      .getCarbonDataLoadSchema
+      .getCarbonTable
+      .getMeasures
+      .asScala
+      .map(_.getDataType)
+      .toArray
+  }
+
   override def addBatch(batchId: Long, data: DataFrame): Unit = {
     if (batchId <= fileLog.getLatest().map(_._1).getOrElse(-1L)) {
       CarbonAppendableStreamSink.LOGGER.info(s"Skipping already committed batch $batchId")
@@ -122,7 +135,7 @@ class CarbonAppendableStreamSink(
         className = sparkSession.sessionState.conf.streamingFileCommitProtocolClass,
         jobId = batchId.toString,
         outputPath = fileLogPath,
-        isAppend = false)
+        false)
 
       committer match {
         case manifestCommitter: ManifestFileCommitProtocol =>
@@ -133,14 +146,14 @@ class CarbonAppendableStreamSink(
       CarbonAppendableStreamSink.writeDataFileJob(
         sparkSession,
         carbonTable,
-        parameters,
         batchId,
         currentSegmentId,
         data.queryExecution,
         committer,
         hadoopConf,
         carbonLoadModel,
-        server)
+        server,
+        msrDataTypes)
       // fire post event on every batch add
       val loadTablePostExecutionEvent = new LoadTablePostExecutionEvent(
         carbonTable.getCarbonTableIdentifier,
@@ -212,14 +225,14 @@ object CarbonAppendableStreamSink {
   def writeDataFileJob(
       sparkSession: SparkSession,
       carbonTable: CarbonTable,
-      parameters: Map[String, String],
       batchId: Long,
       segmentId: String,
       queryExecution: QueryExecution,
       committer: FileCommitProtocol,
       hadoopConf: Configuration,
       carbonLoadModel: CarbonLoadModel,
-      server: Option[DictionaryServer]): Unit = {
+      server: Option[DictionaryServer],
+      msrDataTypes: Array[DataType]): Unit = {
 
     // create job
     val job = Job.getInstance(hadoopConf)
@@ -236,7 +249,7 @@ object CarbonAppendableStreamSink {
 
     // run write data file job
     SQLExecution.withNewExecutionId(sparkSession, queryExecution) {
-      var result: Array[TaskCommitMessage] = null
+      var result: Array[(TaskCommitMessage, StreamFileIndex)] = null
       try {
         committer.setupJob(job)
         // initialize dictionary server
@@ -275,18 +288,19 @@ object CarbonAppendableStreamSink {
 
         // update data file info in index file
         StreamSegment.updateIndexFile(
-          CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentId))
+          CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentId),
+          result.map(_._2), msrDataTypes)
 
       } catch {
         // catch fault of executor side
         case t: Throwable =>
           val segmentDir = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentId)
           StreamSegment.recoverSegmentIfRequired(segmentDir)
-          LOGGER.error(t, s"Aborting job ${ job.getJobID }.")
+          LOGGER.error(s"Aborting job ${ job.getJobID }.", t)
           committer.abortJob(job)
           throw new CarbonStreamException("Job failed to write data file", t)
       }
-      committer.commitJob(job, result)
+      committer.commitJob(job, result.map(_._1))
       LOGGER.info(s"Job ${ job.getJobID } committed.")
     }
   }
@@ -302,8 +316,7 @@ object CarbonAppendableStreamSink {
       sparkAttemptNumber: Int,
       committer: FileCommitProtocol,
       iterator: Iterator[InternalRow],
-      rowSchema: StructType
-  ): TaskCommitMessage = {
+      rowSchema: StructType): (TaskCommitMessage, StreamFileIndex) = {
 
     val jobId = CarbonInputFormatUtil.getJobId(new Date, sparkStageId)
     val taskId = new TaskID(jobId, TaskType.MAP, sparkPartitionId)
@@ -325,6 +338,7 @@ object CarbonAppendableStreamSink {
     committer.setupTask(taskAttemptContext)
 
     try {
+      var blockIndex: StreamFileIndex = null
       Utils.tryWithSafeFinallyAndFailureCallbacks(block = {
 
         val parserName = taskAttemptContext.getConfiguration.get(
@@ -335,13 +349,13 @@ object CarbonAppendableStreamSink {
           Class.forName(parserName).newInstance.asInstanceOf[CarbonStreamParser]
         streamParser.initialize(taskAttemptContext.getConfiguration, rowSchema)
 
-        StreamSegment.appendBatchData(new InputIterator(iterator, streamParser),
+        blockIndex = StreamSegment.appendBatchData(new InputIterator(iterator, streamParser),
           taskAttemptContext, carbonLoadModel)
       })(catchBlock = {
         committer.abortTask(taskAttemptContext)
         LOGGER.error(s"Job $jobId aborted.")
       })
-      committer.commitTask(taskAttemptContext)
+      (committer.commitTask(taskAttemptContext), blockIndex)
     } catch {
       case t: Throwable =>
         throw new CarbonStreamException("Task failed while writing rows", t)

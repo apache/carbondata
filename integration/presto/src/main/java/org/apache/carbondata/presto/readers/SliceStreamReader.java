@@ -22,9 +22,7 @@ import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl
 
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
-import com.facebook.presto.spi.block.BlockBuilderStatus;
 import com.facebook.presto.spi.block.DictionaryBlock;
-import com.facebook.presto.spi.block.SliceArrayBlock;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.spi.type.VarcharType;
 
@@ -40,26 +38,28 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
   protected Type type = VarcharType.VARCHAR;
 
   protected BlockBuilder builder;
+
   int[] values;
-  private SliceArrayBlock dictionarySliceArrayBlock;
+
+  private Block dictionaryBlock;
 
   public SliceStreamReader(int batchSize, DataType dataType,
-      SliceArrayBlock dictionarySliceArrayBlock) {
+      Block dictionaryBlock) {
     super(batchSize, dataType);
     this.batchSize = batchSize;
-    if (dictionarySliceArrayBlock == null) {
-      this.builder = type.createBlockBuilder(new BlockBuilderStatus(), batchSize);
+    if (dictionaryBlock == null) {
+      this.builder = type.createBlockBuilder(null, batchSize);
     } else {
-      this.dictionarySliceArrayBlock = dictionarySliceArrayBlock;
+      this.dictionaryBlock = dictionaryBlock;
       this.values = new int[batchSize];
     }
   }
 
   @Override public Block buildBlock() {
-    if (dictionarySliceArrayBlock == null) {
+    if (dictionaryBlock == null) {
       return builder.build();
     } else {
-      return new DictionaryBlock(batchSize, dictionarySliceArrayBlock, values);
+      return new DictionaryBlock(batchSize, dictionaryBlock, values);
     }
   }
 
@@ -71,23 +71,23 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
     values[rowId] = value;
   }
 
-  @Override public void putBytes(int rowId, byte[] value) {
+  @Override public void putByteArray(int rowId, byte[] value) {
     type.writeSlice(builder, wrappedBuffer(value));
   }
 
-  @Override public void putBytes(int rowId, int offset, int length, byte[] value) {
+  @Override public void putByteArray(int rowId, int offset, int length, byte[] value) {
     byte[] byteArr = new byte[length];
     System.arraycopy(value, offset, byteArr, 0, length);
     type.writeSlice(builder, wrappedBuffer(byteArr));
   }
 
   @Override public void putNull(int rowId) {
-    if (dictionarySliceArrayBlock == null) {
+    if (dictionaryBlock == null) {
       builder.appendNull();
     }
   }
 
   @Override public void reset() {
-    builder = type.createBlockBuilder(new BlockBuilderStatus(), batchSize);
+    builder = type.createBlockBuilder(null, batchSize);
   }
 }

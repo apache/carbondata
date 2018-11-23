@@ -29,13 +29,13 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionColumnPage;
+import org.apache.carbondata.core.datastore.chunk.store.ColumnPageWrapper;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -62,9 +62,11 @@ import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
+import org.apache.log4j.Logger;
+
 public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(RowLevelFilterExecuterImpl.class.getName());
   List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList;
   List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList;
@@ -288,6 +290,16 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   }
 
   @Override
+  public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
+      throws FilterUnsupportedException, IOException {
+    readColumnChunks(rawBlockletColumnChunks);
+    int pages = rawBlockletColumnChunks.getDataBlock().numberOfPages();
+    BitSet bitSet = new BitSet();
+    bitSet.set(0, pages);
+    return bitSet;
+  }
+
+  @Override
   public boolean applyFilter(RowIntf value, int dimOrdinalMax)
       throws FilterUnsupportedException, IOException {
     try {
@@ -406,12 +418,11 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
         DimensionColumnPage columnDataChunk =
             blockChunkHolder.getDimensionRawColumnChunks()[dimensionChunkIndex[i]]
                 .decodeColumnPage(pageIndex);
-        if (!dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)
-            && columnDataChunk instanceof VariableLengthDimensionColumnPage) {
+        if (!dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY) && (
+            columnDataChunk instanceof VariableLengthDimensionColumnPage
+                || columnDataChunk instanceof ColumnPageWrapper)) {
 
-          VariableLengthDimensionColumnPage dimensionColumnDataChunk =
-              (VariableLengthDimensionColumnPage) columnDataChunk;
-          byte[] memberBytes = dimensionColumnDataChunk.getChunkData(index);
+          byte[] memberBytes = columnDataChunk.getChunkData(index);
           if (null != memberBytes) {
             if (Arrays.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, memberBytes)) {
               memberBytes = null;
@@ -597,7 +608,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   }
 
   @Override
-  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
+      boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     bitSet.set(0);
     return bitSet;

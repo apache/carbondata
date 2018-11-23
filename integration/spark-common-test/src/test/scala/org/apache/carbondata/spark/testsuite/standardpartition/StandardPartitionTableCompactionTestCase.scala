@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.spark.testsuite.standardpartition
 
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -181,6 +182,27 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     sql("update compactionupdatepartition set(AMSize)=('8RAM size')").show()
     sql("delete from compactionupdatepartition where AMSize ='8RAM size'").show()
     sql(s"""alter table compactionupdatepartition compact 'major'""").collect
+  }
+
+  test("test compaction when 'carbon.enable.page.level.reader.in.compaction' is set to true") {
+    sql("DROP TABLE IF EXISTS originTable")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION, "true")
+    sql("create table originTable(a int, b string) stored by 'carbondata'")
+    sql("insert into originTable values(1,'abc')")
+    sql("insert into originTable values(1,'abc')")
+    sql("insert into originTable values(1,'abc')")
+    sql("insert into originTable values(1,'abc')")
+    sql("alter table originTable compact 'minor'")
+    checkAnswer(sql("select count(*) from originTable"), Seq(Row(4)))
+    sql("insert into originTable values(1,'abc')")
+    sql("insert into originTable values(1,'abc')")
+    sql("insert into originTable values(1,'abc')")
+    sql("insert into originTable values(1,'abc')")
+    sql("alter table originTable compact 'major'")
+    checkAnswer(sql("select count(*) from originTable"), Seq(Row(8)))
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION, "false")
   }
 
     override def afterAll = {

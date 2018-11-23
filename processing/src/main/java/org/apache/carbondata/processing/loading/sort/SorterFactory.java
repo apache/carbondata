@@ -19,9 +19,9 @@ package org.apache.carbondata.processing.loading.sort;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.SortScopeOptions;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.sort.impl.ParallelReadMergeSorterImpl;
@@ -31,9 +31,11 @@ import org.apache.carbondata.processing.loading.sort.impl.UnsafeParallelReadMerg
 import org.apache.carbondata.processing.loading.sort.impl.UnsafeParallelReadMergeSorterWithColumnRangeImpl;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.log4j.Logger;
+
 public class SorterFactory {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(SorterFactory.class.getName());
 
   public static Sorter createSorter(CarbonDataLoadConfiguration configuration, AtomicLong counter) {

@@ -19,7 +19,10 @@ package org.apache.carbondata.processing.sort.sortdata;
 
 import java.util.Comparator;
 
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
+import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.comparator.SerializableComparator;
 import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
 
 /**
@@ -31,11 +34,15 @@ public class IntermediateSortTempRowComparator implements Comparator<Intermediat
    */
   private boolean[] isSortColumnNoDictionary;
 
+  private DataType[] noDicSortDataTypes;
+
   /**
    * @param isSortColumnNoDictionary isSortColumnNoDictionary
    */
-  public IntermediateSortTempRowComparator(boolean[] isSortColumnNoDictionary) {
+  public IntermediateSortTempRowComparator(boolean[] isSortColumnNoDictionary,
+      DataType[] noDicSortDataTypes) {
     this.isSortColumnNoDictionary = isSortColumnNoDictionary;
+    this.noDicSortDataTypes = noDicSortDataTypes;
   }
 
   /**
@@ -45,18 +52,31 @@ public class IntermediateSortTempRowComparator implements Comparator<Intermediat
     int diff = 0;
     int dictIndex = 0;
     int nonDictIndex = 0;
+    int noDicTypeIdx = 0;
 
     for (boolean isNoDictionary : isSortColumnNoDictionary) {
 
       if (isNoDictionary) {
-        byte[] byteArr1 = rowA.getNoDictSortDims()[nonDictIndex];
-        byte[] byteArr2 = rowB.getNoDictSortDims()[nonDictIndex];
-        nonDictIndex++;
+        if (DataTypeUtil.isPrimitiveColumn(noDicSortDataTypes[noDicTypeIdx])) {
+          // use data types based comparator for the no dictionary measure columns
+          SerializableComparator comparator = org.apache.carbondata.core.util.comparator.Comparator
+              .getComparator(noDicSortDataTypes[noDicTypeIdx]);
+          int difference = comparator.compare(rowA.getNoDictSortDims()[nonDictIndex],
+              rowB.getNoDictSortDims()[nonDictIndex]);
+          if (difference != 0) {
+            return difference;
+          }
+        } else {
+          byte[] byteArr1 = (byte[]) rowA.getNoDictSortDims()[nonDictIndex];
+          byte[] byteArr2 = (byte[]) rowB.getNoDictSortDims()[nonDictIndex];
 
-        int difference = UnsafeComparer.INSTANCE.compareTo(byteArr1, byteArr2);
-        if (difference != 0) {
-          return difference;
+          int difference = UnsafeComparer.INSTANCE.compareTo(byteArr1, byteArr2);
+          if (difference != 0) {
+            return difference;
+          }
         }
+        nonDictIndex++;
+        noDicTypeIdx++;
       } else {
         int dimFieldA = rowA.getDictSortDims()[dictIndex];
         int dimFieldB = rowB.getDictSortDims()[dictIndex];

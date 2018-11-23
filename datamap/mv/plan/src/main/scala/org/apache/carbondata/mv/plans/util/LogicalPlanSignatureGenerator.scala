@@ -30,7 +30,8 @@ object CheckSPJG {
       case a: Aggregate =>
         a.child.collect {
           case Join(_, _, _, _) | Project(_, _) | Filter(_, _) |
-               HiveTableRelation(_, _, _) | LogicalRelation(_, _, _) | LocalRelation(_, _) => true
+               HiveTableRelation(_, _, _) => true
+          case  l: LogicalRelation => true
           case _ => false
         }.forall(identity)
       case _ => false
@@ -55,7 +56,7 @@ object LogicalPlanRule extends SignatureRule[LogicalPlan] {
   def apply(plan: LogicalPlan, childSignatures: Seq[Option[Signature]]): Option[Signature] = {
 
     plan match {
-      case LogicalRelation(_, _, _) =>
+      case l: LogicalRelation =>
         // TODO: implement this (link to BaseRelation)
         None
       case HiveTableRelation(tableMeta, _, _) =>

@@ -17,17 +17,16 @@
 
 package org.apache.carbondata.processing.loading.sort.unsafe;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -40,6 +39,7 @@ import org.apache.carbondata.core.memory.UnsafeSortMemoryManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.ReUsableByteArrayDataOutputStream;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 import org.apache.carbondata.processing.loading.sort.unsafe.comparator.UnsafeRowComparator;
 import org.apache.carbondata.processing.loading.sort.unsafe.comparator.UnsafeRowComparatorForNormalDims;
@@ -52,11 +52,13 @@ import org.apache.carbondata.processing.sort.sortdata.SortParameters;
 import org.apache.carbondata.processing.sort.sortdata.TableFieldStat;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.log4j.Logger;
+
 public class UnsafeSortDataRows {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(UnsafeSortDataRows.class.getName());
   /**
    * threadStatusObserver
@@ -72,7 +74,7 @@ public class UnsafeSortDataRows {
 
   private SortParameters parameters;
   private TableFieldStat tableFieldStat;
-  private ThreadLocal<ByteBuffer> rowBuffer;
+  private ThreadLocal<ReUsableByteArrayDataOutputStream> reUsableByteArrayDataOutputStream;
   private UnsafeIntermediateMerger unsafeInMemoryIntermediateFileMerger;
 
   private UnsafeCarbonRowPage rowPage;
@@ -92,16 +94,16 @@ public class UnsafeSortDataRows {
    */
   private Semaphore semaphore;
 
-  private final long taskId;
+  private final String taskId;
 
   public UnsafeSortDataRows(SortParameters parameters,
       UnsafeIntermediateMerger unsafeInMemoryIntermediateFileMerger, int inMemoryChunkSize) {
     this.parameters = parameters;
     this.tableFieldStat = new TableFieldStat(parameters);
-    this.rowBuffer = new ThreadLocal<ByteBuffer>() {
-      @Override protected ByteBuffer initialValue() {
-        byte[] backedArray = new byte[2 * 1024 * 1024];
-        return ByteBuffer.wrap(backedArray);
+    this.reUsableByteArrayDataOutputStream = new ThreadLocal<ReUsableByteArrayDataOutputStream>() {
+      @Override protected ReUsableByteArrayDataOutputStream initialValue() {
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        return new ReUsableByteArrayDataOutputStream(byteStream);
       }
     };
     this.unsafeInMemoryIntermediateFileMerger = unsafeInMemoryIntermediateFileMerger;
@@ -188,20 +190,35 @@ public class UnsafeSortDataRows {
   }
 
   private void addBatch(Object[][] rowBatch, int size) throws CarbonSortKeyAndGroupByException {
+    if (rowPage == null) {
+      return;
+    }
     for (int i = 0; i < size; i++) {
-      if (rowPage.canAdd()) {
-        bytesAdded += rowPage.addRow(rowBatch[i], rowBuffer.get());
-      } else {
-        try {
+      try {
+        if (!rowPage.canAdd()) {
           handlePreviousPage();
-          rowPage = createUnsafeRowPage();
-          bytesAdded += rowPage.addRow(rowBatch[i], rowBuffer.get());
-        } catch (Exception e) {
+          try {
+            rowPage = createUnsafeRowPage();
+          } catch (Exception ex) {
+            // row page has freed in handlePreviousPage(), so other iterator may try to access it.
+            rowPage = null;
+            LOGGER.error(
+                "exception occurred while trying to acquire a semaphore lock: " + ex.getMessage());
+            throw new CarbonSortKeyAndGroupByException(ex);
+          }
+        }
+        bytesAdded += rowPage.addRow(rowBatch[i], reUsableByteArrayDataOutputStream.get());
+      } catch (Exception e) {
+        if (e.getMessage().contains("cannot handle this row. create new page"))
+        {
+          rowPage.makeCanAddFail();
+          // so that same rowBatch will be handled again in new page
+          i--;
+        } else {
           LOGGER.error(
-                  "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
+              "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
           throw new CarbonSortKeyAndGroupByException(e);
         }
-
       }
     }
   }
@@ -210,16 +227,30 @@ public class UnsafeSortDataRows {
    * This method will be used to add new row
    */
   public void addRow(Object[] row) throws CarbonSortKeyAndGroupByException {
-    // if record holder list size is equal to sort buffer size then it will
-    // sort the list and then write current list data to file
-    if (rowPage.canAdd()) {
-      rowPage.addRow(row, rowBuffer.get());
-    } else {
-      try {
+    if (rowPage == null) {
+      return;
+    }
+    try {
+      // if record holder list size is equal to sort buffer size then it will
+      // sort the list and then write current list data to file
+      if (!rowPage.canAdd()) {
         handlePreviousPage();
-        rowPage = createUnsafeRowPage();
-        rowPage.addRow(row, rowBuffer.get());
-      } catch (Exception e) {
+        try {
+          rowPage = createUnsafeRowPage();
+        } catch (Exception ex) {
+          rowPage = null;
+          LOGGER.error(
+              "exception occurred while trying to acquire a semaphore lock: " + ex.getMessage());
+          throw new CarbonSortKeyAndGroupByException(ex);
+        }
+      }
+      rowPage.addRow(row, reUsableByteArrayDataOutputStream.get());
+    } catch (Exception e) {
+      if (e.getMessage().contains("cannot handle this row. create new page"))
+      {
+        rowPage.makeCanAddFail();
+        addRow(row);
+      } else {
         LOGGER.error(
             "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
         throw new CarbonSortKeyAndGroupByException(e);
@@ -280,7 +311,7 @@ public class UnsafeSortDataRows {
         rowPage.writeRow(
             rowPage.getBuffer().get(i) + rowPage.getDataBlock().getBaseOffset(), stream);
       }
-    } catch (IOException e) {
+    } catch (IOException | MemoryException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while writing the file", e);
     } finally {
       // close streams
@@ -386,7 +417,7 @@ public class UnsafeSortDataRows {
           page.getBuffer().loadToUnsafe();
           unsafeInMemoryIntermediateFileMerger.addDataChunkToMerge(page);
           LOGGER.info(
-              "Time taken to sort row page with size: " + page.getBuffer().getActualSize() + "is: "
+              "Time taken to sort row page with size: " + page.getBuffer().getActualSize() + " is: "
                   + (System.currentTimeMillis() - startTime));
         }
       } catch (Throwable e) {

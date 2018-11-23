@@ -22,10 +22,20 @@ import java.io.IOException;
 
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
+import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsCollector;
+import org.apache.carbondata.core.datastore.page.statistics.KeyPageStatsCollector;
+import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
+import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
+import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.BlockletHeader;
+import org.apache.carbondata.format.BlockletIndex;
 import org.apache.carbondata.format.BlockletInfo;
 import org.apache.carbondata.format.MutationType;
+import org.apache.carbondata.streaming.segment.StreamSegment;
 
 /**
  * stream blocklet writer
@@ -37,14 +47,51 @@ public class StreamBlockletWriter {
   private int rowSize;
   private int count = 0;
   private int rowIndex = -1;
-  private Compressor compressor = CompressorFactory.getInstance().getCompressor();
+  private Compressor compressor;
 
-  StreamBlockletWriter(int maxSize, int maxRowNum, int rowSize) {
+  private int dimCountWithoutComplex;
+  private int measureCount;
+  private DataType[] measureDataTypes;
+
+  // blocklet level stats
+  ColumnPageStatsCollector[] dimStatsCollectors;
+  ColumnPageStatsCollector[] msrStatsCollectors;
+  // blocklet level Min/Max
+  private BlockletMinMaxIndex blockletMinMaxIndex;
+
+  StreamBlockletWriter(int maxSize, int maxRowNum, int rowSize, int dimCountWithoutComplex,
+      int measureCount, DataType[] measureDataTypes, String compressorName) {
     buffer = new byte[maxSize];
     this.maxSize = maxSize;
     this.maxRowNum = maxRowNum;
     this.rowSize = rowSize;
+    this.dimCountWithoutComplex = dimCountWithoutComplex;
+    this.measureCount = measureCount;
+    this.measureDataTypes = measureDataTypes;
+    this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
+    initializeStatsCollector();
   }
+
+  private void initializeStatsCollector() {
+    // dimension stats collectors
+    // not require to collector stats for complex type
+    // so it only contains dictionary dimensions and no-dictionary dimensions
+    dimStatsCollectors = new ColumnPageStatsCollector[dimCountWithoutComplex];
+    // measure stats collectors
+    msrStatsCollectors = new ColumnPageStatsCollector[measureCount];
+
+    int dimCount = 0;
+    for (; dimCount < dimCountWithoutComplex; dimCount++) {
+      dimStatsCollectors[dimCount] =
+          KeyPageStatsCollector.newInstance(DataTypes.BYTE_ARRAY);
+    }
+
+    for (int msrCount = 0; msrCount < measureCount; msrCount++) {
+      msrStatsCollectors[msrCount] =
+          PrimitivePageStatsCollector.newInstance(measureDataTypes[msrCount]);
+    }
+  }
+
 
   private void ensureCapacity(int space) {
     int newcount = space + count;
@@ -58,6 +105,8 @@ public class StreamBlockletWriter {
   void reset() {
     count = 0;
     rowIndex = -1;
+    initializeStatsCollector();
+    blockletMinMaxIndex = null;
   }
 
   byte[] getBytes() {
@@ -134,6 +183,36 @@ public class StreamBlockletWriter {
     count += len;
   }
 
+  private SimpleStatsResult[] getDimStats() {
+    if (dimStatsCollectors == null) {
+      return new SimpleStatsResult[0];
+    }
+    SimpleStatsResult[] stats = new SimpleStatsResult[dimStatsCollectors.length];
+    int dimCount = 0;
+    for (; dimCount < dimStatsCollectors.length; dimCount++) {
+      stats[dimCount] = dimStatsCollectors[dimCount].getPageStats();
+    }
+    return stats;
+  }
+
+  private SimpleStatsResult[] getMsrStats() {
+    if (msrStatsCollectors == null) {
+      return new SimpleStatsResult[0];
+    }
+    SimpleStatsResult[] stats = new SimpleStatsResult[msrStatsCollectors.length];
+    for (int mrsCount = 0; mrsCount < msrStatsCollectors.length; mrsCount++) {
+      stats[mrsCount] = msrStatsCollectors[mrsCount].getPageStats();
+    }
+    return stats;
+  }
+
+  BlockletMinMaxIndex generateBlockletMinMax() {
+    if (blockletMinMaxIndex == null) {
+      blockletMinMaxIndex = StreamSegment.collectMinMaxIndex(getDimStats(), getMsrStats());
+    }
+    return blockletMinMaxIndex;
+  }
+
   void apppendBlocklet(DataOutputStream outputStream) throws IOException {
     outputStream.write(CarbonStreamOutputFormat.CARBON_SYNC_MARKER);
 
@@ -143,6 +222,13 @@ public class StreamBlockletWriter {
     blockletHeader.setBlocklet_length(getCount());
     blockletHeader.setMutation(MutationType.INSERT);
     blockletHeader.setBlocklet_info(blockletInfo);
+    // add blocklet level min/max
+    blockletMinMaxIndex = generateBlockletMinMax();
+    if (blockletInfo.getNum_rows() > 1) {
+      BlockletIndex blockletIndex = new BlockletIndex();
+      blockletIndex.setMin_max_index(CarbonMetadataUtil.convertMinMaxIndex(blockletMinMaxIndex));
+      blockletHeader.setBlocklet_index(blockletIndex);
+    }
     byte[] headerBytes = CarbonUtil.getByteArray(blockletHeader);
     outputStream.writeInt(headerBytes.length);
     outputStream.write(headerBytes);

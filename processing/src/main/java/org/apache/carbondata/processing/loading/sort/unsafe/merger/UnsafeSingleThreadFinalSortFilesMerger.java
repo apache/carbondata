@@ -28,7 +28,6 @@ import java.util.NoSuchElementException;
 import java.util.PriorityQueue;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
@@ -40,11 +39,13 @@ import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeInmemor
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeSortTempFileChunkHolder;
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
 
+import org.apache.log4j.Logger;
+
 public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(UnsafeSingleThreadFinalSortFilesMerger.class.getName());
 
   /**
@@ -143,7 +144,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
       for (final File file : filesToMergeSort) {
 
         SortTempChunkHolder sortTempFileChunkHolder =
-            new UnsafeSortTempFileChunkHolder(file, parameters);
+            new UnsafeSortTempFileChunkHolder(file, parameters, true);
 
         // initialize
         sortTempFileChunkHolder.readRow();
@@ -197,8 +198,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
    */
   public Object[] next() {
     if (hasNext()) {
-      IntermediateSortTempRow sortTempRow = getSortedRecordFromFile();
-      return sortStepRowHandler.convertIntermediateSortTempRowTo3Parted(sortTempRow);
+      return sortStepRowHandler.convertIntermediateSortTempRowTo3Parted(getSortedRecordFromFile());
     } else {
       throw new NoSuchElementException("No more elements to return");
     }

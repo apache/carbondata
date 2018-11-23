@@ -23,10 +23,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -34,6 +35,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
 import org.apache.carbondata.processing.loading.DataLoadExecutor;
 import org.apache.carbondata.processing.loading.TableProcessingOperations;
@@ -232,9 +234,21 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
 
   @Override
   public RecordWriter<NullWritable, ObjectArrayWritable> getRecordWriter(
-      TaskAttemptContext taskAttemptContext) throws IOException {
+      final TaskAttemptContext taskAttemptContext) throws IOException {
     final CarbonLoadModel loadModel = getLoadModel(taskAttemptContext.getConfiguration());
+    String appName =
+        taskAttemptContext.getConfiguration().get(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME);
+    if (null != appName) {
+      CarbonProperties.getInstance()
+          .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, appName);
+    }
     //if loadModel having taskNo already(like in SDK) then no need to overwrite
+    short sdkWriterCores = loadModel.getSdkWriterCores();
+    int itrSize = (sdkWriterCores > 0) ? sdkWriterCores : 1;
+    final CarbonOutputIteratorWrapper[] iterators = new CarbonOutputIteratorWrapper[itrSize];
+    for (int i = 0; i < itrSize; i++) {
+      iterators[i] = new CarbonOutputIteratorWrapper();
+    }
     if (null == loadModel.getTaskNo() || loadModel.getTaskNo().isEmpty()) {
       loadModel.setTaskNo(taskAttemptContext.getConfiguration()
           .get("carbon.outputformat.taskno", String.valueOf(System.nanoTime())));
@@ -242,30 +256,38 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     loadModel.setDataWritePath(
         taskAttemptContext.getConfiguration().get("carbon.outputformat.writepath"));
     final String[] tempStoreLocations = getTempStoreLocations(taskAttemptContext);
-    final CarbonOutputIteratorWrapper iteratorWrapper = new CarbonOutputIteratorWrapper();
     final DataLoadExecutor dataLoadExecutor = new DataLoadExecutor();
     final ExecutorService executorService = Executors.newFixedThreadPool(1,
-        new CarbonThreadFactory("CarbonRecordWriter:" + loadModel.getTableName()));;
+        new CarbonThreadFactory("CarbonRecordWriter:" + loadModel.getTableName()));
     // It should be started in new thread as the underlying iterator uses blocking queue.
     Future future = executorService.submit(new Thread() {
       @Override public void run() {
+        ThreadLocalSessionInfo.setConfigurationToCurrentThread(taskAttemptContext
+            .getConfiguration());
         try {
           dataLoadExecutor
-              .execute(loadModel, tempStoreLocations, new CarbonIterator[] { iteratorWrapper });
+              .execute(loadModel, tempStoreLocations, iterators);
         } catch (Exception e) {
           executorService.shutdownNow();
-          iteratorWrapper.closeWriter(true);
+          for (CarbonOutputIteratorWrapper iterator : iterators) {
+            iterator.closeWriter(true);
+          }
           dataLoadExecutor.close();
-          // clean up the folders and files created locally for data load operation
-          TableProcessingOperations.deleteLocalDataLoadFolderLocation(loadModel, false, false);
-
           throw new RuntimeException(e);
+        } finally {
+          ThreadLocalSessionInfo.unsetAll();
         }
       }
     });
 
-    return new CarbonRecordWriter(iteratorWrapper, dataLoadExecutor, loadModel, future,
-        executorService);
+    if (sdkWriterCores > 0) {
+      // CarbonMultiRecordWriter handles the load balancing of the write rows in round robin.
+      return new CarbonMultiRecordWriter(iterators, dataLoadExecutor, loadModel, future,
+          executorService);
+    } else {
+      return new CarbonRecordWriter(iterators[0], dataLoadExecutor, loadModel, future,
+          executorService);
+    }
   }
 
   public static CarbonLoadModel getLoadModel(Configuration conf) throws IOException {
@@ -281,6 +303,12 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     model.setTableName(CarbonTableOutputFormat.getTableName(conf));
     model.setCarbonTransactionalTable(true);
     CarbonTable carbonTable = getCarbonTable(conf);
+    String columnCompressor = carbonTable.getTableInfo().getFactTable().getTableProperties().get(
+        CarbonCommonConstants.COMPRESSOR);
+    if (null == columnCompressor) {
+      columnCompressor = CompressorFactory.getInstance().getCompressor().getName();
+    }
+    model.setColumnCompressor(columnCompressor);
     model.setCarbonDataLoadSchema(new CarbonDataLoadSchema(carbonTable));
     model.setTablePath(getTablePath(conf));
     setFileHeader(conf, model);
@@ -349,7 +377,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     String badRecordsPath = conf.get(BAD_RECORD_PATH);
     if (StringUtils.isEmpty(badRecordsPath)) {
       badRecordsPath =
-          carbonTable.getTableInfo().getFactTable().getTableProperties().get("bad_records_path");
+          carbonTable.getTableInfo().getFactTable().getTableProperties().get("bad_record_path");
       if (StringUtils.isEmpty(badRecordsPath)) {
         badRecordsPath = carbonProperty
             .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH, carbonProperty
@@ -399,6 +427,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
 
     private Future future;
 
+    private boolean isClosed;
+
     public CarbonRecordWriter(CarbonOutputIteratorWrapper iteratorWrapper,
         DataLoadExecutor dataLoadExecutor, CarbonLoadModel loadModel, Future future,
         ExecutorService executorService) {
@@ -411,27 +441,71 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
 
     @Override public void write(NullWritable aVoid, ObjectArrayWritable objects)
         throws InterruptedException {
-      iteratorWrapper.write(objects.get());
+      if (iteratorWrapper != null) {
+        iteratorWrapper.write(objects.get());
+      }
     }
 
     @Override public void close(TaskAttemptContext taskAttemptContext) throws InterruptedException {
-      iteratorWrapper.closeWriter(false);
-      try {
-        future.get();
-      } catch (ExecutionException e) {
-        LOG.error("Error while loading data", e);
-        throw new InterruptedException(e.getMessage());
-      } finally {
-        executorService.shutdownNow();
-        dataLoadExecutor.close();
-        // clean up the folders and files created locally for data load operation
-        TableProcessingOperations.deleteLocalDataLoadFolderLocation(loadModel, false, false);
+      if (!isClosed) {
+        isClosed = true;
+        if (iteratorWrapper != null) {
+          iteratorWrapper.closeWriter(false);
+        }
+        try {
+          future.get();
+        } catch (ExecutionException e) {
+          LOG.error("Error while loading data", e);
+          throw new InterruptedException(e.getMessage());
+        } finally {
+          executorService.shutdownNow();
+          dataLoadExecutor.close();
+          ThreadLocalSessionInfo.unsetAll();
+          // clean up the folders and files created locally for data load operation
+          TableProcessingOperations.deleteLocalDataLoadFolderLocation(loadModel, false, false);
+        }
+        LOG.info("Closed writer task " + taskAttemptContext.getTaskAttemptID());
       }
-      LOG.info("Closed writer task " + taskAttemptContext.getTaskAttemptID());
     }
 
     public CarbonLoadModel getLoadModel() {
       return loadModel;
+    }
+  }
+
+  /* CarbonMultiRecordWriter takes multiple iterators
+  and handles the load balancing of the write rows in round robin. */
+  public static class CarbonMultiRecordWriter extends CarbonRecordWriter {
+
+    private CarbonOutputIteratorWrapper[] iterators;
+
+    // keep counts of number of writes called
+    // and it is used to load balance each write call to one iterator.
+    private AtomicLong counter;
+
+    CarbonMultiRecordWriter(CarbonOutputIteratorWrapper[] iterators,
+        DataLoadExecutor dataLoadExecutor, CarbonLoadModel loadModel, Future future,
+        ExecutorService executorService) {
+      super(null, dataLoadExecutor, loadModel, future, executorService);
+      this.iterators = iterators;
+      counter = new AtomicLong(0);
+    }
+
+    @Override public void write(NullWritable aVoid, ObjectArrayWritable objects)
+        throws InterruptedException {
+      int iteratorNum = (int) (counter.incrementAndGet() % iterators.length);
+      synchronized (iterators[iteratorNum]) {
+        iterators[iteratorNum].write(objects.get());
+      }
+    }
+
+    @Override public void close(TaskAttemptContext taskAttemptContext) throws InterruptedException {
+      for (int i = 0; i < iterators.length; i++) {
+        synchronized (iterators[i]) {
+          iterators[i].closeWriter(false);
+        }
+      }
+      super.close(taskAttemptContext);
     }
   }
 }

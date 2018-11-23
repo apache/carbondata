@@ -77,7 +77,8 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("create datamap preagg11 on table PreAggMain1 using 'preaggregate'as select a,sum(b) from PreAggMain1 group by a")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg11"), true, "preaggmain1_a")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg11"), true, "preaggmain1_b_sum")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg11"), true, "DICTIONARY")
+    sql("DESCRIBE FORMATTED PreAggMain1_preagg11").show(100, false)
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg11"), true, "Dictionary")
     sql("drop datamap preagg11 on table PreAggMain1")
   }
 
@@ -87,7 +88,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg12"), true, "preaggmain1_b_sum")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg12"), false, "preaggmain1_a1")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg12"), false, "preaggmain1_sum")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg12"), true, "DICTIONARY")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg12"), true, "Dictionary")
     sql("drop datamap preagg12 on table PreAggMain1")
   }
 
@@ -97,7 +98,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg14"), true, "preaggmain1_b_sum")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg14"), false, "preaggmain1_a1")
     checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg14"), false, "preaggmain1_sum")
-    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg14"), true, "DICTIONARY")
+    checkExistence(sql("DESCRIBE FORMATTED PreAggMain1_preagg14"), true, "Dictionary")
     sql("drop datamap preagg14 on table PreAggMain1")
   }
 
@@ -437,14 +438,27 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("test pre agg datamap with deferred rebuild") {
-    val e = intercept[MalformedDataMapCommandException] {
-      sql("create datamap failure on table PreAggMain1 " +
-          "using 'preaggregate' " +
-          "with deferred rebuild " +
-          "as select a as a1,sum(b) as sum from PreAggMain1 group by a")
-    }
-    assert(e.getMessage.contains("DEFERRED REBUILD is not supported on this DataMap"))
+  test("test codegen issue with preaggregate") {
+    sql("DROP TABLE IF EXISTS PreAggMain")
+    sql("CREATE TABLE PreAggMain (id Int, date date, country string, phonetype string, " +
+        "serialname String,salary int ) STORED BY 'org.apache.carbondata.format' " +
+        "tblproperties('dictionary_include'='country')")
+    sql("create datamap PreAggSum on table PreAggMain using 'preaggregate' as " +
+        "select country,sum(salary) as sum from PreAggMain group by country")
+    sql("create datamap PreAggAvg on table PreAggMain using 'preaggregate' as " +
+        "select country,avg(salary) as avg from PreAggMain group by country")
+    sql("create datamap PreAggCount on table PreAggMain using 'preaggregate' as " +
+        "select country,count(salary) as count from PreAggMain group by country")
+    sql("create datamap PreAggMin on table PreAggMain using 'preaggregate' as " +
+        "select country,min(salary) as min from PreAggMain group by country")
+    sql("create datamap PreAggMax on table PreAggMain using 'preaggregate' as " +
+        "select country,max(salary) as max from PreAggMain group by country")
+    sql(s"LOAD DATA INPATH '$integrationPath/spark-common-test/src/test/resources/source.csv' " +
+        s"into table PreAggMain")
+    checkExistence(sql("select t1.country,sum(id) from PreAggMain t1 join (select " +
+                       "country as newcountry,sum(salary) as sum from PreAggMain group by country)" +
+                       "t2 on t1.country=t2.newcountry group by country"), true, "france")
+    sql("DROP TABLE IF EXISTS PreAggMain")
   }
 
   // TODO: Need to Fix

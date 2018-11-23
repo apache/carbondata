@@ -38,7 +38,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
   var writerPath = new File(this.getClass.getResource("/").getPath
                             +
                             "../." +
-                            "./src/test/resources/SparkCarbonFileFormat/WriterOutput/")
+                            "./target/SparkCarbonFileFormat/WriterOutput/")
     .getCanonicalPath
   //getCanonicalPath gives path with \, but the code expects /.
   writerPath = writerPath.replace("\\", "/")
@@ -66,13 +66,13 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
     try {
       val writer = if (isLocalDictionary) {
         CarbonWriter.builder
-          .outputPath(writerPath).isTransactionalTable(false).enableLocalDictionary(true)
+          .outputPath(writerPath).enableLocalDictionary(true)
           .localDictionaryThreshold(2000)
-          .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput(nn)
+          .uniqueIdentifier(System.currentTimeMillis()).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithComplexType").build()
       } else {
         CarbonWriter.builder
-          .outputPath(writerPath).isTransactionalTable(false)
-          .uniqueIdentifier(System.currentTimeMillis()).buildWriterForAvroInput(nn)
+          .outputPath(writerPath)
+          .uniqueIdentifier(System.currentTimeMillis()).withAvroInput(nn).writtenBy("TestNonTransactionalCarbonTableWithComplexType").build()
       }
       var i = 0
       while (i < rows) {
@@ -221,14 +221,6 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
       case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
-    descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("10000"))
-      case None => assert(false)
-    }
-    descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
-      case Some(row) => assert(row.get(1).toString.contains("name,val1.val2.street,val1.val2.city,val1.val2.WindSpeed,val1.val2.year"))
-      case None => assert(false)
-    }
 
     // TODO: Add a validation
 
@@ -276,7 +268,7 @@ class TestNonTransactionalCarbonTableWithComplexType extends QueryTest with Befo
       """.stripMargin
     val pschema= org.apache.avro.Schema.parse(mySchema)
     val records = testUtil.jsonToAvro(jsonvalue, mySchema)
-    val writer=CarbonWriter.builder().outputPath(writerPath).buildWriterForAvroInput(pschema)
+    val writer = CarbonWriter.builder().outputPath(writerPath).withAvroInput(pschema).writtenBy("TestNonTransactionalCarbonTableWithComplexType").build()
     writer.write(records)
     writer.close()
     sql("DROP TABLE IF EXISTS sdkOutputTable")

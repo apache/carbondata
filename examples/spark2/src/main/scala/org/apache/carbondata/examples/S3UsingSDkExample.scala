@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.examples
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
 import org.apache.spark.sql.SparkSession
 import org.slf4j.{Logger, LoggerFactory}
@@ -33,8 +34,7 @@ object S3UsingSDKExample {
   // prepare SDK writer output
   def buildTestData(
       path: String,
-      num: Int = 3,
-      persistSchema: Boolean = false): Any = {
+      num: Int = 3): Any = {
 
     // getCanonicalPath gives path with \, but the code expects /.
     val writerPath = path.replace("\\", "/");
@@ -47,18 +47,10 @@ object S3UsingSDKExample {
     try {
       val builder = CarbonWriter.builder()
       val writer =
-        if (persistSchema) {
-          builder.persistSchemaFile(true)
-          builder.outputPath(writerPath).isTransactionalTable(true)
-            .uniqueIdentifier(
-              System.currentTimeMillis)
-            .buildWriterForCSVInput(new Schema(fields))
-        } else {
-          builder.outputPath(writerPath).isTransactionalTable(true)
-            .uniqueIdentifier(
-              System.currentTimeMillis).withBlockSize(2)
-            .buildWriterForCSVInput(new Schema(fields))
-        }
+        builder.outputPath(writerPath)
+          .uniqueIdentifier(System.currentTimeMillis)
+          .withBlockSize(2)
+          .withCsvInput(new Schema(fields)).build()
       var i = 0
       var row = num
       while (i < row) {
@@ -67,8 +59,7 @@ object S3UsingSDKExample {
       }
       writer.close()
     } catch {
-      case ex: Exception => None
-      case e => None
+      case ex: Throwable => None
     }
   }
 
@@ -118,7 +109,7 @@ object S3UsingSDKExample {
 
     spark.sql("DROP TABLE IF EXISTS s3_sdk_table")
     spark.sql(s"CREATE EXTERNAL TABLE s3_sdk_table STORED BY 'carbondata'" +
-      s" LOCATION '$path/Fact/Part0/Segment_null'")
+      s" LOCATION '$path'")
     spark.sql("SELECT * FROM s3_sdk_table LIMIT 10").show()
     spark.stop()
   }

@@ -30,7 +30,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -39,6 +38,7 @@ import org.apache.carbondata.core.mutate.DeleteDeltaBlockletDetails;
 import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+import org.apache.log4j.Logger;
 
 /**
  * This class perform the functionality of reading multiple delete delta files
@@ -48,7 +48,7 @@ public class CarbonDeleteFilesDataReader {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonDeleteFilesDataReader.class.getName());
 
   /**
@@ -60,12 +60,16 @@ public class CarbonDeleteFilesDataReader {
     initThreadPoolSize();
   }
 
+  public CarbonDeleteFilesDataReader(int thread_pool_size) {
+    this.thread_pool_size = thread_pool_size;
+  }
+
   /**
    * This method will initialize the thread pool size to be used for creating the
    * max number of threads for a job
    */
   private void initThreadPoolSize() {
-    thread_pool_size = CarbonProperties.getInstance().getNumberOfCores();
+    thread_pool_size = CarbonProperties.getInstance().getNumberOfLoadingCores();
   }
 
   /**

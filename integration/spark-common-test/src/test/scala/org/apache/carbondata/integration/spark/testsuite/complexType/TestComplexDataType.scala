@@ -45,7 +45,6 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "create table table1 (roll string,person Struct<detail:int>) stored by " +
       "'carbondata'")
     sql("insert into table1 values('abc',1)")
-    sql("select roll,person,roll,person.detail from table1").show(false)
     checkAnswer(sql("select roll,person,person.detail from table1"),
       Seq(Row("abc", Row(1), 1)))
     checkAnswer(sql("select person,person.detail from table1"),
@@ -60,7 +59,6 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "create table table1 (roll string,person array<int>) stored by " +
       "'carbondata'")
     sql("insert into table1 values('abc','1$2$3')")
-    sql("select roll,person,roll,person from table1").show(false)
     checkAnswer(sql("select roll,person from table1"),
       Seq(Row("abc", mutable.WrappedArray.make(Array(1, 2, 3)))))
   }
@@ -99,8 +97,6 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "create table table1 (roll int,person Struct<detail:array<string>>) stored by " +
       "'carbondata'")
     sql("insert into table1 values(1,'abc:bcd')")
-    //    sql("select person from table1").show(false)
-    sql("select person.detail[0] from table1").show(false)
     checkAnswer(sql("select person.detail[0] from table1"), Seq(Row("abc")))
     checkAnswer(sql("select person.detail[1] from table1"), Seq(Row("bcd")))
     checkAnswer(sql("select roll,person from table1"),
@@ -164,7 +160,6 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "'carbondata'")
     sql("insert into table1 values(1,'2018/01/01')")
     checkExistence(sql("select person from table1"), true, "2018-01-01 00:00:00.0")
-    sql("select person,roll,person.detail from table1").show(false)
     checkAnswer(sql("select person,roll,person.detail from table1"),
       Seq(Row(Row(Timestamp.valueOf("2018-01-01 00:00:00.0")), 1,
         Timestamp.valueOf("2018-01-01 00:00:00.0"))))
@@ -227,7 +222,6 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "'carbondata'")
     sql("insert into table1 values(1,20)")
     checkExistence(sql("select person from table1"), true, "20")
-    sql("select person,person.detail from table1").show(false)
     checkAnswer(sql("select person,roll,person.detail from table1"), Seq(Row(Row(20), 1, 20)))
     checkExistence(sql("select person.detail from table1"), true, "20")
     checkAnswer(sql("select roll,person from table1"), Seq(Row(1, Row(20))))
@@ -252,7 +246,6 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "'carbondata'")
     sql("insert into table1 values(1,true)")
     checkExistence(sql("select person from table1"), true, "true")
-    sql("select person,person.detail from table1").show(false)
     checkAnswer(sql("select person,roll,person.detail from table1"), Seq(Row(Row(true), 1, true)))
     checkExistence(sql("select person.detail from table1"), true, "true")
     checkAnswer(sql("select roll,person from table1"), Seq(Row(1, Row(true))))
@@ -675,6 +668,16 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 
+  test("test arrayofstruct with count(distinct)") {
+    sql("DROP TABLE IF EXISTS test")
+    sql("create table test(cus_id string,array_of_struct array<struct<id:int,country:string," +
+        "state:string,city:string>>) stored by 'carbondata'")
+    sql("insert into test values('cus_01','123:abc:mno:xyz$1234:abc1:mno1:xyz1')")
+    checkAnswer(sql("select array_of_struct.state[0],count(distinct array_of_struct.id[0]) as count_country," +
+      "count(distinct array_of_struct.state[0]) as count_city from test group by array_of_struct" +
+      ".state[0]"), Seq(Row("mno", 1, 1)))
+  }
+
   test("test struct complex type with filter") {
     sql("DROP TABLE IF EXISTS test")
     sql("create table test(id int,a struct<b:int,c:int>) stored by 'carbondata'")
@@ -961,6 +964,13 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "('dictionary_include'='b')")
     sql("insert into test values(1,2) ")
     checkAnswer(sql("select b[0] from test"),Seq(Row(2)))
+    sql("DROP TABLE IF EXISTS test")
+    sql(
+      "create table test(intval array<array<int>>,str array<array<string>>, bool " +
+      "array<array<boolean>>, sint array<array<short>>, big array<array<bigint>>)  stored by " +
+      "'carbondata' tblproperties('dictionary_include'='bool,sint,big')")
+    sql("insert into test values(1,'ab',true,22,33)")
+    checkExistence(sql("select * from test"), true, "33")
   }
 
   test("date with struct and array") {
@@ -999,4 +1009,15 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
         CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
   }
+  test("test null values in primitive data type and select all data types including complex data type") {
+    sql("DROP TABLE IF EXISTS table1")
+    sql(
+      "create table table1 (id int, name string, structField struct<intval:int, stringval:string>) stored by 'carbondata'")
+    sql("insert into table1 values(null,'aaa','23$bb')")
+    checkAnswer(sql("select * from table1"),Seq(Row(null,"aaa", Row(23,"bb"))))
+    checkAnswer(sql("select id,name,structField.intval,structField.stringval from table1"),Seq(Row(null,"aaa",23,"bb")))
+    checkAnswer(sql("select id,name,structField.intval,structField.stringval,name from table1"),Seq(Row(null,"aaa",23,"bb","aaa")))
+    checkAnswer(sql("select id,name,structField.intval,name,structField.stringval from table1"),Seq(Row(null,"aaa",23,"aaa","bb")))
+  }
+
 }

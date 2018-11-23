@@ -72,7 +72,6 @@ class SubqueryWithFilterAndSortTestCase extends QueryTest with BeforeAndAfterAll
     sql("drop table if exists subqueryfilterwithsort")
     sql("drop table if exists subqueryfilterwithsort_hive")
     deleteFile(tempFilePath)
-    deleteFile(tempDirPath)
   }
 
 }

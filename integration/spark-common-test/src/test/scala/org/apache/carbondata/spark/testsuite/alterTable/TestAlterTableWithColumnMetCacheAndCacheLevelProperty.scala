@@ -111,18 +111,18 @@ class TestAlterTableWithColumnMetCacheAndCacheLevelProperty extends QueryTest wi
   test("validate unsetting of column_meta_cache when column_meta_cache is already set - alter_column_meta_cache_11") {
     sql("Alter table alter_column_meta_cache SET TBLPROPERTIES('column_meta_cache'='c2,c3')")
     var descResult = sql("describe formatted alter_column_meta_cache")
-    checkExistence(descResult, true, "COLUMN_META_CACHE")
+    checkExistence(descResult, true, "Cached Min/Max Index Columns c2, c3")
     sql("Alter table alter_column_meta_cache UNSET TBLPROPERTIES('column_meta_cache')")
     descResult = sql("describe formatted alter_column_meta_cache")
-    checkExistence(descResult, false, "COLUMN_META_CACHE")
+    checkExistence(descResult, false, "Cached Min/Max Index Columns c2, c3")
   }
 
   test("validate unsetting of column_meta_cache when column_meta_cache is not already set - alter_column_meta_cache_12") {
     var descResult = sql("describe formatted alter_column_meta_cache")
-    checkExistence(descResult, false, "COLUMN_META_CACHE")
+    checkExistence(descResult, false, "c2, c3")
     sql("Alter table alter_column_meta_cache UNSET TBLPROPERTIES('column_meta_cache')")
     descResult = sql("describe formatted alter_column_meta_cache")
-    checkExistence(descResult, false, "COLUMN_META_CACHE")
+    checkExistence(descResult, false, "c2, c3")
   }
 
   test("validate cache_level with only empty spaces - ALTER_CACHE_LEVEL_01") {
@@ -150,14 +150,14 @@ class TestAlterTableWithColumnMetCacheAndCacheLevelProperty extends QueryTest wi
   test("validate describe formatted command to display cache_level when cache_level is set - ALTER_CACHE_LEVEL_05") {
     sql("Alter table cache_level SET TBLPROPERTIES('cache_level'='bloCKlet')")
     val descResult = sql("describe formatted cache_level")
-    checkExistence(descResult, true, "CACHE_LEVEL")
+    checkExistence(descResult, true, "Min/Max Index Cache Level")
   }
 
   test("validate describe formatted command to display cache_level when cache_level is not set - ALTER_CACHE_LEVEL_06") {
     sql("Alter table cache_level UNSET TBLPROPERTIES('cache_level')")
     val descResult = sql("describe formatted cache_level")
     // even though not configured default cache level will be displayed as BLOCK
-    checkExistence(descResult, true, "CACHE_LEVEL")
+    checkExistence(descResult, true, "Min/Max Index Cache Level")
   }
 
   test("validate column_meta_cache and cache_level on child dataMap- ALTER_CACHE_LEVEL_07") {

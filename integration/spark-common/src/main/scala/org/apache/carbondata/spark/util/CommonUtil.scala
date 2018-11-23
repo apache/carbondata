@@ -18,6 +18,7 @@
 package org.apache.carbondata.spark.util
 
 
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util
 import java.util.regex.{Matcher, Pattern}
@@ -29,13 +30,11 @@ import scala.util.Random
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.{SparkContext, SparkEnv}
-import org.apache.spark.rdd.CarbonMergeFilesRDD
 import org.apache.spark.sql.{Row, RowFactory}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
 import org.apache.spark.sql.types.{MetadataBuilder, StringType}
-import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
@@ -43,14 +42,13 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.memory.{UnsafeMemoryManager, UnsafeSortMemoryManager}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.partition.PartitionUtil
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
-import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties}
 import org.apache.carbondata.core.util.comparator.Comparator
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
@@ -455,7 +453,7 @@ object CommonUtil {
       try {
         val levels: Array[String] = regularedStr.split(",")
         val thresholds = regularedStr.split(",").map(levelThresholdStr => levelThresholdStr.toInt)
-        if (!thresholds.forall(t => t < 100 && t > 0)) {
+        if (!thresholds.forall(t => t < 100 && t >= 0)) {
           throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
             s"$regularedStr, only int values separated by comma and between 0 " +
             s"and 100 are supported.")
@@ -502,30 +500,31 @@ object CommonUtil {
   }
 
   /**
-   * This method will validate the table block size specified by the user
+   * This method will validate the table block size and blocklet size specified by the user
    *
-   * @param tableProperties
+   * @param tableProperties table property specified by user
+   * @param propertyName property name
    */
-  def validateTableBlockSize(tableProperties: Map[String, String]): Unit = {
-    var tableBlockSize: Integer = 0
-    if (tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).isDefined) {
+  def validateSize(tableProperties: Map[String, String], propertyName: String): Unit = {
+    var size: Integer = 0
+    if (tableProperties.get(propertyName).isDefined) {
       val blockSizeStr: String =
-        parsePropertyValueStringInMB(tableProperties(CarbonCommonConstants.TABLE_BLOCKSIZE))
+        parsePropertyValueStringInMB(tableProperties(propertyName))
       try {
-        tableBlockSize = Integer.parseInt(blockSizeStr)
+        size = Integer.parseInt(blockSizeStr)
       } catch {
         case e: NumberFormatException =>
-          throw new MalformedCarbonCommandException("Invalid table_blocksize value found: " +
+          throw new MalformedCarbonCommandException(s"Invalid $propertyName value found: " +
                                                     s"$blockSizeStr, only int value from 1 MB to " +
                                                     s"2048 MB is supported.")
       }
-      if (tableBlockSize < CarbonCommonConstants.BLOCK_SIZE_MIN_VAL ||
-          tableBlockSize > CarbonCommonConstants.BLOCK_SIZE_MAX_VAL) {
-        throw new MalformedCarbonCommandException("Invalid table_blocksize value found: " +
+      if (size < CarbonCommonConstants.BLOCK_SIZE_MIN_VAL ||
+          size > CarbonCommonConstants.BLOCK_SIZE_MAX_VAL) {
+        throw new MalformedCarbonCommandException(s"Invalid $propertyName value found: " +
                                                   s"$blockSizeStr, only int value from 1 MB to " +
                                                   s"2048 MB is supported.")
       }
-      tableProperties.put(CarbonCommonConstants.TABLE_BLOCKSIZE, blockSizeStr)
+      tableProperties.put(propertyName, blockSizeStr)
     }
   }
 
@@ -638,7 +637,7 @@ object CommonUtil {
    * Method to clear the memory for a task
    * if present
    */
-  def clearUnsafeMemory(taskId: Long) {
+  def clearUnsafeMemory(taskId: String) {
     UnsafeMemoryManager.
       INSTANCE.freeMemoryAll(taskId)
     UnsafeSortMemoryManager.
@@ -707,38 +706,47 @@ object CommonUtil {
       carbonLoadModel: CarbonLoadModel,
       isCompactionFlow: Boolean,
       isAltPartitionFlow: Boolean) : Unit = {
-    var storeLocation: String = null
+    val storeLocation = getTempStoreLocations(index.toString).mkString(File.pathSeparator)
 
-    // this property is used to determine whether temp location for carbon is inside
-    // container temp dir or is yarn application directory.
-    val carbonUseLocalDir = CarbonProperties.getInstance()
-      .getProperty("carbon.use.local.dir", "false")
-
-    if (carbonUseLocalDir.equalsIgnoreCase("true")) {
-
-      val storeLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
-      if (null != storeLocations && storeLocations.nonEmpty) {
-        storeLocation = storeLocations(Random.nextInt(storeLocations.length))
-      }
-      if (storeLocation == null) {
-        storeLocation = System.getProperty("java.io.tmpdir")
-      }
-    } else {
-      storeLocation = System.getProperty("java.io.tmpdir")
-    }
-    storeLocation = storeLocation + CarbonCommonConstants.FILE_SEPARATOR + "carbon" +
-      System.nanoTime() + CarbonCommonConstants.UNDERSCORE + index
-
-    val tempLocationKey = CarbonDataProcessorUtil
-      .getTempStoreLocationKey(carbonLoadModel.getDatabaseName,
-        carbonLoadModel.getTableName,
-        carbonLoadModel.getSegmentId,
-        carbonLoadModel.getTaskNo,
-        isCompactionFlow,
-        isAltPartitionFlow)
+    val tempLocationKey = CarbonDataProcessorUtil.getTempStoreLocationKey(
+      carbonLoadModel.getDatabaseName,
+      carbonLoadModel.getTableName,
+      carbonLoadModel.getSegmentId,
+      carbonLoadModel.getTaskNo,
+      isCompactionFlow,
+      isAltPartitionFlow)
     CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation)
   }
 
+  /**
+   * get the temp locations for each process thread
+   *
+   * @param index the id for each process thread
+   * @return an array of temp locations
+   */
+  def getTempStoreLocations(index: String) : Array[String] = {
+    var storeLocation: Array[String] = Array[String]()
+    val isCarbonUseYarnLocalDir = CarbonProperties.getInstance().getProperty(
+      CarbonCommonConstants.CARBON_LOADING_USE_YARN_LOCAL_DIR,
+      CarbonCommonConstants.CARBON_LOADING_USE_YARN_LOCAL_DIR_DEFAULT).equalsIgnoreCase("true")
+    val tmpLocationSuffix =
+      s"${File.separator}carbon${System.nanoTime()}${CarbonCommonConstants.UNDERSCORE}$index"
+    if (isCarbonUseYarnLocalDir) {
+      val yarnStoreLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
+
+      if (null != yarnStoreLocations && yarnStoreLocations.nonEmpty) {
+        storeLocation = yarnStoreLocations.map(_ + tmpLocationSuffix)
+      } else {
+        LOGGER.warn("It seems that the we didn't configure local dirs for yarn," +
+                    " so we are unable to use them for data loading." +
+                    " Here we will fall back using the java tmp dir.")
+        storeLocation = storeLocation :+ (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
+      }
+    } else {
+      storeLocation = storeLocation :+ (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
+    }
+    storeLocation
+  }
   /**
    * This method will validate the cache level
    *
@@ -827,59 +835,30 @@ object CommonUtil {
   }
 
   /**
-   * Merge the carbonindex files with in the segment to carbonindexmerge file inside same segment
+   * This method will validate single node minimum load data volume of table specified by the user
    *
-   * @param sparkContext
-   * @param segmentIds
-   * @param tablePath
-   * @param carbonTable
-   * @param mergeIndexProperty
-   * @param readFileFooterFromCarbonDataFile flag to read file footer information from carbondata
-   *                                         file. This will used in case of upgrade from version
-   *                                         which do not store the blocklet info to current
-   *                                         version
+   * @param tableProperties table property specified by user
+   * @param propertyName property name
    */
-  def mergeIndexFiles(sparkContext: SparkContext,
-    segmentIds: Seq[String],
-    segmentFileNameToSegmentIdMap: java.util.Map[String, String],
-    tablePath: String,
-    carbonTable: CarbonTable,
-    mergeIndexProperty: Boolean,
-    readFileFooterFromCarbonDataFile: Boolean = false): Unit = {
-    if (mergeIndexProperty) {
-      new CarbonMergeFilesRDD(
-        sparkContext,
-        carbonTable,
-        segmentIds,
-        segmentFileNameToSegmentIdMap,
-        carbonTable.isHivePartitionTable,
-        readFileFooterFromCarbonDataFile).collect()
-    } else {
+  def validateLoadMinSize(tableProperties: Map[String, String], propertyName: String): Unit = {
+    var size: Integer = 0
+    if (tableProperties.get(propertyName).isDefined) {
+      val loadSizeStr: String =
+        parsePropertyValueStringInMB(tableProperties(propertyName))
       try {
-        if (CarbonProperties.getInstance().getProperty(
-          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
-          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT).toBoolean) {
-          new CarbonMergeFilesRDD(
-            sparkContext,
-            carbonTable,
-            segmentIds,
-            segmentFileNameToSegmentIdMap,
-            carbonTable.isHivePartitionTable,
-            readFileFooterFromCarbonDataFile).collect()
-        }
+        size = Integer.parseInt(loadSizeStr)
       } catch {
-        case _: Exception =>
-          if (CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT.toBoolean) {
-            new CarbonMergeFilesRDD(
-              sparkContext,
-              carbonTable,
-              segmentIds,
-              segmentFileNameToSegmentIdMap,
-              carbonTable.isHivePartitionTable,
-              readFileFooterFromCarbonDataFile).collect()
-          }
+        case e: NumberFormatException =>
+          throw new MalformedCarbonCommandException(s"Invalid $propertyName value found: " +
+                                                    s"$loadSizeStr, only int value greater " +
+                                                    s"than 0 is supported.")
+      }
+      // if the value is negative, set the value is 0
+      if(size > 0) {
+        tableProperties.put(propertyName, loadSizeStr)
+      } else {
+        tableProperties.put(propertyName, CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT)
       }
     }
   }
-
 }

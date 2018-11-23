@@ -26,6 +26,8 @@ import org.scalatest.BeforeAndAfterAll
 class FloatDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    sql("DROP TABLE IF EXISTS datatype_float_hive")
+    sql("DROP TABLE IF EXISTS datatype_float_byte")
     sql("DROP TABLE IF EXISTS tfloat")
     sql("""
            CREATE TABLE IF NOT EXISTS tfloat
@@ -57,7 +59,19 @@ class FloatDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       Seq(Row(24.56)))
   }
 
+  test("test when float range exceeds") {
+    sql("create table datatype_float_hive(f float, b byte)")
+    sql("insert into datatype_float_hive select 1.7976931348623157E308,-127")
+    sql("create table datatype_float_byte(f float, b byte) using carbon")
+    sql("insert into datatype_float_byte select 1.7976931348623157E308,-127")
+    checkAnswer(
+      sql("SELECT f FROM datatype_float_byte"),
+      sql("SELECT f FROM datatype_float_hive"))
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS tfloat")
+    sql("DROP TABLE IF EXISTS datatype_float_byte")
+    sql("DROP TABLE IF EXISTS datatype_float_hive")
   }
 }

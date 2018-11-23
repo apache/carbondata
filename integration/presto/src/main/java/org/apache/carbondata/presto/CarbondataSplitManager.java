@@ -17,9 +17,12 @@
 
 package org.apache.carbondata.presto;
 
-import javax.inject.Inject;
 import java.util.List;
 import java.util.Optional;
+
+import javax.inject.Inject;
+
+import static java.util.Objects.requireNonNull;
 
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.stats.QueryStatistic;
@@ -29,6 +32,8 @@ import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.presto.impl.CarbonLocalMultiBlockSplit;
 import org.apache.carbondata.presto.impl.CarbonTableCacheModel;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
+
+import static org.apache.carbondata.presto.Types.checkType;
 
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorSession;
@@ -42,8 +47,6 @@ import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
 import com.facebook.presto.spi.predicate.TupleDomain;
 import com.google.common.collect.ImmutableList;
 
-import static java.util.Objects.requireNonNull;
-import static org.apache.carbondata.presto.Types.checkType;
 
 /**
  * Build Carbontable splits
@@ -61,7 +64,8 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
   }
 
   public ConnectorSplitSource getSplits(ConnectorTransactionHandle transactionHandle,
-      ConnectorSession session, ConnectorTableLayoutHandle layout) {
+      ConnectorSession session, ConnectorTableLayoutHandle layout,
+      SplitSchedulingStrategy splitSchedulingStrategy) {
     CarbondataTableLayoutHandle layoutHandle = (CarbondataTableLayoutHandle) layout;
     CarbondataTableHandle tableHandle = layoutHandle.getTable();
     SchemaTableName key = tableHandle.getSchemaTableName();

@@ -21,7 +21,6 @@ import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
@@ -30,6 +29,8 @@ import org.apache.carbondata.core.cache.dictionary.ReverseDictionaryCache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexStore;
 import org.apache.carbondata.core.util.CarbonProperties;
+
+import org.apache.log4j.Logger;
 
 /**
  * Cache provider class which will create a cache based on given type
@@ -59,7 +60,7 @@ public class CacheProvider {
   /**
    * instance for CacheProvider LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CacheProvider.class.getName());
 
   /**
@@ -151,7 +152,8 @@ public class CacheProvider {
    */
   private void createLRULevelCacheInstance() {
     boolean isDriver = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "false"));
+        .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE,
+            CarbonCommonConstants.IS_DRIVER_INSTANCE_DEFAULT));
     if (isDriver) {
       carbonLRUCache = new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE,
           CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);

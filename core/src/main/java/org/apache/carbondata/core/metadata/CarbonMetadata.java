@@ -69,9 +69,8 @@ public final class CarbonMetadata {
 
   /**
    * Below method will be used to set the carbon table
-   * This method will be used in executor side as driver will always have
-   * updated table so from driver during query execution and data loading
-   * we just need to add the table
+   * Note: Use this method only in driver as clean up in Executor is not handled
+   *       if this table is added to executor
    *
    * @param carbonTable
    */
@@ -143,7 +142,7 @@ public final class CarbonMetadata {
     List<CarbonDimension> listOfCarbonDims =
         carbonTable.getDimensionByTableName(carbonTable.getTableName());
     for (CarbonDimension dimension : listOfCarbonDims) {
-      if (dimension.getColumnId().equals(columnIdentifier)) {
+      if (dimension.getColumnId().equalsIgnoreCase(columnIdentifier)) {
         return dimension;
       }
       if (dimension.getNumberOfChild() > 0) {
@@ -168,7 +167,8 @@ public final class CarbonMetadata {
   private CarbonDimension getCarbonChildDimsBasedOnColIdentifier(String columnIdentifier,
       CarbonDimension dimension) {
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
-      if (dimension.getListOfChildDimensions().get(i).getColumnId().equals(columnIdentifier)) {
+      if (dimension.getListOfChildDimensions().get(i).getColumnId()
+          .equalsIgnoreCase(columnIdentifier)) {
         return dimension.getListOfChildDimensions().get(i);
       } else if (dimension.getListOfChildDimensions().get(i).getNumberOfChild() > 0) {
         CarbonDimension childDim = getCarbonChildDimsBasedOnColIdentifier(columnIdentifier,

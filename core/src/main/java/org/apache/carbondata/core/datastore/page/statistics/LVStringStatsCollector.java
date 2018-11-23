@@ -19,13 +19,30 @@ package org.apache.carbondata.core.datastore.page.statistics;
 
 import java.math.BigDecimal;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 public abstract class LVStringStatsCollector implements ColumnPageStatsCollector {
 
+  /**
+   * allowed character limit for to be considered for storing min max
+   */
+  protected static final int allowedMinMaxByteLimit = Integer.parseInt(
+      CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT));
+  /**
+   * variables for storing min max value
+   */
   private byte[] min, max;
+  /**
+   * This flag will be used to decide whether to write min/max in the metadata or not. This will be
+   * helpful for reducing the store size in scenarios where the numbers of characters in
+   * string/varchar type columns are more
+   */
+  private boolean ignoreWritingMinMax;
 
   @Override
   public void updateNull(int rowId) {
@@ -57,6 +74,10 @@ public abstract class LVStringStatsCollector implements ColumnPageStatsCollector
 
   }
 
+  @Override public void update(float value) {
+
+  }
+
   @Override
   public void update(BigDecimal value) {
 
@@ -66,23 +87,33 @@ public abstract class LVStringStatsCollector implements ColumnPageStatsCollector
 
   @Override
   public void update(byte[] value) {
+    // return if min/max need not be written
+    if (isIgnoreMinMaxFlagSet(value)) {
+      return;
+    }
     // input value is LV encoded
     byte[] newValue = getActualValue(value);
     if (min == null) {
       min = newValue;
     }
-
     if (null == max) {
       max = newValue;
     }
-
     if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(min, newValue) > 0) {
       min = newValue;
     }
-
     if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(max, newValue) < 0) {
       max = newValue;
     }
+  }
+
+  private boolean isIgnoreMinMaxFlagSet(byte[] value) {
+    if (!ignoreWritingMinMax) {
+      if (null != value && value.length > allowedMinMaxByteLimit) {
+        ignoreWritingMinMax = true;
+      }
+    }
+    return ignoreWritingMinMax;
   }
 
   @Override
@@ -90,10 +121,16 @@ public abstract class LVStringStatsCollector implements ColumnPageStatsCollector
     return new SimpleStatsResult() {
 
       @Override public Object getMin() {
+        if (null == min || ignoreWritingMinMax) {
+          min = new byte[0];
+        }
         return min;
       }
 
       @Override public Object getMax() {
+        if (null == max || ignoreWritingMinMax) {
+          max = new byte[0];
+        }
         return max;
       }
 
@@ -103,6 +140,10 @@ public abstract class LVStringStatsCollector implements ColumnPageStatsCollector
 
       @Override public DataType getDataType() {
         return DataTypes.STRING;
+      }
+
+      @Override public boolean writeMinMax() {
+        return !ignoreWritingMinMax;
       }
 
     };

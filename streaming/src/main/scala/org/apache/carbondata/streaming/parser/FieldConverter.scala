@@ -78,7 +78,7 @@ object FieldConverter {
               .append(delimiter)
           }
           builder.substring(0, builder.length - delimiter.length())
-        case m: scala.collection.Map[Any, Any] =>
+        case m: scala.collection.Map[_, _] =>
           throw new Exception("Unsupported data type: Map")
         case r: org.apache.spark.sql.Row =>
           val delimiter = if (level == 1) {

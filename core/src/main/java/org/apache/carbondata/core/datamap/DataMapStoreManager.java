@@ -28,7 +28,6 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.MetadataProcessException;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
 import org.apache.carbondata.common.exceptions.sql.NoSuchDataMapException;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
@@ -53,6 +52,9 @@ import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV;
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.PREAGGREGATE;
 
+import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
+
 /**
  * It maintains all the DataMaps in it.
  */
@@ -71,6 +73,11 @@ public final class DataMapStoreManager {
   private Map<String, List<TableDataMap>> allDataMaps = new ConcurrentHashMap<>();
 
   /**
+   * Contains the table name to the tablepath mapping.
+   */
+  private Map<String, String> tablePathMap = new ConcurrentHashMap<>();
+
+  /**
    * Contains the datamap catalog for each datamap provider.
    */
   private Map<String, DataMapCatalog> dataMapCatalogs = null;
@@ -80,7 +87,7 @@ public final class DataMapStoreManager {
   private DataMapSchemaStorageProvider provider = new DiskBasedDMSchemaStorageProvider(
       CarbonProperties.getInstance().getSystemFolderLocation());
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(DataMapStoreManager.class.getName());
 
   private DataMapStoreManager() {
@@ -285,7 +292,7 @@ public final class DataMapStoreManager {
           dataMapCatalog.registerSchema(schema);
         } catch (Exception e) {
           // Ignore the schema
-          LOGGER.error(e, "Error while registering schema");
+          LOGGER.error("Error while registering schema", e);
         }
       }
     }
@@ -308,6 +315,13 @@ public final class DataMapStoreManager {
     String tableUniqueName =
         table.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableUniqueName();
     List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
+    if (tableIndices == null) {
+      String keyUsingTablePath = getKeyUsingTablePath(table.getTablePath());
+      if (keyUsingTablePath != null) {
+        tableUniqueName = keyUsingTablePath;
+        tableIndices = allDataMaps.get(tableUniqueName);
+      }
+    }
     TableDataMap dataMap = null;
     if (tableIndices != null) {
       dataMap = getTableDataMap(dataMapSchema.getDataMapName(), tableIndices);
@@ -331,7 +345,25 @@ public final class DataMapStoreManager {
     if (dataMap == null) {
       throw new RuntimeException("Datamap does not exist");
     }
+    // This is done to handle the scenario of stale cache because of which schema mismatch
+    // exception can be thrown. Scenario: In case of carbondata used through FileFormat API,
+    // once a table is dropped and recreated with the same name again then because the dataMap
+    // contains the stale carbon table schema mismatch exception is thrown. To avoid such scenarios
+    // it is always better to update the carbon table object retrieved
+    dataMap.getDataMapFactory().setCarbonTable(table);
     return dataMap;
+  }
+
+  private String getKeyUsingTablePath(String tablePath) {
+    if (tablePath != null) {
+      // Try get using table path
+      for (Map.Entry<String, String> entry : tablePathMap.entrySet()) {
+        if (new Path(entry.getValue()).equals(new Path(tablePath))) {
+          return entry.getKey();
+        }
+      }
+    }
+    return null;
   }
 
   /**
@@ -372,6 +404,13 @@ public final class DataMapStoreManager {
     getTableSegmentRefresher(table);
     List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
     if (tableIndices == null) {
+      String keyUsingTablePath = getKeyUsingTablePath(table.getTablePath());
+      if (keyUsingTablePath != null) {
+        tableUniqueName = keyUsingTablePath;
+        tableIndices = allDataMaps.get(tableUniqueName);
+      }
+    }
+    if (tableIndices == null) {
       tableIndices = new ArrayList<>();
     }
 
@@ -388,6 +427,7 @@ public final class DataMapStoreManager {
 
     tableIndices.add(dataMap);
     allDataMaps.put(tableUniqueName, tableIndices);
+    tablePathMap.put(tableUniqueName, table.getTablePath());
     return dataMap;
   }
 
@@ -426,17 +466,25 @@ public final class DataMapStoreManager {
     CarbonTable carbonTable = getCarbonTable(identifier);
     String tableUniqueName = identifier.getCarbonTableIdentifier().getTableUniqueName();
     List<TableDataMap> tableIndices = allDataMaps.get(tableUniqueName);
+    if (tableIndices == null) {
+      String keyUsingTablePath = getKeyUsingTablePath(identifier.getTablePath());
+      if (keyUsingTablePath != null) {
+        tableUniqueName = keyUsingTablePath;
+        tableIndices = allDataMaps.get(tableUniqueName);
+      }
+    }
     if (null != carbonTable && tableIndices != null) {
       try {
         DataMapUtil.executeDataMapJobForClearingDataMaps(carbonTable);
       } catch (IOException e) {
-        LOGGER.error(e, "clear dataMap job failed");
+        LOGGER.error("clear dataMap job failed", e);
         // ignoring the exception
       }
     }
     segmentRefreshMap.remove(identifier.uniqueName());
     clearDataMaps(tableUniqueName);
     allDataMaps.remove(tableUniqueName);
+    tablePathMap.remove(tableUniqueName);
   }
 
   /**
@@ -454,7 +502,7 @@ public final class DataMapStoreManager {
             .buildFromTablePath(identifier.getTableName(), identifier.getDatabaseName(),
                 identifier.getTablePath(), identifier.getCarbonTableIdentifier().getTableId());
       } catch (IOException e) {
-        LOGGER.error("failed to get carbon table from table Path");
+        LOGGER.warn("failed to get carbon table from table Path" + e.getMessage());
         // ignoring exception
       }
     }
@@ -477,6 +525,7 @@ public final class DataMapStoreManager {
       }
     }
     allDataMaps.remove(tableUniqName);
+    tablePathMap.remove(tableUniqName);
   }
 
   /**
@@ -497,7 +546,7 @@ public final class DataMapStoreManager {
             DataMapUtil.executeDataMapJobForClearingDataMaps(carbonTable);
             tableDataMap.clear();
           } catch (IOException e) {
-            LOGGER.error(e, "clear dataMap job failed");
+            LOGGER.error("clear dataMap job failed", e);
             // ignoring the exception
           }
           tableDataMap.deleteDatamapData();

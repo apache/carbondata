@@ -66,4 +66,12 @@ public class MapType extends DataType {
     result = prime * result + valueType.hashCode();
     return result;
   }
+
+  public DataType getKeyType() {
+    return keyType;
+  }
+
+  public DataType getValueType() {
+    return valueType;
+  }
 }

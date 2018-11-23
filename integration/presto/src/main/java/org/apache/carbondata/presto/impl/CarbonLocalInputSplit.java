@@ -17,17 +17,18 @@
 
 package org.apache.carbondata.presto.impl;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.gson.Gson;
-import org.apache.hadoop.fs.Path;
-
 import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.Gson;
+
+import org.apache.hadoop.fs.Path;
 
 /**
  * CarbonLocalInputSplit represents a block, it contains a set of blocklet.

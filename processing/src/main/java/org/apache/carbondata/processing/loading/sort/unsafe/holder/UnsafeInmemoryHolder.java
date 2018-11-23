@@ -17,15 +17,16 @@
 
 package org.apache.carbondata.processing.loading.sort.unsafe.holder;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
 import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.sort.sortdata.IntermediateSortTempRowComparator;
 
+import org.apache.log4j.Logger;
+
 public class UnsafeInmemoryHolder implements SortTempChunkHolder {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(UnsafeInmemoryHolder.class.getName());
 
   private int counter;
@@ -45,7 +46,9 @@ public class UnsafeInmemoryHolder implements SortTempChunkHolder {
     this.rowPage = rowPage;
     LOGGER.info("Processing unsafe inmemory rows page with size : " + actualSize);
     this.comparator = new IntermediateSortTempRowComparator(
-        rowPage.getTableFieldStat().getIsSortColNoDictFlags());
+        rowPage.getTableFieldStat().getIsSortColNoDictFlags(),
+        rowPage.getTableFieldStat().getNoDictDataType());
+    this.rowPage.setReadConvertedNoSortField();
   }
 
   public boolean hasNext() {

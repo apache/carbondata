@@ -23,9 +23,11 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
@@ -35,6 +37,7 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.format.Encoding;
 
 /**
@@ -66,7 +69,7 @@ public class RLECodec implements ColumnPageCodec {
   public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
     assert meta instanceof RLEEncoderMeta;
     RLEEncoderMeta codecMeta = (RLEEncoderMeta) meta;
-    return new RLEDecoder(meta.getColumnSpec(), codecMeta.getPageSize());
+    return new RLEDecoder(meta.getColumnSpec(), codecMeta.getPageSize(), meta.getCompressorName());
   }
 
   // This codec supports integral type only
@@ -151,7 +154,10 @@ public class RLECodec implements ColumnPageCodec {
     @Override
     protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
       return new RLEEncoderMeta(inputPage.getColumnSpec(),
-          inputPage.getDataType(), inputPage.getPageSize(), inputPage.getStatistics());
+          inputPage.getDataType(),
+          inputPage.getPageSize(),
+          inputPage.getStatistics(),
+          inputPage.getColumnCompressorName());
     }
 
     private void putValue(Object value) throws IOException {
@@ -281,19 +287,21 @@ public class RLECodec implements ColumnPageCodec {
 
     private TableSpec.ColumnSpec columnSpec;
     private int pageSize;
+    private String compressorName;
 
-    private RLEDecoder(TableSpec.ColumnSpec columnSpec, int pageSize) {
+    private RLEDecoder(TableSpec.ColumnSpec columnSpec, int pageSize, String compressorName) {
       validateDataType(columnSpec.getSchemaDataType());
       this.columnSpec = columnSpec;
       this.pageSize = pageSize;
+      this.compressorName = compressorName;
     }
 
-    @Override
-    public ColumnPage decode(byte[] input, int offset, int length)
+    @Override public ColumnPage decode(byte[] input, int offset, int length)
         throws MemoryException, IOException {
       DataType dataType = columnSpec.getSchemaDataType();
       DataInputStream in = new DataInputStream(new ByteArrayInputStream(input, offset, length));
-      ColumnPage resultPage = ColumnPage.newPage(columnSpec, dataType, pageSize);
+      ColumnPage resultPage = ColumnPage.newPage(
+          new ColumnPageEncoderMeta(columnSpec, dataType, compressorName), pageSize);
       if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
         decodeBytePage(in, resultPage);
       } else if (dataType == DataTypes.SHORT) {
@@ -306,6 +314,13 @@ public class RLECodec implements ColumnPageCodec {
         throw new RuntimeException("unsupported datatype:" + dataType);
       }
       return resultPage;
+    }
+
+    @Override public void decodeAndFillVector(byte[] input, int offset, int length,
+        ColumnVectorInfo vectorInfo, BitSet nullBits, boolean isLVEncoded, int pageSize,
+        ReusableDataBuffer reusableDataBuffer)
+        throws MemoryException, IOException {
+      throw new UnsupportedOperationException("Not supposed to be called here");
     }
 
     @Override public ColumnPage decode(byte[] input, int offset, int length, boolean isLVEncoded)

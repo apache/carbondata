@@ -24,19 +24,20 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
+import org.apache.carbondata.core.constants.SortScopeOptions;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.features.TableOperation;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -57,6 +58,7 @@ import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
 import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -64,12 +66,16 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import static org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.MV;
 import static org.apache.carbondata.core.util.CarbonUtil.thriftColumnSchemaToWrapperColumnSchema;
 
+import com.google.common.collect.Lists;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
+
 /**
  * Mapping class for Carbon actual table
  */
 public class CarbonTable implements Serializable {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonTable.class.getName());
 
   /**
@@ -237,24 +243,15 @@ public class CarbonTable implements Serializable {
 
   public static CarbonTable buildTable(
       String tablePath,
-      String tableName) throws IOException {
+      String tableName,
+      Configuration configuration) throws IOException {
     TableInfo tableInfoInfer = CarbonUtil.buildDummyTableInfo(tablePath, "null", "null");
-    CarbonFile[] carbonFiles = FileFactory
-        .getCarbonFile(tablePath)
-        .listFiles(new CarbonFileFilter() {
-          @Override
-          public boolean accept(CarbonFile file) {
-            if (file == null) {
-              return false;
-            }
-            return file.getName().endsWith("carbonindex");
-          }
-        });
-    if (carbonFiles == null || carbonFiles.length < 1) {
+    CarbonFile carbonFile = getFirstIndexFile(FileFactory.getCarbonFile(tablePath, configuration));
+    if (carbonFile == null) {
       throw new RuntimeException("Carbon index file not exists.");
     }
     org.apache.carbondata.format.TableInfo tableInfo = CarbonUtil
-        .inferSchemaFromIndexFile(carbonFiles[0].getPath(), tableName);
+        .inferSchemaFromIndexFile(carbonFile.getPath(), tableName);
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     for (org.apache.carbondata.format.ColumnSchema thriftColumnSchema : tableInfo
         .getFact_table().getTable_columns()) {
@@ -266,6 +263,24 @@ public class CarbonTable implements Serializable {
     }
     tableInfoInfer.getFactTable().setListOfColumns(columnSchemaList);
     return CarbonTable.buildFromTableInfo(tableInfoInfer);
+  }
+
+  private static CarbonFile getFirstIndexFile(CarbonFile tablePath) {
+    CarbonFile[] carbonFiles = tablePath.listFiles();
+    for (CarbonFile carbonFile : carbonFiles) {
+      if (carbonFile.isDirectory()) {
+        // if the list has directories that doesn't contain index files,
+        // continue checking other files/directories in the list.
+        if (getFirstIndexFile(carbonFile) == null) {
+          continue;
+        } else {
+          return getFirstIndexFile(carbonFile);
+        }
+      } else if (carbonFile.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+        return carbonFile;
+      }
+    }
+    return null;
   }
 
   public static CarbonTable buildDummyTable(String tablePath) throws IOException {
@@ -831,6 +846,15 @@ public class CarbonTable implements Serializable {
     return blockSize;
   }
 
+  public int getBlockletSizeInMB() {
+    try {
+      return Integer.parseInt(tableInfo.getFactTable().getTableProperties().get(
+          CarbonCommonConstants.TABLE_BLOCKLET_SIZE));
+    } catch (NumberFormatException e) {
+      return Integer.parseInt(CarbonCommonConstants.TABLE_BLOCKLET_SIZE_DEFAULT);
+    }
+  }
+
   /**
    * to get the normal dimension or the primitive dimension of the complex type
    *
@@ -909,6 +933,10 @@ public class CarbonTable implements Serializable {
       }
     }
     return sort_columsList;
+  }
+
+  public List<String> getSortColumns() {
+    return getSortColumns(getTableName());
   }
 
   public int getNumberOfSortColumns() {
@@ -1016,7 +1044,10 @@ public class CarbonTable implements Serializable {
 
   public void processFilterExpression(Expression filterExpression,
       boolean[] isFilterDimensions, boolean[] isFilterMeasures) {
-    QueryModel.processFilterExpression(this, filterExpression, isFilterDimensions,
+    QueryModel.FilterProcessVO processVO =
+        new QueryModel.FilterProcessVO(getDimensionByTableName(getTableName()),
+            getMeasureByTableName(getTableName()), getImplicitDimensionByTableName(getTableName()));
+    QueryModel.processFilterExpression(processVO, filterExpression, isFilterDimensions,
         isFilterMeasures);
 
     if (null != filterExpression) {
@@ -1030,11 +1061,11 @@ public class CarbonTable implements Serializable {
   /**
    * Resolve the filter expression.
    */
-  public FilterResolverIntf resolveFilter(Expression filterExpression) {
+  public static FilterResolverIntf resolveFilter(Expression filterExpression,
+      AbsoluteTableIdentifier identifier) {
     try {
       FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
-      return filterExpressionProcessor.getFilterResolver(
-          filterExpression, getAbsoluteTableIdentifier());
+      return filterExpressionProcessor.getFilterResolver(filterExpression, identifier);
     } catch (Exception e) {
       throw new RuntimeException("Error while resolving filter expression", e);
     }
@@ -1160,10 +1191,11 @@ public class CarbonTable implements Serializable {
    * @param tableInfo
    */
   private static void setLocalDictInfo(CarbonTable table, TableInfo tableInfo) {
-    String isLocalDictionaryEnabled = tableInfo.getFactTable().getTableProperties()
-        .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE);
-    String localDictionaryThreshold = tableInfo.getFactTable().getTableProperties()
-        .get(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD);
+    Map<String, String> tableProperties = tableInfo.getFactTable().getTableProperties();
+    String isLocalDictionaryEnabled =
+        tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE);
+    String localDictionaryThreshold =
+        tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_THRESHOLD);
     if (null != isLocalDictionaryEnabled) {
       table.setLocalDictionaryEnabled(Boolean.parseBoolean(isLocalDictionaryEnabled));
       if (null != localDictionaryThreshold) {
@@ -1176,7 +1208,16 @@ public class CarbonTable implements Serializable {
       // in case of old tables, local dictionary enable property will not be present in
       // tableProperties, so disable the local dictionary generation
       table.setLocalDictionaryEnabled(Boolean.parseBoolean("false"));
+      tableProperties.put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE, "false");
     }
+  }
+
+  /**
+   * Return the format value defined in table properties
+   * @return String as per table properties, null if not defined
+   */
+  public String getFormat() {
+    return getTableInfo().getFactTable().getTableProperties().get("format");
   }
 
   /**
@@ -1191,16 +1232,22 @@ public class CarbonTable implements Serializable {
     String tableName = tableInfo.getFactTable().getTableName();
     String cacheColumns =
         tableInfo.getFactTable().getTableProperties().get(CarbonCommonConstants.COLUMN_META_CACHE);
-    if (null != cacheColumns && !cacheColumns.isEmpty()) {
-      String[] cachedCols = cacheColumns.split(",");
-      for (String column : cachedCols) {
-        CarbonColumn carbonColumn = getColumnByName(tableName, column);
-        if (null != carbonColumn && !carbonColumn.isInvisible()) {
-          cachedColsList.add(carbonColumn.getColName());
+    if (null != cacheColumns) {
+      if (!cacheColumns.isEmpty()) {
+        String[] cachedCols = cacheColumns.split(",");
+        for (String column : cachedCols) {
+          CarbonColumn carbonColumn = getColumnByName(tableName, column);
+          if (null != carbonColumn && !carbonColumn.isInvisible()) {
+            cachedColsList.add(carbonColumn.getColName());
+          }
         }
+        return cachedColsList;
+      } else {
+        return new LinkedList<>();
       }
+    } else {
+      return Lists.newArrayList("All columns");
     }
-    return cachedColsList;
   }
 
   /**
@@ -1273,5 +1320,42 @@ public class CarbonTable implements Serializable {
       }
     }
     return false;
+  }
+
+  /**
+   * Return all inverted index columns in this table
+   */
+  public List<ColumnSchema> getInvertedIndexColumns() {
+    if (getSortScope() == SortScopeOptions.SortScope.NO_SORT) {
+      return new LinkedList<>();
+    }
+    List<ColumnSchema> columns = new LinkedList<>();
+    for (ColumnSchema column : tableInfo.getFactTable().getListOfColumns()) {
+      if (column.isUseInvertedIndex() && column.isSortColumn()) {
+        columns.add(column);
+      }
+    }
+    return columns;
+  }
+
+  /**
+   * Return table level sort scope
+   */
+  public SortScopeOptions.SortScope getSortScope() {
+    String sortScope = tableInfo.getFactTable().getTableProperties().get("sort_scope");
+    if (sortScope == null) {
+      if (getNumberOfSortColumns() == 0) {
+        return SortScopeOptions.SortScope.NO_SORT;
+      } else {
+        return SortScopeOptions.getSortScope(
+            CarbonProperties.getInstance().getProperty(
+                CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
+                CarbonProperties.getInstance().getProperty(
+                    CarbonCommonConstants.LOAD_SORT_SCOPE,
+                    CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)));
+      }
+    } else {
+      return SortScopeOptions.getSortScope(sortScope);
+    }
   }
 }

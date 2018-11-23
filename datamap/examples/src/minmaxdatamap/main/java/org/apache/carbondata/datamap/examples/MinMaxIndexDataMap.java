@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
+import org.apache.log4j.Logger;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datamap.dev.cgdatamap.CoarseGrainDataMap;
@@ -53,7 +53,7 @@ import org.apache.hadoop.fs.PathFilter;
  */
 public class MinMaxIndexDataMap extends CoarseGrainDataMap {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(MinMaxIndexDataMap.class.getName());
 
   private String[] indexFilePath;
@@ -140,7 +140,7 @@ public class MinMaxIndexDataMap extends CoarseGrainDataMap {
 
           BitSet bitSet = filterExecuter.isScanRequired(
               readMinMaxDataMap[blkIdx][blkltIdx].getMaxValues(),
-              readMinMaxDataMap[blkIdx][blkltIdx].getMinValues());
+              readMinMaxDataMap[blkIdx][blkltIdx].getMinValues(), null);
           if (!bitSet.isEmpty()) {
             String blockFileName = indexFilePath[blkIdx].substring(
                 indexFilePath[blkIdx].lastIndexOf(File.separatorChar) + 1,

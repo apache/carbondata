@@ -36,7 +36,8 @@ case class CarbonDeleteLoadByLoadDateCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
-
+    setAuditTable(carbonTable)
+    setAuditInfo(Map("date" -> dateField))
     if (!carbonTable.getTableInfo.isTransactionalTable) {
       throw new MalformedCarbonCommandException("Unsupported operation on non transactional table")
     }
@@ -66,4 +67,6 @@ case class CarbonDeleteLoadByLoadDateCommand(
 
     Seq.empty
   }
+
+  override protected def opName: String = "DELETE SEGMENT BY DATE"
 }

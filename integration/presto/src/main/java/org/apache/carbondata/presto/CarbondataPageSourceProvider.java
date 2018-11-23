@@ -20,6 +20,8 @@ package org.apache.carbondata.presto;
 import java.io.IOException;
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
+
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -39,6 +41,8 @@ import org.apache.carbondata.presto.impl.CarbonLocalMultiBlockSplit;
 import org.apache.carbondata.presto.impl.CarbonTableCacheModel;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
 
+import static org.apache.carbondata.presto.Types.checkType;
+
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorPageSource;
 import com.facebook.presto.spi.ConnectorSession;
@@ -55,8 +59,7 @@ import org.apache.hadoop.mapreduce.TaskType;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.Objects.requireNonNull;
-import static org.apache.carbondata.presto.Types.checkType;
+
 
 /**
  * Provider Class for Carbondata Page Source class.
@@ -97,12 +100,14 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
     checkArgument(carbondataSplit.getConnectorId().equals(connectorId),
         "split is not for this connector");
     QueryModel queryModel = createQueryModel(carbondataSplit, columns);
-    QueryExecutor queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
+    QueryExecutor queryExecutor =
+        QueryExecutorFactory.getQueryExecutor(queryModel, new Configuration());
     try {
       CarbonIterator iterator = queryExecutor.execute(queryModel);
       readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getTable());
-      PrestoCarbonVectorizedRecordReader reader = new PrestoCarbonVectorizedRecordReader(queryExecutor, queryModel,
-          (AbstractDetailQueryResultIterator) iterator, readSupport);
+      PrestoCarbonVectorizedRecordReader reader =
+          new PrestoCarbonVectorizedRecordReader(queryExecutor, queryModel,
+              (AbstractDetailQueryResultIterator) iterator, readSupport);
       reader.setTaskId(carbondataSplit.getIndex());
       return reader;
     } catch (IOException e) {

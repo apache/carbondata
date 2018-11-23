@@ -22,6 +22,12 @@ public class CarbonDictionaryImpl implements CarbonDictionary {
 
   private byte[][] dictionary;
 
+  private byte[] singleArrayDictValues;
+
+  private int[] dictLens;
+
+  private int[] dictOffsets;
+
   private int actualSize;
 
   private boolean isDictUsed;
@@ -51,4 +57,38 @@ public class CarbonDictionaryImpl implements CarbonDictionary {
     return dictionary[index];
   }
 
+  @Override public byte[][] getAllDictionaryValues() {
+    return dictionary;
+  }
+
+  @Override public byte[] getAllDictionaryValuesInSingleArray() {
+    if (singleArrayDictValues == null) {
+      dictLens = new int[dictionary.length];
+      dictOffsets = new int[dictionary.length];
+      int size = 0;
+      for (int i = 0; i < dictionary.length; i++) {
+        if (dictionary[i] != null) {
+          dictOffsets[i] = size;
+          size += dictionary[i].length;
+          dictLens[i] = dictionary[i].length;
+        }
+      }
+      singleArrayDictValues = new byte[size];
+      for (int i = 0; i < dictionary.length; i++) {
+        if (dictionary[i] != null) {
+          System.arraycopy(dictionary[i], 0, singleArrayDictValues, dictOffsets[i], dictLens[i]);
+        }
+      }
+      dictionary = null;
+    }
+    return singleArrayDictValues;
+  }
+
+  public int[] getDictLens() {
+    return dictLens;
+  }
+
+  public int[] getDictOffsets() {
+    return dictOffsets;
+  }
 }

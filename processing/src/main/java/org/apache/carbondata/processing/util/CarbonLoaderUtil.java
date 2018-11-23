@@ -16,16 +16,18 @@
  */
 package org.apache.carbondata.processing.util;
 
-import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
@@ -40,9 +42,6 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
-import org.apache.carbondata.core.fileoperations.AtomicFileOperationFactory;
-import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.locks.CarbonLockUtil;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -60,14 +59,17 @@ import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.merger.NodeMultiBlockRelation;
 
-import static org.apache.carbondata.core.enums.EscapeSequences.*;
+import static org.apache.carbondata.core.enums.EscapeSequences.BACKSPACE;
+import static org.apache.carbondata.core.enums.EscapeSequences.CARRIAGE_RETURN;
+import static org.apache.carbondata.core.enums.EscapeSequences.NEW_LINE;
+import static org.apache.carbondata.core.enums.EscapeSequences.TAB;
 
-import com.google.gson.Gson;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 public final class CarbonLoaderUtil {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonLoaderUtil.class.getName());
 
   private CarbonLoaderUtil() {
@@ -79,7 +81,7 @@ public final class CarbonLoaderUtil {
   public enum BlockAssignmentStrategy {
     BLOCK_NUM_FIRST("Assign blocks to node base on number of blocks"),
     BLOCK_SIZE_FIRST("Assign blocks to node base on data size of blocks"),
-    NODE_MIN_SIZE_FIRST("Assign blocks to node base on minumun size of inputs");
+    NODE_MIN_SIZE_FIRST("Assign blocks to node base on minimum size of inputs");
     private String name;
     BlockAssignmentStrategy(String name) {
       this.name = name;
@@ -327,7 +329,7 @@ public final class CarbonLoaderUtil {
 
         for (LoadMetadataDetails detail: listOfLoadFolderDetails) {
           // if the segments is in the list of marked for delete then update the status.
-          if (segmentsToBeDeleted.contains(new Segment(detail.getLoadName(), null))) {
+          if (segmentsToBeDeleted.contains(new Segment(detail.getLoadName()))) {
             detail.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
           } else if (segmentFilesTobeUpdated
               .contains(Segment.toSegment(detail.getLoadName(), null))) {
@@ -395,39 +397,6 @@ public final class CarbonLoaderUtil {
     }
     loadMetadataDetails.setSegmentStatus(loadStatus);
     loadMetadataDetails.setLoadStartTime(loadStartTime);
-  }
-
-  public static void writeLoadMetadata(AbsoluteTableIdentifier identifier,
-      List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
-    String dataLoadLocation = CarbonTablePath.getTableStatusFilePath(identifier.getTablePath());
-
-    DataOutputStream dataOutputStream;
-    Gson gsonObjectToWrite = new Gson();
-    BufferedWriter brWriter = null;
-
-    AtomicFileOperations writeOperation =
-        AtomicFileOperationFactory.getAtomicFileOperations(dataLoadLocation);
-
-    try {
-      dataOutputStream = writeOperation.openForWrite(FileWriteOperation.OVERWRITE);
-      brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
-              Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
-
-      String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetails.toArray());
-      brWriter.write(metadataInstance);
-    } finally {
-      try {
-        if (null != brWriter) {
-          brWriter.flush();
-        }
-      } catch (Exception e) {
-        LOGGER.error("error in  flushing ");
-
-      }
-      CarbonUtil.closeStreams(brWriter);
-      writeOperation.close();
-    }
-
   }
 
   public static boolean isValidEscapeSequence(String escapeChar) {
@@ -577,7 +546,7 @@ public final class CarbonLoaderUtil {
    * @param noOfNodesInput -1 if number of nodes has to be decided
    *                       based on block location information
    * @param blockAssignmentStrategy strategy used to assign blocks
-   * @param loadMinSize the property load_min_size_inmb specified by the user
+   * @param expectedMinSizePerNode the property load_min_size_inmb specified by the user
    * @return a map that maps node to blocks
    */
   public static Map<String, List<Distributable>> nodeBlockMapping(
@@ -622,7 +591,8 @@ public final class CarbonLoaderUtil {
       } else {
         LOGGER.warn("Invalid load_min_size_inmb value found: " + expectedMinSizePerNode
             + ", only int value greater than 0 is supported.");
-        iexpectedMinSizePerNode = CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_DEFAULT;
+        iexpectedMinSizePerNode = Integer.parseInt(
+            CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT);
       }
       // If the average expected size for each node greater than load min size,
       // then fall back to default strategy

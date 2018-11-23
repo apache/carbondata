@@ -23,10 +23,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
+
+import org.apache.log4j.Logger;
 
 /**
  * class which manages the lru cache
@@ -39,7 +40,7 @@ public final class CarbonLRUCache {
   /**
    * Attribute for Carbon LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonLRUCache.class.getName());
   /**
    * Map that will contain key as table unique name and value as cache Holder
@@ -155,10 +156,10 @@ public final class CarbonLRUCache {
   private void removeKey(String key) {
     Cacheable cacheable = lruCacheMap.get(key);
     if (null != cacheable) {
-      currentSize = currentSize - cacheable.getMemorySize();
-    }
-    Cacheable remove = lruCacheMap.remove(key);
-    if (null != remove) {
+      long memorySize = cacheable.getMemorySize();
+      cacheable.invalidate();
+      lruCacheMap.remove(key);
+      currentSize = currentSize - memorySize;
       LOGGER.info("Removed entry from InMemory lru cache :: " + key);
     }
   }

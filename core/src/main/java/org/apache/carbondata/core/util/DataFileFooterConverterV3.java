@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
@@ -31,7 +32,17 @@ import org.apache.carbondata.core.reader.CarbonHeaderReader;
 import org.apache.carbondata.format.FileFooter3;
 import org.apache.carbondata.format.FileHeader;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
+
+  public DataFileFooterConverterV3(Configuration configuration) {
+    super(configuration);
+  }
+
+  public DataFileFooterConverterV3() {
+    super(FileFactory.getConfiguration());
+  }
 
   /**
    * Below method will be used to convert thrift file meta to wrapper file meta
@@ -48,12 +59,16 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
    */
   @Override public DataFileFooter readDataFileFooter(TableBlockInfo tableBlockInfo)
       throws IOException {
-    DataFileFooter dataFileFooter = new DataFileFooter();
     CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(tableBlockInfo.getFilePath());
     FileHeader fileHeader = carbonHeaderReader.readHeader();
     CarbonFooterReaderV3 reader =
         new CarbonFooterReaderV3(tableBlockInfo.getFilePath(), tableBlockInfo.getBlockOffset());
     FileFooter3 footer = reader.readFooterVersion3();
+    return convertDataFileFooter(fileHeader, footer);
+  }
+
+  public DataFileFooter convertDataFileFooter(FileHeader fileHeader, FileFooter3 footer) {
+    DataFileFooter dataFileFooter = new DataFileFooter();
     dataFileFooter.setVersionId(ColumnarFormatVersion.valueOf((short) fileHeader.getVersion()));
     dataFileFooter.setNumberOfRows(footer.getNum_rows());
     dataFileFooter.setSegmentInfo(getSegmentInfo(footer.getSegment_info()));

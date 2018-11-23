@@ -62,8 +62,8 @@ public class FileReaderImpl implements FileReader {
   @Override public byte[] readByteArray(String filePath, long offset, int length)
       throws IOException {
     FileChannel fileChannel = updateCache(filePath);
-    ByteBuffer byteBffer = read(fileChannel, length, offset);
-    return byteBffer.array();
+    ByteBuffer byteBuffer = read(fileChannel, length, offset);
+    return byteBuffer.array();
   }
 
   /**
@@ -76,6 +76,7 @@ public class FileReaderImpl implements FileReader {
         channel.close();
       }
     }
+    fileNameAndStreamCache.clear();
   }
 
   /**
@@ -88,8 +89,8 @@ public class FileReaderImpl implements FileReader {
    */
   @Override public int readInt(String filePath, long offset) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
-    ByteBuffer byteBffer = read(fileChannel, CarbonCommonConstants.INT_SIZE_IN_BYTE, offset);
-    return byteBffer.getInt();
+    ByteBuffer byteBuffer = read(fileChannel, CarbonCommonConstants.INT_SIZE_IN_BYTE, offset);
+    return byteBuffer.getInt();
   }
 
   /**
@@ -101,8 +102,8 @@ public class FileReaderImpl implements FileReader {
    */
   @Override public int readInt(String filePath) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
-    ByteBuffer byteBffer = read(fileChannel, CarbonCommonConstants.INT_SIZE_IN_BYTE);
-    return byteBffer.getInt();
+    ByteBuffer byteBuffer = read(fileChannel, CarbonCommonConstants.INT_SIZE_IN_BYTE);
+    return byteBuffer.getInt();
   }
 
   /**
@@ -115,8 +116,8 @@ public class FileReaderImpl implements FileReader {
    */
   @Override public long readDouble(String filePath, long offset) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
-    ByteBuffer byteBffer = read(fileChannel, CarbonCommonConstants.LONG_SIZE_IN_BYTE, offset);
-    return byteBffer.getLong();
+    ByteBuffer byteBuffer = read(fileChannel, CarbonCommonConstants.LONG_SIZE_IN_BYTE, offset);
+    return byteBuffer.getLong();
   }
 
   /**
@@ -146,11 +147,11 @@ public class FileReaderImpl implements FileReader {
    * @return byte buffer
    */
   private ByteBuffer read(FileChannel channel, int size, long offset) throws IOException {
-    ByteBuffer byteBffer = ByteBuffer.allocate(size);
+    ByteBuffer byteBuffer = ByteBuffer.allocate(size);
     channel.position(offset);
-    channel.read(byteBffer);
-    byteBffer.rewind();
-    return byteBffer;
+    channel.read(byteBuffer);
+    byteBuffer.rewind();
+    return byteBuffer;
   }
 
   /**
@@ -161,10 +162,10 @@ public class FileReaderImpl implements FileReader {
    * @return byte buffer
    */
   private ByteBuffer read(FileChannel channel, int size) throws IOException {
-    ByteBuffer byteBffer = ByteBuffer.allocate(size);
-    channel.read(byteBffer);
-    byteBffer.rewind();
-    return byteBffer;
+    ByteBuffer byteBuffer = ByteBuffer.allocate(size);
+    channel.read(byteBuffer);
+    byteBuffer.rewind();
+    return byteBuffer;
   }
 
 
@@ -177,8 +178,8 @@ public class FileReaderImpl implements FileReader {
    */
   @Override public byte[] readByteArray(String filePath, int length) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
-    ByteBuffer byteBffer = read(fileChannel, length);
-    return byteBffer.array();
+    ByteBuffer byteBuffer = read(fileChannel, length);
+    return byteBuffer.array();
   }
 
   /**
@@ -191,8 +192,8 @@ public class FileReaderImpl implements FileReader {
    */
   @Override public long readLong(String filePath, long offset) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
-    ByteBuffer byteBffer = read(fileChannel, CarbonCommonConstants.LONG_SIZE_IN_BYTE, offset);
-    return byteBffer.getLong();
+    ByteBuffer byteBuffer = read(fileChannel, CarbonCommonConstants.LONG_SIZE_IN_BYTE, offset);
+    return byteBuffer.getLong();
   }
 
   @Override public ByteBuffer readByteBuffer(String filePath, long offset, int length)

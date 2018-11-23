@@ -21,6 +21,8 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfterAll {
 
@@ -43,10 +45,6 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
-    descLoc.find(_.get(0).toString.contains("Local Dictionary Threshold")) match {
-      case Some(row) => assert(row.get(1).toString.contains("10000"))
-      case None => assert(false)
-    }
   }
 
   test("test local dictionary custom configurations for local dict columns _001") {
@@ -55,7 +53,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_include'='name')
+        | tblproperties('local_dictionary_enable'='true','local_dictionary_include'='name')
       """.
         stripMargin)
     val descFormatted1 = sql("describe formatted local1").collect
@@ -71,13 +69,12 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
 
   test("test local dictionary custom configurations for local dict columns _002") {
     sql("drop table if exists local1")
-
     intercept[MalformedCarbonCommandException] {
       sql(
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_include'='name,name')
+          | tblproperties('local_dictionary_enable'='true','local_dictionary_include'='name,name')
         """.stripMargin)
     }
   }
@@ -89,7 +86,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_include'='')
+          | tblproperties('local_dictionary_enable'='true','local_dictionary_include'='')
         """.
           stripMargin)
     }
@@ -106,7 +103,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_include'='abc')
+          | tblproperties('local_dictionary_enable'='true','local_dictionary_include'='abc')
         """.
           stripMargin)
     }
@@ -123,7 +120,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_include'='id')
+          | tblproperties('local_dictionary_enable'='true','local_dictionary_include'='id')
         """.
           stripMargin)
     }
@@ -142,7 +139,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('dictionary_include'='name','local_dictionary_include'='name')
+          | tblproperties('local_dictionary_enable'='true','dictionary_include'='name','local_dictionary_include'='name')
         """.
           stripMargin)
     }
@@ -154,7 +151,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_threshold'='20000')
+        | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000')
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
@@ -174,7 +171,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_threshold'='-100')
+        | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='-100')
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
@@ -190,7 +187,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_threshold'='21474874811')
+        | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='21474874811')
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
@@ -206,7 +203,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_threshold'='')
+        | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='')
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
@@ -222,7 +219,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_threshold'='hello')
+        | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='hello')
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
@@ -239,7 +236,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_threshold'='20000','local_dictionary_include'='name')
+        | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000','local_dictionary_include'='name')
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
@@ -264,7 +261,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_threshold'='-100','local_dictionary_include'='name')
+        | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='-100','local_dictionary_include'='name')
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
@@ -289,7 +286,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_threshold'='','local_dictionary_include'='name')
+        | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='','local_dictionary_include'='name')
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
@@ -314,7 +311,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('local_dictionary_threshold'='vdslv','local_dictionary_include'='name')
+        | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='vdslv','local_dictionary_include'='name')
       """.stripMargin)
 
     val descLoc = sql("describe formatted local1").collect
@@ -340,7 +337,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_threshold'='20000','local_dictionary_include'='name,
+          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000','local_dictionary_include'='name,
           | name')
         """.stripMargin)
     }
@@ -354,7 +351,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_threshold'='20000','local_dictionary_include'=' ')
+          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000','local_dictionary_include'=' ')
         """.stripMargin)
     }
   }
@@ -367,7 +364,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_threshold'='20000','local_dictionary_include'='hello')
+          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000','local_dictionary_include'='hello')
         """.stripMargin)
     }
   }
@@ -380,7 +377,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_threshold'='20000','local_dictionary_include'='name',
+          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='20000','local_dictionary_include'='name',
           | 'dictionary_include'='name')
         """.stripMargin)
     }
@@ -394,7 +391,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_threshold'='','local_dictionary_include'='name,name')
+          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='','local_dictionary_include'='name,name')
         """.stripMargin)
     }
   }
@@ -407,7 +404,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_threshold'='-100','local_dictionary_include'='Hello')
+          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='-100','local_dictionary_include'='Hello')
         """.stripMargin)
     }
   }
@@ -420,7 +417,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
         """
           | CREATE TABLE local1(id int, name string, city string, age int)
           | STORED BY 'org.apache.carbondata.format'
-          | tblproperties('local_dictionary_threshold'='23213497321591234324',
+          | tblproperties('local_dictionary_enable'='true','local_dictionary_threshold'='23213497321591234324',
           | 'local_dictionary_include'='name','dictionary_include'='name')
         """.stripMargin)
     }
@@ -1504,7 +1501,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       """
         | CREATE TABLE local1(id int, name string, city string, age int)
         | STORED BY 'org.apache.carbondata.format'
-        | tblproperties('dictionary_include'='city','sort_scope'='global_sort',
+        | tblproperties('local_dictionary_enable'='true','dictionary_include'='city','sort_scope'='global_sort',
         | 'sort_columns'='city,name')
       """.stripMargin)
 
@@ -1514,7 +1511,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
-    descLoc.find(_.get(0).toString.contains("SORT_SCOPE")) match {
+    descLoc.find(_.get(0).toString.contains("Sort Scope")) match {
       case Some(row) => assert(row.get(1).toString.contains("global_sort"))
       case None => assert(false)
     }
@@ -1536,7 +1533,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
-    descLoc.find(_.get(0).toString.contains("SORT_SCOPE")) match {
+    descLoc.find(_.get(0).toString.contains("Sort Scope")) match {
       case Some(row) => assert(row.get(1).toString.contains("batch_sort"))
       case None => assert(false)
     }
@@ -1557,7 +1554,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
-    descLoc.find(_.get(0).toString.contains("SORT_SCOPE")) match {
+    descLoc.find(_.get(0).toString.contains("Sort Scope")) match {
       case Some(row) => assert(row.get(1).toString.contains("no_sort"))
       case None => assert(false)
     }
@@ -1578,7 +1575,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       case Some(row) => assert(row.get(1).toString.contains("true"))
       case None => assert(false)
     }
-    descLoc.find(_.get(0).toString.contains("SORT_SCOPE")) match {
+    descLoc.find(_.get(0).toString.contains("Sort Scope")) match {
       case Some(row) => assert(row.get(1).toString.contains("local_sort"))
       case None => assert(false)
     }
@@ -2368,7 +2365,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
-      case Some(row) => assert(row.get(1).toString.contains("st.val.si,name") && !row.get(1).toString.contains("city"))
+      case Some(row) => assert(row.get(1).toString.contains("name,st.val.si") && !row.get(1).toString.contains("city"))
       case None => assert(false)
     }
   }
@@ -2391,7 +2388,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Exclude")) match {
-      case Some(row) => assert(row.get(1).toString.contains("st.val.si,name") &&
+      case Some(row) => assert(row.get(1).toString.contains("name,st.val.si") &&
                                !row.get(1).toString.contains("city"))
       case None => assert(false)
     }
@@ -2420,7 +2417,7 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
       case None => assert(false)
     }
     descLoc.find(_.get(0).toString.contains("Local Dictionary Include")) match {
-      case Some(row) => assert(row.get(1).toString.contains("st.val.si,name") &&
+      case Some(row) => assert(row.get(1).toString.contains("name,st.val.si") &&
                                !row.get(1).toString.contains("city"))
       case None => assert(false)
     }
@@ -2430,7 +2427,39 @@ class LocalDictionarySupportCreateTableTest extends QueryTest with BeforeAndAfte
     }
   }
 
+
+  test("test local dictionary for system level configuration") {
+    sql("drop table if exists local1")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE, "false")
+    // should not throw exception as system level it is false and table level is not configured
+      sql(
+        """
+          | CREATE TABLE local1(id int, name string, city string, age int)
+          | STORED BY 'org.apache.carbondata.format'
+          | tblproperties('local_dictionary_include'='name,name')
+        """.stripMargin)
+  }
+
+  test("test local dictionary for system level configuration and table level priority") {
+    sql("drop table if exists local1")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE, "false")
+    // should not throw exception as system level it is false and table level is not configured
+    intercept[MalformedCarbonCommandException] {
+      sql(
+        """
+        | CREATE TABLE local1(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+        | tblproperties('local_dictionary_enable'='true','local_dictionary_include'='name,name')
+      """.
+          stripMargin)
+      }
+  }
+
+
   override protected def afterAll(): Unit = {
     sql("DROP TABLE IF EXISTS LOCAL1")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.LOCAL_DICTIONARY_SYSTEM_ENABLE,
+        CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE_DEFAULT)
   }
 }

@@ -22,7 +22,7 @@ import java.util.UUID
 
 import scala.util.Random
 
-import org.apache.spark.sql.{CarbonSession, DataFrame}
+import org.apache.spark.sql.{CarbonSession, DataFrame, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
@@ -32,6 +32,7 @@ import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 
 class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
+  val carbonSession = sqlContext.sparkSession.asInstanceOf[CarbonSession]
   val bigFile = s"$resourcesPath/bloom_datamap_input_big.csv"
   val smallFile = s"$resourcesPath/bloom_datamap_input_small.csv"
   val normalTable = "carbon_normal"
@@ -40,6 +41,8 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
 
   override protected def beforeAll(): Unit = {
     new File(CarbonProperties.getInstance().getSystemFolderLocation).delete()
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     createFile(bigFile, line = 50000)
     createFile(smallFile)
     sql(s"DROP TABLE IF EXISTS $normalTable")
@@ -177,7 +180,39 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
   }
 
-  test("test create bloom datamap and REBUILD DATAMAP") {
+  // for CARBONDATA-2820, we will first block deferred rebuild for bloom
+  test("test block deferred rebuild for bloom") {
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128')
+         |  """.stripMargin)
+    val deferredRebuildException = intercept[MalformedDataMapCommandException] {
+      sql(
+        s"""
+           | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable
+           | USING 'bloomfilter'
+           | WITH DEFERRED REBUILD
+           | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+    }
+    assert(deferredRebuildException.getMessage.contains(
+      s"DEFERRED REBUILD is not supported on this datamap $dataMapName with provider bloomfilter"))
+
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+    val exception = intercept[MalformedDataMapCommandException] {
+      sql(s"REBUILD DATAMAP $dataMapName ON TABLE $bloomDMSampleTable")
+    }
+    assert(exception.getMessage.contains(s"Non-lazy datamap $dataMapName does not support rebuild"))
+  }
+
+  ignore("test create bloom datamap and REBUILD DATAMAP") {
     sql(
       s"""
          | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
@@ -219,7 +254,51 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
   }
 
-  test("test create bloom datamap with DEFERRED REBUILD, query hit datamap") {
+  test("test using search mode to query tabel with bloom datamap") {
+    sql(
+      s"""
+         | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128')
+         |  """.stripMargin)
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
+         | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
+         | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128')
+         |  """.stripMargin)
+
+    // load two segments
+    (1 to 2).foreach { i =>
+      sql(
+        s"""
+           | LOAD DATA LOCAL INPATH '$bigFile' INTO TABLE $normalTable
+           | OPTIONS('header'='false')
+         """.stripMargin)
+      sql(
+        s"""
+           | LOAD DATA LOCAL INPATH '$bigFile' INTO TABLE $bloomDMSampleTable
+           | OPTIONS('header'='false')
+         """.stripMargin)
+    }
+
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
+      """.stripMargin)
+    checkExistence(sql(s"SHOW DATAMAP ON TABLE $bloomDMSampleTable"), true, dataMapName)
+
+    // get answer before search mode is enable
+    val expectedAnswer1 = sql(s"select * from $normalTable where id = 1").collect()
+    val expectedAnswer2 = sql(s"select * from $normalTable where city in ('city_999')").collect()
+
+    sql(s"DROP TABLE IF EXISTS $normalTable")
+    sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
+  }
+
+  ignore("test create bloom datamap with DEFERRED REBUILD, query hit datamap") {
     sql(
       s"""
          | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
@@ -297,7 +376,7 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
   }
 
-  test("test create bloom datamap with DEFERRED REBUILD, query not hit datamap") {
+  ignore("test create bloom datamap with DEFERRED REBUILD, query not hit datamap") {
     sql(
       s"""
          | CREATE TABLE $normalTable(id INT, name STRING, city STRING, age INT,
@@ -466,7 +545,7 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     sql(
       s"""
          | CREATE DATAMAP $dataMapName ON TABLE $normalTable
-         | USING 'bloomfilter' WITH DEFERRED REBUILD
+         | USING 'bloomfilter'
          | DMProperties( 'INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
       """.stripMargin)
     val exception: MalformedCarbonCommandException = intercept[MalformedCarbonCommandException] {
@@ -487,7 +566,6 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
       s"""
          | CREATE DATAMAP $dataMapName ON TABLE $normalTable
          | USING 'bloomfilter'
-         | WITH DEFERRED REBUILD
          | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
       """.stripMargin)
     val exception: MalformedCarbonCommandException = intercept[MalformedCarbonCommandException] {
@@ -544,7 +622,6 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
         s"""
            | CREATE DATAMAP $dataMapName ON TABLE $normalTable
            | USING 'bloomfilter'
-           | WITH DEFERRED REBUILD
            | DMProperties('INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
            | """.stripMargin)
     }
@@ -563,7 +640,7 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
          | CREATE TABLE $bloomDMSampleTable(id INT, name STRING, city STRING, age INT,
          | s1 STRING, s2 STRING, s3 STRING, s4 STRING, s5 STRING, s6 STRING, s7 STRING, s8 STRING)
          | STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128',
-         | 'DICTIONARY_INCLUDE'='s1,s2')
+         | 'DICTIONARY_INCLUDE'='s1,s2', 'CACHE_LEVEL'='BLOCKLET')
          |  """.stripMargin)
 
     // load data into table (segment0)
@@ -633,8 +710,18 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
          | FROM $bloomDMSampleTable
          | WHERE num1 = 1
            """.stripMargin).collect()
+
     assert(explainString(0).getString(0).contains(
-      "- name: datamap2\n    - provider: bloomfilter\n    - skipped blocklets: 1"))
+      """
+        |Table Scan on carbon_bloom
+        | - total: 3 blocks, 3 blocklets
+        | - filter: (num1 <> null and num1 = 1)
+        | - pruned by Main DataMap
+        |    - skipped: 1 blocks, 1 blocklets
+        | - pruned by CG DataMap
+        |    - name: datamap2
+        |    - provider: bloomfilter
+        |    - skipped: 1 blocks, 1 blocklets""".stripMargin))
 
     explainString = sql(
       s"""
@@ -642,23 +729,26 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
          | FROM $bloomDMSampleTable
          | WHERE dictString = 'S21'
            """.stripMargin).collect()
+
     assert(explainString(0).getString(0).contains(
-      "- name: datamap2\n    - provider: bloomfilter\n    - skipped blocklets: 0"))
+      """
+        |Table Scan on carbon_bloom
+        | - total: 3 blocks, 3 blocklets
+        | - filter: (dictstring <> null and dictstring = S21)
+        | - pruned by Main DataMap
+        |    - skipped: 1 blocks, 1 blocklets
+        | - pruned by CG DataMap
+        |    - name: datamap2
+        |    - provider: bloomfilter
+        |    - skipped: 0 blocks, 0 blocklets""".stripMargin))
 
   }
 
   test("test bloom datamap on all basic data types") {
-    val originTimestampFormat = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-    val originDateFormat = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
-
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
+      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
+      CarbonCommonConstants.CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
 
     val columnNames = "booleanField,shortField,intField,bigintField,doubleField,stringField," +
       "timestampField,decimalField,dateField,charField,floatField"
@@ -703,17 +793,17 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     sql(
       s"""
          | INSERT INTO TABLE $bloomDMSampleTable
-         | VALUES(true,1,10,100,48.4,'spark','2015/4/23 12:01:01',1.23,'2015/4/23','aaa',2.5),
-         | (true,1,11,100,44.4,'flink','2015/5/23 12:01:03',23.23,'2015/5/23','ccc',2.15),
-         | (true,3,14,160,43.4,'hive','2015/7/26 12:01:06',3454.32,'2015/7/26','ff',5.5),
+         | VALUES(true,1,10,100,48.4,'spark','2015-4-23 12:01:01',1.23,'2015-4-23','aaa',2.5),
+         | (true,1,11,100,44.4,'flink','2015-5-23 12:01:03',23.23,'2015-5-23','ccc',2.15),
+         | (true,3,14,160,43.4,'hive','2015-7-26 12:01:06',3454.32,'2015-7-26','ff',5.5),
          | (NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
        """.stripMargin)
     sql(
       s"""
          | INSERT INTO TABLE $normalTable
-         | VALUES(true,1,10,100,48.4,'spark','2015/4/23 12:01:01',1.23,'2015/4/23','aaa',2.5),
-         | (true,1,11,100,44.4,'flink','2015/5/23 12:01:03',23.23,'2015/5/23','ccc',2.15),
-         | (true,3,14,160,43.4,'hive','2015/7/26 12:01:06',3454.32,'2015/7/26','ff',5.5),
+         | VALUES(true,1,10,100,48.4,'spark','2015-4-23 12:01:01',1.23,'2015-4-23','aaa',2.5),
+         | (true,1,11,100,44.4,'flink','2015-5-23 12:01:03',23.23,'2015-5-23','ccc',2.15),
+         | (true,3,14,160,43.4,'hive','2015-7-26 12:01:06',3454.32,'2015-7-26','ff',5.5),
          | (NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
        """.stripMargin)
 
@@ -730,17 +820,17 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     sql(
       s"""
          | INSERT INTO TABLE $bloomDMSampleTable
-         | VALUES(true,1,10,100,48.4,'spark','2015/4/23 12:01:01',1.23,'2015/4/23','aaa',2.5),
-         | (true,1,11,100,44.4,'flink','2015/5/23 12:01:03',23.23,'2015/5/23','ccc',2.15),
-         | (true,3,14,160,43.4,'hive','2015/7/26 12:01:06',3454.32,'2015/7/26','ff',5.5),
+         | VALUES(true,1,10,100,48.4,'spark','2015-4-23 12:01:01',1.23,'2015-4-23','aaa',2.5),
+         | (true,1,11,100,44.4,'flink','2015-5-23 12:01:03',23.23,'2015-5-23','ccc',2.15),
+         | (true,3,14,160,43.4,'hive','2015-7-26 12:01:06',3454.32,'2015-7-26','ff',5.5),
          | (NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
        """.stripMargin)
     sql(
       s"""
          | INSERT INTO TABLE $normalTable
-         | VALUES(true,1,10,100,48.4,'spark','2015/4/23 12:01:01',1.23,'2015/4/23','aaa',2.5),
-         | (true,1,11,100,44.4,'flink','2015/5/23 12:01:03',23.23,'2015/5/23','ccc',2.15),
-         | (true,3,14,160,43.4,'hive','2015/7/26 12:01:06',3454.32,'2015/7/26','ff',5.5),
+         | VALUES(true,1,10,100,48.4,'spark','2015-4-23 12:01:01',1.23,'2015-4-23','aaa',2.5),
+         | (true,1,11,100,44.4,'flink','2015-5-23 12:01:03',23.23,'2015-5-23','ccc',2.15),
+         | (true,3,14,160,43.4,'hive','2015-7-26 12:01:06',3454.32,'2015-7-26','ff',5.5),
          | (NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
        """.stripMargin)
 
@@ -758,12 +848,12 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE stringField = 'spark'"),
       sql(s"SELECT * FROM $normalTable WHERE stringField = 'spark'"))
     checkAnswer(
-      sql(s"SELECT * FROM $bloomDMSampleTable WHERE timestampField = '2015/7/26 12:01:06'"),
-      sql(s"SELECT * FROM $normalTable WHERE timestampField = '2015/7/26 12:01:06'"))
+      sql(s"SELECT * FROM $bloomDMSampleTable WHERE timestampField = '2015-7-26 12:01:06'"),
+      sql(s"SELECT * FROM $normalTable WHERE timestampField = '2015-7-26 12:01:06'"))
     checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE decimalField = 23.23"),
       sql(s"SELECT * FROM $normalTable WHERE decimalField = 23.23"))
-    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE dateField = '2015/4/23'"),
-      sql(s"SELECT * FROM $normalTable WHERE dateField = '2015/4/23'"))
+    checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE dateField = '2015-4-23'"),
+      sql(s"SELECT * FROM $normalTable WHERE dateField = '2015-4-23'"))
     checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE charField = 'ccc'"),
       sql(s"SELECT * FROM $normalTable WHERE charField = 'ccc'"))
     checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE floatField = 2.5"),
@@ -811,10 +901,66 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     checkAnswer(sql(s"SELECT * FROM $bloomDMSampleTable WHERE floatField = 0"),
       sql(s"SELECT * FROM $normalTable WHERE floatField = 0"))
 
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, originTimestampFormat)
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT, originDateFormat)
+  }
+
+  test("test bloom datamap on multiple columns") {
+    sql("drop table if exists store")
+        sql(
+          s"""
+             |CREATE TABLE IF NOT EXISTS store(
+             | market_code STRING,
+             | device_code STRING,
+             | country_code STRING,
+             | category_id INTEGER,
+             | product_id string,
+             | date date,
+             | est_free_app_download LONG,
+             | est_paid_app_download LONG,
+             | est_revenue LONG
+             | )
+             | STORED BY 'carbondata'
+             | TBLPROPERTIES(
+             | 'SORT_COLUMNS'='market_code, device_code, country_code, category_id, date,product_id',
+             | 'NO_INVERTED_INDEX'='est_free_app_download, est_paid_app_download,est_revenue',
+             | 'DICTIONARY_INCLUDE' = 'market_code, device_code, country_code,category_id, product_id',
+             | 'SORT_SCOPE'='GLOBAL_SORT',
+             | 'CACHE_LEVEL'='BLOCKLET',  'TABLE_BLOCKSIZE'='256',
+             | 'GLOBAL_SORT_PARTITIONS'='2'
+             | )""".stripMargin)
+
+    sql(s"""insert into store values('a', 'ios-phone', 'EE', 100021, 590416158, '2016-09-01', 100, 200, 300)""")
+    sql(s"""insert into store values('b', 'ios-phone', 'EE', 100021, 590437560, '2016-09-03', 100, 200, 300)""")
+    sql(s"""insert into store values('a', 'ios-phone', 'EF', 100022, 590416159, '2016-09-04', 100, 200, 300)""")
+
+    sql(
+      s"""
+         |CREATE DATAMAP IF NOT EXISTS bloomfilter_all_dimensions ON TABLE store
+         | USING 'bloomfilter'
+         | DMPROPERTIES (
+         | 'INDEX_COLUMNS'='market_code, device_code, country_code, category_id, date,product_id',
+         | 'BLOOM_SIZE'='640000',
+         | 'BLOOM_FPP'='0.000001',
+         | 'BLOOM_COMPRESS'='true'
+         | )
+       """.stripMargin).show()
+
+    checkAnswer(sql(
+      s"""SELECT market_code, device_code, country_code,
+         |category_id, sum(est_free_app_download) FROM store WHERE date
+         |BETWEEN '2016-09-01' AND '2016-09-03' AND device_code='ios-phone'
+         |AND country_code='EE' AND category_id=100021 AND product_id IN (590416158, 590437560)
+         |GROUP BY date, market_code, device_code, country_code, category_id""".stripMargin),
+      Seq(Row("a", "ios-phone", "EE", 100021, 100), Row("b", "ios-phone", "EE", 100021, 100)))
+
+    assert(sql(
+      s"""SELECT market_code, device_code, country_code,
+         |category_id, sum(est_free_app_download) FROM store WHERE (device_code='ios-phone'
+         |AND country_code='EF') or (category_id=100021 AND product_id IN (590416158, 590437560))
+         |GROUP BY date, market_code, device_code, country_code, category_id""".stripMargin).collect().length == 3)
+
+    checkAnswer(sql("select device_code from store where product_id=590416158"), Seq(Row("ios-phone")))
+
+    sql("drop table if exists store")
   }
 
   override protected def afterAll(): Unit = {
@@ -822,6 +968,9 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     deleteFile(smallFile)
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
   }
 
   private def createFile(fileName: String, line: Int = 10000, start: Int = 0) = {

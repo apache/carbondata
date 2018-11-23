@@ -67,7 +67,7 @@ class ProfilerSuite extends QueryTest with BeforeAndAfterAll {
     try {
       profilerEndPoint.processSQLStart(statementId, messages)
     } catch {
-      case _ =>
+      case _: Throwable =>
         assert(false, "Failed to log StatementSummary")
     }
   }
@@ -77,7 +77,7 @@ class ProfilerSuite extends QueryTest with BeforeAndAfterAll {
     try {
       profilerEndPoint.processExecutionEnd(executionId, messages)
     } catch {
-      case _ =>
+      case _: Throwable =>
         assert(false, "Failed to log ExecutionSummary")
     }
   }

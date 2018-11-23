@@ -17,25 +17,40 @@
 
 package org.apache.carbondata.examples.sdk;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
-import org.apache.carbondata.sdk.file.*;
+import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.sdk.file.CarbonReader;
+import org.apache.carbondata.sdk.file.CarbonWriter;
+import org.apache.carbondata.sdk.file.CarbonWriterBuilder;
+import org.apache.carbondata.sdk.file.Field;
+import org.apache.carbondata.sdk.file.Schema;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.s3a.Constants;
+import org.apache.log4j.Logger;
 
 /**
  * Example for testing CarbonWriter on S3
  */
 public class SDKS3Example {
     public static void main(String[] args) throws Exception {
-        LogService logger = LogServiceFactory.getLogService(SDKS3Example.class.getName());
+        Logger logger = LogServiceFactory.getLogService(SDKS3Example.class.getName());
         if (args == null || args.length < 3) {
             logger.error("Usage: java CarbonS3Example: <access-key> <secret-key>"
                 + "<s3-endpoint> [table-path-on-s3] [rows]");
             System.exit(0);
         }
+
+        String backupProperty = CarbonProperties.getInstance()
+            .getProperty(CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH,
+                CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH_DEFAULT);
+        CarbonProperties.getInstance()
+            .addProperty(CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH, "true");
 
         String path = "s3a://sdk/WriterOutput";
         if (args.length > 3) {
@@ -47,16 +62,21 @@ public class SDKS3Example {
             num = Integer.parseInt(args[4]);
         }
 
+        Configuration conf = new Configuration(true);
+        conf.set(Constants.ACCESS_KEY, args[0]);
+        conf.set(Constants.SECRET_KEY, args[1]);
+        conf.set(Constants.ENDPOINT, args[2]);
+
         Field[] fields = new Field[2];
         fields[0] = new Field("name", DataTypes.STRING);
         fields[1] = new Field("age", DataTypes.INT);
-        CarbonWriterBuilder builder = CarbonWriter.builder()
-                .setAccessKey(args[0])
-                .setSecretKey(args[1])
-                .setEndPoint(args[2])
-                .outputPath(path);
-
-        CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields));
+        CarbonWriter writer = CarbonWriter
+            .builder()
+            .outputPath(path)
+            .withHadoopConf(conf)
+            .withCsvInput(new Schema(fields))
+            .writtenBy("SDKS3Example")
+            .build();
 
         for (int i = 0; i < num; i++) {
             writer.write(new String[]{"robot" + (i % 10), String.valueOf(i)});
@@ -72,9 +92,7 @@ public class SDKS3Example {
             .builder(path, "_temp")
             .projection(new String[]{"name", "age"})
             .filter(equalToExpression)
-            .setAccessKey(args[0])
-            .setSecretKey(args[1])
-            .setEndPoint(args[2])
+            .withHadoopConf(conf)
             .build();
 
         System.out.println("\nData:");
@@ -86,5 +104,9 @@ public class SDKS3Example {
         }
         System.out.println("\nFinished");
         reader.close();
+
+        CarbonProperties.getInstance()
+            .addProperty(CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH,
+                backupProperty);
     }
 }

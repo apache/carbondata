@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -48,6 +47,8 @@ import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.MergedBlockIndex;
 import org.apache.carbondata.format.MergedBlockIndexHeader;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;
 
 /**
@@ -59,7 +60,7 @@ public class SegmentIndexFileStore {
   /**
    * Logger constant
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(SegmentIndexFileStore.class.getName());
   /**
    * Stores the indexfile name and related binary file data in it.
@@ -76,10 +77,20 @@ public class SegmentIndexFileStore {
    */
   private Map<String, List<String>> carbonMergeFileToIndexFilesMap;
 
+  private Configuration configuration;
+
   public SegmentIndexFileStore() {
     carbonIndexMap = new HashMap<>();
     carbonIndexMapWithFullPath = new TreeMap<>();
     carbonMergeFileToIndexFilesMap = new HashMap<>();
+    configuration = FileFactory.getConfiguration();
+  }
+
+  public SegmentIndexFileStore(Configuration configuration) {
+    carbonIndexMap = new HashMap<>();
+    carbonIndexMapWithFullPath = new TreeMap<>();
+    carbonMergeFileToIndexFilesMap = new HashMap<>();
+    this.configuration = configuration;
   }
 
   /**
@@ -89,7 +100,7 @@ public class SegmentIndexFileStore {
    * @throws IOException
    */
   public void readAllIIndexOfSegment(String segmentPath) throws IOException {
-    CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(segmentPath);
+    CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(segmentPath, configuration);
     for (int i = 0; i < carbonIndexFiles.length; i++) {
       if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
         readMergeFile(carbonIndexFiles[i].getCanonicalPath());
@@ -155,7 +166,8 @@ public class SegmentIndexFileStore {
    * @throws IOException
    */
   public void readAllIndexAndFillBolckletInfo(String segmentPath) throws IOException {
-    CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(segmentPath);
+    CarbonFile[] carbonIndexFiles =
+        getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
     for (int i = 0; i < carbonIndexFiles.length; i++) {
       if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
         readMergeFile(carbonIndexFiles[i].getCanonicalPath());
@@ -190,7 +202,8 @@ public class SegmentIndexFileStore {
    * @throws IOException
    */
   public Map<String, String> getIndexFilesFromSegment(String segmentPath) throws IOException {
-    CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(segmentPath);
+    CarbonFile[] carbonIndexFiles =
+        getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
     Map<String, String> indexFiles = new HashMap<>();
     for (int i = 0; i < carbonIndexFiles.length; i++) {
       if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
@@ -216,7 +229,8 @@ public class SegmentIndexFileStore {
    */
   public Map<String, String> getMergeOrIndexFilesFromSegment(String segmentPath)
       throws IOException {
-    CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(segmentPath);
+    CarbonFile[] carbonIndexFiles =
+        getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
     Map<String, String> indexFiles = new HashMap<>();
     for (int i = 0; i < carbonIndexFiles.length; i++) {
       if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
@@ -251,7 +265,7 @@ public class SegmentIndexFileStore {
    * @throws IOException
    */
   public void readMergeFile(String mergeFilePath) throws IOException {
-    ThriftReader thriftReader = new ThriftReader(mergeFilePath);
+    ThriftReader thriftReader = new ThriftReader(mergeFilePath, configuration);
     try {
       thriftReader.open();
       MergedBlockIndexHeader indexHeader = readMergeBlockIndexHeader(thriftReader);
@@ -259,7 +273,7 @@ public class SegmentIndexFileStore {
       List<String> file_names = indexHeader.getFile_names();
       carbonMergeFileToIndexFilesMap.put(mergeFilePath, file_names);
       List<ByteBuffer> fileData = mergedBlockIndex.getFileData();
-      CarbonFile mergeFile = FileFactory.getCarbonFile(mergeFilePath);
+      CarbonFile mergeFile = FileFactory.getCarbonFile(mergeFilePath, configuration);
       String mergeFileAbsolutePath = mergeFile.getParentFile().getAbsolutePath();
       assert (file_names.size() == fileData.size());
       for (int i = 0; i < file_names.size(); i++) {
@@ -282,8 +296,8 @@ public class SegmentIndexFileStore {
    */
   private void readIndexFile(CarbonFile indexFile) throws IOException {
     String indexFilePath = indexFile.getCanonicalPath();
-    DataInputStream dataInputStream =
-        FileFactory.getDataInputStream(indexFilePath, FileFactory.getFileType(indexFilePath));
+    DataInputStream dataInputStream = FileFactory
+        .getDataInputStream(indexFilePath, FileFactory.getFileType(indexFilePath), configuration);
     byte[] bytes = new byte[(int) indexFile.getSize()];
     try {
       dataInputStream.readFully(bytes);
@@ -341,11 +355,29 @@ public class SegmentIndexFileStore {
   /**
    * List all the index files of the segment.
    *
+   * @param carbonFile directory
+   */
+  public static void getCarbonIndexFilesRecursively(CarbonFile carbonFile,
+      List<CarbonFile> indexFiles) {
+    CarbonFile[] carbonFiles = carbonFile.listFiles();
+    for (CarbonFile file : carbonFiles) {
+      if (file.isDirectory()) {
+        getCarbonIndexFilesRecursively(file, indexFiles);
+      } else if ((file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
+          .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) && file.getSize() > 0) {
+        indexFiles.add(file);
+      }
+    }
+  }
+
+  /**
+   * List all the index files of the segment.
+   *
    * @param segmentPath
    * @return
    */
-  public static CarbonFile[] getCarbonIndexFiles(String segmentPath) {
-    CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
+  public static CarbonFile[] getCarbonIndexFiles(String segmentPath, Configuration configuration) {
+    CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath, configuration);
     return carbonFile.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
         return ((file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
@@ -404,8 +436,9 @@ public class SegmentIndexFileStore {
       indexReader.openThriftReader(indexFile.getCanonicalPath());
       // get the index header
       org.apache.carbondata.format.IndexHeader indexHeader = indexReader.readIndexHeader();
-      DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
-      String filePath = indexFile.getCanonicalPath();
+      DataFileFooterConverter fileFooterConverter =
+          new DataFileFooterConverter(FileFactory.getConfiguration());
+      String filePath = FileFactory.getUpdatedFilePath(indexFile.getCanonicalPath());
       String parentPath =
           filePath.substring(0, filePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
       while (indexReader.hasNext()) {
@@ -472,7 +505,7 @@ public class SegmentIndexFileStore {
   private List<BlockletInfo> getBlockletInfoFromIndexInfo(TableBlockInfo blockInfo)
       throws IOException {
     long startTime = System.currentTimeMillis();
-    DataFileFooter carbondataFileFooter = CarbonUtil.readMetadatFile(blockInfo);
+    DataFileFooter carbondataFileFooter = CarbonUtil.readMetadataFile(blockInfo);
     LOGGER.info(
         "Time taken to read carbondata file footer to get blocklet info " + blockInfo.getFilePath()
             + " is " + (System.currentTimeMillis() - startTime));

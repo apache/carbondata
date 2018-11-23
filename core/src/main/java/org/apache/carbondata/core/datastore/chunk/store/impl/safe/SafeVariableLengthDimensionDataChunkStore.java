@@ -18,11 +18,15 @@
 package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 
 import java.nio.ByteBuffer;
+import java.util.BitSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertableVector;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -44,10 +48,14 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
    */
   private int[] dataOffsets;
 
-  public SafeVariableLengthDimensionDataChunkStore(boolean isInvertedIndex, int numberOfRows) {
+  private int dataLength;
+
+  public SafeVariableLengthDimensionDataChunkStore(boolean isInvertedIndex, int numberOfRows,
+      int dataLength) {
     super(isInvertedIndex);
     this.numberOfRows = numberOfRows;
     this.dataOffsets = new int[numberOfRows];
+    this.dataLength = dataLength;
   }
 
   /**
@@ -62,6 +70,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
       byte[] data) {
     // first put the data, inverted index and reverse inverted index to memory
     super.putArray(invertedIndex, invertedIndexReverse, data);
+    this.dataOffsets = new int[numberOfRows];
     // As data is of variable length and data format is
     // <length in short><data><length in short><data>
     // we need to store offset of each data so data can be accessed directly
@@ -91,6 +100,23 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
     }
   }
 
+  @Override
+  public void fillVector(int[] invertedIndex, int[] invertedIndexReverse, byte[] data,
+      ColumnVectorInfo vectorInfo) {
+    CarbonColumnVector vector = vectorInfo.vector;
+    vector.setDictionary(null);
+    DataType dt = vector.getType();
+    AbstractNonDictionaryVectorFiller vectorFiller = NonDictionaryVectorFillerFactory
+        .getVectorFiller(getLengthSize(), dt, numberOfRows, dataLength);
+    vector = ColumnarVectorWrapperDirectFactory
+        .getDirectVectorWrapperFactory(vector, invertedIndex, new BitSet(), vectorInfo.deletedRows,
+            false, false);
+    vectorFiller.fillVector(data, vector);
+    if (vector instanceof ConvertableVector) {
+      ((ConvertableVector) vector).convert();
+    }
+  }
+
   protected abstract int getLengthSize();
   protected abstract int getLengthFromBuffer(ByteBuffer buffer);
 
@@ -113,7 +139,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
       length = dataOffsets[rowId + 1] - (currentDataOffset + getLengthSize());
     } else {
       // for last record
-      length = this.data.length - currentDataOffset;
+      length = this.dataLength - currentDataOffset;
     }
     byte[] currentRowData = new byte[length];
     System.arraycopy(data, currentDataOffset, currentRowData, 0, length);
@@ -122,6 +148,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
 
   @Override
   public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+    vector.setDictionary(null);
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplictSorted) {
       rowId = invertedIndexReverse[rowId];
@@ -139,30 +166,31 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
       length = dataOffsets[rowId + 1] - (currentDataOffset + getLengthSize());
     } else {
       // for last record
-      length = (short) (this.data.length - currentDataOffset);
+      length = this.dataLength - currentDataOffset;
     }
     DataType dt = vector.getType();
 
-    if ((!(dt == DataTypes.STRING) && length == 0) || ByteUtil.UnsafeComparer.INSTANCE
+    if (((!(dt == DataTypes.STRING) && !(dt == DataTypes.VARCHAR)) && length == 0)
+        || ByteUtil.UnsafeComparer.INSTANCE
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
             CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentDataOffset,
             length)) {
       vector.putNull(vectorRow);
     } else {
-      if (dt == DataTypes.STRING) {
-        vector.putBytes(vectorRow, currentDataOffset, length, data);
+      if (dt == DataTypes.STRING || dt == DataTypes.VARCHAR) {
+        vector.putByteArray(vectorRow, currentDataOffset, length, data);
       } else if (dt == DataTypes.BOOLEAN) {
         vector.putBoolean(vectorRow, ByteUtil.toBoolean(data[currentDataOffset]));
       } else if (dt == DataTypes.SHORT) {
-        vector.putShort(vectorRow, ByteUtil.toShort(data, currentDataOffset, length));
+        vector.putShort(vectorRow, ByteUtil.toXorShort(data, currentDataOffset, length));
       } else if (dt == DataTypes.INT) {
-        vector.putInt(vectorRow, ByteUtil.toInt(data, currentDataOffset, length));
+        vector.putInt(vectorRow, ByteUtil.toXorInt(data, currentDataOffset, length));
       } else if (dt == DataTypes.LONG) {
         vector.putLong(vectorRow,
             DataTypeUtil.getDataBasedOnRestructuredDataType(data, vector.getBlockDataType(),
                 currentDataOffset, length));
       } else if (dt  == DataTypes.TIMESTAMP) {
-        vector.putLong(vectorRow, ByteUtil.toLong(data, currentDataOffset, length) * 1000L);
+        vector.putLong(vectorRow, ByteUtil.toXorLong(data, currentDataOffset, length) * 1000L);
       }
     }
   }
@@ -184,7 +212,7 @@ public abstract class SafeVariableLengthDimensionDataChunkStore
       length = dataOffsets[rowId + 1] - (currentDataOffset + getLengthSize());
     } else {
       // for last record
-      length = this.data.length - currentDataOffset;
+      length = this.dataLength - currentDataOffset;
     }
     return ByteUtil.UnsafeComparer.INSTANCE
         .compareTo(data, currentDataOffset, length, compareValue, 0, compareValue.length);

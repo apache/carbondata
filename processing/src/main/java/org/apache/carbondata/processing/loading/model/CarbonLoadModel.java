@@ -59,6 +59,9 @@ public class CarbonLoadModel implements Serializable {
    */
   private boolean carbonTransactionalTable = true;
 
+  /* Number of thread in which sdk writer is used */
+  private short sdkWriterCores;
+
   private String csvHeader;
   private String[] csvHeaderColumns;
   private String csvDelimiter;
@@ -226,6 +229,11 @@ public class CarbonLoadModel implements Serializable {
 
   private List<String> mergedSegmentIds;
 
+  /**
+   * compressor used to compress column page
+   */
+  private String columnCompressor;
+
   public boolean isAggLoadRequest() {
     return isAggLoadRequest;
   }
@@ -392,7 +400,6 @@ public class CarbonLoadModel implements Serializable {
     this.colDictFilePath = colDictFilePath;
   }
 
-
   public DictionaryServiceProvider getDictionaryServiceProvider() {
     return dictionaryServiceProvider;
   }
@@ -470,6 +477,8 @@ public class CarbonLoadModel implements Serializable {
     copy.sortColumnsBoundsStr = sortColumnsBoundsStr;
     copy.loadMinSize = loadMinSize;
     copy.parentTablePath = parentTablePath;
+    copy.sdkWriterCores = sdkWriterCores;
+    copy.columnCompressor = columnCompressor;
     return copy;
   }
 
@@ -525,8 +534,11 @@ public class CarbonLoadModel implements Serializable {
     copyObj.sortColumnsBoundsStr = sortColumnsBoundsStr;
     copyObj.loadMinSize = loadMinSize;
     copyObj.parentTablePath = parentTablePath;
+    copyObj.sdkWriterCores = sdkWriterCores;
+    copyObj.columnCompressor = columnCompressor;
     return copyObj;
   }
+
 
   /**
    * @param tablePath The tablePath to set.
@@ -541,7 +553,6 @@ public class CarbonLoadModel implements Serializable {
   public String getTablePath() {
     return tablePath;
   }
-
   /**
    * getLoadMetadataDetails.
    *
@@ -550,6 +561,7 @@ public class CarbonLoadModel implements Serializable {
   public List<LoadMetadataDetails> getLoadMetadataDetails() {
     return loadMetadataDetails;
   }
+
 
   /**
    * Get the current load metadata.
@@ -572,7 +584,6 @@ public class CarbonLoadModel implements Serializable {
   public void setLoadMetadataDetails(List<LoadMetadataDetails> loadMetadataDetails) {
     this.loadMetadataDetails = loadMetadataDetails;
   }
-
   /**
    * getSegmentUpdateStatusManager
    *
@@ -850,6 +861,7 @@ public class CarbonLoadModel implements Serializable {
   public void setTimestampformat(String timestampformat) {
     this.timestampformat = timestampformat;
   }
+
   public String getSkipEmptyLine() {
     return skipEmptyLine;
   }
@@ -857,7 +869,6 @@ public class CarbonLoadModel implements Serializable {
   public void setSkipEmptyLine(String skipEmptyLine) {
     this.skipEmptyLine = skipEmptyLine;
   }
-
 
   public boolean isLoadWithoutConverterStep() {
     return isLoadWithoutConverterStep;
@@ -903,7 +914,6 @@ public class CarbonLoadModel implements Serializable {
   public void setMergedSegmentIds(List<String> mergedSegmentIds) {
     this.mergedSegmentIds = mergedSegmentIds;
   }
-
   public List<String> getMergedSegmentIds() {
     if (null == mergedSegmentIds) {
       mergedSegmentIds = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -911,4 +921,19 @@ public class CarbonLoadModel implements Serializable {
     return mergedSegmentIds;
   }
 
+  public short getSdkWriterCores() {
+    return sdkWriterCores;
+  }
+
+  public void setSdkWriterCores(short sdkWriterCores) {
+    this.sdkWriterCores = sdkWriterCores;
+  }
+
+  public String getColumnCompressor() {
+    return columnCompressor;
+  }
+
+  public void setColumnCompressor(String columnCompressor) {
+    this.columnCompressor = columnCompressor;
+  }
 }

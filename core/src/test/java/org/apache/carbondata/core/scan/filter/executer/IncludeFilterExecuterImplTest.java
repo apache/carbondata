@@ -184,7 +184,7 @@ public class IncludeFilterExecuterImplTest extends TestCase {
     dim.setFilterKeys(filterKeys);
 
     dimensionColumnDataChunk = new FixedLengthDimensionColumnPage(dataChunk, null, null,
-        dataChunkSize, dimColumnSize);
+        dataChunkSize, dimColumnSize, dataChunk.length);
 
     // repeat query and compare 2 result between old code and new optimized code
     for (int j = 0; j < queryTimes; j++) {
@@ -270,11 +270,11 @@ public class IncludeFilterExecuterImplTest extends TestCase {
     long newTime = 0;
     long start;
     long end;
-    
+
     // dimension's data number in a blocklet, usually default is 32000
-    int dataChunkSize = 32000; 
+    int dataChunkSize = 32000;
     //  repeat query times in the test
-    int queryTimes = 10000;    
+    int queryTimes = 10000;
     // repeated times for a dictionary value
     int repeatTimes = 200;
     //filtered value count in a blocklet
@@ -304,7 +304,7 @@ public class IncludeFilterExecuterImplTest extends TestCase {
     dim.setFilterKeys(filterKeys);
 
     dimensionColumnDataChunk = new FixedLengthDimensionColumnPage(dataChunk, null, null,
-        dataChunk.length / dimColumnSize, dimColumnSize);
+        dataChunk.length / dimColumnSize, dimColumnSize, dataChunk.length);
 
     // initial to run
     BitSet bitOld = this.setFilterdIndexToBitSetWithColumnIndexOld(dimensionColumnDataChunk, dataChunkSize, filterKeys);

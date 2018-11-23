@@ -24,7 +24,9 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Row}
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider.TIMESERIES
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.util.SparkQueryTest
 
 class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterAll {
@@ -32,6 +34,8 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
   val timeSeries = TIMESERIES.toString
 
   override def beforeAll: Unit = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     sql("drop table if exists mainTable")
     sql("drop table if exists mainTableavg")
     sql("drop table if exists agg0")
@@ -386,10 +390,10 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
     assertResult(
       """== CarbonData Profiler ==
         |Table Scan on maintable
-        | - total blocklets: 1
+        | - total: 1 blocks, 1 blocklets
         | - filter: none
         | - pruned by Main DataMap
-        |    - skipped blocklets: 0
+        |    - skipped: 0 blocks, 0 blocklets
         |""".stripMargin)(rows(0).getString(0))
   }
 
@@ -400,10 +404,10 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
         |Query rewrite based on DataMap:
         | - agg1 (preaggregate)
         |Table Scan on maintable_agg1
-        | - total blocklets: 1
+        | - total: 1 blocks, 1 blocklets
         | - filter: none
         | - pruned by Main DataMap
-        |    - skipped blocklets: 0
+        |    - skipped: 0 blocks, 0 blocklets
         |""".stripMargin)(rows(0).getString(0))
   }
 
@@ -415,10 +419,10 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
         |Query rewrite based on DataMap:
         | - agg1 (preaggregate)
         |Table Scan on maintable_agg1
-        | - total blocklets: 1
+        | - total: 1 blocks, 1 blocklets
         | - filter: (maintable_name <> null and maintable_name = a)
         | - pruned by Main DataMap
-        |    - skipped blocklets: 1
+        |    - skipped: 1 blocks, 1 blocklets
         |""".stripMargin)(rows(0).getString(0))
 
   }
@@ -431,17 +435,17 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
     assert(rows(0).getString(0).contains(
       """
         |Table Scan on maintable
-        | - total blocklets: 1
+        | - total: 1 blocks, 1 blocklets
         | - filter: ((id <> null and id < 3) and name <> null)
         | - pruned by Main DataMap
-        |    - skipped blocklets: 0""".stripMargin))
+        |    - skipped: 0 blocks, 0 blocklets""".stripMargin))
     assert(rows(0).getString(0).contains(
       """
         |Table Scan on maintableavg
-        | - total blocklets: 1
+        | - total: 1 blocks, 1 blocklets
         | - filter: name <> null
         | - pruned by Main DataMap
-        |    - skipped blocklets: 0""".stripMargin))
+        |    - skipped: 0 blocks, 0 blocklets""".stripMargin))
 
   }
 
@@ -454,6 +458,9 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
     sql("DROP TABLE IF EXISTS mainTableavg")
     sql("DROP TABLE IF EXISTS filtertable")
     sql("DROP TABLE IF EXISTS grouptable")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
   }
 
 }

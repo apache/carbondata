@@ -35,7 +35,7 @@ public interface CarbonFactDataWriter {
    *
    * @throws CarbonDataWriterException
    */
-  void writeFooterToFile() throws CarbonDataWriterException;
+  void writeFooter() throws CarbonDataWriterException;
 
   /**
    * Below method will be used to initialise the writer

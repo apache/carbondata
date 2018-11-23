@@ -20,7 +20,6 @@ package org.apache.carbondata.core.datastore.page;
 import java.io.IOException;
 import java.math.BigDecimal;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
@@ -29,6 +28,8 @@ import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.localdictionary.PageLevelDictionary;
 import org.apache.carbondata.core.localdictionary.exception.DictionaryThresholdReachedException;
 import org.apache.carbondata.core.localdictionary.generator.LocalDictionaryGenerator;
+
+import org.apache.log4j.Logger;
 
 /**
  * Column page implementation for Local dictionary generated columns
@@ -41,7 +42,7 @@ public class LocalDictColumnPage extends ColumnPage {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(LocalDictColumnPage.class.getName());
 
   /**
@@ -67,19 +68,22 @@ public class LocalDictColumnPage extends ColumnPage {
   private KeyGenerator keyGenerator;
 
   private int[] dummyKey;
+
+  private boolean isDecoderBasedFallBackEnabled;
+
   /**
    * Create a new column page with input data type and page size.
    */
   protected LocalDictColumnPage(ColumnPage actualDataColumnPage, ColumnPage encodedColumnpage,
-      LocalDictionaryGenerator localDictionaryGenerator, boolean isComplexTypePrimitive) {
-    super(actualDataColumnPage.getColumnSpec(), actualDataColumnPage.getDataType(),
-        actualDataColumnPage.getPageSize());
+      LocalDictionaryGenerator localDictionaryGenerator, boolean isComplexTypePrimitive,
+      boolean isDecoderBasedFallBackEnabled) {
+    super(actualDataColumnPage.getColumnPageEncoderMeta(), actualDataColumnPage.getPageSize());
     // if threshold is not reached then create page level dictionary
     // for encoding with local dictionary
     if (!localDictionaryGenerator.isThresholdReached()) {
       pageLevelDictionary = new PageLevelDictionary(localDictionaryGenerator,
           actualDataColumnPage.getColumnSpec().getFieldName(), actualDataColumnPage.getDataType(),
-          isComplexTypePrimitive);
+          isComplexTypePrimitive, actualDataColumnPage.getColumnCompressorName());
       this.encodedDataColumnPage = encodedColumnpage;
       this.keyGenerator = KeyGeneratorFactory
           .getKeyGenerator(new int[] { CarbonCommonConstants.LOCAL_DICTIONARY_MAX + 1 });
@@ -88,6 +92,7 @@ public class LocalDictColumnPage extends ColumnPage {
       // else free the encoded column page memory as its of no use
       encodedColumnpage.freeMemory();
     }
+    this.isDecoderBasedFallBackEnabled = isDecoderBasedFallBackEnabled;
     this.actualDataColumnPage = actualDataColumnPage;
   }
 
@@ -128,8 +133,8 @@ public class LocalDictColumnPage extends ColumnPage {
         encodedDataColumnPage.freeMemory();
         encodedDataColumnPage = null;
       } catch (KeyGenException e) {
-        LOGGER.error(e, "Unable to generate key for: " + actualDataColumnPage
-            .getColumnSpec().getFieldName());
+        LOGGER.error("Unable to generate key for: " + actualDataColumnPage
+            .getColumnSpec().getFieldName(), e);
         throw new RuntimeException(e);
       }
     } else {
@@ -179,7 +184,16 @@ public class LocalDictColumnPage extends ColumnPage {
   }
 
   @Override public void freeMemory() {
-    if (null == pageLevelDictionary) {
+    // free the encoded column page as data is already encoded and it is of no use, during fallback
+    // if goes to actual databased fallback, we need actual data and decoder based fallback we need
+    // just the encoded data to form a new page
+    if (null != encodedDataColumnPage) {
+      encodedDataColumnPage.freeMemory();
+    }
+    if (isDecoderBasedFallBackEnabled) {
+      actualDataColumnPage.freeMemory();
+      isActualPageMemoryFreed = true;
+    } else if (null == pageLevelDictionary) {
       actualDataColumnPage.freeMemory();
       isActualPageMemoryFreed = true;
     }
@@ -190,7 +204,6 @@ public class LocalDictColumnPage extends ColumnPage {
       actualDataColumnPage.freeMemory();
       isActualPageMemoryFreed = true;
     }
-    freeEncodedColumnPage();
   }
 
   private void freeEncodedColumnPage() {
@@ -217,6 +230,10 @@ public class LocalDictColumnPage extends ColumnPage {
   }
 
   @Override public void putDouble(int rowId, double value) {
+    throw new UnsupportedOperationException("Operation not supported");
+  }
+
+  @Override public void putFloat(int rowId, float value) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 
@@ -326,5 +343,14 @@ public class LocalDictColumnPage extends ColumnPage {
 
   @Override public void convertValue(ColumnPageValueConverter codec) {
     throw new UnsupportedOperationException("Operation not supported");
+  }
+
+  @Override
+  public long getPageLengthInBytes() throws IOException {
+    if (null != pageLevelDictionary) {
+      return encodedDataColumnPage.getPageLengthInBytes();
+    } else {
+      return actualDataColumnPage.getPageLengthInBytes();
+    }
   }
 }

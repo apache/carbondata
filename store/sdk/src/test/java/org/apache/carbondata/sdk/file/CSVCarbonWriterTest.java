@@ -20,13 +20,27 @@ package org.apache.carbondata.sdk.file;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.schema.table.DiskBasedDMSchemaStorageProvider;
+import org.apache.carbondata.core.metadata.datatype.StructField;
+import org.apache.carbondata.core.metadata.schema.SchemaReader;
+import org.apache.carbondata.core.metadata.schema.table.TableInfo;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.reader.CarbonFooterReaderV3;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.format.FileFooter3;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -49,7 +63,9 @@ public class CSVCarbonWriterTest {
       assert (false);
     }
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, path);
+        .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION, path)
+        .addProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE,
+            String.valueOf(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT));
     assert (TestUtil.cleanMdtFile());
   }
 
@@ -91,6 +107,37 @@ public class CSVCarbonWriterTest {
   }
 
   @Test
+  public void testWriteFilesBuildWithJsonSchema() throws IOException, InvalidLoadOptionException, InterruptedException {
+    String path = "./testWriteFilesJsonSchema";
+    FileUtils.deleteDirectory(new File(path));
+
+    String schema = "[{name:string},{age:int},{height:double}]";
+    CarbonWriterBuilder builder = CarbonWriter
+        .builder()
+        .outputPath(path)
+        .withCsvInput(schema)
+        .writtenBy("testWriteFilesBuildWithJsonSchema");
+
+    CarbonWriter writer = builder.build();
+    for (int i = 0; i < 10; i++) {
+      writer.write(new String[]{
+          "robot" + (i % 10), String.valueOf(i % 3000000), String.valueOf((double) i / 2)});
+    }
+    writer.close();
+
+    CarbonReader carbonReader = CarbonReader.builder(path).build();
+    int i = 0;
+    while (carbonReader.hasNext()) {
+      Object[] row = (Object[]) carbonReader.readNextRow();
+      Assert.assertEquals(row[0], "robot" + i % 10);
+      System.out.println();
+      i++;
+    }
+    carbonReader.close();
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
   public void testAllPrimitiveDataType() throws IOException {
     // TODO: write all data type and read by CarbonRecordReader to verify the content
     String path = "./testWriteFiles";
@@ -108,11 +155,8 @@ public class CSVCarbonWriterTest {
     fields[8] = new Field("decimalField", DataTypes.createDecimalType(8, 2));
 
     try {
-      CarbonWriterBuilder builder = CarbonWriter.builder()
-          .isTransactionalTable(true)
-          .outputPath(path);
-
-      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields));
+      CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
 
       for (int i = 0; i < 100; i++) {
         String[] row = new String[]{
@@ -133,10 +177,7 @@ public class CSVCarbonWriterTest {
       Assert.fail(e.getMessage());
     }
 
-    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-    Assert.assertTrue(segmentFolder.exists());
-
-    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+    File[] dataFiles = new File(path).listFiles(new FileFilter() {
       @Override public boolean accept(File pathname) {
         return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
       }
@@ -156,7 +197,7 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, false, 1, 100, false);
+    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, 1, 100);
 
     // TODO: implement reader to verify the number of blocklet in the file
 
@@ -172,10 +213,8 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
 
-    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, false, 2, 2, true);
-
-    File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-    File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+    TestUtil.writeFilesAndVerify(1000 * 1000, new Schema(fields), path, null, 2, 2);
+    File[] dataFiles = new File(path).listFiles(new FileFilter() {
       @Override public boolean accept(File pathname) {
         return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
       }
@@ -207,23 +246,6 @@ public class CSVCarbonWriterTest {
     // TODO: test write data with partition
   }
 
-  @Test
-  public void testSchemaPersistence() throws IOException {
-    String path = "./testWriteFiles";
-    FileUtils.deleteDirectory(new File(path));
-
-    Field[] fields = new Field[2];
-    fields[0] = new Field("name", DataTypes.STRING);
-    fields[1] = new Field("age", DataTypes.INT);
-
-    TestUtil.writeFilesAndVerify(100, new Schema(fields), path, true);
-
-    String schemaFile = CarbonTablePath.getSchemaFilePath(path);
-    Assert.assertTrue(new File(schemaFile).exists());
-
-    FileUtils.deleteDirectory(new File(path));
-  }
-
   @Test(expected = IOException.class)
   public void testWhenWriterthrowsError() throws IOException{
     CarbonWriter carbonWriter = null;
@@ -234,8 +256,8 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     try {
-      carbonWriter = CarbonWriter.builder().isTransactionalTable(false).
-          outputPath(path).buildWriterForCSVInput(new Schema(fields));
+      carbonWriter = CarbonWriter.builder().
+          outputPath(path).withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
       Assert.assertTrue(false);
@@ -254,8 +276,8 @@ public class CSVCarbonWriterTest {
     fields[0] = new Field("name", DataTypes.STRING);
     fields[1] = new Field("age", DataTypes.INT);
     try {
-      carbonWriter = CarbonWriter.builder().isTransactionalTable(false).
-          outputPath(path).buildWriterForCSVInput(new Schema(fields));
+      carbonWriter = CarbonWriter.builder().
+          outputPath(path).withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
     } catch (InvalidLoadOptionException e) {
       e.printStackTrace();
       Assert.assertTrue(false);
@@ -278,10 +300,10 @@ public class CSVCarbonWriterTest {
 
     try {
       CarbonWriterBuilder builder = CarbonWriter.builder()
-          .isTransactionalTable(true).taskNo(5)
+          .taskNo(5)
           .outputPath(path);
 
-      CarbonWriter writer = builder.buildWriterForCSVInput(new Schema(fields));
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
 
       for (int i = 0; i < 2; i++) {
         String[] row = new String[]{
@@ -292,10 +314,7 @@ public class CSVCarbonWriterTest {
       }
       writer.close();
 
-      File segmentFolder = new File(CarbonTablePath.getSegmentPath(path, "null"));
-      Assert.assertTrue(segmentFolder.exists());
-
-      File[] dataFiles = segmentFolder.listFiles(new FileFilter() {
+      File[] dataFiles = new File(path).listFiles(new FileFilter() {
         @Override public boolean accept(File pathname) {
           return pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT);
         }
@@ -308,8 +327,218 @@ public class CSVCarbonWriterTest {
     } catch (Exception e) {
       e.printStackTrace();
       Assert.fail(e.getMessage());
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
     }
-  finally {
+  }
+
+  // validate number of blocklets in one block
+  @Test
+  public void testBlocklet() throws IOException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("name", DataTypes.STRING);
+    fields[1] = new Field("age", DataTypes.INT);
+
+    TestUtil.writeFilesAndVerify(1000000, new Schema(fields), path, new String[]{"name"}, 3, 8);
+
+    // read footer and verify number of blocklets
+    CarbonFile folder = FileFactory.getCarbonFile(path);
+    List<CarbonFile> files = folder.listFiles(true);
+    List<CarbonFile> dataFiles = new LinkedList<>();
+    for (CarbonFile file : files) {
+      if (file.getName().endsWith(CarbonTablePath.CARBON_DATA_EXT)) {
+        dataFiles.add(file);
+      }
+    }
+    for (CarbonFile dataFile : dataFiles) {
+      FileReader fileReader = FileFactory.getFileHolder(FileFactory.getFileType(dataFile.getPath()));
+      ByteBuffer buffer = fileReader.readByteBuffer(FileFactory.getUpdatedFilePath(
+          dataFile.getPath()), dataFile.getSize() - 8, 8);
+      fileReader.finish();
+      CarbonFooterReaderV3 footerReader =
+          new CarbonFooterReaderV3(dataFile.getAbsolutePath(), buffer.getLong());
+      FileFooter3 footer = footerReader.readFooterVersion3();
+      Assert.assertEquals(2, footer.blocklet_index_list.size());
+      Assert.assertEquals(2, footer.blocklet_info_list3.size());
+    }
+    FileUtils.deleteDirectory(new File(path));
+  }
+
+  @Test
+  public void testFloatDataType() throws IOException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[3];
+    fields[0] = new Field("stringField", DataTypes.STRING);
+    fields[1] = new Field("floatField", DataTypes.FLOAT);
+    fields[2] = new Field("doubleField", DataTypes.DOUBLE);
+
+    try {
+      CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
+      for (int i = 0; i < 15; i++) {
+        String[] row = new String[] { "robot" + (i % 10), String.valueOf(i + "." + i),
+            String.valueOf(i + "." + i) };
+        writer.write(row);
+      }
+      writer.close();
+      TableInfo tableInfo = SchemaReader.inferSchema(AbsoluteTableIdentifier.from(path, "",
+          ""), false);
+      List<String> dataTypes = new ArrayList<>();
+      for(ColumnSchema columnSchema: tableInfo.getFactTable().getListOfColumns()) {
+          dataTypes.add(columnSchema.getDataType().toString());
+      }
+      assert(dataTypes.contains("STRING"));
+      assert(dataTypes.contains("DOUBLE"));
+      assert(dataTypes.contains("FLOAT"));
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
+  @Test
+  public void testByteDataType() throws IOException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[2];
+    fields[0] = new Field("stringField", DataTypes.STRING);
+    fields[1] = new Field("byteField", DataTypes.BYTE);
+
+    try {
+      CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
+      for (int i = 0; i < 15; i++) {
+        String[] row = new String[] { "robot" + (i % 10),  "" + i };
+        writer.write(row);
+      }
+      writer.close();
+      TableInfo tableInfo = SchemaReader.inferSchema(AbsoluteTableIdentifier.from(path, "",
+          ""), false);
+      List<String> dataTypes = new ArrayList<>();
+      for(ColumnSchema columnSchema: tableInfo.getFactTable().getListOfColumns()) {
+        dataTypes.add(columnSchema.getDataType().toString());
+      }
+      assert(dataTypes.contains("STRING"));
+      assert(dataTypes.contains("BYTE"));
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
+  @Test
+  public void testReadingOfByteAndFloatWithCarbonReader() throws IOException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    Field[] fields = new Field[3];
+    fields[0] = new Field("stringField", DataTypes.STRING);
+    fields[1] = new Field("byteField", DataTypes.BYTE);
+    fields[2] = new Field("floatField", DataTypes.FLOAT);
+
+    try {
+      CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
+      CarbonWriter writer = builder.withCsvInput(new Schema(fields)).writtenBy("CSVCarbonWriterTest").build();
+      for (int i = 0; i < 15; i++) {
+        String[] row = new String[] { "robot" + (i % 10), "" + i, i + "." + i };
+        writer.write(row);
+      }
+      writer.close();
+      CarbonReader carbonReader =
+          new CarbonReaderBuilder(path, "table1").build();
+      int i = 0;
+      while(carbonReader.hasNext()) {
+        Object[] actualRow = (Object[]) carbonReader.readNextRow();
+        String[] expectedRow = new String[] { "robot" + (i % 10), "" + i, i + "." + i };
+        for (int j = 0; j < 3; j++) {
+          actualRow[j].toString().equalsIgnoreCase(expectedRow[j]);
+        }
+        assert(actualRow[1] instanceof Byte);
+        assert(actualRow[2] instanceof Float);
+        i++;
+      }
+      carbonReader.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
+  @Test
+  public void testWritingAndReadingStructOfFloat() throws IOException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    StructField[] fields = new StructField[3];
+    fields[0] = new StructField("stringField", DataTypes.STRING);
+    fields[1] = new StructField("byteField", DataTypes.BYTE);
+    fields[2] = new StructField("floatField", DataTypes.FLOAT);
+
+    Field structType = new Field("structField", "struct", Arrays.asList(fields));
+
+    try {
+      CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
+      CarbonWriter writer = builder.withCsvInput(new Schema(new Field[] {structType})).writtenBy("CSVCarbonWriterTest").build();
+      for (int i = 0; i < 15; i++) {
+        String[] row = new String[] { "robot" + (i % 10)+"$" + i+ "$" + i + "." + i };
+        writer.write(row);
+      }
+      writer.close();
+      //TODO: CarbonReader has a bug which does not allow reading complex. Once it is fixed below validation can be enabled
+//      CarbonReader carbonReader =
+//          new CarbonReaderBuilder(path, "table121").projection(new String[]{"structfield"}).build(TestUtil.configuration);
+//      for (int i = 0; i < 15; i++) {
+//        Object[] actualRow = (Object[])(carbonReader.readNextRow());
+//        String[] expectedRow = new String[] { "robot" + (i % 10), "" + i, i + "." + i };
+//        for (int j = 0; j < 3; j++) {
+//          ((Object[])actualRow[0])[j].toString().equalsIgnoreCase(expectedRow[j]);
+//        }
+//      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail();
+    } finally {
+      FileUtils.deleteDirectory(new File(path));
+    }
+  }
+
+  @Test
+  public void testWritingAndReadingArrayOfFloatAndByte() throws IOException {
+    String path = "./testWriteFiles";
+    FileUtils.deleteDirectory(new File(path));
+
+    StructField[] fields = new StructField[1];
+    fields[0] = new StructField("floatField", DataTypes.FLOAT);
+
+    Field structType1 = new Field("floatarray", "array", Arrays.asList(fields));
+    StructField[] fields2 = new StructField[1];
+    fields2[0] = new StructField("byteField", DataTypes.BYTE);
+    Field structType2 = new Field("bytearray", "array", Arrays.asList(fields2));
+
+    try {
+      CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
+      CarbonWriter writer = builder.withCsvInput(new Schema(new Field[] {structType1, structType2})).writtenBy("CSVCarbonWriterTest").build();
+      for (int i = 0; i < 15; i++) {
+        String[] row = new String[] { "1.0$2.0$3.0", "1$2$3" };
+        writer.write(row);
+      }
+      writer.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      Assert.fail();
+    } finally {
       FileUtils.deleteDirectory(new File(path));
     }
   }

@@ -17,7 +17,12 @@
 package org.apache.carbondata.core.readcommitter;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
@@ -31,6 +36,8 @@ import org.apache.carbondata.core.statusmanager.SegmentRefreshInfo;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * This is a readCommittedScope for non transactional carbon table
  */
@@ -38,10 +45,12 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 @InterfaceStability.Stable
 public class LatestFilesReadCommittedScope implements ReadCommittedScope {
 
+  private static final long serialVersionUID = -839970494288861816L;
   private String carbonFilePath;
   private String segmentId;
   private ReadCommittedIndexFileSnapShot readCommittedIndexFileSnapShot;
   private LoadMetadataDetails[] loadMetadataDetails;
+  private transient Configuration configuration;
 
   /**
    * a new constructor of this class
@@ -49,15 +58,13 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
    * @param path      carbon file path
    * @param segmentId segment id
    */
-  public LatestFilesReadCommittedScope(String path, String segmentId) {
+  public LatestFilesReadCommittedScope(String path, String segmentId, Configuration configuration)
+      throws IOException {
+    this.configuration = configuration;
     Objects.requireNonNull(path);
     this.carbonFilePath = path;
     this.segmentId = segmentId;
-    try {
-      takeCarbonIndexFileSnapShot();
-    } catch (IOException ex) {
-      throw new RuntimeException("Error while taking index snapshot", ex);
-    }
+    takeCarbonIndexFileSnapShot();
   }
 
   /**
@@ -65,8 +72,19 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
    *
    * @param path carbon file path
    */
-  public LatestFilesReadCommittedScope(String path) {
-    this(path, null);
+  public LatestFilesReadCommittedScope(String path, Configuration configuration)
+      throws IOException {
+    this(path, null, configuration);
+  }
+
+  /**
+   * a new constructor with carbon index files
+   *
+   * @param indexFiles carbon index files
+   */
+  public LatestFilesReadCommittedScope(CarbonFile[] indexFiles, Configuration configuration) {
+    this.configuration = configuration;
+    takeCarbonIndexFileSnapShot(indexFiles);
   }
 
   private void prepareLoadMetadata() {
@@ -119,13 +137,18 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
       index = new LinkedList<>();
     }
     for (String indexPath : index) {
-      indexFileStore.put(indexPath, null);
+      if (indexPath.endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        indexFileStore.put(indexPath, indexPath.substring(indexPath.lastIndexOf('/') + 1));
+      } else {
+        indexFileStore.put(indexPath, null);
+      }
     }
     return indexFileStore;
   }
 
-  @Override public SegmentRefreshInfo getCommittedSegmentRefreshInfo(
-      Segment segment, UpdateVO updateVo) throws IOException {
+  @Override
+  public SegmentRefreshInfo getCommittedSegmentRefreshInfo(Segment segment, UpdateVO updateVo)
+      throws IOException {
     Map<String, SegmentRefreshInfo> snapShot =
         readCommittedIndexFileSnapShot.getSegmentTimestampUpdaterMap();
     String segName;
@@ -143,8 +166,8 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
       // This is CarbonFile case where the Index files are present inside the Segment Folder
       // So the Segment has to be extracted from the path not from the CarbonIndex file.
       String segString = indexFilePath.substring(0, indexFilePath.lastIndexOf("/") + 1);
-      String segName = segString
-          .substring(segString.lastIndexOf("_") + 1, segString.lastIndexOf("/"));
+      String segName =
+          segString.substring(segString.lastIndexOf("_") + 1, segString.lastIndexOf("/"));
       return segName;
     } else {
       String fileName = carbonIndexFileName;
@@ -155,60 +178,73 @@ public class LatestFilesReadCommittedScope implements ReadCommittedScope {
 
   @Override public void takeCarbonIndexFileSnapShot() throws IOException {
     // Read the current file Path get the list of indexes from the path.
-    CarbonFile file = FileFactory.getCarbonFile(carbonFilePath);
-    Map<String, List<String>> indexFileStore = new HashMap<>();
-    Map<String, SegmentRefreshInfo> segmentTimestampUpdaterMap = new HashMap<>();
+    CarbonFile file = FileFactory.getCarbonFile(carbonFilePath, configuration);
+
     CarbonFile[] carbonIndexFiles = null;
     if (file.isDirectory()) {
       if (segmentId == null) {
-        carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(file);
+        List<CarbonFile> indexFiles = new ArrayList<>();
+        SegmentIndexFileStore.getCarbonIndexFilesRecursively(file, indexFiles);
+        carbonIndexFiles = indexFiles.toArray(new CarbonFile[0]);
       } else {
         String segmentPath = CarbonTablePath.getSegmentPath(carbonFilePath, segmentId);
-        carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(segmentPath);
+        carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(segmentPath, configuration);
       }
       if (carbonIndexFiles.length == 0) {
         throw new IOException(
             "No Index files are present in the table location :" + carbonFilePath);
       }
-      for (int i = 0; i < carbonIndexFiles.length; i++) {
-        // TODO. If Required to support merge index, then this code has to be modified.
-        // TODO. Nested File Paths.
-        if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
-          // Get Segment Name from the IndexFile.
-          String indexFilePath =
-              FileFactory.getUpdatedFilePath(carbonIndexFiles[i].getAbsolutePath());
-          String segId =
-              getSegmentID(carbonIndexFiles[i].getName(), indexFilePath);
-          // TODO. During Partition table handling, place Segment File Name.
-          List<String> indexList;
-          SegmentRefreshInfo segmentRefreshInfo;
-          if (indexFileStore.get(segId) == null) {
-            indexList = new ArrayList<>(1);
-            segmentRefreshInfo =
-                new SegmentRefreshInfo(carbonIndexFiles[i].getLastModifiedTime(), 0);
-            segmentTimestampUpdaterMap.put(segId, segmentRefreshInfo);
-          } else {
-            // Entry is already present.
-            indexList = indexFileStore.get(segId);
-            segmentRefreshInfo = segmentTimestampUpdaterMap.get(segId);
-          }
-          indexList.add(indexFilePath);
-          if (segmentRefreshInfo.getSegmentUpdatedTimestamp() < carbonIndexFiles[i]
-              .getLastModifiedTime()) {
-            segmentRefreshInfo
-                .setSegmentUpdatedTimestamp(carbonIndexFiles[i].getLastModifiedTime());
-          }
-          indexFileStore.put(segId, indexList);
-          segmentRefreshInfo.setCountOfFileInSegment(indexList.size());
-        }
-      }
-      ReadCommittedIndexFileSnapShot readCommittedIndexFileSnapShot =
-          new ReadCommittedIndexFileSnapShot(indexFileStore, segmentTimestampUpdaterMap);
-      this.readCommittedIndexFileSnapShot = readCommittedIndexFileSnapShot;
-      prepareLoadMetadata();
+      takeCarbonIndexFileSnapShot(carbonIndexFiles);
     } else {
       throw new IOException("Path is not pointing to directory");
     }
   }
 
+  private void takeCarbonIndexFileSnapShot(CarbonFile[] carbonIndexFiles) {
+    Map<String, List<String>> indexFileStore = new HashMap<>();
+    Map<String, SegmentRefreshInfo> segmentTimestampUpdaterMap = new HashMap<>();
+    for (int i = 0; i < carbonIndexFiles.length; i++) {
+      // TODO. Nested File Paths.
+      if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)
+          || carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        // Get Segment Name from the IndexFile.
+        String indexFilePath =
+            FileFactory.getUpdatedFilePath(carbonIndexFiles[i].getAbsolutePath());
+        String segId = getSegmentID(carbonIndexFiles[i].getName(), indexFilePath);
+        // TODO. During Partition table handling, place Segment File Name.
+        List<String> indexList;
+        SegmentRefreshInfo segmentRefreshInfo;
+        if (indexFileStore.get(segId) == null) {
+          indexList = new ArrayList<>(1);
+          segmentRefreshInfo =
+              new SegmentRefreshInfo(carbonIndexFiles[i].getLastModifiedTime(), 0);
+          segmentTimestampUpdaterMap.put(segId, segmentRefreshInfo);
+        } else {
+          // Entry is already present.
+          indexList = indexFileStore.get(segId);
+          segmentRefreshInfo = segmentTimestampUpdaterMap.get(segId);
+        }
+        indexList.add(indexFilePath);
+        if (segmentRefreshInfo.getSegmentUpdatedTimestamp() < carbonIndexFiles[i]
+            .getLastModifiedTime()) {
+          segmentRefreshInfo
+              .setSegmentUpdatedTimestamp(carbonIndexFiles[i].getLastModifiedTime());
+        }
+        indexFileStore.put(segId, indexList);
+        segmentRefreshInfo.setCountOfFileInSegment(indexList.size());
+      }
+    }
+    ReadCommittedIndexFileSnapShot readCommittedIndexFileSnapShot =
+        new ReadCommittedIndexFileSnapShot(indexFileStore, segmentTimestampUpdaterMap);
+    this.readCommittedIndexFileSnapShot = readCommittedIndexFileSnapShot;
+    prepareLoadMetadata();
+  }
+
+  public Configuration getConfiguration() {
+    return configuration;
+  }
+
+  @Override public void setConfiguration(Configuration configuration) {
+    this.configuration = configuration;
+  }
 }

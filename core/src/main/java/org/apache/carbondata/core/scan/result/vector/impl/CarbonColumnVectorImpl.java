@@ -25,6 +25,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
 
 public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
@@ -52,6 +53,12 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   private DataType blockDataType;
 
+  private int[] lengths;
+
+  private int[] offsets;
+
+  private int batchSize;
+
   /**
    * True if there is at least one NULL byte set. This is an optimization for the writer, to skip
    * having to clear NULL bits.
@@ -63,13 +70,14 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
   private CarbonColumnVector dictionaryVector;
 
   public CarbonColumnVectorImpl(int batchSize, DataType dataType) {
+    this.batchSize = batchSize;
     nullBytes = new BitSet(batchSize);
     this.dataType = dataType;
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       byteArr = new byte[batchSize];
     } else if (dataType == DataTypes.SHORT) {
       shorts = new short[batchSize];
-    } else if (dataType == DataTypes.INT) {
+    } else if (dataType == DataTypes.INT || dataType == DataTypes.DATE) {
       ints = new int[batchSize];
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       longs = new long[batchSize];
@@ -79,7 +87,8 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       doubles = new double[batchSize];
     } else if (dataType instanceof DecimalType) {
       decimals = new BigDecimal[batchSize];
-    } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
+    } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY
+        || dataType == DataTypes.VARCHAR) {
       dictionaryVector = new CarbonColumnVectorImpl(batchSize, DataTypes.INT);
       bytes = new byte[batchSize][];
     } else {
@@ -146,8 +155,12 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     }
   }
 
-  @Override public void putBytes(int rowId, byte[] value) {
+  @Override public void putByteArray(int rowId, byte[] value) {
     bytes[rowId] = value;
+  }
+
+  @Override public void putByte(int rowId, byte value) {
+    byteArr[rowId] = value;
   }
 
   @Override public void putBytes(int rowId, int count, byte[] value) {
@@ -156,7 +169,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     }
   }
 
-  @Override public void putBytes(int rowId, int offset, int length, byte[] value) {
+  @Override public void putByteArray(int rowId, int offset, int length, byte[] value) {
     bytes[rowId] = new byte[length];
     System.arraycopy(value, offset, bytes[rowId], 0, length);
   }
@@ -202,7 +215,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       return  byteArr[rowId];
     } else if (dataType == DataTypes.SHORT) {
       return shorts[rowId];
-    } else if (dataType == DataTypes.INT) {
+    } else if (dataType == DataTypes.INT || dataType == DataTypes.DATE) {
       return ints[rowId];
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       return longs[rowId];
@@ -212,14 +225,46 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       return doubles[rowId];
     } else if (dataType instanceof DecimalType) {
       return decimals[rowId];
-    } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
+    } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY
+        || dataType == DataTypes.VARCHAR) {
       if (null != carbonDictionary) {
         int dictKey = (Integer) dictionaryVector.getData(rowId);
         return carbonDictionary.getDictionaryValue(dictKey);
+      } else if (byteArr != null) {
+        byte[] bytes = new byte[lengths[rowId]];
+        System.arraycopy(byteArr, offsets[rowId], bytes, 0, bytes.length);
+        return bytes;
+      } else {
+        return bytes[rowId];
       }
-      return bytes[rowId];
     } else {
       return data[rowId];
+    }
+  }
+
+  public Object getDataArray() {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
+      return  byteArr;
+    } else if (dataType == DataTypes.SHORT) {
+      return shorts;
+    } else if (dataType == DataTypes.INT) {
+      return ints;
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
+      return longs;
+    } else if (dataType == DataTypes.FLOAT) {
+      return floats;
+    } else if (dataType == DataTypes.DOUBLE) {
+      return doubles;
+    } else if (dataType instanceof DecimalType) {
+      return decimals;
+    } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY || dataType ==
+        DataTypes.VARCHAR) {
+      if (null != carbonDictionary) {
+        return ints;
+      }
+      return bytes;
+    } else {
+      return data;
     }
   }
 
@@ -229,7 +274,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       Arrays.fill(byteArr, (byte) 0);
     } else if (dataType == DataTypes.SHORT) {
       Arrays.fill(shorts, (short) 0);
-    } else if (dataType == DataTypes.INT) {
+    } else if (dataType == DataTypes.INT || dataType == DataTypes.DATE) {
       Arrays.fill(ints, 0);
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
       Arrays.fill(longs, 0);
@@ -239,7 +284,8 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
       Arrays.fill(doubles, 0);
     } else if (dataType instanceof DecimalType) {
       Arrays.fill(decimals, null);
-    } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
+    } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY
+        || dataType == DataTypes.VARCHAR) {
       Arrays.fill(bytes, null);
       this.dictionaryVector.reset();
     } else {
@@ -283,4 +329,65 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
    * as an optimization to prevent setting nulls.
    */
   public final boolean anyNullsSet() { return anyNullsSet; }
+
+  @Override public void putFloats(int rowId, int count, float[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      floats[rowId ++] = src[i];
+    }
+  }
+
+  @Override public void putShorts(int rowId, int count, short[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      shorts[rowId ++] = src[i];
+    }
+  }
+
+  @Override public void putInts(int rowId, int count, int[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      ints[rowId ++] = src[i];
+    }
+  }
+
+  @Override public void putLongs(int rowId, int count, long[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      longs[rowId ++] = src[i];
+    }
+  }
+
+  @Override public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      doubles[rowId ++] = src[i];
+    }
+  }
+
+  @Override public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      byteArr[rowId ++] = src[i];
+    }
+  }
+
+  @Override public void setLazyPage(LazyPageLoader lazyPage) {
+    lazyPage.loadPage();
+  }
+
+  @Override public void putArray(int rowId, int offset, int length) {
+    if (offsets == null) {
+      offsets = new int[batchSize];
+      lengths = new int[batchSize];
+    }
+    offsets[rowId] = offset;
+    lengths[rowId] = length;
+  }
+
+  @Override public void putAllByteArray(byte[] data, int offset, int length) {
+    byteArr = data;
+  }
+
+  public int[] getLengths() {
+    return lengths;
+  }
+
+  public int[] getOffsets() {
+    return offsets;
+  }
 }

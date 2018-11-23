@@ -283,7 +283,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
     checkAnswer(sql("select count(*) from boolean_table where booleanField = false or booleanField = true"),
       Row(10))
 
-    if (!Spark2TestQueryExecutor.spark.version.startsWith("2.2")) {
+    if (Spark2TestQueryExecutor.spark.version.startsWith("2.1")) {
       checkAnswer(sql("select count(*) from boolean_table where booleanField = 'true'"),
         Row(0))
 
@@ -373,7 +373,7 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
     checkAnswer(sql("select count(*) from boolean_table where booleanField = false or booleanField = true"),
       Row(10))
 
-    if (!Spark2TestQueryExecutor.spark.version.startsWith("2.2")) {
+    if (Spark2TestQueryExecutor.spark.version.startsWith("2.1")) {
       checkAnswer(sql("select count(*) from boolean_table where booleanField = 'true'"),
         Row(0))
 

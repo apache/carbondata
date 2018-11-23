@@ -39,15 +39,42 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
    * @param columnValueSize      size of each column value
    */
   public FixedLengthDimensionColumnPage(byte[] dataChunk, int[] invertedIndex,
-      int[] invertedIndexReverse, int numberOfRows, int columnValueSize) {
+      int[] invertedIndexReverse, int numberOfRows, int columnValueSize, int dataLength) {
     boolean isExplicitSorted = isExplicitSorted(invertedIndex);
     long totalSize = isExplicitSorted ?
-        dataChunk.length + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE) :
-        dataChunk.length;
+        dataLength + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE) :
+        dataLength;
     dataChunkStore = DimensionChunkStoreFactory.INSTANCE
         .getDimensionChunkStore(columnValueSize, isExplicitSorted, numberOfRows, totalSize,
-            DimensionStoreType.FIXED_LENGTH, null);
+            DimensionStoreType.FIXED_LENGTH, null, false, dataLength);
     dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunk);
+  }
+
+  /**
+   * Constructor
+   *
+   * @param dataChunk            data chunk
+   * @param invertedIndex        inverted index
+   * @param invertedIndexReverse reverse inverted index
+   * @param numberOfRows         number of rows
+   * @param columnValueSize      size of each column value
+   * @param vectorInfo           vector to be filled with decoded column page.
+   */
+  public FixedLengthDimensionColumnPage(byte[] dataChunk, int[] invertedIndex,
+      int[] invertedIndexReverse, int numberOfRows, int columnValueSize,
+      ColumnVectorInfo vectorInfo, int dataLength) {
+    boolean isExplicitSorted = isExplicitSorted(invertedIndex);
+    long totalSize = isExplicitSorted ?
+        dataLength + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE) :
+        dataLength;
+    dataChunkStore = DimensionChunkStoreFactory.INSTANCE
+        .getDimensionChunkStore(columnValueSize, isExplicitSorted, numberOfRows, totalSize,
+            DimensionStoreType.FIXED_LENGTH, null, vectorInfo != null, dataLength);
+    if (vectorInfo == null) {
+      dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunk);
+    } else {
+      dataChunkStore.fillVector(invertedIndex, invertedIndexReverse, dataChunk, vectorInfo);
+    }
   }
 
   /**

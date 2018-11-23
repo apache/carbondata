@@ -30,7 +30,6 @@ import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCa
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.metadata.SegmentFileStore
-import org.apache.carbondata.core.readcommitter.{ReadCommittedScope, TableStatusReadCommittedScope}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events._
@@ -68,7 +67,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         scanSegmentsAndSubmitJob(loadsToMerge, compactedSegments)
       } catch {
         case e: Exception =>
-          LOGGER.error(e, s"Exception in compaction thread ${ e.getMessage }")
+          LOGGER.error(s"Exception in compaction thread ${ e.getMessage }", e)
           throw e
       }
 
@@ -186,7 +185,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
     val mergeStatus =
       if (CompactionType.IUD_UPDDEL_DELTA == compactionType) {
         new CarbonIUDMergerRDD(
-          sc.sparkContext,
+          sc.sparkSession,
           new MergeResultImpl(),
           carbonLoadModel,
           carbonMergerMapping,
@@ -194,7 +193,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         ).collect
       } else {
         new CarbonMergerRDD(
-          sc.sparkContext,
+          sc.sparkSession,
           new MergeResultImpl(),
           carbonLoadModel,
           carbonMergerMapping,
@@ -285,9 +284,9 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       OperationListenerBus.getInstance()
         .fireEvent(compactionLoadStatusPostEvent, operationContext)
       if (null != tableDataMaps) {
-        val buildDataMapPostExecutionEvent: BuildDataMapPostExecutionEvent =
-          new BuildDataMapPostExecutionEvent(sqlContext.sparkSession,
-            carbonTable.getAbsoluteTableIdentifier)
+        val buildDataMapPostExecutionEvent = new BuildDataMapPostExecutionEvent(
+          sqlContext.sparkSession, carbonTable.getAbsoluteTableIdentifier,
+          null, Seq(mergedLoadNumber), true)
         OperationListenerBus.getInstance()
           .fireEvent(buildDataMapPostExecutionEvent, dataMapOperationContext)
       }
@@ -302,23 +301,16 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       // true because compaction for all datamaps will be finished at a time to the maximum level
       // possible (level 1, 2 etc). so we need to check for either condition
       if (!statusFileUpdation || !commitComplete) {
-        LOGGER.audit(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
-                     s"${ carbonLoadModel.getTableName }")
         LOGGER.error(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
                      s"${ carbonLoadModel.getTableName }")
         throw new Exception(s"Compaction failed to update metadata for table" +
                             s" ${ carbonLoadModel.getDatabaseName }." +
                             s"${ carbonLoadModel.getTableName }")
       } else {
-        LOGGER.audit(s"Compaction request completed for table " +
-                     s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         LOGGER.info(s"Compaction request completed for table " +
                     s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       }
     } else {
-      LOGGER.audit(s"Compaction request failed for table " +
-                   s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }"
-      )
       LOGGER.error(s"Compaction request failed for table " +
                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       throw new Exception("Compaction Failure in Merger Rdd.")

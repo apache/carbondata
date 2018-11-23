@@ -32,24 +32,22 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.common.exceptions.sql.InvalidLoadOptionException;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
-import org.apache.carbondata.core.metadata.converter.SchemaConverter;
-import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.MapType;
 import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.TableSchemaBuilder;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.core.writer.ThriftWriter;
+import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModelBuilder;
 
-import org.apache.hadoop.fs.s3a.Constants;
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * Builder for {@link CarbonWriter}
@@ -60,15 +58,22 @@ public class CarbonWriterBuilder {
   private Schema schema;
   private String path;
   private String[] sortColumns;
-  private boolean persistSchemaFile;
   private int blockletSize;
   private int blockSize;
-  private boolean isTransactionalTable;
-  private long UUID;
+  private long timestamp;
   private Map<String, String> options;
   private String taskNo;
   private int localDictionaryThreshold;
   private boolean isLocalDictionaryEnabled;
+  private short numOfThreads;
+  private Configuration hadoopConf;
+  private String writtenByApp;
+  private String[] invertedIndexColumns;
+  private enum WRITER_TYPE {
+    CSV, AVRO, JSON
+  }
+
+  private WRITER_TYPE writerType;
 
   /**
    * Sets the output path of the writer builder
@@ -90,7 +95,29 @@ public class CarbonWriterBuilder {
    * @return updated CarbonWriterBuilder
    */
   public CarbonWriterBuilder sortBy(String[] sortColumns) {
+    if (sortColumns != null) {
+      for (int i = 0; i < sortColumns.length; i++) {
+        sortColumns[i] = sortColumns[i].toLowerCase();
+      }
+    }
     this.sortColumns = sortColumns;
+    return this;
+  }
+
+  /**
+   * sets the list of columns for which inverted index needs to generated
+   * @param invertedIndexColumns is a string array of columns for which inverted index needs to
+   * generated.
+   * If it is null or an empty array, inverted index will be generated for none of the columns
+   * @return updated CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder invertedIndexFor(String[] invertedIndexColumns) {
+    if (invertedIndexColumns != null) {
+      for (int i = 0; i < invertedIndexColumns.length; i++) {
+        invertedIndexColumns[i] = invertedIndexColumns[i].toLowerCase();
+      }
+    }
+    this.invertedIndexColumns = invertedIndexColumns;
     return this;
   }
 
@@ -106,111 +133,15 @@ public class CarbonWriterBuilder {
     return this;
   }
 
-
-
-  /**
-   * If set, create a schema file in metadata folder.
-   * @param persist is a boolean value, If set to true, creates a schema file in metadata folder.
-   * By default set to false. will not create metadata folder
-   * @return updated CarbonWriterBuilder
-   */
-  public CarbonWriterBuilder persistSchemaFile(boolean persist) {
-    this.persistSchemaFile = persist;
-    return this;
-  }
-
-  /**
-   * If set false, writes the carbondata and carbonindex files in a flat folder structure
-   * @param isTransactionalTable is a boolelan value
-   * If set to false, then writes the carbondata and carbonindex files
-   * in a flat folder structure.
-   * If set to true, then writes the carbondata and carbonindex files
-   * in segment folder structure.
-   * By default set to false.
-   * @return updated CarbonWriterBuilder
-   */
-  public CarbonWriterBuilder isTransactionalTable(boolean isTransactionalTable) {
-    Objects.requireNonNull(isTransactionalTable, "Transactional Table should not be null");
-    this.isTransactionalTable = isTransactionalTable;
-    return this;
-  }
-
-  /**
-   * Set the access key for S3
-   *
-   * @param key   the string of access key for different S3 type,like: fs.s3a.access.key
-   * @param value the value of access key
-   * @return CarbonWriterBuilder
-   */
-  public CarbonWriterBuilder setAccessKey(String key, String value) {
-    FileFactory.getConfiguration().set(key, value);
-    return this;
-  }
-
-  /**
-   * Set the access key for S3.
-   *
-   * @param value the value of access key
-   * @return CarbonWriterBuilder
-   */
-  public CarbonWriterBuilder setAccessKey(String value) {
-    return setAccessKey(Constants.ACCESS_KEY, value);
-  }
-
-  /**
-   * Set the secret key for S3
-   *
-   * @param key   the string of secret key for different S3 type,like: fs.s3a.secret.key
-   * @param value the value of secret key
-   * @return CarbonWriterBuilder
-   */
-  public CarbonWriterBuilder setSecretKey(String key, String value) {
-    FileFactory.getConfiguration().set(key, value);
-    return this;
-  }
-
-  /**
-   * Set the secret key for S3
-   *
-   * @param value the value of secret key
-   * @return CarbonWriterBuilder
-   */
-  public CarbonWriterBuilder setSecretKey(String value) {
-    return setSecretKey(Constants.SECRET_KEY, value);
-  }
-
-  /**
-   * Set the endpoint for S3
-   *
-   * @param key   the string of endpoint for different S3 type,like: fs.s3a.endpoint
-   * @param value the value of endpoint
-   * @return CarbonWriterBuilder
-   */
-  public CarbonWriterBuilder setEndPoint(String key, String value) {
-    FileFactory.getConfiguration().set(key, value);
-    return this;
-  }
-
-  /**
-   * Set the endpoint for S3
-   *
-   * @param value the value of endpoint
-   * @return CarbonWriterBuilder
-   */
-  public CarbonWriterBuilder setEndPoint(String value) {
-    FileFactory.getConfiguration().set(Constants.ENDPOINT, value);
-    return this;
-  }
-
   /**
    * to set the timestamp in the carbondata and carbonindex index files
-   * @param UUID is a timestamp to be used in the carbondata and carbonindex index files.
+   * @param timestamp is a timestamp to be used in the carbondata and carbonindex index files.
    * By default set to zero.
    * @return updated CarbonWriterBuilder
    */
-  public CarbonWriterBuilder uniqueIdentifier(long UUID) {
-    Objects.requireNonNull(UUID, "Unique Identifier should not be null");
-    this.UUID = UUID;
+  public CarbonWriterBuilder uniqueIdentifier(long timestamp) {
+    Objects.requireNonNull(timestamp, "Unique Identifier should not be null");
+    this.timestamp = timestamp;
     return this;
   }
 
@@ -245,11 +176,6 @@ public class CarbonWriterBuilder {
   public CarbonWriterBuilder withLoadOptions(Map<String, String> options) {
     Objects.requireNonNull(options, "Load options should not be null");
     //validate the options.
-    if (options.size() > 9) {
-      throw new IllegalArgumentException("Supports only nine options now. "
-          + "Refer method header or documentation");
-    }
-
     for (String option: options.keySet()) {
       if (!option.equalsIgnoreCase("bad_records_logger_enable") &&
           !option.equalsIgnoreCase("bad_records_action") &&
@@ -260,15 +186,130 @@ public class CarbonWriterBuilder {
           !option.equalsIgnoreCase("complex_delimiter_level_2") &&
           !option.equalsIgnoreCase("quotechar") &&
           !option.equalsIgnoreCase("escapechar")) {
-        throw new IllegalArgumentException("Unsupported options. "
-            + "Refer method header or documentation");
+        throw new IllegalArgumentException("Unsupported option:" + option
+            + ". Refer method header or documentation");
       }
     }
 
-    // convert it to treeMap as keys need to be case insensitive
-    Map<String, String> optionsTreeMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    optionsTreeMap.putAll(options);
-    this.options = optionsTreeMap;
+    if (this.options == null) {
+      // convert it to treeMap as keys need to be case insensitive
+      this.options = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    }
+    this.options.putAll(options);
+    return this;
+  }
+
+  /**
+   * To support the table properties for sdk writer
+   *
+   * @param options key,value pair of create table properties.
+   * supported keys values are
+   * a. table_blocksize -- [1-2048] values in MB. Default value is 1024
+   * b. table_blocklet_size -- values in MB. Default value is 64 MB
+   * c. local_dictionary_threshold -- positive value, default is 10000
+   * d. local_dictionary_enable -- true / false. Default is false
+   * e. sort_columns -- comma separated column. "c1,c2". Default all dimensions are sorted.
+   *                    If empty string "" is passed. No columns are sorted
+   * j. sort_scope -- "local_sort", "no_sort", "batch_sort". default value is "local_sort"
+   * k. long_string_columns -- comma separated string columns which are more than 32k length.
+   *                           default value is null.
+   * l. inverted_index -- comma separated string columns for which inverted index needs to be
+   *                      generated
+   *
+   * @return updated CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder withTableProperties(Map<String, String> options) {
+    Objects.requireNonNull(options, "Table properties should not be null");
+    Set<String> supportedOptions = new HashSet<>(Arrays
+        .asList("table_blocksize", "table_blocklet_size", "local_dictionary_threshold",
+            "local_dictionary_enable", "sort_columns", "sort_scope", "long_string_columns",
+            "inverted_index"));
+
+    for (String key : options.keySet()) {
+      if (!supportedOptions.contains(key.toLowerCase())) {
+        throw new IllegalArgumentException(
+            "Unsupported options. " + "Refer method header or documentation");
+      }
+    }
+
+    for (Map.Entry<String, String> entry : options.entrySet()) {
+      if (entry.getKey().equalsIgnoreCase("table_blocksize")) {
+        this.withBlockSize(Integer.parseInt(entry.getValue()));
+      } else if (entry.getKey().equalsIgnoreCase("table_blocklet_size")) {
+        this.withBlockletSize(Integer.parseInt(entry.getValue()));
+      } else if (entry.getKey().equalsIgnoreCase("local_dictionary_threshold")) {
+        this.localDictionaryThreshold(Integer.parseInt(entry.getValue()));
+      } else if (entry.getKey().equalsIgnoreCase("local_dictionary_enable")) {
+        this.enableLocalDictionary((entry.getValue().equalsIgnoreCase("true")));
+      } else if (entry.getKey().equalsIgnoreCase("sort_columns")) {
+        //sort columns
+        String[] sortColumns;
+        if (entry.getValue().trim().isEmpty()) {
+          sortColumns = new String[0];
+        } else {
+          sortColumns = entry.getValue().split(",");
+        }
+        this.sortBy(sortColumns);
+      } else if (entry.getKey().equalsIgnoreCase("sort_scope")) {
+        this.withSortScope(entry);
+      } else if (entry.getKey().equalsIgnoreCase("long_string_columns")) {
+        updateToLoadOptions(entry);
+      } else if (entry.getKey().equalsIgnoreCase("inverted_index")) {
+        //inverted index columns
+        String[] invertedIndexColumns;
+        if (entry.getValue().trim().isEmpty()) {
+          invertedIndexColumns = new String[0];
+        } else {
+          invertedIndexColumns = entry.getValue().split(",");
+        }
+        this.invertedIndexFor(invertedIndexColumns);
+      }
+    }
+    return this;
+  }
+
+  /**
+   * To make sdk writer thread safe.
+   *
+   * @param numOfThreads should number of threads in which writer is called in multi-thread scenario
+   *                     default sdk writer is not thread safe.
+   *                     can use one writer instance in one thread only.
+   * @return updated CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder withThreadSafe(short numOfThreads) {
+    if (numOfThreads < 1) {
+      throw new IllegalArgumentException("number of threads cannot be lesser than 1. "
+          + "suggest to keep two times the number of cores available");
+    }
+    this.numOfThreads = numOfThreads;
+    return this;
+  }
+
+  /**
+   * To support hadoop configuration
+   *
+   * @param conf hadoop configuration support, can set s3a AK,SK,end point and other conf with this
+   * @return updated CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder withHadoopConf(Configuration conf) {
+    if (conf != null) {
+      this.hadoopConf = conf;
+    }
+    return this;
+  }
+
+  /**
+   * configure hadoop configuration with key value
+   *
+   * @param key   key word
+   * @param value value
+   * @return this object
+   */
+  public CarbonWriterBuilder withHadoopConf(String key, String value) {
+    if (this.hadoopConf == null) {
+      this.hadoopConf = new Configuration(true);
+    }
+    this.hadoopConf.set(key, value);
     return this;
   }
 
@@ -293,9 +334,18 @@ public class CarbonWriterBuilder {
   public CarbonWriterBuilder localDictionaryThreshold(int localDictionaryThreshold) {
     if (localDictionaryThreshold <= 0) {
       throw new IllegalArgumentException(
-          "Local Dictionary Threshold should be between greater than 0");
+          "Local Dictionary Threshold should be greater than 0");
     }
     this.localDictionaryThreshold = localDictionaryThreshold;
+    return this;
+  }
+
+  /**
+   * @param appName appName which is writing the carbondata files
+   * @return
+   */
+  public CarbonWriterBuilder writtenBy(String appName) {
+    this.writtenByApp = appName;
     return this;
   }
 
@@ -324,57 +374,99 @@ public class CarbonWriterBuilder {
   }
 
   /**
-   * Build a {@link CarbonWriter}, which accepts row in CSV format
+   * to build a {@link CarbonWriter}, which accepts row in CSV format
+   *
    * @param schema carbon Schema object {org.apache.carbondata.sdk.file.Schema}
-   * @return CSVCarbonWriter
-   * @throws IOException
-   * @throws InvalidLoadOptionException
+   * @return CarbonWriterBuilder
    */
-  public CarbonWriter buildWriterForCSVInput(Schema schema)
-      throws IOException, InvalidLoadOptionException {
+  public CarbonWriterBuilder withCsvInput(Schema schema) {
     Objects.requireNonNull(schema, "schema should not be null");
-    Objects.requireNonNull(path, "path should not be null");
     this.schema = schema;
-    CarbonLoadModel loadModel = createLoadModel();
-    return new CSVCarbonWriter(loadModel);
+    this.writerType = WRITER_TYPE.CSV;
+    return this;
   }
 
   /**
-   * Build a {@link CarbonWriter}, which accepts Avro object
+   * to build a {@link CarbonWriter}, which accepts row in CSV format
+   *
+   * @param jsonSchema json Schema string
+   * @return CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder withCsvInput(String jsonSchema) {
+    Objects.requireNonNull(jsonSchema, "schema should not be null");
+    this.schema = Schema.parseJson(jsonSchema);
+    this.writerType = WRITER_TYPE.CSV;
+    return this;
+  }
+
+  /**
+   * to build a {@link CarbonWriter}, which accepts Avro object
+   *
    * @param avroSchema avro Schema object {org.apache.avro.Schema}
-   * @return AvroCarbonWriter
-   * @throws IOException
-   * @throws InvalidLoadOptionException
+   * @return CarbonWriterBuilder
    */
-  public CarbonWriter buildWriterForAvroInput(org.apache.avro.Schema avroSchema)
-      throws IOException, InvalidLoadOptionException {
+  public CarbonWriterBuilder withAvroInput(org.apache.avro.Schema avroSchema) {
+    Objects.requireNonNull(avroSchema, "Avro schema should not be null");
     this.schema = AvroCarbonWriter.getCarbonSchemaFromAvroSchema(avroSchema);
-    Objects.requireNonNull(schema, "schema should not be null");
-    Objects.requireNonNull(path, "path should not be null");
-    CarbonLoadModel loadModel = createLoadModel();
-    // AVRO records are pushed to Carbon as Object not as Strings. This was done in order to
-    // handle multi level complex type support. As there are no conversion converter step is
-    // removed from the load. LoadWithoutConverter flag is going to point to the Loader Builder
-    // which will skip Conversion Step.
-    loadModel.setLoadWithoutConverterStep(true);
-    return new AvroCarbonWriter(loadModel);
+    this.writerType = WRITER_TYPE.AVRO;
+    return this;
   }
 
   /**
-   * Build a {@link CarbonWriter}, which accepts Json object
+   * to build a {@link CarbonWriter}, which accepts Json object
+   *
    * @param carbonSchema carbon Schema object
-   * @return JsonCarbonWriter
+   * @return CarbonWriterBuilder
+   */
+  public CarbonWriterBuilder withJsonInput(Schema carbonSchema) {
+    Objects.requireNonNull(carbonSchema, "schema should not be null");
+    this.schema = carbonSchema;
+    this.writerType = WRITER_TYPE.JSON;
+    return this;
+  }
+
+  /**
+   * Build a {@link CarbonWriter}
+   * This writer is not thread safe,
+   * use withThreadSafe() configuration in multi thread environment
+   *
+   * @return CarbonWriter {AvroCarbonWriter/CSVCarbonWriter/JsonCarbonWriter based on Input Type }
    * @throws IOException
    * @throws InvalidLoadOptionException
    */
-  public JsonCarbonWriter buildWriterForJsonInput(Schema carbonSchema)
-      throws IOException, InvalidLoadOptionException {
-    Objects.requireNonNull(carbonSchema, "schema should not be null");
+  public CarbonWriter build() throws IOException, InvalidLoadOptionException {
     Objects.requireNonNull(path, "path should not be null");
-    this.schema = carbonSchema;
-    CarbonLoadModel loadModel = createLoadModel();
-    loadModel.setJsonFileLoad(true);
-    return new JsonCarbonWriter(loadModel);
+    if (this.writerType == null) {
+      throw new IOException(
+          "'writerType' must be set, use withCsvInput() or withAvroInput() or withJsonInput()  "
+              + "API based on input");
+    }
+    if (this.writtenByApp == null || this.writtenByApp.isEmpty()) {
+      throw new RuntimeException(
+          "'writtenBy' must be set when writing carbon files, use writtenBy() API to "
+              + "set it, it can be the name of the application which is using the SDK");
+    }
+    CarbonLoadModel loadModel = buildLoadModel(schema);
+    loadModel.setSdkWriterCores(numOfThreads);
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, writtenByApp);
+    if (hadoopConf == null) {
+      hadoopConf = FileFactory.getConfiguration();
+    }
+    if (this.writerType == WRITER_TYPE.AVRO) {
+      // AVRO records are pushed to Carbon as Object not as Strings. This was done in order to
+      // handle multi level complex type support. As there are no conversion converter step is
+      // removed from the load. LoadWithoutConverter flag is going to point to the Loader Builder
+      // which will skip Conversion Step.
+      loadModel.setLoadWithoutConverterStep(true);
+      return new AvroCarbonWriter(loadModel, hadoopConf);
+    } else if (this.writerType == WRITER_TYPE.JSON) {
+      loadModel.setJsonFileLoad(true);
+      return new JsonCarbonWriter(loadModel, hadoopConf);
+    } else {
+      // CSV
+      return new CSVCarbonWriter(loadModel, hadoopConf);
+    }
   }
 
   private void setCsvHeader(CarbonLoadModel model) {
@@ -394,16 +486,47 @@ public class CarbonWriterBuilder {
     model.setCsvHeaderColumns(columns);
   }
 
-  private CarbonLoadModel createLoadModel() throws IOException, InvalidLoadOptionException {
+  public CarbonLoadModel buildLoadModel(Schema carbonSchema)
+      throws IOException, InvalidLoadOptionException {
+    timestamp = System.nanoTime();
+    // validate long_string_column
+    Set<String> longStringColumns = new HashSet<>();
+    if (options != null && options.get(CarbonCommonConstants.LONG_STRING_COLUMNS) != null) {
+      String[] specifiedLongStrings =
+          options.get(CarbonCommonConstants.LONG_STRING_COLUMNS).toLowerCase().split(",");
+      for (String str : specifiedLongStrings) {
+        longStringColumns.add(str.trim());
+      }
+      validateLongStringColumns(carbonSchema, longStringColumns);
+    }
+    // for the longstring field, change the datatype from string to varchar
+    this.schema = updateSchemaFields(carbonSchema, longStringColumns);
     // build CarbonTable using schema
     CarbonTable table = buildCarbonTable();
-    if (persistSchemaFile) {
-      // we are still using the traditional carbon table folder structure
-      persistSchemaFile(table, CarbonTablePath.getSchemaFilePath(path));
-    }
-
     // build LoadModel
-    return buildLoadModel(table, UUID, taskNo, options);
+    return buildLoadModel(table, timestamp, taskNo, options);
+  }
+
+  private void validateLongStringColumns(Schema carbonSchema, Set<String> longStringColumns) {
+    // long string columns must be string or varchar type
+    for (Field field :carbonSchema.getFields()) {
+      if (longStringColumns.contains(field.getFieldName().toLowerCase()) && (
+          (field.getDataType() != DataTypes.STRING) && field.getDataType() != DataTypes.VARCHAR)) {
+        throw new RuntimeException(
+            "long string column : " + field.getFieldName() + "is not supported for data type: "
+                + field.getDataType());
+      }
+    }
+    // long string columns must not be present in sort columns
+    if (sortColumns != null) {
+      for (String col : sortColumns) {
+        // already will be in lower case
+        if (longStringColumns.contains(col)) {
+          throw new RuntimeException(
+              "long string column : " + col + "must not be present in sort columns");
+        }
+      }
+    }
   }
 
   /**
@@ -442,29 +565,30 @@ public class CarbonWriterBuilder {
       sortColumnsList = Arrays.asList(sortColumns);
     }
     ColumnSchema[] sortColumnsSchemaList = new ColumnSchema[sortColumnsList.size()];
+    List<String> invertedIdxColumnsList = new ArrayList<>();
+    if (null != invertedIndexColumns) {
+      invertedIdxColumnsList = Arrays.asList(invertedIndexColumns);
+    }
     Field[] fields = schema.getFields();
-    buildTableSchema(fields, tableSchemaBuilder, sortColumnsList, sortColumnsSchemaList);
+    buildTableSchema(fields, tableSchemaBuilder, sortColumnsList, sortColumnsSchemaList,
+        invertedIdxColumnsList);
 
     tableSchemaBuilder.setSortColumns(Arrays.asList(sortColumnsSchemaList));
     String tableName;
     String dbName;
-    if (isTransactionalTable) {
-      tableName = "_tempTable";
-      dbName = "_tempDB";
-    } else {
-      dbName = "";
-      tableName = "_tempTable_" + String.valueOf(UUID);
-    }
+    dbName = "";
+    tableName = "_tempTable_" + String.valueOf(timestamp);
     TableSchema schema = tableSchemaBuilder.build();
     schema.setTableName(tableName);
     CarbonTable table =
         CarbonTable.builder().tableName(schema.getTableName()).databaseName(dbName).tablePath(path)
-            .tableSchema(schema).isTransactionalTable(isTransactionalTable).build();
+            .tableSchema(schema).isTransactionalTable(false).build();
     return table;
   }
 
   private void buildTableSchema(Field[] fields, TableSchemaBuilder tableSchemaBuilder,
-      List<String> sortColumnsList, ColumnSchema[] sortColumnsSchemaList) {
+      List<String> sortColumnsList, ColumnSchema[] sortColumnsSchemaList,
+      List<String> invertedIdxColumnsList) {
     Set<String> uniqueFields = new HashSet<>();
     // a counter which will be used in case of complex array type. This valIndex will be assigned
     // to child of complex array type in the order val1, val2 so that each array type child is
@@ -484,6 +608,20 @@ public class CarbonWriterBuilder {
             "column: " + sortColumn + " specified in sort columns does not exist in schema");
       }
     }
+    // Check if any of the columns specified in inverted index are missing from schema.
+    for (String invertedIdxColumn: invertedIdxColumnsList) {
+      boolean exists = false;
+      for (Field field : fields) {
+        if (field.getFieldName().equalsIgnoreCase(invertedIdxColumn)) {
+          exists = true;
+          break;
+        }
+      }
+      if (!exists) {
+        throw new RuntimeException("column: " + invertedIdxColumn
+            + " specified in inverted index columns does not exist in schema");
+      }
+    }
     int i = 0;
     for (Field field : fields) {
       if (null != field) {
@@ -492,13 +630,16 @@ public class CarbonWriterBuilder {
               "Duplicate column " + field.getFieldName() + " found in table schema");
         }
         int isSortColumn = sortColumnsList.indexOf(field.getFieldName());
+        int isInvertedIdxColumn = invertedIdxColumnsList.indexOf(field.getFieldName());
         if (isSortColumn > -1) {
           // unsupported types for ("array", "struct", "double", "float", "decimal")
           if (field.getDataType() == DataTypes.DOUBLE || field.getDataType() == DataTypes.FLOAT
               || DataTypes.isDecimal(field.getDataType()) || field.getDataType().isComplexType()
               || field.getDataType() == DataTypes.VARCHAR) {
-            throw new RuntimeException(
-                " sort columns not supported for array, struct, double, float, decimal, varchar");
+            String errorMsg =
+                "sort columns not supported for array, struct, map, double, float, decimal,"
+                    + "varchar";
+            throw new RuntimeException(errorMsg);
           }
         }
         if (field.getChildren() != null && field.getChildren().size() > 0) {
@@ -507,7 +648,8 @@ public class CarbonWriterBuilder {
             DataType complexType =
                 DataTypes.createArrayType(field.getChildren().get(0).getDataType());
             tableSchemaBuilder
-                .addColumn(new StructField(field.getFieldName(), complexType), valIndex, false);
+                .addColumn(new StructField(field.getFieldName(), complexType), valIndex, false,
+                    isInvertedIdxColumn > -1);
           } else if (field.getDataType().getName().equalsIgnoreCase("STRUCT")) {
             // Loop through the inner columns and for a StructData
             List<StructField> structFieldsArray =
@@ -518,12 +660,20 @@ public class CarbonWriterBuilder {
             }
             DataType complexType = DataTypes.createStructType(structFieldsArray);
             tableSchemaBuilder
-                .addColumn(new StructField(field.getFieldName(), complexType), valIndex, false);
+                .addColumn(new StructField(field.getFieldName(), complexType), valIndex, false,
+                    isInvertedIdxColumn > -1);
+          } else if (field.getDataType().getName().equalsIgnoreCase("MAP")) {
+            // Loop through the inner columns for MapType
+            DataType mapType = DataTypes.createMapType(((MapType) field.getDataType()).getKeyType(),
+                field.getChildren().get(0).getDataType());
+            tableSchemaBuilder
+                .addColumn(new StructField(field.getFieldName(), mapType), valIndex, false,
+                    isInvertedIdxColumn > -1);
           }
         } else {
           ColumnSchema columnSchema = tableSchemaBuilder
-              .addColumn(new StructField(field.getFieldName(), field.getDataType()),
-                  valIndex, isSortColumn > -1);
+              .addColumn(new StructField(field.getFieldName(), field.getDataType()), valIndex,
+                  isSortColumn > -1, isInvertedIdxColumn > -1);
           if (isSortColumn > -1) {
             columnSchema.setSortColumn(true);
             sortColumnsSchemaList[isSortColumn] = columnSchema;
@@ -534,46 +684,61 @@ public class CarbonWriterBuilder {
   }
 
   /**
-   * Save the schema of the {@param table} to {@param persistFilePath}
-   * @param table table object containing schema
-   * @param persistFilePath absolute file path with file name
-   */
-  private void persistSchemaFile(CarbonTable table, String persistFilePath) throws IOException {
-    TableInfo tableInfo = table.getTableInfo();
-    String schemaMetadataPath = CarbonTablePath.getFolderContainingFile(persistFilePath);
-    CarbonMetadata.getInstance().loadTableMetadata(tableInfo);
-    SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
-    org.apache.carbondata.format.TableInfo thriftTableInfo =
-        schemaConverter.fromWrapperToExternalTableInfo(
-            tableInfo,
-            tableInfo.getDatabaseName(),
-            tableInfo.getFactTable().getTableName());
-    org.apache.carbondata.format.SchemaEvolutionEntry schemaEvolutionEntry =
-        new org.apache.carbondata.format.SchemaEvolutionEntry(
-            tableInfo.getLastUpdatedTime());
-    thriftTableInfo.getFact_table().getSchema_evolution().getSchema_evolution_history()
-        .add(schemaEvolutionEntry);
-    FileFactory.FileType fileType = FileFactory.getFileType(schemaMetadataPath);
-    if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
-      FileFactory.mkdirs(schemaMetadataPath, fileType);
-    }
-    ThriftWriter thriftWriter = new ThriftWriter(persistFilePath, false);
-    thriftWriter.open();
-    thriftWriter.write(thriftTableInfo);
-    thriftWriter.close();
-  }
-
-  /**
    * Build a {@link CarbonLoadModel}
    */
-  private CarbonLoadModel buildLoadModel(CarbonTable table, long UUID, String taskNo,
+  private CarbonLoadModel buildLoadModel(CarbonTable table, long timestamp, String taskNo,
       Map<String, String> options) throws InvalidLoadOptionException, IOException {
     if (options == null) {
       options = new HashMap<>();
     }
     CarbonLoadModelBuilder builder = new CarbonLoadModelBuilder(table);
-    CarbonLoadModel build = builder.build(options, UUID, taskNo);
+    CarbonLoadModel build = builder.build(options, timestamp, taskNo);
     setCsvHeader(build);
     return build;
+  }
+
+  /* loop through all the parent column and
+  a) change fields name to lower case.
+  this is to match with sort column case.
+  b) change string fields to varchar type */
+  private Schema updateSchemaFields(Schema schema, Set<String> longStringColumns) {
+    if (schema == null) {
+      return null;
+    }
+    Field[] fields =  schema.getFields();
+    for (int i = 0; i < fields.length; i++) {
+      if (fields[i] != null) {
+        fields[i].updateNameToLowerCase();
+        if (longStringColumns != null) {
+          /* Also update the string type to varchar */
+          if (longStringColumns.contains(fields[i].getFieldName())) {
+            fields[i].updateDataTypeToVarchar();
+          }
+        }
+      }
+    }
+    return new Schema(fields);
+  }
+
+  private void updateToLoadOptions(Map.Entry<String, String> entry) {
+    if (this.options == null) {
+      // convert it to treeMap as keys need to be case insensitive
+      this.options = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    }
+    // update it to load options
+    this.options.put(entry.getKey(), entry.getValue());
+  }
+
+  private void withSortScope(Map.Entry<String, String> entry) {
+    String sortScope = entry.getValue();
+    if (sortScope != null) {
+      if ((!CarbonUtil.isValidSortOption(sortScope))) {
+        throw new IllegalArgumentException("Invalid Sort Scope Option: " + sortScope);
+      } else if (sortScope.equalsIgnoreCase("global_sort")) {
+        throw new IllegalArgumentException("global sort is not supported");
+      }
+    }
+    // update it to load options
+    updateToLoadOptions(entry);
   }
 }

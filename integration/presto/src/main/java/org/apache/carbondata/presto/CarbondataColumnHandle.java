@@ -17,16 +17,18 @@
 
 package org.apache.carbondata.presto;
 
+import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
+
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
 import com.facebook.presto.spi.type.Type;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Objects;
-
 import static com.google.common.base.MoreObjects.toStringHelper;
-import static java.util.Objects.requireNonNull;
+
 
 public class CarbondataColumnHandle implements ColumnHandle {
   private final String connectorId;

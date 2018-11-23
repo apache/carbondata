@@ -18,7 +18,6 @@ package org.apache.carbondata.core.dictionary.server;
 
 import java.net.InetSocketAddress;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
@@ -36,6 +35,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import org.apache.log4j.Logger;
 
 /**
  * Dictionary Server to generate dictionary keys.
@@ -43,7 +43,7 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 public class NonSecureDictionaryServer extends AbstractDictionaryServer
     implements DictionaryServer {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(NonSecureDictionaryServer.class.getName());
 
   private NonSecureDictionaryServerHandler nonSecureDictionaryServerHandler;
@@ -109,6 +109,7 @@ public class NonSecureDictionaryServer extends AbstractDictionaryServer
         });
         bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
         String hostToBind = findLocalIpAddress(LOGGER);
+        //iteratively listening to newports
         InetSocketAddress address = hostToBind == null ?
             new InetSocketAddress(newPort) :
             new InetSocketAddress(hostToBind, newPort);
@@ -119,7 +120,7 @@ public class NonSecureDictionaryServer extends AbstractDictionaryServer
         this.host = hostToBind;
         break;
       } catch (Exception e) {
-        LOGGER.error(e, "Dictionary Server Failed to bind to port:");
+        LOGGER.error("Dictionary Server Failed to bind to port:" + newPort, e);
         if (i == 9) {
           throw new RuntimeException("Dictionary Server Could not bind to any port");
         }

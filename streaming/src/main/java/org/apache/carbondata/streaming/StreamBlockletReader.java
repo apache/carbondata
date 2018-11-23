@@ -41,12 +41,13 @@ public class StreamBlockletReader {
   private final long limitStart;
   private final long limitEnd;
   private boolean isAlreadySync = false;
-  private Compressor compressor = CompressorFactory.getInstance().getCompressor();
+  private Compressor compressor;
   private int rowNums = 0;
   private int rowIndex = 0;
   private boolean isHeaderPresent;
 
-  StreamBlockletReader(byte[] syncMarker, InputStream in, long limit, boolean isHeaderPresent) {
+  public StreamBlockletReader(byte[] syncMarker, InputStream in, long limit,
+      boolean isHeaderPresent, String compressorName) {
     this.syncMarker = syncMarker;
     syncLen = syncMarker.length;
     syncBuffer = new byte[syncLen];
@@ -54,6 +55,7 @@ public class StreamBlockletReader {
     limitStart = limit;
     limitEnd = limitStart + syncLen;
     this.isHeaderPresent = isHeaderPresent;
+    this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
   }
 
   private void ensureCapacity(int capacity) {
@@ -96,7 +98,7 @@ public class StreamBlockletReader {
     return false;
   }
 
-  BlockletHeader readBlockletHeader() throws IOException {
+  public BlockletHeader readBlockletHeader() throws IOException {
     int len = readIntFromStream();
     byte[] b = new byte[len];
     if (!readBytesFromStream(b, 0, len)) {
@@ -108,7 +110,7 @@ public class StreamBlockletReader {
     return header;
   }
 
-  void readBlockletData(BlockletHeader header) throws IOException {
+  public void readBlockletData(BlockletHeader header) throws IOException {
     ensureCapacity(header.getBlocklet_length());
     offset = 0;
     int len = readIntFromStream();
@@ -119,7 +121,7 @@ public class StreamBlockletReader {
     compressor.rawUncompress(b, buffer);
   }
 
-  void skipBlockletData(boolean reset) throws IOException {
+  public void skipBlockletData(boolean reset) throws IOException {
     int len = readIntFromStream();
     skip(len);
     pos += len;
@@ -140,7 +142,7 @@ public class StreamBlockletReader {
   /**
    * find the next blocklet
    */
-  boolean nextBlocklet() throws IOException {
+  public boolean nextBlocklet() throws IOException {
     if (pos >= limitStart) {
       return false;
     }
@@ -158,15 +160,15 @@ public class StreamBlockletReader {
     return pos < limitEnd;
   }
 
-  boolean hasNext() throws IOException {
+  public boolean hasNext() throws IOException {
     return rowIndex < rowNums;
   }
 
-  void nextRow() {
+  public void nextRow() {
     rowIndex++;
   }
 
-  int readIntFromStream() throws IOException {
+  public int readIntFromStream() throws IOException {
     int ch1 = in.read();
     int ch2 = in.read();
     int ch3 = in.read();
@@ -182,7 +184,7 @@ public class StreamBlockletReader {
    * @return <code>true</code> if reading data successfully, or
    * <code>false</code> if there is no more data because the end of the stream has been reached.
    */
-  boolean readBytesFromStream(byte[] b, int offset, int len) throws IOException {
+  public boolean readBytesFromStream(byte[] b, int offset, int len) throws IOException {
     int readLen = in.read(b, offset, len);
     if (readLen < 0) {
       return false;
@@ -195,24 +197,24 @@ public class StreamBlockletReader {
     }
   }
 
-  boolean readBoolean() {
+  public boolean readBoolean() {
     return (buffer[offset++]) != 0;
   }
 
-  short readShort() {
+  public short readShort() {
     short v =  (short) ((buffer[offset + 1] & 255) +
         ((buffer[offset]) << 8));
     offset += 2;
     return v;
   }
 
-  byte[] copy(int len) {
+  public byte[] copy(int len) {
     byte[] b = new byte[len];
     System.arraycopy(buffer, offset, b, 0, len);
     return b;
   }
 
-  int readInt() {
+  public int readInt() {
     int v = ((buffer[offset + 3] & 255) +
         ((buffer[offset + 2] & 255) << 8) +
         ((buffer[offset + 1] & 255) << 16) +
@@ -221,7 +223,7 @@ public class StreamBlockletReader {
     return v;
   }
 
-  long readLong() {
+  public long readLong() {
     long v = ((long)(buffer[offset + 7] & 255)) +
         ((long) (buffer[offset + 6] & 255) << 8) +
         ((long) (buffer[offset + 5] & 255) << 16) +
@@ -234,26 +236,26 @@ public class StreamBlockletReader {
     return v;
   }
 
-  double readDouble() {
+  public double readDouble() {
     return Double.longBitsToDouble(readLong());
   }
 
-  byte[] readBytes(int len) {
+  public byte[] readBytes(int len) {
     byte[] b = new byte[len];
     System.arraycopy(buffer, offset, b, 0, len);
     offset += len;
     return b;
   }
 
-  void skipBytes(int len) {
+  public void skipBytes(int len) {
     offset += len;
   }
 
-  int getRowNums() {
+  public int getRowNums() {
     return rowNums;
   }
 
-  void close() {
+  public void close() {
     CarbonUtil.closeStreams(in);
   }
 }

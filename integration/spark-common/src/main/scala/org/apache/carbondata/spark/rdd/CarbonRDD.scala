@@ -17,28 +17,29 @@
 
 package org.apache.carbondata.spark.rdd
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
-
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark.{Dependency, OneToOneDependency, Partition, SparkContext, TaskContext}
+import org.apache.spark.{Dependency, OneToOneDependency, Partition, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.util.SparkSQLUtil
 
-import org.apache.carbondata.core.datastore.compression.CompressorFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.util._
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 
 /**
  * This RDD maintains session level ThreadLocal
  */
-abstract class CarbonRDD[T: ClassTag](@transient sc: SparkContext,
-    @transient private var deps: Seq[Dependency[_]],
-    @transient hadoopConf: Configuration) extends RDD[T](sc, deps) {
+abstract class CarbonRDD[T: ClassTag](
+    @transient private val ss: SparkSession,
+    @transient private var deps: Seq[Dependency[_]]) extends RDD[T](ss.sparkContext, deps) {
+
+  @transient val sparkAppName: String = ss.sparkContext.appName
+  CarbonProperties.getInstance()
+    .addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, sparkAppName)
 
   val carbonSessionInfo: CarbonSessionInfo = {
     var info = ThreadLocalSessionInfo.getCarbonSessionInfo
@@ -50,28 +51,31 @@ abstract class CarbonRDD[T: ClassTag](@transient sc: SparkContext,
     info
   }
 
-  private val confBytes = {
-    val bao = new ByteArrayOutputStream()
-    val oos = new ObjectOutputStream(bao)
-    hadoopConf.write(oos)
-    oos.close()
-    CompressorFactory.getInstance().getCompressor.compressByte(bao.toByteArray)
-  }
+  @transient val hadoopConf = SparkSQLUtil.sessionState(ss).newHadoopConf()
+
+  val config = SparkSQLUtil.broadCastHadoopConf(sparkContext, hadoopConf)
 
   /** Construct an RDD with just a one-to-one dependency on one parent */
-  def this(@transient oneParent: RDD[_]) =
-    this (oneParent.context, List(new OneToOneDependency(oneParent)),
-      oneParent.sparkContext.hadoopConfiguration)
+  def this(@transient sparkSession: SparkSession, @transient oneParent: RDD[_]) =
+    this (sparkSession, List(new OneToOneDependency(oneParent)))
+
+  protected def internalGetPartitions: Array[Partition]
+
+  override def getPartitions: Array[Partition] = {
+    ThreadLocalSessionInfo.setConfigurationToCurrentThread(hadoopConf)
+    internalGetPartitions
+  }
 
   // RDD compute logic should be here
   def internalCompute(split: Partition, context: TaskContext): Iterator[T]
 
   final def compute(split: Partition, context: TaskContext): Iterator[T] = {
-    CarbonInputFormatUtil.setS3Configurations(getConf)
+    TaskContext.get.addTaskCompletionListener(_ => ThreadLocalSessionInfo.unsetAll())
+    carbonSessionInfo.getNonSerializableExtraInfo.put("carbonConf", getConf)
     ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
     TaskMetricsMap.threadLocal.set(Thread.currentThread().getId)
     val carbonTaskInfo = new CarbonTaskInfo
-    carbonTaskInfo.setTaskId(System.nanoTime)
+    carbonTaskInfo.setTaskId(CarbonUtil.generateUUID())
     ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo)
     carbonSessionInfo.getSessionParams.getAddedProps.asScala.
       map(f => CarbonProperties.getInstance().addProperty(f._1, f._2))
@@ -79,13 +83,7 @@ abstract class CarbonRDD[T: ClassTag](@transient sc: SparkContext,
   }
 
   def getConf: Configuration = {
-    val configuration = new Configuration(false)
-    val bai = new ByteArrayInputStream(CompressorFactory.getInstance().getCompressor
-      .unCompressByte(confBytes))
-    val ois = new ObjectInputStream(bai)
-    configuration.readFields(ois)
-    ois.close()
-    configuration
+    config.value.value
   }
 }
 
@@ -93,12 +91,14 @@ abstract class CarbonRDD[T: ClassTag](@transient sc: SparkContext,
  * This RDD contains TableInfo object which is serialized and deserialized in driver and executor
  */
 abstract class CarbonRDDWithTableInfo[T: ClassTag](
-    @transient sc: SparkContext,
+    @transient private val ss: SparkSession,
     @transient private var deps: Seq[Dependency[_]],
-    serializedTableInfo: Array[Byte]) extends CarbonRDD[T](sc, deps, sc.hadoopConfiguration) {
+    serializedTableInfo: Array[Byte]) extends CarbonRDD[T](ss, deps) {
 
-  def this(@transient oneParent: RDD[_], serializedTableInfo: Array[Byte]) =
-    this (oneParent.context, List(new OneToOneDependency(oneParent)), serializedTableInfo)
+  def this(@transient sparkSession: SparkSession, @transient oneParent: RDD[_],
+      serializedTableInfo: Array[Byte]) = {
+    this (sparkSession, List(new OneToOneDependency(oneParent)), serializedTableInfo)
+  }
 
   def getTableInfo: TableInfo = TableInfo.deserialize(serializedTableInfo)
 }

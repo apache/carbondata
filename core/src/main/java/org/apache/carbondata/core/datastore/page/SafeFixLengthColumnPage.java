@@ -22,7 +22,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 
-import org.apache.carbondata.core.datastore.TableSpec;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -41,13 +41,13 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   private double[] doubleData;
   private byte[] shortIntData;
   private byte[][] fixedLengthdata;
+  private int totalLength;
 
   // total number of entries in array
   private int arrayElementCount = 0;
 
-  SafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize) {
-    super(columnSpec, dataType, pageSize);
-    this.fixedLengthdata = new byte[pageSize][];
+  SafeFixLengthColumnPage(ColumnPageEncoderMeta columnPageEncoderMeta, int pageSize) {
+    super(columnPageEncoderMeta, pageSize);
   }
 
   /**
@@ -58,6 +58,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     ensureArraySize(rowId, DataTypes.BYTE);
     byteData[rowId] = value;
     arrayElementCount++;
+    totalLength += DataTypes.BYTE.getSizeInBytes();
   }
 
   /**
@@ -68,6 +69,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     ensureArraySize(rowId, DataTypes.SHORT);
     shortData[rowId] = value;
     arrayElementCount++;
+    totalLength += DataTypes.SHORT.getSizeInBytes();
   }
 
   /**
@@ -78,6 +80,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     ensureArraySize(rowId, DataTypes.INT);
     intData[rowId] = value;
     arrayElementCount++;
+    totalLength += DataTypes.INT.getSizeInBytes();
   }
 
   /**
@@ -88,6 +91,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     ensureArraySize(rowId, DataTypes.LONG);
     longData[rowId] = value;
     arrayElementCount++;
+    totalLength += DataTypes.LONG.getSizeInBytes();
   }
 
   /**
@@ -98,6 +102,18 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     ensureArraySize(rowId, DataTypes.DOUBLE);
     doubleData[rowId] = value;
     arrayElementCount++;
+    totalLength += DataTypes.DOUBLE.getSizeInBytes();
+  }
+
+  /**
+   * Set float value at rowId
+   */
+  @Override
+  public void putFloat(int rowId, float value) {
+    ensureArraySize(rowId, DataTypes.FLOAT);
+    floatData[rowId] = value;
+    arrayElementCount++;
+    totalLength += DataTypes.FLOAT.getSizeInBytes();
   }
 
   /**
@@ -108,6 +124,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     ensureArraySize(rowId, DataTypes.BYTE_ARRAY);
     this.fixedLengthdata[rowId] = bytes;
     arrayElementCount++;
+    totalLength += bytes.length;
   }
 
   @Override
@@ -116,21 +133,25 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     byte[] converted = ByteUtil.to3Bytes(value);
     System.arraycopy(converted, 0, shortIntData, rowId * 3, 3);
     arrayElementCount++;
+    totalLength += DataTypes.SHORT_INT.getSizeInBytes();
   }
 
   @Override
   public void putBytes(int rowId, byte[] bytes, int offset, int length) {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   @Override
   public void putDecimal(int rowId, BigDecimal decimal) {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   @Override
   public byte[] getDecimalPage() {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   /**
@@ -190,7 +211,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override public BigDecimal getDecimal(int rowId) {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   @Override
@@ -267,7 +289,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public byte[] getLVFlattenedBytePage() throws IOException {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   @Override
@@ -345,7 +368,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void setByteArrayPage(byte[][] byteArray) {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    throw new UnsupportedOperationException(
+        "invalid data type: " + columnPageEncoderMeta.getStoreDataType());
   }
 
   @Override
@@ -366,33 +390,33 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void convertValue(ColumnPageValueConverter codec) {
-    if (dataType == DataTypes.BYTE) {
+    if (columnPageEncoderMeta.getStoreDataType() == DataTypes.BYTE) {
       for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, byteData[i]);
       }
-    } else if (dataType == DataTypes.SHORT) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.SHORT) {
       for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, shortData[i]);
       }
-    } else if (dataType == DataTypes.INT) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.INT) {
       for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, intData[i]);
       }
-    } else if (dataType == DataTypes.LONG) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.LONG) {
       for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, longData[i]);
       }
-    } else if (dataType == DataTypes.FLOAT) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.FLOAT) {
       for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, floatData[i]);
       }
-    } else if (dataType == DataTypes.DOUBLE) {
+    } else if (columnPageEncoderMeta.getStoreDataType() == DataTypes.DOUBLE) {
       for (int i = 0; i < arrayElementCount; i++) {
         codec.encode(i, doubleData[i]);
       }
     } else {
-      throw new UnsupportedOperationException("not support value conversion on " +
-          dataType + " page");
+      throw new UnsupportedOperationException("not support value conversion on "
+          + columnPageEncoderMeta.getStoreDataType() + " page");
     }
   }
 
@@ -440,6 +464,9 @@ public class SafeFixLengthColumnPage extends ColumnPage {
         doubleData = newArray;
       }
     } else if (dataType == DataTypes.BYTE_ARRAY) {
+      if (fixedLengthdata == null) {
+        fixedLengthdata = new byte[pageSize][];
+      }
       if (requestSize >= fixedLengthdata.length) {
         byte[][] newArray = new byte[arrayElementCount * 2][];
         int index = 0;
@@ -457,4 +484,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     return arrayElementCount;
   }
 
+  @Override
+  public long getPageLengthInBytes() throws IOException {
+    return totalLength;
+  }
 }

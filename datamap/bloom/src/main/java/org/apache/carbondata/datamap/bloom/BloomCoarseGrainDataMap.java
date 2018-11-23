@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.datamap.bloom;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
@@ -34,7 +33,6 @@ import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -47,10 +45,11 @@ import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -58,9 +57,11 @@ import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.scan.expression.conditional.InExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
+import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.loading.converter.FieldConverter;
@@ -69,6 +70,7 @@ import org.apache.carbondata.processing.loading.converter.impl.FieldEncoderFacto
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.bloom.CarbonBloomFilter;
 import org.apache.hadoop.util.bloom.Key;
+import org.apache.log4j.Logger;
 
 /**
  * BloomDataCoarseGrainMap is constructed in blocklet level. For each indexed column,
@@ -77,13 +79,14 @@ import org.apache.hadoop.util.bloom.Key;
  */
 @InterfaceAudience.Internal
 public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(BloomCoarseGrainDataMap.class.getName());
-  public static final String BLOOM_INDEX_SUFFIX = ".bloomindex";
   private Map<String, CarbonColumn> name2Col;
   private Cache<BloomCacheKeyValue.CacheKey, BloomCacheKeyValue.CacheValue> cache;
   private String shardName;
   private Path indexPath;
+  private Set<String> filteredShard;
+  private boolean needShardPrune;
   /**
    * This is used to convert literal filter value to internal carbon value
    */
@@ -100,6 +103,13 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     }
   }
 
+  public void setFilteredShard(Set<String> filteredShard) {
+    this.filteredShard = filteredShard;
+    // do shard prune when pruning only if bloom index files are merged
+    this.needShardPrune = filteredShard != null &&
+            shardName.equals(BloomIndexFileStore.MERGE_BLOOM_INDEX_SHARD_NAME);
+  }
+
   /**
    * init field converters for index columns
    */
@@ -108,6 +118,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     for (CarbonColumn col : indexedColumn) {
       this.name2Col.put(col.getColName(), col);
     }
+    String parentTablePath = getAncestorTablePath(carbonTable);
 
     try {
       this.name2Converters = new HashMap<>(indexedColumn.size());
@@ -129,21 +140,37 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         dataField.setTimestampFormat(tsFormat);
         FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
             .createFieldEncoder(dataField, absoluteTableIdentifier, i, nullFormat, null, false,
-                localCaches[i], false, carbonTable.getTablePath());
+                localCaches[i], false, parentTablePath, false);
         this.name2Converters.put(indexedColumn.get(i).getColName(), fieldConverter);
       }
     } catch (IOException e) {
-      LOGGER.error(e, "Exception occurs while init index columns");
+      LOGGER.error("Exception occurs while init index columns", e);
       throw new RuntimeException(e);
     }
     this.badRecordLogHolder = new BadRecordLogHolder();
     this.badRecordLogHolder.setLogged(false);
   }
 
+  /**
+   * recursively find the ancestor's table path. This is used for dictionary scenario
+   * where preagg will use the dictionary of the parent table.
+   */
+  private String getAncestorTablePath(CarbonTable currentTable) {
+    if (!currentTable.isChildDataMap()) {
+      return currentTable.getTablePath();
+    }
+
+    RelationIdentifier parentIdentifier =
+        currentTable.getTableInfo().getParentRelationIdentifiers().get(0);
+    CarbonTable parentTable = CarbonMetadata.getInstance().getCarbonTable(
+        parentIdentifier.getDatabaseName(), parentIdentifier.getTableName());
+    return getAncestorTablePath(parentTable);
+  }
+
   @Override
   public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
       List<PartitionSpec> partitions) throws IOException {
-    Set<Blocklet> hitBlocklets = new HashSet<>();
+    Set<Blocklet> hitBlocklets = null;
     if (filterExp == null) {
       // null is different from empty here. Empty means after pruning, no blocklet need to scan.
       return null;
@@ -153,25 +180,50 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     try {
       bloomQueryModels = createQueryModel(filterExp.getFilterExpression());
     } catch (DictionaryGenerationException | UnsupportedEncodingException e) {
-      LOGGER.error(e, "Exception occurs while creating query model");
+      LOGGER.error("Exception occurs while creating query model", e);
       throw new RuntimeException(e);
     }
     for (BloomQueryModel bloomQueryModel : bloomQueryModels) {
-      LOGGER.debug("prune blocklet for query: " + bloomQueryModel);
+      Set<Blocklet> tempHitBlockletsResult = new HashSet<>();
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("prune blocklet for query: " + bloomQueryModel);
+      }
       BloomCacheKeyValue.CacheKey cacheKey = new BloomCacheKeyValue.CacheKey(
           this.indexPath.toString(), bloomQueryModel.columnName);
       BloomCacheKeyValue.CacheValue cacheValue = cache.get(cacheKey);
       List<CarbonBloomFilter> bloomIndexList = cacheValue.getBloomFilters();
       for (CarbonBloomFilter bloomFilter : bloomIndexList) {
-        boolean scanRequired = bloomFilter.membershipTest(new Key(bloomQueryModel.filterValue));
+        if (needShardPrune && !filteredShard.contains(bloomFilter.getShardName())) {
+          // skip shard which has been pruned in Main datamap
+          continue;
+        }
+        boolean scanRequired = false;
+        for (byte[] value: bloomQueryModel.filterValues) {
+          scanRequired = bloomFilter.membershipTest(new Key(value));
+          if (scanRequired) {
+            // if any filter value hit this bloomfilter
+            // no need to check other filter values
+            break;
+          }
+        }
         if (scanRequired) {
-          LOGGER.debug(String.format("BloomCoarseGrainDataMap: Need to scan -> blocklet#%s",
-              String.valueOf(bloomFilter.getBlockletNo())));
-          Blocklet blocklet = new Blocklet(shardName, String.valueOf(bloomFilter.getBlockletNo()));
-          hitBlocklets.add(blocklet);
-        } else {
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(String.format("BloomCoarseGrainDataMap: Need to scan -> blocklet#%s",
+                String.valueOf(bloomFilter.getBlockletNo())));
+          }
+          Blocklet blocklet = new Blocklet(bloomFilter.getShardName(),
+              String.valueOf(bloomFilter.getBlockletNo()));
+          tempHitBlockletsResult.add(blocklet);
+        } else if (LOGGER.isDebugEnabled()) {
           LOGGER.debug(String.format("BloomCoarseGrainDataMap: Skip scan -> blocklet#%s",
               String.valueOf(bloomFilter.getBlockletNo())));
+        }
+        // get intersect result between query models
+        // pre-condition: only And/In/EqualTo expression exists in single bloom datamap
+        if (null == hitBlocklets) {
+          hitBlocklets = tempHitBlockletsResult;
+        } else {
+          hitBlocklets.retainAll(tempHitBlockletsResult);
         }
       }
     }
@@ -214,17 +266,17 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       if (left instanceof ColumnExpression && right instanceof ListExpression) {
         column = ((ColumnExpression) left).getColumnName();
         if (this.name2Col.containsKey(column)) {
-          List<BloomQueryModel> models =
+          BloomQueryModel bloomQueryModel =
               buildQueryModelForIn((ColumnExpression) left, (ListExpression) right);
-          queryModels.addAll(models);
+          queryModels.add(bloomQueryModel);
         }
         return queryModels;
       } else if (left instanceof ListExpression && right instanceof ColumnExpression) {
         column = ((ColumnExpression) right).getColumnName();
         if (this.name2Col.containsKey(column)) {
-          List<BloomQueryModel> models =
+          BloomQueryModel bloomQueryModel =
               buildQueryModelForIn((ColumnExpression) right, (ListExpression) left);
-          queryModels.addAll(models);
+          queryModels.add(bloomQueryModel);
         }
         return queryModels;
       } else {
@@ -232,21 +284,24 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
         LOGGER.warn(errorMsg);
         throw new RuntimeException(errorMsg);
       }
+    }  else if (expression instanceof AndExpression) {
+      queryModels.addAll(createQueryModel(((AndExpression) expression).getLeft()));
+      queryModels.addAll(createQueryModel(((AndExpression) expression).getRight()));
+      return queryModels;
     }
 
-    for (Expression child : expression.getChildren()) {
-      queryModels.addAll(createQueryModel(child));
-    }
     return queryModels;
   }
 
-  private BloomQueryModel buildQueryModelForEqual(ColumnExpression ce,
-      LiteralExpression le) throws DictionaryGenerationException, UnsupportedEncodingException {
-    String columnName = ce.getColumnName();
-    DataType dataType = ce.getDataType();
+  /**
+   * Here preprocessed NULL and date/timestamp data type.
+   *
+   * Note that if the datatype is date/timestamp, the expressionValue is long type.
+   */
+  private Object getLiteralExpValue(LiteralExpression le) {
     Object expressionValue = le.getLiteralExpValue();
     Object literalValue;
-    // note that if the datatype is date/timestamp, the expressionValue is long type.
+
     if (null == expressionValue) {
       literalValue = null;
     } else if (le.getLiteralExpDataType() == DataTypes.DATE) {
@@ -254,7 +309,6 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       // the below settings are set statically according to DateDirectDirectionaryGenerator
       format.setLenient(false);
       format.setTimeZone(TimeZone.getTimeZone("GMT"));
-
       literalValue = format.format(new Date((long) expressionValue / 1000));
     } else if (le.getLiteralExpDataType() == DataTypes.TIMESTAMP) {
       DateFormat format =
@@ -265,28 +319,37 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     } else {
       literalValue = expressionValue;
     }
+    return literalValue;
+  }
 
-    return buildQueryModelInternal(this.name2Col.get(columnName), literalValue, dataType);
+
+  private BloomQueryModel buildQueryModelForEqual(ColumnExpression ce,
+      LiteralExpression le) throws DictionaryGenerationException, UnsupportedEncodingException {
+    List<byte[]> filterValues = new ArrayList<>();
+    byte[] internalFilterValue = getInternalFilterValue(this.name2Col.get(ce.getColumnName()), le);
+    filterValues.add(internalFilterValue);
+    return new BloomQueryModel(ce.getColumnName(), filterValues);
   }
 
   /**
-   * for `in` expressions, we use `equal` to handle it.
    * Note that `in` operator needs at least one match not exactly match. since while doing pruning,
    * we collect all the blocklets that will match the querymodel, this will not be a problem.
    */
-  private List<BloomQueryModel> buildQueryModelForIn(ColumnExpression ce, ListExpression le)
+  private BloomQueryModel buildQueryModelForIn(ColumnExpression ce, ListExpression le)
       throws DictionaryGenerationException, UnsupportedEncodingException {
-    List<BloomQueryModel> queryModels = new ArrayList<>();
+    List<byte[]> filterValues = new ArrayList<>();
     for (Expression child : le.getChildren()) {
-      queryModels.add(buildQueryModelForEqual(ce, (LiteralExpression) child));
+      byte[] internalFilterValue = getInternalFilterValue(
+          this.name2Col.get(ce.getColumnName()), (LiteralExpression) child);
+      filterValues.add(internalFilterValue);
     }
-    return queryModels;
+    return new BloomQueryModel(ce.getColumnName(), filterValues);
   }
 
-  private BloomQueryModel buildQueryModelInternal(CarbonColumn carbonColumn,
-      Object filterLiteralValue, DataType filterValueDataType) throws
+  private byte[] getInternalFilterValue(CarbonColumn carbonColumn, LiteralExpression le) throws
       DictionaryGenerationException, UnsupportedEncodingException {
-    // convert the filter value to string and apply convertes on it to get carbon internal value
+    Object filterLiteralValue = getLiteralExpValue(le);
+    // convert the filter value to string and apply converters on it to get carbon internal value
     String strFilterValue = null;
     if (null != filterLiteralValue) {
       strFilterValue = String.valueOf(filterLiteralValue);
@@ -312,13 +375,23 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       // for dictionary/date columns, convert the surrogate key to bytes
       internalFilterValue = CarbonUtil.getValueAsBytes(DataTypes.INT, convertedValue);
     } else {
-      // for non dictionary dimensions, is already bytes,
-      internalFilterValue = (byte[]) convertedValue;
+      // for non dictionary dimensions, numeric columns will be of original data,
+      // so convert the data to bytes
+      if (DataTypeUtil.isPrimitiveColumn(carbonColumn.getDataType())) {
+        if (convertedValue == null) {
+          convertedValue = DataConvertUtil.getNullValueForMeasure(carbonColumn.getDataType(),
+              carbonColumn.getColumnSchema().getScale());
+        }
+        internalFilterValue =
+            CarbonUtil.getValueAsBytes(carbonColumn.getDataType(), convertedValue);
+      } else {
+        internalFilterValue = (byte[]) convertedValue;
+      }
     }
     if (internalFilterValue.length == 0) {
       internalFilterValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
     }
-    return new BloomQueryModel(carbonColumn.getColName(), internalFilterValue);
+    return internalFilterValue;
   }
 
   @Override
@@ -330,35 +403,30 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
   public void clear() {
   }
 
-  /**
-   * get bloom index file
-   * @param shardPath path for the shard
-   * @param colName index column name
-   */
-  public static String getBloomIndexFile(String shardPath, String colName) {
-    return shardPath.concat(File.separator).concat(colName).concat(BLOOM_INDEX_SUFFIX);
-  }
   static class BloomQueryModel {
     private String columnName;
-    private byte[] filterValue;
+    private List<byte[]> filterValues;
 
     /**
      * represent an query model will be applyied on bloom index
      *
      * @param columnName bloom index column
-     * @param filterValue key for the bloom index,
+     * @param filterValues key for the bloom index,
      *                   this value is converted from user specified filter value in query
      */
-    private BloomQueryModel(String columnName, byte[] filterValue) {
+    private BloomQueryModel(String columnName, List<byte[]> filterValues) {
       this.columnName = columnName;
-      this.filterValue = filterValue;
+      this.filterValues = filterValues;
     }
 
     @Override
     public String toString() {
       final StringBuilder sb = new StringBuilder("BloomQueryModel{");
       sb.append("columnName='").append(columnName).append('\'');
-      sb.append(", filterValue=").append(Arrays.toString(filterValue));
+      sb.append(", filterValues=");
+      for (byte[] value: filterValues) {
+        sb.append(Arrays.toString(value));
+      }
       sb.append('}');
       return sb.toString();
     }

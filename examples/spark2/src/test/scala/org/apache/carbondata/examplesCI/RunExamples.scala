@@ -23,6 +23,8 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.examples._
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.examples.sdk.CarbonReaderExample
+import org.apache.carbondata.examples.sql.JavaCarbonSessionExample
 
 /**
  * Test suite for examples
@@ -64,6 +66,10 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
 
   test("CarbonSessionExample") {
     CarbonSessionExample.exampleBody(spark)
+  }
+
+  test("JavaCarbonSessionExample") {
+    JavaCarbonSessionExample.exampleBody(spark)
   }
 
   test("CarbonSortColumnsExample") {
@@ -112,5 +118,9 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
 
   test("ExternalTableExample") {
     ExternalTableExample.exampleBody(spark)
+  }
+
+  test("CarbonReaderExample") {
+    CarbonReaderExample.main(null)
   }
 }

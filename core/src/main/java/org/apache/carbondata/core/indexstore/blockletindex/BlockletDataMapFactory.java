@@ -49,6 +49,7 @@ import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.BlockletDataMapUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
@@ -71,7 +72,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   /**
    * variable for cache level BLOCKLET
    */
-  private static final String CACHE_LEVEL_BLOCKLET = "BLOCKLET";
+  public static final String CACHE_LEVEL_BLOCKLET = "BLOCKLET";
 
   public static final DataMapSchema DATA_MAP_SCHEMA =
       new DataMapSchema(NAME, BlockletDataMapFactory.class.getName());
@@ -97,8 +98,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
    * @return
    */
   public static DataMap createDataMap(CarbonTable carbonTable) {
-    boolean cacheLevelBlock =
-        BlockletDataMapUtil.isCacheLevelBlock(carbonTable, CACHE_LEVEL_BLOCKLET);
+    boolean cacheLevelBlock = BlockletDataMapUtil.isCacheLevelBlock(carbonTable);
     if (cacheLevelBlock) {
       // case1: when CACHE_LEVEL = BLOCK
       return new BlockDataMap();
@@ -118,6 +118,40 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
   public DataMapBuilder createBuilder(Segment segment, String shardName,
       SegmentProperties segmentProperties) throws IOException {
     throw new UnsupportedOperationException("not implemented");
+  }
+
+  /**
+   * Get the datamap for all segments
+   */
+  public Map<Segment, List<CoarseGrainDataMap>> getDataMaps(List<Segment> segments)
+      throws IOException {
+    List<TableBlockIndexUniqueIdentifierWrapper> tableBlockIndexUniqueIdentifierWrappers =
+        new ArrayList<>();
+    Map<Segment, List<CoarseGrainDataMap>> dataMaps = new HashMap<>();
+    Map<String, Segment> segmentMap = new HashMap<>();
+    for (Segment segment : segments) {
+      segmentMap.put(segment.getSegmentNo(), segment);
+      Set<TableBlockIndexUniqueIdentifier> identifiers =
+          getTableBlockIndexUniqueIdentifiers(segment);
+
+      for (TableBlockIndexUniqueIdentifier tableBlockIndexUniqueIdentifier : identifiers) {
+        tableBlockIndexUniqueIdentifierWrappers.add(
+            new TableBlockIndexUniqueIdentifierWrapper(tableBlockIndexUniqueIdentifier,
+                this.getCarbonTable(), segment.getConfiguration()));
+      }
+    }
+    List<BlockletDataMapIndexWrapper> blockletDataMapIndexWrappers =
+        cache.getAll(tableBlockIndexUniqueIdentifierWrappers);
+    for (BlockletDataMapIndexWrapper wrapper : blockletDataMapIndexWrappers) {
+      Segment segment = segmentMap.get(wrapper.getSegmentId());
+      List<CoarseGrainDataMap> datamapList = dataMaps.get(segment);
+      if (null == datamapList) {
+        datamapList = new ArrayList<CoarseGrainDataMap>();
+      }
+      datamapList.addAll(wrapper.getDataMaps());
+      dataMaps.put(segment, datamapList);
+    }
+    return dataMaps;
   }
 
   @Override public List<CoarseGrainDataMap> getDataMaps(Segment segment) throws IOException {
@@ -218,7 +252,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
         }
       }
     }
-    throw new IOException("Blocklet with blockid " + blocklet.getBlockletId() + " not found ");
+    throw new IOException("Blocklet not found: " + blocklet.toString());
   }
 
 
@@ -354,7 +388,7 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
     List<CoarseGrainDataMap> dataMaps = getDataMaps(segment);
     for (CoarseGrainDataMap dataMap : dataMaps) {
       blocklets.addAll(
-          dataMap.prune(null, getSegmentProperties(segment), partitions));
+          dataMap.prune((FilterResolverIntf) null, getSegmentProperties(segment), partitions));
     }
     return blocklets;
   }

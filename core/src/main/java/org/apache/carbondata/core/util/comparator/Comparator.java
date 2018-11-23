@@ -34,6 +34,8 @@ public final class Comparator {
       return new ShortSerializableComparator();
     } else if (dataType == DataTypes.DOUBLE) {
       return new DoubleSerializableComparator();
+    } else if (dataType == DataTypes.FLOAT) {
+      return new FloatSerializableComparator();
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.DATE
         || dataType == DataTypes.TIMESTAMP) {
       return new LongSerializableComparator();
@@ -61,16 +63,23 @@ public final class Comparator {
       return new LongSerializableComparator();
     } else if (dataType == DataTypes.DOUBLE) {
       return new DoubleSerializableComparator();
+    } else if (dataType == DataTypes.FLOAT) {
+      return new FloatSerializableComparator();
     } else if (DataTypes.isDecimal(dataType)) {
       return new BigDecimalSerializableComparator();
+    } else if (dataType == DataTypes.BYTE) {
+      return new ByteArraySerializableComparator();
     } else {
-      throw new IllegalArgumentException("Unsupported data type");
+      throw new IllegalArgumentException("Unsupported data type: " + dataType.getName());
     }
   }
 }
 
 class ByteArraySerializableComparator implements SerializableComparator {
   @Override public int compare(Object key1, Object key2) {
+    if (key1 instanceof Byte) {
+      return ((Byte) key1).compareTo((Byte) key2);
+    }
     return ByteUtil.compare((byte[]) key1, (byte[]) key2);
   }
 }
@@ -143,6 +152,19 @@ class DoubleSerializableComparator implements SerializableComparator {
       return 1;
     }
     return ((Double)key1).compareTo((Double)key2);
+  }
+}
+
+class FloatSerializableComparator implements SerializableComparator {
+  @Override public int compare(Object key1, Object key2) {
+    if (key1 == null && key2 == null) {
+      return 0;
+    } else if (key1 == null) {
+      return -1;
+    } else if (key2 == null) {
+      return 1;
+    }
+    return ((Float) key1).compareTo((Float) key2);
   }
 }
 

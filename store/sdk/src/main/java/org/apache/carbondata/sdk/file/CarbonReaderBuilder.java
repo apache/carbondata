@@ -21,18 +21,24 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.model.ProjectionDimension;
+import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonSessionInfo;
+import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.hadoop.api.CarbonFileInputFormat;
+import org.apache.carbondata.hadoop.util.CarbonVectorizedRecordReader;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.s3a.Constants;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobID;
@@ -49,7 +55,8 @@ public class CarbonReaderBuilder {
   private String[] projectionColumns;
   private Expression filterExpression;
   private String tableName;
-  private boolean isTransactionalTable;
+  private Configuration hadoopConf;
+  private boolean useVectorReader = true;
 
   /**
    * Construct a CarbonReaderBuilder with table path and table name
@@ -60,6 +67,7 @@ public class CarbonReaderBuilder {
   CarbonReaderBuilder(String tablePath, String tableName) {
     this.tablePath = tablePath;
     this.tableName = tableName;
+    ThreadLocalSessionInfo.setCarbonSessionInfo(new CarbonSessionInfo());
   }
 
 
@@ -76,21 +84,6 @@ public class CarbonReaderBuilder {
   }
 
   /**
-   * Configure the transactional status of table
-   * If set to false, then reads the carbondata and carbonindex files from a flat folder structure.
-   * If set to true, then reads the carbondata and carbonindex files from segment folder structure.
-   * Default value is false
-   *
-   * @param isTransactionalTable whether is transactional table or not
-   * @return CarbonReaderBuilder object
-   */
-  public CarbonReaderBuilder isTransactionalTable(boolean isTransactionalTable) {
-    Objects.requireNonNull(isTransactionalTable);
-    this.isTransactionalTable = isTransactionalTable;
-    return this;
-  }
-
-  /**
    * Configure the filter expression for carbon reader
    *
    * @param filterExpression filter expression
@@ -103,69 +96,54 @@ public class CarbonReaderBuilder {
   }
 
   /**
-   * Set the access key for S3
+   * To support hadoop configuration
    *
-   * @param key   the string of access key for different S3 type,like: fs.s3a.access.key
-   * @param value the value of access key
-   * @return CarbonWriterBuilder object
+   * @param conf hadoop configuration support, can set s3a AK,SK,end point and other conf with this
+   * @return updated CarbonReaderBuilder
    */
-  public CarbonReaderBuilder setAccessKey(String key, String value) {
-    FileFactory.getConfiguration().set(key, value);
+  public CarbonReaderBuilder withHadoopConf(Configuration conf) {
+    if (conf != null) {
+      this.hadoopConf = conf;
+    }
     return this;
   }
 
   /**
-   * Set the access key for S3.
+   * set read batch size before build
    *
-   * @param value the value of access key
-   * @return CarbonWriterBuilder object
+   * @param batch batch size
+   * @return updated CarbonReaderBuilder
    */
-  public CarbonReaderBuilder setAccessKey(String value) {
-    return setAccessKey(Constants.ACCESS_KEY, value);
-  }
-
-  /**
-   * Set the secret key for S3
-   *
-   * @param key   the string of secret key for different S3 type,like: fs.s3a.secret.key
-   * @param value the value of secret key
-   * @return CarbonWriterBuilder object
-   */
-  public CarbonReaderBuilder setSecretKey(String key, String value) {
-    FileFactory.getConfiguration().set(key, value);
+  public CarbonReaderBuilder withBatch(int batch) {
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE,
+            String.valueOf(batch));
     return this;
   }
 
   /**
-   * Set the secret key for S3
+   * configure hadoop configuration with key value
    *
-   * @param value the value of secret key
-   * @return CarbonWriterBuilder object
+   * @param key   key word
+   * @param value value
+   * @return this object
    */
-  public CarbonReaderBuilder setSecretKey(String value) {
-    return setSecretKey(Constants.SECRET_KEY, value);
-  }
+  public CarbonReaderBuilder withHadoopConf(String key, String value) {
+    if (this.hadoopConf == null) {
+      this.hadoopConf = new Configuration();
 
-  /**
-   * Set the endpoint for S3
-   *
-   * @param key   the string of endpoint for different S3 type,like: fs.s3a.endpoint
-   * @param value the value of endpoint
-   * @return CarbonWriterBuilder object
-   */
-  public CarbonReaderBuilder setEndPoint(String key, String value) {
-    FileFactory.getConfiguration().set(key, value);
+    }
+    this.hadoopConf.set(key, value);
     return this;
   }
 
   /**
-   * Set the endpoint for S3
+   * Configure Row Record Reader for reading.
    *
-   * @param value the value of endpoint
-   * @return CarbonWriterBuilder object
    */
-  public CarbonReaderBuilder setEndPoint(String value) {
-    return setEndPoint(Constants.ENDPOINT, value);
+  public CarbonReaderBuilder withRowRecordReader() {
+    this.useVectorReader = false;
+    return this;
   }
 
   /**
@@ -176,21 +154,16 @@ public class CarbonReaderBuilder {
    * @throws IOException
    * @throws InterruptedException
    */
-  public <T> CarbonReader<T> build() throws IOException, InterruptedException {
-    // DB name is not applicable for SDK reader as, table will be never registered.
-    CarbonTable table;
-    if (isTransactionalTable) {
-      table = CarbonTable
-          .buildFromTablePath(tableName, "default", tablePath, UUID.randomUUID().toString());
-    } else {
-      if (filterExpression != null) {
-        table = CarbonTable.buildTable(tablePath, tableName);
-      } else {
-        table = CarbonTable.buildDummyTable(tablePath);
-      }
+  public <T> CarbonReader<T> build()
+      throws IOException, InterruptedException {
+    if (hadoopConf == null) {
+      hadoopConf = FileFactory.getConfiguration();
     }
+    CarbonTable table;
+    // now always infer schema. TODO:Refactor in next version.
+    table = CarbonTable.buildTable(tablePath, tableName, hadoopConf);
     final CarbonFileInputFormat format = new CarbonFileInputFormat();
-    final Job job = new Job(new Configuration());
+    final Job job = new Job(hadoopConf);
     format.setTableInfo(job.getConfiguration(), table.getTableInfo());
     format.setTablePath(job.getConfiguration(), table.getTablePath());
     format.setTableName(job.getConfiguration(), table.getTableName());
@@ -201,23 +174,48 @@ public class CarbonReaderBuilder {
 
     if (projectionColumns != null) {
       // set the user projection
+      int len = projectionColumns.length;
+      //      TODO : Handle projection of complex child columns
+      for (int i = 0; i < len; i++) {
+        if (projectionColumns[i].contains(".")) {
+          throw new UnsupportedOperationException(
+              "Complex child columns projection NOT supported through CarbonReader");
+        }
+      }
       format.setColumnProjection(job.getConfiguration(), projectionColumns);
     }
 
     try {
-      final List<InputSplit> splits =
-          format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
 
+      if (filterExpression == null) {
+        job.getConfiguration().set("filter_blocks", "false");
+      }
+      List<InputSplit> splits =
+          format.getSplits(new JobContextImpl(job.getConfiguration(), new JobID()));
       List<RecordReader<Void, T>> readers = new ArrayList<>(splits.size());
       for (InputSplit split : splits) {
         TaskAttemptContextImpl attempt =
             new TaskAttemptContextImpl(job.getConfiguration(), new TaskAttemptID());
-        RecordReader reader = format.createRecordReader(split, attempt);
+        RecordReader reader;
+        QueryModel queryModel = format.createQueryModel(split, attempt);
+        boolean hasComplex = false;
+        for (ProjectionDimension projectionDimension : queryModel.getProjectionDimensions()) {
+          if (projectionDimension.getDimension().isComplex()) {
+            hasComplex = true;
+            break;
+          }
+        }
+        if (useVectorReader && !hasComplex) {
+          queryModel.setDirectVectorFill(filterExpression == null);
+          reader = new CarbonVectorizedRecordReader(queryModel);
+        } else {
+          reader = format.createRecordReader(split, attempt);
+        }
         try {
           reader.initialize(split, attempt);
           readers.add(reader);
         } catch (Exception e) {
-          reader.close();
+          CarbonUtil.closeStreams(readers.toArray(new RecordReader[0]));
           throw e;
         }
       }

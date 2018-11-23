@@ -20,10 +20,11 @@ package org.apache.carbondata.core.locks;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+
+import org.apache.log4j.Logger;
 
 /**
  * This class is used to handle the HDFS File locking.
@@ -31,12 +32,8 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
  */
 public class HdfsFileLock extends AbstractCarbonLock {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
              LogServiceFactory.getLogService(HdfsFileLock.class.getName());
-  /**
-   * lockFilePath is the location of the lock file.
-   */
-  private String lockFilePath;
 
   /**
    * lockFileDir is the directory of the lock file.

@@ -27,7 +27,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -40,12 +39,14 @@ import org.apache.carbondata.processing.sort.sortdata.IntermediateSortTempRowCom
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
 import org.apache.carbondata.processing.sort.sortdata.TableFieldStat;
 
+import org.apache.log4j.Logger;
+
 public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
 
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(UnsafeSortTempFileChunkHolder.class.getName());
 
   /**
@@ -96,10 +97,12 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
   private TableFieldStat tableFieldStat;
   private SortStepRowHandler sortStepRowHandler;
   private Comparator<IntermediateSortTempRow> comparator;
+  private boolean convertNoSortFields;
   /**
    * Constructor to initialize
    */
-  public UnsafeSortTempFileChunkHolder(File tempFile, SortParameters parameters) {
+  public UnsafeSortTempFileChunkHolder(File tempFile, SortParameters parameters,
+      boolean convertNoSortFields) {
     // set temp file
     this.tempFile = tempFile;
     this.readBufferSize = parameters.getBufferSize();
@@ -107,7 +110,9 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
     this.tableFieldStat = new TableFieldStat(parameters);
     this.sortStepRowHandler = new SortStepRowHandler(tableFieldStat);
     this.executorService = Executors.newFixedThreadPool(1);
-    comparator = new IntermediateSortTempRowComparator(parameters.getNoDictionarySortColumn());
+    comparator = new IntermediateSortTempRowComparator(parameters.getNoDictionarySortColumn(),
+        parameters.getNoDictDataType());
+    this.convertNoSortFields = convertNoSortFields;
     initialize();
   }
 
@@ -162,7 +167,11 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
       fillDataForPrefetch();
     } else {
       try {
-        this.returnRow = sortStepRowHandler.readIntermediateSortTempRowFromInputStream(stream);
+        if (convertNoSortFields) {
+          this.returnRow = sortStepRowHandler.readWithNoSortFieldConvert(stream);
+        } else {
+          this.returnRow = sortStepRowHandler.readWithoutNoSortFieldConvert(stream);
+        }
         this.numberOfObjectRead++;
       } catch (IOException e) {
         throw new CarbonSortKeyAndGroupByException("Problems while reading row", e);
@@ -210,9 +219,11 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
       throws IOException {
     IntermediateSortTempRow[] holders = new IntermediateSortTempRow[expected];
     for (int i = 0; i < expected; i++) {
-      IntermediateSortTempRow holder
-          = sortStepRowHandler.readIntermediateSortTempRowFromInputStream(stream);
-      holders[i] = holder;
+      if (convertNoSortFields) {
+        holders[i] = sortStepRowHandler.readWithNoSortFieldConvert(stream);
+      } else {
+        holders[i] = sortStepRowHandler.readWithoutNoSortFieldConvert(stream);
+      }
     }
     this.numberOfObjectRead += expected;
     return holders;

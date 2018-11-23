@@ -21,9 +21,9 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -32,12 +32,13 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 public class DataMapUtil {
 
   private static final String DATA_MAP_DSTR = "mapreduce.input.carboninputformat.datamapdstr";
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(DataMapUtil.class.getName());
 
   /**
@@ -94,9 +95,12 @@ public class DataMapUtil {
       throws IOException {
     String dataMapJobClassName = "org.apache.carbondata.spark.rdd.SparkDataMapJob";
     DataMapJob dataMapJob = (DataMapJob) createDataMapJob(dataMapJobClassName);
+    if (dataMapJob == null) {
+      return;
+    }
     String className = "org.apache.carbondata.core.datamap.DistributableDataMapFormat";
     SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegmentsInfo =
-        getValidAndInvalidSegments(carbonTable);
+        getValidAndInvalidSegments(carbonTable, FileFactory.getConfiguration());
     List<Segment> validSegments = validAndInvalidSegmentsInfo.getValidSegments();
     List<Segment> invalidSegments = validAndInvalidSegmentsInfo.getInvalidSegments();
     DataMapExprWrapper dataMapExprWrapper = null;
@@ -137,7 +141,7 @@ public class DataMapUtil {
       List<PartitionSpec> partitionsToPrune) throws IOException {
     String className = "org.apache.carbondata.core.datamap.DistributableDataMapFormat";
     SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegmentsInfo =
-        getValidAndInvalidSegments(carbonTable);
+        getValidAndInvalidSegments(carbonTable, validSegments.get(0).getConfiguration());
     List<Segment> invalidSegments = validAndInvalidSegmentsInfo.getInvalidSegments();
     DistributableDataMapFormat dataMapFormat =
         createDataMapJob(carbonTable, dataMapExprWrapper, validSegments, invalidSegments,
@@ -149,8 +153,9 @@ public class DataMapUtil {
   }
 
   private static SegmentStatusManager.ValidAndInvalidSegmentsInfo getValidAndInvalidSegments(
-      CarbonTable carbonTable) throws IOException {
-    SegmentStatusManager ssm = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier());
+      CarbonTable carbonTable, Configuration configuration) throws IOException {
+    SegmentStatusManager ssm =
+        new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier(), configuration);
     return ssm.getValidAndInvalidSegments();
   }
 

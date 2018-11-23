@@ -18,7 +18,6 @@ package org.apache.carbondata.core.dictionary.client;
 
 import java.net.InetSocketAddress;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 
@@ -29,13 +28,14 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import org.apache.log4j.Logger;
 
 /**
  * Dictionary client to connect to Dictionary server and generate dictionary values
  */
 public class NonSecureDictionaryClient implements DictionaryClient {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(NonSecureDictionaryClient.class.getName());
 
   private NonSecureDictionaryClientHandler nonSecureDictionaryClientHandler =
@@ -51,7 +51,7 @@ public class NonSecureDictionaryClient implements DictionaryClient {
    */
   @Override public void startClient(String secretKey, String address, int port,
       boolean encryptSecureServer) {
-    LOGGER.audit("Starting client on " + address + " " + port);
+    LOGGER.info("Starting client on " + address + " " + port);
     long start = System.currentTimeMillis();
     // Create an Event with 1 thread.
     workerGroup = new NioEventLoopGroup(1);

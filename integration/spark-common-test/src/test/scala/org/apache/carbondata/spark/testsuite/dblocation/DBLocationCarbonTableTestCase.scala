@@ -109,9 +109,9 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   test("Update operation on carbon table") {
-    sql("drop database if exists carbon cascade")
-    sql(s"create database carbon location '$dblocation'")
-    sql("use carbon")
+    sql("drop database if exists carbon1 cascade")
+    sql(s"create database carbon1 location '$dblocation'")
+    sql("use carbon1")
     sql(
       """
          CREATE TABLE automerge(id int, name string, city string, age int)
@@ -120,7 +120,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     val testData = s"$resourcesPath/sample.csv"
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table automerge")
     // update operation
-    sql("""update carbon.automerge d  set (d.id) = (d.id + 1) where d.id > 2""").show()
+    sql("""update carbon1.automerge d  set (d.id) = (d.id + 1) where d.id > 2""").show()
     checkAnswer(
       sql("select count(*) from automerge"),
       Seq(Row(6))
@@ -129,16 +129,16 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Delete operation on carbon table") {
-    sql("drop database if exists carbon cascade")
-    sql(s"create database carbon location '$dblocation'")
-    sql("use carbon")
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+    sql("drop database if exists carbon1 cascade")
+    sql(s"create database carbon1 location '$dblocation'")
+    sql("use carbon1")
+    sql("""create table carbon1.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
     sql("insert into carbontable select 'a',1,'aa','aaa'")
     sql("insert into carbontable select 'b',1,'bb','bbb'")
     // delete operation
     sql("""delete from carbontable where c3 = 'aa'""").show
     checkAnswer(
-      sql("""select c1,c2,c3,c5 from carbon.carbontable"""),
+      sql("""select c1,c2,c3,c5 from carbon1.carbontable"""),
       Seq(Row("b",1,"bb","bbb"))
     )
     sql("drop table carbontable")

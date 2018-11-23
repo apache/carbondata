@@ -210,7 +210,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
           continue;
         }
         filterValuesList.add(DataTypeUtil.getMeasureValueBasedOnDataType(result.getString(),
-            result.getDataType(), carbonMeasure));
+            result.getDataType(), carbonMeasure.getScale(), carbonMeasure.getPrecision()));
       } catch (FilterIllegalMemberException e) {
         // Any invalid member while evaluation shall be ignored, system will log the
         // error only once since all rows the evaluation happens so inorder to avoid

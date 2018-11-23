@@ -33,16 +33,14 @@ import org.apache.carbondata.sdk.file.{CarbonWriter, Schema}
 
 class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with BeforeAndAfterAll {
 
-  var writerPath = new File(this.getClass.getResource("/").getPath
-                            +
-                            "../." +
-                            "./src/test/resources/SparkCarbonFileFormat/WriterOutput/")
+  var writerPath = new File(this.getClass.getResource("/").getPath +
+                            "../../src/test/resources/SparkCarbonFileFormat/WriterOutput")
     .getCanonicalPath
   //getCanonicalPath gives path with \, but the code expects /.
   writerPath = writerPath.replace("\\", "/");
 
 
-  def buildTestData(persistSchema:Boolean) = {
+  def buildTestData(): Any = {
 
     FileUtils.deleteDirectory(new File(writerPath))
 
@@ -55,14 +53,10 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
       .toString()
 
     try {
-      val builder = CarbonWriter.builder().isTransactionalTable(true)
+      val builder = CarbonWriter.builder()
       val writer =
-      if (persistSchema) {
-        builder.persistSchemaFile(true)
-        builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema))
-      } else {
-        builder.outputPath(writerPath).buildWriterForCSVInput(Schema.parseJson(schema))
-      }
+        builder.outputPath(writerPath + "/Fact/Part0/Segment_null")
+          .withCsvInput(Schema.parseJson(schema)).writtenBy("TestCarbonFileInputFormatWithExternalCarbonTable").build()
 
       var i = 0
       while (i < 100) {
@@ -106,7 +100,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
 
   //TO DO, need to remove segment dependency and tableIdentifier Dependency
   test("read carbondata files (sdk Writer Output) using the carbonfile ") {
-    buildTestData(false)
+    buildTestData()
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
@@ -146,7 +140,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
   }
 
   test("should not allow to alter datasource carbontable ") {
-    buildTestData(false)
+    buildTestData()
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
 
@@ -169,7 +163,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
   }
 
   test("Read sdk writer output file without index file should fail") {
-    buildTestData(false)
+    buildTestData()
     deleteIndexFile(writerPath, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -180,11 +174,11 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
          |'$writerPath' """.stripMargin)
 
     //org.apache.spark.SparkException: Index file not present to read the carbondata file
-    val exception = intercept[java.lang.RuntimeException]
+    val exception = intercept[Exception]
     {
       sql("select * from sdkOutputTable").show(false)
     }
-    assert(exception.getMessage().contains("Error while taking index snapshot"))
+    assert(exception.getMessage().contains("No Index files are present in the table location"))
 
     sql("DROP TABLE sdkOutputTable")
     // drop table should not delete the files
@@ -194,7 +188,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
 
   // TODO: Make the sparkCarbonFileFormat to work without index file
   test("Read sdk writer output file without Carbondata file should fail") {
-    buildTestData(false)
+    buildTestData()
     deleteIndexFile(writerPath, CarbonCommonConstants.FACT_FILE_EXT)
     assert(new File(writerPath).exists())
     sql("DROP TABLE IF EXISTS sdkOutputTable")
@@ -216,7 +210,7 @@ class TestCarbonFileInputFormatWithExternalCarbonTable extends QueryTest with Be
 
 
   test("Read sdk writer output file without any file should fail") {
-    buildTestData(false)
+    buildTestData()
     deleteIndexFile(writerPath, CarbonCommonConstants.FACT_FILE_EXT)
     deleteIndexFile(writerPath, CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
     assert(new File(writerPath).exists())

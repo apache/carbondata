@@ -21,12 +21,12 @@ import java.lang.Long
 
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.fs.{LocatedFileStatus, Path, RemoteIterator}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.unsafe.types.UTF8String
 
+import org.apache.carbondata.common.Strings
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -37,21 +37,23 @@ import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, SegmentFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.streaming.segment.StreamSegment
 
 object CarbonStore {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def showSegments(
       limit: Option[String],
-      tableFolderPath: String,
+      tablePath: String,
       showHistory: Boolean): Seq[Row] = {
+    val metaFolder = CarbonTablePath.getMetadataPath(tablePath)
     val loadMetadataDetailsArray = if (showHistory) {
-      SegmentStatusManager.readLoadMetadata(tableFolderPath) ++
-      SegmentStatusManager.readLoadHistoryMetadata(tableFolderPath)
+      SegmentStatusManager.readLoadMetadata(metaFolder) ++
+      SegmentStatusManager.readLoadHistoryMetadata(metaFolder)
     } else {
-      SegmentStatusManager.readLoadMetadata(tableFolderPath)
+      SegmentStatusManager.readLoadMetadata(metaFolder)
     }
 
     if (loadMetadataDetailsArray.nonEmpty) {
@@ -84,17 +86,30 @@ object CarbonStore {
 
           val startTime =
             if (load.getLoadStartTime == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
-              null
+              "NA"
             } else {
-              new java.sql.Timestamp(load.getLoadStartTime)
+              new java.sql.Timestamp(load.getLoadStartTime).toString
             }
 
           val endTime =
             if (load.getLoadEndTime == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
-              null
+              "NA"
             } else {
-              new java.sql.Timestamp(load.getLoadEndTime)
+              new java.sql.Timestamp(load.getLoadEndTime).toString
             }
+
+          val (dataSize, indexSize) = if (load.getFileFormat == FileFormat.ROW_V1) {
+            // for streaming segment, we should get the actual size from the index file
+            // since it is continuously inserting data
+            val segmentDir = CarbonTablePath.getSegmentPath(tablePath, load.getLoadName)
+            val indexPath = CarbonTablePath.getCarbonStreamIndexFilePath(segmentDir)
+            val indices = StreamSegment.readIndexFile(indexPath, FileFactory.getFileType(indexPath))
+            (indices.asScala.map(_.getFile_size).sum, FileFactory.getCarbonFile(indexPath).getSize)
+          } else {
+            // for batch segment, we can get the data size from table status file directly
+            (if (load.getDataSize == null) 0L else load.getDataSize.toLong,
+              if (load.getIndexSize == null) 0L else load.getIndexSize.toLong)
+          }
 
           if (showHistory) {
             Row(
@@ -104,7 +119,9 @@ object CarbonStore {
               endTime,
               mergedTo,
               load.getFileFormat.toString,
-              load.getVisibility())
+              load.getVisibility,
+              Strings.formatSize(dataSize.toFloat),
+              Strings.formatSize(indexSize.toFloat))
           } else {
             Row(
               load.getLoadName,
@@ -112,7 +129,9 @@ object CarbonStore {
               startTime,
               endTime,
               mergedTo,
-              load.getFileFormat.toString)
+              load.getFileFormat.toString,
+              Strings.formatSize(dataSize.toFloat),
+              Strings.formatSize(indexSize.toFloat))
           }
         }.toSeq
     } else {
@@ -139,7 +158,6 @@ object CarbonStore {
       carbonTable: CarbonTable,
       forceTableClean: Boolean,
       currentTablePartitions: Option[Seq[PartitionSpec]] = None): Unit = {
-    LOGGER.audit(s"The clean files request has been received for $dbName.$tableName")
     var carbonCleanFilesLock: ICarbonLock = null
     val absoluteTableIdentifier = if (forceTableClean) {
       AbsoluteTableIdentifier.from(tablePath, dbName, tableName, tableName)
@@ -183,7 +201,6 @@ object CarbonStore {
         CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)
       }
     }
-    LOGGER.audit(s"Clean files operation is success for $dbName.$tableName.")
   }
 
   /**
@@ -262,7 +279,6 @@ object CarbonStore {
       tableName: String,
       carbonTable: CarbonTable): Unit = {
 
-    LOGGER.audit(s"Delete segment by Id request has been received for $dbName.$tableName")
     validateLoadIds(loadids)
 
     val path = carbonTable.getMetadataPath
@@ -271,7 +287,7 @@ object CarbonStore {
       val invalidLoadIds = SegmentStatusManager.updateDeletionStatus(
         carbonTable.getAbsoluteTableIdentifier, loadids.asJava, path).asScala
       if (invalidLoadIds.isEmpty) {
-        LOGGER.audit(s"Delete segment by Id is successfull for $dbName.$tableName.")
+        LOGGER.info(s"Delete segment by Id is successfull for $dbName.$tableName.")
       } else {
         sys.error(s"Delete segment by Id is failed. Invalid ID is: ${invalidLoadIds.mkString(",")}")
       }
@@ -288,7 +304,6 @@ object CarbonStore {
       dbName: String,
       tableName: String,
       carbonTable: CarbonTable): Unit = {
-    LOGGER.audit(s"Delete segment by Id request has been received for $dbName.$tableName")
 
     val time = validateTimeFormat(timestamp)
     val path = carbonTable.getMetadataPath
@@ -301,7 +316,7 @@ object CarbonStore {
           path,
           time).asScala
       if (invalidLoadTimestamps.isEmpty) {
-        LOGGER.audit(s"Delete segment by date is successful for $dbName.$tableName.")
+        LOGGER.info(s"Delete segment by date is successful for $dbName.$tableName.")
       } else {
         sys.error("Delete segment by date is failed. No matching segment found.")
       }

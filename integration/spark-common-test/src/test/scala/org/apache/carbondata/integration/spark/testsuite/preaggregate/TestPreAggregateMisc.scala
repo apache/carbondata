@@ -37,6 +37,7 @@ class TestPreAggregateMisc extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select sum(age) from mainTable"),
       Seq(Row(183.0)))
+    sqlContext.sparkSession.catalog.clearCache()
     sql("RESET")
     sql("drop datamap agg1 on table mainTable")
 

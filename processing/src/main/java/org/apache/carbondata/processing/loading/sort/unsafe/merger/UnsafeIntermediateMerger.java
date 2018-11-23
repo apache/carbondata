@@ -27,7 +27,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.memory.UnsafeSortMemoryManager;
@@ -37,14 +36,14 @@ import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
 
-import org.apache.commons.collections.list.SynchronizedList;
+import org.apache.log4j.Logger;
 
 /**
  * It does mergesort intermediate files to big file.
  */
 public class UnsafeIntermediateMerger {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(UnsafeIntermediateMerger.class.getName());
 
   /**
@@ -77,8 +76,7 @@ public class UnsafeIntermediateMerger {
     this.mergedPages = new ArrayList<>();
     this.executorService = Executors.newFixedThreadPool(parameters.getNumberOfCores(),
         new CarbonThreadFactory("UnsafeIntermediatePool:" + parameters.getTableName()));
-    this.procFiles =
-        SynchronizedList.decorate(new ArrayList<File>(CarbonCommonConstants.CONSTANT_SIZE_TEN));
+    this.procFiles = new ArrayList<>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     this.mergerTask = new ArrayList<>();
 
     Integer spillPercentage = CarbonProperties.getInstance().getSortMemorySpillPercentage();
@@ -111,18 +109,15 @@ public class UnsafeIntermediateMerger {
   }
 
   public void startFileMergingIfPossible() {
-    File[] fileList = null;
-    synchronized (lockObject) {
-      if (procFiles.size() >= parameters.getNumberOfIntermediateFileToBeMerged()) {
+    File[] fileList;
+    if (procFiles.size() >= parameters.getNumberOfIntermediateFileToBeMerged()) {
+      synchronized (lockObject) {
         fileList = procFiles.toArray(new File[procFiles.size()]);
         this.procFiles = new ArrayList<File>();
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER
-              .debug("Submitting request for intermediate merging no of files: " + fileList.length);
-        }
       }
-    }
-    if (null != fileList) {
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Sumitting request for intermediate merging no of files: " + fileList.length);
+      }
       startIntermediateMerging(fileList);
     }
   }
@@ -217,7 +212,7 @@ public class UnsafeIntermediateMerger {
       try {
         mergerTask.get(i).get();
       } catch (InterruptedException | ExecutionException e) {
-        LOGGER.error(e, e.getMessage());
+        LOGGER.error(e.getMessage(), e);
         throw new CarbonSortKeyAndGroupByException(e.getMessage(), e);
       }
     }

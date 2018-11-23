@@ -63,4 +63,5 @@ private[sql] case class CarbonShowTablesCommand ( databaseName: Option[String],
 
   }
 
+  override protected def opName: String = "SHOW TABLES"
 }

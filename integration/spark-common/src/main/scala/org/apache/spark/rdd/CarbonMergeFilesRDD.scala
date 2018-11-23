@@ -17,9 +17,12 @@
 
 package org.apache.spark.rdd
 
-import org.apache.spark.{Partition, SparkContext, TaskContext}
+import org.apache.spark.{Partition, TaskContext}
+import org.apache.spark.sql.SparkSession
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
@@ -33,22 +36,83 @@ case class CarbonMergeFilePartition(rddId: Int, idx: Int, segmentId: String)
   override def hashCode(): Int = 41 * (41 + rddId) + idx
 }
 
+object CarbonMergeFilesRDD {
+
+  /**
+   * Merge the carbonindex files with in the segment to carbonindexmerge file inside same segment
+   *
+   * @param sparkSession carbon session
+   * @param segmentIds the segments to process
+   * @param segmentFileNameToSegmentIdMap a map that map the segmentFileName to segmentId
+   * @param tablePath table path
+   * @param carbonTable carbon table
+   * @param mergeIndexProperty whether to merge the property of the carbon index, the usage
+   *                           scenario is the same as that of `readFileFooterFromCarbonDataFile`
+   * @param readFileFooterFromCarbonDataFile flag to read file footer information from carbondata
+   *                                         file. This will used in case of upgrade from version
+   *                                         which do not store the blocklet info to current
+   *                                         version
+   */
+  def mergeIndexFiles(sparkSession: SparkSession,
+      segmentIds: Seq[String],
+      segmentFileNameToSegmentIdMap: java.util.Map[String, String],
+      tablePath: String,
+      carbonTable: CarbonTable,
+      mergeIndexProperty: Boolean,
+      readFileFooterFromCarbonDataFile: Boolean = false): Unit = {
+    if (mergeIndexProperty) {
+      new CarbonMergeFilesRDD(
+        sparkSession,
+        carbonTable,
+        segmentIds,
+        segmentFileNameToSegmentIdMap,
+        carbonTable.isHivePartitionTable,
+        readFileFooterFromCarbonDataFile).collect()
+    } else {
+      try {
+        if (CarbonProperties.getInstance().getProperty(
+          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT).toBoolean) {
+          new CarbonMergeFilesRDD(
+            sparkSession,
+            carbonTable,
+            segmentIds,
+            segmentFileNameToSegmentIdMap,
+            carbonTable.isHivePartitionTable,
+            readFileFooterFromCarbonDataFile).collect()
+        }
+      } catch {
+        case _: Exception =>
+          if (CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT.toBoolean) {
+            new CarbonMergeFilesRDD(
+              sparkSession,
+              carbonTable,
+              segmentIds,
+              segmentFileNameToSegmentIdMap,
+              carbonTable.isHivePartitionTable,
+              readFileFooterFromCarbonDataFile).collect()
+          }
+      }
+    }
+  }
+}
+
 /**
  * RDD to merge all carbonindex files of each segment to carbonindex file into the same segment.
- * @param sc
+ * @param ss
  * @param carbonTable
  * @param segments segments to be merged
  */
 class CarbonMergeFilesRDD(
-  sc: SparkContext,
+  @transient private val ss: SparkSession,
   carbonTable: CarbonTable,
   segments: Seq[String],
   segmentFileNameToSegmentIdMap: java.util.Map[String, String],
   isHivePartitionedTable: Boolean,
   readFileFooterFromCarbonDataFile: Boolean)
-  extends CarbonRDD[String](sc, Nil, sc.hadoopConfiguration) {
+  extends CarbonRDD[String](ss, Nil) {
 
-  override def getPartitions: Array[Partition] = {
+  override def internalGetPartitions: Array[Partition] = {
     segments.zipWithIndex.map {s =>
       CarbonMergeFilePartition(id, s._2, s._1)
     }.toArray

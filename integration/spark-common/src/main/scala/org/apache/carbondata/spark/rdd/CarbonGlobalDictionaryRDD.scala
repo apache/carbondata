@@ -31,7 +31,7 @@ import com.univocity.parsers.common.TextParsingException
 import org.apache.commons.lang3.{ArrayUtils, StringUtils}
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{Row, SparkSession}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
@@ -174,11 +174,12 @@ case class ColumnDistinctValues(values: Array[String], rowCount: Long) extends S
  * @param model a model package load info
  */
 class CarbonAllDictionaryCombineRDD(
+    @transient private val sparkSession: SparkSession,
     prev: RDD[(String, Iterable[String])],
     model: DictionaryLoadModel)
-  extends CarbonRDD[(Int, ColumnDistinctValues)](prev) {
+  extends CarbonRDD[(Int, ColumnDistinctValues)](sparkSession, prev) {
 
-  override def getPartitions: Array[Partition] = {
+  override def internalGetPartitions: Array[Partition] = {
     firstParent[(String, Iterable[String])].partitions
   }
 
@@ -267,11 +268,12 @@ class StringArrayRow(var values: Array[String]) extends Row {
  * @param model a model package load info
  */
 class CarbonBlockDistinctValuesCombineRDD(
+    @transient private val ss: SparkSession,
     prev: RDD[Row],
     model: DictionaryLoadModel)
-  extends CarbonRDD[(Int, ColumnDistinctValues)](prev) {
+  extends CarbonRDD[(Int, ColumnDistinctValues)](ss, prev) {
 
-  override def getPartitions: Array[Partition] = firstParent[Row].partitions
+  override def internalGetPartitions: Array[Partition] = firstParent[Row].partitions
   override def internalCompute(split: Partition,
       context: TaskContext): Iterator[(Int, ColumnDistinctValues)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -325,11 +327,14 @@ class CarbonBlockDistinctValuesCombineRDD(
  * @param model a model package load info
  */
 class CarbonGlobalDictionaryGenerateRDD(
+    @transient private val sparkSession: SparkSession,
     prev: RDD[(Int, ColumnDistinctValues)],
     model: DictionaryLoadModel)
-  extends CarbonRDD[(Int, SegmentStatus)](prev) {
+  extends CarbonRDD[(Int, SegmentStatus)](sparkSession, prev) {
 
-  override def getPartitions: Array[Partition] = firstParent[(Int, ColumnDistinctValues)].partitions
+  override def internalGetPartitions: Array[Partition] =
+    firstParent[(Int, ColumnDistinctValues)].partitions
+
 
   override def internalCompute(split: Partition,
       context: TaskContext): Iterator[(Int, SegmentStatus)] = {
@@ -492,21 +497,21 @@ class CarbonColumnDictPatition(id: Int, dimension: CarbonDimension)
  * Use external column dict to generate global dictionary
  *
  * @param carbonLoadModel carbon load model
- * @param sparkContext    spark context
+ * @param sparkSession    spark context
  * @param table           carbon table identifier
  * @param dimensions      carbon dimenisons having predefined dict
  * @param dictFolderPath  path of dictionary folder
  */
-class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
+class CarbonColumnDictGenerateRDD(
+    carbonLoadModel: CarbonLoadModel,
     dictionaryLoadModel: DictionaryLoadModel,
-    sparkContext: SparkContext,
+    @transient private val ss: SparkSession,
     table: CarbonTableIdentifier,
     dimensions: Array[CarbonDimension],
     dictFolderPath: String)
-  extends CarbonRDD[(Int, ColumnDistinctValues)](sparkContext, Nil,
-    sparkContext.hadoopConfiguration) {
+  extends CarbonRDD[(Int, ColumnDistinctValues)](ss, Nil) {
 
-  override def getPartitions: Array[Partition] = {
+  override def internalGetPartitions: Array[Partition] = {
     val primDimensions = dictionaryLoadModel.primDimensions
     val primDimLength = primDimensions.length
     val result = new Array[Partition](primDimLength)

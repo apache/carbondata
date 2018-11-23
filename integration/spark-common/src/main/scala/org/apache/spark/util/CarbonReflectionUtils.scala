@@ -17,22 +17,27 @@
 
 package org.apache.spark.util
 
+import java.lang.reflect.Method
+
 import scala.reflect.runtime._
 import scala.reflect.runtime.universe._
 
-import org.apache.spark.SPARK_VERSION
-import org.apache.spark.SparkContext
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.{SPARK_VERSION, SparkContext}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
+import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression}
 import org.apache.spark.sql.catalyst.parser.AstBuilder
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, SubqueryAlias}
-import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.sources.BaseRelation
+import org.apache.spark.sql.catalyst.plans.physical.Partitioning
+import org.apache.spark.sql.execution.{RowDataSourceScanExec, SparkPlan}
+import org.apache.spark.sql.execution.command.RunnableCommand
+import org.apache.spark.sql.execution.datasources.{DataSource, LogicalRelation}
+import org.apache.spark.sql.sources.{BaseRelation, Filter}
+import org.apache.spark.sql.types.StructField
 
-import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 /**
@@ -51,7 +56,6 @@ object CarbonReflectionUtils {
    */
   def getField[T: TypeTag : reflect.ClassTag](name: String, obj: T): Any = {
     val im = rm.reflect(obj)
-
     im.symbol.typeSignature.members.find(_.name.toString.equals(name))
       .map(l => im.reflectField(l.asTerm).get).getOrElse(null)
   }
@@ -60,12 +64,12 @@ object CarbonReflectionUtils {
       tableIdentifier: TableIdentifier,
       tableAlias: Option[String] = None): UnresolvedRelation = {
     val className = "org.apache.spark.sql.catalyst.analysis.UnresolvedRelation"
-    if (SPARK_VERSION.startsWith("2.1")) {
+    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       createObject(
         className,
         tableIdentifier,
         tableAlias)._1.asInstanceOf[UnresolvedRelation]
-    } else if (SPARK_VERSION.startsWith("2.2")) {
+    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
       createObject(
         className,
         tableIdentifier)._1.asInstanceOf[UnresolvedRelation]
@@ -78,13 +82,13 @@ object CarbonReflectionUtils {
       relation: LogicalPlan,
       view: Option[TableIdentifier]): SubqueryAlias = {
     val className = "org.apache.spark.sql.catalyst.plans.logical.SubqueryAlias"
-    if (SPARK_VERSION.startsWith("2.1")) {
+    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       createObject(
         className,
         alias.getOrElse(""),
         relation,
         Option(view))._1.asInstanceOf[SubqueryAlias]
-    } else if (SPARK_VERSION.startsWith("2.2")) {
+    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
       createObject(
         className,
         alias.getOrElse(""),
@@ -100,7 +104,7 @@ object CarbonReflectionUtils {
       overwrite: Boolean,
       ifPartitionNotExists: Boolean): InsertIntoTable = {
     val className = "org.apache.spark.sql.catalyst.plans.logical.InsertIntoTable"
-    if (SPARK_VERSION.startsWith("2.1")) {
+    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       val overwriteOptions = createObject(
         "org.apache.spark.sql.catalyst.plans.logical.OverwriteOptions",
         overwrite.asInstanceOf[Object], Map.empty.asInstanceOf[Object])._1.asInstanceOf[Object]
@@ -111,7 +115,7 @@ object CarbonReflectionUtils {
         query,
         overwriteOptions,
         ifPartitionNotExists.asInstanceOf[Object])._1.asInstanceOf[InsertIntoTable]
-    } else if (SPARK_VERSION.startsWith("2.2")) {
+    } else if (SparkUtil.isSparkVersionXandAbove("2.2") ) {
       createObject(
         className,
         table,
@@ -126,20 +130,28 @@ object CarbonReflectionUtils {
 
   def getLogicalRelation(relation: BaseRelation,
       expectedOutputAttributes: Seq[Attribute],
-      catalogTable: Option[CatalogTable]): LogicalRelation = {
+      catalogTable: Option[CatalogTable],
+      isStreaming: Boolean): LogicalRelation = {
     val className = "org.apache.spark.sql.execution.datasources.LogicalRelation"
-    if (SPARK_VERSION.startsWith("2.1")) {
+    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       createObject(
         className,
         relation,
         Some(expectedOutputAttributes),
         catalogTable)._1.asInstanceOf[LogicalRelation]
-    } else if (SPARK_VERSION.startsWith("2.2")) {
+    } else if (SparkUtil.isSparkVersionEqualTo("2.2")) {
       createObject(
         className,
         relation,
         expectedOutputAttributes,
         catalogTable)._1.asInstanceOf[LogicalRelation]
+    } else if (SparkUtil.isSparkVersionEqualTo("2.3")) {
+      createObject(
+        className,
+        relation,
+        expectedOutputAttributes,
+        catalogTable,
+        isStreaming.asInstanceOf[Object])._1.asInstanceOf[LogicalRelation]
     } else {
       throw new UnsupportedOperationException("Unsupported Spark version")
     }
@@ -182,27 +194,23 @@ object CarbonReflectionUtils {
   def getAstBuilder(conf: Object,
       sqlParser: Object,
       sparkSession: SparkSession): AstBuilder = {
-    if (SPARK_VERSION.startsWith("2.1") || SPARK_VERSION.startsWith("2.2")) {
-      val className = sparkSession.sparkContext.conf.get(
-        CarbonCommonConstants.CARBON_SQLASTBUILDER_CLASSNAME,
-        "org.apache.spark.sql.hive.CarbonSqlAstBuilder")
-      createObject(className,
-        conf,
-        sqlParser, sparkSession)._1.asInstanceOf[AstBuilder]
-    } else {
-      throw new UnsupportedOperationException("Spark version not supported")
-    }
+    val className = sparkSession.sparkContext.conf.get(
+      CarbonCommonConstants.CARBON_SQLASTBUILDER_CLASSNAME,
+      CarbonCommonConstants.CARBON_SQLASTBUILDER_CLASSNAME_DEFAULT)
+    createObject(className,
+      conf,
+      sqlParser, sparkSession)._1.asInstanceOf[AstBuilder]
   }
 
   def getSessionState(sparkContext: SparkContext,
       carbonSession: Object,
       useHiveMetaStore: Boolean): Any = {
-    if (SPARK_VERSION.startsWith("2.1")) {
+    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       val className = sparkContext.conf.get(
         CarbonCommonConstants.CARBON_SESSIONSTATE_CLASSNAME,
         "org.apache.spark.sql.hive.CarbonSessionState")
       createObject(className, carbonSession)._1
-    } else if (SPARK_VERSION.startsWith("2.2")) {
+    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
       if (useHiveMetaStore) {
         val className = sparkContext.conf.get(
           CarbonCommonConstants.CARBON_SESSIONSTATE_CLASSNAME,
@@ -224,12 +232,12 @@ object CarbonReflectionUtils {
   }
 
   def hasPredicateSubquery(filterExp: Expression) : Boolean = {
-    if (SPARK_VERSION.startsWith("2.1")) {
+    if (SparkUtil.isSparkVersionEqualTo("2.1")) {
       val tuple = Class.forName("org.apache.spark.sql.catalyst.expressions.PredicateSubquery")
       val method = tuple.getMethod("hasPredicateSubquery", classOf[Expression])
       val hasSubquery : Boolean = method.invoke(tuple, filterExp).asInstanceOf[Boolean]
       hasSubquery
-    } else if (SPARK_VERSION.startsWith("2.2")) {
+    } else if (SparkUtil.isSparkVersionXandAbove("2.2")) {
       val tuple = Class.forName("org.apache.spark.sql.catalyst.expressions.SubqueryExpression")
       val method = tuple.getMethod("hasInOrExistsSubquery", classOf[Expression])
       val hasSubquery : Boolean = method.invoke(tuple, filterExp).asInstanceOf[Boolean]
@@ -247,6 +255,69 @@ object CarbonReflectionUtils {
     isFormatted
   }
 
+  def getRowDataSourceScanExecObj(relation: LogicalRelation,
+      output: Seq[Attribute],
+      pushedFilters: Seq[Filter],
+      handledFilters: Seq[Filter],
+      rdd: RDD[InternalRow],
+      partition: Partitioning,
+      metadata: Map[String, String]): RowDataSourceScanExec = {
+    val className = "org.apache.spark.sql.execution.RowDataSourceScanExec"
+    if (SparkUtil.isSparkVersionEqualTo("2.1") || SparkUtil.isSparkVersionEqualTo("2.2")) {
+      createObject(className, output, rdd, relation.relation,
+        partition, metadata,
+        relation.catalogTable.map(_.identifier))._1.asInstanceOf[RowDataSourceScanExec]
+    } else if (SparkUtil.isSparkVersionXandAbove("2.3")) {
+      createObject(className, output, output.map(output.indexOf),
+        pushedFilters.toSet, handledFilters.toSet, rdd,
+        relation.relation,
+        relation.catalogTable.map(_.identifier))._1.asInstanceOf[RowDataSourceScanExec]
+    } else {
+      throw new UnsupportedOperationException("Spark version not supported")
+    }
+  }
+
+  def invokewriteAndReadMethod(dataSourceObj: DataSource,
+      dataFrame: DataFrame,
+      data: LogicalPlan,
+      session: SparkSession,
+      mode: SaveMode,
+      query: LogicalPlan,
+      physicalPlan: SparkPlan): BaseRelation = {
+    if (SparkUtil.isSparkVersionEqualTo("2.2")) {
+      val method: Method = dataSourceObj.getClass
+        .getMethod("writeAndRead", classOf[SaveMode], classOf[DataFrame])
+      method.invoke(dataSourceObj, mode, dataFrame)
+        .asInstanceOf[BaseRelation]
+    } else if (SparkUtil.isSparkVersionEqualTo("2.3")) {
+      val method: Method = dataSourceObj.getClass
+        .getMethod("writeAndRead",
+          classOf[SaveMode],
+          classOf[LogicalPlan],
+          classOf[Seq[String]],
+          classOf[SparkPlan])
+      // since spark 2.3.2 version (SPARK-PR#22346),
+      // change 'query.output' to 'query.output.map(_.name)'
+      method.invoke(dataSourceObj, mode, query, query.output.map(_.name), physicalPlan)
+        .asInstanceOf[BaseRelation]
+    } else {
+      throw new UnsupportedOperationException("Spark version not supported")
+    }
+  }
+
+  /**
+   * method to invoke alter table add columns for hive table from carbon session
+   * @param table
+   * @param colsToAdd
+   * @return
+   */
+  def invokeAlterTableAddColumn(table: TableIdentifier,
+      colsToAdd: Seq[StructField]): Object = {
+    val caseClassName = "org.apache.spark.sql.execution.command.AlterTableAddColumnsCommand"
+    CarbonReflectionUtils.createObject(caseClassName, table, colsToAdd)
+      ._1.asInstanceOf[RunnableCommand]
+  }
+
   def createObject(className: String, conArgs: Object*): (Any, Class[_]) = {
     val clazz = Utils.classForName(className)
     val ctor = clazz.getConstructors.head
@@ -254,4 +325,10 @@ object CarbonReflectionUtils {
     (ctor.newInstance(conArgs: _*), clazz)
   }
 
+  def createObjectOfPrivateConstructor(className: String, conArgs: Object*): (Any, Class[_]) = {
+    val clazz = Utils.classForName(className)
+    val ctor = clazz.getDeclaredConstructors.head
+    ctor.setAccessible(true)
+    (ctor.newInstance(conArgs: _*), clazz)
+  }
 }

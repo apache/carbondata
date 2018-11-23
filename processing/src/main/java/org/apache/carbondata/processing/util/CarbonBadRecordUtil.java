@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
@@ -35,12 +34,13 @@ import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 
 /**
  * Common methods used for the bad record handling
  */
 public class CarbonBadRecordUtil {
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonDataProcessorUtil.class.getName());
 
   /**
@@ -130,7 +130,7 @@ public class CarbonBadRecordUtil {
   public static String getBadRecordsPath(Map<String, String> loadOptions, CarbonTable table) {
     String badRecordsFromLoad = loadOptions.get("bad_record_path");
     String badRecordsFromCreate =
-        table.getTableInfo().getFactTable().getTableProperties().get("bad_records_path");
+        table.getTableInfo().getFactTable().getTableProperties().get("bad_record_path");
     String badRecordsPath;
     if (StringUtils.isNotEmpty(badRecordsFromLoad)) {
       badRecordsPath =

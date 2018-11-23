@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
@@ -55,19 +54,29 @@ import org.apache.carbondata.core.util.DeleteLoadFolders;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import com.google.gson.Gson;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 /**
  * Manages Load/Segment status
  */
 public class SegmentStatusManager {
 
-  private static final LogService LOG =
+  private static final Logger LOG =
       LogServiceFactory.getLogService(SegmentStatusManager.class.getName());
 
   private AbsoluteTableIdentifier identifier;
 
+  private Configuration configuration;
+
   public SegmentStatusManager(AbsoluteTableIdentifier identifier) {
     this.identifier = identifier;
+    configuration = FileFactory.getConfiguration();
+  }
+
+  public SegmentStatusManager(AbsoluteTableIdentifier identifier, Configuration configuration) {
+    this.identifier = identifier;
+    this.configuration = configuration;
   }
 
   /**
@@ -93,19 +102,8 @@ public class SegmentStatusManager {
     }
   }
 
-  /**
-   * get valid segment for given table
-   *
-   * @return
-   * @throws IOException
-   */
   public ValidAndInvalidSegmentsInfo getValidAndInvalidSegments() throws IOException {
     return getValidAndInvalidSegments(null, null);
-  }
-
-  public ValidAndInvalidSegmentsInfo getValidAndInvalidSegments(
-      LoadMetadataDetails[] loadMetadataDetails) throws IOException {
-    return getValidAndInvalidSegments(loadMetadataDetails, null);
   }
 
   /**
@@ -129,7 +127,8 @@ public class SegmentStatusManager {
       }
 
       if (readCommittedScope == null) {
-        readCommittedScope = new TableStatusReadCommittedScope(identifier, loadMetadataDetails);
+        readCommittedScope = new TableStatusReadCommittedScope(identifier, loadMetadataDetails,
+            configuration);
       }
       //just directly iterate Array
       for (LoadMetadataDetails segment : loadMetadataDetails) {
@@ -253,7 +252,7 @@ public class SegmentStatusManager {
       listOfLoadFolderDetailsArray =
           gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
     } catch (IOException e) {
-      LOG.error(e, "Failed to read metadata of load");
+      LOG.error("Failed to read metadata of load", e);
       throw e;
     } finally {
       closeStreams(buffReader, inStream, dataInputStream);
@@ -371,7 +370,6 @@ public class SegmentStatusManager {
               String errorMsg = "Delete segment by id is failed for " + tableDetails
                   + ". Not able to acquire the table status lock due to other operation running "
                   + "in the background.";
-              LOG.audit(errorMsg);
               LOG.error(errorMsg);
               throw new Exception(errorMsg + " Please try after some time.");
             }
@@ -381,7 +379,7 @@ public class SegmentStatusManager {
           }
 
         } else {
-          LOG.audit("Delete segment by Id is failed. No matching segment id found.");
+          LOG.error("Delete segment by Id is failed. No matching segment id found.");
           return loadIds;
         }
 
@@ -389,7 +387,6 @@ public class SegmentStatusManager {
         String errorMsg = "Delete segment by id is failed for " + tableDetails
             + ". Not able to acquire the delete segment lock due to another delete "
             + "operation is running in the background.";
-        LOG.audit(errorMsg);
         LOG.error(errorMsg);
         throw new Exception(errorMsg + " Please try after some time.");
       }
@@ -453,7 +450,6 @@ public class SegmentStatusManager {
               String errorMsg = "Delete segment by date is failed for " + tableDetails
                   + ". Not able to acquire the table status lock due to other operation running "
                   + "in the background.";
-              LOG.audit(errorMsg);
               LOG.error(errorMsg);
               throw new Exception(errorMsg + " Please try after some time.");
 
@@ -463,7 +459,7 @@ public class SegmentStatusManager {
           }
 
         } else {
-          LOG.audit("Delete segment by date is failed. No matching segment found.");
+          LOG.error("Delete segment by date is failed. No matching segment found.");
           invalidLoadTimestamps.add(loadDate);
           return invalidLoadTimestamps;
         }
@@ -472,7 +468,6 @@ public class SegmentStatusManager {
         String errorMsg = "Delete segment by date is failed for " + tableDetails
             + ". Not able to acquire the delete segment lock due to another delete "
             + "operation is running in the background.";
-        LOG.audit(errorMsg);
         LOG.error(errorMsg);
         throw new Exception(errorMsg + " Please try after some time.");
       }
@@ -512,6 +507,7 @@ public class SegmentStatusManager {
       brWriter.write(metadataInstance);
     } catch (IOException ioe) {
       LOG.error("Error message: " + ioe.getLocalizedMessage());
+      fileWrite.setFailed();
       throw ioe;
     } finally {
       if (null != brWriter) {
@@ -578,7 +574,7 @@ public class SegmentStatusManager {
       }
 
       if (!loadFound) {
-        LOG.audit("Delete segment by ID is failed. No matching segment id found :" + loadId);
+        LOG.error("Delete segment by ID is failed. No matching segment id found :" + loadId);
         invalidLoadIds.add(loadId);
         return invalidLoadIds;
       }
@@ -632,7 +628,7 @@ public class SegmentStatusManager {
 
     if (!loadFound) {
       invalidLoadTimestamps.add(loadDate);
-      LOG.audit("Delete segment by date is failed. No matching segment found.");
+      LOG.error("Delete segment by date is failed. No matching segment found.");
       return invalidLoadTimestamps;
     }
     return invalidLoadTimestamps;
@@ -881,6 +877,10 @@ public class SegmentStatusManager {
 
       String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetails.toArray());
       brWriter.write(metadataInstance);
+    } catch (IOException ie) {
+      LOG.error("Error message: " + ie.getLocalizedMessage());
+      writeOperation.setFailed();
+      throw ie;
     } finally {
       try {
         if (null != brWriter) {
@@ -929,6 +929,8 @@ public class SegmentStatusManager {
     CarbonLockUtil.deleteExpiredSegmentLockFiles(carbonTable);
     if (isLoadDeletionRequired(carbonTable.getMetadataPath())) {
       AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
+      boolean updationCompletionStatus = false;
+      LoadMetadataDetails[] newAddedLoadHistoryList = null;
       ReturnTuple tuple = isUpdationRequired(isForceDeletion, carbonTable, identifier);
       if (tuple.isUpdateRequired) {
         ICarbonLock carbonTableStatusLock =
@@ -953,7 +955,6 @@ public class SegmentStatusManager {
             int maxSegmentId = SegmentStatusManager.getMaxSegmentId(tuple2.details);
             int invisibleSegmentCnt = SegmentStatusManager.countInvisibleSegments(
                 tuple2.details, maxSegmentId);
-            LoadMetadataDetails[] newAddedLoadHistoryList = null;
             // if execute command 'clean files' or the number of invisible segment info
             // exceeds the value of 'carbon.invisible.segments.preserve.count',
             // it need to append the invisible segment list to 'tablestatus.history' file.
@@ -978,9 +979,7 @@ public class SegmentStatusManager {
                   updateLoadMetadataFromOldToNew(tuple2.details, latestMetadata);
               writeLoadMetadata(identifier, latestStatus);
             }
-            DeleteLoadFolders.physicalFactAndMeasureMetadataDeletion(
-                identifier, carbonTable.getMetadataPath(),
-                newAddedLoadHistoryList, isForceDeletion, partitionSpecs);
+            updationCompletionStatus = true;
           } else {
             String dbName = identifier.getCarbonTableIdentifier().getDatabaseName();
             String tableName = identifier.getCarbonTableIdentifier().getTableName();
@@ -988,13 +987,17 @@ public class SegmentStatusManager {
                 dbName + "." + tableName +
                 ". Not able to acquire the table status lock due to other operation " +
                 "running in the background.";
-            LOG.audit(errorMsg);
             LOG.error(errorMsg);
             throw new IOException(errorMsg + " Please try after some time.");
           }
         } finally {
           if (locked) {
             CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
+          }
+          if (updationCompletionStatus) {
+            DeleteLoadFolders
+                .physicalFactAndMeasureMetadataDeletion(carbonTable, newAddedLoadHistoryList,
+                    isForceDeletion, partitionSpecs);
           }
         }
       }

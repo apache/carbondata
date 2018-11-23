@@ -17,7 +17,8 @@
 
 package org.apache.carbondata.spark.rdd
 
-import org.apache.spark.{Partition, SparkContext, TaskContext}
+import org.apache.spark.{Partition, TaskContext}
+import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -47,15 +48,16 @@ class AddColumnPartition(rddId: Int, idx: Int, schema: ColumnSchema) extends Par
 /**
  * This class is aimed at generating dictionary file for the newly added columns
  */
-class AlterTableAddColumnRDD[K, V](sc: SparkContext,
-    @transient newColumns: Seq[ColumnSchema],
+class AlterTableAddColumnRDD[K, V](
+    @transient private val sparkSession: SparkSession,
+    @transient private val newColumns: Seq[ColumnSchema],
     identifier: AbsoluteTableIdentifier)
-  extends CarbonRDD[(Int, SegmentStatus)](sc, Nil, sc.hadoopConfiguration) {
+  extends CarbonRDD[(Int, SegmentStatus)](sparkSession, Nil) {
 
   val lockType: String = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.LOCK_TYPE,
     CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
 
-  override def getPartitions: Array[Partition] = {
+  override def internalGetPartitions: Array[Partition] = {
     newColumns.zipWithIndex.map { column =>
       new AddColumnPartition(id, column._2, column._1)
     }.toArray

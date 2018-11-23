@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.hive.execution.command
 
-import org.apache.spark.sql.{CarbonEnv, CarbonSession, Row, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 import org.apache.spark.sql.catalyst.expressions.Attribute
@@ -63,29 +63,22 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
 }
 
 case class CarbonSetCommand(command: SetCommand)
-  extends RunnableCommand {
+  extends MetadataCommand {
 
   override val output: Seq[Attribute] = command.output
 
-  override def run(sparkSession: SparkSession): Seq[Row] = {
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val sessionParams = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.getSessionParams
     command.kv match {
       case Some((key, Some(value))) =>
         CarbonSetCommand.validateAndSetValue(sessionParams, key, value)
-
-        // handle search mode start/stop for ThriftServer usage
-        if (key.equalsIgnoreCase(CarbonCommonConstants.CARBON_SEARCH_MODE_ENABLE)) {
-          if (value.equalsIgnoreCase("true")) {
-            sparkSession.asInstanceOf[CarbonSession].startSearchMode()
-          } else {
-            sparkSession.asInstanceOf[CarbonSession].stopSearchMode()
-          }
-        }
       case _ =>
-
     }
     command.run(sparkSession)
   }
+
+  override protected def opName: String = "SET"
+
 }
 
 object CarbonSetCommand {
@@ -112,7 +105,7 @@ object CarbonSetCommand {
         sessionParams.addProperty(key.toLowerCase, value)
       } else {
         throw new MalformedCarbonCommandException("property should be in " +
-          "\" carbon.datamap.visible.<database_name>.<table_name>.<database_name>" +
+          "\" carbon.datamap.visible.<database_name>.<table_name>.<datamap_name>" +
           " = <true/false> \" format")
       }
     } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL)) {

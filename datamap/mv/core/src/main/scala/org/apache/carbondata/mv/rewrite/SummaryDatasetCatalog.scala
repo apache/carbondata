@@ -152,7 +152,14 @@ private[mv] class SummaryDatasetCatalog(sparkSession: SparkSession)
   }
 
 
-  override def listAllSchema(): Array[SummaryDataset] = summaryDatasets.toArray
+  override def listAllValidSchema(): Array[SummaryDataset] = {
+    val statusDetails = DataMapStatusManager.getEnabledDataMapStatusDetails
+    // Only select the enabled datamaps for the query.
+    val enabledDataSets = summaryDatasets.filter { p =>
+      statusDetails.exists(_.getDataMapName.equalsIgnoreCase(p.dataMapSchema.getDataMapName))
+    }
+    enabledDataSets.toArray
+  }
 
   /**
    * API for test only

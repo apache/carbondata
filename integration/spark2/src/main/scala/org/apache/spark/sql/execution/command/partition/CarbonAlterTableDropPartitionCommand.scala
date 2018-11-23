@@ -28,12 +28,13 @@ import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.util.AlterTableUtil
 
-import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
+import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
@@ -47,7 +48,7 @@ case class CarbonAlterTableDropPartitionCommand(
     model: AlterTableDropPartitionModel)
   extends AtomicRunnableCommand {
 
-  private val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
   private val oldPartitionIds: util.ArrayList[Int] = new util.ArrayList[Int]()
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
@@ -56,6 +57,8 @@ case class CarbonAlterTableDropPartitionCommand(
     }
     val dbName = model.databaseName.getOrElse(sparkSession.catalog.currentDatabase)
     val tableName = model.tableName
+    setAuditTable(dbName, tableName)
+    setAuditInfo(Map("partition" -> model.partitionId))
     val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
       .asInstanceOf[CarbonRelation]
@@ -89,6 +92,8 @@ case class CarbonAlterTableDropPartitionCommand(
       case PartitionType.RANGE_INTERVAL =>
         throwMetadataException(dbName, tableName,
           "Dropping range interval partition is unsupported")
+      case _ => throw new UnsupportedOperationException(
+        s"${partitionInfo.getPartitionType} is not supported")
     }
     partitionInfo.dropPartition(partitionIndex)
 
@@ -118,7 +123,7 @@ case class CarbonAlterTableDropPartitionCommand(
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val dbName = model.databaseName.getOrElse(sparkSession.catalog.currentDatabase)
     val tableName = model.tableName
     var locks = List.empty[ICarbonLock]
@@ -143,6 +148,10 @@ case class CarbonAlterTableDropPartitionCommand(
       carbonLoadModel.setTablePath(table.getTablePath)
       val loadStartTime = CarbonUpdateUtil.readCurrentTime
       carbonLoadModel.setFactTimeStamp(loadStartTime)
+      val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
+        .getOrElse(CarbonCommonConstants.COMPRESSOR,
+          CompressorFactory.getInstance().getCompressor.getName)
+      carbonLoadModel.setColumnCompressor(columnCompressor)
       alterTableDropPartition(
         sparkSession.sqlContext,
         model.partitionId,
@@ -161,7 +170,6 @@ case class CarbonAlterTableDropPartitionCommand(
       LOGGER.info("Locks released after alter table drop partition action.")
     }
     LOGGER.info(s"Alter table drop partition is successful for table $dbName.$tableName")
-    LOGGER.audit(s"Alter table drop partition is successful for table $dbName.$tableName")
     Seq.empty
   }
 
@@ -170,8 +178,6 @@ case class CarbonAlterTableDropPartitionCommand(
       carbonLoadModel: CarbonLoadModel,
       dropWithData: Boolean,
       oldPartitionIds: List[Int]): Unit = {
-    LOGGER.audit(s"Drop partition request received for table " +
-                 s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
     try {
       startDropThreads(
         sqlContext,
@@ -191,9 +197,7 @@ case class CarbonAlterTableDropPartitionCommand(
       partitionId: String,
       dropWithData: Boolean,
       oldPartitionIds: List[Int]): Unit = {
-    val numberOfCores = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.NUM_CORES_ALT_PARTITION,
-        CarbonCommonConstants.DEFAULT_NUMBER_CORES)
+    val numberOfCores = CarbonProperties.getInstance().getNumberOfAltPartitionCores
     val executor : ExecutorService = Executors.newFixedThreadPool(numberOfCores.toInt)
     try {
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
@@ -229,6 +233,8 @@ case class CarbonAlterTableDropPartitionCommand(
       }
     }
   }
+
+  override protected def opName: String = "DROP CUSTOM PARTITION"
 }
 
 case class dropPartitionThread(sqlContext: SQLContext,
@@ -239,7 +245,7 @@ case class dropPartitionThread(sqlContext: SQLContext,
     dropWithData: Boolean,
     oldPartitionIds: List[Int]) extends Thread {
 
-  private val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   override def run(): Unit = {
     try {
@@ -247,8 +253,8 @@ case class dropPartitionThread(sqlContext: SQLContext,
         segmentId, partitionId, dropWithData, oldPartitionIds)
     } catch {
       case e: Exception =>
-        val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
-        LOGGER.error(s"Exception in dropping partition thread: ${ e.getMessage } }")
+        val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+        LOGGER.error(s"Exception in dropping partition thread: ${ e.getMessage } }", e)
     }
   }
 
@@ -267,7 +273,7 @@ case class dropPartitionThread(sqlContext: SQLContext,
       future.get
     } catch {
       case e: Exception =>
-        LOGGER.error(e, s"Exception in partition drop thread ${ e.getMessage }")
+        LOGGER.error(s"Exception in partition drop thread ${ e.getMessage }", e)
         throw e
     }
   }

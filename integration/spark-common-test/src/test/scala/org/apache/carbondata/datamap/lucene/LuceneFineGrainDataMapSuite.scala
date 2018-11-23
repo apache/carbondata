@@ -41,6 +41,8 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
   val file2 = resourcesPath + "/datamap_input.csv"
 
   override protected def beforeAll(): Unit = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     new File(CarbonProperties.getInstance().getSystemFolderLocation).delete()
     LuceneFineGrainDataMapSuite.createFile(file2)
     sql("create database if not exists lucene")
@@ -132,7 +134,34 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap dm on table datamap_test")
   }
 
-  test("test lucene rebuild data map") {
+  // for CARBONDATA-2820, we will first block deferred rebuild for lucene
+  test("test block rebuild for lucene") {
+    val deferredRebuildException = intercept[MalformedDataMapCommandException] {
+      sql(
+        s"""
+           | CREATE DATAMAP dm ON TABLE datamap_test
+           | USING 'lucene'
+           | WITH DEFERRED REBUILD
+           | DMProperties('INDEX_COLUMNS'='city')
+      """.stripMargin)
+    }
+    assert(deferredRebuildException.getMessage.contains(
+      s"DEFERRED REBUILD is not supported on this datamap dm with provider lucene"))
+
+    sql(
+      s"""
+         | CREATE DATAMAP dm ON TABLE datamap_test
+         | USING 'lucene'
+         | DMProperties('INDEX_COLUMNS'='city')
+      """.stripMargin)
+    val exception = intercept[MalformedDataMapCommandException] {
+      sql(s"REBUILD DATAMAP dm ON TABLE datamap_test")
+    }
+    sql("drop datamap dm on table datamap_test")
+    assert(exception.getMessage.contains("Non-lazy datamap dm does not support rebuild"))
+  }
+
+  ignore("test lucene rebuild data map") {
     sql("DROP TABLE IF EXISTS datamap_test4")
     sql(
       """
@@ -371,7 +400,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       """
         | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)
         | STORED BY 'carbondata'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT', 'CACHE_LEVEL'='BLOCKLET')
       """.stripMargin)
     sql(
       s"""
@@ -386,33 +415,6 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("SELECT * FROM datamap_test_table WHERE TEXT_MATCH('name:n10')"),
       sql("select * from datamap_test_table where name='n10'"))
     sql("DROP TABLE IF EXISTS datamap_test_table")
-  }
-
-  test("test lucene fine grain data map with ALTER ADD and DROP Table COLUMN on Lucene DataMap") {
-    sql("DROP TABLE IF EXISTS datamap_test_table")
-    sql(
-      """
-        | CREATE TABLE datamap_test_table(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'carbondata'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='GLOBAL_SORT')
-      """.stripMargin)
-    sql(
-      s"""
-         | CREATE DATAMAP dm2 ON TABLE datamap_test_table
-         | USING 'lucene'
-         | DMProperties('INDEX_COLUMNS'='name , city')
-      """.stripMargin)
-    val exception_add_column: Exception = intercept[MalformedCarbonCommandException] {
-      sql("alter table dm2 add columns(city1 string)")
-    }
-    assert(exception_add_column.getMessage
-      .contains("Unsupported alter operation on hive table"))
-    val exception_drop_column: Exception = intercept[MalformedCarbonCommandException] {
-      sql("alter table dm2 drop columns(name)")
-    }
-    assert(exception_drop_column.getMessage
-      .contains("Unsupported alter operation on hive table"))
-    sql("drop datamap if exists dm2 on table datamap_test_table")
   }
 
   test("test Clean Files and check Lucene DataMap") {
@@ -571,7 +573,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       """
         | CREATE TABLE main(id INT, name STRING, city STRING, age INT)
         | STORED BY 'carbondata'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name')
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'CACHE_LEVEL'='BLOCKLET')
       """.stripMargin)
     sql(
       s"""
@@ -587,24 +589,28 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
 
     sql("EXPLAIN SELECT * FROM main WHERE TEXT_MATCH('name:bob')").show(false)
     val rows = sql("EXPLAIN SELECT * FROM main WHERE TEXT_MATCH('name:bob')").collect()
-
-    assertResult(
-      """== CarbonData Profiler ==
-        |Table Scan on main
-        | - total blocklets: 1
-        | - filter: TEXT_MATCH('name:bob')
-        | - pruned by Main DataMap
-        |    - skipped blocklets: 0
-        | - pruned by FG DataMap
-        |    - name: dm
-        |    - provider: lucene
-        |    - skipped blocklets: 1
-        |""".stripMargin)(rows(0).getString(0))
-
-    LuceneFineGrainDataMapSuite.deleteFile(file1)
-    sql("drop datamap dm on table main")
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.BLOCKLET_SIZE, CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
+    // sometimes the plan comparison is failing even in case of both the plan being same.
+    // once the failure happens the dropped datamap is not getting executed
+    // and due to this other test cases also failing.
+    try {
+      assertResult(
+        """== CarbonData Profiler ==
+          |Table Scan on main
+          | - total: 1 blocks, 1 blocklets
+          | - filter: TEXT_MATCH('name:bob')
+          | - pruned by Main DataMap
+          |    - skipped: 0 blocks, 0 blocklets
+          | - pruned by FG DataMap
+          |    - name: dm
+          |    - provider: lucene
+          |    - skipped: 1 blocks, 1 blocklets
+          |""".stripMargin)(rows(0).getString(0))
+    } finally {
+      LuceneFineGrainDataMapSuite.deleteFile(file1)
+      sql("drop datamap dm on table main")
+      CarbonProperties.getInstance().addProperty(
+        CarbonCommonConstants.BLOCKLET_SIZE, CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
+    }
   }
 
   test("test lucene datamap creation for blocked features") {
@@ -654,13 +660,13 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     assert(ex6.getMessage.contains("Delete operation is not supported"))
   }
 
-  test("test lucene fine grain multiple data map on table") {
+  ignore("test lucene fine grain multiple data map on table") {
     sql("DROP TABLE IF EXISTS datamap_test5")
     sql(
       """
         | CREATE TABLE datamap_test5(id INT, name STRING, city STRING, age INT)
         | STORED BY 'carbondata'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT')
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT', 'CACHE_LEVEL'='BLOCKLET')
       """.stripMargin)
     sql(
       s"""
@@ -687,7 +693,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamap_test5")
   }
 
-  test("test lucene fine grain datamap rebuild") {
+  ignore("test lucene fine grain datamap rebuild") {
     sql("DROP TABLE IF EXISTS datamap_test5")
     sql(
       """
@@ -711,7 +717,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS datamap_test5")
   }
 
-  test("test text_match on normal table") {
+  ignore("test text_match on normal table") {
     sql("DROP TABLE IF EXISTS table1")
     sql(
       """
@@ -799,7 +805,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists table_stop")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS, "false")
-    sql("create table table_stop(suggestion string,goal string) stored by 'carbondata'")
+    sql("create table table_stop(suggestion string,goal string) stored by 'carbondata' TBLPROPERTIES('CACHE_LEVEL'='BLOCKLET')")
     sql(
       "create datamap stop_dm on table table_stop using 'lucene' DMPROPERTIES('index_columns'='suggestion')")
     sql("insert into table_stop select 'The is the stop word','abcde'")
@@ -817,13 +823,15 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       """
         | CREATE TABLE datamap_test4(id INT, name STRING, city STRING, age INT)
         | STORED BY 'carbondata'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT', 'autorefreshdatamap' = 'false')
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT',
+        | 'autorefreshdatamap' = 'false', 'CACHE_LEVEL'='BLOCKLET')
       """.stripMargin)
     sql(
       """
         | CREATE TABLE datamap_copy(id INT, name STRING, city STRING, age INT)
         | STORED BY 'carbondata'
-        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT', 'autorefreshdatamap' = 'false')
+        | TBLPROPERTIES('SORT_COLUMNS'='city,name', 'SORT_SCOPE'='LOCAL_SORT',
+        | 'autorefreshdatamap' = 'false', 'CACHE_LEVEL'='BLOCKLET')
       """.stripMargin)
     sql("insert into datamap_test4 select 1,'name','city',20")
     sql("insert into datamap_test4 select 2,'name1','city1',20")
@@ -910,14 +918,14 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("use default")
     sql("drop database if exists lucene cascade")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_SYSTEM_FOLDER_LOCATION,
-        CarbonProperties.getStorePath)
-    CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS,
         CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS_DEFAULT)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
         originDistributedDatamapStatus)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
   }
 }
 

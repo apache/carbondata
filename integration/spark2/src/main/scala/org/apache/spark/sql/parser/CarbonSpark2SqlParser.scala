@@ -20,7 +20,7 @@ package org.apache.spark.sql.parser
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-import org.apache.spark.sql.{CarbonEnv, DeleteRecords, UpdateTable}
+import org.apache.spark.sql.{CarbonToSparkAdapater, DeleteRecords, UpdateTable}
 import org.apache.spark.sql.catalyst.{CarbonDDLSqlParser, TableIdentifier}
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -37,6 +37,7 @@ import org.apache.spark.sql.execution.command.stream.{CarbonCreateStreamCommand,
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
+import org.apache.carbondata.api.CarbonStore.LOGGER
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.CarbonOption
@@ -76,7 +77,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val startCommand: Parser[LogicalPlan] =
     loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
-    alterPartition | datamapManagement | alterTableFinishStreaming | stream
+    alterPartition | datamapManagement | alterTableFinishStreaming | stream | cli
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
@@ -479,7 +480,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         logicalPlan match {
           case _: CarbonCreateTableCommand =>
             ExplainCommand(logicalPlan, extended = isExtended.isDefined)
-          case _ => ExplainCommand(OneRowRelation)
+          case _ => CarbonToSparkAdapater.getExplainCommandObj
         }
     }
 
@@ -492,6 +493,23 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           convertDbNameToLowerCase(databaseName), tableName.toLowerCase(), limit,
           showHistory.isDefined)
     }
+
+
+  protected lazy val cli: Parser[LogicalPlan] =
+    (CARBONCLI ~> FOR ~> TABLE) ~> (ident <~ ".").? ~ ident ~
+    (OPTIONS ~> "(" ~> commandOptions <~ ")").? <~
+    opt(";") ^^ {
+      case databaseName ~ tableName ~ commandList =>
+        var commandOptions: String = null
+        if (commandList.isDefined) {
+          commandOptions = commandList.get
+        }
+        CarbonCliCommand(
+          convertDbNameToLowerCase(databaseName),
+          tableName.toLowerCase(),
+          commandOptions)
+    }
+
 
   protected lazy val alterTableModifyDataType: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ CHANGE ~ ident ~ ident ~
@@ -529,11 +547,6 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
               val colName = name.substring(14)
               if (name.startsWith("default.value.") &&
                   fields.count(p => p.column.equalsIgnoreCase(colName)) == 1) {
-                LOGGER.error(s"Duplicate default value exist for new column: ${ colName }")
-                LOGGER.audit(
-                  s"Validation failed for Create/Alter Table Operation " +
-                  s"for ${ table }. " +
-                  s"Duplicate default value exist for new column: ${ colName }")
                 sys.error(s"Duplicate default value exist for new column: ${ colName }")
               }
             }

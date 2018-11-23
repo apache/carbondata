@@ -21,14 +21,20 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.datamap.Segment;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -36,12 +42,13 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.readcommitter.LatestFilesReadCommittedScope;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
+import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 
@@ -59,6 +66,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
 
   // a cache for carbon table, it will be used in task side
   private CarbonTable carbonTable;
+
 
   public CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
     CarbonTable carbonTableTemp;
@@ -114,16 +122,20 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
       ReadCommittedScope readCommittedScope = null;
       if (carbonTable.isTransactionalTable()) {
         readCommittedScope = new LatestFilesReadCommittedScope(
-            identifier.getTablePath() + "/Fact/Part0/Segment_null/");
+            identifier.getTablePath() + "/Fact/Part0/Segment_null/", job.getConfiguration());
       } else {
-        readCommittedScope = new LatestFilesReadCommittedScope(identifier.getTablePath());
+        readCommittedScope = getReadCommittedScope(job.getConfiguration());
+        if (readCommittedScope == null) {
+          readCommittedScope = new LatestFilesReadCommittedScope(identifier.getTablePath(), job
+              .getConfiguration());
+        } else {
+          readCommittedScope.setConfiguration(job.getConfiguration());
+        }
       }
-      Expression filter = getFilterPredicates(job.getConfiguration());
       // this will be null in case of corrupt schema file.
       PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName());
-      carbonTable.processFilterExpression(filter, null, null);
+      Expression filter = getFilterPredicates(job.getConfiguration());
 
-      FilterResolverIntf filterInterface = carbonTable.resolveFilter(filter);
 
       // if external table Segments are found, add it to the List
       List<Segment> externalTableSegments = new ArrayList<Segment>();
@@ -142,9 +154,35 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
           externalTableSegments.add(seg);
         }
       }
-      // do block filtering and get split
-      List<InputSplit> splits =
-          getSplits(job, filterInterface, externalTableSegments, null, partitionInfo, null);
+      List<InputSplit> splits = new ArrayList<>();
+      boolean useBlockDataMap = job.getConfiguration().getBoolean("filter_blocks", true);
+      // useBlockDataMap would be false in case of SDK when user has not provided any filter, In
+      // this case we dont want to load block/blocklet datamap. It would be true in all other
+      // scenarios
+      if (useBlockDataMap) {
+        // do block filtering and get split
+        splits = getSplits(job, filter, externalTableSegments, null, partitionInfo, null);
+      } else {
+        for (CarbonFile carbonFile : getAllCarbonDataFiles(carbonTable.getTablePath())) {
+          // Segment id is set to null because SDK does not write carbondata files with respect
+          // to segments. So no specific name is present for this load.
+          CarbonInputSplit split =
+              new CarbonInputSplit("null", new Path(carbonFile.getAbsolutePath()), 0,
+                  carbonFile.getLength(), carbonFile.getLocations(), FileFormat.COLUMNAR_V3);
+          split.setVersion(ColumnarFormatVersion.V3);
+          BlockletDetailInfo info = new BlockletDetailInfo();
+          split.setDetailInfo(info);
+          info.setBlockSize(carbonFile.getLength());
+          info.setVersionNumber(split.getVersion().number());
+          info.setUseMinMaxForPruning(false);
+          splits.add(split);
+        }
+        Collections.sort(splits, new Comparator<InputSplit>() {
+          @Override public int compare(InputSplit o1, InputSplit o2) {
+            return ((CarbonInputSplit) o1).getPath().compareTo(((CarbonInputSplit) o2).getPath());
+          }
+        });
+      }
       if (getColumnProjection(job.getConfiguration()) == null) {
         // If the user projection is empty, use default all columns as projections.
         // All column name will be filled inside getSplits, so can update only here.
@@ -156,6 +194,20 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
     return null;
   }
 
+  private List<CarbonFile> getAllCarbonDataFiles(String tablePath) {
+    List<CarbonFile> carbonFiles;
+    try {
+      carbonFiles = FileFactory.getCarbonFile(tablePath).listFiles(true, new CarbonFileFilter() {
+        @Override public boolean accept(CarbonFile file) {
+          return file.getName().endsWith(CarbonTablePath.CARBON_DATA_EXT);
+        }
+      });
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return carbonFiles;
+  }
+
   /**
    * {@inheritDoc}
    * Configurations FileInputFormat.INPUT_DIR, CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS
@@ -164,7 +216,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
    * @return
    * @throws IOException
    */
-  private List<InputSplit> getSplits(JobContext job, FilterResolverIntf filterResolver,
+  private List<InputSplit> getSplits(JobContext job, Expression expression,
       List<Segment> validSegments, BitSet matchedPartitions, PartitionInfo partitionInfo,
       List<Integer> oldPartitionIdList) throws IOException {
 
@@ -173,7 +225,7 @@ public class CarbonFileInputFormat<T> extends CarbonInputFormat<T> implements Se
 
     // for each segment fetch blocks matching filter in Driver BTree
     List<CarbonInputSplit> dataBlocksOfSegment =
-        getDataBlocksOfSegment(job, carbonTable, filterResolver, matchedPartitions,
+        getDataBlocksOfSegment(job, carbonTable, expression, matchedPartitions,
             validSegments, partitionInfo, oldPartitionIdList);
     numBlocks = dataBlocksOfSegment.size();
     result.addAll(dataBlocksOfSegment);

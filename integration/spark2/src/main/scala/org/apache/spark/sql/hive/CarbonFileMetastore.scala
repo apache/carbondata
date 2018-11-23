@@ -23,7 +23,6 @@ import java.net.URI
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
-import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
 import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias}
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -31,7 +30,8 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.util.CarbonReflectionUtils
+import org.apache.spark.sql.sources.BaseRelation
+import org.apache.spark.util.{CarbonReflectionUtils, SparkUtil}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
@@ -43,9 +43,8 @@ import org.apache.carbondata.core.fileoperations.FileWriteOperation
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema
-import org.apache.carbondata.core.metadata.schema.table
+import org.apache.carbondata.core.metadata.schema.{table, SchemaReader}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.metadata.schema.SchemaReader
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.ThriftWriter
@@ -69,6 +68,13 @@ case class CarbonMetaData(dims: Seq[String],
 case class DictionaryMap(dictionaryMap: Map[String, Boolean]) {
   def get(name: String): Option[Boolean] = {
     dictionaryMap.get(name.toLowerCase)
+  }
+}
+
+object MatchLogicalRelation {
+  def unapply(logicalPlan: LogicalPlan): Option[(BaseRelation, Any, Any)] = logicalPlan match {
+    case l: LogicalRelation => Some(l.relation, l.output, l.catalogTable)
+    case _ => None
   }
 }
 
@@ -143,13 +149,13 @@ class CarbonFileMetastore extends CarbonMetaStore {
       sparkSession.catalog.currentDatabase)
     val relation = sparkSession.sessionState.catalog.lookupRelation(tableIdentifier) match {
       case SubqueryAlias(_,
-      LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _)) =>
+      MatchLogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _)) =>
         carbonDatasourceHadoopRelation.carbonRelation
-      case LogicalRelation(
+      case MatchLogicalRelation(
       carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _) =>
         carbonDatasourceHadoopRelation.carbonRelation
       case SubqueryAlias(_, c)
-        if SPARK_VERSION.startsWith("2.2") &&
+        if (SparkUtil.isSparkVersionXandAbove("2.2")) &&
            (c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
             c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.HiveTableRelation") ||
             c.getClass.getName.equals(
@@ -485,7 +491,6 @@ class CarbonFileMetastore extends CarbonMetaStore {
       // in the other beeline need to update.
       checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
 
-      removeTableFromMetadata(dbName, tableName)
       CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
       updateSchemasUpdatedTime(touchSchemaFileSystemTime())
       // discard cached table info in cachedDataSourceTables
@@ -493,6 +498,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
       sparkSession.sessionState.catalog.refreshTable(tableIdentifier)
       DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier)
       SegmentPropertiesAndSchemaHolder.getInstance().invalidate(absoluteTableIdentifier)
+      removeTableFromMetadata(dbName, tableName)
     } else {
       if (!isTransactionalCarbonTable(absoluteTableIdentifier)) {
         removeTableFromMetadata(dbName, tableName)
@@ -502,6 +508,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
         sparkSession.sessionState.catalog.refreshTable(tableIdentifier)
         DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier)
         SegmentPropertiesAndSchemaHolder.getInstance().invalidate(absoluteTableIdentifier)
+        removeTableFromMetadata(dbName, tableName)
       }
     }
   }
@@ -574,7 +581,10 @@ class CarbonFileMetastore extends CarbonMetaStore {
             tableModifiedTimeStore.get(CarbonCommonConstants.DATABASE_DEFAULT_NAME))) {
         metadata.carbonTables = metadata.carbonTables.filterNot(
           table => table.getTableName.equalsIgnoreCase(tableIdentifier.table) &&
-        table.getDatabaseName.equalsIgnoreCase(tableIdentifier.database.getOrElse("default")))
+                   table.getDatabaseName
+                     .equalsIgnoreCase(tableIdentifier.database
+                       .getOrElse(SparkSession.getActiveSession.get.sessionState.catalog
+                         .getCurrentDatabase)))
         updateSchemasUpdatedTime(lastModifiedTime)
         isRefreshed = true
       }
@@ -598,13 +608,13 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val relation: LogicalPlan = sparkSession.sessionState.catalog.lookupRelation(tableIdentifier)
     relation match {
       case SubqueryAlias(_,
-      LogicalRelation(carbonDataSourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _)) =>
+      MatchLogicalRelation(carbonDataSourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _)) =>
         carbonDataSourceHadoopRelation
-      case LogicalRelation(
+      case MatchLogicalRelation(
       carbonDataSourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _) =>
         carbonDataSourceHadoopRelation
       case SubqueryAlias(_, c)
-        if SPARK_VERSION.startsWith("2.2") &&
+        if (SparkUtil.isSparkVersionXandAbove("2.2")) &&
            (c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
             c.getClass.getName
               .equals("org.apache.spark.sql.catalyst.catalog.HiveTableRelation") ||
@@ -620,9 +630,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
         }
         val tableLocation = catalogTable.storage.locationUri match {
           case tableLoc@Some(uri) =>
-            if (tableLoc.get.isInstanceOf[String]) {
-              FileFactory.getUpdatedFilePath(tableLoc.get.asInstanceOf[String])
-            } else if (tableLoc.get.isInstanceOf[URI]) {
+            if (tableLoc.get.isInstanceOf[URI]) {
               FileFactory.getUpdatedFilePath(tableLoc.get.asInstanceOf[URI].getPath)
             }
           case None =>

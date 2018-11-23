@@ -25,8 +25,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+
+import org.apache.log4j.Logger;
 
 /**
  * This class stores the block details of delete delta file
@@ -41,7 +42,7 @@ public class DeleteDeltaBlockDetails implements Serializable {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(DeleteDeltaBlockDetails.class.getName());
 
   public DeleteDeltaBlockDetails(String blockName) {

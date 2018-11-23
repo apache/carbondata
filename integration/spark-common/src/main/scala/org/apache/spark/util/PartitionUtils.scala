@@ -149,7 +149,7 @@ object PartitionUtils {
         oldPartitionIdList,
         partitionInfo,
         carbonTable)
-    val footer = CarbonUtil.readMetadatFile(tableBlockInfoList.get(0))
+    val footer = CarbonUtil.readMetadataFile(tableBlockInfoList.get(0))
     val segmentProperties = new SegmentProperties(footer.getColumnInTable,
       footer.getSegmentInfo.getColumnCardinality)
     segmentProperties
@@ -159,7 +159,7 @@ object PartitionUtils {
       partitionIds: List[String], oldPartitionIdList: List[Int],
       partitionInfo: PartitionInfo,
       carbonTable: CarbonTable): java.util.List[TableBlockInfo] = {
-    val jobConf = new JobConf(new Configuration)
+    val jobConf = new JobConf(FileFactory.getConfiguration)
     val job = new Job(jobConf)
     val format = CarbonInputFormatUtil
       .createCarbonTableInputFormat(identifier, partitionIds.asJava, job)

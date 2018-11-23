@@ -127,4 +127,9 @@ public class IndexDataMapProvider extends DataMapProvider {
   public DataMapFactory getDataMapFactory() {
     return dataMapFactory;
   }
+
+  @Override
+  public boolean supportRebuild() {
+    return dataMapFactory.supportRebuild();
+  }
 }

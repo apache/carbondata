@@ -60,6 +60,8 @@ object PartitionDropper {
         String.valueOf(oldPartitionIds(partitionIndex + 1))
       }
       case PartitionType.LIST => "0"
+      case _ => throw new UnsupportedOperationException(
+        s"${partitionInfo.getPartitionType} is not supported")
     }
 
     if (!dropWithData) {
@@ -85,8 +87,6 @@ object PartitionDropper {
             finalDropStatus = dropStatus.forall(_._2)
           }
           if (!finalDropStatus) {
-            logger.audit(s"Drop Partition request failed for table " +
-                         s"${ dbName }.${ tableName }")
             logger.error(s"Drop Partition request failed for table " +
                          s"${ dbName }.${ tableName }")
           }
@@ -98,22 +98,19 @@ object PartitionDropper {
               Seq(partitionId, targetPartitionId).toList, dbName,
               tableName, partitionInfo)
           } catch {
-            case e: IOException => sys.error(s"Exception while delete original carbon files " +
-                                             e.getMessage)
+            case e: IOException =>
+              throw new IOException("Exception while delete original carbon files ", e)
           }
-          logger.audit(s"Drop Partition request completed for table " +
-                       s"${ dbName }.${ tableName }")
           logger.info(s"Drop Partition request completed for table " +
                       s"${ dbName }.${ tableName }")
         }
       } catch {
-        case e: Exception => sys.error(s"Exception in dropping partition action: ${ e.getMessage }")
+        case e: Exception =>
+          throw new RuntimeException("Exception in dropping partition action", e)
       }
     } else {
       PartitionUtils.deleteOriginalCarbonFile(alterPartitionModel, absoluteTableIdentifier,
         Seq(partitionId).toList, dbName, tableName, partitionInfo)
-      logger.audit(s"Drop Partition request completed for table " +
-                   s"${ dbName }.${ tableName }")
       logger.info(s"Drop Partition request completed for table " +
                   s"${ dbName }.${ tableName }")
     }

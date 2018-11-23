@@ -20,18 +20,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class CarbonLoaderUtilTest {
-  private final static LogService LOGGER
+  private static final Logger LOGGER
       = LogServiceFactory.getLogService(CarbonLoaderUtilTest.class.getName());
 
   private List<Distributable> generateBlocks() {

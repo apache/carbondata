@@ -85,9 +85,9 @@ class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data4.csv' INTO TABLE dropcolumntest"
           + s" OPTIONS('FILEHEADER'='intField,stringField,timestampField,decimalField')")
       sql("ALTER TABLE dropcolumntest COMPACT 'major'")
-      checkExistence(sql("SHOW SEGMENTS FOR TABLE dropcolumntest"), true, "0Compacted")
-      checkExistence(sql("SHOW SEGMENTS FOR TABLE dropcolumntest"), true, "1Compacted")
-      checkExistence(sql("SHOW SEGMENTS FOR TABLE dropcolumntest"), true, "0.1Success")
+      checkExistence(sql("SHOW SEGMENTS FOR TABLE dropcolumntest"), true, "0 Compacted")
+      checkExistence(sql("SHOW SEGMENTS FOR TABLE dropcolumntest"), true, "1 Compacted")
+      checkExistence(sql("SHOW SEGMENTS FOR TABLE dropcolumntest"), true, "0.1 Success")
       afterAll
     }
     sqlContext.setConf("carbon.enable.vector.reader", "true")

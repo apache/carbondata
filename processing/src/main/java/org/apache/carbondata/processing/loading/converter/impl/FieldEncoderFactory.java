@@ -32,6 +32,7 @@ import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.ArrayDataType;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
@@ -57,16 +58,24 @@ public class FieldEncoderFactory {
   /**
    * Creates the FieldConverter for all dimensions, for measures return null.
    *
-   * @param dataField             column schema
-   * @param absoluteTableIdentifier table identifier
-   * @param index                 index of column in the row.
+   * @param dataField                 column schema
+   * @param absoluteTableIdentifier   table identifier
+   * @param index                     index of column in the row
+   * @param nullFormat                null format of the field
+   * @param client
+   * @param useOnePass
+   * @param localCache
    * @param isEmptyBadRecord
+   * @param parentTablePath
+   * @param isConvertToBinary     whether the no dictionary field to be converted to binary or not
    * @return
+   * @throws IOException
    */
   public FieldConverter createFieldEncoder(DataField dataField,
       AbsoluteTableIdentifier absoluteTableIdentifier, int index, String nullFormat,
       DictionaryClient client, Boolean useOnePass, Map<Object, Integer> localCache,
-      boolean isEmptyBadRecord, String parentTablePath) throws IOException {
+      boolean isEmptyBadRecord, String parentTablePath, boolean isConvertToBinary)
+      throws IOException {
     // Converters are only needed for dimensions and measures it return null.
     if (dataField.getColumn().isDimension()) {
       if (dataField.getColumn().hasEncoding(Encoding.DIRECT_DICTIONARY) &&
@@ -111,6 +120,13 @@ public class FieldEncoderFactory {
             createComplexDataType(dataField, absoluteTableIdentifier,
                 client, useOnePass, localCache, index, nullFormat, isEmptyBadRecord), index);
       } else {
+        // if the no dictionary column is a numeric column and no need to convert to binary
+        // then treat it is as measure col
+        // so that the adaptive encoding can be applied on it easily
+        if (DataTypeUtil.isPrimitiveColumn(dataField.getColumn().getDataType())
+            && !isConvertToBinary) {
+          return new MeasureFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);
+        }
         return new NonDictionaryFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);
       }
     } else {
@@ -139,12 +155,13 @@ public class FieldEncoderFactory {
       AbsoluteTableIdentifier absoluteTableIdentifier, DictionaryClient client, Boolean useOnePass,
       Map<Object, Integer> localCache, int index, String nullFormat, Boolean isEmptyBadRecords) {
     DataType dataType = carbonColumn.getDataType();
-    if (DataTypes.isArrayType(dataType)) {
+    if (DataTypes.isArrayType(dataType) || DataTypes.isMapType(dataType)) {
       List<CarbonDimension> listOfChildDimensions =
           ((CarbonDimension) carbonColumn).getListOfChildDimensions();
       // Create array parser with complex delimiter
       ArrayDataType arrayDataType =
-          new ArrayDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId());
+          new ArrayDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId(),
+              carbonColumn.hasEncoding(Encoding.DICTIONARY));
       for (CarbonDimension dimension : listOfChildDimensions) {
         arrayDataType.addChildren(
             createComplexType(dimension, carbonColumn.getColName(), absoluteTableIdentifier,
@@ -156,15 +173,14 @@ public class FieldEncoderFactory {
           ((CarbonDimension) carbonColumn).getListOfChildDimensions();
       // Create struct parser with complex delimiter
       StructDataType structDataType =
-          new StructDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId());
+          new StructDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId(),
+              carbonColumn.hasEncoding(Encoding.DICTIONARY));
       for (CarbonDimension dimension : dimensions) {
         structDataType.addChildren(
             createComplexType(dimension, carbonColumn.getColName(), absoluteTableIdentifier,
                 client, useOnePass, localCache, index, nullFormat, isEmptyBadRecords));
       }
       return structDataType;
-    } else if (DataTypes.isMapType(dataType)) {
-      throw new UnsupportedOperationException("Complex type Map is not supported yet");
     } else {
       return new PrimitiveDataType(carbonColumn, parentName, carbonColumn.getColumnId(),
           (CarbonDimension) carbonColumn, absoluteTableIdentifier, client, useOnePass,

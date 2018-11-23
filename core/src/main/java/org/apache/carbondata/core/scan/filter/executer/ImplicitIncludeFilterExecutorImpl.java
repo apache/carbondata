@@ -54,13 +54,22 @@ public class ImplicitIncludeFilterExecutorImpl
   }
 
   @Override
+  public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
+      throws FilterUnsupportedException, IOException {
+    int numberOfPages = rawBlockletColumnChunks.getDataBlock().numberOfPages();
+    BitSet bitSet = new BitSet(numberOfPages);
+    bitSet.set(0, numberOfPages);
+    return bitSet;
+  }
+
+  @Override
   public boolean applyFilter(RowIntf value, int dimOrdinalMax)
       throws FilterUnsupportedException, IOException {
     return false;
   }
 
-  @Override
-  public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
+      boolean[] isMinMaxSet) {
     return null;
   }
 
@@ -71,7 +80,7 @@ public class ImplicitIncludeFilterExecutorImpl
 
   @Override
   public BitSet isFilterValuesPresentInBlockOrBlocklet(byte[][] maxValue, byte[][] minValue,
-      String uniqueBlockPath) {
+      String uniqueBlockPath, boolean[] isMinMaxSet) {
     BitSet bitSet = new BitSet(1);
     boolean isScanRequired = false;
     String shortBlockId = CarbonTablePath.getShortBlockId(uniqueBlockPath);
@@ -104,7 +113,8 @@ public class ImplicitIncludeFilterExecutorImpl
   }
 
   @Override
-  public Boolean isFilterValuesPresentInAbstractIndex(byte[][] maxValue, byte[][] minValue) {
+  public Boolean isFilterValuesPresentInAbstractIndex(byte[][] maxValue, byte[][] minValue,
+      boolean[] isMinMaxSet) {
     return true;
   }
 }

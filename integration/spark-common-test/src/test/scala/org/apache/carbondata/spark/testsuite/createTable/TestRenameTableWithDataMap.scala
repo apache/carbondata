@@ -20,6 +20,9 @@ package org.apache.carbondata.spark.testsuite.createTable
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
 /**
  * test functionality for alter table with datamap
  */
@@ -31,6 +34,8 @@ class TestRenameTableWithDataMap extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_table")
     sql("DROP TABLE IF EXISTS carbon_tb")
     sql("DROP TABLE IF EXISTS fact_table1")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
   }
 
   test("Creating a bloomfilter datamap,then table rename") {
@@ -188,5 +193,8 @@ class TestRenameTableWithDataMap extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_table")
     sql("DROP TABLE IF EXISTS carbon_tb")
     sql("DROP TABLE IF EXISTS fact_table1")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
   }
 }

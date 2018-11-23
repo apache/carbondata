@@ -17,75 +17,37 @@
 
 package org.apache.carbondata.spark.rdd
 
-import java.io._
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
 
 import scala.collection.mutable
-import scala.util.Random
-import scala.util.control.NonFatal
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.{TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-import org.apache.spark.{Partition, SerializableWritable, SparkContext, SparkEnv, TaskContext}
+import org.apache.spark.{Partition, SparkEnv, TaskContext}
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionWrap, RDD}
 import org.apache.spark.serializer.SerializerInstance
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.compression.CompressorFactory
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalTaskInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses, TableProcessingOperations}
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator}
 import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonQueryUtil
 import org.apache.carbondata.spark.DataLoadResult
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
-
-class SerializableConfiguration(@transient var value: Configuration) extends Serializable {
-
-  @transient
-  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
-  private def writeObject(out: ObjectOutputStream): Unit =
-    try {
-      out.defaultWriteObject()
-      value.write(out)
-    } catch {
-      case e: IOException =>
-        LOGGER.error(e, "Exception encountered")
-        throw e
-      case NonFatal(e) =>
-        LOGGER.error(e, "Exception encountered")
-        throw new IOException(e)
-    }
-
-
-  private def readObject(in: ObjectInputStream): Unit =
-    try {
-      value = new Configuration(false)
-      value.readFields(in)
-    } catch {
-      case e: IOException =>
-        LOGGER.error(e, "Exception encountered")
-        throw e
-      case NonFatal(e) =>
-        LOGGER.error(e, "Exception encountered")
-        throw new IOException(e)
-    }
-}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
 
 /**
  * This partition class use to split by Host
@@ -125,64 +87,29 @@ class SparkPartitionLoader(model: CarbonLoadModel,
     CarbonProperties.getInstance().addProperty("aggregate.columnar.keyblock", "true")
     CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false")
 
-    // this property is used to determine whether temp location for carbon is inside
-    // container temp dir or is yarn application directory.
-    val isCarbonUseLocalDir = CarbonProperties.getInstance()
-      .getProperty("carbon.use.local.dir", "false").equalsIgnoreCase("true")
-
-    val isCarbonUseMultiDir = CarbonProperties.getInstance().isUseMultiTempDir
-
-    if (isCarbonUseLocalDir) {
-      val yarnStoreLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
-
-      if (!isCarbonUseMultiDir && null != yarnStoreLocations && yarnStoreLocations.nonEmpty) {
-        // use single dir
-        storeLocation = storeLocation :+
-            (yarnStoreLocations(Random.nextInt(yarnStoreLocations.length)) + tmpLocationSuffix)
-        if (storeLocation == null || storeLocation.isEmpty) {
-          storeLocation = storeLocation :+
-              (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
-        }
-      } else {
-        // use all the yarn dirs
-        storeLocation = yarnStoreLocations.map(_ + tmpLocationSuffix)
-      }
-    } else {
-      storeLocation = storeLocation :+ (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
-    }
+    storeLocation = CommonUtil.getTempStoreLocations(splitIndex.toString)
     LOGGER.info("Temp location for loading data: " + storeLocation.mkString(","))
   }
-
-  private def tmpLocationSuffix = File.separator + "carbon" + System.nanoTime() + "_" + splitIndex
 }
 
 /**
  * It loads the data to carbon using @AbstractDataLoadProcessorStep
  */
 class NewCarbonDataLoadRDD[K, V](
-    sc: SparkContext,
+    @transient private val ss: SparkSession,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    blocksGroupBy: Array[(String, Array[BlockDetails])],
-    @transient hadoopConf: Configuration)
-  extends CarbonRDD[(K, V)](sc, Nil, hadoopConf) {
+    blocksGroupBy: Array[(String, Array[BlockDetails])])
+  extends CarbonRDD[(K, V)](ss, Nil) {
 
-  sc.setLocalProperty("spark.scheduler.pool", "DDL")
+  ss.sparkContext.setLocalProperty("spark.scheduler.pool", "DDL")
 
   private val jobTrackerId: String = {
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
     formatter.format(new Date())
   }
 
-  private val confBytes = {
-    val bao = new ByteArrayOutputStream()
-    val oos = new ObjectOutputStream(bao)
-    hadoopConf.write(oos)
-    oos.close()
-    CompressorFactory.getInstance().getCompressor.compressByte(bao.toByteArray)
-  }
-
-  override def getPartitions: Array[Partition] = {
+  override def internalGetPartitions: Array[Partition] = {
     blocksGroupBy.zipWithIndex.map { b =>
       new CarbonNodePartition(id, b._2, b._1._1, b._1._2)
     }
@@ -216,8 +143,8 @@ class NewCarbonDataLoadRDD[K, V](
         loader.initialize()
         val executor = new DataLoadExecutor()
         // in case of success, failure or cancelation clear memory and stop execution
-        context.addTaskCompletionListener { context => executor.close()
-          CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
+        context
+          .addTaskCompletionListener { new InsertTaskCompletionListener(executor, executionErrors) }
         executor.execute(model,
           loader.storeLocation,
           recordReaders)
@@ -229,6 +156,8 @@ class NewCarbonDataLoadRDD[K, V](
           logInfo("Bad Record Found")
         case e: Exception =>
           loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_FAILURE)
+          executionErrors.failureCauses = FailureCauses.EXECUTOR_FAILURE
+          executionErrors.errorMsg = e.getMessage
           logInfo("DataLoad failure", e)
           LOGGER.error(e)
           throw e
@@ -245,10 +174,7 @@ class NewCarbonDataLoadRDD[K, V](
 
       def getInputIterators: Array[CarbonIterator[Array[AnyRef]]] = {
         val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, theSplit.index, 0)
-        var configuration: Configuration = getConf
-        if (configuration == null) {
-          configuration = new Configuration()
-        }
+        val configuration: Configuration = FileFactory.getConfiguration
         CommonUtil.configureCSVInputFormat(configuration, carbonLoadModel)
         val hadoopAttemptContext = new TaskAttemptContextImpl(configuration, attemptId)
         val format = new CSVInputFormat
@@ -266,9 +192,6 @@ class NewCarbonDataLoadRDD[K, V](
         CarbonQueryUtil.splitFilePath(carbonLoadModel.getFactFilePath, fileList, ",")
         model = carbonLoadModel.getCopyWithPartition(
           carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
-        StandardLogService.setThreadName(StandardLogService
-          .getPartitionID(model.getCarbonDataLoadSchema.getCarbonTable.getTableUniqueName)
-          , ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId + "")
         val readers =
           split.nodeBlocksDetail.map(format.createRecordReader(_, hadoopAttemptContext))
         readers.zipWithIndex.map { case (reader, index) =>
@@ -319,24 +242,13 @@ class NewCarbonDataLoadRDD[K, V](
  *  @see org.apache.carbondata.processing.newflow.DataLoadExecutor
  */
 class NewDataFrameLoaderRDD[K, V](
-    sc: SparkContext,
+    @transient private val ss: SparkSession,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    prev: DataLoadCoalescedRDD[Row],
-    @transient hadoopConf: Configuration) extends CarbonRDD[(K, V)](prev) {
-
-  private val confBytes = {
-    val bao = new ByteArrayOutputStream()
-    val oos = new ObjectOutputStream(bao)
-    hadoopConf.write(oos)
-    oos.close()
-    CompressorFactory.getInstance().getCompressor.compressByte(bao.toByteArray)
-  }
+    prev: DataLoadCoalescedRDD[Row]) extends CarbonRDD[(K, V)](ss, prev) {
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    val hadoopConf = getConf
-    CarbonInputFormatUtil.setS3Configurations(hadoopConf)
     val iter = new Iterator[(K, V)] {
       val loadMetadataDetails = new LoadMetadataDetails()
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
@@ -370,8 +282,8 @@ class NewDataFrameLoaderRDD[K, V](
         loader.initialize()
         val executor = new DataLoadExecutor
         // in case of success, failure or cancelation clear memory and stop execution
-        context.addTaskCompletionListener { context => executor.close()
-          CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
+        context
+          .addTaskCompletionListener(new InsertTaskCompletionListener(executor, executionErrors))
         executor.execute(model, loader.storeLocation, recordReaders.toArray)
       } catch {
         case e: NoRetryException =>
@@ -405,7 +317,7 @@ class NewDataFrameLoaderRDD[K, V](
     }
     iter
   }
-  override protected def getPartitions: Array[Partition] = firstParent[Row].partitions
+  override protected def internalGetPartitions: Array[Partition] = firstParent[Row].partitions
 }
 
 /**
@@ -480,10 +392,18 @@ class LazyRddIterator(serializer: SerializerInstance,
   private val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
   private val serializationNullFormat =
     carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
+  // the order of fields in dataframe and createTable may be different, here we need to know whether
+  // each fields in dataframe is Varchar or not.
   import scala.collection.JavaConverters._
-  private val isVarcharTypeMapping =
-    carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getCreateOrderColumn(
-      carbonLoadModel.getTableName).asScala.map(_.getDataType == DataTypes.VARCHAR)
+  private val isVarcharTypeMapping = {
+    val col2VarcharType = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+      .getCreateOrderColumn(carbonLoadModel.getTableName).asScala
+      .map(c => c.getColName -> (c.getDataType == DataTypes.VARCHAR)).toMap
+    carbonLoadModel.getCsvHeaderColumns.map(c => {
+      val r = col2VarcharType.get(c.toLowerCase)
+      r.isDefined && r.get
+    })
+  }
 
   private var rddIter: Iterator[Row] = null
   private var uninitialized = true
@@ -529,10 +449,10 @@ class LazyRddIterator(serializer: SerializerInstance,
  *  @see org.apache.carbondata.processing.newflow.DataLoadExecutor
  */
 class PartitionTableDataLoaderRDD[K, V](
-    sc: SparkContext,
+    @transient private val ss: SparkSession,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    prev: RDD[Row]) extends CarbonRDD[(K, V)](prev) {
+    prev: RDD[Row]) extends CarbonRDD[(K, V)](ss, prev) {
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -597,6 +517,6 @@ class PartitionTableDataLoaderRDD[K, V](
     iter
   }
 
-  override protected def getPartitions: Array[Partition] = firstParent[Row].partitions
+  override protected def internalGetPartitions: Array[Partition] = firstParent[Row].partitions
 
 }

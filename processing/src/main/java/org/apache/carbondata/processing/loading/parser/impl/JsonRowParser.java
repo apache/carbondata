@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -59,7 +60,9 @@ public class JsonRowParser implements RowParser {
       if (jsonNodeMap == null) {
         return null;
       }
-      return jsonToCarbonRecord(jsonNodeMap, dataFields);
+      Map<String, Object> jsonNodeMapCaseInsensitive = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+      jsonNodeMapCaseInsensitive.putAll(jsonNodeMap);
+      return jsonToCarbonRecord(jsonNodeMapCaseInsensitive, dataFields);
     } catch (IOException e) {
       throw new IOException("Failed to parse Json String: " + e.getMessage());
     }

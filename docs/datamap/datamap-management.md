@@ -1,4 +1,33 @@
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one or more
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership.
+    The ASF licenses this file to you under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with
+    the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+
 # CarbonData DataMap Management
+
+- [Overview](#overview)
+- [DataMap Management](#datamap-management)
+- [Automatic Refresh](#automatic-refresh)
+- [Manual Refresh](#manual-refresh)
+- [DataMap Catalog](#datamap-catalog)
+- [DataMap Related Commands](#datamap-related-commands)
+  - [Explain](#explain)
+  - [Show DataMap](#show-datamap)
+  - [Compaction on DataMap](#compaction-on-datamap)
+
+
 
 ## Overview
 
@@ -14,29 +43,32 @@ DataMap can be created using following DDL
     SELECT statement
 ```
 
-Currently, there are 5 DataMap implementation in CarbonData.
+Currently, there are 5 DataMap implementations in CarbonData.
 
 | DataMap Provider | Description                              | DMPROPERTIES                             | Management       |
 | ---------------- | ---------------------------------------- | ---------------------------------------- | ---------------- |
 | preaggregate     | single table pre-aggregate table         | No DMPROPERTY is required                | Automatic        |
-| timeseries       | time dimension rollup table.             | event_time, xx_granularity, please refer to [Timeseries DataMap](https://github.com/apache/carbondata/blob/master/docs/datamap/timeseries-datamap-guide.md) | Automatic        |
-| mv               | multi-table pre-aggregate table,         | No DMPROPERTY is required                | Manual           |
-| lucene           | lucene indexing for text column          | index_columns to specifying the index columns | Manual/Automatic |
-| bloom            | bloom filter for high cardinality column, geospatial column | index_columns to specifying the index columns | Manual/Automatic |
+| timeseries       | time dimension rollup table              | event_time, xx_granularity, please refer to [Timeseries DataMap](./timeseries-datamap-guide.md) | Automatic        |
+| mv               | multi-table pre-aggregate table          | No DMPROPERTY is required                | Manual           |
+| lucene           | lucene indexing for text column          | index_columns to specifying the index columns | Automatic |
+| bloomfilter      | bloom filter for high cardinality column, geospatial column | index_columns to specifying the index columns | Automatic |
 
 ## DataMap Management
 
 There are two kinds of management semantic for DataMap.
 
-1. Autmatic Refresh: Create datamap without `WITH DEFERED REBUILD` in the statement
-2. Manual Refresh: Create datamap with `WITH DEFERED REBUILD` in the statement
+1. Automatic Refresh: Create datamap without `WITH DEFERRED REBUILD` in the statement, which is by default.
+2. Manual Refresh: Create datamap with `WITH DEFERRED REBUILD` in the statement
+
+**CAUTION:**
+If user create MV datamap without specifying `WITH DEFERRED REBUILD`, carbondata will give a warning and treat the datamap as deferred rebuild.
 
 ### Automatic Refresh
 
-When user creates a datamap on the main table without using `WITH DEFERED REBUILD` syntax, the datamap will be managed by system automatically.
-For every data load to the main table, system will immediately triger a load to the datamap automatically. These two data loading (to main table and datamap) is executed in a transactional manner, meaning that it will be either both success or neither success. 
+When user creates a datamap on the main table without using `WITH DEFERRED REBUILD` syntax, the datamap will be managed by system automatically.
+For every data load to the main table, system will immediately trigger a load to the datamap automatically. These two data loading (to main table and datamap) is executed in a transactional manner, meaning that it will be either both success or neither success. 
 
-The data loading to datamap is incremental based on Segment concept, avoiding a expesive total rebuild.
+The data loading to datamap is incremental based on Segment concept, avoiding a expensive total rebuild.
 
 If user perform following command on the main table, system will return failure. (reject the operation)
 
@@ -51,15 +83,23 @@ If user do want to perform above operations on the main table, user can first dr
 
 If user drop the main table, the datamap will be dropped immediately too.
 
+We do recommend you to use this management for index datamap.
+
 ### Manual Refresh
 
-When user creates a datamap specifying maunal refresh semantic, the datamap is created with status *disabled* and query will NOT use this datamap until user can issue REBUILD DATAMAP command to build the datamap. For every REBUILD DATAMAP command, system will trigger a full rebuild of the datamap. After rebuild is done, system will change datamap status to *enabled*, so that it can be used in query rewrite.
+When user creates a datamap specifying manual refresh semantic, the datamap is created with status *disabled* and query will NOT use this datamap until user can issue REBUILD DATAMAP command to build the datamap. For every REBUILD DATAMAP command, system will trigger a full rebuild of the datamap. After rebuild is done, system will change datamap status to *enabled*, so that it can be used in query rewrite.
 
-For every new data loading, data update, delete, the related datamap will be made *disabled*.
+For every new data loading, data update, delete, the related datamap will be made *disabled*,
+which means that the following queries will not benefit from the datamap before it becomes *enabled* again.
 
 If the main table is dropped by user, the related datamap will be dropped immediately.
 
-*Note: If you are creating a datamap on external table, you need to do manual managment of the datamap.*
+**Note**:
++ If you are creating a datamap on external table, you need to do manual management of the datamap.
++ For index datamap such as BloomFilter datamap, there is no need to do manual refresh.
+ By default it is automatic refresh,
+ which means its data will get refreshed immediately after the datamap is created or the main table is loaded.
+ Manual refresh on this datamap will has no impact.
 
 
 
@@ -82,7 +122,7 @@ There is a DataMapCatalog interface to retrieve schema of all datamap, it can be
 
 How can user know whether datamap is used in the query?
 
-User can use EXPLAIN command to know, it will print out something like
+User can set enable.query.statistics = true and use EXPLAIN command to know, it will print out something like
 
 ```text
 == CarbonData Profiler ==

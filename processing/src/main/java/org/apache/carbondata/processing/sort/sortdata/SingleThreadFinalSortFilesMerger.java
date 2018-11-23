@@ -33,7 +33,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
@@ -41,13 +40,14 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
 import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+
+import org.apache.log4j.Logger;
 
 public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   /**
    * LOGGER
    */
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(SingleThreadFinalSortFilesMerger.class.getName());
 
   /**
@@ -59,11 +59,6 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    * fileCounter
    */
   private int fileCounter;
-
-  /**
-   * fileBufferSize
-   */
-  private int fileBufferSize;
 
   /**
    * recordHolderHeap
@@ -153,15 +148,10 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
       LOGGER.info("No files to merge sort");
       return;
     }
-    this.fileBufferSize = CarbonDataProcessorUtil
-        .getFileBufferSize(this.fileCounter, CarbonProperties.getInstance(),
-            CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
     LOGGER.info("Started Final Merge");
 
     LOGGER.info("Number of temp file: " + this.fileCounter);
-
-    LOGGER.info("File Buffer Size: " + this.fileBufferSize);
 
     // create record holder heap
     createRecordHolderQueue();
@@ -176,7 +166,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
         @Override public Void call() throws CarbonSortKeyAndGroupByException {
             // create chunk holder
             SortTempFileChunkHolder sortTempFileChunkHolder =
-                new SortTempFileChunkHolder(tempFile, sortParameters, tableName);
+                new SortTempFileChunkHolder(tempFile, sortParameters, tableName, true);
           try {
             // initialize
             sortTempFileChunkHolder.initialize();

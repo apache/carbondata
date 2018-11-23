@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.core.constants;
 
-import org.apache.carbondata.core.util.CarbonProperty;
+import org.apache.carbondata.core.util.annotations.CarbonProperty;
 
 /**
  * Load options constant
@@ -26,76 +26,87 @@ public final class CarbonLoadOptionConstants {
   /**
    * option to enable and disable the logger
    */
-  @CarbonProperty
+  @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE =
       "carbon.options.bad.records.logger.enable";
 
   public static String CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE_DEFAULT = "false";
+
   /**
    * property to pass the bad records action
    */
-  @CarbonProperty
+  @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_OPTIONS_BAD_RECORDS_ACTION =
       "carbon.options.bad.records.action";
+
   /**
    * load option to specify weather empty data to be treated as bad record
    */
-  @CarbonProperty
+  @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD =
       "carbon.options.is.empty.data.bad.record";
+
   public static final String CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT = "false";
 
   /**
    * option to specify whether to skip empty lines in load
    */
-  @CarbonProperty public static final String CARBON_OPTIONS_SKIP_EMPTY_LINE =
+  @CarbonProperty(dynamicConfigurable = true)
+  public static final String CARBON_OPTIONS_SKIP_EMPTY_LINE =
       "carbon.options.is.empty.data.bad.record";
 
   /**
    * option to specify the dateFormat in load option for all date columns in table
    */
-  @CarbonProperty
+  @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_OPTIONS_DATEFORMAT =
-      "carbon.options.dateformat";
+      "carbon.options.date.format";
+
   public static final String CARBON_OPTIONS_DATEFORMAT_DEFAULT = "";
 
   /**
    * option to specify the timestampFormat in load option for all timestamp columns in table
    */
-  @CarbonProperty
+  @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_OPTIONS_TIMESTAMPFORMAT =
-          "carbon.options.timestampformat";
+          "carbon.options.timestamp.format";
+
   public static final String CARBON_OPTIONS_TIMESTAMPFORMAT_DEFAULT = "";
+
   /**
    * option to specify the sort_scope
    */
-  @CarbonProperty
+  @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_OPTIONS_SORT_SCOPE =
       "carbon.options.sort.scope";
+
   /**
    * option to specify the batch sort size inmb
    */
-  @CarbonProperty
+  @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_OPTIONS_BATCH_SORT_SIZE_INMB =
       "carbon.options.batch.sort.size.inmb";
+
   /**
    * Option to enable/ disable single_pass
    */
-  @CarbonProperty
+  @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_OPTIONS_SINGLE_PASS =
       "carbon.options.single.pass";
+
   public static final String CARBON_OPTIONS_SINGLE_PASS_DEFAULT = "false";
 
   /**
    * specify bad record path option
    */
-  @CarbonProperty
+  @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_OPTIONS_BAD_RECORD_PATH =
       "carbon.options.bad.record.path";
+
   /**
    * specify bad record path option
    */
-  @CarbonProperty
+  @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS =
       "carbon.options.global.sort.partitions";
 
@@ -103,7 +114,7 @@ public final class CarbonLoadOptionConstants {
    * specify serialization null format, it is used describe which character in side the csv file
    * is treated as null.
    */
-  @CarbonProperty
+  @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT =
       "carbon.options.serialization.null.format";
 
@@ -123,6 +134,7 @@ public final class CarbonLoadOptionConstants {
   @CarbonProperty
   public static final String ENABLE_CARBON_LOAD_SKEWED_DATA_OPTIMIZATION
       = "carbon.load.skewedDataOptimization.enabled";
+
   public static final String ENABLE_CARBON_LOAD_SKEWED_DATA_OPTIMIZATION_DEFAULT = "false";
 
   /**
@@ -136,9 +148,10 @@ public final class CarbonLoadOptionConstants {
   public static final String SORT_COLUMN_BOUNDS_ROW_DELIMITER = ";";
 
   @CarbonProperty
-  public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS
-      = "carbon.load.directWriteHdfs.enabled";
-  public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS_DEFAULT = "false";
+  public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH
+      = "carbon.load.directWriteToStorePath.enabled";
+
+  public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH_DEFAULT = "false";
 
   /**
    * If the sort memory is insufficient, spill inmemory pages to disk.
@@ -150,15 +163,6 @@ public final class CarbonLoadOptionConstants {
   @CarbonProperty
   public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE
       = "carbon.load.sortmemory.spill.percentage";
-  public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT = "0";
 
-  /**
-   *  if loading data is too small, the original loading method will produce many small files.
-   *  enable set the node load minimum amount of data,avoid producing many small files.
-   *  This option is especially useful when you encounter a lot of small amounts of data.
-   */
-  @CarbonProperty
-  public static final String ENABLE_CARBON_LOAD_NODE_DATA_MIN_SIZE
-      = "carbon.load.min.size.enabled";
-  public static final String ENABLE_CARBON_LOAD_NODE_DATA_MIN_SIZE_DEFAULT = "false";
+  public static final String CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT = "0";
 }

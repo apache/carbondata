@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -47,12 +46,14 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.util.StringUtils;
+import org.apache.log4j.Logger;
 
 public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritable>
     implements InputFormat<Void, ArrayWritable>, CombineHiveInputFormat.AvoidSplitCombination {
   private static final String CARBON_TABLE = "mapreduce.input.carboninputformat.table";
 
-  private LogService LOGGER = LogServiceFactory.getLogService(this.getClass().getCanonicalName());
+  private static final Logger LOGGER =
+      LogServiceFactory.getLogService(MapredCarbonInputFormat.class.getCanonicalName());
 
   /**
    * this method will read the schema from the physical file and populate into CARBON_TABLE

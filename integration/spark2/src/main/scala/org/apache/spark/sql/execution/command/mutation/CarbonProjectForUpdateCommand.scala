@@ -60,6 +60,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
       return Seq.empty
     }
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+    setAuditTable(carbonTable)
+    setAuditInfo(Map("plan" -> plan.simpleString))
     columns.foreach { col =>
       val dataType = carbonTable.getColumnByName(tableName, col).getColumnSchema.getDataType
       if (dataType.isComplexType) {
@@ -163,7 +165,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
         CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, e.compactionTimeStamp.toString)
 
       case e: Exception =>
-        LOGGER.error(e, "Exception in update operation")
+        LOGGER.error("Exception in update operation", e)
         // ****** start clean up.
         // In case of failure , clean all related delete delta files
         CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, currentTime + "")
@@ -276,4 +278,6 @@ private[sql] case class CarbonProjectForUpdateCommand(
     Seq.empty
 
   }
+
+  override protected def opName: String = "UPDATE DATA"
 }

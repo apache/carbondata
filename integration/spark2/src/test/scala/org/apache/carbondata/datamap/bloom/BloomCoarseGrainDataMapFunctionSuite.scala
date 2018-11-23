@@ -1,14 +1,15 @@
 package org.apache.carbondata.datamap.bloom
 
 import java.io.File
+import java.util.{Random, UUID}
 
 import org.apache.commons.io.FileUtils
-import org.apache.spark.sql.CarbonEnv
+import org.apache.spark.sql.{CarbonEnv, SaveMode}
 import org.apache.spark.sql.test.Spark2TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonV3DataFormatConstants}
 import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -708,7 +709,7 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
       s"""
          | CREATE TABLE $bloomDMSampleTable(empno string, doj date, salary float)
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('SORT_COLUMNS'='empno,doj', 'DICTIONARY_INCLUDE'='doj')
+         | TBLPROPERTIES('SORT_COLUMNS'='empno,doj', 'DICTIONARY_INCLUDE'='doj,empno')
        """.stripMargin)
     sql(
       s"""
@@ -779,7 +780,7 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
     import scala.collection.JavaConverters._
     (0 to 1).foreach { segId =>
       val datamapPath = CarbonTablePath.getDataMapStorePath(carbonTable.getTablePath, segId.toString, dataMapName)
-      assert(FileUtils.listFiles(FileUtils.getFile(datamapPath), Array("bloomindex"), true).asScala.nonEmpty)
+      assert(FileUtils.listFiles(FileUtils.getFile(datamapPath), Array("bloomindexmerge"), true).asScala.nonEmpty)
     }
     // delete and clean the first segment, the corresponding datamap files should be cleaned too
     sql(s"DELETE FROM TABLE $bloomDMSampleTable WHERE SEGMENT.ID IN (0)")
@@ -787,7 +788,147 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
     var datamapPath = CarbonTablePath.getDataMapStorePath(carbonTable.getTablePath, "0", dataMapName)
     assert(!FileUtils.getFile(datamapPath).exists(), "index file of this segment has been deleted, should not exist")
     datamapPath = CarbonTablePath.getDataMapStorePath(carbonTable.getTablePath, "1", dataMapName)
-    assert(FileUtils.listFiles(FileUtils.getFile(datamapPath), Array("bloomindex"), true).asScala.nonEmpty)
+    assert(FileUtils.listFiles(FileUtils.getFile(datamapPath), Array("bloomindexmerge"), true).asScala.nonEmpty)
+  }
+
+  // two blocklets in one block are hit by bloom datamap while block cache level hit this block
+  test("CARBONDATA-2788: enable block cache level and bloom datamap") {
+    // minimum per page is 2000 rows
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.BLOCKLET_SIZE, "2000")
+    // minimum per blocklet is 16MB
+    CarbonProperties.getInstance().addProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB, "16")
+    // these lines will result in 3 blocklets in one block and bloom will hit at least 2 of them
+    val lines = 100000
+    sql("drop table if exists test_rcd").collect()
+    val r = new Random()
+    import sqlContext.implicits._
+    val df = sqlContext.sparkContext.parallelize(1 to lines)
+      .map(x => ("No." + r.nextInt(10000), "country" + x % 10000, "city" + x % 10000, x % 10000,
+        UUID.randomUUID().toString, UUID.randomUUID().toString, UUID.randomUUID().toString,
+        UUID.randomUUID().toString, UUID.randomUUID().toString, UUID.randomUUID().toString,
+        UUID.randomUUID().toString, UUID.randomUUID().toString, UUID.randomUUID().toString,
+        UUID.randomUUID().toString, UUID.randomUUID().toString, UUID.randomUUID().toString))
+      .toDF("ID", "country", "city", "population",
+        "random1", "random2", "random3",
+        "random4", "random5", "random6",
+        "random7", "random8", "random9",
+        "random10", "random11", "random12")
+    df.write
+      .format("carbondata")
+      .option("tableName", "test_rcd")
+      .option("SORT_COLUMNS", "id")
+      .option("SORT_SCOPE", "LOCAL_SORT")
+      .mode(SaveMode.Overwrite)
+      .save()
+
+    val withoutBloom = sql("select count(*) from test_rcd where city = 'city40'").collect().toSeq
+    sql("CREATE DATAMAP dm_rcd ON TABLE test_rcd " +
+        "USING 'bloomfilter' DMPROPERTIES " +
+        "('INDEX_COLUMNS' = 'city', 'BLOOM_SIZE'='640000', 'BLOOM_FPP'='0.00001')")
+    checkAnswer(sql("select count(*) from test_rcd where city = 'city40'"), withoutBloom)
+
+    sql("drop table if exists test_rcd").collect()
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+      CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
+    CarbonProperties.getInstance().addProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB,
+      CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE)
+  }
+
+  /**
+   * create bloom and preagg on base table, then create bloom on preagg table,
+   * index column and group by column is dictionary column.
+   * note that the test steps are copied from issue.
+   * In the CI env, sometime it will become timeout, so we ignore the newly added tests
+   */
+  ignore("test bloom datamap: CARBONDATA-2799 bloom datamap on preaggregate") {
+    sql(
+      s"""
+         | CREATE TABLE $normalTable (id int, name string, salary float,dob date)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('dictionary_include'='id')
+       """.stripMargin)
+    sql(
+      s"""
+         | CREATE TABLE $bloomDMSampleTable (id int, name string, salary float,dob date)
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('dictionary_include'='id')
+       """.stripMargin)
+    (1 to 2).foreach { _ =>
+      sql(
+        s"""
+           | INSERT INTO $bloomDMSampleTable VALUES
+           | ('1', 'name1', '11.1', '2018-07-01'),
+           | ('2', 'name2', '21.1', '2018-07-02'),
+           | ('3', 'name3', '31.1', '2018-07-03'),
+           | ('4', 'name4', '41.1', '2018-07-04')
+       """.stripMargin)
+      sql(
+        s"""
+           | INSERT INTO $normalTable VALUES
+           | ('1', 'name1', '11.1', '2018-07-01'),
+           | ('2', 'name2', '21.1', '2018-07-02'),
+           | ('3', 'name3', '31.1', '2018-07-03'),
+           | ('4', 'name4', '41.1', '2018-07-04')
+       """.stripMargin)
+    }
+    sql(
+      s"""
+         | CREATE DATAMAP $dataMapName ON TABLE $bloomDMSampleTable
+         | USING 'bloomfilter'
+         | DMPROPERTIES('INDEX_COLUMNS'='id', 'BLOOM_SIZE'='320000', 'BLOOM_FPP'='0.01', 'BLOOM_COMPRESS'='TRUE')
+       """.stripMargin)
+    sql(
+      s"""
+         | INSERT INTO $bloomDMSampleTable VALUES
+         | ('1', 'name1', '11.1', '2018-07-01'),
+         | ('2', 'name2', '21.1', '2018-07-02'),
+         | ('3', 'name3', '31.1', '2018-07-03'),
+         | ('4', 'name4', '41.1', '2018-07-04')
+       """.stripMargin)
+    sql(
+      s"""
+         | INSERT INTO $normalTable VALUES
+         | ('1', 'name1', '11.1', '2018-07-01'),
+         | ('2', 'name2', '21.1', '2018-07-02'),
+         | ('3', 'name3', '31.1', '2018-07-03'),
+         | ('4', 'name4', '41.1', '2018-07-04')
+       """.stripMargin)
+    val preAggOnBase = "preagg_on_base"
+    sql(
+      s"""
+         | CREATE DATAMAP $preAggOnBase ON TABLE $bloomDMSampleTable
+         | USING 'preaggregate' AS
+         | select id, count(id) from $bloomDMSampleTable group by id
+       """.stripMargin)
+    checkAnswer(sql(s"SELECT id, count(id) from $bloomDMSampleTable where id = 3 group by id"),
+      sql(s"SELECT id, count(id) from $normalTable where id = 3 group by id"))
+
+    val bloomOnPreAgg = "bloom_on_pre_agg"
+    sql(
+      s"""
+         | CREATE DATAMAP $bloomOnPreAgg ON TABLE ${bloomDMSampleTable}_${preAggOnBase}
+         | USING 'bloomfilter'
+         | DMPROPERTIES('INDEX_COLUMNS'='${bloomDMSampleTable}_id')
+       """.stripMargin)
+    checkAnswer(sql(s"SELECT id, count(id) from $bloomDMSampleTable where id = 3 group by id"),
+      sql(s"SELECT id, count(id) from $normalTable where id = 3 group by id"))
+
+    sql(s"DROP DATAMAP $bloomOnPreAgg on table ${bloomDMSampleTable}_${preAggOnBase}")
+    checkAnswer(sql(s"SELECT id, count(id) from $bloomDMSampleTable where id = 3 group by id"),
+      sql(s"SELECT id, count(id) from $normalTable where id = 3 group by id"))
+
+    sql(
+      s"""
+         | CREATE DATAMAP $bloomOnPreAgg ON TABLE ${bloomDMSampleTable}_${preAggOnBase}
+         | USING 'bloomfilter'
+         | DMPROPERTIES('INDEX_COLUMNS'='${bloomDMSampleTable}_id')
+       """.stripMargin)
+    checkAnswer(sql(s"SELECT id, count(id) from $bloomDMSampleTable where id = 3 group by id"),
+      sql(s"SELECT id, count(id) from $normalTable where id = 3 group by id"))
+
+    sql(s"DROP DATAMAP $bloomOnPreAgg on table ${bloomDMSampleTable}_${preAggOnBase}")
+    checkAnswer(sql(s"SELECT id, count(id) from $bloomDMSampleTable where id = 3 group by id"),
+      sql(s"SELECT id, count(id) from $normalTable where id = 3 group by id"))
   }
 
   override def afterAll(): Unit = {

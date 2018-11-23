@@ -19,8 +19,8 @@ package org.apache.carbondata.presto;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.presto.readers.PrestoVectorBlockBuilder;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
@@ -33,16 +33,16 @@ import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.LazyBlock;
 import com.facebook.presto.spi.block.LazyBlockLoader;
+import org.apache.log4j.Logger;
 
 import static com.google.common.base.Preconditions.checkState;
-import static java.util.Objects.requireNonNull;
 
 /**
  * Carbondata Page Source class for custom Carbondata RecordSet Iteration.
  */
 class CarbondataPageSource implements ConnectorPageSource {
 
-  private static final LogService logger =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbondataPageSource.class.getName());
   private List<ColumnHandle> columnHandles;
   private boolean closed;
@@ -131,12 +131,12 @@ class CarbondataPageSource implements ConnectorPageSource {
   }
 
   private void closeWithSuppression(Throwable throwable) {
-    requireNonNull(throwable, "throwable is null");
+    Objects.requireNonNull(throwable, "throwable is null");
     try {
       close();
     } catch (RuntimeException e) {
       // Self-suppression not permitted
-      logger.error(e, e.getMessage());
+      LOGGER.error(e.getMessage(), e);
       if (throwable != e) {
         throwable.addSuppressed(e);
       }

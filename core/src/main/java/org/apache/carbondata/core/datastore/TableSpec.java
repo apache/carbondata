@@ -20,6 +20,7 @@ package org.apache.carbondata.core.datastore;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -35,6 +36,14 @@ public class TableSpec {
   // column spec for each dimension and measure
   private DimensionSpec[] dimensionSpec;
   private MeasureSpec[] measureSpec;
+
+  // Many places we might have to access no-dictionary column spec.
+  // but no-dictionary column spec are not always in below order like,
+  // dictionary + no dictionary + complex + measure
+  // when sort_columns are empty, no columns are selected for sorting.
+  // so, spec will not be in above order.
+  // Hence noDictionaryDimensionSpec will be useful and it will be subset of dimensionSpec.
+  private List<DimensionSpec> noDictionaryDimensionSpec;
 
   // number of simple dimensions
   private int numSimpleDimensions;
@@ -56,6 +65,7 @@ public class TableSpec {
     }
     dimensionSpec = new DimensionSpec[dimensions.size()];
     measureSpec = new MeasureSpec[measures.size()];
+    noDictionaryDimensionSpec = new ArrayList<>();
     addDimensions(dimensions);
     addMeasures(measures);
   }
@@ -67,10 +77,12 @@ public class TableSpec {
       if (dimension.isComplex()) {
         DimensionSpec spec = new DimensionSpec(ColumnType.COMPLEX, dimension);
         dimensionSpec[dimIndex++] = spec;
+        noDictionaryDimensionSpec.add(spec);
       } else if (dimension.getDataType() == DataTypes.TIMESTAMP && !dimension
           .isDirectDictionaryEncoding()) {
         DimensionSpec spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension);
         dimensionSpec[dimIndex++] = spec;
+        noDictionaryDimensionSpec.add(spec);
       } else if (dimension.isDirectDictionaryEncoding()) {
         DimensionSpec spec = new DimensionSpec(ColumnType.DIRECT_DICTIONARY, dimension);
         dimensionSpec[dimIndex++] = spec;
@@ -80,6 +92,7 @@ public class TableSpec {
       } else {
         DimensionSpec spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension);
         dimensionSpec[dimIndex++] = spec;
+        noDictionaryDimensionSpec.add(spec);
       }
     }
   }
@@ -91,8 +104,29 @@ public class TableSpec {
     }
   }
 
+  /**
+   * No dictionary and complex dimensions of the table
+   *
+   * @return
+   */
+  public DimensionSpec[] getNoDictAndComplexDimensions() {
+    List<DimensionSpec> noDictAndComplexDimensions = new ArrayList<>();
+    for (int i = 0; i < dimensionSpec.length; i++) {
+      if (dimensionSpec[i].getColumnType() == ColumnType.PLAIN_VALUE
+          || dimensionSpec[i].getColumnType() == ColumnType.COMPLEX_PRIMITIVE
+          || dimensionSpec[i].getColumnType() == ColumnType.COMPLEX) {
+        noDictAndComplexDimensions.add(dimensionSpec[i]);
+      }
+    }
+    return noDictAndComplexDimensions.toArray(new DimensionSpec[noDictAndComplexDimensions.size()]);
+  }
+
   public DimensionSpec getDimensionSpec(int dimensionIndex) {
     return dimensionSpec[dimensionIndex];
+  }
+
+  public List<DimensionSpec> getNoDictionaryDimensionSpec() {
+    return noDictionaryDimensionSpec;
   }
 
   public MeasureSpec getMeasureSpec(int measureIndex) {

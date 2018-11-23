@@ -146,13 +146,13 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test create table as select with TBLPROPERTIES") {
-    sql("DROP TABLE IF EXISTS ctas_tblproperties_test")
+    sql("DROP TABLE IF EXISTS ctas_tblproperties_testt")
     sql(
-      "create table ctas_tblproperties_test stored by 'carbondata' TBLPROPERTIES" +
+      "create table ctas_tblproperties_testt stored by 'carbondata' TBLPROPERTIES" +
         "('DICTIONARY_INCLUDE'='key', 'sort_scope'='global_sort') as select * from carbon_ctas_test")
-    checkAnswer(sql("select * from ctas_tblproperties_test"), sql("select * from carbon_ctas_test"))
+    checkAnswer(sql("select * from ctas_tblproperties_testt"), sql("select * from carbon_ctas_test"))
     val carbonTable = CarbonEnv.getInstance(Spark2TestQueryExecutor.spark).carbonMetastore
-      .lookupRelation(Option("default"), "ctas_tblproperties_test")(Spark2TestQueryExecutor.spark)
+      .lookupRelation(Option("default"), "ctas_tblproperties_testt")(Spark2TestQueryExecutor.spark)
       .asInstanceOf[CarbonRelation].carbonTable
     val metadataFolderPath: CarbonFile = FileFactory.getCarbonFile(carbonTable.getMetadataPath)
     assert(metadataFolderPath.exists())
@@ -419,7 +419,7 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS ctas_select_where_carbon")
     sql("DROP TABLE IF EXISTS ctas_select_where_parquet")
     sql("DROP TABLE IF EXISTS ctas_select_where_orc")
-    sql("DROP TABLE IF EXISTS ctas_tblproperties_test")
+    sql("DROP TABLE IF EXISTS ctas_tblproperties_testt")
     sql("DROP TABLE IF EXISTS ctas_if_table_name")
     sql("DROP TABLE IF EXISTS source_table")
     sql("DROP TABLE IF EXISTS target_table")

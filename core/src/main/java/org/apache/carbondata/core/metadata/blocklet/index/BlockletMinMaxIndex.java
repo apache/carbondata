@@ -21,6 +21,8 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.List;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 /**
  * Below class holds the information of max and min value of all the columns in a blocklet
  */
@@ -41,16 +43,23 @@ public class BlockletMinMaxIndex implements Serializable {
    */
   private byte[][] maxValues;
 
+  /**
+   * flag to check whether min max is written for a column or not
+   */
+  private boolean[] isMinMaxSet;
+
   public BlockletMinMaxIndex() {
   }
 
-  public BlockletMinMaxIndex(List<ByteBuffer> minValues, List<ByteBuffer> maxValues) {
+  public BlockletMinMaxIndex(List<ByteBuffer> minValues, List<ByteBuffer> maxValues,
+      List<Boolean> isMinMaxSet) {
     this.minValues = new byte[minValues.size()][];
     this.maxValues = new byte[maxValues.size()][];
     for (int i = 0; i < minValues.size(); i++) {
       this.minValues[i] = minValues.get(i).array();
       this.maxValues[i] = maxValues.get(i).array();
     }
+    this.isMinMaxSet = ArrayUtils.toPrimitive(isMinMaxSet.toArray(new Boolean[isMinMaxSet.size()]));
   }
 
   /**
@@ -79,6 +88,14 @@ public class BlockletMinMaxIndex implements Serializable {
    */
   public void setMaxValues(byte[][] maxValues) {
     this.maxValues = maxValues;
+  }
+
+  public boolean[] getIsMinMaxSet() {
+    return isMinMaxSet;
+  }
+
+  public void setIsMinMaxSet(boolean[] isMinMaxSet) {
+    this.isMinMaxSet = isMinMaxSet;
   }
 
 }

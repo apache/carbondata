@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 import java.io.{File, FileWriter}
 
 import org.apache.commons.io.FileUtils
+import org.apache.hadoop.conf.Configuration
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
@@ -281,7 +282,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     } else {
       val segment = Segment.getSegment("0", carbonTable.getTablePath)
       val store = new SegmentFileStore(carbonTable.getTablePath, segment.getSegmentFileName)
-      store.readIndexFiles()
+      store.readIndexFiles(new Configuration(false))
       val size = store.getIndexFilesMap.asScala.map(f => f._2.size()).sum
       assertResult(Math.max(4, defaultParallelism) + 1)(size + store.getIndexFilesMap.size())
     }

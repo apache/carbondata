@@ -33,19 +33,20 @@ object CarbonDataFrameExample {
     // Writes Dataframe to CarbonData file:
     import spark.implicits._
     val df = spark.sparkContext.parallelize(1 to 100)
-      .map(x => ("a", "b", x))
+      .map(x => ("a" + x % 10, "b", x))
       .toDF("c1", "c2", "number")
 
     // Saves dataframe to carbondata file
     df.write
       .format("carbondata")
       .option("tableName", "carbon_df_table")
-      .option("compress", "true")
-      .option("tempCSV", "false")
+      .option("partitionColumns", "c1")  // a list of column names
       .mode(SaveMode.Overwrite)
       .save()
 
     spark.sql(""" SELECT * FROM carbon_df_table """).show()
+
+    spark.sql("SHOW PARTITIONS carbon_df_table").show()
 
     // Specify schema
     import org.apache.spark.sql.types.{StructType, StructField, StringType, IntegerType}

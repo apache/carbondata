@@ -33,11 +33,21 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonFooterReader;
 import org.apache.carbondata.format.FileFooter;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Below class will be used to convert the thrift object of data file
  * meta data to wrapper object
  */
 public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
+
+  public DataFileFooterConverter(Configuration configuration) {
+    super(configuration);
+  }
+
+  public DataFileFooterConverter() {
+    super(FileFactory.getConfiguration());
+  }
 
   /**
    * Below method will be used to convert thrift file meta to wrapper file meta

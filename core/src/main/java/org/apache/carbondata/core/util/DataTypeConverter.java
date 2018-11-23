@@ -32,6 +32,8 @@ public interface DataTypeConverter {
 
   Object wrapWithGenericArrayData(Object data);
   Object wrapWithGenericRow(Object[] fields);
+  Object wrapWithArrayBasedMapData(Object[] keyArray, Object[] valueArray);
+  Object[] unwrapGenericRowToObject(Object data);
 
   Object[] convertCarbonSchemaToSparkSchema(CarbonColumn[] carbonColumns);
 }

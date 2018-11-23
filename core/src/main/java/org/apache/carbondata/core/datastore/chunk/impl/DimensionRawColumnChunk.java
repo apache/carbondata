@@ -23,16 +23,20 @@ import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkReader;
+import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonDictionaryImpl;
+import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.format.Encoding;
 import org.apache.carbondata.format.LocalDictionaryChunk;
 
@@ -69,7 +73,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
     for (int i = 0; i < pagesCount; i++) {
       try {
         if (dataChunks[i] == null) {
-          dataChunks[i] = chunkReader.decodeColumnPage(this, i);
+          dataChunks[i] = chunkReader.decodeColumnPage(this, i, null);
         }
       } catch (IOException | MemoryException e) {
         throw new RuntimeException(e);
@@ -90,7 +94,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
     }
     if (dataChunks[pageNumber] == null) {
       try {
-        dataChunks[pageNumber] = chunkReader.decodeColumnPage(this, pageNumber);
+        dataChunks[pageNumber] = chunkReader.decodeColumnPage(this, pageNumber, null);
       } catch (IOException | MemoryException e) {
         throw new RuntimeException(e);
       }
@@ -105,7 +109,8 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
    * @param index
    * @return
    */
-  public DimensionColumnPage convertToDimColDataChunkWithOutCache(int index) {
+  public DimensionColumnPage convertToDimColDataChunkWithOutCache(int index,
+      ReusableDataBuffer reusableDataBuffer) {
     assert index < pagesCount;
     // in case of filter query filter column if filter column is decoded and stored.
     // then return the same
@@ -113,7 +118,24 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
       return dataChunks[index];
     }
     try {
-      return chunkReader.decodeColumnPage(this, index);
+      return chunkReader.decodeColumnPage(this, index, reusableDataBuffer);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Convert raw data with specified page number processed to DimensionColumnDataChunk and fill
+   * the vector
+   *
+   * @param pageNumber page number to decode and fill the vector
+   * @param vectorInfo vector to be filled with column page
+   */
+  public void convertToDimColDataChunkAndFillVector(int pageNumber, ColumnVectorInfo vectorInfo,
+      ReusableDataBuffer reusableDataBuffer) {
+    assert pageNumber < pagesCount;
+    try {
+      chunkReader.decodeColumnPageAndFillVector(this, pageNumber, vectorInfo, reusableDataBuffer);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -144,7 +166,11 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
     if (null != getDataChunkV3() && null != getDataChunkV3().local_dictionary
         && null == localDictionary) {
       try {
-        localDictionary = getDictionary(getDataChunkV3().local_dictionary);
+        String compressorName = CarbonMetadataUtil.getCompressorNameFromChunkMeta(
+            getDataChunkV3().data_chunk_list.get(0).chunk_meta);
+
+        Compressor compressor = CompressorFactory.getInstance().getCompressor(compressorName);
+        localDictionary = getDictionary(getDataChunkV3().local_dictionary, compressor);
       } catch (IOException | MemoryException e) {
         throw new RuntimeException(e);
       }
@@ -160,17 +186,17 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
    * @throws IOException
    * @throws MemoryException
    */
-  private CarbonDictionary getDictionary(LocalDictionaryChunk localDictionaryChunk)
-      throws IOException, MemoryException {
+  public static CarbonDictionary getDictionary(LocalDictionaryChunk localDictionaryChunk,
+      Compressor compressor) throws IOException, MemoryException {
     if (null != localDictionaryChunk) {
       List<Encoding> encodings = localDictionaryChunk.getDictionary_meta().getEncoders();
       List<ByteBuffer> encoderMetas = localDictionaryChunk.getDictionary_meta().getEncoder_meta();
-      ColumnPageDecoder decoder =
-          DefaultEncodingFactory.getInstance().createDecoder(encodings, encoderMetas);
+      ColumnPageDecoder decoder = DefaultEncodingFactory.getInstance().createDecoder(
+          encodings, encoderMetas, compressor.getName());
       ColumnPage decode = decoder.decode(localDictionaryChunk.getDictionary_data(), 0,
           localDictionaryChunk.getDictionary_data().length);
-      BitSet usedDictionary = BitSet.valueOf(CompressorFactory.getInstance().getCompressor()
-          .unCompressByte(localDictionaryChunk.getDictionary_values()));
+      BitSet usedDictionary = BitSet.valueOf(compressor.unCompressByte(
+          localDictionaryChunk.getDictionary_values()));
       int length = usedDictionary.length();
       int index = 0;
       byte[][] dictionary = new byte[length][];

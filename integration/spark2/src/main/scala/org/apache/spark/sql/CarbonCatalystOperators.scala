@@ -21,16 +21,11 @@ import scala.collection.mutable
 
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.expressions.aggregate.Count
+import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Count}
 import org.apache.spark.sql.catalyst.plans.logical.{UnaryNode, _}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.hive.HiveSessionCatalog
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
-import org.apache.spark.sql.types.{StringType, TimestampType}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
 case class CarbonDictionaryCatalystDecoder(
@@ -125,22 +120,40 @@ case class InsertIntoCarbonTable (table: CarbonDatasourceHadoopRelation,
 object CountStarPlan {
   type ReturnType = (mutable.MutableList[Attribute], LogicalPlan)
 
-  /**
-   * It fill count star query attribute.
-   */
-  private def fillCountStarAttribute(
-      expr: Expression,
-      outputColumns: mutable.MutableList[Attribute]) {
-    expr match {
-      case par@Alias(_, _) =>
-        val head = par.children.head.children.head
-        head match {
-          case count: Count if count.children.head.isInstanceOf[Literal] =>
-            outputColumns += par.toAttribute
-          case _ =>
-        }
-    }
-  }
+ /**
+  * It fill count star query attribute.
+  * 2.2.1 plan
+  * Aggregate [count(1) AS count(1)#30L]
+  * +- Project
+  *
+  *2.3.0 plan
+  * Aggregate [cast(count(1) as string) AS count(1)#29]
+  * +- Project
+  */
+ private def fillCountStarAttribute(
+     expr: Expression,
+     outputColumns: mutable.MutableList[Attribute]) {
+   expr match {
+     case par@Alias(cast: Cast, _) =>
+       if (cast.child.isInstanceOf[AggregateExpression]) {
+         val head = cast.child.children.head
+         head match {
+           case count: Count if count.children.head.isInstanceOf[Literal] =>
+             outputColumns += par.toAttribute
+           case _ =>
+         }
+       }
+     case par@Alias(child, _) =>
+       if (child.isInstanceOf[AggregateExpression]) {
+         val head = child.children.head
+         head match {
+           case count: Count if count.children.head.isInstanceOf[Literal] =>
+             outputColumns += par.toAttribute
+           case _ =>
+         }
+       }
+   }
+ }
 
   def unapply(plan: LogicalPlan): Option[ReturnType] = {
     plan match {

@@ -29,7 +29,7 @@ import org.apache.hadoop.conf.Configuration;
 
 public class DefaultFileTypeProvider implements FileTypeInterface {
 
-  public FileReader getFileHolder(FileFactory.FileType fileType) {
+  public FileReader getFileHolder(FileFactory.FileType fileType, Configuration configuration) {
     switch (fileType) {
       case LOCAL:
         return new FileReaderImpl();
@@ -37,7 +37,7 @@ public class DefaultFileTypeProvider implements FileTypeInterface {
       case ALLUXIO:
       case VIEWFS:
       case S3:
-        return new DFSFileReaderImpl();
+        return new DFSFileReaderImpl(configuration);
       default:
         return new FileReaderImpl();
     }

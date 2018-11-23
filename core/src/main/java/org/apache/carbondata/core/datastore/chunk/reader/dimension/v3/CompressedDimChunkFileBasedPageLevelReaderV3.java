@@ -21,10 +21,13 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.FileReader;
+import org.apache.carbondata.core.datastore.ReusableDataBuffer;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
+import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
@@ -138,7 +141,8 @@ public class CompressedDimChunkFileBasedPageLevelReaderV3
    * @return DimensionColumnDataChunk
    */
   @Override public DimensionColumnPage decodeColumnPage(
-      DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber)
+      DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber,
+      ReusableDataBuffer reusableDataBuffer)
       throws IOException, MemoryException {
     // data chunk of page
     DataChunk2 pageMetadata = null;
@@ -146,6 +150,11 @@ public class CompressedDimChunkFileBasedPageLevelReaderV3
     DataChunk3 dataChunk3 = dimensionRawColumnChunk.getDataChunkV3();
 
     pageMetadata = dataChunk3.getData_chunk_list().get(pageNumber);
+
+    if (compressor == null) {
+      this.compressor = CompressorFactory.getInstance().getCompressor(
+          CarbonMetadataUtil.getCompressorNameFromChunkMeta(pageMetadata.getChunk_meta()));
+    }
     // calculating the start point of data
     // as buffer can contain multiple column data, start point will be datachunkoffset +
     // data chunk length + page offset
@@ -153,17 +162,18 @@ public class CompressedDimChunkFileBasedPageLevelReaderV3
         .get(dimensionRawColumnChunk.getColumnIndex()) + dataChunk3.getPage_offset()
         .get(pageNumber);
     int length = pageMetadata.data_page_length;
-    if (hasEncoding(pageMetadata.encoders, Encoding.INVERTED_INDEX)) {
+    if (CarbonUtil.hasEncoding(pageMetadata.encoders, Encoding.INVERTED_INDEX)) {
       length += pageMetadata.rowid_page_length;
     }
 
-    if (hasEncoding(pageMetadata.encoders, Encoding.RLE)) {
+    if (CarbonUtil.hasEncoding(pageMetadata.encoders, Encoding.RLE)) {
       length += pageMetadata.rle_page_length;
     }
     // get the data buffer
     ByteBuffer rawData = dimensionRawColumnChunk.getFileReader()
         .readByteBuffer(filePath, offset, length);
 
-    return decodeDimension(dimensionRawColumnChunk, rawData, pageMetadata, 0);
+    return decodeDimension(dimensionRawColumnChunk, rawData, pageMetadata, 0, null,
+        reusableDataBuffer);
   }
 }

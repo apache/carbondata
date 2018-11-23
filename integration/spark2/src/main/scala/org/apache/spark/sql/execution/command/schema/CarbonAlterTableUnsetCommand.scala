@@ -29,16 +29,17 @@ private[sql] case class CarbonAlterTableUnsetCommand(
     propKeys: Seq[String],
     ifExists: Boolean,
     isView: Boolean)
-  extends RunnableCommand with MetadataProcessOpeation {
-
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processMetadata(sparkSession)
-  }
+  extends MetadataCommand {
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
+    setAuditTable(tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase),
+      tableIdentifier.table)
     AlterTableUtil.modifyTableProperties(tableIdentifier, Map.empty[String, String],
       propKeys, false)(sparkSession,
       sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog])
+    setAuditInfo(Map("unset" -> propKeys.mkString(", ")))
     Seq.empty
   }
+
+  override protected def opName: String = "ALTER TABLE UNSET"
 }

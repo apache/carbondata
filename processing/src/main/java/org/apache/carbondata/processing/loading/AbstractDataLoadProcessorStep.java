@@ -21,11 +21,12 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
+
+import org.apache.log4j.Logger;
 
 /**
  * This base abstract class for data loading.
@@ -38,7 +39,7 @@ import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
  */
 public abstract class AbstractDataLoadProcessorStep {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(AbstractDataLoadProcessorStep.class.getName());
 
   protected CarbonDataLoadConfiguration configuration;
@@ -71,13 +72,13 @@ public abstract class AbstractDataLoadProcessorStep {
    * @throws IOException
    */
   public void initialize() throws IOException {
-    if (LOGGER.isInfoEnabled()) {
+    if (LOGGER.isDebugEnabled()) {
       // This thread prints the rows processed in each step for every 10 seconds.
       new Thread() {
         @Override public void run() {
           while (!closed) {
             try {
-              LOGGER.info("Rows processed in step " + getStepName() + " : " + rowCounter.get());
+              LOGGER.debug("Rows processed in step " + getStepName() + " : " + rowCounter.get());
               Thread.sleep(10000);
             } catch (InterruptedException e) {
               //ignore

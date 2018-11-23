@@ -17,19 +17,15 @@
 
 package org.apache.spark.sql
 
-import java.io.File
 import java.util.concurrent.ConcurrentHashMap
-
-import scala.util.Try
 
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
-import org.apache.spark.sql.events.MergeIndexEventListener
+import org.apache.spark.sql.events.{MergeBloomIndexEventListener, MergeIndexEventListener}
 import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
 import org.apache.spark.sql.hive._
-import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -101,6 +97,8 @@ class CarbonEnv {
           threadLevelCarbonSessionInfo.setThreadParams(currentThreadSesssionInfo.getThreadParams)
         }
         ThreadLocalSessionInfo.setCarbonSessionInfo(threadLevelCarbonSessionInfo)
+        ThreadLocalSessionInfo.setConfigurationToCurrentThread(sparkSession
+          .sessionState.newHadoopConf())
         val config = new CarbonSQLConf(sparkSession)
         if (sparkSession.conf.getOption(CarbonCommonConstants.ENABLE_UNSAFE_SORT).isEmpty) {
           config.addDefaultCarbonParams()
@@ -116,7 +114,8 @@ class CarbonEnv {
 
           CarbonMetaStoreFactory.createCarbonMetaStore(sparkSession.conf)
         }
-        CarbonProperties.getInstance.addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
+        CarbonProperties.getInstance
+          .addNonSerializableProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
         initialized = true
       }
     }
@@ -184,6 +183,7 @@ object CarbonEnv {
       .addListener(classOf[LoadTablePostExecutionEvent], new MergeIndexEventListener)
       .addListener(classOf[AlterTableCompactionPostEvent], new MergeIndexEventListener)
       .addListener(classOf[AlterTableMergeIndexEvent], new MergeIndexEventListener)
+      .addListener(classOf[BuildDataMapPostExecutionEvent], new MergeBloomIndexEventListener)
   }
 
   /**

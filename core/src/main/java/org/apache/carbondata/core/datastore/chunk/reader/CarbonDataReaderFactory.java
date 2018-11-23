@@ -74,7 +74,6 @@ public class CarbonDataReaderFactory {
         return new CompressedDimensionChunkFileBasedReaderV2(blockletInfo, eachColumnValueSize,
             filePath);
       case V3:
-      default:
         if (readPagebyPage) {
           return new CompressedDimChunkFileBasedPageLevelReaderV3(blockletInfo, eachColumnValueSize,
               filePath);
@@ -82,6 +81,8 @@ public class CarbonDataReaderFactory {
           return new CompressedDimensionChunkFileBasedReaderV3(blockletInfo, eachColumnValueSize,
               filePath);
         }
+      default:
+        throw new UnsupportedOperationException("Unsupported columnar format version: " + version);
     }
   }
 
@@ -101,14 +102,13 @@ public class CarbonDataReaderFactory {
       case V2:
         return new CompressedMeasureChunkFileBasedReaderV2(blockletInfo, filePath);
       case V3:
-      default:
         if (readPagebyPage) {
           return new CompressedMsrChunkFileBasedPageLevelReaderV3(blockletInfo, filePath);
         } else {
           return new CompressedMeasureChunkFileBasedReaderV3(blockletInfo, filePath);
         }
-
+      default:
+        throw new UnsupportedOperationException("Unsupported columnar format version: " + version);
     }
-
   }
 }

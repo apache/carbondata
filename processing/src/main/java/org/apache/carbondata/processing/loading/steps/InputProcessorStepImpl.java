@@ -47,6 +47,9 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   private CarbonIterator<Object[]>[] inputIterators;
 
+  // cores used in SDK writer, set by the user
+  private short sdkWriterCores;
+
   /**
    * executor service to execute the query
    */
@@ -56,6 +59,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
       CarbonIterator<Object[]>[] inputIterators) {
     super(configuration, null);
     this.inputIterators = inputIterators;
+    this.sdkWriterCores = configuration.getWritingCoresCount();
   }
 
   @Override public DataField[] getOutput() {
@@ -75,7 +79,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
   @Override public Iterator<CarbonRowBatch>[] execute() {
     int batchSize = CarbonProperties.getInstance().getBatchSize();
     List<CarbonIterator<Object[]>>[] readerIterators =
-        CarbonDataProcessorUtil.partitionInputReaderIterators(inputIterators);
+        CarbonDataProcessorUtil.partitionInputReaderIterators(inputIterators, sdkWriterCores);
     Iterator<CarbonRowBatch>[] outIterators = new Iterator[readerIterators.length];
     for (int i = 0; i < outIterators.length; i++) {
       outIterators[i] =

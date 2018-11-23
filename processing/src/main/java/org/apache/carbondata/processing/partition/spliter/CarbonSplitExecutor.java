@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -34,12 +33,15 @@ import org.apache.carbondata.core.scan.model.QueryModelBuilder;
 import org.apache.carbondata.core.scan.result.iterator.PartitionSpliterRawResultIterator;
 import org.apache.carbondata.core.util.DataTypeConverter;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
+
 /**
  * Used to read carbon blocks when add/split partition
  */
 public class CarbonSplitExecutor extends AbstractCarbonQueryExecutor {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonSplitExecutor.class.getName());
 
   public CarbonSplitExecutor(Map<String, TaskBlockInfo> segmentMapping, CarbonTable carbonTable) {
@@ -48,7 +50,7 @@ public class CarbonSplitExecutor extends AbstractCarbonQueryExecutor {
   }
 
   public List<PartitionSpliterRawResultIterator> processDataBlocks(
-      String segmentId, DataTypeConverter converter)
+      String segmentId, DataTypeConverter converter, Configuration configuration)
       throws QueryExecutionException, IOException {
     List<TableBlockInfo> list = null;
     queryModel = new QueryModelBuilder(carbonTable)
@@ -64,7 +66,7 @@ public class CarbonSplitExecutor extends AbstractCarbonQueryExecutor {
       list = taskBlockInfo.getTableBlockInfoList(task);
       LOGGER.info("for task -" + task + "-block size is -" + list.size());
       queryModel.setTableBlockInfos(list);
-      resultList.add(new PartitionSpliterRawResultIterator(executeBlockList(list)));
+      resultList.add(new PartitionSpliterRawResultIterator(executeBlockList(list, configuration)));
     }
     return resultList;
   }

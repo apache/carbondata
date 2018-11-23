@@ -19,7 +19,6 @@ package org.apache.carbondata.processing.loading.steps;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -37,8 +36,6 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
-import org.apache.carbondata.processing.loading.BadRecordsLogger;
-import org.apache.carbondata.processing.loading.BadRecordsLoggerProvider;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
@@ -66,10 +63,14 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
   private Map<Integer, GenericDataType> dataFieldsWithComplexDataType;
 
+  // cores used in SDK writer, set by the user
+  private short sdkWriterCores;
+
   public InputProcessorStepWithNoConverterImpl(CarbonDataLoadConfiguration configuration,
       CarbonIterator<Object[]>[] inputIterators) {
     super(configuration, null);
     this.inputIterators = inputIterators;
+    sdkWriterCores = configuration.getWritingCoresCount();
   }
 
   @Override public DataField[] getOutput() {
@@ -135,7 +136,8 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
   @Override public Iterator<CarbonRowBatch>[] execute() {
     int batchSize = CarbonProperties.getInstance().getBatchSize();
-    List<CarbonIterator<Object[]>>[] readerIterators = partitionInputReaderIterators();
+    List<CarbonIterator<Object[]>>[] readerIterators =
+        CarbonDataProcessorUtil.partitionInputReaderIterators(this.inputIterators, sdkWriterCores);
     Iterator<CarbonRowBatch>[] outIterators = new Iterator[readerIterators.length];
     for (int i = 0; i < outIterators.length; i++) {
       outIterators[i] =
@@ -144,29 +146,6 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
               dataFieldsWithComplexDataType);
     }
     return outIterators;
-  }
-
-  /**
-   * Partition input iterators equally as per the number of threads.
-   *
-   * @return
-   */
-  private List<CarbonIterator<Object[]>>[] partitionInputReaderIterators() {
-    // Get the number of cores configured in property.
-    int numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
-    // Get the minimum of number of cores and iterators size to get the number of parallel threads
-    // to be launched.
-    int parallelThreadNumber = Math.min(inputIterators.length, numberOfCores);
-
-    List<CarbonIterator<Object[]>>[] iterators = new List[parallelThreadNumber];
-    for (int i = 0; i < parallelThreadNumber; i++) {
-      iterators[i] = new ArrayList<>();
-    }
-    // Equally partition the iterators as per number of threads
-    for (int i = 0; i < inputIterators.length; i++) {
-      iterators[i % parallelThreadNumber].add(inputIterators[i]);
-    }
-    return iterators;
   }
 
   @Override public void close() {
@@ -210,13 +189,13 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
     private int[] orderOfData;
 
-    private CarbonDataLoadConfiguration configuration;
-
     private Map<Integer, GenericDataType> dataFieldsWithComplexDataType;
 
     private DirectDictionaryGenerator dateDictionaryGenerator;
 
     private DirectDictionaryGenerator timestampDictionaryGenerator;
+
+    private BadRecordLogHolder logHolder = new BadRecordLogHolder();
 
     public InputProcessorIterator(List<CarbonIterator<Object[]>> inputIterators, int batchSize,
         boolean preFetch, AtomicLong rowCounter, int[] orderOfData, boolean[] noDictionaryMapping,
@@ -233,7 +212,6 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
       this.noDictionaryMapping = noDictionaryMapping;
       this.dataTypes = dataTypes;
       this.dataFields = configuration.getDataFields();
-      this.configuration = configuration;
       this.orderOfData = orderOfData;
       this.dataFieldsWithComplexDataType = dataFieldsWithComplexDataType;
     }
@@ -286,13 +264,15 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
 
     private Object[] convertToNoDictionaryToBytes(Object[] data, DataField[] dataFields) {
       Object[] newData = new Object[data.length];
-      BadRecordLogHolder logHolder = new BadRecordLogHolder();
-      BadRecordsLogger badRecordLogger =
-          BadRecordsLoggerProvider.createBadRecordLogger(configuration);
       for (int i = 0; i < data.length; i++) {
         if (i < noDictionaryMapping.length && noDictionaryMapping[i]) {
-          newData[i] = DataTypeUtil
-              .getBytesDataDataTypeForNoDictionaryColumn(data[orderOfData[i]], dataTypes[i]);
+          if (DataTypeUtil.isPrimitiveColumn(dataTypes[i])) {
+            // keep the no dictionary measure column as original data
+            newData[i] = data[orderOfData[i]];
+          } else {
+            newData[i] = DataTypeUtil
+                .getBytesDataDataTypeForNoDictionaryColumn(data[orderOfData[i]], dataTypes[i]);
+          }
         } else {
           // if this is a complex column then recursively comver the data into Byte Array.
           if (dataTypes[i].isComplexType()) {
@@ -302,16 +282,6 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
               GenericDataType complextType =
                   dataFieldsWithComplexDataType.get(dataFields[i].getColumn().getOrdinal());
               complextType.writeByteArray(data[orderOfData[i]], dataOutputStream, logHolder);
-              if (!logHolder.isLogged() && logHolder.isBadRecordNotAdded()) {
-                badRecordLogger.addBadRecordsToBuilder(data, logHolder.getReason());
-                if (badRecordLogger.isDataLoadFail()) {
-                  String error = "Data load failed due to bad record: " + logHolder.getReason();
-                  if (!badRecordLogger.isBadRecordLoggerEnable()) {
-                    error += "Please enable bad record logger to know the detail reason.";
-                  }
-                  throw new BadRecordFoundException(error);
-                }
-              }
               dataOutputStream.close();
               newData[i] = byteArray.toByteArray();
             } catch (BadRecordFoundException e) {
@@ -339,7 +309,6 @@ public class InputProcessorStepWithNoConverterImpl extends AbstractDataLoadProce
           }
         }
       }
-      // System.out.println(Arrays.toString(data));
       return newData;
     }
 

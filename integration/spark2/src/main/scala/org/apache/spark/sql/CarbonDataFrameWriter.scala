@@ -21,6 +21,7 @@ import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CarbonException
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonType}
 import org.apache.carbondata.spark.CarbonOption
@@ -67,7 +68,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       case IntegerType => CarbonType.INT.getName
       case ShortType => CarbonType.SHORT.getName
       case LongType => CarbonType.LONG.getName
-      case FloatType => CarbonType.DOUBLE.getName
+      case FloatType => CarbonType.FLOAT.getName
       case DoubleType => CarbonType.DOUBLE.getName
       case TimestampType => CarbonType.TIMESTAMP.getName
       case DateType => CarbonType.DATE.getName
@@ -78,25 +79,53 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
   }
 
   private def makeCreateTableString(schema: StructType, options: CarbonOption): String = {
-    val carbonSchema = schema.map { field =>
-      s"${ field.name } ${ convertToCarbonType(field.dataType) }"
-    }
-
     val property = Map(
       "SORT_COLUMNS" -> options.sortColumns,
+      "SORT_SCOPE" -> options.sortScope,
       "DICTIONARY_INCLUDE" -> options.dictionaryInclude,
       "DICTIONARY_EXCLUDE" -> options.dictionaryExclude,
       "LONG_STRING_COLUMNS" -> options.longStringColumns,
       "TABLE_BLOCKSIZE" -> options.tableBlockSize,
+      "TABLE_BLOCKLET_SIZE" -> options.tableBlockletSize,
       "STREAMING" -> Option(options.isStreaming.toString)
     ).filter(_._2.isDefined)
       .map(property => s"'${property._1}' = '${property._2.get}'").mkString(",")
+
+    val partition: Seq[String] = if (options.partitionColumns.isDefined) {
+      if (options.partitionColumns.get.toSet.size != options.partitionColumns.get.length) {
+        throw new MalformedCarbonCommandException(s"repeated partition column")
+      }
+      options.partitionColumns.get.map { column =>
+        val field = schema.fields.find(_.name.equalsIgnoreCase(column))
+        if (field.isEmpty) {
+          throw new MalformedCarbonCommandException(s"invalid partition column: $column")
+        }
+        s"$column ${field.get.dataType.typeName}"
+      }
+    } else {
+      Seq()
+    }
+
+    val schemaWithoutPartition = if (options.partitionColumns.isDefined) {
+      val partitionCols = options.partitionColumns.get
+      val fields = schema.filterNot {
+        field => partitionCols.exists(_.equalsIgnoreCase(field.name))
+      }
+      StructType(fields)
+    } else {
+      schema
+    }
+
+    val carbonSchema = schemaWithoutPartition.map { field =>
+      s"${ field.name } ${ convertToCarbonType(field.dataType) }"
+    }
 
     val dbName = CarbonEnv.getDatabaseName(options.dbName)(sqlContext.sparkSession)
 
     s"""
        | CREATE TABLE IF NOT EXISTS $dbName.${options.tableName}
        | (${ carbonSchema.mkString(", ") })
+       | ${ if (partition.nonEmpty) s"PARTITIONED BY (${partition.mkString(", ")})" else ""}
        | STORED BY 'carbondata'
        | ${ if (options.tablePath.nonEmpty) s"LOCATION '${options.tablePath.get}'" else ""}
        |  ${ if (property.nonEmpty) "TBLPROPERTIES (" + property + ")" else "" }

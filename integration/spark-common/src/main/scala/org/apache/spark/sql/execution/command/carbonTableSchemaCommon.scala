@@ -22,7 +22,6 @@ import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
@@ -32,25 +31,21 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.Segment
-import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, DecimalType}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema._
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier,
-  TableInfo, TableSchema}
-import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema,
-  ParentColumnTableRelation}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier, TableInfo, TableSchema}
+import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema, ParentColumnTableRelation}
 import org.apache.carbondata.core.service.impl.ColumnUniqueIdGenerator
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
+import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.CompactionType
 import org.apache.carbondata.spark.CarbonSparkFactory
-import org.apache.carbondata.spark.util.DataTypeConverterUtil
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil}
 
 case class TableModel(
     ifNotExistsSet: Boolean,
@@ -63,6 +58,7 @@ case class TableModel(
     varcharCols: Option[Seq[String]],
     highcardinalitydims: Option[Seq[String]],
     noInvertedIdxCols: Option[Seq[String]],
+    innvertedIdxCols: Option[Seq[String]],
     colProps: Option[util.Map[String, util.List[ColumnProperty]]] = None,
     bucketFields: Option[BucketFields],
     partitionInfo: Option[PartitionInfo],
@@ -119,7 +115,7 @@ case class CarbonMergerMapping(
     var maxSegmentColCardinality: Array[Int],
     // maxSegmentColumnSchemaList is list of column schema of last segment of compaction
     var maxSegmentColumnSchemaList: List[ColumnSchema],
-    currentPartitions: Option[Seq[PartitionSpec]])
+    @transient currentPartitions: Option[Seq[PartitionSpec]])
 
 case class NodeInfo(TaskId: String, noOfBlocks: Int)
 
@@ -241,6 +237,11 @@ class AlterTableColumnSchemaGenerator(
     val existingColsSize = tableCols.size
     var allColumns = tableCols.filter(x => x.isDimensionColumn)
     var newCols = Seq[ColumnSchema]()
+    var invertedIndxCols: Array[String] = Array[String]()
+    if (alterTableModel.tableProperties.get(CarbonCommonConstants.INVERTED_INDEX).isDefined) {
+      invertedIndxCols = alterTableModel.tableProperties(CarbonCommonConstants.INVERTED_INDEX)
+        .split(',').map(_.trim)
+    }
 
     alterTableModel.dimCols.foreach(field => {
       val encoders = new java.util.ArrayList[Encoding]()
@@ -276,31 +277,35 @@ class AlterTableColumnSchemaGenerator(
       newCols ++= Seq(columnSchema)
     })
 
+    if (invertedIndxCols.nonEmpty) {
+      for (column <- newCols) {
+        if (invertedIndxCols.contains(column.getColumnName) && column.isDimensionColumn) {
+          column.setUseInvertedIndex(true)
+        }
+      }
+    }
+
     // Check if there is any duplicate measures or dimensions.
     // Its based on the dimension name and measure name
     allColumns.filter(x => !x.isInvisible).groupBy(_.getColumnName)
       .foreach(f => if (f._2.size > 1) {
         val name = f._1
-        LOGGER.error(s"Duplicate column found with name: $name")
-        LOGGER.audit(
-          s"Validation failed for Create/Alter Table Operation " +
-          s"for ${ dbName }.${ alterTableModel.tableName }. " +
-          s"Duplicate column found with name: $name")
         sys.error(s"Duplicate column found with name: $name")
       })
 
     if (newCols.exists(_.getDataType.isComplexType)) {
-      LOGGER.error(s"Complex column cannot be added")
-      LOGGER.audit(
-        s"Validation failed for Create/Alter Table Operation " +
-        s"for ${ dbName }.${ alterTableModel.tableName }. " +
-        s"Complex column cannot be added")
       sys.error(s"Complex column cannot be added")
     }
 
     val columnValidator = CarbonSparkFactory.getCarbonColumnValidator
     columnValidator.validateColumns(allColumns)
 
+    allColumns = CarbonScalaUtil.reArrangeColumnSchema(allColumns)
+
+    if (tableInfo.getFactTable.getPartitionInfo != null) {
+      val par = tableInfo.getFactTable.getPartitionInfo.getColumnSchemaList
+      allColumns = allColumns.filterNot(b => par.contains(b)) ++= par.asScala
+    }
 
     def getLocalDictColumnList(tableProperties: scala.collection.mutable.Map[String, String],
         columns: scala.collection.mutable.ListBuffer[ColumnSchema]): (scala.collection.mutable
@@ -378,19 +383,58 @@ class AlterTableColumnSchemaGenerator(
       }
     }
 
+    val isLocalDictEnabledForMainTable = tableSchema.getTableProperties
+      .get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE)
 
-    if (alterTableModel.tableProperties != null) {
+    val alterMutableTblProperties: scala.collection.mutable.Map[String, String] = mutable
+      .Map(alterTableModel.tableProperties.toSeq: _*)
+
+    // if local dictionary is enabled, then validate include and exclude columns if defined
+    if (null != isLocalDictEnabledForMainTable && isLocalDictEnabledForMainTable.toBoolean) {
+      var localDictIncludeColumns: Seq[String] = Seq[String]()
+      var localDictExcludeColumns: Seq[String] = Seq[String]()
+      // validate local dictionary include columns if defined
+      if (alterTableModel.tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE)
+        .isDefined) {
+        localDictIncludeColumns =
+          alterTableModel.tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_INCLUDE).split(",")
+            .map(_.trim)
+        CarbonScalaUtil
+          .validateLocalDictionaryColumns(alterMutableTblProperties, localDictIncludeColumns)
+        CarbonScalaUtil
+          .validateLocalConfiguredDictionaryColumns(
+            alterTableModel.dimCols ++ alterTableModel.msrCols,
+            alterMutableTblProperties,
+            localDictIncludeColumns)
+      }
+
+      // validate local dictionary exclude columns if defined
+      if (alterTableModel.tableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE)
+        .isDefined) {
+        localDictExcludeColumns =
+          alterTableModel.tableProperties(CarbonCommonConstants.LOCAL_DICTIONARY_EXCLUDE).split(",")
+            .map(_.trim)
+        CarbonScalaUtil
+          .validateLocalDictionaryColumns(alterMutableTblProperties, localDictExcludeColumns)
+        CarbonScalaUtil
+          .validateLocalConfiguredDictionaryColumns(
+            alterTableModel.dimCols ++ alterTableModel.msrCols,
+            alterMutableTblProperties,
+            localDictExcludeColumns)
+      }
+
+      // validate if both local dictionary include and exclude contains same column
+      CarbonScalaUtil.validateDuplicateLocalDictIncludeExcludeColmns(alterMutableTblProperties)
+
       CarbonUtil
         .setLocalDictColumnsToWrapperSchema(newCols.asJava,
           alterTableModel.tableProperties.asJava,
-          tableSchema.getTableProperties.get(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE))
+          isLocalDictEnabledForMainTable)
     }
 
     val includeExcludeColOfMainTable = getLocalDictColumnList(tableSchema.getTableProperties
       .asScala,
       columnsWithoutNewCols)
-    val alterMutableTblProperties: scala.collection.mutable.Map[String, String] = mutable
-      .Map(alterTableModel.tableProperties.toSeq: _*)
     val includeExcludeColOfAlterTable = getLocalDictColumnList(alterMutableTblProperties,
       newCols.to[mutable.ListBuffer])
 
@@ -512,7 +556,6 @@ object TableNewProcessor {
     columnSchema.setPrecision(precision)
     columnSchema.setScale(scale)
     columnSchema.setSchemaOrdinal(schemaOrdinal)
-    columnSchema.setUseInvertedIndex(isDimensionCol)
     columnSchema.setSortColumn(isSortColumn)
     columnSchema
   }
@@ -689,12 +732,8 @@ class TableNewProcessor(cm: TableModel) {
         }
       }
     }
-    // dimensions that are not varchar
-    cm.dimCols.filter(field => !cm.varcharCols.get.contains(field.column))
-      .foreach(addDimensionCol(_))
-    // dimensions that are varchar
-    cm.dimCols.filter(field => cm.varcharCols.get.contains(field.column))
-      .foreach(addDimensionCol(_))
+    // add all dimensions
+    cm.dimCols.foreach(addDimensionCol(_))
 
     // check whether the column is a local dictionary column and set in column schema
     if (null != cm.tableProperties) {
@@ -746,29 +785,26 @@ class TableNewProcessor(cm: TableModel) {
     allColumns.groupBy(_.getColumnName).foreach { f =>
       if (f._2.size > 1) {
         val name = f._1
-        LOGGER.error(s"Duplicate column found with name: $name")
-        LOGGER.audit(
-          s"Validation failed for Create/Alter Table Operation " +
-          s"Duplicate column found with name: $name")
         CarbonException.analysisException(s"Duplicate dimensions found with name: $name")
       }
     }
 
     val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
 
-    // Setting the boolean value of useInvertedIndex in column schema, if Paranet table is defined
+    // Setting the boolean value of useInvertedIndex in column schema, if Parent table is defined
     // Encoding is already decided above
     if (!cm.parentTable.isDefined) {
       val noInvertedIndexCols = cm.noInvertedIdxCols.getOrElse(Seq())
+      val invertedIndexCols = cm.innvertedIdxCols.getOrElse(Seq())
       LOGGER.info("NoINVERTEDINDEX columns are : " + noInvertedIndexCols.mkString(","))
       for (column <- allColumns) {
         // When the column is measure or the specified no inverted index column in DDL,
         // set useInvertedIndex to false, otherwise true.
-        if (noInvertedIndexCols.contains(column.getColumnName) ||
-            cm.msrCols.exists(_.column.equalsIgnoreCase(column.getColumnName))) {
-          column.setUseInvertedIndex(false)
-        } else {
+        if (invertedIndexCols.contains(column.getColumnName) &&
+            !cm.msrCols.exists(_.column.equalsIgnoreCase(column.getColumnName))) {
           column.setUseInvertedIndex(true)
+        } else {
+          column.setUseInvertedIndex(false)
         }
       }
     }
@@ -811,7 +847,7 @@ class TableNewProcessor(cm: TableModel) {
       cm.tableName,
       tableSchema.getTableId,
       cm.databaseNameOp.getOrElse("default"))
-    tablePropertiesMap.put("bad_records_path", badRecordsPath)
+    tablePropertiesMap.put("bad_record_path", badRecordsPath)
     tableSchema.setTableProperties(tablePropertiesMap)
     if (cm.bucketFields.isDefined) {
       val bucketCols = cm.bucketFields.get.bucketColumns.map { b =>
@@ -865,7 +901,7 @@ class TableNewProcessor(cm: TableModel) {
       tableId: String,
       databaseName: String): String = {
     val badRecordsPath = tablePropertiesMap.asScala
-      .getOrElse("bad_records_path", CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL)
+      .getOrElse("bad_record_path", CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL)
     if (badRecordsPath == null || badRecordsPath.isEmpty) {
       CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL
     } else {

@@ -18,12 +18,13 @@ package org.apache.carbondata.processing.loading.steps;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
@@ -47,13 +48,15 @@ import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.CarbonFactHandlerFactory;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.log4j.Logger;
+
 /**
  * It reads data from sorted files which are generated in previous sort step.
  * And it writes data to carbondata file. It also generates mdk key while writing to carbondata file
  */
 public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonRowDataWriterProcessorStepImpl.class.getName());
 
   private int dimensionWithComplexCount;
@@ -80,11 +83,16 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
 
   private Map<String, LocalDictionaryGenerator> localDictionaryGeneratorMap;
 
+  private List<CarbonFactHandler> carbonFactHandlers;
+
+  private ExecutorService executorService = null;
+
   public CarbonRowDataWriterProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
     super(configuration, child);
     this.localDictionaryGeneratorMap =
         CarbonUtil.getLocalDictionaryModel(configuration.getTableSpec().getCarbonTable());
+    this.carbonFactHandlers = new CopyOnWriteArrayList<>();
   }
 
   @Override public void initialize() throws IOException {
@@ -92,13 +100,10 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     child.initialize();
   }
 
-  private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier) {
-    String[] storeLocation = CarbonDataProcessorUtil.getLocalDataFolderLocation(
-        tableIdentifier.getDatabaseName(),
-        tableIdentifier.getTableName(),
-        String.valueOf(configuration.getTaskNo()), configuration.getSegmentId(),
-        false,
-        false);
+  private String[] getStoreLocation() {
+    String[] storeLocation = CarbonDataProcessorUtil
+        .getLocalDataFolderLocation(this.configuration.getTableSpec().getCarbonTable(),
+            String.valueOf(configuration.getTaskNo()), configuration.getSegmentId(), false, false);
     CarbonDataProcessorUtil.createLocations(storeLocation);
     return storeLocation;
   }
@@ -107,7 +112,6 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     final Iterator<CarbonRowBatch>[] iterators = child.execute();
     tableIdentifier = configuration.getTableIdentifier().getCarbonTableIdentifier();
     tableName = tableIdentifier.getTableName();
-    ExecutorService executorService = null;
     try {
       readCounter = new long[iterators.length];
       writeCounter = new long[iterators.length];
@@ -140,25 +144,21 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
         }
       }
     } catch (CarbonDataWriterException e) {
-      LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterProcessorStepImpl");
+      LOGGER.error("Failed for table: " + tableName + " in DataWriterProcessorStepImpl", e);
       throw new CarbonDataLoadingException(
           "Error while initializing data handler : " + e.getMessage());
     } catch (Exception e) {
-      LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterProcessorStepImpl");
+      LOGGER.error("Failed for table: " + tableName + " in DataWriterProcessorStepImpl", e);
       if (e instanceof BadRecordFoundException) {
         throw new BadRecordFoundException(e.getMessage(), e);
       }
       throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage(), e);
-    } finally {
-      if (null != executorService && executorService.isShutdown()) {
-        executorService.shutdownNow();
-      }
     }
     return null;
   }
 
   private void doExecute(Iterator<CarbonRowBatch> iterator, int iteratorIndex) throws IOException {
-    String[] storeLocation = getStoreLocation(tableIdentifier);
+    String[] storeLocation = getStoreLocation();
     DataMapWriterListener listener = getDataMapWriterListener(0);
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(
         configuration, storeLocation, 0, iteratorIndex, listener);
@@ -169,13 +169,20 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       if (rowsNotExist) {
         rowsNotExist = false;
         dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(model);
+        this.carbonFactHandlers.add(dataHandler);
         dataHandler.initialise();
       }
       processBatch(iterator.next(), dataHandler, iteratorIndex);
     }
-    if (!rowsNotExist) {
-      finish(dataHandler, iteratorIndex);
+    try {
+      if (!rowsNotExist) {
+        finish(dataHandler, iteratorIndex);
+      }
+    } finally {
+      carbonFactHandlers.remove(dataHandler);
     }
+
+
   }
 
   @Override protected String getStepName() {
@@ -183,24 +190,42 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
   }
 
   private void finish(CarbonFactHandler dataHandler, int iteratorIndex) {
+    CarbonDataWriterException exception = null;
     try {
       dataHandler.finish();
     } catch (Exception e) {
-      LOGGER.error(e, "Failed for table: " + tableName + " in  finishing data handler");
+      // if throw exception from here dataHandler will not be closed.
+      // so just holding exception and later throwing exception
+      LOGGER.error("Failed for table: " + tableName + " in  finishing data handler", e);
+      exception = new CarbonDataWriterException(
+          "Failed for table: " + tableName + " in  finishing data handler", e);
     }
-    LOGGER.info("Record Processed For table: " + tableName);
-    String logMessage =
-        "Finished Carbon DataWriterProcessorStepImpl: Read: " + readCounter[iteratorIndex]
-            + ": Write: " + readCounter[iteratorIndex];
-    LOGGER.info(logMessage);
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Record Processed For table: " + tableName);
+      String logMessage =
+          "Finished Carbon DataWriterProcessorStepImpl: Read: " + readCounter[iteratorIndex] +
+              ": Write: " + readCounter[iteratorIndex];
+      LOGGER.debug(logMessage);
+    }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordTotalRecords(rowCounter.get());
-    processingComplete(dataHandler);
+    try {
+      processingComplete(dataHandler);
+    } catch (CarbonDataLoadingException e) {
+      // only assign when exception is null
+      // else it will erase original root cause
+      if (null == exception) {
+        exception = new CarbonDataWriterException(e);
+      }
+    }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
         .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PATITION_ID,
             System.currentTimeMillis());
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
         .recordMdkGenerateTotalTime(CarbonTablePath.DEPRECATED_PATITION_ID,
             System.currentTimeMillis());
+    if (null != exception) {
+      throw exception;
+    }
   }
 
   private void processingComplete(CarbonFactHandler dataHandler) throws CarbonDataLoadingException {
@@ -208,10 +233,10 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       try {
         dataHandler.closeHandler();
       } catch (CarbonDataWriterException e) {
-        LOGGER.error(e, e.getMessage());
+        LOGGER.error(e.getMessage(), e);
         throw new CarbonDataLoadingException(e.getMessage());
       } catch (Exception e) {
-        LOGGER.error(e, e.getMessage());
+        LOGGER.error(e.getMessage(), e);
         throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage());
       }
     }
@@ -252,19 +277,19 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     int dictIndex = 0;
     int nonDicIndex = 0;
     int[] dim = new int[this.dimensionCount];
-    byte[][] nonDicArray = new byte[this.noDictWithComplextCount][];
+    Object[] nonDicArray = new Object[this.noDictWithComplextCount];
     // read dimension values
     int dimCount = 0;
     for (; dimCount < isNoDictionaryDimensionColumn.length; dimCount++) {
       if (isNoDictionaryDimensionColumn[dimCount]) {
-        nonDicArray[nonDicIndex++] = (byte[]) row.getObject(dimCount);
+        nonDicArray[nonDicIndex++] = row.getObject(dimCount);
       } else {
         dim[dictIndex++] = (int) row.getObject(dimCount);
       }
     }
 
     for (; dimCount < this.dimensionWithComplexCount; dimCount++) {
-      nonDicArray[nonDicIndex++] = (byte[]) row.getObject(dimCount);
+      nonDicArray[nonDicIndex++] = row.getObject(dimCount);
     }
 
     Object[] measures = new Object[measureCount];
@@ -286,7 +311,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       }
       writeCounter[iteratorIndex] += batch.getSize();
     } catch (Exception e) {
-      throw new CarbonDataLoadingException("unable to generate the mdkey", e);
+      throw new CarbonDataLoadingException(e);
     }
     rowCounter.getAndAdd(batch.getSize());
   }
@@ -307,6 +332,21 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       } catch (IOException e) {
         LOGGER.error(e);
         throw new RuntimeException(e);
+      }
+    }
+  }
+
+  @Override public void close() {
+    if (!closed) {
+      super.close();
+      if (null != executorService) {
+        executorService.shutdownNow();
+      }
+      if (null != this.carbonFactHandlers && !this.carbonFactHandlers.isEmpty()) {
+        for (CarbonFactHandler carbonFactHandler : this.carbonFactHandlers) {
+          carbonFactHandler.finish();
+          carbonFactHandler.closeHandler();
+        }
       }
     }
   }

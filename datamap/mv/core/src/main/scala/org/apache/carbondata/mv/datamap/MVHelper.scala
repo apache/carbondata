@@ -22,7 +22,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, CarbonToSparkAdapater, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Cast, Expression, NamedExpression, ScalaUDF, SortOrder}
@@ -33,6 +33,7 @@ import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider
 import org.apache.carbondata.core.metadata.schema.table.{DataMapSchema, RelationIdentifier}
@@ -80,6 +81,20 @@ object MVHelper {
     dmProperties.foreach(t => tableProperties.put(t._1, t._2))
 
     val selectTables = getTables(logicalPlan)
+    selectTables.foreach { selectTable =>
+      val mainCarbonTable = try {
+        Some(CarbonEnv.getCarbonTable(selectTable.identifier.database,
+          selectTable.identifier.table)(sparkSession))
+      } catch {
+        // Exception handling if it's not a CarbonTable
+        case ex : Exception => None
+      }
+
+      if (!mainCarbonTable.isEmpty && mainCarbonTable.get.isStreamingSink) {
+        throw new MalformedCarbonCommandException(
+          s"Streaming table does not support creating MV datamap")
+      }
+    }
 
     // TODO inherit the table properties like sort order, sort scope and block size from parent
     // tables to mv datamap table
@@ -285,10 +300,13 @@ object MVHelper {
         case Alias(agg: AggregateExpression, name) =>
           agg.aggregateFunction.collect {
             case attr: AttributeReference =>
-              AttributeReference(attr.name, attr.dataType, attr.nullable, attr
-                .metadata)(attr.exprId,
+              CarbonToSparkAdapater.createAttributeReference(attr.name,
+                attr.dataType,
+                attr.nullable,
+                attr.metadata,
+                attr.exprId,
                 aliasName,
-                attr.isGenerated)
+                attr)
           }.head
         case Alias(child, name) =>
           child
@@ -299,18 +317,25 @@ object MVHelper {
     expressions.map {
         case alias@Alias(agg: AggregateExpression, name) =>
           attrMap.get(AttributeKey(agg)).map { exp =>
-            Alias(getAttribute(exp), name)(alias.exprId,
+            CarbonToSparkAdapater.createAliasRef(
+              getAttribute(exp),
+              name,
+              alias.exprId,
               alias.qualifier,
               alias.explicitMetadata,
-              alias.isGenerated)
+              Some(alias))
           }.getOrElse(alias)
 
         case attr: AttributeReference =>
           val uattr = attrMap.get(AttributeKey(attr)).map{a =>
             if (keepAlias) {
-              AttributeReference(a.name, a.dataType, a.nullable, a.metadata)(a.exprId,
+              CarbonToSparkAdapater.createAttributeReference(a.name,
+                a.dataType,
+                a.nullable,
+                a.metadata,
+                a.exprId,
                 attr.qualifier,
-                a.isGenerated)
+                a)
             } else {
               a
             }
@@ -318,10 +343,9 @@ object MVHelper {
           uattr
         case alias@Alias(expression: Expression, name) =>
           attrMap.get(AttributeKey(expression)).map { exp =>
-            Alias(getAttribute(exp), name)(alias.exprId,
-              alias.qualifier,
-              alias.explicitMetadata,
-              alias.isGenerated)
+            CarbonToSparkAdapater
+              .createAliasRef(getAttribute(exp), name, alias.exprId, alias.qualifier,
+                alias.explicitMetadata, Some(alias))
           }.getOrElse(alias)
         case expression: Expression =>
           val uattr = attrMap.get(AttributeKey(expression))
@@ -361,9 +385,14 @@ object MVHelper {
         case attr: AttributeReference =>
           val uattr = attrMap.get(AttributeKey(attr)).map{a =>
             if (keepAlias) {
-              AttributeReference(a.name, a.dataType, a.nullable, a.metadata)(a.exprId,
-                attr.qualifier,
-                a.isGenerated)
+              CarbonToSparkAdapater
+                .createAttributeReference(a.name,
+                  a.dataType,
+                  a.nullable,
+                  a.metadata,
+                  a.exprId,
+                  attr.qualifier,
+                  a)
             } else {
               a
             }
@@ -510,8 +539,8 @@ object MVHelper {
       aliasMap: Map[AttributeKey, NamedExpression]): Seq[Seq[Any]] = {
     val updatedFlagSpec = select.flagSpec.map { f =>
       f.map {
-        case list: ArrayBuffer[SortOrder] =>
-          list.map { s =>
+        case list: ArrayBuffer[_] =>
+          list.map { case s: SortOrder =>
             val expressions =
               updateOutPutList(
                 Seq(s.child.asInstanceOf[Attribute]),

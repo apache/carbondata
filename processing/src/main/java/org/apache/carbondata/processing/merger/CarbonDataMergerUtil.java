@@ -21,10 +21,20 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
@@ -49,11 +59,14 @@ import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
 /**
  * utility class for load merging.
  */
 public final class CarbonDataMergerUtil {
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonDataMergerUtil.class.getName());
 
   private CarbonDataMergerUtil() {
@@ -391,7 +404,6 @@ public final class CarbonDataMergerUtil {
           CarbonLoadModel carbonLoadModel, long compactionSize,
           List<LoadMetadataDetails> segments, CompactionType compactionType,
           List<String> customSegmentIds) throws IOException, MalformedCarbonCommandException {
-    String tablePath = carbonLoadModel.getTablePath();
     Map<String, String> tableLevelProperties = carbonLoadModel.getCarbonDataLoadSchema()
             .getCarbonTable().getTableInfo().getFactTable().getTableProperties();
     List<LoadMetadataDetails> sortedSegments = new ArrayList<LoadMetadataDetails>(segments);
@@ -400,7 +412,7 @@ public final class CarbonDataMergerUtil {
 
     if (CompactionType.CUSTOM == compactionType) {
       return identitySegmentsToBeMergedBasedOnSpecifiedSegments(sortedSegments,
-              new HashSet<>(customSegmentIds));
+              new LinkedHashSet<>(customSegmentIds));
     }
 
     // Check for segments which are qualified for IUD compaction.
@@ -424,7 +436,7 @@ public final class CarbonDataMergerUtil {
     if (CompactionType.MAJOR == compactionType) {
 
       listOfSegmentsToBeMerged = identifySegmentsToBeMergedBasedOnSize(compactionSize,
-              listOfSegmentsLoadedInSameDateInterval, carbonLoadModel, tablePath);
+              listOfSegmentsLoadedInSameDateInterval, carbonLoadModel);
     } else {
 
       listOfSegmentsToBeMerged =
@@ -462,7 +474,7 @@ public final class CarbonDataMergerUtil {
           List<LoadMetadataDetails> listOfSegments,
           Set<String> segmentIds) throws MalformedCarbonCommandException {
     Map<String, LoadMetadataDetails> specifiedSegments =
-            new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new LinkedHashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (LoadMetadataDetails detail : listOfSegments) {
       if (segmentIds.contains(detail.getLoadName())) {
         specifiedSegments.put(detail.getLoadName(), detail);
@@ -623,13 +635,12 @@ public final class CarbonDataMergerUtil {
    * @param listOfSegmentsAfterPreserve  the segments list after
    *        preserving the configured number of latest loads
    * @param carbonLoadModel carbon load model
-   * @param tablePath the store location of the segment
    * @return the list of segments that need to be merged
    *         based on the Size in case of Major compaction
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnSize(
       long compactionSize, List<LoadMetadataDetails> listOfSegmentsAfterPreserve,
-      CarbonLoadModel carbonLoadModel, String tablePath) throws IOException {
+      CarbonLoadModel carbonLoadModel) throws IOException {
 
     List<LoadMetadataDetails> segmentsToBeMerged =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -651,8 +662,14 @@ public final class CarbonDataMergerUtil {
       // variable to store one  segment size across partition.
       long sizeOfOneSegmentAcrossPartition;
       if (segment.getSegmentFile() != null) {
-        sizeOfOneSegmentAcrossPartition = CarbonUtil.getSizeOfSegment(
-            carbonTable.getTablePath(), new Segment(segId, segment.getSegmentFile()));
+        // If LoadMetaDataDetail already has data size no need to calculate the data size from
+        // index files. If not there then read the index file and calculate size.
+        if (!StringUtils.isEmpty(segment.getDataSize())) {
+          sizeOfOneSegmentAcrossPartition = Long.parseLong(segment.getDataSize());
+        } else {
+          sizeOfOneSegmentAcrossPartition = CarbonUtil.getSizeOfSegment(carbonTable.getTablePath(),
+              new Segment(segId, segment.getSegmentFile()));
+        }
       } else {
         sizeOfOneSegmentAcrossPartition = getSizeOfSegment(carbonTable.getTablePath(), segId);
       }
@@ -738,6 +755,13 @@ public final class CarbonDataMergerUtil {
     if (size >= 2) {
       level1Size = noOfSegmentLevelsCount[0];
       level2Size = noOfSegmentLevelsCount[1];
+      /*
+      Ex. if segs => 0.1,2,3 and threshold =2,1
+      during 2nd time compaction,mergeCounter becomes 1 and we checks if mergeCounter==level2Size
+      then return mergedSegments which will return 0.1 and since only 1 segment(0.1) is identified ,
+      no segment would go for compaction .So change 2nd level threshold  to 0 if it is 1.
+       */
+      level2Size = level2Size == 1 ? 0 : level2Size;
     } else if (size == 1) {
       level1Size = noOfSegmentLevelsCount[0];
     }
@@ -1166,8 +1190,9 @@ public final class CarbonDataMergerUtil {
    */
   public static boolean isHorizontalCompactionEnabled() {
     if ((CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.isHorizontalCompactionEnabled,
-            CarbonCommonConstants.defaultIsHorizontalCompactionEnabled)).equalsIgnoreCase("true")) {
+        .getProperty(CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE,
+            CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE_DEFAULT))
+        .equalsIgnoreCase("true")) {
       return true;
     } else {
       return false;
@@ -1196,7 +1221,7 @@ public final class CarbonDataMergerUtil {
     segmentUpdateStatusManager.setUpdateStatusDetails(segmentUpdateDetails);
 
     CarbonFile[] deleteDeltaFiles =
-        segmentUpdateStatusManager.getDeleteDeltaFilesList(new Segment(seg, null), blockName);
+        segmentUpdateStatusManager.getDeleteDeltaFilesList(new Segment(seg), blockName);
 
     String destFileName =
         blockName + "-" + timestamp.toString() + CarbonCommonConstants.DELETE_DELTA_FILE_EXT;
@@ -1240,7 +1265,8 @@ public final class CarbonDataMergerUtil {
       String blockName, String fullBlockFilePath) throws IOException {
 
     DeleteDeltaBlockDetails deleteDeltaBlockDetails = null;
-    CarbonDeleteFilesDataReader dataReader = new CarbonDeleteFilesDataReader();
+    int numberOfcores = CarbonProperties.getInstance().getNumberOfCompactingCores();
+    CarbonDeleteFilesDataReader dataReader = new CarbonDeleteFilesDataReader(numberOfcores);
     try {
       deleteDeltaBlockDetails =
               dataReader.getCompactedDeleteDeltaFileFromBlock(deleteDeltaFiles, blockName);

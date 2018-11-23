@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -30,10 +31,9 @@ import java.util.Set;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.constants.LoggerAction;
-import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.constants.SortScopeOptions;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -53,40 +53,17 @@ import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.model.CarbonDataLoadSchema;
-import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 public final class CarbonDataProcessorUtil {
-  private static final LogService LOGGER =
+  private static final Logger LOGGER =
       LogServiceFactory.getLogService(CarbonDataProcessorUtil.class.getName());
 
   private CarbonDataProcessorUtil() {
 
-  }
-
-  /**
-   * Below method will be used to get the buffer size
-   *
-   * @param numberOfFiles
-   * @return buffer size
-   */
-  public static int getFileBufferSize(int numberOfFiles, CarbonProperties instance,
-      int deafultvalue) {
-    int configuredBufferSize = 0;
-    try {
-      configuredBufferSize =
-          Integer.parseInt(instance.getProperty(CarbonCommonConstants.SORT_FILE_BUFFER_SIZE));
-    } catch (NumberFormatException e) {
-      configuredBufferSize = deafultvalue;
-    }
-    int fileBufferSize = (configuredBufferSize * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
-        * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR) / numberOfFiles;
-    if (fileBufferSize < CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR) {
-      fileBufferSize = CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR;
-    }
-    return fileBufferSize;
   }
 
   /**
@@ -99,7 +76,7 @@ public final class CarbonDataProcessorUtil {
         try {
           CarbonUtil.deleteFoldersAndFiles(file);
         } catch (IOException | InterruptedException e) {
-          LOGGER.error(e, "Failed to delete " + loc);
+          LOGGER.error("Failed to delete " + loc, e);
         }
       }
     }
@@ -157,25 +134,6 @@ public final class CarbonDataProcessorUtil {
       localDataFolderLocArray[i] = carbonDataDirectoryPath + File.separator + taskId;
     }
     return localDataFolderLocArray;
-  }
-
-  /**
-   * This method will form the local data folder store location
-   *
-   * @param databaseName
-   * @param tableName
-   * @param taskId
-   * @param segmentId
-   * @param isCompactionFlow
-   * @param isAltPartitionFlow
-   * @return
-   */
-  public static String[] getLocalDataFolderLocation(String databaseName, String tableName,
-      String taskId, String segmentId, boolean isCompactionFlow,
-      boolean isAltPartitionFlow) {
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
-    return getLocalDataFolderLocation(carbonTable, taskId,
-        segmentId, isCompactionFlow, isAltPartitionFlow);
   }
 
   /**
@@ -372,13 +330,17 @@ public final class CarbonDataProcessorUtil {
     for (int i = 0; i < hierarchies.length; i++) {
       String[] levels = hierarchies[i].split(CarbonCommonConstants.HASH_SPC_CHARACTER);
       String[] levelInfo = levels[0].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
-      GenericDataType g = levelInfo[1].toLowerCase().contains(CarbonCommonConstants.ARRAY) ?
+      String level1Info = levelInfo[1].toLowerCase();
+      GenericDataType g = (level1Info.contains(CarbonCommonConstants.ARRAY) || level1Info
+          .contains(CarbonCommonConstants.MAP)) ?
           new ArrayDataType(levelInfo[0], "", levelInfo[3]) :
           new StructDataType(levelInfo[0], "", levelInfo[3]);
       complexTypesMap.put(levelInfo[0], g);
       for (int j = 1; j < levels.length; j++) {
         levelInfo = levels[j].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
-        if (levelInfo[1].toLowerCase().contains(CarbonCommonConstants.ARRAY)) {
+        String levelInfo1 = levelInfo[1].toLowerCase();
+        if (levelInfo1.contains(CarbonCommonConstants.ARRAY) || levelInfo1
+            .contains(CarbonCommonConstants.MAP)) {
           g.addChildren(new ArrayDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
         } else if (levelInfo[1].toLowerCase().contains(CarbonCommonConstants.STRUCT)) {
           g.addChildren(new StructDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
@@ -415,7 +377,6 @@ public final class CarbonDataProcessorUtil {
    * This method update the column Name
    *
    * @param schema
-   * @param tableName
    */
   public static Set<String> getSchemaColumnNames(CarbonDataLoadSchema schema) {
     Set<String> columnNames = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -432,26 +393,89 @@ public final class CarbonDataProcessorUtil {
     return columnNames;
   }
 
-  public static DataType[] getMeasureDataType(int measureCount, String databaseName,
-      String tableName) {
+  public static DataType[] getMeasureDataType(int measureCount, CarbonTable carbonTable) {
     DataType[] type = new DataType[measureCount];
     for (int i = 0; i < type.length; i++) {
       type[i] = DataTypes.DOUBLE;
     }
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
-    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(tableName);
+    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(carbonTable.getTableName());
     for (int i = 0; i < type.length; i++) {
       type[i] = measures.get(i).getDataType();
     }
     return type;
   }
 
-  public static DataType[] getMeasureDataType(int measureCount, DataField[] measureFields) {
-    DataType[] type = new DataType[measureCount];
-    for (int i = 0; i < type.length; i++) {
-      type[i] = measureFields[i].getColumn().getDataType();
+  /**
+   * Get the no dictionary data types on the table
+   *
+   * @param carbonTable
+   * @return
+   */
+  public static DataType[] getNoDictDataTypes(CarbonTable carbonTable) {
+    List<CarbonDimension> dimensions =
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
+    List<DataType> type = new ArrayList<>();
+    for (int i = 0; i < dimensions.size(); i++) {
+      if (dimensions.get(i).isSortColumn() && !dimensions.get(i).hasEncoding(Encoding.DICTIONARY)) {
+        type.add(dimensions.get(i).getDataType());
+      }
     }
-    return type;
+    return type.toArray(new DataType[type.size()]);
+  }
+
+  /**
+   * Get the no dictionary sort column mapping of the table
+   *
+   * @param carbonTable
+   * @return
+   */
+  public static boolean[] getNoDictSortColMapping(CarbonTable carbonTable) {
+    List<CarbonDimension> dimensions =
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
+    List<Boolean> noDicSortColMap = new ArrayList<>();
+    for (int i = 0; i < dimensions.size(); i++) {
+      if (dimensions.get(i).isSortColumn()) {
+        if (!dimensions.get(i).hasEncoding(Encoding.DICTIONARY)) {
+          noDicSortColMap.add(true);
+        } else {
+          noDicSortColMap.add(false);
+        }
+      }
+    }
+    Boolean[] mapping = noDicSortColMap.toArray(new Boolean[noDicSortColMap.size()]);
+    boolean[] noDicSortColMapping = new boolean[mapping.length];
+    for (int i = 0; i < mapping.length; i++) {
+      noDicSortColMapping[i] = mapping[i].booleanValue();
+    }
+    return noDicSortColMapping;
+  }
+
+  /**
+   * Get the data types of the no dictionary sort columns
+   *
+   * @param carbonTable
+   * @return
+   */
+  public static Map<String, DataType[]> getNoDictSortAndNoSortDataTypes(CarbonTable carbonTable) {
+    List<CarbonDimension> dimensions =
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
+    List<DataType> noDictSortType = new ArrayList<>();
+    List<DataType> noDictNoSortType = new ArrayList<>();
+    for (int i = 0; i < dimensions.size(); i++) {
+      if (!dimensions.get(i).hasEncoding(Encoding.DICTIONARY)) {
+        if (dimensions.get(i).isSortColumn()) {
+          noDictSortType.add(dimensions.get(i).getDataType());
+        } else {
+          noDictNoSortType.add(dimensions.get(i).getDataType());
+        }
+      }
+    }
+    DataType[] noDictSortTypes = noDictSortType.toArray(new DataType[noDictSortType.size()]);
+    DataType[] noDictNoSortTypes = noDictNoSortType.toArray(new DataType[noDictNoSortType.size()]);
+    Map<String, DataType[]> noDictSortAndNoSortTypes = new HashMap<>(2);
+    noDictSortAndNoSortTypes.put("noDictSortDataTypes", noDictSortTypes);
+    noDictSortAndNoSortTypes.put("noDictNoSortDataTypes", noDictNoSortTypes);
+    return noDictSortAndNoSortTypes;
   }
 
   /**
@@ -459,9 +483,7 @@ public final class CarbonDataProcessorUtil {
    *
    * @return data directory path
    */
-  public static String createCarbonStoreLocation(String databaseName, String tableName,
-      String segmentId) {
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
+  public static String createCarbonStoreLocation(CarbonTable carbonTable, String segmentId) {
     return CarbonTablePath.getSegmentPath(carbonTable.getTablePath(), segmentId);
   }
 
@@ -500,7 +522,6 @@ public final class CarbonDataProcessorUtil {
             configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
                 .toString());
       }
-      LOGGER.info("sort scope is set to " + sortScope);
     } catch (Exception e) {
       sortScope = SortScopeOptions.getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
       LOGGER.warn("Exception occured while resolving sort scope. " +
@@ -659,9 +680,14 @@ public final class CarbonDataProcessorUtil {
    * @return
    */
   public static List<CarbonIterator<Object[]>>[] partitionInputReaderIterators(
-      CarbonIterator<Object[]>[] inputIterators) {
+      CarbonIterator<Object[]>[] inputIterators, short sdkWriterCores) {
     // Get the number of cores configured in property.
-    int numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
+    int numberOfCores;
+    if (sdkWriterCores > 0) {
+      numberOfCores = sdkWriterCores;
+    } else {
+      numberOfCores = CarbonProperties.getInstance().getNumberOfLoadingCores();
+    }
     // Get the minimum of number of cores and iterators size to get the number of parallel threads
     // to be launched.
     int parallelThreadNumber = Math.min(inputIterators.length, numberOfCores);

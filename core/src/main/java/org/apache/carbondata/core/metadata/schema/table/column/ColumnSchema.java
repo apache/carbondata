@@ -315,7 +315,7 @@ public class ColumnSchema implements Serializable, Writable {
       if (other.columnName != null) {
         return false;
       }
-    } else if (!columnName.equals(other.columnName)) {
+    } else if (!columnName.equalsIgnoreCase(other.columnName)) {
       return false;
     }
     if (dataType == null) {
@@ -570,5 +570,14 @@ public class ColumnSchema implements Serializable, Writable {
       }
     }
     this.isLocalDictColumn = in.readBoolean();
+  }
+
+  /**
+   * returns whether column is complex column based on column name for child column
+   * @return
+   */
+  public boolean isComplexColumn() {
+    return this.getColumnName()
+        .contains(".val") || this.getColumnName().contains(".");
   }
 }

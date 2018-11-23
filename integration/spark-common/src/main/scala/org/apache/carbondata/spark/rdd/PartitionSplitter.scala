@@ -73,8 +73,6 @@ object PartitionSplitter {
          finalSplitStatus = splitStatus.forall(_._2)
        }
        if (!finalSplitStatus) {
-         logger.audit(s"Add/Split Partition request failed for table " +
-                      s"${ databaseName }.${ tableName }")
          logger.error(s"Add/Split Partition request failed for table " +
                       s"${ databaseName }.${ tableName }")
        }
@@ -85,11 +83,9 @@ object PartitionSplitter {
            deleteOriginalCarbonFile(alterPartitionModel, absoluteTableIdentifier,
              Seq(partitionId).toList, databaseName, tableName, partitionInfo)
        } catch {
-         case e: IOException => sys.error(s"Exception while delete original carbon files " +
-         e.getMessage)
+         case e: IOException =>
+           throw new IOException("Exception while delete original carbon files ", e)
        }
-       logger.audit(s"Add/Split Partition request completed for table " +
-                    s"${ databaseName }.${ tableName }")
        logger.info(s"Add/Split Partition request completed for table " +
                    s"${ databaseName }.${ tableName }")
      }

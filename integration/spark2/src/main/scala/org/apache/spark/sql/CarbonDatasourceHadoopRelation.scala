@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.util.control.Breaks._
 
@@ -35,9 +36,11 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.hadoop.CarbonProjection
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.spark.rdd.{CarbonScanRDD, SparkReadSupport}
 
 case class CarbonDatasourceHadoopRelation(
@@ -78,6 +81,16 @@ case class CarbonDatasourceHadoopRelation(
     }.reduceOption(new AndExpression(_, _))
 
     val projection = new CarbonProjection
+
+    if (carbonTable.isChildDataMap) {
+      val parentTableIdentifier = carbonTable.getTableInfo.getParentRelationIdentifiers.get(0)
+      val path = CarbonEnv.getCarbonTable(Some(parentTableIdentifier.getDatabaseName),
+        parentTableIdentifier.getTableName)(sparkSession).getTablePath
+      for (carbonDimension: CarbonDimension <- carbonTable.getAllDimensions.asScala) {
+        carbonDimension.getColumnSchema.getParentColumnTableRelations.get(0)
+          .getRelationIdentifier.setTablePath(path)
+      }
+    }
 
     // As Filter pushdown for Complex datatype is not supported, if filter is applied on complex
     // column, then Projection pushdown on Complex Columns will not take effect. Hence, check if

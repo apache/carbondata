@@ -22,6 +22,7 @@ import java.util.concurrent.{ConcurrentHashMap, CountDownLatch, TimeUnit}
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil
 import org.apache.spark.sql.streaming.StreamingQuery
 import org.apache.spark.sql.types.{StructField, StructType}
 
@@ -30,7 +31,6 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.spark.StreamingOption
-import org.apache.carbondata.spark.util.CarbonScalaUtil
 import org.apache.carbondata.streaming.CarbonStreamException
 
 /**
@@ -46,25 +46,29 @@ object StreamJobManager {
 
   private def validateSourceTable(source: CarbonTable): Unit = {
     if (!source.isStreamingSource) {
-      throw new MalformedCarbonCommandException(s"Table ${source.getTableName} is not " +
-                                                "streaming source table " +
-                                                "('streaming' tblproperty is not 'source')")
+      throw new MalformedCarbonCommandException(
+        s"Table ${source.getTableName} is not streaming source table " +
+        "('streaming' tblproperty is not 'source')")
     }
   }
 
-  private def validateSinkTable(querySchema: StructType, sink: CarbonTable): Unit = {
+  private def validateSinkTable(validateQuerySchema: Boolean,
+                                querySchema: StructType, sink: CarbonTable): Unit = {
     if (!sink.isStreamingSink) {
-      throw new MalformedCarbonCommandException(s"Table ${sink.getTableName} is not " +
-                                                "streaming sink table " +
-                                                "('streaming' tblproperty is not 'sink' or 'true')")
+      throw new MalformedCarbonCommandException(
+        s"Table ${sink.getTableName} is not streaming sink table " +
+        "('streaming' tblproperty is not 'sink' or 'true')")
     }
-    val fields = sink.getCreateOrderColumn(sink.getTableName).asScala.map { column =>
-      StructField(column.getColName,
-        CarbonScalaUtil.convertCarbonToSparkDataType(column.getDataType))
-    }
-    if (!querySchema.equals(StructType(fields))) {
-      throw new MalformedCarbonCommandException(s"Schema of table ${sink.getTableName} " +
-                                                s"does not match query output")
+    if (validateQuerySchema) {
+      val fields = sink.getCreateOrderColumn(sink.getTableName).asScala.map { column =>
+        StructField(
+          column.getColName,
+          CarbonSparkDataSourceUtil.convertCarbonToSparkDataType(column.getDataType))
+      }
+      if (!querySchema.equals(StructType(fields))) {
+        throw new MalformedCarbonCommandException(
+          s"Schema of table ${sink.getTableName} does not match query output")
+      }
     }
   }
 
@@ -102,7 +106,12 @@ object StreamJobManager {
     }
 
     validateSourceTable(sourceTable)
-    validateSinkTable(streamDf.schema, sinkTable)
+
+    // for kafka and socket stream source, the source table schema is one string column only
+    // so we do not validate the query schema against the sink table schema
+    val isKafka = Option(sourceTable.getFormat).contains("kafka")
+    val isSocket = Option(sourceTable.getFormat).contains("socket")
+    validateSinkTable(!(isKafka || isSocket), streamDf.schema, sinkTable)
 
     // start a new thread to run the streaming ingest job, the job will be running
     // until user stops it by STOP STREAM JOB
@@ -147,9 +156,6 @@ object StreamJobManager {
         StreamJobDesc(job, streamName, sourceTable.getDatabaseName, sourceTable.getTableName,
           sinkTable.getDatabaseName, sinkTable.getTableName, query, thread))
 
-      LOGGER.audit(s"STREAM $streamName started with job id '${job.id.toString}', " +
-                   s"from ${sourceTable.getDatabaseName}.${sourceTable.getTableName} " +
-                   s"to ${sinkTable.getDatabaseName}.${sinkTable.getTableName}")
       job.id.toString
     } else {
       thread.interrupt()
@@ -168,9 +174,6 @@ object StreamJobManager {
       jobDesc.streamingQuery.stop()
       jobDesc.thread.interrupt()
       jobs.remove(streamName)
-      LOGGER.audit(s"STREAM $streamName stopped, job id '${jobDesc.streamingQuery.id.toString}', " +
-                   s"from ${jobDesc.sourceDb}.${jobDesc.sourceTable} " +
-                   s"to ${jobDesc.sinkDb}.${jobDesc.sinkTable}")
     } else {
       if (!ifExists) {
         throw new NoSuchStreamException(streamName)

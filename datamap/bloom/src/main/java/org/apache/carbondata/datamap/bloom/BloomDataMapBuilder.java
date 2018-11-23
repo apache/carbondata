@@ -27,6 +27,7 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
  * Implementation for BloomFilter DataMap to rebuild the datamap for main table with existing data
@@ -61,8 +62,12 @@ public class BloomDataMapBuilder extends AbstractBloomDataMapWriter implements D
   }
 
   @Override
-  protected byte[] convertNonDictionaryValue(int indexColIdx, byte[] value) {
-    return value;
+  protected byte[] convertNonDictionaryValue(int indexColIdx, Object value) {
+    // no dictionary measure columns will be of original data, so convert it to bytes
+    if (DataTypeUtil.isPrimitiveColumn(indexColumns.get(indexColIdx).getDataType())) {
+      return CarbonUtil.getValueAsBytes(indexColumns.get(indexColIdx).getDataType(), value);
+    }
+    return (byte[]) value;
   }
 
   @Override

@@ -72,6 +72,7 @@ public class CarbonRow implements Serializable {
   public Object[] getRawData() {
     return rawData;
   }
+
   public void setRawData(Object[] rawData) {
     this.rawData = rawData;
   }

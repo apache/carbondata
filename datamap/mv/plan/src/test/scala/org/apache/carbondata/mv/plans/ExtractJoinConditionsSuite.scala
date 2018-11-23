@@ -39,7 +39,7 @@ class ExtractJoinConditionsSuite extends ModularPlanTest {
     val extracted = modularPlan.extractJoinConditions(modularPlan.children(0),modularPlan.children(1))
     
     val correctAnswer = originalQuery match {
-      case logical.Join(logical.Filter(cond1,logical.LocalRelation(tbl1,_)),logical.LocalRelation(tbl2,_),Inner,Some(cond2)) =>
+      case logical.Join(logical.Filter(cond1,MatchLocalRelation(tbl1,_)),MatchLocalRelation(tbl2,_),Inner,Some(cond2)) =>
         Seq(cond2)
     }
     
@@ -58,7 +58,7 @@ class ExtractJoinConditionsSuite extends ModularPlanTest {
       left.join(right,condition = Some("l.c".attr === "r.c".attr)).analyze
       
     val correctAnswer = originalQuery1 match {
-      case logical.Join(logical.Filter(cond1,logical.LocalRelation(tbl1,_)),logical.Filter(cond2,logical.LocalRelation(tbl2,_)),Inner,Some(cond3)) =>
+      case logical.Join(logical.Filter(cond1,MatchLocalRelation(tbl1,_)),logical.Filter(cond2,MatchLocalRelation(tbl2,_)),Inner,Some(cond3)) =>
         Seq(cond3)
     }    
     

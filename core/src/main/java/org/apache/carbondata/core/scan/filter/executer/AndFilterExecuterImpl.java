@@ -50,18 +50,34 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
     return leftFilters;
   }
 
+  @Override
+  public BitSet prunePages(RawBlockletColumnChunks rawBlockletColumnChunks)
+      throws FilterUnsupportedException, IOException {
+    BitSet leftFilters = leftExecuter.prunePages(rawBlockletColumnChunks);
+    if (leftFilters.isEmpty()) {
+      return leftFilters;
+    }
+    BitSet rightFilter = rightExecuter.prunePages(rawBlockletColumnChunks);
+    if (rightFilter.isEmpty()) {
+      return rightFilter;
+    }
+    leftFilters.and(rightFilter);
+    return leftFilters;
+  }
+
   @Override public boolean applyFilter(RowIntf value, int dimOrdinalMax)
       throws FilterUnsupportedException, IOException {
     return leftExecuter.applyFilter(value, dimOrdinalMax) &&
         rightExecuter.applyFilter(value, dimOrdinalMax);
   }
 
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
-    BitSet leftFilters = leftExecuter.isScanRequired(blockMaxValue, blockMinValue);
+  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue,
+      boolean[] isMinMaxSet) {
+    BitSet leftFilters = leftExecuter.isScanRequired(blockMaxValue, blockMinValue, isMinMaxSet);
     if (leftFilters.isEmpty()) {
       return leftFilters;
     }
-    BitSet rightFilter = rightExecuter.isScanRequired(blockMaxValue, blockMinValue);
+    BitSet rightFilter = rightExecuter.isScanRequired(blockMaxValue, blockMinValue, isMinMaxSet);
     if (rightFilter.isEmpty()) {
       return rightFilter;
     }
@@ -77,14 +93,14 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
 
   @Override
   public BitSet isFilterValuesPresentInBlockOrBlocklet(byte[][] maxValue, byte[][] minValue,
-      String uniqueBlockPath) {
+      String uniqueBlockPath, boolean[] isMinMaxSet) {
     BitSet leftFilters = null;
     if (leftExecuter instanceof ImplicitColumnFilterExecutor) {
       leftFilters = ((ImplicitColumnFilterExecutor) leftExecuter)
-          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue,uniqueBlockPath);
+          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue,uniqueBlockPath, isMinMaxSet);
     } else {
       leftFilters = leftExecuter
-          .isScanRequired(maxValue, minValue);
+          .isScanRequired(maxValue, minValue, isMinMaxSet);
     }
     if (leftFilters.isEmpty()) {
       return leftFilters;
@@ -92,9 +108,9 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
     BitSet rightFilter = null;
     if (rightExecuter instanceof ImplicitColumnFilterExecutor) {
       rightFilter = ((ImplicitColumnFilterExecutor) rightExecuter)
-          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath);
+          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath, isMinMaxSet);
     } else {
-      rightFilter = rightExecuter.isScanRequired(maxValue, minValue);
+      rightFilter = rightExecuter.isScanRequired(maxValue, minValue, isMinMaxSet);
     }
     if (rightFilter.isEmpty()) {
       return rightFilter;
@@ -104,15 +120,16 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
   }
 
   @Override
-  public Boolean isFilterValuesPresentInAbstractIndex(byte[][] maxValue, byte[][] minValue) {
+  public Boolean isFilterValuesPresentInAbstractIndex(byte[][] maxValue, byte[][] minValue,
+      boolean[] isMinMaxSet) {
     Boolean leftRes;
     BitSet tempFilter;
     if (leftExecuter instanceof ImplicitColumnFilterExecutor) {
       leftRes = ((ImplicitColumnFilterExecutor) leftExecuter)
-          .isFilterValuesPresentInAbstractIndex(maxValue, minValue);
+          .isFilterValuesPresentInAbstractIndex(maxValue, minValue, isMinMaxSet);
     } else {
       tempFilter = leftExecuter
-          .isScanRequired(maxValue, minValue);
+          .isScanRequired(maxValue, minValue, isMinMaxSet);
       leftRes = !tempFilter.isEmpty();
     }
     if (!leftRes) {
@@ -122,10 +139,10 @@ public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilt
     Boolean rightRes = null;
     if (rightExecuter instanceof ImplicitColumnFilterExecutor) {
       rightRes = ((ImplicitColumnFilterExecutor) rightExecuter)
-          .isFilterValuesPresentInAbstractIndex(maxValue, minValue);
+          .isFilterValuesPresentInAbstractIndex(maxValue, minValue, isMinMaxSet);
     } else {
       tempFilter = rightExecuter
-          .isScanRequired(maxValue, minValue);
+          .isScanRequired(maxValue, minValue, isMinMaxSet);
       rightRes = !tempFilter.isEmpty();
     }
 

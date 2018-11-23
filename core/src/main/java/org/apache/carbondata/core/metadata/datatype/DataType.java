@@ -79,12 +79,13 @@ public class DataType implements Serializable {
 
   public static char convertType(DataType dataType) {
     if (dataType == DataTypes.BYTE ||
+        dataType == DataTypes.BOOLEAN ||
         dataType == DataTypes.SHORT ||
         dataType == DataTypes.SHORT_INT ||
         dataType == DataTypes.INT ||
         dataType == DataTypes.LONG) {
       return BIG_INT_MEASURE_CHAR;
-    } else if (dataType == DataTypes.DOUBLE) {
+    } else if (dataType == DataTypes.DOUBLE || dataType == DataTypes.FLOAT) {
       return DOUBLE_MEASURE_CHAR;
     } else if (DataTypes.isDecimal(dataType)) {
       return BIG_DECIMAL_MEASURE_CHAR;

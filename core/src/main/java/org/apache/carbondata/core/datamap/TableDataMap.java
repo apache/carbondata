@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datamap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -35,6 +36,7 @@ import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
+import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.events.Event;
 import org.apache.carbondata.events.OperationContext;
@@ -78,6 +80,39 @@ public final class TableDataMap extends OperationEventListener {
     return blockletDetailsFetcher;
   }
 
+
+  /**
+   * Pass the valid segments and prune the datamap using filter expression
+   *
+   * @param segments
+   * @param filterExp
+   * @return
+   */
+  public List<ExtendedBlocklet> prune(List<Segment> segments, Expression filterExp,
+      List<PartitionSpec> partitions) throws IOException {
+    List<ExtendedBlocklet> blocklets = new ArrayList<>();
+    SegmentProperties segmentProperties;
+    Map<Segment, List<DataMap>> dataMaps = dataMapFactory.getDataMaps(segments);
+    for (Segment segment : segments) {
+      List<Blocklet> pruneBlocklets = new ArrayList<>();
+      // if filter is not passed then return all the blocklets
+      if (filterExp == null) {
+        pruneBlocklets = blockletDetailsFetcher.getAllBlocklets(segment, partitions);
+      } else {
+        segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segment);
+        for (DataMap dataMap : dataMaps.get(segment)) {
+
+          pruneBlocklets
+              .addAll(dataMap.prune(filterExp, segmentProperties, partitions, identifier));
+        }
+      }
+      blocklets.addAll(addSegmentId(
+          blockletDetailsFetcher.getExtendedBlocklets(pruneBlocklets, segment),
+          segment.toString()));
+    }
+    return blocklets;
+  }
+
   /**
    * Pass the valid segments and prune the datamap using filter expression
    *
@@ -89,15 +124,15 @@ public final class TableDataMap extends OperationEventListener {
       List<PartitionSpec> partitions) throws IOException {
     List<ExtendedBlocklet> blocklets = new ArrayList<>();
     SegmentProperties segmentProperties;
+    Map<Segment, List<DataMap>> dataMaps = dataMapFactory.getDataMaps(segments);
     for (Segment segment : segments) {
       List<Blocklet> pruneBlocklets = new ArrayList<>();
       // if filter is not passed then return all the blocklets
       if (filterExp == null) {
         pruneBlocklets = blockletDetailsFetcher.getAllBlocklets(segment, partitions);
       } else {
-        List<DataMap> dataMaps = dataMapFactory.getDataMaps(segment);
         segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segment);
-        for (DataMap dataMap : dataMaps) {
+        for (DataMap dataMap : dataMaps.get(segment)) {
           pruneBlocklets.addAll(dataMap.prune(filterExp, segmentProperties, partitions));
         }
       }

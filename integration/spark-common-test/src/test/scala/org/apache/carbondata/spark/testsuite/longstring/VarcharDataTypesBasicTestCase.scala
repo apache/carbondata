@@ -31,6 +31,8 @@ import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.util.CarbonProperties
 
+import scala.collection.mutable
+
 class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   private val longStringTable = "long_string_table"
   private val inputDir = s"$resourcesPath${File.separator}varchartype${File.separator}"
@@ -318,6 +320,37 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     sql(s"DROP DATAMAP IF EXISTS $datamapName ON TABLE $longStringTable")
   }
 
+  test("create table with varchar column and complex column") {
+    sql("DROP TABLE IF EXISTS varchar_complex_table")
+    sql("""
+        | CREATE TABLE varchar_complex_table
+        | (m1 int,arr1 array<string>,varchar1 string,s1 string,varchar2 string,arr2 array<string>)
+        | STORED BY 'carbondata'
+        | TBLPROPERTIES('long_string_columns'='varchar1,varchar2')
+        | """.stripMargin)
+    sql(
+      """
+        | INSERT INTO TABLE varchar_complex_table
+        | VALUES(1,'ar1.0$ar1.1','longstr10','normal string1','longstr11','ar2.0$ar2.1'),
+        | (2,'ar1.2$ar1.3','longstr20','normal string2','longstr21','ar2.2$ar2.3')
+        | """.stripMargin)
+    checkAnswer(
+      sql("SELECT * FROM varchar_complex_table where varchar1='longstr10'"),
+      Seq(Row(1,mutable.WrappedArray.make(Array("ar1.0","ar1.1")),"longstr10","normal string1",
+        "longstr11",mutable.WrappedArray.make(Array("ar2.0","ar2.1")))))
+    checkAnswer(
+      sql(
+        """
+          |SELECT varchar1,arr2,s1,m1,varchar2,arr1
+          |FROM varchar_complex_table
+          |WHERE arr1[1]='ar1.3'
+          |""".stripMargin),
+      Seq(Row("longstr20",mutable.WrappedArray.make(Array("ar2.2","ar2.3")),"normal string2",2,
+        "longstr21",mutable.WrappedArray.make(Array("ar1.2","ar1.3")))))
+
+    sql("DROP TABLE IF EXISTS varchar_complex_table")
+  }
+
     // ignore this test in CI, because it will need at least 4GB memory to run successfully
   ignore("Exceed 2GB per column page for varchar datatype") {
     deleteFile(inputFile_2g_column_page)
@@ -367,6 +400,28 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
       .option("sort_columns", "name")
       .option("long_string_columns", "description, note")
       .mode(SaveMode.Overwrite)
+      .save()
+
+    checkQuery()
+  }
+
+  test("write from dataframe with long_string datatype whose order of fields is not the same as that in table") {
+    sql(
+      s"""
+         | CREATE TABLE if not exists $longStringTable(
+         | id INT, name STRING, description STRING, address STRING, note STRING
+         | ) STORED BY 'carbondata'
+         | TBLPROPERTIES('LONG_STRING_COLUMNS'='description, note', 'dictionary_include'='name', 'sort_columns'='id')
+         |""".
+        stripMargin)
+
+    prepareDF()
+    // the order of fields in dataframe is different from that in create table
+    longStringDF.select("note", "address", "description", "name", "id")
+      .write
+      .format("carbondata")
+      .option("tableName", longStringTable)
+      .mode(SaveMode.Append)
       .save()
 
     checkQuery()

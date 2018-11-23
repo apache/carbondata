@@ -18,29 +18,12 @@
 package org.apache.carbondata.presto;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.datatype.StructField;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
-
-import org.apache.spark.sql.types.ArrayType;
-import org.apache.spark.sql.types.BooleanType;
-import org.apache.spark.sql.types.DateType;
-import org.apache.spark.sql.types.DecimalType;
-import org.apache.spark.sql.types.DoubleType;
-import org.apache.spark.sql.types.FloatType;
-import org.apache.spark.sql.types.IntegerType;
-import org.apache.spark.sql.types.LongType;
-import org.apache.spark.sql.types.NullType;
-import org.apache.spark.sql.types.ShortType;
-import org.apache.spark.sql.types.StringType;
-import org.apache.spark.sql.types.StructType;
-import org.apache.spark.sql.types.TimestampType;
+import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
 
 public class CarbonColumnVectorWrapper implements CarbonColumnVector {
 
@@ -162,24 +145,30 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putBytes(int rowId, byte[] value) {
+  @Override public void putByte(int rowId, byte value) {
     if (!filteredRows[rowId]) {
-      columnVector.putBytes(counter++, value);
+      columnVector.putByte(counter++, value);
+    }
+  }
+
+  @Override public void putByteArray(int rowId, byte[] value) {
+    if (!filteredRows[rowId]) {
+      columnVector.putByteArray(counter++, value);
     }
   }
 
   @Override public void putBytes(int rowId, int count, byte[] value) {
     for (int i = 0; i < count; i++) {
       if (!filteredRows[rowId]) {
-        columnVector.putBytes(counter++, value);
+        columnVector.putByteArray(counter++, value);
       }
       rowId++;
     }
   }
 
-  @Override public void putBytes(int rowId, int offset, int length, byte[] value) {
+  @Override public void putByteArray(int rowId, int offset, int length, byte[] value) {
     if (!filteredRows[rowId]) {
-      columnVector.putBytes(counter++, offset, length, value);
+      columnVector.putByteArray(counter++, offset, length, value);
     }
   }
 
@@ -247,7 +236,7 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
   }
 
   @Override public void setDictionary(CarbonDictionary dictionary) {
-      this.columnVector.setDictionary(dictionary);
+    this.columnVector.setDictionary(dictionary);
   }
 
   @Override public boolean hasDictionary() {
@@ -258,48 +247,71 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
     return this.columnVector;
   }
 
-  // TODO: this is copied from carbondata-spark-common module, use presto type instead of this
-  private org.apache.carbondata.core.metadata.datatype.DataType
-  convertSparkToCarbonDataType(org.apache.spark.sql.types.DataType dataType) {
-    if (dataType instanceof StringType) {
-      return DataTypes.STRING;
-    } else if (dataType instanceof ShortType) {
-      return DataTypes.SHORT;
-    } else if (dataType instanceof IntegerType) {
-      return DataTypes.INT;
-    } else if (dataType instanceof LongType) {
-      return DataTypes.LONG;
-    } else if (dataType instanceof DoubleType) {
-      return DataTypes.DOUBLE;
-    } else if (dataType instanceof FloatType) {
-      return DataTypes.FLOAT;
-    } else if (dataType instanceof DateType) {
-      return DataTypes.DATE;
-    } else if (dataType instanceof BooleanType) {
-      return DataTypes.BOOLEAN;
-    } else if (dataType instanceof TimestampType) {
-      return DataTypes.TIMESTAMP;
-    } else if (dataType instanceof NullType) {
-      return DataTypes.NULL;
-    } else if (dataType instanceof DecimalType) {
-      DecimalType decimal = (DecimalType) dataType;
-      return DataTypes.createDecimalType(decimal.precision(), decimal.scale());
-    } else if (dataType instanceof ArrayType) {
-      org.apache.spark.sql.types.DataType elementType = ((ArrayType) dataType).elementType();
-      return DataTypes.createArrayType(convertSparkToCarbonDataType(elementType));
-    } else if (dataType instanceof StructType) {
-      StructType structType = (StructType) dataType;
-      org.apache.spark.sql.types.StructField[] fields = structType.fields();
-      List<StructField> carbonFields = new ArrayList<>();
-      for (org.apache.spark.sql.types.StructField field : fields) {
-        carbonFields.add(
-            new StructField(
-                field.name(),
-                convertSparkToCarbonDataType(field.dataType())));
+  @Override public void putFloats(int rowId, int count, float[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!filteredRows[rowId]) {
+        columnVector.putFloat(counter++, src[i]);
       }
-      return DataTypes.createStructType(carbonFields);
-    } else {
-      throw new UnsupportedOperationException("getting " + dataType + " from presto");
+      rowId++;
     }
+  }
+
+  @Override public void putShorts(int rowId, int count, short[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!filteredRows[rowId]) {
+        columnVector.putShort(counter++, src[i]);
+      }
+      rowId++;
+    }
+  }
+
+  @Override public void putInts(int rowId, int count, int[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!filteredRows[rowId]) {
+        columnVector.putInt(counter++, src[i]);
+      }
+      rowId++;
+    }
+  }
+
+  @Override public void putLongs(int rowId, int count, long[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!filteredRows[rowId]) {
+        columnVector.putLong(counter++, src[i]);
+      }
+      rowId++;
+    }
+  }
+
+  @Override public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!filteredRows[rowId]) {
+        columnVector.putDouble(counter++, src[i]);
+      }
+      rowId++;
+    }
+  }
+
+  @Override public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
+    for (int i = srcIndex; i < count; i++) {
+      if (!filteredRows[rowId]) {
+        columnVector.putByte(counter++, src[i]);
+      }
+      rowId++;
+    }
+  }
+
+  @Override public void setLazyPage(LazyPageLoader lazyPage) {
+    lazyPage.loadPage();
+  }
+
+  @Override public void putArray(int rowId, int offset, int length) {
+    if (!filteredRows[rowId]) {
+      columnVector.putArray(counter++, offset, length);
+    }
+  }
+
+  @Override public void putAllByteArray(byte[] data, int offset, int length) {
+    columnVector.putAllByteArray(data, offset, length);
   }
 }

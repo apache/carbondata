@@ -29,53 +29,66 @@ import org.apache.spark.sql.FalseExpr
 import org.apache.spark.sql.sources
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
+import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.sources.Filter
+import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
 object CastExpressionOptimization {
 
-
   def typeCastStringToLong(v: Any, dataType: DataType): Any = {
-    var parser: SimpleDateFormat = null
-    if (dataType == TimestampType) {
-      parser = new SimpleDateFormat(CarbonProperties.getInstance
-        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
-    } else if (dataType == DateType) {
-      parser = new SimpleDateFormat(CarbonProperties.getInstance
-        .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
-      parser.setTimeZone(TimeZone.getTimeZone("GMT"))
-    } else {
-      throw new UnsupportedOperationException("Unsupported DataType being evaluated.")
-    }
-    try {
-      val value = parser.parse(v.toString).getTime() * 1000L
-      value
-    } catch {
-      case e: ParseException =>
+    if (dataType == TimestampType || dataType == DateType) {
+      val value = if (dataType == TimestampType) {
+        DateTimeUtils.stringToTimestamp(UTF8String.fromString(v.toString))
+      } else {
+        None
+      }
+      if (value.isDefined) {
+        value.get
+      } else {
+        var parser: SimpleDateFormat = null
+        if (dataType == TimestampType) {
+          parser = new SimpleDateFormat(CarbonProperties.getInstance
+            .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+        } else if (dataType == DateType) {
+          parser = new SimpleDateFormat(CarbonProperties.getInstance
+            .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+              CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+          parser.setTimeZone(TimeZone.getTimeZone("GMT"))
+        }
         try {
-          val parsenew: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSz")
-          parsenew.parse(v.toString).getTime() * 1000L
+          val value = parser.parse(v.toString).getTime() * 1000L
+          value
         } catch {
           case e: ParseException =>
-            val gmtDay = new SimpleDateFormat("yyyy-MM-dd", Locale.US)
-            gmtDay.setTimeZone(TimeZone.getTimeZone("GMT"))
             try {
-              gmtDay.parse(v.toString).getTime() * 1000L
+              val parsenew: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSz")
+              parsenew.parse(v.toString).getTime() * 1000L
             } catch {
               case e: ParseException =>
-                v
+                val gmtDay = new SimpleDateFormat("yyyy-MM-dd", Locale.US)
+                gmtDay.setTimeZone(TimeZone.getTimeZone("GMT"))
+                try {
+                  gmtDay.parse(v.toString).getTime() * 1000L
+                } catch {
+                  case e: ParseException =>
+                    v
+                  case e: Exception =>
+                    v
+                }
               case e: Exception =>
                 v
             }
           case e: Exception =>
             v
         }
-      case e: Exception =>
-        v
+      }
+    }
+    else {
+      throw new UnsupportedOperationException("Unsupported DataType being evaluated.")
     }
   }
 
@@ -382,7 +395,7 @@ object CastExpressionOptimization {
       numericTimeValue.toString.toDouble
       true
     } catch {
-      case _ => false
+      case _: Throwable => false
     }
   }
 
