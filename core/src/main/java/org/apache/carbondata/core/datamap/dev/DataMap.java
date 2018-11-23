@@ -70,4 +70,11 @@ public interface DataMap<T extends Blocklet> {
    */
   void finish();
 
+  /**
+   * Returns number of records information that are stored in datamap.
+   * Driver multi-thread block pruning happens based on the number of rows in datamap.
+   * So datamaps can have multiple rows if they store information of multiple files.
+   * so, this number of entries is used to represent how many files information a datamap contains
+   */
+  int getNumberOfEntries();
 }

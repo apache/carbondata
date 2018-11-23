@@ -40,4 +40,9 @@ public abstract class CoarseGrainDataMap implements DataMap<Blocklet> {
       List<PartitionSpec> partitions, AbsoluteTableIdentifier identifier) throws IOException {
     throw new UnsupportedOperationException("Filter expression not supported");
   }
+
+  @Override public int getNumberOfEntries() {
+    // keep default, one record in one datamap
+    return 1;
+  }
 }
