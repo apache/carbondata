@@ -251,6 +251,8 @@ class CGDataMap extends CoarseGrainDataMap {
   override def finish() = {
     ???
   }
+
+  override def getNumberOfEntries: Int = 1
 }
 
 class CGDataMapWriter(

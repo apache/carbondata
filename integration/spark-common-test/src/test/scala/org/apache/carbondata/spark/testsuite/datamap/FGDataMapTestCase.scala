@@ -274,6 +274,8 @@ class FGDataMap extends FineGrainDataMap {
   override def finish() = {
 
   }
+
+  override def getNumberOfEntries: Int = 1
 }
 
 class FGDataMapWriter(carbonTable: CarbonTable,
