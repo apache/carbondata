@@ -26,9 +26,6 @@ import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.annotations.InterfaceStability;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.CarbonTaskInfo;
-import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 import org.apache.carbondata.hadoop.CarbonRecordReader;
 import org.apache.carbondata.hadoop.util.CarbonVectorizedRecordReader;
 
@@ -66,9 +63,6 @@ public class CarbonReader<T> {
     this.readers = readers;
     this.index = 0;
     this.currentReader = readers.get(0);
-    CarbonTaskInfo carbonTaskInfo = new CarbonTaskInfo();
-    carbonTaskInfo.setTaskId(CarbonUtil.generateUUID());
-    ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo);
   }
 
   /**
