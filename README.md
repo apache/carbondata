@@ -76,7 +76,7 @@ This is an active open source project for everyone, and we are always open to pe
 This guide document introduce [how to contribute to CarbonData](https://github.com/apache/carbondata/blob/master/docs/how-to-contribute-to-apache-carbondata.md).
 
 ## Contact us
-To get involved in CarbonData:
+To get involved in CarbonData: 
 
 * First join by emailing to [dev-subscribe@carbondata.apache.org](mailto:dev-subscribe@carbondata.apache.org),then you can discuss issues by emailing to [dev@carbondata.apache.org](mailto:dev@carbondata.apache.org) or visit http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com
 * Report issues on [Apache Jira](https://issues.apache.org/jira/browse/CARBONDATA).
