@@ -20,6 +20,21 @@
 #include <sys/time.h>
 #include "CarbonReader.h"
 
+CarbonReader::CarbonReader() {
+
+}
+
+CarbonReader::CarbonReader(JNIEnv *env, jobject carbonReader) {
+    if (env == NULL) {
+        throw std::runtime_error("JNIEnv parameter can't be NULL.");
+    }
+    if (carbonReader == NULL) {
+        throw std::runtime_error("carbonReader parameter can't be NULL.");
+    }
+    this->jniEnv = env;
+    this->carbonReaderObject = carbonReader;
+}
+
 void CarbonReader::builder(JNIEnv *env, char *path, char *tableName) {
     if (env == NULL) {
         throw std::runtime_error("JNIEnv parameter can't be NULL.");
@@ -172,6 +187,23 @@ bool CarbonReader::checkReader() {
     if (carbonReaderObject == NULL) {
         throw std::runtime_error("carbonReader Object is NULL, Please call build first.");
     }
+}
+
+jobjectArray CarbonReader::split(int maxSplits) {
+    if (maxSplits < 1) {
+        throw std::runtime_error("maxSplits parameter can't be negative and 0.");
+    }
+    if (splitID == NULL) {
+        jclass carbonReader = jniEnv->GetObjectClass(carbonReaderObject);
+        splitID = jniEnv->GetMethodID(carbonReader, "split",
+              "(I)[Lorg/apache/carbondata/sdk/file/CarbonReader;");
+        if (splitID == NULL) {
+            throw std::runtime_error("Can't find the method in java: split");
+        }
+    }
+    jvalue args[1];
+    args[0].i = maxSplits;
+    return (jobjectArray) jniEnv->CallObjectMethodA(carbonReaderObject, splitID, args);
 }
 
 jboolean CarbonReader::hasNext() {

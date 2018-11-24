@@ -92,6 +92,24 @@ C++ SDK support read batch row. User can set batch by using withBatch(int batch)
     jobject build();
 
     /**
+     * Breaks the list of CarbonRecordReader in CarbonReader into multiple
+     * CarbonReader objects, each iterating through some 'carbondata' files
+     * and return that list of CarbonReader objects
+     *
+     * If the no. of files is greater than maxSplits, then break the
+     * CarbonReader into maxSplits splits, with each split iterating
+     * through >= 1 file.
+     *
+     * If the no. of files is less than maxSplits, then return list of
+     * CarbonReader with size as the no. of files, with each CarbonReader
+     * iterating through exactly one file
+     *
+     * @param maxSplits: Int
+     * @return list of {@link CarbonReader} objects
+     */
+    jobjectArray split(int maxSplits);
+    
+    /**
      * Whether it has next row data
      *
      * @return boolean value, if it has next row, return true. if it hasn't next row, return false.

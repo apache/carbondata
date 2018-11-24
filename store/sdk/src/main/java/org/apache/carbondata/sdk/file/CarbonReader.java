@@ -177,7 +177,7 @@ public class CarbonReader<T> {
    * @param maxSplits: Int
    * @return list of {@link CarbonReader} objects
    */
-  public List<CarbonReader> split(int maxSplits) throws IOException {
+  public CarbonReader[] split(int maxSplits) throws IOException {
     validateReader();
     if (maxSplits < 1) {
       throw new RuntimeException(
@@ -209,7 +209,7 @@ public class CarbonReader<T> {
     // over the files and forces user to only use the returned splits
     this.initialise = false;
 
-    return carbonReaders;
+    return carbonReaders.toArray(new CarbonReader[carbonReaders.size()]);
   }
 
   /**
