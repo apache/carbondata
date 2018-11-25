@@ -146,6 +146,12 @@ public abstract class LVStringStatsCollector implements ColumnPageStatsCollector
         return !ignoreWritingMinMax;
       }
 
+      @Override
+      public void clear() {
+        min = null;
+        max = null;
+      }
+
     };
   }
 }

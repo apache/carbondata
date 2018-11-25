@@ -28,8 +28,8 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>carbondata-datamap-examples</artifactId>
-  <name>Apache CarbonData :: DataMap Examples</name>
+  <artifactId>carbondata-minmax-datamap-examples</artifactId>
+  <name>Apache CarbonData :: MinMax DataMap Examples</name>
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
@@ -38,7 +38,12 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-spark2</artifactId>
+      <artifactId>carbondata-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.carbondata</groupId>
+      <artifactId>carbondata-processing</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -61,6 +66,13 @@
               <goal>compile</goal>
             </goals>
             <phase>compile</phase>
+          </execution>
+          <execution>
+            <id>testCompile</id>
+            <goals>
+              <goal>testCompile</goal>
+            </goals>
+            <phase>test</phase>
           </execution>
           <execution>
             <phase>process-resources</phase>

@@ -14,18 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.datamap.examples
+package org.apache.carbondata.datamap.minmax
 
 import java.io.{File, PrintWriter}
 import java.util.UUID
 
 import scala.util.Random
 
-import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
 class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
+  var originalStatEnabled = CarbonProperties.getInstance().getProperty(
+    CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+    CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
   val inputFile = s"$resourcesPath/minmax_datamap_input.csv"
   val normalTable = "carbonNormal"
   val minMaxDMSampleTable = "carbonMinMax"
@@ -33,6 +38,8 @@ class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
   val lineNum = 500000
 
   override protected def beforeAll(): Unit = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     createFile(inputFile, line = lineNum, start = 0)
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $minMaxDMSampleTable")
@@ -54,7 +61,8 @@ class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
         | CREATE DATAMAP $dataMapName ON TABLE $minMaxDMSampleTable
-        | USING '${classOf[MinMaxIndexDataMapFactory].getName}'
+        | USING '${classOf[MinMaxDataMapFactory].getName}'
+        | DMPROPERTIES('INDEX_COLUMNS'='id, city')
       """.stripMargin)
 
     sql(
@@ -68,10 +76,9 @@ class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
          | OPTIONS('header'='false')
        """.stripMargin)
 
-    sql(s"show datamap on table $minMaxDMSampleTable").show(false)
+    checkExistence(sql(s"show datamap on table $minMaxDMSampleTable"), true, dataMapName)
     // not that the table will use default dimension as sort_columns, so for the following cases,
     // the pruning result will differ.
-    // 1 blocklet
     checkAnswer(sql(s"select * from $minMaxDMSampleTable where id = 1"),
       sql(s"select * from $normalTable where id = 1"))
     // 6 blocklet
@@ -96,6 +103,8 @@ class MinMaxDataMapSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   override protected def afterAll(): Unit = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, originalStatEnabled)
     deleteFile(inputFile)
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $minMaxDMSampleTable")

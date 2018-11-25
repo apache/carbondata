@@ -101,7 +101,6 @@
     <module>hadoop</module>
     <module>integration/spark-common</module>
     <module>integration/spark-common-test</module>
-    <module>datamap/examples</module>
     <module>store/sdk</module>
     <module>assembly</module>
     <module>tools/cli</module>
@@ -527,6 +526,7 @@
         <module>examples/spark2</module>
         <module>datamap/lucene</module>
         <module>datamap/bloom</module>
+        <module>datamap/example</module>
       </modules>
       <build>
         <plugins>
@@ -563,6 +563,7 @@
                 <sourceDirectory>${basedir}/store/sdk/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/datamap/bloom/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/datamap/lucene/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/datamap/example/src/main/java</sourceDirectory>
               </sourceDirectories>
             </configuration>
           </plugin>
@@ -588,6 +589,7 @@
         <module>examples/spark2</module>
         <module>datamap/lucene</module>
         <module>datamap/bloom</module>
+        <module>datamap/example</module>
       </modules>
       <build>
         <plugins>
@@ -625,6 +627,7 @@
                 <sourceDirectory>${basedir}/store/sdk/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/datamap/bloom/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/datamap/lucene/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/datamap/example/src/main/java</sourceDirectory>
               </sourceDirectories>
             </configuration>
           </plugin>
@@ -647,6 +650,7 @@
         <module>examples/spark2</module>
         <module>datamap/lucene</module>
         <module>datamap/bloom</module>
+        <module>datamap/example</module>
       </modules>
       <build>
         <plugins>
@@ -683,6 +687,7 @@
                 <sourceDirectory>${basedir}/store/sdk/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/datamap/bloom/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/datamap/lucene/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/datamap/example/src/main/java</sourceDirectory>
               </sourceDirectories>
             </configuration>
           </plugin>

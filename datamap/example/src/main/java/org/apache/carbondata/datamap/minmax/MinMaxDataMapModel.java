@@ -15,27 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.datamap.examples;
+package org.apache.carbondata.datamap.minmax;
 
+import org.apache.carbondata.core.cache.Cache;
+import org.apache.carbondata.core.datamap.dev.DataMapModel;
 
-public class BlockletMinMax {
-  private byte[][] Min;
+import org.apache.hadoop.conf.Configuration;
 
-  private byte[][] Max;
+public class MinMaxDataMapModel extends DataMapModel {
+  private Cache<MinMaxDataMapCacheKeyValue.Key, MinMaxDataMapCacheKeyValue.Value> cache;
 
-  public byte[][] getMin() {
-    return Min;
+  public MinMaxDataMapModel(String filePath,
+      Cache<MinMaxDataMapCacheKeyValue.Key, MinMaxDataMapCacheKeyValue.Value> cache,
+      Configuration conf) {
+    super(filePath, conf);
+    this.cache = cache;
   }
 
-  public void setMin(byte[][] min) {
-    Min = min;
-  }
-
-  public byte[][] getMax() {
-    return Max;
-  }
-
-  public void setMax(byte[][] max) {
-    Max = max;
+  public Cache<MinMaxDataMapCacheKeyValue.Key, MinMaxDataMapCacheKeyValue.Value> getCache() {
+    return cache;
   }
 }

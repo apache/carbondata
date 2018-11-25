@@ -52,6 +52,11 @@ public class DummyStatsCollector implements ColumnPageStatsCollector {
       return true;
     }
 
+    @Override
+    public void clear() {
+
+    }
+
   };
 
   @Override public void updateNull(int rowId) {
