@@ -135,7 +135,6 @@
       will fail to execute -->
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-core_${scala.binary.version}</artifactId>
-      <version>${spark.version}</version>
       <scope>test</scope>
       <exclusions>
         <!-- need to Exclude Avro jar from this project,spark core is using
