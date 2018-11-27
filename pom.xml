@@ -100,7 +100,6 @@
     <module>processing</module>
     <module>hadoop</module>
     <module>integration/spark-common</module>
-    <module>integration/spark-datasource</module>
     <module>integration/spark-common-test</module>
     <module>datamap/examples</module>
     <module>store/sdk</module>
@@ -202,7 +201,18 @@
       </dependency>
       <dependency>
         <groupId>org.apache.spark</groupId>
+        <artifactId>spark-core_${scala.binary.version}</artifactId>
+        <version>${spark.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
         <artifactId>spark-sql_${scala.binary.version}</artifactId>
+        <version>${spark.version}</version>
+        <scope>${spark.deps.scope}</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-streaming_${scala.binary.version}</artifactId>
         <version>${spark.version}</version>
         <scope>${spark.deps.scope}</scope>
       </dependency>
@@ -461,6 +471,7 @@
       <modules>
         <module>format</module>
         <module>integration/spark2</module>
+        <module>integration/spark-datasource</module>
         <module>examples/spark2</module>
         <module>integration/hive</module>
         <module>integration/presto</module>
@@ -495,6 +506,7 @@
       </properties>
       <modules>
         <module>integration/spark2</module>
+        <module>integration/spark-datasource</module>
         <module>integration/hive</module>
         <module>integration/presto</module>
         <module>streaming</module>
@@ -546,7 +558,7 @@
     <profile>
       <id>spark-2.2</id>
       <activation>
-        <activeByDefault>true</activeByDefault>
+        <activeByDefault>false</activeByDefault>
       </activation>
       <properties>
         <spark.version>2.2.1</spark.version>
@@ -555,6 +567,7 @@
       </properties>
       <modules>
         <module>integration/spark2</module>
+        <module>integration/spark-datasource</module>
         <module>integration/hive</module>
         <module>integration/presto</module>
         <module>streaming</module>
@@ -613,6 +626,7 @@
       </properties>
       <modules>
         <module>integration/spark2</module>
+        <module>integration/spark-datasource</module>
         <module>integration/hive</module>
         <module>integration/presto</module>
         <module>streaming</module>
