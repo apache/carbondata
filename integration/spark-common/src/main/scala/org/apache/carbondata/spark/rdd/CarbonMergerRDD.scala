@@ -64,8 +64,7 @@ class CarbonMergerRDD[K, V](
     @transient private val ss: SparkSession,
     result: MergeResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    carbonMergerMapping: CarbonMergerMapping,
-    confExecutorsTemp: String)
+    carbonMergerMapping: CarbonMergerMapping)
   extends CarbonRDD[(K, V)](ss, Nil) {
 
   ss.sparkContext.setLocalProperty("spark.scheduler.pool", "DDL")
@@ -408,23 +407,8 @@ class CarbonMergerRDD[K, V](
     val nodeBlockMap = CarbonLoaderUtil.nodeBlockMapping(taskInfoList, -1, activeNodes.asJava)
 
     val nodeTaskBlocksMap = new java.util.HashMap[String, java.util.List[NodeInfo]]()
-
-    val confExecutors = confExecutorsTemp.toInt
-    val requiredExecutors = if (nodeBlockMap.size > confExecutors) {
-      confExecutors
-    } else { nodeBlockMap.size() }
-    DistributionUtil.ensureExecutors(sparkContext, requiredExecutors, taskInfoList.size)
-    logInfo("No.of Executors required=" + requiredExecutors +
-            " , spark.executor.instances=" + confExecutors +
-            ", no.of.nodes where data present=" + nodeBlockMap.size())
-    var nodes = DistributionUtil.getNodeList(sparkContext)
-    var maxTimes = 30
-    while (nodes.length < requiredExecutors && maxTimes > 0) {
-      Thread.sleep(500)
-      nodes = DistributionUtil.getNodeList(sparkContext)
-      maxTimes = maxTimes - 1
-    }
-    logInfo("Time taken to wait for executor allocation is =" + ((30 - maxTimes) * 500) + "millis")
+    val nodes = DistributionUtil.getNodeList(sparkContext)
+    logInfo("no.of.nodes where data present=" + nodeBlockMap.size())
     defaultParallelism = sparkContext.defaultParallelism
 
     val isPartitionTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isPartitionTable

@@ -168,19 +168,6 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       OperationListenerBus.getInstance().fireEvent(dataMapPreExecutionEvent,
         dataMapOperationContext)
     }
-    var execInstance = "1"
-    // in case of non dynamic executor allocation, number of executors are fixed.
-    if (sc.sparkContext.getConf.contains("spark.executor.instances")) {
-      execInstance = sc.sparkContext.getConf.get("spark.executor.instances")
-      LOGGER.info(s"spark.executor.instances property is set to = $execInstance")
-    } // in case of dynamic executor allocation, taking the max executors of the dynamic allocation.
-    else if (sc.sparkContext.getConf.contains("spark.dynamicAllocation.enabled")) {
-      if (sc.sparkContext.getConf.get("spark.dynamicAllocation.enabled").trim
-        .equalsIgnoreCase("true")) {
-        execInstance = sc.sparkContext.getConf.get("spark.dynamicAllocation.maxExecutors")
-        LOGGER.info(s"spark.dynamicAllocation.maxExecutors property is set to = $execInstance")
-      }
-    }
 
     val mergeStatus =
       if (CompactionType.IUD_UPDDEL_DELTA == compactionType) {
@@ -188,16 +175,14 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
           sc.sparkSession,
           new MergeResultImpl(),
           carbonLoadModel,
-          carbonMergerMapping,
-          execInstance
+          carbonMergerMapping
         ).collect
       } else {
         new CarbonMergerRDD(
           sc.sparkSession,
           new MergeResultImpl(),
           carbonLoadModel,
-          carbonMergerMapping,
-          execInstance
+          carbonMergerMapping
         ).collect
       }
 
