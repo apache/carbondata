@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 
+import org.apache.carbondata.core.constants.CarbonVersionConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.sdk.file.Field;
@@ -205,7 +206,7 @@ public class CarbonCliTest {
     expectedOutput = buildLines(
         "## version Details",
         "written_by  Version         ",
-        "TestUtil    1.6.0-SNAPSHOT  ");
+        "TestUtil    "+ CarbonVersionConstants.CARBONDATA_VERSION+"  ");
     Assert.assertTrue(output.contains(expectedOutput));
   }
 

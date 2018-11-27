@@ -401,7 +401,11 @@ class CarbonMergerRDD[K, V](
           .add(new CarbonInputSplitTaskInfo(entry._1, entry._2).asInstanceOf[Distributable])
     )
 
-    val nodeBlockMap = CarbonLoaderUtil.nodeBlockMapping(taskInfoList, -1)
+    // get all the active nodes of cluster and prepare the nodeBlockMap based on these nodes
+    val activeNodes = DistributionUtil
+      .ensureExecutorsAndGetNodeList(taskInfoList.asScala, sparkContext)
+
+    val nodeBlockMap = CarbonLoaderUtil.nodeBlockMapping(taskInfoList, -1, activeNodes.asJava)
 
     val nodeTaskBlocksMap = new java.util.HashMap[String, java.util.List[NodeInfo]]()
 
