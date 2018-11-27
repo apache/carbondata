@@ -164,6 +164,17 @@ class TestPreAggregateExpressions extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("Test Pre_aggregate with decimal column with order by") {
+    sql("drop table if exists maintable")
+    sql("create table maintable(name string, decimal_col decimal(30,16)) stored by 'carbondata'")
+    sql("insert into table maintable select 'abc',452.564")
+    sql(
+      "create datamap ag1 on table maintable using 'preaggregate' as select name,avg(decimal_col)" +
+      " from maintable group by name")
+    checkAnswer(sql("select avg(decimal_col) from maintable group by name order by name"),
+      Seq(Row(452.56400000000000000000)))
+  }
+
   override def afterAll: Unit = {
     sql("DROP TABLE IF EXISTS mainTable")
   }
