@@ -18,6 +18,8 @@ package org.apache.carbondata.core.datastore.block;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -332,13 +334,45 @@ public class SegmentPropertiesAndSchemaHolder {
       }
       SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper other =
           (SegmentPropertiesAndSchemaHolder.SegmentPropertiesWrapper) obj;
-      return tableIdentifier.equals(other.tableIdentifier) && columnsInTable
-          .equals(other.columnsInTable) && Arrays
+      return tableIdentifier.equals(other.tableIdentifier) && checkColumnSchemaEquality(
+          columnsInTable, other.columnsInTable) && Arrays
           .equals(columnCardinality, other.columnCardinality);
     }
 
+    private boolean checkColumnSchemaEquality(List<ColumnSchema> obj1, List<ColumnSchema> obj2) {
+      if (obj1 == null || obj2 == null || (obj1.size() != obj2.size())) {
+        return false;
+      }
+      List<ColumnSchema> clonedObj1 = new ArrayList<>(obj1);
+      List<ColumnSchema> clonedObj2 = new ArrayList<>(obj2);
+      clonedObj1.addAll(obj1);
+      clonedObj2.addAll(obj2);
+      sortList(clonedObj1);
+      sortList(clonedObj2);
+      boolean exists = true;
+      for (int i = 0; i < obj1.size(); i++) {
+        if (!clonedObj1.get(i).equalsWithStrictCheck(clonedObj2.get(i))) {
+          exists = false;
+          break;
+        }
+      }
+      return exists;
+    }
+
+    private void sortList(List<ColumnSchema> columnSchemas) {
+      Collections.sort(columnSchemas, new Comparator<ColumnSchema>() {
+        @Override public int compare(ColumnSchema o1, ColumnSchema o2) {
+          return o1.getColumnUniqueId().compareTo(o2.getColumnUniqueId());
+        }
+      });
+    }
+
     @Override public int hashCode() {
-      return tableIdentifier.hashCode() + columnsInTable.hashCode() + Arrays
+      int allColumnsHashCode = 0;
+      for (ColumnSchema columnSchema: columnsInTable) {
+        allColumnsHashCode = allColumnsHashCode + columnSchema.strictHashCode();
+      }
+      return tableIdentifier.hashCode() + allColumnsHashCode + Arrays
           .hashCode(columnCardinality);
     }
 

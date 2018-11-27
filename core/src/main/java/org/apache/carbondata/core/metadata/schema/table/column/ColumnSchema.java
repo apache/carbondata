@@ -297,6 +297,10 @@ public class ColumnSchema implements Serializable, Writable {
     return result;
   }
 
+  public int strictHashCode() {
+    return hashCode() + columnUniqueId.hashCode() + encodingList.hashCode();
+  }
+
   /**
    * Overridden equals method for columnSchema
    */
