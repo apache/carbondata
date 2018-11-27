@@ -390,8 +390,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       }
       // Don't request columns that are only referenced by pushed filters.
       val requestedColumns =
-        (projectsAttr.to[mutable.LinkedHashSet] ++ filterSet -- handledSet)
-          .map(relation.attributeMap).toSeq ++ newProjectList
+        getRequestedColumns(relation, projectsAttr, filterSet, handledSet, newProjectList)
 
       var updateRequestedColumns =
         if (!vectorPushRowFilters && !implictsExisted && !hasDictionaryFilterCols
@@ -444,6 +443,15 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       }
 
     }
+  }
+
+  protected def getRequestedColumns(relation: LogicalRelation,
+      projectsAttr: Seq[Attribute],
+      filterSet: AttributeSet,
+      handledSet: AttributeSet,
+      newProjectList: Seq[Attribute]) = {
+    (projectsAttr.to[mutable.LinkedHashSet] ++ filterSet -- handledSet)
+      .map(relation.attributeMap).toSeq ++ newProjectList
   }
 
   private def getDataSourceScan(relation: LogicalRelation,
