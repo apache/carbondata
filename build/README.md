@@ -29,9 +29,39 @@ Build with different supported versions of Spark, by default using Spark 2.2.1 t
 ```
 mvn -DskipTests -Pspark-2.1 -Dspark.version=2.1.0 clean package
 mvn -DskipTests -Pspark-2.2 -Dspark.version=2.2.1 clean package
+mvn -DskipTests -Pspark-2.3 -Dspark.version=2.3.2 clean package
 ```
 
 Note: If you are working in Windows environment, remember to add `-Pwindows` while building the project.
+
+## MV Feature Build
+Add mv module and sourceDirectory to the spark profile corresponding to the parent pom.xml file and recompile.
+The compile command is the same as the command in the previous section
+```
+    <profile>
+      <id>spark-2.2</id>
+      <modules>
+        ...
+        <module>datamap/mv/core</module>
+        <module>datamap/mv/plan</module>
+      </modules>
+      <build>
+        <plugins>
+          ...
+          <configuration>
+            <sourceDirectories>
+              ...
+              <sourceDirectory>${basedir}/datamap/mv/core/src/main/java</sourceDirectory>
+              <sourceDirectory>${basedir}/datamap/mv/plan/src/main/java</sourceDirectory>
+            </sourceDirectories>
+          </configuration>
+          ...
+         </plugins>
+      </build>
+    </profile>
+```
+
+Note:The mv feature is not compiled by default. If you want to use this feature, compile it yourself.
 
 ## For contributors : To build the format code after any changes, please follow the below command.
 Note:Need install Apache Thrift 0.9.3
