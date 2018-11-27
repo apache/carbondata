@@ -518,13 +518,14 @@ public final class CarbonLoaderUtil {
 
   /**
    * This method will divide the blocks among the nodes as per the data locality
-   *
+   * @param activeNodes List of all the active nodes running in cluster, based on these and the
+   *                    actual nodes, where blocks are present, the mapping is done
    * @param blockInfos
    * @return
    */
   public static Map<String, List<Distributable>> nodeBlockMapping(List<Distributable> blockInfos,
-      int noOfNodesInput) {
-    return nodeBlockMapping(blockInfos, noOfNodesInput, null,
+      int noOfNodesInput, List<String> activeNodes) {
+    return nodeBlockMapping(blockInfos, noOfNodesInput, activeNodes,
         BlockAssignmentStrategy.BLOCK_NUM_FIRST,null);
   }
 
@@ -536,7 +537,8 @@ public final class CarbonLoaderUtil {
    */
   public static Map<String, List<Distributable>> nodeBlockMapping(List<Distributable> blockInfos) {
     // -1 if number of nodes has to be decided based on block location information
-    return nodeBlockMapping(blockInfos, -1);
+    return nodeBlockMapping(blockInfos, -1, null,
+        BlockAssignmentStrategy.BLOCK_NUM_FIRST,null);
   }
 
   /**

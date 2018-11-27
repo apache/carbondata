@@ -41,13 +41,11 @@ class CarbonIUDMergerRDD[K, V](
     @transient private val ss: SparkSession,
     result: MergeResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    carbonMergerMapping: CarbonMergerMapping,
-    confExecutorsTemp: String)
+    carbonMergerMapping: CarbonMergerMapping)
   extends CarbonMergerRDD[K, V](ss,
     result,
     carbonLoadModel,
-    carbonMergerMapping,
-    confExecutorsTemp) {
+    carbonMergerMapping) {
 
   override def internalGetPartitions: Array[Partition] = {
     val startTime = System.currentTimeMillis()
