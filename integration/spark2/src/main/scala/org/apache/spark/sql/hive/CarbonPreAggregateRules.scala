@@ -989,8 +989,15 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           Cast(AggregateExpression(Count(exp), aggExp.mode, false), DoubleType))
         newExp
       case Average(exp: Expression) =>
-        val newExp = Seq(AggregateExpression(Sum(Cast(exp, DoubleType)), aggExp.mode, false),
-          Cast(AggregateExpression(Count(exp), aggExp.mode, false), DoubleType))
+        val dataType =
+          if (exp.dataType.isInstanceOf[DecimalType]) {
+            // decimal must not go as double precision.
+            exp.dataType.asInstanceOf[DecimalType]
+          } else {
+            DoubleType
+          }
+        val newExp = Seq(AggregateExpression(Sum(Cast(exp, dataType)), aggExp.mode, false),
+          Cast(AggregateExpression(Count(exp), aggExp.mode, false), dataType))
         newExp
       case _ =>
         val newExp = Seq(aggExp)
@@ -1663,6 +1670,13 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
               false))
         }
       case Average(exp: Expression) =>
+        val dataType =
+          if (exp.dataType.isInstanceOf[DecimalType]) {
+            // decimal must not go as double precision.
+            exp.dataType.asInstanceOf[DecimalType]
+          } else {
+            DoubleType
+          }
         // for handling Normal table case/Aggregate node added in case of streaming table
         if (!isStreamingTable) {
           // In case of average aggregate function select 2 columns from aggregate table
@@ -1670,24 +1684,24 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           // Then add divide(sum(column with sum), sum(column with count)).
           Seq(Divide(AggregateExpression(Sum(Cast(
             attrs.head,
-            DoubleType)),
+            dataType)),
             aggExp.mode,
             false),
             AggregateExpression(Sum(Cast(
               attrs.last,
-              DoubleType)),
+              dataType)),
               aggExp.mode,
               false)))
         } else {
           // in case of streaming aggregate table return two aggregate function sum and count
           Seq(AggregateExpression(Sum(Cast(
             attrs.head,
-            DoubleType)),
+            dataType)),
             aggExp.mode,
             false),
             AggregateExpression(Sum(Cast(
               attrs.last,
-              DoubleType)),
+              dataType)),
               aggExp.mode,
               false))
         }
