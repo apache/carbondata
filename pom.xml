@@ -557,9 +557,6 @@
     </profile>
     <profile>
       <id>spark-2.2</id>
-      <activation>
-        <activeByDefault>false</activeByDefault>
-      </activation>
       <properties>
         <spark.version>2.2.1</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
