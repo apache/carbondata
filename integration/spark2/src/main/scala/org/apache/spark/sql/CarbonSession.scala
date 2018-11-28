@@ -182,7 +182,6 @@ object CarbonSession {
       val userSuppliedContext: Option[SparkContext] =
         getValue("userSuppliedContext", builder).asInstanceOf[Option[SparkContext]]
 
-      // Filter for null and empty strings
       if (metaStorePath != null && !metaStorePath.trim.isEmpty) {
         val hadoopConf = new Configuration()
         val configFile = Utils.getContextOrSparkClassLoader.getResource("hive-site.xml")
