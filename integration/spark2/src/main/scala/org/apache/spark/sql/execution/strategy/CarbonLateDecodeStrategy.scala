@@ -367,7 +367,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       // In case of implicit exist we should disable vectorPushRowFilters as it goes in IUD flow
       // to get the positionId or tupleID
       var implictsExisted = false
-      val updatedProjects = projects.map {
+      var updatedProjects = projects.map {
           case a@Alias(s: ScalaUDF, name)
             if name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
                 name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID) =>
@@ -388,9 +388,15 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
             }
           case other => other
       }
+      val updatedColumns = getRequestedColumns(relation,
+        projectsAttr,
+        filterSet,
+        handledSet,
+        newProjectList,
+        updatedProjects)
       // Don't request columns that are only referenced by pushed filters.
-      val requestedColumns =
-        getRequestedColumns(relation, projectsAttr, filterSet, handledSet, newProjectList)
+      val requestedColumns = updatedColumns._1
+      updatedProjects = updatedColumns._2
 
       var updateRequestedColumns =
         if (!vectorPushRowFilters && !implictsExisted && !hasDictionaryFilterCols
@@ -449,9 +455,10 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       projectsAttr: Seq[Attribute],
       filterSet: AttributeSet,
       handledSet: AttributeSet,
-      newProjectList: Seq[Attribute]) = {
-    (projectsAttr.to[mutable.LinkedHashSet] ++ filterSet -- handledSet)
-      .map(relation.attributeMap).toSeq ++ newProjectList
+      newProjectList: Seq[Attribute],
+      updatedProjects: Seq[Expression]): (Seq[Attribute], Seq[Expression]) = {
+    ((projectsAttr.to[mutable.LinkedHashSet] ++ filterSet -- handledSet)
+       .map(relation.attributeMap).toSeq ++ newProjectList, updatedProjects)
   }
 
   private def getDataSourceScan(relation: LogicalRelation,
