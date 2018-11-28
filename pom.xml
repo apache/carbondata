@@ -463,7 +463,7 @@
         <module>integration/spark2</module>
         <module>examples/spark2</module>
         <module>integration/hive</module>
-        <module>integration/presto</module>
+        <!--<module>integration/presto</module>-->
         <module>examples/flink</module>
         <module>streaming</module>
       </modules>
@@ -496,7 +496,7 @@
       <modules>
         <module>integration/spark2</module>
         <module>integration/hive</module>
-        <module>integration/presto</module>
+        <!--<module>integration/presto</module>-->
         <module>streaming</module>
         <module>examples/spark2</module>
         <module>datamap/lucene</module>
@@ -556,7 +556,7 @@
       <modules>
         <module>integration/spark2</module>
         <module>integration/hive</module>
-        <module>integration/presto</module>
+        <!--<module>integration/presto</module>-->
         <module>streaming</module>
         <module>examples/spark2</module>
         <module>datamap/lucene</module>
@@ -614,7 +614,7 @@
       <modules>
         <module>integration/spark2</module>
         <module>integration/hive</module>
-        <module>integration/presto</module>
+        <!--<module>integration/presto</module>-->
         <module>streaming</module>
         <module>examples/spark2</module>
         <module>datamap/lucene</module>
