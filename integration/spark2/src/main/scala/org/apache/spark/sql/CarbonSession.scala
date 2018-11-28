@@ -37,15 +37,16 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
 import org.apache.carbondata.streaming.CarbonStreamingQueryListener
 
-/**
- * Session implementation for {org.apache.spark.sql.SparkSession}
- * Implemented this class only to use our own SQL DDL commands.
- * User needs to use {CarbonSession.getOrCreateCarbon} to create Carbon session.
- */
+ /**
+  * Session implementation for {org.apache.spark.sql.SparkSession}
+  * Implemented this class only to use our own SQL DDL commands.
+  * User needs to use {CarbonSession.getOrCreateCarbon} to create Carbon session.
+  */
 class CarbonSession(@transient val sc: SparkContext,
-    @transient private val existingSharedState: Option[SharedState],
-    @transient private val useHiveMetaStore: Boolean = true
-) extends SparkSession(sc) { self =>
+                    @transient private val existingSharedState: Option[SharedState],
+                    @transient private val useHiveMetaStore: Boolean = true
+                   ) extends SparkSession(sc) {
+  self =>
 
   def this(sc: SparkContext) {
     this(sc, None)
@@ -57,10 +58,10 @@ class CarbonSession(@transient val sc: SparkContext,
       .asInstanceOf[SessionState]
   }
 
-  /**
-   * State shared across sessions, including the `SparkContext`, cached data, listener,
-   * and a catalog that interacts with external systems.
-   */
+   /**
+    * State shared across sessions, including the `SparkContext`, cached data, listener,
+    * and a catalog that interacts with external systems.
+    */
   @transient
   override lazy val sharedState: SharedState = {
     existingSharedState match {
@@ -80,22 +81,22 @@ class CarbonSession(@transient val sc: SparkContext,
     new CarbonSession(sparkContext, Some(sharedState), useHiveMetaStore)
   }
 
-  /**
-   * Run search mode if enabled, otherwise run SparkSQL
-   */
+   /**
+    * Run search mode if enabled, otherwise run SparkSQL
+    */
   override def sql(sqlText: String): DataFrame = {
     withProfiler(
       sqlText,
       (qe, sse) => {
-          new Dataset[Row](self, qe, RowEncoder(qe.analyzed.schema))
+        new Dataset[Row](self, qe, RowEncoder(qe.analyzed.schema))
       }
     )
   }
 
-  /**
-   * Return true if the specified sql statement will hit the datamap
-   * This API is for test purpose only
-   */
+   /**
+    * Return true if the specified sql statement will hit the datamap
+    * This API is for test purpose only
+    */
   @InterfaceAudience.Developer(Array("DataMap"))
   def isDataMapHit(sqlStatement: String, dataMapName: String): Boolean = {
     // explain command will output the dataMap information only if enable.query.statistics = true
@@ -103,9 +104,9 @@ class CarbonSession(@transient val sc: SparkContext,
     message(0).getString(0).contains(dataMapName)
   }
 
-  /**
-   * Run SparkSQL directly
-   */
+   /**
+    * Run SparkSQL directly
+    */
   def sparkSql(sqlText: String): DataFrame = {
     withProfiler(
       sqlText,
@@ -114,8 +115,8 @@ class CarbonSession(@transient val sc: SparkContext,
   }
 
   private def withProfiler(
-      sqlText: String,
-      generateDF: (QueryExecution, SQLStart) => DataFrame): DataFrame = {
+                            sqlText: String,
+                            generateDF: (QueryExecution, SQLStart) => DataFrame): DataFrame = {
     val sse = SQLStart(sqlText, CarbonSession.statementId.getAndIncrement())
     CarbonSession.threadStatementId.set(sse.statementId)
     sse.startTime = System.currentTimeMillis()
@@ -128,7 +129,7 @@ class CarbonSession(@transient val sc: SparkContext,
       qe.assertAnalyzed()
       sse.isCommand = qe.analyzed match {
         case c: Command => true
-        case u @ Union(children) if children.forall(_.isInstanceOf[Command]) => true
+        case u@Union(children) if children.forall(_.isInstanceOf[Command]) => true
         case _ => false
       }
       sse.analyzerEnd = System.currentTimeMillis()
@@ -160,6 +161,7 @@ object CarbonSession {
       enableInMemCatlog = true
       builder
     }
+
     def getOrCreateCarbonSession(): SparkSession = {
       getOrCreateCarbonSession(null, null)
     }
@@ -171,7 +173,7 @@ object CarbonSession {
     }
 
     def getOrCreateCarbonSession(storePath: String,
-        metaStorePath: String): SparkSession = synchronized {
+                                 metaStorePath: String): SparkSession = synchronized {
       if (!enableInMemCatlog) {
         builder.enableHiveSupport()
       }
@@ -180,14 +182,15 @@ object CarbonSession {
       val userSuppliedContext: Option[SparkContext] =
         getValue("userSuppliedContext", builder).asInstanceOf[Option[SparkContext]]
 
-      if (metaStorePath != null) {
+      // Filter for null and empty strings
+      if (metaStorePath != null && !metaStorePath.trim.isEmpty) {
         val hadoopConf = new Configuration()
         val configFile = Utils.getContextOrSparkClassLoader.getResource("hive-site.xml")
         if (configFile != null) {
           hadoopConf.addResource(configFile)
         }
         if (options.get(CarbonCommonConstants.HIVE_CONNECTION_URL).isEmpty &&
-            hadoopConf.get(CarbonCommonConstants.HIVE_CONNECTION_URL) == null) {
+          hadoopConf.get(CarbonCommonConstants.HIVE_CONNECTION_URL) == null) {
           val metaStorePathAbsolute = new File(metaStorePath).getCanonicalPath
           val hiveMetaStoreDB = metaStorePathAbsolute + "/metastore_db"
           options ++= Map[String, String]((CarbonCommonConstants.HIVE_CONNECTION_URL,
@@ -248,7 +251,7 @@ object CarbonSession {
 
         session = new CarbonSession(sparkContext, None, !enableInMemCatlog)
         val carbonProperties = CarbonProperties.getInstance()
-        if (storePath != null) {
+        if (storePath != null && !storePath.trim.isEmpty) {
           carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
           // In case if it is in carbon.properties for backward compatible
         } else if (carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION) == null) {
@@ -269,9 +272,9 @@ object CarbonSession {
       session
     }
 
-    /**
-     * It is a hack to get the private field from class.
-     */
+     /**
+      * It is a hack to get the private field from class.
+      */
     def getValue(name: String, builder: Builder): Any = {
       val currentMirror = scala.reflect.runtime.currentMirror
       val instanceMirror = currentMirror.reflect(builder)
