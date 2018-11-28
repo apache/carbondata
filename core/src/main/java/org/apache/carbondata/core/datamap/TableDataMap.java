@@ -145,6 +145,7 @@ public final class TableDataMap extends OperationEventListener {
     // for filter queries
     int totalFiles = 0;
     int datamapsCount = 0;
+    int filesCountPerDatamap;
     boolean isBlockDataMapType = true;
     for (Segment segment : segments) {
       for (DataMap dataMap : dataMaps.get(segment)) {
@@ -152,7 +153,9 @@ public final class TableDataMap extends OperationEventListener {
           isBlockDataMapType = false;
           break;
         }
-        totalFiles += ((BlockDataMap) dataMap).getTotalBlocks();
+        filesCountPerDatamap = ((BlockDataMap) dataMap).getTotalBlocks();
+        // old legacy store can give 0, so consider one datamap as 1 record.
+        totalFiles += (filesCountPerDatamap == 0) ? 1 : filesCountPerDatamap;
         datamapsCount++;
       }
       if (!isBlockDataMapType) {
@@ -206,10 +209,14 @@ public final class TableDataMap extends OperationEventListener {
       List<ExtendedBlocklet> blocklets, final Map<Segment, List<DataMap>> dataMaps,
       int totalFiles) {
     int numOfThreadsForPruning = getNumOfThreadsForPruning();
+    LOG.info(
+        "Number of threads selected for multi-thread block pruning is " + numOfThreadsForPruning
+            + ". total files: " + totalFiles + ". total segments: " + segments.size());
     int filesPerEachThread = totalFiles / numOfThreadsForPruning;
     int prev;
     int filesCount = 0;
     int processedFileCount = 0;
+    int filesCountPerDatamap;
     List<List<SegmentDataMapGroup>> segmentList = new ArrayList<>(numOfThreadsForPruning);
     List<SegmentDataMapGroup> segmentDataMapGroupList = new ArrayList<>();
     for (Segment segment : segments) {
@@ -217,7 +224,9 @@ public final class TableDataMap extends OperationEventListener {
       prev = 0;
       for (int i = 0; i < eachSegmentDataMapList.size(); i++) {
         DataMap dataMap = eachSegmentDataMapList.get(i);
-        filesCount += ((BlockDataMap) dataMap).getTotalBlocks();
+        filesCountPerDatamap = ((BlockDataMap) dataMap).getTotalBlocks();
+        // old legacy store can give 0, so consider one datamap as 1 record.
+        filesCount += (filesCountPerDatamap == 0) ? 1 : filesCountPerDatamap;
         if (filesCount >= filesPerEachThread) {
           if (segmentList.size() != numOfThreadsForPruning - 1) {
             // not the last segmentList
