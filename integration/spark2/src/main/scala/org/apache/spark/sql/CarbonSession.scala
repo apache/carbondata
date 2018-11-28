@@ -180,7 +180,7 @@ object CarbonSession {
       val userSuppliedContext: Option[SparkContext] =
         getValue("userSuppliedContext", builder).asInstanceOf[Option[SparkContext]]
 
-      if (metaStorePath != null) {
+      if (metaStorePath != null && !metaStorePath.trim.isEmpty) {
         val hadoopConf = new Configuration()
         val configFile = Utils.getContextOrSparkClassLoader.getResource("hive-site.xml")
         if (configFile != null) {
@@ -248,7 +248,7 @@ object CarbonSession {
 
         session = new CarbonSession(sparkContext, None, !enableInMemCatlog)
         val carbonProperties = CarbonProperties.getInstance()
-        if (storePath != null) {
+        if (storePath != null && !storePath.trim.isEmpty) {
           carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
           // In case if it is in carbon.properties for backward compatible
         } else if (carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION) == null) {
