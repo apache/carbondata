@@ -283,7 +283,7 @@ release the memory and destroy JVM.
     jobject readSchema(char *path, bool validateSchema);
 ```
 
-###Schema
+### Schema
 ``` 
  /**
      * constructor with jni env and carbon schema data
@@ -333,7 +333,7 @@ release the memory and destroy JVM.
     char *getArrayElementTypeName(int ordinal);
 ```
 
-###CarbonProperties
+### CarbonProperties
 ```
   /**
      * Constructor of CarbonProperties
