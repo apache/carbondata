@@ -549,12 +549,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     int[] dimensionChunkIndexes = QueryUtil.getDimensionChunkIndexes(projectDimensions,
         segmentProperties.getDimensionOrdinalToChunkMapping(),
         currentBlockFilterDimensions, allProjectionListDimensionIdexes);
-    int reusableBufferSize = segmentProperties.getDimensionOrdinalToChunkMapping().size()
-        < projectDimensions.size() ?
-        projectDimensions.size() :
-        segmentProperties.getDimensionOrdinalToChunkMapping().size();
-    ReusableDataBuffer[] dimensionBuffer =
-        new ReusableDataBuffer[reusableBufferSize];
+    int reusableBufferSize = Math.max(segmentProperties.getDimensionOrdinalToChunkMapping().size(),
+        projectDimensions.size());
+    ReusableDataBuffer[] dimensionBuffer = new ReusableDataBuffer[reusableBufferSize];
     for (int i = 0; i < dimensionBuffer.length; i++) {
       dimensionBuffer[i] = new ReusableDataBuffer();
     }
@@ -583,8 +580,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         currentBlockQueryMeasures, expressionMeasures,
         segmentProperties.getMeasuresOrdinalToChunkMapping(), filterMeasures,
         allProjectionListMeasureIndexes);
-    ReusableDataBuffer[] measureBuffer =
-        new ReusableDataBuffer[segmentProperties.getMeasuresOrdinalToChunkMapping().size()];
+    reusableBufferSize = Math.max(segmentProperties.getMeasuresOrdinalToChunkMapping().size(),
+        allProjectionListMeasureIndexes.size());
+    ReusableDataBuffer[] measureBuffer = new ReusableDataBuffer[reusableBufferSize];
     for (int i = 0; i < measureBuffer.length; i++) {
       measureBuffer[i] = new ReusableDataBuffer();
     }
