@@ -406,6 +406,17 @@ public CarbonWriterBuilder withHadoopConf(Configuration conf)
 ```
 
 ```
+  /**
+   * Updates the hadoop configuration with the given key value
+   *
+   * @param key   key word
+   * @param value value
+   * @return this object
+   */
+  public CarbonWriterBuilder withHadoopConf(String key, String value);
+```
+
+```
 /**
 * to build a {@link CarbonWriter}, which accepts row in CSV format
 *
@@ -478,6 +489,16 @@ public CarbonWriter build() throws IOException, InvalidLoadOptionException;
 ```
 
 ### Class org.apache.carbondata.sdk.file.CarbonWriter
+
+```
+/**
+* Create a {@link CarbonWriterBuilder} to build a {@link CarbonWriter}
+*/
+public static CarbonWriterBuilder builder() {
+    return new CarbonWriterBuilder();
+}
+```
+
 ```
 /**
 * Write an object to the file, the format of the object depends on the implementation
@@ -496,15 +517,6 @@ public abstract void write(Object object) throws IOException;
 * Flush and close the writer
 */
 public abstract void close() throws IOException;
-```
-
-```
-/**
-* Create a {@link CarbonWriterBuilder} to build a {@link CarbonWriter}
-*/
-public static CarbonWriterBuilder builder() {
-    return new CarbonWriterBuilder();
-}
 ```
 
 ### Class org.apache.carbondata.sdk.file.Field
@@ -633,7 +645,7 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
   * @return list of CarbonReader objects
   */
   public List<CarbonReader> split(int maxSplits);
-``
+```
 
 ```
   /**
@@ -647,6 +659,13 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    * Read and return next row object
    */
   public T readNextRow();
+```
+
+```
+  /**
+   * Read and return next batch row objects
+   */
+  public Object[] readNextBatchRow();
 ```
 
 ```
@@ -688,6 +707,16 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
 ```
 
 ```
+  /**
+   * Sets the batch size of records to read
+   *
+   * @param batch batch size
+   * @return updated CarbonReaderBuilder
+   */
+  public CarbonReaderBuilder withBatch(int batch);
+```
+
+```
 /**
  * To support hadoop configuration
  *
@@ -697,6 +726,17 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
  public CarbonReaderBuilder withHadoopConf(Configuration conf);
 ```
 
+```
+  /**
+   * Updates the hadoop configuration with the given key value
+   *
+   * @param key   key word
+   * @param value value
+   * @return this object
+   */
+  public CarbonReaderBuilder withHadoopConf(String key, String value);
+```
+  
 ```
  /**
    * Build CarbonReader
@@ -717,6 +757,7 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    * @return schema object
    * @throws IOException
    */
+  @Deprecated
   public static Schema readSchemaInSchemaFile(String schemaFilePath);
 ```
 
@@ -727,6 +768,7 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    * @param dataFilePath complete path including carbondata file name
    * @return Schema object
    */
+  @Deprecated
   public static Schema readSchemaInDataFile(String dataFilePath);
 ```
 
@@ -738,8 +780,10 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    * @return schema object
    * @throws IOException
    */
+  @Deprecated
   public static Schema readSchemaInIndexFile(String indexFilePath);
 ```
+
 ```
   /**
    * read schema from path,
@@ -752,6 +796,7 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    */
   public static Schema readSchema(String path);
 ```
+
 ```
   /**
    * read schema from path,
