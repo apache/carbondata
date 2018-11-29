@@ -122,8 +122,7 @@ Compared with V2: The blocklet data volume of V2 format defaults to 120,000 line
 
 #### Footer format
 
-Footer records each carbondata
-All blocklet data distribution information and statistical related metadata information (minmax, startkey/endkey) inside the file.
+Footer records each carbondata, all blocklet data distribution information and statistical related metadata information (minmax, startkey/endkey) inside the file.
 
 ![Footer format](../docs/images/2-3_4.png?raw=true)
 
