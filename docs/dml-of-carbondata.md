@@ -58,7 +58,7 @@ CarbonData DML statements are documented here,which includes:
 | [COLUMNDICT](#columndict)                               | Path to read the dictionary data from for particular column  |
 | [DATEFORMAT](#dateformattimestampformat)                | Format of date in the input csv file                         |
 | [TIMESTAMPFORMAT](#dateformattimestampformat)           | Format of timestamp in the input csv file                    |
-| [SORT_COLUMN_BOUNDS](#sort-column-bounds)               | How to parititon the sort columns to make the evenly distributed |
+| [SORT_COLUMN_BOUNDS](#sort-column-bounds)               | How to partition the sort columns to make the evenly distributed |
 | [SINGLE_PASS](#single_pass)                             | When to enable single pass data loading                      |
 | [BAD_RECORDS_LOGGER_ENABLE](#bad-records-handling)      | Whether to enable bad records logging                        |
 | [BAD_RECORD_PATH](#bad-records-handling)                | Bad records logging path. Useful when bad record logging is enabled |
@@ -83,7 +83,7 @@ CarbonData DML statements are documented here,which includes:
     ```
 
   - ##### COMMENTCHAR:
-    Comment Characters can be provided in the load command if user want to comment lines.
+    Comment Characters can be provided in the load command if user wants to comment lines.
     ```
     OPTIONS('COMMENTCHAR'='#')
     ```
@@ -184,7 +184,7 @@ CarbonData DML statements are documented here,which includes:
 
     **NOTE:**
     * SORT_COLUMN_BOUNDS will be used only when the SORT_SCOPE is 'local_sort'.
-    * Carbondata will use these bounds as ranges to process data concurrently during the final sort percedure. The records will be sorted and written out inside each partition. Since the partition is sorted, all records will be sorted.
+    * Carbondata will use these bounds as ranges to process data concurrently during the final sort procedure. The records will be sorted and written out inside each partition. Since the partition is sorted, all records will be sorted.
     * Since the actual order and literal order of the dictionary column are not necessarily the same, we do not recommend you to use this feature if the first sort column is 'dictionary_include'.
     * The option works better if your CPU usage during loading is low. If your current system CPU usage is high, better not to use this option. Besides, it depends on the user to specify the bounds. If user does not know the exactly bounds to make the data distributed evenly among the bounds, loading performance will still be better than before or at least the same as before.
     * Users can find more information about this option in the description of PR1953.
