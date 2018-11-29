@@ -299,7 +299,7 @@ public class CarbonWriterBuilder {
   }
 
   /**
-   * configure hadoop configuration with key value
+   * Updates the hadoop configuration with the given key value
    *
    * @param key   key word
    * @param value value
