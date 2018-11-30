@@ -24,7 +24,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hiveexample.HiveExample
 
-class RunHiveExample extends QueryTest with BeforeAndAfterAll {
+class RunHiveExampleTest extends QueryTest with BeforeAndAfterAll {
 
   private val spark = sqlContext.sparkSession
 
