@@ -20,11 +20,15 @@ package org.apache.carbondata.spark.testsuite.createTable
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
+
 class TestCreateTableIfNotExists extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("use default")
     sql("drop table if exists test")
+    sql("drop table if exists sourceTable")
+    sql("drop table if exists targetTable")
   }
 
   test("test create table if not exists") {
@@ -39,9 +43,19 @@ class TestCreateTableIfNotExists extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("test blocking of create table like command") {
+    sql("create table sourceTable(name string) stored by 'carbondata'")
+    val exception = intercept[MalformedCarbonCommandException] {
+      sql("create table targetTable like sourceTable")
+    }
+    assert(exception.getMessage.contains("Operation not allowed, when source table is carbon table"))
+  }
+
   override def afterAll {
     sql("use default")
     sql("drop table if exists test")
+    sql("drop table if exists sourceTable")
+    sql("drop table if exists targetTable")
   }
 
 }
