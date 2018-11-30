@@ -129,7 +129,7 @@ public class UnsafeMemoryManager {
       memoryBlock = MemoryAllocator.HEAP.allocate(memoryRequested);
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug(String
-            .format("Creating onheap working Memory block (%d) with size: ", memoryBlock.size()));
+            .format("Creating onheap working Memory block with size: (%d)", memoryBlock.size()));
       }
     }
     return memoryBlock;
