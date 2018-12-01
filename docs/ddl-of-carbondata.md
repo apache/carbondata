@@ -450,7 +450,7 @@ CarbonData DDL statements are documented here,which includes:
    - ##### Compression for table
 
      Data compression is also supported by CarbonData.
-     By default, Snappy is used to compress the data. CarbonData also support ZSTD compressor.
+     By default, Snappy is used to compress the data. CarbonData also supports ZSTD compressor.
      User can specify the compressor in the table property:
 
      ```
@@ -557,7 +557,7 @@ CarbonData DDL statements are documented here,which includes:
 
 ### Create external table on Non-Transactional table data location.
   Non-Transactional table data location will have only carbondata and carbonindex files, there will not be a metadata folder (table status and schema).
-  Our SDK module currently support writing data in this format.
+  Our SDK module currently supports writing data in this format.
 
   **Example:**
   ```

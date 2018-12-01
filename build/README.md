@@ -29,9 +29,12 @@ Build with different supported versions of Spark, by default using Spark 2.2.1 t
 ```
 mvn -DskipTests -Pspark-2.1 -Dspark.version=2.1.0 clean package
 mvn -DskipTests -Pspark-2.2 -Dspark.version=2.2.1 clean package
+mvn -DskipTests -Pspark-2.3 -Dspark.version=2.3.2 clean package
 ```
 
-Note: If you are working in Windows environment, remember to add `-Pwindows` while building the project.
+Note:
+ - If you are working in Windows environment, remember to add `-Pwindows` while building the project.
+ - The mv feature is not compiled by default. If you want to use this feature, remember to add `-Pmv` while building the project.
 
 ## For contributors : To build the format code after any changes, please follow the below command.
 Note:Need install Apache Thrift 0.9.3

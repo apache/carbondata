@@ -575,7 +575,7 @@ public class CarbonReaderTest extends TestCase {
 
     CarbonReader reader = CarbonReader
         .builder(path, "_temp")
-        .projection(new String[]{"name", "name", "age", "name"})
+        .projection(new String[]{"name", "age", "age", "name"})
         .build();
 
     // expected output after sorting
@@ -591,7 +591,7 @@ public class CarbonReaderTest extends TestCase {
       Object[] row = (Object[]) reader.readNextRow();
       // Default sort column is applied for dimensions. So, need  to validate accordingly
       Assert.assertEquals(name[i], row[0]);
-      Assert.assertEquals(name[i], row[1]);
+      Assert.assertEquals(age[i], row[1]);
       Assert.assertEquals(age[i], row[2]);
       Assert.assertEquals(name[i], row[3]);
       i++;

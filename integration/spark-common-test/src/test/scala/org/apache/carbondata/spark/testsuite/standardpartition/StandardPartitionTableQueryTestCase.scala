@@ -440,7 +440,7 @@ test("Creation of partition table should fail if the colname in table schema and
   test("validate data in partition table after dropping and adding a column") {
     sql("drop table if exists par")
     sql("create table par(name string) partitioned by (age double) stored by " +
-              "'carbondata'")
+              "'carbondata' TBLPROPERTIES('cache_level'='blocklet')")
     sql(s"load data local inpath '$resourcesPath/uniqwithoutheader.csv' into table par options" +
         s"('header'='false')")
     sql("alter table par drop columns(name)")

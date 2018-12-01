@@ -203,9 +203,11 @@ object DistributionUtil {
     if (sparkContext.getConf.getBoolean("spark.dynamicAllocation.enabled", false)) {
       // default value for spark.dynamicAllocation.maxExecutors is infinity
       confExecutors = sparkContext.getConf.getInt("spark.dynamicAllocation.maxExecutors", 1)
+      LOGGER.info(s"spark.dynamicAllocation.maxExecutors property is set to = $confExecutors")
     } else {
       // default value for spark.executor.instances is 2
       confExecutors = sparkContext.getConf.getInt("spark.executor.instances", 1)
+      LOGGER.info(s"spark.executor.instances property is set to = $confExecutors")
     }
     confExecutors
   }

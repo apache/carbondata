@@ -109,7 +109,7 @@ public class CarbonReaderBuilder {
   }
 
   /**
-   * set read batch size before build
+   * Sets the batch size of records to read
    *
    * @param batch batch size
    * @return updated CarbonReaderBuilder
@@ -122,7 +122,7 @@ public class CarbonReaderBuilder {
   }
 
   /**
-   * configure hadoop configuration with key value
+   * Updates the hadoop configuration with the given key value
    *
    * @param key   key word
    * @param value value

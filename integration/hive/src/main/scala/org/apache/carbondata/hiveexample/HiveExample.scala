@@ -192,7 +192,6 @@ object HiveExample {
       outOfOrderColFetched = outOfOrderColFetched + 1
     }
     hiveEmbeddedServer2.stop()
-    System.exit(0)
   }
 
 }
