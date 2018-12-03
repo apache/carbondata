@@ -32,6 +32,7 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -120,11 +121,9 @@ public final class FileFactory {
       throws IOException {
     return getDataInputStream(path, fileType, bufferSize, getConfiguration());
   }
-
   public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize,
       Configuration configuration) throws IOException {
-    return getCarbonFile(path, configuration)
-        .getDataInputStream(path, fileType, bufferSize, configuration);
+    return getCarbonFile(path).getDataInputStream(path, fileType, bufferSize, configuration);
   }
 
   /**
@@ -381,10 +380,11 @@ public final class FileFactory {
   public static String getUpdatedFilePath(String filePath, FileType fileType) {
     switch (fileType) {
       case HDFS:
-      case ALLUXIO:
       case VIEWFS:
       case S3:
         return filePath;
+      case ALLUXIO:
+        return StringUtils.startsWith(filePath, "alluxio") ? filePath : "alluxio:///" + filePath;
       case LOCAL:
       default:
         if (filePath != null && !filePath.isEmpty()) {
@@ -472,6 +472,7 @@ public final class FileFactory {
     switch (fileType) {
       case S3:
       case HDFS:
+      case ALLUXIO:
       case VIEWFS:
         try {
           Path path = new Path(directoryPath);

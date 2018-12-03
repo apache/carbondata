@@ -1811,6 +1811,11 @@ public final class CarbonCommonConstants {
   public static final String CARBON_LOCK_TYPE_S3 = "S3LOCK";
 
   /**
+   * ALLUXIOLOCK TYPE
+   */
+  public static final String CARBON_LOCK_TYPE_ALLUXIO = "ALLUXIOLOCK";
+
+  /**
    * Invalid filter member log string
    */
   public static final String FILTER_INVALID_MEMBER =
