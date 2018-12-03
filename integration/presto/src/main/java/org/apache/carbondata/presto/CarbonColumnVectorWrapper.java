@@ -244,7 +244,7 @@ public class CarbonColumnVectorWrapper implements CarbonColumnVector {
   }
 
   @Override public CarbonColumnVector getDictionaryVector() {
-    return this.columnVector;
+    return this.columnVector.getDictionaryVector();
   }
 
   @Override public void putFloats(int rowId, int count, float[] src, int srcIndex) {
