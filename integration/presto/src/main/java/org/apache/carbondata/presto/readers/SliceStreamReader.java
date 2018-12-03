@@ -17,14 +17,19 @@
 
 package org.apache.carbondata.presto.readers;
 
+import java.util.Optional;
+
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
 
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
 import com.facebook.presto.spi.block.DictionaryBlock;
+import com.facebook.presto.spi.block.VariableWidthBlock;
 import com.facebook.presto.spi.type.Type;
 import com.facebook.presto.spi.type.VarcharType;
+import io.airlift.slice.Slices;
 
 import static io.airlift.slice.Slices.wrappedBuffer;
 
@@ -61,6 +66,36 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
     } else {
       return new DictionaryBlock(batchSize, dictionaryBlock, values);
     }
+  }
+
+  @Override public void setDictionary(CarbonDictionary dictionary) {
+    super.setDictionary(dictionary);
+    if (dictionary == null) {
+      dictionaryBlock = null;
+      return;
+    }
+    boolean[] nulls = new boolean[dictionary.getDictionarySize()];
+    nulls[0] = true;
+    nulls[1] = true;
+    int[] dictOffsets = new int[dictionary.getDictionarySize() + 1];
+    int size = 0;
+    for (int i = 0; i < dictionary.getDictionarySize(); i++) {
+      if (dictionary.getDictionaryValue(i) != null) {
+        dictOffsets[i] = size;
+        size += dictionary.getDictionaryValue(i).length;
+      }
+    }
+    byte[] singleArrayDictValues = new byte[size];
+    for (int i = 0; i < dictionary.getDictionarySize(); i++) {
+      if (dictionary.getDictionaryValue(i) != null) {
+        System.arraycopy(dictionary.getDictionaryValue(i), 0, singleArrayDictValues, dictOffsets[i],
+            dictionary.getDictionaryValue(i).length);
+      }
+    }
+    dictOffsets[dictOffsets.length - 1] = size;
+    dictionaryBlock = new VariableWidthBlock(dictionary.getDictionarySize(),
+        Slices.wrappedBuffer(singleArrayDictValues), dictOffsets, Optional.of(nulls));
+    values = (int[]) ((CarbonColumnVectorImpl) getDictionaryVector()).getDataArray();
   }
 
   @Override public void setBatchSize(int batchSize) {

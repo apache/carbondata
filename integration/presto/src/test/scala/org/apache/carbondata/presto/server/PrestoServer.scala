@@ -35,7 +35,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.presto.CarbondataPlugin
 
-object PrestoServer {
+class PrestoServer {
 
   val CARBONDATA_CATALOG = "carbondata"
   val CARBONDATA_CONNECTOR = "carbondata"
@@ -45,7 +45,7 @@ object PrestoServer {
 
   val prestoProperties: util.Map[String, String] = Map(("http-server.http.port", "8086")).asJava
   createSession
-  val queryRunner = new DistributedQueryRunner(createSession, 4, prestoProperties)
+  lazy val queryRunner = new DistributedQueryRunner(createSession, 4, prestoProperties)
 
 
   /**
