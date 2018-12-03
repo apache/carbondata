@@ -81,7 +81,7 @@ public final class CarbonCommonConstants {
    * default carbon properties file path
    */
   public static final String CARBON_PROPERTIES_FILE_PATH_DEFAULT =
-      "../../../conf/carbon.properties";
+          "../../../conf/carbon.properties";
 
   /**
    * CARBON_DDL_BASE_HDFS_URL
@@ -195,7 +195,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String LOCAL_DICTIONARY_DECODER_BASED_FALLBACK =
-      "carbon.local.dictionary.decoder.fallback";
+          "carbon.local.dictionary.decoder.fallback";
 
   /**
    * System property to enable or disable decoder based local dictionary fallback default value
@@ -216,7 +216,7 @@ public final class CarbonCommonConstants {
 
   @CarbonProperty
   public static final String SPARK_SCHEMA_STRING_LENGTH_THRESHOLD =
-      "spark.sql.sources.schemaStringLengthThreshold";
+          "spark.sql.sources.schemaStringLengthThreshold";
 
   public static final int SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT = 4000;
 
@@ -250,14 +250,14 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_SQLASTBUILDER_CLASSNAME =
-      "spark.carbon.sqlastbuilder.classname";
+          "spark.carbon.sqlastbuilder.classname";
 
   public static final String CARBON_SQLASTBUILDER_CLASSNAME_DEFAULT =
-      "org.apache.spark.sql.hive.CarbonSqlAstBuilder";
+          "org.apache.spark.sql.hive.CarbonSqlAstBuilder";
 
   @CarbonProperty
   public static final String CARBON_LEASE_RECOVERY_RETRY_COUNT =
-      "carbon.lease.recovery.retry.count";
+          "carbon.lease.recovery.retry.count";
 
   public static final String CARBON_LEASE_RECOVERY_RETRY_COUNT_DEFAULT = "5";
 
@@ -267,7 +267,7 @@ public final class CarbonCommonConstants {
 
   @CarbonProperty
   public static final String CARBON_LEASE_RECOVERY_RETRY_INTERVAL =
-      "carbon.lease.recovery.retry.interval";
+          "carbon.lease.recovery.retry.interval";
 
   public static final String CARBON_LEASE_RECOVERY_RETRY_INTERVAL_DEFAULT = "1000";
 
@@ -277,7 +277,7 @@ public final class CarbonCommonConstants {
 
   @CarbonProperty
   public static final String CARBON_SECURE_DICTIONARY_SERVER =
-      "carbon.secure.dictionary.server";
+          "carbon.secure.dictionary.server";
 
   public static final String CARBON_SECURE_DICTIONARY_SERVER_DEFAULT = "true";
 
@@ -306,7 +306,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_SEGMENT_LOCK_FILES_PRESERVE_HOURS =
-      "carbon.segment.lock.files.preserve.hours";
+          "carbon.segment.lock.files.preserve.hours";
 
   /**
    * default value is 2 days
@@ -319,7 +319,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_INVISIBLE_SEGMENTS_PRESERVE_COUNT =
-      "carbon.invisible.segments.preserve.count";
+          "carbon.invisible.segments.preserve.count";
 
   /**
    * default value is 200, it means that it will preserve 200 invisible segment info
@@ -341,7 +341,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_MERGE_INDEX_IN_SEGMENT =
-      "carbon.merge.index.in.segment";
+          "carbon.merge.index.in.segment";
 
   public static final String CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT = "true";
 
@@ -351,7 +351,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_MINMAX_ALLOWED_BYTE_COUNT =
-      "carbon.minmax.allowed.byte.count";
+          "carbon.minmax.allowed.byte.count";
 
   public static final String CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT = "200";
 
@@ -533,7 +533,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_SORT_FILE_WRITE_BUFFER_SIZE =
-      "carbon.sort.file.write.buffer.size";
+          "carbon.sort.file.write.buffer.size";
 
   /**
    * SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE
@@ -594,7 +594,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK =
-      "carbon.concurrent.lock.retries";
+          "carbon.concurrent.lock.retries";
 
   /**
    * NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK.
@@ -611,7 +611,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String MAX_TIMEOUT_FOR_CONCURRENT_LOCK =
-      "carbon.concurrent.lock.retry.timeout.sec";
+          "carbon.concurrent.lock.retry.timeout.sec";
 
   /**
    * MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK
@@ -625,7 +625,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String NUMBER_OF_TRIES_FOR_CARBON_LOCK =
-      "carbon.lock.retries";
+          "carbon.lock.retries";
 
   /**
    * NUMBER_OF_TRIES_FOR_CARBON_LOCK
@@ -637,7 +637,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String MAX_TIMEOUT_FOR_CARBON_LOCK =
-      "carbon.lock.retry.timeout.sec";
+          "carbon.lock.retry.timeout.sec";
 
   /**
    * MAX_TIMEOUT_FOR_CARBON_LOCK
@@ -709,7 +709,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final java.lang.String PRESERVE_LATEST_SEGMENTS_NUMBER =
-      "carbon.numberof.preserve.segments";
+          "carbon.numberof.preserve.segments";
 
   /**
    * If preserve property is enabled then 2 segments will be preserved.
@@ -732,7 +732,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_BLOCK_META_RESERVED_SPACE =
-      "carbon.block.meta.size.reserved.percentage";
+          "carbon.block.meta.size.reserved.percentage";
 
   /**
    * default value for space reserved for writing block meta data in carbon data file
@@ -773,7 +773,7 @@ public final class CarbonCommonConstants {
   @InterfaceStability.Evolving
   @CarbonProperty
   public static final String CARBON_INSERT_STORAGE_LEVEL =
-      "carbon.insert.storage.level";
+          "carbon.insert.storage.level";
 
   /**
    * The default value(MEMORY_AND_DISK) is the same as the default storage level of Dataset.
@@ -792,7 +792,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty(dynamicConfigurable = true)
   public static final String COMPACTION_SEGMENT_LEVEL_THRESHOLD =
-      "carbon.compaction.level.threshold";
+          "carbon.compaction.level.threshold";
 
   /**
    * Default count for Number of segments to be merged in levels is 4,3
@@ -805,7 +805,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION =
-      "carbon.horizontal.update.compaction.threshold";
+          "carbon.horizontal.update.compaction.threshold";
 
   /**
    * Default count of segments which act as a threshold for IUD compaction merge.
@@ -818,7 +818,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION =
-      "carbon.horizontal.delete.compaction.threshold";
+          "carbon.horizontal.delete.compaction.threshold";
 
   /**
    * Default count of segments which act as a threshold for IUD compaction merge.
@@ -866,7 +866,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_HORIZONTAL_COMPACTION_ENABLE =
-      "carbon.horizontal.compaction.enable";
+          "carbon.horizontal.compaction.enable";
 
   /**
    * Default value for HorizontalCompaction is true.
@@ -880,7 +880,7 @@ public final class CarbonCommonConstants {
   @InterfaceStability.Evolving
   @CarbonProperty
   public static final String CARBON_UPDATE_STORAGE_LEVEL =
-      "carbon.update.storage.level";
+          "carbon.update.storage.level";
 
   /**
    * The default value(MEMORY_AND_DISK) is the same as the default storage level of Dataset.
@@ -944,7 +944,7 @@ public final class CarbonCommonConstants {
 
   @CarbonProperty
   public static final String UNSAFE_DRIVER_WORKING_MEMORY_IN_MB =
-      "carbon.unsafe.driver.working.memory.in.mb";
+          "carbon.unsafe.driver.working.memory.in.mb";
 
   /**
    * Sorts the data in batches and writes the batch data to store with index file.
@@ -1031,7 +1031,7 @@ public final class CarbonCommonConstants {
   @InterfaceStability.Evolving
   @CarbonProperty
   public static final String CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL =
-      "carbon.global.sort.rdd.storage.level";
+          "carbon.global.sort.rdd.storage.level";
 
   /**
    * The default value(MEMORY_ONLY) is designed for executors with big memory, if user's executor
@@ -1049,7 +1049,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_UPDATE_SEGMENT_PARALLELISM =
-      "carbon.update.segment.parallelism";
+          "carbon.update.segment.parallelism";
 
   /**
    * In default we will not optimize the update
@@ -1107,7 +1107,7 @@ public final class CarbonCommonConstants {
   @InterfaceStability.Evolving
   @CarbonProperty
   public static final String CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION =
-      "carbon.enable.page.level.reader.in.compaction";
+          "carbon.enable.page.level.reader.in.compaction";
 
   /**
    * Default value
@@ -1117,7 +1117,7 @@ public final class CarbonCommonConstants {
 
   @CarbonProperty
   public static final String CARBON_SORT_STORAGE_INMEMORY_IN_MB =
-      "carbon.sort.storage.inmemory.size.inmb";
+          "carbon.sort.storage.inmemory.size.inmb";
 
   public static final int CARBON_SORT_STORAGE_INMEMORY_IN_MB_DEFAULT = 512;
 
@@ -1126,7 +1126,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_COMPACTION_PREFETCH_ENABLE =
-      "carbon.compaction.prefetch.enable";
+          "carbon.compaction.prefetch.enable";
 
   public static final String CARBON_COMPACTION_PREFETCH_ENABLE_DEFAULT = "false";
 
@@ -1227,7 +1227,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE =
-      "carbon.max.executor.lru.cache.size";
+          "carbon.max.executor.lru.cache.size";
 
   /**
    * max lru cache size default value in MB
@@ -1317,7 +1317,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO =
-      "carbon.scheduler.min.registered.resources.ratio";
+          "carbon.scheduler.min.registered.resources.ratio";
 
   /**
    * default minimum required registered resource for starting block distribution
@@ -1340,7 +1340,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT =
-      "carbon.dynamical.location.scheduler.timeout";
+          "carbon.dynamical.location.scheduler.timeout";
 
   /**
    * default scheduler wait time
@@ -1370,7 +1370,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_READ_PARTITION_HIVE_DIRECT =
-      "carbon.read.partition.hive.direct";
+          "carbon.read.partition.hive.direct";
 
   public static final String CARBON_READ_PARTITION_HIVE_DIRECT_DEFAULT = "true";
 
@@ -1383,7 +1383,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES =
-      "carbon.heap.memory.pooling.threshold.bytes";
+          "carbon.heap.memory.pooling.threshold.bytes";
 
   public static final String CARBON_HEAP_MEMORY_POOLING_THRESHOLD_BYTES_DEFAULT = "1048576";
 
@@ -1395,7 +1395,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty(dynamicConfigurable = true)
   public static final String CARBON_PUSH_ROW_FILTERS_FOR_VECTOR =
-      "carbon.push.rowfilters.for.vector";
+          "carbon.push.rowfilters.for.vector";
 
   public static final String CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT = "false";
 
@@ -1403,7 +1403,7 @@ public final class CarbonCommonConstants {
    * max driver threads used for block pruning [1 to 4 threads]
    */
   @CarbonProperty public static final String CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING =
-      "carbon.max.driver.threads.for.block.pruning";
+          "carbon.max.driver.threads.for.block.pruning";
 
   public static final String CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT = "4";
 
@@ -1445,13 +1445,13 @@ public final class CarbonCommonConstants {
 
   @CarbonProperty(dynamicConfigurable = true)
   public static final String SUPPORT_DIRECT_QUERY_ON_DATAMAP =
-      "carbon.query.directQueryOnDataMap.enabled";
+          "carbon.query.directQueryOnDataMap.enabled";
 
   public static final String SUPPORT_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE = "false";
 
   @CarbonProperty
   public static final String VALIDATE_DIRECT_QUERY_ON_DATAMAP =
-      "carbon.query.validate.direct.query.on.datamap";
+          "carbon.query.validate.direct.query.on.datamap";
 
   public static final String VALIDATE_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE = "true";
 
@@ -1591,7 +1591,7 @@ public final class CarbonCommonConstants {
    * MEMBER_DEFAULT_VAL_ARRAY
    */
   public static final byte[] MEMBER_DEFAULT_VAL_ARRAY =
-      MEMBER_DEFAULT_VAL.getBytes(Charset.forName(DEFAULT_CHARSET));
+          MEMBER_DEFAULT_VAL.getBytes(Charset.forName(DEFAULT_CHARSET));
 
   /**
    * Empty byte array
@@ -1811,10 +1811,15 @@ public final class CarbonCommonConstants {
   public static final String CARBON_LOCK_TYPE_S3 = "S3LOCK";
 
   /**
+   * ALLUXIOLOCK TYPE
+   */
+  public static final String CARBON_LOCK_TYPE_ALLUXIO = "ALLUXIOLOCK";
+
+  /**
    * Invalid filter member log string
    */
   public static final String FILTER_INVALID_MEMBER =
-      " Invalid Record(s) are present while filter evaluation. ";
+          " Invalid Record(s) are present while filter evaluation. ";
 
   /**
    * default location of the carbon metastore db
