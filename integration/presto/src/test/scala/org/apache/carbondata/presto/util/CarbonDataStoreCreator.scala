@@ -67,7 +67,8 @@ object CarbonDataStoreCreator {
   /**
    * Create store without any restructure
    */
-  def createCarbonStore(storePath: String, dataFilePath: String): Unit = {
+  def createCarbonStore(storePath: String, dataFilePath: String,
+      useLocalDict: Boolean = false): Unit = {
     try {
       logger.info("Creating The Carbon Store")
       val dbName: String = "testdb"
@@ -80,7 +81,7 @@ object CarbonDataStoreCreator {
       //   val factFilePath: String = new File(dataFilePath).getCanonicalPath
       val storeDir: File = new File(absoluteTableIdentifier.getTablePath)
       CarbonUtil.deleteFoldersAndFiles(storeDir)
-      val table: CarbonTable = createTable(absoluteTableIdentifier)
+      val table: CarbonTable = createTable(absoluteTableIdentifier, useLocalDict)
       writeDictionary(dataFilePath, table, absoluteTableIdentifier)
       val schema: CarbonDataLoadSchema = new CarbonDataLoadSchema(table)
       val loadModel: CarbonLoadModel = new CarbonLoadModel()
@@ -141,7 +142,8 @@ object CarbonDataStoreCreator {
     }
   }
 
-  private def createTable(absoluteTableIdentifier: AbsoluteTableIdentifier): CarbonTable = {
+  private def createTable(absoluteTableIdentifier: AbsoluteTableIdentifier,
+      useLocalDict: Boolean): CarbonTable = {
     val tableInfo: TableInfo = new TableInfo()
     tableInfo.setTablePath(absoluteTableIdentifier.getTablePath)
     tableInfo.setDatabaseName(
@@ -151,7 +153,9 @@ object CarbonDataStoreCreator {
       absoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
     val columnSchemas = new ArrayList[ColumnSchema]()
     val dictionaryEncoding: ArrayList[Encoding] = new ArrayList[Encoding]()
-    dictionaryEncoding.add(Encoding.DICTIONARY)
+    if (!useLocalDict) {
+      dictionaryEncoding.add(Encoding.DICTIONARY)
+    }
 
     val invertedIndexEncoding: ArrayList[Encoding] = new ArrayList[Encoding]()
     invertedIndexEncoding.add(Encoding.INVERTED_INDEX)
@@ -225,9 +229,9 @@ object CarbonDataStoreCreator {
     val salary: ColumnSchema = new ColumnSchema()
     salary.setColumnName("salary")
     salary.setDataType(DataTypes.DOUBLE)
-    salary.setEncodingList(dictionaryEncoding)
+    salary.setEncodingList(new util.ArrayList[Encoding]())
     salary.setColumnUniqueId(UUID.randomUUID().toString)
-    salary.setDimensionColumn(true)
+    salary.setDimensionColumn(false)
     salary.setSchemaOrdinal(6)
     salary.setColumnReferenceId(salary.getColumnUniqueId)
     columnSchemas.add(salary)
@@ -291,6 +295,8 @@ object CarbonDataStoreCreator {
       new util.ArrayList[SchemaEvolutionEntry]())
     tableSchema.setSchemaEvolution(schemaEvol)
     tableSchema.setTableId(UUID.randomUUID().toString)
+    tableSchema.getTableProperties.put(CarbonCommonConstants.LOCAL_DICTIONARY_ENABLE,
+      String.valueOf(useLocalDict))
     tableInfo.setTableUniqueName(
       absoluteTableIdentifier.getCarbonTableIdentifier.getTableUniqueName
     )

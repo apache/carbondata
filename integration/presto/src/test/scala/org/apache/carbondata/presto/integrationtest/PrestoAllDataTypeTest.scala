@@ -40,7 +40,7 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
                                   + "../../../..").getCanonicalPath
   private val storePath = s"$rootPath/integration/presto/target/store"
   private val systemPath = s"$rootPath/integration/presto/target/system"
-
+  private val PrestoServer = new PrestoServer
 
   // Table schema:
   // +-------------+----------------+-------------+------------+
