@@ -2426,7 +2426,6 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          |'$writerPath' """.stripMargin)
     val df = sql("describe formatted sdkTable")
     checkExistence(df, true, "Local Dictionary Enabled true")
-    checkExistence(df, true, "Inverted Index Columns name")
     FileUtils.deleteDirectory(new File(writerPath))
   }
 
@@ -2471,7 +2470,10 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     FileUtils.deleteDirectory(new File(writerPath))
   }
 
-  test("test inverted index column by API") {
+  // Inverted index display is based on sort_scope, now by default sort_scope is no_sort.
+  // Hence inverted index will not be displayed for external table
+  // as we don't support table-properties inferring
+  ignore("test inverted index column by API") {
     FileUtils.deleteDirectory(new File(writerPath))
     val builder = CarbonWriter.builder
       .sortBy(Array[String]("name")).withBlockSize(12).enableLocalDictionary(true)

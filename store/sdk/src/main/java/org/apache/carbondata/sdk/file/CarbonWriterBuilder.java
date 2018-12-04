@@ -57,7 +57,8 @@ import org.apache.hadoop.conf.Configuration;
 public class CarbonWriterBuilder {
   private Schema schema;
   private String path;
-  private String[] sortColumns;
+  //initialize with empty array , as no columns should be selected for sorting in NO_SORT
+  private String[] sortColumns = new String[0];
   private int blockletSize;
   private int blockSize;
   private long timestamp;
@@ -540,6 +541,19 @@ public class CarbonWriterBuilder {
     }
     // for the longstring field, change the datatype from string to varchar
     this.schema = updateSchemaFields(carbonSchema, longStringColumns);
+    if (sortColumns != null && sortColumns.length != 0) {
+      if (options == null || options.get("sort_scope") == null) {
+        // If sort_columns are specified and sort_scope is not specified,
+        // change sort scope to local_sort as now by default sort scope is no_sort.
+        if (CarbonProperties.getInstance().getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
+            == null) {
+          if (options == null) {
+            options = new HashMap<>();
+          }
+          options.put("sort_scope", "local_sort");
+        }
+      }
+    }
     // build CarbonTable using schema
     CarbonTable table = buildCarbonTable();
     // build LoadModel

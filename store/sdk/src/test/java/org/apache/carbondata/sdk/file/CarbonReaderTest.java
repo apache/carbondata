@@ -75,20 +75,11 @@ public class CarbonReaderTest extends TestCase {
     CarbonReader reader = CarbonReader.builder(path, "_temp")
         .projection(new String[]{"name", "age"}).build();
 
-    // expected output after sorting
-    String[] name = new String[200];
-    Integer[] age = new Integer[200];
-    for (int i = 0; i < 200; i++) {
-      name[i] = "robot" + (i / 10);
-      age[i] = i;
-    }
-
     int i = 0;
     while (reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
-      // Default sort column is applied for dimensions. So, need  to validate accordingly
-      assert(Arrays.asList(name).contains(row[0]));
-      assert(Arrays.asList(age).contains(row[1]));
+      Assert.assertEquals(("robot" + (i % 10)), row[0]);
+      Assert.assertEquals(i, row[1]);
       i++;
     }
     Assert.assertEquals(i, 200);
@@ -102,9 +93,8 @@ public class CarbonReaderTest extends TestCase {
     i = 0;
     while (reader2.hasNext()) {
       Object[] row = (Object[]) reader2.readNextRow();
-      // Default sort column is applied for dimensions. So, need  to validate accordingly
-      assert(Arrays.asList(name).contains(row[0]));
-      assert(Arrays.asList(age).contains(row[1]));
+      Assert.assertEquals(("robot" + (i % 10)), row[0]);
+      Assert.assertEquals(i, row[1]);
       i++;
     }
     Assert.assertEquals(i, 200);
@@ -578,22 +568,14 @@ public class CarbonReaderTest extends TestCase {
         .projection(new String[]{"name", "age", "age", "name"})
         .build();
 
-    // expected output after sorting
-    String[] name = new String[100];
-    int[] age = new int[100];
-    for (int i = 0; i < 100; i++) {
-      name[i] = "robot" + (i / 10);
-      age[i] = (i % 10) * 10 + i / 10;
-    }
-
     int i = 0;
     while (reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
       // Default sort column is applied for dimensions. So, need  to validate accordingly
-      Assert.assertEquals(name[i], row[0]);
-      Assert.assertEquals(age[i], row[1]);
-      Assert.assertEquals(age[i], row[2]);
-      Assert.assertEquals(name[i], row[3]);
+      Assert.assertEquals(("robot" + (i % 10)), row[0]);
+      Assert.assertEquals(i, row[1]);
+      Assert.assertEquals(i, row[2]);
+      Assert.assertEquals("robot" + (i % 10), row[3]);
       i++;
     }
     Assert.assertEquals(i, 100);
@@ -700,20 +682,11 @@ public class CarbonReaderTest extends TestCase {
         .projection(new String[]{"name", "age"})
         .build();
 
-    // expected output after sorting
-    String[] name = new String[100];
-    int[] age = new int[100];
-    for (int i = 0; i < 100; i++) {
-      name[i] = "robot" + (i / 10);
-      age[i] = (i % 10) * 10 + i / 10;
-    }
-
     int i = 0;
     while (reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
-      // Default sort column is applied for dimensions. So, need  to validate accordingly
-      Assert.assertEquals(name[i], row[0]);
-      Assert.assertEquals(age[i], row[1]);
+      Assert.assertEquals(("robot" + (i % 10)), row[0]);
+      Assert.assertEquals(i, row[1]);
       i++;
     }
     Assert.assertEquals(i, 100);
@@ -736,20 +709,11 @@ public class CarbonReaderTest extends TestCase {
 
     CarbonReader reader = CarbonReader.builder(path).build();
 
-    // expected output after sorting
-    String[] name = new String[100];
-    int[] age = new int[100];
-    for (int i = 0; i < 100; i++) {
-      name[i] = "robot" + (i / 10);
-      age[i] = (i % 10) * 10 + i / 10;
-    }
-
     int i = 0;
     while (reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
-      // Default sort column is applied for dimensions. So, need  to validate accordingly
-      Assert.assertEquals(name[i], row[0]);
-      Assert.assertEquals(age[i], row[1]);
+      Assert.assertEquals(("robot" + (i % 10)), row[0]);
+      Assert.assertEquals(i, row[1]);
       i++;
     }
     Assert.assertEquals(i, 100);
@@ -802,20 +766,11 @@ public class CarbonReaderTest extends TestCase {
         .projection(new String[]{"name", "age"})
         .build();
 
-    // expected output after sorting
-    String[] name = new String[100];
-    int[] age = new int[100];
-    for (int i = 0; i < 100; i++) {
-      name[i] = "robot" + (i / 10);
-      age[i] = (i % 10) * 10 + i / 10;
-    }
-
     int i = 0;
     while (reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
-      // Default sort column is applied for dimensions. So, need  to validate accordingly
-      Assert.assertEquals(name[i], row[0]);
-      Assert.assertEquals(age[i], row[1]);
+      Assert.assertEquals(("robot" + (i % 10)), row[0]);
+      Assert.assertEquals(i, row[1]);
       i++;
     }
     Assert.assertEquals(i, 100);
@@ -1192,20 +1147,11 @@ public class CarbonReaderTest extends TestCase {
 
     CarbonReader reader = CarbonReader.builder(path, "_temp").build();
 
-    // expected output after sorting
-    String[] name = new String[100];
-    int[] age = new int[100];
-    for (int i = 0; i < 100; i++) {
-      name[i] = "robot" + (i / 10);
-      age[i] = (i % 10) * 10 + i / 10;
-    }
-
     int i = 0;
     while (reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
-      // Default sort column is applied for dimensions. So, need  to validate accordingly
-      Assert.assertEquals(name[i], row[0]);
-      Assert.assertEquals(age[i], row[1]);
+      Assert.assertEquals(("robot" + (i % 10)), row[0]);
+      Assert.assertEquals(i, row[1]);
       i++;
     }
     Assert.assertEquals(i, 100);
@@ -1227,19 +1173,11 @@ public class CarbonReaderTest extends TestCase {
 
     CarbonReader reader = CarbonReader.builder(path, "_temp").build();
 
-    // expected output after sorting
-    String[] name = new String[100];
-    int[] age = new int[100];
-    for (int i = 0; i < 100; i++) {
-      name[i] = "robot" + (i / 10);
-      age[i] = (i % 10) * 10 + i / 10;
-    }
-
     int i = 0;
     while (reader.hasNext()) {
       Object[] row = (Object[]) reader.readNextRow();
-      Assert.assertEquals(name[i], row[0]);
-      Assert.assertEquals(age[i], row[1]);
+      Assert.assertEquals(("robot" + (i % 10)), row[0]);
+      Assert.assertEquals(i, row[1]);
       i++;
     }
     reader.close();

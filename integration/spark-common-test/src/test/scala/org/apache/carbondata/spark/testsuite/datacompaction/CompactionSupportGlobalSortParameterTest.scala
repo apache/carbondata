@@ -57,6 +57,7 @@ class CompactionSupportGlobalSortParameterTest extends QueryTest with BeforeAndA
   override def afterEach {
     sql("DROP TABLE IF EXISTS compaction_globalsort")
     sql("DROP TABLE IF EXISTS carbon_localsort")
+    resetConf()
   }
 
   test("MINOR, ENABLE_AUTO_LOAD_MERGE: false") {

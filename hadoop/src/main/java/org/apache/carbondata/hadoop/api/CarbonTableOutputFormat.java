@@ -34,6 +34,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
@@ -257,6 +258,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     loadModel.setDataWritePath(
         taskAttemptContext.getConfiguration().get("carbon.outputformat.writepath"));
     final String[] tempStoreLocations = getTempStoreLocations(taskAttemptContext);
+    DataTypeUtil.clearFormatter();
     final DataLoadExecutor dataLoadExecutor = new DataLoadExecutor();
     final ExecutorService executorService = Executors.newFixedThreadPool(1,
         new CarbonThreadFactory("CarbonRecordWriter:" + loadModel.getTableName()));
@@ -273,7 +275,12 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
           for (CarbonOutputIteratorWrapper iterator : iterators) {
             iterator.closeWriter(true);
           }
-          dataLoadExecutor.close();
+          try {
+            dataLoadExecutor.close();
+          } catch (Exception ex) {
+            // As already exception happened before close() send that exception.
+            throw new RuntimeException(e);
+          }
           throw new RuntimeException(e);
         } finally {
           ThreadLocalSessionInfo.unsetAll();

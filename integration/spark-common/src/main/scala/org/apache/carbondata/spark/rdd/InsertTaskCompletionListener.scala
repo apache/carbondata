@@ -21,7 +21,7 @@ import org.apache.spark.TaskContext
 import org.apache.spark.sql.carbondata.execution.datasources.tasklisteners.CarbonLoadTaskCompletionListener
 import org.apache.spark.sql.execution.command.ExecutionErrors
 
-import org.apache.carbondata.core.util.ThreadLocalTaskInfo
+import org.apache.carbondata.core.util.{DataTypeUtil, ThreadLocalTaskInfo}
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses}
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -34,12 +34,15 @@ class InsertTaskCompletionListener(dataLoadExecutor: DataLoadExecutor,
     }
     catch {
       case e: Exception =>
-        if (executorErrors.failureCauses != FailureCauses.BAD_RECORDS) {
+        if (executorErrors.failureCauses == FailureCauses.NONE) {
+          // If already error happened before task completion,
+          // that error need to be thrown. Not the new error. Hence skip this.
           throw e
         }
     }
     finally {
       CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+      DataTypeUtil.clearFormatter()
     }
   }
 }
