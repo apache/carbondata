@@ -66,6 +66,7 @@ import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriterImpl;
@@ -495,6 +496,7 @@ public class StoreCreator {
 
     CSVRecordReaderIterator readerIterator =
         new CSVRecordReaderIterator(recordReader, blockDetails, hadoopAttemptContext);
+    DataTypeUtil.clearFormatter();
     new DataLoadExecutor().execute(loadModel,
         new String[] {storeLocation + "/" + databaseName + "/" + tableName},
         new CarbonIterator[]{readerIterator});

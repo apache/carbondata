@@ -134,15 +134,13 @@ CarbonData DDL statements are documented here,which includes:
    - ##### Sort Columns Configuration
 
      This property is for users to specify which columns belong to the MDK(Multi-Dimensions-Key) index.
-     * If users don't specify "SORT_COLUMN" property, by default MDK index be built by using all dimension columns except complex data type column. 
+     * If users don't specify "SORT_COLUMN" property, by default no columns are sorted 
      * If this property is specified but with empty argument, then the table will be loaded without sort.
      * This supports only string, date, timestamp, short, int, long, byte and boolean data types.
      Suggested use cases : Only build MDK index for required columns,it might help to improve the data loading performance.
 
      ```
      TBLPROPERTIES ('SORT_COLUMNS'='column1, column3')
-     OR
-     TBLPROPERTIES ('SORT_COLUMNS'='')
      ```
 
      **NOTE**: Sort_Columns for Complex datatype columns is not supported.
@@ -151,8 +149,8 @@ CarbonData DDL statements are documented here,which includes:
    
      This property is for users to specify the scope of the sort during data load, following are the types of sort scope.
      
-     * LOCAL_SORT: It is the default sort scope.             
-     * NO_SORT: It will load the data in unsorted manner, it will significantly increase load performance.       
+     * LOCAL_SORT: data will be locally sorted (task level sorting)             
+     * NO_SORT: default scope. It will load the data in unsorted manner, it will significantly increase load performance.       
      * BATCH_SORT: It increases the load performance but decreases the query performance if identified blocks > parallelism.
      * GLOBAL_SORT: It increases the query performance, especially high concurrent point query.
        And if you care about loading resources isolation strictly, because the system uses the spark GroupBy to sort data, the resource can be controlled by spark. 

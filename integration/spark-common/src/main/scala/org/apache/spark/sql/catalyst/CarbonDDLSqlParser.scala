@@ -734,13 +734,13 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     }
 
     // All columns in sortkey should be there in create table cols
-    val sortKeyOption = tableProperties.get(CarbonCommonConstants.SORT_COLUMNS)
-    var sortKeyDimsTmp: Seq[String] = Seq[String]()
-    val sortKeyString: String = if (sortKeyOption.isDefined) {
-      CarbonUtil.unquoteChar(sortKeyOption.get) trim
-    } else {
-      ""
+    var sortKeyOption = tableProperties.get(CarbonCommonConstants.SORT_COLUMNS)
+    if (!sortKeyOption.isDefined) {
+      // default no columns are selected for sorting in no_sort scope
+      sortKeyOption = Some("")
     }
+    val sortKeyString: String = CarbonUtil.unquoteChar(sortKeyOption.get) trim
+    var sortKeyDimsTmp: Seq[String] = Seq[String]()
     if (!sortKeyString.isEmpty) {
       val sortKey = sortKeyString.split(',').map(_.trim)
       if (sortKey.diff(sortKey.distinct).length > 0 ||

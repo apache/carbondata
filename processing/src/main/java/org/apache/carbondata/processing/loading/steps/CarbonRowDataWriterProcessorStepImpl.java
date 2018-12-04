@@ -152,7 +152,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       if (e instanceof BadRecordFoundException) {
         throw new BadRecordFoundException(e.getMessage(), e);
       }
-      throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage(), e);
+      throw new CarbonDataLoadingException(e.getMessage(), e);
     }
     return null;
   }

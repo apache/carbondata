@@ -39,7 +39,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalTaskInfo}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, DataTypeUtil, ThreadLocalTaskInfo}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses, TableProcessingOperations}
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator}
@@ -141,6 +141,8 @@ class NewCarbonDataLoadRDD[K, V](
           loadMetadataDetails)
         // Initialize to set carbon properties
         loader.initialize()
+        // need to clear thread local before every load.
+        DataTypeUtil.clearFormatter()
         val executor = new DataLoadExecutor()
         // in case of success, failure or cancelation clear memory and stop execution
         context

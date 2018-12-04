@@ -82,7 +82,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
         | c6 string, c7 int, c8 int, c9 int, c10 int)
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('dictionary_include'='c1,c2,c3,c4,c5,c6',
-        | 'sort_scope'='batch_sort')
+        | 'sort_scope'='batch_sort', 'sort_columns'='c1,c2,c3,c4,c5,c6')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load1 " +
@@ -133,7 +133,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
         | c6 string, c7 int, c8 int, c9 int, c10 int)
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('dictionary_include'='c1,c2,c3,c4,c5,c6',
-        | 'sort_scope'='batch_sort')
+        | 'sort_scope'='batch_sort', 'sort_columns'='c1,c2,c3,c4,c5,c6')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load3 " +
@@ -156,7 +156,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
         | CREATE TABLE carbon_load4(c1 string, c2 string, c3 string, c4 string, c5 string,
         | c6 string, c7 int, c8 int, c9 int, c10 int)
         | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('dictionary_include'='c1,c2,c3,c4,c5,c6')
+        | TBLPROPERTIES('dictionary_include'='c1,c2,c3,c4,c5,c6', 'sort_columns'='c1,c2,c3,c4,c5,c6')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load4 " )
@@ -204,6 +204,9 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     dropTable
     new File(filePath).delete()
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+        CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
   }
 }
 
