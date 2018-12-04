@@ -90,7 +90,9 @@ class TestInsertAndOtherCommandConcurrent extends QueryTest with BeforeAndAfterA
 
   private def createTable(tableName: String, schema: StructType): Unit = {
     val schemaString = schema.fields.map(x => x.name + " " + x.dataType.typeName).mkString(", ")
-    sql(s"CREATE TABLE $tableName ($schemaString) stored as carbondata")
+    sql(s"CREATE TABLE $tableName ($schemaString) stored as carbondata tblproperties" +
+        s"('sort_scope'='local_sort','sort_columns'='o_country,o_name,o_phonetype,o_serialname," +
+        s"o_comment')")
   }
 
   override def afterAll {

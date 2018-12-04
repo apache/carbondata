@@ -34,7 +34,9 @@ class InsertTaskCompletionListener(dataLoadExecutor: DataLoadExecutor,
     }
     catch {
       case e: Exception =>
-        if (executorErrors.failureCauses != FailureCauses.BAD_RECORDS) {
+        if (executorErrors.failureCauses == FailureCauses.NONE) {
+          // If already error happened before task completion,
+          // that error need to be thrown. Not the new error. Hence skip this.
           throw e
         }
     }

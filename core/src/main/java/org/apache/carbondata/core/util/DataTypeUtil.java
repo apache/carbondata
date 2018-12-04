@@ -51,7 +51,7 @@ public final class DataTypeUtil {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(DataTypeUtil.class.getName());
 
-  private static final ThreadLocal<DateFormat> timeStampformatter = new ThreadLocal<DateFormat>() {
+  private static ThreadLocal<DateFormat> timeStampformatter = new ThreadLocal<DateFormat>() {
     @Override protected DateFormat initialValue() {
       DateFormat dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
@@ -61,7 +61,35 @@ public final class DataTypeUtil {
     }
   };
 
-  private static final ThreadLocal<DateFormat> dateformatter = new ThreadLocal<DateFormat>() {
+  private static ThreadLocal<String> timeStampformatterString = new ThreadLocal<String>() {
+    @Override protected String initialValue() {
+      return CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+    }
+  };
+
+  private static void updateTimeStamp() {
+    timeStampformatter = new ThreadLocal<DateFormat>() {
+      @Override protected DateFormat initialValue() {
+        DateFormat dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+        dateFormat.setLenient(false);
+        return dateFormat;
+      }
+    };
+
+    timeStampformatterString = new ThreadLocal<String>() {
+      @Override protected String initialValue() {
+        return CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+      }
+    };
+  }
+
+  private static ThreadLocal<DateFormat> dateformatter = new ThreadLocal<DateFormat>() {
     @Override protected DateFormat initialValue() {
       return new SimpleDateFormat(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
@@ -163,6 +191,11 @@ public final class DataTypeUtil {
           dateFormatter = new SimpleDateFormat(timeStampFormat);
           dateFormatter.setLenient(false);
         } else {
+          if (!timeStampformatterString.get().equalsIgnoreCase(CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))) {
+            // not same as one stored in thread local
+            updateTimeStamp();
+          }
           dateFormatter = timeStampformatter.get();
         }
         dateToStr = dateFormatter.parse(dimValue);
@@ -410,6 +443,11 @@ public final class DataTypeUtil {
           dateFormatter = new SimpleDateFormat(dateFormat);
           dateFormatter.setLenient(false);
         } else {
+          if (!timeStampformatterString.get().equalsIgnoreCase(CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))) {
+            // not same as one stored in thread local
+            updateTimeStamp();
+          }
           dateFormatter = timeStampformatter.get();
         }
         dateToStr = dateFormatter.parse(dimensionValue);
@@ -445,6 +483,11 @@ public final class DataTypeUtil {
           dateFormatter = new SimpleDateFormat(dateFormat);
           dateFormatter.setLenient(false);
         } else {
+          if (!timeStampformatterString.get().equalsIgnoreCase(CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))) {
+            // not same as one stored in thread local
+            updateTimeStamp();
+          }
           dateFormatter = timeStampformatter.get();
         }
         dateToStr = dateFormatter.parse(dimensionValue);

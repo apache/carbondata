@@ -305,7 +305,8 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       .mode(SaveMode.Overwrite)
   }
 
-  test("test load dataframe with sort_columns not specified," +
+  // now by default all the dimensions are not selected for sorting in no_sort
+  ignore("test load dataframe with sort_columns not specified," +
        " by default all string columns will be sort_columns") {
     // all string column will be sort_columns by default
     getDefaultWriter("df_write_sort_column_not_specified").save()

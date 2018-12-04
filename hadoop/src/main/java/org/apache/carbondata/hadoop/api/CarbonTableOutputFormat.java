@@ -273,7 +273,12 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
           for (CarbonOutputIteratorWrapper iterator : iterators) {
             iterator.closeWriter(true);
           }
-          dataLoadExecutor.close();
+          try {
+            dataLoadExecutor.close();
+          } catch (Exception ex) {
+            // As already exception happened before close() send that exception.
+            throw new RuntimeException(e);
+          }
           throw new RuntimeException(e);
         } finally {
           ThreadLocalSessionInfo.unsetAll();
