@@ -51,8 +51,8 @@ case class CarbonExplainCommand(
       sparkSession.sessionState.executePlan(child.asInstanceOf[ExplainCommand].logicalPlan)
     try {
       ExplainCollector.setup()
-      queryExecution.toRdd.partitions
       if (ExplainCollector.enabled()) {
+        queryExecution.toRdd.partitions
         Seq(Row("== CarbonData Profiler ==\n" + ExplainCollector.getFormatedOutput))
       } else {
         Seq.empty
