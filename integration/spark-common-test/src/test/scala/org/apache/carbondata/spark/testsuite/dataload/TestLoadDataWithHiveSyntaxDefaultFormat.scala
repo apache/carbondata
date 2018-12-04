@@ -701,7 +701,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     sql(
       s"load data local inpath '$resourcesPath/double.csv' into table double_test options" +
       "('FILEHEADER'='empno,salary')")
-    checkAnswer(sql("select salary from double_test limit 1"),Row(7.756787654567891E23))
+    checkAnswer(sql("select salary from double_test where empno =\"'abc'\" limit 1"),Row(7.756787654567891E23))
   }
 
   test("test table with specified table path") {
@@ -715,7 +715,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
       s"load data local inpath '$resourcesPath/double.csv' into table table_path_test options" +
       "('FILEHEADER'='empno,salary')")
     assert(new File(path).exists())
-    checkAnswer(sql("select salary from table_path_test limit 1"),Row(7.756787654567891E23))
+    checkAnswer(sql("select salary from table_path_test where empno =\"'abc'\" limit 1"),Row(7.756787654567891E23))
     sql("drop table table_path_test")
     assert(! new File(path).exists())
     assert(intercept[AnalysisException](
@@ -735,7 +735,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
       s"load data local inpath '$resourcesPath/double.csv' into table test.table_path_test options" +
       "('FILEHEADER'='empno,salary')")
     assert(new File(path).exists())
-    checkAnswer(sql("select salary from test.table_path_test limit 1"),Row(7.756787654567891E23))
+    checkAnswer(sql("select salary from test.table_path_test where empno =\"'abc'\" limit 1"),Row(7.756787654567891E23))
     sql("drop table test.table_path_test")
     assert(! new File(path).exists())
     assert(intercept[AnalysisException](

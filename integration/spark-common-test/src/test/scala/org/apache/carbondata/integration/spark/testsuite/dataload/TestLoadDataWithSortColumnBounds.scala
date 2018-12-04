@@ -23,7 +23,7 @@ import scala.util.Random
 
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{DataFrame, Row, SaveMode}
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, Ignore}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
@@ -60,7 +60,8 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, dateFormatStr)
     sql(s"DROP TABLE IF EXISTS $tableName")
-
+    // sort column bounds work only with local_sort
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, "local_sort")
     prepareDataFile()
     prepareDataFrame()
   }
@@ -71,6 +72,10 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
     sql(s"DROP TABLE IF EXISTS $tableName")
     new File(filePath).delete()
     df = null
+    // sort column bounds work only with local_sort
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+        CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
   }
 
   /**
@@ -247,7 +252,8 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
     sql(s"DROP TABLE IF EXISTS $tableName")
   }
 
-  test("load data with sort column bounds: no sort columns explicitly specified" +
+  // now default sort scope is no_sort, hence all dimesions are not sorted by default
+  ignore("load data with sort column bounds: no sort columns explicitly specified" +
        " means all dimension columns will be sort columns, so bounds should be set correctly") {
     sql(s"DROP TABLE IF EXISTS $tableName")
 

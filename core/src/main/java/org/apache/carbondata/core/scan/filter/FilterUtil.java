@@ -2265,7 +2265,8 @@ public final class FilterUtil {
       defaultValue = FilterUtil
           .getMaskKey(key, currentBlockDimension, segmentProperties.getSortColumnsGenerator());
     } else {
-      defaultValue = ByteUtil.toXorBytes(key);
+      defaultValue = FilterUtil
+          .getMaskKey(key, currentBlockDimension, segmentProperties.getDimensionKeyGenerator());
     }
     return defaultValue;
   }

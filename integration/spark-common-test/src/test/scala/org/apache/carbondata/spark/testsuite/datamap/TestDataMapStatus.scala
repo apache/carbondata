@@ -53,7 +53,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         | CREATE TABLE datamapstatustest(id int, name string, city string, age int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='name,city')
       """.stripMargin)
     sql(
       s"""create datamap statusdatamap on table datamapstatustest
@@ -74,7 +74,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         | CREATE TABLE datamapstatustest(id int, name string, city string, age int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='name,city')
       """.stripMargin)
     sql(
       s"""create datamap statusdatamap on table datamapstatustest
@@ -96,7 +96,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         | CREATE TABLE datamapstatustest1(id int, name string, city string, age int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='name,city')
       """.stripMargin)
     sql(
       s"""create datamap statusdatamap1 on table datamapstatustest1
@@ -123,7 +123,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         | CREATE TABLE datamapstatustest2(id int, name string, city string, age int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='name,city')
       """.stripMargin)
     sql(
       s"""create datamap statusdatamap2 on table datamapstatustest2
@@ -157,7 +157,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         | CREATE TABLE datamapstatustest3(id int, name string, city string, age int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='name,city')
       """.stripMargin)
     intercept[MalformedDataMapCommandException] {
       sql(
@@ -175,7 +175,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         | CREATE TABLE datamapstatustest3(id int, name string, city string, age int)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('sort_scope'='local_sort','sort_columns'='name,city')
       """.stripMargin)
     sql(
       s"""create datamap statusdatamap3 on table datamapstatustest3
