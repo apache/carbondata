@@ -49,8 +49,8 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
  * @param hadoopConf
  */
 class CarbonHiveSessionCatalog(
-    externalCatalog: HiveExternalCatalog,
-    globalTempViewManager: GlobalTempViewManager,
+    externalCatalog: () => HiveExternalCatalog,
+    globalTempViewManager: () => GlobalTempViewManager,
     functionRegistry: FunctionRegistry,
     sparkSession: SparkSession,
     conf: SQLConf,
@@ -216,8 +216,8 @@ class CarbonSessionStateBuilder(sparkSession: SparkSession,
    */
   override protected lazy val catalog: CarbonHiveSessionCatalog = {
     val catalog = new CarbonHiveSessionCatalog(
-      externalCatalog,
-      session.sharedState.globalTempViewManager,
+      () => externalCatalog,
+      () => session.sharedState.globalTempViewManager,
       functionRegistry,
       sparkSession,
       conf,
@@ -236,7 +236,7 @@ class CarbonSessionStateBuilder(sparkSession: SparkSession,
    */
   override protected lazy val resourceLoader: HiveSessionResourceLoader = {
     val client: HiveClient = externalCatalog.client.newSession()
-    new HiveSessionResourceLoader(session, client)
+    new HiveSessionResourceLoader(session, ()=>client)
   }
 
   override lazy val optimizer: Optimizer = new CarbonOptimizer(catalog, conf, experimentalMethods)

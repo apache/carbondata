@@ -53,8 +53,8 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
  * @param hadoopConf
  */
 class InMemorySessionCatalog(
-    externalCatalog: ExternalCatalog,
-    globalTempViewManager: GlobalTempViewManager,
+    externalCatalog: () => ExternalCatalog,
+    globalTempViewManager: () => GlobalTempViewManager,
     functionRegistry: FunctionRegistry,
     sparkSession: SparkSession,
     conf: SQLConf,
@@ -236,8 +236,8 @@ class CarbonInMemorySessionStateBuilder (sparkSession: SparkSession,
    */
   override protected lazy val catalog: InMemorySessionCatalog = {
     val catalog = new InMemorySessionCatalog(
-      externalCatalog,
-      session.sharedState.globalTempViewManager,
+      () => externalCatalog,
+      () => session.sharedState.globalTempViewManager,
       functionRegistry,
       sparkSession,
       conf,

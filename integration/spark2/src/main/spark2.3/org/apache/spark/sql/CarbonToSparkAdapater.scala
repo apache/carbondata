@@ -38,7 +38,7 @@ object CarbonToSparkAdapater {
   }
 
   def createAttributeReference(name: String, dataType: DataType, nullable: Boolean,
-                               metadata: Metadata, exprId: ExprId, qualifier: Option[String],
+                               metadata: Metadata, exprId: ExprId, qualifier: Seq[String],
                                attrRef : NamedExpression): AttributeReference = {
     AttributeReference(
       name,
@@ -50,7 +50,7 @@ object CarbonToSparkAdapater {
   def createAliasRef(child: Expression,
                      name: String,
                      exprId: ExprId = NamedExpression.newExprId,
-                     qualifier: Option[String] = None,
+                     qualifier: Seq[String],
                      explicitMetadata: Option[Metadata] = None,
                      namedExpr : Option[NamedExpression] = None ) : Alias = {
 

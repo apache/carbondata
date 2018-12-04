@@ -137,7 +137,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       val newAttr = AttributeReference(attr.name,
         attr.dataType,
         attr.nullable,
-        attr.metadata)(attr.exprId, Option(table.carbonRelation.tableName))
+        attr.metadata)(attr.exprId, Seq(table.carbonRelation.tableName))
       relation.addAttribute(newAttr)
       newAttr
     }
@@ -384,7 +384,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
             newProjectList :+= reference
             a.transform {
               case s: ScalaUDF =>
-                ScalaUDF(s.function, s.dataType, Seq(reference), s.inputTypes)
+                ScalaUDF(s.function, s.dataType, Seq(reference), s.inputsNullSafe, s.inputTypes)
             }
           case other => other
       }

@@ -40,6 +40,7 @@ class CarbonDataSourceScan(
     output,
     relation.dataSchema,
     Seq.empty,
+    Option.empty,
     Seq.empty,
     identifier) {
 

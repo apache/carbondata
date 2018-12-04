@@ -918,7 +918,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             newAggExp += CarbonToSparkAdapater.createAliasRef(
               exp,
               "dummy_" + counter,
-              NamedExpression.newExprId)
+              NamedExpression.newExprId,
+              Seq.empty)
             counter = counter + 1
         }
       }
@@ -1128,7 +1129,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           attr.nullable,
           attr.metadata,
           attr.exprId,
-          None,
+          Seq.empty,
           attr)
     }
   }

@@ -123,7 +123,7 @@ case class CarbonRelation(
             CarbonMetastoreTypes.toDataType(dataType)
         }
         AttributeReference(column.getColName, output, nullable = true )(
-          qualifier = Option(tableName + "." + column.getColName))
+          qualifier = Seq(tableName + "." + column.getColName))
       } else {
         val output = CarbonMetastoreTypes.toDataType {
           column.getDataType.getName.toLowerCase match {
@@ -133,7 +133,7 @@ case class CarbonRelation(
           }
         }
         AttributeReference(column.getColName, output, nullable = true)(
-          qualifier = Option(tableName + "." + column.getColName))
+          qualifier = Seq(tableName + "." + column.getColName))
       }
     }
   }
