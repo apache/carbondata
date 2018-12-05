@@ -24,6 +24,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectWithInvertedIndex;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.SequentialFill;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -83,20 +84,37 @@ class StringVectorFiller extends AbstractNonDictionaryVectorFiller {
   @Override
   public void fillVector(byte[] data, CarbonColumnVector vector) {
     // start position will be used to store the current data position
+    boolean invertedIndex = vector instanceof ColumnarVectorWrapperDirectWithInvertedIndex
+        || vector instanceof SequentialFill;
+
     int localOffset = 0;
     ByteUtil.UnsafeComparer comparator = ByteUtil.UnsafeComparer.INSTANCE;
-    for (int i = 0; i < numberOfRows; i++) {
-      int length = (((data[localOffset] & 0xFF) << 8) | (data[localOffset + 1] & 0xFF));
-      localOffset += 2;
-      if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
-          CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
-        vector.putNull(i);
-      } else {
-        vector.putArray(i, localOffset, length);
+    if (invertedIndex) {
+      for (int i = 0; i < numberOfRows; i++) {
+        int length = (((data[localOffset] & 0xFF) << 8) | (data[localOffset + 1] & 0xFF));
+        localOffset += 2;
+        if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+            CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
+          vector.putNull(i);
+        } else {
+          vector.putByteArray(i, localOffset, length, data);
+        }
+        localOffset += length;
       }
-      localOffset += length;
+    } else {
+      for (int i = 0; i < numberOfRows; i++) {
+        int length = (((data[localOffset] & 0xFF) << 8) | (data[localOffset + 1] & 0xFF));
+        localOffset += 2;
+        if (comparator.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+            CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, localOffset, length)) {
+          vector.putNull(i);
+        } else {
+          vector.putArray(i, localOffset, length);
+        }
+        localOffset += length;
+      }
+      vector.putAllByteArray(data, 0, actualDataLength);
     }
-    vector.putAllByteArray(data, 0, actualDataLength);
   }
 }
 
@@ -111,7 +129,8 @@ class LongStringVectorFiller extends AbstractNonDictionaryVectorFiller {
 
   @Override public void fillVector(byte[] data, CarbonColumnVector vector) {
     // start position will be used to store the current data position
-    boolean invertedIndex = vector instanceof ColumnarVectorWrapperDirectWithInvertedIndex;
+    boolean invertedIndex = vector instanceof ColumnarVectorWrapperDirectWithInvertedIndex
+        || vector instanceof SequentialFill;
     int localOffset = 0;
     ByteUtil.UnsafeComparer comparator = ByteUtil.UnsafeComparer.INSTANCE;
     if (invertedIndex) {

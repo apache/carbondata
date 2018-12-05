@@ -41,15 +41,25 @@ public final class ColumnarVectorWrapperDirectFactory {
   public static CarbonColumnVector getDirectVectorWrapperFactory(CarbonColumnVector columnVector,
       int[] invertedIndex, BitSet nullBitset, BitSet deletedRows, boolean isnullBitsExists,
       boolean isDictVector) {
-    if ((invertedIndex != null && invertedIndex.length > 0) && (deletedRows == null || deletedRows
-        .isEmpty())) {
+    // If it is sequential data filler then add the null bitset.
+    if (columnVector instanceof SequentialFill) {
+      // If it has inverted index then create a dummy delete rows bitset so that it goes to
+      // ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex, here it does the sequential
+      // filling using another vector.
+      if ((invertedIndex != null && invertedIndex.length > 0)) {
+        if (deletedRows == null) {
+          deletedRows = new BitSet();
+        }
+      } else if (deletedRows == null) {
+        ((SequentialFill) columnVector).setNullBits(nullBitset);
+      }
+    }
+    if ((invertedIndex != null && invertedIndex.length > 0) && (deletedRows == null)) {
       return new ColumnarVectorWrapperDirectWithInvertedIndex(columnVector, invertedIndex,
           isnullBitsExists);
-    } else if ((invertedIndex == null || invertedIndex.length == 0) && (deletedRows != null
-        && !deletedRows.isEmpty())) {
+    } else if ((invertedIndex == null || invertedIndex.length == 0) && deletedRows != null) {
       return new ColumnarVectorWrapperDirectWithDeleteDelta(columnVector, deletedRows, nullBitset);
-    } else if ((invertedIndex != null && invertedIndex.length > 0) && (deletedRows != null
-        && !deletedRows.isEmpty())) {
+    } else if ((invertedIndex != null && invertedIndex.length > 0) && deletedRows != null) {
       return new ColumnarVectorWrapperDirectWithDeleteDeltaAndInvertedIndex(columnVector,
           deletedRows, invertedIndex, nullBitset, isnullBitsExists, isDictVector);
     } else {

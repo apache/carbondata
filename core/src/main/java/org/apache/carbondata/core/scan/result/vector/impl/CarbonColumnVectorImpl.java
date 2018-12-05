@@ -47,7 +47,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   private short[] shorts;
 
-  private BitSet nullBytes;
+  protected BitSet nullBytes;
 
   private DataType dataType;
 
@@ -68,6 +68,10 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
   private CarbonDictionary carbonDictionary;
 
   private CarbonColumnVector dictionaryVector;
+
+  private LazyPageLoader lazyPage;
+
+  private boolean loaded;
 
   public CarbonColumnVectorImpl(int batchSize, DataType dataType) {
     this.batchSize = batchSize;
@@ -208,6 +212,9 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
   }
 
   @Override public Object getData(int rowId) {
+    if (!loaded) {
+      loadPage();
+    }
     if (nullBytes.get(rowId)) {
       return null;
     }
@@ -243,6 +250,9 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
   }
 
   public Object getDataArray() {
+    if (!loaded) {
+      loadPage();
+    }
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       return  byteArr;
     } else if (dataType == DataTypes.SHORT) {
@@ -291,6 +301,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     } else {
       Arrays.fill(data, null);
     }
+    loaded = false;
 
   }
 
@@ -367,7 +378,14 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
   }
 
   @Override public void setLazyPage(LazyPageLoader lazyPage) {
-    lazyPage.loadPage();
+    this.lazyPage = lazyPage;
+  }
+
+  public void loadPage() {
+    if (lazyPage != null) {
+      lazyPage.loadPage();
+    }
+    loaded = true;
   }
 
   @Override public void putArray(int rowId, int offset, int length) {
