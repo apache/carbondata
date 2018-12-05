@@ -80,8 +80,8 @@ public class SliceStreamReader extends CarbonColumnVectorImpl implements PrestoV
     int[] dictOffsets = new int[dictionary.getDictionarySize() + 1];
     int size = 0;
     for (int i = 0; i < dictionary.getDictionarySize(); i++) {
+      dictOffsets[i] = size;
       if (dictionary.getDictionaryValue(i) != null) {
-        dictOffsets[i] = size;
         size += dictionary.getDictionaryValue(i).length;
       }
     }

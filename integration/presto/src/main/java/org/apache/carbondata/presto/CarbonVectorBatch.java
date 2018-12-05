@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalType;
@@ -68,8 +69,13 @@ public class CarbonVectorBatch {
   }
 
   public static CarbonVectorBatch allocate(StructField[] schema,
-      CarbonDictionaryDecodeReadSupport readSupport) {
-    return new CarbonVectorBatch(schema, readSupport, DEFAULT_BATCH_SIZE);
+      CarbonDictionaryDecodeReadSupport readSupport, boolean isDirectFill) {
+    if (isDirectFill) {
+      return new CarbonVectorBatch(schema, readSupport,
+          CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
+    } else {
+      return new CarbonVectorBatch(schema, readSupport,DEFAULT_BATCH_SIZE);
+    }
   }
 
   private CarbonColumnVectorImpl createDirectStreamReader(int batchSize, DataType dataType,

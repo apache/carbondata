@@ -214,11 +214,16 @@ class PrestoCarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
       }
     }
 
-    columnarBatch = CarbonVectorBatch.allocate(fields, readSupport);
+    columnarBatch =
+        CarbonVectorBatch.allocate(fields, readSupport, queryModel.isDirectVectorFill());
     CarbonColumnVector[] vectors = new CarbonColumnVector[fields.length];
     boolean[] filteredRows = new boolean[columnarBatch.capacity()];
     for (int i = 0; i < fields.length; i++) {
-      vectors[i] = new CarbonColumnVectorWrapper(columnarBatch.column(i), filteredRows);
+      if (queryModel.isDirectVectorFill()) {
+        vectors[i] = new ColumnarVectorWrapperDirect(columnarBatch.column(i));
+      } else {
+        vectors[i] = new CarbonColumnVectorWrapper(columnarBatch.column(i), filteredRows);
+      }
     }
     carbonColumnarBatch = new CarbonColumnarBatch(vectors, columnarBatch.capacity(), filteredRows);
   }
