@@ -461,7 +461,8 @@ object CarbonDataRDDFactory {
       }
       return null
     }
-    val uniqueTableStatusId = operationContext.getProperty("uuid").asInstanceOf[String]
+    val uniqueTableStatusId = Option(operationContext.getProperty("uuid")).getOrElse("")
+      .asInstanceOf[String]
     if (loadStatus == SegmentStatus.LOAD_FAILURE) {
       // update the load entry in table status file for changing the status to marked for delete
       CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uniqueTableStatusId)

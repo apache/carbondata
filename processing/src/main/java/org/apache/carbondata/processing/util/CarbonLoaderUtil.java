@@ -339,8 +339,14 @@ public final class CarbonLoaderUtil {
           }
         }
 
-        SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
-            .toArray(new LoadMetadataDetails[listOfLoadFolderDetails.size()]));
+        if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() && !loadStartEntry
+            && !uuid.isEmpty() && segmentsToBeDeleted.isEmpty() && !insertOverwrite) {
+          SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath,
+              new LoadMetadataDetails[] { newMetaEntry });
+        } else {
+          SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
+              .toArray(new LoadMetadataDetails[listOfLoadFolderDetails.size()]));
+        }
         // Delete all old stale segment folders
         for (CarbonFile staleFolder : staleFolders) {
           // try block is inside for loop because even if there is failure in deletion of 1 stale
