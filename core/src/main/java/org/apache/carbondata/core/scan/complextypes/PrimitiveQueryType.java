@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -93,10 +94,12 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     return 1;
   }
 
-  @Override public void parseBlocksAndReturnComplexColumnByteArray(
-      DimensionRawColumnChunk[] rawColumnChunks, int rowNumber,
-      int pageNumber, DataOutputStream dataOutputStream) throws IOException {
-    byte[] currentVal = copyBlockDataChunk(rawColumnChunks, rowNumber, pageNumber);
+  @Override
+  public void parseBlocksAndReturnComplexColumnByteArray(DimensionRawColumnChunk[] rawColumnChunks,
+      DimensionColumnPage[][] dimensionColumnPages, int rowNumber, int pageNumber,
+      DataOutputStream dataOutputStream) throws IOException {
+    byte[] currentVal =
+        copyBlockDataChunk(rawColumnChunks, dimensionColumnPages, rowNumber, pageNumber);
     if (!this.isDictionary && !this.isDirectDictionary) {
       dataOutputStream.writeShort(currentVal.length);
     }
