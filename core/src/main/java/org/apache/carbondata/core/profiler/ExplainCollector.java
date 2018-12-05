@@ -171,7 +171,12 @@ public class ExplainCollector {
   }
 
   public static String getFormatedOutput() {
-    return get().toString();
+    if(null!=get()) {
+      return get().toString();
+    }
+    else {
+      return null;
+    }
   }
 
   @Override

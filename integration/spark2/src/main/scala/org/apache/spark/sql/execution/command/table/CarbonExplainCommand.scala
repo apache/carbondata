@@ -53,6 +53,11 @@ case class CarbonExplainCommand(
       ExplainCollector.setup()
       if (ExplainCollector.enabled()) {
         queryExecution.toRdd.partitions
+        // For count(*) queries the explain collector will be disabled, so profiler
+        // informations not required in such scenarios.
+        if(null==ExplainCollector.getFormatedOutput) {
+          Seq.empty
+        }
         Seq(Row("== CarbonData Profiler ==\n" + ExplainCollector.getFormatedOutput))
       } else {
         Seq.empty
