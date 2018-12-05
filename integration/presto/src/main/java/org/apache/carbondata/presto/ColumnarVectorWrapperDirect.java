@@ -15,148 +15,180 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.vectorreader;
+package org.apache.carbondata.presto;
 
 import java.math.BigDecimal;
+import java.util.BitSet;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
+import org.apache.carbondata.core.scan.result.vector.impl.CarbonColumnVectorImpl;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.SequentialFill;
 import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
-
-import org.apache.spark.sql.CarbonVectorProxy;
-import org.apache.spark.sql.carbondata.execution.datasources.CarbonSparkDataSourceUtil;
-import org.apache.spark.sql.types.Decimal;
 
 /**
  * Fills the vector directly with out considering any deleted rows.
  */
-class ColumnarVectorWrapperDirect implements CarbonColumnVector {
-
-  /**
-   * It is one column vector adapter class.
-   */
-  protected CarbonVectorProxy.ColumnVectorProxy sparkColumnVectorProxy;
-
+class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill {
   /**
    * It is adapter class of complete ColumnarBatch.
    */
-  protected CarbonVectorProxy carbonVectorProxy;
+  protected CarbonColumnVectorImpl columnVector;
 
-  protected int ordinal;
-
-  protected boolean isDictionary;
-
+  /**
+   * It is current block file datatype used for alter table scenarios when datatype changes.
+   */
   private DataType blockDataType;
 
   private CarbonColumnVector dictionaryVector;
 
-  ColumnarVectorWrapperDirect(CarbonVectorProxy writableColumnVector, int ordinal) {
-    this.sparkColumnVectorProxy = writableColumnVector.getColumnVector(ordinal);
-    this.carbonVectorProxy = writableColumnVector;
-    this.ordinal = ordinal;
+  private BitSet nullBitset;
+
+  ColumnarVectorWrapperDirect(CarbonColumnVectorImpl columnVector) {
+    this.columnVector = columnVector;
+    this.dictionaryVector = columnVector.getDictionaryVector();
+    this.nullBitset = new BitSet();
+  }
+
+  @Override public void setNullBits(BitSet nullBits) {
+    this.nullBitset = nullBits;
   }
 
   @Override public void putBoolean(int rowId, boolean value) {
-    sparkColumnVectorProxy.putBoolean(rowId, value);
+    if (nullBitset.get(rowId)) {
+      columnVector.putNull(rowId);
+    } else {
+      columnVector.putBoolean(rowId, value);
+    }
   }
 
   @Override public void putFloat(int rowId, float value) {
-    sparkColumnVectorProxy.putFloat(rowId, value);
+    if (nullBitset.get(rowId)) {
+      columnVector.putNull(rowId);
+    } else {
+      columnVector.putFloat(rowId, value);
+    }
   }
 
   @Override public void putShort(int rowId, short value) {
-    sparkColumnVectorProxy.putShort(rowId, value);
+    if (nullBitset.get(rowId)) {
+      columnVector.putNull(rowId);
+    } else {
+      columnVector.putShort(rowId, value);
+    }
   }
 
   @Override public void putShorts(int rowId, int count, short value) {
-    sparkColumnVectorProxy.putShorts(rowId, count, value);
+    columnVector.putShorts(rowId, count, value);
+
   }
 
   @Override public void putInt(int rowId, int value) {
-    if (isDictionary) {
-      sparkColumnVectorProxy.putDictionaryInt(rowId, value);
+    if (nullBitset.get(rowId)) {
+      columnVector.putNull(rowId);
     } else {
-      sparkColumnVectorProxy.putInt(rowId, value);
+      columnVector.putInt(rowId, value);
     }
   }
 
   @Override public void putInts(int rowId, int count, int value) {
-    sparkColumnVectorProxy.putInts(rowId, count, value);
+    columnVector.putInts(rowId, count, value);
   }
 
   @Override public void putLong(int rowId, long value) {
-    sparkColumnVectorProxy.putLong(rowId, value);
+    if (nullBitset.get(rowId)) {
+      columnVector.putNull(rowId);
+    } else {
+      columnVector.putLong(rowId, value);
+    }
   }
 
   @Override public void putLongs(int rowId, int count, long value) {
-    sparkColumnVectorProxy.putLongs(rowId, count, value);
+    columnVector.putLongs(rowId, count, value);
   }
 
   @Override public void putDecimal(int rowId, BigDecimal value, int precision) {
-    Decimal toDecimal = Decimal.apply(value);
-    sparkColumnVectorProxy.putDecimal(rowId, toDecimal, precision);
+    if (nullBitset.get(rowId)) {
+      columnVector.putNull(rowId);
+    } else {
+      columnVector.putDecimal(rowId, value, precision);
+    }
   }
 
   @Override public void putDecimals(int rowId, int count, BigDecimal value, int precision) {
-    Decimal decimal = Decimal.apply(value);
     for (int i = 0; i < count; i++) {
-      sparkColumnVectorProxy.putDecimal(rowId, decimal, precision);
+      if (nullBitset.get(rowId)) {
+        columnVector.putNull(rowId);
+      } else {
+        columnVector.putDecimal(rowId, value, precision);
+      }
       rowId++;
     }
   }
 
   @Override public void putDouble(int rowId, double value) {
-    sparkColumnVectorProxy.putDouble(rowId, value);
+    if (nullBitset.get(rowId)) {
+      columnVector.putNull(rowId);
+    } else {
+      columnVector.putDouble(rowId, value);
+    }
   }
 
   @Override public void putDoubles(int rowId, int count, double value) {
-    sparkColumnVectorProxy.putDoubles(rowId, count, value);
+    columnVector.putDoubles(rowId, count, value);
   }
 
   @Override public void putByteArray(int rowId, byte[] value) {
-    sparkColumnVectorProxy.putByteArray(rowId, value, 0, value.length);
+    if (nullBitset.get(rowId)) {
+      columnVector.putNull(rowId);
+    } else {
+      columnVector.putByteArray(rowId, value);
+    }
   }
 
   @Override
   public void putByteArray(int rowId, int count, byte[] value) {
     for (int i = 0; i < count; i++) {
-      sparkColumnVectorProxy.putByteArray(rowId, value);
-      rowId++;
+      columnVector.putByteArray(rowId++, value);
     }
   }
 
   @Override public void putByteArray(int rowId, int offset, int length, byte[] value) {
-    sparkColumnVectorProxy.putByteArray(rowId, value, offset, length);
+    if (nullBitset.get(rowId)) {
+      columnVector.putNull(rowId);
+    } else {
+      columnVector.putByteArray(rowId, offset, length, value);
+    }
   }
 
   @Override public void putNull(int rowId) {
-    sparkColumnVectorProxy.putNull(rowId);
+    columnVector.putNull(rowId);
   }
 
   @Override public void putNulls(int rowId, int count) {
-    sparkColumnVectorProxy.putNulls(rowId, count);
+    columnVector.putNulls(rowId, count);
   }
 
   @Override public void putNotNull(int rowId) {
-    sparkColumnVectorProxy.putNotNull(rowId);
+    columnVector.putNotNull(rowId);
   }
 
   @Override public void putNotNull(int rowId, int count) {
-    sparkColumnVectorProxy.putNotNulls(rowId, count);
   }
 
   @Override public boolean isNull(int rowId) {
-    return sparkColumnVectorProxy.isNullAt(rowId);
+    return columnVector.isNullAt(rowId);
   }
 
   @Override public void putObject(int rowId, Object obj) {
-    //TODO handle complex types
+    throw new UnsupportedOperationException(
+        "Not supported this opeartion from " + this.getClass().getName());
   }
 
   @Override public Object getData(int rowId) {
-    //TODO handle complex types
-    return null;
+    throw new UnsupportedOperationException(
+        "Not supported this opeartion from " + this.getClass().getName());
   }
 
   @Override public void reset() {
@@ -166,8 +198,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector {
   }
 
   @Override public DataType getType() {
-    return CarbonSparkDataSourceUtil
-        .convertSparkToCarbonDataType(sparkColumnVectorProxy.dataType());
+    return columnVector.getType();
   }
 
   @Override public DataType getBlockDataType() {
@@ -179,64 +210,101 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector {
   }
 
   @Override public void setDictionary(CarbonDictionary dictionary) {
-    sparkColumnVectorProxy.setDictionary(dictionary);
+    columnVector.setDictionary(dictionary);
   }
 
   @Override public boolean hasDictionary() {
-    return sparkColumnVectorProxy.hasDictionary();
+    return columnVector.hasDictionary();
   }
 
-  public void reserveDictionaryIds() {
-    sparkColumnVectorProxy.reserveDictionaryIds(carbonVectorProxy.numRows());
-    dictionaryVector = new ColumnarVectorWrapperDirect(carbonVectorProxy, ordinal);
-    ((ColumnarVectorWrapperDirect) dictionaryVector).isDictionary = true;
-  }
 
   @Override public CarbonColumnVector getDictionaryVector() {
     return dictionaryVector;
   }
 
   @Override public void putByte(int rowId, byte value) {
-    sparkColumnVectorProxy.putByte(rowId, value);
+    columnVector.putByte(rowId, value);
   }
 
   @Override public void setFilteredRowsExist(boolean filteredRowsExist) {
-
+    // Leave it, as it does not need to do anything here.
   }
 
   @Override public void putFloats(int rowId, int count, float[] src, int srcIndex) {
-    sparkColumnVectorProxy.putFloats(rowId, count, src, srcIndex);
+    for (int i = 0; i < count; i++) {
+      if (nullBitset.get(rowId)) {
+        columnVector.putNull(rowId);
+      } else {
+        columnVector.putFloat(rowId, src[i]);
+      }
+      rowId++;
+    }
   }
 
   @Override public void putShorts(int rowId, int count, short[] src, int srcIndex) {
-    sparkColumnVectorProxy.putShorts(rowId, count, src, srcIndex);
+    for (int i = 0; i < count; i++) {
+      if (nullBitset.get(rowId)) {
+        columnVector.putNull(rowId);
+      } else {
+        columnVector.putShort(rowId, src[i]);
+      }
+      rowId++;
+    }
   }
 
   @Override public void putInts(int rowId, int count, int[] src, int srcIndex) {
-    sparkColumnVectorProxy.putInts(rowId, count, src, srcIndex);
+    for (int i = 0; i < count; i++) {
+      if (nullBitset.get(rowId)) {
+        columnVector.putNull(rowId);
+      } else {
+        columnVector.putInt(rowId, src[i]);
+      }
+      rowId++;
+    }
   }
 
   @Override public void putLongs(int rowId, int count, long[] src, int srcIndex) {
-    sparkColumnVectorProxy.putLongs(rowId, count, src, srcIndex);
+    for (int i = 0; i < count; i++) {
+      if (nullBitset.get(rowId)) {
+        columnVector.putNull(rowId);
+      } else {
+        columnVector.putLong(rowId, src[i]);
+      }
+      rowId++;
+    }
   }
 
   @Override public void putDoubles(int rowId, int count, double[] src, int srcIndex) {
-    sparkColumnVectorProxy.putDoubles(rowId, count, src, srcIndex);
+    for (int i = 0; i < count; i++) {
+      if (nullBitset.get(rowId)) {
+        columnVector.putNull(rowId);
+      } else {
+        columnVector.putDouble(rowId, src[i]);
+      }
+      rowId++;
+    }
   }
 
   @Override public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
-    sparkColumnVectorProxy.putBytes(rowId, count, src, srcIndex);
+    for (int i = 0; i < count; i++) {
+      if (nullBitset.get(rowId)) {
+        columnVector.putNull(rowId);
+      } else {
+        columnVector.putByte(rowId, src[i]);
+      }
+      rowId++;
+    }
   }
 
   @Override public void setLazyPage(LazyPageLoader lazyPage) {
-    sparkColumnVectorProxy.setLazyPage(lazyPage);
+    columnVector.setLazyPage(lazyPage);
   }
 
   @Override public void putArray(int rowId, int offset, int length) {
-    sparkColumnVectorProxy.putArray(rowId, offset, length);
+    columnVector.putArray(rowId, offset, length);
   }
 
   @Override public void putAllByteArray(byte[] data, int offset, int length) {
-    sparkColumnVectorProxy.putAllByteArray(data, offset, length);
+    columnVector.putAllByteArray(data, offset, length);
   }
 }

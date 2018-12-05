@@ -100,6 +100,11 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
     checkArgument(carbondataSplit.getConnectorId().equals(connectorId),
         "split is not for this connector");
     QueryModel queryModel = createQueryModel(carbondataSplit, columns);
+    if (carbonTableReader.config.getPushRowFilter() == null ||
+        carbonTableReader.config.getPushRowFilter().equalsIgnoreCase("false")) {
+      queryModel.setDirectVectorFill(true);
+      queryModel.setPreFetchData(false);
+    }
     QueryExecutor queryExecutor =
         QueryExecutorFactory.getQueryExecutor(queryModel, new Configuration());
     try {

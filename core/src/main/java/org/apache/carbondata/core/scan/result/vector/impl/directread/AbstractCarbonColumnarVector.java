@@ -59,7 +59,7 @@ public abstract class AbstractCarbonColumnarVector
   }
 
   @Override
-  public void putBytes(int rowId, int count, byte[] value) {
+  public void putByteArray(int rowId, int count, byte[] value) {
     throw new UnsupportedOperationException("Not allowed from here " + getClass().getName());
   }
 

@@ -204,7 +204,8 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
       } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
         vector.putLongs(columnVectorInfo.vectorOffset, columnVectorInfo.size, (long) defaultValue);
       } else {
-        vector.putBytes(columnVectorInfo.vectorOffset, columnVectorInfo.size, (byte[])defaultValue);
+        vector.putByteArray(columnVectorInfo.vectorOffset, columnVectorInfo.size,
+            (byte[]) defaultValue);
       }
     } else {
       vector.putNulls(columnVectorInfo.vectorOffset, columnVectorInfo.size);

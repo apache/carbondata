@@ -68,7 +68,7 @@ public interface CarbonColumnVector {
 
   void putByte(int rowId, byte value);
 
-  void putBytes(int rowId, int count, byte[] value);
+  void putByteArray(int rowId, int count, byte[] value);
 
   void putBytes(int rowId, int count, byte[] src, int srcIndex);
 
