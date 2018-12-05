@@ -457,9 +457,10 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
           DataOutputStream dataOutputStream = new DataOutputStream(byteStream);
           complexType.parseBlocksAndReturnComplexColumnByteArray(
-              blockChunkHolder.getDimensionRawColumnChunks(), index, pageIndex, dataOutputStream);
-          record[dimColumnEvaluatorInfo.getRowIndex()] = complexType
-              .getDataBasedOnDataType(ByteBuffer.wrap(byteStream.toByteArray()));
+              blockChunkHolder.getDimensionRawColumnChunks(), null, index, pageIndex,
+              dataOutputStream);
+          record[dimColumnEvaluatorInfo.getRowIndex()] =
+              complexType.getDataBasedOnDataType(ByteBuffer.wrap(byteStream.toByteArray()));
           byteStream.close();
         } catch (IOException e) {
           LOGGER.info(e.getMessage());

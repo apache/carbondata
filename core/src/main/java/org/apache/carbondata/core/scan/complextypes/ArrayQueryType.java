@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
@@ -62,17 +63,17 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
   }
 
   public void parseBlocksAndReturnComplexColumnByteArray(DimensionRawColumnChunk[] rawColumnChunks,
-      int rowNumber, int pageNumber, DataOutputStream dataOutputStream) throws IOException {
-    byte[] input = copyBlockDataChunk(rawColumnChunks, rowNumber, pageNumber);
+      DimensionColumnPage[][] dimensionColumnPages, int rowNumber, int pageNumber,
+      DataOutputStream dataOutputStream) throws IOException {
+    byte[] input = copyBlockDataChunk(rawColumnChunks, dimensionColumnPages, rowNumber, pageNumber);
     ByteBuffer byteArray = ByteBuffer.wrap(input);
     int dataLength = byteArray.getInt();
     dataOutputStream.writeInt(dataLength);
     if (dataLength > 0) {
       int dataOffset = byteArray.getInt();
       for (int i = 0; i < dataLength; i++) {
-        children
-            .parseBlocksAndReturnComplexColumnByteArray(rawColumnChunks, dataOffset++, pageNumber,
-                dataOutputStream);
+        children.parseBlocksAndReturnComplexColumnByteArray(rawColumnChunks, dimensionColumnPages,
+            dataOffset++, pageNumber, dataOutputStream);
       }
     }
   }
