@@ -31,9 +31,11 @@ import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.{DataMapStoreManager, Segment}
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock}
 import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable}
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.CarbonUtil
@@ -69,16 +71,32 @@ trait CommitHelper {
   protected def markInProgressSegmentAsDeleted(tableStatusFile: String,
       operationContext: OperationContext,
       carbonTable: CarbonTable): Unit = {
-    val loadMetaDataDetails = SegmentStatusManager.readTableStatusFile(tableStatusFile)
-    val segmentBeingLoaded =
-      operationContext.getProperty(carbonTable.getTableUniqueName + "_Segment").toString
-    val newDetails = loadMetaDataDetails.collect {
-      case detail if detail.getLoadName.equalsIgnoreCase(segmentBeingLoaded) =>
-        detail.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE)
-        detail
-      case others => others
+    val lockFile: ICarbonLock = new SegmentStatusManager(carbonTable
+      .getAbsoluteTableIdentifier).getTableStatusLock
+    val retryCount = CarbonLockUtil
+      .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
+        CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT)
+    val maxTimeout = CarbonLockUtil
+      .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
+        CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT)
+    try {
+      if (lockFile.lockWithRetries(retryCount, maxTimeout)) {
+        val loadMetaDataDetails = SegmentStatusManager.readTableStatusFile(tableStatusFile)
+        val segmentBeingLoaded =
+          operationContext.getProperty(carbonTable.getTableUniqueName + "_Segment").toString
+        val newDetails = loadMetaDataDetails.collect {
+          case detail if detail.getLoadName.equalsIgnoreCase(segmentBeingLoaded) =>
+            detail.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE)
+            detail
+          case others => others
+        }
+        SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusFile, newDetails)
+      } else {
+        throw new RuntimeException("Uable to update table status file")
+      }
+    } finally {
+      lockFile.unlock()
     }
-    SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusFile, newDetails)
   }
 
   /**
@@ -108,6 +126,43 @@ trait CommitHelper {
       * Hence this should return true
       */
       true
+    }
+  }
+
+  def mergeTableStatusContents(carbonTable: CarbonTable, uuidTableStatusPath: String,
+      tableStatusPath: String): Boolean = {
+    val lockFile: ICarbonLock = new SegmentStatusManager(carbonTable
+      .getAbsoluteTableIdentifier).getTableStatusLock
+    try {
+      val retryCount = CarbonLockUtil
+        .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
+          CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT)
+      val maxTimeout = CarbonLockUtil
+        .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
+          CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT)
+      if (lockFile.lockWithRetries(retryCount, maxTimeout)) {
+        val tableStatusContents = SegmentStatusManager.readTableStatusFile(tableStatusPath)
+        val newLoadContent = SegmentStatusManager.readTableStatusFile(uuidTableStatusPath)
+        val mergedContent = tableStatusContents.collect {
+          case content =>
+            val contentIndex = newLoadContent.indexOf(content)
+            if (contentIndex == -1) {
+              content
+            } else {
+              newLoadContent(contentIndex)
+            }
+        }
+        SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, mergedContent)
+        true
+      } else {
+        false
+      }
+    } catch {
+      case ex: Exception =>
+        LOGGER.error("Exception occurred while merging files", ex)
+        false
+    } finally {
+      lockFile.unlock()
     }
   }
 
@@ -156,20 +211,19 @@ object AlterTableDropPartitionPostStatusListener extends OperationEventListener 
             // Generate table status file name without UUID, forExample: tablestatus
             val newTableSchemaPath = CarbonTablePath.getTableStatusFilePath(
               childCarbonTable.getTablePath)
-            renameDataMapTableStatusFiles(oldTableSchemaPath, newTableSchemaPath, uuid)
+            mergeTableStatusContents(childCarbonTable, oldTableSchemaPath, newTableSchemaPath)
         }
         // if true then the commit for one of the child tables has failed
         val commitFailed = renamedDataMaps.lengthCompare(childCommands.length) != 0
         if (commitFailed) {
-          LOGGER.info("Reverting table status file to original state")
-          renamedDataMaps.foreach {
-            command =>
-              val carbonTable = command.table
-              // rename the backup tablestatus i.e tablestatus_backup_UUID to tablestatus
-              val backupTableSchemaPath =
-                CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath) + "_backup_" + uuid
-              val tableSchemaPath = CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath)
-              renameDataMapTableStatusFiles(backupTableSchemaPath, tableSchemaPath, "")
+          LOGGER.warn("Reverting table status file to original state")
+          childCommands.foreach {
+            childDropCommand =>
+              val tableStatusPath = CarbonTablePath.getTableStatusFilePath(
+                childDropCommand.table.getTablePath)
+              markInProgressSegmentAsDeleted(tableStatusPath,
+                operationContext,
+                childDropCommand.table)
           }
         }
         commitFailed
@@ -200,7 +254,6 @@ object AlterTableDropPartitionMetaListener extends OperationEventListener{
     val dropPartitionEvent = event.asInstanceOf[AlterTableDropPartitionMetaEvent]
     val parentCarbonTable = dropPartitionEvent.parentCarbonTable
     val partitionsToBeDropped = dropPartitionEvent.specs.flatMap(_.keys)
-    val sparkSession = SparkSession.getActiveSession.get
     if (parentCarbonTable.hasAggregationDataMap) {
       // used as a flag to block direct drop partition on aggregate tables fired by the user
       operationContext.setProperty("isInternalDropCall", "true")
@@ -325,7 +378,7 @@ object CompactionProcessMetaListener extends OperationEventListener {
         childDataFrame,
         false,
         sparkSession)
-      val uuid = Option(operationContext.getProperty("uuid")).getOrElse("").toString
+      val uuid = Option(operationContext.getProperty("uuid")).getOrElse(UUID.randomUUID()).toString
       loadCommand.processMetadata(sparkSession)
       operationContext.setProperty(table.getTableName + "_Compaction", loadCommand)
       operationContext.setProperty("uuid", uuid)
@@ -460,7 +513,7 @@ object LoadPostAggregateListener extends OperationEventListener {
           .asInstanceOf[mutable.ArrayBuffer[AggregationDataMapSchema]]
         // sorting the datamap for timeseries rollup
         val sortedList = aggregationDataMapList.sortBy(_.getOrdinal)
-        for (dataMapSchema: AggregationDataMapSchema <- sortedList) {
+        val successDataMaps = sortedList.takeWhile { dataMapSchema =>
           val childLoadCommand = operationContext
             .getProperty(dataMapSchema.getChildSchema.getTableName)
             .asInstanceOf[CarbonLoadDataCommand]
@@ -493,8 +546,31 @@ object LoadPostAggregateListener extends OperationEventListener {
             isOverwrite,
             sparkSession)
         }
+        val loadFailed = successDataMaps.lengthCompare(sortedList.length) != 0
+        if (loadFailed) {
+          successDataMaps.foreach(dataMapSchema => markSuccessSegmentsAsFailed(operationContext
+            .getProperty(dataMapSchema.getChildSchema.getTableName)
+            .asInstanceOf[CarbonLoadDataCommand]))
+          throw new RuntimeException(
+            "Data Load failed for DataMap. Please check logs for the failure")
+        }
       }
     }
+  }
+
+  private def markSuccessSegmentsAsFailed(childLoadCommand: CarbonLoadDataCommand) {
+    val segmentToRevert = childLoadCommand.operationContext
+      .getProperty(childLoadCommand.table.getTableUniqueName + "_Segment")
+    val tableStatusPath = CarbonTablePath.getTableStatusFilePath(
+      childLoadCommand.table.getTablePath)
+    val tableStatusContents = SegmentStatusManager.readTableStatusFile(tableStatusPath)
+    val updatedLoadDetails = tableStatusContents.collect {
+      case content if content.getLoadName == segmentToRevert =>
+        content.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE)
+        content
+      case others => others
+    }
+    SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, updatedLoadDetails)
   }
 }
 
@@ -540,7 +616,7 @@ object CommitPreAggregateListener extends OperationEventListener with CommitHelp
           operationContext.getProperty(dataMapSchema.getChildSchema.getTableName + "_Compaction")
             .asInstanceOf[CarbonLoadDataCommand]
         }
-      }
+    }
     var commitFailed = false
     try {
       if (dataMapSchemas.nonEmpty) {
@@ -554,23 +630,19 @@ object CommitPreAggregateListener extends OperationEventListener with CommitHelp
           // Generate table status file name without UUID, forExample: tablestatus
           val newTableSchemaPath = CarbonTablePath.getTableStatusFilePath(
             childCarbonTable.getTablePath)
-          renameDataMapTableStatusFiles(oldTableSchemaPath, newTableSchemaPath, uuid)
+          mergeTableStatusContents(childCarbonTable, oldTableSchemaPath, newTableSchemaPath)
         }
         // if true then the commit for one of the child tables has failed
         commitFailed = renamedDataMaps.lengthCompare(dataMapSchemas.length) != 0
         if (commitFailed) {
           LOGGER.warn("Reverting table status file to original state")
-          renamedDataMaps.foreach {
-            loadCommand =>
-              val carbonTable = loadCommand.table
-              // rename the backup tablestatus i.e tablestatus_backup_UUID to tablestatus
-              val backupTableSchemaPath =
-                CarbonTablePath.getTableStatusFilePath(carbonTable.getTablePath) + "_backup_" +
-                uuid
-              val tableSchemaPath = CarbonTablePath
-                .getTableStatusFilePath(carbonTable.getTablePath)
-              markInProgressSegmentAsDeleted(backupTableSchemaPath, operationContext, carbonTable)
-              renameDataMapTableStatusFiles(backupTableSchemaPath, tableSchemaPath, "")
+          childLoadCommands.foreach {
+            childLoadCommand =>
+              val tableStatusPath = CarbonTablePath.getTableStatusFilePath(
+                childLoadCommand.table.getTablePath)
+              markInProgressSegmentAsDeleted(tableStatusPath,
+                operationContext,
+                childLoadCommand.table)
           }
         }
         // after success/failure of commit delete all tablestatus files with UUID in their names.

@@ -349,7 +349,7 @@ case class CarbonLoadDataCommand(
       case ex: Exception =>
         LOGGER.error(ex)
         // update the load entry in table status file for changing the status to marked for delete
-        if (isUpdateTableStatusRequired) {
+        if (isUpdateTableStatusRequired && !table.isChildDataMap) {
           CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uuid)
         }
         throw ex

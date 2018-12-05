@@ -587,7 +587,7 @@ object PreAggregateUtil {
       validateSegments: Boolean,
       loadCommand: CarbonLoadDataCommand,
       isOverwrite: Boolean,
-      sparkSession: SparkSession): Unit = {
+      sparkSession: SparkSession): Boolean = {
     CarbonSession.threadSet(
       CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
       parentTableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase) + "." +
@@ -601,6 +601,11 @@ object PreAggregateUtil {
       "true")
     try {
       loadCommand.processData(sparkSession)
+      true
+    } catch {
+      case ex: Exception =>
+        LOGGER.error("Data Load failed for DataMap: ", ex)
+        false
     } finally {
       CarbonSession.threadUnset(
         CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
