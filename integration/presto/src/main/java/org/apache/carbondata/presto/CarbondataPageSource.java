@@ -161,6 +161,7 @@ class CarbondataPageSource implements ConnectorPageSource {
       }
       checkState(batchId == expectedBatchId);
       try {
+        vectorReader.getColumnarBatch().column(columnIndex).loadPage();
         PrestoVectorBlockBuilder blockBuilder =
             (PrestoVectorBlockBuilder) vectorReader.getColumnarBatch().column(columnIndex);
         blockBuilder.setBatchSize(lazyBlock.getPositionCount());

@@ -43,6 +43,7 @@ public class CarbonTableConfig {
   private String s3N_acesssKey;
   private String s3N_secretKey;
   private String endPoint;
+  private String pushRowFilter;
 
 
   @NotNull public String getDbPath() {
@@ -194,5 +195,14 @@ public class CarbonTableConfig {
   public CarbonTableConfig setS3EndPoint(String endPoint) {
     this.endPoint = endPoint;
     return this;
+  }
+
+  public String getPushRowFilter() {
+    return pushRowFilter;
+  }
+
+  @Config("carbon.push.rowfilters.for.vector")
+  public void setPushRowFilter(String pushRowFilter) {
+    this.pushRowFilter = pushRowFilter;
   }
 }
