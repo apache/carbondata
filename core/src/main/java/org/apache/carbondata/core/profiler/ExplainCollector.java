@@ -171,10 +171,9 @@ public class ExplainCollector {
   }
 
   public static String getFormatedOutput() {
-    if(null!=get()) {
+    if (null != get()) {
       return get().toString();
-    }
-    else {
+    } else {
       return null;
     }
   }
