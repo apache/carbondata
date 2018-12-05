@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
@@ -41,7 +42,8 @@ public interface GenericQueryType {
   int getColsCount();
 
   void parseBlocksAndReturnComplexColumnByteArray(DimensionRawColumnChunk[] rawColumnChunks,
-      int rowNumber, int pageNumber, DataOutputStream dataOutputStream) throws IOException;
+      DimensionColumnPage[][] dimensionColumnPages, int rowNumber, int pageNumber,
+      DataOutputStream dataOutputStream) throws IOException;
 
   void fillRequiredBlockData(RawBlockletColumnChunks blockChunkHolder) throws IOException;
 
