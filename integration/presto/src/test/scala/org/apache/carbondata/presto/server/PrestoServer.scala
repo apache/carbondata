@@ -32,7 +32,6 @@ import com.facebook.presto.tests.DistributedQueryRunner
 import com.google.common.collect.ImmutableMap
 import org.slf4j.{Logger, LoggerFactory}
 
-import org.apache.carbondata.core.util.ThreadLocalSessionInfo
 import org.apache.carbondata.presto.CarbondataPlugin
 
 class PrestoServer {
@@ -46,6 +45,7 @@ class PrestoServer {
   val prestoProperties: util.Map[String, String] = Map(("http-server.http.port", "8086")).asJava
   createSession
   lazy val queryRunner = new DistributedQueryRunner(createSession, 4, prestoProperties)
+  var dbName : String = null
 
 
   /**
@@ -53,7 +53,24 @@ class PrestoServer {
    *
    * @param carbonStorePath the store path of carbon
    */
-  def startServer(carbonStorePath: String) = {
+  def startServer(carbonStorePath: String): Unit = {
+
+    logger.info("======== STARTING PRESTO SERVER ========")
+    val queryRunner: DistributedQueryRunner = createQueryRunner(
+      prestoProperties, carbonStorePath)
+
+    logger.info("STARTED SERVER AT :" + queryRunner.getCoordinator.getBaseUrl)
+  }
+
+  /**
+   * start the presto server
+   *
+   * @param carbonStorePath the store path of carbon
+   * @param dbName the database name , if not a default database
+   */
+  def startServer(carbonStorePath: String, dbName: String): Unit = {
+
+    this.dbName = dbName
 
     logger.info("======== STARTING PRESTO SERVER ========")
     val queryRunner: DistributedQueryRunner = createQueryRunner(
@@ -99,7 +116,7 @@ class PrestoServer {
   def executeQuery(query: String): List[Map[String, Any]] = {
 
     Try {
-      val conn: Connection = createJdbcConnection
+      val conn: Connection = createJdbcConnection(dbName)
       logger.info(s"***** executing the query ***** \n $query")
       val statement = conn.createStatement()
       val result: ResultSet = statement.executeQuery(query)
@@ -117,13 +134,17 @@ class PrestoServer {
    *
    * @return
    */
-  private def createJdbcConnection: Connection = {
+  private def createJdbcConnection(dbName: String) = {
     val JDBC_DRIVER = "com.facebook.presto.jdbc.PrestoDriver"
-    val DB_URL = "jdbc:presto://localhost:8086/carbondata/testdb"
-
+    var DB_URL : String = null
+    if (dbName == null) {
+      DB_URL = "jdbc:presto://localhost:8086/carbondata/default"
+    } else {
+      DB_URL = "jdbc:presto://localhost:8086/carbondata/" + dbName
+    }
     val properties = new Properties
     // The database Credentials
-    properties.setProperty("user", "test");
+    properties.setProperty("user", "test")
   
     // STEP 2: Register JDBC driver
     Class.forName(JDBC_DRIVER)
