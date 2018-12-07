@@ -139,6 +139,9 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
       Configuration conf = new Configuration();
       conf.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, "");
       String carbonTablePath = carbonTable.getAbsoluteTableIdentifier().getTablePath();
+      CarbonTableInputFormat
+          .setTransactionalTable(conf, carbonTable.getTableInfo().isTransactionalTable());
+      CarbonTableInputFormat.setTableInfo(conf, carbonTable.getTableInfo());
 
       conf.set(CarbonTableInputFormat.INPUT_DIR, carbonTablePath);
       conf.set("query.id", queryId);
