@@ -53,7 +53,7 @@ class TestAdaptiveEncodingForNullValues
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
       "stored by 'carbondata'")
-    sql("insert into adaptive values(1,'null$abc$null:null:null')")
+    sql("insert into adaptive values(1,'null\001abc\001null\002null\002null')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(null, "abc", mutable.WrappedArray.make(Array(null, null, null))))))
   }
@@ -64,7 +64,7 @@ class TestAdaptiveEncodingForNullValues
     sql(
       "create table adaptive(roll int, student struct<id:smallint,name:string," +
       "marks:array<smallint>>) stored by 'carbondata'")
-    sql("insert into adaptive values(1,'null$abc$null:null:null')")
+    sql("insert into adaptive values(1,'null\001abc\001null\002null\002null')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(null, "abc", mutable.WrappedArray.make(Array(null, null, null))))))
   }
@@ -75,7 +75,7 @@ class TestAdaptiveEncodingForNullValues
     sql(
       "create table adaptive(roll int, student struct<id:bigint,name:string," +
       "marks:array<bigint>>) stored by 'carbondata'")
-    sql("insert into adaptive values(1,'null$abc$null:null:null')")
+    sql("insert into adaptive values(1,'null\001abc\001null\002null\002null')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(null, "abc", mutable.WrappedArray.make(Array(null, null, null))))))
   }
@@ -85,7 +85,7 @@ class TestAdaptiveEncodingForNullValues
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string," +
       "marks:array<double>>) stored by 'carbondata'")
-    sql("insert into adaptive values(1,'null$abc$null:null:null')")
+    sql("insert into adaptive values(1,'null\001abc\001null\002null\002null')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(null, "abc", mutable.WrappedArray.make(Array(null, null, null))))))
   }
@@ -96,7 +96,7 @@ class TestAdaptiveEncodingForNullValues
       "create table adaptive(roll int, student struct<id:decimal(3,2),name:string," +
       "marks:array<decimal>>) stored by " +
       "'carbondata'")
-    sql("insert into adaptive values(1,'null$abc$null:null:null')")
+    sql("insert into adaptive values(1,'null\001abc\001null\002null\002null')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(null, "abc", mutable.WrappedArray.make(Array(null, null, null))))))
   }
@@ -108,7 +108,7 @@ class TestAdaptiveEncodingForNullValues
     sql(
       "create table adaptive(roll int, student struct<id:timestamp,name:string>) stored by " +
       "'carbondata'")
-    sql("insert into adaptive values(1,'null$abc')")
+    sql("insert into adaptive values(1,'null\001abc')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(null, "abc"))))
   }
@@ -120,7 +120,7 @@ class TestAdaptiveEncodingForNullValues
     sql(
       "create table adaptive(roll int, student struct<name:string," +
       "marks:array<timestamp>>) stored by 'carbondata'")
-    sql("insert into adaptive values(1,'abc$null:null:null')")
+    sql("insert into adaptive values(1,'abc\001null\002null\002null')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row("abc", mutable.WrappedArray.make(Array(null, null, null))))))
   }
@@ -130,7 +130,7 @@ class TestAdaptiveEncodingForNullValues
     sql(
       "create table adaptive(roll int, student struct<name:string," +
       "marks:array<date>>) stored by 'carbondata'")
-    sql("insert into adaptive values(1,'abc$null:null:null')")
+    sql("insert into adaptive values(1,'abc\001null\002null\002null')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row("abc", mutable.WrappedArray.make(Array(null, null, null))))))
   }
@@ -140,7 +140,7 @@ class TestAdaptiveEncodingForNullValues
     sql(
       "create table adaptive(roll int, student struct<id:long,name:string,marks:array<long>>) " +
       "stored by 'carbondata'")
-    sql("insert into adaptive values(1,'null$abc$null:null:null')")
+    sql("insert into adaptive values(1,'null\001abc\001null\002null\002null')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(null, "abc", mutable.WrappedArray.make(Array(null, null, null))))))
   }
@@ -150,7 +150,7 @@ class TestAdaptiveEncodingForNullValues
     sql(
       "create table adaptive(roll int, student struct<id:short,name:string,marks:array<short>>) " +
       "stored by 'carbondata'")
-    sql("insert into adaptive values(1,'null$abc$null:null:null')")
+    sql("insert into adaptive values(1,'null\001abc\001null\002null\002null')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(null, "abc", mutable.WrappedArray.make(Array(null, null, null))))))
   }
@@ -161,7 +161,7 @@ class TestAdaptiveEncodingForNullValues
       "create table adaptive(roll int, student struct<id:boolean,name:string," +
       "marks:array<boolean>>) " +
       "stored by 'carbondata'")
-    sql("insert into adaptive values(1,'null$abc$null:null:null')")
+    sql("insert into adaptive values(1,'null\001abc\001null\002null\002null')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(null, "abc", mutable.WrappedArray.make(Array(null, null, null))))))
   }

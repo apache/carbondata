@@ -113,11 +113,11 @@ public class LoadOption {
 
     optionsFinal.put(
         "complex_delimiter_level_1",
-        Maps.getOrDefault(options,"complex_delimiter_level_1", "$"));
+        Maps.getOrDefault(options,"complex_delimiter_level_1", "\\\001"));
 
     optionsFinal.put(
         "complex_delimiter_level_2",
-        Maps.getOrDefault(options, "complex_delimiter_level_2", ":"));
+        Maps.getOrDefault(options, "complex_delimiter_level_2", "\\\002"));
 
     optionsFinal.put(
         "dateformat",
