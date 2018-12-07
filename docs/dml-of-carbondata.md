@@ -132,18 +132,18 @@ CarbonData DML statements are documented here,which includes:
 
   - ##### COMPLEX_DELIMITER_LEVEL_1:
 
-    Split the complex type data column in a row (eg., a$b$c --> Array = {a,b,c}).
+    Split the complex type data column in a row (eg., a\001b\001c --> Array = {a,b,c}).
 
     ```
-    OPTIONS('COMPLEX_DELIMITER_LEVEL_1'='$') 
+    OPTIONS('COMPLEX_DELIMITER_LEVEL_1'='\001')
     ```
 
   - ##### COMPLEX_DELIMITER_LEVEL_2:
 
-    Split the complex type nested data column in a row. Applies level_1 delimiter & applies level_2 based on complex data type (eg., a:b$c:d --> Array> = {{a,b},{c,d}}).
+    Split the complex type nested data column in a row. Applies level_1 delimiter & applies level_2 based on complex data type (eg., a\002b\001c\002d --> Array> = {{a,b},{c,d}}).
 
     ```
-    OPTIONS('COMPLEX_DELIMITER_LEVEL_2'=':')
+    OPTIONS('COMPLEX_DELIMITER_LEVEL_2'='\002')
     ```
 
   - ##### ALL_DICTIONARY_PATH:
@@ -212,8 +212,8 @@ CarbonData DML statements are documented here,which includes:
    'FILEHEADER'='empno,empname,designation,doj,workgroupcategory,
    workgroupcategoryname,deptno,deptname,projectcode,
    projectjoindate,projectenddate,attendance,utilization,salary',
-   'MULTILINE'='true','ESCAPECHAR'='\','COMPLEX_DELIMITER_LEVEL_1'='$',
-   'COMPLEX_DELIMITER_LEVEL_2'=':',
+   'MULTILINE'='true','ESCAPECHAR'='\','COMPLEX_DELIMITER_LEVEL_1'='\001',
+   'COMPLEX_DELIMITER_LEVEL_2'='\002',
    'ALL_DICTIONARY_PATH'='/opt/alldictionary/data.dictionary',
    'SINGLE_PASS'='TRUE')
    ```

@@ -338,7 +338,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
             SKIP_EMPTY_LINE,
             carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SKIP_EMPTY_LINE)));
 
-    String complexDelim = conf.get(COMPLEX_DELIMITERS, "$" + "," + ":");
+    String complexDelim = conf.get(COMPLEX_DELIMITERS, "\001" + "," + "\002");
     String[] split = complexDelim.split(",");
     model.setComplexDelimiterLevel1(split[0]);
     if (split.length > 1) {

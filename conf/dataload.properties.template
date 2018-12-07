@@ -51,10 +51,10 @@ delimiter=,
 #all_dictionary_path=
 
 #complex column's level 1 delimiter
-#complex_delimiter_level_1=\\$
+#complex_delimiter_level_1=\\'\001'
 
 #complex column's level 2 delimiter
-#complex_delimiter_level_2=\\:
+#complex_delimiter_level_2=\\'\002'
 
 #timestamp type column's data format
 #dateformat=
