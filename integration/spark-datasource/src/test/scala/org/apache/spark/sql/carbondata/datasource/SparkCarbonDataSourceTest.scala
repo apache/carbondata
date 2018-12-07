@@ -19,21 +19,22 @@ package org.apache.spark.sql.carbondata.datasource
 
 import java.io.File
 import java.util
-import java.util.Arrays
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+
+import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.carbondata.datasource.TestUtil._
+import org.apache.spark.util.SparkUtil
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
+
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
 import org.apache.carbondata.hadoop.testutil.StoreCreator
 import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
-import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
-import org.apache.spark.util.SparkUtil
 
 class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
 
