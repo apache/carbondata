@@ -492,7 +492,7 @@ public class CSVCarbonWriterTest {
       CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
       CarbonWriter writer = builder.withCsvInput(new Schema(new Field[] {structType})).writtenBy("CSVCarbonWriterTest").build();
       for (int i = 0; i < 15; i++) {
-        String[] row = new String[] { "robot" + (i % 10)+"$" + i+ "$" + i + "." + i };
+        String[] row = new String[] { "robot" + (i % 10)+"\001" + i+ "\001" + i + "." + i };
         writer.write(row);
       }
       writer.close();
@@ -531,7 +531,7 @@ public class CSVCarbonWriterTest {
       CarbonWriterBuilder builder = CarbonWriter.builder().taskNo(5).outputPath(path);
       CarbonWriter writer = builder.withCsvInput(new Schema(new Field[] {structType1, structType2})).writtenBy("CSVCarbonWriterTest").build();
       for (int i = 0; i < 15; i++) {
-        String[] row = new String[] { "1.0$2.0$3.0", "1$2$3" };
+        String[] row = new String[] { "1.0\0012.0\0013.0", "1\0012\0013" };
         writer.write(row);
       }
       writer.close();
