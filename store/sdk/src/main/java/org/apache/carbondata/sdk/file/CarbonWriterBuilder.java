@@ -166,8 +166,8 @@ public class CarbonWriterBuilder {
    * c. bad_record_path -- ""
    * d. dateformat -- "" , uses from carbon.properties file
    * e. timestampformat -- "", uses from carbon.properties file
-   * f. complex_delimiter_level_1 -- "$"
-   * g. complex_delimiter_level_2 -- ":"
+   * f. complex_delimiter_level_1 -- "\001"
+   * g. complex_delimiter_level_2 -- "\002"
    * h. quotechar -- "\""
    * i. escapechar -- "\\"
    *

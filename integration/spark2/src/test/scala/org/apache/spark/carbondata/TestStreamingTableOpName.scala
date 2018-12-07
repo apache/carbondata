@@ -2323,23 +2323,23 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
                 stringBuilder.append(index.toString + "abc,name_" + index
                                      + ",city_" + index + "," + (10000.00 * index).toString + ",0.01,80.01" +
                                      ",1990-01-01,2010-01-01 10:01:01,2010-01-01 10:01:01" +
-                                     ",school_" + index + ":school_" + index + index + "$" + index)
+                                     ",school_" + index + "\002school_" + index + index + "\001" + index)
               } else if (index == 9) {
                 stringBuilder.append(index.toString + ",name_" + index
                                      + ",city_" + index + "," + (10000.00 * index).toString + ",0.04,80.04" +
                                      ",1990-01-04,2010-01-04 10:01:01,2010-01-04 10:01:01" +
-                                     ",school_" + index + ":school_" + index + index + "$" + index)
+                                     ",school_" + index + "\002school_" + index + index + "\001" + index)
               } else {
                 stringBuilder.append(index.toString + ",name_" + index
                                      + ",city_" + index + "," + (10000.00 * index).toString + ",0.01,80.01" +
                                      ",1990-01-01,2010-01-01 10:01:01,2010-01-01 10:01:01" +
-                                     ",school_" + index + ":school_" + index + index + "$" + index)
+                                     ",school_" + index + "\002school_" + index + index + "\001" + index)
               }
             } else {
               stringBuilder.append(index.toString + ",name_" + index
                                    + ",city_" + index + "," + (10000.00 * index).toString + ",0.01,80.01" +
                                    ",1990-01-01,2010-01-01 10:01:01,2010-01-01 10:01:01" +
-                                   ",school_" + index + ":school_" + index + index + "$" + index)
+                                   ",school_" + index + "\002school_" + index + index + "\001" + index)
             }
             stringBuilder.append("\n")
           }
@@ -2474,7 +2474,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
             "1990-01-01",
             "2010-01-01 10:01:01",
             "2010-01-01 10:01:01",
-            "school_" + id + ":school_" + id + id + "$" + id)
+            "school_" + id + "\002school_" + id + id + "\001" + id)
         }
       spark.createDataFrame(csvRDD).toDF(
         "id", "name", "city", "salary", "tax", "percent", "birthday", "register", "updated", "file")
@@ -2489,7 +2489,7 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
             "1990-01-01",
             "2010-01-01 10:01:01",
             "2010-01-01 10:01:01",
-            "school_" + id + ":school_" + id + id + "$" + id)
+            "school_" + id + "\002school_" + id + id + "\001" + id)
         }
       spark.createDataFrame(csvRDD).toDF(
         "id", "salary", "tax", "percent", "birthday", "register", "updated", "file")
@@ -2594,11 +2594,8 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
 
   def executeBatchLoad(tableName: String): Unit = {
     sql(
-      s"""
-         | LOAD DATA LOCAL INPATH '$dataFilePath'
-         | INTO TABLE streaming.$tableName
-         | OPTIONS('HEADER'='true')
-         """.stripMargin)
+      s"LOAD DATA LOCAL INPATH '$dataFilePath' INTO TABLE streaming.$tableName OPTIONS" +
+      "('HEADER'='true','COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')")
   }
 
   def wrap(array: Array[String]) = {

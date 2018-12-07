@@ -331,8 +331,8 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     sql(
       """
         | INSERT INTO TABLE varchar_complex_table
-        | VALUES(1,'ar1.0$ar1.1','longstr10','normal string1','longstr11','ar2.0$ar2.1'),
-        | (2,'ar1.2$ar1.3','longstr20','normal string2','longstr21','ar2.2$ar2.3')
+        | VALUES(1,'ar1.0\001ar1.1','longstr10','normal string1','longstr11','ar2.0\001ar2.1'),
+        | (2,'ar1.2\001ar1.3','longstr20','normal string2','longstr21','ar2.2\001ar2.3')
         | """.stripMargin)
     checkAnswer(
       sql("SELECT * FROM varchar_complex_table where varchar1='longstr10'"),

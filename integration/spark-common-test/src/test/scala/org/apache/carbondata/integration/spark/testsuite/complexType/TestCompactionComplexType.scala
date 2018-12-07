@@ -46,10 +46,10 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
       "stored by 'carbondata'")
-    sql("insert into adaptive values(1,'500$abc$20:30:40')")
-    sql("insert into adaptive values(2,'600$abc$30:30:40')")
-    sql("insert into adaptive values(3,'700$abc$40:30:40')")
-    sql("insert into adaptive values(4,'800$abc$50:30:40')")
+    sql("insert into adaptive values(1,'500\001abc\00120\00230\00240')")
+    sql("insert into adaptive values(2,'600\001abc\00130\00230\00240')")
+    sql("insert into adaptive values(3,'700\001abc\00140\00230\00240')")
+    sql("insert into adaptive values(4,'800\001abc\00150\00230\00240')")
     sql("alter table adaptive compact 'major'").show(200,false)
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(500, "abc", mutable.WrappedArray.make(Array(20, 30, 40)))),
@@ -75,10 +75,10 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
       "stored by 'carbondata'")
-    sql("insert into adaptive values(1,'500$abc$200:300:400')")
-    sql("insert into adaptive values(2,'600$abc$300:300:400')")
-    sql("insert into adaptive values(3,'700$abc$400:300:400')")
-    sql("insert into adaptive values(4,'800$abc$500:300:400')")
+    sql("insert into adaptive values(1,'500\001abc\001200\002300\002400')")
+    sql("insert into adaptive values(2,'600\001abc\001300\002300\002400')")
+    sql("insert into adaptive values(3,'700\001abc\001400\002300\002400')")
+    sql("insert into adaptive values(4,'800\001abc\001500\002300\002400')")
     sql("alter table adaptive compact 'major'").show(200,false)
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(500, "abc", mutable.WrappedArray.make(Array(200, 300, 400)))),
@@ -104,10 +104,10 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
       "stored by 'carbondata'")
-    sql("insert into adaptive values(1,'50000$abc$2000000:3000000:4000000')")
-    sql("insert into adaptive values(2,'70000$abc$2000000:4000000:4000000')")
-    sql("insert into adaptive values(3,'100000$abc$2000000:5000000:4000000')")
-    sql("insert into adaptive values(4,'200000$abc$2000000:6000000:4000000')")
+    sql("insert into adaptive values(1,'50000\001abc\0012000000\0023000000\0024000000')")
+    sql("insert into adaptive values(2,'70000\001abc\0012000000\0024000000\0024000000')")
+    sql("insert into adaptive values(3,'100000\001abc\0012000000\0025000000\0024000000')")
+    sql("insert into adaptive values(4,'200000\001abc\0012000000\0026000000\0024000000')")
     sql("alter table adaptive compact 'major'").show(200,false)
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(50000, "abc", mutable.WrappedArray.make(Array(2000000, 3000000, 4000000)))),
@@ -133,10 +133,10 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:int,name:string,marks:array<int>>) " +
       "stored by 'carbondata'")
-    sql("insert into adaptive values(1,'500000$abc$200:300:52000000')")
-    sql("insert into adaptive values(2,'700000$abc$210:350:52000000')")
-    sql("insert into adaptive values(3,'10000000$abc$200:300:52000000')")
-    sql("insert into adaptive values(4,'10000001$abd$250:450:62000000')")
+    sql("insert into adaptive values(1,'500000\001abc\001200\002300\00252000000')")
+    sql("insert into adaptive values(2,'700000\001abc\001210\002350\00252000000')")
+    sql("insert into adaptive values(3,'10000000\001abc\001200\002300\00252000000')")
+    sql("insert into adaptive values(4,'10000001\001abd\001250\002450\00262000000')")
     sql("alter table adaptive compact 'major'").show(200,false)
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(500000, "abc", mutable.WrappedArray.make(Array(200, 300, 52000000)))),
@@ -151,10 +151,10 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:smallint,name:string," +
       "marks:array<smallint>>) stored by 'carbondata'")
-    sql("insert into adaptive values(1,'100$abc$20:30:40')")
-    sql("insert into adaptive values(2,'200$abc$30:40:50')")
-    sql("insert into adaptive values(3,'300$abd$30:41:55')")
-    sql("insert into adaptive values(4,'400$abe$30:42:56')")
+    sql("insert into adaptive values(1,'100\001abc\00120\00230\00240')")
+    sql("insert into adaptive values(2,'200\001abc\00130\00240\00250')")
+    sql("insert into adaptive values(3,'300\001abd\00130\00241\00255')")
+    sql("insert into adaptive values(4,'400\001abe\00130\00242\00256')")
     sql("alter table adaptive compact 'major'").show(200,false)
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(100, "abc", mutable.WrappedArray.make(Array(20, 30, 40)))),
@@ -168,20 +168,20 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:smallint,name:string," +
       "marks:array<smallint>>) stored by 'carbondata'")
-    sql("insert into adaptive values(1,'500$abc$200:300:400')")
-    sql("insert into adaptive values(2,'8000$abc$300:410:500')")
-    sql("insert into adaptive values(3,'9000$abee$310:420:400')")
-    sql("insert into adaptive values(4,'9900$abfffffffffffffff$320:430:500')")
+    sql("insert into adaptive values(1,'500\001abc\001200\002300\002400')")
+    sql("insert into adaptive values(2,'8000\001abc\001300\002410\002500')")
+    sql("insert into adaptive values(3,'9000\001abee\001310\002420\002400')")
+    sql("insert into adaptive values(4,'9900\001abfffffffffffffff\001320\002430\002500')")
     sql("alter table adaptive compact 'major'").show(200,false)
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(500, "abc", mutable.WrappedArray.make(Array(200, 300, 400)))),
         Row(2, Row(8000, "abc", mutable.WrappedArray.make(Array(300, 410, 500)))),
         Row(3, Row(9000, "abee", mutable.WrappedArray.make(Array(310, 420, 400)))),
         Row(4, Row(9900, "abfffffffffffffff", mutable.WrappedArray.make(Array(320, 430, 500))))))
-    sql("insert into adaptive values(5,'500$abc$200:310:400')")
-    sql("insert into adaptive values(6,'8000$abc$300:310:500')")
-    sql("insert into adaptive values(7,'9000$abee$310:320:400')")
-    sql("insert into adaptive values(8,'9900$abfffffffffffffffeeee$320:330:500')")
+    sql("insert into adaptive values(5,'500\001abc\001200\002310\002400')")
+    sql("insert into adaptive values(6,'8000\001abc\001300\002310\002500')")
+    sql("insert into adaptive values(7,'9000\001abee\001310\002320\002400')")
+    sql("insert into adaptive values(8,'9900\001abfffffffffffffffeeee\001320\002330\002500')")
     sql("alter table adaptive compact 'major'").show(200,false)
     sql("SHOW SEGMENTS FOR TABLE adaptive").show(200,false)
     sql("clean files for table adaptive").show(200,false)
@@ -202,18 +202,18 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:bigint,name:string," +
       "marks:array<bigint>>) stored by 'carbondata'")
-    sql("insert into adaptive values(11,'1$abc$21:30:40')")
-    sql("insert into adaptive values(12,'1$ab1$22:30:40')")
-    sql("insert into adaptive values(13,'1$ab2$23:30:40')")
-    sql("insert into adaptive values(14,'1$ab3$24:30:40')")
-    sql("insert into adaptive values(15,'1$ab4$25:30:40')")
-    sql("insert into adaptive values(16,'1$ab5$26:30:40')")
-    sql("insert into adaptive values(17,'1$ab6$27:30:40')")
-    sql("insert into adaptive values(18,'1$ab7$28:30:40')")
-    sql("insert into adaptive values(19,'1$ab8$29:30:40')")
-    sql("insert into adaptive values(20,'1$ab9$30:30:40')")
-    sql("insert into adaptive values(21,'1$ab10$31:30:40')")
-    sql("insert into adaptive values(22,'1$ab11$32:30:40')")
+    sql("insert into adaptive values(11,'1\001abc\00121\00230\00240')")
+    sql("insert into adaptive values(12,'1\001ab1\00122\00230\00240')")
+    sql("insert into adaptive values(13,'1\001ab2\00123\00230\00240')")
+    sql("insert into adaptive values(14,'1\001ab3\00124\00230\00240')")
+    sql("insert into adaptive values(15,'1\001ab4\00125\00230\00240')")
+    sql("insert into adaptive values(16,'1\001ab5\00126\00230\00240')")
+    sql("insert into adaptive values(17,'1\001ab6\00127\00230\00240')")
+    sql("insert into adaptive values(18,'1\001ab7\00128\00230\00240')")
+    sql("insert into adaptive values(19,'1\001ab8\00129\00230\00240')")
+    sql("insert into adaptive values(20,'1\001ab9\00130\00230\00240')")
+    sql("insert into adaptive values(21,'1\001ab10\00131\00230\00240')")
+    sql("insert into adaptive values(22,'1\001ab11\00132\00230\00240')")
     sql("alter table adaptive compact 'major'").show(200,false)
     sql("SHOW SEGMENTS FOR TABLE adaptive").show(200,false)
     sql("clean files for table adaptive").show(200,false)
@@ -240,10 +240,10 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:bigint,name:string," +
       "marks:array<bigint>>) stored by 'carbondata'")
-    sql("insert into adaptive values(1,'500$abc$200:300:400')")
-    sql("insert into adaptive values(2,'8000$abc$300:400:500')")
-    sql("insert into adaptive values(3,'9000$abc$300:400:500')")
-    sql("insert into adaptive values(4,'10000$abc$300:400:500')")
+    sql("insert into adaptive values(1,'500\001abc\001200\002300\002400')")
+    sql("insert into adaptive values(2,'8000\001abc\001300\002400\002500')")
+    sql("insert into adaptive values(3,'9000\001abc\001300\002400\002500')")
+    sql("insert into adaptive values(4,'10000\001abc\001300\002400\002500')")
     sql("alter table adaptive compact'major'")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(500, "abc", mutable.WrappedArray.make(Array(200, 300, 400)))),
@@ -293,18 +293,18 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:bigint,name:string," +
       "marks:array<bigint>>) stored by 'carbondata'")
-    sql("insert into adaptive values(1,'50000$abc$2000000:3000000:4000000')")
-    sql("insert into adaptive values(2,'70000$abc$2000000:3000000:4000000')")
-    sql("insert into adaptive values(3,'100000$abc$2000000:3000000:4000000')")
-    sql("insert into adaptive values(1,'50000$abc$2000000:3000000:4000000')")
-    sql("insert into adaptive values(2,'70000$abc$2000000:3000000:4000000')")
-    sql("insert into adaptive values(3,'100000$abc$2000000:3000000:4000000')")
-    sql("insert into adaptive values(1,'50000$abc$2000000:3000000:4000000')")
-    sql("insert into adaptive values(2,'70000$abc$2000000:3000000:4000000')")
-    sql("insert into adaptive values(3,'100000$abc$2000000:3000000:4000000')")
-    sql("insert into adaptive values(1,'50000$abc$2000000:3000000:4000000')")
-    sql("insert into adaptive values(2,'70000$abc$2000000:3000000:4000000')")
-    sql("insert into adaptive values(3,'100000$abc$2000000:3000000:4000000')")
+    sql("insert into adaptive values(1,'50000\001abc\0012000000\0023000000\0024000000')")
+    sql("insert into adaptive values(2,'70000\001abc\0012000000\0023000000\0024000000')")
+    sql("insert into adaptive values(3,'100000\001abc\0012000000\0023000000\0024000000')")
+    sql("insert into adaptive values(1,'50000\001abc\0012000000\0023000000\0024000000')")
+    sql("insert into adaptive values(2,'70000\001abc\0012000000\0023000000\0024000000')")
+    sql("insert into adaptive values(3,'100000\001abc\0012000000\0023000000\0024000000')")
+    sql("insert into adaptive values(1,'50000\001abc\0012000000\0023000000\0024000000')")
+    sql("insert into adaptive values(2,'70000\001abc\0012000000\0023000000\0024000000')")
+    sql("insert into adaptive values(3,'100000\001abc\0012000000\0023000000\0024000000')")
+    sql("insert into adaptive values(1,'50000\001abc\0012000000\0023000000\0024000000')")
+    sql("insert into adaptive values(2,'70000\001abc\0012000000\0023000000\0024000000')")
+    sql("insert into adaptive values(3,'100000\001abc\0012000000\0023000000\0024000000')")
     sql("alter table adaptive compact'major'")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(50000, "abc", mutable.WrappedArray.make(Array(2000000, 3000000, 4000000)))),
@@ -400,18 +400,18 @@ class TestCompactionComplexType extends QueryTest {
       "create table adaptive(roll int, student struct<id:BIGINT,name:string,marks:array<BIGINT>>)" +
       " " +
       "stored by 'carbondata'")
-    sql("insert into adaptive values(1,'500000$abc$200:300:52000000')")
-    sql("insert into adaptive values(2,'700000$abc$200:300:52000000')")
-    sql("insert into adaptive values(3,'10000000$abc$200:300:52000000')")
-    sql("insert into adaptive values(1,'500000$abc$200:300:52000000')")
-    sql("insert into adaptive values(2,'700000$abc$200:300:52000000')")
-    sql("insert into adaptive values(3,'10000000$abc$200:300:52000000')")
-    sql("insert into adaptive values(1,'500000$abc$200:300:52000000')")
-    sql("insert into adaptive values(2,'700000$abc$200:300:52000000')")
-    sql("insert into adaptive values(3,'10000000$abc$200:300:52000000')")
-    sql("insert into adaptive values(1,'500000$abc$200:300:52000000')")
-    sql("insert into adaptive values(2,'700000$abc$200:300:52000000')")
-    sql("insert into adaptive values(3,'10000000$abc$200:300:52000000')")
+    sql("insert into adaptive values(1,'500000\001abc\001200\002300\00252000000')")
+    sql("insert into adaptive values(2,'700000\001abc\001200\002300\00252000000')")
+    sql("insert into adaptive values(3,'10000000\001abc\001200\002300\00252000000')")
+    sql("insert into adaptive values(1,'500000\001abc\001200\002300\00252000000')")
+    sql("insert into adaptive values(2,'700000\001abc\001200\002300\00252000000')")
+    sql("insert into adaptive values(3,'10000000\001abc\001200\002300\00252000000')")
+    sql("insert into adaptive values(1,'500000\001abc\001200\002300\00252000000')")
+    sql("insert into adaptive values(2,'700000\001abc\001200\002300\00252000000')")
+    sql("insert into adaptive values(3,'10000000\001abc\001200\002300\00252000000')")
+    sql("insert into adaptive values(1,'500000\001abc\001200\002300\00252000000')")
+    sql("insert into adaptive values(2,'700000\001abc\001200\002300\00252000000')")
+    sql("insert into adaptive values(3,'10000000\001abc\001200\002300\00252000000')")
     sql("alter table adaptive compact 'major' ")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(500000, "abc", mutable.WrappedArray.make(Array(200, 300, 52000000)))),
@@ -434,10 +434,10 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string," +
       "marks:array<double>>) stored by 'carbondata'")
-    sql("insert into adaptive values(1,'1.323$abc$2.2:3.3:4.4')")
-    sql("insert into adaptive values(2,'1.324$abc$2.2:3.3:4.4')")
-    sql("insert into adaptive values(3,'1.325$abc$2.2:3.3:4.4')")
-    sql("insert into adaptive values(4,'1.326$abc$2.2:3.3:4.4')")
+    sql("insert into adaptive values(1,'1.323\001abc\0012.2\0023.3\0024.4')")
+    sql("insert into adaptive values(2,'1.324\001abc\0012.2\0023.3\0024.4')")
+    sql("insert into adaptive values(3,'1.325\001abc\0012.2\0023.3\0024.4')")
+    sql("insert into adaptive values(4,'1.326\001abc\0012.2\0023.3\0024.4')")
     sql("alter table adaptive compact 'major' ")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(1.323, "abc", mutable.WrappedArray.make(Array(2.2, 3.3, 4.4)))),
@@ -491,10 +491,10 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string," +
       "marks:array<double>>) stored by 'carbondata'")
-    sql("insert into adaptive values(1,'1.323$abc$20.2:30.3:40.4')")
-    sql("insert into adaptive values(2,'1.324$abc$20.2:30.3:40.5')")
-    sql("insert into adaptive values(3,'1.325$abc$20.2:30.3:40.6')")
-    sql("insert into adaptive values(4,'1.326$abc$20.2:30.3:40.7')")
+    sql("insert into adaptive values(1,'1.323\001abc\00120.2\00230.3\00240.4')")
+    sql("insert into adaptive values(2,'1.324\001abc\00120.2\00230.3\00240.5')")
+    sql("insert into adaptive values(3,'1.325\001abc\00120.2\00230.3\00240.6')")
+    sql("insert into adaptive values(4,'1.326\001abc\00120.2\00230.3\00240.7')")
     sql("alter table adaptive compact 'major' ")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(1.323, "abc", mutable.WrappedArray.make(Array(20.2, 30.3, 40.4)))),
@@ -549,10 +549,10 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string," +
       "marks:array<double>>) stored by 'carbondata'")
-    sql("insert into adaptive values(1,'10.323$abc$20.2:30.3:501.423')")
-    sql("insert into adaptive values(2,'10.323$abc$20.2:30.3:502.421')")
-    sql("insert into adaptive values(3,'10.323$abc$20.2:30.3:503.422')")
-    sql("insert into adaptive values(4,'10.323$abc$20.2:30.3:504.424')")
+    sql("insert into adaptive values(1,'10.323\001abc\00120.2\00230.3\002501.423')")
+    sql("insert into adaptive values(2,'10.323\001abc\00120.2\00230.3\002502.421')")
+    sql("insert into adaptive values(3,'10.323\001abc\00120.2\00230.3\002503.422')")
+    sql("insert into adaptive values(4,'10.323\001abc\00120.2\00230.3\002504.424')")
     sql("alter table adaptive compact 'major' ")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(10.323, "abc", mutable.WrappedArray.make(Array(20.2, 30.3, 501.423)))),
@@ -606,10 +606,10 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string," +
       "marks:array<double>>) stored by 'carbondata'")
-    sql("insert into adaptive values(1,'1000.323$abc$20.2:30.3:60000.423')")
-    sql("insert into adaptive values(2,'1000.324$abc$20.2:30.3:70000.424')")
-    sql("insert into adaptive values(3,'1000.325$abc$20.2:30.3:80000.425')")
-    sql("insert into adaptive values(4,'1000.326$abc$20.2:30.3:90000.426')")
+    sql("insert into adaptive values(1,'1000.323\001abc\00120.2\00230.3\00260000.423')")
+    sql("insert into adaptive values(2,'1000.324\001abc\00120.2\00230.3\00270000.424')")
+    sql("insert into adaptive values(3,'1000.325\001abc\00120.2\00230.3\00280000.425')")
+    sql("insert into adaptive values(4,'1000.326\001abc\00120.2\00230.3\00290000.426')")
     sql("alter table adaptive compact 'major' ")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(1000.323, "abc", mutable.WrappedArray.make(Array(20.2, 30.3, 60000.423)))),
@@ -664,10 +664,10 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:double,name:string," +
       "marks:array<double>>) stored by 'carbondata'")
-    sql("insert into adaptive values(1,'1.797693134862315$abc$2.2:30.3:1.797693134862315')")
-    sql("insert into adaptive values(2,'1.797693134862316$abc$2.2:30.3:1.797693134862316')")
-    sql("insert into adaptive values(3,'1.797693134862317$abc$2.2:30.3:1.797693134862317')")
-    sql("insert into adaptive values(4,'1.797693134862318$abc$2.2:30.3:1.797693134862318')")
+    sql("insert into adaptive values(1,'1.797693134862315\001abc\0012.2\00230.3\0021.797693134862315')")
+    sql("insert into adaptive values(2,'1.797693134862316\001abc\0012.2\00230.3\0021.797693134862316')")
+    sql("insert into adaptive values(3,'1.797693134862317\001abc\0012.2\00230.3\0021.797693134862317')")
+    sql("insert into adaptive values(4,'1.797693134862318\001abc\0012.2\00230.3\0021.797693134862318')")
     sql("alter table adaptive compact 'major' ")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1,
@@ -695,7 +695,7 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:decimal(3,2),name:string>) stored by " +
       "'carbondata'")
-    sql("insert into adaptive values(1,'3.2$abc')")
+    sql("insert into adaptive values(1,'3.2\001abc')")
     sql("select * from adaptive").show(false)
   }
 
@@ -704,7 +704,7 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<name:string," +
       "marks:array<decimal>>) stored by 'carbondata'")
-    sql("insert into adaptive values(1,'abc$20.2:30.3:40.4')")
+    sql("insert into adaptive values(1,'abc\00120.2\00230.3\00240.4')")
     sql("select * from adaptive").show(false)
   }
 
@@ -715,10 +715,10 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:timestamp,name:string>) stored by " +
       "'carbondata'")
-    sql("insert into adaptive values(1,'2017/01/01 00:00:00$abc')")
-    sql("insert into adaptive values(2,'2017/01/02 00:00:00$abc')")
-    sql("insert into adaptive values(3,'2017/01/03 00:00:00$abc')")
-    sql("insert into adaptive values(4,'2017/01/04 00:00:00$abc')")
+    sql("insert into adaptive values(1,'2017/01/01 00:00:00\001abc')")
+    sql("insert into adaptive values(2,'2017/01/02 00:00:00\001abc')")
+    sql("insert into adaptive values(3,'2017/01/03 00:00:00\001abc')")
+    sql("insert into adaptive values(4,'2017/01/04 00:00:00\001abc')")
     sql("alter table adaptive compact 'major' ")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(Timestamp.valueOf("2017-01-01 00:00:00.0"), "abc")),
@@ -735,10 +735,10 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<name:string," +
       "marks:array<timestamp>>) stored by 'carbondata'")
-    sql("insert into adaptive values(1,'abc1$2017/01/01:2018/01/01')")
-    sql("insert into adaptive values(2,'abc2$2017/01/02:2018/01/03')")
-    sql("insert into adaptive values(3,'abc3$2017/01/04:2018/01/05')")
-    sql("insert into adaptive values(4,'abc4$2017/01/06:2018/01/07')")
+    sql("insert into adaptive values(1,'abc1\0012017/01/01\0022018/01/01')")
+    sql("insert into adaptive values(2,'abc2\0012017/01/02\0022018/01/03')")
+    sql("insert into adaptive values(3,'abc3\0012017/01/04\0022018/01/05')")
+    sql("insert into adaptive values(4,'abc4\0012017/01/06\0022018/01/07')")
     sql("alter table adaptive compact 'major' ")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1,
@@ -769,7 +769,7 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<name:string," +
       "marks:array<date>>) stored by 'carbondata'")
-    sql("insert into adaptive values(1,'abc$2017-01-01')")
+    sql("insert into adaptive values(1,'abc\0012017-01-01')")
     sql("select * from adaptive").show(false)
   }
 
@@ -778,10 +778,10 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:long,name:string,marks:array<long>>) " +
       "stored by 'carbondata'")
-    sql("insert into adaptive values(1,'11111$abc$20:30:40')")
-    sql("insert into adaptive values(2,'11111$abc$55:65:75')")
-    sql("insert into adaptive values(3,'11111$abc$88:98:8')")
-    sql("insert into adaptive values(4,'11111$abc$99:9:19')")
+    sql("insert into adaptive values(1,'11111\001abc\00120\00230\00240')")
+    sql("insert into adaptive values(2,'11111\001abc\00155\00265\00275')")
+    sql("insert into adaptive values(3,'11111\001abc\00188\00298\0028')")
+    sql("insert into adaptive values(4,'11111\001abc\00199\0029\00219')")
     sql("alter table adaptive compact 'major' ")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(11111, "abc", mutable.WrappedArray.make(Array(20, 30, 40)))),
@@ -796,10 +796,10 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:long,name:string,marks:array<long>>) " +
       "stored by 'carbondata'")
-    sql("insert into adaptive values(1,'11111$abc$200:300:400')")
-    sql("insert into adaptive values(2,'11111$abc$201:301:401')")
-    sql("insert into adaptive values(3,'11111$abc$202:302:402')")
-    sql("insert into adaptive values(4,'11111$abc$203:303:403')")
+    sql("insert into adaptive values(1,'11111\001abc\001200\002300\002400')")
+    sql("insert into adaptive values(2,'11111\001abc\001201\002301\002401')")
+    sql("insert into adaptive values(3,'11111\001abc\001202\002302\002402')")
+    sql("insert into adaptive values(4,'11111\001abc\001203\002303\002403')")
     sql("alter table adaptive compact 'major' ")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(11111, "abc", mutable.WrappedArray.make(Array(200, 300, 400)))),
@@ -861,9 +861,9 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:LONG,name:string,marks:array<LONG>>) " +
       "stored by 'carbondata'")
-    sql("insert into adaptive values(1,'50000$abc$2000000:3000000:4000000')")
-    sql("insert into adaptive values(2,'70000$abc$2000000:3000000:4000000')")
-    sql("insert into adaptive values(3,'100000$abc$2000000:3000000:4000000')")
+    sql("insert into adaptive values(1,'50000\001abc\0012000000\0023000000\0024000000')")
+    sql("insert into adaptive values(2,'70000\001abc\0012000000\0023000000\0024000000')")
+    sql("insert into adaptive values(3,'100000\001abc\0012000000\0023000000\0024000000')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(50000, "abc", mutable.WrappedArray.make(Array(2000000, 3000000, 4000000)))),
         Row(2, Row(70000, "abc", mutable.WrappedArray.make(Array(2000000, 3000000, 4000000)))),
@@ -887,9 +887,9 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:LONG,name:string,marks:array<LONG>>) " +
       "stored by 'carbondata'")
-    sql("insert into adaptive values(1,'500000$abc$200:300:52000000')")
-    sql("insert into adaptive values(2,'700000$abc$200:300:52000000')")
-    sql("insert into adaptive values(3,'10000000$abc$200:300:52000000')")
+    sql("insert into adaptive values(1,'500000\001abc\001200\002300\00252000000')")
+    sql("insert into adaptive values(2,'700000\001abc\001200\002300\00252000000')")
+    sql("insert into adaptive values(3,'10000000\001abc\001200\002300\00252000000')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(500000, "abc", mutable.WrappedArray.make(Array(200, 300, 52000000)))),
         Row(2, Row(700000, "abc", mutable.WrappedArray.make(Array(200, 300, 52000000)))),
@@ -901,9 +901,9 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:LONG,name:string,marks:array<LONG>>) " +
       "stored by 'carbondata'")
-    sql("insert into adaptive values(1,'500000$abc$200:300:52000000000')")
-    sql("insert into adaptive values(2,'700000$abc$200:300:52000000000')")
-    sql("insert into adaptive values(3,'10000000$abc$200:300:52000000000')")
+    sql("insert into adaptive values(1,'500000\001abc\001200\002300\00252000000000')")
+    sql("insert into adaptive values(2,'700000\001abc\001200\002300\00252000000000')")
+    sql("insert into adaptive values(3,'10000000\001abc\001200\002300\00252000000000')")
     sql("select * from adaptive").show(false)
   }
 
@@ -912,7 +912,7 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:short,name:string,marks:array<short>>) " +
       "stored by 'carbondata'")
-    sql("insert into adaptive values(1,'11$abc$20:30:40')")
+    sql("insert into adaptive values(1,'11\001abc\00120\00230\00240')")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(11, "abc", mutable.WrappedArray.make(Array(20, 30, 40))))))
   }
@@ -922,10 +922,10 @@ class TestCompactionComplexType extends QueryTest {
     sql(
       "create table adaptive(roll int, student struct<id:SHORT,name:string,marks:array<SHORT>>) " +
       "stored by 'carbondata'")
-    sql("insert into adaptive values(1,'11111$abc$200:300:400')")
-    sql("insert into adaptive values(1,'11111$abc$200:300:401')")
-    sql("insert into adaptive values(1,'11111$abc$200:300:402')")
-    sql("insert into adaptive values(1,'11111$abc$200:300:403')")
+    sql("insert into adaptive values(1,'11111\001abc\001200\002300\002400')")
+    sql("insert into adaptive values(1,'11111\001abc\001200\002300\002401')")
+    sql("insert into adaptive values(1,'11111\001abc\001200\002300\002402')")
+    sql("insert into adaptive values(1,'11111\001abc\001200\002300\002403')")
     sql("alter table adaptive compact 'major' ")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(11111, "abc", mutable.WrappedArray.make(Array(200, 300, 400)))),
@@ -976,10 +976,10 @@ class TestCompactionComplexType extends QueryTest {
       "create table adaptive(roll int, student struct<id:boolean,name:string," +
       "marks:array<boolean>>) " +
       "stored by 'carbondata'")
-    sql("insert into adaptive values(1,'true$abc$false:true:false')")
-    sql("insert into adaptive values(1,'true$abc$false:true:true')")
-    sql("insert into adaptive values(1,'true$abc$false:true:true')")
-    sql("insert into adaptive values(1,'true$abc$false:true:false')")
+    sql("insert into adaptive values(1,'true\001abc\001false\002true\002false')")
+    sql("insert into adaptive values(1,'true\001abc\001false\002true\002true')")
+    sql("insert into adaptive values(1,'true\001abc\001false\002true\002true')")
+    sql("insert into adaptive values(1,'true\001abc\001false\002true\002false')")
     sql("alter table adaptive compact 'major' ")
     checkAnswer(sql("select * from adaptive"),
       Seq(Row(1, Row(true, "abc", mutable.WrappedArray.make(Array(false, true, false)))),
