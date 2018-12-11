@@ -205,8 +205,7 @@ public class MinMaxDataMapFactory extends CoarseGrainDataMapFactory {
           List<CarbonFile> indexFiles;
           String dmPath = CarbonTablePath.getDataMapStorePath(tablePath, segmentId,
               dataMap.getDataMapSchema().getDataMapName());
-          FileFactory.FileType fileType = FileFactory.getFileType(dmPath);
-          final CarbonFile dirPath = FileFactory.getCarbonFile(dmPath, fileType);
+          final CarbonFile dirPath = FileFactory.getCarbonFile(dmPath);
           indexFiles = Arrays.asList(dirPath.listFiles(new CarbonFileFilter() {
             @Override
             public boolean accept(CarbonFile file) {
@@ -277,8 +276,7 @@ public class MinMaxDataMapFactory extends CoarseGrainDataMapFactory {
       String datamapPath = CarbonTablePath
           .getDataMapStorePath(getCarbonTable().getTablePath(), segmentId, dataMapName);
       if (FileFactory.isFileExist(datamapPath)) {
-        CarbonFile file =
-            FileFactory.getCarbonFile(datamapPath, FileFactory.getFileType(datamapPath));
+        CarbonFile file = FileFactory.getCarbonFile(datamapPath);
         CarbonUtil.deleteFoldersAndFilesSilent(file);
       }
     } catch (InterruptedException ex) {
@@ -303,20 +301,10 @@ public class MinMaxDataMapFactory extends CoarseGrainDataMapFactory {
   @Override
   public boolean willBecomeStale(TableOperation operation) {
     switch (operation) {
-      case ALTER_RENAME:
-        return false;
       case ALTER_DROP:
-        return true;
-      case ALTER_ADD_COLUMN:
-        return false;
       case ALTER_CHANGE_DATATYPE:
-        return true;
-      case STREAMING:
-        return false;
       case DELETE:
-        return true;
       case UPDATE:
-        return true;
       case PARTITION:
         return true;
       default:

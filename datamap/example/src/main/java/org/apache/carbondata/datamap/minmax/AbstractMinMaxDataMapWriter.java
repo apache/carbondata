@@ -149,6 +149,8 @@ public abstract class AbstractMinMaxDataMapWriter extends DataMapWriter {
       if (DataTypes.BOOLEAN == dataType) {
         indexColumnMinMaxCollectors[indexColIdx].update(
             BooleanConvert.boolean2Byte((boolean) value));
+      } else if (DataTypes.BYTE == dataType) {
+        indexColumnMinMaxCollectors[indexColIdx].update((byte) value);
       } else if (DataTypes.SHORT == dataType) {
         indexColumnMinMaxCollectors[indexColIdx].update((short) value);
       } else if (DataTypes.INT == dataType) {
@@ -157,6 +159,8 @@ public abstract class AbstractMinMaxDataMapWriter extends DataMapWriter {
         indexColumnMinMaxCollectors[indexColIdx].update((long) value);
       } else if (DataTypes.DOUBLE == dataType) {
         indexColumnMinMaxCollectors[indexColIdx].update((double) value);
+      } else if (DataTypes.FLOAT == dataType) {
+        indexColumnMinMaxCollectors[indexColIdx].update((float) value);
       } else if (DataTypes.isDecimal(dataType)) {
         indexColumnMinMaxCollectors[indexColIdx].update((BigDecimal) value);
       } else {
