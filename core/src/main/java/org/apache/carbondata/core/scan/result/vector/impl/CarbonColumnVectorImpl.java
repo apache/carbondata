@@ -167,7 +167,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     byteArr[rowId] = value;
   }
 
-  @Override public void putBytes(int rowId, int count, byte[] value) {
+  @Override public void putByteArray(int rowId, int count, byte[] value) {
     for (int i = 0; i < count; ++i) {
       bytes[i + rowId] = value;
     }

@@ -30,14 +30,15 @@ import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
 /**
  * Fills the vector directly with out considering any deleted rows.
  */
-class ColumnarVectorWrapperDirect implements CarbonColumnVector,SequentialFill {
-
-
+class ColumnarVectorWrapperDirect implements CarbonColumnVector, SequentialFill {
   /**
    * It is adapter class of complete ColumnarBatch.
    */
   protected CarbonColumnVectorImpl columnVector;
 
+  /**
+   * It is current block file datatype used for alter table scenarios when datatype changes.
+   */
   private DataType blockDataType;
 
   private CarbonColumnVector dictionaryVector;
@@ -79,14 +80,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector,SequentialFill {
   }
 
   @Override public void putShorts(int rowId, int count, short value) {
-    for (int i = 0; i < count; i++) {
-      if (nullBitset.get(rowId)) {
-        columnVector.putNull(rowId);
-      } else {
-        columnVector.putShort(rowId, value);
-      }
-      rowId++;
-    }
+    columnVector.putShorts(rowId, count, value);
 
   }
 
@@ -154,14 +148,9 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector,SequentialFill {
   }
 
   @Override
-  public void putBytes(int rowId, int count, byte[] value) {
+  public void putByteArray(int rowId, int count, byte[] value) {
     for (int i = 0; i < count; i++) {
-      if (nullBitset.get(rowId)) {
-        columnVector.putNull(rowId);
-      } else {
-        columnVector.putByteArray(rowId, value);
-      }
-      rowId++;
+      columnVector.putByteArray(rowId++, value);
     }
   }
 
@@ -193,12 +182,13 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector,SequentialFill {
   }
 
   @Override public void putObject(int rowId, Object obj) {
-    //TODO handle complex types
+    throw new UnsupportedOperationException(
+        "Not supported this opeartion from " + this.getClass().getName());
   }
 
   @Override public Object getData(int rowId) {
-    //TODO handle complex types
-    return null;
+    throw new UnsupportedOperationException(
+        "Not supported this opeartion from " + this.getClass().getName());
   }
 
   @Override public void reset() {
@@ -237,7 +227,7 @@ class ColumnarVectorWrapperDirect implements CarbonColumnVector,SequentialFill {
   }
 
   @Override public void setFilteredRowsExist(boolean filteredRowsExist) {
-
+    // Leave it, as it does not need to do anything here.
   }
 
   @Override public void putFloats(int rowId, int count, float[] src, int srcIndex) {

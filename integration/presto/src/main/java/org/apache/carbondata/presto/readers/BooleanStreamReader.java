@@ -68,12 +68,6 @@ public class BooleanStreamReader extends CarbonColumnVectorImpl
     type.writeBoolean(builder, value == 1);
   }
 
-  @Override public void putBytes(int rowId, int count, byte[] value) {
-    for (int i = 0; i < count; i++) {
-      type.writeBoolean(builder, value[i] == 1);
-    }
-  }
-
   @Override public void putBytes(int rowId, int count, byte[] src, int srcIndex) {
     for (int i = 0; i < count; i++) {
       type.writeBoolean(builder, src[srcIndex++] == 1);

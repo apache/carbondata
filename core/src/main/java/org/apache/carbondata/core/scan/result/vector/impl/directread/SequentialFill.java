@@ -19,10 +19,15 @@ package org.apache.carbondata.core.scan.result.vector.impl.directread;
 
 import java.util.BitSet;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
+
 /**
  * It is sort of a marker interface to let execution engine know that it is appendable/sequential
  * data adding vector. It means we cannot add random rowids to it.
  */
+@InterfaceStability.Evolving
+@InterfaceAudience.Internal
 public interface SequentialFill {
 
   /**

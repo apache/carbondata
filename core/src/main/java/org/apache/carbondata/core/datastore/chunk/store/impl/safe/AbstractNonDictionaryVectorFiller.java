@@ -84,12 +84,14 @@ class StringVectorFiller extends AbstractNonDictionaryVectorFiller {
   @Override
   public void fillVector(byte[] data, CarbonColumnVector vector) {
     // start position will be used to store the current data position
-    boolean invertedIndex = vector instanceof ColumnarVectorWrapperDirectWithInvertedIndex
+    boolean addSequential = vector instanceof ColumnarVectorWrapperDirectWithInvertedIndex
         || vector instanceof SequentialFill;
 
     int localOffset = 0;
     ByteUtil.UnsafeComparer comparator = ByteUtil.UnsafeComparer.INSTANCE;
-    if (invertedIndex) {
+    // In case of inverted index and sequential fill, add data to vector sequentially instead of
+    // adding offsets and data separately.
+    if (addSequential) {
       for (int i = 0; i < numberOfRows; i++) {
         int length = (((data[localOffset] & 0xFF) << 8) | (data[localOffset + 1] & 0xFF));
         localOffset += 2;
