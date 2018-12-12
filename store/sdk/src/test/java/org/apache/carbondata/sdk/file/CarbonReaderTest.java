@@ -2072,4 +2072,36 @@ public class CarbonReaderTest extends TestCase {
     }
   }
 
+  @Test
+  public void testSdkWriteWhenArrayOfStringIsEmpty() throws IOException, InvalidLoadOptionException {
+    String badRecordAction =
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION);
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL");
+
+    String path = "./testSdkWriteWhenArrayOfStringIsEmpty";
+    String[] rec = { "aaa", "bbb", "aaa@cdf.com", "", "", "mmm", "" };
+    Field[] fields = new Field[7];
+    fields[0] = new Field("stringField", DataTypes.STRING);
+    fields[1] = new Field("varcharField", DataTypes.VARCHAR);
+    fields[2] = new Field("stringField1", DataTypes.STRING);
+    fields[3] = new Field("arrayField", DataTypes.createArrayType(DataTypes.STRING));
+    fields[4] = new Field("arrayField1", DataTypes.createArrayType(DataTypes.STRING));
+    fields[5] = new Field("arrayField2", DataTypes.createArrayType(DataTypes.STRING));
+    fields[6] = new Field("varcharField1", DataTypes.VARCHAR);
+    Schema schema = new Schema(fields);
+    Map map = new HashMap();
+    map.put("complex_delimiter_level_1", "#");
+    map.put("bad_records_logger_enable", "TRUE");
+    map.put("bad_record_path", path + "/badrec");
+    CarbonWriterBuilder builder = CarbonWriter.builder().outputPath(path);
+    builder.withLoadOptions(map).withCsvInput(schema).enableLocalDictionary(false)
+        .writtenBy("CarbonReaderTest");
+    CarbonWriter writer = builder.build();
+    writer.write(rec);
+    writer.close();
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, badRecordAction);
+  }
+
 }
