@@ -175,6 +175,10 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       // null is different from empty here. Empty means after pruning, no blocklet need to scan.
       return null;
     }
+    if (filteredShard.isEmpty()) {
+      LOGGER.info("Bloom filtered shards is empty");
+      return new ArrayList<>();
+    }
 
     List<BloomQueryModel> bloomQueryModels;
     try {
@@ -226,6 +230,12 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
           hitBlocklets.retainAll(tempHitBlockletsResult);
         }
       }
+    }
+    if (hitBlocklets == null) {
+      LOGGER.warn(String.format("HitBlocklets is empty in bloom filter prune method. " +
+              "bloomQueryModels size is %d, filterShards size if %d",
+              bloomQueryModels.size(), filteredShard.size()));
+      return null;
     }
     return new ArrayList<>(hitBlocklets);
   }
