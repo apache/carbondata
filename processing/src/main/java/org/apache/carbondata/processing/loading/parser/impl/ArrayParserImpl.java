@@ -56,6 +56,10 @@ public class ArrayParserImpl implements ComplexParser<ArrayObject> {
           }
           return new ArrayObject(array);
         }
+      } else if (value.isEmpty()) {
+        Object[] array = new Object[1];
+        array[0] = child.parse(value);
+        return new ArrayObject(array);
       }
     }
     return null;

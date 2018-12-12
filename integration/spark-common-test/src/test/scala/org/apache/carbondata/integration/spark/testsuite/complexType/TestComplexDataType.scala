@@ -106,6 +106,31 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       Seq(Row(1, "abc", Row(mutable.WrappedArray.make(Array("abc", "bcd"))), "bcd")))
   }
 
+  test("test Projection PushDown for Array - String type when Array is Empty") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL")
+    sql("drop table if exists table1")
+    sql("create table table1 (detail array<string>) stored by 'carbondata'")
+    sql("insert into table1 values('')")
+    checkAnswer(sql("select detail[0] from table1"), Seq(Row("")))
+    sql("drop table if exists table1")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, badRecordAction)
+  }
+
+  test("test Projection PushDown for Struct - Array type when Array is Empty") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL")
+    sql("drop table if exists table1")
+    sql("create table table1 (person struct<detail:array<string>,age:int>) stored by 'carbondata'")
+    sql("insert into table1 values ('\0011')")
+    checkAnswer(sql("select person.detail[0] from table1"), Seq(Row("")))
+    checkAnswer(sql("select person.age from table1"), Seq(Row(1)))
+    sql("drop table if exists table1")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, badRecordAction)
+  }
+
   test("test Projection PushDown for Struct - Double type") {
     sql("DROP TABLE IF EXISTS table1")
     sql(
