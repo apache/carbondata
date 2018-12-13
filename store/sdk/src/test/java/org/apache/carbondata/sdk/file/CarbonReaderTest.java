@@ -2074,6 +2074,8 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testSdkWriteWhenArrayOfStringIsEmpty() throws IOException, InvalidLoadOptionException {
+    String badRecordAction =
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION);
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL");
 
@@ -2098,6 +2100,8 @@ public class CarbonReaderTest extends TestCase {
     CarbonWriter writer = builder.build();
     writer.write(rec);
     writer.close();
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, badRecordAction);
   }
 
 }
