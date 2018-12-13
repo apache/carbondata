@@ -94,7 +94,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
             CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT).toFloat), ""),
       ("Carbon Column Compressor ", tblProps
         .getOrElse(CarbonCommonConstants.COMPRESSOR,
-          CarbonCommonConstants.DEFAULT_COMPRESSOR), "")
+          CarbonCommonConstants.DEFAULT_COMPRESSOR), ""),
       //////////////////////////////////////////////////////////////////////////////
       //  Index Information
       //////////////////////////////////////////////////////////////////////////////
