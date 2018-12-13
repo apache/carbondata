@@ -232,7 +232,7 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       }
     }
     if (hitBlocklets == null) {
-      LOGGER.warn(String.format("HitBlocklets is null int bloom filter prune method! " +
+      LOGGER.warn(String.format("HitBlocklets is empty in bloom filter prune method. " +
               "bloomQueryModels size is %d, filterShards size if %d",
               bloomQueryModels.size(), filteredShard.size()));
       return null;
