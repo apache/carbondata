@@ -42,6 +42,7 @@ import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ColumnarVectorWrapperDirectFactory;
 import org.apache.carbondata.core.scan.result.vector.impl.directread.ConvertableVector;
+import org.apache.carbondata.core.scan.result.vector.impl.directread.SequentialFill;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.Encoding;
@@ -291,7 +292,8 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           .getDirectVectorWrapperFactory(vector, vectorInfo.invertedIndex, nullBits, deletedRows,
               true, false);
       fillVector(pageData, vector, vectorDataType, pageDataType, pageSize, vectorInfo, nullBits);
-      if (deletedRows == null || deletedRows.isEmpty()) {
+      if ((deletedRows == null || deletedRows.isEmpty())
+          && !(vectorInfo.vector instanceof SequentialFill)) {
         for (int i = nullBits.nextSetBit(0); i >= 0; i = nullBits.nextSetBit(i + 1)) {
           vector.putNull(i);
         }

@@ -108,7 +108,7 @@ public:
     void withHadoopConf(char *key, char *value);
 
     /**
-     * set batch size
+     * Sets the batch size of records to read
      *
      * @param batch batch size
      * @return CarbonReaderBuilder object

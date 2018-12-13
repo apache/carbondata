@@ -47,12 +47,17 @@ case class CarbonExplainCommand(
   }
 
   private def collectProfiler(sparkSession: SparkSession): Seq[Row] = {
-    val queryExecution =
-      sparkSession.sessionState.executePlan(child.asInstanceOf[ExplainCommand].logicalPlan)
     try {
       ExplainCollector.setup()
-      queryExecution.toRdd.partitions
       if (ExplainCollector.enabled()) {
+        val queryExecution =
+          sparkSession.sessionState.executePlan(child.asInstanceOf[ExplainCommand].logicalPlan)
+        queryExecution.toRdd.partitions
+        // For count(*) queries the explain collector will be disabled, so profiler
+        // informations not required in such scenarios.
+        if (null == ExplainCollector.getFormatedOutput) {
+          Seq.empty
+        }
         Seq(Row("== CarbonData Profiler ==\n" + ExplainCollector.getFormatedOutput))
       } else {
         Seq.empty

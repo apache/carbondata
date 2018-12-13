@@ -166,6 +166,7 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     }
     // close read support
     readSupport.close();
+    carbonIterator.close();
     try {
       queryExecutor.finish();
     } catch (QueryExecutionException e) {

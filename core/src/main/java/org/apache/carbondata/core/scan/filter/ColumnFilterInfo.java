@@ -107,19 +107,26 @@ public class ColumnFilterInfo implements Serializable {
   public Set<String> getImplicitDriverColumnFilterList() {
     // this list is required to be populated only n case of driver, so in executor this check will
     // avoid unnecessary loading of the driver filter list
-    if (null == implicitDriverColumnFilterList) {
-      populateBlockIdListForDriverBlockPruning();
+    if (implicitDriverColumnFilterList != null) {
+      return implicitDriverColumnFilterList;
+    }
+    synchronized (this) {
+      if (null == implicitDriverColumnFilterList) {
+        // populate only once. (can be called in multi-thread)
+        implicitDriverColumnFilterList = populateBlockIdListForDriverBlockPruning();
+      }
     }
     return implicitDriverColumnFilterList;
   }
 
-  private void populateBlockIdListForDriverBlockPruning() {
-    implicitDriverColumnFilterList = new HashSet<>(implicitColumnFilterList.size());
-    String blockId = null;
+  private Set<String> populateBlockIdListForDriverBlockPruning() {
+    Set<String> columnFilterList = new HashSet<>(implicitColumnFilterList.size());
+    String blockId;
     for (String blockletId : implicitColumnFilterList) {
       blockId =
           blockletId.substring(0, blockletId.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
-      implicitDriverColumnFilterList.add(blockId);
+      columnFilterList.add(blockId);
     }
+    return columnFilterList;
   }
 }

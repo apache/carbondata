@@ -39,9 +39,6 @@ public class ChunkRowIterator extends CarbonIterator<Object[]> {
 
   public ChunkRowIterator(CarbonIterator<RowBatch> iterator) {
     this.iterator = iterator;
-    if (iterator.hasNext()) {
-      currentChunk = iterator.next();
-    }
   }
 
   /**
@@ -52,17 +49,11 @@ public class ChunkRowIterator extends CarbonIterator<Object[]> {
    * @return {@code true} if the iteration has more elements
    */
   @Override public boolean hasNext() {
-    if (null != currentChunk) {
-      if ((currentChunk.hasNext())) {
-        return true;
-      } else if (!currentChunk.hasNext()) {
-        while (iterator.hasNext()) {
-          currentChunk = iterator.next();
-          if (currentChunk != null && currentChunk.hasNext()) {
-            return true;
-          }
-        }
-      }
+    if (currentChunk != null && currentChunk.hasNext()) {
+      return true;
+    } else if (iterator != null && iterator.hasNext()) {
+      currentChunk = iterator.next();
+      return hasNext();
     }
     return false;
   }

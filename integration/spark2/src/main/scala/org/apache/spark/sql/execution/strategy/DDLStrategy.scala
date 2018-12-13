@@ -92,6 +92,15 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         ExecutedCommandExec(
           CarbonDropTableCommand(ifNotExists, identifier.database,
             identifier.table.toLowerCase)) :: Nil
+      case createLikeTable: CreateTableLikeCommand =>
+        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .tableExists(createLikeTable.sourceTable)(sparkSession)
+        if (isCarbonTable) {
+          throw new MalformedCarbonCommandException(
+            "Operation not allowed, when source table is carbon table")
+        } else {
+          ExecutedCommandExec(createLikeTable) :: Nil
+        }
       case InsertIntoCarbonTable(relation: CarbonDatasourceHadoopRelation,
       partition, child: LogicalPlan, overwrite, _) =>
         ExecutedCommandExec(CarbonInsertIntoCommand(relation, child, overwrite, partition)) :: Nil

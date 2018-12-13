@@ -487,6 +487,8 @@ m filterExpression
     // First prune using default datamap on driver side.
     TableDataMap defaultDataMap = DataMapStoreManager.getInstance().getDefaultDataMap(carbonTable);
     List<ExtendedBlocklet> prunedBlocklets = null;
+    // This is to log the event, so user will know what is happening by seeing logs.
+    LOG.info("Started block pruning ...");
     if (carbonTable.isTransactionalTable()) {
       prunedBlocklets = defaultDataMap.prune(segmentIds, resolver, partitionsToPrune);
     } else {
@@ -542,6 +544,7 @@ m filterExpression
             prunedBlocklets.size(), getBlockCount(prunedBlocklets));
       }
     }
+    LOG.info("Finished block pruning ...");
     return prunedBlocklets;
   }
 

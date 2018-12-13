@@ -339,8 +339,14 @@ public final class CarbonLoaderUtil {
           }
         }
 
-        SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
-            .toArray(new LoadMetadataDetails[listOfLoadFolderDetails.size()]));
+        if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() && !loadStartEntry
+            && !uuid.isEmpty() && segmentsToBeDeleted.isEmpty() && !insertOverwrite) {
+          SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath,
+              new LoadMetadataDetails[] { newMetaEntry });
+        } else {
+          SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
+              .toArray(new LoadMetadataDetails[listOfLoadFolderDetails.size()]));
+        }
         // Delete all old stale segment folders
         for (CarbonFile staleFolder : staleFolders) {
           // try block is inside for loop because even if there is failure in deletion of 1 stale
@@ -518,13 +524,14 @@ public final class CarbonLoaderUtil {
 
   /**
    * This method will divide the blocks among the nodes as per the data locality
-   *
+   * @param activeNodes List of all the active nodes running in cluster, based on these and the
+   *                    actual nodes, where blocks are present, the mapping is done
    * @param blockInfos
    * @return
    */
   public static Map<String, List<Distributable>> nodeBlockMapping(List<Distributable> blockInfos,
-      int noOfNodesInput) {
-    return nodeBlockMapping(blockInfos, noOfNodesInput, null,
+      int noOfNodesInput, List<String> activeNodes) {
+    return nodeBlockMapping(blockInfos, noOfNodesInput, activeNodes,
         BlockAssignmentStrategy.BLOCK_NUM_FIRST,null);
   }
 
@@ -536,7 +543,8 @@ public final class CarbonLoaderUtil {
    */
   public static Map<String, List<Distributable>> nodeBlockMapping(List<Distributable> blockInfos) {
     // -1 if number of nodes has to be decided based on block location information
-    return nodeBlockMapping(blockInfos, -1);
+    return nodeBlockMapping(blockInfos, -1, null,
+        BlockAssignmentStrategy.BLOCK_NUM_FIRST,null);
   }
 
   /**
