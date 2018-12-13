@@ -129,4 +129,8 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
   test("HiveExample") {
     HiveExample.exampleBody(spark, TestQueryExecutor.warehouse)
   }
+
+  test("DataFrameSDKS3Example") {
+    DataFrameSDKS3Example.exampleBody(spark)
+  }
 }
