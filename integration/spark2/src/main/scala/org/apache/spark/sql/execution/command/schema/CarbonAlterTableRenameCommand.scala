@@ -87,6 +87,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
 
     var timeStamp = 0L
     var carbonTable: CarbonTable = null
+    var hiveRenameSuccess = false
     // lock file path to release locks after operation
     var carbonTableLockFilePath: String = null
     try {
@@ -139,6 +140,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
           oldIdentifier,
           newIdentifier,
         oldTableIdentifier.getTablePath)
+      hiveRenameSuccess = true
 
       metastore.updateTableSchemaForAlter(
         newTableIdentifier,
@@ -165,6 +167,12 @@ private[sql] case class CarbonAlterTableRenameCommand(
       case e: ConcurrentOperationException =>
         throw e
       case e: Exception =>
+        if (hiveRenameSuccess) {
+          sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog].alterTableRename(
+            TableIdentifier(newTableName, Some(oldDatabaseName)),
+            TableIdentifier(oldTableName, Some(oldDatabaseName)),
+            carbonTable.getAbsoluteTableIdentifier.getTableName)
+        }
         if (carbonTable != null) {
           AlterTableUtil.revertRenameTableChanges(
             newTableName,
@@ -172,8 +180,9 @@ private[sql] case class CarbonAlterTableRenameCommand(
             timeStamp)(
             sparkSession)
         }
+        LOGGER.error(opName + " operation failed: ", e)
         throwMetadataException(oldDatabaseName, oldTableName,
-          s"Alter table rename table operation failed: ${e.getMessage}")
+          opName + " operation failed! Please check logs for details.")
     }
     Seq.empty
   }
