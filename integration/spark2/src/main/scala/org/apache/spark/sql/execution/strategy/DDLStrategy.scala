@@ -127,13 +127,15 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           throw new MalformedCarbonCommandException(
             "Operation not allowed : " + altertablemodel.alterSql)
         }
-      case dataTypeChange@CarbonAlterTableDataTypeChangeCommand(alterTableChangeDataTypeModel) =>
+      case colRenameDataTypeChange@CarbonAlterTableColRenameDataTypeChangeCommand(
+      alterTableColRenameAndDataTypeChangeModel, _) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
-          .tableExists(TableIdentifier(alterTableChangeDataTypeModel.tableName,
-            alterTableChangeDataTypeModel.databaseName))(sparkSession)
+          .tableExists(TableIdentifier(alterTableColRenameAndDataTypeChangeModel.tableName,
+            alterTableColRenameAndDataTypeChangeModel.databaseName))(sparkSession)
         if (isCarbonTable) {
-          val carbonTable = CarbonEnv.getCarbonTable(alterTableChangeDataTypeModel.databaseName,
-            alterTableChangeDataTypeModel.tableName)(sparkSession)
+          val carbonTable = CarbonEnv
+            .getCarbonTable(alterTableColRenameAndDataTypeChangeModel.databaseName,
+              alterTableColRenameAndDataTypeChangeModel.tableName)(sparkSession)
           if (carbonTable != null && carbonTable.isFileLevelFormat) {
             throw new MalformedCarbonCommandException(
               "Unsupported alter operation on Carbon external fileformat table")
@@ -141,7 +143,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
             throw new MalformedCarbonCommandException(
               "Unsupported operation on non transactional table")
           } else {
-            ExecutedCommandExec(dataTypeChange) :: Nil
+            ExecutedCommandExec(colRenameDataTypeChange) :: Nil
           }
         } else {
           throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")

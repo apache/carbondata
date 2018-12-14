@@ -729,9 +729,11 @@ object PreAggregateDataTypeChangePreListener extends OperationEventListener {
    * @param operationContext
    */
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
-    val dataTypeChangePreListener = event.asInstanceOf[AlterTableDataTypeChangePreEvent]
-    val carbonTable = dataTypeChangePreListener.carbonTable
-    val alterTableDataTypeChangeModel = dataTypeChangePreListener.alterTableDataTypeChangeModel
+    val colRenameDataTypeChangePreListener = event
+      .asInstanceOf[AlterTableColRenameAndDataTypeChangePreEvent]
+    val carbonTable = colRenameDataTypeChangePreListener.carbonTable
+    val alterTableDataTypeChangeModel = colRenameDataTypeChangePreListener
+      .alterTableDataTypeChangeModel
     val columnToBeAltered: String = alterTableDataTypeChangeModel.columnName
     if (CarbonUtil.hasAggregationDataMap(carbonTable)) {
       val dataMapSchemas = carbonTable.getTableInfo.getDataMapSchemaList
@@ -748,7 +750,8 @@ object PreAggregateDataTypeChangePreListener extends OperationEventListener {
     }
     if (carbonTable.isChildDataMap) {
       throw new UnsupportedOperationException(
-        s"Cannot change data type for columns in pre-aggregate table ${ carbonTable.getDatabaseName
+        s"Cannot change data type or rename column for columns in pre-aggregate table ${
+          carbonTable.getDatabaseName
         }.${ carbonTable.getTableName }")
     }
   }

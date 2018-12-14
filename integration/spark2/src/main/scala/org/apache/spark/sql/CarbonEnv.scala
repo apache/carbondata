@@ -166,7 +166,8 @@ object CarbonEnv {
       .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
       .addListener(classOf[AlterTableDropColumnPreEvent], PreAggregateDropColumnPreListener)
       .addListener(classOf[AlterTableRenamePreEvent], RenameTablePreListener)
-      .addListener(classOf[AlterTableDataTypeChangePreEvent], PreAggregateDataTypeChangePreListener)
+      .addListener(classOf[AlterTableColRenameAndDataTypeChangePreEvent],
+        PreAggregateDataTypeChangePreListener)
       .addListener(classOf[AlterTableAddColumnPreEvent], PreAggregateAddColumnsPreListener)
       .addListener(classOf[LoadTablePreExecutionEvent], LoadPreAggregateTablePreListener)
       .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
