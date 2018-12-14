@@ -39,4 +39,9 @@ public abstract class FineGrainDataMap implements DataMap<FineGrainBlocklet> {
       List<PartitionSpec> partitions, AbsoluteTableIdentifier identifier) throws IOException {
     throw new UnsupportedOperationException("Filter expression not supported");
   }
+
+  @Override public int getNumberOfEntries() {
+    // keep default, one record in one datamap
+    return 1;
+  }
 }
