@@ -808,6 +808,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     if (null != exceptionOccurred) {
       throw new QueryExecutionException(exceptionOccurred);
     }
+    DataTypeUtil.initializeFormatter();
   }
 
 }

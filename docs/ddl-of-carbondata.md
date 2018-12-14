@@ -141,8 +141,6 @@ CarbonData DDL statements are documented here,which includes:
 
      ```
      TBLPROPERTIES ('SORT_COLUMNS'='column1, column3')
-     OR
-     TBLPROPERTIES ('SORT_COLUMNS'='')
      ```
 
      **NOTE**: Sort_Columns for Complex datatype columns is not supported.

@@ -856,8 +856,7 @@ class TableNewProcessor(cm: TableModel) {
         // properties it won't be reflected as table properties is given higher priority)
         if (CarbonProperties.getInstance().getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE) ==
             null) {
-          CarbonProperties.getInstance()
-            .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, "LOCAL_SORT")
+          tablePropertiesMap.put("sort_scope", "LOCAL_SORT")
         }
       }
     }

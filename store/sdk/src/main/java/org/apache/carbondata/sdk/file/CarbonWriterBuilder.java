@@ -545,11 +545,13 @@ public class CarbonWriterBuilder {
       if (options == null || options.get("sort_scope") == null) {
         // If sort_columns are specified and sort_scope is not specified,
         // change sort scope to local_sort as now by default sort scope is no_sort.
-        if (options == null) {
-          options = new HashMap<>();
+        if (CarbonProperties.getInstance().getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
+            == null) {
+          if (options == null) {
+            options = new HashMap<>();
+          }
+          options.put("sort_scope", "local_sort");
         }
-        //TODO: add in carbon property instead of load options
-        options.put("sort_scope", "local_sort");
       }
     }
     // build CarbonTable using schema

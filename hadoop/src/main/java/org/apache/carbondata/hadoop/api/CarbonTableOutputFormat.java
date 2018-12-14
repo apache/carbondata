@@ -34,6 +34,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
@@ -257,6 +258,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     loadModel.setDataWritePath(
         taskAttemptContext.getConfiguration().get("carbon.outputformat.writepath"));
     final String[] tempStoreLocations = getTempStoreLocations(taskAttemptContext);
+    DataTypeUtil.initializeFormatter();
     final DataLoadExecutor dataLoadExecutor = new DataLoadExecutor();
     final ExecutorService executorService = Executors.newFixedThreadPool(1,
         new CarbonThreadFactory("CarbonRecordWriter:" + loadModel.getTableName()));

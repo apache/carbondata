@@ -21,7 +21,7 @@ import org.apache.spark.TaskContext
 import org.apache.spark.sql.carbondata.execution.datasources.tasklisteners.CarbonLoadTaskCompletionListener
 import org.apache.spark.sql.execution.command.ExecutionErrors
 
-import org.apache.carbondata.core.util.ThreadLocalTaskInfo
+import org.apache.carbondata.core.util.{DataTypeUtil, ThreadLocalTaskInfo}
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses}
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -42,6 +42,7 @@ class InsertTaskCompletionListener(dataLoadExecutor: DataLoadExecutor,
     }
     finally {
       CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+      DataTypeUtil.initializeFormatter()
     }
   }
 }

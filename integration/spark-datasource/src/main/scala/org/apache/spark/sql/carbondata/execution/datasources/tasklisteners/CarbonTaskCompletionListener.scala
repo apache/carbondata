@@ -26,7 +26,7 @@ import org.apache.spark.util.TaskCompletionListener
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.memory.UnsafeMemoryManager
-import org.apache.carbondata.core.util.ThreadLocalTaskInfo
+import org.apache.carbondata.core.util.{DataTypeUtil, ThreadLocalTaskInfo}
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable
 
 /**
@@ -54,6 +54,7 @@ case class CarbonQueryTaskCompletionListenerImpl(iter: RecordReaderIterator[Inte
       UnsafeMemoryManager.INSTANCE
         .freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
     }
+    DataTypeUtil.initializeFormatter()
   }
 }
 
@@ -67,6 +68,7 @@ case class CarbonLoadTaskCompletionListenerImpl(recordWriter: RecordWriter[NullW
     } finally {
       UnsafeMemoryManager.INSTANCE
         .freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
+      DataTypeUtil.initializeFormatter()
     }
   }
 }
