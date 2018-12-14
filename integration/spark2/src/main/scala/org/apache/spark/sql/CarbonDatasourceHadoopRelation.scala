@@ -24,7 +24,7 @@ import scala.util.control.Breaks._
 import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, GetArrayItem, GetStructField, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, GetArrayItem, GetMapValue, GetStructField, NamedExpression}
 import org.apache.spark.sql.execution.command.management.CarbonInsertIntoCommand
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.optimizer.CarbonFilters
@@ -101,32 +101,41 @@ case class CarbonDatasourceHadoopRelation(
     if (!complexFilterExists.exists(f => f.contains(true))) {
       var parentColumn = new ListBuffer[String]
       // In case of Struct or StructofStruct Complex type, get the project column for given
-      // parent/child field and pushdown the corresponding project column. In case of Array,
-      // ArrayofStruct or StructofArray, pushdown parent column
+      // parent/child field and pushdown the corresponding project column. In case of Array, Map,
+      // ArrayofStruct, StructofArray, MapOfStruct or StructOfMap, pushdown parent column
       var reqColumns = projects.map {
         case a@Alias(s: GetStructField, name) =>
-          var arrayTypeExists = false
-          var ifGetArrayItemExists = s
+          var arrayOrMapTypeExists = false
+          var ifGetArrayOrMapItemExists = s
           breakable({
-            while (ifGetArrayItemExists.containsChild != null) {
-              if (ifGetArrayItemExists.childSchema.toString().contains("ArrayType")) {
-                arrayTypeExists = ifGetArrayItemExists.childSchema.toString().contains("ArrayType")
+            while (ifGetArrayOrMapItemExists.containsChild != null) {
+              if (ifGetArrayOrMapItemExists.childSchema.toString().contains("ArrayType") ||
+                  ifGetArrayOrMapItemExists.childSchema.toString().contains("MapType")) {
+                arrayOrMapTypeExists = true
                 break
               }
-              if (ifGetArrayItemExists.child.isInstanceOf[AttributeReference]) {
-                arrayTypeExists = s.childSchema.toString().contains("ArrayType")
+              if (ifGetArrayOrMapItemExists.child.isInstanceOf[AttributeReference]) {
+                arrayOrMapTypeExists = s.childSchema.toString().contains("ArrayType") ||
+                                       s.childSchema.toString().contains("MapType")
                 break
               } else {
-                if (ifGetArrayItemExists.child.isInstanceOf[GetArrayItem]) {
-                  arrayTypeExists = true
+                if (ifGetArrayOrMapItemExists.child.isInstanceOf[GetArrayItem] ||
+                    ifGetArrayOrMapItemExists.child.isInstanceOf[GetMapValue]) {
+                  arrayOrMapTypeExists = true
                   break
                 } else {
-                  ifGetArrayItemExists = ifGetArrayItemExists.child.asInstanceOf[GetStructField]
+                  if (ifGetArrayOrMapItemExists.child.isInstanceOf[GetStructField]) {
+                    ifGetArrayOrMapItemExists = ifGetArrayOrMapItemExists.child
+                      .asInstanceOf[GetStructField]
+                  } else {
+                    arrayOrMapTypeExists = true
+                    break
+                  }
                 }
               }
             }
           })
-          if (!arrayTypeExists) {
+          if (!arrayOrMapTypeExists) {
             parentColumn += s.toString().split("\\.")(0).replaceAll("#.*", "").toLowerCase
             parentColumn = parentColumn.distinct
             s.toString().replaceAll("#[0-9]*", "").toLowerCase

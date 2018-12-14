@@ -27,7 +27,6 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk
-
 import scala.collection.JavaConversions._
 
 class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
@@ -469,6 +468,76 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
     assert(exception1.getMessage
       .contains(
         "sort_columns is unsupported for map datatype column: mapfield"))
+  }
+
+  test("Data Load Fail Issue") {
+    sql("DROP TABLE IF EXISTS carbon")
+    sql(
+      s"""
+         | CREATE TABLE carbon(
+         | mapField map<INT,STRING>
+         | )
+         | STORED BY 'carbondata'
+         | """
+        .stripMargin)
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$path'
+         | INTO TABLE carbon OPTIONS(
+         | 'header' = 'false')
+       """.stripMargin)
+    sql("INSERT INTO carbon SELECT * FROM carbon")
+    checkAnswer(sql("select * from carbon"), Seq(
+      Row(Map(1 -> "Nalla", 2 -> "Singh", 4 -> "Kumar")),
+      Row(Map(1 -> "Nalla", 2 -> "Singh", 4 -> "Kumar")),
+      Row(Map(10 -> "Nallaa", 20 -> "Sissngh", 100 -> "Gusspta", 40 -> "Kumar")),
+      Row(Map(10 -> "Nallaa", 20 -> "Sissngh", 100 -> "Gusspta", 40 -> "Kumar"))
+      ))
+  }
+
+  test("Struct inside map") {
+    sql("DROP TABLE IF EXISTS carbon")
+    sql(
+      s"""
+         | CREATE TABLE carbon(
+         | mapField map<INT,struct<kk:STRING,mm:STRING>>
+         | )
+         | STORED BY 'carbondata'
+         | """
+        .stripMargin)
+    sql("INSERT INTO carbon values('1\002man\003nan\0012\002kands\003dsnknd')")
+    sql("INSERT INTO carbon SELECT * FROM carbon")
+    checkAnswer(sql("SELECT * FROM carbon limit 1"),
+      Seq(Row(Map(1 -> Row("man", "nan"), (2 -> Row("kands", "dsnknd"))))))
+  }
+
+  test("Struct inside map pushdown") {
+    sql("DROP TABLE IF EXISTS carbon")
+    sql(
+      s"""
+         | CREATE TABLE carbon(
+         | mapField map<INT,struct<kk:STRING,mm:STRING>>
+         | )
+         | STORED BY 'carbondata'
+         | """
+        .stripMargin)
+    sql("INSERT INTO carbon values('1\002man\003nan\0012\002kands\003dsnknd')")
+    checkAnswer(sql("SELECT mapField[1].kk FROM carbon"), Row("man"))
+  }
+
+  test("Map inside struct") {
+    sql("DROP TABLE IF EXISTS carbon")
+    sql(
+      s"""
+         | CREATE TABLE carbon(
+         | structField struct<intVal:INT,map1:MAP<STRING,STRING>>
+         | )
+         | STORED BY 'carbondata'
+         | """
+        .stripMargin)
+    sql("INSERT INTO carbon values('1\001man\003nan\002kands\003dsnknd')")
+    val res = sql("SELECT structField.intVal FROM carbon").show(false)
+    checkAnswer(sql("SELECT structField.intVal FROM carbon"), Seq(Row(1)))
   }
 
 }
