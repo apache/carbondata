@@ -212,7 +212,7 @@ public class CarbonWriterBuilder {
    */
   public CarbonWriterBuilder withLoadOption(String key, String value) {
     Objects.requireNonNull(key, "key of load properties should not be null");
-    Objects.requireNonNull(key, "value of loadtestWithTableProperties properties  should not be null");
+    Objects.requireNonNull(key, "value of load properties should not be null");
     Map map = new HashMap();
     map.put(key, value);
     withLoadOptions(map);
