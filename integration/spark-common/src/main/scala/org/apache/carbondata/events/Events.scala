@@ -19,7 +19,7 @@ package org.apache.carbondata.events
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
-import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableDataTypeChangeModel, AlterTableDropColumnModel, AlterTableRenameModel, CarbonMergerMapping}
+import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableColRenameAndDataTypeChangeModel, AlterTableDropColumnModel, AlterTableRenameModel, CarbonMergerMapping}
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -80,7 +80,7 @@ trait AlterTableDropPartitionEventInfo {
 
 trait AlterTableDataTypeChangeEventInfo {
   val carbonTable: CarbonTable
-  val alterTableDataTypeChangeModel: AlterTableDataTypeChangeModel
+  val alterTableDataTypeChangeModel: AlterTableColRenameAndDataTypeChangeModel
 }
 
 /**

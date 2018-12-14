@@ -117,12 +117,15 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
   override def updateTableSchemaForAlter(newTableIdentifier: CarbonTableIdentifier,
       oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: format.TableInfo,
-      schemaEvolutionEntry: SchemaEvolutionEntry,
+      schemaEvolutionEntry: List[SchemaEvolutionEntry],
       tablePath: String)
     (sparkSession: SparkSession): String = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
-    if (schemaEvolutionEntry != null) {
-      thriftTableInfo.fact_table.schema_evolution.schema_evolution_history.add(schemaEvolutionEntry)
+    if (schemaEvolutionEntry != null && schemaEvolutionEntry.nonEmpty) {
+      schemaEvolutionEntry.foreach { schemaEvolutionEntry =>
+        thriftTableInfo.fact_table.schema_evolution.schema_evolution_history
+          .add(schemaEvolutionEntry)
+      }
     }
     updateHiveMetaStoreForAlter(newTableIdentifier,
       oldTableIdentifier,
@@ -199,11 +202,22 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
    */
   override def revertTableSchemaInAlterFailure(carbonTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: format.TableInfo,
-      identifier: AbsoluteTableIdentifier)
+      identifier: AbsoluteTableIdentifier,
+      timeStamp: Long)
     (sparkSession: SparkSession): String = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     val evolutionEntries = thriftTableInfo.fact_table.schema_evolution.schema_evolution_history
-    evolutionEntries.remove(evolutionEntries.size() - 1)
+    // we may need to remove two evolution entries if the operation is both col rename and datatype
+    // change operation
+    if (evolutionEntries.size() > 1 && (evolutionEntries.get(evolutionEntries.size() - 1).time_stamp
+           == evolutionEntries.get(evolutionEntries.size() - 2).time_stamp)) {
+      evolutionEntries.remove(evolutionEntries.size() - 1)
+      evolutionEntries.remove(evolutionEntries.size() - 2)
+    } else {
+      if (evolutionEntries.get(evolutionEntries.size() - 1).time_stamp == timeStamp) {
+        evolutionEntries.remove(evolutionEntries.size() - 1)
+      }
+    }
     updateHiveMetaStoreForAlter(carbonTableIdentifier,
       carbonTableIdentifier,
       thriftTableInfo,

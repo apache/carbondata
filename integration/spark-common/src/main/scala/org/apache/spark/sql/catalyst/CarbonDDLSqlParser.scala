@@ -1487,7 +1487,28 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * @param values
    * @return
    */
-  def parseDataType(dataType: String, values: Option[List[(Int, Int)]]): DataTypeInfo = {
+  def parseDataType(
+      dataType: String,
+      values: Option[List[(Int, Int)]],
+      isColumnRename: Boolean): DataTypeInfo = {
+    def validateAndGetDecimalDatatype: DataTypeInfo = {
+      var precision: Int = 0
+      var scale: Int = 0
+      if (values.isDefined) {
+        precision = values.get(0)._1
+        scale = values.get(0)._2
+      } else {
+        throw new MalformedCarbonCommandException("Decimal format provided is invalid")
+      }
+      // precision should be > 0 and <= 38 and scale should be >= 0 and <= 38
+      if (precision < 1 || precision > 38) {
+        throw new MalformedCarbonCommandException("Invalid value for precision")
+      } else if (scale < 0 || scale > 38) {
+        throw new MalformedCarbonCommandException("Invalid value for scale")
+      }
+      DataTypeInfo("decimal", precision, scale)
+    }
+
     dataType match {
       case "bigint" | "long" =>
         if (values.isDefined) {
@@ -1495,23 +1516,17 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         }
         DataTypeInfo(dataType)
       case "decimal" =>
-        var precision: Int = 0
-        var scale: Int = 0
-        if (values.isDefined) {
-          precision = values.get(0)._1
-          scale = values.get(0)._2
-        } else {
-          throw new MalformedCarbonCommandException("Decimal format provided is invalid")
-        }
-        // precision should be > 0 and <= 38 and scale should be >= 0 and <= 38
-        if (precision < 1 || precision > 38) {
-          throw new MalformedCarbonCommandException("Invalid value for precision")
-        } else if (scale < 0 || scale > 38) {
-          throw new MalformedCarbonCommandException("Invalid value for scale")
-        }
-        DataTypeInfo("decimal", precision, scale)
+        validateAndGetDecimalDatatype
       case _ =>
-        throw new MalformedCarbonCommandException("Data type provided is invalid.")
+        if (isColumnRename) {
+          if (dataType.equalsIgnoreCase("decimal")) {
+            return validateAndGetDecimalDatatype
+          } else {
+            return DataTypeInfo(DataTypeConverterUtil.convertToCarbonType(dataType).getName)
+          }
+        } else {
+          throw new MalformedCarbonCommandException("Data type provided is invalid.")
+        }
     }
   }
 }

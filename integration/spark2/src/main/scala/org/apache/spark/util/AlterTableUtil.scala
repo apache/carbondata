@@ -106,7 +106,7 @@ object AlterTableUtil {
    * @param sparkSession
    */
   def updateSchemaInfo(carbonTable: CarbonTable,
-      schemaEvolutionEntry: SchemaEvolutionEntry = null,
+      schemaEvolutionEntry: List[SchemaEvolutionEntry] = null,
       thriftTable: TableInfo,
       cols: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]] =
       None)
@@ -179,7 +179,7 @@ object AlterTableUtil {
           tablePath,
           newCarbonTableIdentifier)
         metastore.revertTableSchemaInAlterFailure(oldCarbonTableIdentifier,
-          tableInfo, absoluteTableIdentifier)(sparkSession)
+          tableInfo, absoluteTableIdentifier, timeStamp)(sparkSession)
         metastore.removeTableFromMetadata(database, newTableName)
       }
     }
@@ -206,7 +206,7 @@ object AlterTableUtil {
       thriftTable.fact_table.table_columns.removeAll(addedSchemas)
       metastore
         .revertTableSchemaInAlterFailure(carbonTable.getCarbonTableIdentifier,
-          thriftTable, carbonTable.getAbsoluteTableIdentifier)(sparkSession)
+          thriftTable, carbonTable.getAbsoluteTableIdentifier, timeStamp)(sparkSession)
     }
   }
 
@@ -237,7 +237,7 @@ object AlterTableUtil {
       }
       metastore
         .revertTableSchemaInAlterFailure(carbonTable.getCarbonTableIdentifier,
-          thriftTable, carbonTable.getAbsoluteTableIdentifier)(sparkSession)
+          thriftTable, carbonTable.getAbsoluteTableIdentifier, timeStamp)(sparkSession)
     }
   }
 
@@ -249,29 +249,57 @@ object AlterTableUtil {
    * @param timeStamp
    * @param sparkSession
    */
-  def revertDataTypeChanges(dbName: String, tableName: String, timeStamp: Long)
+  def revertColumnRenameAndDataTypeChanges(dbName: String, tableName: String, timeStamp: Long)
     (sparkSession: SparkSession): Unit = {
     val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
     val thriftTable: TableInfo = metastore.getThriftTableInfo(carbonTable)
     val evolutionEntryList = thriftTable.fact_table.schema_evolution.schema_evolution_history
-    val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp
-    if (updatedTime == timeStamp) {
-      LOGGER.error(s"Reverting changes for $dbName.$tableName")
-      val removedColumns = evolutionEntryList.get(evolutionEntryList.size() - 1).removed
-      thriftTable.fact_table.table_columns.asScala.foreach { columnSchema =>
-        removedColumns.asScala.foreach { removedColumn =>
-          if (columnSchema.column_id.equalsIgnoreCase(removedColumn.column_id) &&
-              !columnSchema.isInvisible) {
-            columnSchema.setData_type(removedColumn.data_type)
-            columnSchema.setPrecision(removedColumn.precision)
-            columnSchema.setScale(removedColumn.scale)
-          }
+    // here, there can be maximum of two entries for schemaEvolution, when my operation is
+    // both column rename and datatype change. So check if last two Evolution entry timestamp is
+    // same, then it is both column rename and datatype change, so revert two entries,else one entry
+    if (evolutionEntryList.size() > 1 &&
+        (evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp == timeStamp) &&
+        (evolutionEntryList.get(evolutionEntryList.size() - 2).time_stamp == timeStamp)) {
+      LOGGER.error(s"Reverting column rename and datatype changes for $dbName.$tableName")
+      revertColumnSchemaChanges(thriftTable, evolutionEntryList, true)
+    } else {
+      if (evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp == timeStamp) {
+        LOGGER.error(s"Reverting changes for $dbName.$tableName")
+        revertColumnSchemaChanges(thriftTable, evolutionEntryList, false)
+      }
+    }
+    metastore
+      .revertTableSchemaInAlterFailure(carbonTable.getCarbonTableIdentifier,
+        thriftTable, carbonTable.getAbsoluteTableIdentifier, timeStamp)(sparkSession)
+  }
+
+  /**
+   * This method reverts the column schema in case of failure in alter datatype change or col rename
+   * @param thriftTable thrift table
+   * @param evolutionEntryList SchemaEvolutionEntry List
+   * @param isBothColRenameAndDataTypeChange true if operation done is noth rename and datatype chng
+   */
+  private def revertColumnSchemaChanges(thriftTable: TableInfo,
+      evolutionEntryList: util.List[SchemaEvolutionEntry],
+      isBothColRenameAndDataTypeChange: Boolean): Unit = {
+    var removedColumns: mutable.Buffer[org.apache.carbondata.format.ColumnSchema] = null
+    if (isBothColRenameAndDataTypeChange) {
+      removedColumns = evolutionEntryList.get(evolutionEntryList.size() - 1).removed.asScala ++
+                       evolutionEntryList.get(evolutionEntryList.size() - 2).removed.asScala
+    } else {
+      removedColumns = evolutionEntryList.get(evolutionEntryList.size() - 1).removed.asScala
+    }
+    thriftTable.fact_table.table_columns.asScala.foreach { columnSchema =>
+      removedColumns.foreach { removedColumn =>
+        if (columnSchema.column_id.equalsIgnoreCase(removedColumn.column_id) &&
+            !columnSchema.isInvisible) {
+          columnSchema.setColumn_name(removedColumn.column_name)
+          columnSchema.setData_type(removedColumn.data_type)
+          columnSchema.setPrecision(removedColumn.precision)
+          columnSchema.setScale(removedColumn.scale)
         }
       }
-      metastore
-        .revertTableSchemaInAlterFailure(carbonTable.getCarbonTableIdentifier,
-          thriftTable, carbonTable.getAbsoluteTableIdentifier)(sparkSession)
     }
   }
 

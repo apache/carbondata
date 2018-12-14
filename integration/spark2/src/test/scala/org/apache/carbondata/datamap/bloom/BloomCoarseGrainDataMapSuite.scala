@@ -552,7 +552,7 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
       sql(s"ALTER TABLE $normalTable CHANGE id id bigint")
     }
     assert(exception.getMessage.contains(
-      "alter table change datatype is not supported for index datamap"))
+      "alter table change datatype or column rename is not supported for index datamap"))
   }
 
   test("test drop index columns for bloomfilter datamap") {

@@ -286,12 +286,16 @@ class CarbonFileMetastore extends CarbonMetaStore {
       newTableIdentifier: CarbonTableIdentifier,
       oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
-      schemaEvolutionEntry: SchemaEvolutionEntry,
+      schemaEvolutionEntry: List[SchemaEvolutionEntry],
       tablePath: String) (sparkSession: SparkSession): String = {
     val identifier = AbsoluteTableIdentifier.from(tablePath, oldTableIdentifier)
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
-    if (schemaEvolutionEntry != null) {
-      thriftTableInfo.fact_table.schema_evolution.schema_evolution_history.add(schemaEvolutionEntry)
+
+    if (schemaEvolutionEntry != null && schemaEvolutionEntry.nonEmpty) {
+      schemaEvolutionEntry.foreach { schemaEvolutionEntry =>
+        thriftTableInfo.fact_table.schema_evolution.schema_evolution_history
+          .add(schemaEvolutionEntry)
+      }
     }
     val wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
       thriftTableInfo,
@@ -318,7 +322,8 @@ class CarbonFileMetastore extends CarbonMetaStore {
    */
   def revertTableSchemaInAlterFailure(carbonTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
-      absoluteTableIdentifier: AbsoluteTableIdentifier)(sparkSession: SparkSession): String = {
+      absoluteTableIdentifier: AbsoluteTableIdentifier,
+      timeStamp: Long)(sparkSession: SparkSession): String = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     val wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
       thriftTableInfo,
@@ -326,7 +331,18 @@ class CarbonFileMetastore extends CarbonMetaStore {
       carbonTableIdentifier.getTableName,
       absoluteTableIdentifier.getTablePath)
     val evolutionEntries = thriftTableInfo.fact_table.schema_evolution.schema_evolution_history
-    evolutionEntries.remove(evolutionEntries.size() - 1)
+    // we may need to remove two evolution entries if the operation is both col rename and datatype
+    // change operation
+    if (evolutionEntries.size() > 1 &&
+        (evolutionEntries.get(evolutionEntries.size() - 1).time_stamp ==
+        evolutionEntries.get(evolutionEntries.size() - 2).time_stamp)) {
+      evolutionEntries.remove(evolutionEntries.size() - 1)
+      evolutionEntries.remove(evolutionEntries.size() - 2)
+    } else {
+      if (evolutionEntries.get(evolutionEntries.size() - 1).time_stamp == timeStamp) {
+        evolutionEntries.remove(evolutionEntries.size() - 1)
+      }
+    }
     val path = createSchemaThriftFile(absoluteTableIdentifier, thriftTableInfo)
     addTableCache(wrapperTableInfo, absoluteTableIdentifier)
     path

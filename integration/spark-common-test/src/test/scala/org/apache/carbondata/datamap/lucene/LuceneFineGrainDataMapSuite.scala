@@ -641,7 +641,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     val ex3 = intercept[MalformedCarbonCommandException] {
       sql("alter table datamap_test7 change id id BIGINT")
     }
-    assert(ex3.getMessage.contains("alter table change datatype is not supported"))
+    assert(ex3.getMessage.contains("alter table change datatype or column rename is not supported"))
 
     val ex4 = intercept[MalformedCarbonCommandException] {
       sql("alter table datamap_test7 drop columns(name)")

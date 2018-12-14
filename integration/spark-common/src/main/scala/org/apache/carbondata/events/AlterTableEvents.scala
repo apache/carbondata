@@ -42,10 +42,10 @@ case class AlterTableDropColumnPreEvent(
  * @param carbonTable
  * @param alterTableDataTypeChangeModel
  */
-case class AlterTableDataTypeChangePreEvent(
+case class AlterTableColRenameAndDataTypeChangePreEvent(
     sparkSession: SparkSession,
     carbonTable: CarbonTable,
-        alterTableDataTypeChangeModel: AlterTableDataTypeChangeModel)
+        alterTableDataTypeChangeModel: AlterTableColRenameAndDataTypeChangeModel)
   extends Event with AlterTableDataTypeChangeEventInfo
 
 /**
@@ -54,10 +54,10 @@ case class AlterTableDataTypeChangePreEvent(
  * @param carbonTable
  * @param alterTableDataTypeChangeModel
  */
-case class AlterTableDataTypeChangePostEvent(
+case class AlterTableColRenameAndDataTypeChangePostEvent(
     sparkSession: SparkSession,
     carbonTable: CarbonTable,
-    alterTableDataTypeChangeModel: AlterTableDataTypeChangeModel)
+    alterTableDataTypeChangeModel: AlterTableColRenameAndDataTypeChangeModel)
   extends Event with AlterTableDataTypeChangeEventInfo
 
 /**

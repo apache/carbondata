@@ -383,7 +383,7 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
         return true;
       case ALTER_ADD_COLUMN:
         return false;
-      case ALTER_CHANGE_DATATYPE:
+      case ALTER_COL_RENAME_AND_CHANGE_DATATYPE:
         return true;
       case STREAMING:
         return false;
@@ -415,8 +415,8 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
         }
         return false;
       }
-      case ALTER_CHANGE_DATATYPE: {
-        // alter table change one column datatype
+      case ALTER_COL_RENAME_AND_CHANGE_DATATYPE: {
+        // alter table change one column datatype, or rename
         // will be blocked if the column in bloomfilter datamap
         String columnToChangeDatatype = (String) targets[0];
         List<String> indexedColumnNames = dataMapMeta.getIndexedColumnNames();

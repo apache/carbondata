@@ -140,7 +140,7 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
       }
       val (tableIdentifier, schemaParts, cols) = AlterTableUtil.updateSchemaInfo(
         carbonTable,
-        schemaEvolutionEntry,
+        List(schemaEvolutionEntry),
         tableInfo,
         Some(delCols))(sparkSession)
       sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]

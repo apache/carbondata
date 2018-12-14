@@ -171,11 +171,12 @@ case class DropPartitionCallableModel(carbonLoadModel: CarbonLoadModel,
 
 case class DataTypeInfo(dataType: String, precision: Int = 0, scale: Int = 0)
 
-case class AlterTableDataTypeChangeModel(dataTypeInfo: DataTypeInfo,
+case class AlterTableColRenameAndDataTypeChangeModel(dataTypeInfo: DataTypeInfo,
     databaseName: Option[String],
     tableName: String,
     columnName: String,
-    newColumnName: String)
+    newColumnName: String,
+    isColumnRename: Boolean)
 
 case class AlterTableRenameModel(
     oldTableIdentifier: TableIdentifier,
