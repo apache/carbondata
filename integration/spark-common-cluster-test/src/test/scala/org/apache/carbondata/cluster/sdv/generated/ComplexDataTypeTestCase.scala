@@ -74,7 +74,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       "create table test(person struct<detail:struct<id:int,name:string,height:double," +
       "status:boolean,dob:date,dobt:timestamp>>) stored by 'carbondata'")
-    sql("insert into test values('1:abc:4.30:true:2017/08/09:2017/08/09')")
+    sql("insert into test values('1\002abc\0024.30\002true\0022017/08/09\0022017/08/09')")
     checkAnswer(sql("select * from test"),
       Seq(Row(Row(Row(1, "abc", 4.3, true, java.sql.Date.valueOf("2017-08-09"),
         Timestamp.valueOf("2017-08-09 00:00:00.0"))))))
@@ -83,8 +83,8 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       "create table test(p1 array<int>,p2 array<string>,p3 array<double>,p4 array<boolean>,p5 " +
       "array<date>,p6 array<timestamp>) stored by 'carbondata'")
     sql(
-      "insert into test values('1$2$3','abc$def$mno','4.30$4.60$5.20','true$true$false'," +
-      "'2017/08/09$2017/08/09$2017/07/07','2017/08/09$2017/08/09$2017/07/07')")
+      "insert into test values('1\0012\0013','abc\001def\001mno','4.30\0014.60\0015.20','true\001true\001false'," +
+      "'2017/08/09\0012017/08/09\0012017/07/07','2017/08/09\0012017/08/09\0012017/07/07')")
     checkAnswer(sql("select * from test"),
       Seq(Row(mutable.WrappedArray.make(Array(1, 2, 3)),
         mutable.WrappedArray.make(Array("abc", "def", "mno")),
@@ -142,7 +142,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       "create table test(person struct<detail:struct<id:int,name:string,height:double," +
       "status:boolean,dob:date,dobt:timestamp>>) stored by 'carbondata' tblproperties" +
       "('dictionary_include'='person')")
-    sql("insert into test values('1:abc:4.30:true:2017/08/09:2017/08/09')")
+    sql("insert into test values('1\002abc\0024.30\002true\0022017/08/09\0022017/08/09')")
     checkAnswer(sql("select * from test"),
       Seq(Row(Row(Row(1,
         "abc", 4.3, true, java.sql.Date.valueOf("2017-08-09"),
@@ -153,8 +153,8 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       "array<date>,p6 array<timestamp>) stored by 'carbondata' tblproperties" +
       "('dictionary_include'='p1,p2,p3,p4,p5,p6')")
     sql(
-      "insert into test values('1$2$3','abc$def$mno','4.30$4.60$5.20','true$true$false'," +
-      "'2017/08/09$2017/08/09$2017/07/07','2017/08/09$2017/08/09$2017/07/07')")
+      "insert into test values('1\0012\0013','abc\001def\001mno','4.30\0014.60\0015.20','true\001true\001false'," +
+      "'2017/08/09\0012017/08/09\0012017/07/07','2017/08/09\0012017/08/09\0012017/07/07')")
     checkAnswer(sql("select * from test"),
       Seq(Row(mutable.WrappedArray.make(Array(1, 2, 3)),
         mutable.WrappedArray.make(Array("abc", "def", "mno")),
@@ -206,9 +206,9 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       "h:string,i:int>,j:int>) stored " +
       "by " +
       "'carbondata'")
-    sql("insert into complexcarbontable values(1,'1$abc$2$efg$3:mno:4$5')")
-    sql("insert into complexcarbontable values(2,'1$abc$2$efg$3:mno:4$5')")
-    sql("insert into complexcarbontable values(3,'1$abc$2$efg$3:mno:4$5')")
+    sql("insert into complexcarbontable values(1,'1\001abc\0012\001efg\0013\002mno\0024\0015')")
+    sql("insert into complexcarbontable values(2,'1\001abc\0012\001efg\0013\002mno\0024\0015')")
+    sql("insert into complexcarbontable values(3,'1\001abc\0012\001efg\0013\002mno\0024\0015')")
     checkAnswer(sql("select a.b from complexcarbontable"), Seq(Row(1), Row(1), Row(1)))
     checkAnswer(sql("select a.c from complexcarbontable"), Seq(Row("abc"), Row("abc"), Row("abc")))
     checkAnswer(sql("select a.d from complexcarbontable"), Seq(Row(2), Row(2), Row(2)))
@@ -248,9 +248,9 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   test("test Complex_DataType-006") {
     sql("DROP TABLE IF EXISTS test")
     sql("create table test(id int,a struct<b:int,c:int>) stored by 'carbondata'")
-    sql("insert into test values(1,'2$3')")
-    sql("insert into test values(3,'5$3')")
-    sql("insert into test values(2,'4$5')")
+    sql("insert into test values(1,'2\0013')")
+    sql("insert into test values(3,'5\0013')")
+    sql("insert into test values(2,'4\0015')")
     checkAnswer(sql("select a.b from test where id=3"), Seq(Row(5)))
     checkAnswer(sql("select a.b from test where a.c!=3"), Seq(Row(4)))
     checkAnswer(sql("select a.b from test where a.c=3"), Seq(Row(5), Row(2)))
@@ -294,7 +294,7 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       "create table complexcarbontable(roll int, student struct<id:int,name:string," +
       "marks:array<int>>) " +
       "stored by 'carbondata'")
-    sql("insert into complexcarbontable values(1,'null$abc$null:null:null')")
+    sql("insert into complexcarbontable values(1,'null\001abc\001null\002null\002null')")
     checkAnswer(sql("select * from complexcarbontable"),
       Seq(Row(1, Row(null, "abc", mutable.WrappedArray.make(Array(null, null, null))))))
   }
@@ -308,14 +308,14 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       "stored by 'carbondata'")
     sql(
       "insert into complexcarbontable values" +
-      "('14.35:400000.35:1.7976931348623157$67890985.888:65.5656:200')," +
-      "('20.25:50000.25:4.945464565654656546546546324$10000000:300000:3000')")
+      "('14.35\002400000.35\0021.7976931348623157\00167890985.888\00265.5656\002200')," +
+      "('20.25\00250000.25\0024.945464565654656546546546324\00110000000\002300000\0023000')")
     checkExistence(sql("select * from complexcarbontable"), true, "1.0E7,300000.0,3000.0")
     sql("Drop table if exists complexcarbontable")
     sql(
       "create table complexcarbontable(struct_arr struct<array_db1:array<double>>) stored by " +
       "'carbondata'")
-    sql("insert into complexcarbontable values('5555555.9559:12345678991234567:3444.999')")
+    sql("insert into complexcarbontable values('5555555.9559\00212345678991234567\0023444.999')")
     checkExistence(sql("select * from complexcarbontable"),
       true,
       "5555555.9559, 1.2345678991234568E16, 3444.999")
@@ -361,7 +361,8 @@ class ComplexDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       """.stripMargin
     val pschema = org.apache.avro.Schema.parse(mySchema)
     val records = jsonToAvro(jsonvalue, mySchema)
-    val writer = CarbonWriter.builder().outputPath(writerPath).buildWriterForAvroInput(pschema)
+    val writer = CarbonWriter.builder().outputPath(writerPath).withAvroInput(pschema)
+      .writtenBy("ComplexDataTypeTestCase").build()
     writer.write(records)
     writer.close()
     sql("DROP TABLE IF EXISTS sdkOutputTable")
