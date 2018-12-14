@@ -93,7 +93,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           CarbonDropTableCommand(ifNotExists, identifier.database,
             identifier.table.toLowerCase)) :: Nil
       case createLikeTable: CreateTableLikeCommand =>
-        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
           .tableExists(createLikeTable.sourceTable)(sparkSession)
         if (isCarbonTable) {
           throw new MalformedCarbonCommandException(
