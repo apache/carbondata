@@ -750,7 +750,7 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   val prop = CarbonProperties.getInstance()
-  val p1 = prop.getProperty("carbon.enable.auto.load.merge", CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
+  val p1 = prop.getPropertyOrDefault(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE)
 
   override protected def beforeAll() {
     // Adding new properties

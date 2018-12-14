@@ -48,12 +48,9 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
   private val dataFilePath = s"$resourcesPath/streamSample.csv"
 
   override def beforeAll {
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT)
     sql("DROP DATABASE IF EXISTS streaming1 CASCADE")
     sql("CREATE DATABASE streaming1")
     sql("USE streaming1")
@@ -741,8 +738,8 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
       tableIdentifier: TableIdentifier,
       badRecordAction: String = "force",
       intervalSecond: Int = 2,
-      handoffSize: Long = CarbonCommonConstants.HANDOFF_SIZE_DEFAULT,
-      autoHandoff: Boolean = CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT.toBoolean
+      handoffSize: Long = CarbonCommonConstants.HANDOFF_SIZE.getDefaultValueLong,
+      autoHandoff: Boolean = CarbonCommonConstants.ENABLE_AUTO_HANDOFF.getDefaultValueBoolean
   ): Thread = {
     new Thread() {
       override def run(): Unit = {
@@ -783,9 +780,10 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
             .option("bad_records_action", badRecordAction)
             .option("dbName", tableIdentifier.database.get)
             .option("tableName", tableIdentifier.table)
-            .option(CarbonCommonConstants.HANDOFF_SIZE, handoffSize)
-            .option("timestampformat", CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-            .option(CarbonCommonConstants.ENABLE_AUTO_HANDOFF, autoHandoff)
+            .option(CarbonCommonConstants.HANDOFF_SIZE.getName, handoffSize)
+            .option("timestampformat", CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT
+              .getDefaultValueString)
+            .option(CarbonCommonConstants.ENABLE_AUTO_HANDOFF.getName, autoHandoff)
             .start()
           qry.awaitTermination()
         } catch {
@@ -812,8 +810,8 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
       continueSeconds: Int,
       generateBadRecords: Boolean,
       badRecordAction: String,
-      handoffSize: Long = CarbonCommonConstants.HANDOFF_SIZE_DEFAULT,
-      autoHandoff: Boolean = CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT.toBoolean
+      handoffSize: Long = CarbonCommonConstants.HANDOFF_SIZE.getDefaultValueLong,
+      autoHandoff: Boolean = CarbonCommonConstants.ENABLE_AUTO_HANDOFF.getDefaultValueBoolean
   ): Unit = {
     val identifier = new TableIdentifier(tableName, Option("streaming1"))
     val carbonTable = CarbonEnv.getInstance(spark).carbonMetaStore.lookupRelation(identifier)(spark)

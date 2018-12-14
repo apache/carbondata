@@ -521,8 +521,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
 
   private def getTimestampFileAndType() = {
     var basePath = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,
-        CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER_DEFAULT)
+      .getPropertyOrDefault(CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER)
     basePath = CarbonUtil.checkAndAppendFileSystemURIScheme(basePath)
     val timestampFile = basePath + "/" + CarbonCommonConstants.SCHEMAS_MODIFIED_TIME_FILE
     val timestampFileType = FileFactory.getFileType(timestampFile)

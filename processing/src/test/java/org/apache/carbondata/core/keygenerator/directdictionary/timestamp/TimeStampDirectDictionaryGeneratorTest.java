@@ -66,8 +66,7 @@ public class TimeStampDirectDictionaryGeneratorTest {
     long valueFromSurrogate = (long) generator.getValueFromSurrogate(surrogateKey);
     Date date = new Date(valueFromSurrogate / 1000);
     SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT));
     timeParser.setLenient(false);
     String actualValue = timeParser.format(date);
     Assert.assertEquals(memberString, actualValue);
@@ -80,8 +79,7 @@ public class TimeStampDirectDictionaryGeneratorTest {
    */
   @Test public void getSurrogateWithCutoff() throws Exception {
     SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT));
     timeParser.setLenient(false);
     TimeStampDirectDictionaryGenerator generator = new TimeStampDirectDictionaryGenerator();
     long cutOffValue = timeParser.parse("1500-01-01 00:00:00").getTime();
@@ -108,8 +106,7 @@ public class TimeStampDirectDictionaryGeneratorTest {
     long valueFromSurrogate = (long) generator.getValueFromSurrogate(2);
     Date date = new Date(valueFromSurrogate / 1000);
     SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT));
     timeParser.setLenient(false);
     timeParser.setTimeZone(TimeZone.getTimeZone("IST"));
     String actualValue = timeParser.format(date);
@@ -127,8 +124,7 @@ public class TimeStampDirectDictionaryGeneratorTest {
     long valueFromSurrogate = (long) generator.getValueFromSurrogate(surrogateKey);
     Date date = new Date(valueFromSurrogate / 1000);
     SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT));
     timeParser.setLenient(false);
     String actualValue = timeParser.format(date);
     Assert.assertEquals("2038-01-01 05:30:00", actualValue);

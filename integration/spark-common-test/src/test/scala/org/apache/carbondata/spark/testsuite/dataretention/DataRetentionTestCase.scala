@@ -44,7 +44,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   var carbonTablePath : String = null
   var carbonDateFormat = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP)
   var defaultDateFormat = new SimpleDateFormat(CarbonCommonConstants
-    .CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    .CARBON_TIMESTAMP_FORMAT.getDefaultValueString)
   var carbonTableStatusLock: ICarbonLock = null
   var carbonDeleteSegmentLock: ICarbonLock = null
   var carbonCleanFilesLock: ICarbonLock = null

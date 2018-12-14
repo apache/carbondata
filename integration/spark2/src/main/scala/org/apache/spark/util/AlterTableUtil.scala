@@ -142,8 +142,10 @@ object AlterTableUtil {
   private def prepareSchemaJsonForAlterTable(sparkConf: SparkConf,
       schemaJsonString: String): String = {
     val threshold = sparkConf
-      .getInt(CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD,
-        CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT)
+      .getInt(CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD.getName,
+        Integer.parseInt(CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD
+          .getDefaultValueString)
+      )
     // Split the JSON string.
     val parts = schemaJsonString.grouped(threshold).toSeq
     var schemaParts: Seq[String] = Seq.empty
@@ -748,14 +750,14 @@ object AlterTableUtil {
   private def validateLoadMinSizeProperties(carbonTable: CarbonTable,
       propertiesMap: mutable.Map[String, String]): Unit = {
     // validate load min size property
-    if (propertiesMap.get(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB).isDefined) {
+    if (propertiesMap.get(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB.getName).isDefined) {
       // load min size is not allowed for child tables and dataMaps
       if (carbonTable.isChildDataMap) {
         throw new MalformedCarbonCommandException(s"Table property ${
           CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB} is not allowed for child datamaps")
       }
       CommonUtil.validateLoadMinSize(propertiesMap,
-        CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB)
+        CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB.getName)
     }
   }
 }

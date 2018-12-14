@@ -39,8 +39,7 @@ public class UnsafeMemoryManager {
       LogServiceFactory.getLogService(UnsafeMemoryManager.class.getName());
 
   private static boolean offHeap = Boolean.parseBoolean(CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
-          CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT));
+      .getPropertyOrDefault(CarbonCommonConstants.ENABLE_OFFHEAP_SORT));
   private static Map<String,Set<MemoryBlock>> taskIdToOffheapMemoryBlockMap;
   static {
     long size = 0L;
@@ -50,7 +49,7 @@ public class UnsafeMemoryManager {
       // initialize unsafe memory configured for driver
       boolean isDriver = Boolean.parseBoolean(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE,
-              CarbonCommonConstants.IS_DRIVER_INSTANCE_DEFAULT));
+              CarbonCommonConstants.IS_DRIVER_INSTANCE.getDefaultValueString()));
       boolean initializedWithUnsafeDriverMemory = false;
       if (isDriver) {
         configuredWorkingMemorySize = CarbonProperties.getInstance()
@@ -74,13 +73,14 @@ public class UnsafeMemoryManager {
     MemoryType memoryType;
     if (offHeap) {
       memoryType = MemoryType.OFFHEAP;
-      long defaultSize = Long.parseLong(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT);
+      long defaultSize = CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB.getDefaultValueLong();
       if (takenSize < defaultSize) {
         takenSize = defaultSize;
         LOGGER.warn(String.format(
             "It is not recommended to set offheap working memory size less than %sMB,"
                 + " so setting default value to %d",
-            CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT, defaultSize));
+            CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB.getDefaultValueString(),
+            defaultSize));
       }
       takenSize = takenSize * 1024 * 1024;
     } else {

@@ -27,15 +27,13 @@ class MajorCompactionWithMeasureSortColumns extends QueryTest with BeforeAndAfte
 
   val csvFilePath = s"$resourcesPath/compaction/nodictionary_compaction.csv"
   val backupDateFormat = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+    .getPropertyOrDefault(CarbonCommonConstants.CARBON_DATE_FORMAT)
 
   override def beforeAll: Unit = {
     sql("drop table if exists store")
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT)
   }
 
   override def afterAll {

@@ -61,8 +61,7 @@ class CountStarTestCase extends QueryTest with BeforeAndAfterAll {
     sql("explain select count(*) from filterTimestampDataType").collect()
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
-        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS)
   }
 
   override def afterAll {

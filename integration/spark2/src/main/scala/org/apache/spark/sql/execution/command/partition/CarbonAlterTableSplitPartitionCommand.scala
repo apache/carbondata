@@ -114,12 +114,10 @@ case class CarbonAlterTableSplitPartitionCommand(
 
   private def updatePartitionInfo(partitionInfo: PartitionInfo, partitionIds: List[Int]): Unit = {
     val dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+      .getPropertyOrDefault(CarbonCommonConstants.CARBON_DATE_FORMAT))
 
     val timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+      .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))
 
     PartitionUtils.updatePartitionInfo(
       partitionInfo,
@@ -147,7 +145,7 @@ case class CarbonAlterTableSplitPartitionCommand(
       val table = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
       val carbonLoadModel = new CarbonLoadModel()
       val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
-        .getOrElse(CarbonCommonConstants.COMPRESSOR,
+        .getOrElse(CarbonCommonConstants.COMPRESSOR.getName,
           CompressorFactory.getInstance().getCompressor.getName)
       carbonLoadModel.setColumnCompressor(columnCompressor)
       val tablePath = table.getTablePath

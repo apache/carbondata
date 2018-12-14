@@ -88,7 +88,7 @@ case class CarbonCreateTableCommand(
 
       // Add validation for sort scope when create table
       val sortScope = tableInfo.getFactTable.getTableProperties.asScala
-        .getOrElse("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+        .getOrElse("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE.getDefaultValueString)
       if (!CarbonUtil.isValidSortOption(sortScope)) {
         throw new InvalidConfigurationException(
           s"Passing invalid SORT_SCOPE '$sortScope', valid SORT_SCOPE are 'NO_SORT'," +
@@ -101,7 +101,7 @@ case class CarbonCreateTableCommand(
 
       // Add validatation for column compressor when create table
       val columnCompressor = tableInfo.getFactTable.getTableProperties.get(
-        CarbonCommonConstants.COMPRESSOR)
+        CarbonCommonConstants.COMPRESSOR.getName)
       try {
         if (null != columnCompressor) {
           CompressorFactory.getInstance().getCompressor(columnCompressor)

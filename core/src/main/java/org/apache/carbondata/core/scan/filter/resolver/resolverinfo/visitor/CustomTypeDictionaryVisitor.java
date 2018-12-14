@@ -104,12 +104,10 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
     String timeFormat = null;
     if (dataType == DataTypes.DATE) {
       timeFormat = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-              CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+          .getPropertyOrDefault(CarbonCommonConstants.CARBON_DATE_FORMAT);
     } else {
       timeFormat = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+          .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT);
     }
     for (String filterMember : evaluateResultListFinal) {
       surrogates

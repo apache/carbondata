@@ -557,8 +557,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     }
     blockExecutionInfo.setDimensionResusableDataBuffer(dimensionBuffer);
     int numberOfColumnToBeReadInOneIO = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
-            CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE));
+        .getPropertyOrDefault(CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO));
 
     if (dimensionChunkIndexes.length > 0) {
       numberOfElementToConsider = dimensionChunkIndexes[dimensionChunkIndexes.length - 1]

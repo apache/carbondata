@@ -636,7 +636,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
 
     }
     if(isPlanUpdated) {
-      CarbonSession.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP, "true")
+      CarbonSession.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP.getName, "true")
     }
     updatedPlan
   }

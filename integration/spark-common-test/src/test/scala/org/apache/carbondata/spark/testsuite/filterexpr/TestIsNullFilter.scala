@@ -10,7 +10,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 class TestIsNullFilter extends QueryTest with BeforeAndAfterAll {
   override def beforeAll: Unit = {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
     sql("drop table if exists main")
     sql("create table main(id int, name string, time timestamp) STORED BY 'org.apache.carbondata.format'")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/newsample.csv' into table main OPTIONS('bad_records_action'='force')")
@@ -24,8 +24,7 @@ class TestIsNullFilter extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll: Unit = {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
     sql("drop table if exists main")
   }
 

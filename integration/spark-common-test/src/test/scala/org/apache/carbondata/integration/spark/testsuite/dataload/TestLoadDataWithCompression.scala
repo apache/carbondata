@@ -187,12 +187,10 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
   }
 
   override protected def afterEach(): Unit = {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
-      CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.COMPRESSOR,
-      CarbonCommonConstants.DEFAULT_COMPRESSOR)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-      CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT)
+      .addProperty(CarbonCommonConstants.COMPRESSOR)
+      .addProperty(CarbonCommonConstants.BLOCKLET_SIZE)
 
     try {
       sql(s"DROP TABLE IF EXISTS $tableName")
@@ -224,7 +222,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES(
-         |  ${if (StringUtils.isBlank(columnCompressor)) "" else s"'${CarbonCommonConstants.COMPRESSOR}'='$columnCompressor',"}
+         |  ${if (StringUtils.isBlank(columnCompressor)) "" else s"'${CarbonCommonConstants.COMPRESSOR.getName}'='$columnCompressor',"}
          |  ${if (streaming) "" else s"'LONG_STRING_COLUMNS'='longStringField',"}
          |  'SORT_COLUMNS'='stringSortField',
          |  'DICTIONARY_INCLUDE'='stringDictField',
@@ -480,7 +478,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     loadData()
     checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
     val carbonTable = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
-    val tableColumnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR)
+    val tableColumnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR.getName)
     assertResult("zstd")(tableColumnCompressor)
   }
 
@@ -493,7 +491,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     loadData()
     checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
     val carbonTable = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
-    val tableColumnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR)
+    val tableColumnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR.getName)
     assert("gzip".equalsIgnoreCase(tableColumnCompressor))
   }
 
@@ -545,7 +543,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     loadData()
     checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
     val carbonTable = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
-    val tableColumnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR)
+    val tableColumnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR.getName)
     assertResult(compressorName.toLowerCase())(tableColumnCompressor)
 
     sql(s"DROP TABLE IF EXISTS $tableName")
@@ -554,7 +552,7 @@ class TestLoadDataWithCompression extends QueryTest with BeforeAndAfterEach with
     loadData()
     checkAnswer(sql(s"SELECT count(*) FROM $tableName"), Seq(Row(8)))
     val carbonTable2 = CarbonEnv.getCarbonTable(Option("default"), tableName)(sqlContext.sparkSession)
-    val tableColumnCompressor2 = carbonTable2.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR)
+    val tableColumnCompressor2 = carbonTable2.getTableInfo.getFactTable.getTableProperties.get(CarbonCommonConstants.COMPRESSOR.getName)
     assertResult(compressorName.toLowerCase())(tableColumnCompressor2)
   }
 

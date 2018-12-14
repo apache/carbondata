@@ -267,7 +267,7 @@ class BatchSortLoad2TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   val prop = CarbonProperties.getInstance()
-  val p1 = prop.getProperty("carbon.load.sort.scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+  val p1 = prop.getPropertyOrDefault(CarbonCommonConstants.LOAD_SORT_SCOPE)
 
   override protected def beforeAll() {
     // Adding new properties

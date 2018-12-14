@@ -896,8 +896,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
-        CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT)
+      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT)
   }
 
   def dropTable {

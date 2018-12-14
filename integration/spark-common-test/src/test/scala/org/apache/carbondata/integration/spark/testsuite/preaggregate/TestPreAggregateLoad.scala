@@ -30,14 +30,12 @@ class TestPreAggregateLoad extends SparkQueryTest with BeforeAndAfterAll with Be
 
   val testData = s"$resourcesPath/sample.csv"
   val p1 = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
-      CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
+    .getPropertyOrDefault(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD)
 
   override def beforeAll(): Unit = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
-      .addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
-        CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
+      .addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD)
 
     SparkUtil4Test.createTaskMockUp(sqlContext)
     sql("DROP TABLE IF EXISTS maintable")
@@ -45,8 +43,7 @@ class TestPreAggregateLoad extends SparkQueryTest with BeforeAndAfterAll with Be
 
   override protected def afterAll(): Unit = {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
-        CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE)
       .addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD, p1)
     sql("DROP TABLE IF EXISTS y ")
     sql("DROP TABLE IF EXISTS maintable")

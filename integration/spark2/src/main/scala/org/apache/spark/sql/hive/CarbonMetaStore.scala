@@ -194,14 +194,14 @@ object CarbonMetaStoreFactory {
 
   def readSchemaFromHive(conf: RuntimeConfig): Boolean = {
     val readSchemaFromHive = {
-      if (conf.contains(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE)) {
-        conf.get(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE)
-      } else if (System.getProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE) != null) {
-        System.getProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE)
+      if (conf.contains(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE.getName)) {
+        conf.get(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE.getName)
+      } else if (System.getProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE
+        .getName) != null) {
+        System.getProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE.getName)
       } else {
         CarbonProperties.getInstance().
-          getProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE,
-          CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT)
+          getPropertyOrDefault(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE)
       }
     }
     readSchemaFromHive.toBoolean

@@ -72,8 +72,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
 
   override def afterAll {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-        CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+      .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
     sql("DROP TABLE IF EXISTS carbon_localsort_once")
     sql("DROP TABLE IF EXISTS carbon_localsort_twice")
     sql("DROP TABLE IF EXISTS carbon_localsort_triple")
@@ -308,8 +307,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
       assertResult(10)(df.count)
     } finally {
       CarbonProperties.getInstance().addProperty(
-        CarbonCommonConstants.CARBON_TASK_DISTRIBUTION,
-        CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT)
+        CarbonCommonConstants.CARBON_TASK_DISTRIBUTION)
     }
   }
 
@@ -382,14 +380,8 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
 
   private def resetConf() {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,
-        CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT)
-
-    // sql(s"SET ${CarbonCommonConstants.LOAD_SORT_SCOPE} = ${CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT}")
-    // sql(s"SET ${CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS} = " +
-    //  s"${CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT}")
+      .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
+      .addProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS)
   }
 
   private def getIndexFileCount(tableName: String, segmentNo: String = "0"): Int = {

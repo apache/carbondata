@@ -265,11 +265,11 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   val prop = CarbonProperties.getInstance()
-  val p1 = prop.getProperty("carbon.load.sort.scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
-  val p2 = prop.getProperty("carbon.batch.sort.size.inmb", CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT)
-  val p3 = prop.getProperty("enable.unsafe.sort", CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
-  val p4 = prop.getProperty("offheap.sort.chunk.size.inmb", CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT)
-  val p5 = prop.getProperty("sort.inmemory.size.inmb", CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT)
+  val p1 = prop.getPropertyOrDefault(CarbonCommonConstants.LOAD_SORT_SCOPE)
+  val p2 = prop.getPropertyOrDefault(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB)
+  val p3 = prop.getPropertyOrDefault(CarbonCommonConstants.ENABLE_UNSAFE_SORT)
+  val p4 = prop.getPropertyOrDefault(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB)
+  val p5 = prop.getPropertyOrDefault(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB)
 
   override protected def beforeAll() {
     // Adding new properties

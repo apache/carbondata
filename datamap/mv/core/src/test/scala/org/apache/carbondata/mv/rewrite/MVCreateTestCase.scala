@@ -1016,7 +1016,6 @@ class MVCreateTestCase extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     drop()
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
   }
 }

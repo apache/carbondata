@@ -153,7 +153,7 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
       maxTime = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME));
     } catch (NumberFormatException e) {
-      maxTime = CarbonCommonConstants.DEFAULT_MAX_QUERY_EXECUTION_TIME;
+      maxTime = CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME.getDefaultValueInt();
     }
     if (null != files) {
       Arrays.sort(files, new Comparator<CarbonFile>() {

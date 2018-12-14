@@ -31,8 +31,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   def getMdtFileAndType() = {
     // if mdt file path is configured then take configured path else take default path
     val configuredMdtPath = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,
-        CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER_DEFAULT).trim
+      .getPropertyOrDefault(CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER).trim
     var timestampFile = configuredMdtPath + "/" + CarbonCommonConstants.SCHEMAS_MODIFIED_TIME_FILE
     timestampFile = CarbonUtil.checkAndAppendFileSystemURIScheme(timestampFile)
     val timestampFileType = FileFactory.getFileType(timestampFile)
@@ -287,8 +286,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
            CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetaStore.isReadFromHiveMetaStore)
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,
-        CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER_DEFAULT)
+      .addProperty(CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER)
     val (timestampFile2, timestampFileType2) = getMdtFileAndType()
     FileFactory.deleteFile(timestampFile2, timestampFileType2)
     sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
@@ -300,8 +298,7 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,
-        CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER_DEFAULT)
+      .addProperty(CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER)
     sql("use default")
     sql("drop database if exists carbon cascade")
   }

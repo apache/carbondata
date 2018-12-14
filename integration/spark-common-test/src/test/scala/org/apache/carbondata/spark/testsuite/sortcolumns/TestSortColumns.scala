@@ -388,10 +388,9 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
   override def afterAll = {
     dropTestTables
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-        CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+      .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
   }
 
   def dropTestTables = {
@@ -439,8 +438,9 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
   }
 
   def defaultLoadingProperties = {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT)
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT)
+      .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
   }
 }

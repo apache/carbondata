@@ -29,7 +29,7 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
 
   var threshold: Int = _
   var timeformat = CarbonProperties.getInstance()
-    .getProperty("carbon.timestamp.format", CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
 
   override def beforeAll {
     CarbonProperties.getInstance()

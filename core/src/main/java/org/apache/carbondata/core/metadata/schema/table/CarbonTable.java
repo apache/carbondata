@@ -1350,9 +1350,8 @@ public class CarbonTable implements Serializable {
         return SortScopeOptions.getSortScope(
             CarbonProperties.getInstance().getProperty(
                 CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
-                CarbonProperties.getInstance().getProperty(
-                    CarbonCommonConstants.LOAD_SORT_SCOPE,
-                    CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)));
+                CarbonProperties.getInstance().getPropertyOrDefault(
+                    CarbonCommonConstants.LOAD_SORT_SCOPE)));
       }
     } else {
       return SortScopeOptions.getSortScope(sortScope);

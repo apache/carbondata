@@ -724,8 +724,6 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
     sql("drop table if exists decimal_varlength")
     sql("drop table if exists decimal_varlength_hive")
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
-      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT
-    )
+      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE)
   }
 }

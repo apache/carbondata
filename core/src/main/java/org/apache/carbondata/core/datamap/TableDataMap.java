@@ -327,16 +327,17 @@ public final class TableDataMap extends OperationEventListener {
 
   private int getNumOfThreadsForPruning() {
     int numOfThreadsForPruning = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING,
-            CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT));
-    if (numOfThreadsForPruning > Integer
-        .parseInt(CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT)
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING));
+    if (numOfThreadsForPruning >
+        Integer.parseInt(CarbonCommonConstants
+            .CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING.getDefaultValueString())
         || numOfThreadsForPruning < 1) {
       LOG.info("Invalid value for carbon.max.driver.threads.for.block.pruning, value :"
           + numOfThreadsForPruning + " .using the default threads : "
-          + CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT);
-      numOfThreadsForPruning = Integer
-          .parseInt(CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING_DEFAULT);
+          + CarbonCommonConstants.CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING
+          .getDefaultValueString());
+      numOfThreadsForPruning = Integer.parseInt(CarbonCommonConstants
+          .CARBON_MAX_DRIVER_THREADS_FOR_BLOCK_PRUNING.getDefaultValueString());
     }
     return numOfThreadsForPruning;
   }

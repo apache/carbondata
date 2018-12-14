@@ -33,8 +33,7 @@ class TestTimeseriesCompaction extends QueryTest with BeforeAndAfterAll {
   override def beforeAll: Unit = {
     SparkUtil4Test.createTaskMockUp(sqlContext)
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
     isCompactionEnabled = CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,"false").toBoolean
     CarbonProperties.getInstance()

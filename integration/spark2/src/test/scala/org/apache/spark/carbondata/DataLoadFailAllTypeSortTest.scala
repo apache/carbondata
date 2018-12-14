@@ -60,8 +60,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
     }
     finally {
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-          CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT);
+        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION);
     }
   }
 
@@ -90,8 +89,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false");
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-          CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT);
+        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION);
     }
   }
 
@@ -116,11 +114,9 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
     }
     finally {
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-          CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
+        .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE);
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-          CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT);
+        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION);
     }
   }
 
@@ -147,11 +143,8 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
     }
     finally {
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-          CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
-      CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-          CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
+        .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
+        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
     }
   }
 
@@ -176,11 +169,9 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
     }
     finally {
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-          CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+        .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-          CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
+        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
     }
   }
 
@@ -204,8 +195,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
     }
     finally {
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-          CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
+        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
     }
   }
   //

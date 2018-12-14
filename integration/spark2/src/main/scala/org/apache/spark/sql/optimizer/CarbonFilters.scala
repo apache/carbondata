@@ -512,8 +512,7 @@ object CarbonFilters {
     val partitions = {
       try {
         if (CarbonProperties.getInstance().
-          getProperty(CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT,
-          CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT_DEFAULT).toBoolean) {
+          getPropertyOrDefault(CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT).toBoolean) {
           // read partitions directly from hive metastore using filters
           sparkSession.sessionState.catalog.listPartitionsByFilter(identifier, partitionFilters)
         } else {

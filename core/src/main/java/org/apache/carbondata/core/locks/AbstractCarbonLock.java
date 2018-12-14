@@ -79,7 +79,8 @@ public abstract class AbstractCarbonLock implements ICarbonLock {
     try {
       retryCount = Integer.parseInt(retries);
     } catch (NumberFormatException e) {
-      retryCount = CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CARBON_LOCK_DEFAULT;
+      retryCount = Integer.parseInt(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CARBON_LOCK
+          .getDefaultValueString());
     }
 
     String maxTimeout = CarbonProperties.getInstance()
@@ -87,7 +88,8 @@ public abstract class AbstractCarbonLock implements ICarbonLock {
     try {
       retryTimeout = Integer.parseInt(maxTimeout);
     } catch (NumberFormatException e) {
-      retryTimeout = CarbonCommonConstants.MAX_TIMEOUT_FOR_CARBON_LOCK_DEFAULT;
+      retryTimeout = Integer.parseInt(CarbonCommonConstants.MAX_TIMEOUT_FOR_CARBON_LOCK
+          .getDefaultValueString());
     }
 
   }

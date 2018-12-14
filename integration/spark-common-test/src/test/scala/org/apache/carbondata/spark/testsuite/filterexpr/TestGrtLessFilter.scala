@@ -31,9 +31,7 @@ class TestGrtLessFilter extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonTable")
     sql("drop table if exists hiveTable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
-      )
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
     val csvFilePath = s"$resourcesPath/filter/datagrtlrt.csv"
     sql(
       "CREATE TABLE IF NOT EXISTS carbonTable(date Timestamp, country String, salary Int) STORED " +

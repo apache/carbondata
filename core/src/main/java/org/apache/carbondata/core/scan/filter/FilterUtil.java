@@ -587,8 +587,7 @@ public final class FilterUtil {
     try {
       int length = evaluateResultListFinal.size();
       String timeFormat = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+          .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT);
       for (int i = 0; i < length; i++) {
         result = evaluateResultListFinal.get(i);
         if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(result)) {
@@ -1761,12 +1760,10 @@ public final class FilterUtil {
         String format = null;
         if (dataType == DataTypes.DATE) {
           format = CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-                  CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+              .getPropertyOrDefault(CarbonCommonConstants.CARBON_DATE_FORMAT);
         } else {
           format = CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+              .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT);
         }
         SimpleDateFormat parser = new SimpleDateFormat(format);
         Date date1 = null;

@@ -572,8 +572,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     )
     sql("drop table carbontable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_UPDATE_PERSIST_ENABLE,
-        CarbonCommonConstants.CARBON_UPDATE_PERSIST_ENABLE_DEFAULT)
+      .addProperty(CarbonCommonConstants.CARBON_UPDATE_PERSIST_ENABLE)
   }
 
   test("partition test update operation with 0 rows updation.") {

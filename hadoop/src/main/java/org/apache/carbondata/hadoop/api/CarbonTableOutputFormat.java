@@ -312,7 +312,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     model.setCarbonTransactionalTable(true);
     CarbonTable carbonTable = getCarbonTable(conf);
     String columnCompressor = carbonTable.getTableInfo().getFactTable().getTableProperties().get(
-        CarbonCommonConstants.COMPRESSOR);
+        CarbonCommonConstants.COMPRESSOR.getName());
     if (null == columnCompressor) {
       columnCompressor = CompressorFactory.getInstance().getCompressor().getName();
     }
@@ -324,22 +324,19 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     model.setBadRecordsLoggerEnable(
         conf.get(
             BAD_RECORDS_LOGGER_ENABLE,
-            carbonProperty.getProperty(
-                CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE,
-                CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE_DEFAULT)));
+            carbonProperty.getPropertyOrDefault(
+                CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE)));
     model.setBadRecordsAction(
         conf.get(
             BAD_RECORDS_LOGGER_ACTION,
-            carbonProperty.getProperty(
-                CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-                CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)));
+            carbonProperty.getPropertyOrDefault(
+                CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)));
 
     model.setIsEmptyDataBadRecord(
         conf.get(
             IS_EMPTY_DATA_BAD_RECORD,
-            carbonProperty.getProperty(
-                CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD,
-                CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT)));
+            carbonProperty.getPropertyOrDefault(
+                CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD)));
 
     model.setSkipEmptyLine(
         conf.get(
@@ -363,16 +360,14 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     model.setDateFormat(
         conf.get(
             DATE_FORMAT,
-            carbonProperty.getProperty(
-                CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT,
-                CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT_DEFAULT)));
+            carbonProperty.getPropertyOrDefault(
+                CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT)));
 
     model.setTimestampformat(
         conf.get(
             TIMESTAMP_FORMAT,
-            carbonProperty.getProperty(
-                CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT,
-                CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT_DEFAULT)));
+            carbonProperty.getPropertyOrDefault(
+                CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT)));
 
     model.setGlobalSortPartitions(
         conf.get(
@@ -386,9 +381,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
             BATCH_SORT_SIZE_INMB,
             carbonProperty.getProperty(
                 CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB,
-                carbonProperty.getProperty(
-                    CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
-                    CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT))));
+                carbonProperty.getPropertyOrDefault(
+                    CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB))));
 
     String badRecordsPath = conf.get(BAD_RECORD_PATH);
     if (StringUtils.isEmpty(badRecordsPath)) {
@@ -397,17 +391,15 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
       if (StringUtils.isEmpty(badRecordsPath)) {
         badRecordsPath = carbonProperty
             .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH, carbonProperty
-                .getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-                    CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL));
+                .getPropertyOrDefault(CarbonCommonConstants.CARBON_BADRECORDS_LOC));
       }
     }
     model.setBadRecordsLocation(badRecordsPath);
     model.setUseOnePass(
         conf.getBoolean(IS_ONE_PASS_LOAD,
             Boolean.parseBoolean(
-                carbonProperty.getProperty(
-                    CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS,
-                    CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS_DEFAULT))));
+                carbonProperty.getPropertyOrDefault(
+                    CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS))));
     return model;
   }
 

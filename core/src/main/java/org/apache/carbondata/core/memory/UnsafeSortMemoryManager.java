@@ -45,8 +45,7 @@ public class UnsafeSortMemoryManager {
    * offheap is enabled
    */
   private static boolean offHeap = Boolean.parseBoolean(CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
-          CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT));
+      .getPropertyOrDefault(CarbonCommonConstants.ENABLE_OFFHEAP_SORT));
 
   /**
    * map to keep taskid to memory blocks
@@ -75,19 +74,21 @@ public class UnsafeSortMemoryManager {
 
   static {
     long size;
+    long value = CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB
+        .getDefaultValueInt();
     try {
       size = Long.parseLong(CarbonProperties.getInstance().getProperty(
           CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB));
     } catch (Exception e) {
-      size = CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB_DEFAULT;
+      size = value;
       LOGGER.info("Wrong memory size given, so setting default value to " + size);
     }
-    if (size < CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB_DEFAULT) {
-      size = CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB_DEFAULT;
+    if (size < value) {
+      size = value;
       LOGGER.warn(String.format(
           "It is not recommended to set unsafe sort memory size less than %dMB,"
               + " so setting default value to %d",
-          CarbonCommonConstants.CARBON_SORT_STORAGE_INMEMORY_IN_MB_DEFAULT, size));
+          value, size));
     }
 
     long takenSize = size * 1024 * 1024;

@@ -877,7 +877,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   ignore("LCM_002_001-001-TC-006_827", Include) {
      sql(s"""create table DL_RETENCTION (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table DL_RETENCTION options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
-    val dateFormat = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    val dateFormat = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT.getDefaultValueString)
     val date = dateFormat.format(new Date(System.currentTimeMillis()))
     println(date)
    sql(s"""delete from table DL_RETENCTION where segment.STARTTIME BEFORE '${date}'""").collect

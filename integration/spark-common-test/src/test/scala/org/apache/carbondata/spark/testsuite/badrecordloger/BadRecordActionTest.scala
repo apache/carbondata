@@ -132,8 +132,7 @@ class BadRecordActionTest extends QueryTest {
           actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
     val badRecordLocation = CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-      CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC)
     try {
       val exMessage = intercept[Exception] {
         sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales OPTIONS" +

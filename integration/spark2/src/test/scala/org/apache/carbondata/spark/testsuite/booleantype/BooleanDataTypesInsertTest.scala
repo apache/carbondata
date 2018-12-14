@@ -982,8 +982,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
         Row(null), Row(null), Row(null), Row(null), Row(null), Row(null)))
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
-        CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE)
   }
 
 }

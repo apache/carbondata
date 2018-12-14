@@ -156,27 +156,28 @@ public class HDFSLeaseUtils {
 
   private static int getLeaseRecoveryRetryCount() {
     String retryMaxAttempts = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_COUNT,
-            CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_COUNT_DEFAULT);
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_COUNT);
     int retryCount = 0;
     try {
       retryCount = Integer.parseInt(retryMaxAttempts);
-      if (retryCount < CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_COUNT_MIN
-          || retryCount > CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_COUNT_MAX) {
+      if (retryCount < CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_COUNT
+          .getMinValueInt()
+          || retryCount > CarbonCommonConstants
+          .CARBON_LEASE_RECOVERY_RETRY_COUNT.getMaxValueInt()) {
         retryCount = Integer.parseInt(
-            CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_COUNT_DEFAULT);
+            CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_COUNT.getDefaultValueString());
         LOGGER.warn(
             String.format("value configured for %s is not in allowed range. Allowed range " +
                     "is >= %d and <= %d. Therefore considering default value: %d",
                 CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_COUNT,
-                CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_COUNT_MIN,
-                CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_COUNT_MAX,
+                CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_COUNT.getMinValue(),
+                CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_COUNT.getMaxValue(),
                 retryCount
             ));
       }
     } catch (NumberFormatException ne) {
       retryCount = Integer.parseInt(
-          CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_COUNT_DEFAULT);
+          CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_COUNT.getDefaultValueString());
       LOGGER.warn("value configured for " + CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_COUNT
           + " is incorrect. Therefore considering default value: " + retryCount);
     }
@@ -185,25 +186,26 @@ public class HDFSLeaseUtils {
 
   private static int getLeaseRecoveryRetryInterval() {
     String retryMaxAttempts = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_INTERVAL,
-            CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_INTERVAL_DEFAULT);
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_INTERVAL);
     int retryCount = 0;
     try {
       retryCount = Integer.parseInt(retryMaxAttempts);
-      if (retryCount < CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_INTERVAL_MIN
-          || retryCount > CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_INTERVAL_MAX) {
+      if (retryCount < CarbonCommonConstants
+          .CARBON_LEASE_RECOVERY_RETRY_INTERVAL.getMinValueInt()
+          || retryCount > CarbonCommonConstants
+          .CARBON_LEASE_RECOVERY_RETRY_INTERVAL.getMaxValueInt()) {
         retryCount = Integer.parseInt(
-            CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_INTERVAL_DEFAULT);
+            CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_INTERVAL.getDefaultValueString());
         LOGGER.warn(
             "value configured for " + CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_INTERVAL
-                + " is not in allowed range. Allowed range is >="
-                + CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_INTERVAL_MIN + " and <="
-                + CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_INTERVAL_MAX
+                + " is not in allowed range. Allowed range is >=" + CarbonCommonConstants
+                .CARBON_LEASE_RECOVERY_RETRY_INTERVAL.getMinValue() + " and <="
+                + CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_INTERVAL.getMaxValue()
                 + ". Therefore considering default value (ms): " + retryCount);
       }
     } catch (NumberFormatException ne) {
       retryCount = Integer.parseInt(
-          CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_INTERVAL_DEFAULT);
+          CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_INTERVAL.getDefaultValueString());
       LOGGER.warn(
           "value configured for " + CarbonCommonConstants.CARBON_LEASE_RECOVERY_RETRY_INTERVAL
               + " is incorrect. Therefore considering default value (ms): " + retryCount);

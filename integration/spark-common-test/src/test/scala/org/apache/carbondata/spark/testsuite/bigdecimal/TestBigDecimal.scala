@@ -213,10 +213,8 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonBigDecimal_3")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.SORT_SIZE,
-      CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT,
-      CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE)
+      .addProperty(CarbonCommonConstants.SORT_SIZE)
+      .addProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT)
   }
 }
 

@@ -74,11 +74,11 @@ trait CommitHelper {
     val lockFile: ICarbonLock = new SegmentStatusManager(carbonTable
       .getAbsoluteTableIdentifier).getTableStatusLock
     val retryCount = CarbonLockUtil
-      .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
-        CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT)
+      .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK.getName,
+        CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK.getDefaultValueInt)
     val maxTimeout = CarbonLockUtil
-      .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
-        CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT)
+      .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK.getName,
+        CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK.getDefaultValueInt)
     try {
       if (lockFile.lockWithRetries(retryCount, maxTimeout)) {
         val loadMetaDataDetails = SegmentStatusManager.readTableStatusFile(tableStatusFile)
@@ -135,11 +135,11 @@ trait CommitHelper {
       .getAbsoluteTableIdentifier).getTableStatusLock
     try {
       val retryCount = CarbonLockUtil
-        .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
-          CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT)
+        .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK.getName,
+          CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK.getDefaultValueInt)
       val maxTimeout = CarbonLockUtil
-        .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
-          CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT)
+        .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK.getName,
+          CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK.getDefaultValueInt)
       if (lockFile.lockWithRetries(retryCount, maxTimeout)) {
         val tableStatusContents = SegmentStatusManager.readTableStatusFile(tableStatusPath)
         val newLoadContent = SegmentStatusManager.readTableStatusFile(uuidTableStatusPath)

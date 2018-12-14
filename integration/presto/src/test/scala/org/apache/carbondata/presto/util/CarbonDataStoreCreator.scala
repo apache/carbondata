@@ -87,7 +87,7 @@ object CarbonDataStoreCreator {
       val loadModel: CarbonLoadModel = new CarbonLoadModel()
       import scala.collection.JavaConverters._
       val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
-        .getOrElse(CarbonCommonConstants.COMPRESSOR,
+        .getOrElse(CarbonCommonConstants.COMPRESSOR.getName,
           CompressorFactory.getInstance().getCompressor().getName())
       loadModel.setColumnCompressor(columnCompressor)
       loadModel.setCarbonDataLoadSchema(schema)
@@ -109,9 +109,8 @@ object CarbonDataStoreCreator {
           CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
           CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS))
       loadModel.setDefaultDateFormat(
-        CarbonProperties.getInstance.getProperty(
-          CarbonCommonConstants.CARBON_DATE_FORMAT,
-          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+        CarbonProperties.getInstance.getPropertyOrDefault(
+          CarbonCommonConstants.CARBON_DATE_FORMAT))
       loadModel.setSerializationNullFormat(
         TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName +
         "," +
@@ -493,9 +492,8 @@ object CarbonDataStoreCreator {
     CSVInputFormat.setQuoteCharacter(configuration, loadModel.getQuoteChar)
     CSVInputFormat.setReadBufferSize(
       configuration,
-      CarbonProperties.getInstance.getProperty(
-        CarbonCommonConstants.CSV_READ_BUFFER_SIZE,
-        CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT))
+      CarbonProperties.getInstance.getPropertyOrDefault(
+        CarbonCommonConstants.CSV_READ_BUFFER_SIZE))
     CSVInputFormat.setNumberOfColumns(
       configuration,
       String.valueOf(loadModel.getCsvHeaderColumns.length))

@@ -53,8 +53,7 @@ public abstract class ColumnPage {
   protected ColumnPageStatsCollector statsCollector;
 
   protected static final boolean unsafe = Boolean.parseBoolean(CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
-          CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT));
+      .getPropertyOrDefault(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE));
 
   /**
    * Create a new column page with input data type and page size.
@@ -152,8 +151,7 @@ public abstract class ColumnPage {
       int pageSize, LocalDictionaryGenerator localDictionaryGenerator,
       boolean isComplexTypePrimitive) throws MemoryException {
     boolean isDecoderBasedFallBackEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK,
-            CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT));
+        .getPropertyOrDefault(CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK));
     ColumnPage actualPage;
     ColumnPage encodedPage;
     if (isUnsafeEnabled(columnPageEncoderMeta)) {

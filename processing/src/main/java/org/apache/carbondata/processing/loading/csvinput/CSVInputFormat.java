@@ -135,7 +135,8 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
         configuration.set(SKIP_EMPTY_LINE, CarbonProperties.getInstance()
             .getProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE));
       } catch (Exception e) {
-        configuration.set(SKIP_EMPTY_LINE, CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE_DEFAULT);
+        configuration.set(SKIP_EMPTY_LINE,
+            CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE.getDefaultValueString());
       }
     }
   }
@@ -204,7 +205,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
     parserSettings.setIgnoreTrailingWhitespaces(false);
     parserSettings.setSkipEmptyLines(
         Boolean.valueOf(job.get(SKIP_EMPTY_LINE,
-            CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE_DEFAULT)));
+            CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE.getDefaultValueString())));
     // todo: will verify whether there is a performance degrade using -1 here
     // parserSettings.setMaxCharsPerColumn(CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT);
     parserSettings.setMaxCharsPerColumn(CarbonCommonConstants.MAX_CHARS_PER_COLUMN_INFINITY);

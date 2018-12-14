@@ -142,7 +142,7 @@ object StreamSinkFactory {
   }
 
   private def validateParameters(parameters: Map[String, String]): Unit = {
-    val segmentSize = parameters.get(CarbonCommonConstants.HANDOFF_SIZE)
+    val segmentSize = parameters.get(CarbonCommonConstants.HANDOFF_SIZE.getName)
     if (segmentSize.isDefined) {
       try {
         val value = java.lang.Long.parseLong(segmentSize.get)
@@ -194,8 +194,7 @@ object StreamSinkFactory {
                          !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)
     }
     val carbonSecureModeDictServer = CarbonProperties.getInstance.
-      getProperty(CarbonCommonConstants.CARBON_SECURE_DICTIONARY_SERVER,
-        CarbonCommonConstants.CARBON_SECURE_DICTIONARY_SERVER_DEFAULT)
+      getPropertyOrDefault(CarbonCommonConstants.CARBON_SECURE_DICTIONARY_SERVER)
 
     val sparkConf = sparkSession.sqlContext.sparkContext.getConf
     val sparkDriverHost = sparkSession.sqlContext.sparkContext.
@@ -264,16 +263,15 @@ object StreamSinkFactory {
     carbonLoadModel.setSegmentId(segmentId)
     // stream should use one pass
     val dictionaryServerPort = parameters.getOrElse(
-      CarbonCommonConstants.DICTIONARY_SERVER_PORT,
-      carbonProperty.getProperty(
-        CarbonCommonConstants.DICTIONARY_SERVER_PORT,
-        CarbonCommonConstants.DICTIONARY_SERVER_PORT_DEFAULT))
+      CarbonCommonConstants.DICTIONARY_SERVER_PORT.getName,
+      carbonProperty.getPropertyOrDefault(
+        CarbonCommonConstants.DICTIONARY_SERVER_PORT))
     val sparkDriverHost = sparkSession.sqlContext.sparkContext.
       getConf.get("spark.driver.host")
     carbonLoadModel.setDictionaryServerHost(sparkDriverHost)
     carbonLoadModel.setDictionaryServerPort(dictionaryServerPort.toInt)
     val columnCompressor = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
-      .getOrElse(CarbonCommonConstants.COMPRESSOR,
+      .getOrElse(CarbonCommonConstants.COMPRESSOR.getName,
         CompressorFactory.getInstance().getCompressor.getName)
     carbonLoadModel.setColumnCompressor(columnCompressor)
     carbonLoadModel

@@ -652,7 +652,7 @@ public class CarbonUpdateUtil {
       maxTime = Integer.parseInt(CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME));
     } catch (NumberFormatException e) {
-      maxTime = CarbonCommonConstants.DEFAULT_MAX_QUERY_EXECUTION_TIME;
+      maxTime = CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME.getDefaultValueInt();
     }
 
     long difference = currentTime - fileTimestamp;

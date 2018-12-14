@@ -78,9 +78,8 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
   }
 
   private void init() {
-    this.prefetchEnabled = CarbonProperties.getInstance().getProperty(
-        CarbonCommonConstants.CARBON_COMPACTION_PREFETCH_ENABLE,
-        CarbonCommonConstants.CARBON_COMPACTION_PREFETCH_ENABLE_DEFAULT).equalsIgnoreCase("true");
+    this.prefetchEnabled = CarbonProperties.getInstance().getPropertyOrDefault(
+        CarbonCommonConstants.CARBON_COMPACTION_PREFETCH_ENABLE).equalsIgnoreCase("true");
     try {
       new RowsFetcher(false).call();
       if (prefetchEnabled) {

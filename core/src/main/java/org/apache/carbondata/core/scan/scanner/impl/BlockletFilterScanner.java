@@ -73,8 +73,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     super(blockExecutionInfo, queryStatisticsModel);
     // to check whether min max is enabled or not
     String minMaxEnableValue = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_QUERY_MIN_MAX_ENABLED,
-            CarbonCommonConstants.MIN_MAX_DEFAULT_VALUE);
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_QUERY_MIN_MAX_ENABLED);
     if (null != minMaxEnableValue) {
       isMinMaxEnabled = Boolean.parseBoolean(minMaxEnableValue);
     }
@@ -83,8 +82,7 @@ public class BlockletFilterScanner extends BlockletFullScanner {
     this.queryStatisticsModel = queryStatisticsModel;
 
     String useBitSetPipeLine = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.BITSET_PIPE_LINE,
-            CarbonCommonConstants.BITSET_PIPE_LINE_DEFAULT);
+        .getPropertyOrDefault(CarbonCommonConstants.BITSET_PIPE_LINE);
     if (null != useBitSetPipeLine) {
       this.useBitSetPipeLine = Boolean.parseBoolean(useBitSetPipeLine);
     }

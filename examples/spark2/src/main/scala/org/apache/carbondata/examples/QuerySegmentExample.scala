@@ -140,8 +140,7 @@ object QuerySegmentExample {
        """.stripMargin).show()
 
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+      CarbonCommonConstants.CARBON_DATE_FORMAT)
 
     // Drop table
     spark.sql("DROP TABLE IF EXISTS querysegment_table")

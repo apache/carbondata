@@ -313,7 +313,7 @@ public class CarbonUtilTest {
       }
     };
     new MockUp<CarbonProperties>() {
-      @SuppressWarnings("unused") @Mock public String getProperty(String key) {
+      @SuppressWarnings("unused") @Mock public String getPropertyOrDefault(Property property) {
         return "BASE_URL";
       }
     };
@@ -328,7 +328,7 @@ public class CarbonUtilTest {
       }
     };
     new MockUp<CarbonProperties>() {
-      @SuppressWarnings("unused") @Mock public String getProperty(String key) {
+      @SuppressWarnings("unused") @Mock public String getPropertyOrDefault(Property property) {
         return "BASE_URL/";
       }
     };
@@ -373,7 +373,7 @@ public class CarbonUtilTest {
       }
     };
     new MockUp<CarbonProperties>() {
-      @SuppressWarnings("unused") @Mock public String getProperty(String key) {
+      @SuppressWarnings("unused") @Mock public String getPropertyOrDefault(Property property) {
         return "/opt/";
       }
     };
@@ -393,7 +393,7 @@ public class CarbonUtilTest {
       }
     };
     new MockUp<CarbonProperties>() {
-      @SuppressWarnings("unused") @Mock public String getProperty(String key) {
+      @SuppressWarnings("unused") @Mock public String getPropertyOrDefault(Property property) {
         return "/opt/";
       }
     };
@@ -408,7 +408,7 @@ public class CarbonUtilTest {
       }
     };
     new MockUp<CarbonProperties>() {
-      @SuppressWarnings("unused") @Mock public String getProperty(String key) {
+      @SuppressWarnings("unused") @Mock public String getPropertyOrDefault(Property property) {
         return "hdfs://ha/opt/";
       }
     };
@@ -423,7 +423,7 @@ public class CarbonUtilTest {
       }
     };
     new MockUp<CarbonProperties>() {
-      @SuppressWarnings("unused") @Mock public String getProperty(String key) {
+      @SuppressWarnings("unused") @Mock public String getPropertyOrDefault(Property property) {
         return "file:///";
       }
     };

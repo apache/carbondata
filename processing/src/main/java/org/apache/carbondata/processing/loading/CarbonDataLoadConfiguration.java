@@ -32,6 +32,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.SortColumnRangeInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.util.Property;
 import org.apache.carbondata.processing.loading.converter.DictionaryCardinalityFinder;
 
 public class CarbonDataLoadConfiguration {
@@ -241,8 +242,16 @@ public class CarbonDataLoadConfiguration {
     dataLoadProperties.put(key, value);
   }
 
+  public void setDataLoadProperty(Property property, Object value) {
+    setDataLoadProperty(property.getName(), value);
+  }
+
   public Object getDataLoadProperty(String key) {
     return dataLoadProperties.get(key);
+  }
+
+  public Object getDataLoadProperty(Property property) {
+    return getDataLoadProperty(property.getName());
   }
 
   public BucketingInfo getBucketingInfo() {

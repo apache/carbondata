@@ -60,9 +60,8 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     carbonLoadModel.setAllDictPath(allDictFilePath)
     carbonLoadModel.setSerializationNullFormat(
           TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + ",\\N")
-    carbonLoadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+    carbonLoadModel.setDefaultTimestampFormat(CarbonProperties.getInstance()
+      .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))
     carbonLoadModel.setCsvHeaderColumns(
       LoadOption.getCsvHeaderColumns(carbonLoadModel, FileFactory.getConfiguration))
     // Create table and metadata folders if not exist
@@ -73,7 +72,7 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     }
     import scala.collection.JavaConverters._
     val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
-      .getOrElse(CarbonCommonConstants.COMPRESSOR,
+      .getOrElse(CarbonCommonConstants.COMPRESSOR.getName,
         CompressorFactory.getInstance().getCompressor.getName)
     carbonLoadModel.setColumnCompressor(columnCompressor)
     carbonLoadModel

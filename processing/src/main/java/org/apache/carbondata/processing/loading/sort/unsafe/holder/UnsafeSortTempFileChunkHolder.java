@@ -123,11 +123,9 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
    */
   public void initialize() {
     prefetch = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_MERGE_SORT_PREFETCH,
-            CarbonCommonConstants.CARBON_MERGE_SORT_PREFETCH_DEFAULT));
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_MERGE_SORT_PREFETCH));
     bufferSize = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
-            CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT));
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE));
     initialise();
   }
 

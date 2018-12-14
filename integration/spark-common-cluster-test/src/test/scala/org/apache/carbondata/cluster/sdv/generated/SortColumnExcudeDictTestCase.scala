@@ -413,9 +413,9 @@ class SortColumnExcudeDictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   val prop = CarbonProperties.getInstance()
-  val p1 = prop.getProperty("carbon.load.sort.scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
-  val p2 = prop.getProperty("enable.unsafe.sort", CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
-  val p3 = prop.getProperty("enable.offheap.sort", CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT)
+  val p1 = prop.getPropertyOrDefault(CarbonCommonConstants.LOAD_SORT_SCOPE)
+  val p2 = prop.getPropertyOrDefault(CarbonCommonConstants.ENABLE_UNSAFE_SORT)
+  val p3 = prop.getPropertyOrDefault(CarbonCommonConstants.ENABLE_OFFHEAP_SORT)
 
   override protected def beforeAll() {
     // Adding new properties

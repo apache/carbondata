@@ -241,11 +241,11 @@ public final class CarbonLoaderUtil {
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     int retryCount = CarbonLockUtil
-        .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
-            CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT);
+        .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK.getName(),
+            CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK.getDefaultValueInt());
     int maxTimeout = CarbonLockUtil
-        .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
-            CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT);
+        .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK.getName(),
+            CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK.getDefaultValueInt());
     try {
       if (carbonLock.lockWithRetries(retryCount, maxTimeout)) {
         LOGGER.info(
@@ -599,8 +599,8 @@ public final class CarbonLoaderUtil {
       } else {
         LOGGER.warn("Invalid load_min_size_inmb value found: " + expectedMinSizePerNode
             + ", only int value greater than 0 is supported.");
-        iexpectedMinSizePerNode = Integer.parseInt(
-            CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT);
+        iexpectedMinSizePerNode =
+            CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB.getDefaultValueInt();
       }
       // If the average expected size for each node greater than load min size,
       // then fall back to default strategy

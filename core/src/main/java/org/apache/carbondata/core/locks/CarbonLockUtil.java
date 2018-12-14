@@ -125,7 +125,7 @@ public class CarbonLockUtil {
         CarbonProperties.getInstance().getSegmentLockFilesPreserveHours();
     AbsoluteTableIdentifier absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
     String lockFilesDir = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.LOCK_PATH, CarbonCommonConstants.LOCK_PATH_DEFAULT);
+        .getProperty(CarbonCommonConstants.LOCK_PATH);
     if (StringUtils.isEmpty(lockFilesDir)) {
       lockFilesDir = CarbonTablePath.getLockFilesDirPath(absoluteTableIdentifier.getTablePath());
     } else {

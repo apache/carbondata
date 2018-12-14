@@ -721,7 +721,6 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("drop table if exists new_renameTextFileTable")
     sql("drop table if exists renameTextFileTable")
     sqlContext.setConf("carbon.enable.vector.reader", "false")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
   }
 }

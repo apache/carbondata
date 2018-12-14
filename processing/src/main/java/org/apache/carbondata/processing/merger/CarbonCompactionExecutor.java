@@ -246,14 +246,13 @@ public class CarbonCompactionExecutor {
    */
   private boolean enablePageLevelReaderForCompaction() {
     String enablePageReaderProperty = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION,
-            CarbonCommonConstants.CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION_DEFAULT);
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION);
     boolean enablePageReader;
     try {
       enablePageReader = Boolean.parseBoolean(enablePageReaderProperty);
     } catch (Exception e) {
-      enablePageReader = Boolean.parseBoolean(
-          CarbonCommonConstants.CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION_DEFAULT);
+      enablePageReader = CarbonCommonConstants
+          .CARBON_ENABLE_PAGE_LEVEL_READER_IN_COMPACTION.getDefaultValueBoolean();
     }
     LOGGER.info("Page level reader is set to: " + enablePageReader);
     return enablePageReader;

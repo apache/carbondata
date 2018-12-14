@@ -193,24 +193,23 @@ case class CarbonLoadDataCommand(
         ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_4.value())
     optionsFinal.put("sort_scope", tableProperties.asScala.getOrElse("sort_scope",
       carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
-        carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-          CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))
-      optionsFinal
-        .put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options.asJava, table))
-      val factPath = if (dataFrame.isDefined) {
-        ""
-      } else {
+        carbonProperty.getPropertyOrDefault(CarbonCommonConstants.LOAD_SORT_SCOPE))))
+    optionsFinal
+      .put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options.asJava, table))
+    val factPath = if (dataFrame.isDefined) {
+      ""
+    } else {
         FileUtils.getPaths(factPathFromUser, hadoopConf)
       }
       carbonLoadModel.setParentTablePath(parentTablePath)
       carbonLoadModel.setFactFilePath(factPath)
       carbonLoadModel.setCarbonTransactionalTable(table.getTableInfo.isTransactionalTable)
       carbonLoadModel.setAggLoadRequest(
-        internalOptions.getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL,
-          CarbonCommonConstants.IS_INTERNAL_LOAD_CALL_DEFAULT).toBoolean)
+        internalOptions.getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL.getName,
+          CarbonCommonConstants.IS_INTERNAL_LOAD_CALL.getDefaultValueString).toBoolean)
       carbonLoadModel.setSegmentId(internalOptions.getOrElse("mergedSegmentName", ""))
       val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
-        .getOrElse(CarbonCommonConstants.COMPRESSOR,
+        .getOrElse(CarbonCommonConstants.COMPRESSOR.getName,
           CompressorFactory.getInstance().getCompressor.getName)
       carbonLoadModel.setColumnCompressor(columnCompressor)
 
@@ -380,13 +379,13 @@ case class CarbonLoadDataCommand(
         table.getTableInfo().getOrCreateAbsoluteTableIdentifier(),
         LockUsage.CONCURRENT_LOAD_LOCK)
       val retryCount = CarbonLockUtil
-        .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK,
-          CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT)
+        .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK.getName,
+          CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK.getDefaultValueInt)
       val maxTimeout = CarbonLockUtil
-        .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK,
-          CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT)
+        .getLockProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK.getName,
+          CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK.getDefaultValueInt)
       if (!(isConcurrentLockRequired &&
-            concurrentLoadLock.lockWithRetries(retryCount, maxTimeout))) {
+        concurrentLoadLock.lockWithRetries(retryCount, maxTimeout))) {
         throw new RuntimeException(table.getDatabaseName + "." + table.getTableName +
                                    " having dictionary column. so concurrent load is not supported")
       }
@@ -448,15 +447,13 @@ case class CarbonLoadDataCommand(
     }
     // dictionaryServerClient dictionary generator
     val dictionaryServerPort = carbonProperty
-      .getProperty(CarbonCommonConstants.DICTIONARY_SERVER_PORT,
-        CarbonCommonConstants.DICTIONARY_SERVER_PORT_DEFAULT)
+      .getPropertyOrDefault(CarbonCommonConstants.DICTIONARY_SERVER_PORT)
     val sparkDriverHost = sparkSession.sqlContext.sparkContext.
       getConf.get("spark.driver.host")
     carbonLoadModel.setDictionaryServerHost(sparkDriverHost)
 
     val carbonSecureModeDictServer = CarbonProperties.getInstance.
-      getProperty(CarbonCommonConstants.CARBON_SECURE_DICTIONARY_SERVER,
-      CarbonCommonConstants.CARBON_SECURE_DICTIONARY_SERVER_DEFAULT)
+      getPropertyOrDefault(CarbonCommonConstants.CARBON_SECURE_DICTIONARY_SERVER)
 
     val sparkConf = sparkSession.sqlContext.sparkContext.getConf
     // For testing.

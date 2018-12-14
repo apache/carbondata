@@ -77,7 +77,7 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
         loadCommand.dataFrame =
                   Some(PreAggregateUtil.getDataFrame(
                     sqlContext.sparkSession, loadCommand.logicalPlan.get))
-        CarbonSession.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
+        CarbonSession.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP.getName,
           "true")
         loadCommand.processData(sqlContext.sparkSession)
         // After load is completed for child table the UUID table status will have 0.1 as success

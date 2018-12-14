@@ -799,12 +799,10 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testTimeStampAndBadRecord() throws IOException, InterruptedException {
-    String timestampFormat = carbonProperties.getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-    String badRecordAction = carbonProperties.getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT);
-    String badRecordLoc = carbonProperties.getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-        CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL);
+    String timestampFormat = carbonProperties.getPropertyOrDefault(CarbonCommonConstants
+        .CARBON_TIMESTAMP_FORMAT);
+    String badRecordAction = carbonProperties.getPropertyOrDefault(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION);
+    String badRecordLoc = carbonProperties.getPropertyOrDefault(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
     String rootPath = new File(this.getClass().getResource("/").getPath()
         + "../../").getCanonicalPath();
     String storeLocation = rootPath + "/target/";
@@ -916,12 +914,11 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testReadSchemaInDataFileAndSort() throws IOException, InterruptedException {
-    String timestampFormat = carbonProperties.getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-    String badRecordAction = carbonProperties.getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT);
-    String badRecordLoc = carbonProperties.getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-        CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL);
+    String timestampFormat = carbonProperties.getPropertyOrDefault(CarbonCommonConstants
+        .CARBON_TIMESTAMP_FORMAT);
+    String badRecordAction = carbonProperties.getPropertyOrDefault(
+        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION);
+    String badRecordLoc = carbonProperties.getPropertyOrDefault(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
     String rootPath = new File(this.getClass().getResource("/").getPath()
         + "../../").getCanonicalPath();
     String storeLocation = rootPath + "/target/";
@@ -1026,12 +1023,11 @@ public class CarbonReaderTest extends TestCase {
 
   @Test
   public void testReadUserSchema() throws IOException, InterruptedException {
-    String timestampFormat = carbonProperties.getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-    String badRecordAction = carbonProperties.getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT);
-    String badRecordLoc = carbonProperties.getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-        CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL);
+    String timestampFormat = carbonProperties.getPropertyOrDefault(
+        CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT);
+    String badRecordAction = carbonProperties.getPropertyOrDefault(
+        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION);
+    String badRecordLoc = carbonProperties.getPropertyOrDefault(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
     String rootPath = new File(this.getClass().getResource("/").getPath()
         + "../../").getCanonicalPath();
     String storeLocation = rootPath + "/target/";

@@ -199,8 +199,7 @@ object CarbonPartitionExample {
     spark.sql("""SHOW PARTITIONS partitionDB.t9""").show(100, false)
 
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+      CarbonCommonConstants.CARBON_DATE_FORMAT)
 
     // drop table
     spark.sql("DROP TABLE IF EXISTS t0")

@@ -597,7 +597,7 @@ object PreAggregateUtil {
       CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
       parentTableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase) + "." +
       parentTableIdentifier.table, validateSegments.toString)
-    CarbonSession.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
+    CarbonSession.threadSet(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP.getName,
       "true")
     try {
       loadCommand.processData(sparkSession)
@@ -904,7 +904,7 @@ object PreAggregateUtil {
       Map("fileheader" -> headers),
       isOverwriteTable = isOverwrite,
       dataFrame = None,
-      internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true",
+      internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL.getName -> "true",
         "timeseriesParent" -> timeseriesParentTableName),
       logicalPlan = Some(dataFrame.queryExecution.logical))
     loadCommand

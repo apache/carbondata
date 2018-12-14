@@ -41,7 +41,7 @@ import org.junit.Test;
 
 public class TestPageLevelDictionary {
   private String compressorName = CompressorFactory.getInstance().getCompressor(
-      CarbonCommonConstants.DEFAULT_COMPRESSOR).getName();
+      CarbonCommonConstants.COMPRESSOR.getDefaultValueString()).getName();
 
   @Test public void testPageLevelDictionaryGenerateDataIsGenertingProperDictionaryValues() {
     LocalDictionaryGenerator generator = new ColumnLocalDictionaryGenerator(1000, 2);

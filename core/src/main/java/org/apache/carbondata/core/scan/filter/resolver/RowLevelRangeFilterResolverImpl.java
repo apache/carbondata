@@ -163,8 +163,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
     List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
     boolean invalidRowsPresent = false;
     String timeFormat = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT);
     for (ExpressionResult result : listOfExpressionResults) {
       try {
         if (result.getString() == null) {
@@ -295,7 +294,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
       for (ExpressionResult result : listOfExpressionResults) {
         filterValuesList.add(directDictionaryGenerator
             .generateDirectSurrogateKey(result.getString(),
-                CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+                CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT.getDefaultValueString()));
       }
     } catch (FilterIllegalMemberException e) {
       throw new FilterUnsupportedException(e);

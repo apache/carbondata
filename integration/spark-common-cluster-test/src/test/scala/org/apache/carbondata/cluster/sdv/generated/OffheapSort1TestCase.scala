@@ -213,9 +213,9 @@ class OffheapSort1TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   val prop = CarbonProperties.getInstance()
-  val p1 = prop.getProperty("enable.unsafe.sort", CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
-  val p2 = prop.getProperty("offheap.sort.chunk.size.inmb", CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT)
-  val p3 = prop.getProperty("sort.inmemory.size.inmb", CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT)
+  val p1 = prop.getPropertyOrDefault(CarbonCommonConstants.ENABLE_UNSAFE_SORT)
+  val p2 = prop.getPropertyOrDefault(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB)
+  val p3 = prop.getPropertyOrDefault(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB)
 
   override protected def beforeAll() {
     // Adding new properties

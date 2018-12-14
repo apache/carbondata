@@ -450,7 +450,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     CommonUtil.validateFlatFolder(tableProperties)
     // validate load_min_size_inmb property
     CommonUtil.validateLoadMinSize(tableProperties,
-      CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB)
+      CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB.getName)
 
     TableModel(
       ifNotExistPresent,
@@ -534,11 +534,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected def getPartitionInfo(partitionCols: Seq[PartitionerField],
       tableProperties: Map[String, String]): Option[PartitionInfo] = {
     val timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+      .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))
     val dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+      .getPropertyOrDefault(CarbonCommonConstants.CARBON_DATE_FORMAT))
     if (partitionCols.isEmpty) {
       None
     } else {

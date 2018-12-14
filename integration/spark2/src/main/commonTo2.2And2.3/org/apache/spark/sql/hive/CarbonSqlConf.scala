@@ -34,73 +34,72 @@ class CarbonSQLConf(sparkSession: SparkSession) {
    */
   def addDefaultCarbonParams(): Unit = {
     val ENABLE_UNSAFE_SORT =
-      buildConf(CarbonCommonConstants.ENABLE_UNSAFE_SORT)
+      buildConf(CarbonCommonConstants.ENABLE_UNSAFE_SORT.getName)
         .doc("To enable/ disable unsafe sort.")
         .booleanConf
-        .createWithDefault(carbonProperties.getProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
-          CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT).toBoolean)
+        .createWithDefault(carbonProperties.getPropertyOrDefault(CarbonCommonConstants
+          .ENABLE_UNSAFE_SORT).toBoolean)
     val CARBON_CUSTOM_BLOCK_DISTRIBUTION =
-      buildConf(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION)
+      buildConf(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION.getName)
         .doc("To set carbon task distribution.")
         .stringConf
         .createWithDefault(carbonProperties
-          .getProperty(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION,
-            CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT))
+          .getPropertyOrDefault(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION))
     val BAD_RECORDS_LOGGER_ENABLE =
-      buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE)
+      buildConf(CarbonLoadOptionConstants
+        .CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE.getName)
         .doc("To enable/ disable carbon bad record logger.")
         .booleanConf
         .createWithDefault(CarbonLoadOptionConstants
-          .CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE_DEFAULT.toBoolean)
+          .CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE.getDefaultValueBoolean)
     val BAD_RECORDS_ACTION =
-      buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION)
+      buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION.getName)
         .doc("To configure the bad records action.")
         .stringConf
         .createWithDefault(carbonProperties
-          .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-            CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT))
+          .getPropertyOrDefault(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION))
     val IS_EMPTY_DATA_BAD_RECORD =
-      buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD)
+      buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD.getName)
         .doc("Property to decide weather empty data to be considered bad/ good record.")
         .booleanConf
-        .createWithDefault(CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT
-          .toBoolean)
+        .createWithDefault(CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD
+          .getDefaultValueBoolean)
     val SORT_SCOPE =
-      buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE)
+      buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE.getName)
         .doc("Property to specify sort scope.")
         .stringConf
-        .createWithDefault(carbonProperties.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-          CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
+        .createWithDefault(carbonProperties.getPropertyOrDefault(
+          CarbonCommonConstants.LOAD_SORT_SCOPE))
     val BATCH_SORT_SIZE_INMB =
-      buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB)
+      buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB.getName)
         .doc("Property to specify batch sort size in MB.")
         .stringConf
         .createWithDefault(carbonProperties
-          .getProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
-            CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT))
+          .getPropertyOrDefault(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB))
     val SINGLE_PASS =
-      buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS)
+      buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS.getName)
         .doc("Property to enable/disable single_pass.")
         .booleanConf
-        .createWithDefault(CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS_DEFAULT.toBoolean)
+        .createWithDefault(CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS
+          .getDefaultValueBoolean)
     val BAD_RECORD_PATH =
-      buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH)
+      buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH.getName)
         .doc("Property to configure the bad record location.")
         .stringConf
-        .createWithDefault(carbonProperties.getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-          CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL))
+        .createWithDefault(carbonProperties.getPropertyOrDefault(
+          CarbonCommonConstants.CARBON_BADRECORDS_LOC))
     val GLOBAL_SORT_PARTITIONS =
-      buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS)
+      buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS.getName)
         .doc("Property to configure the global sort partitions.")
         .stringConf
         .createWithDefault(carbonProperties
-          .getProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,
-            CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT))
+          .getPropertyOrDefault(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS))
     val DATEFORMAT =
-      buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT)
+      buildConf(CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT.getName)
         .doc("Property to configure data format for date type columns.")
         .stringConf
-        .createWithDefault(CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT_DEFAULT)
+        .createWithDefault(CarbonLoadOptionConstants
+          .CARBON_OPTIONS_DATEFORMAT.getDefaultValueString)
     val CARBON_INPUT_SEGMENTS = buildConf(
       "carbon.input.segments.<database_name>.<table_name>")
       .doc("Property to configure the list of segments to query.").stringConf
@@ -111,38 +110,30 @@ class CarbonSQLConf(sparkSession: SparkSession) {
    * to set the dynamic properties default values
    */
   def addDefaultCarbonSessionParams(): Unit = {
-    sparkSession.conf.set(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
-      carbonProperties.getProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
-        CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT).toBoolean)
-    sparkSession.conf.set(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION,
+    sparkSession.conf.set(CarbonCommonConstants.ENABLE_UNSAFE_SORT.getName,
+      carbonProperties.getPropertyOrDefault(CarbonCommonConstants
+        .ENABLE_UNSAFE_SORT).toBoolean)
+    sparkSession.conf.set(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION.getName,
       carbonProperties
-        .getProperty(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION,
-          CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT))
-    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE,
-      CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE_DEFAULT.toBoolean)
-    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION,
-      carbonProperties.getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT))
-    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD,
-      CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT.toBoolean)
-    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
-      carbonProperties.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-        CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
-    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB,
-      carbonProperties.getProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
-        CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT))
-    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS,
-      CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS_DEFAULT.toBoolean)
-    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH,
-      carbonProperties.getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-        CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL))
-    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH,
-      carbonProperties.getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-        CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL))
-    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS,
-      carbonProperties.getProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,
-        CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT))
-    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT,
-      CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT_DEFAULT)
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION))
+    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE
+      .getName, CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE
+      .getDefaultValueBoolean)
+    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION.getName,
+      carbonProperties.getPropertyOrDefault(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION))
+    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD.getName,
+      CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD.getDefaultValueBoolean)
+    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE.getName,
+      carbonProperties.getPropertyOrDefault(CarbonCommonConstants.LOAD_SORT_SCOPE))
+    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB.getName,
+      carbonProperties.getPropertyOrDefault(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB))
+    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS.getName,
+      CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS.getDefaultValueBoolean)
+    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH.getName,
+      carbonProperties.getPropertyOrDefault(CarbonCommonConstants.CARBON_BADRECORDS_LOC))
+    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS.getName,
+      carbonProperties.getPropertyOrDefault(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS))
+    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT.getName,
+      CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT.getDefaultValueString)
   }
 }

@@ -16,49 +16,28 @@
  */
 package org.apache.carbondata.core.constants;
 
-import org.apache.carbondata.core.util.annotations.CarbonProperty;
+import org.apache.carbondata.core.util.Property;
 
 /**
  * Constants for V3 data format
  */
 public interface CarbonV3DataFormatConstants {
 
-  /**
-   * each blocklet group size in mb
-   */
-  @CarbonProperty(dynamicConfigurable = true)
-  String BLOCKLET_SIZE_IN_MB = "carbon.blockletgroup.size.in.mb";
+  Property BLOCKLET_SIZE_IN_MB = Property.buildIntProperty()
+      .key("carbon.blockletgroup.size.in.mb")
+      .defaultValue(64)
+      .minValue(1)
+      .dynamicConfigurable(true)
+      .doc("each blocklet group size in mb")
+      .build();
 
-  /**
-   * blocklet group size default value
-   */
-  String BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE = "64";
-
-  /**
-   * blocklet size min value
-   */
-  short BLOCKLET_SIZE_IN_MB_MIN = 1;
-
-  /**
-   * number of column to be read in one IO in query
-   */
-  @CarbonProperty
-  String NUMBER_OF_COLUMN_TO_READ_IN_IO = "number.of.column.to.read.in.io";
-
-  /**
-   * number of column to be read in one IO in query default value
-   */
-  String NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE = "10";
-
-  /**
-   * number of column to be read in one IO in query max value
-   */
-  short NUMBER_OF_COLUMN_TO_READ_IN_IO_MAX = 20;
-
-  /**
-   * number of column to be read in one IO in query min value
-   */
-  short NUMBER_OF_COLUMN_TO_READ_IN_IO_MIN = 1;
+  Property NUMBER_OF_COLUMN_TO_READ_IN_IO = Property.buildIntProperty()
+      .key("number.of.column.to.read.in.io")
+      .defaultValue(10)
+      .minValue(1)
+      .maxValue(20)
+      .doc("number of column to be read in one IO in query")
+      .build();
 
   /**
    * number of rows per blocklet column page default value

@@ -131,8 +131,8 @@ class NewCarbonDataLoadRDD[K, V](
         loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PATITION_ID)
         loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
 
-        val preFetch = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
-          .USE_PREFETCH_WHILE_LOADING, CarbonCommonConstants.USE_PREFETCH_WHILE_LOADING_DEFAULT)
+        val preFetch = CarbonProperties.getInstance().getPropertyOrDefault(
+          CarbonCommonConstants.USE_PREFETCH_WHILE_LOADING)
         carbonLoadModel.setPreFetch(preFetch.toBoolean)
         val recordReaders = getInputIterators
         val loader = new SparkPartitionLoader(model,
@@ -335,11 +335,10 @@ class NewRddIterator(rddIter: Iterator[Row],
     context: TaskContext) extends CarbonIterator[Array[AnyRef]] {
 
   private val timeStampformatString = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
   private val timeStampFormat = new SimpleDateFormat(timeStampformatString)
-  private val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
-    .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+  private val dateFormatString = CarbonProperties.getInstance().getPropertyOrDefault(
+    CarbonCommonConstants.CARBON_DATE_FORMAT)
   private val dateFormat = new SimpleDateFormat(dateFormatString)
   private val delimiterLevel1 = carbonLoadModel.getComplexDelimiters.get(0)
   private val delimiterLevel2 = carbonLoadModel.getComplexDelimiters.get(1)
@@ -384,12 +383,10 @@ class LazyRddIterator(serializer: SerializerInstance,
     context: TaskContext) extends CarbonIterator[Array[AnyRef]] {
 
   private val timeStampformatString = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
   private val timeStampFormat = new SimpleDateFormat(timeStampformatString)
   private val dateFormatString = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+    .getPropertyOrDefault(CarbonCommonConstants.CARBON_DATE_FORMAT)
   private val dateFormat = new SimpleDateFormat(dateFormatString)
   private val delimiterLevel1 = carbonLoadModel.getComplexDelimiters.get(0)
   private val delimiterLevel2 = carbonLoadModel.getComplexDelimiters.get(1)

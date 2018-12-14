@@ -85,10 +85,9 @@ class DataCompactionBlockletBoundryTest extends QueryTest with BeforeAndAfterAll
     sql("drop table if exists  blocklettest")
     sql("drop table if exists  Carbon_automation_hive")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-        "" + CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
+      .addProperty(CarbonCommonConstants.BLOCKLET_SIZE)
   }
 
 }

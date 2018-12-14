@@ -77,8 +77,7 @@ public class NonSecureDictionaryServer extends AbstractDictionaryServer
     LOGGER.info("Starting Dictionary Server in Non Secure Mode");
     nonSecureDictionaryServerHandler = new NonSecureDictionaryServerHandler();
     String workerThreads = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.DICTIONARY_WORKER_THREADS,
-            CarbonCommonConstants.DICTIONARY_WORKER_THREADS_DEFAULT);
+        .getPropertyOrDefault(CarbonCommonConstants.DICTIONARY_WORKER_THREADS);
     boss = new NioEventLoopGroup(1);
     worker = new NioEventLoopGroup(Integer.parseInt(workerThreads));
     // Configure the server.

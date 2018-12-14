@@ -207,8 +207,7 @@ class TestDataMapStatus extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE,
-      CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE)
     drop
   }
 

@@ -32,12 +32,10 @@ import org.apache.carbondata.core.util.CarbonProperties;
 public class ListPartitioner implements Partitioner {
 
   private SimpleDateFormat timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+      .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT));
 
   private SimpleDateFormat dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
+      .getPropertyOrDefault(CarbonCommonConstants.CARBON_DATE_FORMAT));
 
   /**
    * Map the value of ListPartition to partition id.

@@ -313,13 +313,14 @@ class SparkCarbonFileFormat extends FileFormat
   private def supportVector(sparkSession: SparkSession, schema: StructType): Boolean = {
     val vectorizedReader = {
       if (sparkSession.sqlContext.sparkSession.conf
-        .contains(CarbonCommonConstants.ENABLE_VECTOR_READER)) {
-        sparkSession.sqlContext.sparkSession.conf.get(CarbonCommonConstants.ENABLE_VECTOR_READER)
-      } else if (System.getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER) != null) {
-        System.getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER)
+        .contains(CarbonCommonConstants.ENABLE_VECTOR_READER.getName)) {
+        sparkSession.sqlContext.sparkSession.conf
+          .get(CarbonCommonConstants.ENABLE_VECTOR_READER.getName)
+      } else if (System.getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER.getName) != null) {
+        System.getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER.getDefaultValueString)
       } else {
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
-          CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
+          CarbonCommonConstants.ENABLE_VECTOR_READER.getDefaultValueString)
       }
     }
     vectorizedReader.toBoolean && schema.forall(_.dataType.isInstanceOf[AtomicType])

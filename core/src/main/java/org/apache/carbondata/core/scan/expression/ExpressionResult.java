@@ -347,8 +347,8 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         // no matter in which format the data is been stored, so while retrieving the direct
         // surrogate value for filter member first it should be converted in date form as per
         // above format and needs to retrieve time stamp.
-        SimpleDateFormat parser =
-            new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+        SimpleDateFormat parser = new SimpleDateFormat(CarbonCommonConstants
+            .CARBON_TIMESTAMP_FORMAT.getDefaultValueString());
         Date dateToStr;
         try {
           dateToStr = parser.parse(value.toString());

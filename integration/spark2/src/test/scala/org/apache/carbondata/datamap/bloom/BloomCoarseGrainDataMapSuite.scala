@@ -495,10 +495,8 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
   }
 
   test("test create datamaps on different column but hit only one") {
-    val originDistributedDatamapStatus = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
-      CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT
-    )
+    val originDistributedDatamapStatus = CarbonProperties.getInstance().getPropertyOrDefault(
+      CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP)
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP, "true")
@@ -745,10 +743,8 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
   }
 
   test("test bloom datamap on all basic data types") {
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT)
 
     val columnNames = "booleanField,shortField,intField,bigintField,doubleField,stringField," +
       "timestampField,decimalField,dateField,charField,floatField"
@@ -969,8 +965,7 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
-        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS)
   }
 
   private def createFile(fileName: String, line: Int = 10000, start: Int = 0) = {

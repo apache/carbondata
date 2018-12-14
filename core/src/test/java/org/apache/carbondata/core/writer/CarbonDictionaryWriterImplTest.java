@@ -176,8 +176,7 @@ public class CarbonDictionaryWriterImplTest {
     assertTrue(dataSet1.size() == actual.size());
     // validate the dictionary data
     compareDictionaryData(actual, dataSet1);
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE,
-        CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE_DEFAULT);
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE);
   }
 
   /**

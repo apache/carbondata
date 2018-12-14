@@ -42,8 +42,7 @@ class MergeIndexTestCase extends QueryTest with BeforeAndAfterAll {
 
   override protected def afterAll(): Unit = {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
-        CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT)
+      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT)
     sql("DROP TABLE IF EXISTS nonindexmerge")
     sql("DROP TABLE IF EXISTS indexmerge")
   }

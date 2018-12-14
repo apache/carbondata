@@ -357,10 +357,8 @@ class DictionaryLRUCacheTestCase extends Spark2QueryTest with BeforeAndAfterAll 
 
   override def afterAll {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE,
-        CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT)
-      .addProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE,
-        CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT)
+      .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE)
+      .addProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE)
 
     sql("drop table if exists carbon_new1")
     sql("drop table if exists carbon_new2")

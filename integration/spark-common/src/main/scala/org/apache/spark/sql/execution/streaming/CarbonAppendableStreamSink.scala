@@ -86,22 +86,22 @@ class CarbonAppendableStreamSink(
       DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT,
       carbonLoadModel.getSerializationNullFormat().split(",")(1))
     conf.set(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT.getName,
       carbonLoadModel.getTimestampformat())
     conf.set(
-      CarbonCommonConstants.CARBON_DATE_FORMAT,
+      CarbonCommonConstants.CARBON_DATE_FORMAT.getName,
       carbonLoadModel.getDateFormat())
     conf
   }
   // segment max size(byte)
   private val segmentMaxSize = hadoopConf.getLong(
-    CarbonCommonConstants.HANDOFF_SIZE,
+    CarbonCommonConstants.HANDOFF_SIZE.getName,
     CarbonProperties.getInstance().getHandoffSize
   )
 
   // auto handoff
   private val enableAutoHandoff = hadoopConf.getBoolean(
-    CarbonCommonConstants.ENABLE_AUTO_HANDOFF,
+    CarbonCommonConstants.ENABLE_AUTO_HANDOFF.getName,
     CarbonProperties.getInstance().isEnableAutoHandoff
   )
 

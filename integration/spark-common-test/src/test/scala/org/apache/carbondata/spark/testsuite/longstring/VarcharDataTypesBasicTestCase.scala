@@ -43,9 +43,8 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
   private val lineNum = 1000
   private var content: Content = _
   private var longStringDF: DataFrame = _
-  private var originMemorySize = CarbonProperties.getInstance().getProperty(
-    CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB,
-    CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT)
+  private var originMemorySize = CarbonProperties.getInstance().getPropertyOrDefault(
+    CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB)
 
   case class Content(head: Int, desc_line_head: String, note_line_head: String,
       mid: Int, desc_line_mid: String, note_line_mid: String,
@@ -54,8 +53,7 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
   override def beforeAll(): Unit = {
     // for one 32000 lines * 32000 characters column page, it use about 1GB memory, but here we have only 1000 lines
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB,
-      CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT)
+      CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB)
     deleteFile(inputFile)
     if (!new File(inputDir).exists()) {
       new File(inputDir).mkdir()
@@ -235,12 +233,10 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     prepareTable()
     checkQuery()
 
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
-      CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
-      CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
-      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT)
+      .addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT)
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE)
   }
 
   test("Load and query with long string datatype: safe sort & unsafe column page") {
@@ -251,12 +247,10 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     prepareTable()
     checkQuery()
 
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
-      CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
-      CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
-      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT)
+      .addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT)
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE)
   }
 
   test("Load and query with long string datatype: unsafe sort & safe column page") {
@@ -267,12 +261,10 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     prepareTable()
     checkQuery()
 
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
-      CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
-      CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
-      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT)
+      .addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT)
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE)
   }
 
   test("Load and query with long string datatype: unsafe sort & unsafe column page") {
@@ -283,12 +275,10 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     prepareTable()
     checkQuery()
 
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
-      CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
-      CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
-      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT)
+      .addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT)
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE)
   }
 
   test("Create datamap with long string column selected") {

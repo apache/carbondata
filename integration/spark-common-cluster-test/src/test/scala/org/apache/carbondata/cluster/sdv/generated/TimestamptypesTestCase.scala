@@ -72,7 +72,7 @@ class TimestamptypesTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   val prop = CarbonProperties.getInstance()
-  val p1 = prop.getProperty("carbon.timestamp.format", CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+  val p1 = prop.getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
 
   override protected def beforeAll() {
     // Adding new properties

@@ -87,7 +87,7 @@ object CarbonSetCommand {
     if (isCarbonProperty) {
       sessionParams.addProperty(key, value)
     }
-    else if (key.startsWith(CarbonCommonConstants.CARBON_INPUT_SEGMENTS)) {
+    else if (key.startsWith(CarbonCommonConstants.CARBON_INPUT_SEGMENTS.getName)) {
       if (key.split("\\.").length == 5) {
         sessionParams.addProperty(key.toLowerCase(), value)
       }
@@ -96,11 +96,11 @@ object CarbonSetCommand {
           "property should be in \" carbon.input.segments.<database_name>" +
           ".<table_name>=<seg_id list> \" format.")
       }
-    } else if (key.startsWith(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS)) {
+    } else if (key.startsWith(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS.getName)) {
       sessionParams.addProperty(key.toLowerCase(), value)
     } else if (key.startsWith(CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING)) {
       sessionParams.addProperty(key.toLowerCase(), value)
-    } else if (key.startsWith(CarbonCommonConstants.CARBON_DATAMAP_VISIBLE)) {
+    } else if (key.startsWith(CarbonCommonConstants.CARBON_DATAMAP_VISIBLE.getName)) {
       if (key.split("\\.").length == 6) {
         sessionParams.addProperty(key.toLowerCase, value)
       } else {
@@ -108,7 +108,7 @@ object CarbonSetCommand {
           "\" carbon.datamap.visible.<database_name>.<table_name>.<datamap_name>" +
           " = <true/false> \" format")
       }
-    } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL)) {
+    } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL.getName)) {
       if (key.split("\\.").length == 6) {
         sessionParams.addProperty(key.toLowerCase(), value)
       }

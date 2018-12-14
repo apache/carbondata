@@ -78,8 +78,8 @@ public class CarbonLoadModelBuilder {
       optionsFinal.put("fileheader", Strings.mkString(columns, ","));
     }
     optionsFinal.put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options, table));
-    optionsFinal.put("sort_scope",
-        Maps.getOrDefault(options, "sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT));
+    optionsFinal.put("sort_scope", Maps.getOrDefault(options, "sort_scope",
+        CarbonCommonConstants.LOAD_SORT_SCOPE.getDefaultValueString()));
     CarbonLoadModel model = new CarbonLoadModel();
     model.setCarbonTransactionalTable(table.isTransactionalTable());
     model.setFactTimeStamp(timestamp);
@@ -90,14 +90,12 @@ public class CarbonLoadModelBuilder {
     String timestampFormat = options.get("timestampformat");
     if (timestampFormat == null) {
       timestampFormat = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+          .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT);
     }
     String dateFormat = options.get("dateFormat");
     if (dateFormat == null) {
       dateFormat = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-              CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+          .getPropertyOrDefault(CarbonCommonConstants.CARBON_DATE_FORMAT);
     }
     model.setDateFormat(dateFormat);
     model.setTimestampformat(timestampFormat);
@@ -227,14 +225,12 @@ public class CarbonLoadModelBuilder {
     carbonLoadModel.setTimestampformat(timestampformat);
     carbonLoadModel.setDateFormat(dateFormat);
     carbonLoadModel.setDefaultTimestampFormat(
-        CarbonProperties.getInstance().getProperty(
-            CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+        CarbonProperties.getInstance().getPropertyOrDefault(
+            CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT));
 
     carbonLoadModel.setDefaultDateFormat(
-        CarbonProperties.getInstance().getProperty(
-            CarbonCommonConstants.CARBON_DATE_FORMAT,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
+        CarbonProperties.getInstance().getPropertyOrDefault(
+            CarbonCommonConstants.CARBON_DATE_FORMAT));
 
     carbonLoadModel.setSerializationNullFormat(
         TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName() + "," +
@@ -296,7 +292,7 @@ public class CarbonLoadModelBuilder {
     }
     carbonLoadModel.setSortColumnsBoundsStr(optionsFinal.get("sort_column_bounds"));
     carbonLoadModel.setLoadMinSize(
-        optionsFinal.get(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB));
+        optionsFinal.get(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB.getName()));
     validateAndSetLoadMinSize(carbonLoadModel);
 
     validateAndSetColumnCompressor(carbonLoadModel);
@@ -394,8 +390,8 @@ public class CarbonLoadModelBuilder {
     try {
       String columnCompressor = carbonLoadModel.getColumnCompressor();
       if (StringUtils.isBlank(columnCompressor)) {
-        columnCompressor = CarbonProperties.getInstance().getProperty(
-            CarbonCommonConstants.COMPRESSOR, CarbonCommonConstants.DEFAULT_COMPRESSOR);
+        columnCompressor = CarbonProperties.getInstance().getPropertyOrDefault(
+            CarbonCommonConstants.COMPRESSOR);
       }
       // check and load compressor
       CompressorFactory.getInstance().getCompressor(columnCompressor);
@@ -429,7 +425,8 @@ public class CarbonLoadModelBuilder {
     if (size > 0) {
       carbonLoadModel.setLoadMinSize(loadMinSize);
     } else {
-      carbonLoadModel.setLoadMinSize(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT);
+      carbonLoadModel.setLoadMinSize(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB
+          .getDefaultValueString());
     }
   }
 }

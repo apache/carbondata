@@ -51,7 +51,7 @@ class CompactionSupportGlobalSortBigFileTest extends QueryTest with BeforeAndAft
     CompactionSupportGlobalSortBigFileTest.deleteFile(file3)
     CompactionSupportGlobalSortBigFileTest.deleteFile(file4)
     CompactionSupportGlobalSortBigFileTest.deleteFile(file5)
-    resetConf(CarbonCommonConstants.DEFAULT_CARBON_MAJOR_COMPACTION_SIZE)
+    resetConf(CarbonCommonConstants.CARBON_MAJOR_COMPACTION_SIZE.getDefaultValueString)
   }
 
   override def beforeEach {

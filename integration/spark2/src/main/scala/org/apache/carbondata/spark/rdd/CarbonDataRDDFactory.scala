@@ -94,9 +94,8 @@ object CarbonDataRDDFactory {
       compactionModel: CompactionModel,
       operationContext: OperationContext): Unit = {
     // taking system level lock at the mdt file location
-    var configuredMdtPath = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,
-      CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER_DEFAULT).trim
+    var configuredMdtPath = CarbonProperties.getInstance().getPropertyOrDefault(
+      CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER).trim
 
     configuredMdtPath = CarbonUtil.checkAndAppendFileSystemURIScheme(configuredMdtPath)
     val lock = CarbonLockFactory.getSystemLevelCarbonLockObj(
@@ -183,9 +182,8 @@ object CarbonDataRDDFactory {
               exception = e
           }
           // continue in case of exception also, check for all the tables.
-          val isConcurrentCompactionAllowed = CarbonProperties.getInstance().getProperty(
-            CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
-            CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION
+          val isConcurrentCompactionAllowed = CarbonProperties.getInstance().getPropertyOrDefault(
+            CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION
           ).equalsIgnoreCase("true")
 
           if (!isConcurrentCompactionAllowed) {
@@ -285,7 +283,7 @@ object CarbonDataRDDFactory {
     val loadStartTime = CarbonUpdateUtil.readCurrentTime()
     loadModel.setFactTimeStamp(loadStartTime)
     val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
-      .getOrElse(CarbonCommonConstants.COMPRESSOR,
+      .getOrElse(CarbonCommonConstants.COMPRESSOR.getName,
         CompressorFactory.getInstance().getCompressor.getName)
     loadModel.setColumnCompressor(columnCompressor)
     loadModel
@@ -839,9 +837,8 @@ object CarbonDataRDDFactory {
       }
       storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
 
-      val isConcurrentCompactionAllowed = CarbonProperties.getInstance().getProperty(
-        CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
-        CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION
+      val isConcurrentCompactionAllowed = CarbonProperties.getInstance().getPropertyOrDefault(
+        CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION
       ).equalsIgnoreCase("true")
 
       if (!isConcurrentCompactionAllowed) {
@@ -965,17 +962,16 @@ object CarbonDataRDDFactory {
       if (specificTimestampFormat != null && !specificTimestampFormat.trim.isEmpty) {
         new SimpleDateFormat(specificTimestampFormat)
       } else {
-        val timestampFormatString = CarbonProperties.getInstance().getProperty(
-          CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+        val timestampFormatString = CarbonProperties.getInstance().getPropertyOrDefault(
+          CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
         new SimpleDateFormat(timestampFormatString)
       }
 
     val dateFormat = if (specificDateFormat != null && !specificDateFormat.trim.isEmpty) {
       new SimpleDateFormat(specificDateFormat)
     } else {
-      val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
-        .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+      val dateFormatString = CarbonProperties.getInstance()
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_DATE_FORMAT)
       new SimpleDateFormat(dateFormatString)
     }
     dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"))
@@ -1149,14 +1145,15 @@ object CarbonDataRDDFactory {
     // get user ddl input the node loads the smallest amount of data
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     var loadMinSize = carbonLoadModel.getLoadMinSize()
-    if (loadMinSize.equalsIgnoreCase(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT)) {
+    if (loadMinSize.equalsIgnoreCase(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB
+      .getDefaultValueString)) {
       loadMinSize = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
-        .getOrElse(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
-          CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT)
+        .getOrElse(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB.getName,
+          CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB.getDefaultValueString)
     }
 
     val blockAssignStrategy = if (!loadMinSize.equalsIgnoreCase(
-      CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT)) {
+      CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB.getDefaultValueString)) {
       CarbonLoaderUtil.BlockAssignmentStrategy.NODE_MIN_SIZE_FIRST
     } else if (skewedDataOptimization) {
       CarbonLoaderUtil.BlockAssignmentStrategy.BLOCK_SIZE_FIRST

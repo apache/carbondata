@@ -33,11 +33,9 @@ import org.apache.carbondata.core.util.CarbonProperties
 class DateDataTypeDirectDictionaryWithOffHeapSortDisabledTest
   extends QueryTest with BeforeAndAfterAll {
   private val originBadRecordsAction: String = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
+    .getPropertyOrDefault(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
   private val originOffHeapSortStatus: String = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
-      CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT)
+    .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT)
 
   override def beforeAll {
     try {
@@ -59,7 +57,7 @@ class DateDataTypeDirectDictionaryWithOffHeapSortDisabledTest
       case x: Throwable =>
         x.printStackTrace()
         CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+            CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT.getDefaultValueString)
     }
   }
 
@@ -71,7 +69,7 @@ class DateDataTypeDirectDictionaryWithOffHeapSortDisabledTest
   override def afterAll {
     sql("drop table directDictionaryTable")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+        CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT.getDefaultValueString)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
       originBadRecordsAction)
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")

@@ -31,8 +31,7 @@ public class QueryStatisticsModel {
       new HashMap<String, QueryStatistic>();
 
   private boolean isEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
-          CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT));
+      .getPropertyOrDefault(CarbonCommonConstants.ENABLE_QUERY_STATISTICS));
 
   public QueryStatisticsRecorder getRecorder() {
     return recorder;

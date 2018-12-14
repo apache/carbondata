@@ -34,10 +34,8 @@ import org.apache.carbondata.core.datamap.status.DataMapStatusManager
 
 class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
 
-  val originDistributedDatamapStatus = CarbonProperties.getInstance().getProperty(
-    CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
-    CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT
-  )
+  val originDistributedDatamapStatus = CarbonProperties.getInstance()
+    .getPropertyOrDefault(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP)
   val file2 = resourcesPath + "/datamap_input.csv"
 
   override protected def beforeAll(): Unit = {
@@ -609,7 +607,7 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       LuceneFineGrainDataMapSuite.deleteFile(file1)
       sql("drop datamap dm on table main")
       CarbonProperties.getInstance().addProperty(
-        CarbonCommonConstants.BLOCKLET_SIZE, CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
+        CarbonCommonConstants.BLOCKLET_SIZE)
     }
   }
 
@@ -918,14 +916,10 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
     sql("use default")
     sql("drop database if exists lucene cascade")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS,
-        CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS_DEFAULT)
-    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS)
       .addProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
         originDistributedDatamapStatus)
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
-        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS)
   }
 }
 

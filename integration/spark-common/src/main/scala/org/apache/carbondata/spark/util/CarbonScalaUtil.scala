@@ -140,7 +140,7 @@ object CarbonScalaUtil {
         if (column.getDataType.equals(CarbonDataTypes.TIMESTAMP)) {
           val time = DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
             column.getDataType,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
+            CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT.getDefaultValueString
           ).getValueFromSurrogate(value.toInt)
           if (time == null) {
             return null
@@ -149,7 +149,7 @@ object CarbonScalaUtil {
         } else if (column.getDataType.equals(CarbonDataTypes.DATE)) {
           val date = DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
             column.getDataType,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT
+            CarbonCommonConstants.CARBON_DATE_FORMAT.getDefaultValueString
           ).getValueFromSurrogate(value.toInt)
           if (date == null) {
             return null
@@ -196,12 +196,12 @@ object CarbonScalaUtil {
         if (column.getDataType.equals(CarbonDataTypes.TIMESTAMP)) {
           return DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
             column.getDataType,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
+            CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT.getDefaultValueString
           ).generateDirectSurrogateKey(value).toString
         } else if (column.getDataType.equals(CarbonDataTypes.DATE)) {
           return DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
             column.getDataType,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT
+            CarbonCommonConstants.CARBON_DATE_FORMAT.getDefaultValueString
           ).generateDirectSurrogateKey(value).toString
         }
       } else if (column.hasEncoding(Encoding.DICTIONARY)) {

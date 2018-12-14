@@ -40,8 +40,7 @@ public class SorterFactory {
 
   public static Sorter createSorter(CarbonDataLoadConfiguration configuration, AtomicLong counter) {
     boolean offheapsort = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
-            CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT));
+        .getPropertyOrDefault(CarbonCommonConstants.ENABLE_UNSAFE_SORT));
     SortScopeOptions.SortScope sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
     Sorter sorter;
     if (offheapsort) {

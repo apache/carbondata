@@ -16,8 +16,6 @@
  */
 package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
-import java.io.File
-
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
@@ -459,8 +457,7 @@ class TestPreAggregateTableSelection extends SparkQueryTest with BeforeAndAfterA
     sql("DROP TABLE IF EXISTS filtertable")
     sql("DROP TABLE IF EXISTS grouptable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
-        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS)
   }
 
 }

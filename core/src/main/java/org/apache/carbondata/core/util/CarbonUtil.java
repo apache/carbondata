@@ -631,7 +631,7 @@ public final class CarbonUtil {
     String currentPath = filePath;
     String defaultFsUrl = FileFactory.getConfiguration().get(CarbonCommonConstants.FS_DEFAULT_FS);
     String baseDFSUrl = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL, "");
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL);
     if (checkIfPrefixExists(filePath)) {
       return currentPath;
     }
@@ -1247,11 +1247,10 @@ public final class CarbonUtil {
     int dictionaryOneChunkSize = 0;
     try {
       dictionaryOneChunkSize = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE,
-              CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE_DEFAULT));
+          .getPropertyOrDefault(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE));
     } catch (NumberFormatException e) {
       dictionaryOneChunkSize =
-          Integer.parseInt(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE_DEFAULT);
+          Integer.parseInt(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE.getDefaultValueString());
       LOGGER.error("Dictionary chunk size not configured properly. Taking default size "
           + dictionaryOneChunkSize);
     }
@@ -1728,12 +1727,11 @@ public final class CarbonUtil {
    */
   public static String getFormatFromProperty(DataType dataType) {
     if (dataType.equals(DataTypes.DATE)) {
-      return CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+      return CarbonProperties.getInstance().getPropertyOrDefault(
+          CarbonCommonConstants.CARBON_DATE_FORMAT);
     } else if (dataType.equals(DataTypes.TIMESTAMP)) {
       return CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+          .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT);
     } else {
       return null;
     }
@@ -2467,8 +2465,7 @@ public final class CarbonUtil {
     boolean needUpdate = false;
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
     String isCalculated = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_CALCULATE_SIZE,
-            CarbonCommonConstants.DEFAULT_ENABLE_CALCULATE_SIZE);
+        .getPropertyOrDefault(CarbonCommonConstants.ENABLE_CALCULATE_SIZE);
     if (isCalculated.equalsIgnoreCase("true")) {
       SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
       ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();

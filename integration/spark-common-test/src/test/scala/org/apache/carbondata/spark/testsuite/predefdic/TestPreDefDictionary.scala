@@ -33,9 +33,7 @@ class TestPreDefDictionary extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS predefdictable1")
     sql("DROP TABLE IF EXISTS columndicTable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
-      )
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
   }
 
   test("dictionary value not present in the allpredefdictionary dic file must be loaded.") {
