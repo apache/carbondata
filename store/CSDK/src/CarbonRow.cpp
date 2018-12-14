@@ -24,11 +24,11 @@ CarbonRow::CarbonRow(JNIEnv *env) {
     if (env == NULL) {
         throw std::runtime_error("JNIEnv parameter can't be NULL.");
     }
-    this->rowUtilClass = env->FindClass("org/apache/carbondata/sdk/file/RowUtil");
+    this->jniEnv = env;
+    this->rowUtilClass = jniEnv->FindClass("org/apache/carbondata/sdk/file/RowUtil");
     if (rowUtilClass == NULL) {
         throw std::runtime_error("Can't find the class in java: org/apache/carbondata/sdk/file/RowUtil");
     }
-    this->jniEnv = env;
     getShortId = jniEnv->GetStaticMethodID(rowUtilClass, "getShort",
         "([Ljava/lang/Object;I)S");
     if (getShortId == NULL) {

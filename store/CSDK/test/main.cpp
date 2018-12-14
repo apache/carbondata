@@ -21,14 +21,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include <thread>
 #include <unistd.h>
-#include <sys/time.h>
+#include "../src/CarbonProperties.h"
 #include "../src/CarbonReader.h"
 #include "../src/CarbonRow.h"
-#include "../src/CarbonWriter.h"
 #include "../src/CarbonSchemaReader.h"
+#include "../src/CarbonWriter.h"
 #include "../src/Schema.h"
-#include "../src/CarbonProperties.h"
 
 using namespace std;
 
@@ -665,6 +665,74 @@ bool readFromS3(JNIEnv *env, char *path, char *argv[]) {
     printResult(env, reader);
 }
 
+void readTask(jobject reader, JavaVM *jvm2) {
+    printf("%s\n", "start read task in sub-thread:");
+
+    JNIEnv *env(NULL);
+    if (jvm2->GetEnv((void **) &env, JNI_VERSION_1_6) < 0) {
+        jvm2->AttachCurrentThread((void **) &env, NULL);
+    }
+
+    CarbonReader carbonReader(env, reader);
+    CarbonRow carbonRow(env);
+    try {
+        int i = 0;
+        while (carbonReader.hasNext()) {
+            jobject row = carbonReader.readNextRow();
+            i++;
+            carbonRow.setCarbonRow(row);
+            printf("%s\t%d\t%ld\t", carbonRow.getString(0), carbonRow.getInt(1), carbonRow.getLong(2));
+            jobjectArray array1 = carbonRow.getArray(3);
+            jsize length = env->GetArrayLength(array1);
+            int j = 0;
+            for (j = 0; j < length; j++) {
+                jobject element = env->GetObjectArrayElement(array1, j);
+                char *str = (char *) env->GetStringUTFChars((jstring) element, JNI_FALSE);
+                env->DeleteLocalRef(element);
+                printf("%s\t", str);
+            }
+            printf("%d\t", carbonRow.getShort(4));
+            printf("%d\t", carbonRow.getInt(5));
+            printf("%ld\t", carbonRow.getLong(6));
+            printf("%lf\t", carbonRow.getDouble(7));
+            bool bool1 = carbonRow.getBoolean(8);
+            if (bool1) {
+                printf("true\t");
+            } else {
+                printf("false\t");
+            }
+            printf("%f\t\n", carbonRow.getFloat(9));
+            env->DeleteLocalRef(row);
+        }
+        carbonReader.close();
+        carbonRow.close();
+        jvm2->DetachCurrentThread();
+    } catch (jthrowable ex) {
+        carbonReader.jniEnv->ExceptionDescribe();
+        carbonReader.jniEnv->ExceptionClear();
+    }
+
+}
+
+void readParallel(JNIEnv *env, char *path) {
+    try {
+        CarbonReader carbonReader;
+        carbonReader.builder(env, path);
+        carbonReader.build();
+
+        jobjectArray carbonReaders = carbonReader.split(4);
+        jsize length = env->GetArrayLength(carbonReaders);
+        for (int i = 0; i < length; ++i) {
+            jobject carbonReader = env->GetObjectArrayElement(carbonReaders, i);
+            thread thread1(&readTask, carbonReader, jvm);
+            thread1.detach();
+        }
+    } catch (jthrowable ex) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+    }
+}
+
 /**
  * This a example for C++ interface to read carbon file
  * If you want to test read data fromS3, please input the parameter: ak sk endpoint
@@ -696,9 +764,11 @@ int main(int argc, char *argv[]) {
     } else {
         tryCatchException(env);
         tryCarbonRowException(env, smallFilePath);
+
+        char *writePath = "./data";
+        testWriteData(env, writePath, 1, argv);
+        readParallel(env, writePath);
         testCarbonProperties(env);
-        testWriteData(env, "./data", 1, argv);
-        testWriteData(env, "./data", 1, argv);
         readFromLocalWithoutProjection(env, smallFilePath);
         readFromLocalWithProjection(env, smallFilePath);
         readSchema(env, path, false);
@@ -711,7 +781,7 @@ int main(int argc, char *argv[]) {
         testReadNextBatchRow(env, path, batch, printNum, argv, 0, true);
         testReadNextBatchRow(env, path, batch, printNum, argv, 0, false);
     }
-    (jvm)->DestroyJavaVM();
+    jvm->DestroyJavaVM();
 
     cout << "\nfinish destroy jvm";
     return 0;

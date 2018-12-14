@@ -37,9 +37,11 @@ import org.junit.*;
  */
 public class ConcurrentSdkReaderTest {
 
-  private static final String dataDir = "./testReadFiles";
+  private static final String dataDir = "./target/testReadFiles";
 
-  @Before @After public void cleanTestData() {
+  @Before
+  @After
+  public void cleanTestData() {
     try {
       FileUtils.deleteDirectory(new File(dataDir));
     } catch (Exception e) {
@@ -62,7 +64,7 @@ public class ConcurrentSdkReaderTest {
         CarbonWriter writer = builder.build();
 
         for (long i = 0; i < numRowsPerFile; ++i) {
-          writer.write(new String[] { "robot_" + i, String.valueOf(i) });
+          writer.write(new String[]{"robot_" + i, String.valueOf(i)});
         }
         writer.close();
       } catch (Exception e) {
@@ -72,10 +74,11 @@ public class ConcurrentSdkReaderTest {
     }
   }
 
-  @Test public void testReadParallely() throws IOException, InterruptedException {
+  @Test
+  public void testReadParallel() throws IOException, InterruptedException {
     int numFiles = 10;
     int numRowsPerFile = 10;
-    short numThreads = 4;
+    short numThreads = 16;
     writeDataMultipleFiles(numFiles, numRowsPerFile);
     long count;
 
@@ -102,7 +105,7 @@ public class ConcurrentSdkReaderTest {
     ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
     try {
       CarbonReader reader2 = CarbonReader.builder(dataDir).build();
-      List<CarbonReader> multipleReaders = reader2.split(numThreads);
+      CarbonReader[] multipleReaders = reader2.split(numThreads);
       try {
         List<ReadLogic> tasks = new ArrayList<>();
         List<Future<Long>> results;
@@ -139,7 +142,8 @@ public class ConcurrentSdkReaderTest {
       this.reader = reader;
     }
 
-    @Override public Long call() throws IOException {
+    @Override
+    public Long call() throws IOException {
       long count = 0;
       try {
         while (reader.hasNext()) {
