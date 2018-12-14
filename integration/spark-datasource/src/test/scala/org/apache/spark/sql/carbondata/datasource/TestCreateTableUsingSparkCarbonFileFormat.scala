@@ -428,7 +428,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
     val schema = new StringBuilder()
       .append("[ \n")
       .append("   {\"name\":\"string\"},\n")
-      .append("   {\"address\":\"varchar\"},\n")
+      .append("   {\"  address    \":\"varchar\"},\n")
       .append("   {\"age\":\"int\"},\n")
       .append("   {\"note\":\"varchar\"}\n")
       .append("]")
