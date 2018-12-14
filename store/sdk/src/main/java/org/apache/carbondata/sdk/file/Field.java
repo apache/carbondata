@@ -55,7 +55,7 @@ public class Field {
    * @param type datatype of field, specified in strings.
    */
   public Field(String name, String type) {
-    this.name = name;
+    this.name = name.toLowerCase().trim();
     if (type.equalsIgnoreCase("string")) {
       this.type = DataTypes.STRING;
     } else if (type.equalsIgnoreCase("varchar")) {
@@ -90,7 +90,7 @@ public class Field {
   }
 
   public Field(String name, String type, List<StructField> fields) {
-    this.name = name;
+    this.name = name.toLowerCase().trim();
     this.children = fields;
     if (type.equalsIgnoreCase("string")) {
       this.type = DataTypes.STRING;
@@ -126,13 +126,13 @@ public class Field {
 
 
   public Field(String name, DataType type, List<StructField> fields) {
-    this.name = name;
+    this.name = name.toLowerCase().trim();
     this.type = type;
     this.children = fields;
   }
 
   public Field(String name, DataType type) {
-    this.name = name;
+    this.name = name.toLowerCase().trim();
     this.type = type;
     initComplexTypeChildren();
   }
@@ -143,7 +143,7 @@ public class Field {
    * @param columnSchema ColumnSchema, Store the information about the column meta data
    */
   public Field(ColumnSchema columnSchema) {
-    this.name = columnSchema.getColumnName();
+    this.name = columnSchema.getColumnName().toLowerCase().trim();
     this.type = columnSchema.getDataType();
     children = new LinkedList<>();
     schemaOrdinal = columnSchema.getSchemaOrdinal();
@@ -222,11 +222,6 @@ public class Field {
   /* for SDK, change string type to varchar by default for parent columns */
   public void updateDataTypeToVarchar() {
     this.type = DataTypes.VARCHAR;
-  }
-
-  /*can use to change the case of the schema */
-  public void updateNameToLowerCase() {
-    this.name = name.toLowerCase();
   }
 
   private void initComplexTypeChildren() {

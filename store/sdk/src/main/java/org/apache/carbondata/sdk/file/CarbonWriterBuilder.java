@@ -99,7 +99,7 @@ public class CarbonWriterBuilder {
   public CarbonWriterBuilder sortBy(String[] sortColumns) {
     if (sortColumns != null) {
       for (int i = 0; i < sortColumns.length; i++) {
-        sortColumns[i] = sortColumns[i].toLowerCase();
+        sortColumns[i] = sortColumns[i].toLowerCase().trim();
       }
     }
     this.sortColumns = sortColumns;
@@ -116,7 +116,7 @@ public class CarbonWriterBuilder {
   public CarbonWriterBuilder invertedIndexFor(String[] invertedIndexColumns) {
     if (invertedIndexColumns != null) {
       for (int i = 0; i < invertedIndexColumns.length; i++) {
-        invertedIndexColumns[i] = invertedIndexColumns[i].toLowerCase();
+        invertedIndexColumns[i] = invertedIndexColumns[i].toLowerCase().trim();
       }
     }
     this.invertedIndexColumns = invertedIndexColumns;
@@ -747,7 +747,6 @@ public class CarbonWriterBuilder {
     Field[] fields =  schema.getFields();
     for (int i = 0; i < fields.length; i++) {
       if (fields[i] != null) {
-        fields[i].updateNameToLowerCase();
         if (longStringColumns != null) {
           /* Also update the string type to varchar */
           if (longStringColumns.contains(fields[i].getFieldName())) {
