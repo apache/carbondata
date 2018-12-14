@@ -184,7 +184,7 @@ public class FieldEncoderFactory {
     } else {
       return new PrimitiveDataType(carbonColumn, parentName, carbonColumn.getColumnId(),
           (CarbonDimension) carbonColumn, absoluteTableIdentifier, client, useOnePass,
-          localCache, nullFormat, isEmptyBadRecords);
+          localCache, nullFormat);
     }
   }
 

@@ -994,7 +994,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
 
       var i = 0
       while (i < 11) {
-        val array = Array[String](s"name$i", s"$i" + "$" +s"$i.${i}12")
+        val array = Array[String](s"name$i", s"$i" + "\001" +s"$i.${i}12")
         writer.write(array)
         i += 1
       }
@@ -1124,7 +1124,7 @@ class SparkCarbonDataSourceTest extends FunSuite with BeforeAndAfterAll {
 
       var i = 0
       while (i < 10) {
-        val array = Array[String](s"name$i",s"$i" + "$" + s"${i*2}", s"${i/2}" + "$" + s"${i/3}")
+        val array = Array[String](s"name$i",s"$i" + "\001" + s"${i*2}", s"${i/2}" + "\001" + s"${i/3}")
         writer.write(array)
         i += 1
       }

@@ -321,9 +321,6 @@ public final class CarbonDataProcessorUtil {
     String nullFormat =
         configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
             .toString();
-    boolean isEmptyBadRecord = Boolean.parseBoolean(
-        configuration.getDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD)
-            .toString());
 
     Map<String, GenericDataType> complexTypesMap = new LinkedHashMap<String, GenericDataType>();
     String[] hierarchies = complexTypeString.split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
@@ -347,8 +344,8 @@ public final class CarbonDataProcessorUtil {
         } else {
           g.addChildren(
               new PrimitiveDataType(levelInfo[0], DataTypeUtil.valueOf(levelInfo[1]),
-                  levelInfo[2], levelInfo[4], levelInfo[3].contains("true"), nullFormat,
-                  isEmptyBadRecord));
+                  levelInfo[2], levelInfo[4], levelInfo[3].contains("true"), nullFormat
+              ));
         }
       }
     }
