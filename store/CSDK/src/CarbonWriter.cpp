@@ -66,8 +66,8 @@ void CarbonWriter::sortBy(int argc, char **argv) {
         throw std::runtime_error("argv parameter can't be NULL.");
     }
     checkBuilder();
-    jclass carbonReaderBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
-    jmethodID methodID = jniEnv->GetMethodID(carbonReaderBuilderClass, "sortBy",
+    jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
+    jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "sortBy",
         "([Ljava/lang/String;)Lorg/apache/carbondata/sdk/file/CarbonWriterBuilder;");
     if (methodID == NULL) {
         throw std::runtime_error("Can't find the method in java: sortBy");
@@ -178,7 +178,7 @@ void CarbonWriter::taskNo(long taskNo) {
     if (methodID == NULL) {
         throw std::runtime_error("Can't find the method in java: taskNo");
     }
-    jvalue args[2];
+    jvalue args[1];
     args[0].j = taskNo;
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
 }
@@ -194,7 +194,7 @@ void CarbonWriter::uniqueIdentifier(long timestamp) {
     if (methodID == NULL) {
         throw std::runtime_error("Can't find the method in java: uniqueIdentifier");
     }
-    jvalue args[2];
+    jvalue args[1];
     args[0].j = timestamp;
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
 }
@@ -210,7 +210,7 @@ void CarbonWriter::withThreadSafe(short numOfThreads) {
     if (methodID == NULL) {
         throw std::runtime_error("Can't find the method in java: withThreadSafe");
     }
-    jvalue args[2];
+    jvalue args[1];
     args[0].s = numOfThreads;
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
 }
@@ -226,7 +226,7 @@ void CarbonWriter::withBlockSize(int blockSize) {
     if (methodID == NULL) {
         throw std::runtime_error("Can't find the method in java: withBlockSize");
     }
-    jvalue args[2];
+    jvalue args[1];
     args[0].i = blockSize;
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
 }
@@ -242,7 +242,7 @@ void CarbonWriter::withBlockletSize(int blockletSize) {
     if (methodID == NULL) {
         throw std::runtime_error("Can't find the method in java: withBlockletSize");
     }
-    jvalue args[2];
+    jvalue args[1];
     args[0].i = blockletSize;
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
 }
@@ -258,7 +258,7 @@ void CarbonWriter::localDictionaryThreshold(int localDictionaryThreshold) {
     if (methodID == NULL) {
         throw std::runtime_error("Can't find the method in java: localDictionaryThreshold");
     }
-    jvalue args[2];
+    jvalue args[1];
     args[0].i = localDictionaryThreshold;
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
 }
@@ -274,7 +274,7 @@ void CarbonWriter::enableLocalDictionary(bool enableLocalDictionary) {
     if (methodID == NULL) {
         throw std::runtime_error("Can't find the method in java: enableLocalDictionary");
     }
-    jvalue args[2];
+    jvalue args[1];
     args[0].z = enableLocalDictionary;
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
 }

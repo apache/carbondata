@@ -226,8 +226,6 @@ release the memory and destroy JVM.
     void withHadoopConf(char *key, char *value);
 ```
 
-<<<<<<< HEAD
-=======
 ```
  /**
      *  To support the table properties for writer
@@ -341,7 +339,6 @@ release the memory and destroy JVM.
     void enableLocalDictionary(bool enableLocalDictionary);
 ```
 
->>>>>>> aebd066bc... [CARBONDATA-3073] Support configure TableProperties,withLoadOption etc. interface in carbon writer of C++ SDK
 ```
     /**
      * @param appName appName which is writing the carbondata files
