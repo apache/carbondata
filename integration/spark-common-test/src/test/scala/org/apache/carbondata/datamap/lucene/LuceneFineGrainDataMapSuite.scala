@@ -658,6 +658,11 @@ class LuceneFineGrainDataMapSuite extends QueryTest with BeforeAndAfterAll {
       sql("delete from datamap_test7 where name = 'n10'").show()
     }
     assert(ex6.getMessage.contains("Delete operation is not supported"))
+
+    val ex7 = intercept[MalformedCarbonCommandException] {
+      sql("alter table datamap_test7 change id test int")
+    }
+    assert(ex7.getMessage.contains("alter table column rename is not supported"))
   }
 
   ignore("test lucene fine grain multiple data map on table") {

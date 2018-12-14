@@ -249,11 +249,11 @@ object AlterTableUtil {
    * @param timeStamp
    * @param sparkSession
    */
-  def revertDataTypeChanges(dbName: String, tableName: String, timeStamp: Long)
+  def revertColumnRenameAndDataTypeChanges(dbName: String, tableName: String, timeStamp: Long)
     (sparkSession: SparkSession): Unit = {
-    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
+    val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
-    val thriftTable: TableInfo = metastore.getThriftTableInfo(carbonTable)
+    val thriftTable: TableInfo = metaStore.getThriftTableInfo(carbonTable)
     val evolutionEntryList = thriftTable.fact_table.schema_evolution.schema_evolution_history
     val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp
     if (updatedTime == timeStamp) {
@@ -269,10 +269,49 @@ object AlterTableUtil {
           }
         }
       }
-      metastore
+      metaStore
         .revertTableSchemaInAlterFailure(carbonTable.getCarbonTableIdentifier,
           thriftTable, carbonTable.getAbsoluteTableIdentifier)(sparkSession)
     }
+  }
+
+  /**
+   * This method modifies the table properties if column rename happened
+   * @param tableProperties tableProperties of the table
+   * @param oldColumnName old COlumnname before rename
+   * @param newColumnName new column name to rename
+   */
+  def modifyTablePropertiesAfterColumnRename(
+      tableProperties: mutable.Map[String, String],
+      oldColumnName: String,
+      newColumnName: String): Unit = {
+    tableProperties.foreach { tableProperty =>
+      if (tableProperty._2.contains(oldColumnName)) {
+        val tablePropertyKey = tableProperty._1
+        val tablePropertyValue = tableProperty._2
+        tableProperties
+          .put(tablePropertyKey, tablePropertyValue.replace(oldColumnName, newColumnName))
+      }
+    }
+  }
+
+  /**
+   * This method create a new SchemaEvolutionEntry and adds to SchemaEvolutionEntry List
+   *
+   * @param schemaEvolutionEntry List to add new SchemaEvolutionEntry
+   * @param addColumnSchema          added new column schema
+   * @param deletedColumnSchema      old column schema which is deleted
+   * @return
+   */
+  def addNewSchemaEvolutionEntry(
+      schemaEvolutionEntry: SchemaEvolutionEntry,
+      timeStamp: Long,
+      addColumnSchema: org.apache.carbondata.format.ColumnSchema,
+      deletedColumnSchema: org.apache.carbondata.format.ColumnSchema): SchemaEvolutionEntry = {
+    var schemaEvolutionEntry = new SchemaEvolutionEntry(timeStamp)
+    schemaEvolutionEntry.setAdded(List(addColumnSchema).asJava)
+    schemaEvolutionEntry.setRemoved(List(deletedColumnSchema).asJava)
+    schemaEvolutionEntry
   }
 
   /**
