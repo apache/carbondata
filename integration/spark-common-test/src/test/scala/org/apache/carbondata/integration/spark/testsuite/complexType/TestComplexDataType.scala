@@ -122,7 +122,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL")
     sql("drop table if exists table1")
     sql("create table table1 (person struct<detail:array<string>,age:int>) stored by 'carbondata'")
-    sql("insert into table1 values ('$1')")
+    sql("insert into table1 values ('\0011')")
     checkAnswer(sql("select person.detail[0] from table1"), Seq(Row("")))
     checkAnswer(sql("select person.age from table1"), Seq(Row(1)))
     sql("drop table if exists table1")
