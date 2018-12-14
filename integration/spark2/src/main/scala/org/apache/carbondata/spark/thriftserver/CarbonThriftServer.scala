@@ -48,13 +48,8 @@ object CarbonThriftServer {
       System.exit(0)
     }
 
-    val master = Option(System.getProperty("spark.master"))
-      .orElse(sys.env.get("MASTER"))
-      .orElse(Option("local[8]"))
-
     val builder = SparkSession
       .builder()
-      .master(master.get)
       .config(sparkConf)
       .appName("Carbon Thrift Server(uses CarbonSession)")
       .enableHiveSupport()
