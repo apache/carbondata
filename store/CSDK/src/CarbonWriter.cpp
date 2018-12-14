@@ -85,6 +85,9 @@ void CarbonWriter::sortBy(int argc, char **argv) {
     jvalue args[1];
     args[0].l = array;
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
 }
 
 void CarbonWriter::withCsvInput(char *jsonSchema) {
@@ -145,6 +148,9 @@ void CarbonWriter::withTableProperty(char *key, char *value) {
     args[0].l = jniEnv->NewStringUTF(key);
     args[1].l = jniEnv->NewStringUTF(value);
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
 }
 
 void CarbonWriter::withLoadOption(char *key, char *value) {
@@ -165,6 +171,9 @@ void CarbonWriter::withLoadOption(char *key, char *value) {
     args[0].l = jniEnv->NewStringUTF(key);
     args[1].l = jniEnv->NewStringUTF(value);
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
 }
 
 void CarbonWriter::taskNo(long taskNo) {
@@ -181,6 +190,9 @@ void CarbonWriter::taskNo(long taskNo) {
     jvalue args[1];
     args[0].j = taskNo;
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
 }
 
 void CarbonWriter::uniqueIdentifier(long timestamp) {
@@ -197,6 +209,9 @@ void CarbonWriter::uniqueIdentifier(long timestamp) {
     jvalue args[1];
     args[0].j = timestamp;
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
 }
 
 void CarbonWriter::withThreadSafe(short numOfThreads) {
@@ -213,6 +228,9 @@ void CarbonWriter::withThreadSafe(short numOfThreads) {
     jvalue args[1];
     args[0].s = numOfThreads;
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
 }
 
 void CarbonWriter::withBlockSize(int blockSize) {
@@ -229,6 +247,9 @@ void CarbonWriter::withBlockSize(int blockSize) {
     jvalue args[1];
     args[0].i = blockSize;
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
 }
 
 void CarbonWriter::withBlockletSize(int blockletSize) {
@@ -245,6 +266,9 @@ void CarbonWriter::withBlockletSize(int blockletSize) {
     jvalue args[1];
     args[0].i = blockletSize;
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
 }
 
 void CarbonWriter::localDictionaryThreshold(int localDictionaryThreshold) {
@@ -261,6 +285,9 @@ void CarbonWriter::localDictionaryThreshold(int localDictionaryThreshold) {
     jvalue args[1];
     args[0].i = localDictionaryThreshold;
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
 }
 
 void CarbonWriter::enableLocalDictionary(bool enableLocalDictionary) {
@@ -277,6 +304,9 @@ void CarbonWriter::enableLocalDictionary(bool enableLocalDictionary) {
     jvalue args[1];
     args[0].z = enableLocalDictionary;
     carbonWriterBuilderObject = jniEnv->CallObjectMethodA(carbonWriterBuilderObject, methodID, args);
+    if (jniEnv->ExceptionCheck()) {
+        throw jniEnv->ExceptionOccurred();
+    }
 }
 
 void CarbonWriter::writtenBy(char *appName) {
