@@ -983,15 +983,14 @@ object CarbonDataRDDFactory {
     // generate RDD[(K, V)] to use the partitionBy method of PairRDDFunctions
     val inputRDD: RDD[(String, Row)] = if (dataFrame.isDefined) {
       // input data from DataFrame
-      val delimiterLevel1 = carbonLoadModel.getComplexDelimiters.get(0)
-      val delimiterLevel2 = carbonLoadModel.getComplexDelimiters.get(1)
+      val complexDelimiters = carbonLoadModel.getComplexDelimiters
       val serializationNullFormat =
         carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
       dataFrame.get.rdd.map { row =>
         if (null != row && row.length > partitionColumnIndex &&
             null != row.get(partitionColumnIndex)) {
           (CarbonScalaUtil.getString(row.get(partitionColumnIndex), serializationNullFormat,
-            delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat), row)
+            complexDelimiters, timeStampFormat, dateFormat), row)
         } else {
           (null, row)
         }

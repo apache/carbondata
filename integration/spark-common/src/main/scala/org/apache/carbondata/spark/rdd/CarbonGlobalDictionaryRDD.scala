@@ -20,6 +20,7 @@ package org.apache.carbondata.spark.rdd
 import java.io.{DataInputStream, InputStreamReader}
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
+import java.util
 import java.util.regex.Pattern
 
 import scala.collection.mutable
@@ -293,11 +294,12 @@ class CarbonBlockDistinctValuesCombineRDD(
         row = rddIter.next()
         if (row != null) {
           rowCount += 1
+          val complexDelimiters = new util.ArrayList[String]
+          model.delimiters.foreach(x => complexDelimiters.add(x))
           for (i <- 0 until dimNum) {
             dimensionParsers(i).parseString(CarbonScalaUtil.getString(row.get(i),
               model.serializationNullFormat,
-              model.delimiters(0),
-              model.delimiters(1),
+              complexDelimiters,
               timeStampFormat,
               dateFormat))
           }

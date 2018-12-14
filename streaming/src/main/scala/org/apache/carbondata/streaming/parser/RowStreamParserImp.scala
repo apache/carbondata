@@ -18,6 +18,7 @@
 package org.apache.carbondata.streaming.parser
 
 import java.text.SimpleDateFormat
+import java.util
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.catalyst.encoders.{ExpressionEncoder, RowEncoder}
@@ -26,6 +27,8 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.processing.loading
+import org.apache.carbondata.processing.loading.ComplexDelimitersEnum
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 
 /**
@@ -39,9 +42,7 @@ class RowStreamParserImp extends CarbonStreamParser {
 
   var timeStampFormat: SimpleDateFormat = null
   var dateFormat: SimpleDateFormat = null
-  var complexDelimiterLevel1: String = null
-  var complexDelimiterLevel2: String = null
-  var complexDelimiterLevel3: String = null
+  var complexDelimiters: util.ArrayList[String] = new util.ArrayList[String]()
   var serializationNullFormat: String = null
 
   override def initialize(configuration: Configuration, structType: StructType): Unit = {
@@ -53,9 +54,10 @@ class RowStreamParserImp extends CarbonStreamParser {
       this.configuration.get(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))
     this.dateFormat = new SimpleDateFormat(
       this.configuration.get(CarbonCommonConstants.CARBON_DATE_FORMAT))
-    this.complexDelimiterLevel1 = this.configuration.get("carbon_complex_delimiter_level_1")
-    this.complexDelimiterLevel2 = this.configuration.get("carbon_complex_delimiter_level_2")
-    this.complexDelimiterLevel3 = this.configuration.get("carbon_complex_delimiter_level_3")
+    this.complexDelimiters.add(this.configuration.get("carbon_complex_delimiter_level_1"))
+    this.complexDelimiters.add(this.configuration.get("carbon_complex_delimiter_level_2"))
+    this.complexDelimiters.add(this.configuration.get("carbon_complex_delimiter_level_3"))
+    this.complexDelimiters.add(ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_4.value())
     this.serializationNullFormat =
       this.configuration.get(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
   }
@@ -63,9 +65,10 @@ class RowStreamParserImp extends CarbonStreamParser {
   override def parserRow(value: InternalRow): Array[Object] = {
     this.encoder.fromRow(value).toSeq.map { x => {
       FieldConverter.objectToString(
-        x, serializationNullFormat, complexDelimiterLevel1, complexDelimiterLevel2,
+        x, serializationNullFormat, complexDelimiters,
         timeStampFormat, dateFormat)
-    } }.toArray
+    }
+    }.toArray
   }
 
   override def close(): Unit = {

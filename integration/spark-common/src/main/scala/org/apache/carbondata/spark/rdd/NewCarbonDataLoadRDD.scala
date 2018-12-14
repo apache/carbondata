@@ -341,9 +341,7 @@ class NewRddIterator(rddIter: Iterator[Row],
   private val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
     .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
   private val dateFormat = new SimpleDateFormat(dateFormatString)
-  private val delimiterLevel1 = carbonLoadModel.getComplexDelimiters.get(0)
-  private val delimiterLevel2 = carbonLoadModel.getComplexDelimiters.get(1)
-  private val delimiterLevel3 = carbonLoadModel.getComplexDelimiters.get(2)
+  private val complexDelimiters = carbonLoadModel.getComplexDelimiters
   private val serializationNullFormat =
     carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
   import scala.collection.JavaConverters._
@@ -357,7 +355,7 @@ class NewRddIterator(rddIter: Iterator[Row],
     val columns = new Array[AnyRef](row.length)
     for (i <- 0 until columns.length) {
       columns(i) = CarbonScalaUtil.getString(row.get(i), serializationNullFormat,
-        delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat,
+        complexDelimiters, timeStampFormat, dateFormat,
         isVarcharType = i < isVarcharTypeMapping.size && isVarcharTypeMapping(i))
     }
     columns
@@ -391,9 +389,7 @@ class LazyRddIterator(serializer: SerializerInstance,
     .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
       CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
   private val dateFormat = new SimpleDateFormat(dateFormatString)
-  private val delimiterLevel1 = carbonLoadModel.getComplexDelimiters.get(0)
-  private val delimiterLevel2 = carbonLoadModel.getComplexDelimiters.get(1)
-  private val delimiterLevel3 = carbonLoadModel.getComplexDelimiters.get(2)
+  private val complexDelimiters = carbonLoadModel.getComplexDelimiters
   private val serializationNullFormat =
     carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
   // the order of fields in dataframe and createTable may be different, here we need to know whether
@@ -431,7 +427,7 @@ class LazyRddIterator(serializer: SerializerInstance,
     val columns = new Array[AnyRef](row.length)
     for (i <- 0 until columns.length) {
       columns(i) = CarbonScalaUtil.getString(row.get(i), serializationNullFormat,
-        delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat,
+        complexDelimiters, timeStampFormat, dateFormat,
         isVarcharType = i < isVarcharTypeMapping.size && isVarcharTypeMapping(i))
     }
     columns

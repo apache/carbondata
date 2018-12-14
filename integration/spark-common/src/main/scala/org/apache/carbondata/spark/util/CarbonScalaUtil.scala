@@ -62,14 +62,19 @@ object CarbonScalaUtil {
 
   def getString(value: Any,
       serializationNullFormat: String,
-      delimiterLevel1: String,
-      delimiterLevel2: String,
+      complexDelimiters: util.ArrayList[String],
       timeStampFormat: SimpleDateFormat,
       dateFormat: SimpleDateFormat,
       isVarcharType: Boolean = false,
-      level: Int = 1): String = {
-    FieldConverter.objectToString(value, serializationNullFormat, delimiterLevel1,
-      delimiterLevel2, timeStampFormat, dateFormat, isVarcharType = isVarcharType, level)
+      level: Int = 0): String = {
+    FieldConverter
+      .objectToString(value,
+        serializationNullFormat,
+        complexDelimiters,
+        timeStampFormat,
+        dateFormat,
+        isVarcharType = isVarcharType,
+        level)
   }
 
   /**
