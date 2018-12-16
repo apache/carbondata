@@ -33,7 +33,7 @@ to be configured with Object Store path in CarbonProperties file.
 
 For example:
 ```
-carbon.storelocation=s3a://mybucket/carbonstore.
+carbon.storelocation=s3a://mybucket/carbonstore
 ```
 
 If the existing store location cannot be changed or only specific tables need to be stored 
@@ -68,8 +68,11 @@ spark.hadoop.fs.s3a.access.key=456
 
 Example:
 ```
-./bin/spark-submit --master yarn --conf spark.hadoop.fs.s3a.secret.key=123 --conf spark.hadoop.fs
-.s3a.access.key=456 --class=
+./bin/spark-submit \
+--master yarn \
+--conf spark.hadoop.fs.s3a.secret.key=123 \
+--conf spark.hadoop.fs.s3a.access.key=456 \
+--class=xxx
 ```  
 
 4. Set authentication properties to hadoop configuration object in sparkContext.

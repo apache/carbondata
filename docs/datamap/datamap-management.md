@@ -34,13 +34,13 @@
 DataMap can be created using following DDL
 
 ```
-  CREATE DATAMAP [IF NOT EXISTS] datamap_name
-  [ON TABLE main_table]
-  USING "datamap_provider"
-  [WITH DEFERRED REBUILD]
-  DMPROPERTIES ('key'='value', ...)
-  AS
-    SELECT statement
+CREATE DATAMAP [IF NOT EXISTS] datamap_name
+[ON TABLE main_table]
+USING "datamap_provider"
+[WITH DEFERRED REBUILD]
+DMPROPERTIES ('key'='value', ...)
+AS
+  SELECT statement
 ```
 
 Currently, there are 5 DataMap implementations in CarbonData.
