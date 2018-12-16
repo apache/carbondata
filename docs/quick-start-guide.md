@@ -80,43 +80,49 @@ import org.apache.spark.sql.CarbonSession._
 * Create a CarbonSession :
 
 ```
-val carbon = SparkSession.builder().config(sc.getConf)
-             .getOrCreateCarbonSession("<hdfs store path>")
+val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("<carbon_store_path>")
 ```
-**NOTE**: By default metastore location points to `../carbon.metastore`, user can provide own metastore location to CarbonSession like `SparkSession.builder().config(sc.getConf)
-.getOrCreateCarbonSession("<hdfs store path>", "<local metastore path>")`
+**NOTE** 
+ - By default metastore location points to `../carbon.metastore`, user can provide own metastore location to CarbonSession like 
+   `SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("<carbon_store_path>", "<local metastore path>")`.
+ - Data storage location can be specified by `<carbon_store_path>`, like `/carbon/data/store`, `hdfs://localhost:9000/carbon/data/store` or `s3a://carbon/data/store`.
 
 #### Executing Queries
 
 ###### Creating a Table
 
 ```
-scala>carbon.sql("CREATE TABLE
-                    IF NOT EXISTS test_table(
-                    id string,
-                    name string,
-                    city string,
-                    age Int)
-                  STORED AS carbondata")
+carbon.sql(
+           s"""
+              | CREATE TABLE IF NOT EXISTS test_table(
+              |   id string,
+              |   name string,
+              |   city string,
+              |   age Int)
+              | STORED AS carbondata
+           """.stripMargin)
 ```
 
 ###### Loading Data to a Table
 
 ```
-scala>carbon.sql("LOAD DATA INPATH '/path/to/sample.csv'
-                  INTO TABLE test_table")
+carbon.sql("LOAD DATA INPATH '/path/to/sample.csv' INTO TABLE test_table")
 ```
+
 **NOTE**: Please provide the real file path of `sample.csv` for the above script. 
 If you get "tablestatus.lock" issue, please refer to [FAQ](faq.md)
 
 ###### Query Data from a Table
 
 ```
-scala>carbon.sql("SELECT * FROM test_table").show()
+carbon.sql("SELECT * FROM test_table").show()
 
-scala>carbon.sql("SELECT city, avg(age), sum(age)
-                  FROM test_table
-                  GROUP BY city").show()
+carbon.sql(
+           s"""
+              | SELECT city, avg(age), sum(age)
+              | FROM test_table
+              | GROUP BY city
+           """.stripMargin).show()
 ```
 
 
@@ -150,22 +156,22 @@ scala>carbon.sql("SELECT city, avg(age), sum(age)
 | spark.driver.extraJavaOptions   | `-Dcarbon.properties.filepath = $SPARK_HOME/conf/carbon.properties` | A string of extra JVM options to pass to the driver. For instance, GC settings or other logging. |
 | spark.executor.extraJavaOptions | `-Dcarbon.properties.filepath = $SPARK_HOME/conf/carbon.properties` | A string of extra JVM options to pass to executors. For instance, GC settings or other logging. **NOTE**: You can enter multiple values separated by space. |
 
-1. Add the following properties in `$SPARK_HOME/conf/carbon.properties` file:
+7. Add the following properties in `$SPARK_HOME/conf/carbon.properties` file:
 
 | Property             | Required | Description                                                  | Example                              | Remark                        |
 | -------------------- | -------- | ------------------------------------------------------------ | ------------------------------------ | ----------------------------- |
 | carbon.storelocation | NO       | Location where data CarbonData will create the store and write the data in its own format. If not specified then it takes spark.sql.warehouse.dir path. | hdfs://HOSTNAME:PORT/Opt/CarbonStore | Propose to set HDFS directory |
 
-1. Verify the installation. For example:
+8. Verify the installation. For example:
 
 ```
-./spark-shell --master spark://HOSTNAME:PORT --total-executor-cores 2
+./bin/spark-shell \
+--master spark://HOSTNAME:PORT \
+--total-executor-cores 2 \
 --executor-memory 2G
 ```
 
 **NOTE**: Make sure you have permissions for CarbonData JARs and files through which driver and executor will start.
-
-
 
 ## Installing and Configuring CarbonData on Spark on YARN Cluster
 
@@ -195,7 +201,7 @@ tar -zcvf carbondata.tar.gz carbonlib/
 mv carbondata.tar.gz carbonlib/
 ```
 
-1. Configure the properties mentioned in the following table in `$SPARK_HOME/conf/spark-defaults.conf` file.
+4. Configure the properties mentioned in the following table in `$SPARK_HOME/conf/spark-defaults.conf` file.
 
 | Property                        | Description                                                  | Value                                                        |
 | ------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
@@ -207,20 +213,23 @@ mv carbondata.tar.gz carbonlib/
 | spark.driver.extraClassPath     | Extra classpath entries to prepend to the classpath of the driver. **NOTE**: If SPARK_CLASSPATH is defined in spark-env.sh, then comment it and append the value in below parameter spark.driver.extraClassPath. | `$SPARK_HOME/carbonlib/*`                                    |
 | spark.driver.extraJavaOptions   | A string of extra JVM options to pass to the driver. For instance, GC settings or other logging. | `-Dcarbon.properties.filepath = $SPARK_HOME/conf/carbon.properties` |
 
-1. Add the following properties in `$SPARK_HOME/conf/carbon.properties`:
+5. Add the following properties in `$SPARK_HOME/conf/carbon.properties`:
 
 | Property             | Required | Description                                                  | Example                              | Default Value                 |
 | -------------------- | -------- | ------------------------------------------------------------ | ------------------------------------ | ----------------------------- |
 | carbon.storelocation | NO       | Location where CarbonData will create the store and write the data in its own format. If not specified then it takes spark.sql.warehouse.dir path. | hdfs://HOSTNAME:PORT/Opt/CarbonStore | Propose to set HDFS directory |
 
-1. Verify the installation.
+6. Verify the installation.
 
 ```
- ./bin/spark-shell --master yarn-client --driver-memory 1g
- --executor-cores 2 --executor-memory 2G
+./bin/spark-shell \
+--master yarn-client \
+--driver-memory 1G \
+--executor-memory 2G \
+--executor-cores 2
 ```
 
-  **NOTE**: Make sure you have permissions for CarbonData JARs and files through which driver and executor will start.
+**NOTE**: Make sure you have permissions for CarbonData JARs and files through which driver and executor will start.
 
 
 
@@ -228,13 +237,13 @@ mv carbondata.tar.gz carbonlib/
 
 ### Starting CarbonData Thrift Server.
 
-   a. cd `$SPARK_HOME`
+a. cd `$SPARK_HOME`
 
-   b. Run the following command to start the CarbonData thrift server.
+b. Run the following command to start the CarbonData thrift server.
 
 ```
-./bin/spark-submit
---class org.apache.carbondata.spark.thriftserver.CarbonThriftServer
+./bin/spark-submit \
+--class org.apache.carbondata.spark.thriftserver.CarbonThriftServer \
 $SPARK_HOME/carbonlib/$CARBON_ASSEMBLY_JAR <carbon_store_path>
 ```
 
@@ -246,9 +255,9 @@ $SPARK_HOME/carbonlib/$CARBON_ASSEMBLY_JAR <carbon_store_path>
 **NOTE**: From Spark 1.6, by default the Thrift server runs in multi-session mode. Which means each JDBC/ODBC connection owns a copy of their own SQL configuration and temporary function registry. Cached tables are still shared though. If you prefer to run the Thrift server in single-session mode and share all SQL configuration and temporary function registry, please set option `spark.sql.hive.thriftServer.singleSession` to `true`. You may either add this option to `spark-defaults.conf`, or pass it to `spark-submit.sh` via `--conf`:
 
 ```
-./bin/spark-submit
---conf spark.sql.hive.thriftServer.singleSession=true
---class org.apache.carbondata.spark.thriftserver.CarbonThriftServer
+./bin/spark-submit \
+--conf spark.sql.hive.thriftServer.singleSession=true \
+--class org.apache.carbondata.spark.thriftserver.CarbonThriftServer \
 $SPARK_HOME/carbonlib/$CARBON_ASSEMBLY_JAR <carbon_store_path>
 ```
 
@@ -259,34 +268,34 @@ $SPARK_HOME/carbonlib/$CARBON_ASSEMBLY_JAR <carbon_store_path>
 - Start with default memory and executors.
 
 ```
-./bin/spark-submit
---class org.apache.carbondata.spark.thriftserver.CarbonThriftServer 
-$SPARK_HOME/carbonlib
-/carbondata_2.xx-x.x.x-SNAPSHOT-shade-hadoop2.7.2.jar
+./bin/spark-submit \
+--class org.apache.carbondata.spark.thriftserver.CarbonThriftServer \
+$SPARK_HOME/carbonlib/carbondata_2.xx-x.x.x-SNAPSHOT-shade-hadoop2.7.2.jar \
 hdfs://<host_name>:port/user/hive/warehouse/carbon.store
 ```
 
 - Start with Fixed executors and resources.
 
 ```
-./bin/spark-submit
---class org.apache.carbondata.spark.thriftserver.CarbonThriftServer 
---num-executors 3 --driver-memory 20g --executor-memory 250g 
---executor-cores 32 
-/srv/OSCON/BigData/HACluster/install/spark/sparkJdbc/lib
-/carbondata_2.xx-x.x.x-SNAPSHOT-shade-hadoop2.7.2.jar
+./bin/spark-submit \
+--class org.apache.carbondata.spark.thriftserver.CarbonThriftServer \
+--num-executors 3 \
+--driver-memory 20G \
+--executor-memory 250G \
+--executor-cores 32 \
+$SPARK_HOME/carbonlib/carbondata_2.xx-x.x.x-SNAPSHOT-shade-hadoop2.7.2.jar \
 hdfs://<host_name>:port/user/hive/warehouse/carbon.store
 ```
 
 ### Connecting to CarbonData Thrift Server Using Beeline.
 
 ```
-     cd $SPARK_HOME
-     ./sbin/start-thriftserver.sh
-     ./bin/beeline -u jdbc:hive2://<thriftserver_host>:port
+cd $SPARK_HOME
+./sbin/start-thriftserver.sh
+./bin/beeline -u jdbc:hive2://<thriftserver_host>:port
 
-     Example
-     ./bin/beeline -u jdbc:hive2://10.10.10.10:10000
+Example
+./bin/beeline -u jdbc:hive2://10.10.10.10:10000
 ```
 
 
@@ -300,79 +309,81 @@ Once the table is created,it can be queried from Presto.**
 
 ### Installing Presto
 
- 1. Download the 0.210 version of Presto using:
-    `wget https://repo1.maven.org/maven2/com/facebook/presto/presto-server/0.210/presto-server-0.210.tar.gz`
+1. Download the 0.210 version of Presto using:
+`wget https://repo1.maven.org/maven2/com/facebook/presto/presto-server/0.210/presto-server-0.210.tar.gz`
 
- 2. Extract Presto tar file: `tar zxvf presto-server-0.210.tar.gz`.
+2. Extract Presto tar file: `tar zxvf presto-server-0.210.tar.gz`.
 
- 3. Download the Presto CLI for the coordinator and name it presto.
+3. Download the Presto CLI for the coordinator and name it presto.
 
-  ```
-    wget https://repo1.maven.org/maven2/com/facebook/presto/presto-cli/0.210/presto-cli-0.210-executable.jar
+```
+wget https://repo1.maven.org/maven2/com/facebook/presto/presto-cli/0.210/presto-cli-0.210-executable.jar
 
-    mv presto-cli-0.210-executable.jar presto
+mv presto-cli-0.210-executable.jar presto
 
-    chmod +x presto
-  ```
+chmod +x presto
+```
 
 ### Create Configuration Files
 
-  1. Create `etc` folder in presto-server-0.210 directory.
-  2. Create `config.properties`, `jvm.config`, `log.properties`, and `node.properties` files.
-  3. Install uuid to generate a node.id.
+1. Create `etc` folder in presto-server-0.210 directory.
+2. Create `config.properties`, `jvm.config`, `log.properties`, and `node.properties` files.
+3. Install uuid to generate a node.id.
 
-      ```
-      sudo apt-get install uuid
+  ```
+  sudo apt-get install uuid
 
-      uuid
-      ```
+  uuid
+  ```
 
 
 ##### Contents of your node.properties file
 
-  ```
-  node.environment=production
-  node.id=<generated uuid>
-  node.data-dir=/home/ubuntu/data
-  ```
+```
+node.environment=production
+node.id=<generated uuid>
+node.data-dir=/home/ubuntu/data
+```
 
 ##### Contents of your jvm.config file
 
-  ```
-  -server
-  -Xmx16G
-  -XX:+UseG1GC
-  -XX:G1HeapRegionSize=32M
-  -XX:+UseGCOverheadLimit
-  -XX:+ExplicitGCInvokesConcurrent
-  -XX:+HeapDumpOnOutOfMemoryError
-  -XX:OnOutOfMemoryError=kill -9 %p
-  ```
+```
+-server
+-Xmx16G
+-XX:+UseG1GC
+-XX:G1HeapRegionSize=32M
+-XX:+UseGCOverheadLimit
+-XX:+ExplicitGCInvokesConcurrent
+-XX:+HeapDumpOnOutOfMemoryError
+-XX:OnOutOfMemoryError=kill -9 %p
+```
 
 ##### Contents of your log.properties file
-  ```
-  com.facebook.presto=INFO
-  ```
+
+```
+com.facebook.presto=INFO
+```
 
  The default minimum level is `INFO`. There are four levels: `DEBUG`, `INFO`, `WARN` and `ERROR`.
 
 ### Coordinator Configurations
 
 ##### Contents of your config.properties
-  ```
-  coordinator=true
-  node-scheduler.include-coordinator=false
-  http-server.http.port=8086
-  query.max-memory=5GB
-  query.max-total-memory-per-node=5GB
-  query.max-memory-per-node=3GB
-  memory.heap-headroom-per-node=1GB
-  discovery-server.enabled=true
-  discovery.uri=http://localhost:8086
-  task.max-worker-threads=4
-  optimizer.dictionary-aggregation=true
-  optimizer.optimize-hash-generation = false
-  ```
+
+```
+coordinator=true
+node-scheduler.include-coordinator=false
+http-server.http.port=8086
+query.max-memory=5GB
+query.max-total-memory-per-node=5GB
+query.max-memory-per-node=3GB
+memory.heap-headroom-per-node=1GB
+discovery-server.enabled=true
+discovery.uri=http://localhost:8086
+task.max-worker-threads=4
+optimizer.dictionary-aggregation=true
+optimizer.optimize-hash-generation = false
+```
 The options `node-scheduler.include-coordinator=false` and `coordinator=true` indicate that the node is the coordinator and tells the coordinator not to do any of the computation work itself and to use the workers.
 
 **Note**: It is recommended to set `query.max-memory-per-node` to half of the JVM config max memory, though the workload is highly concurrent, lower value for `query.max-memory-per-node` is to be used.
@@ -385,13 +396,13 @@ Then, `query.max-memory=<30GB * number of nodes>`.
 
 ##### Contents of your config.properties
 
-  ```
-  coordinator=false
-  http-server.http.port=8086
-  query.max-memory=5GB
-  query.max-memory-per-node=2GB
-  discovery.uri=<coordinator_ip>:8086
-  ```
+```
+coordinator=false
+http-server.http.port=8086
+query.max-memory=5GB
+query.max-memory-per-node=2GB
+discovery.uri=<coordinator_ip>:8086
+```
 
 **Note**: `jvm.config` and `node.properties` files are same for all the nodes (worker + coordinator). All the nodes should have different `node.id`.(generated by uuid command).
 
@@ -420,6 +431,7 @@ To run it as a background process.
 To run it in foreground.
 
 ### Start Presto CLI
+
 ```
 ./presto
 ```

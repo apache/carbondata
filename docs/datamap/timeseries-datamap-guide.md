@@ -97,8 +97,7 @@ For querying timeseries data, Carbondata has builtin support for following time 
 timeseries(timeseries column name, 'aggregation level')
 ```
 ```
-SELECT timeseries(order_time, 'hour'), sum(quantity) FROM sales GROUP BY timeseries(order_time,
-'hour')
+SELECT timeseries(order_time, 'hour'), sum(quantity) FROM sales GROUP BY timeseries(order_time,'hour')
 ```
   
 It is **not necessary** to create pre-aggregate tables for each granularity unless required for 
@@ -108,25 +107,25 @@ For Example: For main table **sales** , if following timeseries datamaps were cr
 level and hour level pre-aggregate
   
 ```
-  CREATE DATAMAP agg_day
-  ON TABLE sales
-  USING "timeseries"
-  DMPROPERTIES (
-    'event_time'='order_time',
-    'day_granularity'='1',
-  ) AS
-  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
-   avg(price) FROM sales GROUP BY order_time, country, sex
-        
-  CREATE DATAMAP agg_sales_hour
-  ON TABLE sales
-  USING "timeseries"
-  DMPROPERTIES (
-    'event_time'='order_time',
-    'hour_granularity'='1',
-  ) AS
-  SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
-   avg(price) FROM sales GROUP BY order_time, country, sex
+CREATE DATAMAP agg_day
+ON TABLE sales
+USING "timeseries"
+DMPROPERTIES (
+  'event_time'='order_time',
+  'day_granularity'='1',
+) AS
+SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+ avg(price) FROM sales GROUP BY order_time, country, sex
+      
+CREATE DATAMAP agg_sales_hour
+ON TABLE sales
+USING "timeseries"
+DMPROPERTIES (
+  'event_time'='order_time',
+  'hour_granularity'='1',
+) AS
+SELECT order_time, country, sex, sum(quantity), max(quantity), count(user_id), sum(price),
+ avg(price) FROM sales GROUP BY order_time, country, sex
 ```
 
 Queries like below will not be rolled-up and hit the main table
@@ -138,7 +137,7 @@ Select timeseries(order_time, 'year'), sum(quantity) from sales group by timeser
   'year')
 ```
 
-NOTE (<b>RESTRICTION</b>):
+NOTE (**RESTRICTION**):
 * Only value of 1 is supported for hierarchy levels. Other hierarchy levels will be supported in
 the future CarbonData release. 
 * timeseries datamap for the desired levels needs to be created one after the other

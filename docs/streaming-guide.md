@@ -46,7 +46,7 @@ mvn clean package -DskipTests -Pspark-2.2
 
 Start a socket data server in a terminal
 ```shell
- nc -lk 9099
+nc -lk 9099
 ```
  type some CSV rows as following
 ```csv
@@ -131,12 +131,12 @@ Continue to type some rows into data server, and spark-shell will show the new d
 Streaming table is just a normal carbon table with "streaming" table property, user can create
 streaming table using following DDL.
 ```sql
- CREATE TABLE streaming_table (
-  col1 INT,
-  col2 STRING
- )
- STORED AS carbondata
- TBLPROPERTIES('streaming'='true')
+CREATE TABLE streaming_table (
+ col1 INT,
+ col2 STRING
+)
+STORED AS carbondata
+TBLPROPERTIES('streaming'='true')
 ```
 
  property name | default | description
