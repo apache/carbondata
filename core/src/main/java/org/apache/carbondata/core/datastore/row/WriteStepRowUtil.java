@@ -85,10 +85,10 @@ public class WriteStepRowUtil {
 
     // For Complex Type Columns
     byte[][] complexKeys = ((ByteArrayWrapper) row[0]).getComplexTypesKeys();
-    for (int i = segmentProperties.getNumberOfNoDictionaryDimension();
+    for (int i = segmentProperties.getNumberOfNoDictionaryDimension(), j = 0;
          i < segmentProperties.getNumberOfNoDictionaryDimension() + segmentProperties
              .getComplexDimensions().size(); i++) {
-      noDictAndComplexKeys[i] = complexKeys[i];
+      noDictAndComplexKeys[i] = complexKeys[j++];
     }
 
     // no dictionary and complex dimension
