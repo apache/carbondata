@@ -144,7 +144,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
         newTableIdentifier,
         carbonTable.getCarbonTableIdentifier,
         tableInfo,
-        List(schemaEvolutionEntry),
+        schemaEvolutionEntry,
         carbonTable.getTablePath)(sparkSession)
 
       // Update the storage location with datamap schema

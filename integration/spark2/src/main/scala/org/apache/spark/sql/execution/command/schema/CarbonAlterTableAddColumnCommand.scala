@@ -95,7 +95,7 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
         .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
       val (tableIdentifier, schemaParts, cols) = AlterTableUtil.updateSchemaInfo(
           carbonTable,
-          List(schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry)),
+          schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
           thriftTable,
           Some(newCols))(sparkSession)
       sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog].alterAddColumns(

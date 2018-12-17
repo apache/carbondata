@@ -186,10 +186,14 @@ class TestStreamingTableOpName extends QueryTest with BeforeAndAfterAll {
     val changeDataTypeException = intercept[MalformedCarbonCommandException] {
       sql("""ALTER TABLE source CHANGE c2 c2 bigint""").collect()
     }
+    val columnRenameException = intercept[MalformedCarbonCommandException] {
+      sql("""ALTER TABLE source CHANGE c2 c3 int""").collect()
+    }
     assertResult("Alter table add column is not allowed for streaming table")(addColException.getMessage)
     assertResult("Alter table drop column is not allowed for streaming table")(dropColException.getMessage)
     assertResult("Alter rename table is not allowed for streaming table")(renameException.getMessage)
     assertResult("Alter table change datatype is not allowed for streaming table")(changeDataTypeException.getMessage)
+    assertResult("Alter table column rename is not allowed for streaming table")(columnRenameException.getMessage)
   }
 
   override def  afterAll {

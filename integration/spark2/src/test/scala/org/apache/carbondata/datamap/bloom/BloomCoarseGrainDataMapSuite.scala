@@ -548,11 +548,16 @@ class BloomCoarseGrainDataMapSuite extends QueryTest with BeforeAndAfterAll with
          | USING 'bloomfilter'
          | DMProperties( 'INDEX_COLUMNS'='city,id', 'BLOOM_SIZE'='640000')
       """.stripMargin)
-    val exception: MalformedCarbonCommandException = intercept[MalformedCarbonCommandException] {
+    val changeDataTypeException: MalformedCarbonCommandException = intercept[MalformedCarbonCommandException] {
       sql(s"ALTER TABLE $normalTable CHANGE id id bigint")
     }
-    assert(exception.getMessage.contains(
-      "alter table change datatype or column rename is not supported for index datamap"))
+    assert(changeDataTypeException.getMessage.contains(
+      "alter table change datatype is not supported for index datamap"))
+    val columnRenameException: MalformedCarbonCommandException = intercept[MalformedCarbonCommandException] {
+      sql(s"ALTER TABLE $normalTable CHANGE id test int")
+    }
+    assert(columnRenameException.getMessage.contains(
+      "alter table column rename is not supported for index datamap"))
   }
 
   test("test drop index columns for bloomfilter datamap") {

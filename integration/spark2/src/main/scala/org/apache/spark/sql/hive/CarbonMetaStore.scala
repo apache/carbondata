@@ -71,7 +71,7 @@ trait CarbonMetaStore {
       newTableIdentifier: CarbonTableIdentifier,
       oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
-      schemaEvolutionEntry: List[SchemaEvolutionEntry],
+      schemaEvolutionEntry: SchemaEvolutionEntry,
       carbonStorePath: String)(sparkSession: SparkSession): String
 
   /**
@@ -97,8 +97,7 @@ trait CarbonMetaStore {
    */
   def revertTableSchemaInAlterFailure(carbonTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
-      absoluteTableIdentifier: AbsoluteTableIdentifier,
-      timeStamp: Long)
+      absoluteTableIdentifier: AbsoluteTableIdentifier)
     (sparkSession: SparkSession): String
 
 

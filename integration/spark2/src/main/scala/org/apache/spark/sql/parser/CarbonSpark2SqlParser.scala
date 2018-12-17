@@ -522,7 +522,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           isColumnRename = true
         }
         val alterTableColRenameAndDataTypeChangeModel =
-          AlterTableColRenameAndDataTypeChangeModel(parseDataType(dataType.toLowerCase,
+          AlterTableDataTypeChangeModel(parseDataType(dataType.toLowerCase,
             values,
             isColumnRename),
             convertDbNameToLowerCase(dbName),

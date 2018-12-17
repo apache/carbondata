@@ -25,7 +25,6 @@ import org.apache.carbondata.spark.exception.ProcessMetaDataException
 
 class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
-
   override def beforeAll(): Unit = {
     dropTable()
     createTableAndLoad()
@@ -147,7 +146,7 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
     assert(df3.count() == df4.count())
   }
 
-  test("test sort columns, local dictionary and other column properties in DESC formatted") {
+  test("test sort columns, local dictionary and other column properties in DESC formatted, check case sensitive also") {
     dropTable()
     sql(
       "CREATE TABLE rename (empno int, empname String, designation String, doj Timestamp, " +
@@ -156,11 +155,11 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
       "utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('dictionary_include'='empno,empname'," +
       "'local_dictionary_include'='workgroupcategoryname','local_dictionary_exclude'='deptname','COLUMN_META_CACHE'='projectcode,attendance'," +
       "'SORT_COLUMNS'='workgroupcategory,utilization,salary')")
-    sql("alter table rename change empname name string")
+    sql("alter table rename change eMPName name string")
     sql("alter table rename change workgroupcategoryname workgroup string")
-    sql("alter table rename change deptname deptaddress string")
-    sql("alter table rename change attendance bunk int")
-    sql("alter table rename change utilization utility int")
+    sql("alter table rename change DEPtNaMe depTADDress string")
+    sql("alter table rename change attEnDance bUNk int")
+    sql("alter table rename change uTiLIZation utILIty int")
 
     val descLoc = sql("describe formatted rename").collect
     descLoc.find(_.get(0).toString.contains("Global Dictionary")) match {
@@ -219,7 +218,8 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
     val ex = intercept[ProcessMetaDataException] {
       sql("alter table datamap_test change Name myName string")
     }
-    ex.getMessage.contains("alter table change datatype or column rename is not supported for index datamap")
+    ex.getMessage.contains("alter table column rename is not supported for index datamap")
+    sql("DROP TABLE IF EXISTS datamap_test")
   }
 
   test("test rename column with bloom datamap") {
@@ -239,7 +239,8 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
     val ex = intercept[ProcessMetaDataException] {
       sql("alter table bloomtable change city nation string")
     }
-    ex.getMessage.contains("alter table change datatype or column rename is not supported for index datamap")
+    ex.getMessage.contains("alter table column rename is not supported for index datamap")
+    sql("drop table if exists bloomtable")
   }
 
   test("test rename column on table where preagg exists") {
@@ -255,8 +256,56 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
     intercept[Exception] {
       sql("alter table maintable change id ids int")
     }
+    sql("DROP TABLE IF EXISTS maintable")
   }
 
+  test("test rename on complex column") {
+    sql("drop table if exists complex")
+    sql(
+      "create table complex (id int, name string, structField struct<intval:int, stringval:string>) stored by 'carbondata'")
+    val ex = intercept[ProcessMetaDataException] {
+      sql("alter table complex change structField complexTest struct")
+    }
+    assert(ex.getMessage.contains("Rename column is unsupported for complex datatype column structfield"))
+  }
+
+  test("test SET command with column rename") {
+    dropTable()
+     createTable()
+    sql("alter table rename change workgroupcategoryname testset string")
+    val ex = intercept[Exception] {
+      sql("alter table rename set tblproperties('column_meta_cache'='workgroupcategoryname')")
+    }
+    assert(ex.getMessage.contains("Column workgroupcategoryname does not exists in the table rename"))
+    sql("alter table rename set tblproperties('column_meta_cache'='testset')")
+    val descLoc = sql("describe formatted rename").collect
+    descLoc.find(_.get(0).toString.contains("Cached Min/Max Index Columns")) match {
+      case Some(row) => assert(row.get(1).toString.contains("testset"))
+      case None => assert(false)
+    }
+  }
+
+  test("test column rename with change datatype for decimal datatype") {
+    sql("drop table if exists deciTable")
+    sql("create table decitable(name string, age int, avg decimal(30,10)) stored by 'carbondata'")
+    sql("alter table decitable change avg newAvg decimal(32,11)")
+    val descLoc = sql("describe formatted decitable").collect
+    descLoc.find(_.get(0).toString.contains("newavg")) match {
+      case Some(row) => assert(row.get(1).toString.contains("decimal(32,11)"))
+      case None => assert(false)
+    }
+    sql("drop table if exists decitable")
+  }
+
+  test("test column rename of bigint column") {
+    sql("drop table if exists biginttable")
+    sql("create table biginttable(name string, age int, bigintfield bigint) stored by 'carbondata'")
+    sql("alter table biginttable change bigintfield testfield bigint")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "biginttable")
+    assert(null != carbonTable.getColumnByName("biginttable", "testfield"))
+    assert(null == carbonTable.getColumnByName("biginttable", "bigintfield"))
+    sql("drop table if exists biginttable")
+  }
 
   override def afterAll(): Unit = {
     dropTable()

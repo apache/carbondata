@@ -128,7 +128,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
             "Operation not allowed : " + altertablemodel.alterSql)
         }
       case colRenameDataTypeChange@CarbonAlterTableColRenameDataTypeChangeCommand(
-      alterTableColRenameAndDataTypeChangeModel) =>
+      alterTableColRenameAndDataTypeChangeModel, _) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetaStore
           .tableExists(TableIdentifier(alterTableColRenameAndDataTypeChangeModel.tableName,
             alterTableColRenameAndDataTypeChangeModel.databaseName))(sparkSession)

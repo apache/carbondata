@@ -22,7 +22,7 @@ import org.apache.spark.sql.catalyst.parser.SqlBaseParser
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{AddTableColumnsContext, ChangeColumnContext, CreateTableContext, ShowTablesContext}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkSqlAstBuilder
-import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableColRenameAndDataTypeChangeModel}
+import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableDataTypeChangeModel}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableColRenameDataTypeChangeCommand}
 import org.apache.spark.sql.execution.command.table.{CarbonExplainCommand, CarbonShowTablesCommand}
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
@@ -37,9 +37,10 @@ trait SqlAstBuilderHelper extends SparkSqlAstBuilder {
   override def visitChangeColumn(ctx: ChangeColumnContext): LogicalPlan = {
 
     val newColumn = visitColType(ctx.colType)
-    var isColumnRename = false
-    if (!ctx.identifier.getText.equalsIgnoreCase(newColumn.name)) {
-      isColumnRename = true
+    val isColumnRename = if (!ctx.identifier.getText.equalsIgnoreCase(newColumn.name)) {
+      true
+    } else {
+      false
     }
 
     val (typeString, values): (String, Option[List[(Int, Int)]]) = newColumn.dataType match {
@@ -48,7 +49,7 @@ trait SqlAstBuilderHelper extends SparkSqlAstBuilder {
     }
 
     val alterTableColRenameAndDataTypeChangeModel =
-      AlterTableColRenameAndDataTypeChangeModel(new CarbonSpark2SqlParser()
+      AlterTableDataTypeChangeModel(new CarbonSpark2SqlParser()
         .parseDataType(typeString, values, isColumnRename),
         new CarbonSpark2SqlParser()
           .convertDbNameToLowerCase(Option(ctx.tableIdentifier().db).map(_.getText)),

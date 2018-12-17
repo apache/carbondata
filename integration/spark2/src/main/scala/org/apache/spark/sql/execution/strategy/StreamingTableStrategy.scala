@@ -54,10 +54,14 @@ private[sql] class StreamingTableStrategy(sparkSession: SparkSession) extends Sp
           new TableIdentifier(model.tableName, model.databaseName),
           "Alter table drop column")
         Nil
-      case CarbonAlterTableColRenameDataTypeChangeCommand(model) =>
+      case CarbonAlterTableColRenameDataTypeChangeCommand(model, _) =>
+        val operation = if (model.isColumnRename) {
+          "Alter table column rename"
+        } else {
+          "Alter table change datatype"
+        }
         rejectIfStreamingTable(
-          new TableIdentifier(model.tableName, model.databaseName),
-          "Alter table change datatype")
+          new TableIdentifier(model.tableName, model.databaseName), operation)
         Nil
       case AlterTableRenameCommand(oldTableIdentifier, _, _) =>
         rejectIfStreamingTable(
