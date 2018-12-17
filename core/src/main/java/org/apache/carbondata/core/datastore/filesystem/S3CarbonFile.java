@@ -18,6 +18,7 @@ package org.apache.carbondata.core.datastore.filesystem;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -50,24 +51,39 @@ public class S3CarbonFile extends HDFSCarbonFile {
   }
 
   /**
-    TODO: The current implementation of renameForce is not correct as it deletes the destination
-          object and then performs rename(copy).
-          If the copy fails then there is not way to recover the old file.
-           This can happen when tablestatus.write is renamed to tablestatus.
-          One solution can be to read the content and rewrite the file as write with the same name
-          will overwrite the file by default. Need to discuss.
-          Refer CARBONDATA-2670 for tracking this.
+   The current implementaion of rename force for S3 is to read the contents of source and write
+   as the destination file. This is done to avoid the overhead of deleting and recreating the file.
    */
   @Override
   public boolean renameForce(String changeToName) {
-    FileSystem fs;
+    DataInputStream dataInputStream = null;
+    DataOutputStream dataOutputStream = null;
     try {
-      deleteFile(changeToName, FileFactory.getFileType(changeToName));
-      fs = fileStatus.getPath().getFileSystem(hadoopConf);
-      return fs.rename(fileStatus.getPath(), new Path(changeToName));
+      String sourcePath = getAbsolutePath();
+      dataInputStream = FileFactory.getDataInputStream(sourcePath,
+          FileFactory.getFileType(sourcePath));
+      dataOutputStream = getDataOutputStream(changeToName,
+          FileFactory.getFileType(changeToName), CarbonCommonConstants.BYTEBUFFER_SIZE, false);
+      byte[] byteArray = new byte[dataInputStream.available()];
+      dataInputStream.readFully(byteArray);
+      dataOutputStream.write(byteArray);
+      return true;
     } catch (IOException e) {
-      LOGGER.error("Exception occured: " + e.getMessage());
+      LOGGER.error("Exception occured:", e);
       return false;
+    } finally {
+      try {
+        if (dataInputStream != null) {
+          dataInputStream.close();
+        }
+        if (dataOutputStream != null) {
+          dataOutputStream.close();
+        }
+        // delete the source file
+        delete();
+      } catch (IOException e) {
+        LOGGER.error("Exception occured while closing streams:", e);
+      }
     }
   }
 
