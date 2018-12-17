@@ -877,7 +877,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
     checkExistence(sql("select * from table1"),true,"2.9E9")
   }
 
-  test("test block compaction - auto merge") {
+  test("test compaction - auto merge") {
     sql("DROP TABLE IF EXISTS table1")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
@@ -904,7 +904,7 @@ class TestComplexDataType extends QueryTest with BeforeAndAfterAll {
       "/Struct.csv' into table table1 options('delimiter'=','," +
       "'quotechar'='\"','fileheader'='roll,person','complex_delimiter_level_1'='$'," +
       "'complex_delimiter_level_2'='&')")
-    checkExistence(sql("show segments for table table1"),false, "Compacted")
+    checkExistence(sql("show segments for table table1"),true, "Compacted")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
   }

@@ -44,10 +44,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datamap.DataMapWriterListener;
-import org.apache.carbondata.processing.datatypes.ArrayDataType;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
-import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
-import org.apache.carbondata.processing.datatypes.StructDataType;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
@@ -246,24 +243,9 @@ public class CarbonFactDataHandlerModel {
     }
 
     //To Set MDKey Index of each primitive type in complex type
-    int surrIndex = simpleDimsCount;
-    Iterator<Map.Entry<String, GenericDataType>> complexMap =
-        CarbonDataProcessorUtil.getComplexTypesMap(configuration.getDataFields(), configuration)
-            .entrySet().iterator();
-    Map<Integer, GenericDataType> complexIndexMap = new HashMap<>(complexDimensionCount);
-    while (complexMap.hasNext()) {
-      Map.Entry<String, GenericDataType> complexDataType = complexMap.next();
-      complexDataType.getValue().setOutputArrayIndex(0);
-      complexIndexMap.put(simpleDimsCount, complexDataType.getValue());
-      simpleDimsCount++;
-      List<GenericDataType> primitiveTypes = new ArrayList<GenericDataType>();
-      complexDataType.getValue().getAllPrimitiveChildren(primitiveTypes);
-      for (GenericDataType eachPrimitive : primitiveTypes) {
-        if (eachPrimitive.getIsColumnDictionary()) {
-          eachPrimitive.setSurrogateIndex(surrIndex++);
-        }
-      }
-    }
+    Map<Integer, GenericDataType> complexIndexMap = getComplexMap(
+        configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
+            .toString(), simpleDimsCount, configuration.getDataFields());
 
     CarbonDataFileAttributes carbonDataFileAttributes =
         new CarbonDataFileAttributes(Long.parseLong(configuration.getTaskNo()),
@@ -375,7 +357,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setColCardinality(formattedCardinality);
 
     carbonFactDataHandlerModel.setComplexIndexMap(
-        convertComplexDimensionToGenericDataType(segmentProperties,
+        convertComplexDimensionToComplexIndexMap(segmentProperties,
             loadModel.getSerializationNullFormat()));
     DataType[] measureDataTypes = new DataType[segmentProperties.getMeasures().size()];
     int i = 0;
@@ -417,75 +399,39 @@ public class CarbonFactDataHandlerModel {
    * @param isNullFormat
    * @return
    */
-  private static Map<Integer, GenericDataType> convertComplexDimensionToGenericDataType(
+  private static Map<Integer, GenericDataType> convertComplexDimensionToComplexIndexMap(
       SegmentProperties segmentProperties, String isNullFormat) {
     List<CarbonDimension> complexDimensions = segmentProperties.getComplexDimensions();
-    Map<Integer, GenericDataType> complexIndexMap = new HashMap<>(complexDimensions.size());
-    int dimensionCount = -1;
-    if (segmentProperties.getDimensions().size() == 0) {
-      dimensionCount = 0;
-    } else {
-      dimensionCount = segmentProperties.getDimensions().size() - segmentProperties
-          .getNumberOfNoDictionaryDimension() - segmentProperties.getComplexDimensions().size();
+    int simpleDimsCount = segmentProperties.getDimensions().size() - segmentProperties
+        .getNumberOfNoDictionaryDimension();
+    DataField[] dataFields = new DataField[complexDimensions.size()];
+    int i = 0;
+    for (CarbonColumn complexDimension : complexDimensions) {
+      dataFields[i++] = new DataField(complexDimension);
     }
-    for (CarbonDimension carbonDimension : complexDimensions) {
-      if (carbonDimension.isComplex()) {
-        GenericDataType genericDataType;
-        DataType dataType = carbonDimension.getDataType();
-        if (DataTypes.isArrayType(dataType)) {
-          genericDataType =
-              new ArrayDataType(carbonDimension.getColName(), "", carbonDimension.getColumnId());
-        } else if (DataTypes.isStructType(dataType)) {
-          genericDataType =
-              new StructDataType(carbonDimension.getColName(), "", carbonDimension.getColumnId());
-        } else {
-          // Add Primitive type.
-          throw new RuntimeException("Primitive Type should not be coming in first loop");
-        }
-        if (carbonDimension.getNumberOfChild() > 0) {
-          addChildrenForComplex(carbonDimension.getListOfChildDimensions(), genericDataType,
-              isNullFormat);
-        }
-        genericDataType.setOutputArrayIndex(0);
-        complexIndexMap.put(dimensionCount++, genericDataType);
-      }
-
-    }
-    return complexIndexMap;
+    return getComplexMap(isNullFormat, simpleDimsCount, dataFields);
   }
 
-  private static void addChildrenForComplex(List<CarbonDimension> listOfChildDimensions,
-      GenericDataType genericDataType, String isNullFormat) {
-    for (CarbonDimension carbonDimension : listOfChildDimensions) {
-      String parentColName =
-          carbonDimension.getColName().substring(0, carbonDimension.getColName().lastIndexOf("."));
-      DataType dataType = carbonDimension.getDataType();
-      if (DataTypes.isArrayType(dataType)) {
-        GenericDataType arrayGeneric =
-            new ArrayDataType(carbonDimension.getColName(), parentColName,
-                carbonDimension.getColumnId());
-        if (carbonDimension.getNumberOfChild() > 0) {
-          addChildrenForComplex(carbonDimension.getListOfChildDimensions(), arrayGeneric,
-              isNullFormat);
+  private static Map<Integer, GenericDataType> getComplexMap(String isNullFormat,
+      int simpleDimsCount, DataField[] dataFields) {
+    int surrIndex = simpleDimsCount;
+    Iterator<Map.Entry<String, GenericDataType>> complexMap =
+        CarbonDataProcessorUtil.getComplexTypesMap(dataFields, isNullFormat).entrySet().iterator();
+    Map<Integer, GenericDataType> complexIndexMap = new HashMap<>(dataFields.length);
+    while (complexMap.hasNext()) {
+      Map.Entry<String, GenericDataType> complexDataType = complexMap.next();
+      complexDataType.getValue().setOutputArrayIndex(0);
+      complexIndexMap.put(simpleDimsCount, complexDataType.getValue());
+      simpleDimsCount++;
+      List<GenericDataType> primitiveTypes = new ArrayList<GenericDataType>();
+      complexDataType.getValue().getAllPrimitiveChildren(primitiveTypes);
+      for (GenericDataType eachPrimitive : primitiveTypes) {
+        if (eachPrimitive.getIsColumnDictionary()) {
+          eachPrimitive.setSurrogateIndex(surrIndex++);
         }
-        genericDataType.addChildren(arrayGeneric);
-      } else if (DataTypes.isStructType(dataType)) {
-        GenericDataType structGeneric =
-            new StructDataType(carbonDimension.getColName(), parentColName,
-                carbonDimension.getColumnId());
-        if (carbonDimension.getNumberOfChild() > 0) {
-          addChildrenForComplex(carbonDimension.getListOfChildDimensions(), structGeneric,
-              isNullFormat);
-        }
-        genericDataType.addChildren(structGeneric);
-      } else {
-        // Primitive Data Type
-        genericDataType.addChildren(
-            new PrimitiveDataType(carbonDimension.getColumnSchema().getColumnName(),
-                dataType, parentColName, carbonDimension.getColumnId(),
-                carbonDimension.getColumnSchema().hasEncoding(Encoding.DICTIONARY), isNullFormat));
       }
     }
+    return complexIndexMap;
   }
 
   /**

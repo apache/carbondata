@@ -284,26 +284,6 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
 
   }
 
-  test("Test Compaction blocking") {
-    sql("DROP TABLE IF EXISTS carbon")
-
-    sql(
-      s"""
-         | CREATE TABLE carbon(
-         | a INT,
-         | mapField map<INT,STRING>
-         | )
-         | STORED BY 'carbondata'
-         | """
-        .stripMargin)
-
-    val exception = intercept[UnsupportedOperationException](
-      sql("ALTER table carbon compact 'minor'")
-    )
-    assertResult("Compaction is unsupported for Table containing Map Columns")(exception
-      .getMessage())
-  }
-
   test("Test Load duplicate keys data in map") {
     sql("DROP TABLE IF EXISTS carbon")
     sql(
@@ -422,6 +402,55 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
       Row(Map(1 -> "Nalla", 2 -> "Singh", 4 -> "Kumar")),
       Row(Map(10 -> "Nallaa", 20 -> "Sissngh", 100 -> "Gusspta", 40 -> "Kumar"))
     ))
+  }
+
+  test("test compaction with map data type") {
+    sql("DROP TABLE IF EXISTS carbon")
+    sql(
+      s"""
+         | CREATE TABLE carbon(
+         | mapField map<INT,STRING>
+         | )
+         | STORED BY 'carbondata'
+         | """
+        .stripMargin)
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$path'
+         | INTO TABLE carbon OPTIONS(
+         | 'header' = 'false')
+       """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$path'
+         | INTO TABLE carbon OPTIONS(
+         | 'header' = 'false')
+       """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$path'
+         | INTO TABLE carbon OPTIONS(
+         | 'header' = 'false')
+       """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$path'
+         | INTO TABLE carbon OPTIONS(
+         | 'header' = 'false')
+       """.stripMargin)
+    sql("alter table carbon compact 'minor'")
+    sql("show segments for table carbon").show(false)
+    checkAnswer(sql("select * from carbon"), Seq(
+      Row(Map(1 -> "Nalla", 2 -> "Singh", 4 -> "Kumar")),
+      Row(Map(10 -> "Nallaa", 20 -> "Sissngh", 100 -> "Gusspta", 40 -> "Kumar")),
+      Row(Map(1 -> "Nalla", 2 -> "Singh", 4 -> "Kumar")),
+      Row(Map(10 -> "Nallaa", 20 -> "Sissngh", 100 -> "Gusspta", 40 -> "Kumar")),
+      Row(Map(1 -> "Nalla", 2 -> "Singh", 4 -> "Kumar")),
+      Row(Map(10 -> "Nallaa", 20 -> "Sissngh", 100 -> "Gusspta", 40 -> "Kumar")),
+      Row(Map(1 -> "Nalla", 2 -> "Singh", 4 -> "Kumar")),
+      Row(Map(10 -> "Nallaa", 20 -> "Sissngh", 100 -> "Gusspta", 40 -> "Kumar"))
+    ))
+    sql("DROP TABLE IF EXISTS carbon")
   }
 
   test("Sort Column table property blocking for Map type") {
