@@ -331,7 +331,8 @@ object CarbonSource {
         properties,
         query)
       // updating params
-      val updatedFormat = storageFormat.copy(properties = map)
+      val updatedFormat = CarbonToSparkAdapater
+        .getUpdatedStorageFormat(storageFormat, map, tablePath)
       tableDesc.copy(storage = updatedFormat)
     } else {
       val tableInfo = CarbonUtil.convertGsonToTableInfo(properties.asJava)
