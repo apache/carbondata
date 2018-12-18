@@ -50,6 +50,7 @@ import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConst
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.rdd.StreamHandoffRDD
+import org.apache.carbondata.spark.util.CommonUtil
 import org.apache.carbondata.streaming.{CarbonStreamException, CarbonStreamOutputFormat}
 import org.apache.carbondata.streaming.index.StreamFileIndex
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
@@ -93,6 +94,7 @@ class CarbonAppendableStreamSink(
       carbonLoadModel.getDateFormat())
     conf
   }
+  CommonUtil.configureCSVInputFormat(hadoopConf, carbonLoadModel)
   // segment max size(byte)
   private val segmentMaxSize = hadoopConf.getLong(
     CarbonCommonConstants.HANDOFF_SIZE,
