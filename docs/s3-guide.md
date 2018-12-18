@@ -68,8 +68,11 @@ spark.hadoop.fs.s3a.access.key=456
 
 Example:
 ```
-./bin/spark-submit --master yarn --conf spark.hadoop.fs.s3a.secret.key=123 --conf spark.hadoop.fs
-.s3a.access.key=456 --class=
+./bin/spark-submit \
+--master yarn \
+--conf spark.hadoop.fs.s3a.secret.key=123 \
+--conf spark.hadoop.fs.s3a.access.key=456 \
+--class=xxx
 ```  
 
 4. Set authentication properties to hadoop configuration object in sparkContext.
