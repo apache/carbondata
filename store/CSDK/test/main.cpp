@@ -831,8 +831,8 @@ int main(int argc, char *argv[]) {
     // init jvm
     JNIEnv *env;
     env = initJVM();
-    char *S3WritePath = "s3a://xubo/WriterOutput/carbondata2";
-    char *S3ReadPath = "s3a://xubo/WriterOutput/carbondata";
+    char *S3WritePath = "s3a://csdk/WriterOutput/carbondata2";
+    char *S3ReadPath = "s3a://csdk/WriterOutput/carbondata";
 
     char *smallFilePath = "../../../../resources/carbondata";
     char *path = "../../../../../../../Downloads/carbon-data-big/dir2";
