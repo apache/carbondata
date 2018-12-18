@@ -408,7 +408,6 @@ release the memory and destroy JVM.
     jobject readSchema(char *path, bool validateSchema);
 ```
 
-=======
 ```
     /**
      * read schema from path,
