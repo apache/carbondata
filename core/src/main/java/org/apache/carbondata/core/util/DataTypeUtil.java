@@ -962,7 +962,7 @@ public final class DataTypeUtil {
   /**
    * As each load can have it's own time format. Reset the thread local for each load.
    */
-  public static void initializeFormatter() {
+  public static void clearFormatter() {
     timeStampformatter.remove();
     dateformatter.remove();
   }

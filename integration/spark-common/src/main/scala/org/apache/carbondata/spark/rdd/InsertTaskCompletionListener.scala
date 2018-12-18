@@ -42,7 +42,7 @@ class InsertTaskCompletionListener(dataLoadExecutor: DataLoadExecutor,
     }
     finally {
       CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)
-      DataTypeUtil.initializeFormatter()
+      DataTypeUtil.clearFormatter()
     }
   }
 }

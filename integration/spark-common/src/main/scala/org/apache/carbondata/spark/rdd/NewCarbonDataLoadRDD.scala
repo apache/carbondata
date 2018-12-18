@@ -142,7 +142,7 @@ class NewCarbonDataLoadRDD[K, V](
         // Initialize to set carbon properties
         loader.initialize()
         // need to clear thread local before every load.
-        DataTypeUtil.initializeFormatter()
+        DataTypeUtil.clearFormatter()
         val executor = new DataLoadExecutor()
         // in case of success, failure or cancelation clear memory and stop execution
         context
