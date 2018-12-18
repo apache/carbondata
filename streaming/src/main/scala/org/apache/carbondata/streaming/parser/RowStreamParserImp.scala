@@ -67,8 +67,7 @@ class RowStreamParserImp extends CarbonStreamParser {
       FieldConverter.objectToString(
         x, serializationNullFormat, complexDelimiters,
         timeStampFormat, dateFormat)
-    }
-    }.toArray
+    } }.toArray
   }
 
   override def close(): Unit = {

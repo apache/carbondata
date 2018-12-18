@@ -67,22 +67,17 @@ object CarbonScalaUtil {
       dateFormat: SimpleDateFormat,
       isVarcharType: Boolean = false,
       level: Int = 0): String = {
-    FieldConverter
-      .objectToString(value,
-        serializationNullFormat,
-        complexDelimiters,
-        timeStampFormat,
-        dateFormat,
-        isVarcharType = isVarcharType,
-        level)
+    FieldConverter.objectToString(value, serializationNullFormat, complexDelimiters,
+      timeStampFormat, dateFormat, isVarcharType = isVarcharType, level)
   }
 
   /**
    * Converts incoming value to String after converting data as per the data type.
-   * @param value Input value to convert
-   * @param dataType Datatype to convert and then convert to String
+   *
+   * @param value           Input value to convert
+   * @param dataType        Datatype to convert and then convert to String
    * @param timeStampFormat Timestamp format to convert in case of timestamp datatypes
-   * @param dateFormat DataFormat to convert in case of DateType datatype
+   * @param dateFormat      DataFormat to convert in case of DateType datatype
    * @return converted String
    */
   def convertToDateAndTimeFormats(
@@ -131,7 +126,8 @@ object CarbonScalaUtil {
 
   /**
    * Converts incoming value to String after converting data as per the data type.
-   * @param value Input value to convert
+   *
+   * @param value  Input value to convert
    * @param column column which it value belongs to
    * @return converted String
    */
@@ -188,7 +184,8 @@ object CarbonScalaUtil {
 
   /**
    * Converts incoming value to String after converting data as per the data type.
-   * @param value Input value to convert
+   *
+   * @param value  Input value to convert
    * @param column column which it value belongs to
    * @return converted String
    */
@@ -243,6 +240,7 @@ object CarbonScalaUtil {
 
   /**
    * Update partition values as per the right date and time format
+   *
    * @return updated partition spec
    */
   def updatePartitions(partitionSpec: mutable.LinkedHashMap[String, String],
@@ -471,7 +469,7 @@ object CarbonScalaUtil {
       }
     } catch {
       case e: Exception =>
-        // ignore it
+      // ignore it
     }
   }
 

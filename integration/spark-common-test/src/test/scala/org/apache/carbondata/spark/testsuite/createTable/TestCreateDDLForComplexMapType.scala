@@ -506,9 +506,38 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
          | """
         .stripMargin)
     sql("INSERT INTO carbon values('1\002man\003nan\0012\002kands\003dsnknd')")
-    sql("SELECT * FROM carbon").show(false)
     sql("INSERT INTO carbon SELECT * FROM carbon")
-    sql("SELECT * FROM carbon limit 2").show(false)
+    checkAnswer(sql("SELECT * FROM carbon limit 1"),
+      Seq(Row(Map(1 -> Row("man", "nan"), (2 -> Row("kands", "dsnknd"))))))
+  }
+
+  test("Struct inside map pushdown") {
+    sql("DROP TABLE IF EXISTS carbon")
+    sql(
+      s"""
+         | CREATE TABLE carbon(
+         | mapField map<INT,struct<kk:STRING,mm:STRING>>
+         | )
+         | STORED BY 'carbondata'
+         | """
+        .stripMargin)
+    sql("INSERT INTO carbon values('1\002man\003nan\0012\002kands\003dsnknd')")
+    checkAnswer(sql("SELECT mapField[1].kk FROM carbon"), Row("man"))
+  }
+
+  test("Map inside struct") {
+    sql("DROP TABLE IF EXISTS carbon")
+    sql(
+      s"""
+         | CREATE TABLE carbon(
+         | structField struct<intVal:INT,map1:MAP<STRING,STRING>>
+         | )
+         | STORED BY 'carbondata'
+         | """
+        .stripMargin)
+    sql("INSERT INTO carbon values('1\001man\003nan\002kands\003dsnknd')")
+    val res = sql("SELECT structField.intVal FROM carbon").show(false)
+    checkAnswer(sql("SELECT structField.intVal FROM carbon"), Seq(Row(1)))
   }
 
 }
