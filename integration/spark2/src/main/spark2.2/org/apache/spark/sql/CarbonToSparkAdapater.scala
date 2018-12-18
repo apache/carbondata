@@ -18,8 +18,11 @@
 
 package org.apache.spark.sql
 
+import java.net.URI
+
 import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
+import org.apache.spark.sql.catalyst.catalog.CatalogStorageFormat
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, AttributeSet, ExprId, Expression, ExpressionSet, NamedExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenContext
 import org.apache.spark.sql.catalyst.optimizer.OptimizeCodegen
@@ -78,5 +81,11 @@ object CarbonToSparkAdapater {
 
   def getOptimizeCodegenRule(conf :SQLConf): Seq[Rule[LogicalPlan]] = {
     Seq(OptimizeCodegen(conf))
+  }
+
+  def getUpdatedStorageFormat(storageFormat: CatalogStorageFormat,
+      map: Map[String, String],
+      tablePath: String): CatalogStorageFormat = {
+    storageFormat.copy(properties = map, locationUri = Some(new URI(tablePath)))
   }
 }
