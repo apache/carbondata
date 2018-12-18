@@ -29,6 +29,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.BlockletSerializer;
 import org.apache.carbondata.core.datamap.dev.DataMap;
@@ -50,8 +51,7 @@ import org.apache.carbondata.events.Event;
 import org.apache.carbondata.events.OperationContext;
 import org.apache.carbondata.events.OperationEventListener;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 
 /**
  * Index at the table level, user can add any number of DataMap for one table, by
@@ -74,7 +74,8 @@ public final class TableDataMap extends OperationEventListener {
 
   private SegmentPropertiesFetcher segmentPropertiesFetcher;
 
-  private static final Log LOG = LogFactory.getLog(TableDataMap.class);
+  private static final Logger LOG =
+      LogServiceFactory.getLogService(TableDataMap.class.getName());
 
   /**
    * It is called to initialize and load the required table datamap metadata.
