@@ -169,8 +169,8 @@ private[sql] case class CarbonAlterTableRenameCommand(
       case e: Exception =>
         if (hiveRenameSuccess) {
           sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog].alterTableRename(
-            TableIdentifier(newTableName, Some(oldDatabaseName)),
-            TableIdentifier(oldTableName, Some(oldDatabaseName)),
+            newTableIdentifier,
+            oldTableIdentifier,
             carbonTable.getAbsoluteTableIdentifier.getTableName)
         }
         if (carbonTable != null) {
@@ -180,9 +180,8 @@ private[sql] case class CarbonAlterTableRenameCommand(
             timeStamp)(
             sparkSession)
         }
-        LOGGER.error(opName + " operation failed: ", e)
         throwMetadataException(oldDatabaseName, oldTableName,
-          opName + " operation failed! Please check logs for details.")
+          opName + " operation failed: " + e.getMessage)
     }
     Seq.empty
   }

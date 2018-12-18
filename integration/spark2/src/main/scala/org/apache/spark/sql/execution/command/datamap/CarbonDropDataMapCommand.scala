@@ -103,7 +103,7 @@ case class CarbonDropDataMapCommand(
             Some(childCarbonTable.get.getDatabaseName),
             childCarbonTable.get.getTableName,
             dropChildTable = true)
-          commandToRun.processMetadata(sparkSession)
+          commandToRun.run(sparkSession)
         }
         dropDataMapFromSystemFolder(sparkSession)
         return Seq.empty
