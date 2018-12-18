@@ -27,8 +27,8 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.carbondata.common.logging.LogServiceFactory;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
@@ -39,6 +39,7 @@ import org.apache.hive.service.Service;
 import org.apache.hive.service.cli.CLIService;
 import org.apache.hive.service.cli.SessionHandle;
 import org.apache.hive.service.server.HiveServer2;
+import org.apache.log4j.Logger;
 
 /**
  * Utility starting a local/embedded Hive org.apache.carbondata.hive.server for testing purposes.
@@ -48,7 +49,7 @@ import org.apache.hive.service.server.HiveServer2;
  */
 public class HiveEmbeddedServer2 {
   private static final String SCRATCH_DIR = "/tmp/hive";
-  private static final Log log = LogFactory.getLog(Hive.class);
+  private static final Logger log = LogServiceFactory.getLogService(Hive.class.getName());
   private HiveServer2 hiveServer;
   private HiveConf config;
   private int port;

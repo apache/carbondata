@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -45,8 +46,6 @@ import org.apache.carbondata.processing.loading.model.CarbonDataLoadSchema;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
@@ -54,6 +53,7 @@ import org.apache.hadoop.mapreduce.OutputCommitter;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.log4j.Logger;
 
 /**
  * This is table level output format which writes the data to store in new segment. Each load
@@ -115,7 +115,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
    */
   public static final String OPERATION_CONTEXT = "mapreduce.carbontable.operation.context";
 
-  private static final Log LOG = LogFactory.getLog(CarbonTableOutputFormat.class);
+  private static final Logger LOG =
+      LogServiceFactory.getLogService(CarbonTableOutputFormat.class.getName());
 
   private CarbonOutputCommitter committer;
 
