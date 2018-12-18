@@ -21,10 +21,10 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.CarbonIterator;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 
 /**
  * It is wrapper class to hold the rows in batches when record writer writes the data and allows
@@ -32,7 +32,8 @@ import org.apache.commons.logging.LogFactory;
  */
 public class CarbonOutputIteratorWrapper extends CarbonIterator<Object[]> {
 
-  private static final Log LOG = LogFactory.getLog(CarbonOutputIteratorWrapper.class);
+  private static final Logger LOG =
+      LogServiceFactory.getLogService(CarbonOutputIteratorWrapper.class.getName());
 
   private boolean close;
 
