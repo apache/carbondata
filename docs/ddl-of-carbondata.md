@@ -157,22 +157,22 @@ CarbonData DDL statements are documented here,which includes:
      * GLOBAL_SORT: It increases the query performance, especially high concurrent point query.
        And if you care about loading resources isolation strictly, because the system uses the spark GroupBy to sort data, the resource can be controlled by spark. 
 
-    ### Example:
+   - #### Example:
 
-    ```
-    CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
-      productNumber INT,
-      productName STRING,
-      storeCity STRING,
-      storeProvince STRING,
-      productCategory STRING,
-      productBatch STRING,
-      saleQuantity INT,
-      revenue INT)
-    STORED AS carbondata
-    TBLPROPERTIES ('SORT_COLUMNS'='productName,storeCity',
-                   'SORT_SCOPE'='NO_SORT')
-    ```
+     ```
+     CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
+       productNumber INT,
+       productName STRING,
+       storeCity STRING,
+       storeProvince STRING,
+       productCategory STRING,
+       productBatch STRING,
+       saleQuantity INT,
+       revenue INT)
+     STORED AS carbondata
+     TBLPROPERTIES ('SORT_COLUMNS'='productName,storeCity',
+                    'SORT_SCOPE'='NO_SORT')
+     ```
 
    **NOTE:** CarbonData also supports "using carbondata". Find example code at [SparkSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/SparkSessionExample.scala) in the CarbonData repo.
 
@@ -288,17 +288,13 @@ CarbonData DDL statements are documented here,which includes:
 ### Example:
 
    ```
-   CREATE TABLE carbontable(
-             
-               column1 string,
-             
-               column2 string,
-             
-               column3 LONG )
-             
-     STORED AS carbondata
-     TBLPROPERTIES('LOCAL_DICTIONARY_ENABLE'='true','LOCAL_DICTIONARY_THRESHOLD'='1000',
-     'LOCAL_DICTIONARY_INCLUDE'='column1','LOCAL_DICTIONARY_EXCLUDE'='column2')
+   CREATE TABLE carbontable(             
+     column1 string,             
+     column2 string,             
+     column3 LONG)
+   STORED AS carbondata
+   TBLPROPERTIES('LOCAL_DICTIONARY_ENABLE'='true','LOCAL_DICTIONARY_THRESHOLD'='1000',
+   'LOCAL_DICTIONARY_INCLUDE'='column1','LOCAL_DICTIONARY_EXCLUDE'='column2')
    ```
 
    **NOTE:** 
@@ -412,7 +408,7 @@ CarbonData DDL statements are documented here,which includes:
 
        Following table property enables this feature and default value is false.
        ```
-        'flat_folder'='true'
+       'flat_folder'='true'
        ```
 
        Example:
@@ -479,7 +475,7 @@ CarbonData DDL statements are documented here,which includes:
      be later viewed in table description for reference.
 
      ```
-       TBLPROPERTIES('BAD_RECORD_PATH'='/opt/badrecords')
+     TBLPROPERTIES('BAD_RECORD_PATH'='/opt/badrecords')
      ```
      
    - ##### Load minimum data size
@@ -491,7 +487,7 @@ CarbonData DDL statements are documented here,which includes:
      Notice that once you enable this feature, for load balance, carbondata will ignore the data locality while assigning input data to nodes, this will cause more network traffic.
 
      ```
-       TBLPROPERTIES('LOAD_MIN_SIZE_INMB'='256')
+     TBLPROPERTIES('LOAD_MIN_SIZE_INMB'='256')
      ```
 
 ## CREATE TABLE AS SELECT
@@ -506,26 +502,37 @@ CarbonData DDL statements are documented here,which includes:
 
 ### Examples
   ```
-  carbon.sql("CREATE TABLE source_table(
-                             id INT,
-                             name STRING,
-                             city STRING,
-                             age INT)
-              STORED AS parquet")
+  carbon.sql(
+             s"""
+                | CREATE TABLE source_table(
+                |   id INT,
+                |   name STRING,
+                |   city STRING,
+                |   age INT)
+                | STORED AS parquet
+             """.stripMargin)
+                
   carbon.sql("INSERT INTO source_table SELECT 1,'bob','shenzhen',27")
+  
   carbon.sql("INSERT INTO source_table SELECT 2,'david','shenzhen',31")
   
-  carbon.sql("CREATE TABLE target_table
-              STORED AS carbondata
-              AS SELECT city,avg(age) FROM source_table GROUP BY city")
+  carbon.sql(
+             s"""
+                | CREATE TABLE target_table
+                | STORED AS carbondata
+                | AS SELECT city, avg(age) 
+                |    FROM source_table 
+                |    GROUP BY city
+             """.stripMargin)
               
   carbon.sql("SELECT * FROM target_table").show
-    // results:
-    //    +--------+--------+
-    //    |    city|avg(age)|
-    //    +--------+--------+
-    //    |shenzhen|    29.0|
-    //    +--------+--------+
+  
+  // results:
+  //    +--------+--------+
+  //    |    city|avg(age)|
+  //    +--------+--------+
+  //    |shenzhen|    29.0|
+  //    +--------+--------+
 
   ```
 
@@ -547,11 +554,12 @@ CarbonData DDL statements are documented here,which includes:
   sql("INSERT INTO origin select 200,'hive'")
   // creates a table in $storeLocation/origin
   
-  sql(s"""
-  |CREATE EXTERNAL TABLE source
-  |STORED AS carbondata
-  |LOCATION '$storeLocation/origin'
-  """.stripMargin)
+  sql(
+      s"""
+         | CREATE EXTERNAL TABLE source
+         | STORED AS carbondata
+         | LOCATION '$storeLocation/origin'
+      """.stripMargin)
   checkAnswer(sql("SELECT count(*) from source"), sql("SELECT count(*) from origin"))
   ```
 
@@ -562,8 +570,10 @@ CarbonData DDL statements are documented here,which includes:
   **Example:**
   ```
   sql(
-  s"""CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
-  |'$writerPath' """.stripMargin)
+      s"""
+         | CREATE EXTERNAL TABLE sdkOutputTable STORED AS carbondata LOCATION
+         |'$writerPath'
+      """.stripMargin)
   ```
 
   Here writer path will have carbondata and index files.
@@ -705,30 +715,30 @@ Users can specify which columns to include and exclude for local dictionary gene
       ALTER TABLE [db_name.]table_name COMPACT 'SEGMENT_INDEX'
      ```
 
-      Examples:
+     Examples:
 
      ```
       ALTER TABLE test_db.carbon COMPACT 'SEGMENT_INDEX'
-      ```
+     ```
 
-      **NOTE:**
+     **NOTE:**
 
-      * Merge index is not supported on streaming table.
+     * Merge index is not supported on streaming table.
 
 - ##### SET and UNSET for Local Dictionary Properties
 
    When set command is used, all the newly set properties will override the corresponding old properties if exists.
   
    Example to SET Local Dictionary Properties:
-    ```
+   ```
    ALTER TABLE tablename SET TBLPROPERTIES('LOCAL_DICTIONARY_ENABLE'='false','LOCAL_DICTIONARY_THRESHOLD'='1000','LOCAL_DICTIONARY_INCLUDE'='column1','LOCAL_DICTIONARY_EXCLUDE'='column2')
-    ```
+   ```
    When Local Dictionary properties are unset, corresponding default values will be used for these properties.
    
    Example to UNSET Local Dictionary Properties:
-    ```
+   ```
    ALTER TABLE tablename UNSET TBLPROPERTIES('LOCAL_DICTIONARY_ENABLE','LOCAL_DICTIONARY_THRESHOLD','LOCAL_DICTIONARY_INCLUDE','LOCAL_DICTIONARY_EXCLUDE')
-    ```
+   ```
    
    **NOTE:** For old tables, by default, local dictionary is disabled. If user wants local dictionary for these tables, user can enable/disable local dictionary for new data at their discretion. 
    This can be achieved by using the alter table set command.
@@ -781,8 +791,8 @@ Users can specify which columns to include and exclude for local dictionary gene
   CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
                                 productNumber Int COMMENT 'unique serial number for product')
   COMMENT "This is table comment"
-   STORED AS carbondata
-   TBLPROPERTIES ('DICTIONARY_INCLUDE'='productNumber')
+  STORED AS carbondata
+  TBLPROPERTIES ('DICTIONARY_INCLUDE'='productNumber')
   ```
 
   You can also SET and UNSET table comment using ALTER command.
@@ -985,7 +995,7 @@ Users can specify which columns to include and exclude for local dictionary gene
 
    Only drop partition definition, but keep data
   ```
-    ALTER TABLE [db_name].table_name DROP PARTITION(partition_id)
+  ALTER TABLE [db_name].table_name DROP PARTITION(partition_id)
   ```
 
   Drop both partition definition and data

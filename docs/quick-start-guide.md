@@ -90,12 +90,15 @@ val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession(
 ###### Creating a Table
 
 ```
-carbon.sql("""CREATE TABLE IF NOT EXISTS test_table(
-                id string,
-                name string,
-                city string,
-                age Int)
-              STORED AS carbondata""")
+carbon.sql(
+           s"""
+              | CREATE TABLE IF NOT EXISTS test_table(
+              |   id string,
+              |   name string,
+              |   city string,
+              |   age Int)
+              | STORED AS carbondata
+           """.stripMargin)
 ```
 
 ###### Loading Data to a Table
@@ -112,9 +115,12 @@ If you get "tablestatus.lock" issue, please refer to [FAQ](faq.md)
 ```
 carbon.sql("SELECT * FROM test_table").show()
 
-carbon.sql("""SELECT city, avg(age), sum(age)
-              FROM test_table
-              GROUP BY city""").show()
+carbon.sql(
+           s"""
+              | SELECT city, avg(age), sum(age)
+              | FROM test_table
+              | GROUP BY city
+           """.stripMargin).show()
 ```
 
 
