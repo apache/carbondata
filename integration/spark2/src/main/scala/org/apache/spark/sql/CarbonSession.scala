@@ -180,6 +180,7 @@ object CarbonSession {
         getValue("options", builder).asInstanceOf[scala.collection.mutable.HashMap[String, String]]
       val userSuppliedContext: Option[SparkContext] =
         getValue("userSuppliedContext", builder).asInstanceOf[Option[SparkContext]]
+      CarbonReflectionUtils.updateCarbonSerdeInfo()
 
       if (StringUtils.isNotBlank(metaStorePath)) {
         val hadoopConf = new Configuration()
