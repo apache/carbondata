@@ -55,7 +55,7 @@ $HADOOP_HOME/bin/hadoop fs -put sample.csv <hdfs store path>/sample.csv
 ```
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.CarbonSession._
-val rootPath = "hdfs:////user/hadoop/carbon"
+val rootPath = "hdfs:///user/hadoop/carbon"
 val storeLocation = s"$rootPath/store"
 val warehouse = s"$rootPath/warehouse"
 val metastoredb = s"$rootPath/metastore_db"
@@ -84,7 +84,9 @@ export HADOOP_OPTS="-Dorg.xerial.snappy.lib.path=/Library/Java/Extensions -Dorg.
 ```
 
 ### Start hive client
+```
 $HIVE_HOME/bin/hive
+```
 
 ### Query data from hive table
 

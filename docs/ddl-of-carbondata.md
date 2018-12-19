@@ -712,13 +712,13 @@ Users can specify which columns to include and exclude for local dictionary gene
      This command is used to merge all the CarbonData index files (.carbonindex) inside a segment to a single CarbonData index merge file (.carbonindexmerge). This enhances the first query performance.
 
      ```
-      ALTER TABLE [db_name.]table_name COMPACT 'SEGMENT_INDEX'
+     ALTER TABLE [db_name.]table_name COMPACT 'SEGMENT_INDEX'
      ```
 
      Examples:
 
      ```
-      ALTER TABLE test_db.carbon COMPACT 'SEGMENT_INDEX'
+     ALTER TABLE test_db.carbon COMPACT 'SEGMENT_INDEX'
      ```
 
      **NOTE:**
@@ -830,7 +830,7 @@ Users can specify which columns to include and exclude for local dictionary gene
 
   Example:
   ```
-   CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
+  CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
                                 productNumber INT,
                                 productName STRING,
                                 storeCity STRING,
@@ -868,9 +868,9 @@ Users can specify which columns to include and exclude for local dictionary gene
   This command allows you to insert or load overwrite on a specific partition.
 
   ```
-   INSERT OVERWRITE TABLE table_name
-   PARTITION (column = 'partition_name')
-   select_statement
+  INSERT OVERWRITE TABLE table_name
+  PARTITION (column = 'partition_name')
+  select_statement
   ```
 
   Example:
@@ -937,10 +937,10 @@ Users can specify which columns to include and exclude for local dictionary gene
       col_C LONG,
       col_D DECIMAL(10,2),
       col_E LONG
-   ) partitioned by (col_F Timestamp)
-   PARTITIONED BY 'carbondata'
-   TBLPROPERTIES('PARTITION_TYPE'='RANGE',
-   'RANGE_INFO'='2015-01-01, 2016-01-01, 2017-01-01, 2017-02-01')
+  ) partitioned by (col_F Timestamp)
+  PARTITIONED BY 'carbondata'
+  TBLPROPERTIES('PARTITION_TYPE'='RANGE',
+  'RANGE_INFO'='2015-01-01, 2016-01-01, 2017-01-01, 2017-02-01')
   ```
 
 ### Create List Partition Table
@@ -965,9 +965,9 @@ Users can specify which columns to include and exclude for local dictionary gene
       col_E LONG,
       col_F TIMESTAMP
    ) PARTITIONED BY (col_A STRING)
-   STORED AS carbondata
-   TBLPROPERTIES('PARTITION_TYPE'='LIST',
-   'LIST_INFO'='aaaa, bbbb, (cccc, dddd), eeee')
+  STORED AS carbondata
+  TBLPROPERTIES('PARTITION_TYPE'='LIST',
+  'LIST_INFO'='aaaa, bbbb, (cccc, dddd), eeee')
   ```
 
 
@@ -993,7 +993,7 @@ Users can specify which columns to include and exclude for local dictionary gene
 
 ### Drop a partition
 
-   Only drop partition definition, but keep data
+  Only drop partition definition, but keep data
   ```
   ALTER TABLE [db_name].table_name DROP PARTITION(partition_id)
   ```

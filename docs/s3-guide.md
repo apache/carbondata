@@ -33,7 +33,7 @@ to be configured with Object Store path in CarbonProperties file.
 
 For example:
 ```
-carbon.storelocation=s3a://mybucket/carbonstore.
+carbon.storelocation=s3a://mybucket/carbonstore
 ```
 
 If the existing store location cannot be changed or only specific tables need to be stored 

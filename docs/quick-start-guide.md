@@ -80,10 +80,12 @@ import org.apache.spark.sql.CarbonSession._
 * Create a CarbonSession :
 
 ```
-val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("<hdfs store path>")
+val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("<carbon_store_path>")
 ```
-**NOTE**: By default metastore location points to `../carbon.metastore`, user can provide own metastore location to CarbonSession like `SparkSession.builder().config(sc.getConf)
-.getOrCreateCarbonSession("<hdfs store path>", "<local metastore path>")`
+**NOTE** 
+ - By default metastore location points to `../carbon.metastore`, user can provide own metastore location to CarbonSession like 
+   `SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("<carbon_store_path>", "<local metastore path>")`.
+ - Data storage location can be specified by `<carbon_store_path>`, like `/carbon/data/store`, `hdfs://localhost:9000/carbon/data/store` or `s3a://carbon/data/store`.
 
 #### Executing Queries
 
