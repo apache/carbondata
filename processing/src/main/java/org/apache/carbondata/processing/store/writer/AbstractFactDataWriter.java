@@ -178,7 +178,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     this.enableDirectlyWriteDataToStorePath = "TRUE".equalsIgnoreCase(directlyWriteData2Hdfs);
 
     if (enableDirectlyWriteDataToStorePath) {
-      LOGGER.info("Carbondata will directly write fact data to HDFS.");
+      LOGGER.info("Carbondata will directly write fact data to store path.");
     } else {
       LOGGER.info("Carbondata will write temporary fact data to local disk.");
     }
@@ -231,13 +231,13 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
           + activeFile + ". Data block size: " + currentFileSize);
       // write meta data to end of the existing file
       writeFooterToFile();
-      this.currentFileSize = 0;
       this.dataChunksOffsets = new ArrayList<>();
       this.dataChunksLength = new ArrayList<>();
       this.blockletMetadata = new ArrayList<>();
       this.blockletIndex = new ArrayList<>();
       commitCurrentFile(false);
       // initialize the new channel
+      this.currentFileSize = 0;
       initializeWriter();
     }
     currentFileSize += blockletSizeToBeAdded;
@@ -272,17 +272,43 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
     if (!enableDirectlyWriteDataToStorePath) {
       try {
-        if (copyInCurrentThread) {
-          CarbonUtil.copyCarbonDataFileToCarbonStorePath(carbonDataFileTempPath,
-              model.getCarbonDataDirectoryPath(), fileSizeInBytes);
+        if (currentFileSize == 0) {
           FileFactory
               .deleteFile(carbonDataFileTempPath, FileFactory.getFileType(carbonDataFileTempPath));
+          if (blockIndexInfoList.size() > 0 && blockIndexInfoList.get(blockIndexInfoList.size() - 1)
+              .getFileName().equals(carbonDataFileName)) {
+            // no need add this entry in index file
+            blockIndexInfoList.remove(blockIndexInfoList.size() - 1);
+            // TODO: currently there is no implementation for notifyDataMapBlockEnd(),
+            // hence no impact, once implementation is done. Need to undo it in this case.
+          }
         } else {
-          executorServiceSubmitList
-              .add(executorService.submit(new CompleteHdfsBackendThread(carbonDataFileTempPath)));
+          if (copyInCurrentThread) {
+            CarbonUtil.copyCarbonDataFileToCarbonStorePath(carbonDataFileTempPath,
+                model.getCarbonDataDirectoryPath(), fileSizeInBytes);
+            FileFactory.deleteFile(carbonDataFileTempPath,
+                FileFactory.getFileType(carbonDataFileTempPath));
+          } else {
+            executorServiceSubmitList
+                .add(executorService.submit(new CompleteHdfsBackendThread(carbonDataFileTempPath)));
+          }
         }
       } catch (IOException e) {
         LOGGER.error(e);
+      }
+    } else {
+      if (currentFileSize == 0) {
+        try {
+          FileFactory.deleteFile(carbonDataFileStorePath,
+              FileFactory.getFileType(carbonDataFileStorePath));
+        } catch (IOException e) {
+          LOGGER.error(e);
+        }
+        if (blockIndexInfoList.size() > 0 && blockIndexInfoList.get(blockIndexInfoList.size() - 1)
+            .getFileName().equals(carbonDataFileName)) {
+          // no need add this entry in index file
+          blockIndexInfoList.remove(blockIndexInfoList.size() - 1);
+        }
       }
     }
   }
@@ -374,6 +400,10 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
    * @throws CarbonDataWriterException data writing
    */
   protected void writeIndexFile() throws IOException, CarbonDataWriterException {
+    if (blockIndexInfoList.size() == 0) {
+      // no need to write index file, if data file is not there.
+      return;
+    }
     // get the header
     IndexHeader indexHeader = CarbonMetadataUtil
         .getIndexHeader(localCardinality, thriftColumnSchemaList, model.getBucketId(),
