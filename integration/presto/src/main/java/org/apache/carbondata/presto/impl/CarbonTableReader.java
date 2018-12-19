@@ -288,8 +288,8 @@ public class CarbonTableReader {
     }
     if (isKeyExists) {
       CarbonTableCacheModel carbonTableCacheModel = carbonCache.get().get(schemaTableName);
-      if (carbonTableCacheModel != null
-          && carbonTableCacheModel.carbonTable.getTableInfo() != null) {
+      if (carbonTableCacheModel != null && carbonTableCacheModel.carbonTable.getTableInfo() != null
+          && carbonTableCacheModel.carbonTable.isTransactionalTable()) {
         Long latestTime = FileFactory.getCarbonFile(CarbonTablePath
             .getSchemaFilePath(carbonCache.get().get(schemaTableName).carbonTable.getTablePath()))
             .getLastModifiedTime();

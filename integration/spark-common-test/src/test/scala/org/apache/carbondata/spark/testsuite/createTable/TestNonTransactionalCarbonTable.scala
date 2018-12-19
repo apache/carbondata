@@ -34,7 +34,7 @@ import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter, GenericR
 import org.apache.avro.io.{DecoderFactory, Encoder}
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row}
 import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
@@ -119,6 +119,13 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     buildTestData(rows, options, List("name"))
   }
 
+  def buildTestDataWithOptionsAndEmptySortColumn(rows: Int,
+      options: util.Map[String, String]): Any = {
+    FileUtils.deleteDirectory(new File(writerPath))
+    buildTestData(rows, options, List())
+  }
+
+
   // prepare sdk writer output
   def buildTestData(rows: Int,
       options: util.Map[String, String],
@@ -157,7 +164,7 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
         }
         i += 1
       }
-      if (options != null) {
+      if ((options != null) && sortColumns.nonEmpty) {
         //Keep one valid record. else carbon data file will not generate
         writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
       }
@@ -436,6 +443,24 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
     }
 
     assert(!(new File(writerPath).exists()))
+    cleanTestData()
+  }
+
+  test("test create external table with all the records as bad record with redirect") {
+    var options = Map("bAd_RECords_action" -> "REDIRECT").asJava
+    buildTestDataWithOptionsAndEmptySortColumn(3, options)
+    assert(new File(writerPath).exists())
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    // when one row is bad record and it it redirected.
+    // Empty carbon files must not create in no_sort flow
+    var exception = intercept[AnalysisException] {
+      sql(
+        s"""CREATE EXTERNAL TABLE sdkOutputTable STORED BY
+           |'carbondata' LOCATION
+           |'$writerPath' """.stripMargin)
+    }
+    assert(exception.getMessage()
+      .contains("Invalid table path provided"))
     cleanTestData()
   }
 
