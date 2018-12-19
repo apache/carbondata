@@ -51,21 +51,39 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
       systemPath)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME,
       "Presto")
-    prestoServer.startServer(storePath, "sdk_output")
+    val map = new util.HashMap[String, String]()
+    map.put("hive.metastore", "file")
+    map.put("hive.metastore.catalog.dir", s"file://$storePath")
+
+    prestoServer.startServer(storePath, "sdk_output", map)
   }
 
   override def afterAll(): Unit = {
     prestoServer.stopServer()
+    CarbonUtil.deleteFoldersAndFiles(FileFactory.getCarbonFile(storePath))
   }
 
   def buildTestDataSingleFile(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
+    createTable
+
     buildTestData(3, null)
   }
 
   def buildTestDataMultipleFiles(): Any = {
     FileUtils.deleteDirectory(new File(writerPath))
+    createTable
     buildTestData(1000000, null)
+  }
+
+  private def createTable = {
+    prestoServer.execute("drop table if exists sdk_output.files")
+    prestoServer.execute("drop schema if exists sdk_output")
+    prestoServer.execute("create schema sdk_output")
+    prestoServer
+      .execute(
+        "create table sdk_output.files(name varchar, age int, height double) with" +
+        "(format='CARBON') ")
   }
 
   def buildTestData(rows: Int, options: util.Map[String, String]): Any = {
@@ -173,8 +191,7 @@ class PrestoTestNonTransactionalTableFiles extends FunSuiteLike with BeforeAndAf
       .executeQuery("show schemas ")
     assert(actualResult
       .equals(List(Map("Schema" -> "information_schema"),
-        Map("Schema" -> "sdk_output"),
-        Map("Schema" -> "testdb"))))
+        Map("Schema" -> "sdk_output"))))
     cleanTestData()
   }
 

@@ -369,6 +369,24 @@ public final class FileFactory {
     LOCAL, HDFS, ALLUXIO, VIEWFS, S3
   }
 
+  public static String addSchemeIfNotExists(String filePath) {
+    FileType fileType = getFileType(filePath);
+    switch (fileType) {
+      case LOCAL:
+        if (filePath.startsWith("file:")) {
+          return filePath;
+        } else {
+          return new Path("file://" + filePath).toString();
+        }
+      case HDFS:
+      case ALLUXIO:
+      case VIEWFS:
+      case S3:
+      default:
+        return filePath;
+    }
+  }
+
   /**
    * below method will be used to update the file path
    * for local type

@@ -43,6 +43,7 @@ class PrestoServer {
 
 
   val prestoProperties: util.Map[String, String] = Map(("http-server.http.port", "8086")).asJava
+  val carbonProperties: util.Map[String, String] = new util.HashMap[String, String]()
   createSession
   lazy val queryRunner = new DistributedQueryRunner(createSession, 4, prestoProperties)
   var dbName : String = null
@@ -68,10 +69,10 @@ class PrestoServer {
    * @param carbonStorePath the store path of carbon
    * @param dbName the database name , if not a default database
    */
-  def startServer(carbonStorePath: String, dbName: String): Unit = {
+  def startServer(carbonStorePath: String, dbName: String, properties: util.Map[String, String]= new util.HashMap[String, String]()): Unit = {
 
     this.dbName = dbName
-
+    carbonProperties.putAll(properties)
     logger.info("======== STARTING PRESTO SERVER ========")
     val queryRunner: DistributedQueryRunner = createQueryRunner(
       prestoProperties, carbonStorePath)
@@ -87,7 +88,7 @@ class PrestoServer {
     Try {
       queryRunner.installPlugin(new CarbondataPlugin)
       val carbonProperties = ImmutableMap.builder[String, String]
-        .put("carbondata-store", carbonStorePath)
+        .putAll(this.carbonProperties)
         .put("carbon.unsafe.working.memory.in.mb", "512").build
 
       // CreateCatalog will create a catalog for CarbonData in etc/catalog.
@@ -121,6 +122,21 @@ class PrestoServer {
       val statement = conn.createStatement()
       val result: ResultSet = statement.executeQuery(query)
       convertResultSetToList(result)
+    } match {
+      case Success(result) => result
+      case Failure(jdbcException) => logger
+        .error(s"exception occurs${ jdbcException.getMessage } \n query failed $query")
+        throw jdbcException
+    }
+  }
+
+  def execute(query: String) = {
+
+    Try {
+      val conn: Connection = createJdbcConnection(dbName)
+      logger.info(s"***** executing the query ***** \n $query")
+      val statement = conn.createStatement()
+      statement.execute(query)
     } match {
       case Success(result) => result
       case Failure(jdbcException) => logger
