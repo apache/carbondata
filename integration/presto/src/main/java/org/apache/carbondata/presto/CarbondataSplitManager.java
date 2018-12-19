@@ -17,8 +17,9 @@
 
 package org.apache.carbondata.presto;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 
 import javax.inject.Inject;
 
@@ -33,42 +34,74 @@ import org.apache.carbondata.presto.impl.CarbonLocalMultiBlockSplit;
 import org.apache.carbondata.presto.impl.CarbonTableCacheModel;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
 
-import static org.apache.carbondata.presto.Types.checkType;
-
-import com.facebook.presto.spi.ColumnHandle;
+import com.facebook.presto.hive.CoercionPolicy;
+import com.facebook.presto.hive.DirectoryLister;
+import com.facebook.presto.hive.ForHiveClient;
+import com.facebook.presto.hive.HdfsEnvironment;
+import com.facebook.presto.hive.HiveClientConfig;
+import com.facebook.presto.hive.HiveColumnHandle;
+import com.facebook.presto.hive.HiveSplit;
+import com.facebook.presto.hive.HiveSplitManager;
+import com.facebook.presto.hive.HiveTableLayoutHandle;
+import com.facebook.presto.hive.HiveTransactionHandle;
+import com.facebook.presto.hive.NamenodeStats;
+import com.facebook.presto.hive.metastore.SemiTransactionalHiveMetastore;
+import com.facebook.presto.hive.metastore.Table;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorSplit;
 import com.facebook.presto.spi.ConnectorSplitSource;
 import com.facebook.presto.spi.ConnectorTableLayoutHandle;
 import com.facebook.presto.spi.FixedSplitSource;
+import com.facebook.presto.spi.HostAddress;
 import com.facebook.presto.spi.SchemaTableName;
-import com.facebook.presto.spi.connector.ConnectorSplitManager;
+import com.facebook.presto.spi.TableNotFoundException;
 import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
 import com.facebook.presto.spi.predicate.TupleDomain;
 import com.google.common.collect.ImmutableList;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 
 /**
  * Build Carbontable splits
  * filtering irrelevant blocks
  */
-public class CarbondataSplitManager implements ConnectorSplitManager {
+public class CarbondataSplitManager extends HiveSplitManager {
 
-  private final String connectorId;
   private final CarbonTableReader carbonTableReader;
+  private final Function<HiveTransactionHandle, SemiTransactionalHiveMetastore> metastoreProvider;
+  private final HdfsEnvironment hdfsEnvironment;
 
-  @Inject
-  public CarbondataSplitManager(CarbondataConnectorId connectorId, CarbonTableReader reader) {
-    this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
+  @Inject public CarbondataSplitManager(HiveClientConfig hiveClientConfig,
+      Function<HiveTransactionHandle, SemiTransactionalHiveMetastore> metastoreProvider,
+      NamenodeStats namenodeStats, HdfsEnvironment hdfsEnvironment, DirectoryLister directoryLister,
+      @ForHiveClient ExecutorService executorService, CoercionPolicy coercionPolicy,
+      CarbonTableReader reader) {
+    super(hiveClientConfig, metastoreProvider, namenodeStats, hdfsEnvironment, directoryLister,
+        executorService, coercionPolicy);
     this.carbonTableReader = requireNonNull(reader, "client is null");
+    this.metastoreProvider = requireNonNull(metastoreProvider, "metastore is null");
+    this.hdfsEnvironment = requireNonNull(hdfsEnvironment, "hdfsEnvironment is null");
   }
 
   public ConnectorSplitSource getSplits(ConnectorTransactionHandle transactionHandle,
-      ConnectorSession session, ConnectorTableLayoutHandle layout,
+      ConnectorSession session, ConnectorTableLayoutHandle layoutHandle,
       SplitSchedulingStrategy splitSchedulingStrategy) {
-    CarbondataTableLayoutHandle layoutHandle = (CarbondataTableLayoutHandle) layout;
-    CarbondataTableHandle tableHandle = layoutHandle.getTable();
-    SchemaTableName key = tableHandle.getSchemaTableName();
+
+    HiveTableLayoutHandle layout = (HiveTableLayoutHandle) layoutHandle;
+    SchemaTableName schemaTableName = layout.getSchemaTableName();
+
+    // get table metadata
+    SemiTransactionalHiveMetastore metastore =
+        metastoreProvider.apply((HiveTransactionHandle) transactionHandle);
+    Table table =
+        metastore.getTable(schemaTableName.getSchemaName(), schemaTableName.getTableName())
+            .orElseThrow(() -> new TableNotFoundException(schemaTableName));
+    if (!table.getStorage().getStorageFormat().getInputFormat().contains("carbon")) {
+      return super.getSplits(transactionHandle, session, layoutHandle, splitSchedulingStrategy);
+    }
+    String location = table.getStorage().getLocation();
 
     String queryId = System.nanoTime() + "";
     QueryStatistic statistic = new QueryStatistic();
@@ -78,24 +111,39 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
     statistic = new QueryStatistic();
 
     carbonTableReader.setQueryId(queryId);
-    // Packaging presto-TupleDomain into CarbondataColumnConstraint,
-    // to decouple from presto-spi Module
-    List<CarbondataColumnConstraint> rebuildConstraints =
-        getColumnConstraints(layoutHandle.getConstraint());
-
-    CarbonTableCacheModel cache = carbonTableReader.getCarbonCache(key);
+    TupleDomain<HiveColumnHandle> predicate =
+        (TupleDomain<HiveColumnHandle>) layout.getCompactEffectivePredicate();
+    Configuration configuration = this.hdfsEnvironment.getConfiguration(
+        new HdfsEnvironment.HdfsContext(session, schemaTableName.getSchemaName(),
+            schemaTableName.getTableName()), new Path(location));
+    configuration = carbonTableReader.updateS3Properties(configuration);
+    CarbonTableCacheModel cache =
+        carbonTableReader.getCarbonCache(schemaTableName, location, configuration);
     if (null != cache) {
-      Expression filters = PrestoFilterUtil.parseFilterExpression(layoutHandle.getConstraint());
+      Expression filters = PrestoFilterUtil.parseFilterExpression(predicate);
       try {
+
         List<CarbonLocalMultiBlockSplit> splits =
-            carbonTableReader.getInputSplits2(cache, filters, layoutHandle.getConstraint());
+            carbonTableReader.getInputSplits2(cache, filters, predicate, configuration);
 
         ImmutableList.Builder<ConnectorSplit> cSplits = ImmutableList.builder();
         long index = 0;
         for (CarbonLocalMultiBlockSplit split : splits) {
           index++;
-          cSplits.add(new CarbondataSplit(connectorId, tableHandle.getSchemaTableName(),
-              layoutHandle.getConstraint(), split, rebuildConstraints, queryId, index));
+          Properties properties = new Properties();
+          for (Map.Entry<String, String> entry : table.getStorage().getSerdeParameters()
+              .entrySet()) {
+            properties.setProperty(entry.getKey(), entry.getValue());
+          }
+          properties.setProperty("tablePath", cache.carbonTable.getTablePath());
+          properties.setProperty("carbonSplit", split.getJsonString());
+          properties.setProperty("queryId", queryId);
+          properties.setProperty("index", String.valueOf(index));
+          cSplits.add(
+              new HiveSplit(schemaTableName.getSchemaName(), schemaTableName.getTableName(),
+                  schemaTableName.getTableName(), "", 0, 0, 0, properties, new ArrayList(),
+                  getHostAddresses(split.getLocations()), OptionalInt.empty(), false, predicate,
+                  new HashMap<>(), Optional.empty()));
         }
 
         statisticRecorder.logStatisticsAsTableDriver();
@@ -112,24 +160,8 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
     return null;
   }
 
-  /**
-   *
-   * @param constraint
-   * @return
-   */
-  public List<CarbondataColumnConstraint> getColumnConstraints(
-      TupleDomain<ColumnHandle> constraint) {
-    ImmutableList.Builder<CarbondataColumnConstraint> constraintBuilder = ImmutableList.builder();
-    for (TupleDomain.ColumnDomain<ColumnHandle> columnDomain : constraint.getColumnDomains()
-        .get()) {
-      CarbondataColumnHandle columnHandle =
-          checkType(columnDomain.getColumn(), CarbondataColumnHandle.class, "column handle");
-
-      constraintBuilder.add(new CarbondataColumnConstraint(columnHandle.getColumnName(),
-          Optional.of(columnDomain.getDomain()), columnHandle.isInvertedIndex()));
-    }
-
-    return constraintBuilder.build();
+  private static List<HostAddress> getHostAddresses(String[] hosts) {
+    return Arrays.stream(hosts).map(HostAddress::fromString).collect(toImmutableList());
   }
 
 }

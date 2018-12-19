@@ -340,22 +340,27 @@ object CarbonReflectionUtils {
   def updateCarbonSerdeInfo(): Unit = {
     val currentMirror = scala.reflect.runtime.currentMirror
     val instanceMirror = currentMirror.reflect(HiveSerDe)
-    val field = currentMirror.staticClass(HiveSerDe.getClass.getName).
+    currentMirror.staticClass(HiveSerDe.getClass.getName).
       toType.members.find { p =>
       !p.isMethod && p.name.toString.equals("serdeMap")
-    }.get.asTerm
-    val serdeMap = instanceMirror.reflectField(field).get.asInstanceOf[Map[String, HiveSerDe]]
-    val updatedSerdeMap =
-      serdeMap ++ Map[String, HiveSerDe](
-        ("org.apache.spark.sql.carbonsource", HiveSerDe(Some(
-          classOf[CarbonTableInputFormat[_]].getName),
-          Some(classOf[CarbonTableOutputFormat].getName))),
-        ("carbon", HiveSerDe(Some(
-          classOf[CarbonTableInputFormat[_]].getName),
-          Some(classOf[CarbonTableOutputFormat].getName))),
-        ("carbondata", HiveSerDe(Some(
-          classOf[CarbonTableInputFormat[_]].getName),
-          Some(classOf[CarbonTableOutputFormat].getName))))
-    instanceMirror.reflectField(field).set(updatedSerdeMap)
+    } match {
+      case Some(field) =>
+        val serdeMap =
+          instanceMirror.reflectField(field.asTerm).get.asInstanceOf[Map[String, HiveSerDe]]
+        val updatedSerdeMap =
+          serdeMap ++ Map[String, HiveSerDe](
+            ("org.apache.spark.sql.carbonsource", HiveSerDe(Some(
+              classOf[CarbonTableInputFormat[_]].getName),
+              Some(classOf[CarbonTableOutputFormat].getName))),
+            ("carbon", HiveSerDe(Some(
+              classOf[CarbonTableInputFormat[_]].getName),
+              Some(classOf[CarbonTableOutputFormat].getName))),
+            ("carbondata", HiveSerDe(Some(
+              classOf[CarbonTableInputFormat[_]].getName),
+              Some(classOf[CarbonTableOutputFormat].getName))))
+        instanceMirror.reflectField(field.asTerm).set(updatedSerdeMap)
+      case _ =>
+    }
+
   }
 }
