@@ -369,6 +369,29 @@ public final class FileFactory {
   }
 
   /**
+   * Adds the schema to file path if not exists to the file path.
+   * @param filePath path of file
+   * @return Updated filepath
+   */
+  public static String addSchemeIfNotExists(String filePath) {
+    FileType fileType = getFileType(filePath);
+    switch (fileType) {
+      case LOCAL:
+        if (filePath.startsWith("file:")) {
+          return filePath;
+        } else {
+          return new Path("file://" + filePath).toString();
+        }
+      case HDFS:
+      case ALLUXIO:
+      case VIEWFS:
+      case S3:
+      default:
+        return filePath;
+    }
+  }
+
+  /**
    * below method will be used to update the file path
    * for local type
    * it removes the file:/ from the path

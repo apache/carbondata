@@ -50,12 +50,15 @@ class TestCreateHiveTableWithCarbonDS extends QueryTest with BeforeAndAfterAll {
   }
 
   private def verifyTable = {
-    val table = sqlContext.sparkSession.asInstanceOf[CarbonSession].sessionState.catalog.asInstanceOf[CarbonSessionCatalog].getClient().getTable("default", "source")
-    assertResult(table.schema.fields.length)(3)
-    if (SparkUtil.isSparkVersionEqualTo("2.2")) {
-      assertResult(table.storage.locationUri.get)(new Path(s"file:$storeLocation/source").toUri)
+    if (SparkUtil.isSparkVersionXandAbove("2.2")) {
+      val table = sqlContext.sparkSession.asInstanceOf[CarbonSession].sessionState.catalog
+        .asInstanceOf[CarbonSessionCatalog].getClient().getTable("default", "source")
+      assertResult(table.schema.fields.length)(3)
+      if (SparkUtil.isSparkVersionEqualTo("2.2")) {
+        assertResult(table.storage.locationUri.get)(new Path(s"file:$storeLocation/source").toUri)
+      }
+      assertResult(table.storage.inputFormat.get)(classOf[CarbonTableInputFormat[_]].getName)
     }
-    assertResult(table.storage.inputFormat.get)(classOf[CarbonTableInputFormat[_]].getName)
   }
 
   test("test create table and verify the hive table correctness with using carbondata") {
