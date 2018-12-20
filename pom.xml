@@ -111,8 +111,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <snappy.version>1.1.2.6</snappy.version>
     <hadoop.version>2.7.2</hadoop.version>
-    <httpclient.version>4.2.5</httpclient.version>
-    <httpcore.version>${httpclient.version}</httpcore.version>
+    <httpclient.version>4.3.4</httpclient.version>
+    <httpcore.version>4.3-alpha1</httpcore.version>
     <scala.binary.version>2.11</scala.binary.version>
     <scala.version>2.11.8</scala.version>
     <hadoop.deps.scope>compile</hadoop.deps.scope>
