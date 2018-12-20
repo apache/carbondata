@@ -1450,12 +1450,6 @@ public final class CarbonCommonConstants {
   public static final String SUPPORT_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE = "false";
 
   @CarbonProperty
-  public static final String VALIDATE_DIRECT_QUERY_ON_DATAMAP =
-      "carbon.query.validate.direct.query.on.datamap";
-
-  public static final String VALIDATE_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE = "true";
-
-  @CarbonProperty
   public static final String CARBON_SHOW_DATAMAPS = "carbon.query.show.datamaps";
 
   public static final String CARBON_SHOW_DATAMAPS_DEFAULT = "true";
