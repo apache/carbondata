@@ -182,7 +182,7 @@ object GlobalDictionaryUtil {
       case None =>
         None
       case Some(dim) =>
-        if (DataTypes.isArrayType(dim.getDataType)) {
+        if (DataTypes.isArrayType(dim.getDataType) || DataTypes.isMapType(dim.getDataType)) {
           val arrDim = ArrayParser(dim, format)
           generateParserForChildrenDimension(dim, format, mapColumnValuesWithId, arrDim)
           Some(arrDim)
