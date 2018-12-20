@@ -226,22 +226,22 @@ class TestCreateDDLForComplexMapType extends QueryTest with BeforeAndAfterAll {
       Row(Map(1 -> "Nalla", 2 -> "", 3 -> "Gupta", 4 -> "Kumar"))))
   }
 
-  // Support this for Map type
+  // Global Dictionary for Map type
   test("Test Load data in map with dictionary include") {
     sql("DROP TABLE IF EXISTS carbon")
     sql(
       s"""
          | CREATE TABLE carbon(
-         | mapField map<int,STRING>
+         | mapField map<STRING,STRING>
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES('DICTIONARY_INCLUDE'='mapField')
          | """
         .stripMargin)
-    sql("insert into carbon values('1\002Nalla\0012\002Singh\0013\002Gupta')")
+    sql("insert into carbon values('vi\002Nalla\001sh\002Singh\001al\002Gupta')")
     sql("select * from carbon").show(false)
-    //checkAnswer(sql("select * from carbon"), Seq(
-    //Row(Map(1 -> "Nalla", 2 -> "Singh", 3 -> "Gupta", 4 -> "Kumar"))))
+    checkAnswer(sql("select * from carbon"), Seq(
+      Row(Map("vi" -> "Nalla", "sh" -> "Singh", "al" -> "Gupta"))))
   }
 
   test("Test Load data in map with partition columns") {
