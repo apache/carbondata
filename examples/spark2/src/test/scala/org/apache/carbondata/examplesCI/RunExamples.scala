@@ -17,7 +17,9 @@
 
 package org.apache.carbondata.examplesCI
 
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
+
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.examples._
@@ -122,5 +124,9 @@ class RunExamples extends QueryTest with BeforeAndAfterAll {
 
   test("CarbonReaderExample") {
     CarbonReaderExample.main(null)
+  }
+
+  test("HiveExample") {
+    HiveExample.exampleBody(spark, TestQueryExecutor.warehouse)
   }
 }

@@ -26,14 +26,19 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>carbondata-examples-spark2</artifactId>
-  <name>Apache CarbonData :: Spark2 Examples</name>
+  <artifactId>carbondata-examples</artifactId>
+  <name>Apache CarbonData :: Examples</name>
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>org.apache.carbondata</groupId>
+      <artifactId>carbondata-hive</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
       <artifactId>carbondata-spark2</artifactId>
@@ -79,6 +84,11 @@
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
       <version>${httpclient.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpcore</artifactId>
+      <version>${httpcore.version}</version>
     </dependency>
     <dependency>
       <groupId>org.scalatest</groupId>
