@@ -631,12 +631,14 @@ object PreAggregateUtil {
           case _ => a.getAggFunction}}(${a.getColumnName})"
       } else {
         groupingExpressions += a.getColumnName
-        aggregateColumns+= a.getColumnName
+        aggregateColumns += a.getColumnName
       }
     }
+    val groupByString = if (groupingExpressions.nonEmpty) {
+      s" group by ${ groupingExpressions.mkString(",") }"
+    } else { "" }
     s"select ${ aggregateColumns.mkString(",") } " +
-    s"from $databaseName.${ tableSchema.getTableName }" +
-    s" group by ${ groupingExpressions.mkString(",") }"
+    s"from $databaseName.${ tableSchema.getTableName }" + groupByString
   }
 
   /**

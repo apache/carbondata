@@ -106,22 +106,27 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
   def validateQueryDirectlyOnDataMap(relations: Seq[CarbonDecoderRelation]): Unit = {
     var isPreAggDataMapExists = false
     // first check if pre aggregate data map exists or not
-    relations.foreach{relation =>
+    relations.foreach { relation =>
       if (relation.carbonRelation.carbonTable.isChildDataMap) {
         isPreAggDataMapExists = true
       }
     }
-    val validateQuery = CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.VALIDATE_DIRECT_QUERY_ON_DATAMAP,
-        CarbonCommonConstants.VALIDATE_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE).toBoolean
     var isThrowException = false
-    // if validate query is enabled and relation contains pre aggregate data map
-    if (validateQuery && isPreAggDataMapExists) {
+    // if relation contains pre aggregate data map
+    if (isPreAggDataMapExists) {
       val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
       if (null != carbonSessionInfo) {
-        val supportQueryOnDataMap = CarbonProperties.getInstance.getProperty(
-          CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
-            CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE).toBoolean
+        lazy val sessionPropertyValue = CarbonProperties.getInstance
+          .getProperty(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
+            CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE)
+        // Check if property is set in thread params which would mean this is an internal call
+        // (from load or compaction) and should be of highest priority. Otherwise get from
+        // session(like user has dynamically given the value using set command). If not found in
+        // session then look for the property in carbon.properties file, otherwise use default
+        // value 'false'.
+        val supportQueryOnDataMap = CarbonEnv
+          .getThreadParam(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
+            sessionPropertyValue).toBoolean
         if (!supportQueryOnDataMap) {
           isThrowException = true
         }
