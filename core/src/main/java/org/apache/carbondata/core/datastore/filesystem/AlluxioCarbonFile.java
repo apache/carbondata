@@ -27,7 +27,6 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.log4j.Logger;
 
 public class AlluxioCarbonFile extends AbstractDFSCarbonFile {
@@ -95,15 +94,13 @@ public class AlluxioCarbonFile extends AbstractDFSCarbonFile {
     FileSystem fs;
     try {
       fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
-      if (fs instanceof DistributedFileSystem) {
-        ((DistributedFileSystem) fs).rename(fileStatus.getPath(), new Path(changeToName),
-            org.apache.hadoop.fs.Options.Rename.OVERWRITE);
-        return true;
-      } else {
-        return false;
+      Path targetPath = new Path(changeToName);
+      if (fs.exists(targetPath)) {
+        fs.delete(targetPath, true);
       }
+      return fs.rename(fileStatus.getPath(), targetPath);
     } catch (IOException e) {
-      LOGGER.error("Exception occured: " + e.getMessage());
+      LOGGER.error("Exception occured: " + e.getMessage(), e);
       return false;
     }
   }
