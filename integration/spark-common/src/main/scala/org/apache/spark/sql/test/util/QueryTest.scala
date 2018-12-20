@@ -42,7 +42,7 @@ class QueryTest extends PlanTest {
   Locale.setDefault(Locale.US)
 
   CarbonProperties.getInstance()
-    .addProperty(CarbonCommonConstants.VALIDATE_DIRECT_QUERY_ON_DATAMAP, "false")
+    .addProperty(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP, "true")
 
   /**
    * Runs the plan and makes sure the answer contains all of the keywords, or the
