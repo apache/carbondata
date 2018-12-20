@@ -164,6 +164,6 @@ class TestTableLoadMinSize extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS table_loadminsize3")
     sql("DROP TABLE IF EXISTS table_loadminsize4")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
   }
 }

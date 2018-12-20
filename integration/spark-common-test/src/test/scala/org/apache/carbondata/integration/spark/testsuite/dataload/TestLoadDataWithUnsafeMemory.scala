@@ -33,20 +33,15 @@ import org.apache.carbondata.core.util.CarbonProperties
 class TestLoadDataWithUnsafeMemory extends QueryTest
   with BeforeAndAfterEach with BeforeAndAfterAll {
   val originUnsafeSortStatus: String = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
-      CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
+    .getPropertyOrDefault(CarbonCommonConstants.ENABLE_UNSAFE_SORT)
   val originUnsafeMemForSort: String = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB,
-      CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT)
+    .getPropertyOrDefault(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB)
   val originUnsafeMemForWorking: String = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB,
-      CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT)
+    .getPropertyOrDefault(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB)
   val originUnsafeSizeForChunk: String = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB,
-      CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT)
+    .getPropertyOrDefault(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB)
   val originSpillPercentage: String = CarbonProperties.getInstance()
-    .getProperty(CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE,
-      CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE_DEFAULT)
+    .getPropertyOrDefault(CarbonLoadOptionConstants.CARBON_LOAD_SORT_MEMORY_SPILL_PERCENTAGE)
   val targetTable = "table_unsafe_memory"
 
 

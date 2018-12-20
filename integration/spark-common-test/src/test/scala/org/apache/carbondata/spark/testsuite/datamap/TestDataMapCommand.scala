@@ -96,8 +96,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     } finally {
       sql("drop table hiveMetaStoreTable")
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE,
-          CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT)
+        .addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE)
     }
   }
 
@@ -127,8 +126,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     }
     finally {
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE,
-          CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT)
+        .addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE)
     }
   }
 
@@ -285,8 +283,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
         Seq(Row(1, 31), Row(2, 27), Row(3, 70), Row(4, 55)))
     } finally {
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE,
-          CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT)
+        .addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE)
     }
   }
 
@@ -352,8 +349,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("DROP TABLE IF EXISTS maintable")
     sql("drop table if exists uniqdata")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE,
-      CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE)
     sql("drop table if exists datamaptest")
     sql("drop table if exists datamapshowtest")
   }

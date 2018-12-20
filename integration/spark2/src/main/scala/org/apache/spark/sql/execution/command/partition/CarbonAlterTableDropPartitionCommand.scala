@@ -149,7 +149,7 @@ case class CarbonAlterTableDropPartitionCommand(
       val loadStartTime = CarbonUpdateUtil.readCurrentTime
       carbonLoadModel.setFactTimeStamp(loadStartTime)
       val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
-        .getOrElse(CarbonCommonConstants.COMPRESSOR,
+        .getOrElse(CarbonCommonConstants.COMPRESSOR.getName,
           CompressorFactory.getInstance().getCompressor.getName)
       carbonLoadModel.setColumnCompressor(columnCompressor)
       alterTableDropPartition(

@@ -242,7 +242,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql(
       "create datamap agg2 on table tbl_1 using 'preaggregate' as select prodate, mac from tbl_1 group by prodate,mac")
     checkExistence(sql("show tables"), false, "tbl_1_preagg_sum","tbl_1_agg2_day","tbl_1_agg2_hour","tbl_1_agg2_month","tbl_1_agg2_year")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,CarbonCommonConstants.CARBON_SHOW_DATAMAPS_DEFAULT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS)
   }
 
   test("test pre agg create table 22: create with preaggregate and granularity") {
@@ -306,7 +306,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("create table if not exists  sparktable(imei string,age int,mac string ,prodate timestamp,update timestamp,gamepoint double,contrid double) ")
     checkExistence(sql("show tables"), false, "tbl_1_agg1")
     checkExistence(sql("show tables"), true, "sparktable", "tbl_1")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS, CarbonCommonConstants.CARBON_SHOW_DATAMAPS_DEFAULT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS)
   }
 
   test("test pre agg create table 25: remove TimeSeries agg tables from show table command") {
@@ -358,7 +358,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
     sql("create datamap preagg1 on table PreAggMain using 'preaggregate' as select a,sum(b) from PreAggMain group by a")
     sql("show tables").show()
     checkExistence(sql("show tables"), false, "preaggmain_preagg1")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,CarbonCommonConstants.CARBON_SHOW_DATAMAPS_DEFAULT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS)
     checkExistence(sql("show tables"), true, "preaggmain_preagg1")
   }
 
@@ -565,8 +565,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,
-        CarbonCommonConstants.CARBON_SHOW_DATAMAPS_DEFAULT)
+      .addProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS)
     sql("drop database if exists otherDB cascade")
     sql("drop table if exists maintable")
     sql("drop table if exists PreAggMain")

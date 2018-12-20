@@ -58,8 +58,7 @@ class TimestampDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
 
     } catch {
       case x: Throwable => CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
     }
   }
 
@@ -80,8 +79,7 @@ class TimestampDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table timestampTyeNullData")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")
   }
 

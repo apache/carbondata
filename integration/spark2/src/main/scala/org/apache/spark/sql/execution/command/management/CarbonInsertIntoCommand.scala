@@ -48,8 +48,7 @@ case class CarbonInsertIntoCommand(
     ThreadLocalSessionInfo
       .setConfigurationToCurrentThread(sparkSession.sessionState.newHadoopConf())
     val isPersistEnabledUserValue = CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.CARBON_INSERT_PERSIST_ENABLED,
-        CarbonCommonConstants.CARBON_INSERT_PERSIST_ENABLED_DEFAULT)
+      .getPropertyOrDefault(CarbonCommonConstants.CARBON_INSERT_PERSIST_ENABLED)
     val isPersistRequired =
       isPersistEnabledUserValue.equalsIgnoreCase("true") || containsLimit(child)
     val df =

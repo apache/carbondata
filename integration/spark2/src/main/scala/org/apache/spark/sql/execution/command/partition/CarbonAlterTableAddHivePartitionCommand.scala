@@ -127,7 +127,7 @@ case class CarbonAlterTableAddHivePartitionCommand(
         }
         val loadModel = new CarbonLoadModel
         val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
-          .getOrElse(CarbonCommonConstants.COMPRESSOR,
+          .getOrElse(CarbonCommonConstants.COMPRESSOR.getName,
             CompressorFactory.getInstance().getCompressor.getName)
         loadModel.setColumnCompressor(columnCompressor)
         loadModel.setCarbonTransactionalTable(true)

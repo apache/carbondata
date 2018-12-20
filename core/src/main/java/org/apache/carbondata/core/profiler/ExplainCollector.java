@@ -55,8 +55,7 @@ public class ExplainCollector {
 
   public static void setup() {
     boolean isQueryStatisticsEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
-            CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT));
+        .getPropertyOrDefault(CarbonCommonConstants.ENABLE_QUERY_STATISTICS));
     if (isQueryStatisticsEnabled) {
       INSTANCE = new ExplainCollector();
     }

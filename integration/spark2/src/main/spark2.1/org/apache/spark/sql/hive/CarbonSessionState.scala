@@ -395,8 +395,7 @@ class CarbonSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser, sparkSes
   override def visitShowTables(ctx: ShowTablesContext): LogicalPlan = {
     withOrigin(ctx) {
       if (CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_SHOW_DATAMAPS,
-          CarbonCommonConstants.CARBON_SHOW_DATAMAPS_DEFAULT).toBoolean) {
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_SHOW_DATAMAPS).toBoolean) {
         super.visitShowTables(ctx)
       } else {
         CarbonShowTablesCommand(

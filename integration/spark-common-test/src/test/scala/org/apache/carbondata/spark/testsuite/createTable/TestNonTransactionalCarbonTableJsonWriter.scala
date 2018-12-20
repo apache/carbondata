@@ -42,20 +42,16 @@ class TestNonTransactionalCarbonTableJsonWriter extends QueryTest with BeforeAnd
   //getCanonicalPath gives path with \, but the code expects /.
   writerPath = writerPath.replace("\\", "/")
 
-  var backupdateFormat = CarbonProperties.getInstance().getProperty(
-    CarbonCommonConstants.CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+  var backupdateFormat = CarbonProperties.getInstance().getPropertyOrDefault(
+    CarbonCommonConstants.CARBON_DATE_FORMAT)
 
-  var backupTimeFormat = CarbonProperties.getInstance().getProperty(
-    CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-    CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+  var backupTimeFormat = CarbonProperties.getInstance().getPropertyOrDefault(
+    CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
 
   override def beforeAll(): Unit = {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT)
 
     sql("DROP TABLE IF EXISTS sdkOutputTable")
   }

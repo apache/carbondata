@@ -405,8 +405,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private void setWritingConfiguration() throws CarbonDataWriterException {
     // get blocklet size
     this.pageSize = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
+        .getPropertyOrDefault(CarbonCommonConstants.BLOCKLET_SIZE));
     // support less than 32000 rows in one page, because we support super long string,
     // if it is long enough, a column page with 32000 rows will exceed 2GB
     if (version == ColumnarFormatVersion.V3) {

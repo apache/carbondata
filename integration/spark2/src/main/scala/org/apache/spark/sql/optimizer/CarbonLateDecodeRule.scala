@@ -112,16 +112,15 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
       }
     }
     val validateQuery = CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.VALIDATE_DIRECT_QUERY_ON_DATAMAP,
-        CarbonCommonConstants.VALIDATE_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE).toBoolean
+      .getPropertyOrDefault(CarbonCommonConstants.VALIDATE_DIRECT_QUERY_ON_DATAMAP).toBoolean
     var isThrowException = false
     // if validate query is enabled and relation contains pre aggregate data map
     if (validateQuery && isPreAggDataMapExists) {
       val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
       if (null != carbonSessionInfo) {
         val supportQueryOnDataMap = CarbonProperties.getInstance.getProperty(
-          CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP,
-            CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP_DEFAULTVALUE).toBoolean
+          CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP.getName,
+          CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP.getDefaultValueString).toBoolean
         if (!supportQueryOnDataMap) {
           isThrowException = true
         }

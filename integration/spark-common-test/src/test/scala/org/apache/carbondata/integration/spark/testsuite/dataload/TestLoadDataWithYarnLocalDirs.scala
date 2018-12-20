@@ -71,8 +71,7 @@ class TestLoadDataWithYarnLocalDirs extends QueryTest with BeforeAndAfterAll {
 
   private def disableMultipleDir = {
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_LOADING_USE_YARN_LOCAL_DIR,
-      CarbonCommonConstants.CARBON_LOADING_USE_YARN_LOCAL_DIR_DEFAULT)
+      CarbonCommonConstants.CARBON_LOADING_USE_YARN_LOCAL_DIR)
   }
 
   test("test carbon table data loading for multiple temp dir") {

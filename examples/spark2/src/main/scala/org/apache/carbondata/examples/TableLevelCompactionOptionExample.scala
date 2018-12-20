@@ -110,12 +110,9 @@ object TableLevelCompactionOptionExample {
     spark.sql("CLEAN FILES FOR TABLE tablecompaction_table")
     spark.sql("SHOW SEGMENTS FOR TABLE tablecompaction_table").show()
 
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT)
 
     // Drop table
     spark.sql("DROP TABLE IF EXISTS tablecompaction_table")

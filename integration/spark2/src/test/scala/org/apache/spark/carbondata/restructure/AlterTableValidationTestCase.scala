@@ -358,8 +358,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
       "('DEFAULT.VALUE.designation'='67890')")
     checkAnswer(sql("select distinct(designation) from restructure"), Row(67890))
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
 
   }
 
@@ -652,8 +651,7 @@ test("test alter command for boolean data type with correct default measure valu
       }
       finally {
         CarbonProperties.getInstance()
-          .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+          .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
       }
     }
 
@@ -735,7 +733,7 @@ test("test alter command for boolean data type with correct default measure valu
     finally {
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
-          CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
+          CarbonCommonConstants.ENABLE_VECTOR_READER.getDefaultValueString)
     }
   }
 

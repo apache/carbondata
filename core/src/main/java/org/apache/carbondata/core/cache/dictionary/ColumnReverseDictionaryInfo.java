@@ -47,8 +47,7 @@ public class ColumnReverseDictionaryInfo extends AbstractColumnDictionaryInfo {
    */
   public ColumnReverseDictionaryInfo() {
     boolean useXXHash = Boolean.valueOf(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_XXHASH,
-            CarbonCommonConstants.ENABLE_XXHASH_DEFAULT));
+        .getPropertyOrDefault(CarbonCommonConstants.ENABLE_XXHASH));
     if (useXXHash) {
       xxHash32 = XXHashFactory.fastestInstance().hash32();
     }

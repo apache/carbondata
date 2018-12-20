@@ -289,7 +289,7 @@ public class ExpressionResultTest {
       return null;
     }
     SimpleDateFormat parser =
-        new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+        new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT.getDefaultValueString());
     Date dateToStr;
     try {
       dateToStr = parser.parse(value.toString());

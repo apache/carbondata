@@ -46,7 +46,7 @@ public class DimensionChunkStoreFactory {
   static {
     isUnsafe = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION,
-            CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION_DEFAULTVALUE));
+            CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION.getDefaultValueString()));
   }
 
   private DimensionChunkStoreFactory() {

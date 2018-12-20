@@ -126,7 +126,7 @@ public class CompressorFactory {
    */
   public Compressor getCompressor() {
     String compressorType = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.COMPRESSOR, CarbonCommonConstants.DEFAULT_COMPRESSOR);
+        .getPropertyOrDefault(CarbonCommonConstants.COMPRESSOR);
     return getCompressor(compressorType);
   }
 

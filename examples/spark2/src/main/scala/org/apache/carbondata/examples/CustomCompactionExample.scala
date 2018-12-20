@@ -90,8 +90,7 @@ object CustomCompactionExample {
     spark.sql("SELECT * FROM custom_compaction_table WHERE ID=5").show()
 
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+      CarbonCommonConstants.CARBON_DATE_FORMAT)
 
     // Drop table
     spark.sql("DROP TABLE IF EXISTS custom_compaction_table")

@@ -96,10 +96,10 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
         batchSize = Integer.parseInt(batchSizeString);
       } catch (NumberFormatException ne) {
         LOGGER.error("Invalid inmemory records size. Using default value");
-        batchSize = CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT;
+        batchSize = CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE.getDefaultValueInt();
       }
     } else {
-      batchSize = CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT;
+      batchSize = CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE.getDefaultValueInt();
     }
     this.recorder = queryModel.getStatisticsRecorder();
     this.blockExecutionInfos = infos;

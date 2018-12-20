@@ -51,12 +51,10 @@ public class RangeFilterImpl implements PartitionFilterIntf {
   @Override public BitSet applyFilter(Partitioner partitioner) {
 
     SimpleDateFormat timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT));
 
     SimpleDateFormat dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_DATE_FORMAT));
 
     switch (partitionInfo.getPartitionType()) {
       case LIST:

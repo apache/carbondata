@@ -158,11 +158,9 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
     sql("create table if not exists carbonBigDecimal (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(27, 10)) STORED BY 'org.apache.carbondata.format'")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/decimalBoundaryDataCarbon.csv' into table carbonBigDecimal")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT,
-        CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE)
-      .addProperty(CarbonCommonConstants.SORT_SIZE, CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL)
-      .addProperty(CarbonCommonConstants.DATA_LOAD_BATCH_SIZE,
-        CarbonCommonConstants.DATA_LOAD_BATCH_SIZE_DEFAULT)
+      .addProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT)
+      .addProperty(CarbonCommonConstants.SORT_SIZE)
+      .addProperty(CarbonCommonConstants.DATA_LOAD_BATCH_SIZE)
     sql("drop table if exists carbon_table")
   }
 
@@ -242,9 +240,8 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
   }
 
   test("test data loading with directly writing fact data to hdfs") {
-    val originStatus = CarbonProperties.getInstance().getProperty(
-      CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH,
-      CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH_DEFAULT)
+    val originStatus = CarbonProperties.getInstance().getPropertyOrDefault(
+      CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH)
     CarbonProperties.getInstance().addProperty(
       CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH, "true")
 
@@ -271,18 +268,15 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterEach {
       Seq(Row(6))
     )
 
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-      CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.BLOCKLET_SIZE)
   }
 
   override def afterEach {
     sql("DROP TABLE if exists loadtest")
     sql("drop table if exists invalidMeasures")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT,
-        CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE)
-      .addProperty(CarbonCommonConstants.SORT_SIZE, CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL)
-      .addProperty(CarbonCommonConstants.DATA_LOAD_BATCH_SIZE,
-        CarbonCommonConstants.DATA_LOAD_BATCH_SIZE_DEFAULT)
+      .addProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT)
+      .addProperty(CarbonCommonConstants.SORT_SIZE)
+      .addProperty(CarbonCommonConstants.DATA_LOAD_BATCH_SIZE)
   }
 }

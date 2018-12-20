@@ -36,13 +36,10 @@ class BloomFilterDataMapTestCase extends QueryTest with BeforeAndAfterEach with 
   }
 
   override protected def afterAll(): Unit = {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
-        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS)
   }
 
   private def createAllDataTypeTable(tableName: String): Unit = {

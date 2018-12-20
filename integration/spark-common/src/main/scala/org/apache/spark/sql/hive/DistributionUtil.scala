@@ -39,8 +39,7 @@ object DistributionUtil {
    */
   lazy val minRegisteredResourceRatio: Double = {
     val value: String = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO,
-        CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT)
+      .getPropertyOrDefault(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO)
     java.lang.Double.parseDouble(value)
   }
 
@@ -49,8 +48,7 @@ object DistributionUtil {
    */
   lazy val dynamicAllocationSchTimeOut: Integer = {
     val value: String = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT,
-        CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT_DEFAULT)
+      .getPropertyOrDefault(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT)
     // milli second
     java.lang.Integer.parseInt(value) * 1000
   }

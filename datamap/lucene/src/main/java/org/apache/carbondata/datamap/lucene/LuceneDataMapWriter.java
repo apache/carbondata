@@ -131,8 +131,7 @@ public class LuceneDataMapWriter extends DataMapWriter {
   public void onBlockletStart(int blockletId) throws IOException {
     if (null == analyzer) {
       if (CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS,
-              CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS_DEFAULT)
+          .getPropertyOrDefault(CarbonCommonConstants.CARBON_LUCENE_INDEX_STOP_WORDS)
           .equalsIgnoreCase("true")) {
         analyzer = new StandardAnalyzer(CharArraySet.EMPTY_SET);
       } else {
@@ -173,9 +172,9 @@ public class LuceneDataMapWriter extends DataMapWriter {
 
     IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer);
     if (CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE,
-            CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)
-        .equalsIgnoreCase(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)) {
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE)
+        .equalsIgnoreCase(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE
+            .getDefaultValueString())) {
       indexWriterConfig.setCodec(speedCodec);
     } else {
       indexWriterConfig

@@ -100,7 +100,7 @@ public class SessionParams implements Serializable, Cloneable {
   public SessionParams addProperty(String key, String value) throws InvalidConfigurationException {
     boolean isValidConf = validateKeyValue(key, value);
     if (isValidConf) {
-      if (key.equals(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION)) {
+      if (key.equals(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION.getName())) {
         value = value.toUpperCase();
       }
       LOGGER.info(
@@ -123,6 +123,10 @@ public class SessionParams implements Serializable, Cloneable {
     return addedProps;
   }
 
+  private boolean equal(String key, Property property) {
+    return property.getName().equalsIgnoreCase(key);
+  }
+
   /**
    * validate the key value to be set using set command
    * @param key
@@ -132,107 +136,98 @@ public class SessionParams implements Serializable, Cloneable {
    */
   private boolean validateKeyValue(String key, String value) throws InvalidConfigurationException {
     boolean isValid = false;
-    switch (key) {
-      case ENABLE_UNSAFE_SORT:
-      case ENABLE_OFFHEAP_SORT:
-      case CARBON_CUSTOM_BLOCK_DISTRIBUTION:
-      case CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE:
-      case CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD:
-      case CARBON_OPTIONS_SINGLE_PASS:
-      case ENABLE_VECTOR_READER:
-      case ENABLE_UNSAFE_IN_QUERY_EXECUTION:
-      case ENABLE_AUTO_LOAD_MERGE:
-      case CARBON_PUSH_ROW_FILTERS_FOR_VECTOR:
+    if (equal(key, ENABLE_UNSAFE_SORT)
+        || equal(key, ENABLE_OFFHEAP_SORT)
+        || equal(key, CARBON_CUSTOM_BLOCK_DISTRIBUTION)
+        || equal(key, CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE)
+        || equal(key, CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD)
+        || equal(key, CARBON_OPTIONS_SINGLE_PASS)
+        || equal(key, ENABLE_VECTOR_READER)
+        || equal(key, ENABLE_UNSAFE_IN_QUERY_EXECUTION)
+        || equal(key, ENABLE_AUTO_LOAD_MERGE)
+        || equal(key, CARBON_PUSH_ROW_FILTERS_FOR_VECTOR)) {
+      isValid = CarbonUtil.validateBoolean(value);
+      if (!isValid) {
+        throw new InvalidConfigurationException("Invalid value " + value + " for key " + key);
+      }
+    } else if (equal(key, CARBON_OPTIONS_BAD_RECORDS_ACTION)) {
+      try {
+        LoggerAction.valueOf(value.toUpperCase());
+        isValid = true;
+      } catch (IllegalArgumentException iae) {
+        throw new InvalidConfigurationException(
+            "The key " + key + " can have only either FORCE or IGNORE or REDIRECT or FAIL.");
+      }
+    } else if (equal(key, CARBON_OPTIONS_SORT_SCOPE)) {
+      isValid = CarbonUtil.isValidSortOption(value);
+      if (!isValid) {
+        throw new InvalidConfigurationException("The sort scope " + key
+            + " can have only either BATCH_SORT or LOCAL_SORT or NO_SORT.");
+      }
+    } else if (equal(key, CARBON_OPTIONS_BATCH_SORT_SIZE_INMB)
+        || equal(key, CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS)
+        || equal(key, NUM_CORES_LOADING)
+        || equal(key, NUM_CORES_COMPACTING)
+        || equal(key, BLOCKLET_SIZE_IN_MB)
+        || equal(key, CARBON_MAJOR_COMPACTION_SIZE)) {
+      isValid = CarbonUtil.validateValidIntType(value);
+      if (!isValid) {
+        throw new InvalidConfigurationException(
+            "The configured value for key " + key + " must be valid integer.");
+      }
+    } else if (equal(key, CARBON_OPTIONS_BAD_RECORD_PATH)) {
+      isValid = CarbonUtil.isValidBadStorePath(value);
+      if (!isValid) {
+        throw new InvalidConfigurationException("Invalid bad records location.");
+      }
+      // no validation needed while set for CARBON_OPTIONS_DATEFORMAT
+    } else if (equal(key, CARBON_OPTIONS_DATEFORMAT)) {
+      isValid = true;
+      // no validation needed while set for CARBON_OPTIONS_TIMESTAMPFORMAT
+    } else if (equal(key, CARBON_OPTIONS_TIMESTAMPFORMAT)) {
+      isValid = true;
+      // no validation needed while set for CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT
+    } else if (equal(key, CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT)) {
+      isValid = true;
+    } else if (equal(key, COMPACTION_SEGMENT_LEVEL_THRESHOLD)) {
+      int[] values = CarbonProperties.getInstance().getIntArray(value);
+      if (values.length != 2) {
+        throw new InvalidConfigurationException(
+            "Invalid COMPACTION_SEGMENT_LEVEL_THRESHOLD: " + value);
+      }
+      isValid = true;
+    } else {
+      if (key.startsWith(CarbonCommonConstants.CARBON_INPUT_SEGMENTS.getName())) {
+        isValid = CarbonUtil.validateRangeOfSegmentList(value);
+        if (!isValid) {
+          throw new InvalidConfigurationException("Invalid CARBON_INPUT_SEGMENT_IDs");
+        }
+      } else if (key.startsWith(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS.getName())) {
+        isValid = true;
+      } else if (key.equalsIgnoreCase(CarbonCommonConstants
+          .SUPPORT_DIRECT_QUERY_ON_DATAMAP.getName())) {
+        isValid = true;
+      } else if (key.startsWith(CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING)) {
+        isValid = true;
+      } else if (key.startsWith(CarbonCommonConstants.CARBON_DATAMAP_VISIBLE.getName())) {
+        String[] keyArray = key.split("\\.");
+        isValid = DataMapStoreManager.getInstance().isDataMapExist(
+            keyArray[keyArray.length - 3],
+            keyArray[keyArray.length - 2],
+            keyArray[keyArray.length - 1]);
+        if (!isValid) {
+          throw new InvalidConfigurationException(
+              String.format("Invalid configuration of %s, datamap does not exist", key));
+        }
+      } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL.getName())) {
         isValid = CarbonUtil.validateBoolean(value);
         if (!isValid) {
           throw new InvalidConfigurationException("Invalid value " + value + " for key " + key);
         }
-        break;
-      case CARBON_OPTIONS_BAD_RECORDS_ACTION:
-        try {
-          LoggerAction.valueOf(value.toUpperCase());
-          isValid = true;
-        } catch (IllegalArgumentException iae) {
-          throw new InvalidConfigurationException(
-              "The key " + key + " can have only either FORCE or IGNORE or REDIRECT or FAIL.");
-        }
-        break;
-      case CARBON_OPTIONS_SORT_SCOPE:
-        isValid = CarbonUtil.isValidSortOption(value);
-        if (!isValid) {
-          throw new InvalidConfigurationException("The sort scope " + key
-              + " can have only either BATCH_SORT or LOCAL_SORT or NO_SORT.");
-        }
-        break;
-      case CARBON_OPTIONS_BATCH_SORT_SIZE_INMB:
-      case CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS:
-      case NUM_CORES_LOADING:
-      case NUM_CORES_COMPACTING:
-      case BLOCKLET_SIZE_IN_MB:
-      case CARBON_MAJOR_COMPACTION_SIZE:
-        isValid = CarbonUtil.validateValidIntType(value);
-        if (!isValid) {
-          throw new InvalidConfigurationException(
-              "The configured value for key " + key + " must be valid integer.");
-        }
-        break;
-      case CARBON_OPTIONS_BAD_RECORD_PATH:
-        isValid = CarbonUtil.isValidBadStorePath(value);
-        if (!isValid) {
-          throw new InvalidConfigurationException("Invalid bad records location.");
-        }
-        break;
-      // no validation needed while set for CARBON_OPTIONS_DATEFORMAT
-      case CARBON_OPTIONS_DATEFORMAT:
-        isValid = true;
-        break;
-      // no validation needed while set for CARBON_OPTIONS_TIMESTAMPFORMAT
-      case CARBON_OPTIONS_TIMESTAMPFORMAT:
-        isValid = true;
-        break;
-      // no validation needed while set for CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT
-      case CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT:
-        isValid = true;
-        break;
-      case COMPACTION_SEGMENT_LEVEL_THRESHOLD:
-        int[] values = CarbonProperties.getInstance().getIntArray(value);
-        if (values.length != 2) {
-          throw new InvalidConfigurationException(
-              "Invalid COMPACTION_SEGMENT_LEVEL_THRESHOLD: " + value);
-        }
-        isValid = true;
-        break;
-      default:
-        if (key.startsWith(CarbonCommonConstants.CARBON_INPUT_SEGMENTS)) {
-          isValid = CarbonUtil.validateRangeOfSegmentList(value);
-          if (!isValid) {
-            throw new InvalidConfigurationException("Invalid CARBON_INPUT_SEGMENT_IDs");
-          }
-        } else if (key.startsWith(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS)) {
-          isValid = true;
-        } else if (key.equalsIgnoreCase(CarbonCommonConstants.SUPPORT_DIRECT_QUERY_ON_DATAMAP)) {
-          isValid = true;
-        } else if (key.startsWith(CarbonCommonConstantsInternal.QUERY_ON_PRE_AGG_STREAMING)) {
-          isValid = true;
-        } else if (key.startsWith(CarbonCommonConstants.CARBON_DATAMAP_VISIBLE)) {
-          String[] keyArray = key.split("\\.");
-          isValid = DataMapStoreManager.getInstance().isDataMapExist(
-              keyArray[keyArray.length - 3],
-              keyArray[keyArray.length - 2],
-              keyArray[keyArray.length - 1]);
-          if (!isValid) {
-            throw new InvalidConfigurationException(
-                String.format("Invalid configuration of %s, datamap does not exist", key));
-          }
-        } else if (key.startsWith(CarbonCommonConstants.CARBON_LOAD_DATAMAPS_PARALLEL)) {
-          isValid = CarbonUtil.validateBoolean(value);
-          if (!isValid) {
-            throw new InvalidConfigurationException("Invalid value " + value + " for key " + key);
-          }
-        } else {
-          throw new InvalidConfigurationException(
-              "The key " + key + " not supported for dynamic configuration.");
-        }
+      } else {
+        throw new InvalidConfigurationException(
+            "The key " + key + " not supported for dynamic configuration.");
+      }
     }
     return isValid;
   }

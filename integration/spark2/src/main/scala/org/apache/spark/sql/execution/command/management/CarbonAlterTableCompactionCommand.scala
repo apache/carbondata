@@ -159,7 +159,7 @@ case class CarbonAlterTableCompactionCommand(
       carbonLoadModel.setDatabaseName(table.getDatabaseName)
       carbonLoadModel.setTablePath(table.getTablePath)
       val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
-        .getOrElse(CarbonCommonConstants.COMPRESSOR,
+        .getOrElse(CarbonCommonConstants.COMPRESSOR.getName,
           CompressorFactory.getInstance().getCompressor.getName)
       carbonLoadModel.setColumnCompressor(columnCompressor)
 
@@ -263,9 +263,7 @@ case class CarbonAlterTableCompactionCommand(
     )
 
     val isConcurrentCompactionAllowed = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
-        CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION
-      )
+      .getPropertyOrDefault(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION)
       .equalsIgnoreCase("true")
 
     // if system level compaction is enabled then only one compaction can run in the system

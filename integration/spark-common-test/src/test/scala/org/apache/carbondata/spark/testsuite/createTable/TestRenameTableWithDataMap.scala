@@ -194,7 +194,6 @@ class TestRenameTableWithDataMap extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_tb")
     sql("DROP TABLE IF EXISTS fact_table1")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
-        CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
+      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS)
   }
 }

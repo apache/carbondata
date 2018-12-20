@@ -46,10 +46,11 @@ public class SDKS3Example {
         }
 
         String backupProperty = CarbonProperties.getInstance()
-            .getProperty(CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH,
-                CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH_DEFAULT);
+            .getPropertyOrDefault(CarbonLoadOptionConstants
+                .ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH);
         CarbonProperties.getInstance()
-            .addProperty(CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH, "true");
+            .addProperty(CarbonLoadOptionConstants
+                .ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH, "true");
 
         String path = "s3a://sdk/WriterOutput";
         if (args.length > 3) {

@@ -57,7 +57,7 @@ class DateDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with Befo
         x.printStackTrace()
         CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+          CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT.getDefaultValueString)
     }
   }
 
@@ -95,8 +95,7 @@ class DateDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with Befo
   override def afterAll {
     sql("drop table directDictionaryTable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT)
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")
   }
 }

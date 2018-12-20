@@ -171,12 +171,10 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
     carbonLoadModel.setQuoteChar("\"");
     carbonLoadModel.setSerializationNullFormat(
       TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + ",\\N")
-    carbonLoadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
-    carbonLoadModel.setDefaultDateFormat(CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+    carbonLoadModel.setDefaultTimestampFormat(CarbonProperties.getInstance()
+      .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))
+    carbonLoadModel.setDefaultDateFormat(CarbonProperties.getInstance()
+      .getPropertyOrDefault(CarbonCommonConstants.CARBON_DATE_FORMAT))
     carbonLoadModel.setCsvHeaderColumns(
       LoadOption.getCsvHeaderColumns(carbonLoadModel, FileFactory.getConfiguration))
     carbonLoadModel.setMaxColumns("100")
@@ -188,7 +186,7 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
     }
     import scala.collection.JavaConverters._
     val columnCompressor = table.getTableInfo.getFactTable.getTableProperties.asScala
-      .getOrElse(CarbonCommonConstants.COMPRESSOR,
+      .getOrElse(CarbonCommonConstants.COMPRESSOR.getName,
         CompressorFactory.getInstance().getCompressor.getName)
     carbonLoadModel.setColumnCompressor(columnCompressor)
     carbonLoadModel

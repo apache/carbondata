@@ -108,8 +108,7 @@ public class CarbonReader<T> {
       }
     } else if (currentReader instanceof CarbonVectorizedRecordReader) {
       int batch = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE,
-              String.valueOf(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT)));
+          .getPropertyOrDefault(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE));
       batchRows = new Object[batch];
       int sum = 0;
       for (int i = 0; i < batch; i++) {
@@ -214,8 +213,7 @@ public class CarbonReader<T> {
   public void close() throws IOException {
     validateReader();
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE,
-            String.valueOf(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT));
+        .addProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE);
     this.currentReader.close();
     this.initialise = false;
   }

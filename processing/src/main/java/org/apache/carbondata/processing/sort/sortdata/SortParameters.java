@@ -422,13 +422,11 @@ public class SortParameters implements Serializable {
     parameters.setObserver(new SortObserver());
     // get sort buffer size
     parameters.setSortBufferSize(Integer.parseInt(carbonProperties
-        .getProperty(CarbonCommonConstants.SORT_SIZE,
-            CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL)));
+        .getPropertyOrDefault(CarbonCommonConstants.SORT_SIZE)));
     LOGGER.info("Sort size for table: " + parameters.getSortBufferSize());
     // set number of intermedaite file to merge
     parameters.setNumberOfIntermediateFileToBeMerged(Integer.parseInt(carbonProperties
-        .getProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT,
-            CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE)));
+        .getPropertyOrDefault(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT)));
 
     LOGGER.info("Number of intermediate file to be merged: " + parameters
         .getNumberOfIntermediateFileToBeMerged());
@@ -452,8 +450,7 @@ public class SortParameters implements Serializable {
     parameters.setNumberOfCores(numberOfCores > 0 ? numberOfCores : 1);
 
     parameters.setFileWriteBufferSize(Integer.parseInt(carbonProperties
-        .getProperty(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE,
-            CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE)));
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE)));
 
     parameters.setSortTempCompressorName(CarbonProperties.getInstance().getSortTempCompressor());
     if (!parameters.sortTempCompressorName.isEmpty()) {
@@ -462,9 +459,8 @@ public class SortParameters implements Serializable {
     }
 
     parameters.setPrefetch(CarbonCommonConstants.CARBON_PREFETCH_IN_MERGE_VALUE);
-    parameters.setBufferSize(Integer.parseInt(carbonProperties.getProperty(
-        CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
-        CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT)));
+    parameters.setBufferSize(Integer.parseInt(carbonProperties.getPropertyOrDefault(
+        CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE)));
 
     DataType[] measureDataType = configuration.getMeasureDataType();
     parameters.setMeasureDataType(measureDataType);
@@ -510,13 +506,11 @@ public class SortParameters implements Serializable {
     parameters.setObserver(new SortObserver());
     // get sort buffer size
     parameters.setSortBufferSize(Integer.parseInt(carbonProperties
-        .getProperty(CarbonCommonConstants.SORT_SIZE,
-            CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL)));
+        .getPropertyOrDefault(CarbonCommonConstants.SORT_SIZE)));
     LOGGER.info("Sort size for table: " + parameters.getSortBufferSize());
     // set number of intermedaite file to merge
     parameters.setNumberOfIntermediateFileToBeMerged(Integer.parseInt(carbonProperties
-        .getProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT,
-            CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE)));
+        .getPropertyOrDefault(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT)));
 
     LOGGER.info("Number of intermediate file to be merged: " + parameters
         .getNumberOfIntermediateFileToBeMerged());
@@ -532,8 +526,7 @@ public class SortParameters implements Serializable {
     parameters.setNumberOfCores(numberOfCores > 0 ? numberOfCores : 1);
 
     parameters.setFileWriteBufferSize(Integer.parseInt(carbonProperties
-        .getProperty(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE,
-            CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE)));
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE)));
 
     parameters.setSortTempCompressorName(CarbonProperties.getInstance().getSortTempCompressor());
     if (!parameters.sortTempCompressorName.isEmpty()) {
@@ -542,9 +535,8 @@ public class SortParameters implements Serializable {
     }
 
     parameters.setPrefetch(CarbonCommonConstants. CARBON_PREFETCH_IN_MERGE_VALUE);
-    parameters.setBufferSize(Integer.parseInt(carbonProperties.getProperty(
-        CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
-        CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT)));
+    parameters.setBufferSize(Integer.parseInt(carbonProperties.getPropertyOrDefault(
+        CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE)));
 
     DataType[] type = CarbonDataProcessorUtil
         .getMeasureDataType(parameters.getMeasureColCount(), parameters.getCarbonTable());

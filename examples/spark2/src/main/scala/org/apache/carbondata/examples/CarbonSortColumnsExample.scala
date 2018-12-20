@@ -108,12 +108,9 @@ object CarbonSortColumnsExample {
     spark.sql(
       s"""SELECT * FROM sort_columns_table""".stripMargin).show()
 
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT)
 
     // Drop table
     spark.sql("DROP TABLE IF EXISTS no_sort_columns_table")

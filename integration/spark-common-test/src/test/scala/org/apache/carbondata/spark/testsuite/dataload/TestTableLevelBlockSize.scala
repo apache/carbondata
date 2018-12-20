@@ -142,7 +142,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
     sql("DROP TABLE IF EXISTS table_blocksize3")
     sql("DROP TABLE IF EXISTS table_max_block_size")
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
   }
 
 }

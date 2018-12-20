@@ -164,17 +164,15 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
 
     // size reserved in one file for writing block meta data. It will be in percentage
     int spaceReservedForBlockMetaSize = Integer.parseInt(propInstance
-        .getProperty(CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE,
-            CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE_DEFAULT));
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE));
     this.blockSizeThreshold =
         fileSizeInBytes - (fileSizeInBytes * spaceReservedForBlockMetaSize) / 100;
     LOGGER
         .info("Total file size: " + fileSizeInBytes + " and dataBlock Size: " + blockSizeThreshold);
 
     // whether to directly write fact data to HDFS
-    String directlyWriteData2Hdfs = propInstance
-        .getProperty(CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH,
-            CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH_DEFAULT);
+    String directlyWriteData2Hdfs = propInstance.getPropertyOrDefault(
+        CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH);
     this.enableDirectlyWriteDataToStorePath = "TRUE".equalsIgnoreCase(directlyWriteData2Hdfs);
 
     if (enableDirectlyWriteDataToStorePath) {
@@ -193,8 +191,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     thriftColumnSchemaList = getColumnSchemaListAndCardinality(cardinalityList, localCardinality,
         this.model.getWrapperColumnSchema());
     this.numberCompressor = new NumberCompressor(Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)));
+        .getPropertyOrDefault(CarbonCommonConstants.BLOCKLET_SIZE)));
     this.dataChunksOffsets = new ArrayList<>();
     this.dataChunksLength = new ArrayList<>();
     blockletMetadata = new ArrayList<BlockletInfo3>();

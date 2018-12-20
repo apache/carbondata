@@ -255,7 +255,7 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
     sql("create table badrecordsPartitionintnullalt(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')")
     sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartitionintnullalt options('bad_records_action'='force')")
     checkAnswer(sql("select count(*) cnt from badrecordsPartitionintnullalt where intfield2 = 13"), Seq(Row(1)))
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT, CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT_DEFAULT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT)
   }
 
   test("global sort static column partition with load command") {
@@ -1027,13 +1027,9 @@ class StandardPartitionGlobalSortTestCase extends QueryTest with BeforeAndAfterA
 
   override def afterAll = {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION ,
-      CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT)
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION)
     dropTable
     if (executorService != null && !executorService.isShutdown) {
       executorService.shutdownNow()

@@ -116,9 +116,9 @@ public class LuceneDataMapBuilder implements DataMapBuilder {
 
     IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer);
     if (CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE,
-            CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)
-        .equalsIgnoreCase(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE_DEFAULT)) {
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE)
+        .equalsIgnoreCase(CarbonCommonConstants.CARBON_LUCENE_COMPRESSION_MODE
+            .getDefaultValueString())) {
       indexWriterConfig.setCodec(new Lucene62Codec(Lucene50StoredFieldsFormat.Mode.BEST_SPEED));
     } else {
       indexWriterConfig

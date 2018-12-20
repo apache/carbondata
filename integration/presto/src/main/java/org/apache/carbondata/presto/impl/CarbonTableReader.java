@@ -54,6 +54,7 @@ import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.Property;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.api.CarbonInputFormat;
@@ -566,6 +567,10 @@ public class CarbonTableReader {
     if (propertyValue != null) {
       CarbonProperties.getInstance().addProperty(propertyName, propertyValue);
     }
+  }
+
+  private void addProperty(Property propertyName, String propertyValue) {
+    addProperty(propertyName.getName(), propertyValue);
   }
 
   /**

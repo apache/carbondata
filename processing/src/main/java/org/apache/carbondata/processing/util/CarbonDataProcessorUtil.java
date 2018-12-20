@@ -507,15 +507,15 @@ public final class CarbonDataProcessorUtil {
       // first check whether user input it from ddl, otherwise get from carbon properties
       if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE) == null) {
         sortScope = SortScopeOptions.getSortScope(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-                CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT));
+            .getPropertyOrDefault(CarbonCommonConstants.LOAD_SORT_SCOPE));
       } else {
         sortScope = SortScopeOptions.getSortScope(
             configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
                 .toString());
       }
     } catch (Exception e) {
-      sortScope = SortScopeOptions.getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
+      sortScope = SortScopeOptions.getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE
+          .getDefaultValueString());
       LOGGER.warn("Exception occured while resolving sort scope. " +
           "sort scope is set to " + sortScope);
     }
@@ -528,14 +528,14 @@ public final class CarbonDataProcessorUtil {
       // first check whether user input it from ddl, otherwise get from carbon properties
       if (sortScopeString == null) {
         sortScope = SortScopeOptions.getSortScope(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-                CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT));
+            .getPropertyOrDefault(CarbonCommonConstants.LOAD_SORT_SCOPE));
       } else {
         sortScope = SortScopeOptions.getSortScope(sortScopeString);
       }
       LOGGER.info("sort scope is set to " + sortScope);
     } catch (Exception e) {
-      sortScope = SortScopeOptions.getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
+      sortScope = SortScopeOptions.getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE
+          .getDefaultValueString());
       LOGGER.warn("Exception occured while resolving sort scope. " +
           "sort scope is set to " + sortScope);
     }
@@ -554,8 +554,7 @@ public final class CarbonDataProcessorUtil {
       if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB)
           == null) {
         batchSortSizeInMb = Integer.parseInt(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
-                CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT));
+            .getPropertyOrDefault(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB));
       } else {
         batchSortSizeInMb = Integer.parseInt(
             configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB)
@@ -581,8 +580,7 @@ public final class CarbonDataProcessorUtil {
       // First try to get the number from ddl, otherwise get it from carbon properties.
       if (globalSortPartitions == null) {
         numPartitions = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,
-            CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT));
+            .getPropertyOrDefault(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS));
       } else {
         numPartitions = Integer.parseInt(globalSortPartitions.toString());
       }

@@ -182,7 +182,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       // IF the file is not existed, use the create api
       outputStream = FileFactory.getDataOutputStream(filePath, fileType);
       compressorName = carbonTable.getTableInfo().getFactTable().getTableProperties().get(
-          CarbonCommonConstants.COMPRESSOR);
+          CarbonCommonConstants.COMPRESSOR.getName());
       if (null == compressorName) {
         compressorName = CompressorFactory.getInstance().getCompressor().getName();
       }

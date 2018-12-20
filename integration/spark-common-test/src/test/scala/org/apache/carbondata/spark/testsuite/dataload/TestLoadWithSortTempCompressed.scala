@@ -27,11 +27,9 @@ import org.apache.carbondata.core.util.CarbonProperties
 class TestLoadWithSortTempCompressed extends QueryTest
   with BeforeAndAfterEach with BeforeAndAfterAll {
   val originOffHeapStatus: String = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
-      CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT)
+    .getPropertyOrDefault(CarbonCommonConstants.ENABLE_OFFHEAP_SORT)
   val originSortTempCompressor: String = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR,
-      CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR_DEFAULT)
+    .getPropertyOrDefault(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR)
   val simpleTable = "simpleTable"
   val complexCarbonTable = "complexCarbonTable"
   val complexHiveTable = "complexHiveTable"

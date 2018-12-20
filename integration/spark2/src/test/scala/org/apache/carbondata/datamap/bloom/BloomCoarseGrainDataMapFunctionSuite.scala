@@ -34,8 +34,7 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
   override def afterEach(): Unit = {
     sql(s"DROP TABLE IF EXISTS $normalTable")
     sql(s"DROP TABLE IF EXISTS $bloomDMSampleTable")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT)
   }
 
   test("test bloom datamap: index column is integer, dictionary, sort_column") {
@@ -828,10 +827,8 @@ class BloomCoarseGrainDataMapFunctionSuite  extends QueryTest with BeforeAndAfte
     checkAnswer(sql("select count(*) from test_rcd where city = 'city40'"), withoutBloom)
 
     sql("drop table if exists test_rcd").collect()
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-      CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)
-    CarbonProperties.getInstance().addProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB,
-      CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.BLOCKLET_SIZE)
+    CarbonProperties.getInstance().addProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB)
   }
 
   /**

@@ -57,7 +57,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
     val sortScope = if (carbonTable.getNumberOfSortColumns == 0) {
       "NO_SORT"
     } else {
-      tblProps.getOrElse("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+      tblProps.getOrElse("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE.getDefaultValueString)
     }
     val streaming: String = if (carbonTable.isStreamingSink) {
       "sink"
@@ -90,11 +90,11 @@ private[sql] case class CarbonDescribeFormattedCommand(
       ("Bad Record Path", tblProps.getOrElse("bad_record_path", ""), ""),
       ("Min Input Per Node Per Load",
         Strings.formatSize(
-          tblProps.getOrElse(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
-            CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT).toFloat), ""),
+          tblProps.getOrElse(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB.getName,
+            CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB.getDefaultValueString).toFloat), ""),
       ("Data File Compressor ", tblProps
-        .getOrElse(CarbonCommonConstants.COMPRESSOR,
-          CarbonCommonConstants.DEFAULT_COMPRESSOR), ""),
+        .getOrElse(CarbonCommonConstants.COMPRESSOR.getName,
+          CarbonCommonConstants.COMPRESSOR.getDefaultValueString), ""),
       //////////////////////////////////////////////////////////////////////////////
       //  Index Information
       //////////////////////////////////////////////////////////////////////////////
@@ -136,19 +136,19 @@ private[sql] case class CarbonDescribeFormattedCommand(
       ("## Compaction Information", "", ""),
       (CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE.toUpperCase,
         tblProps.getOrElse(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE,
-        CarbonCommonConstants.DEFAULT_CARBON_MAJOR_COMPACTION_SIZE), ""),
+        CarbonCommonConstants.CARBON_MAJOR_COMPACTION_SIZE.getDefaultValueString), ""),
       (CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE.toUpperCase,
         tblProps.getOrElse(CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE,
-        CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE), ""),
+        CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE.getDefaultValueString), ""),
       (CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD.toUpperCase,
         tblProps.getOrElse(CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD,
-        CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD), ""),
+        CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD.getDefaultValueString), ""),
       (CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS.toUpperCase,
         tblProps.getOrElse(CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS,
-        CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER), ""),
+        CarbonCommonConstants.PRESERVE_LATEST_SEGMENTS_NUMBER.getDefaultValueString), ""),
       (CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS.toUpperCase,
         tblProps.getOrElse(CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS,
-        CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT), "")
+        CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT.getDefaultValueString), "")
     )
 
     //////////////////////////////////////////////////////////////////////////////

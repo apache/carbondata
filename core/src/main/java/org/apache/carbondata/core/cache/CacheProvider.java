@@ -152,24 +152,25 @@ public class CacheProvider {
    */
   private void createLRULevelCacheInstance() {
     boolean isDriver = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE,
-            CarbonCommonConstants.IS_DRIVER_INSTANCE_DEFAULT));
+        .getPropertyOrDefault(CarbonCommonConstants.IS_DRIVER_INSTANCE));
     if (isDriver) {
-      carbonLRUCache = new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE,
-          CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
+      carbonLRUCache = new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE
+          .getName(),
+          CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE.getDefaultValueString());
     } else {
       // if executor cache size is not configured then driver cache conf will be used
       String executorCacheSize = CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE);
       if (null != executorCacheSize) {
         carbonLRUCache =
-            new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE,
-                CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
+            new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE.getName(),
+                CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE.getDefaultValueString());
       } else {
         LOGGER.info(
             "Executor LRU cache size not configured. Initializing with driver LRU cache size.");
-        carbonLRUCache = new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE,
-            CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
+        carbonLRUCache = new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE
+            .getName(),
+            CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE.getDefaultValueString());
       }
     }
   }

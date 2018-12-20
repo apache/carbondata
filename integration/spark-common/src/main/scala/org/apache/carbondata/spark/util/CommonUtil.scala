@@ -171,13 +171,11 @@ object CommonUtil {
         value.matches(pattern)
       case "timestamptype" =>
         val timeStampFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+          .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))
         scala.util.Try(timeStampFormat.parse(value)).isSuccess
       case "datetype" =>
         val dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+          .getPropertyOrDefault(CarbonCommonConstants.CARBON_DATE_FORMAT))
         scala.util.Try(dateFormat.parse(value)).isSuccess
       case others =>
        if (others != null && others.startsWith("char")) {
@@ -223,13 +221,11 @@ object CommonUtil {
         value.matches(pattern)
       case "timestamp" =>
         val timeStampFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+          .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))
         scala.util.Try(timeStampFormat.parse(value)).isSuccess
       case "date" =>
         val dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+          .getPropertyOrDefault(CarbonCommonConstants.CARBON_DATE_FORMAT))
         scala.util.Try(dateFormat.parse(value)).isSuccess
       case _ =>
         validateTypeConvertForSpark2(partitionerField, value)
@@ -559,8 +555,7 @@ object CommonUtil {
       carbonLoadModel.getCsvHeader == null || carbonLoadModel.getCsvHeader.isEmpty)
     CSVInputFormat.setQuoteCharacter(configuration, carbonLoadModel.getQuoteChar)
     CSVInputFormat.setReadBufferSize(configuration, CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE,
-        CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT))
+      .getPropertyOrDefault(CarbonCommonConstants.CSV_READ_BUFFER_SIZE))
   }
 
   def configSplitMaxSize(context: SparkContext, filePaths: String,
@@ -652,8 +647,7 @@ object CommonUtil {
    */
   def cleanInProgressSegments(databaseLocation: String, dbName: String): Unit = {
     val loaderDriver = CarbonProperties.getInstance().
-      getProperty(CarbonCommonConstants.DATA_MANAGEMENT_DRIVER,
-        CarbonCommonConstants.DATA_MANAGEMENT_DRIVER_DEFAULT).toBoolean
+      getPropertyOrDefault(CarbonCommonConstants.DATA_MANAGEMENT_DRIVER).toBoolean
     if (!loaderDriver) {
       return
     }
@@ -726,9 +720,8 @@ object CommonUtil {
    */
   def getTempStoreLocations(index: String) : Array[String] = {
     var storeLocation: Array[String] = Array[String]()
-    val isCarbonUseYarnLocalDir = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.CARBON_LOADING_USE_YARN_LOCAL_DIR,
-      CarbonCommonConstants.CARBON_LOADING_USE_YARN_LOCAL_DIR_DEFAULT).equalsIgnoreCase("true")
+    val isCarbonUseYarnLocalDir = CarbonProperties.getInstance().getPropertyOrDefault(
+      CarbonCommonConstants.CARBON_LOADING_USE_YARN_LOCAL_DIR).equalsIgnoreCase("true")
     val tmpLocationSuffix =
       s"${File.separator}carbon${System.nanoTime()}${CarbonCommonConstants.UNDERSCORE}$index"
     if (isCarbonUseYarnLocalDir) {
@@ -857,7 +850,8 @@ object CommonUtil {
       if(size > 0) {
         tableProperties.put(propertyName, loadSizeStr)
       } else {
-        tableProperties.put(propertyName, CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT)
+        tableProperties.put(propertyName, CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB
+          .getDefaultValueString)
       }
     }
   }

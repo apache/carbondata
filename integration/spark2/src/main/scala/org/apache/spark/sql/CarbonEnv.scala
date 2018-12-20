@@ -100,7 +100,7 @@ class CarbonEnv {
         ThreadLocalSessionInfo.setConfigurationToCurrentThread(sparkSession
           .sessionState.newHadoopConf())
         val config = new CarbonSQLConf(sparkSession)
-        if (sparkSession.conf.getOption(CarbonCommonConstants.ENABLE_UNSAFE_SORT).isEmpty) {
+        if (sparkSession.conf.getOption(CarbonCommonConstants.ENABLE_UNSAFE_SORT.getName).isEmpty) {
           config.addDefaultCarbonParams()
         }
         // add session params after adding DefaultCarbonParams

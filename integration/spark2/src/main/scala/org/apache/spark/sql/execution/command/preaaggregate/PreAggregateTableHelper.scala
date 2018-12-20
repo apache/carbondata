@@ -100,7 +100,7 @@ case class PreAggregateTableHelper(
     tableProperties.put(CarbonCommonConstants.SORT_COLUMNS, neworder.mkString(","))
     tableProperties.put("sort_scope", parentTable.getTableInfo.getFactTable.
       getTableProperties.asScala.getOrElse("sort_scope", CarbonCommonConstants
-      .LOAD_SORT_SCOPE_DEFAULT))
+      .LOAD_SORT_SCOPE.getDefaultValueString))
     tableProperties
       .put(CarbonCommonConstants.TABLE_BLOCKSIZE, parentTable.getBlockSizeInMB.toString)
     tableProperties.put(CarbonCommonConstants.FLAT_FOLDER,

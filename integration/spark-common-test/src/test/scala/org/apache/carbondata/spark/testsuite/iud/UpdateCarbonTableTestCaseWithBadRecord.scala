@@ -64,6 +64,6 @@ class UpdateCarbonTableTestCaseWithBadRecord extends QueryTest with BeforeAndAft
 
   override def afterAll {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION , CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
+      .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
   }
 }

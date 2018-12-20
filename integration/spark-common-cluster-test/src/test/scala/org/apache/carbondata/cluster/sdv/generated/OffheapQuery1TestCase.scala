@@ -1042,7 +1042,7 @@ test("OffHeapQuery-001-TC_108", Include) {
   }
 
   val prop = CarbonProperties.getInstance()
-  val p1 = prop.getProperty("enable.unsafe.in.query.processing", CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION_DEFAULTVALUE)
+  val p1 = prop.getPropertyOrDefault(CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION)
 
   override protected def beforeAll() {
     // Adding new properties

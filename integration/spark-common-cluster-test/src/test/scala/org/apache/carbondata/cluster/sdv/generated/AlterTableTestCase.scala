@@ -1017,11 +1017,11 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   val prop = CarbonProperties.getInstance()
-  val p1 = prop.getProperty("carbon.horizontal.compaction.enable", CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE_DEFAULT)
-  val p2 = prop.getProperty("carbon.horizontal.update.compaction.threshold", CarbonCommonConstants.DEFAULT_UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION)
-  val p3 = prop.getProperty("carbon.horizontal.delete.compaction.threshold", CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION)
-  val p4 = prop.getProperty("carbon.compaction.level.threshold", CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
-  val p5 = prop.getProperty("carbon.enable.auto.load.merge", CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
+  val p1 = prop.getPropertyOrDefault(CarbonCommonConstants.CARBON_HORIZONTAL_COMPACTION_ENABLE)
+  val p2 = prop.getPropertyOrDefault(CarbonCommonConstants.UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION)
+  val p3 = prop.getPropertyOrDefault(CarbonCommonConstants.DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION)
+  val p4 = prop.getPropertyOrDefault(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD)
+  val p5 = prop.getPropertyOrDefault(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE)
   val p6 = prop.getProperty("carbon.bad.records.action", LoggerAction.FORCE.name())
 
   override protected def beforeAll() {

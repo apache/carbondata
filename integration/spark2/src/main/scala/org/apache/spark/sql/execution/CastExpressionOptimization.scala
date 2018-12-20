@@ -51,12 +51,10 @@ object CastExpressionOptimization {
         var parser: SimpleDateFormat = null
         if (dataType == TimestampType) {
           parser = new SimpleDateFormat(CarbonProperties.getInstance
-            .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+            .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))
         } else if (dataType == DateType) {
           parser = new SimpleDateFormat(CarbonProperties.getInstance
-            .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-              CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+            .getPropertyOrDefault(CarbonCommonConstants.CARBON_DATE_FORMAT))
           parser.setTimeZone(TimeZone.getTimeZone("GMT"))
         }
         try {

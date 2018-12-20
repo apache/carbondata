@@ -53,7 +53,7 @@ class DateDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
         x.printStackTrace()
         CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+          CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT.getDefaultValueString)
     }
   }
 
@@ -75,7 +75,7 @@ class DateDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
     sql("drop table timestampTyeNullData")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+        CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT.getDefaultValueString)
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")
   }
 

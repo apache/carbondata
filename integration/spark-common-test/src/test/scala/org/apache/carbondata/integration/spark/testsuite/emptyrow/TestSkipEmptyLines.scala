@@ -54,8 +54,7 @@ class TestSkipEmptyLines extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/emptylines.csv' into table skipEmptyRowCarbonTable")
     checkAnswer(sql("select * from skipEmptyRowCarbonTable"),
       Seq(Row("a",25),Row("b",22),Row("c",23)))
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE,
-      CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE_DEFAULT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE)
   }
 
   test("test carbonproperties with false") {
@@ -65,8 +64,7 @@ class TestSkipEmptyLines extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/emptylines.csv' into table skipEmptyRowCarbonTable")
     checkAnswer(sql("select * from skipEmptyRowCarbonTable"),
       Seq(Row("a",25),Row("b",22),Row("c",23),Row(null,null),Row(null,null),Row(null,null)))
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE,
-      CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE_DEFAULT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE)
   }
 
   test("test carbonproperties with false and load options true") {
@@ -77,8 +75,7 @@ class TestSkipEmptyLines extends QueryTest with BeforeAndAfterAll {
         s"OPTIONS('skip_empty_line'='true')")
     checkAnswer(sql("select * from skipEmptyRowCarbonTable"),
       Seq(Row("a",25),Row("b",22),Row("c",23)))
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE,
-      CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE_DEFAULT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE)
   }
 
   test("test carbonproperties with true and load options false") {
@@ -89,8 +86,7 @@ class TestSkipEmptyLines extends QueryTest with BeforeAndAfterAll {
         s"OPTIONS('skip_empty_line'='false')")
     checkAnswer(sql("select * from skipEmptyRowCarbonTable"),
       Seq(Row("a",25),Row("b",22),Row("c",23),Row(null,null),Row(null,null),Row(null,null)))
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE,
-      CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE_DEFAULT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE)
   }
 
   override def afterAll {

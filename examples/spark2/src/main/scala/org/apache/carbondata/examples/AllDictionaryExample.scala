@@ -75,8 +75,7 @@ object AllDictionaryExample {
            """).show()
 
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+      CarbonCommonConstants.CARBON_DATE_FORMAT)
 
     spark.sql("DROP TABLE IF EXISTS dictionary_table")
 

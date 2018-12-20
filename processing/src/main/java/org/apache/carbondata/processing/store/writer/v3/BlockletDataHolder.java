@@ -37,8 +37,7 @@ public class BlockletDataHolder {
   public BlockletDataHolder(ExecutorService fallbackpool, CarbonFactDataHandlerModel model) {
     encodedBlocklet = new EncodedBlocklet(fallbackpool, Boolean.parseBoolean(
         CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK,
-                CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK_DEFAULT)),
+            .getPropertyOrDefault(CarbonCommonConstants.LOCAL_DICTIONARY_DECODER_BASED_FALLBACK)),
         model.getColumnLocalDictGenMap());
   }
 

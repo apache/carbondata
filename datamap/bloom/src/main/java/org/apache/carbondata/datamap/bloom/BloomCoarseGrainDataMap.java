@@ -130,13 +130,11 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
       for (int i = 0; i < indexedColumn.size(); i++) {
         localCaches[i] = new ConcurrentHashMap<>();
         DataField dataField = new DataField(indexedColumn.get(i));
-        String dateFormat = CarbonProperties.getInstance().getProperty(
-            CarbonCommonConstants.CARBON_DATE_FORMAT,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+        String dateFormat = CarbonProperties.getInstance().getPropertyOrDefault(
+            CarbonCommonConstants.CARBON_DATE_FORMAT);
         dataField.setDateFormat(dateFormat);
-        String tsFormat = CarbonProperties.getInstance().getProperty(
-            CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+        String tsFormat = CarbonProperties.getInstance().getPropertyOrDefault(
+            CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT);
         dataField.setTimestampFormat(tsFormat);
         FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
             .createFieldEncoder(dataField, absoluteTableIdentifier, i, nullFormat, null, false,
@@ -305,14 +303,16 @@ public class BloomCoarseGrainDataMap extends CoarseGrainDataMap {
     if (null == expressionValue) {
       literalValue = null;
     } else if (le.getLiteralExpDataType() == DataTypes.DATE) {
-      DateFormat format = new SimpleDateFormat(CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+      DateFormat format = new SimpleDateFormat(CarbonCommonConstants.CARBON_DATE_FORMAT
+          .getDefaultValueString());
       // the below settings are set statically according to DateDirectDirectionaryGenerator
       format.setLenient(false);
       format.setTimeZone(TimeZone.getTimeZone("GMT"));
       literalValue = format.format(new Date((long) expressionValue / 1000));
     } else if (le.getLiteralExpDataType() == DataTypes.TIMESTAMP) {
       DateFormat format =
-          new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+          new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT
+              .getDefaultValueString());
       // the below settings are set statically according to TimeStampDirectDirectionaryGenerator
       format.setLenient(false);
       literalValue = format.format(new Date((long) expressionValue / 1000));

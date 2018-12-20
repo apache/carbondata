@@ -70,9 +70,8 @@ object CarbonMergeFilesRDD {
         readFileFooterFromCarbonDataFile).collect()
     } else {
       try {
-        if (CarbonProperties.getInstance().getProperty(
-          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
-          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT).toBoolean) {
+        if (CarbonProperties.getInstance().getPropertyOrDefault(
+          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT).toBoolean) {
           new CarbonMergeFilesRDD(
             sparkSession,
             carbonTable,
@@ -83,7 +82,7 @@ object CarbonMergeFilesRDD {
         }
       } catch {
         case _: Exception =>
-          if (CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT.toBoolean) {
+          if (CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT.getDefaultValueString.toBoolean) {
             new CarbonMergeFilesRDD(
               sparkSession,
               carbonTable,

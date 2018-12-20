@@ -249,13 +249,12 @@ class TestSortColumnsWithUnsafe extends QueryTest with BeforeAndAfterAll with Be
   override def afterAll = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION,
-        CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION_DEFAULTVALUE)
+        CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION.getDefaultValueString)
 
     dropTable
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-        CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+      .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
   }
 
   def dropTable = {
@@ -291,8 +290,9 @@ class TestSortColumnsWithUnsafe extends QueryTest with BeforeAndAfterAll with Be
   }
 
   def defaultLoadingProperties = {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT)
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT)
+      .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
   }
 }

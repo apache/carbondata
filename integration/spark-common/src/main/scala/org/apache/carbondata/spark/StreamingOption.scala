@@ -45,10 +45,12 @@ class StreamingOption(val userInputMap: Map[String, String]) {
       CarbonTablePath.getStreamingCheckpointDir(tablePath))
 
   lazy val timeStampFormat: String =
-    userInputMap.getOrElse("timestampformat", CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    userInputMap.getOrElse("timestampformat", CarbonCommonConstants
+      .CARBON_TIMESTAMP_FORMAT.getDefaultValueString)
 
   lazy val dateFormat: String =
-    userInputMap.getOrElse("dateformat", CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+    userInputMap.getOrElse("dateformat", CarbonCommonConstants
+      .CARBON_DATE_FORMAT.getDefaultValueString)
 
   lazy val rowParser: String =
     userInputMap.getOrElse(CarbonStreamParser.CARBON_STREAM_PARSER,
@@ -57,26 +59,22 @@ class StreamingOption(val userInputMap: Map[String, String]) {
   lazy val badRecordsPath: String =
     userInputMap
       .getOrElse("bad_record_path", CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-          CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL))
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_BADRECORDS_LOC))
 
   lazy val badRecordsAction: String =
     userInputMap
       .getOrElse("bad_records_action", CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-          CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT))
+        .getPropertyOrDefault(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION))
 
   lazy val badRecordsLogger: String =
     userInputMap
       .getOrElse("bad_records_logger_enable", CarbonProperties.getInstance()
-        .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE,
-          CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE_DEFAULT))
+        .getPropertyOrDefault(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE))
 
   lazy val isEmptyBadRecord: String =
     userInputMap
       .getOrElse("is_empty_bad_record", CarbonProperties.getInstance()
-        .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD,
-          CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT))
+        .getPropertyOrDefault(CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD))
 
   lazy val remainingOption: Map[String, String] = {
     // copy the user input map and remove the fix options

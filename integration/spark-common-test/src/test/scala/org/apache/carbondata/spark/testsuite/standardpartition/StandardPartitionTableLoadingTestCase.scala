@@ -357,8 +357,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     store.getIndexFiles
     assert(store.getIndexFiles.size() == 10)
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
-        CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT)
+      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT)
   }
 
   test("load static partition table for one static partition column with load syntax issue") {
@@ -491,8 +490,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
       assert(scanRdd.getPartitions.length < 10)
       assertResult(100)(dataFrame.count)
     } finally {
-      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION ,
-        CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT)
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION)
     }
   }
 
@@ -525,10 +523,8 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
 
   override def afterAll = {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION ,
-      CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT)
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_TASK_DISTRIBUTION)
     dropTable
     if (executorService != null && !executorService.isShutdown) {
       executorService.shutdownNow()

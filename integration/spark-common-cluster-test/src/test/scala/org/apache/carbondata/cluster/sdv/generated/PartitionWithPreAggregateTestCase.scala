@@ -263,10 +263,8 @@ class PartitionWithPreAggregateTestCase extends QueryTest with BeforeAndAfterAll
 
   override def afterAll {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT)
     sql("drop table if exists uniqdata")
     sql("drop table if exists partition_table")
     sql(s"""drop table if exists uniqdata1""")

@@ -51,9 +51,8 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
   private val dateFormatStr: String = "yyyy/MM/dd"
   private val totalLineNum = 2000
 
-  private val originDateStatus: String = CarbonProperties.getInstance().getProperty(
-    CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-    CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+  private val originDateStatus: String = CarbonProperties.getInstance().getPropertyOrDefault(
+    CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
 
 
   override def beforeAll(): Unit = {
@@ -74,8 +73,7 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
     df = null
     // sort column bounds work only with local_sort
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-        CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+      .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
   }
 
   /**
@@ -125,8 +123,8 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
   }
 
   test("load data with sort column bounds: safe mode") {
-    val originStatus = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.ENABLE_UNSAFE_SORT, CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
+    val originStatus = CarbonProperties.getInstance().getPropertyOrDefault(
+      CarbonCommonConstants.ENABLE_UNSAFE_SORT)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false")
     sql(s"DROP TABLE IF EXISTS $tableName")
 
@@ -147,8 +145,8 @@ class TestLoadDataWithSortColumnBounds extends QueryTest with BeforeAndAfterAll 
   }
 
   test("load data with sort column bounds: unsafe mode") {
-    val originStatus = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.ENABLE_UNSAFE_SORT, CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
+    val originStatus = CarbonProperties.getInstance().getPropertyOrDefault(
+      CarbonCommonConstants.ENABLE_UNSAFE_SORT)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "true")
     sql(s"DROP TABLE IF EXISTS $tableName")
 

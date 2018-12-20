@@ -26,7 +26,7 @@ public class SortScopeOptions {
 
   public static SortScope getSortScope(String sortScope) {
     if (sortScope == null) {
-      sortScope = CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT;
+      sortScope = CarbonCommonConstants.LOAD_SORT_SCOPE.getDefaultValueString();
     }
     switch (sortScope.toUpperCase()) {
       case "BATCH_SORT":

@@ -138,9 +138,7 @@ class ProfilerSuite extends QueryTest with BeforeAndAfterAll {
     SparkEnv.get.rpcEnv.stop(setupEndpointRef)
     sqlContext.sparkContext.listenerBus.removeListener(listener)
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
-      CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT
-    )
+      CarbonCommonConstants.ENABLE_QUERY_STATISTICS)
     Profiler.setIsEnable(false)
     sql("DROP TABLE IF EXISTS mobile")
     sql("DROP TABLE IF EXISTS emp")

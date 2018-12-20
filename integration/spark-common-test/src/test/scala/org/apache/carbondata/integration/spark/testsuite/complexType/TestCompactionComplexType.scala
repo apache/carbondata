@@ -31,8 +31,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
 
   private val compactionThreshold = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
-      CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
+    .getPropertyOrDefault(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD)
 
   override protected def beforeAll(): Unit = {
     CarbonProperties.getInstance()

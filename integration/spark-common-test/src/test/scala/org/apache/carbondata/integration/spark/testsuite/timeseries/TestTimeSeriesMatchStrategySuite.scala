@@ -35,12 +35,10 @@ class TestTimeSeriesMatchStrategySuite extends QueryTest with BeforeAndAfterAll 
 
   override def beforeAll: Unit = {
     timestampFormat = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      .getPropertyOrDefault(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
     SparkUtil4Test.createTaskMockUp(sqlContext)
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
 
   }
 

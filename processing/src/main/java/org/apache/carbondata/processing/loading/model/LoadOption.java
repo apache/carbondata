@@ -74,13 +74,11 @@ public class LoadOption {
         Maps.getOrDefault(
             options,
             "bad_records_logger_enable",
-            CarbonProperties.getInstance().getProperty(
-                CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE,
-                CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE_DEFAULT)));
+            CarbonProperties.getInstance().getPropertyOrDefault(
+                CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE)));
 
-    String badRecordActionValue = CarbonProperties.getInstance().getProperty(
-        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT);
+    String badRecordActionValue = CarbonProperties.getInstance().getPropertyOrDefault(
+        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION);
 
     optionsFinal.put(
         "bad_records_action",
@@ -96,9 +94,8 @@ public class LoadOption {
         Maps.getOrDefault(
             options,
             "is_empty_data_bad_record",
-            CarbonProperties.getInstance().getProperty(
-                CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD,
-                CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT)));
+            CarbonProperties.getInstance().getPropertyOrDefault(
+                CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD)));
 
     optionsFinal.put(
         "skip_empty_line",
@@ -129,18 +126,16 @@ public class LoadOption {
         Maps.getOrDefault(
             options,
             "dateformat",
-            CarbonProperties.getInstance().getProperty(
-                CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT,
-                CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT_DEFAULT)));
+            CarbonProperties.getInstance().getPropertyOrDefault(
+                CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT)));
 
     optionsFinal.put(
         "timestampformat",
         Maps.getOrDefault(
             options,
             "timestampformat",
-            CarbonProperties.getInstance().getProperty(
-                CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT,
-                CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT_DEFAULT)));
+            CarbonProperties.getInstance().getPropertyOrDefault(
+                CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT)));
 
     optionsFinal.put(
         "global_sort_partitions",
@@ -160,16 +155,14 @@ public class LoadOption {
             "batch_sort_size_inmb",
             CarbonProperties.getInstance().getProperty(
                 CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB,
-                CarbonProperties.getInstance().getProperty(
-                    CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
-                    CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT))));
+                CarbonProperties.getInstance().getPropertyOrDefault(
+                    CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB))));
 
     String useOnePass = Maps.getOrDefault(
         options,
         "single_pass",
-        CarbonProperties.getInstance().getProperty(
-            CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS,
-            CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS_DEFAULT)).trim().toLowerCase();
+        CarbonProperties.getInstance().getPropertyOrDefault(
+            CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS)).trim().toLowerCase();
 
     boolean singlePass;
 
@@ -188,11 +181,11 @@ public class LoadOption {
     }
 
     optionsFinal.put("single_pass", String.valueOf(singlePass));
-    optionsFinal.put("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
+    optionsFinal.put("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE.getDefaultValueString());
     optionsFinal.put("sort_column_bounds", Maps.getOrDefault(options, "sort_column_bounds", ""));
-    optionsFinal.put(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
-        Maps.getOrDefault(options, CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB,
-            CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT));
+    optionsFinal.put(CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB.getName(),
+        Maps.getOrDefault(options, CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB.getName(),
+            CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB.getDefaultValueString()));
     return optionsFinal;
   }
 

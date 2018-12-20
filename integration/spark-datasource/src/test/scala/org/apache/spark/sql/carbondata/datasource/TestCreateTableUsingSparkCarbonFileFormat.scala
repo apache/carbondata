@@ -51,8 +51,7 @@ class TestCreateTableUsingSparkCarbonFileFormat extends FunSuite with BeforeAndA
 
   override def afterAll(): Unit = {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT,
-        CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT_DEFAULT)
+      .addProperty(CarbonCommonConstants.CARBON_MINMAX_ALLOWED_BYTE_COUNT)
     spark.sql("DROP TABLE IF EXISTS sdkOutputTable")
   }
 

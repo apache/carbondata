@@ -64,8 +64,7 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable_hive")
     } catch {
       case x: Throwable => CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
     }
   }
 
@@ -165,8 +164,7 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
       sql("select col from test_timestamp_hive where col not between '2014-01-01 18:00:00' and " +
           "'0'"))
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR,
-        CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR_DEFAULT)
+      .addProperty(CarbonCommonConstants.CARBON_PUSH_ROW_FILTERS_FOR_VECTOR)
   }
 
   override def afterAll {
@@ -175,8 +173,7 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
     sql("drop table if exists test_timestamp")
     sql("drop table if exists test_timestamp_hive")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")
   }
 }

@@ -233,9 +233,8 @@ class CarbonScanRDD[T: ClassTag](
       val carbonDistribution = if (directFill) {
         CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_MERGE_FILES
       } else {
-        CarbonProperties.getInstance().getProperty(
-          CarbonCommonConstants.CARBON_TASK_DISTRIBUTION,
-          CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_DEFAULT)
+        CarbonProperties.getInstance().getPropertyOrDefault(
+          CarbonCommonConstants.CARBON_TASK_DISTRIBUTION)
       }
       // If bucketing is enabled on table then partitions should be grouped based on buckets.
       if (bucketedTable != null) {

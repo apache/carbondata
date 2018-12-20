@@ -165,8 +165,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
 
     assert(getIndexfileCount("carbon_load4") == 5, "Something wrong in batch sort")
     CarbonProperties.getInstance().
-      addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-        CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+      addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB, "0")
   }
 
@@ -186,8 +185,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
 
     assert(getIndexfileCount("carbon_load6") == 1, "Something wrong in batch sort")
     CarbonProperties.getInstance().
-      addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-        CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+      addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
   }
 
   def getIndexfileCount(tableName: String, segmentNo: String = "0"): Int = {
@@ -205,8 +203,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
     dropTable
     new File(filePath).delete()
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-        CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+      .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
   }
 }
 

@@ -51,11 +51,12 @@ class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
     assert(new File(originDataPath).exists())
     sql("DROP TABLE IF EXISTS source")
     if (System
-          .getProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE,
-            CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT).equalsIgnoreCase("true") ||
+          .getProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE.getName,
+            CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE
+              .getDefaultValueString).equalsIgnoreCase("true") ||
         CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE,
-            CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT).equalsIgnoreCase("true")) {
+          .getPropertyOrDefault(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE)
+          .equalsIgnoreCase("true")) {
 
       intercept[Exception] {
         // create external table with existing files

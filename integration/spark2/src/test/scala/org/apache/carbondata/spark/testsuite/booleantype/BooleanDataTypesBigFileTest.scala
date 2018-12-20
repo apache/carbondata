@@ -676,8 +676,7 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
 
   def defaultConf(): Unit = {
     CarbonProperties.getInstance().
-      addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
-        CarbonCommonConstants.ENABLE_DATA_LOADING_STATISTICS_DEFAULT)
+      addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE)
   }
 }
 

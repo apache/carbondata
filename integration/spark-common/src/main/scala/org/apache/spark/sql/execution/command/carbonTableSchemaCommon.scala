@@ -912,10 +912,10 @@ class TableNewProcessor(cm: TableModel) {
       tableName: String,
       tableId: String,
       databaseName: String): String = {
-    val badRecordsPath = tablePropertiesMap.asScala
-      .getOrElse("bad_record_path", CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL)
+    val badRecordsPath = tablePropertiesMap.asScala.getOrElse("bad_record_path",
+      CarbonCommonConstants.CARBON_BADRECORDS_LOC.getDefaultValueString)
     if (badRecordsPath == null || badRecordsPath.isEmpty) {
-      CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL
+      CarbonCommonConstants.CARBON_BADRECORDS_LOC.getDefaultValueString
     } else {
       badRecordsPath + CarbonCommonConstants.FILE_SEPARATOR + databaseName +
       CarbonCommonConstants.FILE_SEPARATOR + s"${tableName}_$tableId"

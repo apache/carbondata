@@ -38,11 +38,9 @@ public class CarbonTimeStatisticsFactory {
 
   private static void updateTimeStatisticsUtilStatus() {
     loadStatisticsInstanceType = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_DATA_LOADING_STATISTICS,
-            CarbonCommonConstants.ENABLE_DATA_LOADING_STATISTICS_DEFAULT);
+        .getPropertyOrDefault(CarbonCommonConstants.ENABLE_DATA_LOADING_STATISTICS);
     driverRecorderType = CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
-                    CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT);
+            .getPropertyOrDefault(CarbonCommonConstants.ENABLE_QUERY_STATISTICS);
   }
 
   private static LoadStatistics genLoadStatisticsInstance() {
@@ -71,8 +69,7 @@ public class CarbonTimeStatisticsFactory {
 
   public static QueryStatisticsRecorder createExecutorRecorder(String queryId) {
     String queryStatisticsRecorderType = CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
-                    CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT);
+            .getPropertyOrDefault(CarbonCommonConstants.ENABLE_QUERY_STATISTICS);
     if (queryStatisticsRecorderType.equalsIgnoreCase("true")) {
       return new QueryStatisticsRecorderImpl(queryId);
     } else {

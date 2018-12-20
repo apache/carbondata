@@ -50,9 +50,9 @@ class RowStreamParserImp extends CarbonStreamParser {
     this.encoder = RowEncoder.apply(this.structType).resolveAndBind()
 
     this.timeStampFormat = new SimpleDateFormat(
-      this.configuration.get(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))
+      this.configuration.get(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT.getName))
     this.dateFormat = new SimpleDateFormat(
-      this.configuration.get(CarbonCommonConstants.CARBON_DATE_FORMAT))
+      this.configuration.get(CarbonCommonConstants.CARBON_DATE_FORMAT.getName))
     this.complexDelimiterLevel1 = this.configuration.get("carbon_complex_delimiter_level_1")
     this.complexDelimiterLevel2 = this.configuration.get("carbon_complex_delimiter_level_2")
     this.complexDelimiterLevel3 = this.configuration.get("carbon_complex_delimiter_level_3")
