@@ -35,7 +35,7 @@ This tutorial provides a quick introduction to using CarbonData. To follow along
 
 ## Integration
 
-CarbonData can be integrated with Spark and Presto Execution Engines. The below documentation guides on Installing and Configuring with these execution engines.
+CarbonData can be integrated with Spark,Presto and Hive Execution Engines. The below documentation guides on Installing and Configuring with these execution engines.
 
 ### Spark
 
@@ -50,6 +50,9 @@ CarbonData can be integrated with Spark and Presto Execution Engines. The below 
 
 ### Presto
 [Installing and Configuring CarbonData on Presto](#installing-and-configuring-carbondata-on-presto)
+
+### Hive
+[Installing and Configuring CarbonData on Hive](https://github.com/apache/carbondata/blob/master/docs/hive-guide.md)
 
 
 
@@ -473,3 +476,4 @@ select * from carbon_table;
 
 **Note :** Create Tables and data loads should be done before executing queries as we can not create carbon table from this interface.
 
+```
