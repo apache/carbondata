@@ -70,8 +70,7 @@ CarbonData is built using Apache Maven, to [build CarbonData](https://github.com
 ##  Integrations
 * [Hive](https://github.com/apache/carbondata/blob/master/docs/hive-guide.md)
 * [Presto](https://github.com/apache/carbondata/tree/master/integration/presto)
-* [Flink]( )
-* [Alluxio]()
+
 ## Other Technical Material
 * [Apache CarbonData meetup material](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=66850609)
 * [Use Case Articles](https://cwiki.apache.org/confluence/display/CARBONDATA/CarbonData+Articles)
