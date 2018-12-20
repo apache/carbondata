@@ -24,9 +24,6 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-
-// scalastyle:off println
-
 object ExampleUtils {
 
   def currentPath: String = new File(this.getClass.getResource("/").getPath + "../../")
@@ -113,5 +110,3 @@ object ExampleUtils {
     spark.sql(s"DROP TABLE IF EXISTS $tableName")
   }
 }
-// scalastyle:on println
-

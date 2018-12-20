@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.hiveexample
+package org.apache.carbondata.examples
 
 import java.io.File
 import java.sql.{DriverManager, ResultSet, Statement}
@@ -22,6 +22,9 @@ import java.sql.{DriverManager, ResultSet, Statement}
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.examples.util.ExampleUtils
 import org.apache.carbondata.hive.server.HiveEmbeddedServer2
 
 // scalastyle:off println
@@ -30,44 +33,38 @@ object HiveExample {
   private val driverName: String = "org.apache.hive.jdbc.HiveDriver"
 
   def main(args: Array[String]) {
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
-    val store = s"$rootPath/integration/hive/target/store"
-    val warehouse = s"$rootPath/integration/hive/target/warehouse"
-    val metaStore_Db = s"$rootPath/integration/hive/target/carbon_metaStore_db"
+    val carbonSession = ExampleUtils.createCarbonSession("HiveExample")
+    exampleBody(carbonSession, CarbonProperties.getStorePath
+      + CarbonCommonConstants.FILE_SEPARATOR
+      + CarbonCommonConstants.DATABASE_DEFAULT_NAME)
+    carbonSession.close()
+
+    System.exit(0)
+  }
+
+  def exampleBody(sparkSession: SparkSession, store: String): Unit = {
     val logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    var resultId = ""
-    var resultName = ""
-    var resultSalary = ""
+    val rootPath = new File(this.getClass.getResource("/").getPath
+      + "../../../..").getCanonicalPath
 
+    sparkSession.sql("""DROP TABLE IF EXISTS HIVE_CARBON_EXAMPLE""".stripMargin)
 
-    import org.apache.spark.sql.CarbonSession._
-
-    val carbonSession = SparkSession
-      .builder()
-      .master("local")
-      .appName("HiveExample")
-      .config("carbonSession.sql.warehouse.dir", warehouse).enableHiveSupport()
-      .getOrCreateCarbonSession(
-        store, metaStore_Db)
-
-    carbonSession.sql("""DROP TABLE IF EXISTS HIVE_CARBON_EXAMPLE""".stripMargin)
-
-    carbonSession
-      .sql(
-        """CREATE TABLE HIVE_CARBON_EXAMPLE (ID int,NAME string,SALARY double) STORED BY
-          |'CARBONDATA' """
-          .stripMargin)
-
-    carbonSession.sql(
+    sparkSession.sql(
       s"""
-           LOAD DATA LOCAL INPATH '$rootPath/integration/hive/src/main/resources/data.csv' INTO
-           TABLE
-         HIVE_CARBON_EXAMPLE
-           """)
-    carbonSession.sql("SELECT * FROM HIVE_CARBON_EXAMPLE").show()
+         | CREATE TABLE HIVE_CARBON_EXAMPLE
+         | (ID int,NAME string,SALARY double)
+         | STORED BY 'carbondata'
+       """.stripMargin)
 
-    carbonSession.stop()
+    sparkSession.sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$rootPath/examples/spark2/src/main/resources/sample.csv'
+         | INTO TABLE HIVE_CARBON_EXAMPLE
+       """.stripMargin)
+
+    sparkSession.sql("SELECT * FROM HIVE_CARBON_EXAMPLE").show()
+
+    sparkSession.stop()
 
     try {
       Class.forName(driverName)
@@ -85,25 +82,35 @@ object HiveExample {
 
     logger.info(s"============HIVE CLI IS STARTED ON PORT $port ==============")
 
-    statement.execute("CREATE TABLE IF NOT EXISTS " + "HIVE_CARBON_EXAMPLE " +
-                      " (ID int, NAME string,SALARY double)")
-    statement
-      .execute(
-        "ALTER TABLE HIVE_CARBON_EXAMPLE SET FILEFORMAT INPUTFORMAT \"org.apache.carbondata." +
-        "hive.MapredCarbonInputFormat\"OUTPUTFORMAT \"org.apache.carbondata.hive." +
-        "MapredCarbonOutputFormat\"SERDE \"org.apache.carbondata.hive." +
-        "CarbonHiveSerDe\" ")
+    statement.execute(
+      s"""
+         | CREATE TABLE IF NOT EXISTS HIVE_CARBON_EXAMPLE
+         | (ID int, NAME string,SALARY double)
+         | ROW FORMAT SERDE 'org.apache.carbondata.hive.CarbonHiveSerDe'
+         | WITH SERDEPROPERTIES ('mapreduce.input.carboninputformat.databaseName'='default',
+         | 'mapreduce.input.carboninputformat.tableName'='HIVE_CARBON_EXAMPLE')
+       """.stripMargin)
+
+    statement.execute(
+      s"""
+         | ALTER TABLE HIVE_CARBON_EXAMPLE
+         | SET FILEFORMAT
+         | INPUTFORMAT \"org.apache.carbondata.hive.MapredCarbonInputFormat\"
+         | OUTPUTFORMAT \"org.apache.carbondata.hive.MapredCarbonOutputFormat\"
+         | SERDE \"org.apache.carbondata.hive.CarbonHiveSerDe\"
+       """.stripMargin)
 
     statement
       .execute(
         "ALTER TABLE HIVE_CARBON_EXAMPLE SET LOCATION " +
-        s"'file:///$store/hive_carbon_example' ")
+          s"'file:///$store/hive_carbon_example' ")
 
-    val sql = "SELECT * FROM HIVE_CARBON_EXAMPLE"
-
-    val resultSet: ResultSet = statement.executeQuery(sql)
+    val resultSet: ResultSet = statement.executeQuery("SELECT * FROM HIVE_CARBON_EXAMPLE")
 
     var rowsFetched = 0
+    var resultId = ""
+    var resultName = ""
+    var resultSalary = ""
 
     while (resultSet.next) {
       if (rowsFetched == 0) {
@@ -130,6 +137,7 @@ object HiveExample {
       rowsFetched = rowsFetched + 1
     }
     println(s"******Total Number Of Rows Fetched ****** $rowsFetched")
+    assert(rowsFetched == 2)
 
     logger.info("Fetching the Individual Columns ")
 
@@ -158,8 +166,9 @@ object HiveExample {
       }
       individualColRowsFetched = individualColRowsFetched + 1
     }
-    println(" ********** Total Rows Fetched When Quering The Individual Column **********" +
-            s"$individualColRowsFetched")
+    println(" ********** Total Rows Fetched When Quering The Individual Columns **********" +
+      s"$individualColRowsFetched")
+    assert(individualColRowsFetched == 2)
 
     logger.info("Fetching the Out Of Order Columns ")
 
@@ -191,7 +200,10 @@ object HiveExample {
       }
       outOfOrderColFetched = outOfOrderColFetched + 1
     }
+    println(" ********** Total Rows Fetched When Quering The Out Of Order Columns **********" +
+      s"$outOfOrderColFetched")
+    assert(outOfOrderColFetched == 2)
+
     hiveEmbeddedServer2.stop()
   }
-
 }
