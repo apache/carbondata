@@ -79,7 +79,7 @@ The store location specified while creating carbon session is used by the Carbon
 Try creating ``carbonsession`` with ``storepath`` specified in the following manner :
 
 ```
-val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession(<store_path>)
+val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession(<carbon_store_path>)
 ```
 Example:
 

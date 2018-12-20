@@ -157,22 +157,22 @@ CarbonData DDL statements are documented here,which includes:
      * GLOBAL_SORT: It increases the query performance, especially high concurrent point query.
        And if you care about loading resources isolation strictly, because the system uses the spark GroupBy to sort data, the resource can be controlled by spark. 
 
-   - #### Example:
+ ### Example:
 
-     ```
-     CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
-       productNumber INT,
-       productName STRING,
-       storeCity STRING,
-       storeProvince STRING,
-       productCategory STRING,
-       productBatch STRING,
-       saleQuantity INT,
-       revenue INT)
-     STORED AS carbondata
-     TBLPROPERTIES ('SORT_COLUMNS'='productName,storeCity',
-                    'SORT_SCOPE'='NO_SORT')
-     ```
+   ```
+   CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
+     productNumber INT,
+     productName STRING,
+     storeCity STRING,
+     storeProvince STRING,
+     productCategory STRING,
+     productBatch STRING,
+     saleQuantity INT,
+     revenue INT)
+   STORED AS carbondata
+   TBLPROPERTIES ('SORT_COLUMNS'='productName,storeCity',
+                  'SORT_SCOPE'='NO_SORT')
+   ```
 
    **NOTE:** CarbonData also supports "using carbondata". Find example code at [SparkSessionExample](https://github.com/apache/carbondata/blob/master/examples/spark2/src/main/scala/org/apache/carbondata/examples/SparkSessionExample.scala) in the CarbonData repo.
 
