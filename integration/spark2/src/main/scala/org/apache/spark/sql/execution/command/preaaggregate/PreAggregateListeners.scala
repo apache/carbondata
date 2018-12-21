@@ -349,7 +349,8 @@ object CompactionProcessMetaListener extends OperationEventListener {
           TableIdentifier(childTableName, Some(childDatabaseName)),
           childDataFrame,
           false,
-          sparkSession)
+          sparkSession,
+          mutable.Map.empty[String, String])
         val uuid = Option(operationContext.getProperty("uuid")).
           getOrElse(UUID.randomUUID()).toString
         operationContext.setProperty("uuid", uuid)
@@ -377,7 +378,8 @@ object CompactionProcessMetaListener extends OperationEventListener {
         TableIdentifier(childTableName, Some(childDatabaseName)),
         childDataFrame,
         false,
-        sparkSession)
+        sparkSession,
+        mutable.Map.empty[String, String])
       val uuid = Option(operationContext.getProperty("uuid")).getOrElse(UUID.randomUUID()).toString
       loadCommand.processMetadata(sparkSession)
       operationContext.setProperty(table.getTableName + "_Compaction", loadCommand)
@@ -453,6 +455,7 @@ object LoadProcessMetaListener extends OperationEventListener {
             childDataFrame,
             isOverwrite,
             sparkSession,
+            tableEvent.getOptions.asScala,
             timeseriesParentTableName = childSelectQuery._2)
           operationContext.setProperty("uuid", uuid)
           loadCommand.operationContext.setProperty("uuid", uuid)

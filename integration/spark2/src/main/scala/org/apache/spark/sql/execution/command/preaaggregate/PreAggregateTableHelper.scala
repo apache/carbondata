@@ -275,7 +275,8 @@ case class PreAggregateTableHelper(
       tableIdentifier,
       dataFrame,
       isOverwrite = false,
-      sparkSession = sparkSession)
+      sparkSession = sparkSession,
+      mutable.Map.empty[String, String])
     loadCommand.processMetadata(sparkSession)
     Seq.empty
   }

@@ -25,7 +25,7 @@ import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
 
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException
-import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonCommonConstantsInternal}
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonCommonConstantsInternal, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, SessionParams}
 
 case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
@@ -84,10 +84,7 @@ case class CarbonSetCommand(command: SetCommand)
 object CarbonSetCommand {
   def validateAndSetValue(sessionParams: SessionParams, key: String, value: String): Unit = {
     val isCarbonProperty: Boolean = CarbonProperties.getInstance().isCarbonProperty(key)
-    if (isCarbonProperty) {
-      sessionParams.addProperty(key, value)
-    }
-    else if (key.startsWith(CarbonCommonConstants.CARBON_INPUT_SEGMENTS)) {
+    if (key.startsWith(CarbonCommonConstants.CARBON_INPUT_SEGMENTS)) {
       if (key.split("\\.").length == 5) {
         sessionParams.addProperty(key.toLowerCase(), value)
       }
@@ -117,6 +114,18 @@ object CarbonSetCommand {
           "property should be in \" carbon.load.datamaps.parallel.<database_name>" +
           ".<table_name>=<true/false> \" format.")
       }
+    } else if (key.startsWith(CarbonLoadOptionConstants.CARBON_TABLE_LOAD_SORT_SCOPE)) {
+      if (key.split("\\.").length == 7) {
+        sessionParams.addProperty(key.toLowerCase(), value)
+      }
+      else {
+        throw new MalformedCarbonCommandException(
+          "property should be in \" carbon.table.load.sort.scope.<database_name>" +
+          ".<table_name>=<sort_sope> \" format.")
+      }
+    }
+    else if (isCarbonProperty) {
+      sessionParams.addProperty(key, value)
     }
   }
 
