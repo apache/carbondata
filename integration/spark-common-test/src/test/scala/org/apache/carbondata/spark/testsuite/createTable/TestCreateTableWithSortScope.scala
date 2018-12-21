@@ -32,25 +32,6 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS tableWithBatchSort")
     sql("DROP TABLE IF EXISTS tableWithNoSort")
     sql("DROP TABLE IF EXISTS tableWithUnsupportSortScope")
-    sql("DROP TABLE IF EXISTS tableLoadWithSortScope")
-  }
-
-  test("Do not support load data with specify sort scope") {
-    sql(
-    s"""
-       | CREATE TABLE tableLoadWithSortScope(
-       | intField INT,
-       | stringField STRING
-       | )
-       | STORED BY 'carbondata'
-       | TBLPROPERTIES('SORT_COLUMNS'='stringField')
-       """.stripMargin)
-
-    val exception_loaddata_sortscope: Exception = intercept[Exception] {
-      sql("LOAD DATA LOCAL INPATH '/path/to/data' INTO TABLE tableLoadWithSortScope " +
-          "OPTIONS('SORT_SCOPE'='GLOBAL_SORT')")
-    }
-    assert(exception_loaddata_sortscope.getMessage.contains("Error: Invalid option(s): sort_scope"))
   }
 
   test("test create table with sort scope in normal cases") {

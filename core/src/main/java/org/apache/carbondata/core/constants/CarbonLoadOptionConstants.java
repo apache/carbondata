@@ -81,6 +81,12 @@ public final class CarbonLoadOptionConstants {
       "carbon.options.sort.scope";
 
   /**
+   * option to specify table level sort_scope
+   */
+  @CarbonProperty(dynamicConfigurable = true)
+  public static final String CARBON_TABLE_LOAD_SORT_SCOPE = "carbon.table.load.sort.scope.";
+
+  /**
    * option to specify the batch sort size inmb
    */
   @CarbonProperty(dynamicConfigurable = true)

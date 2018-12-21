@@ -95,9 +95,9 @@ case class CarbonAlterTableCompactionCommand(
       // If set to true then only loadCommands for compaction will be created.
       val loadMetadataEvent =
         if (alterTableModel.compactionType.equalsIgnoreCase(CompactionType.STREAMING.name())) {
-          new LoadMetadataEvent(table, false)
+          new LoadMetadataEvent(table, false, Map.empty[String, String].asJava)
         } else {
-          new LoadMetadataEvent(table, true)
+          new LoadMetadataEvent(table, true, Map.empty[String, String].asJava)
         }
       OperationListenerBus.getInstance().fireEvent(loadMetadataEvent, operationContext)
     }

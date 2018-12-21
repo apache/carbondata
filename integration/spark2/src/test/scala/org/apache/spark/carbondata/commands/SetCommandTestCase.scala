@@ -128,6 +128,34 @@ class SetCommandTestCase extends Spark2QueryTest with BeforeAndAfterAll{
         sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS}"))
     }
   }
+
+  test(s"test set carbon.table.load.sort.scope for valid options") {
+    checkAnswer(
+      sql(s"set carbon.table.load.sort.scope.db.tbl=no_sort"),
+      sql(s"set carbon.table.load.sort.scope.db.tbl"))
+
+    checkAnswer(
+      sql(s"set carbon.table.load.sort.scope.db.tbl=batch_sort"),
+      sql(s"set carbon.table.load.sort.scope.db.tbl"))
+
+    checkAnswer(
+      sql(s"set carbon.table.load.sort.scope.db.tbl=local_sort"),
+      sql(s"set carbon.table.load.sort.scope.db.tbl"))
+
+    checkAnswer(
+      sql(s"set carbon.table.load.sort.scope.db.tbl=global_sort"),
+      sql(s"set carbon.table.load.sort.scope.db.tbl"))
+  }
+
+  test(s"test set carbon.table.load.sort.scope for invalid options")
+  {
+    intercept[InvalidConfigurationException] {
+      checkAnswer(
+        sql(s"set carbon.table.load.sort.scope.db.tbl=fake_sort"),
+        sql(s"set carbon.table.load.sort.scope.db.tbl"))
+    }
+  }
+
   override def afterAll {
     sqlContext.sparkSession.catalog.clearCache()
     sql("reset")
