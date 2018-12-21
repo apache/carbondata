@@ -597,6 +597,10 @@ public final class CarbonUtil {
    */
   public static String delimiterConverter(String delimiter) {
     switch (delimiter) {
+      case "\\001":
+      case "\\002":
+      case "\\003":
+      case "\\004":
       case "|":
       case "*":
       case ".":

@@ -311,17 +311,12 @@ public final class CarbonDataProcessorUtil {
 
   // TODO: need to simplify it. Not required create string first.
   public static Map<String, GenericDataType> getComplexTypesMap(DataField[] dataFields,
-      CarbonDataLoadConfiguration configuration) {
+      String nullFormat) {
     String complexTypeString = getComplexTypeString(dataFields);
 
     if (null == complexTypeString || complexTypeString.equals("")) {
       return new LinkedHashMap<>();
     }
-
-    String nullFormat =
-        configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
-            .toString();
-
     Map<String, GenericDataType> complexTypesMap = new LinkedHashMap<String, GenericDataType>();
     String[] hierarchies = complexTypeString.split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
     for (int i = 0; i < hierarchies.length; i++) {

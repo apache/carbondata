@@ -132,7 +132,7 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
       .config("spark.executor.heartbeatInterval", "600s")
       .config("carbon.enable.vector.reader","false")
       .getOrCreateCarbonSession(storeLocation, metastoredb)
-    val catalog = CarbonEnv.getInstance(spark).carbonMetastore
+    val catalog = CarbonEnv.getInstance(spark).carbonMetaStore
     extComplexRelation = catalog
       .lookupRelation(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
         "extComplextypes")(spark)
@@ -165,8 +165,8 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
     carbonLoadModel.setFactFilePath(filePath)
     carbonLoadModel.setCsvHeader(header)
     carbonLoadModel.setCsvDelimiter(csvDelimiter)
-    carbonLoadModel.setComplexDelimiterLevel1("$")
-    carbonLoadModel.setComplexDelimiterLevel2(":")
+    carbonLoadModel.setComplexDelimiter("$")
+    carbonLoadModel.setComplexDelimiter(":")
     carbonLoadModel.setColDictFilePath(extColFilePath)
     carbonLoadModel.setQuoteChar("\"");
     carbonLoadModel.setSerializationNullFormat(

@@ -195,6 +195,18 @@ release the memory and destroy JVM.
 
 ```
     /**
+      * sets the list of columns that needs to be in sorted order
+      *
+      * @param argc argc argument counter, the number of projection column
+      * @param argv argv is a string array of columns that needs to be sorted.
+      *                  If it is null or by default all dimensions are selected for sorting
+      *                  If it is empty array, no columns are sorted
+      */
+    void sortBy(int argc, char *argv[]);
+```
+
+```
+    /**
      * configure the schema with json style schema
      *
      * @param jsonSchema json style schema
@@ -212,6 +224,119 @@ release the memory and destroy JVM.
     * @return CarbonWriterBuilder object
     */
     void withHadoopConf(char *key, char *value);
+```
+
+```
+ /**
+     *  To support the table properties for writer
+     *
+     * @param key properties key
+     * @param value properties value
+     */
+    void withTableProperty(char *key, char *value);
+```
+
+```
+    /**
+     * To support the load options for C++ sdk writer
+     *
+     * @param options key,value pair of load options.
+     * supported keys values are
+     * a. bad_records_logger_enable -- true (write into separate logs), false
+     * b. bad_records_action -- FAIL, FORCE, IGNORE, REDIRECT
+     * c. bad_record_path -- path
+     * d. dateformat -- same as JAVA SimpleDateFormat
+     * e. timestampformat -- same as JAVA SimpleDateFormat
+     * f. complex_delimiter_level_1 -- value to Split the complexTypeData
+     * g. complex_delimiter_level_2 -- value to Split the nested complexTypeData
+     * h. quotechar
+     * i. escapechar
+     *
+     * Default values are as follows.
+     *
+     * a. bad_records_logger_enable -- "false"
+     * b. bad_records_action -- "FAIL"
+     * c. bad_record_path -- ""
+     * d. dateformat -- "" , uses from carbon.properties file
+     * e. timestampformat -- "", uses from carbon.properties file
+     * f. complex_delimiter_level_1 -- "$"
+     * g. complex_delimiter_level_2 -- ":"
+     * h. quotechar -- "\""
+     * i. escapechar -- "\\"
+     *
+     * @return updated CarbonWriterBuilder
+     */
+    void withLoadOption(char *key, char *value);
+```
+
+```
+    /**
+     * sets the taskNo for the writer. CSDKs concurrently running
+     * will set taskNo in order to avoid conflicts in file's name during write.
+     *
+     * @param taskNo is the TaskNo user wants to specify.
+     *               by default it is system time in nano seconds.
+     */
+    void taskNo(long taskNo);
+```
+
+```
+    /**
+     * to set the timestamp in the carbondata and carbonindex index files
+     *
+     * @param timestamp is a timestamp to be used in the carbondata and carbonindex index files.
+     * By default set to zero.
+     * @return updated CarbonWriterBuilder
+     */
+    void uniqueIdentifier(long timestamp);
+```
+
+```
+    /**
+     * To make c++ sdk writer thread safe.
+     *
+     * @param numOfThreads should number of threads in which writer is called in multi-thread scenario
+     *                      default C++ sdk writer is not thread safe.
+     *                      can use one writer instance in one thread only.
+     */
+    void withThreadSafe(short numOfThreads) ;
+```
+
+```
+    /**
+     * To set the carbondata file size in MB between 1MB-2048MB
+     *
+     * @param blockSize is size in MB between 1MB to 2048 MB
+     * default value is 1024 MB
+     */
+    void withBlockSize(int blockSize);
+```
+
+```
+    /**
+     * To set the blocklet size of CarbonData file
+     *
+     * @param blockletSize is blocklet size in MB
+     *        default value is 64 MB
+     * @return updated CarbonWriterBuilder
+     */
+    void withBlockletSize(int blockletSize);
+```
+
+```
+    /**
+     * @param localDictionaryThreshold is localDictionaryThreshold, default is 10000
+     * @return updated CarbonWriterBuilder
+     */
+    void localDictionaryThreshold(int localDictionaryThreshold);
+```
+
+```
+    /**
+     * @param enableLocalDictionary enable local dictionary, default is false
+     * @return updated CarbonWriterBuilder
+     */
+    void enableLocalDictionary(bool enableLocalDictionary);
 ```
 
 ```
@@ -283,8 +408,38 @@ release the memory and destroy JVM.
     jobject readSchema(char *path, bool validateSchema);
 ```
 
+```
+    /**
+     * read schema from path,
+     * path can be folder path, carbonindex file path, and carbondata file path
+     * and will not check all files schema
+     *
+     * @param path file/folder path
+     * @param conf           configuration support, can set s3a AK,SK,
+     *                       end point and other conf with this
+     * @return schema
+     */
+    jobject readSchema(char *path, Configuration conf);
+```
+
+```
+    /**
+     *  read schema from path,
+     *  path can be folder path, carbonindex file path, and carbondata file path
+     *  and user can decide whether check all files schema
+     *
+     * @param path carbon data path
+     * @param validateSchema whether check all files schema
+     * @param conf           configuration support, can set s3a AK,SK,
+     *                       end point and other conf with this
+     * @return schema
+     */
+    jobject readSchema(char *path, bool validateSchema, Configuration conf);
+
+```
+
 ### Schema
-``` 
+```
  /**
      * constructor with jni env and carbon schema data
      *

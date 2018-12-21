@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -34,9 +35,11 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
+import org.apache.carbondata.processing.loading.ComplexDelimitersEnum;
 import org.apache.carbondata.processing.loading.DataLoadExecutor;
 import org.apache.carbondata.processing.loading.TableProcessingOperations;
 import org.apache.carbondata.processing.loading.iterator.CarbonOutputIteratorWrapper;
@@ -44,8 +47,6 @@ import org.apache.carbondata.processing.loading.model.CarbonDataLoadSchema;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
@@ -53,6 +54,7 @@ import org.apache.hadoop.mapreduce.OutputCommitter;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.log4j.Logger;
 
 /**
  * This is table level output format which writes the data to store in new segment. Each load
@@ -114,7 +116,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
    */
   public static final String OPERATION_CONTEXT = "mapreduce.carbontable.operation.context";
 
-  private static final Log LOG = LogFactory.getLog(CarbonTableOutputFormat.class);
+  private static final Logger LOG =
+      LogServiceFactory.getLogService(CarbonTableOutputFormat.class.getName());
 
   private CarbonOutputCommitter committer;
 
@@ -256,6 +259,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
     loadModel.setDataWritePath(
         taskAttemptContext.getConfiguration().get("carbon.outputformat.writepath"));
     final String[] tempStoreLocations = getTempStoreLocations(taskAttemptContext);
+    DataTypeUtil.clearFormatter();
     final DataLoadExecutor dataLoadExecutor = new DataLoadExecutor();
     final ExecutorService executorService = Executors.newFixedThreadPool(1,
         new CarbonThreadFactory("CarbonRecordWriter:" + loadModel.getTableName()));
@@ -272,7 +276,12 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
           for (CarbonOutputIteratorWrapper iterator : iterators) {
             iterator.closeWriter(true);
           }
-          dataLoadExecutor.close();
+          try {
+            dataLoadExecutor.close();
+          } catch (Exception ex) {
+            // As already exception happened before close() send that exception.
+            throw new RuntimeException(e);
+          }
           throw new RuntimeException(e);
         } finally {
           ThreadLocalSessionInfo.unsetAll();
@@ -338,11 +347,19 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Obje
             SKIP_EMPTY_LINE,
             carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SKIP_EMPTY_LINE)));
 
-    String complexDelim = conf.get(COMPLEX_DELIMITERS, "\\\001" + "," + "\\\002");
+    String complexDelim = conf.get(COMPLEX_DELIMITERS);
+    if (null == complexDelim) {
+      complexDelim = ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_1.value() + ","
+          + ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_2.value() + ","
+          + ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_3.value();
+    }
     String[] split = complexDelim.split(",");
-    model.setComplexDelimiterLevel1(split[0]);
-    if (split.length > 1) {
-      model.setComplexDelimiterLevel2(split[1]);
+    model.setComplexDelimiter(split[0]);
+    if (split.length > 2) {
+      model.setComplexDelimiter(split[1]);
+      model.setComplexDelimiter(split[2]);
+    } else if (split.length > 1) {
+      model.setComplexDelimiter(split[1]);
     }
     model.setDateFormat(
         conf.get(

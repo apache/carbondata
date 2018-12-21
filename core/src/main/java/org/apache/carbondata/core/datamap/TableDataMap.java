@@ -29,6 +29,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.BlockletSerializer;
 import org.apache.carbondata.core.datamap.dev.DataMap;
@@ -41,7 +42,6 @@ import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
-import org.apache.carbondata.core.indexstore.blockletindex.BlockDataMap;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -51,8 +51,7 @@ import org.apache.carbondata.events.Event;
 import org.apache.carbondata.events.OperationContext;
 import org.apache.carbondata.events.OperationEventListener;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 
 /**
  * Index at the table level, user can add any number of DataMap for one table, by
@@ -75,7 +74,8 @@ public final class TableDataMap extends OperationEventListener {
 
   private SegmentPropertiesFetcher segmentPropertiesFetcher;
 
-  private static final Log LOG = LogFactory.getLog(TableDataMap.class);
+  private static final Logger LOG =
+      LogServiceFactory.getLogService(TableDataMap.class.getName());
 
   /**
    * It is called to initialize and load the required table datamap metadata.
@@ -145,22 +145,10 @@ public final class TableDataMap extends OperationEventListener {
     // for filter queries
     int totalFiles = 0;
     int datamapsCount = 0;
-    int filesCountPerDatamap;
-    boolean isBlockDataMapType = true;
     for (Segment segment : segments) {
       for (DataMap dataMap : dataMaps.get(segment)) {
-        if (!(dataMap instanceof BlockDataMap)) {
-          isBlockDataMapType = false;
-          break;
-        }
-        filesCountPerDatamap = ((BlockDataMap) dataMap).getTotalBlocks();
-        // old legacy store can give 0, so consider one datamap as 1 record.
-        totalFiles += (filesCountPerDatamap == 0) ? 1 : filesCountPerDatamap;
+        totalFiles += dataMap.getNumberOfEntries();
         datamapsCount++;
-      }
-      if (!isBlockDataMapType) {
-        // totalFiles fill be 0 for non-BlockDataMap Type. ex: lucene, bloom datamap. use old flow.
-        break;
       }
     }
     int numOfThreadsForPruning = getNumOfThreadsForPruning();
@@ -208,6 +196,30 @@ public final class TableDataMap extends OperationEventListener {
       final FilterResolverIntf filterExp, final List<PartitionSpec> partitions,
       List<ExtendedBlocklet> blocklets, final Map<Segment, List<DataMap>> dataMaps,
       int totalFiles) {
+    /*
+     *********************************************************************************
+     * Below is the example of how this part of code works.
+     * consider a scenario of having 5 segments, 10 datamaps in each segment,
+     * and each datamap has one record. So total 50 records.
+     *
+     * Datamaps in each segment looks like below.
+     * s0 [0-9], s1 [0-9], s2 [0-9], s3[0-9], s4[0-9]
+     *
+     * If number of threads are 4. so filesPerEachThread = 50/4 = 12 files per each thread.
+     *
+     * SegmentDataMapGroup look like below: [SegmentId, fromIndex, toIndex]
+     * In each segment only those datamaps are processed between fromIndex and toIndex.
+     *
+     * Final result will be: (4 list created as numOfThreadsForPruning is 4)
+     * Thread1 list: s0 [0-9], s1 [0-1]  : 12 files
+     * Thread2 list: s1 [2-9], s2 [0-3]  : 12 files
+     * Thread3 list: s2 [4-9], s3 [0-5]  : 12 files
+     * Thread4 list: s3 [6-9], s4 [0-9]  : 14 files
+     * so each thread will process almost equal number of records.
+     *
+     *********************************************************************************
+     */
+
     int numOfThreadsForPruning = getNumOfThreadsForPruning();
     LOG.info(
         "Number of threads selected for multi-thread block pruning is " + numOfThreadsForPruning
@@ -216,24 +228,22 @@ public final class TableDataMap extends OperationEventListener {
     int prev;
     int filesCount = 0;
     int processedFileCount = 0;
-    int filesCountPerDatamap;
-    List<List<SegmentDataMapGroup>> segmentList = new ArrayList<>(numOfThreadsForPruning);
+    List<List<SegmentDataMapGroup>> datamapListForEachThread =
+        new ArrayList<>(numOfThreadsForPruning);
     List<SegmentDataMapGroup> segmentDataMapGroupList = new ArrayList<>();
     for (Segment segment : segments) {
       List<DataMap> eachSegmentDataMapList = dataMaps.get(segment);
       prev = 0;
       for (int i = 0; i < eachSegmentDataMapList.size(); i++) {
         DataMap dataMap = eachSegmentDataMapList.get(i);
-        filesCountPerDatamap = ((BlockDataMap) dataMap).getTotalBlocks();
-        // old legacy store can give 0, so consider one datamap as 1 record.
-        filesCount += (filesCountPerDatamap == 0) ? 1 : filesCountPerDatamap;
+        filesCount += dataMap.getNumberOfEntries();
         if (filesCount >= filesPerEachThread) {
-          if (segmentList.size() != numOfThreadsForPruning - 1) {
+          if (datamapListForEachThread.size() != numOfThreadsForPruning - 1) {
             // not the last segmentList
             segmentDataMapGroupList.add(new SegmentDataMapGroup(segment, prev, i));
             // save the last value to process in next thread
             prev = i + 1;
-            segmentList.add(segmentDataMapGroupList);
+            datamapListForEachThread.add(segmentDataMapGroupList);
             segmentDataMapGroupList = new ArrayList<>();
             processedFileCount += filesCount;
             filesCount = 0;
@@ -252,7 +262,7 @@ public final class TableDataMap extends OperationEventListener {
       }
     }
     // adding the last segmentList data
-    segmentList.add(segmentDataMapGroupList);
+    datamapListForEachThread.add(segmentDataMapGroupList);
     processedFileCount += filesCount;
     if (processedFileCount != totalFiles) {
       // this should not happen
@@ -263,7 +273,7 @@ public final class TableDataMap extends OperationEventListener {
     final ExecutorService executorService = Executors.newFixedThreadPool(numOfThreadsForPruning);
     final String threadName = Thread.currentThread().getName();
     for (int i = 0; i < numOfThreadsForPruning; i++) {
-      final List<SegmentDataMapGroup> segmentDataMapGroups = segmentList.get(i);
+      final List<SegmentDataMapGroup> segmentDataMapGroups = datamapListForEachThread.get(i);
       results.add(executorService.submit(new Callable<Void>() {
         @Override public Void call() throws IOException {
           Thread.currentThread().setName(threadName);

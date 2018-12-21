@@ -551,14 +551,14 @@ public final class CarbonLoaderUtil {
    * This method will divide the blocks among the nodes as per the data locality
    *
    * @param blockInfos blocks
-   * @param noOfNodesInput -1 if number of nodes has to be decided
+   * @param numOfNodesInput -1 if number of nodes has to be decided
    *                       based on block location information
    * @param blockAssignmentStrategy strategy used to assign blocks
    * @param expectedMinSizePerNode the property load_min_size_inmb specified by the user
    * @return a map that maps node to blocks
    */
   public static Map<String, List<Distributable>> nodeBlockMapping(
-      List<Distributable> blockInfos, int noOfNodesInput, List<String> activeNodes,
+      List<Distributable> blockInfos, int numOfNodesInput, List<String> activeNodes,
       BlockAssignmentStrategy blockAssignmentStrategy, String expectedMinSizePerNode) {
     ArrayList<NodeMultiBlockRelation> rtnNode2Blocks = new ArrayList<>();
 
@@ -569,9 +569,9 @@ public final class CarbonLoaderUtil {
       nodes.add(relation.getNode());
     }
 
-    int noofNodes = (-1 == noOfNodesInput) ? nodes.size() : noOfNodesInput;
+    int numOfNodes = (-1 == numOfNodesInput) ? nodes.size() : numOfNodesInput;
     if (null != activeNodes) {
-      noofNodes = activeNodes.size();
+      numOfNodes = activeNodes.size();
     }
 
     // calculate the average expected size for each node
@@ -579,7 +579,7 @@ public final class CarbonLoaderUtil {
     long totalFileSize = 0;
     if (BlockAssignmentStrategy.BLOCK_NUM_FIRST == blockAssignmentStrategy) {
       if (blockInfos.size() > 0) {
-        sizePerNode = blockInfos.size() / noofNodes;
+        sizePerNode = blockInfos.size() / numOfNodes;
       }
       sizePerNode = sizePerNode <= 0 ? 1 : sizePerNode;
     } else if (BlockAssignmentStrategy.BLOCK_SIZE_FIRST == blockAssignmentStrategy
@@ -587,7 +587,7 @@ public final class CarbonLoaderUtil {
       for (Distributable blockInfo : uniqueBlocks) {
         totalFileSize += ((TableBlockInfo) blockInfo).getBlockLength();
       }
-      sizePerNode = totalFileSize / noofNodes;
+      sizePerNode = totalFileSize / numOfNodes;
     }
 
     // if enable to control the minimum amount of input data for each node
@@ -1152,7 +1152,7 @@ public final class CarbonLoaderUtil {
    * @return
    * @throws IOException
    */
-  public static String mergeIndexFilesinPartitionedSegment(CarbonTable table, String segmentId,
+  public static String mergeIndexFilesInPartitionedSegment(CarbonTable table, String segmentId,
       String uuid) throws IOException {
     String tablePath = table.getTablePath();
     return new CarbonIndexFileMergeWriter(table)

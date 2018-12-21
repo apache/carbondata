@@ -370,9 +370,8 @@ public CarbonWriterBuilder withLoadOptions(Map<String, String> options);
 * b. table_blocklet_size -- values in MB. Default value is 64 MB
 * c. local_dictionary_threshold -- positive value, default is 10000
 * d. local_dictionary_enable -- true / false. Default is false
-* e. sort_columns -- comma separated column. "c1,c2". Default all dimensions are sorted.
-                     If empty string "" is passed. No columns are sorted
-* j. sort_scope -- "local_sort", "no_sort", "batch_sort". default value is "local_sort"
+* e. sort_columns -- comma separated column. "c1,c2". Default no columns are sorted.
+* j. sort_scope -- "local_sort", "no_sort", "batch_sort". default value is "no_sort"
 * k. long_string_columns -- comma separated string columns which are more than 32k length. 
 *                           default value is null.
 * l. inverted_index -- comma separated string columns for which inverted index needs to be
@@ -809,6 +808,36 @@ Find example code at [CarbonReaderExample](https://github.com/apache/carbondata/
    * @throws IOException
    */
   public static Schema readSchema(String path, boolean validateSchema);
+```
+
+```
+  /**
+   * read schema from path,
+   * path can be folder path, carbonindex file path, and carbondata file path
+   * and will not check all files schema
+   *
+   * @param path file/folder path
+   * @param conf hadoop configuration support, can set s3a AK,SK,end point and other conf with this
+   * @return schema
+   * @throws IOException
+   */
+  public static Schema readSchema(String path, Configuration conf);
+```
+
+```
+  /**
+   * read schema from path,
+   * path can be folder path, carbonindex file path, and carbondata file path
+   * and user can decide whether check all files schema
+   *
+   * @param path           file/folder path
+   * @param validateSchema whether check all files schema
+   * @param conf           hadoop configuration support, can set s3a AK,SK,
+   *                       end point and other conf with this
+   * @return schema
+   * @throws IOException
+   */
+  public static Schema readSchema(String path, boolean validateSchema, Configuration conf);
 ```
 
 ```

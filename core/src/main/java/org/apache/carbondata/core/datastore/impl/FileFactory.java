@@ -120,9 +120,11 @@ public final class FileFactory {
       throws IOException {
     return getDataInputStream(path, fileType, bufferSize, getConfiguration());
   }
+
   public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize,
       Configuration configuration) throws IOException {
-    return getCarbonFile(path).getDataInputStream(path, fileType, bufferSize, configuration);
+    return getCarbonFile(path, configuration)
+        .getDataInputStream(path, fileType, bufferSize, configuration);
   }
 
   /**

@@ -51,7 +51,7 @@ case class RefreshCarbonTableCommand(
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val databaseName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
     setAuditTable(databaseName, tableName)
     // Steps

@@ -62,7 +62,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
     val oldTableName = oldTableIdentifier.table.toLowerCase
     val newTableName = newTableIdentifier.table.toLowerCase
     LOGGER.info(s"Rename table request has been received for $oldDatabaseName.$oldTableName")
-    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetaStore
     val relation: CarbonRelation =
       metastore.lookupRelation(oldTableIdentifier.database, oldTableName)(sparkSession)
         .asInstanceOf[CarbonRelation]

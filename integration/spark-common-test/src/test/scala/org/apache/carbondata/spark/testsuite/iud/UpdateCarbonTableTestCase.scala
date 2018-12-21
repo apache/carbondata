@@ -423,7 +423,8 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
         sql("update update_with_bad_record set (item)=(3.45)").show()
         sql("drop table if exists update_with_bad_record")
       }
-      assert(errorMessage.getMessage.contains("Data load failed due to bad record"))
+      assert(errorMessage.getMessage
+        .contains("Update operation failed"))
     } finally {
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")

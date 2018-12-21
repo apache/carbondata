@@ -960,7 +960,7 @@ public final class CarbonCommonConstants {
    * If set to GLOBAL_SORT, the sorting scope is bigger and one index tree per task will be
    * created, thus loading is slower but query is faster.
    */
-  public static final String LOAD_SORT_SCOPE_DEFAULT = "LOCAL_SORT";
+  public static final String LOAD_SORT_SCOPE_DEFAULT = "NO_SORT";
 
   /**
    * Size of batch data to keep in memory, as a thumb rule it supposed

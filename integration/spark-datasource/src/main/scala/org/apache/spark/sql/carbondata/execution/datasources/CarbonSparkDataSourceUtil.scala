@@ -241,7 +241,7 @@ object CarbonSparkDataSourceUtil {
         } else {
           cols.split(",").map(_.trim)
         }
-      case _ => null
+      case _ => Array[String]()
     }
     builder.sortBy(sortCols)
     val invertedIdxCols = options.get(CarbonCommonConstants.INVERTED_INDEX) match {

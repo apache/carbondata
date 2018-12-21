@@ -72,7 +72,7 @@ case class CarbonCreateTableAsSelectCommand(
         databaseOpt = Some(tableInfo.getDatabaseName)
       }
       val dbName = CarbonEnv.getDatabaseName(databaseOpt)(sparkSession)
-      val carbonDataSourceHadoopRelation = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val carbonDataSourceHadoopRelation = CarbonEnv.getInstance(sparkSession).carbonMetaStore
         .createCarbonDataSourceHadoopRelation(sparkSession,
           TableIdentifier(tableName, Option(dbName)))
       // execute command to load data into carbon table

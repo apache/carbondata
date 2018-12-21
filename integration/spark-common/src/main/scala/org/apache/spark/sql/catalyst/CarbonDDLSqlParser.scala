@@ -114,6 +114,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val MULTILINE = carbonKeyWord("MULTILINE")
   protected val COMPLEX_DELIMITER_LEVEL_1 = carbonKeyWord("COMPLEX_DELIMITER_LEVEL_1")
   protected val COMPLEX_DELIMITER_LEVEL_2 = carbonKeyWord("COMPLEX_DELIMITER_LEVEL_2")
+  protected val COMPLEX_DELIMITER_LEVEL_3 = carbonKeyWord("COMPLEX_DELIMITER_LEVEL_3")
   protected val OPTIONS = carbonKeyWord("OPTIONS")
   protected val OUTPATH = carbonKeyWord("OUTPATH")
   protected val OVERWRITE = carbonKeyWord("OVERWRITE")
@@ -733,13 +734,13 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     }
 
     // All columns in sortkey should be there in create table cols
-    val sortKeyOption = tableProperties.get(CarbonCommonConstants.SORT_COLUMNS)
-    var sortKeyDimsTmp: Seq[String] = Seq[String]()
-    val sortKeyString: String = if (sortKeyOption.isDefined) {
-      CarbonUtil.unquoteChar(sortKeyOption.get) trim
-    } else {
-      ""
+    var sortKeyOption = tableProperties.get(CarbonCommonConstants.SORT_COLUMNS)
+    if (!sortKeyOption.isDefined) {
+      // default no columns are selected for sorting in no_sort scope
+      sortKeyOption = Some("")
     }
+    val sortKeyString: String = CarbonUtil.unquoteChar(sortKeyOption.get) trim
+    var sortKeyDimsTmp: Seq[String] = Seq[String]()
     if (!sortKeyString.isEmpty) {
       val sortKey = sortKeyString.split(',').map(_.trim)
       if (sortKey.diff(sortKey.distinct).length > 0 ||
@@ -915,7 +916,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * @param dimensionDatatype
    */
   def isDetectAsDimentionDatatype(dimensionDatatype: String): Boolean = {
-    val dimensionType = Array("string", "array", "struct", "timestamp", "date", "char")
+    val dimensionType = Array("string", "array", "struct", "map", "timestamp", "date", "char")
     dimensionType.exists(x => dimensionDatatype.toLowerCase.contains(x))
   }
 
@@ -1070,13 +1071,32 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     // validate with all supported options
     val options = optionList.get.groupBy(x => x._1)
-    val supportedOptions = Seq("DELIMITER", "QUOTECHAR", "FILEHEADER", "ESCAPECHAR", "MULTILINE",
-      "COMPLEX_DELIMITER_LEVEL_1", "COMPLEX_DELIMITER_LEVEL_2", "COLUMNDICT",
-      "SERIALIZATION_NULL_FORMAT", "BAD_RECORDS_LOGGER_ENABLE", "BAD_RECORDS_ACTION",
-      "ALL_DICTIONARY_PATH", "MAXCOLUMNS", "COMMENTCHAR", "DATEFORMAT", "BAD_RECORD_PATH",
-      "BATCH_SORT_SIZE_INMB", "GLOBAL_SORT_PARTITIONS", "SINGLE_PASS",
-      "IS_EMPTY_DATA_BAD_RECORD", "HEADER", "TIMESTAMPFORMAT", "SKIP_EMPTY_LINE",
-      "SORT_COLUMN_BOUNDS", "LOAD_MIN_SIZE_INMB"
+    val supportedOptions = Seq("DELIMITER",
+      "QUOTECHAR",
+      "FILEHEADER",
+      "ESCAPECHAR",
+      "MULTILINE",
+      "COMPLEX_DELIMITER_LEVEL_1",
+      "COMPLEX_DELIMITER_LEVEL_2",
+      "COMPLEX_DELIMITER_LEVEL_3",
+      "COLUMNDICT",
+      "SERIALIZATION_NULL_FORMAT",
+      "BAD_RECORDS_LOGGER_ENABLE",
+      "BAD_RECORDS_ACTION",
+      "ALL_DICTIONARY_PATH",
+      "MAXCOLUMNS",
+      "COMMENTCHAR",
+      "DATEFORMAT",
+      "BAD_RECORD_PATH",
+      "BATCH_SORT_SIZE_INMB",
+      "GLOBAL_SORT_PARTITIONS",
+      "SINGLE_PASS",
+      "IS_EMPTY_DATA_BAD_RECORD",
+      "HEADER",
+      "TIMESTAMPFORMAT",
+      "SKIP_EMPTY_LINE",
+      "SORT_COLUMN_BOUNDS",
+      "LOAD_MIN_SIZE_INMB"
     )
     var isSupported = true
     val invalidOptions = StringBuilder.newBuilder
@@ -1291,13 +1311,16 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         Field("unknown", Some("struct"), Some("unknown"), Some(e1))
     }
 
+  //  Map<Key,Value> is represented as Map<Struct<Key,Value>>
   protected lazy val mapFieldType: Parser[Field] =
     (MAP ^^^ "map") ~> "<" ~> primitiveFieldType ~ ("," ~> nestedType) <~ ">" ^^ {
       case key ~ value =>
         Field("unknown", Some("map"), Some("unknown"),
           Some(List(
-            Field("key", key.dataType, Some("key"), key.children),
-            Field("value", value.dataType, Some("value"), value.children))))
+            Field("val", Some("struct"), Some("unknown"),
+              Some(List(
+                Field("key", key.dataType, Some("key"), key.children),
+                Field("value", value.dataType, Some("value"), value.children)))))))
     }
 
   protected lazy val measureCol: Parser[Field] =
@@ -1460,20 +1483,23 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   /**
    * This method will parse the given data type and validate against the allowed data types
    *
-   * @param dataType
-   * @param values
-   * @return
+   * @param dataType datatype string given by the user in DDL
+   * @param values values defined when the decimal datatype is given in DDL
+   * @return DataTypeInfo object with datatype, precision and scale
    */
-  def parseDataType(dataType: String, values: Option[List[(Int, Int)]]): DataTypeInfo = {
+  def parseDataType(
+      dataType: String,
+      values: Option[List[(Int, Int)]],
+      isColumnRename: Boolean): DataTypeInfo = {
+    var precision: Int = 0
+    var scale: Int = 0
     dataType match {
       case "bigint" | "long" =>
         if (values.isDefined) {
           throw new MalformedCarbonCommandException("Invalid data type")
         }
-        DataTypeInfo(dataType)
+        DataTypeInfo(DataTypeConverterUtil.convertToCarbonType(dataType).getName.toLowerCase)
       case "decimal" =>
-        var precision: Int = 0
-        var scale: Int = 0
         if (values.isDefined) {
           precision = values.get(0)._1
           scale = values.get(0)._2
@@ -1488,7 +1514,11 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         }
         DataTypeInfo("decimal", precision, scale)
       case _ =>
-        throw new MalformedCarbonCommandException("Data type provided is invalid.")
+        if (isColumnRename) {
+          DataTypeInfo(DataTypeConverterUtil.convertToCarbonType(dataType).getName.toLowerCase)
+        } else {
+          throw new MalformedCarbonCommandException("Data type provided is invalid.")
+        }
     }
   }
 }

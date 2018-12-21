@@ -663,6 +663,12 @@ public abstract class BlockletScannedResult {
       return true;
     } else if (pageCounter < pageFilteredRowCount.length) {
       pageCounter++;
+      if (pageCounter >= pageFilteredRowCount.length) {
+        return false;
+      }
+      if (this.pageFilteredRowCount[pageCounter] == 0) {
+        return hasNext();
+      }
       fillDataChunks();
       rowCounter = 0;
       currentRow = -1;

@@ -115,7 +115,7 @@ case class CarbonCreateTableCommand(
       val createTablePreExecutionEvent: CreateTablePreExecutionEvent =
         CreateTablePreExecutionEvent(sparkSession, tableIdentifier, Some(tableInfo))
       OperationListenerBus.getInstance.fireEvent(createTablePreExecutionEvent, operationContext)
-      val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val catalog = CarbonEnv.getInstance(sparkSession).carbonMetaStore
       val carbonSchemaString = catalog.generateTableSchemaString(tableInfo, tableIdentifier)
       if (createDSTable) {
         try {
@@ -128,7 +128,7 @@ case class CarbonCreateTableCommand(
             if (partitionInfo != null &&
                 partitionInfo.getPartitionType == PartitionType.NATIVE_HIVE) {
               // Restrict dictionary encoding on partition columns.
-              // TODO Need to decide wherher it is required
+              // TODO Need to decide whether it is required
               val dictionaryOnPartitionColumn =
               partitionInfo.getColumnSchemaList.asScala.exists{p =>
                 p.hasEncoding(Encoding.DICTIONARY) && !p.hasEncoding(Encoding.DIRECT_DICTIONARY)
@@ -170,7 +170,7 @@ case class CarbonCreateTableCommand(
           case e: Exception =>
             // call the drop table to delete the created table.
             try {
-              CarbonEnv.getInstance(sparkSession).carbonMetastore
+              CarbonEnv.getInstance(sparkSession).carbonMetaStore
                 .dropTable(tableIdentifier)(sparkSession)
             } catch {
               case _: Exception => // No operation

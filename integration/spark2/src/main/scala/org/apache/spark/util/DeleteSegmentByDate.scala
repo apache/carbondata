@@ -45,7 +45,7 @@ object DeleteSegmentByDate {
     val (dbName, tableName) = TableAPIUtil.parseSchemaName(TableAPIUtil.escape(args(1)))
     val dateValue = TableAPIUtil.escape(args(2))
     val spark = TableAPIUtil.spark(storePath, s"DeleteSegmentByDate: $dbName.$tableName")
-    CarbonEnv.getInstance(spark).carbonMetastore.
+    CarbonEnv.getInstance(spark).carbonMetaStore.
       checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
     deleteSegmentByDate(spark, dbName, tableName, dateValue)
   }

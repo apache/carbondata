@@ -42,7 +42,6 @@ case class StreamData(id: Integer, name: String, city: String, salary: java.lang
     register: String, updated: String,
     file: FileElement)
 
-@Ignore
 class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
 
   private val spark = sqlContext.sparkSession
@@ -420,7 +419,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
       continueSeconds = 20,
       generateBadRecords = true,
       badRecordAction = "force",
-      autoHandoff = true
+      autoHandoff = false
     )
 
     // non-filter
@@ -817,7 +816,7 @@ class TestStreamingTableWithRowParser extends QueryTest with BeforeAndAfterAll {
       autoHandoff: Boolean = CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT.toBoolean
   ): Unit = {
     val identifier = new TableIdentifier(tableName, Option("streaming1"))
-    val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore.lookupRelation(identifier)(spark)
+    val carbonTable = CarbonEnv.getInstance(spark).carbonMetaStore.lookupRelation(identifier)(spark)
       .asInstanceOf[CarbonRelation].metaData.carbonTable
     var server: ServerSocket = null
     try {

@@ -39,6 +39,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.exception.ConcurrentOperationException
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
@@ -73,7 +74,7 @@ case class CarbonAlterTableCompactionCommand(
     table = if (tableInfoOp.isDefined) {
       CarbonTable.buildFromTableInfo(tableInfoOp.get)
     } else {
-      val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val relation = CarbonEnv.getInstance(sparkSession).carbonMetaStore
         .lookupRelation(Option(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
       if (relation == null) {
         throw new NoSuchTableException(dbName, tableName)

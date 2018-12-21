@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
+import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.SchemaReader;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -106,9 +107,17 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     CarbonInputSplit split;
     for (int i = 0; i < splitList.size(); i++) {
       split = (CarbonInputSplit) splitList.get(i);
-      splits[i] = new CarbonHiveInputSplit(split.getSegmentId(), split.getPath(), split.getStart(),
-          split.getLength(), split.getLocations(), split.getNumberOfBlocklets(), split.getVersion(),
-          split.getBlockStorageIdMap());
+      CarbonHiveInputSplit inputSplit = new CarbonHiveInputSplit(split.getSegmentId(),
+              split.getPath(), split.getStart(), split.getLength(),
+              split.getLocations(), split.getNumberOfBlocklets(),
+              split.getVersion(), split.getBlockStorageIdMap());
+      BlockletDetailInfo info = new BlockletDetailInfo();
+      info.setBlockSize(split.getLength());
+      info.setBlockFooterOffset(split.getDetailInfo().getBlockFooterOffset());
+      info.setVersionNumber(split.getVersion().number());
+      info.setUseMinMaxForPruning(false);
+      inputSplit.setDetailInfo(info);
+      splits[i] = inputSplit;
     }
     return splits;
   }
