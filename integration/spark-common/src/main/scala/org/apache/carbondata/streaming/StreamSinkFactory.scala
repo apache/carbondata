@@ -109,7 +109,7 @@ object StreamSinkFactory {
     carbonLoadModel.setSegmentId(segmentId)
 
     // Used to generate load commands for child tables in case auto-handoff is fired.
-    val loadMetaEvent = new LoadMetadataEvent(carbonTable, false)
+    val loadMetaEvent = new LoadMetadataEvent(carbonTable, false, parameters.asJava)
     OperationListenerBus.getInstance().fireEvent(loadMetaEvent, operationContext)
     // start server if necessary
     val server = startDictionaryServer(

@@ -17,6 +17,7 @@
 package org.apache.spark.sql.execution.command.preaaggregate
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, CarbonSession, SparkSession, _}
@@ -895,6 +896,7 @@ object PreAggregateUtil {
       dataFrame: DataFrame,
       isOverwrite: Boolean,
       sparkSession: SparkSession,
+      options: mutable.Map[String, String],
       timeseriesParentTableName: String = ""): CarbonLoadDataCommand = {
     val headers = columns.asScala.filter { column =>
       !column.getColumnName.equalsIgnoreCase(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE)

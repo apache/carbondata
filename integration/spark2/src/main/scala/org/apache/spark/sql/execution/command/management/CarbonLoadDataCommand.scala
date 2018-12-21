@@ -142,7 +142,7 @@ case class CarbonLoadDataCommand(
     }
     operationContext.setProperty("isOverwrite", isOverwriteTable)
     if(CarbonUtil.hasAggregationDataMap(table)) {
-      val loadMetadataEvent = new LoadMetadataEvent(table, false)
+      val loadMetadataEvent = new LoadMetadataEvent(table, false, options.asJava)
       OperationListenerBus.getInstance().fireEvent(loadMetadataEvent, operationContext)
     }
     Seq.empty
@@ -191,10 +191,34 @@ case class CarbonLoadDataCommand(
     optionsFinal
       .put("complex_delimiter_level_4",
         ComplexDelimitersEnum.COMPLEX_DELIMITERS_LEVEL_4.value())
-    optionsFinal.put("sort_scope", tableProperties.asScala.getOrElse("sort_scope",
-      carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
-        carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-          CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))
+
+    /**
+    * Priority of sort_scope assignment :
+    * -----------------------------------
+    *
+    * 1. Load Options  ->
+    *     LOAD DATA INPATH 'data.csv' INTO TABLE tableName OPTIONS('sort_scope'='no_sort')
+    *
+    * 2. Session property CARBON_TABLE_LOAD_SORT_SCOPE  ->
+    *     SET CARBON.TABLE.LOAD.SORT.SCOPE.database.table=no_sort
+    *     SET CARBON.TABLE.LOAD.SORT.SCOPE.database.table=batch_sort
+    *     SET CARBON.TABLE.LOAD.SORT.SCOPE.database.table=local_sort
+    *     SET CARBON.TABLE.LOAD.SORT.SCOPE.database.table=global_sort
+    *
+    * 3. Sort Scope provided in TBLPROPERTIES
+    * 4. Session property CARBON_OPTIONS_SORT_SCOPE
+    * 5. Default Sort Scope LOAD_SORT_SCOPE
+    */
+    optionsFinal.put("sort_scope",
+      options.getOrElse("sort_scope",
+        carbonProperty.getProperty(
+          CarbonLoadOptionConstants.CARBON_TABLE_LOAD_SORT_SCOPE + table.getDatabaseName + "." +
+          table.getTableName,
+          tableProperties.asScala.getOrElse("sort_scope",
+            carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
+              carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+                CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))))
+
       optionsFinal
         .put("bad_record_path", CarbonBadRecordUtil.getBadRecordsPath(options.asJava, table))
       val factPath = if (dataFrame.isDefined) {
@@ -304,6 +328,7 @@ case class CarbonLoadDataCommand(
       }
       val partitionStatus = SegmentStatus.SUCCESS
       val columnar = sparkSession.conf.get("carbon.is.columnar.storage", "true").toBoolean
+      LOGGER.info("Sort Scope : " + carbonLoadModel.getSortScope)
       if (carbonLoadModel.getUseOnePass) {
         loadDataUsingOnePass(
           sparkSession,

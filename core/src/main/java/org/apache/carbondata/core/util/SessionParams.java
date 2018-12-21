@@ -161,7 +161,7 @@ public class SessionParams implements Serializable, Cloneable {
         isValid = CarbonUtil.isValidSortOption(value);
         if (!isValid) {
           throw new InvalidConfigurationException("The sort scope " + key
-              + " can have only either BATCH_SORT or LOCAL_SORT or NO_SORT.");
+              + " can have only either NO_SORT, BATCH_SORT, LOCAL_SORT or GLOBAL_SORT.");
         }
         break;
       case CARBON_OPTIONS_BATCH_SORT_SIZE_INMB:
@@ -228,6 +228,12 @@ public class SessionParams implements Serializable, Cloneable {
           isValid = CarbonUtil.validateBoolean(value);
           if (!isValid) {
             throw new InvalidConfigurationException("Invalid value " + value + " for key " + key);
+          }
+        } else if (key.startsWith(CarbonLoadOptionConstants.CARBON_TABLE_LOAD_SORT_SCOPE)) {
+          isValid = CarbonUtil.isValidSortOption(value);
+          if (!isValid) {
+            throw new InvalidConfigurationException("The sort scope " + key
+                + " can have only either NO_SORT, BATCH_SORT, LOCAL_SORT or GLOBAL_SORT.");
           }
         } else {
           throw new InvalidConfigurationException(
