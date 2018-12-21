@@ -16,7 +16,8 @@
  */
 package org.apache.carbondata.hive;
 
-import org.apache.carbondata.common.logging.LogServiceFactory;
+import java.util.Properties;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.common.type.HiveDecimal;
 import org.apache.hadoop.hive.serde2.SerDeException;
@@ -26,11 +27,13 @@ import org.apache.hadoop.hive.serde2.io.HiveDecimalWritable;
 import org.apache.hadoop.hive.serde2.io.ShortWritable;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.io.*;
+
 import org.apache.log4j.Logger;
+
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Properties;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 
 public class TestCarbonSerDe {
 

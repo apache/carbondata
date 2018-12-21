@@ -17,14 +17,16 @@
 
 package org.apache.carbondata.examplesCI
 
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
+
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.examples._
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.sdk.CarbonReaderExample
 import org.apache.carbondata.examples.sql.JavaCarbonSessionExample
-import org.apache.spark.sql.test.TestQueryExecutor
 
 /**
  * Test suite for examples

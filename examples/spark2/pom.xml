@@ -83,12 +83,12 @@
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
-      <version>4.3.4</version>
+      <version>${httpclient.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpcore</artifactId>
-      <version>4.3-alpha1</version>
+      <version>${httpcore.version}</version>
     </dependency>
     <dependency>
       <groupId>org.scalatest</groupId>

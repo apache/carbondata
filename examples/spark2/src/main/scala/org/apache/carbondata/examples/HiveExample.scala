@@ -42,29 +42,29 @@ object HiveExample {
     System.exit(0)
   }
 
-  def exampleBody(sparkSession: SparkSession, store: String): Unit = {
+  def exampleBody(carbonSession: SparkSession, store: String): Unit = {
     val logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
 
-    sparkSession.sql("""DROP TABLE IF EXISTS HIVE_CARBON_EXAMPLE""".stripMargin)
+    carbonSession.sql("""DROP TABLE IF EXISTS HIVE_CARBON_EXAMPLE""".stripMargin)
 
-    sparkSession.sql(
+    carbonSession.sql(
       s"""
          | CREATE TABLE HIVE_CARBON_EXAMPLE
          | (ID int,NAME string,SALARY double)
          | STORED BY 'carbondata'
        """.stripMargin)
 
-    sparkSession.sql(
+    carbonSession.sql(
       s"""
          | LOAD DATA LOCAL INPATH '$rootPath/examples/spark2/src/main/resources/sample.csv'
          | INTO TABLE HIVE_CARBON_EXAMPLE
        """.stripMargin)
 
-    sparkSession.sql("SELECT * FROM HIVE_CARBON_EXAMPLE").show()
+    carbonSession.sql("SELECT * FROM HIVE_CARBON_EXAMPLE").show()
 
-    sparkSession.stop()
+    carbonSession.stop()
 
     try {
       Class.forName(driverName)
