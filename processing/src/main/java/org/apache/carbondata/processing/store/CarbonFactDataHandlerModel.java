@@ -314,18 +314,23 @@ public class CarbonFactDataHandlerModel {
 
     // for dynamic page size in write step if varchar columns exist
     List<Integer> varcharDimIdxInNoDict = new ArrayList<>();
-    List<CarbonDimension> allDimensions = carbonTable.getDimensions();
+    List<CarbonDimension> allDimensions = carbonTable.getAllDimensions();
     int dictDimCount = allDimensions.size() - segmentProperties.getNumberOfNoDictionaryDimension()
             - segmentProperties.getComplexDimensions().size();
     CarbonColumn[] noDicAndComplexColumns =
         new CarbonColumn[segmentProperties.getNumberOfNoDictionaryDimension() + segmentProperties
             .getComplexDimensions().size()];
     int noDicAndComp = 0;
+    int invisibleCount = 0;
     for (CarbonDimension dim : allDimensions) {
+      if (dim.isInvisible()) {
+        invisibleCount++;
+        continue;
+      }
       if (!dim.isComplex() && !dim.hasEncoding(Encoding.DICTIONARY) &&
           dim.getDataType() == DataTypes.VARCHAR) {
         // ordinal is set in CarbonTable.fillDimensionsAndMeasuresForTables()
-        varcharDimIdxInNoDict.add(dim.getOrdinal() - dictDimCount);
+        varcharDimIdxInNoDict.add(dim.getOrdinal() - dictDimCount - invisibleCount);
       }
       if (!dim.hasEncoding(Encoding.DICTIONARY)) {
         noDicAndComplexColumns[noDicAndComp++] =
