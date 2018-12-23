@@ -273,15 +273,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     if (!enableDirectlyWriteDataToStorePath) {
       try {
         if (currentFileSize == 0) {
-          FileFactory
-              .deleteFile(carbonDataFileTempPath, FileFactory.getFileType(carbonDataFileTempPath));
-          if (blockIndexInfoList.size() > 0 && blockIndexInfoList.get(blockIndexInfoList.size() - 1)
-              .getFileName().equals(carbonDataFileName)) {
-            // no need add this entry in index file
-            blockIndexInfoList.remove(blockIndexInfoList.size() - 1);
-            // TODO: currently there is no implementation for notifyDataMapBlockEnd(),
-            // hence no impact, once implementation is done. Need to undo it in this case.
-          }
+          handleEmptyDataFile(carbonDataFileTempPath);
         } else {
           if (copyInCurrentThread) {
             CarbonUtil.copyCarbonDataFileToCarbonStorePath(carbonDataFileTempPath,
@@ -299,17 +291,22 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     } else {
       if (currentFileSize == 0) {
         try {
-          FileFactory.deleteFile(carbonDataFileStorePath,
-              FileFactory.getFileType(carbonDataFileStorePath));
+          handleEmptyDataFile(carbonDataFileStorePath);
         } catch (IOException e) {
           LOGGER.error(e);
         }
-        if (blockIndexInfoList.size() > 0 && blockIndexInfoList.get(blockIndexInfoList.size() - 1)
-            .getFileName().equals(carbonDataFileName)) {
-          // no need add this entry in index file
-          blockIndexInfoList.remove(blockIndexInfoList.size() - 1);
-        }
       }
+    }
+  }
+
+  private void handleEmptyDataFile(String filePath) throws IOException {
+    FileFactory.deleteFile(filePath, FileFactory.getFileType(filePath));
+    if (blockIndexInfoList.size() > 0 && blockIndexInfoList.get(blockIndexInfoList.size() - 1)
+        .getFileName().equals(carbonDataFileName)) {
+      // no need add this entry in index file
+      blockIndexInfoList.remove(blockIndexInfoList.size() - 1);
+      // TODO: currently there is no implementation for notifyDataMapBlockEnd(),
+      // hence no impact, once implementation is done. Need to undo it in this case.
     }
   }
 
