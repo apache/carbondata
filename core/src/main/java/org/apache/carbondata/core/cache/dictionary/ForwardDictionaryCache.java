@@ -97,7 +97,7 @@ public class ForwardDictionaryCache<K extends
         new ArrayList<Dictionary>(dictionaryColumnUniqueIdentifiers.size());
     List<Future<Dictionary>> taskSubmitList =
         new ArrayList<>(dictionaryColumnUniqueIdentifiers.size());
-    ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
+    ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
     for (final DictionaryColumnUniqueIdentifier uniqueIdent : dictionaryColumnUniqueIdentifiers) {
       taskSubmitList.add(executorService.submit(new Callable<Dictionary>() {
         @Override public Dictionary call() throws IOException {
