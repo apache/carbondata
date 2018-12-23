@@ -112,7 +112,7 @@ public class LocalFileLock extends AbstractCarbonLock {
         status = true;
       }
     } catch (IOException e) {
-      status = false;
+      // status = false;
     } finally {
       CarbonUtil.closeStreams(channel);
     }
