@@ -340,7 +340,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
       .contains(Encoding.INVERTED_INDEX))
     assert(carbonTable.getColumnByName("index1", "name").getColumnSchema.getEncodingList
       .contains(Encoding.INVERTED_INDEX))
-    assert(!carbonTable.getColumnByName("index1", "id").getColumnSchema.getEncodingList
+    assert(carbonTable.getColumnByName("index1", "id").getColumnSchema.getEncodingList
       .contains(Encoding.INVERTED_INDEX))
   }
 
