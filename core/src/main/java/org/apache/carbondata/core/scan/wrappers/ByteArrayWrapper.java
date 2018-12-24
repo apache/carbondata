@@ -81,6 +81,10 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
     return this.noDictionaryKeys[index];
   }
 
+  public byte[] getComplexKeyByIndex(int index) {
+    return this.complexTypesKeys[index];
+  }
+
   /**
    * to get the no dictionary column data
    *
