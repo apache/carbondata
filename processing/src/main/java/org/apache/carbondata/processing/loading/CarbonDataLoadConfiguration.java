@@ -24,8 +24,6 @@ import java.util.Map;
 
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.dictionary.service.DictionaryServiceProvider;
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
-import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -381,35 +379,11 @@ public class CarbonDataLoadConfiguration {
     return sortColumnMapping;
   }
 
-  public int[] calcDimensionLengths() {
-    int[] dimLensWithComplex = getCardinalityFinder().getCardinality();
-    if (!isSortTable()) {
-      for (int i = 0; i < dimLensWithComplex.length; i++) {
-        if (dimLensWithComplex[i] != 0) {
-          dimLensWithComplex[i] = Integer.MAX_VALUE;
-        }
-      }
-    }
-    List<Integer> dimsLenList = new ArrayList<Integer>();
-    for (int eachDimLen : dimLensWithComplex) {
-      if (eachDimLen != 0) dimsLenList.add(eachDimLen);
-    }
-    int[] dimLens = new int[dimsLenList.size()];
-    for (int i = 0; i < dimsLenList.size(); i++) {
-      dimLens[i] = dimsLenList.get(i);
-    }
-    return dimLens;
+  public int[] getCardinalityForComplexDimension() {
+    return getCardinalityFinder().getCardinality();
   }
 
-  public KeyGenerator[] createKeyGeneratorForComplexDimension() {
-    int[] dimLens = calcDimensionLengths();
-    KeyGenerator[] complexKeyGenerators = new KeyGenerator[dimLens.length];
-    for (int i = 0; i < dimLens.length; i++) {
-      complexKeyGenerators[i] =
-          KeyGeneratorFactory.getKeyGenerator(new int[] { dimLens[i] });
-    }
-    return complexKeyGenerators;
-  }
+
 
   public TableSpec getTableSpec() {
     return tableSpec;

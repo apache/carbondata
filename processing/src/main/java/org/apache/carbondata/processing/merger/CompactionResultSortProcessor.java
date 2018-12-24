@@ -18,6 +18,7 @@ package org.apache.carbondata.processing.merger;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -299,7 +300,9 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   private Object[] prepareRowObjectForSorting(Object[] row) {
     ByteArrayWrapper wrapper = (ByteArrayWrapper) row[0];
     // ByteBuffer[] noDictionaryBuffer = new ByteBuffer[noDictionaryCount];
-    List<CarbonDimension> dimensions = segmentProperties.getDimensions();
+    List<CarbonDimension> dimensions = new ArrayList<>();
+    dimensions.addAll(segmentProperties.getDimensions());
+    dimensions.addAll(segmentProperties.getComplexDimensions());
     Object[] preparedRow = new Object[dimensions.size() + measureCount];
     // convert the dictionary from MDKey to surrogate key
     byte[] dictionaryKey = wrapper.getDictionaryKey();
@@ -310,12 +313,14 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     }
     int noDictionaryIndex = 0;
     int dictionaryIndex = 0;
+    int complexIndex = 0;
+
     for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dims = dimensions.get(i);
-      if (dims.hasEncoding(Encoding.DICTIONARY)) {
+      if (dims.hasEncoding(Encoding.DICTIONARY) && !dims.isComplex()) {
         // dictionary
         preparedRow[i] = dictionaryValues[dictionaryIndex++];
-      } else {
+      } else if (!dims.isComplex()) {
         // no dictionary dims
         byte[] noDictionaryKeyByIndex = wrapper.getNoDictionaryKeyByIndex(noDictionaryIndex++);
         if (DataTypeUtil.isPrimitiveColumn(dims.getDataType())) {
@@ -331,8 +336,11 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
         } else {
           preparedRow[i] = noDictionaryKeyByIndex;
         }
+      } else {
+        preparedRow[i] = wrapper.getComplexKeyByIndex(complexIndex++);
       }
     }
+
     // fill all the measures
     // measures will always start from 1st index in the row object array
     int measureIndexInRow = 1;

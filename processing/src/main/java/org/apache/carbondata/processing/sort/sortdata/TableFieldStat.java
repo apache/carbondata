@@ -18,9 +18,12 @@
 package org.apache.carbondata.processing.sort.sortdata;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Objects;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 
 /**
  * This class is used to hold field information for a table during data loading. These information
@@ -103,34 +106,37 @@ public class TableFieldStat implements Serializable {
     int tmpDictSortCnt = 0;
     int tmpDictNoSortCnt = 0;
     int tmpVarcharCnt = 0;
+    int tmpComplexcount = 0;
 
-    for (int i = 0; i < isDimNoDictFlags.length; i++) {
-      if (isDimNoDictFlags[i]) {
+    List<CarbonDimension> allDimensions =
+        sortParameters.getCarbonTable().getDimensionByTableName(sortParameters.getTableName());
+
+    for (int i = 0; i < allDimensions.size(); i++) {
+      CarbonDimension carbonDimension = allDimensions.get(i);
+      if (carbonDimension.hasEncoding(Encoding.DICTIONARY) && !carbonDimension.isComplex()) {
+        if (carbonDimension.isSortColumn()) {
+          dictSortDimIdx[tmpDictSortCnt++] = i;
+        } else {
+          dictNoSortDimIdx[tmpDictNoSortCnt++] = i;
+        }
+      } else if (!carbonDimension.isComplex()) {
         if (isVarcharDimFlags[i]) {
           varcharDimIdx[tmpVarcharCnt++] = i;
-        } else if (sortColumn[i]) {
+        } else if (carbonDimension.isSortColumn()) {
           noDictSortDimIdx[tmpNoDictSortCnt++] = i;
         } else {
           noDictNoSortDimIdx[tmpNoDictNoSortCnt++] = i;
         }
       } else {
-        if (sortColumn[i]) {
-          dictSortDimIdx[tmpDictSortCnt++] = i;
-        } else {
-          dictNoSortDimIdx[tmpDictNoSortCnt++] = i;
-        }
+        complexDimIdx[tmpComplexcount++] = i;
       }
     }
+
     dictNoSortDimCnt = tmpDictNoSortCnt;
     noDictNoSortDimCnt = tmpNoDictNoSortCnt;
 
-    int base = isDimNoDictFlags.length;
-    // indices for complex dimension columns
-    for (int i = 0; i < complexDimCnt; i++) {
-      complexDimIdx[i] = base + i;
-    }
+    int base = allDimensions.size();
 
-    base += complexDimCnt;
     // indices for measure columns
     for (int i = 0; i < measureCnt; i++) {
       measureIdx[i] = base + i;
