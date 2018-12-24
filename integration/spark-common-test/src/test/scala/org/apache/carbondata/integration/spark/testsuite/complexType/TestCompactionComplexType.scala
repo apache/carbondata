@@ -40,6 +40,7 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
   }
 
   override protected def afterAll(): Unit = {
+    sql("DROP TABLE IF EXISTS compactComplex")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD, compactionThreshold)
   }
@@ -1066,6 +1067,70 @@ class TestCompactionComplexType extends QueryTest with BeforeAndAfterAll {
         Row(1, Row(11111, "abc", mutable.WrappedArray.make(Array(200, 300, 403))), Map(31 -> "Nalla", 32 -> "Singh", 33 -> "Gupta", 34 -> "Kumar"))
       ))
     sql("Drop table if exists adaptive")
+  }
+
+  test("Test major compaction with dictionary include for struct of array type") {
+    sql("DROP TABLE IF EXISTS compactComplex")
+    sql(
+      "CREATE TABLE compactComplex(CUST_ID string,YEAR int, MONTH int, AGE int, GENDER string,EDUCATED " +
+      "string,IS_MARRIED " +
+      "string," +
+      "STRUCT_OF_ARRAY struct<ID:int,CHECK_DATE:string,SNo:array<int>,sal1:array<double>," +
+      "state:array<string>," +
+      "date1:array<string>>,CARD_COUNT int,DEBIT_COUNT int,CREDIT_COUNT int, DEPOSIT double, " +
+      "HQ_DEPOSIT double) STORED BY 'carbondata'" +
+      "TBLPROPERTIES('DICTIONARY_INCLUDE'='STRUCT_OF_ARRAY,DEPOSIT,HQ_DEPOSIT')")
+    sql(
+      s"LOAD DATA LOCAL INPATH '$resourcesPath/structofarray.csv' INTO TABLE compactComplex OPTIONS" +
+      s"('DELIMITER'=',','QUOTECHAR'='\'," +
+      "'FILEHEADER'='CUST_ID,YEAR,MONTH,AGE, GENDER,EDUCATED,IS_MARRIED,STRUCT_OF_ARRAY," +
+      "CARD_COUNT," +
+      "DEBIT_COUNT,CREDIT_COUNT, DEPOSIT,HQ_DEPOSIT','COMPLEX_DELIMITER_LEVEL_1'='$', " +
+      "'COMPLEX_DELIMITER_LEVEL_2'='&')")
+    sql(
+      s"LOAD DATA LOCAL INPATH '$resourcesPath/structofarray.csv' INTO TABLE compactComplex OPTIONS" +
+      s"('DELIMITER'=',','QUOTECHAR'='\'," +
+      "'FILEHEADER'='CUST_ID,YEAR,MONTH,AGE, GENDER,EDUCATED,IS_MARRIED,STRUCT_OF_ARRAY," +
+      "CARD_COUNT," +
+      "DEBIT_COUNT,CREDIT_COUNT, DEPOSIT,HQ_DEPOSIT','COMPLEX_DELIMITER_LEVEL_1'='$', " +
+      "'COMPLEX_DELIMITER_LEVEL_2'='&')")
+    sql(
+      s"LOAD DATA LOCAL INPATH '$resourcesPath/structofarray.csv' INTO TABLE compactComplex OPTIONS" +
+      s"('DELIMITER'=',','QUOTECHAR'='\'," +
+      "'FILEHEADER'='CUST_ID,YEAR,MONTH,AGE,GENDER,EDUCATED,IS_MARRIED,STRUCT_OF_ARRAY," +
+      "CARD_COUNT," +
+      "DEBIT_COUNT,CREDIT_COUNT, DEPOSIT,HQ_DEPOSIT','COMPLEX_DELIMITER_LEVEL_1'='$', " +
+      "'COMPLEX_DELIMITER_LEVEL_2'='&')")
+    sql("ALTER TABLE compactComplex COMPACT 'major'")
+    checkAnswer(sql("Select count(*) from compactComplex"), Row(30))
+  }
+
+  test("Test Compaction for complex types with table restructured") {
+    sql("drop table if exists compactComplex")
+    sql(
+      """
+        | create table compactComplex (
+        | name string,
+        | age int,
+        | number string,
+        | structfield struct<a:array<int> ,b:int>
+        | )
+        | stored by 'carbondata'
+        | TBLPROPERTIES(
+        | 'DICTIONARY_INCLUDE'='name,age,number,structfield'
+        | )
+      """.stripMargin)
+    sql("INSERT into compactComplex values('man',25,'222','1000\0022000\0011')")
+    sql("INSERT into compactComplex values('can',24,'333','1000\0022000\0012')")
+    sql("INSERT into compactComplex values('dan',25,'222','1000\0022000\0013')")
+    sql("ALTER TABLE compactComplex drop columns(age)")
+    sql("ALTER TABLE compactComplex COMPACT 'major'")
+    checkAnswer(sql("SELECT * FROM compactComplex"),
+      Seq(Row("man", "222", Row(mutable.WrappedArray.make(Array(1000, 2000)), 1)),
+        Row("can", "333", Row(mutable.WrappedArray.make(Array(1000, 2000)), 2)),
+        Row("dan", "222", Row(mutable.WrappedArray.make(Array(1000, 2000)), 3))
+      ))
+
   }
 
 }
