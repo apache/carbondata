@@ -305,7 +305,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
            CREATE TABLE IF NOT EXISTS index1
            (id Int, name String, city String)
            STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('DICTIONARY_INCLUDE'='id','INVERTED_INDEX'='city,name')
+           TBLPROPERTIES('DICTIONARY_INCLUDE'='id','INVERTED_INDEX'='city,name', 'SORT_COLUMNS'='city,name')
       """)
     sql(
       s"""
@@ -333,7 +333,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
            CREATE TABLE IF NOT EXISTS index1
            (id Int, name String, city String)
            STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('INVERTED_INDEX'='city,name,id')
+           TBLPROPERTIES('INVERTED_INDEX'='city,name,id','SORT_COLUMNS'='city,name,id')
       """)
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "index1")
     assert(carbonTable.getColumnByName("index1", "city").getColumnSchema.getEncodingList
@@ -352,7 +352,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
            CREATE TABLE IF NOT EXISTS index1
            (id Int, name String, city String)
            STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('NO_INVERTED_INDEX'='city','INVERTED_INDEX'='city')
+           TBLPROPERTIES('NO_INVERTED_INDEX'='city','INVERTED_INDEX'='city','SORT_COLUMNS'='city')
       """)
     }
     assert(exception.getMessage
