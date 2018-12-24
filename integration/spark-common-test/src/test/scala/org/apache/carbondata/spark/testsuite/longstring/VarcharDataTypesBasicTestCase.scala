@@ -191,6 +191,19 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     assert(exceptionCaught.getMessage.contains("both in no_inverted_index and long_string_columns"))
   }
 
+  test("inverted index columns cannot be present in long_string_cols as they do not support sort_cols") {
+    val exceptionCaught = intercept[MalformedCarbonCommandException] {
+      sql(
+        s"""
+           | CREATE TABLE if not exists $longStringTable(
+           | id INT, name STRING, description STRING, address STRING, note STRING
+           | ) STORED BY 'carbondata'
+           | TBLPROPERTIES('inverted_index'='note', 'long_string_columns'='note,description')
+           |""".stripMargin)
+    }
+    assert(exceptionCaught.getMessage.contains("INVERTED_INDEX column: note should be present in SORT_COLUMNS"))
+  }
+
   private def prepareTable(): Unit = {
     sql(
       s"""

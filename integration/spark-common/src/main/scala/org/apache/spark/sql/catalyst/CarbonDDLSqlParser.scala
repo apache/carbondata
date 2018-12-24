@@ -374,6 +374,16 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     // get inverted index columns from table properties
     val invertedIdxCols = extractInvertedIndexColumns(fields, tableProperties)
 
+    // Validate if columns present in inverted index are part of sort columns.
+    if (invertedIdxCols.nonEmpty) {
+      invertedIdxCols.foreach { column =>
+        if (!sortKeyDims.contains(column)) {
+          val errMsg = "INVERTED_INDEX column: " + column + " should be present in SORT_COLUMNS"
+          throw new MalformedCarbonCommandException(errMsg)
+        }
+      }
+    }
+
     // check for any duplicate columns in inverted and noinverted columns defined in tblproperties
     if (invertedIdxCols.nonEmpty && noInvertedIdxCols.nonEmpty) {
       invertedIdxCols.foreach { distCol =>
