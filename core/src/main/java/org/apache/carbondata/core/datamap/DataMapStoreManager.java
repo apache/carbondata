@@ -36,6 +36,7 @@ import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.schema.datamap.DataMapClassProvider;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchemaStorageProvider;
@@ -139,6 +140,25 @@ public final class DataMapStoreManager {
             .equals(carbonTable.getTableId())) {
           dataMaps.add(getDataMap(carbonTable, dataMapSchema));
         }
+      }
+    }
+    return dataMaps;
+  }
+
+  /**
+   * It gives datamaps of specific provider with flag to skip lazy datamap.
+   *
+   * @return
+   */
+  public List<TableDataMap> getAllDataMap(CarbonTable carbonTable, DataMapClassProvider provider,
+                                          boolean skipLazy) throws IOException {
+    List<TableDataMap> allDataMaps = getAllDataMap(carbonTable);
+    List<TableDataMap> dataMaps = new ArrayList<>();
+    for (TableDataMap dataMap : allDataMaps) {
+      DataMapSchema dataMapSchema = dataMap.getDataMapSchema();
+      if (dataMapSchema.getProviderName().equalsIgnoreCase(provider.getShortName())
+            && !(skipLazy && dataMapSchema.isLazy())) {
+        dataMaps.add(dataMap);
       }
     }
     return dataMaps;

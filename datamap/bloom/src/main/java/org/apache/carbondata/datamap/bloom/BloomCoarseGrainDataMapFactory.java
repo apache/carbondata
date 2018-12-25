@@ -243,7 +243,10 @@ public class BloomCoarseGrainDataMapFactory extends DataMapFactory<CoarseGrainDa
         shardPaths.add(FileFactory.getPath(carbonFile.getAbsolutePath()).toString());
       }
     }
-    if (mergeShardFile != null && !mergeShardInprogress) {
+    if (mergeShardInprogress) {
+      LOGGER.warn(String.format("Bloom index file is merging for datamap=%s, segment=%s",
+          dataMapName, segmentId));
+    } else if (mergeShardFile != null) {
       // should only get one shard path if mergeShard is generated successfully
       shardPaths.clear();
       shardPaths.add(FileFactory.getPath(mergeShardFile.getAbsolutePath()).toString());

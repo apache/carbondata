@@ -67,6 +67,9 @@ case class CarbonDataMapRebuildCommand(
 
     setAuditTable(table)
 
+    // Disable the datamap before rebuild
+    DataMapStatusManager.disableDataMap(dataMapName)
+
     val provider = DataMapManager.get().getDataMapProvider(table, schema, sparkSession)
     provider.rebuild()
 
