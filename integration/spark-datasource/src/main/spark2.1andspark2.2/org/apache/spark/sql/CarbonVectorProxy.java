@@ -22,7 +22,6 @@ import java.math.BigInteger;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 import org.apache.carbondata.core.scan.scanner.LazyPageLoader;
 
-import org.apache.parquet.column.Encoding;
 import org.apache.spark.memory.MemoryMode;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.execution.vectorized.ColumnVector;
@@ -306,10 +305,9 @@ public class CarbonVectorProxy {
 
     public void setDictionary(CarbonDictionary dictionary) {
       if (null != dictionary) {
-        CarbonDictionaryWrapper dictionaryWrapper =
-            new CarbonDictionaryWrapper(Encoding.PLAIN, dictionary);
-        vector.setDictionary(dictionaryWrapper);
-        this.dictionary = dictionaryWrapper;
+        Object dictionaryObj = CarbonDictionaryUtil.generateDictionary(dictionary);
+        CarbonDictionaryUtil.setDictionary(vector, dictionaryObj);
+        CarbonDictionaryUtil.setDictionary(this, dictionaryObj);
       } else {
         vector.setDictionary(null);
       }
