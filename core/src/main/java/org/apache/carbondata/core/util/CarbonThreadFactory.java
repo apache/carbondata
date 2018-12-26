@@ -50,8 +50,7 @@ public class CarbonThreadFactory implements ThreadFactory {
     final Thread thread = defaultFactory.newThread(r);
     if (withTime) {
       thread.setName(name + "_" + System.currentTimeMillis());
-    }
-    else {
+    } else {
       thread.setName(name);
     }
     return thread;
