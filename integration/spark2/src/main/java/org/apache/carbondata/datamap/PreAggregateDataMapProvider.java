@@ -32,9 +32,10 @@ import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
-
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
+
 import org.apache.log4j.Logger;
+
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateTableHelper;
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand;
@@ -115,7 +116,8 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
     try {
       DataMapStoreManager.getInstance().dropDataMapSchema(getDataMapSchema().getDataMapName());
     } catch (IOException e) {
-      LOGGER.warn(String.format("DataMapStoreManager dropDataMapSchema fail! tableName:%s", tableName));
+      LOGGER.warn(String.format("DataMapStoreManager dropDataMapSchema fail! " +
+              "tableName:%s", tableName));
     }
   }
 
