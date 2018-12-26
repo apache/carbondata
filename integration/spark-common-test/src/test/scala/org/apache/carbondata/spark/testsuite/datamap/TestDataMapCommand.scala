@@ -78,6 +78,15 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     assert(dataMapSchemaList.get(0).getChildSchema.getTableName.equals("datamaptest_datamap3"))
   }
 
+  test("Test 'show datamap' bloomfilter and preaggregate") {
+    sql("drop table if exists maintable")
+    sql("create table maintable(name string, c_code int, price int) stored by 'carbondata'")
+    sql("create datamap ag1 on table maintable using 'preaggregate' as select name,sum(price) from maintable group by name")
+    sql("create datamap bloomfilter1 on table maintable using 'bloomfilter' DMPROPERTIES('INDEX_COLUMNS'='name')")
+    assert(sql("show datamap").collect().size == 2)
+    sql("drop table if exists maintable")
+  }
+
   test("check hivemetastore after drop datamap") {
     try {
       CarbonProperties.getInstance()

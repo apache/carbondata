@@ -17,18 +17,24 @@
 
 package org.apache.carbondata.datamap;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapProvider;
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapProperty;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 
+import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
+import org.apache.log4j.Logger;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateTableHelper;
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand;
@@ -36,6 +42,9 @@ import scala.Some;
 
 @InterfaceAudience.Internal
 public class PreAggregateDataMapProvider extends DataMapProvider {
+  private static final Logger LOGGER =
+          LogServiceFactory.getLogService(PreAggregateDataMapProvider.class.getName());
+
   protected PreAggregateTableHelper helper;
   protected CarbonDropTableCommand dropTableCommand;
   protected SparkSession sparkSession;
@@ -58,6 +67,24 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
         getMainTable(), dataMapSchema.getDataMapName(), dataMapSchema.getProviderName(),
         dataMapSchema.getProperties(), ctasSqlStatement, null, false);
     helper.initMeta(sparkSession);
+
+    CarbonTable mainTable = getMainTable();
+    if (mainTable == null) {
+      throw new MalformedDataMapCommandException(
+              "Parent table is required to create index datamap");
+    }
+    ArrayList<RelationIdentifier> relationIdentifiers = new ArrayList<>();
+    RelationIdentifier relationIdentifier =
+            new RelationIdentifier(mainTable.getDatabaseName(), mainTable.getTableName(),
+                    mainTable.getTableInfo().getFactTable().getTableId());
+    relationIdentifiers.add(relationIdentifier);
+    dataMapSchema.setRelationIdentifier(relationIdentifier);
+    dataMapSchema.setParentTables(relationIdentifiers);
+    try {
+      DataMapStoreManager.getInstance().saveDataMapSchema(dataMapSchema);
+    } catch (IOException e) {
+      LOGGER.warn("DataMapStoreManager saveDataMapSchema fail!");
+    }
   }
 
   private void validateDmProperty(DataMapSchema dataMapSchema)
@@ -84,6 +111,12 @@ public class PreAggregateDataMapProvider extends DataMapProvider {
         tableName,
         true);
     dropTableCommand.processMetadata(sparkSession);
+
+    try {
+      DataMapStoreManager.getInstance().dropDataMapSchema(getDataMapSchema().getDataMapName());
+    } catch (IOException e) {
+      LOGGER.warn(String.format("DataMapStoreManager dropDataMapSchema fail! tableName:%s", tableName));
+    }
   }
 
   @Override
