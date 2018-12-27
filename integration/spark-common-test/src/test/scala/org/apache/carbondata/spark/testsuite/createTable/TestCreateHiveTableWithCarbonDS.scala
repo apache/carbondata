@@ -17,19 +17,14 @@
 
 package org.apache.carbondata.spark.testsuite.createTable
 
-import java.io.File
-
 import org.apache.hadoop.fs.Path
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.CarbonSession
 import org.apache.spark.sql.hive.CarbonSessionCatalog
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.{AnalysisException, CarbonEnv, CarbonSession}
 import org.apache.spark.util.SparkUtil
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.hadoop.api.CarbonFileInputFormat
+import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 
 class TestCreateHiveTableWithCarbonDS extends QueryTest with BeforeAndAfterAll {
 
@@ -46,7 +41,7 @@ class TestCreateHiveTableWithCarbonDS extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          |CREATE TABLE source (key INT, value string, col1 double)
-         |STORED BY 'carbondata'
+         |STORED AS carbondata
      """.stripMargin)
 
     verifyTable
@@ -56,11 +51,11 @@ class TestCreateHiveTableWithCarbonDS extends QueryTest with BeforeAndAfterAll {
 
   private def verifyTable = {
     val table = sqlContext.sparkSession.asInstanceOf[CarbonSession].sessionState.catalog.asInstanceOf[CarbonSessionCatalog].getClient().getTable("default", "source")
-    assert(table.schema.fields.length == 3)
+    assertResult(table.schema.fields.length)(3)
     if (SparkUtil.isSparkVersionEqualTo("2.2")) {
-      assert(table.storage.locationUri.get.equals(new Path(s"file:$storeLocation/source").toUri))
+      assertResult(table.storage.locationUri.get)(new Path(s"file:$storeLocation/source").toUri)
     }
-    assert(table.storage.inputFormat.get.equals(classOf[CarbonFileInputFormat[_]].getName))
+    assertResult(table.storage.inputFormat.get)(classOf[CarbonTableInputFormat[_]].getName)
   }
 
   test("test create table and verify the hive table correctness with using carbondata") {
@@ -70,10 +65,7 @@ class TestCreateHiveTableWithCarbonDS extends QueryTest with BeforeAndAfterAll {
          |CREATE TABLE source (key INT, value string, col1 double)
          |using carbondata
      """.stripMargin)
-
     verifyTable
-
-
     sql("DROP TABLE IF EXISTS source")
   }
 
@@ -84,10 +76,7 @@ class TestCreateHiveTableWithCarbonDS extends QueryTest with BeforeAndAfterAll {
          |CREATE TABLE source (key INT, value string, col1 double)
          |using carbon
      """.stripMargin)
-
     verifyTable
-
-
     sql("DROP TABLE IF EXISTS source")
   }
 

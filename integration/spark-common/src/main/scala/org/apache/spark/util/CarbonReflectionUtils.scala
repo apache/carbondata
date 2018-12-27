@@ -40,6 +40,7 @@ import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types.StructField
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.hadoop.api.{CarbonTableInputFormat, CarbonTableOutputFormat}
 
 /**
  * Reflection APIs
@@ -347,14 +348,14 @@ object CarbonReflectionUtils {
     val updatedSerdeMap =
       serdeMap ++ Map[String, HiveSerDe](
         ("org.apache.spark.sql.carbonsource", HiveSerDe(Some(
-          "org.apache.carbondata.hadoop.api.CarbonFileInputFormat"),
-          Some("org.apache.carbondata.hadoop.api.CarbonTableOutputFormat"))),
+          classOf[CarbonTableInputFormat[_]].getName),
+          Some(classOf[CarbonTableOutputFormat].getName))),
         ("carbon", HiveSerDe(Some(
-          "org.apache.carbondata.hadoop.api.CarbonFileInputFormat"),
-          Some("org.apache.carbondata.hadoop.api.CarbonTableOutputFormat"))),
+          classOf[CarbonTableInputFormat[_]].getName),
+          Some(classOf[CarbonTableOutputFormat].getName))),
         ("carbondata", HiveSerDe(Some(
-          "org.apache.carbondata.hadoop.api.CarbonFileInputFormat"),
-          Some("org.apache.carbondata.hadoop.api.CarbonTableOutputFormat"))))
+          classOf[CarbonTableInputFormat[_]].getName),
+          Some(classOf[CarbonTableOutputFormat].getName))))
     instanceMirror.reflectField(field).set(updatedSerdeMap)
   }
 }
