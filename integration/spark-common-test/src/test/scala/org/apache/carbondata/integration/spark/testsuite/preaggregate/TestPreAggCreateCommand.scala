@@ -22,10 +22,6 @@ import java.util
 import java.util.concurrent.{Callable, ExecutorService, Executors, TimeUnit}
 
 import scala.collection.JavaConverters._
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration.Duration
-import scala.util.{Failure, Success}
 
 import org.apache.spark.sql.{AnalysisException, CarbonDatasourceHadoopRelation, Row}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan

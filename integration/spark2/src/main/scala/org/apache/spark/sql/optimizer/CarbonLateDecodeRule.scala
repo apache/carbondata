@@ -788,7 +788,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
           p.transformAllExpressions {
             case a@Alias(exp, _)
               if !exp.deterministic && !exp.isInstanceOf[CustomDeterministicExpression] =>
-              CarbonToSparkAdapater.createAliasRef(CustomDeterministicExpression(exp),
+              CarbonToSparkAdapter.createAliasRef(CustomDeterministicExpression(exp),
                 a.name,
                 a.exprId,
                 a.qualifier,
@@ -806,7 +806,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
           f.transformAllExpressions {
             case a@Alias(exp, _)
               if !exp.deterministic && !exp.isInstanceOf[CustomDeterministicExpression] =>
-              CarbonToSparkAdapater.createAliasRef(CustomDeterministicExpression(exp),
+              CarbonToSparkAdapter.createAliasRef(CustomDeterministicExpression(exp),
                 a.name,
                 a.exprId,
                 a.qualifier,

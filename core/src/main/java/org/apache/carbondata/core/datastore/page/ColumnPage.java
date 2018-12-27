@@ -746,7 +746,7 @@ public abstract class ColumnPage {
     } else if (dataType == DataTypes.BYTE_ARRAY) {
       return getLVFlattenedBytePage().length;
     } else {
-      throw new UnsupportedOperationException("unsupport compress column page: " + dataType);
+      throw new UnsupportedOperationException("unsupported compress column page: " + dataType);
     }
   }
 
@@ -785,7 +785,7 @@ public abstract class ColumnPage {
     } else if (dataType == DataTypes.BYTE_ARRAY) {
       return compressor.compressByte(getLVFlattenedBytePage());
     } else {
-      throw new UnsupportedOperationException("unsupport compress column page: " + dataType);
+      throw new UnsupportedOperationException("unsupported compress column page: " + dataType);
     }
   }
 
@@ -851,7 +851,7 @@ public abstract class ColumnPage {
           CarbonCommonConstants.INT_SIZE_IN_BYTE, meta.getCompressorName());
     } else {
       throw new UnsupportedOperationException(
-          "unsupport uncompress column page: " + meta.getStoreDataType());
+          "unsupported uncompress column page: " + meta.getStoreDataType());
     }
   }
 

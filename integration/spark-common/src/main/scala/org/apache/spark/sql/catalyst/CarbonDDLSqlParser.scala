@@ -18,13 +18,10 @@
 package org.apache.spark.sql.catalyst
 
 import java.text.SimpleDateFormat
-import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, LinkedHashSet, Map}
 import scala.language.implicitConversions
-import scala.util.Try
 import scala.util.matching.Regex
 
 import org.apache.hadoop.hive.ql.lib.Node
@@ -267,7 +264,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
-   * This will prepate the Model from the Tree details.
+   * This will prepare the Model from the Tree details.
    *
    * @param ifNotExistPresent
    * @param dbName

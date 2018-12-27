@@ -393,7 +393,7 @@ public class TablePage {
   private EncodedColumnPage[] encodeAndCompressDimensions()
       throws KeyGenException, IOException, MemoryException {
     List<EncodedColumnPage> encodedDimensions = new ArrayList<>();
-    List<EncodedColumnPage> encodedComplexDimenions = new ArrayList<>();
+    List<EncodedColumnPage> encodedComplexDimensions = new ArrayList<>();
     TableSpec tableSpec = model.getTableSpec();
     int dictIndex = 0;
     int noDictIndex = 0;
@@ -435,7 +435,7 @@ public class TablePage {
         case COMPLEX:
           EncodedColumnPage[] encodedPages = ColumnPageEncoder.encodeComplexColumn(
               complexDimensionPages[complexDimIndex++]);
-          encodedComplexDimenions.addAll(Arrays.asList(encodedPages));
+          encodedComplexDimensions.addAll(Arrays.asList(encodedPages));
           break;
         default:
           throw new IllegalArgumentException("unsupported dimension type:" + spec
@@ -443,7 +443,7 @@ public class TablePage {
       }
     }
 
-    encodedDimensions.addAll(encodedComplexDimenions);
+    encodedDimensions.addAll(encodedComplexDimensions);
     return encodedDimensions.toArray(new EncodedColumnPage[encodedDimensions.size()]);
   }
 

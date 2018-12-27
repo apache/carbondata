@@ -17,8 +17,7 @@
 
 package org.apache.spark.sql.common.util
 
-import org.apache.spark.sql.CarbonSession
-import org.apache.spark.sql.hive.{CarbonHiveSessionCatalog, HiveExternalCatalog}
+import org.apache.spark.sql.hive.CarbonHiveSessionCatalog
 import org.apache.spark.sql.test.util.QueryTest
 
 

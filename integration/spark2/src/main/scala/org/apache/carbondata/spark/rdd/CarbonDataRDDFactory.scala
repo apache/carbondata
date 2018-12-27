@@ -744,7 +744,7 @@ object CarbonDataRDDFactory {
                              CarbonCommonConstants.UNDERSCORE +
                              (index + "_0")
 
-        loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PATITION_ID)
+        loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PARTITION_ID)
         loadMetadataDetails.setLoadName(segId)
         loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_FAILURE)
         carbonLoadModel.setSegmentId(segId)
