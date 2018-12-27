@@ -378,7 +378,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     if (invertedIdxCols.nonEmpty) {
       invertedIdxCols.foreach { column =>
         if (!sortKeyDims.contains(column)) {
-          val errMsg = "INVERTED INDEX column: " + column + " should be present in SORT_COLUMN(s)"
+          val errMsg = "INVERTED_INDEX column: " + column + " should be present in SORT_COLUMNS"
           throw new MalformedCarbonCommandException(errMsg)
         }
       }

@@ -201,7 +201,7 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
            | TBLPROPERTIES('inverted_index'='note', 'long_string_columns'='note,description')
            |""".stripMargin)
     }
-    assert(exceptionCaught.getMessage.contains("should be present in SORT_COLUMN(s)"))
+    assert(exceptionCaught.getMessage.contains("INVERTED_INDEX column: note should be present in SORT_COLUMNS"))
   }
 
   private def prepareTable(): Unit = {
