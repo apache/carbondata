@@ -214,7 +214,8 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
         carbonTable,
         tableInfo,
         addColumnSchema,
-        schemaEvolutionEntry)
+        schemaEvolutionEntry,
+        oldCarbonColumn.head)
       val alterTableColRenameAndDataTypeChangePostEvent
       : AlterTableColRenameAndDataTypeChangePostEvent =
         AlterTableColRenameAndDataTypeChangePostEvent(sparkSession, carbonTable,
@@ -262,13 +263,24 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
       carbonTable: CarbonTable,
       tableInfo: TableInfo,
       addColumnSchema: ColumnSchema,
-      schemaEvolutionEntry: SchemaEvolutionEntry): Unit = {
+      schemaEvolutionEntry: SchemaEvolutionEntry,
+      oldCarbonColumn: CarbonColumn): Unit = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
-    val a = List(schemaConverter.fromExternalToWrapperColumnSchema(addColumnSchema))
-    val (tableIdentifier, schemaParts, cols) = AlterTableUtil.updateSchemaInfo(
-      carbonTable, schemaEvolutionEntry, tableInfo, Some(a))(sparkSession)
+    // get the carbon column in schema order
+    val carbonColumns = carbonTable.getCreateOrderColumn(carbonTable.getTableName).asScala
+      .collect { case carbonColumn if !carbonColumn.isInvisible => carbonColumn.getColumnSchema }
+    // get the schema ordinal of the column for which the dataType changed or column is renamed
+    val schemaOrdinal = carbonColumns.indexOf(carbonColumns
+      .filter { column => column.getColumnName.equalsIgnoreCase(oldCarbonColumn.getColName) }.head)
+    // update the schema changed column at the specific index in carbonColumns based on schema order
+    carbonColumns
+      .update(schemaOrdinal, schemaConverter.fromExternalToWrapperColumnSchema(addColumnSchema))
+    val (tableIdentifier, schemaParts) = AlterTableUtil.updateSchemaInfo(
+      carbonTable,
+      schemaEvolutionEntry,
+      tableInfo)(sparkSession)
     sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
-      .alterColumnChangeDataType(tableIdentifier, schemaParts, cols)
+      .alterColumnChangeDataTypeOrRename(tableIdentifier, schemaParts, Some(carbonColumns))
     sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
   }
 

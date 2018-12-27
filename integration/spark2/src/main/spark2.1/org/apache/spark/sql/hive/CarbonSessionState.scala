@@ -40,6 +40,7 @@ import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, Experime
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema => ColumnSchema}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
@@ -85,45 +86,23 @@ class CarbonHiveSessionCatalog(
     carbonEnv
   }
 
-  def alterTableRename(oldTableIdentifier: TableIdentifier,
-      newTableIdentifier: TableIdentifier,
-      newTablePath: String): Unit = {
-    getClient().runSqlHive(
-      s"ALTER TABLE ${ oldTableIdentifier.database.get }.${ oldTableIdentifier.table }" +
-      s" RENAME TO ${ oldTableIdentifier.database.get }.${ newTableIdentifier.table }")
-    getClient().runSqlHive(
-      s"ALTER TABLE ${ oldTableIdentifier.database.get }.${ newTableIdentifier.table }" +
-      s" SET SERDEPROPERTIES" +
-      s"('tableName'='${ newTableIdentifier.table }', " +
-      s"'dbName'='${ oldTableIdentifier.database.get }', 'tablePath'='${ newTablePath }')")
-  }
-
-  def alterTable(tableIdentifier: TableIdentifier,
-      schemaParts: String,
-      cols: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]])
-  : Unit = {
-    getClient()
-      .runSqlHive(s"ALTER TABLE ${tableIdentifier.database.get}.${tableIdentifier.table } " +
-                  s"SET TBLPROPERTIES(${ schemaParts })")
-  }
-
   def alterAddColumns(tableIdentifier: TableIdentifier,
       schemaParts: String,
-      cols: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]])
+      cols: Option[Seq[ColumnSchema]])
   : Unit = {
     alterTable(tableIdentifier, schemaParts, cols)
   }
 
   def alterDropColumns(tableIdentifier: TableIdentifier,
       schemaParts: String,
-      cols: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]])
+      cols: Option[Seq[ColumnSchema]])
   : Unit = {
     alterTable(tableIdentifier, schemaParts, cols)
   }
 
-  def alterColumnChangeDataType(tableIdentifier: TableIdentifier,
+  def alterColumnChangeDataTypeOrRename(tableIdentifier: TableIdentifier,
       schemaParts: String,
-      cols: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]])
+      cols: Option[Seq[ColumnSchema]])
   : Unit = {
     alterTable(tableIdentifier, schemaParts, cols)
   }

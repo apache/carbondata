@@ -548,6 +548,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       if (sortColumns != null) {
         wrapperColumnSchema.setSortColumn(true);
       }
+      wrapperColumnSchema.setColumnProperties(externalColumnSchema.getColumnProperties());
     }
     wrapperColumnSchema.setFunction(externalColumnSchema.getAggregate_function());
     List<org.apache.carbondata.format.ParentColumnTableRelation> parentColumnTableRelation =

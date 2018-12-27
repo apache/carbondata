@@ -138,11 +138,14 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
       val delCols = deletedColumnSchema.map { deleteCols =>
         schemaConverter.fromExternalToWrapperColumnSchema(deleteCols)
       }
-      val (tableIdentifier, schemaParts, cols) = AlterTableUtil.updateSchemaInfo(
+      val (tableIdentifier, schemaParts) = AlterTableUtil.updateSchemaInfo(
         carbonTable,
         schemaEvolutionEntry,
-        tableInfo,
-        Some(delCols))(sparkSession)
+        tableInfo)(sparkSession)
+      // get the columns in schema order and filter the dropped column in the column set
+      val cols = Some(carbonTable.getCreateOrderColumn(carbonTable.getTableName).asScala
+        .collect { case carbonColumn if !carbonColumn.isInvisible => carbonColumn.getColumnSchema}
+        .filterNot(column => delCols.contains(column)))
       sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
         .alterDropColumns(tableIdentifier, schemaParts, cols)
       sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
