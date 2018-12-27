@@ -305,9 +305,9 @@ public class CarbonVectorProxy {
 
     public void setDictionary(CarbonDictionary dictionary) {
       if (null != dictionary) {
-        Object dictionaryObj = CarbonDictionaryUtil.generateDictionary(dictionary);
-        CarbonDictionaryUtil.setDictionary(vector, dictionaryObj);
-        CarbonDictionaryUtil.setDictionary(this, dictionaryObj);
+        Object dictionaryObj = CarbonDictionaryReflectionUtil.generateDictionary(dictionary);
+        CarbonDictionaryReflectionUtil.setDictionary(vector, dictionaryObj);
+        CarbonDictionaryReflectionUtil.setDictionary(this, dictionaryObj);
       } else {
         vector.setDictionary(null);
       }

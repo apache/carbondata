@@ -20,6 +20,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import org.apache.carbondata.common.annotations.InterfaceAudience;
 import org.apache.carbondata.core.scan.result.vector.CarbonDictionary;
 
 import org.apache.spark.sql.execution.vectorized.ColumnVector;
@@ -28,7 +29,8 @@ import org.apache.spark.sql.execution.vectorized.ColumnVector;
  * This class uses the java reflection to create parquet dictionary class as CDH distribution uses
  * twitter parquet instead of apache parquet.
  */
-public class CarbonDictionaryUtil {
+@InterfaceAudience.Internal
+public class CarbonDictionaryReflectionUtil {
 
   private static final boolean isApacheParquet;
 

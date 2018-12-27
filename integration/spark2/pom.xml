@@ -54,6 +54,12 @@
       <groupId>org.apache.carbondata</groupId>
       <artifactId>carbondata-lucene</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-all</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
@@ -257,6 +263,12 @@
         <scala.binary.version>2.11</scala.binary.version>
         <scala.version>2.11.8</scala.version>
       </properties>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.spark</groupId>
+          <artifactId>spark-hive-thriftserver_${scala.binary.version}</artifactId>
+        </dependency>
+      </dependencies>
       <build>
         <plugins>
           <plugin>
