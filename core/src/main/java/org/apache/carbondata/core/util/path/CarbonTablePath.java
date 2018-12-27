@@ -322,11 +322,11 @@ public class CarbonTablePath {
   }
 
   // This partition is not used in any code logic, just keep backward compatibility
-  public static final String DEPRECATED_PATITION_ID = "0";
+  public static final String DEPRECATED_PARTITION_ID = "0";
 
   public static String getPartitionDir(String tablePath) {
     return getFactDir(tablePath) + File.separator + PARTITION_PREFIX +
-        CarbonTablePath.DEPRECATED_PATITION_ID;
+        CarbonTablePath.DEPRECATED_PARTITION_ID;
   }
 
   public static String getFactDir(String tablePath) {

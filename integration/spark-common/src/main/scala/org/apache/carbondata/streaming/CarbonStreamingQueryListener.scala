@@ -25,7 +25,6 @@ import org.apache.spark.sql.execution.streaming.{CarbonAppendableStreamSink, Str
 import org.apache.spark.sql.streaming.StreamingQueryListener
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 
 class CarbonStreamingQueryListener(spark: SparkSession) extends StreamingQueryListener {
 

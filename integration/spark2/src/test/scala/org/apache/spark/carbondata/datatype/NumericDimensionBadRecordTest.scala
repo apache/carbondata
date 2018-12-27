@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.spark.testsuite.badrecordloger
 
-import java.io.File
-
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.hive.HiveContext

@@ -16,8 +16,6 @@
  */
 package org.apache.carbondata.spark.util
 
-import java.io.File
-
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.common.util.Spark2QueryTest

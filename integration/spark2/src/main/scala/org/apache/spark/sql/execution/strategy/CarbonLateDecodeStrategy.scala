@@ -174,13 +174,13 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     if (names.nonEmpty) {
       val partitionSet = AttributeSet(names
         .map(p => relation.output.find(_.name.equalsIgnoreCase(p)).get))
-      val partitionKeyFilters = CarbonToSparkAdapater
+      val partitionKeyFilters = CarbonToSparkAdapter
         .getPartitionKeyFilter(partitionSet, filterPredicates)
       // Update the name with lower case as it is case sensitive while getting partition info.
       val updatedPartitionFilters = partitionKeyFilters.map { exp =>
         exp.transform {
           case attr: AttributeReference =>
-            CarbonToSparkAdapater.createAttributeReference(
+            CarbonToSparkAdapter.createAttributeReference(
               attr.name.toLowerCase,
               attr.dataType,
               attr.nullable,

@@ -39,7 +39,7 @@ public class PartitionUtil {
         return new RangePartitioner(partitionInfo);
       default:
         throw new UnsupportedOperationException(
-            "unsupport partition type: " + partitionInfo.getPartitionType().name());
+            "unsupported partition type: " + partitionInfo.getPartitionType().name());
     }
   }
 

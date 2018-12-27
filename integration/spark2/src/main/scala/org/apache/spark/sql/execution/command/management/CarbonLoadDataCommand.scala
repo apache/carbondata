@@ -885,7 +885,7 @@ case class CarbonLoadDataCommand(
       // datatype is always int
       val column = table.getColumnByName(table.getTableName, attr.name)
       if (column.hasEncoding(Encoding.DICTIONARY)) {
-        CarbonToSparkAdapater.createAttributeReference(attr.name,
+        CarbonToSparkAdapter.createAttributeReference(attr.name,
           IntegerType,
           attr.nullable,
           attr.metadata,
@@ -893,7 +893,7 @@ case class CarbonLoadDataCommand(
           attr.qualifier,
           attr)
       } else if (attr.dataType == TimestampType || attr.dataType == DateType) {
-        CarbonToSparkAdapater.createAttributeReference(attr.name,
+        CarbonToSparkAdapter.createAttributeReference(attr.name,
           LongType,
           attr.nullable,
           attr.metadata,

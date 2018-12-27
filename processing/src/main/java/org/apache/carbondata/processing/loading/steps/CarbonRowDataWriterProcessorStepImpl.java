@@ -126,7 +126,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       measureCount = configuration.getMeasureCount();
       outputLength = measureCount + (this.noDictWithComplextCount > 0 ? 1 : 0) + 1;
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-          .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PATITION_ID,
+          .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PARTITION_ID,
               System.currentTimeMillis());
 
       if (iterators.length == 1) {
@@ -218,10 +218,10 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       }
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-        .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PATITION_ID,
+        .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PARTITION_ID,
             System.currentTimeMillis());
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-        .recordMdkGenerateTotalTime(CarbonTablePath.DEPRECATED_PATITION_ID,
+        .recordMdkGenerateTotalTime(CarbonTablePath.DEPRECATED_PARTITION_ID,
             System.currentTimeMillis());
     if (null != exception) {
       throw exception;
