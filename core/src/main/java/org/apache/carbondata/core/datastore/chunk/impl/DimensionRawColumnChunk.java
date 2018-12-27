@@ -208,8 +208,10 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
         }
       }
       decode.freeMemory();
-      // as dictionary values starts from 1 setting null default value
-      dictionary[1] = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
+      if (!usedDictionary.isEmpty()) {
+        // as dictionary values starts from 1 setting null default value
+        dictionary[1] = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
+      }
       return new CarbonDictionaryImpl(dictionary, usedDictionary.cardinality());
     }
     return null;
