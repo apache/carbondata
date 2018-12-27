@@ -21,11 +21,16 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartition, ExternalCatalogUtils}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
-import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
+import org.apache.spark.sql.types.MetadataBuilder
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
+import org.apache.spark.sql.types.{StructField, StructType}
+import org.apache.spark.sql.util.SparkTypeConverter
+
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * This class refresh the relation from cache if the carbontable in
@@ -91,6 +96,54 @@ object CarbonSessionUtil {
       partitionFilters,
       sparkSession.sessionState.conf.sessionLocalTimeZone
     )
+  }
+
+  /**
+   * This method alter the table for datatype change or column rename operation, and update the
+   * external catalog directly
+   *
+   * @param tableIdentifier tableIdentifier for table
+   * @param cols            all the column of table, which are updated with datatype change of
+   *                        new column name
+   * @param schemaParts     schemaParts
+   * @param sparkSession    sparkSession
+   */
+  def alterExternalCatalogForTableWithUpdatedSchema(tableIdentifier: TableIdentifier,
+      cols: Option[Seq[ColumnSchema]],
+      schemaParts: String,
+      sparkSession: SparkSession): Unit = {
+    val carbonTable = CarbonEnv.getCarbonTable(tableIdentifier)(sparkSession)
+    val colArray: scala.collection.mutable.ArrayBuffer[StructField] = ArrayBuffer()
+    cols.get.foreach(column =>
+      if (!column.isInvisible) {
+        val structFiled =
+          if (null != column.getColumnProperties &&
+              column.getColumnProperties.get("comment") != null) {
+            StructField(column.getColumnName,
+              SparkTypeConverter
+                .convertCarbonToSparkDataType(column,
+                  carbonTable),
+              true,
+              // update the column comment if present in the schema
+              new MetadataBuilder().putString("comment", column.getColumnProperties.get("comment"))
+                .build())
+          } else {
+            StructField(column.getColumnName,
+              SparkTypeConverter
+                .convertCarbonToSparkDataType(column,
+                  carbonTable))
+          }
+        colArray += structFiled
+      }
+    )
+    // Alter the data schema of a table identified by the provided database and table name.
+    // updated schema should contain all the existing data columns. This alterTableDataSchema API
+    // should be called after any alter with existing schema which updates the catalog table with
+    // new updated schema
+    sparkSession.sessionState.catalog.externalCatalog
+      .alterTableDataSchema(tableIdentifier.database.get,
+        tableIdentifier.table,
+        StructType(colArray))
   }
 
 }

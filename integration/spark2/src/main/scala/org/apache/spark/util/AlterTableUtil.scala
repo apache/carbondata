@@ -107,13 +107,8 @@ object AlterTableUtil {
    */
   def updateSchemaInfo(carbonTable: CarbonTable,
       schemaEvolutionEntry: SchemaEvolutionEntry = null,
-      thriftTable: TableInfo,
-      cols: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]] =
-      None)
-    (sparkSession: SparkSession):
-    (TableIdentifier,
-      String,
-      Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]]) = {
+      thriftTable: TableInfo)
+    (sparkSession: SparkSession): (TableIdentifier, String) = {
     val dbName = carbonTable.getDatabaseName
     val tableName = carbonTable.getTableName
     CarbonEnv.getInstance(sparkSession).carbonMetaStore
@@ -127,7 +122,7 @@ object AlterTableUtil {
     val schema = CarbonEnv.getInstance(sparkSession).carbonMetaStore
       .lookupRelation(tableIdentifier)(sparkSession).schema.json
     val schemaParts = prepareSchemaJsonForAlterTable(sparkSession.sparkContext.getConf, schema)
-    (tableIdentifier, schemaParts, cols)
+    (tableIdentifier, schemaParts)
   }
 
   /**
@@ -403,11 +398,10 @@ object AlterTableUtil {
         // check if duplicate columns are present in both local dictionary include and exclude
         CarbonScalaUtil.validateDuplicateLocalDictIncludeExcludeColmns(tblPropertiesMap)
       }
-      val (tableIdentifier, schemParts, cols: Option[Seq[org.apache.carbondata.core.metadata
-      .schema.table.column.ColumnSchema]]) = updateSchemaInfo(
+      val (tableIdentifier, schemParts) = updateSchemaInfo(
         carbonTable = carbonTable,
         thriftTable = thriftTable)(sparkSession)
-      catalog.alterTable(tableIdentifier, schemParts, cols)
+      catalog.alterTable(tableIdentifier, schemParts, None)
       sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
       // check and clear the block/blocklet cache
       checkAndClearBlockletCache(carbonTable,

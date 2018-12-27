@@ -23,6 +23,7 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable
 import org.apache.spark.sql.catalyst.expressions.Expression
 
 import org.apache.carbondata.common.annotations.{InterfaceAudience, InterfaceStability}
+import org.apache.carbondata.core.metadata.schema.table.column.{ColumnSchema => ColumnSchema}
 
 /**
  * This interface defines those common api used by carbon for spark-2.1 and spark-2.2 integration,
@@ -77,7 +78,16 @@ trait CarbonSessionCatalog {
    */
   def alterTableRename(oldTableIdentifier: TableIdentifier,
       newTableIdentifier: TableIdentifier,
-      newTablePath: String): Unit
+      newTablePath: String): Unit = {
+    getClient().runSqlHive(
+      s"ALTER TABLE ${ oldTableIdentifier.database.get }.${ oldTableIdentifier.table } " +
+      s"RENAME TO ${ oldTableIdentifier.database.get }.${ newTableIdentifier.table }")
+    getClient().runSqlHive(
+      s"ALTER TABLE ${ oldTableIdentifier.database.get }.${ newTableIdentifier.table } " +
+      s"SET SERDEPROPERTIES" +
+      s"('tableName'='${ newTableIdentifier.table }', " +
+      s"'dbName'='${ oldTableIdentifier.database.get }', 'tablePath'='${ newTablePath }')")
+  }
 
   /**
    * Below method will be used to update serd properties
@@ -87,7 +97,11 @@ trait CarbonSessionCatalog {
    */
   def alterTable(tableIdentifier: TableIdentifier,
       schemaParts: String,
-      cols: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]]): Unit
+      cols: Option[Seq[ColumnSchema]]): Unit = {
+    getClient()
+      .runSqlHive(s"ALTER TABLE ${ tableIdentifier.database.get }.${ tableIdentifier.table } " +
+                  s"SET TBLPROPERTIES(${ schemaParts })")
+  }
 
   /**
    * Below method will be used to add new column
@@ -97,7 +111,7 @@ trait CarbonSessionCatalog {
    */
   def alterAddColumns(tableIdentifier: TableIdentifier,
       schemaParts: String,
-      cols: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]]): Unit
+      cols: Option[Seq[ColumnSchema]]): Unit
 
   /**
    * Below method will be used to drop column
@@ -107,7 +121,7 @@ trait CarbonSessionCatalog {
    */
   def alterDropColumns(tableIdentifier: TableIdentifier,
       schemaParts: String,
-      cols: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]]): Unit
+      cols: Option[Seq[ColumnSchema]]): Unit
 
   /**
    * Below method will be used to alter data type of column in schema
@@ -115,7 +129,7 @@ trait CarbonSessionCatalog {
    * @param schemaParts schema parts
    * @param cols cols
    */
-  def alterColumnChangeDataType(tableIdentifier: TableIdentifier,
+  def alterColumnChangeDataTypeOrRename(tableIdentifier: TableIdentifier,
       schemaParts: String,
-      cols: Option[Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]]): Unit
+      cols: Option[Seq[ColumnSchema]]): Unit
 }
