@@ -16,10 +16,10 @@
  */
 package org.apache.carbondata.core.scan.filter.resolver.resolverinfo.visitor;
 
-import java.io.IOException;
-import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
+import org.apache.carbondata.core.scan.expression.conditional.ImplicitExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
@@ -43,18 +43,18 @@ public class ImplicitColumnVisitor implements ResolvedFilterInfoVisitorIntf {
    */
 
   @Override public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
-      FilterResolverMetadata metadata) throws FilterUnsupportedException, IOException {
+      FilterResolverMetadata metadata) throws FilterUnsupportedException {
     if (visitableObj instanceof DimColumnResolvedFilterInfo) {
       ColumnFilterInfo resolvedFilterObject = null;
-      List<String> evaluateResultListFinal;
-      try {
-        evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
-      } catch (FilterIllegalMemberException e) {
-        throw new FilterUnsupportedException(e);
+      if (metadata.getExpression() instanceof ImplicitExpression) {
+        Map<String, Set<Integer>> blockIdToBlockletIdMapping =
+            ((ImplicitExpression) metadata.getExpression()).getBlockIdToBlockletIdMapping();
+        resolvedFilterObject = FilterUtil
+            .getImplicitColumnFilterList(blockIdToBlockletIdMapping, metadata.isIncludeFilter());
+        ((DimColumnResolvedFilterInfo) visitableObj).setFilterValues(resolvedFilterObject);
+      } else {
+        throw new FilterUnsupportedException("Expression not an instance of implicit expression");
       }
-      resolvedFilterObject = FilterUtil
-          .getImplicitColumnFilterList(evaluateResultListFinal, metadata.isIncludeFilter());
-      ((DimColumnResolvedFilterInfo)visitableObj).setFilterValues(resolvedFilterObject);
     }
   }
 }

@@ -48,6 +48,7 @@ import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.profiler.ExplainCollector;
 import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.model.QueryModelBuilder;
@@ -611,7 +612,8 @@ m filterExpression
   @Override public RecordReader<Void, T> createRecordReader(InputSplit inputSplit,
       TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
     Configuration configuration = taskAttemptContext.getConfiguration();
-    QueryModel queryModel = createQueryModel(inputSplit, taskAttemptContext);
+    QueryModel queryModel = createQueryModel(inputSplit, taskAttemptContext,
+        getFilterPredicates(taskAttemptContext.getConfiguration()));
     CarbonReadSupport<T> readSupport = getReadSupportClass(configuration);
     return new CarbonRecordReader<T>(queryModel, readSupport,
         taskAttemptContext.getConfiguration());
@@ -619,6 +621,12 @@ m filterExpression
 
   public QueryModel createQueryModel(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
       throws IOException {
+    return createQueryModel(inputSplit, taskAttemptContext,
+        getFilterPredicates(taskAttemptContext.getConfiguration()));
+  }
+
+  public QueryModel createQueryModel(InputSplit inputSplit, TaskAttemptContext taskAttemptContext,
+      Expression filterExpression) throws IOException {
     Configuration configuration = taskAttemptContext.getConfiguration();
     CarbonTable carbonTable = getOrCreateCarbonTable(configuration);
 
@@ -630,9 +638,10 @@ m filterExpression
     } else {
       projectColumns = new String[]{};
     }
+    checkAndAddImplicitExpression(filterExpression, inputSplit);
     QueryModel queryModel = new QueryModelBuilder(carbonTable)
         .projectColumns(projectColumns)
-        .filterExpression(getFilterPredicates(configuration))
+        .filterExpression(filterExpression)
         .dataConverter(getDataTypeConverter(configuration))
         .build();
 
@@ -650,6 +659,36 @@ m filterExpression
       }
     }
     return queryModel;
+  }
+
+  /**
+   * This method will create an Implict Expression and set it as right child in the given
+   * expression
+   *
+   * @param expression
+   * @param inputSplit
+   */
+  private void checkAndAddImplicitExpression(Expression expression, InputSplit inputSplit) {
+    if (inputSplit instanceof CarbonMultiBlockSplit) {
+      CarbonMultiBlockSplit split = (CarbonMultiBlockSplit) inputSplit;
+      List<CarbonInputSplit> splits = split.getAllSplits();
+      // iterate over all the splits and create block to bblocklet mapping
+      Map<String, Set<Integer>> blockIdToBlockletIdMapping = new HashMap<>();
+      for (CarbonInputSplit carbonInputSplit : splits) {
+        Set<Integer> validBlockletIds = carbonInputSplit.getValidBlockletIds();
+        if (null != validBlockletIds && !validBlockletIds.isEmpty()) {
+          String uniqueBlockPath = carbonInputSplit.getPath().toString();
+          String shortBlockPath = CarbonTablePath
+              .getShortBlockId(uniqueBlockPath.substring(uniqueBlockPath.lastIndexOf("/Part") + 1));
+          blockIdToBlockletIdMapping.put(shortBlockPath, validBlockletIds);
+        }
+      }
+      if (!blockIdToBlockletIdMapping.isEmpty()) {
+        // create implicit expression and set as right child
+        FilterUtil
+            .createImplicitExpressionAndSetAsRightChild(expression, blockIdToBlockletIdMapping);
+      }
+    }
   }
 
   public CarbonReadSupport<T> getReadSupportClass(Configuration configuration) {
