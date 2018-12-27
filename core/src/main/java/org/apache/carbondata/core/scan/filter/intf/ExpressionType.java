@@ -43,5 +43,6 @@ public enum ExpressionType {
   STARTSWITH,
   ENDSWITH,
   CONTAINSWITH,
-  TEXT_MATCH
+  TEXT_MATCH,
+  IMPLICIT
 }
