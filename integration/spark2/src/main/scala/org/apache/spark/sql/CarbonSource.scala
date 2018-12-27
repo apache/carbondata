@@ -331,7 +331,7 @@ object CarbonSource {
         properties,
         query)
       // updating params
-      val updatedFormat = CarbonToSparkAdapater
+      val updatedFormat = CarbonToSparkAdapter
         .getUpdatedStorageFormat(storageFormat, map, tablePath)
       tableDesc.copy(storage = updatedFormat)
     } else {

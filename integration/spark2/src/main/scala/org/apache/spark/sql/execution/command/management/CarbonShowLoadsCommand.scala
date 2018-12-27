@@ -20,7 +20,7 @@ package org.apache.spark.sql.execution.command.management
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
-import org.apache.spark.sql.types.{StringType, TimestampType}
+import org.apache.spark.sql.types.StringType
 
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException

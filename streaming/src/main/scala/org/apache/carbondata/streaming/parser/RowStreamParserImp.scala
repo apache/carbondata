@@ -27,7 +27,6 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.processing.loading
 import org.apache.carbondata.processing.loading.ComplexDelimitersEnum
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 

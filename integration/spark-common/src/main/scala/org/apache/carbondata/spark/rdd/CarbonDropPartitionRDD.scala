@@ -28,7 +28,7 @@ import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.indexstore.PartitionSpec
 import org.apache.carbondata.core.metadata.SegmentFileStore
 
-case class CarbonDropPartition(rddId: Int, val idx: Int, segment: Segment)
+case class CarbonDropPartition(rddId: Int, idx: Int, segment: Segment)
   extends Partition {
 
   override val index: Int = idx

@@ -32,7 +32,7 @@ object PartitionFactory {
       case PartitionType.LIST => new ListPartitioner(partitionInfo)
       case PartitionType.RANGE => new RangePartitioner(partitionInfo)
       case partitionType =>
-        throw new CarbonDataLoadingException(s"Unsupport partition type: $partitionType")
+        throw new CarbonDataLoadingException(s"Unsupported partition type: $partitionType")
     }
   }
 }
