@@ -121,24 +121,23 @@ public class AlluxioCarbonFile extends HDFSCarbonFile {
       fsdos = fs.create(changedPath, true);
       fsdis = fs.open(actualPath);
       if (null != fsdis && null != fsdos) {
-        IOUtils.copyBytes(fsdis, fsdos, hadoopConf, true);
+        try {
+          IOUtils.copyBytes(fsdis, fsdos, hadoopConf, true);
+          if (fs.exists(changedPath)) {
+            fs.delete(actualPath, true);
+          }
+          // Reassigning fileStatus to the changedPath.
+          fileStatus = fs.getFileStatus(changedPath);
+        } catch (IOException e) {
+          LOGGER.error("Exception occured: " + e.getMessage());
+          return false;
+        }
         return true;
       }
       return false;
     } catch (IOException e) {
       LOGGER.error("Exception occured: " + e.getMessage());
       return false;
-    } finally {
-      try {
-        if (null != fsdis && null != fsdos) {
-          if (fs.exists(new Path(changeToName))) {
-            fs.delete(fileStatus.getPath(), true);
-          }
-        }
-      } catch (IOException e) {
-        LOGGER.error("Exception occured: " + e.getMessage());
-        return false;
-      }
     }
   }
 
