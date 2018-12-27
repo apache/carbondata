@@ -307,6 +307,14 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
     sql("drop table if exists biginttable")
   }
 
+  test("test column comment after column rename") {
+    dropTable()
+    createTable()
+    checkExistence(sql("describe formatted rename"), true, "This column has comment ")
+    sql("alter table rename change deptno classno bigint")
+    checkExistence(sql("describe formatted rename"), true, "This column has comment ")
+  }
+
   override def afterAll(): Unit = {
     dropTable()
   }
@@ -335,7 +343,8 @@ class AlterTableColumnRenameTestCase extends Spark2QueryTest with BeforeAndAfter
   def createTable(): Unit = {
     sql(
       "CREATE TABLE rename (empno int, empname String, designation String, doj Timestamp, " +
-      "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
+      "workgroupcategory int, workgroupcategoryname String, deptno int comment \"This column " +
+      "has comment\", deptname String, " +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
       "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
   }
