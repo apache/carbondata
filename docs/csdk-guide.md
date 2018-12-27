@@ -43,114 +43,116 @@ C++ SDK support read batch row. User can set batch by using withBatch(int batch)
 ## API List
 ### CarbonReader
 ```
-    /**
-     * create a CarbonReaderBuilder object for building carbonReader,
-     * CarbonReaderBuilder object  can configure different parameter
-     *
-     * @param env JNIEnv
-     * @param path data store path
-     * @param tableName table name
-     * @return CarbonReaderBuilder object
-     */
-    jobject builder(JNIEnv *env, char *path, char *tableName);
+/**
+ * Create a CarbonReaderBuilder object for building carbonReader,
+ * CarbonReaderBuilder object  can configure different parameter
+ *
+ * @param env JNIEnv
+ * @param path data store path
+ * @param tableName table name
+ * @return CarbonReaderBuilder object
+ */
+jobject builder(JNIEnv *env, char *path, char *tableName);
 ```
 
 ```
-    /**
-     * create a CarbonReaderBuilder object for building carbonReader,
-     * CarbonReaderBuilder object  can configure different parameter
-     *
-     * @param env JNIEnv
-     * @param path data store path
-     * */
-    void builder(JNIEnv *env, char *path);
+/**
+ * Create a CarbonReaderBuilder object for building carbonReader,
+ * CarbonReaderBuilder object can configure different parameter
+ *
+ * @param env JNIEnv
+ * @param path data store path
+ * 
+ */
+void builder(JNIEnv *env, char *path);
 ```
 
 ```
-    /**
-     * Configure the projection column names of carbon reader
-     *
-     * @param argc argument counter
-     * @param argv argument vector
-     * @return CarbonReaderBuilder object
-     */
-    jobject projection(int argc, char *argv[]);
+/**
+ * Configure the projection column names of carbon reader
+ *
+ * @param argc argument counter
+ * @param argv argument vector
+ * @return CarbonReaderBuilder object
+ */
+jobject projection(int argc, char *argv[]);
 ```
 
 ```
-    /**
-     *  build carbon reader with argument vector
-     *  it support multiple parameter
-     *  like: key=value
-     *  for example: fs.s3a.access.key=XXXX, XXXX is user's access key value
-     *
-     * @param argc argument counter
-     * @param argv argument vector
-     * @return CarbonReaderBuilder object
-     **/
-    jobject withHadoopConf(int argc, char *argv[]);
+/**
+ * Build carbon reader with argument vector
+ * it supports multiple parameters
+ * like: key=value
+ * for example: fs.s3a.access.key=XXXX, XXXX is user's access key value
+ *
+ * @param argc argument counter
+ * @param argv argument vector
+ * @return CarbonReaderBuilder object
+ *
+ */
+jobject withHadoopConf(int argc, char *argv[]);
 ```
 
 ```
-   /**
-     * Sets the batch size of records to read
-     *
-     * @param batch batch size
-     * @return CarbonReaderBuilder object
-     */
-    void withBatch(int batch);
+/**
+ * Sets the batch size of records to read
+ *
+ * @param batch batch size
+ * @return CarbonReaderBuilder object
+ */
+void withBatch(int batch);
 ```
 
 ```
-    /**
-     * Configure Row Record Reader for reading.
-     */
-    void withRowRecordReader();
+/**
+ * Configure Row Record Reader for reading.
+ */
+void withRowRecordReader();
 ```
 
 ```
-    /**
-     * build carbonReader object for reading data
-     * it support read data from load disk
-     *
-     * @return carbonReader object
-     */
-    jobject build();
+/**
+ * Build carbonReader object for reading data
+ * it supports read data from load disk
+ *
+ * @return carbonReader object
+ */
+jobject build();
 ```
 
 ```
-    /**
-     * Whether it has next row data
-     *
-     * @return boolean value, if it has next row, return true. if it hasn't next row, return false.
-     */
-    jboolean hasNext();
+/**
+ * Whether it has next row data
+ *
+ * @return boolean value, if it has next row, return true. if it hasn't next row, return false.
+ */
+jboolean hasNext();
 ```
 
 ```
-    /**
-     * read next carbonRow from data
-     * @return carbonRow object of one row
-     */
-     jobject readNextRow();
+/**
+ * Read next carbonRow from data
+ * @return carbonRow object of one row
+ */
+jobject readNextRow();
 ```
 
 ```
-    /**
-     * read Next Batch Row
-     *
-     * @return rows
-     */
-    jobjectArray readNextBatchRow();
+/**
+ * Read Next Batch Row
+ *
+ * @return rows
+ */
+jobjectArray readNextBatchRow();
 ```
 
 ```
-    /**
-     * close the carbon reader
-     *
-     * @return  boolean value
-     */
-    jboolean close();
+/**
+ * Close the carbon reader
+ *
+ * @return  boolean value
+ */
+jboolean close();
 ```
 
 # C++ SDK Writer
@@ -172,361 +174,360 @@ release the memory and destroy JVM.
 ## API List
 ### CarbonWriter
 ```
-    /**
-     * create a CarbonWriterBuilder object for building carbonWriter,
-     * CarbonWriterBuilder object  can configure different parameter
-     *
-     * @param env JNIEnv
-     * @return CarbonWriterBuilder object
-     */
-    void builder(JNIEnv *env);
+/**
+ * Create a CarbonWriterBuilder object for building carbonWriter,
+ * CarbonWriterBuilder object  can configure different parameter
+ *
+ * @param env JNIEnv
+ * @return CarbonWriterBuilder object
+ */
+void builder(JNIEnv *env);
 ```
 
 ```
-    /**
-     * Sets the output path of the writer builder
-     *
-     * @param path is the absolute path where output files are written
-     * This method must be called when building CarbonWriterBuilder
-     * @return updated CarbonWriterBuilder
-     */
-    void outputPath(char *path);
+/**
+ * Sets the output path of the writer builder
+ *
+ * @param path is the absolute path where output files are written
+ * This method must be called when building CarbonWriterBuilder
+ * @return updated CarbonWriterBuilder
+ */
+void outputPath(char *path);
 ```
 
 ```
-    /**
-      * sets the list of columns that needs to be in sorted order
-      *
-      * @param argc argc argument counter, the number of projection column
-      * @param argv argv is a string array of columns that needs to be sorted.
-      *                  If it is null or by default all dimensions are selected for sorting
-      *                  If it is empty array, no columns are sorted
-      */
-    void sortBy(int argc, char *argv[]);
+/**
+ * Sets the list of columns that needs to be in sorted order
+ *
+ * @param argc argc argument counter, the number of projection column
+ * @param argv argv is a string array of columns that needs to be sorted.
+ *                  If it is null or by default all dimensions are selected for sorting
+ *                  If it is empty array, no columns are sorted
+ */
+void sortBy(int argc, char *argv[]);
 ```
 
 ```
-    /**
-     * configure the schema with json style schema
-     *
-     * @param jsonSchema json style schema
-     * @return updated CarbonWriterBuilder
-     */
-    void withCsvInput(char *jsonSchema);
+/**
+ * Configure the schema with json style schema
+ *
+ * @param jsonSchema json style schema
+ * @return updated CarbonWriterBuilder
+ */
+void withCsvInput(char *jsonSchema);
 ```
 
 ```
-    /**
-    * Updates the hadoop configuration with the given key value
-    *
-    * @param key key word
-    * @param value value
-    * @return CarbonWriterBuilder object
-    */
-    void withHadoopConf(char *key, char *value);
+/**
+ * Updates the hadoop configuration with the given key value
+ *
+ * @param key key word
+ * @param value value
+ * @return CarbonWriterBuilder object
+ */
+void withHadoopConf(char *key, char *value);
 ```
 
 ```
- /**
-     *  To support the table properties for writer
-     *
-     * @param key properties key
-     * @param value properties value
-     */
-    void withTableProperty(char *key, char *value);
+/**
+ * To support the table properties for writer
+ *
+ * @param key properties key
+ * @param value properties value
+ */
+void withTableProperty(char *key, char *value);
 ```
 
 ```
-    /**
-     * To support the load options for C++ sdk writer
-     *
-     * @param options key,value pair of load options.
-     * supported keys values are
-     * a. bad_records_logger_enable -- true (write into separate logs), false
-     * b. bad_records_action -- FAIL, FORCE, IGNORE, REDIRECT
-     * c. bad_record_path -- path
-     * d. dateformat -- same as JAVA SimpleDateFormat
-     * e. timestampformat -- same as JAVA SimpleDateFormat
-     * f. complex_delimiter_level_1 -- value to Split the complexTypeData
-     * g. complex_delimiter_level_2 -- value to Split the nested complexTypeData
-     * h. quotechar
-     * i. escapechar
-     *
-     * Default values are as follows.
-     *
-     * a. bad_records_logger_enable -- "false"
-     * b. bad_records_action -- "FAIL"
-     * c. bad_record_path -- ""
-     * d. dateformat -- "" , uses from carbon.properties file
-     * e. timestampformat -- "", uses from carbon.properties file
-     * f. complex_delimiter_level_1 -- "$"
-     * g. complex_delimiter_level_2 -- ":"
-     * h. quotechar -- "\""
-     * i. escapechar -- "\\"
-     *
-     * @return updated CarbonWriterBuilder
-     */
-    void withLoadOption(char *key, char *value);
+/**
+ * To support the load options for C++ sdk writer
+ *
+ * @param options key,value pair of load options.
+ * supported keys values are
+ * a. bad_records_logger_enable -- true (write into separate logs), false
+ * b. bad_records_action -- FAIL, FORCE, IGNORE, REDIRECT
+ * c. bad_record_path -- path
+ * d. dateformat -- same as JAVA SimpleDateFormat
+ * e. timestampformat -- same as JAVA SimpleDateFormat
+ * f. complex_delimiter_level_1 -- value to Split the complexTypeData
+ * g. complex_delimiter_level_2 -- value to Split the nested complexTypeData
+ * h. quotechar
+ * i. escapechar
+ *
+ * Default values are as follows.
+ *
+ * a. bad_records_logger_enable -- "false"
+ * b. bad_records_action -- "FAIL"
+ * c. bad_record_path -- ""
+ * d. dateformat -- "" , uses from carbon.properties file
+ * e. timestampformat -- "", uses from carbon.properties file
+ * f. complex_delimiter_level_1 -- "$"
+ * g. complex_delimiter_level_2 -- ":"
+ * h. quotechar -- "\""
+ * i. escapechar -- "\\"
+ *
+ * @return updated CarbonWriterBuilder
+ */
+void withLoadOption(char *key, char *value);
 ```
 
 ```
-    /**
-     * sets the taskNo for the writer. CSDKs concurrently running
-     * will set taskNo in order to avoid conflicts in file's name during write.
-     *
-     * @param taskNo is the TaskNo user wants to specify.
-     *               by default it is system time in nano seconds.
-     */
-    void taskNo(long taskNo);
+/**
+ * Sets the taskNo for the writer. CSDKs concurrently running
+ * will set taskNo in order to avoid conflicts in file's name during write.
+ *
+ * @param taskNo is the TaskNo user wants to specify.
+ *               by default it is system time in nano seconds.
+ */
+void taskNo(long taskNo);
 ```
 
 ```
-    /**
-     * to set the timestamp in the carbondata and carbonindex index files
-     *
-     * @param timestamp is a timestamp to be used in the carbondata and carbonindex index files.
-     * By default set to zero.
-     * @return updated CarbonWriterBuilder
-     */
-    void uniqueIdentifier(long timestamp);
+/**
+ * Set the timestamp in the carbondata and carbonindex index files
+ *
+ * @param timestamp is a timestamp to be used in the carbondata and carbonindex index files.
+ * By default set to zero.
+ * @return updated CarbonWriterBuilder
+ */
+void uniqueIdentifier(long timestamp);
 ```
 
 ```
-    /**
-     * To make c++ sdk writer thread safe.
-     *
-     * @param numOfThreads should number of threads in which writer is called in multi-thread scenario
-     *                      default C++ sdk writer is not thread safe.
-     *                      can use one writer instance in one thread only.
-     */
-    void withThreadSafe(short numOfThreads) ;
+/**
+ * To make c++ sdk writer thread safe.
+ *
+ * @param numOfThreads should number of threads in which writer is called in multi-thread scenario
+ *                      default C++ sdk writer is not thread safe.
+ *                      can use one writer instance in one thread only.
+ */
+void withThreadSafe(short numOfThreads) ;
 ```
 
 ```
-    /**
-     * To set the carbondata file size in MB between 1MB-2048MB
-     *
-     * @param blockSize is size in MB between 1MB to 2048 MB
-     * default value is 1024 MB
-     */
-    void withBlockSize(int blockSize);
+/**
+ * To set the carbondata file size in MB between 1MB-2048MB
+ *
+ * @param blockSize is size in MB between 1MB to 2048 MB
+ * default value is 1024 MB
+ */
+void withBlockSize(int blockSize);
 ```
 
 ```
-    /**
-     * To set the blocklet size of CarbonData file
-     *
-     * @param blockletSize is blocklet size in MB
-     *        default value is 64 MB
-     * @return updated CarbonWriterBuilder
-     */
-    void withBlockletSize(int blockletSize);
+/**
+ * To set the blocklet size of CarbonData file
+ *
+ * @param blockletSize is blocklet size in MB
+ *        default value is 64 MB
+ * @return updated CarbonWriterBuilder
+ */
+void withBlockletSize(int blockletSize);
 ```
 
 ```
-    /**
-     * @param localDictionaryThreshold is localDictionaryThreshold, default is 10000
-     * @return updated CarbonWriterBuilder
-     */
-    void localDictionaryThreshold(int localDictionaryThreshold);
+/**
+ * @param localDictionaryThreshold is localDictionaryThreshold, default is 10000
+ * @return updated CarbonWriterBuilder
+ */
+void localDictionaryThreshold(int localDictionaryThreshold);
 ```
 
 ```
-    /**
-     * @param enableLocalDictionary enable local dictionary, default is false
-     * @return updated CarbonWriterBuilder
-     */
-    void enableLocalDictionary(bool enableLocalDictionary);
+/**
+ * @param enableLocalDictionary enable local dictionary, default is false
+ * @return updated CarbonWriterBuilder
+ */
+void enableLocalDictionary(bool enableLocalDictionary);
 ```
 
 ```
-    /**
-     * @param appName appName which is writing the carbondata files
-     */
-    void writtenBy(char *appName);
+/**
+ * @param appName appName which is writing the carbondata files
+ */
+void writtenBy(char *appName);
 ```
 
 ```
-    /**
-     * build carbonWriter object for writing data
-     * it support write data from load disk
-     *
-     * @return carbonWriter object
-     */
-    void build();
+/**
+ * Build carbonWriter object for writing data
+ * it support write data from load disk
+ *
+ * @return carbonWriter object
+ */
+void build();
 ```
 
 ```
-    /**
-     * Write an object to the file, the format of the object depends on the
-     * implementation.
-     * Note: This API is not thread safe
-     */
-    void write(jobject obj);
+/**
+ * Write an object to the file, the format of the object depends on the
+ * implementation.
+ * Note: This API is not thread safe
+ */
+void write(jobject obj);
 ```
 
 ```
-    /**
-     * close the carbon Writer
-     */
-    void close();
+/**
+ * close the carbon Writer
+ */
+void close();
 ```
 
 ### CarbonSchemaReader
 
 ```
-    /**
-     * constructor with jni env
-     *
-     * @param env  jni env
-     */
-    CarbonSchemaReader(JNIEnv *env);
+/**
+ * Constructor with jni env
+ *
+ * @param env  jni env
+ */
+CarbonSchemaReader(JNIEnv *env);
 ```
 
 ```
-    /**
-     * read schema from path,
-     * path can be folder path, carbonindex file path, and carbondata file path
-     * and will not check all files schema
-     *
-     * @param path file/folder path
-     * @return schema
-     */
-    jobject readSchema(char *path);
+/**
+ * Read schema from path,
+ * path can be folder path, carbonindex file path, and carbondata file path
+ * and will not check all files schema
+ *
+ * @param path file/folder path
+ * @return schema
+ */
+jobject readSchema(char *path);
 ```
 
 ```
-    /**
-     *  read schema from path,
-     *  path can be folder path, carbonindex file path, and carbondata file path
-     *  and user can decide whether check all files schema
-     *
-     * @param path carbon data path
-     * @param validateSchema whether check all files schema
-     * @return schema
-     */
-    jobject readSchema(char *path, bool validateSchema);
+/**
+ * Read schema from path,
+ * path can be folder path, carbonindex file path, and carbondata file path
+ * and user can decide whether check all files schema
+ *
+ * @param path carbon data path
+ * @param validateSchema whether check all files schema
+ * @return schema
+ */
+jobject readSchema(char *path, bool validateSchema);
 ```
 
 ```
-    /**
-     * read schema from path,
-     * path can be folder path, carbonindex file path, and carbondata file path
-     * and will not check all files schema
-     *
-     * @param path file/folder path
-     * @param conf           configuration support, can set s3a AK,SK,
-     *                       end point and other conf with this
-     * @return schema
-     */
-    jobject readSchema(char *path, Configuration conf);
+/**
+ * Read schema from path,
+ * path can be folder path, carbonindex file path, and carbondata file path
+ * and will not check all files schema
+ *
+ * @param path file/folder path
+ * @param conf           configuration support, can set s3a AK,SK,
+ *                       end point and other conf with this
+ * @return schema
+ */
+jobject readSchema(char *path, Configuration conf);
 ```
 
 ```
-    /**
-     *  read schema from path,
-     *  path can be folder path, carbonindex file path, and carbondata file path
-     *  and user can decide whether check all files schema
-     *
-     * @param path carbon data path
-     * @param validateSchema whether check all files schema
-     * @param conf           configuration support, can set s3a AK,SK,
-     *                       end point and other conf with this
-     * @return schema
-     */
-    jobject readSchema(char *path, bool validateSchema, Configuration conf);
-
+/**
+ * Read schema from path,
+ * path can be folder path, carbonindex file path, and carbondata file path
+ * and user can decide whether check all files schema
+ *
+ * @param path carbon data path
+ * @param validateSchema whether check all files schema
+ * @param conf           configuration support, can set s3a AK,SK,
+ *                       end point and other conf with this
+ * @return schema
+ */
+jobject readSchema(char *path, bool validateSchema, Configuration conf);
 ```
 
 ### Schema
 ```
- /**
-     * constructor with jni env and carbon schema data
-     *
-     * @param env jni env
-     * @param schema  carbon schema data
-     */
-    Schema(JNIEnv *env, jobject schema);
+/**
+ * Constructor with jni env and carbon schema data
+ *
+ * @param env jni env
+ * @param schema  carbon schema data
+ */
+Schema(JNIEnv *env, jobject schema);
 ```
 
 ```
-    /**
-     * get fields length of schema
-     *
-     * @return fields length
-     */
-    int getFieldsLength();
+/**
+ * Get fields length of schema
+ *
+ * @return fields length
+ */
+int getFieldsLength();
 ```
 
 ```
-    /**
-     * get field name by ordinal
-     *
-     * @param ordinal the data index of carbon schema
-     * @return ordinal field name
-     */
-    char *getFieldName(int ordinal);
+/**
+ * Get field name by ordinal
+ *
+ * @param ordinal the data index of carbon schema
+ * @return ordinal field name
+ */
+char *getFieldName(int ordinal);
 ```
 
 ```
-    /**
-     * get  field data type name by ordinal
-     *
-     * @param ordinal the data index of carbon schema
-     * @return ordinal field data type name
-     */
-    char *getFieldDataTypeName(int ordinal);
+/**
+ * Get  field data type name by ordinal
+ *
+ * @param ordinal the data index of carbon schema
+ * @return ordinal field data type name
+ */
+char *getFieldDataTypeName(int ordinal);
 ```
 
 ```
-    /**
-     * get  array child element data type name by ordinal
-     *
-     * @param ordinal the data index of carbon schema
-     * @return ordinal array child element data type name
-     */
-    char *getArrayElementTypeName(int ordinal);
+/**
+ * Get  array child element data type name by ordinal
+ *
+ * @param ordinal the data index of carbon schema
+ * @return ordinal array child element data type name
+ */
+char *getArrayElementTypeName(int ordinal);
 ```
 
 ### CarbonProperties
 ```
-  /**
-     * Constructor of CarbonProperties
-     *
-     * @param env JNI env
-     */
-    CarbonProperties(JNIEnv *env);
+/**
+ * Constructor of CarbonProperties
+ *
+ * @param env JNI env
+ */
+CarbonProperties(JNIEnv *env);
 ```
 
 ```
-    /**
-     * This method will be used to add a new property
-     * 
-     * @param key property key
-     * @param value property value
-     * @return CarbonProperties object
-     */
-    jobject addProperty(char *key, char *value);
+/**
+ * This method will be used to add a new property
+ * 
+ * @param key property key
+ * @param value property value
+ * @return CarbonProperties object
+ */
+jobject addProperty(char *key, char *value);
 ```
 
 ```
-    /**
-     * This method will be used to get the properties value
-     *
-     * @param key  property key
-     * @return  property value
-     */
-    char *getProperty(char *key);
+/**
+ * This method will be used to get the properties value
+ *
+ * @param key property key
+ * @return property value
+ */
+char *getProperty(char *key);
 ```
 
 ```
-    /**
-     * This method will be used to get the properties value
-     * if property is not present then it will return the default value
-     *
-     * @param key  property key
-     * @param defaultValue  property default Value
-     * @return
-     */
-    char *getProperty(char *key, char *defaultValue);
+/**
+ * This method will be used to get the properties value
+ * if property is not present then it will return the default value
+ *
+ * @param key  property key
+ * @param defaultValue  property default Value
+ * @return
+ */
+char *getProperty(char *key, char *defaultValue);
 ```
