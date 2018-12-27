@@ -23,8 +23,10 @@ import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.Segment;
@@ -89,6 +91,11 @@ public class CarbonInputSplit extends FileSplit
   private FileFormat fileFormat = FileFormat.COLUMNAR_V3;
 
   private String dataMapWritePath;
+  /**
+   * validBlockletIds will contain the valid blocklted ids for a given block that contains the data
+   * after pruning from driver. These will be used in executor for further pruning of blocklets
+   */
+  private Set<Integer> validBlockletIds;
 
   public CarbonInputSplit() {
     segment = null;
@@ -252,6 +259,11 @@ public class CarbonInputSplit extends FileSplit
     if (dataMapWriterPathExists) {
       dataMapWritePath = in.readUTF();
     }
+    int validBlockletIdCount = in.readShort();
+    validBlockletIds = new HashSet<>(validBlockletIdCount);
+    for (int i = 0; i < validBlockletIdCount; i++) {
+      validBlockletIds.add((int) in.readShort());
+    }
   }
 
   @Override public void write(DataOutput out) throws IOException {
@@ -277,6 +289,10 @@ public class CarbonInputSplit extends FileSplit
     out.writeBoolean(dataMapWritePath != null);
     if (dataMapWritePath != null) {
       out.writeUTF(dataMapWritePath);
+    }
+    out.writeShort(getValidBlockletIds().size());
+    for (Integer blockletId : getValidBlockletIds()) {
+      out.writeShort(blockletId);
     }
   }
 
@@ -444,4 +460,16 @@ public class CarbonInputSplit extends FileSplit
   public Blocklet makeBlocklet() {
     return new Blocklet(getPath().getName(), blockletId);
   }
+
+  public Set<Integer> getValidBlockletIds() {
+    if (null == validBlockletIds) {
+      validBlockletIds = new HashSet<>();
+    }
+    return validBlockletIds;
+  }
+
+  public void setValidBlockletIds(Set<Integer> validBlockletIds) {
+    this.validBlockletIds = validBlockletIds;
+  }
+
 }
