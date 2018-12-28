@@ -15,7 +15,6 @@
     limitations under the License.
 -->
 
-
 <img src="/docs/images/CarbonData_logo.png" width="200" height="40">
 
 Apache CarbonData is an indexed columnar data store solution for fast analytics on big data platform, e.g.Apache Hadoop, Apache Spark, etc.
@@ -84,7 +83,4 @@ To get involved in CarbonData:
 
 ## About
 Apache CarbonData is an open source project of The Apache Software Foundation (ASF).
-
-
-## 2018-12-28开始
 
