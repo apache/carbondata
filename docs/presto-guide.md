@@ -1,13 +1,29 @@
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one or more 
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership. 
+    The ASF licenses this file to you under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with 
+    the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software 
+    distributed under the License is distributed on an "AS IS" BASIS, 
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and 
+    limitations under the License.
+-->
 
 # Presto guide
 This tutorial provides a quick introduction to using current integration/presto module.
 
 
-[Presto Multinode Cluster setup For Carbondata](#presto-multinode-cluster-setup-for-carbondata)
+[Presto Multinode Cluster Setup For Carbondata](#presto-multinode-cluster-setup-for-carbondata)
 
-[Presto Single node setup For Carbondata](#presto-single-node-setup-for-carbondata)
+[Presto Single Node Setup For Carbondata](#presto-single-node-setup-for-carbondata)
 
-## Presto Multinode Cluster setup For Carbondata
+## Presto Multinode Cluster Setup For Carbondata
 ### Installing Presto
 
   1. Download the 0.210 version of Presto using:
@@ -142,7 +158,9 @@ select * from system.runtime.nodes;
 ```
 Now you can use the Presto CLI on the coordinator to query data sources in the catalog using the Presto workers.
 
-## Presto Single node setup For Carbondata
+
+
+## Presto Single Node Setup For Carbondata
 
 ### Config presto server
 * Download presto server (0.210 is suggested and supported) : https://repo1.maven.org/maven2/com/facebook/presto/presto-server/
