@@ -28,12 +28,13 @@ import org.slf4j.{Logger, LoggerFactory}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.util.CarbonSparkUtil
 
-/**
- * CarbonThriftServer support different modes:
- * 1. read/write data from/to HDFS or local,it only needs configurate storePath
- * 2. read/write data from/to S3, it needs provide access-key, secret-key, s3-endpoint
- */
+ /**
+  * CarbonThriftServer support different modes:
+  * 1. read/write data from/to HDFS or local,it only needs configurate storePath
+  * 2. read/write data from/to S3, it needs provide access-key, secret-key, s3-endpoint
+  */
 object CarbonThriftServer {
 
   def main(args: Array[String]): Unit = {
@@ -72,10 +73,10 @@ object CarbonThriftServer {
     val spark = if (args.length <= 1) {
       builder.getOrCreateCarbonSession(storePath)
     } else {
-      val (accessKey, secretKey, endpoint) = getKeyOnPrefix(args(0))
+      val (accessKey, secretKey, endpoint) = CarbonSparkUtil.getKeyOnPrefix(args(0))
       builder.config(accessKey, args(1))
         .config(secretKey, args(2))
-        .config(endpoint, getS3EndPoint(args))
+        .config(endpoint, CarbonSparkUtil.getS3EndPoint(args))
         .getOrCreateCarbonSession(storePath)
     }
 
@@ -86,31 +87,11 @@ object CarbonThriftServer {
       case e: Exception =>
         val LOG = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
         LOG.error(s"Wrong value for carbon.spark.warmUpTime $warmUpTime " +
-                  "Using default Value and proceeding")
+          "Using default Value and proceeding")
         Thread.sleep(5000)
     }
 
     HiveThriftServer2.startWithContext(spark.sqlContext)
-  }
-
-  def getKeyOnPrefix(path: String): (String, String, String) = {
-    val endPoint = "spark.hadoop." + ENDPOINT
-    if (path.startsWith(CarbonCommonConstants.S3A_PREFIX)) {
-      ("spark.hadoop." + ACCESS_KEY, "spark.hadoop." + SECRET_KEY, endPoint)
-    } else if (path.startsWith(CarbonCommonConstants.S3N_PREFIX)) {
-      ("spark.hadoop." + CarbonCommonConstants.S3N_ACCESS_KEY,
-        "spark.hadoop." + CarbonCommonConstants.S3N_SECRET_KEY, endPoint)
-    } else if (path.startsWith(CarbonCommonConstants.S3_PREFIX)) {
-      ("spark.hadoop." + CarbonCommonConstants.S3_ACCESS_KEY,
-        "spark.hadoop." + CarbonCommonConstants.S3_SECRET_KEY, endPoint)
-    } else {
-      throw new Exception("Incorrect Store Path")
-    }
-  }
-
-  def getS3EndPoint(args: Array[String]): String = {
-    if (args.length >= 4 && args(3).contains(".com")) args(3)
-    else ""
   }
 
 }
