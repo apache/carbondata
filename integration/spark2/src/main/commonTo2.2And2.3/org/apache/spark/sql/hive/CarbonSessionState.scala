@@ -109,26 +109,30 @@ class CarbonHiveSessionCatalog(
   override def alterAddColumns(tableIdentifier: TableIdentifier,
       schemaParts: String,
       cols: Option[Seq[ColumnSchema]]): Unit = {
-    alterTable(tableIdentifier, schemaParts, cols)
-    CarbonSessionUtil
-      .alterExternalCatalogForTableWithUpdatedSchema(tableIdentifier,
-        cols,
-        schemaParts,
-        sparkSession)
+    updateCatalogTableForAlter(tableIdentifier, schemaParts, cols)
   }
 
   override def alterDropColumns(tableIdentifier: TableIdentifier,
       schemaParts: String,
       cols: Option[Seq[ColumnSchema]]): Unit = {
-    alterTable(tableIdentifier, schemaParts, cols)
-    CarbonSessionUtil
-      .alterExternalCatalogForTableWithUpdatedSchema(tableIdentifier,
-        cols,
-        schemaParts,
-        sparkSession)
+    updateCatalogTableForAlter(tableIdentifier, schemaParts, cols)
   }
 
   override def alterColumnChangeDataTypeOrRename(tableIdentifier: TableIdentifier,
+      schemaParts: String,
+      cols: Option[Seq[ColumnSchema]]): Unit = {
+    updateCatalogTableForAlter(tableIdentifier, schemaParts, cols)
+  }
+
+  /**
+   * This method alters table to set serde properties and updates the catalog table with new updated
+   * schema for all the alter operations like add column, drop column, change datatype or rename
+   * column
+   * @param tableIdentifier
+   * @param schemaParts
+   * @param cols
+   */
+  private def updateCatalogTableForAlter(tableIdentifier: TableIdentifier,
       schemaParts: String,
       cols: Option[Seq[ColumnSchema]]): Unit = {
     alterTable(tableIdentifier, schemaParts, cols)

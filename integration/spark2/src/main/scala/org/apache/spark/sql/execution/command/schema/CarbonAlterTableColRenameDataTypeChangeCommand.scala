@@ -269,14 +269,10 @@ private[sql] case class CarbonAlterTableColRenameDataTypeChangeCommand(
     // get the carbon column in schema order
     val carbonColumns = carbonTable.getCreateOrderColumn(carbonTable.getTableName).asScala
       .collect { case carbonColumn if !carbonColumn.isInvisible => carbonColumn.getColumnSchema }
-    // get the schema ordinal of the column for which the datatype changed or column is renamed
-    var schemaOrdinal: Int = 0
-    carbonColumns.foreach { carbonColumn =>
-      if (carbonColumn.getColumnName.equalsIgnoreCase(oldCarbonColumn.getColName)) {
-        schemaOrdinal = carbonColumns.indexOf(carbonColumn)
-      }
-    }
-    // update the schema changed column at the specific index in carbonColumns based on schemaorder
+    // get the schema ordinal of the column for which the dataType changed or column is renamed
+    val schemaOrdinal = carbonColumns.indexOf(carbonColumns
+      .filter { column => column.getColumnName.equalsIgnoreCase(oldCarbonColumn.getColName) }.head)
+    // update the schema changed column at the specific index in carbonColumns based on schema order
     carbonColumns
       .update(schemaOrdinal, schemaConverter.fromExternalToWrapperColumnSchema(addColumnSchema))
     val (tableIdentifier, schemaParts) = AlterTableUtil.updateSchemaInfo(
