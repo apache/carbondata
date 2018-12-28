@@ -20,11 +20,11 @@
 This tutorial provides a quick introduction to using current integration/presto module.
 
 
-[Presto Multinode Cluster Setup For Carbondata](#presto-multinode-cluster-setup-for-carbondata)
+[Presto Multinode Cluster Setup for Carbondata](#presto-multinode-cluster-setup-for-carbondata)
 
-[Presto Single Node Setup For Carbondata](#presto-single-node-setup-for-carbondata)
+[Presto Single Node Setup for Carbondata](#presto-single-node-setup-for-carbondata)
 
-## Presto Multinode Cluster Setup For Carbondata
+## Presto Multinode Cluster Setup for Carbondata
 ### Installing Presto
 
   1. Download the 0.210 version of Presto using:
@@ -161,7 +161,7 @@ Now you can use the Presto CLI on the coordinator to query data sources in the c
 
 
 
-## Presto Single Node Setup For Carbondata
+## Presto Single Node Setup for Carbondata
 
 ### Config presto server
 * Download presto server (0.210 is suggested and supported) : https://repo1.maven.org/maven2/com/facebook/presto/presto-server/
