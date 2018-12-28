@@ -19,16 +19,16 @@
 
 ### Introduction
 DataMap is a data structure that can be used to accelerate certain query of the table. Different DataMap can be implemented by developers. 
-Currently, there are two 2 types of DataMap supported:
-1. IndexDataMap: DataMap that leverages index to accelerate filter query
-2. MVDataMap: DataMap that leverages Materialized View to accelerate OLAP style query, like SPJG query (select, predicate, join, groupby)
+Currently, there are two types of DataMap supported:
+1. IndexDataMap: DataMap that leverages index to accelerate filter query, including Lucene DataMap and BloomFilter DataMap.
+2. MVDataMap: DataMap that leverages Materialized View to accelerate olap style query, like SPJG query (select, predicate, join, groupby), including preaggregate, timeseries and mv DataMap.
 
 ### DataMap Provider
 When user issues `CREATE DATAMAP dm ON TABLE main USING 'provider'`, the corresponding DataMapProvider implementation will be created and initialized. 
 Currently, the provider string can be:
 1. preaggregate: A type of MVDataMap that do pre-aggregate of single table
 2. timeseries: A type of MVDataMap that do pre-aggregate based on time dimension of the table
-3. class name IndexDataMapFactory  implementation: Developer can implement new type of IndexDataMap by extending IndexDataMapFactory
+3. class name IndexDataMapFactory implementation: Developer can implement new type of IndexDataMap by extending IndexDataMapFactory
 
 When user issues `DROP DATAMAP dm ON TABLE main`, the corresponding DataMapProvider interface will be called.
 
