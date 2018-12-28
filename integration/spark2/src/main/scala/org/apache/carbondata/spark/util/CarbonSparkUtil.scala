@@ -20,6 +20,7 @@ package org.apache.carbondata.spark.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
+import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
 import org.apache.spark.sql.hive.{CarbonMetaData, CarbonRelation, DictionaryMap}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -30,6 +31,9 @@ import org.apache.carbondata.core.util.CarbonUtil
 
 case class TransformHolder(rdd: Any, mataData: CarbonMetaData)
 
+/**
+ * carbon spark common methods
+ */
 object CarbonSparkUtil {
 
   def createSparkMeta(carbonTable: CarbonTable): CarbonMetaData = {
@@ -41,7 +45,7 @@ object CarbonSparkUtil {
       carbonTable.getDimensionByTableName(carbonTable.getTableName).asScala.map { f =>
         (f.getColName.toLowerCase,
           f.hasEncoding(Encoding.DICTIONARY) && !f.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
-          !f.getDataType.isComplexType)
+            !f.getDataType.isComplexType)
       }
     CarbonMetaData(dimensionsAttr,
       measureAttr,
@@ -62,8 +66,8 @@ object CarbonSparkUtil {
   /**
    * return's the formatted column comment if column comment is present else empty("")
    *
-   * @param carbonColumn
-   * @return
+   * @param carbonColumn the column of carbonTable
+   * @return string
    */
   def getColumnComment(carbonColumn: CarbonColumn): String = {
     {
@@ -81,8 +85,8 @@ object CarbonSparkUtil {
   /**
    * the method return's raw schema
    *
-   * @param carbonRelation
-   * @return
+   * @param carbonRelation logical plan for one carbon table
+   * @return schema
    */
   def getRawSchema(carbonRelation: CarbonRelation): String = {
     val fields = new Array[String](
@@ -110,6 +114,10 @@ object CarbonSparkUtil {
 
   /**
    * add escape prefix for delimiter
+   *
+   * @param delimiter A delimiter is a sequence of one or more characters
+   * used to specify the boundary between separate
+   * @return delimiter
    */
   def delimiterConverter4Udf(delimiter: String): String = delimiter match {
     case "|" | "*" | "." | ":" | "^" | "\\" | "$" | "+" | "?" | "(" | ")" | "{" | "}" | "[" | "]" =>
@@ -117,4 +125,26 @@ object CarbonSparkUtil {
     case _ =>
       delimiter
   }
+
+  def getKeyOnPrefix(path: String): (String, String, String) = {
+    val prefix = "spark.hadoop."
+    val endPoint = prefix + ENDPOINT
+    if (path.startsWith(CarbonCommonConstants.S3A_PREFIX)) {
+      (prefix + ACCESS_KEY, prefix + SECRET_KEY, endPoint)
+    } else if (path.startsWith(CarbonCommonConstants.S3N_PREFIX)) {
+      (prefix + CarbonCommonConstants.S3N_ACCESS_KEY,
+        prefix + CarbonCommonConstants.S3N_SECRET_KEY, endPoint)
+    } else if (path.startsWith(CarbonCommonConstants.S3_PREFIX)) {
+      (prefix + CarbonCommonConstants.S3_ACCESS_KEY,
+        prefix + CarbonCommonConstants.S3_SECRET_KEY, endPoint)
+    } else {
+      throw new Exception("Incorrect Store Path")
+    }
+  }
+
+  def getS3EndPoint(args: Array[String]): String = {
+    if (args.length >= 4 && args(3).contains(".com")) args(3)
+    else ""
+  }
+
 }

@@ -18,11 +18,10 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
-import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
 import org.apache.spark.sql.{Row, SparkSession}
 import org.slf4j.{Logger, LoggerFactory}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 object S3Example {
 
@@ -38,18 +37,18 @@ object S3Example {
    */
   def main(args: Array[String]) {
     val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
+      + "../../../..").getCanonicalPath
     val path = s"$rootPath/examples/spark2/src/main/resources/data1.csv"
     val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
     import org.apache.spark.sql.CarbonSession._
     if (args.length < 3 || args.length > 5) {
       logger.error("Usage: java CarbonS3Example <access-key> <secret-key>" +
-                   "<table-path-on-s3> [s3-endpoint] [spark-master]")
+        "<table-path-on-s3> [s3-endpoint] [spark-master]")
       System.exit(0)
     }
 
-    val (accessKey, secretKey, endpoint) = getKeyOnPrefix(args(2))
+    val (accessKey, secretKey, endpoint) = CarbonSparkUtil.getKeyOnPrefix(args(2))
     val spark = SparkSession
       .builder()
       .master(getSparkMaster(args))
@@ -57,13 +56,12 @@ object S3Example {
       .config("spark.driver.host", "localhost")
       .config(accessKey, args(0))
       .config(secretKey, args(1))
-      .config(endpoint, getS3EndPoint(args))
+      .config(endpoint, CarbonSparkUtil.getS3EndPoint(args))
       .getOrCreateCarbonSession()
 
     spark.sparkContext.setLogLevel("WARN")
 
     spark.sql("Drop table if exists carbon_table")
-
     spark.sql(
       s"""
          | CREATE TABLE if not exists carbon_table(
@@ -79,7 +77,7 @@ object S3Example {
          | floatField FLOAT
          | )
          | STORED BY 'carbondata'
-         | LOCATION '${ args(2) }'
+         | LOCATION '${args(2)}'
          | TBLPROPERTIES('SORT_COLUMNS'='', 'DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
 
@@ -134,26 +132,6 @@ object S3Example {
     spark.sql("Drop table if exists carbon_table")
 
     spark.stop()
-  }
-
-  def getKeyOnPrefix(path: String): (String, String, String) = {
-    val endPoint = "spark.hadoop." + ENDPOINT
-    if (path.startsWith(CarbonCommonConstants.S3A_PREFIX)) {
-      ("spark.hadoop." + ACCESS_KEY, "spark.hadoop." + SECRET_KEY, endPoint)
-    } else if (path.startsWith(CarbonCommonConstants.S3N_PREFIX)) {
-      ("spark.hadoop." + CarbonCommonConstants.S3N_ACCESS_KEY,
-        "spark.hadoop." + CarbonCommonConstants.S3N_SECRET_KEY, endPoint)
-    } else if (path.startsWith(CarbonCommonConstants.S3_PREFIX)) {
-      ("spark.hadoop." + CarbonCommonConstants.S3_ACCESS_KEY,
-        "spark.hadoop." + CarbonCommonConstants.S3_SECRET_KEY, endPoint)
-    } else {
-      throw new Exception("Incorrect Store Path")
-    }
-  }
-
-  def getS3EndPoint(args: Array[String]): String = {
-    if (args.length >= 4 && args(3).contains(".com")) args(3)
-    else ""
   }
 
   def getSparkMaster(args: Array[String]): String = {
