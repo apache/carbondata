@@ -94,10 +94,11 @@ public class CarbondataPageSourceProvider extends HivePageSourceProvider {
       ConnectorSession session, ConnectorSplit split, List<ColumnHandle> columns) {
     HiveSplit carbonSplit =
         checkType(split, HiveSplit.class, "split is not class HiveSplit");
-    if (carbonSplit.getSchema().getProperty("queryId") == null) {
+    this.queryId = carbonSplit.getSchema().getProperty("queryId");
+    if (this.queryId == null) {
+      // Fall back to hive pagesource.
       return super.createPageSource(transactionHandle, session, split, columns);
     }
-    this.queryId = carbonSplit.getSchema().getProperty("queryId");
     Configuration configuration = this.hdfsEnvironment.getConfiguration(
         new HdfsEnvironment.HdfsContext(session, carbonSplit.getDatabase(), carbonSplit.getTable()),
         new Path(carbonSplit.getSchema().getProperty("tablePath")));

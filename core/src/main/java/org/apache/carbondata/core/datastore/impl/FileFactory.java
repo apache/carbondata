@@ -369,6 +369,11 @@ public final class FileFactory {
     LOCAL, HDFS, ALLUXIO, VIEWFS, S3
   }
 
+  /**
+   * Adds the schema to file path if not exists to the file path.
+   * @param filePath path of file
+   * @return Updated filepath
+   */
   public static String addSchemeIfNotExists(String filePath) {
     FileType fileType = getFileType(filePath);
     switch (fileType) {

@@ -82,6 +82,9 @@ import static io.airlift.json.JsonCodecBinder.jsonCodecBinder;
 import static org.weakref.jmx.ObjectNames.generatedNameOf;
 import static org.weakref.jmx.guice.ExportBinder.newExporter;
 
+/**
+ * Binds all necessary classes needed for this module.
+ */
 public class CarbondataModule extends HiveClientModule {
 
   private final String connectorId;

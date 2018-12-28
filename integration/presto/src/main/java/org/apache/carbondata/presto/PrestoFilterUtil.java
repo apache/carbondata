@@ -93,12 +93,10 @@ public class PrestoFilterUtil {
       return DataTypes.DATE;
     } else if (colType.equals(HiveType.HIVE_TIMESTAMP)) {
       return DataTypes.TIMESTAMP;
-    }
-    else if (colType.getTypeInfo() instanceof DecimalTypeInfo) {
+    } else if (colType.getTypeInfo() instanceof DecimalTypeInfo) {
       DecimalTypeInfo typeInfo = (DecimalTypeInfo) colType.getTypeInfo();
       return DataTypes.createDecimalType(typeInfo.getPrecision(),typeInfo.getScale());
-    }
-    else {
+    } else {
       return DataTypes.STRING;
     }
   }

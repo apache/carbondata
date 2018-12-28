@@ -78,9 +78,7 @@ object CarbonDataStoreCreator {
         new CarbonTableIdentifier(dbName,
           tableName,
           UUID.randomUUID().toString))
-      //   val factFilePath: String = new File(dataFilePath).getCanonicalPath
       val storeDir: File = new File(absoluteTableIdentifier.getTablePath)
-//      CarbonUtil.deleteFoldersAndFiles(storeDir)
       val table: CarbonTable = createTable(absoluteTableIdentifier, useLocalDict)
       writeDictionary(dataFilePath, table, absoluteTableIdentifier)
       val schema: CarbonDataLoadSchema = new CarbonDataLoadSchema(table)
