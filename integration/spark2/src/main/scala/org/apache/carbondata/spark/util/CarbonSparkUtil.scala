@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.spark.sql.hive.{CarbonMetaData, CarbonRelation, DictionaryMap}
-
+import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
@@ -62,8 +62,7 @@ object CarbonSparkUtil {
   /**
    * return's the formatted column comment if column comment is present else empty("")
    *
-   * @param carbonColumn
-   * @return
+   * @return comment
    */
   def getColumnComment(carbonColumn: CarbonColumn): String = {
     {
@@ -82,7 +81,7 @@ object CarbonSparkUtil {
    * the method return's raw schema
    *
    * @param carbonRelation
-   * @return
+   * @return schema
    */
   def getRawSchema(carbonRelation: CarbonRelation): String = {
     val fields = new Array[String](
@@ -116,5 +115,19 @@ object CarbonSparkUtil {
       "\\\\" + delimiter
     case _ =>
       delimiter
+  }
+  def getKeyOnPrefix(path: String): (String, String, String) = {
+    val endPoint = "spark.hadoop." + ENDPOINT
+    if (path.startsWith(CarbonCommonConstants.S3A_PREFIX)) {
+      ("spark.hadoop." + ACCESS_KEY, "spark.hadoop." + SECRET_KEY, endPoint)
+    } else if (path.startsWith(CarbonCommonConstants.S3N_PREFIX)) {
+      ("spark.hadoop." + CarbonCommonConstants.S3N_ACCESS_KEY,
+        "spark.hadoop." + CarbonCommonConstants.S3N_SECRET_KEY, endPoint)
+    } else if (path.startsWith(CarbonCommonConstants.S3_PREFIX)) {
+      ("spark.hadoop." + CarbonCommonConstants.S3_ACCESS_KEY,
+        "spark.hadoop." + CarbonCommonConstants.S3_SECRET_KEY, endPoint)
+    } else {
+      throw new Exception("Incorrect Store Path")
+    }
   }
 }
