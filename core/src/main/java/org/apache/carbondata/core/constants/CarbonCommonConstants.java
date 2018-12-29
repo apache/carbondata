@@ -1122,7 +1122,7 @@ public final class CarbonCommonConstants {
   public static final int CARBON_SORT_STORAGE_INMEMORY_IN_MB_DEFAULT = 512;
 
   /*
-   * whether to enable prefetch for rowbatch to enhance row reconstruction during compaction
+   * whether to enable prefetch for rowBatch to enhance row reconstruction during compaction
    */
   @CarbonProperty
   public static final String CARBON_COMPACTION_PREFETCH_ENABLE =

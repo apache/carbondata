@@ -257,7 +257,7 @@ object AlterTableDropPartitionMetaListener extends OperationEventListener{
     if (parentCarbonTable.hasAggregationDataMap) {
       // used as a flag to block direct drop partition on aggregate tables fired by the user
       operationContext.setProperty("isInternalDropCall", "true")
-      // Filter out all the tables which dont have the partition being dropped.
+      // Filter out all the tables which don't have the partition being dropped.
       val childTablesWithoutPartitionColumns =
         parentCarbonTable.getTableInfo.getDataMapSchemaList.asScala.filter { dataMapSchema =>
           val childColumns = dataMapSchema.getChildSchema.getListOfColumns.asScala

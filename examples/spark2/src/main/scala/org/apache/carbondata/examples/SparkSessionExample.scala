@@ -36,14 +36,14 @@ object SparkSessionExample {
                             + "../../../..").getCanonicalPath
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
-    val metastoredb = s"$rootPath/examples/spark2/target/metastore_db"
+    val metaStoreDB = s"$rootPath/examples/spark2/target/metastore_db"
 
     // clean data folder
     if (true) {
       val clean = (path: String) => FileUtils.deleteDirectory(new File(path))
       clean(storeLocation)
       clean(warehouse)
-      clean(metastoredb)
+      clean(metaStoreDB)
     }
 
     val sparksession = SparkSession
@@ -53,7 +53,7 @@ object SparkSessionExample {
       .enableHiveSupport()
       .config("spark.sql.warehouse.dir", warehouse)
       .config("javax.jdo.option.ConnectionURL",
-        s"jdbc:derby:;databaseName=$metastoredb;create=true")
+        s"jdbc:derby:;databaseName=$metaStoreDB;create=true")
       .getOrCreate()
 
     CarbonProperties.getInstance()
