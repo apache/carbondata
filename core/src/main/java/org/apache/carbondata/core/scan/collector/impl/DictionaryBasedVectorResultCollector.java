@@ -145,7 +145,8 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
     dictionaryInfo = dictInfoList.toArray(new ColumnVectorInfo[dictInfoList.size()]);
     noDictionaryInfo = noDictInfoList.toArray(new ColumnVectorInfo[noDictInfoList.size()]);
     complexInfo = complexList.toArray(new ColumnVectorInfo[complexList.size()]);
-    implicitColumnInfo = implicitColumnList.toArray(new ColumnVectorInfo[implicitColumnList.size()]);
+    implicitColumnInfo = implicitColumnList.toArray(
+            new ColumnVectorInfo[implicitColumnList.size()]);
     Arrays.sort(dictionaryInfo);
     Arrays.sort(complexInfo);
   }
