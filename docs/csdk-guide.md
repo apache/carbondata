@@ -219,12 +219,12 @@ void withCsvInput(char *jsonSchema);
 
 ```
 /**
-* Updates the hadoop configuration with the given key value
-*
-* @param key key word
-* @param value value
-* @return CarbonWriterBuilder object
-*/
+ * Updates the hadoop configuration with the given key value
+ *
+ * @param key key word
+ * @param value value
+ * @return CarbonWriterBuilder object
+ */
 void withHadoopConf(char *key, char *value);
 ```
 
