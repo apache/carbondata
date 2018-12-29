@@ -35,7 +35,7 @@ object ExampleUtils {
                             + "../../../..").getCanonicalPath
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
-    val metastoredb = s"$rootPath/examples/spark2/target"
+    val metaStoreDB = s"$rootPath/examples/spark2/target"
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
@@ -57,7 +57,7 @@ object ExampleUtils {
       .config("spark.sql.warehouse.dir", warehouse)
       .config("spark.driver.host", "localhost")
       .config("spark.sql.crossJoin.enabled", "true")
-      .getOrCreateCarbonSession(storeLocation, metastoredb)
+      .getOrCreateCarbonSession(storeLocation, metaStoreDB)
 
     spark.sparkContext.setLogLevel("ERROR")
     spark

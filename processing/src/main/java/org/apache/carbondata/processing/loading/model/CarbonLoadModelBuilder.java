@@ -161,11 +161,11 @@ public class CarbonLoadModelBuilder {
     String global_sort_partitions = optionsFinal.get("global_sort_partitions");
     String timestampformat = optionsFinal.get("timestampformat");
     String dateFormat = optionsFinal.get("dateformat");
-    String delimeter = optionsFinal.get("delimiter");
-    String complex_delimeter_level1 = optionsFinal.get("complex_delimiter_level_1");
-    String complex_delimeter_level2 = optionsFinal.get("complex_delimiter_level_2");
-    String complex_delimeter_level3 = optionsFinal.get("complex_delimiter_level_3");
-    String complex_delimeter_level4 = optionsFinal.get("complex_delimiter_level_4");
+    String delimiter = optionsFinal.get("delimiter");
+    String complex_delimiter_level1 = optionsFinal.get("complex_delimiter_level_1");
+    String complex_delimiter_level2 = optionsFinal.get("complex_delimiter_level_2");
+    String complex_delimiter_level3 = optionsFinal.get("complex_delimiter_level_3");
+    String complex_delimiter_level4 = optionsFinal.get("complex_delimiter_level_4");
     String all_dictionary_path = optionsFinal.get("all_dictionary_path");
     String column_dict = optionsFinal.get("columndict");
     validateDateTimeFormat(timestampformat, "TimestampFormat");
@@ -257,20 +257,20 @@ public class CarbonLoadModelBuilder {
     carbonLoadModel.setGlobalSortPartitions(global_sort_partitions);
     carbonLoadModel.setUseOnePass(Boolean.parseBoolean(single_pass));
 
-    if (delimeter.equalsIgnoreCase(complex_delimeter_level1) ||
-        complex_delimeter_level1.equalsIgnoreCase(complex_delimeter_level2) ||
-        delimeter.equalsIgnoreCase(complex_delimeter_level2) ||
-        delimeter.equalsIgnoreCase(complex_delimeter_level3)) {
+    if (delimiter.equalsIgnoreCase(complex_delimiter_level1) ||
+        complex_delimiter_level1.equalsIgnoreCase(complex_delimiter_level2) ||
+        delimiter.equalsIgnoreCase(complex_delimiter_level2) ||
+        delimiter.equalsIgnoreCase(complex_delimiter_level3)) {
       throw new InvalidLoadOptionException("Field Delimiter and Complex types delimiter are same");
     } else {
-      carbonLoadModel.setComplexDelimiter(complex_delimeter_level1);
-      carbonLoadModel.setComplexDelimiter(complex_delimeter_level2);
-      carbonLoadModel.setComplexDelimiter(complex_delimeter_level3);
-      carbonLoadModel.setComplexDelimiter(complex_delimeter_level4);
+      carbonLoadModel.setComplexDelimiter(complex_delimiter_level1);
+      carbonLoadModel.setComplexDelimiter(complex_delimiter_level2);
+      carbonLoadModel.setComplexDelimiter(complex_delimiter_level3);
+      carbonLoadModel.setComplexDelimiter(complex_delimiter_level4);
     }
     // set local dictionary path, and dictionary file extension
     carbonLoadModel.setAllDictPath(all_dictionary_path);
-    carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimeter));
+    carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimiter));
     carbonLoadModel.setCsvHeader(fileHeader);
     carbonLoadModel.setColDictFilePath(column_dict);
 

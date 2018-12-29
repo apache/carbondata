@@ -122,7 +122,7 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   def buildRelation() = {
     val warehouse = s"$resourcesPath/target/warehouse"
     val storeLocation = s"$resourcesPath/target/store"
-    val metastoredb = s"$resourcesPath/target"
+    val metaStoreDB = s"$resourcesPath/target"
     CarbonProperties.getInstance()
       .addProperty("carbon.custom.distribution", "true")
     CarbonProperties.getInstance()
@@ -137,7 +137,7 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       .config("spark.network.timeout", "600s")
       .config("spark.executor.heartbeatInterval", "600s")
       .config("carbon.enable.vector.reader","false")
-      .getOrCreateCarbonSession(storeLocation, metastoredb)
+      .getOrCreateCarbonSession(storeLocation, metaStoreDB)
     val catalog = CarbonEnv.getInstance(spark).carbonMetaStore
     sampleRelation = catalog.lookupRelation(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
       "sample")(spark).asInstanceOf[CarbonRelation]

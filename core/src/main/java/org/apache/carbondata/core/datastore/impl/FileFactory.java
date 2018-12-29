@@ -190,7 +190,7 @@ public final class FileFactory {
    * @param fileType
    * @param bufferSize
    * @param compressorName name of compressor to write this file
-   * @return data out put stram
+   * @return data out put stream
    * @throws IOException
    */
   public static DataOutputStream getDataOutputStream(String path, FileType fileType, int bufferSize,

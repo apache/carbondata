@@ -304,7 +304,7 @@ test("Creation of partition table should fail if the colname in table schema and
       """create table partitionTable (id int,name String) partitioned by(email string) stored by 'carbondata'
       """.stripMargin)
     sql("insert into partitionTable select 1,'huawei','abc'")
-    val location = metastoredb +"/" +"def"
+    val location = metaStoreDB +"/" +"def"
     checkAnswer(sql("show partitions partitionTable"), Seq(Row("email=abc")))
     sql(s"""alter table partitionTable add partition (email='def') location '$location'""")
     sql("insert into partitionTable select 1,'huawei','def'")
@@ -323,7 +323,7 @@ test("Creation of partition table should fail if the colname in table schema and
         | PARTITIONED BY (empname String)
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
-    val location = metastoredb +"/" +"ravi"
+    val location = metaStoreDB +"/" +"ravi"
     sql(s"""alter table staticpartitionlocload add partition (empname='ravi') location '$location'""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocload partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     val frame = sql("select count(empno) from staticpartitionlocload")
@@ -348,7 +348,7 @@ test("Creation of partition table should fail if the colname in table schema and
         | PARTITIONED BY (empname String)
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
-    val location = metastoredb +"/" +"ravi1"
+    val location = metaStoreDB +"/" +"ravi1"
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionsetloc partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     intercept[Exception] {
       sql(s"""alter table staticpartitionsetloc partition (empname='ravi') set location '$location'""")
@@ -369,7 +369,7 @@ test("Creation of partition table should fail if the colname in table schema and
         | PARTITIONED BY (empname String)
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
-    val location = metastoredb +"/" +"ravi"
+    val location = metaStoreDB +"/" +"ravi"
     sql(s"""alter table staticpartitionlocloadother add partition (empname='ravi') location '$location'""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocloadother partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocloadother partition(empname='indra') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
@@ -405,7 +405,7 @@ test("Creation of partition table should fail if the colname in table schema and
         | PARTITIONED BY (empname String)
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
-    val location = metastoredb +"/" +"ravi1"
+    val location = metaStoreDB +"/" +"ravi1"
     sql(s"""alter table staticpartitionlocloadother_new add partition (empname='ravi') location '$location'""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocloadother_new partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionlocloadother_new partition(empname='indra') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")

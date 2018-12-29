@@ -99,7 +99,7 @@ public class LoadMetadataDetails implements Serializable {
   private static final Logger LOGGER =
       LogServiceFactory.getLogService(LoadMetadataDetails.class.getName());
 
-  // dont remove static as the write will fail.
+  // don't remove static as the write will fail.
   private static final SimpleDateFormat parser =
       new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
   /**

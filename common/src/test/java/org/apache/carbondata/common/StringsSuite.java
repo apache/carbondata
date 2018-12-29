@@ -28,7 +28,7 @@ public class StringsSuite {
   }
 
   @Test(expected = NullPointerException.class)
-  public void testMkStringNullDelimeter() {
+  public void testMkStringNullDelimiter() {
     Strings.mkString(new String[]{"abc"}, null);
   }
   

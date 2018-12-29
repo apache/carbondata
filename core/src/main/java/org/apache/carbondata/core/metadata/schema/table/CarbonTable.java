@@ -391,7 +391,7 @@ public class CarbonTable implements Serializable {
   }
 
   /**
-   * This method will add implict dimension into carbontable
+   * This method will add implicit dimension into carbontable
    *
    * @param dimensionOrdinal
    * @param dimensions
