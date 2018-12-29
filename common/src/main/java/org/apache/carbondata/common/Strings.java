@@ -28,14 +28,14 @@ public class Strings {
    * Provide same function as mkString in Scala.
    * This is added to avoid JDK 8 dependency.
    */
-  public static String mkString(String[] strings, String delimeter) {
+  public static String mkString(String[] strings, String delimiter) {
     Objects.requireNonNull(strings);
-    Objects.requireNonNull(delimeter);
+    Objects.requireNonNull(delimiter);
     StringBuilder builder = new StringBuilder();
     for (int i = 0; i < strings.length; i++) {
       builder.append(strings[i]);
       if (i != strings.length - 1) {
-        builder.append(delimeter);
+        builder.append(delimiter);
       }
     }
     return builder.toString();

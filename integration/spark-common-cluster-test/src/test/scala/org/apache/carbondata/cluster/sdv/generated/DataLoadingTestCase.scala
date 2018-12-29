@@ -244,7 +244,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Show loads-->Delimeter_check
+  //Show loads-->Delimiter_check
   test("BadRecord_Dataload_021", Include) {
     sql(
       s"""CREATE TABLE bad_records_test5 (String_col string,integer_col int,decimal_column
