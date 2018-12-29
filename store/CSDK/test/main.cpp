@@ -546,7 +546,7 @@ bool testWriteData(JNIEnv *env, char *path, int argc, char *argv[]) {
         writer.withCsvInput(jsonSchema);
         writer.withLoadOption("complex_delimiter_level_1", "#");
         writer.writtenBy("CSDK");
-        writer.taskNo(185);
+        writer.taskNo(15541554.81);
         writer.withThreadSafe(1);
         writer.uniqueIdentifier(1549911814000000);
         writer.withBlockSize(1);
@@ -709,6 +709,7 @@ bool testWithTableProperty(JNIEnv *env, char *path, int argc, char **argv) {
         writer.outputPath(path);
         writer.withCsvInput(jsonSchema);
         writer.withTableProperty("sort_columns", "shortField");
+        writer.enableLocalDictionary(false);
         writer.writtenBy("CSDK");
         if (argc > 3) {
             writer.withHadoopConf("fs.s3a.access.key", argv[1]);
@@ -764,6 +765,7 @@ bool testSortBy(JNIEnv *env, char *path, int argc, char **argv) {
         writer.outputPath(path);
         writer.withCsvInput(jsonSchema);
         writer.sortBy(1, sort);
+        writer.enableLocalDictionary(NULL);
         writer.writtenBy("CSDK");
         if (argc > 3) {
             writer.withHadoopConf("fs.s3a.access.key", argv[1]);
