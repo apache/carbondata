@@ -47,8 +47,8 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists structusingstructHive")
     sql("drop table if exists structusingarraycarbon")
     sql("drop table if exists structusingarrayhive")
-    sql("drop table if exists complexcarbonwithspecialchardelimeter")
-    sql("drop table if exists complexhivewithspecialchardelimeter")
+    sql("drop table if exists complexcarbonwithspecialchardelimiter")
+    sql("drop table if exists complexhivewithspecialchardelimiter")
     sql(
       "create table complexcarbontable(deviceInformationId int, channelsId string, ROMSize " +
       "string, ROMName String, purchasedate string, mobile struct<imei:string, imsi:string>, MAC " +
@@ -128,7 +128,7 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
   test(
     "Test ^ * special character data loading for complex types") {
     sql(
-      "create table complexcarbonwithspecialchardelimeter(deviceInformationId int, channelsId " +
+      "create table complexcarbonwithspecialchardelimiter(deviceInformationId int, channelsId " +
       "string, ROMSize string, ROMName String, purchasedate string, mobile struct<imei:string, " +
       "imsi:string>, MAC array<string>, locationinfo array<struct<ActiveAreaId:int, " +
       "ActiveCountry:string, ActiveProvince:string, Activecity:string, ActiveDistrict:string, " +
@@ -136,12 +136,12 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
       "activeDeactivedate:array<string>>, gamePointId double,contractNumber double)  STORED BY " +
       "'org.apache.carbondata.format'");
     sql("LOAD DATA local inpath '" + resourcesPath +
-        "/complextypespecialchardelimiter.csv' INTO table complexcarbonwithspecialchardelimeter  " +
+        "/complextypespecialchardelimiter.csv' INTO table complexcarbonwithspecialchardelimiter  " +
         "OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,channelsId," +
         "ROMSize,ROMName,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId," +
         "contractNumber', 'COMPLEX_DELIMITER_LEVEL_1'='^', 'COMPLEX_DELIMITER_LEVEL_2'='*')");
     sql(
-      "create table complexhivewithspecialchardelimeter(deviceInformationId int, channelsId " +
+      "create table complexhivewithspecialchardelimiter(deviceInformationId int, channelsId " +
       "string, ROMSize string, ROMName String, purchasedate string, mobile struct<imei:string, " +
       "imsi:string>, MAC array<string>, locationinfo array<struct<ActiveAreaId:int, " +
       "ActiveCountry:string, ActiveProvince:string, Activecity:string, ActiveDistrict:string, " +
@@ -150,11 +150,11 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
       "delimited fields terminated by ',' collection items terminated by '^' map keys terminated " +
       "by '*'")
     sql("LOAD DATA local inpath '" + resourcesPath +
-        "/complextypespecialchardelimiter.csv' INTO table complexhivewithspecialchardelimeter");
-    checkAnswer(sql("select * from complexcarbonwithspecialchardelimeter"),
-      sql("select * from complexhivewithspecialchardelimeter"))
-    sql("drop table if exists complexcarbonwithspecialchardelimeter")
-    sql("drop table if exists complexhivewithspecialchardelimeter")
+        "/complextypespecialchardelimiter.csv' INTO table complexhivewithspecialchardelimiter");
+    checkAnswer(sql("select * from complexcarbonwithspecialchardelimiter"),
+      sql("select * from complexhivewithspecialchardelimiter"))
+    sql("drop table if exists complexcarbonwithspecialchardelimiter")
+    sql("drop table if exists complexhivewithspecialchardelimiter")
   }
 
   test("complex filter set1") {

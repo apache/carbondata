@@ -41,7 +41,7 @@ object TestUtil {
                           + "../../../..").getCanonicalPath
   val warehouse1 = FileFactory.getPath(s"$rootPath/integration/spark-datasource/target/warehouse").toString
   val resource = s"$rootPath/integration/spark-datasource/src/test/resources"
-  val metastoredb1 = s"$rootPath/integration/spark-datasource/target"
+  val metaStoreDB1 = s"$rootPath/integration/spark-datasource/target"
   val spark = SparkSession
     .builder()
     .enableHiveSupport()

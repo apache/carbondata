@@ -634,7 +634,7 @@ public class CarbonTableInputFormat<T> extends CarbonInputFormat<T> {
       String segmentId = Segment.toSegment(blocklet.getSegmentId()).getSegmentNo();
       String key = CarbonUpdateUtil.getSegmentBlockNameKey(segmentId, blockName);
 
-      // if block is invalid then dont add the count
+      // if block is invalid then don't add the count
       SegmentUpdateDetails details = updateStatusManager.getDetailsForABlock(key);
 
       if (null == details || !CarbonUpdateUtil.isBlockInvalid(details.getSegmentStatus())) {

@@ -28,7 +28,7 @@ import org.scalatest.BeforeAndAfterAll
 class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
          
 
-  //Load history data from CSV with/without header and specify/dont specify headers in command using external ALL_dictionary_PATH
+  //Load history data from CSV with/without header and specify/don't specify headers in command using external ALL_dictionary_PATH
   test("Columndict-TC001", Include) {
      sql(s"""drop table if exists t3""").collect
    sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
@@ -37,7 +37,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //Load history data from CSV with/without header and specify/dont specify headers in command using external columndict
+  //Load history data from CSV with/without header and specify/don't specify headers in command using external columndict
   test("Columndict-TC002", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data/columndict/country.csv', 'SINGLE_PASS'='true')""").collect

@@ -192,9 +192,9 @@ object CarbonStore {
       }
     } finally {
       if (currentTablePartitions.equals(None)) {
-        cleanUpPartitionFoldersRecurssively(carbonTable, List.empty[PartitionSpec])
+        cleanUpPartitionFoldersRecursively(carbonTable, List.empty[PartitionSpec])
       } else {
-        cleanUpPartitionFoldersRecurssively(carbonTable, currentTablePartitions.get.toList)
+        cleanUpPartitionFoldersRecursively(carbonTable, currentTablePartitions.get.toList)
       }
 
       if (carbonCleanFilesLock != null) {
@@ -204,12 +204,12 @@ object CarbonStore {
   }
 
   /**
-   * delete partition folders recurssively
+   * delete partition folders recursively
    *
    * @param carbonTable
    * @param partitionSpecList
    */
-  def cleanUpPartitionFoldersRecurssively(carbonTable: CarbonTable,
+  def cleanUpPartitionFoldersRecursively(carbonTable: CarbonTable,
       partitionSpecList: List[PartitionSpec]): Unit = {
     if (carbonTable != null) {
       val loadMetadataDetails = SegmentStatusManager

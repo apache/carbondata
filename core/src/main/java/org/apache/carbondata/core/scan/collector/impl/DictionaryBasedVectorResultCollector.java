@@ -60,7 +60,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
 
   ColumnVectorInfo[] allColumnInfo;
 
-  private ColumnVectorInfo[] implictColumnInfo;
+  private ColumnVectorInfo[] implicitColumnInfo;
 
   private boolean isDirectVectorFill;
 
@@ -85,14 +85,14 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
     List<ColumnVectorInfo> dictInfoList = new ArrayList<>();
     List<ColumnVectorInfo> noDictInfoList = new ArrayList<>();
     List<ColumnVectorInfo> complexList = new ArrayList<>();
-    List<ColumnVectorInfo> implictColumnList = new ArrayList<>();
+    List<ColumnVectorInfo> implicitColumnList = new ArrayList<>();
     for (int i = 0; i < queryDimensions.length; i++) {
       if (!dimensionInfo.getDimensionExists()[i]) {
         continue;
       }
       if (queryDimensions[i].getDimension().hasEncoding(Encoding.IMPLICIT)) {
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
-        implictColumnList.add(columnVectorInfo);
+        implicitColumnList.add(columnVectorInfo);
         columnVectorInfo.dimension = queryDimensions[i];
         columnVectorInfo.ordinal = queryDimensions[i].getDimension().getOrdinal();
         allColumnInfo[queryDimensions[i].getOrdinal()] = columnVectorInfo;
@@ -145,7 +145,8 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
     dictionaryInfo = dictInfoList.toArray(new ColumnVectorInfo[dictInfoList.size()]);
     noDictionaryInfo = noDictInfoList.toArray(new ColumnVectorInfo[noDictInfoList.size()]);
     complexInfo = complexList.toArray(new ColumnVectorInfo[complexList.size()]);
-    implictColumnInfo = implictColumnList.toArray(new ColumnVectorInfo[implictColumnList.size()]);
+    implicitColumnInfo = implicitColumnList.toArray(
+            new ColumnVectorInfo[implicitColumnList.size()]);
     Arrays.sort(dictionaryInfo);
     Arrays.sort(complexInfo);
   }
@@ -194,7 +195,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
     scannedResult.fillColumnarNoDictionaryBatch(noDictionaryInfo);
     scannedResult.fillColumnarMeasureBatch(measureColumnInfo, measureInfo.getMeasureOrdinals());
     scannedResult.fillColumnarComplexBatch(complexInfo);
-    scannedResult.fillColumnarImplicitBatch(implictColumnInfo);
+    scannedResult.fillColumnarImplicitBatch(implicitColumnInfo);
     // it means fetched all data out of page so increment the page counter
     if (availableRows == requiredRows) {
       scannedResult.incrementPageCounter();
