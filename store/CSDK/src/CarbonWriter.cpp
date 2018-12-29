@@ -291,9 +291,6 @@ void CarbonWriter::localDictionaryThreshold(int localDictionaryThreshold) {
 }
 
 void CarbonWriter::enableLocalDictionary(bool enableLocalDictionary) {
-    if (enableLocalDictionary == NULL) {
-        throw std::runtime_error("enableLocalDictionary parameter can't be NULL.");
-    }
     checkBuilder();
     jclass carbonWriterBuilderClass = jniEnv->GetObjectClass(carbonWriterBuilderObject);
     jmethodID methodID = jniEnv->GetMethodID(carbonWriterBuilderClass, "enableLocalDictionary",
