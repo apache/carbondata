@@ -44,7 +44,7 @@ C++ SDK support read batch row. User can set batch by using withBatch(int batch)
 ### CarbonReader
 ```
 /**
- * create a CarbonReaderBuilder object for building carbonReader,
+ * Create a CarbonReaderBuilder object for building carbonReader,
  * CarbonReaderBuilder object  can configure different parameter
  *
  * @param env JNIEnv
@@ -57,8 +57,8 @@ jobject builder(JNIEnv *env, char *path, char *tableName);
 
 ```
 /**
- * create a CarbonReaderBuilder object for building carbonReader,
- * CarbonReaderBuilder object  can configure different parameter
+ * Create a CarbonReaderBuilder object for building carbonReader,
+ * CarbonReaderBuilder object can configure different parameter
  *
  * @param env JNIEnv
  * @param path data store path
@@ -80,8 +80,8 @@ jobject projection(int argc, char *argv[]);
 
 ```
 /**
- * build carbon reader with argument vector
- * it support multiple parameter
+ * Build carbon reader with argument vector
+ * it supports multiple parameters
  * like: key=value
  * for example: fs.s3a.access.key=XXXX, XXXX is user's access key value
  *
@@ -112,8 +112,8 @@ void withRowRecordReader();
 
 ```
 /**
- * build carbonReader object for reading data
- * it support read data from load disk
+ * Build carbonReader object for reading data
+ * it supports read data from load disk
  *
  * @return carbonReader object
  */
@@ -131,7 +131,7 @@ jboolean hasNext();
 
 ```
 /**
- * read next carbonRow from data
+ * Read next carbonRow from data
  * @return carbonRow object of one row
  */
 jobject readNextRow();
@@ -139,7 +139,7 @@ jobject readNextRow();
 
 ```
 /**
- * read Next Batch Row
+ * Read Next Batch Row
  *
  * @return rows
  */
@@ -148,7 +148,7 @@ jobjectArray readNextBatchRow();
 
 ```
 /**
- * close the carbon reader
+ * Close the carbon reader
  *
  * @return  boolean value
  */
@@ -175,7 +175,7 @@ release the memory and destroy JVM.
 ### CarbonWriter
 ```
 /**
- * create a CarbonWriterBuilder object for building carbonWriter,
+ * Create a CarbonWriterBuilder object for building carbonWriter,
  * CarbonWriterBuilder object  can configure different parameter
  *
  * @param env JNIEnv
@@ -197,7 +197,7 @@ void outputPath(char *path);
 
 ```
 /**
- * sets the list of columns that needs to be in sorted order
+ * Sets the list of columns that needs to be in sorted order
  *
  * @param argc argc argument counter, the number of projection column
  * @param argv argv is a string array of columns that needs to be sorted.
@@ -209,7 +209,7 @@ void sortBy(int argc, char *argv[]);
 
 ```
 /**
- * configure the schema with json style schema
+ * Configure the schema with json style schema
  *
  * @param jsonSchema json style schema
  * @return updated CarbonWriterBuilder
@@ -230,7 +230,7 @@ void withHadoopConf(char *key, char *value);
 
 ```
 /**
- *  To support the table properties for writer
+ * To support the table properties for writer
  *
  * @param key properties key
  * @param value properties value
@@ -273,7 +273,7 @@ void withLoadOption(char *key, char *value);
 
 ```
 /**
- * sets the taskNo for the writer. CSDKs concurrently running
+ * Sets the taskNo for the writer. CSDKs concurrently running
  * will set taskNo in order to avoid conflicts in file's name during write.
  *
  * @param taskNo is the TaskNo user wants to specify.
@@ -284,7 +284,7 @@ void taskNo(long taskNo);
 
 ```
 /**
- * to set the timestamp in the carbondata and carbonindex index files
+ * Set the timestamp in the carbondata and carbonindex index files
  *
  * @param timestamp is a timestamp to be used in the carbondata and carbonindex index files.
  * By default set to zero.
@@ -350,7 +350,7 @@ void writtenBy(char *appName);
 
 ```
 /**
- * build carbonWriter object for writing data
+ * Build carbonWriter object for writing data
  * it support write data from load disk
  *
  * @return carbonWriter object
@@ -378,7 +378,7 @@ void close();
 
 ```
 /**
- * constructor with jni env
+ * Constructor with jni env
  *
  * @param env  jni env
  */
@@ -387,7 +387,7 @@ CarbonSchemaReader(JNIEnv *env);
 
 ```
 /**
- * read schema from path,
+ * Read schema from path,
  * path can be folder path, carbonindex file path, and carbondata file path
  * and will not check all files schema
  *
@@ -399,9 +399,9 @@ jobject readSchema(char *path);
 
 ```
 /**
- *  read schema from path,
- *  path can be folder path, carbonindex file path, and carbondata file path
- *  and user can decide whether check all files schema
+ * Read schema from path,
+ * path can be folder path, carbonindex file path, and carbondata file path
+ * and user can decide whether check all files schema
  *
  * @param path carbon data path
  * @param validateSchema whether check all files schema
@@ -412,7 +412,7 @@ jobject readSchema(char *path, bool validateSchema);
 
 ```
 /**
- * read schema from path,
+ * Read schema from path,
  * path can be folder path, carbonindex file path, and carbondata file path
  * and will not check all files schema
  *
@@ -426,9 +426,9 @@ jobject readSchema(char *path, Configuration conf);
 
 ```
 /**
- *  read schema from path,
- *  path can be folder path, carbonindex file path, and carbondata file path
- *  and user can decide whether check all files schema
+ * Read schema from path,
+ * path can be folder path, carbonindex file path, and carbondata file path
+ * and user can decide whether check all files schema
  *
  * @param path carbon data path
  * @param validateSchema whether check all files schema
@@ -442,7 +442,7 @@ jobject readSchema(char *path, bool validateSchema, Configuration conf);
 ### Schema
 ```
 /**
- * constructor with jni env and carbon schema data
+ * Constructor with jni env and carbon schema data
  *
  * @param env jni env
  * @param schema  carbon schema data
@@ -452,7 +452,7 @@ Schema(JNIEnv *env, jobject schema);
 
 ```
 /**
- * get fields length of schema
+ * Get fields length of schema
  *
  * @return fields length
  */
@@ -461,7 +461,7 @@ int getFieldsLength();
 
 ```
 /**
- * get field name by ordinal
+ * Get field name by ordinal
  *
  * @param ordinal the data index of carbon schema
  * @return ordinal field name
@@ -471,7 +471,7 @@ char *getFieldName(int ordinal);
 
 ```
 /**
- * get  field data type name by ordinal
+ * Get  field data type name by ordinal
  *
  * @param ordinal the data index of carbon schema
  * @return ordinal field data type name
@@ -481,7 +481,7 @@ char *getFieldDataTypeName(int ordinal);
 
 ```
 /**
- * get  array child element data type name by ordinal
+ * Get  array child element data type name by ordinal
  *
  * @param ordinal the data index of carbon schema
  * @return ordinal array child element data type name
@@ -514,8 +514,8 @@ jobject addProperty(char *key, char *value);
 /**
  * This method will be used to get the properties value
  *
- * @param key  property key
- * @return  property value
+ * @param key property key
+ * @return property value
  */
 char *getProperty(char *key);
 ```

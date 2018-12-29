@@ -252,6 +252,7 @@ Find example code at [DirectSQLExample](https://github.com/apache/carbondata/blo
 ```
 /**
  * Sets the output path of the writer builder
+ *
  * @param path is the absolute path where output files are written
  *             This method must be called when building CarbonWriterBuilder
  * @return updated CarbonWriterBuilder
@@ -261,7 +262,8 @@ public CarbonWriterBuilder outputPath(String path);
 
 ```
 /**
- * to set the timestamp in the carbondata and carbonindex index files
+ * To set the timestamp in the carbondata and carbonindex index files
+ *
  * @param UUID is a timestamp to be used in the carbondata and carbonindex index files.
  *             By default set to zero.
  * @return updated CarbonWriterBuilder
@@ -272,6 +274,7 @@ public CarbonWriterBuilder uniqueIdentifier(long UUID);
 ```
 /**
  * To set the carbondata file size in MB between 1MB-2048MB
+ *
  * @param blockSize is size in MB between 1MB to 2048 MB
  *                  default value is 1024 MB
  * @return updated CarbonWriterBuilder
@@ -282,6 +285,7 @@ public CarbonWriterBuilder withBlockSize(int blockSize);
 ```
 /**
  * To set the blocklet size of carbondata file
+ *
  * @param blockletSize is blocklet size in MB
  *                     default value is 64 MB
  * @return updated CarbonWriterBuilder
@@ -308,7 +312,8 @@ public CarbonWriterBuilder localDictionaryThreshold(int localDictionaryThreshold
 
 ```
 /**
- * sets the list of columns that needs to be in sorted order
+ * Sets the list of columns that needs to be in sorted order
+ *
  * @param sortColumns is a string array of columns that needs to be sorted.
  *                    If it is null or by default all dimensions are selected for sorting
  *                    If it is empty array, no columns are sorted
@@ -319,8 +324,9 @@ public CarbonWriterBuilder sortBy(String[] sortColumns);
 
 ```
 /**
- * sets the taskNo for the writer. SDKs concurrently running
+ * Sets the taskNo for the writer. SDKs concurrently running
  * will set taskNo in order to avoid conflicts in file's name during write.
+ *
  * @param taskNo is the TaskNo user wants to specify.
  *               by default it is system time in nano seconds.
  * @return updated CarbonWriterBuilder
@@ -417,7 +423,7 @@ public CarbonWriterBuilder withHadoopConf(String key, String value);
 
 ```
 /**
- * to build a {@link CarbonWriter}, which accepts row in CSV format
+ * To build a {@link CarbonWriter}, which accepts row in CSV format
  *
  * @param schema carbon Schema object {org.apache.carbondata.sdk.file.Schema}
  * @return CarbonWriterBuilder
@@ -427,7 +433,7 @@ public CarbonWriterBuilder withCsvInput(Schema schema);
 
 ```
 /**
- * to build a {@link CarbonWriter}, which accepts Avro object
+ * To build a {@link CarbonWriter}, which accepts Avro object
  *
  * @param avroSchema avro Schema object {org.apache.avro.Schema}
  * @return CarbonWriterBuilder
@@ -437,7 +443,7 @@ public CarbonWriterBuilder withAvroInput(org.apache.avro.Schema avroSchema);
 
 ```
 /**
- * to build a {@link CarbonWriter}, which accepts Json object
+ * To build a {@link CarbonWriter}, which accepts Json object
  *
  * @param carbonSchema carbon Schema object
  * @return CarbonWriterBuilder
@@ -457,7 +463,8 @@ public CarbonWriterBuilder writtenBy(String appName) {
 
 ```
 /**
- * sets the list of columns for which inverted index needs to generated
+ * Sets the list of columns for which inverted index needs to generated
+ *
  * @param invertedIndexColumns is a string array of columns for which inverted index needs to
  * generated.
  * If it is null or an empty array, inverted index will be generated for none of the columns
@@ -505,6 +512,7 @@ public static CarbonWriterBuilder builder() {
  *                      which is one row of data.
  * If CSVCarbonWriter, object is of type String[], which is one row of data
  * If JsonCarbonWriter, object is of type String, which is one row of json
+ *
  * @param object
  * @throws IOException
  */
@@ -522,6 +530,7 @@ public abstract void close() throws IOException;
 ```
 /**
  * Field Constructor
+ *
  * @param name name of the field
  * @param type datatype of field, specified in strings.
  */
@@ -531,6 +540,7 @@ public Field(String name, String type);
 ```
 /**
  * Field constructor
+ *
  * @param name name of the field
  * @param type datatype of the field of class DataType
  */
@@ -541,7 +551,8 @@ public Field(String name, DataType type);
 
 ```
 /**
- * construct a schema with fields
+ * Construct a schema with fields
+ *
  * @param fields
  */
 public Schema(Field[] fields);
@@ -563,7 +574,7 @@ public static Schema parseJson(String json);
 ### Class org.apache.carbondata.sdk.file.AvroCarbonWriter
 ```
 /**
- * converts avro schema to carbon schema, required by carbonWriter
+ * Converts avro schema to carbon schema, required by carbonWriter
  *
  * @param avroSchemaString json formatted avro schema as string
  * @return carbon sdk schema
@@ -643,7 +654,7 @@ public static CarbonReaderBuilder builder(String tablePath);
  * @param maxSplits: Int
  * @return list of CarbonReader objects
  */
- public List<CarbonReader> split(int maxSplits);
+public List<CarbonReader> split(int maxSplits);
 ```
 
 ```
@@ -661,10 +672,10 @@ public T readNextRow();
 ```
 
 ```
-  /**
-   * Read and return next batch row objects
-   */
-  public Object[] readNextBatchRow();
+/**
+ * Read and return next batch row objects
+ */
+public Object[] readNextBatchRow();
 ```
 
 ```
@@ -785,7 +796,7 @@ public static Schema readSchemaInIndexFile(String indexFilePath);
 
 ```
 /**
- * read schema from path,
+ * Read schema from path,
  * path can be folder path,carbonindex file path, and carbondata file path
  * and will not check all files schema
  *
@@ -798,7 +809,7 @@ public static Schema readSchema(String path);
 
 ```
 /**
- * read schema from path,
+ * Read schema from path,
  * path can be folder path,carbonindex file path, and carbondata file path
  * and user can decide whether check all files schema
  *
@@ -812,7 +823,7 @@ public static Schema readSchema(String path, boolean validateSchema);
 
 ```
 /**
- * read schema from path,
+ * Read schema from path,
  * path can be folder path, carbonindex file path, and carbondata file path
  * and will not check all files schema
  *
@@ -826,7 +837,7 @@ public static Schema readSchema(String path, Configuration conf);
 
 ```
 /**
- * read schema from path,
+ * Read schema from path,
  * path can be folder path, carbonindex file path, and carbondata file path
  * and user can decide whether check all files schema
  *
@@ -845,6 +856,7 @@ public static Schema readSchema(String path, boolean validateSchema, Configurati
  * This method return the version details in formatted string by reading from carbondata file
  * If application name is SDK_1.0.0 and this has written the carbondata file in carbondata 1.6 project version,
  * then this API returns the String "SDK_1.0.0 in version: 1.6.0-SNAPSHOT"
+ *
  * @param dataFilePath complete path including carbondata file name
  * @return string with information of who has written this file in which carbondata project version
  * @throws IOException
@@ -855,7 +867,8 @@ public static String getVersionDetails(String dataFilePath);
 ### Class org.apache.carbondata.sdk.file.Schema
 ```
 /**
- * construct a schema with fields
+ * Construct a schema with fields
+ *
  * @param fields
  */
 public Schema(Field[] fields);
@@ -863,7 +876,7 @@ public Schema(Field[] fields);
 
 ```
 /**
- * construct a schema with List<ColumnSchema>
+ * Construct a schema with List<ColumnSchema>
  *
  * @param columnSchemaList column schema list
  */
@@ -896,6 +909,7 @@ public Schema asOriginOrder();
 ```
 /**
  * Field Constructor
+ *
  * @param name name of the field
  * @param type datatype of field, specified in strings.
  */
