@@ -30,7 +30,7 @@ import org.apache.spark.sql.execution.command.ExplainCommand
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.{DataType, Metadata}
 
-object CarbonToSparkAdapater {
+object CarbonToSparkAdapter {
 
   def addSparkListener(sparkContext: SparkContext) = {
     sparkContext.addSparkListener(new SparkListener {

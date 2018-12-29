@@ -495,7 +495,7 @@ public class SortParameters implements Serializable {
     parameters.setCarbonTable(carbonTable);
     parameters.setDatabaseName(databaseName);
     parameters.setTableName(tableName);
-    parameters.setPartitionID(CarbonTablePath.DEPRECATED_PATITION_ID);
+    parameters.setPartitionID(CarbonTablePath.DEPRECATED_PARTITION_ID);
     parameters.setSegmentId(segmentId);
     parameters.setTaskNo(taskNo);
     parameters.setMeasureColCount(measureColCount);

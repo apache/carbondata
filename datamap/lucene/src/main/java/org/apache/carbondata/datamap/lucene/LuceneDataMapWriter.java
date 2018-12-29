@@ -346,7 +346,7 @@ public class LuceneDataMapWriter extends DataMapWriter {
     } else if (type == DataTypes.BOOLEAN) {
       value = page.getBoolean(rowId);
     } else {
-      LOGGER.error("unsupport data type " + type);
+      LOGGER.error("unsupported data type " + type);
       throw new RuntimeException("unsupported data type " + type);
     }
     return value;

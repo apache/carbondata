@@ -322,7 +322,8 @@ m filterExpression
           ObjectSerializationUtil.convertObjectToString(new ArrayList<>(partitions));
       configuration.set(PARTITIONS_TO_PRUNE, partitionString);
     } catch (Exception e) {
-      throw new RuntimeException("Error while setting patition information to Job" + partitions, e);
+      throw new RuntimeException(
+          "Error while setting partition information to Job" + partitions, e);
     }
   }
 

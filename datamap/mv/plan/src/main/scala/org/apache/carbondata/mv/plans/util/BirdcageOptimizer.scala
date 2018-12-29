@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.mv.plans.util
 
-import org.apache.spark.sql.CarbonToSparkAdapater
+import org.apache.spark.sql.CarbonToSparkAdapter
 import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.optimizer._
@@ -128,7 +128,7 @@ object BirdcageOptimizer extends RuleExecutor[LogicalPlan] {
     //      ConvertToLocalRelation,
     //      PropagateEmptyRelation) ::
     Batch(
-      "OptimizeCodegen", Once, CarbonToSparkAdapater.getOptimizeCodegenRule(conf): _*) ::
+      "OptimizeCodegen", Once, CarbonToSparkAdapter.getOptimizeCodegenRule(conf): _*) ::
     Batch(
       "RewriteSubquery", Once,
       RewritePredicateSubquery,

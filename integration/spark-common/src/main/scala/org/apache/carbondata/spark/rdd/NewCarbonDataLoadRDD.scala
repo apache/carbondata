@@ -79,7 +79,7 @@ class SparkPartitionLoader(model: CarbonLoadModel,
         System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties")
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance.initPartitionInfo(
-      CarbonTablePath.DEPRECATED_PATITION_ID)
+      CarbonTablePath.DEPRECATED_PARTITION_ID)
     CarbonProperties.getInstance().addProperty("carbon.is.columnar.storage", "true")
     CarbonProperties.getInstance().addProperty("carbon.dimension.split.value.in.columnar", "1")
     CarbonProperties.getInstance().addProperty("carbon.is.fullyfilled.bits", "true")
@@ -128,7 +128,7 @@ class NewCarbonDataLoadRDD[K, V](
       val uniqueLoadStatusId =
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
       try {
-        loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PATITION_ID)
+        loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PARTITION_ID)
         loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
 
         val preFetch = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
@@ -170,7 +170,7 @@ class NewCarbonDataLoadRDD[K, V](
         // So print the data load statistics only in case of non failure case
         if (SegmentStatus.LOAD_FAILURE != loadMetadataDetails.getSegmentStatus) {
           CarbonTimeStatisticsFactory.getLoadStatisticsInstance
-            .printStatisticsInfo(CarbonTablePath.DEPRECATED_PATITION_ID)
+            .printStatisticsInfo(CarbonTablePath.DEPRECATED_PARTITION_ID)
         }
       }
 
@@ -259,7 +259,7 @@ class NewDataFrameLoaderRDD[K, V](
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
       try {
 
-        loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PATITION_ID)
+        loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PARTITION_ID)
         loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
         carbonLoadModel.setPreFetch(false)
@@ -305,7 +305,7 @@ class NewDataFrameLoaderRDD[K, V](
         // So print the data load statistics only in case of non failure case
         if (SegmentStatus.LOAD_FAILURE != loadMetadataDetails.getSegmentStatus) {
           CarbonTimeStatisticsFactory.getLoadStatisticsInstance
-            .printStatisticsInfo(CarbonTablePath.DEPRECATED_PATITION_ID)
+            .printStatisticsInfo(CarbonTablePath.DEPRECATED_PARTITION_ID)
         }
       }
       var finished = false
@@ -466,7 +466,7 @@ class PartitionTableDataLoaderRDD[K, V](
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
       try {
 
-        loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PATITION_ID)
+        loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PARTITION_ID)
         loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
         carbonLoadModel.setTaskNo(String.valueOf(partitionInfo.getPartitionId(theSplit.index)))
         carbonLoadModel.setPreFetch(false)
@@ -503,7 +503,7 @@ class PartitionTableDataLoaderRDD[K, V](
         // So print the data load statistics only in case of non failure case
         if (SegmentStatus.LOAD_FAILURE != loadMetadataDetails.getSegmentStatus) {
           CarbonTimeStatisticsFactory.getLoadStatisticsInstance
-            .printStatisticsInfo(CarbonTablePath.DEPRECATED_PATITION_ID)
+            .printStatisticsInfo(CarbonTablePath.DEPRECATED_PARTITION_ID)
         }
       }
       var finished = false

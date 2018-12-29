@@ -165,7 +165,7 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     assert(exceptionCaught.getMessage.contains("does not exist in table"))
   }
 
-  test("long_string_columns: columns cannot exist in patitions columns") {
+  test("long_string_columns: columns cannot exist in partitions columns") {
     val exceptionCaught = intercept[MalformedCarbonCommandException] {
       sql(
         s"""
