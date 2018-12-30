@@ -18,34 +18,32 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
-import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
 import org.apache.spark.sql.{Row, SparkSession}
 import org.slf4j.{Logger, LoggerFactory}
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 object S3Example {
 
   /**
-   * This example demonstrate usage of
-   * 1. create carbon table with storage location on object based storage
-   * like AWS S3, Huawei OBS, etc
-   * 2. load data into carbon table, the generated file will be stored on object based storage
-   * query the table.
-   *
-   * @param args require three parameters "Access-key" "Secret-key"
-   *             "table-path on s3" "s3-endpoint" "spark-master"
-   */
+    * This example demonstrate usage of
+    * 1. create carbon table with storage location on object based storage
+    * like AWS S3, Huawei OBS, etc
+    * 2. load data into carbon table, the generated file will be stored on object based storage
+    * query the table.
+    *
+    * @param args require three parameters "Access-key" "Secret-key"
+    *             "table-path on s3" "s3-endpoint" "spark-master"
+    */
   def main(args: Array[String]) {
     val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
+      + "../../../..").getCanonicalPath
     val path = s"$rootPath/examples/spark2/src/main/resources/data1.csv"
     val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
     import org.apache.spark.sql.CarbonSession._
     if (args.length < 3 || args.length > 5) {
       logger.error("Usage: java CarbonS3Example <access-key> <secret-key>" +
-                   "<table-path-on-s3> [s3-endpoint] [spark-master]")
+        "<table-path-on-s3> [s3-endpoint] [spark-master]")
       System.exit(0)
     }
 
@@ -78,7 +76,7 @@ object S3Example {
          | floatField FLOAT
          | )
          | STORED BY 'carbondata'
-         | LOCATION '${ args(2) }'
+         | LOCATION '${args(2)}'
          | TBLPROPERTIES('SORT_COLUMNS'='', 'DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
 

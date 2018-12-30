@@ -20,21 +20,22 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
 import org.apache.spark.sql.SparkSession
 import org.slf4j.{Logger, LoggerFactory}
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
-/**
- * Generate data and write data to S3
- * User can generate different numbers of data by specifying the number-of-rows in parameters
- */
+ /**
+  * Generate data and write data to S3
+  * User can generate different numbers of data by specifying the number-of-rows in parameters
+  */
 object S3UsingSDKExample {
 
   // prepare SDK writer output
   def buildTestData(
-      path: String,
-      num: Int = 3): Any = {
+                     path: String,
+                     num: Int = 3): Any = {
 
     // getCanonicalPath gives path with \, but the code expects /.
     val writerPath = path.replace("\\", "/");
@@ -42,7 +43,7 @@ object S3UsingSDKExample {
     val fields: Array[Field] = new Array[Field](3)
     fields(0) = new Field("name", DataTypes.STRING)
     fields(1) = new Field("age", DataTypes.INT)
-    fields(2) = new Field("height", DataTypes.DOUBLE)
+    fields(2) = new Field("height",DataTypes.DOUBLE)
 
     try {
       val builder = CarbonWriter.builder()
@@ -63,23 +64,23 @@ object S3UsingSDKExample {
     }
   }
 
-  /**
-   * This example demonstrate usage of
-   * 1. create carbon table with storage location on object based storage
-   * like AWS S3, Huawei OBS, etc
-   * 2. load data into carbon table, the generated file will be stored on object based storage
-   * query the table.
-   *
-   * @param args require three parameters "Access-key" "Secret-key"
-   *             "table-path on s3" "s3-endpoint" "spark-master"
-   */
+   /**
+    * This example demonstrate usage of
+    * 1. create carbon table with storage location on object based storage
+    * like AWS S3, Huawei OBS, etc
+    * 2. load data into carbon table, the generated file will be stored on object based storage
+    * query the table.
+    *
+    * @param args require three parameters "Access-key" "Secret-key"
+    *             "table-path on s3" "s3-endpoint" "spark-master"
+    */
   def main(args: Array[String]) {
     val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
     import org.apache.spark.sql.CarbonSession._
     if (args.length < 2 || args.length > 6) {
       logger.error("Usage: java CarbonS3Example <access-key> <secret-key>" +
-                   "[table-path-on-s3] [s3-endpoint] [number-of-rows] [spark-master]")
+        "[table-path-on-s3] [s3-endpoint] [number-of-rows] [spark-master]")
       System.exit(0)
     }
 
@@ -91,7 +92,7 @@ object S3UsingSDKExample {
       .config("spark.driver.host", "localhost")
       .config(accessKey, args(0))
       .config(secretKey, args(1))
-      .config(endpoint,CarbonSparkUtil.getS3EndPoint(args))
+      .config(endpoint, CarbonSparkUtil.getS3EndPoint(args))
       .getOrCreateCarbonSession()
 
     spark.sparkContext.setLogLevel("WARN")
@@ -113,7 +114,6 @@ object S3UsingSDKExample {
     spark.sql("SELECT * FROM s3_sdk_table LIMIT 10").show()
     spark.stop()
   }
-
 
 
 }
