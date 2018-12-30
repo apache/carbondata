@@ -190,7 +190,7 @@ public class StructDataType implements GenericDataType<StructObject> {
         children.get(i).writeByteArray(data[i], dataOutputStream, logHolder);
       }
 
-      // For other children elements which dont have data, write empty
+      // For other children elements which don't have data, write empty
       for (int i = data.length; i < children.size(); i++) {
         children.get(i).writeByteArray(null, dataOutputStream, logHolder);
       }

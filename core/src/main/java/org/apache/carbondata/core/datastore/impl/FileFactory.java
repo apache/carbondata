@@ -190,7 +190,7 @@ public final class FileFactory {
    * @param fileType
    * @param bufferSize
    * @param compressorName name of compressor to write this file
-   * @return data out put stram
+   * @return data out put stream
    * @throws IOException
    */
   public static DataOutputStream getDataOutputStream(String path, FileType fileType, int bufferSize,
@@ -366,6 +366,29 @@ public final class FileFactory {
 
   public enum FileType {
     LOCAL, HDFS, ALLUXIO, VIEWFS, S3
+  }
+
+  /**
+   * Adds the schema to file path if not exists to the file path.
+   * @param filePath path of file
+   * @return Updated filepath
+   */
+  public static String addSchemeIfNotExists(String filePath) {
+    FileType fileType = getFileType(filePath);
+    switch (fileType) {
+      case LOCAL:
+        if (filePath.startsWith("file:")) {
+          return filePath;
+        } else {
+          return new Path("file://" + filePath).toString();
+        }
+      case HDFS:
+      case ALLUXIO:
+      case VIEWFS:
+      case S3:
+      default:
+        return filePath;
+    }
   }
 
   /**

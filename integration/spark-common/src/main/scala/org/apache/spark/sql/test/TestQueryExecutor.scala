@@ -76,7 +76,7 @@ object TestQueryExecutor {
     // Otherwise point to respective target folder location
     localTarget
   }
-  val metastoredb = target
+  val metaStoreDB = target
   val location = s"$target/dbpath"
   val masterUrl = {
     val property = System.getProperty("spark.master.url")

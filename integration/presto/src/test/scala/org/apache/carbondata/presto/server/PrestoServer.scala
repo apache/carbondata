@@ -39,10 +39,11 @@ class PrestoServer {
   val CARBONDATA_CATALOG = "carbondata"
   val CARBONDATA_CONNECTOR = "carbondata"
   val CARBONDATA_SOURCE = "carbondata"
-  val logger: Logger = LoggerFactory.getLogger(this.getClass)
+  val LOGGER: Logger = LoggerFactory.getLogger(this.getClass)
 
 
   val prestoProperties: util.Map[String, String] = Map(("http-server.http.port", "8086")).asJava
+  val carbonProperties: util.Map[String, String] = new util.HashMap[String, String]()
   createSession
   lazy val queryRunner = new DistributedQueryRunner(createSession, 4, prestoProperties)
   var dbName : String = null
@@ -55,11 +56,11 @@ class PrestoServer {
    */
   def startServer(carbonStorePath: String): Unit = {
 
-    logger.info("======== STARTING PRESTO SERVER ========")
+    LOGGER.info("======== STARTING PRESTO SERVER ========")
     val queryRunner: DistributedQueryRunner = createQueryRunner(
       prestoProperties, carbonStorePath)
 
-    logger.info("STARTED SERVER AT :" + queryRunner.getCoordinator.getBaseUrl)
+    LOGGER.info("STARTED SERVER AT :" + queryRunner.getCoordinator.getBaseUrl)
   }
 
   /**
@@ -68,15 +69,15 @@ class PrestoServer {
    * @param carbonStorePath the store path of carbon
    * @param dbName the database name , if not a default database
    */
-  def startServer(carbonStorePath: String, dbName: String): Unit = {
+  def startServer(carbonStorePath: String, dbName: String, properties: util.Map[String, String]= new util.HashMap[String, String]()): Unit = {
 
     this.dbName = dbName
-
-    logger.info("======== STARTING PRESTO SERVER ========")
+    carbonProperties.putAll(properties)
+    LOGGER.info("======== STARTING PRESTO SERVER ========")
     val queryRunner: DistributedQueryRunner = createQueryRunner(
       prestoProperties, carbonStorePath)
 
-    logger.info("STARTED SERVER AT :" + queryRunner.getCoordinator.getBaseUrl)
+    LOGGER.info("STARTED SERVER AT :" + queryRunner.getCoordinator.getBaseUrl)
   }
 
   /**
@@ -87,7 +88,7 @@ class PrestoServer {
     Try {
       queryRunner.installPlugin(new CarbondataPlugin)
       val carbonProperties = ImmutableMap.builder[String, String]
-        .put("carbondata-store", carbonStorePath)
+        .putAll(this.carbonProperties)
         .put("carbon.unsafe.working.memory.in.mb", "512").build
 
       // CreateCatalog will create a catalog for CarbonData in etc/catalog.
@@ -104,7 +105,7 @@ class PrestoServer {
    */
   def stopServer(): Unit = {
     queryRunner.close()
-    logger.info("***** Stopping The Server *****")
+    LOGGER.info("***** Stopping The Server *****")
   }
 
   /**
@@ -117,13 +118,28 @@ class PrestoServer {
 
     Try {
       val conn: Connection = createJdbcConnection(dbName)
-      logger.info(s"***** executing the query ***** \n $query")
+      LOGGER.info(s"***** executing the query ***** \n $query")
       val statement = conn.createStatement()
       val result: ResultSet = statement.executeQuery(query)
       convertResultSetToList(result)
     } match {
       case Success(result) => result
-      case Failure(jdbcException) => logger
+      case Failure(jdbcException) => LOGGER
+        .error(s"exception occurs${ jdbcException.getMessage } \n query failed $query")
+        throw jdbcException
+    }
+  }
+
+  def execute(query: String) = {
+
+    Try {
+      val conn: Connection = createJdbcConnection(dbName)
+      LOGGER.info(s"***** executing the query ***** \n $query")
+      val statement = conn.createStatement()
+      statement.execute(query)
+    } match {
+      case Success(result) => result
+      case Failure(jdbcException) => LOGGER
         .error(s"exception occurs${ jdbcException.getMessage } \n query failed $query")
         throw jdbcException
     }
@@ -145,7 +161,7 @@ class PrestoServer {
     val properties = new Properties
     // The database Credentials
     properties.setProperty("user", "test")
-  
+
     // STEP 2: Register JDBC driver
     Class.forName(JDBC_DRIVER)
     // STEP 3: Open a connection
@@ -180,7 +196,7 @@ class PrestoServer {
    * CreateSession will create a new session in the Server to connect and execute queries.
    */
   private def createSession: Session = {
-    logger.info("\n Creating The Presto Server Session")
+    LOGGER.info("\n Creating The Presto Server Session")
     Session.builder(new SessionPropertyManager)
       .setQueryId(new QueryIdGenerator().createNextQueryId)
       .setIdentity(new Identity("user", Optional.empty()))

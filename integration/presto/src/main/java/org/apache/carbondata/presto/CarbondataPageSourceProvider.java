@@ -19,6 +19,7 @@ package org.apache.carbondata.presto;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
@@ -28,7 +29,6 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
-import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.iterator.AbstractDetailQueryResultIterator;
@@ -43,63 +43,79 @@ import org.apache.carbondata.presto.impl.CarbonTableReader;
 
 import static org.apache.carbondata.presto.Types.checkType;
 
+import com.facebook.presto.hive.HdfsEnvironment;
+import com.facebook.presto.hive.HiveClientConfig;
+import com.facebook.presto.hive.HiveColumnHandle;
+import com.facebook.presto.hive.HivePageSourceFactory;
+import com.facebook.presto.hive.HivePageSourceProvider;
+import com.facebook.presto.hive.HiveRecordCursorProvider;
+import com.facebook.presto.hive.HiveSplit;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorPageSource;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorSplit;
-import com.facebook.presto.spi.connector.ConnectorPageSourceProvider;
+import com.facebook.presto.spi.SchemaTableName;
 import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
+import com.facebook.presto.spi.type.TypeManager;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.TaskAttemptContextImpl;
 import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskType;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-
 
 /**
  * Provider Class for Carbondata Page Source class.
  */
-public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider {
+public class CarbondataPageSourceProvider extends HivePageSourceProvider {
 
-  private String connectorId;
   private CarbonTableReader carbonTableReader;
   private String queryId ;
+  private HdfsEnvironment hdfsEnvironment;
 
-  @Inject public CarbondataPageSourceProvider(CarbondataConnectorId connectorId,
+  @Inject public CarbondataPageSourceProvider(
+      HiveClientConfig hiveClientConfig,
+      HdfsEnvironment hdfsEnvironment,
+      Set<HiveRecordCursorProvider> cursorProviders,
+      Set<HivePageSourceFactory> pageSourceFactories,
+      TypeManager typeManager,
       CarbonTableReader carbonTableReader) {
-    this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
+    super(hiveClientConfig, hdfsEnvironment, cursorProviders, pageSourceFactories, typeManager);
     this.carbonTableReader = requireNonNull(carbonTableReader, "carbonTableReader is null");
+    this.hdfsEnvironment = hdfsEnvironment;
   }
 
   @Override
   public ConnectorPageSource createPageSource(ConnectorTransactionHandle transactionHandle,
       ConnectorSession session, ConnectorSplit split, List<ColumnHandle> columns) {
-    this.queryId = ((CarbondataSplit)split).getQueryId();
+    HiveSplit carbonSplit =
+        checkType(split, HiveSplit.class, "split is not class HiveSplit");
+    this.queryId = carbonSplit.getSchema().getProperty("queryId");
+    if (this.queryId == null) {
+      // Fall back to hive pagesource.
+      return super.createPageSource(transactionHandle, session, split, columns);
+    }
+    Configuration configuration = this.hdfsEnvironment.getConfiguration(
+        new HdfsEnvironment.HdfsContext(session, carbonSplit.getDatabase(), carbonSplit.getTable()),
+        new Path(carbonSplit.getSchema().getProperty("tablePath")));
+    configuration = carbonTableReader.updateS3Properties(configuration);
     CarbonDictionaryDecodeReadSupport readSupport = new CarbonDictionaryDecodeReadSupport();
     PrestoCarbonVectorizedRecordReader carbonRecordReader =
-        createReader(split, columns, readSupport);
+        createReader(carbonSplit, columns, readSupport, configuration);
     return new CarbondataPageSource(carbonRecordReader, columns);
   }
 
   /**
-   * @param split
-   * @param columns
-   * @param readSupport
-   * @return
+   * Create vector reader using the split.
    */
-  private PrestoCarbonVectorizedRecordReader createReader(ConnectorSplit split,
-      List<? extends ColumnHandle> columns, CarbonDictionaryDecodeReadSupport readSupport) {
-
-    CarbondataSplit carbondataSplit =
-        checkType(split, CarbondataSplit.class, "split is not class CarbondataSplit");
-    checkArgument(carbondataSplit.getConnectorId().equals(connectorId),
-        "split is not for this connector");
-    QueryModel queryModel = createQueryModel(carbondataSplit, columns);
+  private PrestoCarbonVectorizedRecordReader createReader(HiveSplit carbonSplit,
+      List<? extends ColumnHandle> columns, CarbonDictionaryDecodeReadSupport readSupport,
+      Configuration conf) {
+    QueryModel queryModel = createQueryModel(carbonSplit, columns, conf);
     if (carbonTableReader.config.getPushRowFilter() == null ||
         carbonTableReader.config.getPushRowFilter().equalsIgnoreCase("false")) {
       queryModel.setDirectVectorFill(true);
@@ -113,14 +129,10 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
       PrestoCarbonVectorizedRecordReader reader =
           new PrestoCarbonVectorizedRecordReader(queryExecutor, queryModel,
               (AbstractDetailQueryResultIterator) iterator, readSupport);
-      reader.setTaskId(carbondataSplit.getIndex());
+      reader.setTaskId(Long.parseLong(carbonSplit.getSchema().getProperty("index")));
       return reader;
-    } catch (IOException e) {
-      throw new RuntimeException("Unable to get the Query Model ", e);
-    } catch (QueryExecutionException e) {
-      throw new RuntimeException(e.getMessage(), e);
-    } catch (Exception ex) {
-      throw new RuntimeException(ex.getMessage(), ex);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to create reader ", e);
     }
   }
 
@@ -129,30 +141,27 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
    * @param columns
    * @return
    */
-  private QueryModel createQueryModel(CarbondataSplit carbondataSplit,
-      List<? extends ColumnHandle> columns) {
+  private QueryModel createQueryModel(HiveSplit carbondataSplit,
+      List<? extends ColumnHandle> columns, Configuration conf) {
 
     try {
       CarbonProjection carbonProjection = getCarbonProjection(columns);
-      CarbonTable carbonTable = getCarbonTable(carbondataSplit);
-
-      Configuration conf = new Configuration();
+      CarbonTable carbonTable = getCarbonTable(carbondataSplit, conf);
       conf.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, "");
       String carbonTablePath = carbonTable.getAbsoluteTableIdentifier().getTablePath();
       CarbonTableInputFormat
           .setTransactionalTable(conf, carbonTable.getTableInfo().isTransactionalTable());
       CarbonTableInputFormat.setTableInfo(conf, carbonTable.getTableInfo());
-
       conf.set(CarbonTableInputFormat.INPUT_DIR, carbonTablePath);
       conf.set("query.id", queryId);
       JobConf jobConf = new JobConf(conf);
       CarbonTableInputFormat carbonTableInputFormat = createInputFormat(jobConf, carbonTable,
-          PrestoFilterUtil.parseFilterExpression(carbondataSplit.getConstraints()),
+          PrestoFilterUtil.parseFilterExpression(carbondataSplit.getEffectivePredicate()),
           carbonProjection);
       TaskAttemptContextImpl hadoopAttemptContext =
           new TaskAttemptContextImpl(jobConf, new TaskAttemptID("", 1, TaskType.MAP, 0, 0));
-      CarbonMultiBlockSplit carbonInputSplit =
-          CarbonLocalMultiBlockSplit.convertSplit(carbondataSplit.getLocalInputSplit());
+      CarbonMultiBlockSplit carbonInputSplit = CarbonLocalMultiBlockSplit
+          .convertSplit(carbondataSplit.getSchema().getProperty("carbonSplit"));
       QueryModel queryModel =
           carbonTableInputFormat.createQueryModel(carbonInputSplit, hadoopAttemptContext);
       queryModel.setQueryId(queryId);
@@ -204,10 +213,10 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
   private CarbonProjection getCarbonProjection(List<? extends ColumnHandle> columns) {
     CarbonProjection carbonProjection = new CarbonProjection();
     // Convert all columns handles
-    ImmutableList.Builder<CarbondataColumnHandle> handles = ImmutableList.builder();
+    ImmutableList.Builder<HiveColumnHandle> handles = ImmutableList.builder();
     for (ColumnHandle handle : columns) {
-      handles.add(checkType(handle, CarbondataColumnHandle.class, "handle"));
-      carbonProjection.addColumn(((CarbondataColumnHandle) handle).getColumnName());
+      handles.add(checkType(handle, HiveColumnHandle.class, "handle"));
+      carbonProjection.addColumn(((HiveColumnHandle) handle).getName());
     }
     return carbonProjection;
   }
@@ -216,9 +225,10 @@ public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider
    * @param carbonSplit
    * @return
    */
-  private CarbonTable getCarbonTable(CarbondataSplit carbonSplit) {
-    CarbonTableCacheModel tableCacheModel =
-        carbonTableReader.getCarbonCache(carbonSplit.getSchemaTableName());
+  private CarbonTable getCarbonTable(HiveSplit carbonSplit, Configuration configuration) {
+    CarbonTableCacheModel tableCacheModel = carbonTableReader
+        .getCarbonCache(new SchemaTableName(carbonSplit.getDatabase(), carbonSplit.getTable()),
+            carbonSplit.getSchema().getProperty("tablePath"), configuration);
     checkNotNull(tableCacheModel, "tableCacheModel should not be null");
     checkNotNull(tableCacheModel.carbonTable, "tableCacheModel.carbonTable should not be null");
     checkNotNull(tableCacheModel.carbonTable.getTableInfo(),

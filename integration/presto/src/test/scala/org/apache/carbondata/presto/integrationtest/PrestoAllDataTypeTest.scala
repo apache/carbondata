@@ -19,6 +19,7 @@ package org.apache.carbondata.presto.integrationtest
 
 import java.io.File
 import java.sql.Timestamp
+import java.util
 
 import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.scalatest.{BeforeAndAfterAll, FunSuiteLike}
@@ -27,7 +28,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.presto.server.PrestoServer
 
 
@@ -75,16 +76,25 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
       systemPath)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME,
       "Presto")
+    val map = new util.HashMap[String, String]()
+    map.put("hive.metastore", "file")
+    map.put("hive.metastore.catalog.dir", s"file://$storePath")
+
+    prestoServer.startServer(storePath, "testdb", map)
+    prestoServer.execute("drop table if exists testdb.testtable")
+    prestoServer.execute("drop schema if exists testdb")
+    prestoServer.execute("create schema testdb")
+    prestoServer.execute("create table testdb.testtable(ID int, date date, country varchar, name varchar, phonetype varchar, serialname varchar,salary double, bonus decimal(10,4), monthlyBonus decimal(18,4), dob timestamp, shortField smallint, iscurrentemployee boolean) with(format='CARBON') ")
     CarbonDataStoreCreator
       .createCarbonStore(storePath,
         s"$rootPath/integration/presto/src/test/resources/alldatatype.csv")
     logger.info(s"\nCarbon store is created at location: $storePath")
     cleanUp
-    prestoServer.startServer(storePath, "testdb")
   }
 
   override def afterAll(): Unit = {
     prestoServer.stopServer()
+    CarbonUtil.deleteFoldersAndFiles(FileFactory.getCarbonFile(storePath))
   }
 
   test("test the result for count(*) in presto") {

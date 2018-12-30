@@ -560,7 +560,7 @@ public final class CarbonUtil {
   }
 
   /**
-   * From beeline if a delimeter is passed as \001, in code we get it as
+   * From beeline if a delimiter is passed as \001, in code we get it as
    * escaped string as \\001. So this method will unescape the slash again and
    * convert it back t0 \001
    *

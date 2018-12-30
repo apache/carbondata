@@ -37,7 +37,7 @@ public class CarbonPropertiesValidationTest extends TestCase {
     carbonProperties = CarbonProperties.getInstance();
   }
 
-  @Test public void testvalidateLockType()
+  @Test public void testValidateLockType()
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     Method validateMethodType = carbonProperties.getClass().getDeclaredMethod("validateLockType");
     validateMethodType.setAccessible(true);
