@@ -20,11 +20,12 @@ import java.io.File
 
 import org.apache.spark.sql.{Row, SparkSession}
 import org.slf4j.{Logger, LoggerFactory}
+
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 object S3Example {
 
-  /**
+   /**
     * This example demonstrate usage of
     * 1. create carbon table with storage location on object based storage
     * like AWS S3, Huawei OBS, etc

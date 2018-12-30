@@ -16,12 +16,9 @@
  */
 package org.apache.carbondata.examples
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, ENDPOINT, SECRET_KEY}
 import org.apache.spark.sql.SparkSession
 import org.slf4j.{Logger, LoggerFactory}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.sdk.file.{CarbonWriter, Field, Schema}
 import org.apache.carbondata.spark.util.CarbonSparkUtil
@@ -30,7 +27,7 @@ import org.apache.carbondata.spark.util.CarbonSparkUtil
   * Generate data and write data to S3
   * User can generate different numbers of data by specifying the number-of-rows in parameters
   */
-object S3UsingSDKExample {
+object S3UsingSdkExample {
 
   // prepare SDK writer output
   def buildTestData(
@@ -38,12 +35,12 @@ object S3UsingSDKExample {
                      num: Int = 3): Any = {
 
     // getCanonicalPath gives path with \, but the code expects /.
-    val writerPath = path.replace("\\", "/");
+    val writerPath = path.replace("\\", "/")
 
     val fields: Array[Field] = new Array[Field](3)
     fields(0) = new Field("name", DataTypes.STRING)
     fields(1) = new Field("age", DataTypes.INT)
-    fields(2) = new Field("height",DataTypes.DOUBLE)
+    fields(2) = new Field("height", DataTypes.DOUBLE)
 
     try {
       val builder = CarbonWriter.builder()
@@ -53,14 +50,14 @@ object S3UsingSDKExample {
           .withBlockSize(2)
           .withCsvInput(new Schema(fields)).build()
       var i = 0
-      var row = num
+      val row = num
       while (i < row) {
         writer.write(Array[String]("robot" + i, String.valueOf(i), String.valueOf(i.toDouble / 2)))
         i += 1
       }
       writer.close()
     } catch {
-      case ex: Throwable => None
+      case _: Throwable => None
     }
   }
 
