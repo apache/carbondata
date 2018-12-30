@@ -298,11 +298,11 @@ public class SegmentProperties {
           carbonDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           complexDimensions.add(carbonDimension);
           isComplexDimensionStarted = true;
-          int previouseOrdinal = dimensionOrdinal;
+          int previousOrdinal = dimensionOrdinal;
           dimensionOrdinal =
               readAllComplexTypeChildren(dimensionOrdinal, columnSchema.getNumberOfChild(),
                   columnsInTable, carbonDimension, complexTypeOrdinal);
-          int numberOfChildrenDimensionAdded = dimensionOrdinal - previouseOrdinal;
+          int numberOfChildrenDimensionAdded = dimensionOrdinal - previousOrdinal;
           for (int i = 0; i < numberOfChildrenDimensionAdded; i++) {
             cardinalityIndexForComplexDimensionColumn.add(++tableOrdinal);
           }
