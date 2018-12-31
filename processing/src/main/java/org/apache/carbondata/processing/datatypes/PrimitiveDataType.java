@@ -83,7 +83,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   /**
    * column parent name
    */
-  private String parentname;
+  private String parentName;
 
   /**
    * column unique id
@@ -133,7 +133,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   public PrimitiveDataType(String name, DataType dataType, String parentName, String columnId,
       boolean isDictionary, String nullFormat) {
     this.name = name;
-    this.parentname = parentName;
+    this.parentName = parentName;
     this.columnId = columnId;
     this.isDictionary = isDictionary;
     this.nullformat = nullFormat;
@@ -157,7 +157,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       DictionaryClient client, Boolean useOnePass, Map<Object, Integer> localCache,
       String nullFormat) {
     this.name = carbonColumn.getColName();
-    this.parentname = parentName;
+    this.parentName = parentName;
     this.columnId = columnId;
     this.carbonDimension = carbonDimension;
     this.isDictionary = isDictionaryDimension(carbonDimension);
@@ -250,8 +250,8 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    * get column parent name
    */
   @Override
-  public String getParentname() {
-    return parentname;
+  public String getParentName() {
+    return parentName;
   }
 
   /*
@@ -558,7 +558,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     PrimitiveDataType dataType = new PrimitiveDataType(this.outputArrayIndex, 0);
     dataType.carbonDimension = this.carbonDimension;
     dataType.isDictionary = this.isDictionary;
-    dataType.parentname = this.parentname;
+    dataType.parentName = this.parentName;
     dataType.columnId = this.columnId;
     dataType.dictionaryGenerator = this.dictionaryGenerator;
     dataType.nullformat = this.nullformat;
