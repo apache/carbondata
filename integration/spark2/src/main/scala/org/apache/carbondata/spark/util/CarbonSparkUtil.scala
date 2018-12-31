@@ -29,7 +29,7 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
 import org.apache.carbondata.core.util.CarbonUtil
 
-case class TransformHolder (rdd: Any, mataData: CarbonMetaData)
+case class TransformHolder(rdd: Any, mataData: CarbonMetaData)
 
  /**
   * carbon spark common methods
@@ -37,7 +37,7 @@ case class TransformHolder (rdd: Any, mataData: CarbonMetaData)
 
 object CarbonSparkUtil {
 
-  def createSparkMeta (carbonTable: CarbonTable): CarbonMetaData = {
+  def createSparkMeta(carbonTable: CarbonTable): CarbonMetaData = {
     val dimensionsAttr = carbonTable.getDimensionByTableName(carbonTable.getTableName)
       .asScala.map(x => x.getColName) // wf : may be problem
     val measureAttr = carbonTable.getMeasureByTableName(carbonTable.getTableName)
@@ -55,7 +55,7 @@ object CarbonSparkUtil {
       CarbonUtil.hasAggregationDataMap(carbonTable))
   }
 
-  def createCarbonRelation (tableInfo: TableInfo, tablePath: String): CarbonRelation = {
+  def createCarbonRelation(tableInfo: TableInfo, tablePath: String): CarbonRelation = {
     val table = CarbonTable.buildFromTableInfo(tableInfo)
     CarbonRelation(
       tableInfo.getDatabaseName,
@@ -70,7 +70,7 @@ object CarbonSparkUtil {
     * @param carbonColumn the column of carbonTable
     * @return string
     */
-  def getColumnComment (carbonColumn: CarbonColumn): String = {
+  def getColumnComment(carbonColumn: CarbonColumn): String = {
     {
       val columnProperties = carbonColumn.getColumnProperties
       if (columnProperties != null) {
@@ -89,7 +89,7 @@ object CarbonSparkUtil {
     * @param carbonRelation logical plan for one carbon table
     * @return schema
     */
-  def getRawSchema (carbonRelation: CarbonRelation): String = {
+  def getRawSchema(carbonRelation: CarbonRelation): String = {
     val fields = new Array[String](
       carbonRelation.dimensionsAttr.size + carbonRelation.measureAttr.size)
     val carbonTable = carbonRelation.carbonTable
@@ -120,7 +120,7 @@ object CarbonSparkUtil {
     * used to specify the boundary between separate
     * @return delimiter
     */
-  def delimiterConverter4Udf (delimiter: String): String = delimiter match {
+  def delimiterConverter4Udf(delimiter: String): String = delimiter match {
     case "|" | "*" | "." | ":" | "^" | "\\" | "$" | "+" | "?" | "(" | ")" | "{" | "}" | "[" | "]" =>
       "\\\\" + delimiter
     case _ =>
@@ -128,7 +128,7 @@ object CarbonSparkUtil {
   }
 
 
-  def getKeyOnPrefix (path: String): (String, String, String) = {
+  def getKeyOnPrefix(path: String): (String, String, String) = {
     val prefix = "spark.hadoop."
     val endPoint = prefix + ENDPOINT
     if (path.startsWith(CarbonCommonConstants.S3A_PREFIX)) {
@@ -144,12 +144,12 @@ object CarbonSparkUtil {
     }
   }
 
-  def getS3EndPoint (args: Array[String]): String = {
+  def getS3EndPoint(args: Array[String]): String = {
     if (args.length >= 4 && args(3).contains(".com")) args(3)
     else ""
   }
 
-  def getSparkMaster (args: Array[String]): String = {
+  def getSparkMaster(args: Array[String]): String = {
     if (args.length == 6) args(5)
     else if (args(3).contains("spark:") || args(3).contains("mesos:")) args(3)
     else "local"
