@@ -67,8 +67,20 @@ public class ShortStreamReader extends CarbonColumnVectorImpl implements PrestoV
     type.writeLong(builder, value);
   }
 
+  @Override public void putShorts(int rowId, int count, short value) {
+    for (int i = 0; i < count; i++) {
+      type.writeLong(builder, value);
+    }
+  }
+
   @Override public void putNull(int rowId) {
     builder.appendNull();
+  }
+
+  @Override public void putNulls(int rowId, int count) {
+    for (int i = 0; i < count; i++) {
+      builder.appendNull();
+    }
   }
 
   @Override public void reset() {

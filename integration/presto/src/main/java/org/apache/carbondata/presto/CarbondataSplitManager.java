@@ -119,45 +119,40 @@ public class CarbondataSplitManager extends HiveSplitManager {
     configuration = carbonTableReader.updateS3Properties(configuration);
     CarbonTableCacheModel cache =
         carbonTableReader.getCarbonCache(schemaTableName, location, configuration);
-    if (null != cache) {
-      Expression filters = PrestoFilterUtil.parseFilterExpression(predicate);
-      try {
+    Expression filters = PrestoFilterUtil.parseFilterExpression(predicate);
+    try {
 
-        List<CarbonLocalMultiBlockSplit> splits =
-            carbonTableReader.getInputSplits2(cache, filters, predicate, configuration);
+      List<CarbonLocalMultiBlockSplit> splits =
+          carbonTableReader.getInputSplits2(cache, filters, predicate, configuration);
 
-        ImmutableList.Builder<ConnectorSplit> cSplits = ImmutableList.builder();
-        long index = 0;
-        for (CarbonLocalMultiBlockSplit split : splits) {
-          index++;
-          Properties properties = new Properties();
-          for (Map.Entry<String, String> entry : table.getStorage().getSerdeParameters()
-              .entrySet()) {
-            properties.setProperty(entry.getKey(), entry.getValue());
-          }
-          properties.setProperty("tablePath", cache.carbonTable.getTablePath());
-          properties.setProperty("carbonSplit", split.getJsonString());
-          properties.setProperty("queryId", queryId);
-          properties.setProperty("index", String.valueOf(index));
-          cSplits.add(
-              new HiveSplit(schemaTableName.getSchemaName(), schemaTableName.getTableName(),
-                  schemaTableName.getTableName(), "", 0, 0, 0, properties, new ArrayList(),
-                  getHostAddresses(split.getLocations()), OptionalInt.empty(), false, predicate,
-                  new HashMap<>(), Optional.empty()));
+      ImmutableList.Builder<ConnectorSplit> cSplits = ImmutableList.builder();
+      long index = 0;
+      for (CarbonLocalMultiBlockSplit split : splits) {
+        index++;
+        Properties properties = new Properties();
+        for (Map.Entry<String, String> entry : table.getStorage().getSerdeParameters().entrySet()) {
+          properties.setProperty(entry.getKey(), entry.getValue());
         }
-
-        statisticRecorder.logStatisticsAsTableDriver();
-
-        statistic.addStatistics(QueryStatisticsConstants.BLOCK_IDENTIFICATION,
-            System.currentTimeMillis());
-        statisticRecorder.recordStatisticsForDriver(statistic, queryId);
-        statisticRecorder.logStatisticsAsTableDriver();
-        return new FixedSplitSource(cSplits.build());
-      } catch (Exception ex) {
-        throw new RuntimeException(ex.getMessage(), ex);
+        properties.setProperty("tablePath", cache.getCarbonTable().getTablePath());
+        properties.setProperty("carbonSplit", split.getJsonString());
+        properties.setProperty("queryId", queryId);
+        properties.setProperty("index", String.valueOf(index));
+        cSplits.add(new HiveSplit(schemaTableName.getSchemaName(), schemaTableName.getTableName(),
+            schemaTableName.getTableName(), "", 0, 0, 0, properties, new ArrayList(),
+            getHostAddresses(split.getLocations()), OptionalInt.empty(), false, predicate,
+            new HashMap<>(), Optional.empty()));
       }
+
+      statisticRecorder.logStatisticsAsTableDriver();
+
+      statistic
+          .addStatistics(QueryStatisticsConstants.BLOCK_IDENTIFICATION, System.currentTimeMillis());
+      statisticRecorder.recordStatisticsForDriver(statistic, queryId);
+      statisticRecorder.logStatisticsAsTableDriver();
+      return new FixedSplitSource(cSplits.build());
+    } catch (Exception ex) {
+      throw new RuntimeException(ex.getMessage(), ex);
     }
-    return null;
   }
 
   private static List<HostAddress> getHostAddresses(String[] hosts) {

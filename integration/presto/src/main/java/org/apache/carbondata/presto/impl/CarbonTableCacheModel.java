@@ -25,10 +25,35 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
  */
 public class CarbonTableCacheModel {
 
-  public CarbonTable carbonTable;
+  private long lastUpdatedTime;
 
-  public boolean isValid() {
-    return carbonTable != null;
+  private boolean isValid;
+
+  private CarbonTable carbonTable;
+
+  public CarbonTableCacheModel(long lastUpdatedTime, CarbonTable carbonTable) {
+    this.lastUpdatedTime = lastUpdatedTime;
+    this.carbonTable = carbonTable;
+    this.isValid = true;
   }
 
+  public void setCurrentSchemaTime(long currentSchemaTime) {
+    if (lastUpdatedTime != currentSchemaTime) {
+      isValid = false;
+    }
+    this.lastUpdatedTime = currentSchemaTime;
+  }
+
+  public CarbonTable getCarbonTable() {
+    return carbonTable;
+  }
+
+  public boolean isValid() {
+    return isValid;
+  }
+
+  public void setCarbonTable(CarbonTable carbonTable) {
+    this.carbonTable = carbonTable;
+    this.isValid = true;
+  }
 }

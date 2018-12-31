@@ -20,19 +20,19 @@ package org.apache.carbondata.presto.impl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -57,13 +57,11 @@ import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.presto.PrestoFilterUtil;
 
 import com.facebook.presto.hadoop.$internal.com.google.gson.Gson;
-import com.facebook.presto.hadoop.$internal.io.netty.util.internal.ConcurrentSet;
 import com.facebook.presto.hadoop.$internal.org.apache.commons.collections.CollectionUtils;
 import com.facebook.presto.hive.HiveColumnHandle;
 import com.facebook.presto.spi.SchemaTableName;
 import com.facebook.presto.spi.predicate.TupleDomain;
 import com.google.inject.Inject;
-import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
@@ -97,14 +95,10 @@ public class CarbonTableReader {
   };
   public CarbonTableConfig config;
   /**
-   * The names of the tables under the schema (this.carbonFileList).
-   */
-  private ConcurrentSet<SchemaTableName> tableList;
-  /**
    * A cache for Carbon reader, with this cache,
    * metadata of a table is only read from file system once.
    */
-  private AtomicReference<HashMap<SchemaTableName, CarbonTableCacheModel>> carbonCache;
+  private AtomicReference<Map<SchemaTableName, CarbonTableCacheModel>> carbonCache;
 
   private String queryId;
 
@@ -121,8 +115,7 @@ public class CarbonTableReader {
 
   @Inject public CarbonTableReader(CarbonTableConfig config) {
     this.config = Objects.requireNonNull(config, "CarbonTableConfig is null");
-    this.carbonCache = new AtomicReference(new HashMap());
-    tableList = new ConcurrentSet<>();
+    this.carbonCache = new AtomicReference(new ConcurrentHashMap<>());
     populateCarbonProperties();
   }
 
@@ -134,23 +127,12 @@ public class CarbonTableReader {
    */
   public CarbonTableCacheModel getCarbonCache(SchemaTableName table, String location,
       Configuration config) {
-    if (!carbonCache.get().containsKey(table) || carbonCache.get().get(table) == null) {
-      updateSchemaTables(table, config);
-      parseCarbonMetadata(table, location, config);
+    updateSchemaTables(table, config);
+    CarbonTableCacheModel carbonTableCacheModel = carbonCache.get().get(table);
+    if (carbonTableCacheModel == null || !carbonTableCacheModel.isValid()) {
+      return parseCarbonMetadata(table, location, config);
     }
-    if (carbonCache.get().containsKey(table)) {
-      return carbonCache.get().get(table);
-    } else {
-      return null;
-    }
-  }
-
-  private void removeTableFromCache(SchemaTableName table) {
-    DataMapStoreManager.getInstance()
-        .clearDataMaps(carbonCache.get().get(table).carbonTable.getAbsoluteTableIdentifier());
-    carbonCache.get().remove(table);
-    tableList.remove(table);
-
+    return carbonTableCacheModel;
   }
 
   /**
@@ -159,22 +141,19 @@ public class CarbonTableReader {
    * is called, it clears this.tableList and populate the list by reading the files.
    */
   private void updateSchemaTables(SchemaTableName schemaTableName, Configuration config) {
-    // update logic determine later
-    boolean isKeyExists = carbonCache.get().containsKey(schemaTableName);
-
-    if (isKeyExists) {
-      CarbonTableCacheModel carbonTableCacheModel = carbonCache.get().get(schemaTableName);
-      if (carbonTableCacheModel != null && carbonTableCacheModel.carbonTable.getTableInfo() != null
-          && carbonTableCacheModel.carbonTable.isTransactionalTable()) {
-        Long latestTime = FileFactory.getCarbonFile(CarbonTablePath
-                .getSchemaFilePath(
-                    carbonCache.get().get(schemaTableName).carbonTable.getTablePath()),
-            config).getLastModifiedTime();
-        Long oldTime = carbonTableCacheModel.carbonTable.getTableInfo().getLastUpdatedTime();
-        if (DateUtils.truncate(new Date(latestTime), Calendar.MINUTE)
-            .after(DateUtils.truncate(new Date(oldTime), Calendar.MINUTE))) {
-          removeTableFromCache(schemaTableName);
-        }
+    CarbonTableCacheModel carbonTableCacheModel = carbonCache.get().get(schemaTableName);
+    if (carbonTableCacheModel != null &&
+        carbonTableCacheModel.getCarbonTable().isTransactionalTable()) {
+      CarbonTable carbonTable = carbonTableCacheModel.getCarbonTable();
+      long latestTime = FileFactory.getCarbonFile(CarbonTablePath
+              .getSchemaFilePath(
+                  carbonTable.getTablePath()),
+          config).getLastModifiedTime();
+      carbonTableCacheModel.setCurrentSchemaTime(latestTime);
+      if (!carbonTableCacheModel.isValid()) {
+        // Invalidate datamaps
+        DataMapStoreManager.getInstance()
+            .clearDataMaps(carbonTableCacheModel.getCarbonTable().getAbsoluteTableIdentifier());
       }
     }
   }
@@ -184,26 +163,22 @@ public class CarbonTableReader {
    * and cache it in this.carbonCache (CarbonTableReader cache).
    *
    * @param table name of the given table.
-   * @return the CarbonTable instance which contains all the needed metadata for a table.
+   * @return the CarbonTableCacheModel instance which contains all the needed metadata for a table.
    */
-  private CarbonTable parseCarbonMetadata(SchemaTableName table, String tablePath,
+  private CarbonTableCacheModel parseCarbonMetadata(SchemaTableName table, String tablePath,
       Configuration config) {
-    CarbonTable result;
     try {
       CarbonTableCacheModel cache = carbonCache.get().get(table);
-      if (cache == null) {
-        cache = new CarbonTableCacheModel();
+      if (cache != null && cache.isValid()) {
+        return cache;
       }
-      if (cache.isValid()) {
-        return cache.carbonTable;
-      }
-      // If table is not previously cached, then:
-
       // Step 1: get store path of the table and cache it.
-      String metadataPath = CarbonTablePath.getSchemaFilePath(tablePath);
+      String schemaFilePath = CarbonTablePath.getSchemaFilePath(tablePath);
       // If metadata folder exists, it is a transactional table
-      boolean isTransactionalTable = FileFactory.getCarbonFile(metadataPath, config).exists();
+      CarbonFile schemaFile = FileFactory.getCarbonFile(schemaFilePath, config);
+      boolean isTransactionalTable = schemaFile.exists();
       org.apache.carbondata.format.TableInfo tableInfo;
+      long modifiedTime = System.currentTimeMillis();
       if (isTransactionalTable) {
         //Step 2: read the metadata (tableInfo) of the table.
         ThriftReader.TBaseCreator createTBase = new ThriftReader.TBaseCreator() {
@@ -216,10 +191,11 @@ public class CarbonTableReader {
           }
         };
         ThriftReader thriftReader =
-            new ThriftReader(CarbonTablePath.getSchemaFilePath(tablePath), createTBase, config);
+            new ThriftReader(schemaFilePath, createTBase, config);
         thriftReader.open();
         tableInfo = (org.apache.carbondata.format.TableInfo) thriftReader.read();
         thriftReader.close();
+        modifiedTime = schemaFile.getLastModifiedTime();
       } else {
         tableInfo = CarbonUtil
             .inferSchema(tablePath, table.getTableName(), false, config);
@@ -234,21 +210,24 @@ public class CarbonTableReader {
 
       wrapperTableInfo.setTransactionalTable(isTransactionalTable);
 
+      CarbonMetadata.getInstance().removeTable(wrapperTableInfo.getTableUniqueName());
       // Step 4: Load metadata info into CarbonMetadata
       CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo);
-
-      cache.carbonTable =
-          CarbonMetadata.getInstance().getCarbonTable(table.getSchemaName(), table.getTableName());
-
-      // cache the table
-      carbonCache.get().put(table, cache);
-
-      result = cache.carbonTable;
+      CarbonTable carbonTable = Objects.requireNonNull(
+          CarbonMetadata.getInstance().getCarbonTable(table.getSchemaName(), table.getTableName()),
+          "carbontable is null");
+      // If table is not previously cached, then:
+      if (cache == null) {
+        cache = new CarbonTableCacheModel(modifiedTime, carbonTable);
+        // cache the table
+        carbonCache.get().put(table, cache);
+      } else {
+        cache.setCarbonTable(carbonTable);
+      }
+      return cache;
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     }
-
-    return result;
   }
 
   public List<CarbonLocalMultiBlockSplit> getInputSplits2(CarbonTableCacheModel tableCacheModel,
@@ -256,8 +235,8 @@ public class CarbonTableReader {
       throws IOException {
     List<CarbonLocalInputSplit> result = new ArrayList<>();
     List<CarbonLocalMultiBlockSplit> multiBlockSplitList = new ArrayList<>();
-    CarbonTable carbonTable = tableCacheModel.carbonTable;
-    TableInfo tableInfo = tableCacheModel.carbonTable.getTableInfo();
+    CarbonTable carbonTable = tableCacheModel.getCarbonTable();
+    TableInfo tableInfo = tableCacheModel.getCarbonTable().getTableInfo();
     config.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, "");
     String carbonTablePath = carbonTable.getAbsoluteTableIdentifier().getTablePath();
     config.set(CarbonTableInputFormat.INPUT_DIR, carbonTablePath);
@@ -268,7 +247,7 @@ public class CarbonTableReader {
     CarbonInputFormat.setTableInfo(config, carbonTable.getTableInfo());
 
     JobConf jobConf = new JobConf(config);
-    List<PartitionSpec> filteredPartitions = new ArrayList();
+    List<PartitionSpec> filteredPartitions = new ArrayList<>();
 
     PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName());
     LoadMetadataDetails[] loadMetadataDetails = null;
