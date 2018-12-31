@@ -89,6 +89,18 @@ public class DecimalSliceStreamReader extends CarbonColumnVectorImpl
     decimalBlockWriter(value);
   }
 
+  @Override public void putDecimals(int rowId, int count, BigDecimal value, int precision) {
+    for (int i = 0; i < count; i++) {
+      putDecimal(rowId++, value, precision);
+    }
+  }
+
+  @Override public void putNulls(int rowId, int count) {
+    for (int i = 0; i < count; i++) {
+      builder.appendNull();
+    }
+  }
+
   @Override public void putNull(int rowId) {
     builder.appendNull();
   }

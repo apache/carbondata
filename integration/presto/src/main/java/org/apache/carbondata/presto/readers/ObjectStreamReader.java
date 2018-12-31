@@ -62,4 +62,10 @@ public class ObjectStreamReader extends CarbonColumnVectorImpl implements Presto
     builder = type.createBlockBuilder(null, batchSize);
   }
 
+  @Override public void putNulls(int rowId, int count) {
+    for (int i = 0; i < count; i++) {
+      builder.appendNull();
+    }
+  }
+
 }
