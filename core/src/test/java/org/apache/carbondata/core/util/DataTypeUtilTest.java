@@ -31,7 +31,6 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.apache.carbondata.core.util.DataTypeUtil.bigDecimalToByte;
 import static org.apache.carbondata.core.util.DataTypeUtil.byteToBigDecimal;
-import static org.apache.carbondata.core.util.DataTypeUtil.getDataBasedOnDataType;
 import static org.apache.carbondata.core.util.DataTypeUtil.getMeasureValueBasedOnDataType;
 import static org.apache.carbondata.core.util.DataTypeUtil.normalizeIntAndLongValues;
 
