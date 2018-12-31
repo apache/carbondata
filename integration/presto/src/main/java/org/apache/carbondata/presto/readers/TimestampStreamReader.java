@@ -68,8 +68,20 @@ public class TimestampStreamReader extends CarbonColumnVectorImpl
     type.writeLong(builder, value / 1000);
   }
 
+  @Override public void putLongs(int rowId, int count, long value) {
+    for (int i = 0; i < count; i++) {
+      type.writeLong(builder, value / 1000);
+    }
+  }
+
   @Override public void putNull(int rowId) {
     builder.appendNull();
+  }
+
+  @Override public void putNulls(int rowId, int count) {
+    for (int i = 0; i < count; ++i) {
+      builder.appendNull();
+    }
   }
 
   @Override public void reset() {

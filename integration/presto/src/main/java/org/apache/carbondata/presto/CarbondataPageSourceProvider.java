@@ -230,10 +230,11 @@ public class CarbondataPageSourceProvider extends HivePageSourceProvider {
         .getCarbonCache(new SchemaTableName(carbonSplit.getDatabase(), carbonSplit.getTable()),
             carbonSplit.getSchema().getProperty("tablePath"), configuration);
     checkNotNull(tableCacheModel, "tableCacheModel should not be null");
-    checkNotNull(tableCacheModel.carbonTable, "tableCacheModel.carbonTable should not be null");
-    checkNotNull(tableCacheModel.carbonTable.getTableInfo(),
+    checkNotNull(tableCacheModel.getCarbonTable(),
+        "tableCacheModel.carbonTable should not be null");
+    checkNotNull(tableCacheModel.getCarbonTable().getTableInfo(),
         "tableCacheModel.carbonTable.tableInfo should not be null");
-    return tableCacheModel.carbonTable;
+    return tableCacheModel.getCarbonTable();
   }
 
 }
