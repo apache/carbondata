@@ -43,7 +43,7 @@ public interface GenericDataType<T> {
   /**
    * @return - columns parent name
    */
-  String getParentname();
+  String getParentName();
 
   /**
    * @param children - To add children dimension for parent complex type

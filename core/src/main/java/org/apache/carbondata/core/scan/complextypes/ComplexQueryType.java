@@ -26,13 +26,13 @@ import org.apache.carbondata.core.scan.processor.RawBlockletColumnChunks;
 public class ComplexQueryType {
   protected String name;
 
-  protected String parentname;
+  protected String parentName;
 
   protected int blockIndex;
 
-  public ComplexQueryType(String name, String parentname, int blockIndex) {
+  public ComplexQueryType(String name, String parentName, int blockIndex) {
     this.name = name;
-    this.parentname = parentname;
+    this.parentName = parentName;
     this.blockIndex = blockIndex;
   }
 

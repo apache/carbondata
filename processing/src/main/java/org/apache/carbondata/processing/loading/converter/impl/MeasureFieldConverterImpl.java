@@ -39,15 +39,15 @@ public class MeasureFieldConverterImpl implements FieldConverter {
 
   private int index;
 
-  private String nullformat;
+  private String nullFormat;
 
   private boolean isEmptyBadRecord;
 
   private DataField dataField;
 
-  public MeasureFieldConverterImpl(DataField dataField, String nullformat, int index,
+  public MeasureFieldConverterImpl(DataField dataField, String nullFormat, int index,
       boolean isEmptyBadRecord) {
-    this.nullformat = nullformat;
+    this.nullFormat = nullFormat;
     this.index = index;
     this.isEmptyBadRecord = isEmptyBadRecord;
     this.dataField = dataField;
@@ -88,7 +88,7 @@ public class MeasureFieldConverterImpl implements FieldConverter {
         logHolder.setReason(message);
       }
       return null;
-    } else if (literalValue.equals(nullformat)) {
+    } else if (literalValue.equals(nullFormat)) {
       return null;
     } else {
       try {
