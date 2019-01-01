@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.constants;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-
 /**
  * Sort scope options
  */
