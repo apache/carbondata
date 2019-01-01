@@ -48,7 +48,7 @@ public class ArrayQueryTypeTest {
     ByteBuffer surrogateData = ByteBuffer.allocate(10);
     surrogateData.put(3, (byte) 1);
     arrayQueryType.setName("testName");
-    arrayQueryType.setParentname("testName");
+    arrayQueryType.setParentName("testName");
     arrayQueryType.addChildren(arrayQueryType);
     assertNotNull(arrayQueryType.getDataBasedOnDataType(surrogateData));
   }

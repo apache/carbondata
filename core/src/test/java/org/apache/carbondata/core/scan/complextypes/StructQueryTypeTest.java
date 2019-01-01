@@ -52,7 +52,7 @@ public class StructQueryTypeTest {
 
   @Test public void testGetColsCount() {
     structQueryType.setName("testName");
-    structQueryType.setParentname("testName");
+    structQueryType.setParentName("testName");
     structQueryType.addChildren(arrayQueryType);
     new MockUp<ArrayQueryType>() {
       @Mock int getColsCount() {

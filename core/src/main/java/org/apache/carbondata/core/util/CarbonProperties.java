@@ -597,9 +597,9 @@ public final class CarbonProperties {
         .getProperty(NUMBER_OF_COLUMN_TO_READ_IN_IO,
             CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
     try {
-      short numberofColumnPerIO = Short.parseShort(numberOfColumnPerIOString);
-      if (numberofColumnPerIO < CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_MIN
-          || numberofColumnPerIO > CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_MAX) {
+      short numberOfColumnPerIO = Short.parseShort(numberOfColumnPerIOString);
+      if (numberOfColumnPerIO < CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_MIN
+          || numberOfColumnPerIO > CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_MAX) {
         LOGGER.info("The Number Of pages per blocklet column value \"" + numberOfColumnPerIOString
             + "\" is invalid. Using the default value \""
             + CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
