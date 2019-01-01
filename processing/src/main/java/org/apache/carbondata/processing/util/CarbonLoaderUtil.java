@@ -592,19 +592,19 @@ public final class CarbonLoaderUtil {
 
     // if enable to control the minimum amount of input data for each node
     if (BlockAssignmentStrategy.NODE_MIN_SIZE_FIRST == blockAssignmentStrategy) {
-      long iexpectedMinSizePerNode = 0;
+      long expectedMinSizePerNodeInt = 0;
       // validate the property load_min_size_inmb specified by the user
       if (CarbonUtil.validateValidIntType(expectedMinSizePerNode)) {
-        iexpectedMinSizePerNode = Integer.parseInt(expectedMinSizePerNode);
+        expectedMinSizePerNodeInt = Integer.parseInt(expectedMinSizePerNode);
       } else {
         LOGGER.warn("Invalid load_min_size_inmb value found: " + expectedMinSizePerNode
             + ", only int value greater than 0 is supported.");
-        iexpectedMinSizePerNode = Integer.parseInt(
+        expectedMinSizePerNodeInt = Integer.parseInt(
             CarbonCommonConstants.CARBON_LOAD_MIN_SIZE_INMB_DEFAULT);
       }
       // If the average expected size for each node greater than load min size,
       // then fall back to default strategy
-      if (iexpectedMinSizePerNode * 1024 * 1024 < sizePerNode) {
+      if (expectedMinSizePerNodeInt * 1024 * 1024 < sizePerNode) {
         if (CarbonProperties.getInstance().isLoadSkewedDataOptimizationEnabled()) {
           blockAssignmentStrategy = BlockAssignmentStrategy.BLOCK_SIZE_FIRST;
         } else {
@@ -613,7 +613,7 @@ public final class CarbonLoaderUtil {
         LOGGER.info("Specified minimum data size to load is less than the average size "
             + "for each node, fallback to default strategy" + blockAssignmentStrategy);
       } else {
-        sizePerNode = iexpectedMinSizePerNode;
+        sizePerNode = expectedMinSizePerNodeInt;
       }
     }
 

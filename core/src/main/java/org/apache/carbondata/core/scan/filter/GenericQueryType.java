@@ -33,9 +33,9 @@ public interface GenericQueryType {
 
   void setName(String name);
 
-  String getParentname();
+  String getParentName();
 
-  void setParentname(String parentname);
+  void setParentName(String parentName);
 
   void addChildren(GenericQueryType children);
 

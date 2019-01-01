@@ -35,16 +35,16 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
 
   private List<GenericQueryType> children = new ArrayList<GenericQueryType>();
   private String name;
-  private String parentname;
+  private String parentName;
 
-  public StructQueryType(String name, String parentname, int blockIndex) {
-    super(name, parentname, blockIndex);
+  public StructQueryType(String name, String parentName, int blockIndex) {
+    super(name, parentName, blockIndex);
     this.name = name;
-    this.parentname = parentname;
+    this.parentName = parentName;
   }
 
   @Override public void addChildren(GenericQueryType newChild) {
-    if (this.getName().equals(newChild.getParentname())) {
+    if (this.getName().equals(newChild.getParentName())) {
       this.children.add(newChild);
     } else {
       for (GenericQueryType child : this.children) {
@@ -62,12 +62,12 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     this.name = name;
   }
 
-  @Override public String getParentname() {
-    return parentname;
+  @Override public String getParentName() {
+    return parentName;
   }
 
-  @Override public void setParentname(String parentname) {
-    this.parentname = parentname;
+  @Override public void setParentName(String parentName) {
+    this.parentName = parentName;
 
   }
 
