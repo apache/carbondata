@@ -25,8 +25,8 @@ import org.apache.carbondata.core.util.DataTypeUtil;
  */
 public class MapQueryType extends ArrayQueryType {
 
-  public MapQueryType(String name, String parentname, int blockIndex) {
-    super(name, parentname, blockIndex);
+  public MapQueryType(String name, String parentName, int blockIndex) {
+    super(name, parentName, blockIndex);
   }
 
   /**

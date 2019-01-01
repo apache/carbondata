@@ -33,8 +33,8 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
 
   private GenericQueryType children;
 
-  public ArrayQueryType(String name, String parentname, int blockIndex) {
-    super(name, parentname, blockIndex);
+  public ArrayQueryType(String name, String parentName, int blockIndex) {
+    super(name, parentName, blockIndex);
   }
 
   @Override public void addChildren(GenericQueryType children) {
