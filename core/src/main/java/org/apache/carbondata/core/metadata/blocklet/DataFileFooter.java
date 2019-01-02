@@ -75,6 +75,11 @@ public class DataFileFooter implements Serializable {
   private long schemaUpdatedTimeStamp;
 
   /**
+   * boolean representing if the file is sorted or not.
+   */
+  private Boolean isSorted = true;
+
+  /**
    * @return the versionId
    */
   public ColumnarFormatVersion getVersionId() {
@@ -178,5 +183,13 @@ public class DataFileFooter implements Serializable {
 
   public void setSchemaUpdatedTimeStamp(long schemaUpdatedTimeStamp) {
     this.schemaUpdatedTimeStamp = schemaUpdatedTimeStamp;
+  }
+
+  public void setSorted(Boolean isSorted) {
+    this.isSorted = isSorted;
+  }
+
+  public Boolean isSorted() {
+    return isSorted;
   }
 }

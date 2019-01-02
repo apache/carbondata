@@ -35,7 +35,11 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.loading.row.IntermediateSortTempRow;
 import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
@@ -54,11 +58,6 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    * lockObject
    */
   private static final Object LOCKOBJECT = new Object();
-
-  /**
-   * fileCounter
-   */
-  private int fileCounter;
 
   /**
    * recordHolderHeap
@@ -114,6 +113,33 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
     startSorting(filesToMerge);
   }
 
+  /**
+   * Below method will be used to add in memory raw result iterator to priority queue.
+   * This will be called in case of compaction, when it is compacting sorted and unsorted
+   * both type of carbon data file
+   * This method will add sorted file's RawResultIterator to priority queue using
+   * InMemorySortTempChunkHolder as wrapper
+   *
+   * @param sortedRawResultMergerList
+   * @param segmentProperties
+   * @param noDicAndComplexColumns
+   * @throws CarbonSortKeyAndGroupByException
+   */
+  public void addInMemoryRawResultIterator(List<RawResultIterator> sortedRawResultMergerList,
+      SegmentProperties segmentProperties, CarbonColumn[] noDicAndComplexColumns,
+      DataType[] measureDataType)
+      throws CarbonSortKeyAndGroupByException {
+    for (RawResultIterator rawResultIterator : sortedRawResultMergerList) {
+      InMemorySortTempChunkHolder inMemorySortTempChunkHolder =
+          new InMemorySortTempChunkHolder(rawResultIterator, segmentProperties,
+              noDicAndComplexColumns, sortParameters, measureDataType);
+      if (inMemorySortTempChunkHolder.hasNext()) {
+        inMemorySortTempChunkHolder.readRow();
+      }
+      recordHolderHeapLocal.add(inMemorySortTempChunkHolder);
+    }
+  }
+
   private List<File> getFilesToMergeSort() {
     final int rangeId = sortParameters.getRangeId();
     FileFilter fileFilter = new FileFilter() {
@@ -143,18 +169,17 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    * @throws CarbonSortKeyAndGroupByException
    */
   private void startSorting(List<File> files) throws CarbonDataWriterException {
-    this.fileCounter = files.size();
-    if (fileCounter == 0) {
+    if (files.size() == 0) {
       LOGGER.info("No files to merge sort");
       return;
     }
 
     LOGGER.info("Started Final Merge");
 
-    LOGGER.info("Number of temp file: " + this.fileCounter);
+    LOGGER.info("Number of temp file: " + files.size());
 
     // create record holder heap
-    createRecordHolderQueue();
+    createRecordHolderQueue(files.size());
 
     // iterate over file list and create chunk holder and add to heap
     LOGGER.info("Started adding first record from each file");
@@ -207,9 +232,9 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    * This method will be used to create the heap which will be used to hold
    * the chunk of data
    */
-  private void createRecordHolderQueue() {
+  private void createRecordHolderQueue(int size) {
     // creating record holder heap
-    this.recordHolderHeapLocal = new PriorityQueue<SortTempFileChunkHolder>(fileCounter);
+    this.recordHolderHeapLocal = new PriorityQueue<SortTempFileChunkHolder>(size);
   }
 
   private synchronized void notifyFailure(Throwable throwable) {
@@ -256,9 +281,6 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
       // if chunk is empty then close the stream
       poll.closeStream();
 
-      // change the file counter
-      --this.fileCounter;
-
       // reaturn row
       return row;
     }
@@ -285,7 +307,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    * @return more element is present
    */
   public boolean hasNext() {
-    return this.fileCounter > 0;
+    return this.recordHolderHeapLocal.size() > 0;
   }
 
   public void close() {

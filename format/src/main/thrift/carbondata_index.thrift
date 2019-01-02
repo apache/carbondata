@@ -32,6 +32,7 @@ struct IndexHeader{
   3: required carbondata.SegmentInfo segment_info;	// Segment info (will be same/repeated for all files in this segment)
   4: optional i32 bucket_id; // Bucket number in which file contains
   5: optional i64 schema_time_stamp; // Timestamp to compare column schema against master schema
+  6: optional bool is_sort; // True if the data is sorted in this file, it is used for compaction to decide whether to use merge sort or not
 }
 
 /**

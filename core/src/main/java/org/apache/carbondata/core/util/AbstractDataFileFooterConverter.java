@@ -126,6 +126,13 @@ public abstract class AbstractDataFileFooterConverter {
           dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());
           dataFileFooter.setBlockInfo(new BlockInfo(tableBlockInfo));
           dataFileFooter.setSegmentInfo(segmentInfo);
+          if (readIndexHeader.isSetIs_sort()) {
+            dataFileFooter.setSorted(readIndexHeader.isIs_sort());
+          } else {
+            if (tableBlockInfo.getVersion() == ColumnarFormatVersion.V3) {
+              dataFileFooter.setSorted(null);
+            }
+          }
           dataFileFooters.add(dataFileFooter);
           if (++index == tableBlockInfoList.size()) {
             break;

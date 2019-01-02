@@ -89,6 +89,8 @@ public class BlockletInfo implements Serializable, Writable {
 
   private int[] numberOfRowsPerPage;
 
+  private Boolean isSorted = true;
+
   /**
    * @return the numberOfRows
    */
@@ -222,6 +224,11 @@ public class BlockletInfo implements Serializable, Writable {
     }
     writeChunkInfoForOlderVersions(output);
 
+    boolean isSortedPresent = (isSorted != null);
+    output.writeBoolean(isSortedPresent);
+    if (isSortedPresent) {
+      output.writeBoolean(isSorted);
+    }
   }
 
   /**
@@ -288,6 +295,10 @@ public class BlockletInfo implements Serializable, Writable {
       measureChunksLength.add(input.readInt());
     }
     readChunkInfoForOlderVersions(input);
+    final boolean isSortedPresent = input.readBoolean();
+    if (isSortedPresent) {
+      this.isSorted = input.readBoolean();
+    }
   }
 
   /**
@@ -316,5 +327,13 @@ public class BlockletInfo implements Serializable, Writable {
 
   public void setNumberOfRowsPerPage(int[] numberOfRowsPerPage) {
     this.numberOfRowsPerPage = numberOfRowsPerPage;
+  }
+
+  public Boolean isSorted() {
+    return isSorted;
+  }
+
+  public void setSorted(Boolean sorted) {
+    isSorted = sorted;
   }
 }

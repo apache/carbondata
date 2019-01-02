@@ -54,6 +54,8 @@ import org.apache.carbondata.format.IndexHeader;
 import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 
+import static org.apache.carbondata.core.constants.SortScopeOptions.SortScope.NO_SORT;
+
 import org.apache.log4j.Logger;
 
 public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
@@ -405,6 +407,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     IndexHeader indexHeader = CarbonMetadataUtil
         .getIndexHeader(localCardinality, thriftColumnSchemaList, model.getBucketId(),
             model.getSchemaUpdatedTimeStamp());
+    indexHeader.setIs_sort(model.getSortScope() != null && model.getSortScope() != NO_SORT);
     // get the block index info thrift
     List<BlockIndex> blockIndexThrift = CarbonMetadataUtil.getBlockIndexInfo(blockIndexInfoList);
     String indexFileName;
