@@ -1491,6 +1491,37 @@ public final class CarbonProperties {
     }
   }
 
+  public int getMaxDictionaryThreshold() {
+    int localDictionaryMaxThreshold = Integer.parseInt(carbonProperties
+        .getProperty(CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_MAX_SIZE_THRESHOLD,
+            CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_MAX_SIZE_THRESHOLD_DEFAULT));
+    if (localDictionaryMaxThreshold
+        > CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_THRESHOLD_MAX_VALUE) {
+      LOGGER.info(
+          "Configured value for " + CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_MAX_SIZE_THRESHOLD
+              + "MB is more than the allowed limit: "
+              + CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_THRESHOLD_MAX_VALUE
+              + "MB, therefore considering "
+              + CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_MAX_SIZE_THRESHOLD_DEFAULT + "MB.");
+      localDictionaryMaxThreshold =
+          CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_THRESHOLD_MAX_VALUE;
+    } else if (localDictionaryMaxThreshold < Integer
+        .parseInt(CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_MAX_SIZE_THRESHOLD_DEFAULT)) {
+      LOGGER.info(
+          "Configured value for " + CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_MAX_SIZE_THRESHOLD
+              + "MB is less than the required limit: "
+              + CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_MAX_SIZE_THRESHOLD_DEFAULT
+              + "MB, therefore considering "
+              + CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_MAX_SIZE_THRESHOLD_DEFAULT + "MB.");
+      localDictionaryMaxThreshold = Integer
+          .parseInt(CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_MAX_SIZE_THRESHOLD_DEFAULT);
+    }
+    LOGGER.info(
+        "Configured value for " + CarbonCommonConstants.CARBON_LOCAL_DICTIONARY_MAX_SIZE_THRESHOLD
+            + ": " + localDictionaryMaxThreshold + "MB");
+    return localDictionaryMaxThreshold;
+  }
+
   /**
    * This method validates the allowed character limit for storing min/max for string type
    */

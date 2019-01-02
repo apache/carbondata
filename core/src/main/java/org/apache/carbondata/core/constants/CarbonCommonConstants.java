@@ -2076,4 +2076,25 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_QUERY_DATAMAP_BLOOM_CACHE_SIZE_DEFAULT_VAL = "512";
 
+  /**
+   * Used to set Max threshold size for local dictionanary after which fallback would be triggered.
+   *
+   * Currently this is an internal property not to be used by the user.
+   */
+  public static final String CARBON_LOCAL_DICTIONARY_MAX_SIZE_THRESHOLD =
+      "carbon.local.dictionary.max.size.threshold";
+
+  /**
+   * Max threshold for local dictionary in MB after which fallback should be triggered
+   */
+  public static final String CARBON_LOCAL_DICTIONARY_MAX_SIZE_THRESHOLD_DEFAULT = "2";
+
+  /**
+   * Max allowed limit for local dictionary threshold. If the user specifies the
+   */
+  public static final int CARBON_LOCAL_DICTIONARY_THRESHOLD_MAX_VALUE = 20;
+
+
+
+
 }

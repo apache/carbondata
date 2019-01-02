@@ -205,8 +205,10 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
       if (model.getNumberOfCores() > 1) {
         numberOfCores = model.getNumberOfCores() / 2;
       }
-      fallbackExecutorService = Executors.newFixedThreadPool(numberOfCores, new CarbonThreadFactory(
-          "FallbackPool:" + model.getTableName() + ", range: " + model.getBucketId()));
+      fallbackExecutorService = model.getFallBackExecutorService() != null ?
+          model.getFallBackExecutorService() :
+          Executors.newFixedThreadPool(numberOfCores, new CarbonThreadFactory(
+              "FallbackPool:" + model.getTableName() + ", range: " + model.getBucketId(), true));
     }
   }
 

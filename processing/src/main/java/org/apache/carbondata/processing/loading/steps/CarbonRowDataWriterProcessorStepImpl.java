@@ -87,6 +87,8 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
 
   private ExecutorService executorService = null;
 
+  private ExecutorService fallBackExecutorService = null;
+
   public CarbonRowDataWriterProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
     super(configuration, child);
@@ -128,7 +130,6 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
           .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PARTITION_ID,
               System.currentTimeMillis());
-
       if (iterators.length == 1) {
         doExecute(iterators[0], 0);
       } else {
@@ -162,7 +163,10 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     DataMapWriterListener listener = getDataMapWriterListener(0);
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(
         configuration, storeLocation, 0, iteratorIndex, listener);
+    fallBackExecutorService = Executors
+        .newFixedThreadPool(model.getNumberOfCores(), new CarbonThreadFactory("FallBackPool:"));
     model.setColumnLocalDictGenMap(localDictionaryGeneratorMap);
+    model.setFallBackExecutorService(fallBackExecutorService);
     CarbonFactHandler dataHandler = null;
     boolean rowsNotExist = true;
     while (iterator.hasNext()) {
@@ -341,6 +345,9 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       super.close();
       if (null != executorService) {
         executorService.shutdownNow();
+      }
+      if (null != fallBackExecutorService && !this.fallBackExecutorService.isShutdown()) {
+        fallBackExecutorService.shutdownNow();
       }
       if (null != this.carbonFactHandlers && !this.carbonFactHandlers.isEmpty()) {
         for (CarbonFactHandler carbonFactHandler : this.carbonFactHandlers) {

@@ -57,10 +57,7 @@ public class DecoderBasedFallbackEncoder implements Callable<FallbackEncodedColu
     int pageSize =
         encodedColumnPage.getActualPage().getPageSize();
     int offset = 0;
-    int[] reverseInvertedIndex = new int[pageSize];
-    for (int i = 0; i < pageSize; i++) {
-      reverseInvertedIndex[i] = i;
-    }
+    int[] reverseInvertedIndex = null;
     int[] rlePage;
 
     // uncompress the encoded column page
@@ -109,11 +106,19 @@ public class DecoderBasedFallbackEncoder implements Callable<FallbackEncodedColu
 
     // get the actual data for each dictionary data and put the actual data in new page
     int rowId = 0;
-    for (int i = 0; i < pageSize; i++) {
-      int index = reverseInvertedIndex[i] * 3;
-      int keyArray = (int) keyGenerator.getKeyArray(bytes, index)[0];
-      actualDataColumnPage
-          .putBytes(rowId++, localDictionaryGenerator.getDictionaryKeyBasedOnValue(keyArray));
+    if (reverseInvertedIndex == null) {
+      for (int i = 0; i < pageSize; i++) {
+        int keyArray = (int) keyGenerator.getKeyArray(bytes, i * 3)[0];
+        actualDataColumnPage
+            .putBytes(rowId++, localDictionaryGenerator.getDictionaryKeyBasedOnValue(keyArray));
+      }
+    } else {
+      for (int i = 0; i < pageSize; i++) {
+        int index = reverseInvertedIndex[i] * 3;
+        int keyArray = (int) keyGenerator.getKeyArray(bytes, index)[0];
+        actualDataColumnPage
+            .putBytes(rowId++, localDictionaryGenerator.getDictionaryKeyBasedOnValue(keyArray));
+      }
     }
 
     // get column spec for existing column page

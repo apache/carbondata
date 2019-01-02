@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.core.cache.dictionary.DictionaryByteArrayWrapper;
 import org.apache.carbondata.core.localdictionary.exception.DictionaryThresholdReachedException;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * Map based dictionary holder class, it will use map to hold
@@ -60,6 +61,9 @@ public class MapBasedDictionaryStore implements DictionaryStore {
    */
   private long currentSize;
 
+  private static final int MAX_DICTIONARY_SIZE =
+      CarbonProperties.getInstance().getMaxDictionaryThreshold() * 1024 * 1024;
+
   public MapBasedDictionaryStore(int dictionaryThreshold) {
     this.dictionaryThreshold = dictionaryThreshold;
     this.dictionary = new ConcurrentHashMap<>();
@@ -93,7 +97,7 @@ public class MapBasedDictionaryStore implements DictionaryStore {
           value = ++lastAssignValue;
           currentSize += data.length;
           // if new value is greater than threshold
-          if (value > dictionaryThreshold || currentSize >= Integer.MAX_VALUE) {
+          if (value > dictionaryThreshold || currentSize >= MAX_DICTIONARY_SIZE) {
             // set the threshold boolean to true
             isThresholdReached = true;
             // throw exception
@@ -111,9 +115,10 @@ public class MapBasedDictionaryStore implements DictionaryStore {
 
   private void checkIfThresholdReached() throws DictionaryThresholdReachedException {
     if (isThresholdReached) {
-      if (currentSize >= Integer.MAX_VALUE) {
+      if (currentSize >= MAX_DICTIONARY_SIZE) {
         throw new DictionaryThresholdReachedException(
-            "Unable to generate dictionary. Dictionary Size crossed 2GB limit");
+            "Unable to generate dictionary. Dictionary Size crossed " + CarbonProperties
+                .getInstance().getMaxDictionaryThreshold() + "MB limit");
       } else {
         throw new DictionaryThresholdReachedException(
             "Unable to generate dictionary value. Dictionary threshold reached");

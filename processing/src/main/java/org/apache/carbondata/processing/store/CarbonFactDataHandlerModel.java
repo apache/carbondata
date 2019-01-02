@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -186,6 +187,8 @@ public class CarbonFactDataHandlerModel {
   private List<Integer> varcharDimIdxInNoDict;
 
   private String columnCompressor;
+
+  private ExecutorService fallBackExecutorService;
 
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
@@ -777,6 +780,14 @@ public class CarbonFactDataHandlerModel {
 
   public void setNoDictAndComplexColumns(CarbonColumn[] noDictAndComplexColumns) {
     this.noDictAndComplexColumns = noDictAndComplexColumns;
+  }
+
+  public ExecutorService getFallBackExecutorService() {
+    return fallBackExecutorService;
+  }
+
+  public void setFallBackExecutorService(ExecutorService fallBackExecutorService) {
+    this.fallBackExecutorService = fallBackExecutorService;
   }
 }
 
