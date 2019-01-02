@@ -29,6 +29,7 @@ import org.apache.carbondata.core.datamap.Segment;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath.DataFileUtil;
@@ -100,6 +101,8 @@ public class TableBlockInfo implements Distributable, Serializable {
   private BlockletDetailInfo detailInfo;
 
   private String dataMapWriterPath;
+
+  private transient DataFileFooter dataFileFooter;
 
   /**
    * comparator to sort by block size in descending order.
@@ -460,6 +463,14 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   public void setDataMapWriterPath(String dataMapWriterPath) {
     this.dataMapWriterPath = dataMapWriterPath;
+  }
+
+  public DataFileFooter getDataFileFooter() {
+    return dataFileFooter;
+  }
+
+  public void setDataFileFooter(DataFileFooter dataFileFooter) {
+    this.dataFileFooter = dataFileFooter;
   }
 
   @Override

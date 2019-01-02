@@ -91,7 +91,10 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       LOGGER.info("Blocklet size configure for table is: " + blockletSizeThreshold);
     }
     blockletDataHolder = new BlockletDataHolder(fallbackExecutorService, model);
-    isSorted = model.getSortScope() != NO_SORT;
+    if (model.getSortScope() != null) {
+      isSorted = model.getSortScope() != NO_SORT;
+    }
+    LOGGER.info("Sort Scope : " + model.getSortScope());
   }
 
   @Override

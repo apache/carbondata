@@ -36,7 +36,7 @@ import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.converter.SparkDataTypeConverterImpl
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, SortScopeOptions}
 import org.apache.carbondata.core.datamap.Segment
 import org.apache.carbondata.core.datastore.block._
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -99,7 +99,7 @@ class CarbonMergerRDD[K, V](
       var mergeNumber = ""
       var exec: CarbonCompactionExecutor = null
       var processor: AbstractResultProcessor = null
-      var rawResultIteratorList: java.util.List[RawResultIterator] = null
+      var rawResultIteratorMap: util.Map[String, util.List[RawResultIterator]] = _
       try {
         // sorting the table block info List.
         val splitList = carbonSparkPartition.split.value.getAllSplits
@@ -159,7 +159,8 @@ class CarbonMergerRDD[K, V](
           CarbonCompactionUtil.createMappingForSegments(tableBlockInfoList)
 
         val dataFileMetadataSegMapping: java.util.Map[String, List[DataFileFooter]] =
-          CarbonCompactionUtil.createDataFileFooterMappingForSegments(tableBlockInfoList)
+          CarbonCompactionUtil.createDataFileFooterMappingForSegments(tableBlockInfoList,
+            carbonTable.getSortScope != SortScopeOptions.SortScope.NO_SORT)
 
         carbonLoadModel.setTablePath(tablePath)
         // check for restructured block
@@ -180,7 +181,7 @@ class CarbonMergerRDD[K, V](
         }
         try {
           // fire a query and get the results.
-          rawResultIteratorList = exec.processTableBlocks(FileFactory.getConfiguration)
+          rawResultIteratorMap = exec.processTableBlocks(FileFactory.getConfiguration)
         } catch {
           case e: Throwable =>
             LOGGER.error(e)
@@ -196,7 +197,21 @@ class CarbonMergerRDD[K, V](
         val tempStoreLoc = CarbonDataProcessorUtil.getLocalDataFolderLocation(
           carbonTable, carbonLoadModel.getTaskNo, mergeNumber, true, false)
 
-        if (restructuredBlockExists) {
+        if (carbonTable.getSortScope == SortScopeOptions.SortScope.NO_SORT ||
+          rawResultIteratorMap.get(CarbonCompactionUtil.UNSORTED_IDX).size() == 0) {
+
+          LOGGER.info("RowResultMergerProcessor flow is selected")
+          processor = new RowResultMergerProcessor(
+            databaseName,
+            factTableName,
+            segmentProperties,
+            tempStoreLoc,
+            carbonLoadModel,
+            carbonMergerMapping.campactionType,
+            partitionSpec)
+
+        } else {
+
           LOGGER.info("CompactionResultSortProcessor flow is selected")
           processor = new CompactionResultSortProcessor(
             carbonLoadModel,
@@ -205,19 +220,12 @@ class CarbonMergerRDD[K, V](
             carbonMergerMapping.campactionType,
             factTableName,
             partitionSpec)
-        } else {
-          LOGGER.info("RowResultMergerProcessor flow is selected")
-          processor =
-            new RowResultMergerProcessor(
-              databaseName,
-              factTableName,
-              segmentProperties,
-              tempStoreLoc,
-              carbonLoadModel,
-              carbonMergerMapping.campactionType,
-              partitionSpec)
+
         }
-        mergeStatus = processor.execute(rawResultIteratorList)
+
+        mergeStatus = processor.execute(
+          rawResultIteratorMap.get(CarbonCompactionUtil.UNSORTED_IDX),
+          rawResultIteratorMap.get(CarbonCompactionUtil.SORTED_IDX))
         mergeResult = tableBlockInfoList.get(0).getSegmentId + ',' + mergeNumber
 
       } catch {
@@ -231,7 +239,8 @@ class CarbonMergerRDD[K, V](
         // close all the query executor service and clean up memory acquired during query processing
         if (null != exec) {
           LOGGER.info("Cleaning up query resources acquired during compaction")
-          exec.close(rawResultIteratorList, queryStartTime)
+          exec.close(rawResultIteratorMap.get(CarbonCompactionUtil.UNSORTED_IDX), queryStartTime)
+          exec.close(rawResultIteratorMap.get(CarbonCompactionUtil.SORTED_IDX), queryStartTime)
         }
         // clean up the resources for processor
         if (null != processor) {
