@@ -35,10 +35,12 @@ public abstract class AbstractResultProcessor {
   /**
    * This method will perform the desired tasks of merging the selected slices
    *
-   * @param resultIteratorList
+   * @param unsortedResultIteratorList
+   * @param sortedResultIteratorList
    * @return
    */
-  public abstract boolean execute(List<RawResultIterator> resultIteratorList) throws Exception;
+  public abstract boolean execute(List<RawResultIterator> unsortedResultIteratorList,
+      List<RawResultIterator> sortedResultIteratorList) throws Exception;
 
   /**
    * This method will be sued to clean up the resources and close all the spawned threads to avoid

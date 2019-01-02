@@ -411,6 +411,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel
         .setColumnLocalDictGenMap(CarbonUtil.getLocalDictionaryModel(carbonTable));
     carbonFactDataHandlerModel.setVarcharDimIdxInNoDict(varcharDimIdxInNoDict);
+    carbonFactDataHandlerModel.sortScope = carbonTable.getSortScope();
     return carbonFactDataHandlerModel;
   }
 

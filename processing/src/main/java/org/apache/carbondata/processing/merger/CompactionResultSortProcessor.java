@@ -32,6 +32,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
@@ -141,6 +142,8 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
 
   private SortParameters sortParameters;
 
+  private CarbonColumn[] noDicAndComplexColumns;
+
   public CompactionResultSortProcessor(CarbonLoadModel carbonLoadModel, CarbonTable carbonTable,
       SegmentProperties segmentProperties, CompactionType compactionType, String tableName,
       PartitionSpec partitionSpec) {
@@ -157,21 +160,25 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * This method will iterate over the query result and convert it into a format compatible
    * for data loading
    *
-   * @param resultIteratorList
+   * @param unsortedResultIteratorList
+   * @param sortedResultIteratorList
+   * @return if the compaction is success or not
+   * @throws Exception
    */
-  public boolean execute(List<RawResultIterator> resultIteratorList) throws Exception {
+  public boolean execute(List<RawResultIterator> unsortedResultIteratorList,
+      List<RawResultIterator> sortedResultIteratorList) throws Exception {
     boolean isCompactionSuccess = false;
     try {
       initTempStoreLocation();
       initSortDataRows();
       dataTypes = CarbonDataProcessorUtil.initDataType(carbonTable, tableName, measureCount);
-      processResult(resultIteratorList);
+      processResult(unsortedResultIteratorList);
       // After delete command, if no records are fetched from one split,
       // below steps are not required to be initialized.
       if (isRecordFound) {
         initializeFinalThreadMergerForMergeSort();
         initDataHandler();
-        readAndLoadDataFromSortTempFiles();
+        readAndLoadDataFromSortTempFiles(sortedResultIteratorList);
       }
       isCompactionSuccess = true;
     } catch (Exception e) {
@@ -372,10 +379,15 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   /**
    * This method will read sort temp files, perform merge sort and add it to store for data loading
    */
-  private void readAndLoadDataFromSortTempFiles() throws Exception {
+  private void readAndLoadDataFromSortTempFiles(List<RawResultIterator> sortedRawResultIterator)
+      throws Exception {
     try {
       intermediateFileMerger.finish();
       finalMerger.startFinalMerge();
+      if (sortedRawResultIterator != null && sortedRawResultIterator.size() > 0) {
+        finalMerger.addInMemoryRawResultIterator(sortedRawResultIterator, segmentProperties,
+            noDicAndComplexColumns, dataTypes);
+      }
       while (finalMerger.hasNext()) {
         Object[] row = finalMerger.next();
         dataHandler.addDataToStore(new CarbonRow(row));
@@ -500,6 +512,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
             tempStoreLocation, carbonStoreLocation);
     carbonFactDataHandlerModel.setSegmentId(carbonLoadModel.getSegmentId());
     setDataFileAttributesInModel(carbonLoadModel, compactionType, carbonFactDataHandlerModel);
+    this.noDicAndComplexColumns = carbonFactDataHandlerModel.getNoDictAndComplexColumns();
     dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(carbonFactDataHandlerModel);
     try {
       dataHandler.initialise();

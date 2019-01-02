@@ -212,6 +212,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             .isUseMinMaxForPruning()) {
         blockInfo.setBlockOffset(blockletDetailInfo.getBlockFooterOffset());
         DataFileFooter fileFooter = filePathToFileFooterMapping.get(blockInfo.getFilePath());
+        if (null != blockInfo.getDataFileFooter()) {
+          fileFooter = blockInfo.getDataFileFooter();
+        }
         if (null == fileFooter) {
           blockInfo.setDetailInfo(null);
           fileFooter = CarbonUtil.readMetadataFile(blockInfo);

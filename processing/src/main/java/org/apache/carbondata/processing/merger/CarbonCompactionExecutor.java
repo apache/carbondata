@@ -103,12 +103,20 @@ public class CarbonCompactionExecutor {
   /**
    * For processing of the table blocks.
    *
-   * @return List of Carbon iterators
+   * @return Map of String with Carbon iterators
+   * Map has 2 elements: UNSORTED and SORTED
+   * Map(UNSORTED) = List of Iterators which yield sorted data
+   * Map(Sorted) = List of Iterators which yield sorted data
    */
-  public List<RawResultIterator> processTableBlocks(Configuration configuration) throws
-      QueryExecutionException, IOException {
-    List<RawResultIterator> resultList =
-        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  public Map<String, List<RawResultIterator>> processTableBlocks(Configuration configuration)
+      throws QueryExecutionException, IOException {
+
+    Map<String, List<RawResultIterator>> resultList = new HashMap<>(2);
+    resultList.put(CarbonCompactionUtil.UNSORTED_IDX,
+        new ArrayList<RawResultIterator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE));
+    resultList.put(CarbonCompactionUtil.SORTED_IDX,
+        new ArrayList<RawResultIterator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE));
+
     List<TableBlockInfo> list = null;
     QueryModelBuilder builder = new QueryModelBuilder(carbonTable)
         .projectAllColumns()
@@ -126,6 +134,10 @@ public class CarbonCompactionExecutor {
       // for each segment get taskblock info
       TaskBlockInfo taskBlockInfo = taskMap.getValue();
       Set<String> taskBlockListMapping = taskBlockInfo.getTaskSet();
+      // Check if block needs sorting or not
+      boolean sortingRequired =
+          CarbonCompactionUtil.isRestructured(listMetadata, carbonTable.getTableLastUpdatedTime())
+              || !CarbonCompactionUtil.isSorted(listMetadata.get(0));
       for (String task : taskBlockListMapping) {
         list = taskBlockInfo.getTableBlockInfoList(task);
         Collections.sort(list);
@@ -133,10 +145,15 @@ public class CarbonCompactionExecutor {
             "for task -" + task + "- in segment id -" + segmentId + "- block size is -" + list
                 .size());
         queryModel.setTableBlockInfos(list);
-        resultList.add(
-            new RawResultIterator(executeBlockList(list, segmentId, task, configuration),
-                sourceSegProperties,
-                destinationSegProperties, false));
+        if (sortingRequired) {
+          resultList.get(CarbonCompactionUtil.UNSORTED_IDX).add(
+              new RawResultIterator(executeBlockList(list, segmentId, task, configuration),
+                  sourceSegProperties, destinationSegProperties, false));
+        } else {
+          resultList.get(CarbonCompactionUtil.SORTED_IDX).add(
+              new RawResultIterator(executeBlockList(list, segmentId, task, configuration),
+                  sourceSegProperties, destinationSegProperties, false));
+        }
       }
     }
     return resultList;
