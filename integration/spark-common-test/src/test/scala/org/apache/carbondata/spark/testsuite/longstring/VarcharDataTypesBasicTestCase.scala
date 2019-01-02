@@ -333,6 +333,37 @@ class VarcharDataTypesBasicTestCase extends QueryTest with BeforeAndAfterEach wi
     sql(s"DROP DATAMAP IF EXISTS $datamapName ON TABLE $longStringTable")
   }
 
+  test("creating datamap with long string column selected and loading data should be success") {
+
+    sql(s"drop table if exists $longStringTable")
+    val datamapName = "pre_agg_dm"
+    sql(
+      s"""
+         | CREATE TABLE if not exists $longStringTable(
+         | id INT, name STRING, description STRING, address STRING, note STRING
+         | ) STORED BY 'carbondata'
+         | TBLPROPERTIES('LONG_STRING_COLUMNS'='description, note', 'SORT_COLUMNS'='name')
+         |""".stripMargin)
+
+    sql(
+      s"""
+         | CREATE DATAMAP $datamapName ON TABLE $longStringTable
+         | USING 'preaggregate'
+         | AS SELECT id,description,note,count(*) FROM $longStringTable
+         | GROUP BY id,description,note
+         |""".
+        stripMargin)
+
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$inputFile' INTO TABLE $longStringTable
+         | OPTIONS('header'='false')
+       """.stripMargin)
+
+    checkAnswer(sql(s"select count(*) from $longStringTable"), Row(1000))
+    sql(s"drop table if exists $longStringTable")
+  }
+
   test("create table with varchar column and complex column") {
     sql("DROP TABLE IF EXISTS varchar_complex_table")
     sql("""
