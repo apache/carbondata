@@ -277,12 +277,7 @@ m filterExpression
   public static void setQuerySegment(Configuration conf, AbsoluteTableIdentifier identifier) {
     String dbName = identifier.getCarbonTableIdentifier().getDatabaseName().toLowerCase();
     String tbName = identifier.getCarbonTableIdentifier().getTableName().toLowerCase();
-    String segmentNumbersFromProperty = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS + dbName + "." + tbName, "*");
-    if (!segmentNumbersFromProperty.trim().equals("*")) {
-      CarbonInputFormat.setSegmentsToAccess(conf,
-          Segment.toSegmentList(segmentNumbersFromProperty.split(","), null));
-    }
+    getQuerySegmentToAccess(conf, dbName, tbName);
   }
 
   /**
@@ -827,4 +822,22 @@ m filterExpression
     }
     return projectColumns.toArray(new String[projectColumns.size()]);
   }
+
+  private static void getQuerySegmentToAccess(Configuration conf, String dbName, String tableName) {
+    String segmentNumbersFromProperty = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS + dbName + "." + tableName, "*");
+    if (!segmentNumbersFromProperty.trim().equals("*")) {
+      CarbonInputFormat.setSegmentsToAccess(conf,
+          Segment.toSegmentList(segmentNumbersFromProperty.split(","), null));
+    }
+  }
+
+  /**
+   * Set `CARBON_INPUT_SEGMENTS` from property to configuration
+   */
+  public static void setQuerySegment(Configuration conf, CarbonTable carbonTable) {
+    String tableName = carbonTable.getTableName();
+    getQuerySegmentToAccess(conf, carbonTable.getDatabaseName(), tableName);
+  }
+
 }

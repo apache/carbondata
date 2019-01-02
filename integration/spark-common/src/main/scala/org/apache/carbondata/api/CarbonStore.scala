@@ -107,8 +107,8 @@ object CarbonStore {
             (indices.asScala.map(_.getFile_size).sum, FileFactory.getCarbonFile(indexPath).getSize)
           } else {
             // for batch segment, we can get the data size from table status file directly
-            (if (load.getDataSize == null) 0L else load.getDataSize.toLong,
-              if (load.getIndexSize == null) 0L else load.getIndexSize.toLong)
+            (if (load.getDataSize == null) -1L else load.getDataSize.toLong,
+              if (load.getIndexSize == null) -1L else load.getIndexSize.toLong)
           }
 
           if (showHistory) {
