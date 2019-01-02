@@ -47,7 +47,8 @@ CarbonData DDL statements are documented here,which includes:
     * [RENAME TABLE](#rename-table)
     * [ADD COLUMNS](#add-columns)
     * [DROP COLUMNS](#drop-columns)
-    * [CHANGE DATA TYPE](#change-data-type)
+    * [RENAME COLUMN](#change-column-nametype)
+    * [CHANGE COLUMN NAME/TYPE](#change-column-nametype)
     * [MERGE INDEXES](#merge-index)
     * [SET/UNSET Local Dictionary Properties](#set-and-unset-for-local-dictionary-properties)
   * [DROP TABLE](#drop-table)
@@ -681,13 +682,13 @@ Users can specify which columns to include and exclude for local dictionary gene
 
      **NOTE:** Drop Complex child column is not supported.
 
-   - ##### CHANGE DATA TYPE
+   - ##### CHANGE COLUMN NAME/TYPE
    
-     This command is used to change the data type from INT to BIGINT or decimal precision from lower to higher.
+     This command is used to change column name and the data type from INT to BIGINT or decimal precision from lower to higher.
      Change of decimal data type from lower precision to higher precision will only be supported for cases where there is no data loss.
 
      ```
-     ALTER TABLE [db_name.]table_name CHANGE col_name col_name changed_column_type
+     ALTER TABLE [db_name.]table_name CHANGE col_old_name col_new_name column_type
      ```
 
      Valid Scenarios
@@ -695,10 +696,10 @@ Users can specify which columns to include and exclude for local dictionary gene
      - Valid scenario - Change of decimal precision from (10,2) to (12,3) is valid as the total number of digits are increased by 2 but scale is increased only by 1 which will not lead to any data loss.
      - **NOTE:** The allowed range is 38,38 (precision, scale) and is a valid upper case scenario which is not resulting in data loss.
 
-     Example1:Changing data type of column a1 from INT to BIGINT.
+     Example1:Change column a1's name to a2 and its data type from INT to BIGINT.
 
      ```
-     ALTER TABLE test_db.carbon CHANGE a1 a1 BIGINT
+     ALTER TABLE test_db.carbon CHANGE a1 a2 BIGINT
      ```
      
      Example2:Changing decimal precision of column a1 from 10 to 18.
@@ -707,6 +708,13 @@ Users can specify which columns to include and exclude for local dictionary gene
      ALTER TABLE test_db.carbon CHANGE a1 a1 DECIMAL(18,2)
      ```
 
+     Example3:Change column a3's name to a4.
+
+     ```
+     ALTER TABLE test_db.carbon CHANGE a3 a4 STRING
+     ```
+
+     **NOTE:** Once the column is renamed, user has to take care about replacing the fileheader with the new name or changing the column header in csv file.
 - ##### MERGE INDEX
 
      This command is used to merge all the CarbonData index files (.carbonindex) inside a segment to a single CarbonData index merge file (.carbonindexmerge). This enhances the first query performance.
